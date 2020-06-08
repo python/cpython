@@ -1092,7 +1092,7 @@ class _TestMboxMMDF(_TestSingleFile):
             # Signal the child it can now release the lock and exit.
             p.send(b'p')
             # Wait for child to exit.  Locking should now succeed.
-            exited_pid, status = os.waitpid(pid, 0)
+            support.wait_process(pid, exitcode=0)
 
         self._box.lock()
         self._box.unlock()

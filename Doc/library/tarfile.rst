@@ -159,7 +159,10 @@ Some facts and figures:
 .. function:: is_tarfile(name)
 
    Return :const:`True` if *name* is a tar archive file, that the :mod:`tarfile`
-   module can read.
+   module can read. *name* may be a :class:`str`, file, or file-like object.
+
+   .. versionchanged:: 3.9
+      Support for file and file-like objects.
 
 
 The :mod:`tarfile` module defines the following exceptions:
@@ -784,7 +787,7 @@ How to read a gzip compressed tar archive and display some member information::
    import tarfile
    tar = tarfile.open("sample.tar.gz", "r:gz")
    for tarinfo in tar:
-       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is", end="")
+       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
        if tarinfo.isreg():
            print("a regular file.")
        elif tarinfo.isdir():

@@ -1,7 +1,7 @@
 """Tests for distutils.command.bdist_msi."""
 import sys
 import unittest
-from test.support import run_unittest
+from test.support import run_unittest, check_warnings
 from distutils.tests import support
 
 
@@ -14,7 +14,8 @@ class BDistMSITestCase(support.TempdirManager,
         # minimal test XXX need more tests
         from distutils.command.bdist_msi import bdist_msi
         project_dir, dist = self.create_dist()
-        cmd = bdist_msi(dist)
+        with check_warnings(("", DeprecationWarning)):
+            cmd = bdist_msi(dist)
         cmd.ensure_finalized()
 
 

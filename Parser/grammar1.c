@@ -41,7 +41,7 @@ PyGrammar_LabelRepr(label *lb)
         }
     }
     else {
-        Py_FatalError("invalid label");
+        Py_FatalError("invalid grammar label");
         return NULL;
     }
 }

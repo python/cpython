@@ -54,8 +54,9 @@ s_push(stack *s, const dfa *d, node *parent)
 static void
 s_pop(stack *s)
 {
-    if (s_empty(s))
-        Py_FatalError("s_pop: parser stack underflow -- FATAL");
+    if (s_empty(s)) {
+        Py_FatalError("parser stack underflow");
+    }
     s->s_top++;
 }
 

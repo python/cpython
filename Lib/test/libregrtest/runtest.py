@@ -123,7 +123,7 @@ def _runtest(ns, test_name):
 
     start_time = time.perf_counter()
     try:
-        support.set_match_tests(ns.match_tests)
+        support.set_match_tests(ns.match_tests, ns.ignore_tests)
         support.junit_xml_list = xml_list = [] if ns.xmlpath else None
         if ns.failfast:
             support.failfast = True
@@ -327,7 +327,7 @@ def cleanup_test_droppings(test_name, verbose):
                                f"directory nor file")
 
         if verbose:
-            print_warning("%r left behind %s %r" % (test_name, kind, name))
+            print_warning(f"{test_name} left behind {kind} {name!r}")
             support.environment_altered = True
 
         try:

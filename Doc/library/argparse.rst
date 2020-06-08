@@ -449,7 +449,7 @@ default values to each of the argument help messages::
    >>> parser.add_argument('--foo', type=int, default=42, help='FOO!')
    >>> parser.add_argument('bar', nargs='*', default=[1, 2, 3], help='BAR!')
    >>> parser.print_help()
-   usage: PROG [-h] [--foo FOO] [bar [bar ...]]
+   usage: PROG [-h] [--foo FOO] [bar ...]
 
    positional arguments:
     bar         BAR! (default: [1, 2, 3])
@@ -810,9 +810,11 @@ how the command-line arguments should be handled. The supplied actions are:
   example, this is useful for increasing verbosity levels::
 
     >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument('--verbose', '-v', action='count')
+    >>> parser.add_argument('--verbose', '-v', action='count', default=0)
     >>> parser.parse_args(['-vvv'])
     Namespace(verbose=3)
+
+  Note, the *default* will be ``None`` unless explicitly set to *0*.
 
 * ``'help'`` - This prints a complete help message for all the options in the
   current parser and then exits. By default a help action is automatically
@@ -837,6 +839,8 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
     >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
     Namespace(foo=['f1', 'f2', 'f3', 'f4'])
+
+  .. versionadded:: 3.8
 
 You may also specify an arbitrary action by passing an Action subclass or
 other object that implements the same interface. The ``BooleanOptionalAction``
@@ -956,19 +960,6 @@ values are:
      >>> parser.parse_args([])
      usage: PROG [-h] foo [foo ...]
      PROG: error: the following arguments are required: foo
-
-.. _`argparse.REMAINDER`:
-
-* ``argparse.REMAINDER``.  All the remaining command-line arguments are gathered
-  into a list.  This is commonly useful for command line utilities that dispatch
-  to other command line utilities::
-
-     >>> parser = argparse.ArgumentParser(prog='PROG')
-     >>> parser.add_argument('--foo')
-     >>> parser.add_argument('command')
-     >>> parser.add_argument('args', nargs=argparse.REMAINDER)
-     >>> print(parser.parse_args('--foo B cmd --arg1 XX ZZ'.split()))
-     Namespace(args=['--arg1', 'XX', 'ZZ'], command='cmd', foo='B')
 
 If the ``nargs`` keyword argument is not provided, the number of arguments consumed
 is determined by the action_.  Generally this means a single command-line argument
@@ -1636,7 +1627,7 @@ Sub-commands
      stored; by default ``None`` and no value is stored
 
    * required_ - Whether or not a subcommand must be provided, by default
-     ``False``.
+     ``False`` (added in 3.7)
 
    * help_ - help for sub-parser group in help output, by default ``None``
 
@@ -1791,6 +1782,9 @@ Sub-commands
      >>> subparser2.add_argument('y')
      >>> parser.parse_args(['2', 'frobble'])
      Namespace(subparser_name='2', y='frobble')
+
+   .. versionchanged:: 3.7
+      New *required* keyword argument.
 
 
 FileType objects

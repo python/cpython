@@ -14,7 +14,8 @@ sys.path.append(os.path.abspath('includes'))
 # ---------------------
 
 extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
-              'pyspecific', 'c_annotations', 'escape4chm']
+              'pyspecific', 'c_annotations', 'escape4chm',
+              'asdl_highlight']
 
 
 doctest_global_setup = '''
@@ -127,6 +128,7 @@ latex_elements['preamble'] = r'''
 }
 \let\Verbatim=\OriginalVerbatim
 \let\endVerbatim=\endOriginalVerbatim
+\setcounter{tocdepth}{2}
 '''
 
 # The paper size ('letter' or 'a4').

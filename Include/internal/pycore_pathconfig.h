@@ -47,8 +47,6 @@ PyAPI_DATA(wchar_t*) _Py_dll_path;
 #endif
 
 extern void _PyPathConfig_ClearGlobal(void);
-extern PyStatus _PyPathConfig_SetGlobal(
-    const struct _PyPathConfig *pathconfig);
 
 extern PyStatus _PyPathConfig_Calculate(
     _PyPathConfig *pathconfig,
@@ -56,11 +54,10 @@ extern PyStatus _PyPathConfig_Calculate(
 extern int _PyPathConfig_ComputeSysPath0(
     const PyWideStringList *argv,
     PyObject **path0);
-extern int _Py_FindEnvConfigValue(
+extern PyStatus _Py_FindEnvConfigValue(
     FILE *env_file,
     const wchar_t *key,
-    wchar_t *value,
-    size_t value_size);
+    wchar_t **value_p);
 
 #ifdef MS_WINDOWS
 extern wchar_t* _Py_GetDLLPath(void);

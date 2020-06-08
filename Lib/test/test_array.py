@@ -10,7 +10,6 @@ import pickle
 import operator
 import struct
 import sys
-import warnings
 
 import array
 from array import _array_reconstructor as array_reconstructor
@@ -425,26 +424,6 @@ class BaseTest:
         self.assertRaises(TypeError, b.fromlist, [None])
         b.fromlist(a.tolist())
         self.assertEqual(a, b)
-
-    def test_tofromstring(self):
-        # Warnings not raised when arguments are incorrect as Argument Clinic
-        # handles that before the warning can be raised.
-        nb_warnings = 2
-        with warnings.catch_warnings(record=True) as r:
-            warnings.filterwarnings("always",
-                                    message=r"(to|from)string\(\) is deprecated",
-                                    category=DeprecationWarning)
-            a = array.array(self.typecode, 2*self.example)
-            b = array.array(self.typecode)
-            self.assertRaises(TypeError, a.tostring, 42)
-            self.assertRaises(TypeError, b.fromstring)
-            self.assertRaises(TypeError, b.fromstring, 42)
-            b.fromstring(a.tostring())
-            self.assertEqual(a, b)
-            if a.itemsize>1:
-                self.assertRaises(ValueError, b.fromstring, "x")
-                nb_warnings += 1
-        self.assertEqual(len(r), nb_warnings)
 
     def test_tofrombytes(self):
         a = array.array(self.typecode, 2*self.example)

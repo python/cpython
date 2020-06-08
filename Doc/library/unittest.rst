@@ -56,8 +56,8 @@ test runner
       Kent Beck's original paper on testing frameworks using the pattern shared
       by :mod:`unittest`.
 
-   `Nose <https://nose.readthedocs.io/>`_ and `pytest <https://docs.pytest.org/>`_
-      Third-party unittest frameworks with a lighter-weight syntax for writing
+   `pytest <https://docs.pytest.org/>`_
+      Third-party unittest framework with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
    `The Python Testing Tools Taxonomy <https://wiki.python.org/moin/PythonTestingToolsTaxonomy>`_
@@ -910,10 +910,10 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertIn(first, second, msg=None)
-               assertNotIn(first, second, msg=None)
+   .. method:: assertIn(member, container, msg=None)
+               assertNotIn(member, container, msg=None)
 
-      Test that *first* is (or is not) in *second*.
+      Test that *member* is (or is not) in *container*.
 
       .. versionadded:: 3.1
 
@@ -1563,7 +1563,7 @@ Test cases
       if __name__ == "__main__":
           unittest.main()
 
-   After running the test ``events`` would contain ``["setUp", "asyncSetUp", "test_response", "asyncTearDown", "tearDown", "cleanup"]``
+   After running the test, ``events`` would contain ``["setUp", "asyncSetUp", "test_response", "asyncTearDown", "tearDown", "cleanup"]``.
 
 
 .. class:: FunctionTestCase(testFunc, setUp=None, tearDown=None, description=None)

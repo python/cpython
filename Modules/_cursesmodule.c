@@ -547,7 +547,7 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
             encoding = "utf-8";
     }
 
-    wo = PyObject_NEW(PyCursesWindowObject, &PyCursesWindow_Type);
+    wo = PyObject_New(PyCursesWindowObject, &PyCursesWindow_Type);
     if (wo == NULL) return NULL;
     wo->win = win;
     wo->encoding = _PyMem_Strdup(encoding);
@@ -709,7 +709,7 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        char *str = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         funcname = "addstr";
         if (use_xy)
             rtn = mvwaddstr(self->win,y,x,str);
@@ -792,7 +792,7 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        char *str = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         funcname = "addnstr";
         if (use_xy)
             rtn = mvwaddnstr(self->win,y,x,str,n);
@@ -1710,7 +1710,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        char *str = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         funcname = "insstr";
         if (use_xy)
             rtn = mvwinsstr(self->win,y,x,str);
@@ -1795,7 +1795,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        char *str = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         funcname = "insnstr";
         if (use_xy)
             rtn = mvwinsnstr(self->win,y,x,str,n);
@@ -2924,7 +2924,7 @@ _curses_getwin(PyObject *module, PyObject *file)
     if (!PyBytes_Check(data)) {
         PyErr_Format(PyExc_TypeError,
                      "f.read() returned %.100s instead of bytes",
-                     data->ob_type->tp_name);
+                     Py_TYPE(data)->tp_name);
         Py_DECREF(data);
         goto error;
     }
@@ -3254,6 +3254,90 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
 
     Py_RETURN_NONE;
 }
+
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
+// https://invisible-island.net/ncurses/NEWS.html#index-t20080119
+
+/*[clinic input]
+_curses.get_escdelay
+
+Gets the curses ESCDELAY setting.
+
+Gets the number of milliseconds to wait after reading an escape character,
+to distinguish between an individual escape character entered on the
+keyboard from escape sequences sent by cursor and function keys.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_get_escdelay_impl(PyObject *module)
+/*[clinic end generated code: output=222fa1a822555d60 input=be2d5b3dd974d0a4]*/
+{
+    return PyLong_FromLong(ESCDELAY);
+}
+/*[clinic input]
+_curses.set_escdelay
+    ms: int
+        length of the delay in milliseconds.
+    /
+
+Sets the curses ESCDELAY setting.
+
+Sets the number of milliseconds to wait after reading an escape character,
+to distinguish between an individual escape character entered on the
+keyboard from escape sequences sent by cursor and function keys.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_set_escdelay_impl(PyObject *module, int ms)
+/*[clinic end generated code: output=43818efbf7980ac4 input=7796fe19f111e250]*/
+{
+    if (ms <= 0) {
+        PyErr_SetString(PyExc_ValueError, "ms must be > 0");
+        return NULL;
+    }
+
+    return PyCursesCheckERR(set_escdelay(ms), "set_escdelay");
+}
+
+/*[clinic input]
+_curses.get_tabsize
+
+Gets the curses TABSIZE setting.
+
+Gets the number of columns used by the curses library when converting a tab
+character to spaces as it adds the tab to a window.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_get_tabsize_impl(PyObject *module)
+/*[clinic end generated code: output=7e9e51fb6126fbdf input=74af86bf6c9f5d7e]*/
+{
+    return PyLong_FromLong(TABSIZE);
+}
+/*[clinic input]
+_curses.set_tabsize
+    size: int
+        rendered cell width of a tab character.
+    /
+
+Sets the curses TABSIZE setting.
+
+Sets the number of columns used by the curses library when converting a tab
+character to spaces as it adds the tab to a window.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_set_tabsize_impl(PyObject *module, int size)
+/*[clinic end generated code: output=c1de5a76c0daab1e input=78cba6a3021ad061]*/
+{
+    if (size <= 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be > 0");
+        return NULL;
+    }
+
+    return PyCursesCheckERR(set_tabsize(size), "set_tabsize");
+}
+#endif
 
 /*[clinic input]
 _curses.intrflush
@@ -3730,7 +3814,7 @@ update_lines_cols(void)
         return 0;
     }
     /* PyId_LINES.object will be initialized here. */
-    if (PyDict_SetItem(ModDict, PyId_LINES.object, o)) {
+    if (PyDict_SetItem(ModDict, _PyUnicode_FromId(&PyId_LINES), o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
@@ -3746,7 +3830,7 @@ update_lines_cols(void)
         Py_DECREF(o);
         return 0;
     }
-    if (PyDict_SetItem(ModDict, PyId_COLS.object, o)) {
+    if (PyDict_SetItem(ModDict, _PyUnicode_FromId(&PyId_COLS), o)) {
         Py_DECREF(m);
         Py_DECREF(o);
         return 0;
@@ -3757,15 +3841,18 @@ update_lines_cols(void)
 }
 
 /*[clinic input]
-_curses.update_lines_cols -> int
+_curses.update_lines_cols
 
 [clinic start generated code]*/
 
-static int
+static PyObject *
 _curses_update_lines_cols_impl(PyObject *module)
-/*[clinic end generated code: output=0345e7f072ea711a input=3a87760f7d5197f0]*/
+/*[clinic end generated code: output=423f2b1e63ed0f75 input=5f065ab7a28a5d90]*/
 {
-  return update_lines_cols();
+    if (!update_lines_cols()) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 #endif
@@ -3849,8 +3936,10 @@ _curses_resizeterm_impl(PyObject *module, int nlines, int ncols)
     result = PyCursesCheckERR(resizeterm(nlines, ncols), "resizeterm");
     if (!result)
         return NULL;
-    if (!update_lines_cols())
+    if (!update_lines_cols()) {
+        Py_DECREF(result);
         return NULL;
+    }
     return result;
 }
 
@@ -3886,8 +3975,10 @@ _curses_resize_term_impl(PyObject *module, int nlines, int ncols)
     result = PyCursesCheckERR(resize_term(nlines, ncols), "resize_term");
     if (!result)
         return NULL;
-    if (!update_lines_cols())
+    if (!update_lines_cols()) {
+        Py_DECREF(result);
         return NULL;
+    }
     return result;
 }
 #endif /* HAVE_CURSES_RESIZE_TERM */
@@ -3958,12 +4049,18 @@ _curses_start_color_impl(PyObject *module)
         c = PyLong_FromLong((long) COLORS);
         if (c == NULL)
             return NULL;
-        PyDict_SetItemString(ModDict, "COLORS", c);
+        if (PyDict_SetItemString(ModDict, "COLORS", c) < 0) {
+            Py_DECREF(c);
+            return NULL;
+        }
         Py_DECREF(c);
         cp = PyLong_FromLong((long) COLOR_PAIRS);
         if (cp == NULL)
             return NULL;
-        PyDict_SetItemString(ModDict, "COLOR_PAIRS", cp);
+        if (PyDict_SetItemString(ModDict, "COLOR_PAIRS", cp) < 0) {
+            Py_DECREF(cp);
+            return NULL;
+        }
         Py_DECREF(cp);
         Py_RETURN_NONE;
     } else {
@@ -4415,6 +4512,12 @@ static PyMethodDef PyCurses_methods[] = {
     _CURSES_RESIZETERM_METHODDEF
     _CURSES_RESIZE_TERM_METHODDEF
     _CURSES_SAVETTY_METHODDEF
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
+    _CURSES_GET_ESCDELAY_METHODDEF
+    _CURSES_SET_ESCDELAY_METHODDEF
+#endif
+    _CURSES_GET_TABSIZE_METHODDEF
+    _CURSES_SET_TABSIZE_METHODDEF
     _CURSES_SETSYX_METHODDEF
     _CURSES_SETUPTERM_METHODDEF
     _CURSES_START_COLOR_METHODDEF
@@ -4637,7 +4740,8 @@ PyInit__curses(void)
         SetDictInt("KEY_MAX", KEY_MAX);
     }
 
-    Py_INCREF(&PyCursesWindow_Type);
-    PyModule_AddObject(m, "window", (PyObject *)&PyCursesWindow_Type);
+    if (PyModule_AddType(m, &PyCursesWindow_Type) < 0) {
+        return NULL;
+    }
     return m;
 }

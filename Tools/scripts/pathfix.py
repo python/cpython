@@ -89,11 +89,8 @@ def main():
     sys.exit(bad)
 
 
-ispythonprog = re.compile(r'^[a-zA-Z0-9_]+\.py$')
-
-
 def ispython(name):
-    return bool(ispythonprog.match(name))
+    return name.endswith('.py')
 
 
 def recursedown(dirname):

@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 /* Forward declaration */
-typedef struct pyruntimestate _PyRuntimeState;
+struct pyruntimestate;
 
 /* --- PyStatus ----------------------------------------------- */
 
@@ -151,7 +151,7 @@ extern PyStatus _PyConfig_Copy(
     const PyConfig *config2);
 extern PyStatus _PyConfig_InitPathConfig(PyConfig *config);
 extern void _PyConfig_Write(const PyConfig *config,
-    _PyRuntimeState *runtime);
+    struct pyruntimestate *runtime);
 extern PyStatus _PyConfig_SetPyArgv(
     PyConfig *config,
     const _PyArgv *args);

@@ -1,4 +1,0 @@
-Child mocks will now detect their type as either synchronous or
-asynchronous, asynchronous child mocks will be AsyncMocks and synchronous
-child mocks will be either MagicMock or Mock (depending on their parent
-type).

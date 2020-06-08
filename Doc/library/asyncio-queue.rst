@@ -6,6 +6,10 @@
 Queues
 ======
 
+**Source code:** :source:`Lib/asyncio/queues.py`
+
+------------------------------------------------
+
 asyncio queues are designed to be similar to classes of the
 :mod:`queue` module.  Although asyncio queues are not thread-safe,
 they are designed to be used specifically in async/await code.

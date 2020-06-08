@@ -130,7 +130,7 @@ class Label(str):
 
 
 class ParserGenerator(object):
-    def __init__(self, grammar_file, token_file, verbose=False):
+    def __init__(self, grammar_file, token_file, verbose=False, graph_file=None):
         with open(grammar_file) as f:
             self.grammar = f.read()
         with open(token_file) as tok_file:
@@ -141,6 +141,7 @@ class ParserGenerator(object):
         self.opmap["<>"] = "NOTEQUAL"
         self.verbose = verbose
         self.filename = grammar_file
+        self.graph_file = graph_file
         self.dfas, self.startsymbol = self.create_dfas()
         self.first = {}  # map from symbol name to set of tokens
         self.calculate_first_sets()
@@ -152,11 +153,15 @@ class ParserGenerator(object):
             if self.verbose:
                 print("Dump of NFA for", nfa.name)
                 nfa.dump()
+            if self.graph_file is not None:
+                nfa.dump_graph(self.graph_file.write)
             dfa = DFA.from_nfa(nfa)
             if self.verbose:
                 print("Dump of DFA for", dfa.name)
                 dfa.dump()
             dfa.simplify()
+            if self.graph_file is not None:
+                dfa.dump_graph(self.graph_file.write)
             rule_to_dfas[dfa.name] = dfa
 
             if start_nonterminal is None:

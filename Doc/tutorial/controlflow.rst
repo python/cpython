@@ -70,6 +70,9 @@ Code that modifies a collection while iterating over that same collection can
 be tricky to get right.  Instead, it is usually more straight-forward to loop
 over a copy of the collection or to create a new collection::
 
+    # Create a sample collection
+    users = {'Hans': 'active', 'Éléonore': 'inactive', '景太郎': 'active'}
+
     # Strategy:  Iterate over a copy
     for user, status in users.copy().items():
         if status == 'inactive':
@@ -142,7 +145,7 @@ the list, thus saving space.
 We say such an object is :term:`iterable`, that is, suitable as a target for
 functions and constructs that expect something from which they can
 obtain successive items until the supply is exhausted.  We have seen that
-the :keyword:`for` statement is such a construct, while an example of function
+the :keyword:`for` statement is such a construct, while an example of a function
 that takes an iterable is :func:`sum`::
 
     >>> sum(range(4))  # 0 + 1 + 2 + 3

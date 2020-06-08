@@ -69,6 +69,10 @@ This documentation page contains the following sections:
 Transports
 ==========
 
+**Source code:** :source:`Lib/asyncio/transports.py`
+
+----------------------------------------------------
+
 Transports are classes provided by :mod:`asyncio` in order to abstract
 various kinds of communication channels.
 
@@ -431,6 +435,10 @@ Subprocess Transports
 Protocols
 =========
 
+**Source code:** :source:`Lib/asyncio/protocols.py`
+
+---------------------------------------------------
+
 asyncio provides a set of abstract base classes that should be used
 to implement network protocols.  Those classes are meant to be used
 together with :ref:`transports <asyncio-transport>`.
@@ -580,9 +588,6 @@ Buffered Streaming Protocols
 ----------------------------
 
 .. versionadded:: 3.7
-   **Important:** this has been added to asyncio in Python 3.7
-   *on a provisional basis*!  This is as an experimental API that
-   might be changed or removed completely in Python 3.8.
 
 Buffered Protocols can be used with any event loop method
 that supports `Streaming Protocols`_.

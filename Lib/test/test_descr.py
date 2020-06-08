@@ -1967,7 +1967,7 @@ order (MRO) for bases """
         # different error messages.
         set_add = set.add
 
-        expected_errmsg = "descriptor 'add' of 'set' object needs an argument"
+        expected_errmsg = "unbound method set.add() needs an argument"
 
         with self.assertRaises(TypeError) as cm:
             set_add()
@@ -2526,9 +2526,9 @@ order (MRO) for bases """
         except TypeError:
             pass
 
-        # Two essentially featureless objects, just inheriting stuff from
-        # object.
-        self.assertEqual(dir(NotImplemented), dir(Ellipsis))
+        # Two essentially featureless objects, (Ellipsis just inherits stuff
+        # from object.
+        self.assertEqual(dir(object()), dir(Ellipsis))
 
         # Nasty test case for proxied objects
         class Wrapper(object):

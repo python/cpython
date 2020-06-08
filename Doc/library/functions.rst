@@ -43,9 +43,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: abs(x)
 
    Return the absolute value of a number.  The argument may be an
-   integer or a floating point number.  If the argument is a complex number, its
-   magnitude is returned. If *x* defines :meth:`__abs__`,
-   ``abs(x)`` returns ``x.__abs__()``.
+   integer, a floating point number, or an object implementing :meth:`__abs__`.
+   If the argument is a complex number, its magnitude is returned.
 
 
 .. function:: all(iterable)
@@ -181,8 +180,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: callable(object)
 
    Return :const:`True` if the *object* argument appears callable,
-   :const:`False` if not.  If this returns true, it is still possible that a
-   call fails, but if it is false, calling *object* will never succeed.
+   :const:`False` if not.  If this returns ``True``, it is still possible that a
+   call fails, but if it is ``False``, calling *object* will never succeed.
    Note that classes are callable (calling a class returns a new instance);
    instances are callable if their class has a :meth:`__call__` method.
 
@@ -473,7 +472,7 @@ are always available.  They are listed here in alphabetical order.
    dictionary is omitted it defaults to the *globals* dictionary.  If both
    dictionaries are omitted, the expression is executed with the *globals* and
    *locals* in the environment where :func:`eval` is called.  Note, *eval()*
-   does not have access to the :term:`nested scope`\s (non-locals) in the
+   does not have access to the :term:`nested scopes <nested scope>` (non-locals) in the
    enclosing environment.
 
    The return value is the result of
@@ -840,19 +839,19 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: isinstance(object, classinfo)
 
-   Return true if the *object* argument is an instance of the *classinfo*
+   Return ``True`` if the *object* argument is an instance of the *classinfo*
    argument, or of a (direct, indirect or :term:`virtual <abstract base
    class>`) subclass thereof.  If *object* is not
-   an object of the given type, the function always returns false.
+   an object of the given type, the function always returns ``False``.
    If *classinfo* is a tuple of type objects (or recursively, other such
-   tuples), return true if *object* is an instance of any of the types.
+   tuples), return ``True`` if *object* is an instance of any of the types.
    If *classinfo* is not a type or tuple of types and such tuples,
    a :exc:`TypeError` exception is raised.
 
 
 .. function:: issubclass(class, classinfo)
 
-   Return true if *class* is a subclass (direct, indirect or :term:`virtual
+   Return ``True`` if *class* is a subclass (direct, indirect or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
    objects, in which case every entry in *classinfo* will be checked. In any other
@@ -891,6 +890,11 @@ are always available.  They are listed here in alphabetical order.
    Return the length (the number of items) of an object.  The argument may be a
    sequence (such as a string, bytes, tuple, list, or range) or a collection
    (such as a dictionary, set, or frozen set).
+
+   .. impl-detail::
+
+      ``len`` raises :exc:`OverflowError` on lengths larger than
+      :data:`sys.maxsize`, such as :class:`range(2 ** 100) <range>`.
 
 
 .. _func-list:
@@ -952,7 +956,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-memoryview:
-.. function:: memoryview(obj)
+.. class:: memoryview(obj)
    :noindex:
 
    Return a "memory view" object created from the given argument.  See
@@ -1247,7 +1251,7 @@ are always available.  They are listed here in alphabetical order.
 
          * The file is now non-inheritable.
 
-   .. deprecated-removed:: 3.4 4.0
+   .. deprecated-removed:: 3.4 3.10
 
       The ``'U'`` mode.
 
@@ -1306,7 +1310,7 @@ are always available.  They are listed here in alphabetical order.
       the second argument to be negative, permitting computation of modular
       inverses.
 
-   .. versionchanged:: 3.9
+   .. versionchanged:: 3.8
       Allow keyword arguments.  Formerly, only positional arguments were
       supported.
 
@@ -1414,7 +1418,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-range:
-.. function:: range(stop)
+.. class:: range(stop)
               range(start, stop[, step])
    :noindex:
 
@@ -1638,7 +1642,7 @@ are always available.  They are listed here in alphabetical order.
                                      # super(C, self).method(arg)
 
    In addition to method lookups, :func:`super` also works for attribute
-   lookups.  One possible use case for this is calling :term:`descriptor`\s
+   lookups.  One possible use case for this is calling :term:`descriptors <descriptor>`
    in a parent or sibling class.
 
    Note that :func:`super` is implemented as part of the binding process for
@@ -1661,7 +1665,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-tuple:
-.. function:: tuple([iterable])
+.. class:: tuple([iterable])
    :noindex:
 
    Rather than being a function, :class:`tuple` is actually an immutable
@@ -1830,6 +1834,9 @@ are always available.  They are listed here in alphabetical order.
       Negative values for *level* are no longer supported (which also changes
       the default value to 0).
 
+   .. versionchanged:: 3.9
+      When the command line options :option:`-E` or :option:`-I` are being used,
+      the environment variable :envvar:`PYTHONCASEOK` is now ignored.
 
 .. rubric:: Footnotes
 
