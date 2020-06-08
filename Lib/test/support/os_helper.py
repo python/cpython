@@ -269,6 +269,7 @@ if sys.platform.startswith("win"):
 
     def _rmtree(path):
         def _rmtree_inner(path):
+            from test.support import _force_run
             for name in _force_run(path, os.listdir, path):
                 fullname = os.path.join(path, name)
                 try:
@@ -311,6 +312,7 @@ else:
             pass
 
         def _rmtree_inner(path):
+            from test.support import _force_run
             for name in _force_run(path, os.listdir, path):
                 fullname = os.path.join(path, name)
                 try:
@@ -439,6 +441,8 @@ def findfile(filename, subdir=None):
     Setting *subdir* indicates a relative path to use to find the file
     rather than looking directly in the path directories.
     """
+    from test.support import TEST_HOME_DIR
+
     if os.path.isabs(filename):
         return filename
     if subdir is not None:
