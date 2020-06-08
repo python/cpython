@@ -392,7 +392,6 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             if not line:
                 continue
             associativity, *operators = line.split()
-            # TODO: Add support for right-associative operators.
             if associativity not in {"left", "right"}:
                 raise ValueError("Associative of operators must be either 'left' or 'right'")
             for operator in operators:
