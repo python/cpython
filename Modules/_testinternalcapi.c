@@ -109,7 +109,7 @@ check_bit_length(unsigned long x, int expected)
     if (len != expected) {
         PyErr_Format(PyExc_AssertionError,
                      "_Py_bit_length(%lu) returns %i, expected %i",
-                     (unsigned long)x, len, expected);
+                     x, len, expected);
         return -1;
     }
     return 0;
