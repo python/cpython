@@ -24,6 +24,10 @@
 #  endif
 #endif
 
+#ifndef PLATLIBDIR
+#  error "PLATLIBDIR macro must be defined"
+#endif
+
 
 /* --- Command line options --------------------------------------- */
 
@@ -110,6 +114,7 @@ PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n\
 static const char usage_5[] =
 "PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "               The default module search path uses %s.\n"
+"PYTHONPLATLIBDIR : override sys.platlibdir.\n"
 "PYTHONCASEOK : ignore case in 'import' statements (Windows).\n"
 "PYTHONUTF8: if set to 1, enable the UTF-8 mode.\n"
 "PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
@@ -588,6 +593,7 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->base_prefix);
     CLEAR(config->exec_prefix);
     CLEAR(config->base_exec_prefix);
+    CLEAR(config->platlibdir);
 
     CLEAR(config->filesystem_encoding);
     CLEAR(config->filesystem_errors);
@@ -824,6 +830,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTR_ATTR(base_prefix);
     COPY_WSTR_ATTR(exec_prefix);
     COPY_WSTR_ATTR(base_exec_prefix);
+    COPY_WSTR_ATTR(platlibdir);
 
     COPY_ATTR(site_import);
     COPY_ATTR(bytes_warning);
@@ -926,6 +933,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_WSTR(base_prefix);
     SET_ITEM_WSTR(exec_prefix);
     SET_ITEM_WSTR(base_exec_prefix);
+    SET_ITEM_WSTR(platlibdir);
     SET_ITEM_INT(site_import);
     SET_ITEM_INT(bytes_warning);
     SET_ITEM_INT(inspect);
@@ -1336,6 +1344,14 @@ config_read_env_vars(PyConfig *config)
         }
     }
 
+    if(config->platlibdir == NULL) {
+        status = CONFIG_GET_ENV_DUP(config, &config->platlibdir,
+                                    L"PYTHONPLATLIBDIR", "PYTHONPLATLIBDIR");
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
     if (config->use_hash_seed < 0) {
         status = config_init_hash_seed(config);
         if (_PyStatus_EXCEPTION(status)) {
@@ -1726,6 +1742,14 @@ config_read(PyConfig *config)
 
     if (config->executable == NULL) {
         status = config_init_executable(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if(config->platlibdir == NULL) {
+        status = CONFIG_SET_BYTES_STR(config, &config->platlibdir, PLATLIBDIR,
+                                      "PLATLIBDIR macro");
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -2554,6 +2578,7 @@ PyConfig_Read(PyConfig *config)
         assert(config->exec_prefix != NULL);
         assert(config->base_exec_prefix != NULL);
     }
+    assert(config->platlibdir != NULL);
     assert(config->filesystem_encoding != NULL);
     assert(config->filesystem_errors != NULL);
     assert(config->stdio_encoding != NULL);
@@ -2704,6 +2729,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     DUMP_SYS(_base_executable);
     DUMP_SYS(base_prefix);
     DUMP_SYS(base_exec_prefix);
+    DUMP_SYS(platlibdir);
     DUMP_SYS(executable);
     DUMP_SYS(prefix);
     DUMP_SYS(exec_prefix);

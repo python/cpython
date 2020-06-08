@@ -548,6 +548,13 @@ static int test_init_from_config(void)
     /* FIXME: test home */
     /* FIXME: test path config: module_search_path .. dll_path */
 
+    putenv("PYTHONPLATLIBDIR=env_platlibdir");
+    status = PyConfig_SetBytesString(&config, &config.platlibdir, "my_platlibdir");
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
+
     putenv("PYTHONVERBOSE=0");
     Py_VerboseFlag = 0;
     config.verbose = 1;
@@ -668,6 +675,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONFAULTHANDLER=1");
     putenv("PYTHONIOENCODING=iso8859-1:replace");
     putenv("PYTHONOLDPARSER=1");
+    putenv("PYTHONPLATLIBDIR=env_platlibdir");
 }
 
 
