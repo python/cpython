@@ -173,6 +173,29 @@ _PyType_CheckConsistency(PyTypeObject *type)
 #undef CHECK
 }
 
+
+#ifndef NDEBUG
+int
+_PyStaticType_IsFinalized(PyTypeObject *type)
+{
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        if (_PyRuntimeState_GetFinalizing(&_PyRuntime)) {
+            // _PyStaticType_Fini() sets tp_dict to NULL
+            return (type->tp_dict == NULL);
+        }
+        else {
+            return 0;
+        }
+    }
+    else {
+        // Assume that a heap type is not finalized if it's still accessible
+        return 0;
+    }
+
+}
+#endif
+
+
 static const char *
 _PyType_DocWithoutSignature(const char *name, const char *internal_doc)
 {
@@ -983,6 +1006,7 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
        caller loses its exception */
     assert(!_PyErr_Occurred(tstate));
 #endif
+    assert(!_PyStaticType_IsFinalized(type));
 
     /* Special case: type(x) should return Py_TYPE(x) */
     /* We only want type itself to accept the one-argument form (#27157) */
@@ -5362,6 +5386,8 @@ static int add_operators(PyTypeObject *);
 int
 PyType_Ready(PyTypeObject *type)
 {
+    assert(!_PyStaticType_IsFinalized(type));
+
     PyObject *dict, *bases;
     PyTypeObject *base;
     Py_ssize_t i, n;
@@ -5592,6 +5618,30 @@ PyType_Ready(PyTypeObject *type)
     type->tp_flags &= ~Py_TPFLAGS_READYING;
     return -1;
 }
+
+
+void
+_PyStaticType_Fini(PyTypeObject *type)
+{
+    assert(!(type->tp_flags & Py_TPFLAGS_HEAPTYPE));
+
+#ifdef Py_TRACE_REFS
+    _Py_ForgetReference((PyObject *)type);
+#endif
+
+    Py_CLEAR(type->tp_dict);
+    Py_CLEAR(type->tp_bases);
+    Py_CLEAR(type->tp_mro);
+    Py_CLEAR(type->tp_cache);
+    Py_CLEAR(type->tp_subclasses);
+
+    // Clear Py_TPFLAGS_READY flag
+    type->tp_flags &= ~Py_TPFLAGS_READY;
+
+    // Test that _PyStaticType_IsFinalized() works as expected
+    assert(_PyStaticType_IsFinalized(type));
+}
+
 
 static int
 add_subclass(PyTypeObject *base, PyTypeObject *type)

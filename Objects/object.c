@@ -1731,7 +1731,7 @@ PyObject _Py_NotImplementedStruct = {
 };
 
 PyStatus
-_PyTypes_Init(void)
+_PyStaticTypes_Init(void)
 {
     PyStatus status = _PyTypes_InitSlotDefs();
     if (_PyStatus_EXCEPTION(status)) {
@@ -1815,6 +1815,84 @@ _PyTypes_Init(void)
     return _PyStatus_OK();
 
 #undef INIT_TYPE
+}
+
+
+// Finalize static types initialized by _PyStaticTypes_Init().
+void
+_PyStaticTypes_Fini(void)
+{
+    _PyStaticType_Fini(&_PyWeakref_RefType);
+    _PyStaticType_Fini(&_PyWeakref_CallableProxyType);
+    _PyStaticType_Fini(&_PyWeakref_ProxyType);
+    _PyStaticType_Fini(&PyLong_Type);
+    _PyStaticType_Fini(&PyBool_Type);
+    _PyStaticType_Fini(&PyByteArray_Type);
+    _PyStaticType_Fini(&PyBytes_Type);
+    _PyStaticType_Fini(&PyList_Type);
+    _PyStaticType_Fini(&_PyNone_Type);
+    _PyStaticType_Fini(&_PyNotImplemented_Type);
+    _PyStaticType_Fini(&PyTraceBack_Type);
+    _PyStaticType_Fini(&PySuper_Type);
+    _PyStaticType_Fini(&PyRange_Type);
+    _PyStaticType_Fini(&PyDict_Type);
+    _PyStaticType_Fini(&PyDictKeys_Type);
+    _PyStaticType_Fini(&PyDictValues_Type);
+    _PyStaticType_Fini(&PyDictItems_Type);
+    _PyStaticType_Fini(&PyDictRevIterKey_Type);
+    _PyStaticType_Fini(&PyDictRevIterValue_Type);
+    _PyStaticType_Fini(&PyDictRevIterItem_Type);
+    _PyStaticType_Fini(&PyODict_Type);
+    _PyStaticType_Fini(&PyODictKeys_Type);
+    _PyStaticType_Fini(&PyODictItems_Type);
+    _PyStaticType_Fini(&PyODictValues_Type);
+    _PyStaticType_Fini(&PyODictIter_Type);
+    _PyStaticType_Fini(&PySet_Type);
+    _PyStaticType_Fini(&PyUnicode_Type);
+    _PyStaticType_Fini(&PySlice_Type);
+    _PyStaticType_Fini(&PyStaticMethod_Type);
+    _PyStaticType_Fini(&PyComplex_Type);
+    _PyStaticType_Fini(&PyFloat_Type);
+    _PyStaticType_Fini(&PyFrozenSet_Type);
+    _PyStaticType_Fini(&PyProperty_Type);
+    _PyStaticType_Fini(&_PyManagedBuffer_Type);
+    _PyStaticType_Fini(&PyMemoryView_Type);
+    _PyStaticType_Fini(&PyTuple_Type);
+    _PyStaticType_Fini(&PyEnum_Type);
+    _PyStaticType_Fini(&PyReversed_Type);
+    _PyStaticType_Fini(&PyStdPrinter_Type);
+    _PyStaticType_Fini(&PyCode_Type);
+    _PyStaticType_Fini(&PyFrame_Type);
+    _PyStaticType_Fini(&PyCFunction_Type);
+    _PyStaticType_Fini(&PyCMethod_Type);
+    _PyStaticType_Fini(&PyMethod_Type);
+    _PyStaticType_Fini(&PyFunction_Type);
+    _PyStaticType_Fini(&PyDictProxy_Type);
+    _PyStaticType_Fini(&PyGen_Type);
+    _PyStaticType_Fini(&PyGetSetDescr_Type);
+    _PyStaticType_Fini(&PyWrapperDescr_Type);
+    _PyStaticType_Fini(&_PyMethodWrapper_Type);
+    _PyStaticType_Fini(&PyEllipsis_Type);
+    _PyStaticType_Fini(&PyMemberDescr_Type);
+    _PyStaticType_Fini(&_PyNamespace_Type);
+    _PyStaticType_Fini(&PyCapsule_Type);
+    _PyStaticType_Fini(&PyLongRangeIter_Type);
+    _PyStaticType_Fini(&PyCell_Type);
+    _PyStaticType_Fini(&PyInstanceMethod_Type);
+    _PyStaticType_Fini(&PyClassMethodDescr_Type);
+    _PyStaticType_Fini(&PyMethodDescr_Type);
+    _PyStaticType_Fini(&PyCallIter_Type);
+    _PyStaticType_Fini(&PySeqIter_Type);
+    _PyStaticType_Fini(&PyPickleBuffer_Type);
+    _PyStaticType_Fini(&PyCoro_Type);
+    _PyStaticType_Fini(&_PyCoroWrapper_Type);
+    _PyStaticType_Fini(&_PyInterpreterID_Type);
+
+    // Finish by core types: object and type.
+    _PyStaticType_Fini(&PyType_Type);
+    _PyStaticType_Fini(&PyBaseObject_Type);
+
+    PyType_ClearCache();
 }
 
 

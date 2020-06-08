@@ -586,7 +586,7 @@ pycore_init_types(PyThreadState *tstate)
     }
 
     if (is_main_interp) {
-        status = _PyTypes_Init();
+        status = _PyStaticTypes_Init();
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -1253,6 +1253,12 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyThreadState *tstate, int is_main_interp)
 {
+    if (is_main_interp) {
+        _PyExc_Fini();
+        _PyStaticTypes_Fini();
+        // after this point, builtin static types must no longer be used
+    }
+
     _PyFrame_Fini(tstate);
     _PyAsyncGen_Fini(tstate);
     _PyContext_Fini(tstate);
@@ -1302,7 +1308,6 @@ finalize_interp_clear(PyThreadState *tstate)
 
     if (is_main_interp) {
         PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
-        _PyExc_Fini();
     }
 
     finalize_interp_types(tstate, is_main_interp);

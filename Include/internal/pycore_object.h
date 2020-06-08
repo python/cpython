@@ -15,6 +15,19 @@ extern "C" {
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
+// Finalize a static type: it must not be used after this call.
+// Once a static type is finalized, it must no longer be used.
+// Use assert(!_PyStaticType_IsFinalized(type)); to ensure that
+// a static type is not finalized.
+extern void _PyStaticType_Fini(PyTypeObject *type);
+
+#ifndef NDEBUG
+// Test if _PyStaticType_Fini() was called on a static type.
+// Always return 0 for heap types.
+// Usage: assert(!_PyStaticType_IsFinalized(type));
+extern int _PyStaticType_IsFinalized(PyTypeObject *type);
+#endif
+
 /* Tell the GC to track this object.
  *
  * NB: While the object is tracked by the collector, it must be safe to call the

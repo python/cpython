@@ -2740,11 +2740,77 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
 #undef INIT_ALIAS
 }
 
+// Finalize exceptions initialized by _PyExc_Init().
 void
 _PyExc_Fini(void)
 {
     free_preallocated_memerrors();
     Py_CLEAR(errnomap);
+
+    _PyStaticType_Fini(&_PyExc_BaseException);
+    _PyStaticType_Fini(&_PyExc_Exception);
+    _PyStaticType_Fini(&_PyExc_TypeError);
+    _PyStaticType_Fini(&_PyExc_StopAsyncIteration);
+    _PyStaticType_Fini(&_PyExc_StopIteration);
+    _PyStaticType_Fini(&_PyExc_GeneratorExit);
+    _PyStaticType_Fini(&_PyExc_SystemExit);
+    _PyStaticType_Fini(&_PyExc_KeyboardInterrupt);
+    _PyStaticType_Fini(&_PyExc_ImportError);
+    _PyStaticType_Fini(&_PyExc_ModuleNotFoundError);
+    _PyStaticType_Fini(&_PyExc_OSError);
+    _PyStaticType_Fini(&_PyExc_EOFError);
+    _PyStaticType_Fini(&_PyExc_RuntimeError);
+    _PyStaticType_Fini(&_PyExc_RecursionError);
+    _PyStaticType_Fini(&_PyExc_NotImplementedError);
+    _PyStaticType_Fini(&_PyExc_NameError);
+    _PyStaticType_Fini(&_PyExc_UnboundLocalError);
+    _PyStaticType_Fini(&_PyExc_AttributeError);
+    _PyStaticType_Fini(&_PyExc_SyntaxError);
+    _PyStaticType_Fini(&_PyExc_IndentationError);
+    _PyStaticType_Fini(&_PyExc_TabError);
+    _PyStaticType_Fini(&_PyExc_LookupError);
+    _PyStaticType_Fini(&_PyExc_IndexError);
+    _PyStaticType_Fini(&_PyExc_KeyError);
+    _PyStaticType_Fini(&_PyExc_ValueError);
+    _PyStaticType_Fini(&_PyExc_UnicodeError);
+    _PyStaticType_Fini(&_PyExc_UnicodeEncodeError);
+    _PyStaticType_Fini(&_PyExc_UnicodeDecodeError);
+    _PyStaticType_Fini(&_PyExc_UnicodeTranslateError);
+    _PyStaticType_Fini(&_PyExc_AssertionError);
+    _PyStaticType_Fini(&_PyExc_ArithmeticError);
+    _PyStaticType_Fini(&_PyExc_FloatingPointError);
+    _PyStaticType_Fini(&_PyExc_OverflowError);
+    _PyStaticType_Fini(&_PyExc_ZeroDivisionError);
+    _PyStaticType_Fini(&_PyExc_SystemError);
+    _PyStaticType_Fini(&_PyExc_ReferenceError);
+    _PyStaticType_Fini(&_PyExc_MemoryError);
+    _PyStaticType_Fini(&_PyExc_BufferError);
+    _PyStaticType_Fini(&_PyExc_Warning);
+    _PyStaticType_Fini(&_PyExc_UserWarning);
+    _PyStaticType_Fini(&_PyExc_DeprecationWarning);
+    _PyStaticType_Fini(&_PyExc_PendingDeprecationWarning);
+    _PyStaticType_Fini(&_PyExc_SyntaxWarning);
+    _PyStaticType_Fini(&_PyExc_RuntimeWarning);
+    _PyStaticType_Fini(&_PyExc_FutureWarning);
+    _PyStaticType_Fini(&_PyExc_ImportWarning);
+    _PyStaticType_Fini(&_PyExc_UnicodeWarning);
+    _PyStaticType_Fini(&_PyExc_BytesWarning);
+    _PyStaticType_Fini(&_PyExc_ResourceWarning);
+    _PyStaticType_Fini(&_PyExc_ConnectionError);
+    _PyStaticType_Fini(&_PyExc_BlockingIOError);
+    _PyStaticType_Fini(&_PyExc_BrokenPipeError);
+    _PyStaticType_Fini(&_PyExc_ChildProcessError);
+    _PyStaticType_Fini(&_PyExc_ConnectionAbortedError);
+    _PyStaticType_Fini(&_PyExc_ConnectionRefusedError);
+    _PyStaticType_Fini(&_PyExc_ConnectionResetError);
+    _PyStaticType_Fini(&_PyExc_FileExistsError);
+    _PyStaticType_Fini(&_PyExc_FileNotFoundError);
+    _PyStaticType_Fini(&_PyExc_IsADirectoryError);
+    _PyStaticType_Fini(&_PyExc_NotADirectoryError);
+    _PyStaticType_Fini(&_PyExc_InterruptedError);
+    _PyStaticType_Fini(&_PyExc_PermissionError);
+    _PyStaticType_Fini(&_PyExc_ProcessLookupError);
+    _PyStaticType_Fini(&_PyExc_TimeoutError);
 }
 
 /* Helper to do the equivalent of "raise X from Y" in C, but always using
