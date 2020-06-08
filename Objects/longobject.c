@@ -3,8 +3,9 @@
 /* XXX The functional organization of this file is terrible */
 
 #include "Python.h"
-#include "pycore_interp.h"    // _PY_NSMALLPOSINTS
-#include "pycore_pystate.h"   // _Py_IsMainInterpreter()
+#include "pycore_bitutils.h"      // _Py_popcount32()
+#include "pycore_interp.h"        // _PY_NSMALLPOSINTS
+#include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "longintrepr.h"
 
 #include <float.h>
@@ -5307,12 +5308,10 @@ int_bit_length_impl(PyObject *self)
 static int
 popcount_digit(digit d)
 {
-    /* 32bit SWAR popcount. */
-    uint32_t u = d;
-    u -= (u >> 1) & 0x55555555U;
-    u = (u & 0x33333333U) + ((u >> 2) & 0x33333333U);
-    u = (u + (u >> 4)) & 0x0f0f0f0fU;
-    return (uint32_t)(u * 0x01010101U) >> 24;
+    // digit can be larger than uint32_t, but only PyLong_SHIFT bits
+    // of it will be ever used.
+    Py_BUILD_ASSERT(PyLong_SHIFT <= 32);
+    return _Py_popcount32((uint32_t)d);
 }
 
 /*[clinic input]

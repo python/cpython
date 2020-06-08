@@ -1,4 +1,6 @@
-/* Bytes swap functions, reverse order of bytes:
+/* Bit and bytes utilities.
+
+   Bytes swap functions, reverse order of bytes:
 
    - _Py_bswap16(uint16_t)
    - _Py_bswap32(uint32_t)
@@ -78,6 +80,53 @@ _Py_bswap64(uint64_t word)
            | ((word & UINT64_C(0x0000FF0000000000)) >> 24)
            | ((word & UINT64_C(0x00FF000000000000)) >> 40)
            | ((word & UINT64_C(0xFF00000000000000)) >> 56));
+#endif
+}
+
+
+// Population count: count the number of 1's in 'x'
+// (number of bits set to 1), also known as the hamming weight.
+//
+// Implementation note. CPUID is not used, to test if x86 POPCNT instruction
+// can be used, to keep the implementation simple. For example, Visual Studio
+// __popcnt() is not used this reason. The clang and GCC builtin function can
+// use the x86 POPCNT instruction if the target architecture has SSE4a or
+// newer.
+static inline int
+_Py_popcount32(uint32_t x)
+{
+#if (defined(__clang__) || defined(__GNUC__))
+
+#if SIZEOF_INT >= 4
+    Py_BUILD_ASSERT(sizeof(x) <= sizeof(unsigned int));
+    return __builtin_popcount(x);
+#else
+    // The C standard guarantees that unsigned long will always be big enough
+    // to hold a uint32_t value without losing information.
+    Py_BUILD_ASSERT(sizeof(x) <= sizeof(unsigned long));
+    return __builtin_popcountl(x);
+#endif
+
+#else
+    // 32-bit SWAR (SIMD Within A Register) popcount
+
+    // Binary: 0 1 0 1 ...
+    const uint32_t M1 = 0x55555555;
+    // Binary: 00 11 00 11. ..
+    const uint32_t M2 = 0x33333333;
+    // Binary: 0000 1111 0000 1111 ...
+    const uint32_t M4 = 0x0F0F0F0F;
+    // 256**4 + 256**3 + 256**2 + 256**1
+    const uint32_t SUM = 0x01010101;
+
+    // Put count of each 2 bits into those 2 bits
+    x = x - ((x >> 1) & M1);
+    // Put count of each 4 bits into those 4 bits
+    x = (x & M2) + ((x >> 2) & M2);
+    // Put count of each 8 bits into those 8 bits
+    x = (x + (x >> 4)) & M4;
+    // Sum of the 4 byte counts
+    return (uint32_t)((uint64_t)x * (uint64_t)SUM) >> 24;
 #endif
 }
 
