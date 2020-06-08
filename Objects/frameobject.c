@@ -595,6 +595,10 @@ frame_dealloc(PyFrameObject *f)
     else {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         struct _Py_frame_state *state = &interp->frame;
+#ifdef Py_DEBUG
+        // frame_dealloc() must not be called after _PyFrame_Fini()
+        assert(state->numfree != -1);
+#endif
         if (state->numfree < PyFrame_MAXFREELIST) {
             ++state->numfree;
             f->f_back = state->free_list;
@@ -790,6 +794,10 @@ frame_alloc(PyCodeObject *code)
         }
     }
     else {
+#ifdef Py_DEBUG
+        // frame_alloc() must not be called after _PyFrame_Fini()
+        assert(state->numfree != -1);
+#endif
         assert(state->numfree > 0);
         --state->numfree;
         f = state->free_list;
@@ -1188,6 +1196,10 @@ void
 _PyFrame_Fini(PyThreadState *tstate)
 {
     _PyFrame_ClearFreeList(tstate);
+#ifdef Py_DEBUG
+    struct _Py_frame_state *state = &tstate->interp->frame;
+    state->numfree = -1;
+#endif
 }
 
 /* Print summary info about the state of the optimized allocator */
