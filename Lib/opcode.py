@@ -221,9 +221,10 @@ def_op('DICT_UPDATE', 165)
 jrel_op('MATCH', 166)
 jrel_op('OLD_MATCH_MAP', 167)
 jrel_op('OLD_MATCH_MAP_STAR', 168)
-jrel_op('OLD_MATCH_SEQ', 169)
-jrel_op('OLD_MATCH_SEQ_STAR', 170)
 def_op('MATCH_LEN_EQ', 171)
 def_op('MATCH_LEN_GE', 172)
+def_op('MATCH_SEQ_SLICE', 173)
+def_op('MATCH_SEQ_ITEM', 174)
+def_op('MATCH_SEQ_ITEM_END', 175)
 
 del def_op, name_op, jrel_op, jabs_op

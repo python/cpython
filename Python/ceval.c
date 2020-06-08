@@ -3611,23 +3611,8 @@ main_loop:
             int star = opcode == OLD_MATCH_MAP_STAR;
             PyObject *keys = TOP();
             PyObject *target = SECOND();
-            PyObject *copy;
-            if (PyDict_CheckExact(target)) {
-                copy = PyDict_Copy(target);
-                if (!copy) {
-                    goto error;
-                }
-            }
-            else {
-                copy = PyDict_New();
-                if (!copy || PyDict_Update(copy, target)) {
-                    Py_XDECREF(copy);
-                    goto error;
-                }
-            }
-            PyObject *values = match_map_items(tstate, copy, keys);
+            PyObject *values = match_map_items(tstate, target, keys);
             if (!values) {
-                Py_DECREF(copy);
                 if (_PyErr_Occurred(tstate)) {
                     goto error;
                 }
@@ -3638,11 +3623,9 @@ main_loop:
                 DISPATCH();
             }
             // TODO: This is inefficient:
-            if (star && PyList_Insert(values, 0, copy)) {
-                Py_DECREF(copy);
+            if (star && PyList_Insert(values, 0, target)) {
                 goto error;
             }
-            Py_DECREF(copy);
             STACK_SHRINK(1);
             SET_TOP(values);
             Py_DECREF(keys);
@@ -3652,87 +3635,60 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(OLD_MATCH_SEQ):
-        case TARGET(OLD_MATCH_SEQ_STAR): {
-            int star = opcode == OLD_MATCH_SEQ_STAR;
-            Py_ssize_t size_pre = -1;
-            Py_ssize_t size = -1;
-            if (star) {
-                PyObject *_size_pre = POP();
-                assert(PyLong_CheckExact(_size_pre));
-                size_pre = PyLong_AsSsize_t(_size_pre);
-                Py_DECREF(_size_pre);
-                if (size_pre < 0) {
-                    goto error;
-                }
-                PyObject *_size = POP();
-                assert(PyLong_CheckExact(_size));
-                size = PyLong_AsSsize_t(_size);
-                Py_DECREF(_size);
-                if (size < 0) {
-                    goto error;
-                }
-            }
+        case TARGET(MATCH_SEQ_ITEM): {
             PyObject *target = TOP();
-            // TODO: Break this out:
-            PyObject *list = PySequence_List(target);
-            if (!list) {
-                goto error;
+            assert(PyList_CheckExact(target) || PyTuple_CheckExact(target));
+            PyObject *item = PySequence_Fast_GET_ITEM(target, oparg);
+            Py_INCREF(item);
+            PUSH(item);
+            DISPATCH();
+        }
+
+        case TARGET(MATCH_SEQ_ITEM_END): {
+            PyObject *target = TOP();
+            assert(PyList_CheckExact(target) || PyTuple_CheckExact(target));
+            Py_ssize_t i = PySequence_Fast_GET_SIZE(target) - 1 - oparg;
+            PyObject *item = PySequence_Fast_GET_ITEM(target, i);
+            Py_INCREF(item);
+            PUSH(item);
+            DISPATCH();
+        }
+
+        case TARGET(MATCH_SEQ_SLICE): {
+            PyObject *target = TOP();
+            assert(PyList_CheckExact(target) || PyTuple_CheckExact(target));
+            Py_ssize_t pre = oparg >> 16;
+            Py_ssize_t post = oparg & 0xFF;
+            PyObject *slice;
+            if (PyList_CheckExact(target)) {
+                post = PyList_GET_SIZE(target) - post;
+                slice = PyList_GetSlice(target, pre, post);
             }
-            if (!star) {
-                assert(size_pre < 0);
-                assert(size < 0);
-                if (PyList_Reverse(list)) {
-                    Py_DECREF(list);
+            else {
+                post = PyTuple_GET_SIZE(target) - post;
+                PyObject *tslice = PyTuple_GetSlice(target, pre, post);
+                if (!tslice) {
                     goto error;
                 }
-                SET_TOP(list);
-                Py_DECREF(target);
-                DISPATCH();
+                slice = PySequence_List(tslice);
+                Py_DECREF(tslice);
             }
-            assert(size_pre >= 0);
-            assert(size >= 0);
-            Py_ssize_t actual = PyList_GET_SIZE(list);
-            if (actual < size_pre + size) {
-                Py_DECREF(list);
-                STACK_SHRINK(1);
-                Py_DECREF(target);
-                JUMPBY(oparg);
-                DISPATCH();
-            }
-            PyObject *middle = PyList_GetSlice(list, size_pre, actual - size);
-            if (!middle) {
-                Py_DECREF(list);
+            if (!slice) {
                 goto error;
             }
-            PyObject *nested = PyTuple_Pack(1, middle);
-            Py_DECREF(middle);
-            if (!nested) {
-                Py_DECREF(list);
-                goto error;
-            }
-            if (PyList_SetSlice(list, size_pre, actual - size, nested)) {
-                Py_DECREF(nested);
-                Py_DECREF(list);
-                goto error;
-            }
-            Py_DECREF(nested);
-            if (PyList_Reverse(list)) {
-                Py_DECREF(list);
-                goto error;
-            }
-            assert(PyList_GET_SIZE(list) == size_pre + 1 + size);
-            SET_TOP(list);
-            Py_DECREF(target);
-            PREDICT(LIST_POP);
-            PREDICT(POP_TOP);
+            PUSH(slice);
             DISPATCH();
         }
 
         case TARGET(MATCH_LEN_EQ): {
-            Py_ssize_t len = PyObject_Length(TOP());
-            if (len < 0) {
-                goto error;
+            PyObject *target = TOP();
+            Py_ssize_t len;
+            if (PyDict_CheckExact(target)) {
+                len = PyDict_GET_SIZE(target);
+            }
+            else {
+                assert(PyList_CheckExact(target) || PyTuple_CheckExact(target));
+                len = PySequence_Fast_GET_SIZE(target);
             }
             PUSH(len == oparg ? Py_True : Py_False);
             Py_INCREF(TOP());
@@ -3740,9 +3696,14 @@ main_loop:
         }
 
         case TARGET(MATCH_LEN_GE): {
-            Py_ssize_t len = PyObject_Length(TOP());
-            if (len < 0) {
-                goto error;
+            PyObject *target = TOP();
+            Py_ssize_t len;
+            if (PyDict_CheckExact(target)) {
+                len = PyDict_GET_SIZE(target);
+            }
+            else {
+                assert(PyList_CheckExact(target) || PyTuple_CheckExact(target));
+                len = PySequence_Fast_GET_SIZE(target);
             }
             PUSH(len >= oparg ? Py_True : Py_False);
             Py_INCREF(TOP());
@@ -3750,9 +3711,28 @@ main_loop:
         }
 
         case TARGET(MATCH_MAP): {
-            int match = match_map(TOP());
+            PyObject *target = TOP();
+            int match = match_map(target);
             if (match < 0) {
                 goto error;
+            }
+            if (match) {
+                PyObject *map;
+                if (PyDict_CheckExact(target)) {
+                    map = PyDict_Copy(target);
+                    if (!map) {
+                        goto error;
+                    }
+                }
+                else {
+                    map = PyDict_New();
+                    if (!map || PyDict_Update(map, target)) {
+                        Py_XDECREF(map);
+                        goto error;
+                    }
+                }
+                SET_TOP(map);
+                Py_DECREF(target);
             }
             PUSH(match ? Py_True : Py_False);
             Py_INCREF(TOP());
@@ -3760,9 +3740,18 @@ main_loop:
         }
 
         case TARGET(MATCH_SEQ): {
-            int match = match_seq(TOP());
+            PyObject *target = TOP();
+            int match = match_seq(target);
             if (match < 0) {
                 goto error;
+            }
+            if (match) {
+                PyObject *seq = PySequence_Fast(target, "TODO");  // TODO
+                if (!seq) {
+                    goto error;
+                }
+                SET_TOP(seq);
+                Py_DECREF(target);
             }
             PUSH(match ? Py_True : Py_False);
             Py_INCREF(TOP());

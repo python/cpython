@@ -1125,14 +1125,13 @@ stack_effect(int opcode, int oparg, int jump)
         case OLD_MATCH_MAP:
         case OLD_MATCH_MAP_STAR:
             return jump > 0 ? -2 : -1;
-        case OLD_MATCH_SEQ:
-            return jump > 0 ? -1 : 0;
-        case OLD_MATCH_SEQ_STAR:
-            return jump > 0 ? -3 : -2;
         case MATCH_LEN_EQ:
         case MATCH_LEN_GE:
         case MATCH_MAP:
         case MATCH_SEQ:
+        case MATCH_SEQ_ITEM:
+        case MATCH_SEQ_ITEM_END:
+        case MATCH_SEQ_SLICE:
             return 1;
         default:
             return PY_INVALID_STACK_EFFECT;
@@ -2998,23 +2997,25 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
             ADDOP_I(c, MATCH_LEN_GE, size - 1);
             ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
         }
-        // TODO: ERROR CHECKING FOR THESE:
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star - 1))
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(star))
-        ADDOP_JREL(c, OLD_MATCH_SEQ_STAR, fail);
     }
     else {
         ADDOP_I(c, MATCH_LEN_EQ, size);
         ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
-        ADDOP_JREL(c, OLD_MATCH_SEQ, fail);
     }
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);
-        if (i == star) {
+        if (star < 0 || i < star) {
+            ADDOP_I(c, MATCH_SEQ_ITEM, i);
+        }
+        else if (i == star) {
             assert(value->kind == Starred_kind);
             value = value->v.Starred.value;
+            // TODO: ERROR CHECKING FOR THESE:
+            ADDOP_I(c, MATCH_SEQ_SLICE, (i << 16) + (size - 1 - i));
         }
-        ADDOP(c, LIST_POP);
+        else {
+            ADDOP_I(c, MATCH_SEQ_ITEM_END, size - 1 - i);
+        }
         CHECK(compiler_pattern(c, value, block, names));
     }
     ADDOP(c, POP_TOP);

@@ -133,10 +133,11 @@ extern "C" {
 #define MATCH                   166
 #define OLD_MATCH_MAP           167
 #define OLD_MATCH_MAP_STAR      168
-#define OLD_MATCH_SEQ           169
-#define OLD_MATCH_SEQ_STAR      170
 #define MATCH_LEN_EQ            171
 #define MATCH_LEN_GE            172
+#define MATCH_SEQ_SLICE         173
+#define MATCH_SEQ_ITEM          174
+#define MATCH_SEQ_ITEM_END      175
 
 /* EXCEPT_HANDLER is a special, implicit block type which is created when
    entering an except handler. It is not an opcode but we define it here
