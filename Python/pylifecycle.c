@@ -460,7 +460,10 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
         return _PyStatus_ERR("can't make main interpreter");
     }
 
-    _PyConfig_Write(config, runtime);
+    status = _PyConfig_Write(config, runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     status = _PyInterpreterState_SetConfig(interp, config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -486,7 +489,10 @@ pycore_init_runtime(_PyRuntimeState *runtime,
         return _PyStatus_ERR("main interpreter already initialized");
     }
 
-    _PyConfig_Write(config, runtime);
+    PyStatus status = _PyConfig_Write(config, runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     /* Py_Finalize leaves _Py_Finalizing set in order to help daemon
      * threads behave a little more gracefully at interpreter shutdown.
@@ -499,7 +505,7 @@ pycore_init_runtime(_PyRuntimeState *runtime,
      */
     _PyRuntimeState_SetFinalizing(runtime, NULL);
 
-    PyStatus status = _Py_HashRandomization_Init(config);
+    status = _Py_HashRandomization_Init(config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -746,8 +752,6 @@ pyinit_config(_PyRuntimeState *runtime,
               PyThreadState **tstate_p,
               const PyConfig *config)
 {
-    _PyConfig_Write(config, runtime);
-
     PyStatus status = pycore_init_runtime(runtime, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;

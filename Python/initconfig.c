@@ -548,8 +548,6 @@ _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
 }
 
 
-/* Make the *original* argc/argv available to other modules.
-   This is rare, but it is needed by the secureware extension. */
 void
 Py_GetArgcArgv(int *argc, wchar_t ***argv)
 {
@@ -859,6 +857,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(pathconfig_warnings);
     COPY_ATTR(_init_main);
     COPY_ATTR(_isolated_interpreter);
+    COPY_WSTRLIST(_orig_argv);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -960,6 +959,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(pathconfig_warnings);
     SET_ITEM_INT(_init_main);
     SET_ITEM_INT(_isolated_interpreter);
+    SET_ITEM_WSTRLIST(_orig_argv);
 
     return dict;
 
@@ -1856,7 +1856,7 @@ config_init_stdio(const PyConfig *config)
 
    - set Py_xxx global configuration variables
    - initialize C standard streams (stdin, stdout, stderr) */
-void
+PyStatus
 _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
 {
     config_set_global_vars(config);
@@ -1870,6 +1870,13 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
     preconfig->isolated = config->isolated;
     preconfig->use_environment = config->use_environment;
     preconfig->dev_mode = config->dev_mode;
+
+    if (_Py_SetArgcArgv(config->_orig_argv.length,
+                        config->_orig_argv.items) < 0)
+    {
+        return _PyStatus_NO_MEMORY();
+    }
+    return _PyStatus_OK();
 }
 
 
@@ -2493,7 +2500,6 @@ PyStatus
 PyConfig_Read(PyConfig *config)
 {
     PyStatus status;
-    PyWideStringList orig_argv = _PyWideStringList_INIT;
 
     status = _Py_PreInitializeFromConfig(config, NULL);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2502,8 +2508,13 @@ PyConfig_Read(PyConfig *config)
 
     config_get_global_vars(config);
 
-    if (_PyWideStringList_Copy(&orig_argv, &config->argv) < 0) {
-        return _PyStatus_NO_MEMORY();
+    if (config->_orig_argv.length == 0
+        && !(config->argv.length == 1
+             && wcscmp(config->argv.items[0], L"") == 0))
+    {
+        if (_PyWideStringList_Copy(&config->_orig_argv, &config->argv) < 0) {
+            return _PyStatus_NO_MEMORY();
+        }
     }
 
     _PyPreCmdline precmdline = _PyPreCmdline_INIT;
@@ -2531,11 +2542,6 @@ PyConfig_Read(PyConfig *config)
 
     status = config_read(config);
     if (_PyStatus_EXCEPTION(status)) {
-        goto done;
-    }
-
-    if (_Py_SetArgcArgv(orig_argv.length, orig_argv.items) < 0) {
-        status = _PyStatus_NO_MEMORY();
         goto done;
     }
 
@@ -2591,11 +2597,11 @@ PyConfig_Read(PyConfig *config)
     assert(config->check_hash_pycs_mode != NULL);
     assert(config->_install_importlib >= 0);
     assert(config->pathconfig_warnings >= 0);
+    assert(_PyWideStringList_CheckConsistency(&config->_orig_argv));
 
     status = _PyStatus_OK();
 
 done:
-    _PyWideStringList_Clear(&orig_argv);
     _PyPreCmdline_Clear(&precmdline);
     return status;
 }
