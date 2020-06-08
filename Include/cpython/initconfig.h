@@ -385,6 +385,7 @@ typedef struct {
     wchar_t *base_prefix;       /* sys.base_prefix */
     wchar_t *exec_prefix;       /* sys.exec_prefix */
     wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
+    wchar_t *platlibdir;        /* sys.platlibdir */
 
     /* --- Parameter only used by Py_Main() ---------- */
 
