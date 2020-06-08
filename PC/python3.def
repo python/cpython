@@ -734,6 +734,7 @@ EXPORTS
   Py_FinalizeEx=python39.Py_FinalizeEx
   Py_GenericAlias=python39.Py_GenericAlias
   Py_GenericAliasType=python39.Py_GenericAliasType
+  Py_GetArgcArgv=python39.Py_GetArgcArgv
   Py_GetBuildInfo=python39.Py_GetBuildInfo
   Py_GetCompiler=python39.Py_GetCompiler
   Py_GetCopyright=python39.Py_GetCopyright
