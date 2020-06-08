@@ -399,7 +399,9 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     # Variables used in the methods and docstrings
     field_names = tuple(map(_sys.intern, field_names))
     num_fields = len(field_names)
-    arg_list = repr(field_names).replace("'", "")[1:-1]
+    arg_list = ', '.join(field_names)
+    if num_fields == 1:
+        arg_list += ','
     repr_fmt = '(' + ', '.join(f'{name}=%r' for name in field_names) + ')'
     tuple_new = tuple.__new__
     _dict, _tuple, _len, _map, _zip = dict, tuple, len, map, zip
@@ -410,6 +412,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     namespace = {'_tuple_new': tuple_new,  '__builtins__': None,
                  '__name__': f'namedtuple_{typename}'}
     __new__ = eval(s, namespace)
+    __new__.__name__ = '__new__'
     __new__.__doc__ = f'Create new instance of {typename}({arg_list})'
     if defaults is not None:
         __new__.__defaults__ = defaults
