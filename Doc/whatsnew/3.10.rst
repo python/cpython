@@ -124,7 +124,7 @@ mimetypes
 ---------
 
 :func:`mimetypes.mimesniff` is added. :func:`mimetypes.mimesniff` guesses
-the types of given datas based on the algorithm described at
+the types of given data based on the algorithm described at
 https://mimesniff.spec.whatwg.org/.
 (Contributed by Dong-hee Na in :issue:`40841`.)
 

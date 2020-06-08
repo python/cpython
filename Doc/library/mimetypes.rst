@@ -118,14 +118,14 @@ behavior of the module.
    When *strict* is ``True`` (the default), the mapping will be added to the
    official MIME types, otherwise to the non-standard ones.
 
-.. function:: mimesniff(datas)
+.. function:: mimesniff(data)
 
-    Guess the type of given *datas*.
-    *datas* should be :class:`bytes` or :class:`bytearray`.
+    Guess the type of given *data*.
+    *data* should be :class:`bytes` or :class:`bytearray`.
     Return value is a tuple (type, charset).
     This function always returns the most valid type, but charset can be
     ``None`` if there no proper charset.
-    If the *datas* can not be guessed it will return 'application/octet-stream'.
+    If the *data* can not be guessed it will return 'application/octet-stream'.
     :func:`mimetypes.mimesniff` is implemented based on the algorithm which is described at
     https://mimesniff.spec.whatwg.org/
 

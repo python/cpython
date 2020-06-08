@@ -294,25 +294,25 @@ def guess_type(url, strict=True):
     return _db.guess_type(url, strict)
 
 
-def mimesniff(datas):
-    """Guess the type of given datas.
+def mimesniff(data):
+    """Guess the type of given data.
 
     Return value is a tuple (type, charset).
-    datas should be bytes or bytearray.
+    data should be bytes or bytearray.
     This function always returns the most valid type, but charset can be
     None if there no proper charset.
-    If the datas can not be guessed, it will return 'application/octet-stream'.
+    If the data can not be guessed, it will return 'application/octet-stream'.
     mimesniff is implemented based on the algorithm which is described at
     https://mimesniff.spec.whatwg.org/
     """
-    if not isinstance(datas, (bytes, bytearray)):
-        msg = f'expected bytes or bytearray, but got {type(datas).__name__}'
+    if not isinstance(data, (bytes, bytearray)):
+        msg = f'expected bytes or bytearray, but got {type(data).__name__}'
         raise TypeError(msg)
 
-    if len(datas) > 512:
-        datas = datas[:512]
+    if len(data) > 512:
+        data = data[:512]
 
-    tp, charset = _detect_content(datas)
+    tp, charset = _detect_content(data)
     if tp is None:
         return ('application/octet-stream', None)
     return (tp, charset)
