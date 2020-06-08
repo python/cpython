@@ -138,7 +138,7 @@ _Py_bit_length(unsigned long x) {
     if (!x) {
         return 0;
     }
-#if (defined(__clang__) || defined(__GNUC__))
+#if (defined(__clang__) || (defined(__GNUC__) && (((__GNUC__ == 3) && (__GNUC_MINOR__ >= 4)) || (__GNUC__ >= 4))))
     return sizeof(unsigned long) * 8 - __builtin_clzl(x);
 #elif defined(_MSC_VER)
     Py_BUILD_ASSERT(4 == sizeof(unsigned long));
