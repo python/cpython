@@ -412,6 +412,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     namespace = {'_tuple_new': tuple_new,  '__builtins__': None,
                  '__name__': f'namedtuple_{typename}'}
     __new__ = eval(s, namespace)
+    __new__.__name__ = '__new__'
     __new__.__doc__ = f'Create new instance of {typename}({arg_list})'
     if defaults is not None:
         __new__.__defaults__ = defaults
