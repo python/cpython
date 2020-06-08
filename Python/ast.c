@@ -2512,6 +2512,10 @@ ast_for_atom(struct compiling *c, const node *n)
         else {
             return copy_location(ast_for_listcomp(c, ch), n, n);
         }
+    case JLBRACE: {
+        return Constant(Py_None, NULL, LINENO(n), n->n_col_offset,
+                        n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                        }
     case LBRACE: {
         /* dictorsetmaker: ( ((test ':' test | '**' test)
          *                    (comp_for | (',' (test ':' test | '**' test))* [','])) |

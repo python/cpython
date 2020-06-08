@@ -78,6 +78,11 @@ class ParserGenerator(object):
         return first
 
     def make_label(self, c, label):
+        ret = self._make_label(c, label)
+        print("make_label:", ret, c, label)
+        return ret
+
+    def _make_label(self, c, label):
         # XXX Maybe this should be a method on a subclass of converter?
         ilabel = len(c.labels)
         if label[0].isalpha():
