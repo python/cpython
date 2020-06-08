@@ -63,6 +63,10 @@ SyntaxError: cannot assign to __debug__
 Traceback (most recent call last):
 SyntaxError: cannot assign to function call
 
+>>> yield = 1
+Traceback (most recent call last):
+SyntaxError: assignment to yield expression not possible
+
 >>> del f()
 Traceback (most recent call last):
 SyntaxError: cannot delete function call
@@ -143,6 +147,10 @@ SyntaxError: cannot assign to True
 >>> x = y = True = z = 3
 Traceback (most recent call last):
 SyntaxError: cannot assign to True
+
+>>> x = y = yield = 1
+Traceback (most recent call last):
+SyntaxError: assignment to yield expression not possible
 
 >>> a, b += 1, 2
 Traceback (most recent call last):
