@@ -144,7 +144,7 @@ _Py_bit_length(unsigned long x) {
     Py_BUILD_ASSERT(4 == sizeof(unsigned long));
     unsigned long msb;
     _BitScanReverse(&msb, x);
-    return 32 - msb;
+    return msb + 1;
 #else
     int msb = 0;
     while (x != 0) {
