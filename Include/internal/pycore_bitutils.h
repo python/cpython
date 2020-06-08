@@ -134,7 +134,8 @@ _Py_popcount32(uint32_t x)
 // Return the index of the most significant 1 bit in 'x'. This is the smallest
 // integer k such that x < 2**k. Equivalent to floor(log2(x)) + 1 for x != 0.
 static inline int
-_Py_bit_length(unsigned long x) {
+_Py_bit_length(unsigned long x)
+{
     if (x == 0) {
         return 0;
     }
@@ -159,7 +160,8 @@ _Py_bit_length(unsigned long x) {
 }
 
 static inline int
-_Py_bit_length_digit(digit x) {
+_Py_bit_length_digit(digit x)
+{
     Py_BUILD_ASSERT(PyLong_SHIFT <= sizeof(unsigned long) * 8);
     return _Py_popcount32((unsigned long)x);
 }
