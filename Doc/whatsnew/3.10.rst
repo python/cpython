@@ -95,6 +95,12 @@ New Modules
 Improved Modules
 ================
 
+something
+---------
+
+This is a test PR for https://github.com/python/core-workflow/issues/368.
+
+
 Optimizations
 =============
 
