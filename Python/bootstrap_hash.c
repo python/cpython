@@ -580,7 +580,7 @@ _Py_HashRandomization_Init(const PyConfig *config)
         res = pyurandom(secret, secret_size, 0, 0);
         if (res < 0) {
             return _PyStatus_ERR("failed to get random numbers "
-                                "to initialize Python");
+                                 "to initialize Python");
         }
     }
     return _PyStatus_OK();
