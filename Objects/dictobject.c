@@ -4409,9 +4409,99 @@ dictviews_or(PyObject* self, PyObject *other)
     return result;
 }
 
+static PyObject *
+dictitems_xor(PyObject *self, PyObject *other)
+{
+    assert(Py_IS_TYPE(self, &PyDictItems_Type));
+    assert(Py_IS_TYPE(other, &PyDictItems_Type));
+    PyObject *d1 = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+    PyObject *d2 = (PyObject *)((_PyDictViewObject *)other)->dv_dict;
+
+    PyObject *temp_dict = PyDict_Copy(d1);
+    if (temp_dict == NULL) {
+        return NULL;
+    }
+    PyObject *result_set = PySet_New(NULL);
+    if (result_set == NULL) {
+        Py_CLEAR(temp_dict);
+        return NULL;
+    }
+
+    PyObject *key = NULL, *val1 = NULL, *val2 = NULL;
+    Py_ssize_t pos = 0;
+    Py_hash_t hash;
+
+    while (_PyDict_Next(d2, &pos, &key, &val2, &hash)) {
+        Py_INCREF(key);
+        Py_INCREF(val2);
+        val1 = _PyDict_GetItem_KnownHash(temp_dict, key, hash);
+
+        int to_delete;
+        if (val1 == NULL) {
+            if (PyErr_Occurred()) {
+                goto error;
+            }
+            to_delete = 0;
+        }
+        else {
+            Py_INCREF(val1);
+            to_delete = PyObject_RichCompareBool(val1, val2, Py_EQ);
+            if (to_delete < 0) {
+                goto error;
+            }
+        }
+
+        if (to_delete) {
+            if (_PyDict_DelItem_KnownHash(temp_dict, key, hash) < 0) {
+                goto error;
+            }
+        }
+        else {
+            PyObject *pair = Py_BuildValue("(OO)", key, val2);
+            if (pair == NULL) {
+                goto error;
+            }
+            if (PySet_Add(result_set, pair) < 0) {
+                Py_DECREF(pair);
+                goto error;
+            }
+            Py_DECREF(pair);
+        }
+        Py_DECREF(key);
+        Py_XDECREF(val1);
+        Py_DECREF(val2);
+    }
+    key = val1 = val2 = NULL;
+
+    PyObject *remaining_pairs = PyDict_Items(temp_dict);
+    if (remaining_pairs == NULL) {
+        goto error;
+    }
+    if (_PySet_Update(result_set, remaining_pairs) < 0) {
+        Py_XDECREF(remaining_pairs);
+        goto error;
+    }
+    Py_XDECREF(temp_dict);
+    Py_XDECREF(remaining_pairs);
+    return result_set;
+
+error:
+    Py_XDECREF(temp_dict);
+    Py_XDECREF(result_set);
+    Py_XDECREF(key);
+    Py_XDECREF(val1);
+    Py_XDECREF(val2);
+    return NULL;
+}
+
 static PyObject*
 dictviews_xor(PyObject* self, PyObject *other)
 {
+    if (Py_IS_TYPE(self, &PyDictItems_Type)
+        && Py_IS_TYPE(other, &PyDictItems_Type))
+    {
+        return dictitems_xor(self, other);
+    }
     PyObject *result = dictviews_to_set(self);
     if (result == NULL) {
         return NULL;
