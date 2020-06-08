@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_byteswap.h"      // _Py_bswap32()
+#include "pycore_bitutils.h"      // _Py_bswap32()
 
 #include <ffi.h>
 #ifdef MS_WIN32
