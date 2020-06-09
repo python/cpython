@@ -1137,6 +1137,7 @@ ast_dealloc(AST_object *self)
 static int
 ast_traverse(AST_object *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }

@@ -118,7 +118,6 @@
     <ClInclude Include="..\Modules\_decimal\libmpdec\typearith.h" />
     <ClInclude Include="..\Modules\_decimal\libmpdec\umodarith.h" />
     <ClInclude Include="..\Modules\_decimal\libmpdec\vccompat.h" />
-    <ClInclude Include="..\Modules\_decimal\libmpdec\vcstdint.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_decimal\_decimal.c" />

@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_byteswap.h"      // _Py_bswap32()
+#include "pycore_bitutils.h"      // _Py_bswap32()
 
 #include <ffi.h>
 #ifdef MS_WIN32
@@ -1263,7 +1263,9 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
     }
 
     data = PyBytes_AS_STRING(value);
-    size = strlen(data); /* XXX Why not Py_SIZE(value)? */
+    // bpo-39593: Use strlen() to truncate the string at the first null character.
+    size = strlen(data);
+
     if (size < length) {
         /* This will copy the terminating NUL character
          * if there is space for it.

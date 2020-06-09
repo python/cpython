@@ -734,6 +734,7 @@ EXPORTS
   Py_FinalizeEx=python310.Py_FinalizeEx
   Py_GenericAlias=python310.Py_GenericAlias
   Py_GenericAliasType=python310.Py_GenericAliasType
+  Py_GetArgcArgv=python310.Py_GetArgcArgv
   Py_GetBuildInfo=python310.Py_GetBuildInfo
   Py_GetCompiler=python310.Py_GetCompiler
   Py_GetCopyright=python310.Py_GetCopyright

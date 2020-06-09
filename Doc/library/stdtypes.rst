@@ -478,6 +478,27 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.1
 
+.. method:: int.bit_count()
+
+    Return the number of ones in the binary representation of the absolute
+    value of the integer. This is also known as the population count.
+    Example::
+
+        >>> n = 19
+        >>> bin(n)
+        '0b10011'
+        >>> n.bit_count()
+        3
+        >>> (-n).bit_count()
+        3
+
+    Equivalent to::
+
+        def bit_count(self):
+            return bin(self).count("1")
+
+    .. versionadded:: 3.10
+
 .. method:: int.to_bytes(length, byteorder, \*, signed=False)
 
     Return an array of bytes representing an integer.

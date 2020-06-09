@@ -17,7 +17,7 @@
 /* SHA objects */
 
 #include "Python.h"
-#include "pycore_byteswap.h"      // _Py_bswap32()
+#include "pycore_bitutils.h"      // _Py_bswap32()
 #include "structmember.h"         // PyMemberDef
 #include "hashlib.h"
 #include "pystrhex.h"
@@ -740,9 +740,6 @@ static struct PyMethodDef SHA_functions[] = {
 
 
 /* Initialize this module. */
-
-#define insint(n,v) { PyModule_AddIntConstant(m,n,v); }
-
 
 static struct PyModuleDef _sha512module = {
         PyModuleDef_HEAD_INIT,

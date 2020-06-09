@@ -12,15 +12,11 @@ import glob
 import importlib
 import importlib.util
 import os
-import platform
 import re
 import stat
 import struct
-import subprocess
 import sys
 import sysconfig
-import _thread
-import threading
 import time
 import types
 import unittest
@@ -62,8 +58,6 @@ __all__ = [
     "open_urlresource",
     # processes
     'temp_umask', "reap_children",
-    # threads
-    "threading_setup", "threading_cleanup", "reap_threads", "start_threads",
     # miscellaneous
     "check_warnings", "check_no_resource_warning", "check_no_warnings",
     "EnvironmentVarGuard",
@@ -85,7 +79,7 @@ __all__ = [
 # The timeout should be long enough for connect(), recv() and send() methods
 # of socket.socket.
 LOOPBACK_TIMEOUT = 5.0
-if sys.platform == 'win32' and platform.machine() == 'ARM':
+if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
     # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
     # seconds on Windows ARM32 buildbot
     LOOPBACK_TIMEOUT = 10
@@ -485,6 +479,7 @@ def forget(modname):
 def _is_gui_available():
     if hasattr(_is_gui_available, 'result'):
         return _is_gui_available.result
+    import platform
     reason = None
     if sys.platform.startswith('win') and platform.win32_is_iot():
         reason = "gui is not available on Windows IoT Core"
@@ -585,6 +580,7 @@ def _requires_unix_version(sysname, min_version):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
+            import platform
             if platform.system() == sysname:
                 version_txt = platform.release().split('-', 1)[0]
                 try:
@@ -631,6 +627,7 @@ def requires_mac_ver(*min_version):
         @functools.wraps(func)
         def wrapper(*args, **kw):
             if sys.platform == 'darwin':
+                import platform
                 version_txt = platform.mac_ver()[0]
                 try:
                     version = tuple(map(int, version_txt.split('.')))
@@ -788,7 +785,6 @@ if sys.platform == 'darwin':
     # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
     import unicodedata
     TESTFN_UNICODE = unicodedata.normalize('NFD', TESTFN_UNICODE)
-TESTFN_ENCODING = sys.getfilesystemencoding()
 
 # TESTFN_UNENCODABLE is a filename (str type) that should *not* be able to be
 # encoded by the filesystem encoding (in strict mode). It can be None if we
@@ -801,23 +797,23 @@ if os.name == 'nt':
         # probability that the whole name is encodable to MBCS (issue #9819)
         TESTFN_UNENCODABLE = TESTFN + "-\u5171\u0141\u2661\u0363\uDC80"
         try:
-            TESTFN_UNENCODABLE.encode(TESTFN_ENCODING)
+            TESTFN_UNENCODABLE.encode(sys.getfilesystemencoding())
         except UnicodeEncodeError:
             pass
         else:
             print('WARNING: The filename %r CAN be encoded by the filesystem encoding (%s). '
                   'Unicode filename tests may not be effective'
-                  % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
+                  % (TESTFN_UNENCODABLE, sys.getfilesystemencoding()))
             TESTFN_UNENCODABLE = None
 # Mac OS X denies unencodable filenames (invalid utf-8)
 elif sys.platform != 'darwin':
     try:
         # ascii and utf-8 cannot encode the byte 0xff
-        b'\xff'.decode(TESTFN_ENCODING)
+        b'\xff'.decode(sys.getfilesystemencoding())
     except UnicodeDecodeError:
         # 0xff will be encoded using the surrogate character u+DCFF
         TESTFN_UNENCODABLE = TESTFN \
-            + b'-\xff'.decode(TESTFN_ENCODING, 'surrogateescape')
+            + b'-\xff'.decode(sys.getfilesystemencoding(), 'surrogateescape')
     else:
         # File system encoding (eg. ISO-8859-* encodings) can encode
         # the byte 0xff. Skip some unicode filename tests.
@@ -848,7 +844,7 @@ for name in (
     b'\x81\x98',
 ):
     try:
-        name.decode(TESTFN_ENCODING)
+        name.decode(sys.getfilesystemencoding())
     except UnicodeDecodeError:
         TESTFN_UNDECODABLE = os.fsencode(TESTFN) + name
         break
@@ -1611,6 +1607,7 @@ class _MemoryWatchdog:
             sys.stderr.flush()
             return
 
+        import subprocess
         with f:
             watchdog_script = findfile("memory_watchdog.py")
             self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
@@ -1744,7 +1741,7 @@ def check_impl_detail(**guards):
           if check_impl_detail(cpython=False):  # everywhere except on CPython
     """
     guards, default = _parse_guards(guards)
-    return guards.get(platform.python_implementation().lower(), default)
+    return guards.get(sys.implementation.name, default)
 
 
 def no_tracing(func):
@@ -1991,119 +1988,13 @@ def modules_cleanup(oldmodules):
     # Implicitly imported *real* modules should be left alone (see issue 10556).
     sys.modules.update(oldmodules)
 
-#=======================================================================
-# Threading support to prevent reporting refleaks when running regrtest.py -R
-
 # Flag used by saved_test_environment of test.libregrtest.save_env,
 # to check if a test modified the environment. The flag should be set to False
 # before running a new test.
 #
-# For example, threading_cleanup() sets the flag is the function fails
+# For example, threading_helper.threading_cleanup() sets the flag is the function fails
 # to cleanup threads.
 environment_altered = False
-
-# NOTE: we use thread._count() rather than threading.enumerate() (or the
-# moral equivalent thereof) because a threading.Thread object is still alive
-# until its __bootstrap() method has returned, even after it has been
-# unregistered from the threading module.
-# thread._count(), on the other hand, only gets decremented *after* the
-# __bootstrap() method has returned, which gives us reliable reference counts
-# at the end of a test run.
-
-def threading_setup():
-    return _thread._count(), threading._dangling.copy()
-
-def threading_cleanup(*original_values):
-    global environment_altered
-
-    _MAX_COUNT = 100
-
-    for count in range(_MAX_COUNT):
-        values = _thread._count(), threading._dangling
-        if values == original_values:
-            break
-
-        if not count:
-            # Display a warning at the first iteration
-            environment_altered = True
-            dangling_threads = values[1]
-            print_warning(f"threading_cleanup() failed to cleanup "
-                          f"{values[0] - original_values[0]} threads "
-                          f"(count: {values[0]}, "
-                          f"dangling: {len(dangling_threads)})")
-            for thread in dangling_threads:
-                print_warning(f"Dangling thread: {thread!r}")
-
-            # Don't hold references to threads
-            dangling_threads = None
-        values = None
-
-        time.sleep(0.01)
-        gc_collect()
-
-
-def reap_threads(func):
-    """Use this function when threads are being used.  This will
-    ensure that the threads are cleaned up even when the test fails.
-    """
-    @functools.wraps(func)
-    def decorator(*args):
-        key = threading_setup()
-        try:
-            return func(*args)
-        finally:
-            threading_cleanup(*key)
-    return decorator
-
-
-@contextlib.contextmanager
-def wait_threads_exit(timeout=None):
-    """
-    bpo-31234: Context manager to wait until all threads created in the with
-    statement exit.
-
-    Use _thread.count() to check if threads exited. Indirectly, wait until
-    threads exit the internal t_bootstrap() C function of the _thread module.
-
-    threading_setup() and threading_cleanup() are designed to emit a warning
-    if a test leaves running threads in the background. This context manager
-    is designed to cleanup threads started by the _thread.start_new_thread()
-    which doesn't allow to wait for thread exit, whereas thread.Thread has a
-    join() method.
-    """
-    if timeout is None:
-        timeout = SHORT_TIMEOUT
-    old_count = _thread._count()
-    try:
-        yield
-    finally:
-        start_time = time.monotonic()
-        deadline = start_time + timeout
-        while True:
-            count = _thread._count()
-            if count <= old_count:
-                break
-            if time.monotonic() > deadline:
-                dt = time.monotonic() - start_time
-                msg = (f"wait_threads() failed to cleanup {count - old_count} "
-                       f"threads after {dt:.1f} seconds "
-                       f"(count: {count}, old count: {old_count})")
-                raise AssertionError(msg)
-            time.sleep(0.010)
-            gc_collect()
-
-
-def join_thread(thread, timeout=None):
-    """Join a thread. Raise an AssertionError if the thread is still alive
-    after timeout seconds.
-    """
-    if timeout is None:
-        timeout = SHORT_TIMEOUT
-    thread.join(timeout)
-    if thread.is_alive():
-        msg = f"failed to join the thread in {timeout:.1f} seconds"
-        raise AssertionError(msg)
-
 
 def reap_children():
     """Use this function at the end of test_main() whenever sub-processes
@@ -2132,43 +2023,6 @@ def reap_children():
         print_warning(f"reap_children() reaped child process {pid}")
         environment_altered = True
 
-
-@contextlib.contextmanager
-def start_threads(threads, unlock=None):
-    import faulthandler
-    threads = list(threads)
-    started = []
-    try:
-        try:
-            for t in threads:
-                t.start()
-                started.append(t)
-        except:
-            if verbose:
-                print("Can't start %d threads, only %d threads started" %
-                      (len(threads), len(started)))
-            raise
-        yield
-    finally:
-        try:
-            if unlock:
-                unlock()
-            endtime = starttime = time.monotonic()
-            for timeout in range(1, 16):
-                endtime += 60
-                for t in started:
-                    t.join(max(endtime - time.monotonic(), 0.01))
-                started = [t for t in started if t.is_alive()]
-                if not started:
-                    break
-                if verbose:
-                    print('Unable to join %d threads during a period of '
-                          '%d minutes' % (len(started), timeout))
-        finally:
-            started = [t for t in started if t.is_alive()]
-            if started:
-                faulthandler.dump_traceback(sys.stdout)
-                raise AssertionError('Unable to join %d threads' % len(started))
 
 @contextlib.contextmanager
 def swap_attr(obj, attr, new_val):
@@ -2235,11 +2089,13 @@ def swap_item(obj, item, new_val):
 def args_from_interpreter_flags():
     """Return a list of command-line arguments reproducing the current
     settings in sys.flags and sys.warnoptions."""
+    import subprocess
     return subprocess._args_from_interpreter_flags()
 
 def optim_args_from_interpreter_flags():
     """Return a list of command-line arguments reproducing the current
     optimization settings in sys.flags."""
+    import subprocess
     return subprocess._optim_args_from_interpreter_flags()
 
 
@@ -2380,6 +2236,7 @@ class PythonSymlink:
                     print("failed to clean up {}: {}".format(link, ex))
 
     def _call(self, python, args, env, returncode):
+        import subprocess
         cmd = [python, *args]
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE, env=env)
@@ -2408,6 +2265,7 @@ def can_xattr():
     if not hasattr(os, "setxattr"):
         can = False
     else:
+        import platform
         tmp_dir = tempfile.mkdtemp()
         tmp_fp, tmp_name = tempfile.mkstemp(dir=tmp_dir)
         try:
@@ -2592,6 +2450,7 @@ class SuppressCrashReport:
                     pass
 
             if sys.platform == 'darwin':
+                import subprocess
                 # Check if the 'Crash Reporter' on OSX was configured
                 # in 'Developer' mode and warn that it will get triggered
                 # when it is.
@@ -2738,6 +2597,7 @@ def setswitchinterval(interval):
     if is_android and interval < minimum_interval:
         global _is_android_emulator
         if _is_android_emulator is None:
+            import subprocess
             _is_android_emulator = (subprocess.check_output(
                                ['getprop', 'ro.kernel.qemu']).strip() == b'1')
         if _is_android_emulator:
@@ -3021,63 +2881,6 @@ class catch_unraisable_exception:
     def __exit__(self, *exc_info):
         sys.unraisablehook = self._old_hook
         del self.unraisable
-
-
-class catch_threading_exception:
-    """
-    Context manager catching threading.Thread exception using
-    threading.excepthook.
-
-    Attributes set when an exception is catched:
-
-    * exc_type
-    * exc_value
-    * exc_traceback
-    * thread
-
-    See threading.excepthook() documentation for these attributes.
-
-    These attributes are deleted at the context manager exit.
-
-    Usage:
-
-        with support.catch_threading_exception() as cm:
-            # code spawning a thread which raises an exception
-            ...
-
-            # check the thread exception, use cm attributes:
-            # exc_type, exc_value, exc_traceback, thread
-            ...
-
-        # exc_type, exc_value, exc_traceback, thread attributes of cm no longer
-        # exists at this point
-        # (to avoid reference cycles)
-    """
-
-    def __init__(self):
-        self.exc_type = None
-        self.exc_value = None
-        self.exc_traceback = None
-        self.thread = None
-        self._old_hook = None
-
-    def _hook(self, args):
-        self.exc_type = args.exc_type
-        self.exc_value = args.exc_value
-        self.exc_traceback = args.exc_traceback
-        self.thread = args.thread
-
-    def __enter__(self):
-        self._old_hook = threading.excepthook
-        threading.excepthook = self._hook
-        return self
-
-    def __exit__(self, *exc_info):
-        threading.excepthook = self._old_hook
-        del self.exc_type
-        del self.exc_value
-        del self.exc_traceback
-        del self.thread
 
 
 def wait_process(pid, *, exitcode, timeout=None):

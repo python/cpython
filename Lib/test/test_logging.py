@@ -43,6 +43,7 @@ import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
 from test.support import socket_helper
+from test.support import threading_helper
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
@@ -79,7 +80,7 @@ class BaseTest(unittest.TestCase):
     def setUp(self):
         """Setup the default logging stream to an internal StringIO instance,
         so that we can examine log output as we want."""
-        self._threading_key = support.threading_setup()
+        self._threading_key = threading_helper.threading_setup()
 
         logger_dict = logging.getLogger().manager.loggerDict
         logging._acquireLock()
@@ -150,7 +151,7 @@ class BaseTest(unittest.TestCase):
             logging._releaseLock()
 
         self.doCleanups()
-        support.threading_cleanup(*self._threading_key)
+        threading_helper.threading_cleanup(*self._threading_key)
 
     def assert_log_lines(self, expected_values, stream=None, pat=None):
         """Match the collected log lines against the regular expression
@@ -865,7 +866,7 @@ class TestSMTPServer(smtpd.SMTPServer):
         Wait for the server thread to terminate.
         """
         self.close()
-        support.join_thread(self._thread)
+        threading_helper.join_thread(self._thread)
         self._thread = None
         asyncore.close_all(map=self._map, ignore_all=True)
 
@@ -915,7 +916,7 @@ class ControlMixin(object):
         """
         self.shutdown()
         if self._thread is not None:
-            support.join_thread(self._thread)
+            threading_helper.join_thread(self._thread)
             self._thread = None
         self.server_close()
         self.ready.clear()
@@ -3212,7 +3213,7 @@ class ConfigDictTest(BaseTest):
         finally:
             t.ready.wait(2.0)
             logging.config.stopListening()
-            support.join_thread(t)
+            threading_helper.join_thread(t)
 
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:

@@ -240,15 +240,14 @@ UNSIGNAL_ASYNC_EXC(PyInterpreterState *interp)
 #endif
 #include "ceval_gil.h"
 
-static void
-ensure_tstate_not_null(const char *func, PyThreadState *tstate)
+void _Py_NO_RETURN
+_Py_FatalError_TstateNULL(const char *func)
 {
-    if (tstate == NULL) {
-        _Py_FatalErrorFunc(func,
-                           "current thread state is NULL (released GIL?)");
-    }
+    _Py_FatalErrorFunc(func,
+                       "the function must be called with the GIL held, "
+                       "but the GIL is released "
+                       "(the current Python thread state is NULL)");
 }
-
 
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
 int
@@ -374,7 +373,7 @@ PyEval_AcquireLock(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
 
     take_gil(tstate);
 }
@@ -403,7 +402,7 @@ _PyEval_ReleaseLock(PyThreadState *tstate)
 void
 PyEval_AcquireThread(PyThreadState *tstate)
 {
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
 
     take_gil(tstate);
 
@@ -434,15 +433,12 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 
 #ifdef HAVE_FORK
 /* This function is called from PyOS_AfterFork_Child to destroy all threads
- * which are not running in the child process, and clear internal locks
- * which might be held by those threads.
- */
-
-void
-_PyEval_ReInitThreads(_PyRuntimeState *runtime)
+   which are not running in the child process, and clear internal locks
+   which might be held by those threads. */
+PyStatus
+_PyEval_ReInitThreads(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    ensure_tstate_not_null(__func__, tstate);
+    _PyRuntimeState *runtime = tstate->interp->runtime;
 
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     struct _gil_runtime_state *gil = &tstate->interp->ceval.gil;
@@ -450,7 +446,7 @@ _PyEval_ReInitThreads(_PyRuntimeState *runtime)
     struct _gil_runtime_state *gil = &runtime->ceval.gil;
 #endif
     if (!gil_created(gil)) {
-        return;
+        return _PyStatus_OK();
     }
     recreate_gil(gil);
 
@@ -458,11 +454,12 @@ _PyEval_ReInitThreads(_PyRuntimeState *runtime)
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
     if (_PyThread_at_fork_reinit(&pending->lock) < 0) {
-        Py_FatalError("Can't initialize threads for pending calls");
+        return _PyStatus_ERR("Can't reinitialize pending calls lock");
     }
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(runtime, tstate);
+    return _PyStatus_OK();
 }
 #endif
 
@@ -486,7 +483,7 @@ PyEval_SaveThread(void)
 #else
     PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
 #endif
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
 
     struct _ceval_runtime_state *ceval = &runtime->ceval;
     struct _ceval_state *ceval2 = &tstate->interp->ceval;
@@ -502,7 +499,7 @@ PyEval_SaveThread(void)
 void
 PyEval_RestoreThread(PyThreadState *tstate)
 {
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
 
     take_gil(tstate);
 
@@ -1248,7 +1245,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 {
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
 
 #ifdef DXPAIRS
     int lastopcode = 0;
@@ -4601,14 +4598,22 @@ _PyEval_EvalCode(PyThreadState *tstate,
 {
     assert(is_tstate_valid(tstate));
 
-    PyCodeObject* co = (PyCodeObject*)_co;
-    PyFrameObject *f;
+    PyCodeObject *co = (PyCodeObject*)_co;
+
+    if (!name) {
+        name = co->co_name;
+    }
+    assert(name != NULL);
+    assert(PyUnicode_Check(name));
+
+    if (!qualname) {
+        qualname = name;
+    }
+    assert(qualname != NULL);
+    assert(PyUnicode_Check(qualname));
+
     PyObject *retval = NULL;
-    PyObject **fastlocals, **freevars;
-    PyObject *x, *u;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
-    Py_ssize_t i, j, n;
-    PyObject *kwdict;
 
     if (globals == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError,
@@ -4617,14 +4622,16 @@ _PyEval_EvalCode(PyThreadState *tstate,
     }
 
     /* Create the frame */
-    f = _PyFrame_New_NoTrack(tstate, co, globals, locals);
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, co, globals, locals);
     if (f == NULL) {
         return NULL;
     }
-    fastlocals = f->f_localsplus;
-    freevars = f->f_localsplus + co->co_nlocals;
+    PyObject **fastlocals = f->f_localsplus;
+    PyObject **freevars = f->f_localsplus + co->co_nlocals;
 
     /* Create a dictionary for keyword parameters (**kwags) */
+    PyObject *kwdict;
+    Py_ssize_t i;
     if (co->co_flags & CO_VARKEYWORDS) {
         kwdict = PyDict_New();
         if (kwdict == NULL)
@@ -4640,6 +4647,7 @@ _PyEval_EvalCode(PyThreadState *tstate,
     }
 
     /* Copy all positional arguments into local variables */
+    Py_ssize_t j, n;
     if (argcount > co->co_argcount) {
         n = co->co_argcount;
     }
@@ -4647,14 +4655,14 @@ _PyEval_EvalCode(PyThreadState *tstate,
         n = argcount;
     }
     for (j = 0; j < n; j++) {
-        x = args[j];
+        PyObject *x = args[j];
         Py_INCREF(x);
         SETLOCAL(j, x);
     }
 
     /* Pack other positional arguments into the *args argument */
     if (co->co_flags & CO_VARARGS) {
-        u = _PyTuple_FromArray(args + n, argcount - n);
+        PyObject *u = _PyTuple_FromArray(args + n, argcount - n);
         if (u == NULL) {
             goto fail;
         }
@@ -4680,16 +4688,16 @@ _PyEval_EvalCode(PyThreadState *tstate,
            normally interned this should almost always hit. */
         co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
         for (j = co->co_posonlyargcount; j < total_args; j++) {
-            PyObject *name = co_varnames[j];
-            if (name == keyword) {
+            PyObject *varname = co_varnames[j];
+            if (varname == keyword) {
                 goto kw_found;
             }
         }
 
         /* Slow fallback, just in case */
         for (j = co->co_posonlyargcount; j < total_args; j++) {
-            PyObject *name = co_varnames[j];
-            int cmp = PyObject_RichCompareBool( keyword, name, Py_EQ);
+            PyObject *varname = co_varnames[j];
+            int cmp = PyObject_RichCompareBool( keyword, varname, Py_EQ);
             if (cmp > 0) {
                 goto kw_found;
             }
@@ -4703,7 +4711,8 @@ _PyEval_EvalCode(PyThreadState *tstate,
 
             if (co->co_posonlyargcount
                 && positional_only_passed_as_keyword(tstate, co,
-                                                     kwcount, kwnames, qualname))
+                                                     kwcount, kwnames,
+                                                     qualname))
             {
                 goto fail;
             }
@@ -4732,7 +4741,8 @@ _PyEval_EvalCode(PyThreadState *tstate,
 
     /* Check the number of positional arguments */
     if ((argcount > co->co_argcount) && !(co->co_flags & CO_VARARGS)) {
-        too_many_positional(tstate, co, argcount, defcount, fastlocals, qualname);
+        too_many_positional(tstate, co, argcount, defcount, fastlocals,
+                            qualname);
         goto fail;
     }
 
@@ -4746,7 +4756,8 @@ _PyEval_EvalCode(PyThreadState *tstate,
             }
         }
         if (missing) {
-            missing_arguments(tstate, co, missing, defcount, fastlocals, qualname);
+            missing_arguments(tstate, co, missing, defcount, fastlocals,
+                              qualname);
             goto fail;
         }
         if (n > m)
@@ -4766,12 +4777,11 @@ _PyEval_EvalCode(PyThreadState *tstate,
     if (co->co_kwonlyargcount > 0) {
         Py_ssize_t missing = 0;
         for (i = co->co_argcount; i < total_args; i++) {
-            PyObject *name;
             if (GETLOCAL(i) != NULL)
                 continue;
-            name = PyTuple_GET_ITEM(co->co_varnames, i);
+            PyObject *varname = PyTuple_GET_ITEM(co->co_varnames, i);
             if (kwdefs != NULL) {
-                PyObject *def = PyDict_GetItemWithError(kwdefs, name);
+                PyObject *def = PyDict_GetItemWithError(kwdefs, varname);
                 if (def) {
                     Py_INCREF(def);
                     SETLOCAL(i, def);
@@ -4784,7 +4794,8 @@ _PyEval_EvalCode(PyThreadState *tstate,
             missing++;
         }
         if (missing) {
-            missing_arguments(tstate, co, missing, -1, fastlocals, qualname);
+            missing_arguments(tstate, co, missing, -1, fastlocals,
+                              qualname);
             goto fail;
         }
     }

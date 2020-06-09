@@ -457,7 +457,7 @@ static PyObject *
 sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    assert(tstate != NULL);
+    _Py_EnsureTstateNotNULL(tstate);
 
     if (argc == 0) {
         _PyErr_SetString(tstate, PyExc_TypeError,
@@ -2922,13 +2922,7 @@ _PySys_InitMain(PyThreadState *tstate)
     SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
     SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
     SET_SYS_FROM_WSTR("base_exec_prefix", config->base_exec_prefix);
-    {
-        PyObject *str = PyUnicode_FromString(PLATLIBDIR);
-        if (str == NULL) {
-            return -1;
-        }
-        SET_SYS_FROM_STRING("platlibdir", str);
-    }
+    SET_SYS_FROM_WSTR("platlibdir", config->platlibdir);
 
     if (config->pycache_prefix != NULL) {
         SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);

@@ -113,7 +113,7 @@ PEP 616: New removeprefix() and removesuffix() string methods
 to easily remove an unneeded prefix or a suffix from a string. Corresponding
 ``bytes``, ``bytearray``, and ``collections.UserString`` methods have also been
 added. See :pep:`616` for a full description. (Contributed by Dennis Sweeney in
-:issue:`18939`.)
+:issue:`39939`.)
 
 PEP 585: Builtin Generic Types
 ------------------------------
@@ -156,7 +156,7 @@ back to the LL(1) parser using a command line switch (``-X
 oldparser``) or an environment variable (``PYTHONOLDPARSER=1``).
 
 See :pep:`617` for more details.  (Contributed by Guido van Rossum,
-Pablo Galindo and Lysandros Nikolau in :issue:`40334`.)
+Pablo Galindo and Lysandros Nikolaou in :issue:`40334`.)
 
 
 Other Language Changes
@@ -243,6 +243,14 @@ PyPI and maintained by the CPython core team.
 
     :pep:`615` -- Support for the IANA Time Zone Database in the Standard Library
         PEP written and implemented by Paul Ganssle
+
+
+graphlib
+---------
+
+Add the :mod:`graphlib` that contains the :class:`graphlib.TopologicalSorter` class
+to offer functionality to perform topological sorting of graphs. (Contributed by Pablo
+Galindo, Tim Peters and Larry Hastings in :issue:`17005`.)
 
 
 Improved Modules
@@ -351,13 +359,6 @@ ftplib
 :class:`~ftplib.FTP` and :class:`~ftplib.FTP_TLS` now raise a :class:`ValueError`
 if the given timeout for their constructor is zero to prevent the creation of
 a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
-
-functools
----------
-
-Add the :class:`functools.TopologicalSorter` class to offer functionality to perform
-topological sorting of graphs. (Contributed by Pablo Galindo, Tim Peters and Larry
-Hastings in :issue:`17005`.)
 
 gc
 --
@@ -552,16 +553,21 @@ sys
 ---
 
 Add a new :attr:`sys.platlibdir` attribute: name of the platform-specific
-library directory. It is used to build the path of platform-specific dynamic
-libraries and the path of the standard library. It is equal to ``"lib"`` on
-most platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit
-platforms.
+library directory. It is used to build the path of standard library and the
+paths of installed extension modules. It is equal to ``"lib"`` on most
+platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit platforms.
 (Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner in :issue:`1294959`.)
 
 Previously, :attr:`sys.stderr` was block-buffered when non-interactive. Now
 ``stderr`` defaults to always being line-buffered.
 (Contributed by Jendrik Seipp in :issue:`13601`.)
 
+tracemalloc
+-----------
+
+Added :func:`tracemalloc.reset_peak` to set the peak size of traced memory
+blocks to the current size, to measure the peak of specific pieces of code.
+(Contributed by Huon Wilson in :issue:`40630`.)
 
 typing
 ------
@@ -693,9 +699,10 @@ Deprecated
   Python versions it will raise a :exc:`TypeError` for all floats.
   (Contributed by Serhiy Storchaka in :issue:`37315`.)
 
-* The :mod:`parser` module is deprecated and will be removed in future versions
-  of Python. For the majority of use cases, users can leverage the Abstract Syntax
-  Tree (AST) generation and compilation stage, using the :mod:`ast` module.
+* The :mod:`parser` and :mod:`symbol` modules are deprecated and will be
+  removed in future versions of Python. For the majority of use cases,
+  users can leverage the Abstract Syntax Tree (AST) generation and compilation
+  stage, using the :mod:`ast` module.
 
 * Using :data:`NotImplemented` in a boolean context has been deprecated,
   as it is almost exclusively the result of incorrect rich comparator
@@ -761,6 +768,9 @@ Deprecated
   Python version. Consider third-party alternatives such as `LibCST`_ or
   `parso`_.
   (Contributed by Carl Meyer in :issue:`40360`.)
+
+* The *random* parameter of :func:`random.shuffle` has been deprecated.
+  (Contributed by Raymond Hettinger in :issue:`40465`)
 
 .. _LibCST: https://libcst.readthedocs.io/
 .. _parso: https://parso.readthedocs.io/
@@ -828,9 +838,6 @@ Removed
   :func:`~plistlib.dumps` functions. Additionally, the *use_builtin_types* parameter was
   removed, standard :class:`bytes` objects are always used instead.
   (Contributed by Jon Janzen in :issue:`36409`.)
-
-* The C function ``PyThreadState_DeleteCurrent()`` has been removed. It was not documented.
-  (Contributed by Joannah Nanjekye in :issue:`37878`.)
 
 * The C function ``PyGen_NeedsFinalizing`` has been removed. It was not
   documented, tested, or used anywhere within CPython after the implementation
@@ -932,6 +939,55 @@ Changes in the Python API
   of ``wchar_t`` since Python 3.3.
   (Contributed by Inada Naoki in :issue:`34538`.)
 
+
+Changes in the C API
+--------------------
+
+* Instances of heap-allocated types (such as those created with
+  :c:func:`PyType_FromSpec` and similar APIs) hold a reference to their type
+  object since Python 3.8. As indicated in the "Changes in the C API" of Python
+  3.8, for the vast majority of cases, there should be no side effect but for
+  types that have a custom :c:member:`~PyTypeObject.tp_traverse` function,
+  ensure that all custom ``tp_traverse`` functions of heap-allocated types
+  visit the object's type.
+
+    Example:
+
+    .. code-block:: c
+
+        int
+        foo_traverse(foo_struct *self, visitproc visit, void *arg) {
+        // Rest of the traverse function
+        #if PY_VERSION_HEX >= 0x03090000
+            // This was not needed before Python 3.9 (Python issue 35810 and 40217)
+            Py_VISIT(Py_TYPE(self));
+        #endif
+        }
+
+  If your traverse function delegates to ``tp_traverse`` of its base class
+  (or another type), ensure that ``Py_TYPE(self)`` is visited only once.
+  Note that only heap types are expected to visit the type in ``tp_traverse``.
+
+    For example, if your ``tp_traverse`` function includes:
+
+    .. code-block:: c
+
+        base->tp_traverse(self, visit, arg)
+
+    then add:
+
+    .. code-block:: c
+
+        #if PY_VERSION_HEX >= 0x03090000
+            // This was not needed before Python 3.9 (Python issue 35810 and 40217)
+            if (base->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+                // a heap type's tp_traverse already visited Py_TYPE(self)
+            } else {
+                Py_VISIT(Py_TYPE(self));
+            }
+        #else
+
+  (See :issue:`35810` and :issue:`40217` for more information.)
 
 CPython bytecode changes
 ------------------------
@@ -1042,6 +1098,10 @@ Porting to Python 3.9
   and refers to a constant string.
   (Contributed by Serhiy Storchaka in :issue:`38650`.)
 
+* The :c:type:`PyGC_Head` structure is now opaque. It is only defined in the
+  internal C API (``pycore_gc.h``).
+  (Contributed by Victor Stinner in :issue:`40241`.)
+
 
 Removed
 -------
@@ -1059,6 +1119,8 @@ Removed
 
   * Exclude the following functions from the limited C API:
 
+    * ``PyThreadState_DeleteCurrent()``
+      (Contributed by Joannah Nanjekye in :issue:`37878`.)
     * ``_Py_CheckRecursionLimit``
     * ``_Py_NewReference()``
     * ``_Py_ForgetReference()``
