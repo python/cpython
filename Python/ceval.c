@@ -979,20 +979,23 @@ static PyObject *
 get_match_args(PyThreadState *tstate, PyObject *proxy)
 {
     if (!PyObject_HasAttrString(proxy, "__match_args__")) {
-        return PyTuple_New(0);
+        Py_RETURN_NONE;
     }
     PyObject *ma = PyObject_GetAttrString(proxy, "__match_args__");
     if (!ma) {
         return NULL;
     }
-    if (!PyList_CheckExact(ma)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "__match_args__ must be a list (got %s)",
-                      Py_TYPE(ma)->tp_name);
-        Py_DECREF(ma);
-        return NULL;
+    if (PyList_CheckExact(ma)) {
+        return PyList_AsTuple(ma);
     }
-    return PyList_AsTuple(ma);
+    if (ma == Py_None) {
+        return ma;
+    }
+    _PyErr_Format(tstate, PyExc_TypeError,
+                    "__match_args__ must be a list or None (got %s)",
+                    Py_TYPE(ma)->tp_name);
+    Py_DECREF(ma);
+    return NULL;
 }
 
 static PyObject *
@@ -1040,17 +1043,30 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
             Py_DECREF(proxy);
             return NULL;
         }
-        assert(PyTuple_CheckExact(_args));
-        if (PyTuple_GET_SIZE(_args) < nargs) {
-            Py_DECREF(_args);
-            Py_DECREF(proxy);
-            // TODO: Add expected and actual counts:
-            _PyErr_SetString(tstate, PyExc_TypeError,
-                            "too many positional matches in pattern");
-            return NULL;
+        if (_args == Py_None) {
+            if (nargs > 1) {
+                Py_DECREF(_args);
+                Py_DECREF(proxy);
+                // TODO: Add expected and actual counts:
+                _PyErr_SetString(tstate, PyExc_TypeError,
+                                "too many positional matches in pattern");
+                return NULL;
+            }
+            args = _args;
         }
-        args = PyTuple_GetSlice(_args, 0, nargs);
-        Py_DECREF(_args);
+        else {
+            assert(PyTuple_CheckExact(_args));
+            if (PyTuple_GET_SIZE(_args) < nargs) {
+                Py_DECREF(_args);
+                Py_DECREF(proxy);
+                // TODO: Add expected and actual counts:
+                _PyErr_SetString(tstate, PyExc_TypeError,
+                                "too many positional matches in pattern");
+                return NULL;
+            }
+            args = PyTuple_GetSlice(_args, 0, nargs);
+            Py_DECREF(_args);
+        }
     }
     else {
         args = PyTuple_New(0);
@@ -1059,7 +1075,7 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
         Py_DECREF(proxy);
         return NULL;
     }
-    assert(PyTuple_CheckExact(args));
+    assert(PyTuple_CheckExact(args) || args == Py_None);
     PyObject *attrs = PyList_New(nargs + nkwargs);
     if (!attrs) {
         Py_DECREF(proxy);
@@ -1076,6 +1092,12 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
     PyObject *name;
     for (Py_ssize_t i = 0; i < nargs + nkwargs; i++) {
         if (i < nargs) {
+            if (args == Py_None) {
+                assert(!i);
+                Py_INCREF(proxy);
+                PyList_SET_ITEM(attrs, nargs + nkwargs - 1, proxy);
+                continue;
+            }
             name = PyTuple_GET_ITEM(args, i);
             if (!PyUnicode_CheckExact(name)) {
                 _PyErr_Format(tstate, PyExc_TypeError,
