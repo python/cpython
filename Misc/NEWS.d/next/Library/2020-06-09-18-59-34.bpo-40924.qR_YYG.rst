@@ -1,0 +1,4 @@
+`importlib.resources`: Reverted ``TraversableResources`` implementations
+from the built-in loaders (SourceFileLoader and ZipImporter) as it was an
+incompatible change introduced in 3.9.0 beta 2 causing through a chain of
+events for root TLS certificates to be missing.
