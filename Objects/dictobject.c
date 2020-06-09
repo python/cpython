@@ -4412,8 +4412,8 @@ dictviews_or(PyObject* self, PyObject *other)
 static PyObject *
 dictitems_xor(PyObject *self, PyObject *other)
 {
-    assert(Py_IS_TYPE(self, &PyDictItems_Type));
-    assert(Py_IS_TYPE(other, &PyDictItems_Type));
+    assert(PyDictItems_Check(self));
+    assert(PyDictItems_Check(other));
     PyObject *d1 = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
     PyObject *d2 = (PyObject *)((_PyDictViewObject *)other)->dv_dict;
 
@@ -4497,9 +4497,7 @@ error:
 static PyObject*
 dictviews_xor(PyObject* self, PyObject *other)
 {
-    if (Py_IS_TYPE(self, &PyDictItems_Type)
-        && Py_IS_TYPE(other, &PyDictItems_Type))
-    {
+    if (PyDictItems_Check(self) && PyDictItems_Check(other)) {
         return dictitems_xor(self, other);
     }
     PyObject *result = dictviews_to_set(self);
