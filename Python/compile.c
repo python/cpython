@@ -1118,8 +1118,6 @@ stack_effect(int opcode, int oparg, int jump)
         case DICT_MERGE:
         case DICT_UPDATE:
             return -1;
-        case LIST_POP:
-            return 1;
         case MATCH:
             return jump > 0 ? -4 : -3;
         case MATCH_MAP_KEYS:
@@ -2808,12 +2806,12 @@ compiler_pattern_call(struct compiler *c, expr_ty p, basicblock *fail, PyObject*
     ADDOP_JREL(c, MATCH, fail);
     for (i = 0; i < nargs; i++) {
         expr_ty arg = asdl_seq_GET(args, i);
-        ADDOP(c, LIST_POP);
+        ADDOP_I(c, MATCH_SEQ_ITEM, i);
         CHECK(compiler_pattern(c, arg, block, names));
     }
     for (i = 0; i < nkwargs; i++) {
         keyword_ty kwarg = asdl_seq_GET(kwargs, i);
-        ADDOP(c, LIST_POP);
+        ADDOP_I(c, MATCH_SEQ_ITEM, nargs + i);
         CHECK(compiler_pattern(c, kwarg->value, block, names));
     }
     ADDOP(c, POP_TOP);

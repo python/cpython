@@ -1092,7 +1092,7 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
             if (args == Py_None) {
                 assert(!i);
                 Py_INCREF(proxy);
-                PyList_SET_ITEM(attrs, nargs + nkwargs - 1, proxy);
+                PyList_SET_ITEM(attrs, 0, proxy);
                 continue;
             }
             name = PyTuple_GET_ITEM(args, i);
@@ -1139,7 +1139,7 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
             Py_DECREF(seen);
             return NULL;
         }
-        PyList_SET_ITEM(attrs, nargs + nkwargs - i - 1, attr);
+        PyList_SET_ITEM(attrs, i, attr);
     }
     // TODO: check __match_args_required__.
     Py_DECREF(proxy);
@@ -3583,20 +3583,6 @@ main_loop:
 #else
             DISPATCH();
 #endif
-        }
-
-        case TARGET(LIST_POP): {
-            PyObject *list = TOP();
-            assert(PyList_CheckExact(list));
-            Py_ssize_t size = PyList_GET_SIZE(list);
-            assert(size > 0);
-            PyObject *popped = PyList_GET_ITEM(list, size - 1);
-            Py_INCREF(popped);
-            PUSH(popped);
-            if (PyList_SetSlice(list, size - 1, size, NULL)) {
-                goto error;
-            }
-            DISPATCH();
         }
 
         case TARGET(MATCH): {
