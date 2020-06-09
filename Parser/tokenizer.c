@@ -1346,6 +1346,16 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     /* Identifier (most frequent token!) */
     nonascii = 0;
     if (is_potential_identifier_start(c)) {
+        if (c == 'j') {
+            int d = tok_nextc(tok);
+            if (d == '{') {
+                tok->parenstack[tok->level] = d;
+                tok->parenlinenostack[tok->level] = tok->lineno;
+                tok->level++;
+                return JLBRACE;
+            }
+            tok_backup(tok, d);
+        }
         /* Process the various legal combinations of b"", r"", u"", and f"". */
         int saw_b = 0, saw_r = 0, saw_u = 0, saw_f = 0;
         while (1) {
