@@ -1,2 +1,3 @@
-A line with only a line continuation character should be considered a blank line at tokenizer level, so that only a single NEWLINE token gets
-emitted. The old parser was working around the issue, but the new parser threw a SyntaxError for valid input. For example, an empty line following a line continuation character was interpreted as a SyntaxError.
+A line with only a line continuation character should be considered a blank line at tokenizer level, so that only a
+single NEWLINE token gets emitted. The old parser was working around the issue, but the new parser threw a SyntaxError
+for valid input. For example, an empty line following a line continuation character was interpreted as a SyntaxError.
