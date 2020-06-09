@@ -152,7 +152,7 @@ atom_expr: [AWAIT] atom trailer*
 atom: ('(' [yield_expr|testlist_comp] ')' |
        '[' [testlist_comp] ']' |
        '{' [dictorsetmaker] '}' |
-       '`{' [jsondict]  '}'|
+       '`{' [jsondict]  '}' |
        NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False')
 testlist_comp: (namedexpr_test|star_expr) ( comp_for | (',' (namedexpr_test|star_expr))* [','] )
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
@@ -166,8 +166,9 @@ dictorsetmaker: ( ((test ':' test | '**' expr)
                   ((test | star_expr)
                    (comp_for | (',' (test | star_expr))* [','])) )
 
-jsondict: ((test ':' test | '**' expr)
-                    (',' (test ':' test | '**' expr))* [','])
+jsondict: ( ((NAME | NAME ':' test | '**' expr)
+                   (',' (NAME | NAME ':' test | '**' expr))* [',']))
+
 
 classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
 

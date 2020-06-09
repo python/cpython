@@ -592,6 +592,7 @@ struct compiling {
 };
 
 static asdl_seq *seq_for_testlist(struct compiling *, const node *);
+static expr_ty ast_for_atom(struct compiling *c, const node *n);
 static expr_ty ast_for_expr(struct compiling *, const node *);
 static stmt_ty ast_for_stmt(struct compiling *, const node *);
 static asdl_seq *ast_for_suite(struct compiling *c, const node *n);
@@ -2345,6 +2346,100 @@ ast_for_dictdisplay(struct compiling *c, const node *n)
                 n->n_end_lineno, n->n_end_col_offset, c->c_arena);
 }
 
+
+static int
+ast_for_jsondictelement(struct compiling *c, const node *n, int *i,
+                    expr_ty *key, expr_ty *value)
+{
+    expr_ty expression;
+printf("_________________%s, %d, %d\n", STR(CHILD(n, *i)), TYPE(CHILD(n, *i)), DOUBLESTAR);
+    if (TYPE(CHILD(n, *i)) == DOUBLESTAR) {
+        assert(NCH(n) - *i >= 2);
+
+        expression = ast_for_expr(c, CHILD(n, *i + 1));
+        if (!expression)
+            return 0;
+        *key = NULL;
+        *value = expression;
+
+        *i += 2;
+    }
+    else {
+        identifier name;
+        assert(NCH(n) - *i >= 3);
+
+        name = new_identifier(STR(CHILD(n, *i)), c);
+        if (!name)
+            return NULL;
+
+        expression = Constant(name, NULL, LINENO(n), n->n_col_offset,
+                        n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+
+        if (!expression)
+            return 0;
+        *key = expression;
+
+        REQ(CHILD(n, *i + 1), COLON);
+
+        expression = ast_for_expr(c, CHILD(n, *i + 2));
+        if (!expression)
+            return 0;
+        *value = expression;
+
+        *i += 3;
+    }
+    return 1;
+}
+
+static expr_ty
+ast_for_jsondictdisplay(struct compiling *c, const node *n)
+{
+    int i;
+    int j;
+    int size;
+    asdl_seq *keys, *values;
+
+    size = (NCH(n) + 1) / 2; /* +1 in case no trailing comma */
+    keys = _Py_asdl_seq_new(size, c->c_arena);
+    if (!keys)
+        return NULL;
+
+    values = _Py_asdl_seq_new(size, c->c_arena);
+    if (!values)
+        return NULL;
+
+    j = 0;
+    for (i = 0; i < NCH(n); i++) {
+        expr_ty key, value;
+        if (NCH(n) <= (i+1) || TYPE(CHILD(n, i + 1)) == COMMA) {
+            identifier name = new_identifier(STR(CHILD(n, i)), c);
+            if (!name)
+                return NULL;
+
+            key = Constant(name, NULL, LINENO(n), n->n_col_offset,
+                            n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+
+            value = Name(name, Load, LINENO(n), n->n_col_offset,
+                        n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+
+            i += 1;
+        }
+        else {
+            if (!ast_for_jsondictelement(c, n, &i, &key, &value)) {
+                return NULL;
+            }
+        }
+        asdl_seq_SET(keys, j, key);
+        asdl_seq_SET(values, j, value);
+
+        j++;
+    }
+    keys->size = j;
+    values->size = j;
+    return Dict(keys, values, LINENO(n), n->n_col_offset,
+                n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+}
+
 static expr_ty
 ast_for_genexp(struct compiling *c, const node *n)
 {
@@ -2512,10 +2607,6 @@ ast_for_atom(struct compiling *c, const node *n)
         else {
             return copy_location(ast_for_listcomp(c, ch), n, n);
         }
-    case JLBRACE: {
-        return Constant(Py_None, NULL, LINENO(n), n->n_col_offset,
-                        n->n_end_lineno, n->n_end_col_offset, c->c_arena);
-                        }
     case LBRACE: {
         /* dictorsetmaker: ( ((test ':' test | '**' test)
          *                    (comp_for | (',' (test ':' test | '**' test))* [','])) |
@@ -2555,6 +2646,19 @@ ast_for_atom(struct compiling *c, const node *n)
                 /* It's a dictionary display. */
                 res = ast_for_dictdisplay(c, ch);
             }
+            return copy_location(res, n, n);
+        }
+    }
+    case JLBRACE: {
+        ch = CHILD(n, 1);
+        if (TYPE(ch) == RBRACE) {
+            /* It's an empty dict. */
+            return Dict(NULL, NULL, LINENO(n), n->n_col_offset,
+                        n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        }
+        else {
+            expr_ty res;
+            res = ast_for_jsondictdisplay(c, ch);
             return copy_location(res, n, n);
         }
     }
