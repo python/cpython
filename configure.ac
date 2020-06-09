@@ -4770,7 +4770,11 @@ else
 fi
 
 
-# Check for --with-libdir-name
+AC_SUBST(BINLIBDEST)
+BINLIBDEST='$(LIBDIR)/python$(VERSION)'
+
+
+# Check for --with-platlibdir
 # /usr/$LIDIRNAME/python$VERSION
 AC_SUBST(PLATLIBDIR)
 PLATLIBDIR="lib"
@@ -4787,6 +4791,7 @@ if test -n "$withval" -a "$withval" != yes -a "$withval" != no
 then
   AC_MSG_RESULT(yes)
   PLATLIBDIR="$withval"
+  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)'
 else
   AC_MSG_RESULT(no)
 fi],
