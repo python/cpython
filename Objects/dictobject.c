@@ -4473,7 +4473,9 @@ dictitems_xor(PyObject *self, PyObject *other)
     }
     key = val1 = val2 = NULL;
 
-    PyObject *remaining_pairs = PyDict_Items(temp_dict);
+    _Py_IDENTIFIER(items);
+    PyObject *remaining_pairs = _PyObject_CallMethodIdNoArgs(temp_dict,
+                                                             &PyId_items);
     if (remaining_pairs == NULL) {
         goto error;
     }
