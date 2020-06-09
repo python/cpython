@@ -1040,6 +1040,7 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
             Py_DECREF(proxy);
             return NULL;
         }
+        assert(PyTuple_CheckExact(_args));
         if (PyTuple_GET_SIZE(_args) < nargs) {
             Py_DECREF(_args);
             Py_DECREF(proxy);
@@ -3606,9 +3607,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(OLD_MATCH_MAP):
-        case TARGET(OLD_MATCH_MAP_STAR): {
-            int star = opcode == OLD_MATCH_MAP_STAR;
+        case TARGET(OLD_MATCH_MAP): {
             PyObject *keys = TOP();
             PyObject *target = SECOND();
             PyObject *values = match_map_items(tstate, target, keys);
@@ -3621,10 +3620,6 @@ main_loop:
                 Py_DECREF(target);
                 JUMPBY(oparg);
                 DISPATCH();
-            }
-            // TODO: This is inefficient:
-            if (star && PyList_Insert(values, 0, target)) {
-                goto error;
             }
             STACK_SHRINK(1);
             SET_TOP(values);

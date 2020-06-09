@@ -167,7 +167,7 @@ static void *opcode_targets[256] = {
     &&TARGET_DICT_UPDATE,
     &&TARGET_MATCH,
     &&TARGET_OLD_MATCH_MAP,
-    &&TARGET_OLD_MATCH_MAP_STAR,
+    &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&TARGET_MATCH_LEN_EQ,

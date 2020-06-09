@@ -132,7 +132,6 @@ extern "C" {
 #define DICT_UPDATE             165
 #define MATCH                   166
 #define OLD_MATCH_MAP           167
-#define OLD_MATCH_MAP_STAR      168
 #define MATCH_LEN_EQ            171
 #define MATCH_LEN_GE            172
 #define MATCH_SEQ_SLICE         173

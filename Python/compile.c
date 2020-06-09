@@ -1123,7 +1123,6 @@ stack_effect(int opcode, int oparg, int jump)
         case MATCH:
             return jump > 0 ? -4 : -3;
         case OLD_MATCH_MAP:
-        case OLD_MATCH_MAP_STAR:
             return jump > 0 ? -2 : -1;
         case MATCH_LEN_EQ:
         case MATCH_LEN_GE:
@@ -2849,7 +2848,8 @@ compiler_pattern_store(struct compiler *c, expr_ty p, int anon_ok, PyObject* nam
 static int
 compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names)
 {
-    basicblock *block, *end;
+    basicblock *block, *block_star, *end;
+    CHECK(block_star = compiler_new_block(c));
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
     asdl_seq *keys = p->v.Dict.keys;
@@ -2861,6 +2861,9 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
     if (size - star) {
         ADDOP_I(c, MATCH_LEN_GE, size - star);
         ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+    }
+    if (star) {
+        ADDOP(c, DUP_TOP);
     }
     Py_ssize_t i;
     for (i = 0; i < size - star; i++) {
@@ -2874,15 +2877,19 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
         VISIT(c, expr, asdl_seq_GET(keys, i));
     }
     ADDOP_I(c, BUILD_TUPLE, size - star);
-    // TODO: Just drop OLD_MATCH_MAP_STAR?
-    ADDOP_JREL(c, star ? OLD_MATCH_MAP_STAR : OLD_MATCH_MAP, fail);
-    for (i = 0; i < size; i++) {
+    ADDOP_JREL(c, OLD_MATCH_MAP, star ? block : fail);
+    for (i = 0; i < size - star; i++) {
         expr_ty value = asdl_seq_GET(values, i);
         ADDOP(c, LIST_POP);
-        CHECK(compiler_pattern(c, value, block, names));
+        CHECK(compiler_pattern(c, value, star ? block_star : block, names));
     }
     ADDOP(c, POP_TOP);
+    if (star) {
+        CHECK(compiler_pattern(c, asdl_seq_GET(values, size - 1), block, names));
+    }
     ADDOP_JREL(c, JUMP_FORWARD, end);
+    compiler_use_next_block(c, block_star);
+    ADDOP(c, POP_TOP);
     compiler_use_next_block(c, block);
     ADDOP(c, POP_TOP);
     ADDOP_JREL(c, JUMP_FORWARD, fail);
