@@ -3,11 +3,13 @@
    Uses the mechanism of the python binhex module
    Based on an original test by Roger E. Masse.
 """
+import importlib
 import unittest
 from test import support
 
-with support.check_warnings(('', DeprecationWarning)):
-    import binhex
+with support.check_warnings(('', DeprecationWarning)), \
+        support.CleanImport("binhex"):
+    binhex = importlib.import_module("binhex")
 
 
 class BinHexTestCase(unittest.TestCase):
