@@ -1,5 +1,5 @@
 from test.support import FS_NONASCII
-from test.support import SAVEDCWD 
+from test.support import SAVEDCWD
 from test.support import TESTFN
 from test.support import TESTFN_NONASCII
 from test.support import TESTFN_UNENCODABLE
