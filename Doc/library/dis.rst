@@ -737,14 +737,6 @@ iterations of the loop.
    by :opcode:`CALL_FUNCTION` to construct a class.
 
 
-.. opcode:: LIST_POP
-
-   TOS is a :class:`list`.  Pop the last item from it, and push it onto the
-   stack.
-
-   .. versionadded:: 3.10
-
-
 .. opcode:: SETUP_WITH (delta)
 
    This opcode performs several operations before a with block starts.  First,
@@ -1199,6 +1191,8 @@ All of the following opcodes use their arguments.
 
 .. opcode:: MATCH (delta)
 
+   TODO
+
    Pop TOS, TOS1, TOS2, and TOS3.  If TOS2 is an instance of :class:`type` and
    has a ``__match__`` method, call that method on TOS3.  The returned "proxy"
    should be non-``None``.
@@ -1216,40 +1210,44 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.10
 
 
-.. opcode:: MATCH_MAP (delta)
+.. opcode:: MATCH_MAP
 
-   Pop TOS and TOS1.  TOS is a tuple of keys.  If TOS1 is an instance of
-   :class:`collections.abc.Mapping`, push a reversed list of values mapped from
-   those keys onto the stack.  Otherwise, increment the bytecode counter by
-   ``delta``.
+   TODO
 
    .. versionadded:: 3.10
 
 
-.. opcode:: MATCH_MAP_STAR (delta)
+.. opcode:: MATCH_MAP_KEYS
 
-   Perform the same steps as :opcode:`MATCH_MAP`, but prepend a :class:`dict` of
-   the remaining items to the list of values.
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: MATCH_SEQ (delta)
-
-   Pop TOS. If it is an instance of :class:`collections.abc.Sequence`, is not an
-   :term:`iterator`, and is not an instance of
-   :class:`str`/:class:`bytes`/:class:`bytearray`, collect it into a reversed
-   list and push that onto the stack.  Otherwise, increment the bytecode counter
-   by ``delta``.
+   TODO
 
    .. versionadded:: 3.10
 
 
-.. opcode:: MATCH_SEQ_STAR (delta)
+.. opcode:: MATCH_SEQ
 
-   Pop TOS, TOS1, and TOS2.  TOS and TOS1 are int lengths.  Perform the same
-   steps as :opcode:`MATCH_SEQ` on TOS2, but fold the middle items of the result
-   list between TOS1 and -TOS2 into another, nested list.
+   TODO
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_SEQ_ITEM (i)
+
+   TODO
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_SEQ_ITEM_END (i)
+
+   TODO
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_SEQ_ITEM_SLICE (ij)
+
+   TODO
 
    .. versionadded:: 3.10
 

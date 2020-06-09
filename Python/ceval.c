@@ -929,7 +929,7 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
             goto fail;
         }
         Py_INCREF(value);
-        PyList_SET_ITEM(values, nkeys - 1 - i, value);
+        PyList_SET_ITEM(values, i, value);
         if (PyDict_DelItem(map, key)) {
             goto fail;
         }
@@ -1828,7 +1828,6 @@ main_loop:
         }
 
         case TARGET(POP_TOP): {
-            PREDICTED(POP_TOP);
             PyObject *value = POP();
             Py_DECREF(value);
             FAST_DISPATCH();
@@ -3587,7 +3586,6 @@ main_loop:
         }
 
         case TARGET(LIST_POP): {
-            PREDICTED(LIST_POP);
             PyObject *list = TOP();
             assert(PyList_CheckExact(list));
             Py_ssize_t size = PyList_GET_SIZE(list);
@@ -3621,12 +3619,10 @@ main_loop:
             }
             STACK_SHRINK(3);
             SET_TOP(attrs);
-            PREDICT(LIST_POP);
-            PREDICT(POP_TOP);
             DISPATCH();
         }
 
-        case TARGET(OLD_MATCH_MAP): {
+        case TARGET(MATCH_MAP_KEYS): {
             PyObject *keys = TOP();
             PyObject *target = SECOND();
             PyObject *values = match_map_items(tstate, target, keys);
@@ -3634,18 +3630,17 @@ main_loop:
                 if (_PyErr_Occurred(tstate)) {
                     goto error;
                 }
-                STACK_SHRINK(2);
+                Py_INCREF(Py_None);
+                SET_TOP(Py_None);
                 Py_DECREF(keys);
-                Py_DECREF(target);
-                JUMPBY(oparg);
+                Py_INCREF(Py_False);
+                PUSH(Py_False);
                 DISPATCH();
             }
-            STACK_SHRINK(1);
             SET_TOP(values);
             Py_DECREF(keys);
-            Py_DECREF(target);
-            PREDICT(LIST_POP);
-            PREDICT(POP_TOP);
+            Py_INCREF(Py_True);
+            PUSH(Py_True);
             DISPATCH();
         }
 

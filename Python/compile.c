@@ -1122,8 +1122,7 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case MATCH:
             return jump > 0 ? -4 : -3;
-        case OLD_MATCH_MAP:
-            return jump > 0 ? -2 : -1;
+        case MATCH_MAP_KEYS:
         case MATCH_LEN_EQ:
         case MATCH_LEN_GE:
         case MATCH_MAP:
@@ -2862,9 +2861,6 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
         ADDOP_I(c, MATCH_LEN_GE, size - star);
         ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     }
-    if (star) {
-        ADDOP(c, DUP_TOP);
-    }
     Py_ssize_t i;
     for (i = 0; i < size - star; i++) {
         expr_ty key = asdl_seq_GET(keys, i);
@@ -2877,15 +2873,19 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
         VISIT(c, expr, asdl_seq_GET(keys, i));
     }
     ADDOP_I(c, BUILD_TUPLE, size - star);
-    ADDOP_JREL(c, OLD_MATCH_MAP, star ? block : fail);
+    ADDOP(c, MATCH_MAP_KEYS);
+    ADDOP_JABS(c, POP_JUMP_IF_FALSE, block_star)
     for (i = 0; i < size - star; i++) {
         expr_ty value = asdl_seq_GET(values, i);
-        ADDOP(c, LIST_POP);
-        CHECK(compiler_pattern(c, value, star ? block_star : block, names));
+        ADDOP_I(c, MATCH_SEQ_ITEM, i);
+        CHECK(compiler_pattern(c, value, block_star, names));
     }
     ADDOP(c, POP_TOP);
     if (star) {
-        CHECK(compiler_pattern(c, asdl_seq_GET(values, size - 1), block, names));
+        CHECK(compiler_pattern(c, asdl_seq_GET(values, size - 1), fail, names));
+    }
+    else {
+        ADDOP(c, POP_TOP);
     }
     ADDOP_JREL(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, block_star);

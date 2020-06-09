@@ -86,6 +86,7 @@ def_op('INPLACE_TRUE_DIVIDE', 29)
 
 def_op('MATCH_SEQ', 30)
 def_op('MATCH_MAP', 31)
+def_op('MATCH_MAP_KEYS', 32)
 
 def_op('RERAISE', 48)
 def_op('WITH_EXCEPT_START', 49)
@@ -219,7 +220,6 @@ def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
 
 jrel_op('MATCH', 166)
-jrel_op('OLD_MATCH_MAP', 167)
 
 def_op('MATCH_LEN_EQ', 171)
 def_op('MATCH_LEN_GE', 172)
