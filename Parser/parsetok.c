@@ -271,8 +271,6 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
             err_ret->error = tok->done;
             break;
         }
-
-printf(">>>>>>>>>>> started: %d token: %d\n", started, type);
         if (type == ENDMARKER && started) {
             type = NEWLINE; /* Add an extra newline */
             started = 0;
@@ -350,14 +348,12 @@ printf(">>>>>>>>>>> started: %d token: %d\n", started, type);
              PyParser_AddToken(ps, (int)type, str,
                                lineno, col_offset, tok->lineno, end_col_offset,
                                &(err_ret->expected))) != E_OK) {
-printf(">>>>>>>>>>> addtoken: %d %d %d\n", type, E_DONE, err_ret->error);
             if (err_ret->error != E_DONE) {
                 PyObject_FREE(str);
                 err_ret->token = type;
             }
             break;
         }
-printf(">>>>>>>>>>> addtoken2: %d %d\n", type, err_ret->error);
     }
 
     if (err_ret->error == E_DONE) {
