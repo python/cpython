@@ -1,0 +1,20 @@
+.. bpo: 40924
+.. date: 2020-06-09-18-59-34
+.. nonce: qR_YYG
+.. release date: 2020-06-09
+.. section: Library
+
+`importlib.resources`: Reverted ``TraversableResources`` implementations
+from the built-in loaders (SourceFileLoader and ZipImporter) as it was an
+incompatible change introduced in 3.9.0 beta 2 causing through a chain of
+events for root TLS certificates to be missing.
+
+..
+
+.. bpo: 40684
+.. date: 2020-06-08-19-57-05
+.. nonce: WIY2-i
+.. section: Build
+
+``make install`` now uses the ``PLATLIBDIR`` variable for the destination
+``lib-dynload/`` directory when ``./configure --with-platlibdir`` is used.
