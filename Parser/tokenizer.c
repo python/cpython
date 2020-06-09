@@ -1203,8 +1203,9 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
             }
         }
         tok_backup(tok, c);
-        if (c == '#' || c == '\n') {
+        if (c == '#' || c == '\n' || c == '\\') {
             /* Lines with only whitespace and/or comments
+               and/or a line continuation character
                shouldn't affect the indentation and are
                not passed to the parser as NEWLINE tokens,
                except *totally* empty lines in interactive

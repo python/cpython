@@ -858,6 +858,20 @@ class SyntaxTestCase(unittest.TestCase):
                           "iterable argument unpacking follows "
                           "keyword argument unpacking")
 
+    def test_empty_line_after_linecont(self):
+        # See issue-40847
+        s = r"""\
+pass
+        \
+
+pass
+"""
+        try:
+            compile(s, '<string>', 'exec')
+        except SyntaxError:
+            self.fail("Empty line after a line continuation character is valid.")
+
+
 def test_main():
     support.run_unittest(SyntaxTestCase)
     from test import test_syntax
