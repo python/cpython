@@ -4478,11 +4478,11 @@ dictitems_xor(PyObject *self, PyObject *other)
         goto error;
     }
     if (_PySet_Update(result_set, remaining_pairs) < 0) {
-        Py_XDECREF(remaining_pairs);
+        Py_DECREF(remaining_pairs);
         goto error;
     }
-    Py_XDECREF(temp_dict);
-    Py_XDECREF(remaining_pairs);
+    Py_DECREF(temp_dict);
+    Py_DECREF(remaining_pairs);
     return result_set;
 
 error:
