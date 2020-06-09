@@ -632,6 +632,7 @@ THREADHEADERS
 LIBPL
 PY_ENABLE_SHARED
 PLATLIBDIR
+BINLIBDEST
 LIBPYTHON
 EXT_SUFFIX
 ALT_SOABI
@@ -15334,7 +15335,11 @@ else
 fi
 
 
-# Check for --with-libdir-name
+
+BINLIBDEST='$(LIBDIR)/python$(VERSION)'
+
+
+# Check for --with-platlibdir
 # /usr/$LIDIRNAME/python$VERSION
 
 PLATLIBDIR="lib"
@@ -15353,6 +15358,7 @@ then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
   PLATLIBDIR="$withval"
+  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)'
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
