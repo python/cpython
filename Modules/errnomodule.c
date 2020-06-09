@@ -608,7 +608,7 @@ errno_exec(PyObject *module)
     add_errcode("EBFONT", EBFONT, "Bad font file format");
 #endif
 #ifdef EDEADLOCK
-    add_errcode("EDEADLOCK", EDEADLOCK, "Error EDEADLOCK");
+    add_errcode("EDEADLOCK", EDEADLOCK, "File locking deadlock error");
 #endif
 #ifdef ETOOMANYREFS
     add_errcode("ETOOMANYREFS", ETOOMANYREFS, "Too many references: cannot splice");
@@ -665,19 +665,19 @@ errno_exec(PyObject *module)
     add_errcode("WSAESTALE", WSAESTALE, "Stale NFS file handle");
 #endif
 #ifdef WSAVERNOTSUPPORTED
-    add_errcode("WSAVERNOTSUPPORTED", WSAVERNOTSUPPORTED, "Error WSAVERNOTSUPPORTED");
+    add_errcode("WSAVERNOTSUPPORTED", WSAVERNOTSUPPORTED, "Winsock.dll version out of range.");
 #endif
 #ifdef WSAENETUNREACH
     add_errcode("WSAENETUNREACH", WSAENETUNREACH, "Network is unreachable");
 #endif
 #ifdef WSAEPROCLIM
-    add_errcode("WSAEPROCLIM", WSAEPROCLIM, "Error WSAEPROCLIM");
+    add_errcode("WSAEPROCLIM", WSAEPROCLIM, "Too many processes.");
 #endif
 #ifdef WSAEFAULT
     add_errcode("WSAEFAULT", WSAEFAULT, "Bad address");
 #endif
 #ifdef WSANOTINITIALISED
-    add_errcode("WSANOTINITIALISED", WSANOTINITIALISED, "Error WSANOTINITIALISED");
+    add_errcode("WSANOTINITIALISED", WSANOTINITIALISED, "Successful WSAStartup not yet performed.");
 #endif
 #ifdef WSAEUSERS
     add_errcode("WSAEUSERS", WSAEUSERS, "Too many users");
@@ -737,7 +737,7 @@ errno_exec(PyObject *module)
     add_errcode("WSAENOBUFS", WSAENOBUFS, "No buffer space available");
 #endif
 #ifdef WSAEDISCON
-    add_errcode("WSAEDISCON", WSAEDISCON, "Error WSAEDISCON");
+    add_errcode("WSAEDISCON", WSAEDISCON, "Graceful shutdown in progress.");
 #endif
 #ifdef WSAEINTR
     add_errcode("WSAEINTR", WSAEINTR, "Interrupted system call");
@@ -761,7 +761,7 @@ errno_exec(PyObject *module)
     add_errcode("WSAEPROTONOSUPPORT", WSAEPROTONOSUPPORT, "Protocol not supported");
 #endif
 #ifdef WSASYSNOTREADY
-    add_errcode("WSASYSNOTREADY", WSASYSNOTREADY, "Error WSASYSNOTREADY");
+    add_errcode("WSASYSNOTREADY", WSASYSNOTREADY, "Network subsystem is unavailable.");
 #endif
 #ifdef WSAEWOULDBLOCK
     add_errcode("WSAEWOULDBLOCK", WSAEWOULDBLOCK, "Operation would block");
