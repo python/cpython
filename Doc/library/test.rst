@@ -634,17 +634,6 @@ The :mod:`test.support` module defines the following functions:
       self.assertEqual(captured, "hello")
 
 
-.. function:: temp_dir(path=None, quiet=False)
-
-   A context manager that creates a temporary directory at *path* and
-   yields the directory.
-
-   If *path* is ``None``, the temporary directory is created using
-   :func:`tempfile.mkdtemp`.  If *quiet* is ``False``, the context manager
-   raises an exception on error.  Otherwise, if *path* is specified and
-   cannot be created, only a warning is issued.
-
-
 .. function:: disable_faulthandler()
 
    A context manager that replaces ``sys.stderr`` with ``sys.__stderr__``.
@@ -1635,6 +1624,17 @@ The :mod:`test.support.os_helper` module provides support for os tests.
    If *quiet* is ``False`` and it is not possible to create or change
    the CWD, an error is raised.  Otherwise, only a warning is raised
    and the original CWD is used.
+
+
+.. function:: temp_dir(path=None, quiet=False)
+
+   A context manager that creates a temporary directory at *path* and
+   yields the directory.
+
+   If *path* is ``None``, the temporary directory is created using
+   :func:`tempfile.mkdtemp`.  If *quiet* is ``False``, the context manager
+   raises an exception on error.  Otherwise, if *path* is specified and
+   cannot be created, only a warning is issued.
 
 
 .. function:: temp_umask(umask)
