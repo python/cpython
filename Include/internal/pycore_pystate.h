@@ -11,6 +11,21 @@ extern "C" {
 #include "pycore_runtime.h"   /* PyRuntimeState */
 
 
+PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalError_TstateNULL(const char *func);
+
+static inline void
+_Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
+{
+    if (tstate == NULL) {
+        _Py_FatalError_TstateNULL(func);
+    }
+}
+
+// Call Py_FatalError() if tstate is NULL
+#define _Py_EnsureTstateNotNULL(tstate) \
+    _Py_EnsureFuncTstateNotNULL(__func__, tstate)
+
+
 /* Check if the current thread is the main thread.
    Use _Py_IsMainInterpreter() to check if it's the main interpreter. */
 static inline int
@@ -53,6 +68,7 @@ _Py_ThreadCanHandlePendingCalls(void)
 PyAPI_FUNC(PyThreadState*) _PyThreadState_GetTSS(void);
 #endif
 
+
 static inline PyThreadState*
 _PyRuntimeState_GetThreadState(_PyRuntimeState *runtime)
 {
@@ -62,6 +78,32 @@ _PyRuntimeState_GetThreadState(_PyRuntimeState *runtime)
     return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->gilstate.tstate_current);
 #endif
 }
+
+
+static inline PyInterpreterState*
+_PyRuntimeState_GetInterpreter(_PyRuntimeState *runtime)
+{
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+#ifdef Py_DEBUG
+    _Py_EnsureTstateNotNULL(tstate);
+#endif
+    return tstate->interp;
+#else
+    PyInterpreterState* interp;
+    interp = (PyInterpreterState*)_Py_atomic_load_relaxed(&runtime->gilstate.interp_current);
+#ifdef Py_DEBUG
+    if (interp == NULL) {
+        _Py_FatalErrorFunc(__func__,
+                           "the function must be called with the GIL held, "
+                           "but the GIL is released "
+                           "(the current Python interpreter is NULL)");
+    }
+#endif
+    return interp;
+#endif
+}
+
 
 /* Get the current Python thread state.
 
@@ -86,20 +128,6 @@ _PyThreadState_GET(void)
 #undef PyThreadState_GET
 #define PyThreadState_GET() _PyThreadState_GET()
 
-PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalError_TstateNULL(const char *func);
-
-static inline void
-_Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
-{
-    if (tstate == NULL) {
-        _Py_FatalError_TstateNULL(func);
-    }
-}
-
-// Call Py_FatalError() if tstate is NULL
-#define _Py_EnsureTstateNotNULL(tstate) \
-    _Py_EnsureFuncTstateNotNULL(__func__, tstate)
-
 
 /* Get the current interpreter state.
 
@@ -110,11 +138,7 @@ _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
    See also _PyInterpreterState_Get()
    and _PyGILState_GetInterpreterStateUnsafe(). */
 static inline PyInterpreterState* _PyInterpreterState_GET(void) {
-    PyThreadState *tstate = _PyThreadState_GET();
-#ifdef Py_DEBUG
-    _Py_EnsureTstateNotNULL(tstate);
-#endif
-    return tstate->interp;
+    return _PyRuntimeState_GetInterpreter(&_PyRuntime);
 }
 
 

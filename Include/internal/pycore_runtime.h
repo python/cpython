@@ -33,6 +33,9 @@ struct _gilstate_runtime_state {
     /* Assuming the current thread holds the GIL, this is the
        PyThreadState for the current thread. */
     _Py_atomic_address tstate_current;
+    /* Assuming the current thread holds the GIL, this is the
+       PyInterpreterState of tstate_current. */
+    _Py_atomic_address interp_current;
     /* The single PyInterpreterState used by this process'
        GILState implementation
     */
