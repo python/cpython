@@ -2352,7 +2352,6 @@ ast_for_jsondictelement(struct compiling *c, const node *n, int *i,
                     expr_ty *key, expr_ty *value)
 {
     expr_ty expression;
-printf("_________________%s, %d, %d\n", STR(CHILD(n, *i)), TYPE(CHILD(n, *i)), DOUBLESTAR);
     if (TYPE(CHILD(n, *i)) == DOUBLESTAR) {
         assert(NCH(n) - *i >= 2);
 

@@ -240,7 +240,6 @@ PyParser_AddToken(parser_state *ps, int type, char *str,
 
     /* Find out which label this token is */
     ilabel = classify(ps, type, str);
-printf("ilabel: %d\n", ilabel);
     if (ilabel < 0)
         return E_SYNTAX;
 
