@@ -468,7 +468,7 @@ class TraversableResources(ResourceReader):
         raise FileNotFoundError(resource)
 
     def is_resource(self, path):
-        return self.files().joinpath(path).is_file()
+        return self.files().joinpath(path).isfile()
 
     def contents(self):
         return (item.name for item in self.files().iterdir())
