@@ -4457,7 +4457,7 @@ dictitems_xor(PyObject *self, PyObject *other)
             }
         }
         else {
-            PyObject *pair = Py_BuildValue("(OO)", key, val2);
+            PyObject *pair = PyTuple_Pack(2, key, val2);
             if (pair == NULL) {
                 goto error;
             }
