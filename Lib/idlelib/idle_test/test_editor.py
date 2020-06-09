@@ -209,21 +209,21 @@ class IndentAndNewlineTest(unittest.TestCase):
         eq(p().code, "")
 
         # Two lines with block opener.
-        insert("  def f1(self, a, b):\n    return a + b\n")
+        insert(text, "  def f1(self, a, b):\n    return a + b\n")
         eq(p().code, "    return a + b\n")
 
         # No newline in code.
-        insert("  def f1(")
+        insert(text, "  def f1(")
         eq(p(lineend=" \n").code, "  def f1( \n")
 
         # Two lines without block opener.
         code = ("a = 1\n"
                 "b = 2\n")
-        insert(code)
+        insert(text, code)
         eq(p().code, code)
 
         # No newline in code.
-        insert("  def f1(")
+        insert(text, "  def f1(")
         eq(p(lineend=" \n").code, "  def f1( \n")
 
     def test_parser_shell(self):
@@ -235,26 +235,26 @@ class IndentAndNewlineTest(unittest.TestCase):
 
         # One line with block opener.
         code = (">>> def f1(self, a, b):\n")
-        insert(code)
+        insert(text, code)
         text.tag_add("console", "1.0", "1.4")
         # The prompt is removed with the parser.
         eq(p().code, code[4:])
 
         # Two lines with block opener parses everything but prompt.
         code = (">>>   def f1(self, a, b):\n       return a + b\n")
-        insert(code)
+        insert(text, code)
         text.tag_add("console", "1.0", "1.4")
         eq(p().code, code[4:])
 
         # Two lines without block opener.
         code = (">>> a = 1\n"
                 ">>> b = 2\n")
-        insert(code)
+        insert(text, code)
         text.tag_add("console", "2.0", "2.4")
         eq(p().code, "b = 2\n")
 
         # No newline in code.
-        insert(">>>   def f1(")
+        insert(text, ">>>   def f1(")
         text.tag_add("console", "1.0", "1.4")
         eq(p(lineend=" \n").code, "  def f1( \n")
 
