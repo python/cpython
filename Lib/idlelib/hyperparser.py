@@ -23,7 +23,7 @@ _IS_ASCII_ID_FIRST_CHAR = \
 
 
 class HyperParser:
-    def __init__(self, editwin, index):
+    def __init__(self, editwin, index, end_at_eol=True):
         "To initialize, analyze the surroundings of the given index."
 
         self.editwin = editwin
@@ -39,7 +39,7 @@ class HyperParser:
             for context in editwin.num_context_lines:
                 startat = max(lno - context, 1)
                 startatindex = repr(startat) + ".0"
-                stopatindex = "%d.end" % lno
+                stopatindex = "%d.end" % lno if end_at_eol else "end-1c"
                 # We add the newline because PyParse requires a newline
                 # at end. We add a space so that index won't be at end
                 # of line, so that its status will be the same as the
@@ -56,7 +56,14 @@ class HyperParser:
                 startatindex = r[1]
             else:
                 startatindex = "1.0"
-            stopatindex = "%d.end" % lno
+            if end_at_eol:
+                stopatindex = "%d.end" % lno
+            else:
+                r = text.tag_nextrange("console", index)
+                if r:
+                    stopatindex = text.index(r[0] + "-1c")
+                else:
+                    stopatindex = "end-1c"
             # We add the newline because PyParse requires it. We add a
             # space so that index won't be at end of line, so that its
             # status will be the same as the char before it, if should.
@@ -119,10 +126,11 @@ class HyperParser:
         If the index given to the HyperParser is surrounded by a
         bracket defined in openers (or at least has one before it),
         return the indices of the opening bracket and the closing
-        bracket (or the end of line, whichever comes first).
+        bracket (or the end of line/file, whichever comes first).
 
-        If it is not surrounded by brackets, or the end of line comes
-        before the closing bracket and mustclose is True, returns None.
+        If it is not surrounded by brackets, or the end of line/file
+        comes before the closing bracket and mustclose is True, returns
+        None.
         """
 
         bracketinglevel = self.bracketing[self.indexbracket][1]

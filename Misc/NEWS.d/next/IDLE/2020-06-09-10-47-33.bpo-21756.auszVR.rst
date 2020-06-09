@@ -1,0 +1,1 @@
+Fixed IDLE's "show surrounding parens" for multi-line statements.

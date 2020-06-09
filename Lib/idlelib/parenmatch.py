@@ -75,8 +75,8 @@ class ParenMatch:
 
     def flash_paren_event(self, event):
         "Handle editor 'show surrounding parens' event (menu or shortcut)."
-        indices = (HyperParser(self.editwin, "insert")
-                   .get_surrounding_brackets())
+        hp = HyperParser(self.editwin, "insert", end_at_eol=False)
+        indices = hp.get_surrounding_brackets()
         self.finish_paren_event(indices)
         return "break"
 
