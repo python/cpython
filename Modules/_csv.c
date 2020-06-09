@@ -147,13 +147,6 @@ get_dialect_from_registry(PyObject * name_obj)
 }
 
 static PyObject *
-get_string(PyObject *str)
-{
-    Py_XINCREF(str);
-    return str;
-}
-
-static PyObject *
 get_nullchar_as_None(Py_UCS4 c)
 {
     if (c == '\0') {
@@ -166,7 +159,8 @@ get_nullchar_as_None(Py_UCS4 c)
 static PyObject *
 Dialect_get_lineterminator(DialectObj *self, void *Py_UNUSED(ignored))
 {
-    return get_string(self->lineterminator);
+    Py_XINCREF(self->lineterminator);
+    return self->lineterminator;
 }
 
 static PyObject *
