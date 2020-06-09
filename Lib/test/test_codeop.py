@@ -297,7 +297,7 @@ class CodeopTests(unittest.TestCase):
     def test_warning(self):
         # Test that the warning is only returned once.
         with support.check_warnings((".*invalid", DeprecationWarning)) as w:
-            compile_command("\e")
+            compile_command("'\e'")
             self.assertEqual(len(w.warnings), 1)
 
 if __name__ == "__main__":
