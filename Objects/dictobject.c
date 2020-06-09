@@ -4431,6 +4431,10 @@ dictitems_xor(PyObject *self, PyObject *other)
     Py_ssize_t pos = 0;
     Py_hash_t hash;
 
+    /* For each pair in d2:
+           if there's a matching pair in temp_dict, delete it from temp_dict.
+           otherwise, add the pair to the result set.
+     */
     while (_PyDict_Next(d2, &pos, &key, &val2, &hash)) {
         Py_INCREF(key);
         Py_INCREF(val2);
@@ -4471,18 +4475,27 @@ dictitems_xor(PyObject *self, PyObject *other)
         Py_XDECREF(val1);
         Py_DECREF(val2);
     }
-    key = val1 = val2 = NULL;
 
-    PyObject *remaining_pairs = PyDict_Items(temp_dict);
-    if (remaining_pairs == NULL) {
-        goto error;
+    /* Transfer over the pairs that were not deleted from temp_dict. */
+    pos = 0;
+    key = val1 = val2 = NULL;
+    while (_PyDict_Next(temp_dict, &pos, &key, &val1, &hash)) {
+        Py_INCREF(key);
+        Py_INCREF(val1);
+        PyObject *pair = PyTuple_Pack(2, key, val1);
+        if (pair == NULL) {
+            goto error;
+        }
+        if (PySet_Add(result_set, pair) < 0) {
+            Py_DECREF(pair);
+            goto error;
+        }
+        Py_DECREF(pair);
+        Py_DECREF(key);
+        Py_DECREF(val1);
     }
-    if (_PySet_Update(result_set, remaining_pairs) < 0) {
-        Py_DECREF(remaining_pairs);
-        goto error;
-    }
+
     Py_DECREF(temp_dict);
-    Py_DECREF(remaining_pairs);
     return result_set;
 
 error:
