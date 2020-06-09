@@ -30,8 +30,6 @@ listnode(FILE *fp, node *n)
 static void
 list1node(FILE *fp, node *n)
 {
-    PyInterpreterState *interp;
-
     if (n == NULL)
         return;
     if (ISNONTERMINAL(TYPE(n))) {
@@ -40,26 +38,28 @@ list1node(FILE *fp, node *n)
             list1node(fp, CHILD(n, i));
     }
     else if (ISTERMINAL(TYPE(n))) {
-        interp = _PyInterpreterState_GET();
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        struct _Py_parser_state *parser = &interp->parser;
         switch (TYPE(n)) {
         case INDENT:
-            interp->parser.listnode.level++;
+            parser->listnode.level++;
             break;
         case DEDENT:
-            interp->parser.listnode.level--;
+            parser->listnode.level--;
             break;
         default:
-            if (interp->parser.listnode.atbol) {
+            if (parser->listnode.atbol) {
                 int i;
-                for (i = 0; i < interp->parser.listnode.level; ++i)
+                for (i = 0; i < parser->listnode.level; ++i) {
                     fprintf(fp, "\t");
-                interp->parser.listnode.atbol = 0;
+                }
+                parser->listnode.atbol = 0;
             }
             if (TYPE(n) == NEWLINE) {
                 if (STR(n) != NULL)
                     fprintf(fp, "%s", STR(n));
                 fprintf(fp, "\n");
-                interp->parser.listnode.atbol = 1;
+                parser->listnode.atbol = 1;
             }
             else
                 fprintf(fp, "%s ", STR(n));

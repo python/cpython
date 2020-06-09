@@ -2029,8 +2029,8 @@ finally:
 void
 _PyTrash_deposit_object(PyObject *op)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    struct _gc_runtime_state *gcstate = &tstate->interp->gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _gc_runtime_state *gcstate = &interp->gc;
 
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
@@ -2057,8 +2057,8 @@ _PyTrash_thread_deposit_object(PyObject *op)
 void
 _PyTrash_destroy_chain(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    struct _gc_runtime_state *gcstate = &tstate->interp->gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _gc_runtime_state *gcstate = &interp->gc;
 
     while (gcstate->trash_delete_later) {
         PyObject *op = gcstate->trash_delete_later;

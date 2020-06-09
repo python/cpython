@@ -41,8 +41,8 @@ static PyObject *
 get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *v = (PyObject*)tstate->interp->small_ints[ival + NSMALLNEGINTS];
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *v = (PyObject*)interp->small_ints[ival + NSMALLNEGINTS];
     Py_INCREF(v);
     return v;
 }
