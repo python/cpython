@@ -233,11 +233,27 @@ class Symbol(object):
             raise ValueError("name is bound to multiple namespaces")
         return self.__namespaces[0]
 
-if __name__ == "__main__":
-    import os, sys
-    with open(sys.argv[0]) as f:
-        src = f.read()
-    mod = symtable(src, os.path.split(sys.argv[0])[1], "exec")
+def main():
+    from argparse import ArgumentParser, FileType
+    parser = ArgumentParser(prog='python -m symtable')
+    parser.add_argument('infile', type=FileType(mode='rb'), nargs='?',
+                        default='-',
+                        help='the file to show symbol table; defaults to stdin')
+    parser.add_argument('-m', '--mode', default='exec',
+                        choices=('exec', 'single', 'eval'),
+                        help='specify what kind of code must be parsed')
+    args = parser.parse_args()
+
+    with args.infile as infile:
+        source = infile.read()
+
+    mod = symtable(source, args.infile.name, args.mode)
+    available_properties = [prop for prop in dir(Symbol) if prop.startswith("is_")]
+
     for ident in mod.get_identifiers():
-        info = mod.lookup(ident)
-        print(info, info.is_local(), info.is_namespace())
+        symbol = mod.lookup(ident)
+        properties = {prop.removeprefix("is_") for prop in available_properties if getattr(symbol, prop)()}
+        print(symbol, "==>", properties)
+
+if __name__ == "__main__":
+    main()

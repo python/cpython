@@ -1,0 +1,1 @@
+Fix command line interface of :mod:`symtable`.
