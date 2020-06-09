@@ -458,13 +458,13 @@ Accessing attributes of extension types
    +-------------+------------------+-----------------------------------+
    | doc         | const char \*    | optional docstring                |
    +-------------+------------------+-----------------------------------+
-   | closure     | void \*          | optional function pointer,        |
+   | closure     | void \*          | optional pointer,                 |
    |             |                  | providing additional data for     |
    |             |                  | getter and setter                 |
    +-------------+------------------+-----------------------------------+
 
    The ``get`` function takes one :c:type:`PyObject\*` parameter (the
-   instance) and a function pointer (the associated ``closure``)::
+   instance) and a generic pointer (the associated ``closure``)::
 
       typedef PyObject *(*getter)(PyObject *, void *);
 
@@ -472,7 +472,7 @@ Accessing attributes of extension types
    on failure.
 
    ``set`` functions take two :c:type:`PyObject\*` parameters (the instance and
-   the value to be set) and a function pointer (the associated ``closure``)::
+   the value to be set) and a generic pointer (the associated ``closure``)::
 
       typedef int (*setter)(PyObject *, PyObject *, void *);
 
