@@ -839,3 +839,31 @@ defined by the module.  The specific list of defined symbols is available as
 
    .. availability:: OSX.
 
+
+.. data:: WSASYSNOTREADY
+
+   Network subsystem is unavailable.
+
+   .. availability:: Windows.
+
+
+.. data:: WSANOTINITIALISED
+
+   Successful WSAStartup not yet performed.
+
+   .. availability:: Windows.
+
+
+.. data:: WSAEDISCON
+
+   Graceful shutdown in progress.
+
+   .. availability:: Windows.
+
+
+.. data:: WSAVERNOTSUPPORTED
+
+   Winsock.dll version out of range.
+
+   .. availability:: Windows.
+
