@@ -4,6 +4,16 @@
 #  error "this header file must not be included directly"
 #endif
 
+/* These values are chosen so that all tests involve comparing to zero. */
+typedef enum _framestate {
+    FRAME_CREATED = -2,
+    FRAME_SUSPENDED = -1,
+    FRAME_EXECUTING = 0,
+    FRAME_RETURNED = 1,
+    FRAME_RAISED = 2,
+    FRAME_CLEARED = 3
+} PyFrameState;
+
 typedef struct {
     int b_type;                 /* what kind of block this is */
     int b_handler;              /* where to jump to find handler */
@@ -37,11 +47,22 @@ struct _frame {
        bytecode index. */
     int f_lineno;               /* Current line number */
     int f_iblock;               /* index in f_blockstack */
-    char f_executing;           /* whether the frame is still executing */
+    PyFrameState f_state;       /* What state the frame is in */
     PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
     PyObject *f_localsplus[1];  /* locals+stack, dynamically sized */
 };
 
+static inline int _PyFrameIsRunnable(struct _frame *f) {
+    return f->f_state < FRAME_EXECUTING;
+}
+
+static inline int _PyFrameIsExecuting(struct _frame *f) {
+    return f->f_state == FRAME_EXECUTING;
+}
+
+static inline int _PyFrameHasCompleted(struct _frame *f) {
+    return f->f_state > FRAME_EXECUTING;
+}
 
 /* Standard object interface */
 

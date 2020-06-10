@@ -352,33 +352,32 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    /* Upon the 'call' trace event of a new frame, f->f_lasti is -1 and
-     * f->f_trace is NULL, check first on the first condition.
-     * Forbidding jumps from the 'call' event of a new frame is a side effect
-     * of allowing to set f_lineno only from trace functions. */
-    if (f->f_lasti == -1) {
-        PyErr_Format(PyExc_ValueError,
-                     "can't jump from the 'call' trace event of a new frame");
-        return -1;
-    }
-
-    /* You can only do this from within a trace function, not via
-     * _getframe or similar hackery. */
-    if (!f->f_trace) {
-        PyErr_Format(PyExc_ValueError,
-                     "f_lineno can only be set by a trace function");
-        return -1;
-    }
-
     /* Forbid jumps upon a 'return' trace event (except after executing a
-     * YIELD_VALUE or YIELD_FROM opcode, f_stacktop is not NULL in that case)
+     * YIELD_VALUE or YIELD_FROM opcode)
      * and upon an 'exception' trace event.
      * Jumps from 'call' trace events have already been forbidden above for new
      * frames, so this check does not change anything for 'call' events. */
-    if (f->f_stacktop == NULL) {
-        PyErr_SetString(PyExc_ValueError,
+    switch(f->f_state) {
+        case FRAME_CREATED:
+            PyErr_Format(PyExc_ValueError,
+                     "can't jump from the 'call' trace event of a new frame");
+            return -1;
+        case FRAME_RETURNED:
+        case FRAME_RAISED:
+        case FRAME_CLEARED:
+            PyErr_SetString(PyExc_ValueError,
                 "can only jump from a 'line' trace event");
-        return -1;
+            return -1;
+        case FRAME_EXECUTING:
+        case FRAME_SUSPENDED:
+            /* You can only do this from within a trace function, not via
+            * _getframe or similar hackery. */
+            if (!f->f_trace) {
+                PyErr_Format(PyExc_ValueError,
+                            "f_lineno can only be set by a trace function");
+                return -1;
+            }
+            break;
     }
 
     int new_lineno;
@@ -665,7 +664,7 @@ frame_tp_clear(PyFrameObject *f)
      */
     PyObject **oldtop = f->f_stacktop;
     f->f_stacktop = NULL;
-    f->f_executing = 0;
+    f->f_state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
 
@@ -687,7 +686,7 @@ frame_tp_clear(PyFrameObject *f)
 static PyObject *
 frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
-    if (f->f_executing) {
+    if (_PyFrameIsExecuting(f)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot clear an executing frame");
         return NULL;
@@ -927,7 +926,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
     f->f_lasti = -1;
     f->f_lineno = code->co_firstlineno;
     f->f_iblock = 0;
-    f->f_executing = 0;
+    f->f_state = FRAME_CREATED;
     f->f_gen = NULL;
     f->f_trace_opcodes = 0;
     f->f_trace_lines = 1;

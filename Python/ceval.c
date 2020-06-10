@@ -1349,10 +1349,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         assert(f->f_lasti % sizeof(_Py_CODEUNIT) == 0);
         next_instr += f->f_lasti / sizeof(_Py_CODEUNIT) + 1;
     }
+    f->f_state = FRAME_EXECUTING;
     stack_pointer = f->f_stacktop;
     assert(stack_pointer != NULL);
     f->f_stacktop = NULL;       /* remains NULL unless yield suspends frame */
-    f->f_executing = 1;
+    f->f_state = FRAME_EXECUTING;
 
     if (co->co_opcache_flag < OPCACHE_MIN_RUNS) {
         co->co_opcache_flag++;
@@ -2076,6 +2077,7 @@ main_loop:
             retval = POP();
             assert(f->f_iblock == 0);
             assert(EMPTY());
+            f->f_state = FRAME_RETURNED;
             goto exiting;
         }
 
@@ -2246,6 +2248,7 @@ main_loop:
             /* and repeat... */
             assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
+            f->f_state = FRAME_SUSPENDED;
             goto exiting;
         }
 
@@ -2263,6 +2266,7 @@ main_loop:
             }
 
             f->f_stacktop = stack_pointer;
+            f->f_state = FRAME_SUSPENDED;
             goto exiting;
         }
 
@@ -3762,10 +3766,14 @@ error:
         /* Log traceback info. */
         PyTraceBack_Here(f);
 
-        if (tstate->c_tracefunc != NULL)
+        if (tstate->c_tracefunc != NULL) {
+            /* Temporarily set frame state to RAISED for benefit of frame.setlineno */
+            assert(f->f_state == FRAME_EXECUTING);
+            f->f_state = FRAME_RAISED;
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
                            tstate, f);
-
+            f->f_state = FRAME_EXECUTING;
+        }
 exception_unwind:
         /* Unwind stacks if an exception occurred */
         while (f->f_iblock > 0) {
@@ -3842,6 +3850,7 @@ exception_unwind:
         Py_XDECREF(o);
     }
 
+    f->f_state = FRAME_RAISED;
 exiting:
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
@@ -3863,7 +3872,6 @@ exit_eval_frame:
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(f);
     _Py_LeaveRecursiveCall(tstate);
-    f->f_executing = 0;
     tstate->frame = f->f_back;
 
     return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
