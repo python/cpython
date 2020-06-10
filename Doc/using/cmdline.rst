@@ -371,7 +371,7 @@ Miscellaneous options
    searching for a module.  Also provides information on module cleanup at exit.
 
    .. versionchanged:: 3.10
-      When running the :mod:`site` module, report the site-specific paths
+      The :mod:`site` module reports the site-specific paths
       and :file:`.pth` files being processed.
 
    See also :envvar:`PYTHONVERBOSE`.
