@@ -15,25 +15,29 @@ list, set, and tuple.
 '''
 
 __all__ = [
-    'deque',
-    'defaultdict',
-    'namedtuple',
+    'ChainMap',
+    'Counter',
+    'OrderedDict',
     'UserDict',
     'UserList',
     'UserString',
-    'Counter',
-    'OrderedDict',
-    'ChainMap',
+    'defaultdict',
+    'deque',
+    'namedtuple',
 ]
 
 import _collections_abc
-from operator import itemgetter as _itemgetter, eq as _eq
-from keyword import iskeyword as _iskeyword
-import sys as _sys
 import heapq as _heapq
-from _weakref import proxy as _proxy
-from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
+import sys as _sys
+
+from itertools import chain as _chain
+from itertools import repeat as _repeat
+from itertools import starmap as _starmap
+from keyword import iskeyword as _iskeyword
+from operator import eq as _eq
+from operator import itemgetter as _itemgetter
 from reprlib import recursive_repr as _recursive_repr
+from _weakref import proxy as _proxy
 
 try:
     from _collections import deque
@@ -755,7 +759,7 @@ class Counter(dict):
         if not self:
             return f'{self.__class__.__name__}()'
         try:
-            # dict() preserves the ordering returned by mostcommon()
+            # dict() preserves the ordering returned by most_common()
             d = dict(self.most_common())
         except TypeError:
             # handle case where values are not orderable
