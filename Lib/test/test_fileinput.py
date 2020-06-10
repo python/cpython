@@ -234,10 +234,8 @@ class FileInputTests(BaseTests, unittest.TestCase):
             pass
         # try opening in universal newline mode
         t1 = self.writeTmp(b"A\nB\r\nC\rD", mode="wb")
-        with check_warnings(('', DeprecationWarning)):
-            fi = FileInput(files=t1, mode="U")
-        with check_warnings(('', DeprecationWarning)):
-            lines = list(fi)
+        fi = FileInput(files=t1)
+        lines = list(fi)
         self.assertEqual(lines, ["A\n", "B\n", "C\n", "D"])
 
     def test_stdin_binary_mode(self):
@@ -985,10 +983,7 @@ class Test_hook_encoded(unittest.TestCase):
             self.assertEqual(lines, expected_lines)
 
         check('r', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
-        with self.assertWarns(DeprecationWarning):
-            check('rU', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
-        with self.assertWarns(DeprecationWarning):
-            check('U', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
+        check('r', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
         with self.assertRaises(ValueError):
             check('rb', ['A\n', 'B\r\n', 'C\r', 'D\u20ac'])
 

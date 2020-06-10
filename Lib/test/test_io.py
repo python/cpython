@@ -3901,16 +3901,6 @@ class MiscIOTest(unittest.TestCase):
         self.assertEqual(f.mode, "wb")
         f.close()
 
-        with support.check_warnings(('', DeprecationWarning)):
-            f = self.open(support.TESTFN, "U")
-        self.assertEqual(f.name,            support.TESTFN)
-        self.assertEqual(f.buffer.name,     support.TESTFN)
-        self.assertEqual(f.buffer.raw.name, support.TESTFN)
-        self.assertEqual(f.mode,            "U")
-        self.assertEqual(f.buffer.mode,     "rb")
-        self.assertEqual(f.buffer.raw.mode, "rb")
-        f.close()
-
         f = self.open(support.TESTFN, "w+")
         self.assertEqual(f.mode,            "w+")
         self.assertEqual(f.buffer.mode,     "rb+") # Does it really matter?

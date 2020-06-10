@@ -1089,12 +1089,6 @@ are always available.  They are listed here in alphabetical order.
    first decoded using a platform-dependent encoding or using the specified
    *encoding* if given.
 
-   There is an additional mode character permitted, ``'U'``, which no longer
-   has any effect, and is considered deprecated. It previously enabled
-   :term:`universal newlines` in text mode, which became the default behaviour
-   in Python 3.0. Refer to the documentation of the
-   :ref:`newline <open-newline-parameter>` parameter for further details.
-
    .. note::
 
       Python doesn't depend on the underlying operating system's notion of text
@@ -1250,10 +1244,6 @@ are always available.  They are listed here in alphabetical order.
       3.4
 
          * The file is now non-inheritable.
-
-   .. deprecated-removed:: 3.4 3.10
-
-      The ``'U'`` mode.
 
    .. versionchanged::
       3.5

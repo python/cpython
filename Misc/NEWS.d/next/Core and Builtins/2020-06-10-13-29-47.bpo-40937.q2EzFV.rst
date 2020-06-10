@@ -1,0 +1,2 @@
+The ``'U'`` character mode, deprecated since Python 3.4 and replaced by the
+``newline`` argument, has been removed. Pach contributed by Rémi Lapeyre.
