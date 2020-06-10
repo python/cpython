@@ -159,13 +159,6 @@ Extension types can easily be made to support weak references; see
    application without adding attributes to those objects.  This can be especially
    useful with objects that override attribute accesses.
 
-   .. note::
-
-      Caution: Because a :class:`WeakKeyDictionary` is built on top of a Python
-      dictionary, it must not change size when iterating over it.  This can be
-      difficult to ensure for a :class:`WeakKeyDictionary` because actions
-      performed by the program during iteration may cause items in the
-      dictionary to vanish "by magic" (as a side effect of garbage collection).
 
 :class:`WeakKeyDictionary` objects have an additional method that
 exposes the internal references directly.  The references are not guaranteed to
@@ -185,13 +178,6 @@ than needed.
    Mapping class that references values weakly.  Entries in the dictionary will be
    discarded when no strong reference to the value exists any more.
 
-   .. note::
-
-      Caution:  Because a :class:`WeakValueDictionary` is built on top of a Python
-      dictionary, it must not change size when iterating over it.  This can be
-      difficult to ensure for a :class:`WeakValueDictionary` because actions performed
-      by the program during iteration may cause items in the dictionary to vanish "by
-      magic" (as a side effect of garbage collection).
 
 :class:`WeakValueDictionary` objects have an additional method that has the
 same issues as the :meth:`keyrefs` method of :class:`WeakKeyDictionary`
