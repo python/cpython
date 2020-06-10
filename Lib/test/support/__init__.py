@@ -21,31 +21,16 @@ import types
 import unittest
 import warnings
 
-from .os_helper import FS_NONASCII
-from .os_helper import SAVEDCWD
-from .os_helper import TESTFN
-from .os_helper import TESTFN_NONASCII
-from .os_helper import TESTFN_UNENCODABLE
-from .os_helper import TESTFN_UNDECODABLE
-from .os_helper import TESTFN_UNICODE
-from .os_helper import can_symlink
-from .os_helper import can_xattr
-from .os_helper import change_cwd
-from .os_helper import create_empty_file
-from .os_helper import fd_count
-from .os_helper import fs_is_case_insensitive
-from .os_helper import make_bad_fd
-from .os_helper import rmdir
-from .os_helper import rmtree
-from .os_helper import skip_unless_symlink
-from .os_helper import skip_unless_xattr
-from .os_helper import temp_cwd
-from .os_helper import temp_dir
-from .os_helper import temp_umask
-from .os_helper import unlink
-from .os_helper import EnvironmentVarGuard
-from .os_helper import FakePath
-from .os_helper import _longpath
+from .os_helper import (
+    FS_NONASCII, SAVEDCWD, TESTFN, TESTFN_NONASCII,
+    TESTFN_UNENCODABLE, TESTFN_UNDECODABLE,
+    TESTFN_UNICODE, can_symlink, can_xattr,
+    change_cwd, create_empty_file, fd_count,
+    fs_is_case_insensitive, make_bad_fd, rmdir,
+    rmtree, skip_unless_symlink, skip_unless_xattr,
+    temp_cwd, temp_dir, temp_umask, unlink,
+    EnvironmentVarGuard, FakePath, _longpath)
+
 from .testresult import get_test_runner
 
 
