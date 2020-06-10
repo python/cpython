@@ -1043,11 +1043,11 @@ class ChainMap(_collections_abc.MutableMapping):
         return self
 
     def __or__(self, other):
-        if isinstance(other, _collections_abc.Mapping):
-            m = self.maps[0].copy()
-            m.update(other)
-            return self.__class__(m, *self.maps[1:])
-        return NotImplemented
+        if not isinstance(other, _collections_abc.Mapping):
+            return NotImplemented
+        m = self.copy()
+        m.maps[0].update(other)
+        return m
 
     def __ror__(self, other):
         if isinstance(other, _collections_abc.Mapping):
