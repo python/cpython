@@ -115,9 +115,9 @@ static KeywordToken *reserved_keywords[] = {
 #define finally_block_type 1037
 #define match_stmt_type 1038
 #define case_block_type 1039
-#define pattern_no_comma_type 1040
-#define pattern_type 1041
-#define guard_type 1042
+#define guard_type 1040
+#define pattern_no_comma_type 1041
+#define pattern_type 1042
 #define or_pattern_type 1043
 #define closed_pattern_type 1044
 #define name_pattern_type 1045
@@ -133,7 +133,7 @@ static KeywordToken *reserved_keywords[] = {
 #define values_pattern_type 1055
 #define items_pattern_type 1056
 #define keyword_pattern_type 1057
-#define argument_pattern_type 1058
+#define error_argument_pattern_type 1058
 #define error_star_type 1059
 #define value_pattern_type 1060
 #define key_value_pattern_type 1061
@@ -488,9 +488,9 @@ static excepthandler_ty except_block_rule(Parser *p);
 static asdl_seq* finally_block_rule(Parser *p);
 static void *match_stmt_rule(Parser *p);
 static void *case_block_rule(Parser *p);
+static void *guard_rule(Parser *p);
 static void *pattern_no_comma_rule(Parser *p);
 static expr_ty pattern_rule(Parser *p);
-static void *guard_rule(Parser *p);
 static void *or_pattern_rule(Parser *p);
 static void *closed_pattern_rule(Parser *p);
 static void *name_pattern_rule(Parser *p);
@@ -506,7 +506,7 @@ static void *name_or_attr_rule(Parser *p);
 static void *values_pattern_rule(Parser *p);
 static void *items_pattern_rule(Parser *p);
 static void *keyword_pattern_rule(Parser *p);
-static void *argument_pattern_rule(Parser *p);
+static void *error_argument_pattern_rule(Parser *p);
 static expr_ty error_star_rule(Parser *p);
 static void *value_pattern_rule(Parser *p);
 static void *key_value_pattern_rule(Parser *p);
@@ -4806,6 +4806,50 @@ case_block_rule(Parser *p)
     return _res;
 }
 
+// guard: 'if' named_expression
+static void *
+guard_rule(Parser *p)
+{
+    D(p->level++);
+    if (p->error_indicator) {
+        D(p->level--);
+        return NULL;
+    }
+    void * _res = NULL;
+    int _mark = p->mark;
+    { // 'if' named_expression
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> guard[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'if' named_expression"));
+        Token * _keyword;
+        expr_ty guard;
+        if (
+            (_keyword = _PyPegen_expect_token(p, 510))  // token='if'
+            &&
+            (guard = named_expression_rule(p))  // named_expression
+        )
+        {
+            D(fprintf(stderr, "%*c+ guard[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'if' named_expression"));
+            _res = guard;
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s guard[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'if' named_expression"));
+    }
+    _res = NULL;
+  done:
+    D(p->level--);
+    return _res;
+}
+
 // pattern_no_comma: pattern !',' | pattern ','
 static void *
 pattern_no_comma_rule(Parser *p)
@@ -4876,7 +4920,7 @@ pattern_no_comma_rule(Parser *p)
     return _res;
 }
 
-// pattern: NAME ':=' or_pattern | '(' ')' | or_pattern
+// pattern: NAME ':=' or_pattern | or_pattern
 static expr_ty
 pattern_rule(Parser *p)
 {
@@ -4935,33 +4979,6 @@ pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME ':=' or_pattern"));
     }
-    { // '(' ')'
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' ')'"));
-        Token * _literal;
-        Token * error;
-        if (
-            (error = _PyPegen_expect_token(p, 7))  // token='('
-            &&
-            (_literal = _PyPegen_expect_token(p, 8))  // token=')'
-        )
-        {
-            D(fprintf(stderr, "%*c+ pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' ')'"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( error , "tuple displays cannot be used as patterns; did you mean '[]'?" );
-            if (_res == NULL && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                D(p->level--);
-                return NULL;
-            }
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' ')'"));
-    }
     { // or_pattern
         if (p->error_indicator) {
             D(p->level--);
@@ -4980,50 +4997,6 @@ pattern_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "or_pattern"));
-    }
-    _res = NULL;
-  done:
-    D(p->level--);
-    return _res;
-}
-
-// guard: 'if' named_expression
-static void *
-guard_rule(Parser *p)
-{
-    D(p->level++);
-    if (p->error_indicator) {
-        D(p->level--);
-        return NULL;
-    }
-    void * _res = NULL;
-    int _mark = p->mark;
-    { // 'if' named_expression
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> guard[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'if' named_expression"));
-        Token * _keyword;
-        expr_ty guard;
-        if (
-            (_keyword = _PyPegen_expect_token(p, 510))  // token='if'
-            &&
-            (guard = named_expression_rule(p))  // named_expression
-        )
-        {
-            D(fprintf(stderr, "%*c+ guard[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'if' named_expression"));
-            _res = guard;
-            if (_res == NULL && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                D(p->level--);
-                return NULL;
-            }
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s guard[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'if' named_expression"));
     }
     _res = NULL;
   done:
@@ -5641,7 +5614,7 @@ constant_pattern_rule(Parser *p)
     return _res;
 }
 
-// group_pattern: '(' pattern_no_comma ')'
+// group_pattern: '(' pattern_no_comma ')' | '(' ')'
 static void *
 group_pattern_rule(Parser *p)
 {
@@ -5681,6 +5654,33 @@ group_pattern_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s group_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' pattern_no_comma ')'"));
+    }
+    { // '(' ')'
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> group_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' ')'"));
+        Token * _literal;
+        Token * error;
+        if (
+            (error = _PyPegen_expect_token(p, 7))  // token='('
+            &&
+            (_literal = _PyPegen_expect_token(p, 8))  // token=')'
+        )
+        {
+            D(fprintf(stderr, "%*c+ group_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' ')'"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( error , "tuple displays cannot be used as patterns; did you mean '[]'?" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s group_pattern[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' ')'"));
     }
     _res = NULL;
   done:
@@ -5823,8 +5823,8 @@ mapping_pattern_rule(Parser *p)
 //     | name_or_attr '(' ','.pattern+ ','? ')'
 //     | name_or_attr '(' ','.keyword_pattern+ ','? ')'
 //     | name_or_attr '(' ','.pattern+ ',' ','.keyword_pattern+ ','? ')'
-//     | name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' pattern [',' ','.argument_pattern+] ','? ')'
-//     | name_or_attr '(' [','.argument_pattern+ ','] error_star [',' ','.(argument_pattern | error_star)+] ','? ')'
+//     | name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' pattern [',' ','.error_argument_pattern+] ','? ')'
+//     | name_or_attr '(' [','.error_argument_pattern+ ','] error_star [',' ','.(error_argument_pattern | error_star)+] ','? ')'
 static void *
 class_pattern_rule(Parser *p)
 {
@@ -6027,12 +6027,12 @@ class_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s class_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "name_or_attr '(' ','.pattern+ ',' ','.keyword_pattern+ ','? ')'"));
     }
-    { // name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' pattern [',' ','.argument_pattern+] ','? ')'
+    { // name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' pattern [',' ','.error_argument_pattern+] ','? ')'
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> class_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' pattern [',' ','.argument_pattern+] ','? ')'"));
+        D(fprintf(stderr, "%*c> class_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' pattern [',' ','.error_argument_pattern+] ','? ')'"));
         asdl_seq * _gather_65_var;
         Token * _literal;
         Token * _literal_1;
@@ -6058,14 +6058,14 @@ class_pattern_rule(Parser *p)
             &&
             (error = pattern_rule(p))  // pattern
             &&
-            (_opt_var_1 = _tmp_67_rule(p), 1)  // [',' ','.argument_pattern+]
+            (_opt_var_1 = _tmp_67_rule(p), 1)  // [',' ','.error_argument_pattern+]
             &&
             (_opt_var_2 = _PyPegen_expect_token(p, 12), 1)  // ','?
             &&
             (_literal_2 = _PyPegen_expect_token(p, 8))  // token=')'
         )
         {
-            D(fprintf(stderr, "%*c+ class_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' pattern [',' ','.argument_pattern+] ','? ')'"));
+            D(fprintf(stderr, "%*c+ class_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' pattern [',' ','.error_argument_pattern+] ','? ')'"));
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( error , "positional pattern follows keyword pattern" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -6076,14 +6076,14 @@ class_pattern_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s class_pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' pattern [',' ','.argument_pattern+] ','? ')'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' pattern [',' ','.error_argument_pattern+] ','? ')'"));
     }
-    { // name_or_attr '(' [','.argument_pattern+ ','] error_star [',' ','.(argument_pattern | error_star)+] ','? ')'
+    { // name_or_attr '(' [','.error_argument_pattern+ ','] error_star [',' ','.(error_argument_pattern | error_star)+] ','? ')'
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> class_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' [','.argument_pattern+ ','] error_star [',' ','.(argument_pattern | error_star)+] ','? ')'"));
+        D(fprintf(stderr, "%*c> class_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' [','.error_argument_pattern+ ','] error_star [',' ','.(error_argument_pattern | error_star)+] ','? ')'"));
         Token * _literal;
         Token * _literal_1;
         void *_opt_var;
@@ -6099,18 +6099,18 @@ class_pattern_rule(Parser *p)
             &&
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
-            (_opt_var = _tmp_68_rule(p), 1)  // [','.argument_pattern+ ',']
+            (_opt_var = _tmp_68_rule(p), 1)  // [','.error_argument_pattern+ ',']
             &&
             (error = error_star_rule(p))  // error_star
             &&
-            (_opt_var_1 = _tmp_69_rule(p), 1)  // [',' ','.(argument_pattern | error_star)+]
+            (_opt_var_1 = _tmp_69_rule(p), 1)  // [',' ','.(error_argument_pattern | error_star)+]
             &&
             (_opt_var_2 = _PyPegen_expect_token(p, 12), 1)  // ','?
             &&
             (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
         )
         {
-            D(fprintf(stderr, "%*c+ class_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' [','.argument_pattern+ ','] error_star [',' ','.(argument_pattern | error_star)+] ','? ')'"));
+            D(fprintf(stderr, "%*c+ class_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' [','.error_argument_pattern+ ','] error_star [',' ','.(error_argument_pattern | error_star)+] ','? ')'"));
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( error , "can't use starred pattern here" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -6121,7 +6121,7 @@ class_pattern_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s class_pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "name_or_attr '(' [','.argument_pattern+ ','] error_star [',' ','.(argument_pattern | error_star)+] ','? ')'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "name_or_attr '(' [','.error_argument_pattern+ ','] error_star [',' ','.(error_argument_pattern | error_star)+] ','? ')'"));
     }
     _res = NULL;
   done:
@@ -6516,9 +6516,9 @@ keyword_pattern_rule(Parser *p)
     return _res;
 }
 
-// argument_pattern: pattern | keyword_pattern
+// error_argument_pattern: pattern | keyword_pattern
 static void *
-argument_pattern_rule(Parser *p)
+error_argument_pattern_rule(Parser *p)
 {
     D(p->level++);
     if (p->error_indicator) {
@@ -6532,18 +6532,18 @@ argument_pattern_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> argument_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "pattern"));
+        D(fprintf(stderr, "%*c> error_argument_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "pattern"));
         expr_ty pattern_var;
         if (
             (pattern_var = pattern_rule(p))  // pattern
         )
         {
-            D(fprintf(stderr, "%*c+ argument_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "pattern"));
+            D(fprintf(stderr, "%*c+ error_argument_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "pattern"));
             _res = pattern_var;
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s argument_pattern[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s error_argument_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "pattern"));
     }
     { // keyword_pattern
@@ -6551,18 +6551,18 @@ argument_pattern_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> argument_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "keyword_pattern"));
+        D(fprintf(stderr, "%*c> error_argument_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "keyword_pattern"));
         void *keyword_pattern_var;
         if (
             (keyword_pattern_var = keyword_pattern_rule(p))  // keyword_pattern
         )
         {
-            D(fprintf(stderr, "%*c+ argument_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "keyword_pattern"));
+            D(fprintf(stderr, "%*c+ error_argument_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "keyword_pattern"));
             _res = keyword_pattern_var;
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s argument_pattern[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s error_argument_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "keyword_pattern"));
     }
     _res = NULL;
@@ -21417,7 +21417,7 @@ _gather_65_rule(Parser *p)
     return _res;
 }
 
-// _tmp_67: ',' ','.argument_pattern+
+// _tmp_67: ',' ','.error_argument_pattern+
 static void *
 _tmp_67_rule(Parser *p)
 {
@@ -21428,27 +21428,27 @@ _tmp_67_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // ',' ','.argument_pattern+
+    { // ',' ','.error_argument_pattern+
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_67[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' ','.argument_pattern+"));
+        D(fprintf(stderr, "%*c> _tmp_67[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' ','.error_argument_pattern+"));
         asdl_seq * _gather_170_var;
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
-            (_gather_170_var = _gather_170_rule(p))  // ','.argument_pattern+
+            (_gather_170_var = _gather_170_rule(p))  // ','.error_argument_pattern+
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_67[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "',' ','.argument_pattern+"));
+            D(fprintf(stderr, "%*c+ _tmp_67[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "',' ','.error_argument_pattern+"));
             _res = _PyPegen_dummy_name(p, _literal, _gather_170_var);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_67[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' ','.argument_pattern+"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' ','.error_argument_pattern+"));
     }
     _res = NULL;
   done:
@@ -21456,7 +21456,7 @@ _tmp_67_rule(Parser *p)
     return _res;
 }
 
-// _tmp_68: ','.argument_pattern+ ','
+// _tmp_68: ','.error_argument_pattern+ ','
 static void *
 _tmp_68_rule(Parser *p)
 {
@@ -21467,27 +21467,27 @@ _tmp_68_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // ','.argument_pattern+ ','
+    { // ','.error_argument_pattern+ ','
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_68[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.argument_pattern+ ','"));
+        D(fprintf(stderr, "%*c> _tmp_68[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.error_argument_pattern+ ','"));
         asdl_seq * _gather_172_var;
         Token * _literal;
         if (
-            (_gather_172_var = _gather_172_rule(p))  // ','.argument_pattern+
+            (_gather_172_var = _gather_172_rule(p))  // ','.error_argument_pattern+
             &&
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_68[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "','.argument_pattern+ ','"));
+            D(fprintf(stderr, "%*c+ _tmp_68[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "','.error_argument_pattern+ ','"));
             _res = _PyPegen_dummy_name(p, _gather_172_var, _literal);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_68[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','.argument_pattern+ ','"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','.error_argument_pattern+ ','"));
     }
     _res = NULL;
   done:
@@ -21495,7 +21495,7 @@ _tmp_68_rule(Parser *p)
     return _res;
 }
 
-// _tmp_69: ',' ','.(argument_pattern | error_star)+
+// _tmp_69: ',' ','.(error_argument_pattern | error_star)+
 static void *
 _tmp_69_rule(Parser *p)
 {
@@ -21506,27 +21506,27 @@ _tmp_69_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // ',' ','.(argument_pattern | error_star)+
+    { // ',' ','.(error_argument_pattern | error_star)+
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_69[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' ','.(argument_pattern | error_star)+"));
+        D(fprintf(stderr, "%*c> _tmp_69[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' ','.(error_argument_pattern | error_star)+"));
         asdl_seq * _gather_174_var;
         Token * _literal;
         if (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
-            (_gather_174_var = _gather_174_rule(p))  // ','.(argument_pattern | error_star)+
+            (_gather_174_var = _gather_174_rule(p))  // ','.(error_argument_pattern | error_star)+
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_69[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "',' ','.(argument_pattern | error_star)+"));
+            D(fprintf(stderr, "%*c+ _tmp_69[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "',' ','.(error_argument_pattern | error_star)+"));
             _res = _PyPegen_dummy_name(p, _literal, _gather_174_var);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_69[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' ','.(argument_pattern | error_star)+"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' ','.(error_argument_pattern | error_star)+"));
     }
     _res = NULL;
   done:
@@ -27613,7 +27613,7 @@ _gather_168_rule(Parser *p)
     return _res;
 }
 
-// _loop0_171: ',' argument_pattern
+// _loop0_171: ',' error_argument_pattern
 static asdl_seq *
 _loop0_171_rule(Parser *p)
 {
@@ -27634,18 +27634,18 @@ _loop0_171_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
-    { // ',' argument_pattern
+    { // ',' error_argument_pattern
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _loop0_171[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' argument_pattern"));
+        D(fprintf(stderr, "%*c> _loop0_171[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' error_argument_pattern"));
         Token * _literal;
         void *elem;
         while (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
-            (elem = argument_pattern_rule(p))  // argument_pattern
+            (elem = error_argument_pattern_rule(p))  // error_argument_pattern
         )
         {
             _res = elem;
@@ -27671,7 +27671,7 @@ _loop0_171_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_171[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' argument_pattern"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' error_argument_pattern"));
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
@@ -27688,7 +27688,7 @@ _loop0_171_rule(Parser *p)
     return _seq;
 }
 
-// _gather_170: argument_pattern _loop0_171
+// _gather_170: error_argument_pattern _loop0_171
 static asdl_seq *
 _gather_170_rule(Parser *p)
 {
@@ -27699,27 +27699,27 @@ _gather_170_rule(Parser *p)
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
-    { // argument_pattern _loop0_171
+    { // error_argument_pattern _loop0_171
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _gather_170[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "argument_pattern _loop0_171"));
+        D(fprintf(stderr, "%*c> _gather_170[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "error_argument_pattern _loop0_171"));
         void *elem;
         asdl_seq * seq;
         if (
-            (elem = argument_pattern_rule(p))  // argument_pattern
+            (elem = error_argument_pattern_rule(p))  // error_argument_pattern
             &&
             (seq = _loop0_171_rule(p))  // _loop0_171
         )
         {
-            D(fprintf(stderr, "%*c+ _gather_170[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "argument_pattern _loop0_171"));
+            D(fprintf(stderr, "%*c+ _gather_170[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "error_argument_pattern _loop0_171"));
             _res = _PyPegen_seq_insert_in_front(p, elem, seq);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _gather_170[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "argument_pattern _loop0_171"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "error_argument_pattern _loop0_171"));
     }
     _res = NULL;
   done:
@@ -27727,7 +27727,7 @@ _gather_170_rule(Parser *p)
     return _res;
 }
 
-// _loop0_173: ',' argument_pattern
+// _loop0_173: ',' error_argument_pattern
 static asdl_seq *
 _loop0_173_rule(Parser *p)
 {
@@ -27748,18 +27748,18 @@ _loop0_173_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
-    { // ',' argument_pattern
+    { // ',' error_argument_pattern
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _loop0_173[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' argument_pattern"));
+        D(fprintf(stderr, "%*c> _loop0_173[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' error_argument_pattern"));
         Token * _literal;
         void *elem;
         while (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
-            (elem = argument_pattern_rule(p))  // argument_pattern
+            (elem = error_argument_pattern_rule(p))  // error_argument_pattern
         )
         {
             _res = elem;
@@ -27785,7 +27785,7 @@ _loop0_173_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_173[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' argument_pattern"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' error_argument_pattern"));
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
@@ -27802,7 +27802,7 @@ _loop0_173_rule(Parser *p)
     return _seq;
 }
 
-// _gather_172: argument_pattern _loop0_173
+// _gather_172: error_argument_pattern _loop0_173
 static asdl_seq *
 _gather_172_rule(Parser *p)
 {
@@ -27813,27 +27813,27 @@ _gather_172_rule(Parser *p)
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
-    { // argument_pattern _loop0_173
+    { // error_argument_pattern _loop0_173
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _gather_172[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "argument_pattern _loop0_173"));
+        D(fprintf(stderr, "%*c> _gather_172[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "error_argument_pattern _loop0_173"));
         void *elem;
         asdl_seq * seq;
         if (
-            (elem = argument_pattern_rule(p))  // argument_pattern
+            (elem = error_argument_pattern_rule(p))  // error_argument_pattern
             &&
             (seq = _loop0_173_rule(p))  // _loop0_173
         )
         {
-            D(fprintf(stderr, "%*c+ _gather_172[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "argument_pattern _loop0_173"));
+            D(fprintf(stderr, "%*c+ _gather_172[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "error_argument_pattern _loop0_173"));
             _res = _PyPegen_seq_insert_in_front(p, elem, seq);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _gather_172[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "argument_pattern _loop0_173"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "error_argument_pattern _loop0_173"));
     }
     _res = NULL;
   done:
@@ -27841,7 +27841,7 @@ _gather_172_rule(Parser *p)
     return _res;
 }
 
-// _loop0_175: ',' (argument_pattern | error_star)
+// _loop0_175: ',' (error_argument_pattern | error_star)
 static asdl_seq *
 _loop0_175_rule(Parser *p)
 {
@@ -27862,18 +27862,18 @@ _loop0_175_rule(Parser *p)
     }
     ssize_t _children_capacity = 1;
     ssize_t _n = 0;
-    { // ',' (argument_pattern | error_star)
+    { // ',' (error_argument_pattern | error_star)
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _loop0_175[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' (argument_pattern | error_star)"));
+        D(fprintf(stderr, "%*c> _loop0_175[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' (error_argument_pattern | error_star)"));
         Token * _literal;
         void *elem;
         while (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
-            (elem = _tmp_190_rule(p))  // argument_pattern | error_star
+            (elem = _tmp_190_rule(p))  // error_argument_pattern | error_star
         )
         {
             _res = elem;
@@ -27899,7 +27899,7 @@ _loop0_175_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _loop0_175[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' (argument_pattern | error_star)"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "',' (error_argument_pattern | error_star)"));
     }
     asdl_seq *_seq = _Py_asdl_seq_new(_n, p->arena);
     if (!_seq) {
@@ -27916,7 +27916,7 @@ _loop0_175_rule(Parser *p)
     return _seq;
 }
 
-// _gather_174: (argument_pattern | error_star) _loop0_175
+// _gather_174: (error_argument_pattern | error_star) _loop0_175
 static asdl_seq *
 _gather_174_rule(Parser *p)
 {
@@ -27927,27 +27927,27 @@ _gather_174_rule(Parser *p)
     }
     asdl_seq * _res = NULL;
     int _mark = p->mark;
-    { // (argument_pattern | error_star) _loop0_175
+    { // (error_argument_pattern | error_star) _loop0_175
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _gather_174[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(argument_pattern | error_star) _loop0_175"));
+        D(fprintf(stderr, "%*c> _gather_174[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(error_argument_pattern | error_star) _loop0_175"));
         void *elem;
         asdl_seq * seq;
         if (
-            (elem = _tmp_190_rule(p))  // argument_pattern | error_star
+            (elem = _tmp_190_rule(p))  // error_argument_pattern | error_star
             &&
             (seq = _loop0_175_rule(p))  // _loop0_175
         )
         {
-            D(fprintf(stderr, "%*c+ _gather_174[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "(argument_pattern | error_star) _loop0_175"));
+            D(fprintf(stderr, "%*c+ _gather_174[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "(error_argument_pattern | error_star) _loop0_175"));
             _res = _PyPegen_seq_insert_in_front(p, elem, seq);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _gather_174[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(argument_pattern | error_star) _loop0_175"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(error_argument_pattern | error_star) _loop0_175"));
     }
     _res = NULL;
   done:
@@ -28640,7 +28640,7 @@ _tmp_189_rule(Parser *p)
     return _res;
 }
 
-// _tmp_190: argument_pattern | error_star
+// _tmp_190: error_argument_pattern | error_star
 static void *
 _tmp_190_rule(Parser *p)
 {
@@ -28651,24 +28651,24 @@ _tmp_190_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // argument_pattern
+    { // error_argument_pattern
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_190[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "argument_pattern"));
-        void *argument_pattern_var;
+        D(fprintf(stderr, "%*c> _tmp_190[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "error_argument_pattern"));
+        void *error_argument_pattern_var;
         if (
-            (argument_pattern_var = argument_pattern_rule(p))  // argument_pattern
+            (error_argument_pattern_var = error_argument_pattern_rule(p))  // error_argument_pattern
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_190[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "argument_pattern"));
-            _res = argument_pattern_var;
+            D(fprintf(stderr, "%*c+ _tmp_190[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "error_argument_pattern"));
+            _res = error_argument_pattern_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_190[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "argument_pattern"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "error_argument_pattern"));
     }
     { // error_star
         if (p->error_indicator) {

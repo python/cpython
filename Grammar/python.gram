@@ -198,23 +198,18 @@ match_stmt:
 case_block:
     | "case" pattern=pattern_no_comma guard=guard? ':' body=block {
         _Py_match_case(pattern, guard, body, p->arena) }
+guard:
+    | 'if' guard=named_expression { guard }
 
 pattern_no_comma:
-    | pattern=pattern !',' {
-        pattern }
+    | pattern=pattern !',' { pattern }
     | pattern error=',' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "tuple displays cannot be used as patterns; did you mean '[...]'?") }
 
 pattern[expr_ty]:
     | target=NAME ':=' value=or_pattern {
         _Py_NamedExpr(CHECK(_PyPegen_set_expr_context(p, target, Store)), value, EXTRA) }
-    | error='(' ')' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "tuple displays cannot be used as patterns; did you mean '[]'?") }
     | or_pattern
-
-guard:
-    | 'if' guard=named_expression {
-        guard }
 
 or_pattern:
     | value=closed_pattern '|' values='|'.closed_pattern+ {
@@ -231,84 +226,69 @@ closed_pattern:
     | class_pattern
 
 name_pattern:
-    | name=NAME !('.' | '(' | '=') {
-        _PyPegen_set_expr_context(p, name, Store) }
+    | name=NAME !('.' | '(' | '=') { _PyPegen_set_expr_context(p, name, Store) }
 literal_pattern:
     | signed_number !('+' | '-')
-    | real=signed_number '+' imag=NUMBER {
-        _Py_BinOp(real, Add, imag, EXTRA) }
-    | real=signed_number '-' imag=NUMBER  {
-        _Py_BinOp(real, Sub, imag, EXTRA) }
+    | real=signed_number '+' imag=NUMBER { _Py_BinOp(real, Add, imag, EXTRA) }
+    | real=signed_number '-' imag=NUMBER  { _Py_BinOp(real, Sub, imag, EXTRA) }
     | strings
-    | 'None' {
-        _Py_Constant(Py_None, NULL, EXTRA) }
-    | 'True' {
-        _Py_Constant(Py_True, NULL, EXTRA) }
-    | 'False' {
-        _Py_Constant(Py_False, NULL, EXTRA) }
+    | 'None' { _Py_Constant(Py_None, NULL, EXTRA) }
+    | 'True' { _Py_Constant(Py_True, NULL, EXTRA) }
+    | 'False' { _Py_Constant(Py_False, NULL, EXTRA) }
 constant_pattern:
-    | '.' name=NAME !('.' | '(' | '=') {
-        name }
-    | '.'? attr=attr !('.' | '(' | '=') {
-        attr }
+    | '.' name=NAME !('.' | '(' | '=') { name }
+    | '.'? attr=attr !('.' | '(' | '=') { attr }
 group_pattern:
-    | '(' pattern=pattern_no_comma ')' {
-        pattern }
+    | '(' pattern=pattern_no_comma ')' { pattern }
+    | error='(' ')' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "tuple displays cannot be used as patterns; did you mean '[]'?") }
 sequence_pattern:
-    | '[' values=values_pattern? ']' {
-        _Py_List(values, Load, EXTRA) }
+    | '[' values=values_pattern? ']' { _Py_List(values, Load, EXTRA) }
 mapping_pattern:
     | '{' items=items_pattern? '}' {
         _Py_Dict(CHECK(_PyPegen_get_keys(p, items)), CHECK(_PyPegen_get_values(p, items)), EXTRA) }
 class_pattern:
-    | func=name_or_attr '(' ')' {
-        _Py_Call(func, NULL, NULL, EXTRA) }
+    | func=name_or_attr '(' ')' { _Py_Call(func, NULL, NULL, EXTRA) }
     | func=name_or_attr '(' args=','.pattern+ ','? ')' {
         _Py_Call(func, args, NULL, EXTRA) }
     | func=name_or_attr '(' keywords=','.keyword_pattern+ ','? ')' {
         _Py_Call(func, NULL, keywords, EXTRA) }
     | func=name_or_attr '(' args=','.pattern+ ',' keywords=','.keyword_pattern+ ','? ')' {
         _Py_Call(func, args, keywords, EXTRA) }
-    | func=name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' error=pattern [',' ','.argument_pattern+] ','? ')' {
+    | func=name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' error=pattern [',' ','.error_argument_pattern+] ','? ')' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "positional pattern follows keyword pattern") }
-    | func=name_or_attr '(' [','.argument_pattern+ ','] error=error_star [',' ','.(argument_pattern | error_star)+] ','? ')' {
+    | func=name_or_attr '(' [','.error_argument_pattern+ ','] error=error_star [',' ','.(error_argument_pattern | error_star)+] ','? ')' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "can't use starred pattern here") }
 
 signed_number:
     | NUMBER
-    | '-' number=NUMBER {
-        _Py_UnaryOp(USub, number, EXTRA) }
+    | '-' number=NUMBER { _Py_UnaryOp(USub, number, EXTRA) }
 attr:
     | value=name_or_attr '.' attr=NAME {
         _Py_Attribute(value, attr->v.Name.id, Load, EXTRA) }
 name_or_attr:
     | attr
     | NAME
+
 values_pattern:
-    | values=','.value_pattern+ ','? {
-        values }
+    | values=','.value_pattern+ ','? { values }
 items_pattern:
-    | items=','.key_value_pattern+ ','? {
-        items }
+    | items=','.key_value_pattern+ ','? { items }
 keyword_pattern:
-    | arg=NAME '=' value=or_pattern {
-        _Py_keyword(arg->v.Name.id, value, EXTRA) }
-argument_pattern:
+    | arg=NAME '=' value=or_pattern { _Py_keyword(arg->v.Name.id, value, EXTRA) }
+error_argument_pattern:
     | pattern
     | keyword_pattern
 error_star[expr_ty]:
-    | ('*' | '**') error=NAME {
-        error }
+    | ('*' | '**') error=NAME { error }
 
 value_pattern:
-    | '*' value=name_pattern {
-        _Py_Starred(value, Store, EXTRA) }
+    | '*' value=name_pattern { _Py_Starred(value, Store, EXTRA) }
     | pattern
 key_value_pattern:
     | key=(literal_pattern | constant_pattern) ':' value=or_pattern {
         _PyPegen_key_value_pair(p, key, value) }
-    | '**' value=name_pattern {
-        _PyPegen_key_value_pair(p, NULL, value) }
+    | '**' value=name_pattern { _PyPegen_key_value_pair(p, NULL, value) }
 
 return_stmt[stmt_ty]:
     | 'return' a=[star_expressions] { _Py_Return(a, EXTRA) }
