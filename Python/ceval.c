@@ -998,11 +998,12 @@ get_match_args(PyThreadState *tstate, PyObject *proxy)
 static PyObject *
 do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *type, PyObject *target)
 {
+    // TODO: Break this up:
     assert(PyLong_CheckExact(count));
     assert(PyTuple_CheckExact(kwargs));
     if (!PyType_Check(type)) {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "called match pattern must be a type; did you mean '%s'?",
+                      "called match pattern must be a type; did you mean '%s(...)'?",
                       Py_TYPE(type)->tp_name);
         return NULL;
     }
@@ -1123,16 +1124,19 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
             }
             return NULL;
         }
-        if (!PyObject_HasAttr(proxy, name)) {
-            // TODO: typo checking using __match_args__?
-            Py_DECREF(proxy);
-            Py_DECREF(args);
-            Py_DECREF(attrs);
-            Py_DECREF(seen);
-            return NULL;
-        }
         PyObject *attr = PyObject_GetAttr(proxy, name);
         if (!attr) {
+            _PyErr_Clear(tstate);
+            PyObject *_args = get_match_args(tstate, proxy);
+            if (_args) {
+                // TODO: iterate manually (and check for strings)
+                if (_args == Py_None || !PySequence_Contains(_args, name)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "match proxy %R has no attribute %R",
+                                  proxy, name);
+                }
+                Py_DECREF(_args);
+            }
             Py_DECREF(proxy);
             Py_DECREF(args);
             Py_DECREF(attrs);
