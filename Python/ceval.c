@@ -982,6 +982,9 @@ get_match_args(PyThreadState *tstate, PyObject *proxy)
     if (!ma) {
         return NULL;
     }
+    // TODO: PySequence_FAST
+    // TODO We should probably just check for string items here
+    // TODO: Allow duplicate items? Hm...
     if (PyList_CheckExact(ma)) {
         return PyList_AsTuple(ma);
     }
@@ -1046,7 +1049,7 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
                 Py_DECREF(proxy);
                 // TODO: Add expected and actual counts:
                 _PyErr_SetString(tstate, PyExc_TypeError,
-                                "too many positional matches in pattern");
+                                 "too many positional matches in pattern");
                 return NULL;
             }
             args = match_args;
@@ -1058,7 +1061,7 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
                 Py_DECREF(proxy);
                 // TODO: Add expected and actual counts:
                 _PyErr_SetString(tstate, PyExc_TypeError,
-                                "too many positional matches in pattern");
+                                 "too many positional matches in pattern");
                 return NULL;
             }
             args = PyTuple_GetSlice(match_args, 0, nargs);
@@ -1099,12 +1102,34 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
         goto error;
     }
     if (required > nargs + nkwargs) {
+        // TODO: combine with below? Use name?
         _PyErr_Format(tstate, PyExc_TypeError,
                       "not enough match arguments provided");
         goto error;
     }
     if (required > nargs) {
-        // TODO: loop over names and validate (and check for strings)
+        if (match_args == Py_None) {
+            assert(required == 1);
+            assert(!nargs);
+            // TODO: combine with above? Use name?
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "not enough match arguments provided");
+            goto error;
+        }
+        assert(PyTuple_CheckExact(match_args));
+        for (Py_ssize_t i = nargs; i < required; i++) {
+            PyObject *name = PyTuple_GET_ITEM(match_args, i);
+            int ok = PySequence_Contains(kwargs, name);
+            if (ok < 0) {
+                goto error;
+            }
+            if (!ok) {
+                // TODO: Combine with above? Use name?
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "not enough match arguments provided");
+                goto error;
+            }
+        }
     }
     PyObject *name;
     for (Py_ssize_t i = 0; i < nargs + nkwargs; i++) {
