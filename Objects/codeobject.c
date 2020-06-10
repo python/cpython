@@ -166,6 +166,14 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         return NULL;
     }
 
+    /* Make sure that code is indexable with an int, this is
+       a long running assumption in ceval.c and many parts of
+       the interpreter. */
+    if (PyBytes_GET_SIZE(code) > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "co_code larger than INT_MAX");
+        return NULL;
+    }
+
     /* Check for any inner or outer closure references */
     n_cellvars = PyTuple_GET_SIZE(cellvars);
     if (!n_cellvars && !PyTuple_GET_SIZE(freevars)) {
