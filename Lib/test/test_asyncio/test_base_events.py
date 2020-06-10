@@ -17,6 +17,7 @@ from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
 from test.support import socket_helper
+from ipaddress import IPv4Address, IPv6Address
 
 
 MOCK_ANY = mock.ANY
@@ -77,6 +78,11 @@ class BaseEventTests(test_utils.TestCase):
             (INET, DGRAM, UDP, '', ('1.2.3.4', 1)),
             base_events._ipaddr_info('1.2.3.4', 1, UNSPEC, DGRAM, UDP))
 
+        # IPv4Address
+        self.assertEqual(
+            (INET, DGRAM, UDP, '', ('1.2.3.4', 1)),
+            base_events._ipaddr_info(IPv4Address('1.2.3.4'), 1, UNSPEC, DGRAM, UDP))
+
         # Socket type STREAM implies TCP protocol.
         self.assertEqual(
             (INET, STREAM, TCP, '', ('1.2.3.4', 1)),
@@ -103,6 +109,11 @@ class BaseEventTests(test_utils.TestCase):
             self.assertEqual(
                 (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
                 base_events._ipaddr_info('::3', 1, UNSPEC, STREAM, TCP))
+
+            # IPv6Address 
+            self.assertEqual(
+                (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
+                base_events._ipaddr_info(IPv6Address('::3'), 1, UNSPEC, STREAM, TCP))
 
             # IPv6 address with family IPv4.
             self.assertIsNone(
