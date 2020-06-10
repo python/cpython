@@ -1,2 +1,6 @@
 Add support for scoped IPv6 addresses to :mod:`ipaddress`. Patch by Oleksandr 
 Pavliuk.
+
+Add new function get_close_matches_ignorecase() that provides the same functionality
+get_close_matches() provides, but on a case-insensitive basis. Patch by Brian
+Gallagher.
