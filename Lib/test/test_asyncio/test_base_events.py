@@ -110,7 +110,7 @@ class BaseEventTests(test_utils.TestCase):
                 (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
                 base_events._ipaddr_info('::3', 1, UNSPEC, STREAM, TCP))
 
-            # IPv6Address 
+            # IPv6Address
             self.assertEqual(
                 (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
                 base_events._ipaddr_info(IPv6Address('::3'), 1, UNSPEC, STREAM, TCP))
