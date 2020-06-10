@@ -13,7 +13,7 @@ Tip: to use the tab key as the completion key, call
 
 And to make completion with case insensitive, call
 
-    rlcompleter.set_case_insensitive(True)
+    rlcompleter.set_ignore_case(True)
 
 Notes:
 
@@ -192,7 +192,7 @@ class Completer:
         return matches
 
 _re_ignorecase_flags = 0
-def set_case_insensitive(option):
+def set_ignore_case(option):
     import re
     global _re_ignorecase_flags
     _re_ignorecase_flags = re.IGNORECASE if option else 0

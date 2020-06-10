@@ -141,7 +141,7 @@ class TestRlcompleter(unittest.TestCase):
         # add an additional attr for testing
         CompleteMe.SpAm = 2
         # enable the case insensitive option
-        rlcompleter.set_case_insensitive(True)
+        rlcompleter.set_ignore_case(True)
         # test globals
         self.assertEqual(self.completer.global_matches('completem'),
                          ['CompleteMe('])
@@ -149,7 +149,7 @@ class TestRlcompleter(unittest.TestCase):
         self.assertNotEqual(self.completer.attr_matches('CompleteMe.spa'),
                          ['CompleteMe.spam', 'CompleteMe.SpAm'])
         # disable the case insensitive option
-        rlcompleter.set_case_insensitive(False)
+        rlcompleter.set_ignore_case(False)
         # test globals
         self.assertNotEqual(self.completer.global_matches('completem'),
                             ['CompleteMe('])

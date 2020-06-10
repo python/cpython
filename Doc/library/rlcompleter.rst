@@ -69,7 +69,7 @@ Case Sensitivity
 You can change the Completer's default case sensitive selection to case insensitive using the following method:
 
 
-.. function:: rlcompleter.set_case_insensitive(option)
+.. function:: rlcompleter.set_ignore_case(option)
 
    Return the *None*.
 
