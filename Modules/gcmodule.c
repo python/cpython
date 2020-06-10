@@ -1043,7 +1043,7 @@ show_stats_each_generations(GCState *gcstate)
 
     for (int i = 0; i < NUM_GENERATIONS && pos < sizeof(buf); i++) {
         pos += PyOS_snprintf(buf+pos, sizeof(buf)-pos,
-                             " %"PY_FORMAT_SIZE_T"d",
+                             " %zd",
                              gc_list_size(GEN_HEAD(gcstate, i)));
     }
 
@@ -1290,8 +1290,7 @@ collect(PyThreadState *tstate, int generation,
     if (gcstate->debug & DEBUG_STATS) {
         double d = _PyTime_AsSecondsDouble(_PyTime_GetMonotonicClock() - t1);
         PySys_WriteStderr(
-            "gc: done, %" PY_FORMAT_SIZE_T "d unreachable, "
-            "%" PY_FORMAT_SIZE_T "d uncollectable, %.4fs elapsed\n",
+            "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
             n+m, n, d);
     }
 
