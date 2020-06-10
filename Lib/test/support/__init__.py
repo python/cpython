@@ -33,7 +33,6 @@ from .os_helper import can_xattr
 from .os_helper import change_cwd
 from .os_helper import create_empty_file
 from .os_helper import fd_count
-from .os_helper import findfile
 from .os_helper import fs_is_case_insensitive
 from .os_helper import make_bad_fd
 from .os_helper import rmdir
@@ -83,7 +82,7 @@ __all__ = [
     "reap_children",
     # miscellaneous
     "check_warnings", "check_no_resource_warning", "check_no_warnings",
-    "run_with_locale", "swap_item",
+    "run_with_locale", "swap_item", "findfile",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
@@ -638,6 +637,26 @@ TEST_HOME_DIR = os.path.dirname(TEST_SUPPORT_DIR)
 
 # TEST_DATA_DIR is used as a target download location for remote resources
 TEST_DATA_DIR = os.path.join(TEST_HOME_DIR, "data")
+
+
+def findfile(filename, subdir=None):
+    """Try to find a file on sys.path or in the test directory.  If it is not
+    found the argument passed to the function is returned (this does not
+    necessarily signal failure; could still be the legitimate path).
+
+    Setting *subdir* indicates a relative path to use to find the file
+    rather than looking directly in the path directories.
+    """
+    if os.path.isabs(filename):
+        return filename
+    if subdir is not None:
+        filename = os.path.join(subdir, filename)
+    path = [TEST_HOME_DIR] + sys.path
+    for dn in path:
+        fn = os.path.join(dn, filename)
+        if os.path.exists(fn): return fn
+    return filename
+
 
 def sortdict(dict):
     "Like repr(dict), but in sorted order."

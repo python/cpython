@@ -45,8 +45,8 @@ if os.name == 'nt':
         except UnicodeEncodeError:
             pass
         else:
-            print('WARNING: The filename %r CAN be encoded by the filesystem encoding (%s). '
-                  'Unicode filename tests may not be effective'
+            print('WARNING: The filename %r CAN be encoded by the filesystem '
+                  'encoding (%s). Unicode filename tests may not be effective'
                   % (TESTFN_UNENCODABLE, sys.getfilesystemencoding()))
             TESTFN_UNENCODABLE = None
 # Mac OS X denies unencodable filenames (invalid utf-8)
@@ -124,8 +124,8 @@ TESTFN_UNDECODABLE = None
 for name in (
     # b'\xff' is not decodable by os.fsdecode() with code page 932. Windows
     # accepts it to create a file or a directory, or don't accept to enter to
-    # such directory (when the bytes name is used). So test b'\xe7' first: it is
-    # not decodable from cp932.
+    # such directory (when the bytes name is used). So test b'\xe7' first:
+    # it is not decodable from cp932.
     b'\xe7w\xf0',
     # undecodable from ASCII, UTF-8
     b'\xff',
@@ -164,6 +164,8 @@ def make_bad_fd():
 
 
 _can_symlink = None
+
+
 def can_symlink():
     global _can_symlink
     if _can_symlink is not None:
@@ -180,7 +182,16 @@ def can_symlink():
     return can
 
 
+def skip_unless_symlink(test):
+    """Skip decorator for tests that require functional symlink"""
+    ok = can_symlink()
+    msg = "Requires functional symlink implementation"
+    return test if ok else unittest.skip(msg)(test)
+
+
 _can_xattr = None
+
+
 def can_xattr():
     import tempfile
     global _can_xattr
@@ -212,6 +223,7 @@ def can_xattr():
             rmdir(tmp_dir)
     _can_xattr = can
     return can
+
 
 def skip_unless_xattr(test):
     """Skip decorator for tests that require functional extended attributes"""
@@ -276,7 +288,8 @@ if sys.platform.startswith("win"):
                 try:
                     mode = os.lstat(fullname).st_mode
                 except OSError as exc:
-                    print("support.rmtree(): os.lstat(%r) failed with %s" % (fullname, exc),
+                    print("support.rmtree(): os.lstat(%r) failed with %s"
+                          % (fullname, exc),
                           file=sys.__stderr__)
                     mode = 0
                 if stat.S_ISDIR(mode):
@@ -386,6 +399,7 @@ def temp_dir(path=None, quiet=False):
         if dir_created and pid == os.getpid():
             rmtree(path)
 
+
 @contextlib.contextmanager
 def change_cwd(path, quiet=False):
     """Return a context manager that changes the current working directory.
@@ -434,42 +448,15 @@ def temp_cwd(name='tempcwd', quiet=False):
             yield cwd_dir
 
 
-def findfile(filename, subdir=None):
-    """Try to find a file on sys.path or in the test directory.  If it is not
-    found the argument passed to the function is returned (this does not
-    necessarily signal failure; could still be the legitimate path).
-
-    Setting *subdir* indicates a relative path to use to find the file
-    rather than looking directly in the path directories.
-    """
-    from test.support import TEST_HOME_DIR
-
-    if os.path.isabs(filename):
-        return filename
-    if subdir is not None:
-        filename = os.path.join(subdir, filename)
-    path = [TEST_HOME_DIR] + sys.path
-    for dn in path:
-        fn = os.path.join(dn, filename)
-        if os.path.exists(fn): return fn
-    return filename
-
-
 def create_empty_file(filename):
     """Create an empty file. If the file already exists, truncate it."""
     fd = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
     os.close(fd)
 
 
-def skip_unless_symlink(test):
-    """Skip decorator for tests that require functional symlink"""
-    ok = can_symlink()
-    msg = "Requires functional symlink implementation"
-    return test if ok else unittest.skip(msg)(test)
-
-
 def fs_is_case_insensitive(directory):
-    """Detects if the file system for the specified directory is case-insensitive."""
+    """Detects if the file system for the specified directory
+    is case-insensitive."""
     import tempfile
     with tempfile.NamedTemporaryFile(dir=directory) as base:
         base_path = base.name
@@ -534,7 +521,8 @@ def fd_count():
             for report_type in (msvcrt.CRT_WARN,
                                 msvcrt.CRT_ERROR,
                                 msvcrt.CRT_ASSERT):
-                old_modes[report_type] = msvcrt.CrtSetReportMode(report_type, 0)
+                old_modes[report_type] = msvcrt.CrtSetReportMode(report_type,
+                                                                 0)
 
     try:
         count = 0

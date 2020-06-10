@@ -452,6 +452,16 @@ The :mod:`test.support` module defines the following functions:
    Return a repr of *dict* with keys sorted.
 
 
+.. function:: findfile(filename, subdir=None)
+
+   Return the path to the file named *filename*. If no match is found
+   *filename* is returned. This does not equal a failure since it could be the
+   path to the file.
+
+   Setting *subdir* indicates a relative path to use to find the file
+   rather than looking directly in the path directories.
+
+
 .. function:: match_test(test)
 
    Match *test* to patterns set in :func:`set_match_tests`.
@@ -1565,16 +1575,6 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 .. function:: fd_count()
 
    Count the number of open file descriptors.
-
-
-.. function:: findfile(filename, subdir=None)
-
-   Return the path to the file named *filename*. If no match is found
-   *filename* is returned. This does not equal a failure since it could be the
-   path to the file.
-
-   Setting *subdir* indicates a relative path to use to find the file
-   rather than looking directly in the path directories.
 
 
 .. function:: fs_is_case_insensitive(directory)
