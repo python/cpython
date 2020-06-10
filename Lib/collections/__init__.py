@@ -1074,14 +1074,18 @@ class UserDict(_collections_abc.MutableMapping):
             self.update(kwargs)
 
     def __len__(self): return len(self.data)
+
     def __getitem__(self, key):
         if key in self.data:
             return self.data[key]
         if hasattr(self.__class__, "__missing__"):
             return self.__class__.__missing__(self, key)
         raise KeyError(key)
+
     def __setitem__(self, key, item): self.data[key] = item
+
     def __delitem__(self, key): del self.data[key]
+
     def __iter__(self):
         return iter(self.data)
 
@@ -1098,12 +1102,14 @@ class UserDict(_collections_abc.MutableMapping):
         if isinstance(other, dict):
             return self.__class__(self.data | other)
         return NotImplemented
+
     def __ror__(self, other):
         if isinstance(other, UserDict):
             return self.__class__(other.data | self.data)
         if isinstance(other, dict):
             return self.__class__(other | self.data)
         return NotImplemented
+
     def __ior__(self, other):
         if isinstance(other, UserDict):
             self.data |= other.data
@@ -1137,7 +1143,6 @@ class UserDict(_collections_abc.MutableMapping):
         for key in iterable:
             d[key] = value
         return d
-
 
 
 ################################################################################
@@ -1220,7 +1225,6 @@ class UserList(_collections_abc.MutableSequence):
             self.data.extend(other.data)
         else:
             self.data.extend(other)
-
 
 
 ################################################################################
