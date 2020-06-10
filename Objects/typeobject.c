@@ -3067,23 +3067,28 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     }
 
     /* Set type.__module__ */
-    s = strrchr(spec->name, '.');
-    if (s != NULL) {
-        int err;
-        modname = PyUnicode_FromStringAndSize(
-                spec->name, (Py_ssize_t)(s - spec->name));
-        if (modname == NULL) {
+    if (_PyDict_GetItemIdWithError(type->tp_dict, &PyId___module__) == NULL) {
+        if (PyErr_Occurred()) {
             goto fail;
         }
-        err = _PyDict_SetItemId(type->tp_dict, &PyId___module__, modname);
-        Py_DECREF(modname);
-        if (err != 0)
-            goto fail;
-    } else {
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "builtin type %.200s has no __module__ attribute",
-                spec->name))
-            goto fail;
+        s = strrchr(spec->name, '.');
+        if (s != NULL) {
+            int err;
+            modname = PyUnicode_FromStringAndSize(
+                    spec->name, (Py_ssize_t)(s - spec->name));
+            if (modname == NULL) {
+                goto fail;
+            }
+            err = _PyDict_SetItemId(type->tp_dict, &PyId___module__, modname);
+            Py_DECREF(modname);
+            if (err != 0)
+                goto fail;
+        } else {
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                    "builtin type %.200s has no __module__ attribute",
+                    spec->name))
+                goto fail;
+        }
     }
 
     return (PyObject*)res;
