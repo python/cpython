@@ -1,0 +1,6 @@
+:func:`gettext.bind_textdomain_codeset`, :func:`gettext.lgettext`,
+:func:`gettext.ldgettext`, :func:`gettext.lngettext`,
+:func:`gettext.ldngettext`, :meth:`gettext.NullTranslations.output_charset`
+and :meth:`gettext.NullTranslations.set_output_charset` have been removed.
+The codeset parameter in :func:`gettext.translation` and
+:func:`gettext.install` has been removed. Patch contributed by Rémi Lapeyre.
