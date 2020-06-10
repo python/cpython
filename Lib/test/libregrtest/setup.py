@@ -67,7 +67,7 @@ def setup_tests(ns):
     if ns.threshold is not None:
         gc.set_threshold(ns.threshold)
 
-    suppress_msvcrt_asserts(ns.verbose and ns.verbose >= 2)
+    support.suppress_msvcrt_asserts(ns.verbose and ns.verbose >= 2)
 
     support.use_resources = ns.use_resources
 
@@ -76,31 +76,6 @@ def setup_tests(ns):
         def _test_audit_hook(name, args):
             pass
         sys.addaudithook(_test_audit_hook)
-
-
-def suppress_msvcrt_asserts(verbose):
-    try:
-        import msvcrt
-    except ImportError:
-        return
-
-    msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
-                        msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
-                        msvcrt.SEM_NOGPFAULTERRORBOX|
-                        msvcrt.SEM_NOOPENFILEERRORBOX)
-    try:
-        msvcrt.CrtSetReportMode
-    except AttributeError:
-        # release build
-        return
-
-    for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-        if verbose:
-            msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
-            msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
-        else:
-            msvcrt.CrtSetReportMode(m, 0)
-
 
 
 def replace_stdout():
