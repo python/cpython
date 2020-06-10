@@ -585,7 +585,7 @@ class Counter(dict):
         >>> c = Counter(a=4, b=2)                   # a new counter from keyword args
 
         '''
-        super(Counter, self).__init__()
+        super().__init__()
         self.update(iterable, **kwds)
 
     def __missing__(self, key):
@@ -669,7 +669,8 @@ class Counter(dict):
                     for elem, count in iterable.items():
                         self[elem] = count + self_get(elem, 0)
                 else:
-                    super(Counter, self).update(iterable) # fast path when counter is empty
+                    # fast path when counter is empty
+                    super().update(iterable)
             else:
                 _count_elements(self, iterable)
         if kwds:
