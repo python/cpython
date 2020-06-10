@@ -247,41 +247,6 @@ The :mod:`test.support` module defines the following constants:
    Path for shell if not on Windows; otherwise ``None``.
 
 
-.. data:: FS_NONASCII
-
-   A non-ASCII character encodable by :func:`os.fsencode`.
-
-
-.. data:: TESTFN
-
-   Set to a name that is safe to use as the name of a temporary file.  Any
-   temporary file that is created should be closed and unlinked (removed).
-
-
-.. data:: TESTFN_UNICODE
-
-    Set to a non-ASCII name for a temporary file.
-
-
-.. data:: TESTFN_UNENCODABLE
-
-   Set to a filename (str type) that should not be able to be encoded by file
-   system encoding in strict mode.  It may be ``None`` if it's not possible to
-   generate such a filename.
-
-
-.. data:: TESTFN_UNDECODABLE
-
-   Set to a filename (bytes type) that should not be able to be decoded by
-   file system encoding in strict mode.  It may be ``None`` if it's not
-   possible to generate such a filename.
-
-
-.. data:: TESTFN_NONASCII
-
-   Set to a filename containing the :data:`FS_NONASCII` character.
-
-
 .. data:: LOOPBACK_TIMEOUT
 
    Timeout in seconds for tests using a network server listening on the network
@@ -341,11 +306,6 @@ The :mod:`test.support` module defines the following constants:
 
    See also :data:`LOOPBACK_TIMEOUT`, :data:`INTERNET_TIMEOUT` and
    :data:`SHORT_TIMEOUT`.
-
-
-.. data:: SAVEDCWD
-
-   Set to :func:`os.getcwd`.
 
 
 .. data:: PGO
@@ -449,25 +409,6 @@ The :mod:`test.support` module defines the following functions:
    Delete *name* from ``sys.modules``.
 
 
-.. function:: unlink(filename)
-
-   Call :func:`os.unlink` on *filename*.  On Windows platforms, this is
-   wrapped with a wait loop that checks for the existence fo the file.
-
-
-.. function:: rmdir(filename)
-
-   Call :func:`os.rmdir` on *filename*.  On Windows platforms, this is
-   wrapped with a wait loop that checks for the existence of the file.
-
-
-.. function:: rmtree(path)
-
-   Call :func:`shutil.rmtree` on *path* or call :func:`os.lstat` and
-   :func:`os.rmdir` to remove a path and its contents.  On Windows platforms,
-   this is wrapped with a wait loop that checks for the existence of the files.
-
-
 .. function:: make_legacy_pyc(source)
 
    Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
@@ -519,16 +460,6 @@ The :mod:`test.support` module defines the following functions:
 
    Setting *subdir* indicates a relative path to use to find the file
    rather than looking directly in the path directories.
-
-
-.. function:: create_empty_file(filename)
-
-   Create an empty file with *filename*.  If it already exists, truncate it.
-
-
-.. function:: fd_count()
-
-   Count the number of open file descriptors.
 
 
 .. function:: match_test(test)
@@ -713,47 +644,6 @@ The :mod:`test.support` module defines the following functions:
       self.assertEqual(captured, "hello")
 
 
-.. function:: temp_dir(path=None, quiet=False)
-
-   A context manager that creates a temporary directory at *path* and
-   yields the directory.
-
-   If *path* is ``None``, the temporary directory is created using
-   :func:`tempfile.mkdtemp`.  If *quiet* is ``False``, the context manager
-   raises an exception on error.  Otherwise, if *path* is specified and
-   cannot be created, only a warning is issued.
-
-
-.. function:: change_cwd(path, quiet=False)
-
-   A context manager that temporarily changes the current working
-   directory to *path* and yields the directory.
-
-   If *quiet* is ``False``, the context manager raises an exception
-   on error.  Otherwise, it issues only a warning and keeps the current
-   working directory the same.
-
-
-.. function:: temp_cwd(name='tempcwd', quiet=False)
-
-   A context manager that temporarily creates a new directory and
-   changes the current working directory (CWD).
-
-   The context manager creates a temporary directory in the current
-   directory with name *name* before temporarily changing the current
-   working directory.  If *name* is ``None``, the temporary directory is
-   created using :func:`tempfile.mkdtemp`.
-
-   If *quiet* is ``False`` and it is not possible to create or change
-   the CWD, an error is raised.  Otherwise, only a warning is raised
-   and the original CWD is used.
-
-
-.. function:: temp_umask(umask)
-
-   A context manager that temporarily sets the process umask.
-
-
 .. function:: disable_faulthandler()
 
    A context manager that replaces ``sys.stderr`` with ``sys.__stderr__``.
@@ -849,28 +739,6 @@ The :mod:`test.support` module defines the following functions:
 
    For testcase *test*, assert that the ``sys.getsizeof`` for *o* plus the GC
    header size equals *size*.
-
-
-.. function:: can_symlink()
-
-   Return ``True`` if the OS supports symbolic links, ``False``
-   otherwise.
-
-
-.. function:: can_xattr()
-
-   Return ``True`` if the OS supports xattr, ``False``
-   otherwise.
-
-
-.. decorator:: skip_unless_symlink
-
-   A decorator for running tests that require support for symbolic links.
-
-
-.. decorator:: skip_unless_xattr
-
-   A decorator for running tests that require support for xattr.
 
 
 .. decorator:: anticipate_failure(condition)
@@ -990,12 +858,6 @@ The :mod:`test.support` module defines the following functions:
 
    Decorator for tests that fill the address space.  *f* is the function to
    wrap.
-
-
-.. function:: make_bad_fd()
-
-   Create an invalid file descriptor by opening and closing a temporary file,
-   and returning its descriptor.
 
 
 .. function:: check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None)
@@ -1144,11 +1006,6 @@ The :mod:`test.support` module defines the following functions:
           return load_package_tests(os.path.dirname(__file__), *args)
 
 
-.. function:: fs_is_case_insensitive(directory)
-
-   Return ``True`` if the file system for *directory* is case-insensitive.
-
-
 .. function:: detect_api_mismatch(ref_api, other_api, *, ignore=())
 
    Returns the set of attributes, functions or methods of *ref_api* not
@@ -1241,28 +1098,6 @@ The :mod:`test.support` module defines the following classes:
    attributes on the exception is :exc:`ResourceDenied` raised.
 
 
-.. class:: EnvironmentVarGuard()
-
-   Class used to temporarily set or unset environment variables.  Instances can
-   be used as a context manager and have a complete dictionary interface for
-   querying/modifying the underlying ``os.environ``. After exit from the
-   context manager all changes to environment variables done through this
-   instance will be rolled back.
-
-   .. versionchanged:: 3.1
-      Added dictionary interface.
-
-.. method:: EnvironmentVarGuard.set(envvar, value)
-
-   Temporarily set the environment variable ``envvar`` to the value of
-   ``value``.
-
-
-.. method:: EnvironmentVarGuard.unset(envvar)
-
-   Temporarily unset the environment variable ``envvar``.
-
-
 .. class:: SuppressCrashReport()
 
    A context manager used to try to prevent crash dialog popups on tests that
@@ -1330,13 +1165,6 @@ The :mod:`test.support` module defines the following classes:
    .. method:: run(test)
 
       Run *test* and return the result.
-
-
-.. class:: FakePath(path)
-
-   Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
-   method which just returns the *path* argument.  If *path* is an exception,
-   it will be raised in :meth:`!__fspath__`.
 
 
 :mod:`test.support.socket_helper` --- Utilities for socket tests
@@ -1634,3 +1462,187 @@ The :mod:`test.support.threading_helper` module provides support for threading t
        # (to avoid reference cycles)
 
    .. versionadded:: 3.8
+
+
+:mod:`test.support.os_helper` --- Utilities for os tests
+========================================================================
+
+.. module:: test.support.os_helper
+   :synopsis: Support for os tests.
+
+The :mod:`test.support.os_helper` module provides support for os tests.
+
+.. versionadded:: 3.10
+
+
+.. data:: FS_NONASCII
+
+   A non-ASCII character encodable by :func:`os.fsencode`.
+
+
+.. data:: SAVEDCWD
+
+   Set to :func:`os.getcwd`.
+
+
+.. data:: TESTFN
+
+   Set to a name that is safe to use as the name of a temporary file.  Any
+   temporary file that is created should be closed and unlinked (removed).
+
+
+.. data:: TESTFN_NONASCII
+
+   Set to a filename containing the :data:`FS_NONASCII` character.
+
+
+.. data:: TESTFN_UNENCODABLE
+
+   Set to a filename (str type) that should not be able to be encoded by file
+   system encoding in strict mode.  It may be ``None`` if it's not possible to
+   generate such a filename.
+
+
+.. data:: TESTFN_UNDECODABLE
+
+   Set to a filename (bytes type) that should not be able to be decoded by
+   file system encoding in strict mode.  It may be ``None`` if it's not
+   possible to generate such a filename.
+
+
+.. data:: TESTFN_UNICODE
+
+    Set to a non-ASCII name for a temporary file.
+
+
+.. class:: EnvironmentVarGuard()
+
+   Class used to temporarily set or unset environment variables.  Instances can
+   be used as a context manager and have a complete dictionary interface for
+   querying/modifying the underlying ``os.environ``. After exit from the
+   context manager all changes to environment variables done through this
+   instance will be rolled back.
+
+   .. versionchanged:: 3.1
+      Added dictionary interface.
+
+
+.. class:: FakePath(path)
+
+   Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
+   method which just returns the *path* argument.  If *path* is an exception,
+   it will be raised in :meth:`!__fspath__`.
+
+
+.. method:: EnvironmentVarGuard.set(envvar, value)
+
+   Temporarily set the environment variable ``envvar`` to the value of
+   ``value``.
+
+
+.. method:: EnvironmentVarGuard.unset(envvar)
+
+   Temporarily unset the environment variable ``envvar``.
+
+
+.. function:: can_symlink()
+
+   Return ``True`` if the OS supports symbolic links, ``False``
+   otherwise.
+
+
+.. function:: can_xattr()
+
+   Return ``True`` if the OS supports xattr, ``False``
+   otherwise.
+
+
+.. function:: change_cwd(path, quiet=False)
+
+   A context manager that temporarily changes the current working
+   directory to *path* and yields the directory.
+
+   If *quiet* is ``False``, the context manager raises an exception
+   on error.  Otherwise, it issues only a warning and keeps the current
+   working directory the same.
+
+
+.. function:: create_empty_file(filename)
+
+   Create an empty file with *filename*.  If it already exists, truncate it.
+
+
+.. function:: fd_count()
+
+   Count the number of open file descriptors.
+
+
+.. function:: fs_is_case_insensitive(directory)
+
+   Return ``True`` if the file system for *directory* is case-insensitive.
+
+
+.. function:: make_bad_fd()
+
+   Create an invalid file descriptor by opening and closing a temporary file,
+   and returning its descriptor.
+
+
+.. function:: rmdir(filename)
+
+   Call :func:`os.rmdir` on *filename*.  On Windows platforms, this is
+   wrapped with a wait loop that checks for the existence of the file.
+
+
+.. function:: rmtree(path)
+
+   Call :func:`shutil.rmtree` on *path* or call :func:`os.lstat` and
+   :func:`os.rmdir` to remove a path and its contents.  On Windows platforms,
+   this is wrapped with a wait loop that checks for the existence of the files.
+
+
+.. decorator:: skip_unless_symlink
+
+   A decorator for running tests that require support for symbolic links.
+
+
+.. decorator:: skip_unless_xattr
+
+   A decorator for running tests that require support for xattr.
+
+
+.. function:: temp_cwd(name='tempcwd', quiet=False)
+
+   A context manager that temporarily creates a new directory and
+   changes the current working directory (CWD).
+
+   The context manager creates a temporary directory in the current
+   directory with name *name* before temporarily changing the current
+   working directory.  If *name* is ``None``, the temporary directory is
+   created using :func:`tempfile.mkdtemp`.
+
+   If *quiet* is ``False`` and it is not possible to create or change
+   the CWD, an error is raised.  Otherwise, only a warning is raised
+   and the original CWD is used.
+
+
+.. function:: temp_dir(path=None, quiet=False)
+
+   A context manager that creates a temporary directory at *path* and
+   yields the directory.
+
+   If *path* is ``None``, the temporary directory is created using
+   :func:`tempfile.mkdtemp`.  If *quiet* is ``False``, the context manager
+   raises an exception on error.  Otherwise, if *path* is specified and
+   cannot be created, only a warning is issued.
+
+
+.. function:: temp_umask(umask)
+
+   A context manager that temporarily sets the process umask.
+
+
+.. function:: unlink(filename)
+
+   Call :func:`os.unlink` on *filename*.  On Windows platforms, this is
+   wrapped with a wait loop that checks for the existence fo the file.

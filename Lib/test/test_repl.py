@@ -98,7 +98,11 @@ class TestInteractiveInterpreter(unittest.TestCase):
             print("before close")
             os.close(0)
         ''')
-        process = spawn_repl()
+        prepare_repl = dedent('''
+            from test.support import suppress_msvcrt_asserts
+            suppress_msvcrt_asserts()
+        ''')
+        process = spawn_repl('-c', prepare_repl)
         output = process.communicate(user_input)[0]
         self.assertEqual(process.returncode, 0)
         self.assertIn('before close', output)
