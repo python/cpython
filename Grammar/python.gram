@@ -329,7 +329,11 @@ expression[expr_ty] (memo):
     | lambdef
 
 lambdef[expr_ty]:
-    | 'lambda' a=[lambda_parameters] ':' b=expression { _Py_Lambda((a) ? a : CHECK(_PyPegen_empty_arguments(p)), b, EXTRA) }
+    | 'lambda' a=[lambda_params] ':' b=expression { _Py_Lambda((a) ? a : CHECK(_PyPegen_empty_arguments(p)), b, EXTRA) }
+
+lambda_params[arguments_ty]:
+    | invalid_lambda_parameters
+    | lambda_parameters
 
 # lambda_parameters etc. duplicates parameters but without annotations
 # or type comments, and if there's no comma after a parameter, we expect
@@ -668,6 +672,9 @@ invalid_dict_comprehension:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "dict unpacking cannot be used in dict comprehension") }
 invalid_parameters:
     | param_no_default* (slash_with_default | param_with_default+) param_no_default {
+        RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
+invalid_lambda_parameters:
+    | lambda_param_no_default* (lambda_slash_with_default | lambda_param_with_default+) lambda_param_no_default {
         RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
 invalid_star_etc:
     | '*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
