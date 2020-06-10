@@ -66,8 +66,7 @@ _Py_GetRefTotal(void)
 void
 _PyDebug_PrintTotalRefs(void) {
     fprintf(stderr,
-            "[%" PY_FORMAT_SIZE_T "d refs, "
-            "%" PY_FORMAT_SIZE_T "d blocks]\n",
+            "[%zd refs, %zd blocks]\n",
             _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
 }
 #endif /* Py_REF_DEBUG */
@@ -1876,9 +1875,10 @@ _Py_PrintReferences(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining objects:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", (void *)op, Py_REFCNT(op));
-        if (PyObject_Print(op, fp, 0) != 0)
+        fprintf(fp, "%p [%zd] ", (void *)op, Py_REFCNT(op));
+        if (PyObject_Print(op, fp, 0) != 0) {
             PyErr_Clear();
+        }
         putc('\n', fp);
     }
 }
@@ -1892,7 +1892,7 @@ _Py_PrintReferenceAddresses(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining object addresses:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", (void *)op,
+        fprintf(fp, "%p [%zd] %s\n", (void *)op,
             Py_REFCNT(op), Py_TYPE(op)->tp_name);
 }
 
