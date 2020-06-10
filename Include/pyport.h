@@ -131,7 +131,9 @@ typedef int Py_ssize_clean_t;
 /* Smallest negative value of type Py_ssize_t. */
 #define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
 
-/* PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
+/* Macro kept for backward compatibility: use "z" in new code.
+ *
+ * PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
  * format to convert an argument with the width of a size_t or Py_ssize_t.
  * C99 introduced "z" for this purpose, but old MSVCs had not supported it.
  * Since MSVC supports "z" since (at least) 2015, we can just use "z"

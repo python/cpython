@@ -256,27 +256,29 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
         }
 
         case 'd':
-            if (longflag)
+            if (longflag) {
                 sprintf(buffer, "%ld", va_arg(vargs, long));
-            else if (size_tflag)
-                sprintf(buffer, "%" PY_FORMAT_SIZE_T "d",
-                    va_arg(vargs, Py_ssize_t));
-            else
+            }
+            else if (size_tflag) {
+                sprintf(buffer, "%zd", va_arg(vargs, Py_ssize_t));
+            }
+            else {
                 sprintf(buffer, "%d", va_arg(vargs, int));
+            }
             assert(strlen(buffer) < sizeof(buffer));
             WRITE_BYTES(buffer);
             break;
 
         case 'u':
-            if (longflag)
-                sprintf(buffer, "%lu",
-                    va_arg(vargs, unsigned long));
-            else if (size_tflag)
-                sprintf(buffer, "%" PY_FORMAT_SIZE_T "u",
-                    va_arg(vargs, size_t));
-            else
-                sprintf(buffer, "%u",
-                    va_arg(vargs, unsigned int));
+            if (longflag) {
+                sprintf(buffer, "%lu", va_arg(vargs, unsigned long));
+            }
+            else if (size_tflag) {
+                sprintf(buffer, "%zu", va_arg(vargs, size_t));
+            }
+            else {
+                sprintf(buffer, "%u", va_arg(vargs, unsigned int));
+            }
             assert(strlen(buffer) < sizeof(buffer));
             WRITE_BYTES(buffer);
             break;
