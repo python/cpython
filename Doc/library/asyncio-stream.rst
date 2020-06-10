@@ -73,6 +73,9 @@ and work with streams:
 
       The *ssl_handshake_timeout* parameter.
 
+   .. versionadded:: 3.9
+      Added support for IPAddress
+
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
                           port=None, \*, loop=None, limit=None, \
                           family=socket.AF_UNSPEC, \
@@ -105,6 +108,9 @@ and work with streams:
    .. versionadded:: 3.7
 
       The *ssl_handshake_timeout* and *start_serving* parameters.
+
+   .. versionadded:: 3.9
+      Added support for IPAddress
 
 
 .. rubric:: Unix Sockets
