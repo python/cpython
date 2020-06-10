@@ -1356,19 +1356,18 @@ _PyUnicode_Dump(PyObject *op)
     }
     else
         data = unicode->data.any;
-    printf("%s: len=%" PY_FORMAT_SIZE_T "u, ",
-           unicode_kind_name(op), ascii->length);
+    printf("%s: len=%zu, ", unicode_kind_name(op), ascii->length);
 
     if (ascii->wstr == data)
         printf("shared ");
     printf("wstr=%p", (void *)ascii->wstr);
 
     if (!(ascii->state.ascii == 1 && ascii->state.compact == 1)) {
-        printf(" (%" PY_FORMAT_SIZE_T "u), ", compact->wstr_length);
-        if (!ascii->state.compact && compact->utf8 == unicode->data.any)
+        printf(" (%zu), ", compact->wstr_length);
+        if (!ascii->state.compact && compact->utf8 == unicode->data.any) {
             printf("shared ");
-        printf("utf8=%p (%" PY_FORMAT_SIZE_T "u)",
-               (void *)compact->utf8, compact->utf8_length);
+        }
+        printf("utf8=%p (%zu)", (void *)compact->utf8, compact->utf8_length);
     }
     printf(", data=%p\n", data);
 }
@@ -2845,35 +2844,35 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         Py_ssize_t arglen;
 
         if (*f == 'u') {
-            if (longflag)
-                len = sprintf(buffer, "%lu",
-                        va_arg(*vargs, unsigned long));
-            else if (longlongflag)
-                len = sprintf(buffer, "%llu",
-                        va_arg(*vargs, unsigned long long));
-            else if (size_tflag)
-                len = sprintf(buffer, "%" PY_FORMAT_SIZE_T "u",
-                        va_arg(*vargs, size_t));
-            else
-                len = sprintf(buffer, "%u",
-                        va_arg(*vargs, unsigned int));
+            if (longflag) {
+                len = sprintf(buffer, "%lu", va_arg(*vargs, unsigned long));
+            }
+            else if (longlongflag) {
+                len = sprintf(buffer, "%llu", va_arg(*vargs, unsigned long long));
+            }
+            else if (size_tflag) {
+                len = sprintf(buffer, "%zu", va_arg(*vargs, size_t));
+            }
+            else {
+                len = sprintf(buffer, "%u", va_arg(*vargs, unsigned int));
+            }
         }
         else if (*f == 'x') {
             len = sprintf(buffer, "%x", va_arg(*vargs, int));
         }
         else {
-            if (longflag)
-                len = sprintf(buffer, "%li",
-                        va_arg(*vargs, long));
-            else if (longlongflag)
-                len = sprintf(buffer, "%lli",
-                        va_arg(*vargs, long long));
-            else if (size_tflag)
-                len = sprintf(buffer, "%" PY_FORMAT_SIZE_T "i",
-                        va_arg(*vargs, Py_ssize_t));
-            else
-                len = sprintf(buffer, "%i",
-                        va_arg(*vargs, int));
+            if (longflag) {
+                len = sprintf(buffer, "%li", va_arg(*vargs, long));
+            }
+            else if (longlongflag) {
+                len = sprintf(buffer, "%lli", va_arg(*vargs, long long));
+            }
+            else if (size_tflag) {
+                len = sprintf(buffer, "%zi", va_arg(*vargs, Py_ssize_t));
+            }
+            else {
+                len = sprintf(buffer, "%i", va_arg(*vargs, int));
+            }
         }
         assert(len >= 0);
 
@@ -15657,8 +15656,7 @@ unicode_release_interned(void)
 
     Py_ssize_t n = PyList_GET_SIZE(keys);
 #ifdef INTERNED_STATS
-    fprintf(stderr, "releasing %" PY_FORMAT_SIZE_T "d interned strings\n",
-            n);
+    fprintf(stderr, "releasing %zd interned strings\n", n);
 
     Py_ssize_t immortal_size = 0, mortal_size = 0;
 #endif
@@ -15688,9 +15686,9 @@ unicode_release_interned(void)
         _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
     }
 #ifdef INTERNED_STATS
-    fprintf(stderr, "total size of all interned strings: "
-            "%" PY_FORMAT_SIZE_T "d/%" PY_FORMAT_SIZE_T "d "
-            "mortal/immortal\n", mortal_size, immortal_size);
+    fprintf(stderr,
+            "total size of all interned strings: %zd/%zd mortal/immortal\n",
+            mortal_size, immortal_size);
 #endif
     Py_DECREF(keys);
     PyDict_Clear(interned);
