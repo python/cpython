@@ -998,7 +998,7 @@ get_match_args(PyThreadState *tstate, PyObject *proxy)
 static PyObject *
 do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *type, PyObject *target)
 {
-    // TODO: Break this up:
+    // TODO: Break this up, and better error handling ("goto error;"):
     assert(PyLong_CheckExact(count));
     assert(PyTuple_CheckExact(kwargs));
     if (!PyType_Check(type)) {
@@ -1008,11 +1008,9 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
         return NULL;
     }
     PyObject *method = PyObject_GetAttrString(type, "__match__");
-    if (!method) {
-        return NULL;
-    }
-    if (method == Py_None) {
-        Py_DECREF(method);
+    if (!method || method == Py_None) {
+        Py_XDECREF(method);
+        _PyErr_Clear(tstate);
         _PyErr_Format(tstate, PyExc_TypeError,
                       "type %s cannot be matched",
                       Py_TYPE(type)->tp_name);
@@ -1035,57 +1033,78 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
     }
     nargs -= nkwargs;
     PyObject *args;
+    PyObject *match_args = get_match_args(tstate, proxy);
+    if (!match_args) {
+        Py_DECREF(proxy);
+        return NULL;
+    }
+    assert(PyTuple_CheckExact(match_args) || match_args == Py_None);
     if (nargs) {
-        PyObject *_args = get_match_args(tstate, proxy);
-        if (!_args) {
-            Py_DECREF(proxy);
-            return NULL;
-        }
-        if (_args == Py_None) {
+        if (match_args == Py_None) {
             if (nargs > 1) {
-                Py_DECREF(_args);
+                Py_DECREF(match_args);
                 Py_DECREF(proxy);
                 // TODO: Add expected and actual counts:
                 _PyErr_SetString(tstate, PyExc_TypeError,
                                 "too many positional matches in pattern");
                 return NULL;
             }
-            args = _args;
+            args = match_args;
         }
         else {
-            assert(PyTuple_CheckExact(_args));
-            if (PyTuple_GET_SIZE(_args) < nargs) {
-                Py_DECREF(_args);
+            if (PyTuple_GET_SIZE(match_args) < nargs) {
+                // TODO: Combine with above:
+                Py_DECREF(match_args);
                 Py_DECREF(proxy);
                 // TODO: Add expected and actual counts:
                 _PyErr_SetString(tstate, PyExc_TypeError,
                                 "too many positional matches in pattern");
                 return NULL;
             }
-            args = PyTuple_GetSlice(_args, 0, nargs);
-            Py_DECREF(_args);
+            args = PyTuple_GetSlice(match_args, 0, nargs);
         }
     }
     else {
         args = PyTuple_New(0);
     }
     if (!args) {
+        Py_DECREF(match_args);
         Py_DECREF(proxy);
         return NULL;
     }
     assert(PyTuple_CheckExact(args) || args == Py_None);
     PyObject *attrs = PyList_New(nargs + nkwargs);
     if (!attrs) {
+        Py_DECREF(match_args);
         Py_DECREF(proxy);
         Py_DECREF(args);
         return NULL;
     }
     PyObject *seen = PySet_New(NULL);
     if (!seen) {
+        Py_DECREF(match_args);
         Py_DECREF(proxy);
         Py_DECREF(args);
         Py_DECREF(attrs);
         return NULL;
+    }
+    Py_ssize_t required = get_match_args_required(tstate, proxy);
+    if (required < 0) {
+        goto error;
+    }
+    if ((match_args == Py_None ? 1 : PyTuple_GET_SIZE(match_args)) < required) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "__match_args_required__ is larger than __match_args__",
+                      proxy);
+        goto error;
+    }
+    if (required > nargs + nkwargs) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "not enough match arguments provided");
+        goto error;
+    }
+    if (required > nargs) {
+        // TODO: loop over names and validate (and check for strings)
     }
     PyObject *name;
     for (Py_ssize_t i = 0; i < nargs + nkwargs; i++) {
@@ -1101,12 +1120,7 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "__match_args__ elements must be str (got %s)",
                               Py_TYPE(name)->tp_name);
-                Py_DECREF(proxy);
-                Py_DECREF(args);
-                Py_DECREF(attrs);
-                Py_DECREF(seen);
-                Py_DECREF(name);
-                return NULL;
+                goto error;
             }
         }
         else {
@@ -1114,42 +1128,36 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
         }
         int dupe = PySet_Contains(seen, name);
         if (dupe || PySet_Add(seen, name)) {
-            Py_DECREF(proxy);
-            Py_DECREF(args);
-            Py_DECREF(attrs);
-            Py_DECREF(seen);
             if (!_PyErr_Occurred(tstate)) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "multiple patterns bound to attribute %R", name);
             }
-            return NULL;
+            goto error;
         }
         PyObject *attr = PyObject_GetAttr(proxy, name);
         if (!attr) {
             _PyErr_Clear(tstate);
-            PyObject *_args = get_match_args(tstate, proxy);
-            if (_args) {
-                // TODO: iterate manually (and check for strings)
-                if (_args == Py_None || !PySequence_Contains(_args, name)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "match proxy %R has no attribute %R",
-                                  proxy, name);
-                }
-                Py_DECREF(_args);
+            // TODO: iterate manually (and check for strings)
+            if (match_args == Py_None || !PySequence_Contains(match_args, name)) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "match proxy %R has no attribute %R",
+                              proxy, name);
             }
-            Py_DECREF(proxy);
-            Py_DECREF(args);
-            Py_DECREF(attrs);
-            Py_DECREF(seen);
-            return NULL;
         }
         PyList_SET_ITEM(attrs, i, attr);
     }
-    // TODO: check __match_args_required__.
+    Py_DECREF(match_args);
     Py_DECREF(proxy);
     Py_DECREF(args);
     Py_DECREF(seen);
     return attrs;
+error:
+    Py_DECREF(match_args);
+    Py_DECREF(proxy);
+    Py_DECREF(args);
+    Py_DECREF(seen);
+    Py_DECREF(attrs);
+    return NULL;
 }
 
 
