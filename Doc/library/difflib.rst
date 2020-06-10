@@ -192,7 +192,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    See :ref:`difflib-interface` for a more detailed example.
 
 
-.. function:: get_close_matches(word, possibilities, n=3, cutoff=0.6, ignorecase=False)
+.. function:: get_close_matches(word, possibilities, n=3, cutoff=0.6)
 
    Return a list of the best "good enough" matches.  *word* is a sequence for which
    close matches are desired (typically a string), and *possibilities* is a list of
@@ -203,10 +203,6 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    Optional argument *cutoff* (default ``0.6``) is a float in the range [0, 1].
    Possibilities that don't score at least that similar to *word* are ignored.
-
-   Optional argument *ignorecase* (default ``False``) dictates whether the
-   uppercase/lowercase counterpart of a character in ``word`` or ``possibilities`` is
-   considered equivalent or not.
 
    The best (no more than *n*) matches among the possibilities are returned in a
    list, sorted by similarity score, most similar first.
@@ -220,10 +216,28 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       []
       >>> get_close_matches('accept', keyword.kwlist)
       ['except']
-      >>> get_close_matches('apple', ['APPLE'], ignorecase=True)
-      ['APPLE']
-      >>> get_close_matches('apple', ['APPLE'])
-      []
+
+
+.. function:: get_close_matches_ignorecase(word, possibilities, n=3, cutoff=0.6)
+
+   Return a list of the best "good enough" matches on a case-insensitive basis.
+   *word* is a sequence for which close matches are desired (typically a string),
+   and *possibilities* is a list of sequences against which to match *word*
+   (typically a list of strings).
+
+   Optional argument *n* (default ``3``) is the maximum number of close matches to
+   return; *n* must be greater than ``0``.
+
+   Optional argument *cutoff* (default ``0.6``) is a float in the range [0, 1].
+   Possibilities that don't score at least that similar to *word* are ignored.
+
+   The best (no more than *n*) matches among the possibilities are returned in a
+   list, sorted by similarity score, most similar first.
+
+      >>> get_close_matches_ignorecase('APPLE', ['apple'])
+      ['apple']
+      >>> get_close_matches_ignorecase('APPLE', ['APPle'])
+      ['APPle']
 
 
 .. function:: ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK)

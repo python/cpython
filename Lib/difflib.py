@@ -4,6 +4,10 @@ Module difflib -- helpers for computing deltas between objects.
 Function get_close_matches(word, possibilities, n=3, cutoff=0.6):
     Use SequenceMatcher to return list of the best "good enough" matches.
 
+Function get_close_matches_ignorecase(word, possibilities, n=3, cutoff=0.6):
+    Use SequenceMatcher to return case-insensitive list of the best
+    "good enough" matches.
+
 Function context_diff(a, b):
     For two lists of strings, return a delta in context diff format.
 
@@ -26,7 +30,7 @@ Class HtmlDiff:
     For producing HTML side by side comparison with change highlights.
 """
 
-__all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
+__all__ = ['get_close_matches', 'get_close_matches_ignorecase', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff', 'diff_bytes', 'HtmlDiff', 'Match']
 
@@ -170,6 +174,10 @@ class SequenceMatcher:
         Optional arg autojunk should be set to False to disable the
         "automatic junk heuristic" that treats popular elements as junk
         (see module documentation for more information).
+
+        Optional arg ignorecase calls lower() on each character supplied in
+        word and possibilities in order to provide case-insensitive matching,
+        when set to True.
         """
 
         # Members:
@@ -695,7 +703,7 @@ class SequenceMatcher:
         # shorter sequence
         return _calculate_ratio(min(la, lb), la + lb)
 
-def get_close_matches(word, possibilities, n=3, cutoff=0.6, ignorecase=False):
+def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     """Use SequenceMatcher to return list of the best "good enough" matches.
 
     word is a sequence for which close matches are desired (typically a
@@ -729,7 +737,53 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6, ignorecase=False):
     if not 0.0 <= cutoff <= 1.0:
         raise ValueError("cutoff must be in [0.0, 1.0]: %r" % (cutoff,))
     result = []
-    s = SequenceMatcher(ignorecase=ignorecase)
+    s = SequenceMatcher()
+    s.set_seq2(word)
+    for x in possibilities:
+        s.set_seq1(x)
+        if s.real_quick_ratio() >= cutoff and \
+           s.quick_ratio() >= cutoff and \
+           s.ratio() >= cutoff:
+            result.append((s.ratio(), x))
+
+    # Move the best scorers to head of list
+    result = _nlargest(n, result)
+    # Strip scores for the best n matches
+    return [x for score, x in result]
+
+
+def get_close_matches_ignorecase(word, possibilities, n=3, cutoff=0.6):
+    """Use SequenceMatcher to return list of the best "good enough" matches.
+    This function ignores casing of the supplied word and possibilities
+    by setting the ignorecase parameter of SequenceMatcher to True.
+
+    word is a sequence for which close matches are desired (typically a
+    string).
+
+    possibilities is a list of sequences against which to match word
+    (typically a list of strings).
+
+    Optional arg n (default 3) is the maximum number of close matches to
+    return.  n must be > 0.
+
+    Optional arg cutoff (default 0.6) is a float in [0, 1].  Possibilities
+    that don't score at least that similar to word are ignored.
+
+    The best (no more than n) matches among the possibilities are returned
+    in a list, sorted by similarity score, most similar first.
+
+    >>> get_close_matches_ignorecase('APPLE', ['apple'])
+    ['apple']
+    >>> get_close_matches_ignorecase('APPLE', ['APPle'])
+    ['APPle']
+    """
+
+    if not n >  0:
+        raise ValueError("n must be > 0: %r" % (n,))
+    if not 0.0 <= cutoff <= 1.0:
+        raise ValueError("cutoff must be in [0.0, 1.0]: %r" % (cutoff,))
+    result = []
+    s = SequenceMatcher(ignorecase=True)
     s.set_seq2(word)
     for x in possibilities:
         s.set_seq1(x)

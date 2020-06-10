@@ -1,6 +1,2 @@
 Add support for scoped IPv6 addresses to :mod:`ipaddress`. Patch by Oleksandr 
 Pavliuk.
-
-Add *ignorecase* parameter to :func:`get_close_matches` that considers lowercase
-and uppercase characters in provided strings as equivalent. Patch by Brian
-Gallagher.
