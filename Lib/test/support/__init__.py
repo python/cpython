@@ -1899,6 +1899,27 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
     test_case.assertCountEqual(module.__all__, expected)
 
 
+def suppress_msvcrt_asserts(verbose=False):
+    try:
+        import msvcrt
+    except ImportError:
+        return
+
+    msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS
+                        | msvcrt.SEM_NOALIGNMENTFAULTEXCEPT
+                        | msvcrt.SEM_NOGPFAULTERRORBOX
+                        | msvcrt.SEM_NOOPENFILEERRORBOX)
+
+    # CrtSetReportMode() is only available in debug build
+    if hasattr(msvcrt, 'CrtSetReportMode'):
+        for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
+            if verbose:
+                msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
+                msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
+            else:
+                msvcrt.CrtSetReportMode(m, 0)
+
+
 class SuppressCrashReport:
     """Try to prevent a crash report from popping up.
 
@@ -1910,30 +1931,25 @@ class SuppressCrashReport:
 
     def __enter__(self):
         """On Windows, disable Windows Error Reporting dialogs using
-        SetErrorMode.
+        SetErrorMode() and CrtSetReportMode().
 
         On UNIX, try to save the previous core file size limit, then set
         soft limit to 0.
         """
         if sys.platform.startswith('win'):
             # see http://msdn.microsoft.com/en-us/library/windows/desktop/ms680621.aspx
-            # GetErrorMode is not available on Windows XP and Windows Server 2003,
-            # but SetErrorMode returns the previous value, so we can use that
-            import ctypes
-            self._k32 = ctypes.windll.kernel32
-            SEM_NOGPFAULTERRORBOX = 0x02
-            self.old_value = self._k32.SetErrorMode(SEM_NOGPFAULTERRORBOX)
-            self._k32.SetErrorMode(self.old_value | SEM_NOGPFAULTERRORBOX)
-
-            # Suppress assert dialogs in debug builds
-            # (see http://bugs.python.org/issue23314)
             try:
                 import msvcrt
-                msvcrt.CrtSetReportMode
-            except (AttributeError, ImportError):
-                # no msvcrt or a release build
-                pass
-            else:
+            except ImportError:
+                return
+
+            self.old_value = msvcrt.GetErrorMode()
+
+            msvcrt.SetErrorMode(self.old_value | msvcrt.SEM_NOGPFAULTERRORBOX)
+
+            # bpo-23314: Suppress assert dialogs in debug builds.
+            # CrtSetReportMode() is only available in debug build.
+            if hasattr(msvcrt, 'CrtSetReportMode'):
                 self.old_modes = {}
                 for report_type in [msvcrt.CRT_WARN,
                                     msvcrt.CRT_ERROR,
@@ -1985,10 +2001,10 @@ class SuppressCrashReport:
             return
 
         if sys.platform.startswith('win'):
-            self._k32.SetErrorMode(self.old_value)
+            import msvcrt
+            msvcrt.SetErrorMode(self.old_value)
 
             if self.old_modes:
-                import msvcrt
                 for report_type, (old_mode, old_file) in self.old_modes.items():
                     msvcrt.CrtSetReportMode(report_type, old_mode)
                     msvcrt.CrtSetReportFile(report_type, old_file)
@@ -2332,7 +2348,6 @@ def wait_process(pid, *, exitcode, timeout=None):
         if timeout is None:
             timeout = SHORT_TIMEOUT
         t0 = time.monotonic()
-        deadline = t0 + timeout
         sleep = 0.001
         max_sleep = 0.1
         while True:
