@@ -73,7 +73,7 @@ and work with streams:
 
       The *ssl_handshake_timeout* parameter.
 
-   .. versionadded:: 3.9
+   .. versionadded:: 3.10
       Added support for IPAddress
 
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
