@@ -23,7 +23,7 @@ _IS_ASCII_ID_FIRST_CHAR = \
 
 
 class HyperParser:
-    def __init__(self, editwin, index, end_at_eol=True):
+    def __init__(self, editwin, index, *, end_at_eol=True):
         "To initialize, analyze the surroundings of the given index."
 
         self.editwin = editwin
@@ -34,13 +34,13 @@ class HyperParser:
         def index2line(index):
             return int(float(index))
         lno = index2line(text.index(index))
+        stopatindex = f"{lno}.end" if end_at_eol else "end-1c"
 
         if not editwin.prompt_last_line:
             for context in editwin.num_context_lines:
                 startat = max(lno - context, 1)
-                startatindex = repr(startat) + ".0"
-                stopatindex = "%d.end" % lno if end_at_eol else "end-1c"
-                # We add the newline because PyParse requires a newline
+                startatindex = f"{startat}.0"
+                # We add a newline because PyParse requires a newline
                 # at end. We add a space so that index won't be at end
                 # of line, so that its status will be the same as the
                 # char before it, if should.
@@ -52,18 +52,10 @@ class HyperParser:
             parser.set_lo(bod or 0)
         else:
             r = text.tag_prevrange("console", index)
-            if r:
-                startatindex = r[1]
-            else:
-                startatindex = "1.0"
-            if end_at_eol:
-                stopatindex = "%d.end" % lno
-            else:
-                r = text.tag_nextrange("console", index)
-                if r:
-                    stopatindex = text.index(r[0] + "-1c")
-                else:
-                    stopatindex = "end-1c"
+            startatindex = r[1] if r else "1.0"
+            if not end_at_eol and (r2 := text.tag_nextrange("console", index)):
+                stopatindex = f"{r2[0]}-1c"
+
             # We add the newline because PyParse requires it. We add a
             # space so that index won't be at end of line, so that its
             # status will be the same as the char before it, if should.
