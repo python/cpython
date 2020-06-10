@@ -161,6 +161,7 @@ byte_offset_to_character_offset(PyObject *line, int col_offset)
 const char *
 _PyPegen_get_expr_name(expr_ty e)
 {
+    assert(e != NULL);
     switch (e->kind) {
         case Attribute_kind:
             return "attribute";
@@ -719,6 +720,15 @@ _PyPegen_lookahead_with_name(int positive, expr_ty (func)(Parser *), Parser *p)
 }
 
 int
+_PyPegen_lookahead_with_string(int positive, expr_ty (func)(Parser *, const char*), Parser *p, const char* arg)
+{
+    int mark = p->mark;
+    void *res = func(p, arg);
+    p->mark = mark;
+    return (res != NULL) == positive;
+}
+
+int
 _PyPegen_lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *p, int arg)
 {
     int mark = p->mark;
@@ -766,15 +776,15 @@ _PyPegen_expect_soft_keyword(Parser *p, const char *keyword)
     if (t->type != NAME) {
         return NULL;
     }
-    char* s = PyBytes_AsString(t->bytes);
+    char *s = PyBytes_AsString(t->bytes);
     if (!s) {
+        p->error_indicator = 1;
         return NULL;
     }
     if (strcmp(s, keyword) != 0) {
         return NULL;
     }
-    expr_ty res = _PyPegen_name_token(p);
-    return res;
+    return _PyPegen_name_token(p);
 }
 
 Token *
@@ -800,10 +810,12 @@ _PyPegen_name_token(Parser *p)
     }
     char* s = PyBytes_AsString(t->bytes);
     if (!s) {
+        p->error_indicator = 1;
         return NULL;
     }
     PyObject *id = _PyPegen_new_identifier(p, s);
     if (id == NULL) {
+        p->error_indicator = 1;
         return NULL;
     }
     return Name(id, Load, t->lineno, t->col_offset, t->end_lineno, t->end_col_offset,
@@ -896,6 +908,7 @@ _PyPegen_number_token(Parser *p)
 
     char *num_raw = PyBytes_AsString(t->bytes);
     if (num_raw == NULL) {
+        p->error_indicator = 1;
         return NULL;
     }
 
@@ -908,11 +921,13 @@ _PyPegen_number_token(Parser *p)
     PyObject *c = parsenumber(num_raw);
 
     if (c == NULL) {
+        p->error_indicator = 1;
         return NULL;
     }
 
     if (PyArena_AddPyObject(p->arena, c) < 0) {
         Py_DECREF(c);
+        p->error_indicator = 1;
         return NULL;
     }
 
@@ -923,8 +938,8 @@ _PyPegen_number_token(Parser *p)
 static int // bool
 newline_in_string(Parser *p, const char *cur)
 {
-    for (char c = *cur; cur >= p->tok->buf; c = *--cur) {
-        if (c == '\'' || c == '"') {
+    for (const char *c = cur; c >= p->tok->buf; c--) {
+        if (*c == '\'' || *c == '"') {
             return 1;
         }
     }

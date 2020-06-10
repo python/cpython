@@ -1,0 +1,3 @@
+Export explicitly the :c:func:`Py_GetArgcArgv` function to the C API and
+document the function. Previously, it was exported implicitly which no
+longer works since Python is built with ``-fvisibility=hidden``.

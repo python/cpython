@@ -1040,42 +1040,6 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 PyObject *
-PyType_FromSpec_Alloc(PyTypeObject *type, Py_ssize_t nitems)
-{
-    PyObject *obj;
-    const size_t size = _Py_SIZE_ROUND_UP(
-            _PyObject_VAR_SIZE(type, nitems+1) + sizeof(traverseproc),
-            SIZEOF_VOID_P);
-    /* note that we need to add one, for the sentinel and space for the
-       provided tp-traverse: See bpo-40217 for more details */
-
-    if (PyType_IS_GC(type)) {
-        obj = _PyObject_GC_Malloc(size);
-    }
-    else {
-        obj = (PyObject *)PyObject_MALLOC(size);
-    }
-
-    if (obj == NULL) {
-        return PyErr_NoMemory();
-    }
-
-    memset(obj, '\0', size);
-
-    if (type->tp_itemsize == 0) {
-        (void)PyObject_INIT(obj, type);
-    }
-    else {
-        (void) PyObject_INIT_VAR((PyVarObject *)obj, type, nitems);
-    }
-
-    if (PyType_IS_GC(type)) {
-        _PyObject_GC_TRACK(obj);
-    }
-    return obj;
-}
-
-PyObject *
 PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
 {
     PyObject *obj;
@@ -1164,11 +1128,16 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
             Py_VISIT(*dictptr);
     }
 
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE
+        && (!basetraverse || !(base->tp_flags & Py_TPFLAGS_HEAPTYPE))) {
         /* For a heaptype, the instances count as references
            to the type.          Traverse the type so the collector
-           can find cycles involving this link. */
+           can find cycles involving this link.
+           Skip this visit if basetraverse belongs to a heap type: in that
+           case, basetraverse will visit the type when we call it later.
+           */
         Py_VISIT(type);
+    }
 
     if (basetraverse)
         return basetraverse(self, visit, arg);
@@ -2910,36 +2879,6 @@ static const short slotoffsets[] = {
 #include "typeslots.inc"
 };
 
-static int
-PyType_FromSpec_tp_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    PyTypeObject *parent = Py_TYPE(self);
-
-    // Only a instance of a type that is directly created by
-    // PyType_FromSpec (not subclasses) must visit its parent.
-    if (parent->tp_traverse == PyType_FromSpec_tp_traverse) {
-        Py_VISIT(parent);
-    }
-
-    // Search for the original type that was created using PyType_FromSpec
-    PyTypeObject *base;
-    base = parent;
-    while (base->tp_traverse != PyType_FromSpec_tp_traverse) {
-        base = base->tp_base;
-        assert(base);
-    }
-
-    // Extract the user defined traverse function that we placed at the end
-    // of the type and call it.
-    size_t size = Py_SIZE(base);
-    size_t _offset = _PyObject_VAR_SIZE(&PyType_Type, size+1);
-    traverseproc fun = *(traverseproc*)((char*)base + _offset);
-    if (fun == NULL) {
-        return 0;
-    }
-    return fun(self, visit, arg);
-}
-
 PyObject *
 PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
@@ -2985,7 +2924,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         }
     }
 
-    res = (PyHeapTypeObject*)PyType_FromSpec_Alloc(&PyType_Type, nmembers);
+    res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, nmembers);
     if (res == NULL)
         return NULL;
     res_start = (char*)res;
@@ -3092,30 +3031,6 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
             size_t len = Py_TYPE(type)->tp_itemsize * nmembers;
             memcpy(PyHeapType_GET_MEMBERS(res), slot->pfunc, len);
             type->tp_members = PyHeapType_GET_MEMBERS(res);
-        }
-        else if (slot->slot == Py_tp_traverse) {
-
-           /* Types created by PyType_FromSpec own a strong reference to their
-            * type, but this was added in Python 3.8. The tp_traverse function
-            * needs to call Py_VISIT on the type but all existing traverse
-            * functions cannot be updated (especially the ones from existing user
-            * functions) so we need to provide a tp_traverse that manually calls
-            * Py_VISIT(Py_TYPE(self)) and then call the provided tp_traverse. In
-            * this way, user functions do not need to be updated, preserve
-            * backwards compatibility.
-            *
-            * We store the user-provided traverse function at the end of the type
-            * (we have allocated space for it) so we can call it from our
-            * PyType_FromSpec_tp_traverse wrapper.
-            *
-            * Check bpo-40217 for more information and rationale about this issue.
-            *
-            * */
-
-            type->tp_traverse = PyType_FromSpec_tp_traverse;
-            size_t _offset = _PyObject_VAR_SIZE(&PyType_Type, nmembers+1);
-            traverseproc *user_traverse = (traverseproc*)((char*)type + _offset);
-            *user_traverse = slot->pfunc;
         }
         else {
             /* Copy other slots directly */
@@ -6419,7 +6334,7 @@ slot_sq_length(PyObject *self)
     if (res == NULL)
         return -1;
 
-    Py_SETREF(res, PyNumber_Index(res));
+    Py_SETREF(res, _PyNumber_Index(res));
     if (res == NULL)
         return -1;
 

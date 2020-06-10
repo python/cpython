@@ -399,7 +399,9 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     # Variables used in the methods and docstrings
     field_names = tuple(map(_sys.intern, field_names))
     num_fields = len(field_names)
-    arg_list = repr(field_names).replace("'", "")[1:-1]
+    arg_list = ', '.join(field_names)
+    if num_fields == 1:
+        arg_list += ','
     repr_fmt = '(' + ', '.join(f'{name}=%r' for name in field_names) + ')'
     tuple_new = tuple.__new__
     _dict, _tuple, _len, _map, _zip = dict, tuple, len, map, zip
@@ -407,8 +409,10 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     # Create all the named tuple methods to be added to the class namespace
 
     s = f'lambda _cls, {arg_list}: _tuple_new(_cls, ({arg_list}))'
-    namespace = {'_tuple_new': tuple_new, '__name__': f'namedtuple_{typename}'}
+    namespace = {'_tuple_new': tuple_new,  '__builtins__': None,
+                 '__name__': f'namedtuple_{typename}'}
     __new__ = eval(s, namespace)
+    __new__.__name__ = '__new__'
     __new__.__doc__ = f'Create new instance of {typename}({arg_list})'
     if defaults is not None:
         __new__.__defaults__ = defaults
@@ -691,6 +695,42 @@ class Counter(dict):
         if elem in self:
             super().__delitem__(elem)
 
+    def __eq__(self, other):
+        'True if all counts agree. Missing counts are treated as zero.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return all(self[e] == other[e] for c in (self, other) for e in c)
+
+    def __ne__(self, other):
+        'True if any counts disagree. Missing counts are treated as zero.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return not self == other
+
+    def __le__(self, other):
+        'True if all counts in self are a subset of those in other.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return all(self[e] <= other[e] for c in (self, other) for e in c)
+
+    def __lt__(self, other):
+        'True if all counts in self are a proper subset of those in other.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return self <= other and self != other
+
+    def __ge__(self, other):
+        'True if all counts in self are a superset of those in other.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return all(self[e] >= other[e] for c in (self, other) for e in c)
+
+    def __gt__(self, other):
+        'True if all counts in self are a proper superset of those in other.'
+        if not isinstance(other, Counter):
+            return NotImplemented
+        return self >= other and self != other
+
     def __repr__(self):
         if not self:
             return '%s()' % self.__class__.__name__
@@ -710,12 +750,26 @@ class Counter(dict):
     # To strip negative and zero counts, add-in an empty counter:
     #       c += Counter()
     #
-    # Rich comparison operators for multiset subset and superset tests
-    # are deliberately omitted due to semantic conflicts with the
-    # existing inherited dict equality method.  Subset and superset
-    # semantics ignore zero counts and require that p≤q ∧ p≥q → p=q;
-    # however, that would not be the case for p=Counter(a=1, b=0)
-    # and q=Counter(a=1) where the dictionaries are not equal.
+    # When the multiplicities are all zero or one, multiset operations
+    # are guaranteed to be equivalent to the corresponding operations
+    # for regular sets.
+    #     Given counter multisets such as:
+    #         cp = Counter(a=1, b=0, c=1)
+    #         cq = Counter(c=1, d=0, e=1)
+    #     The corresponding regular sets would be:
+    #         sp = {'a', 'c'}
+    #         sq = {'c', 'e'}
+    #     All of the following relations would hold:
+    #         set(cp + cq) == sp | sq
+    #         set(cp - cq) == sp - sq
+    #         set(cp | cq) == sp | sq
+    #         set(cp & cq) == sp & sq
+    #         (cp == cq) == (sp == sq)
+    #         (cp != cq) == (sp != sq)
+    #         (cp <= cq) == (sp <= sq)
+    #         (cp < cq) == (sp < sq)
+    #         (cp >= cq) == (sp >= sq)
+    #         (cp > cq) == (sp > sq)
 
     def __add__(self, other):
         '''Add counts from two counters.

@@ -193,7 +193,7 @@ _sre_SRE_Pattern_match(PatternObject *self, PyObject *const *args, Py_ssize_t na
     if (args[1]) {
         {
             Py_ssize_t ival = -1;
-            PyObject *iobj = PyNumber_Index(args[1]);
+            PyObject *iobj = _PyNumber_Index(args[1]);
             if (iobj != NULL) {
                 ival = PyLong_AsSsize_t(iobj);
                 Py_DECREF(iobj);
@@ -209,7 +209,7 @@ _sre_SRE_Pattern_match(PatternObject *self, PyObject *const *args, Py_ssize_t na
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[2]);
+        PyObject *iobj = _PyNumber_Index(args[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -262,7 +262,7 @@ _sre_SRE_Pattern_fullmatch(PatternObject *self, PyObject *const *args, Py_ssize_
     if (args[1]) {
         {
             Py_ssize_t ival = -1;
-            PyObject *iobj = PyNumber_Index(args[1]);
+            PyObject *iobj = _PyNumber_Index(args[1]);
             if (iobj != NULL) {
                 ival = PyLong_AsSsize_t(iobj);
                 Py_DECREF(iobj);
@@ -278,7 +278,7 @@ _sre_SRE_Pattern_fullmatch(PatternObject *self, PyObject *const *args, Py_ssize_
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[2]);
+        PyObject *iobj = _PyNumber_Index(args[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -333,7 +333,7 @@ _sre_SRE_Pattern_search(PatternObject *self, PyObject *const *args, Py_ssize_t n
     if (args[1]) {
         {
             Py_ssize_t ival = -1;
-            PyObject *iobj = PyNumber_Index(args[1]);
+            PyObject *iobj = _PyNumber_Index(args[1]);
             if (iobj != NULL) {
                 ival = PyLong_AsSsize_t(iobj);
                 Py_DECREF(iobj);
@@ -349,7 +349,7 @@ _sre_SRE_Pattern_search(PatternObject *self, PyObject *const *args, Py_ssize_t n
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[2]);
+        PyObject *iobj = _PyNumber_Index(args[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -402,7 +402,7 @@ _sre_SRE_Pattern_findall(PatternObject *self, PyObject *const *args, Py_ssize_t 
     if (args[1]) {
         {
             Py_ssize_t ival = -1;
-            PyObject *iobj = PyNumber_Index(args[1]);
+            PyObject *iobj = _PyNumber_Index(args[1]);
             if (iobj != NULL) {
                 ival = PyLong_AsSsize_t(iobj);
                 Py_DECREF(iobj);
@@ -418,7 +418,7 @@ _sre_SRE_Pattern_findall(PatternObject *self, PyObject *const *args, Py_ssize_t 
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[2]);
+        PyObject *iobj = _PyNumber_Index(args[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -473,7 +473,7 @@ _sre_SRE_Pattern_finditer(PatternObject *self, PyObject *const *args, Py_ssize_t
     if (args[1]) {
         {
             Py_ssize_t ival = -1;
-            PyObject *iobj = PyNumber_Index(args[1]);
+            PyObject *iobj = _PyNumber_Index(args[1]);
             if (iobj != NULL) {
                 ival = PyLong_AsSsize_t(iobj);
                 Py_DECREF(iobj);
@@ -489,7 +489,7 @@ _sre_SRE_Pattern_finditer(PatternObject *self, PyObject *const *args, Py_ssize_t
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[2]);
+        PyObject *iobj = _PyNumber_Index(args[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -541,7 +541,7 @@ _sre_SRE_Pattern_scanner(PatternObject *self, PyObject *const *args, Py_ssize_t 
     if (args[1]) {
         {
             Py_ssize_t ival = -1;
-            PyObject *iobj = PyNumber_Index(args[1]);
+            PyObject *iobj = _PyNumber_Index(args[1]);
             if (iobj != NULL) {
                 ival = PyLong_AsSsize_t(iobj);
                 Py_DECREF(iobj);
@@ -557,7 +557,7 @@ _sre_SRE_Pattern_scanner(PatternObject *self, PyObject *const *args, Py_ssize_t 
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[2]);
+        PyObject *iobj = _PyNumber_Index(args[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -608,7 +608,7 @@ _sre_SRE_Pattern_split(PatternObject *self, PyObject *const *args, Py_ssize_t na
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -661,7 +661,7 @@ _sre_SRE_Pattern_sub(PatternObject *self, PyObject *const *args, Py_ssize_t narg
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[2]);
+        PyObject *iobj = _PyNumber_Index(args[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -714,7 +714,7 @@ _sre_SRE_Pattern_subn(PatternObject *self, PyObject *const *args, Py_ssize_t nar
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[2]);
+        PyObject *iobj = _PyNumber_Index(args[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -800,7 +800,7 @@ _sre_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     code = args[2];
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[3]);
+        PyObject *iobj = _PyNumber_Index(args[3]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -1102,4 +1102,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=7a3360917b40a808 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0e27915b1eb7c0e4 input=a9049054013a1b77]*/

@@ -478,9 +478,9 @@ PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
 
 static int
 parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
-                   int *lineno, int *offset, PyObject **text)
+                   Py_ssize_t *lineno, Py_ssize_t *offset, PyObject **text)
 {
-    int hold;
+    Py_ssize_t hold;
     PyObject *v;
     _Py_IDENTIFIER(msg);
     _Py_IDENTIFIER(filename);
@@ -513,7 +513,7 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
     v = _PyObject_GetAttrId(err, &PyId_lineno);
     if (!v)
         goto finally;
-    hold = _PyLong_AsInt(v);
+    hold = PyLong_AsSsize_t(v);
     Py_DECREF(v);
     if (hold < 0 && PyErr_Occurred())
         goto finally;
@@ -526,7 +526,7 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
         *offset = -1;
         Py_DECREF(v);
     } else {
-        hold = _PyLong_AsInt(v);
+        hold = PyLong_AsSsize_t(v);
         Py_DECREF(v);
         if (hold < 0 && PyErr_Occurred())
             goto finally;
@@ -552,7 +552,7 @@ finally:
 }
 
 static void
-print_error_text(PyObject *f, int offset, PyObject *text_obj)
+print_error_text(PyObject *f, Py_ssize_t offset, PyObject *text_obj)
 {
     /* Convert text to a char pointer; return if error */
     const char *text = PyUnicode_AsUTF8(text_obj);
@@ -586,7 +586,7 @@ print_error_text(PyObject *f, int offset, PyObject *text_obj)
             break;
         }
         Py_ssize_t inl = nl - text;
-        if (inl >= (Py_ssize_t)offset) {
+        if (inl >= offset) {
             break;
         }
         inl += 1;
@@ -833,7 +833,7 @@ print_exception(PyObject *f, PyObject *value)
         _PyObject_HasAttrId(value, &PyId_print_file_and_line))
     {
         PyObject *message, *filename, *text;
-        int lineno, offset;
+        Py_ssize_t lineno, offset;
         if (!parse_syntax_error(value, &message, &filename,
                                 &lineno, &offset, &text))
             PyErr_Clear();
@@ -843,7 +843,7 @@ print_exception(PyObject *f, PyObject *value)
             Py_DECREF(value);
             value = message;
 
-            line = PyUnicode_FromFormat("  File \"%S\", line %d\n",
+            line = PyUnicode_FromFormat("  File \"%S\", line %zd\n",
                                           filename, lineno);
             Py_DECREF(filename);
             if (line != NULL) {

@@ -784,7 +784,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         PyObject *iobj;
         Py_ssize_t *p = va_arg(*p_va, Py_ssize_t *);
         Py_ssize_t ival = -1;
-        iobj = PyNumber_Index(arg);
+        iobj = _PyNumber_Index(arg);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);

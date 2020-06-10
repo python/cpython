@@ -302,7 +302,7 @@ def library_recipes():
                   "--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib"%(getVersion(),),
               ],
               patchscripts=[
-                  ("ftp://invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
+                  ("ftp://ftp.invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
                    "f54bf02a349f96a7c4f0d00922f3a0d4"),
                    ],
               useLDFlags=False,
@@ -313,9 +313,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.31.1",
-              url="https://sqlite.org/2020/sqlite-autoconf-3310100.tar.gz",
-              checksum='2d0a553534c521504e3ac3ad3b90f125',
+              name="SQLite 3.32.2",
+              url="https://sqlite.org/2020/sqlite-autoconf-3320200.tar.gz",
+              checksum='eb498918a33159cdf8104997aad29e83',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -1066,14 +1066,40 @@ def buildPythonDocs():
     curDir = os.getcwd()
     os.chdir(buildDir)
     runCommand('make clean')
-    # Create virtual environment for docs builds with blurb and sphinx
-    runCommand('make venv')
-    runCommand('venv/bin/python3 -m pip install -U Sphinx==2.2.0')
-    runCommand('make html PYTHON=venv/bin/python')
+
+    # Search third-party source directory for a pre-built version of the docs.
+    #   Use the naming convention of the docs.python.org html downloads:
+    #       python-3.9.0b1-docs-html.tar.bz2
+    doctarfiles = [ f for f in os.listdir(DEPSRC)
+        if f.startswith('python-'+getFullVersion())
+        if f.endswith('-docs-html.tar.bz2') ]
+    if doctarfiles:
+        doctarfile = doctarfiles[0]
+        if not os.path.exists('build'):
+            os.mkdir('build')
+        # if build directory existed, it was emptied by make clean, above
+        os.chdir('build')
+        # Extract the first archive found for this version into build
+        runCommand('tar xjf %s'%shellQuote(os.path.join(DEPSRC, doctarfile)))
+        # see if tar extracted a directory ending in -docs-html
+        archivefiles = [ f for f in os.listdir('.')
+            if f.endswith('-docs-html')
+            if os.path.isdir(f) ]
+        if archivefiles:
+            archivefile = archivefiles[0]
+            # make it our 'Docs/build/html' directory
+            print(' -- using pre-built python documentation from %s'%archivefile)
+            os.rename(archivefile, 'html')
+        os.chdir(buildDir)
+
+    htmlDir = os.path.join('build', 'html')
+    if not os.path.exists(htmlDir):
+        # Create virtual environment for docs builds with blurb and sphinx
+        runCommand('make venv')
+        runCommand('venv/bin/python3 -m pip install -U Sphinx==2.2.0')
+        runCommand('make html PYTHON=venv/bin/python')
+    os.rename(htmlDir, docdir)
     os.chdir(curDir)
-    if not os.path.exists(docdir):
-        os.mkdir(docdir)
-    os.rename(os.path.join(buildDir, 'build', 'html'), docdir)
 
 
 def buildPython():

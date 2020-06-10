@@ -278,6 +278,9 @@ static void fstring_shift_argument(expr_ty parent, arg_ty args, int lineno, int 
 
 
 static inline void shift_expr(expr_ty parent, expr_ty n, int line, int col) {
+    if (n == NULL) {
+        return;
+    }
     if (parent->lineno < n->lineno) {
         col = 0;
     }
@@ -604,6 +607,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
 
     struct tok_state* tok = PyTokenizer_FromString(str, 1);
     if (tok == NULL) {
+        PyMem_RawFree(str);
         return NULL;
     }
     Py_INCREF(p->tok->filename);
@@ -629,6 +633,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     result = expr;
 
 exit:
+    PyMem_RawFree(str);
     _PyPegen_Parser_Free(p2);
     PyTokenizer_Free(tok);
     return result;
@@ -928,6 +933,11 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     /* Check for =, which puts the text value of the expression in
        expr_text. */
     if (**str == '=') {
+        if (p->feature_version < 8) {
+            RAISE_SYNTAX_ERROR("f-string: self documenting expressions are "
+                               "only supported in Python 3.8 and greater");
+            goto error;
+        }
         *str += 1;
 
         /* Skip over ASCII whitespace.  No need to test for end of string
