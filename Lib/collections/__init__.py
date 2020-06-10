@@ -1040,7 +1040,7 @@ class ChainMap(_collections_abc.MutableMapping):
         self.maps[0].clear()
 
     def __ior__(self, other):
-        self.maps[0] |= other
+        self.maps[0].update(other)
         return self
 
     def __or__(self, other):
