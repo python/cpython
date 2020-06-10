@@ -1019,7 +1019,7 @@ class ChainMap(_collections_abc.MutableMapping):
         try:
             del self.maps[0][key]
         except KeyError:
-            raise KeyError('Key not found in the first mapping: {!r}'.format(key))
+            raise KeyError(f'Key not found in the first mapping: {key!r}')
 
     def popitem(self):
         'Remove and return an item pair from maps[0]. Raise KeyError is maps[0] is empty.'
@@ -1033,7 +1033,7 @@ class ChainMap(_collections_abc.MutableMapping):
         try:
             return self.maps[0].pop(key, *args)
         except KeyError:
-            raise KeyError('Key not found in the first mapping: {!r}'.format(key))
+            raise KeyError(f'Key not found in the first mapping: {key!r}')
 
     def clear(self):
         'Clear maps[0], leaving maps[1:] intact.'
