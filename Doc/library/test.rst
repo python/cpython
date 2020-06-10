@@ -398,25 +398,6 @@ The :mod:`test.support` module defines the following constants:
 
 The :mod:`test.support` module defines the following functions:
 
-.. function:: forget(module_name)
-
-   Remove the module named *module_name* from ``sys.modules`` and delete any
-   byte-compiled files of the module.
-
-
-.. function:: unload(name)
-
-   Delete *name* from ``sys.modules``.
-
-
-.. function:: make_legacy_pyc(source)
-
-   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
-   system path to the legacy pyc file.  The *source* value is the file system
-   path to the source file.  It does not need to exist, however the PEP
-   3147/488 pyc file must exist.
-
-
 .. function:: is_resource_enabled(resource)
 
    Return ``True`` if *resource* is enabled and available. The list of
@@ -889,67 +870,6 @@ The :mod:`test.support` module defines the following functions:
    Open *url*.  If open fails, raises :exc:`TestFailed`.
 
 
-.. function:: import_module(name, deprecated=False, *, required_on())
-
-   This function imports and returns the named module. Unlike a normal
-   import, this function raises :exc:`unittest.SkipTest` if the module
-   cannot be imported.
-
-   Module and package deprecation messages are suppressed during this import
-   if *deprecated* is ``True``.  If a module is required on a platform but
-   optional for others, set *required_on* to an iterable of platform prefixes
-   which will be compared against :data:`sys.platform`.
-
-   .. versionadded:: 3.1
-
-
-.. function:: import_fresh_module(name, fresh=(), blocked=(), deprecated=False)
-
-   This function imports and returns a fresh copy of the named Python module
-   by removing the named module from ``sys.modules`` before doing the import.
-   Note that unlike :func:`reload`, the original module is not affected by
-   this operation.
-
-   *fresh* is an iterable of additional module names that are also removed
-   from the ``sys.modules`` cache before doing the import.
-
-   *blocked* is an iterable of module names that are replaced with ``None``
-   in the module cache during the import to ensure that attempts to import
-   them raise :exc:`ImportError`.
-
-   The named module and any modules named in the *fresh* and *blocked*
-   parameters are saved before starting the import and then reinserted into
-   ``sys.modules`` when the fresh import is complete.
-
-   Module and package deprecation messages are suppressed during this import
-   if *deprecated* is ``True``.
-
-   This function will raise :exc:`ImportError` if the named module cannot be
-   imported.
-
-   Example use::
-
-      # Get copies of the warnings module for testing without affecting the
-      # version being used by the rest of the test suite. One copy uses the
-      # C implementation, the other is forced to use the pure Python fallback
-      # implementation
-      py_warnings = import_fresh_module('warnings', blocked=['_warnings'])
-      c_warnings = import_fresh_module('warnings', fresh=['_warnings'])
-
-   .. versionadded:: 3.1
-
-
-.. function:: modules_setup()
-
-   Return a copy of :data:`sys.modules`.
-
-
-.. function:: modules_cleanup(oldmodules)
-
-   Remove modules except for *oldmodules* and ``encodings`` in order to
-   preserve internal cache.
-
-
 .. function:: reap_children()
 
    Use this at the end of ``test_main`` whenever sub-processes are started.
@@ -1111,29 +1031,6 @@ The :mod:`test.support` module defines the following classes:
    creation.
 
    On both platforms, the old value is restored by :meth:`__exit__`.
-
-
-.. class:: CleanImport(*module_names)
-
-   A context manager to force import to return a new module reference.  This
-   is useful for testing module-level behaviors, such as the emission of a
-   DeprecationWarning on import.  Example usage::
-
-      with CleanImport('foo'):
-          importlib.import_module('foo')  # New reference.
-
-
-.. class:: DirsOnSysPath(*paths)
-
-   A context manager to temporarily add directories to sys.path.
-
-   This makes a copy of :data:`sys.path`, appends any directories given
-   as positional arguments, then reverts :data:`sys.path` to the copied
-   settings when the context ends.
-
-   Note that *all* :data:`sys.path` modifications in the body of the
-   context manager, including replacement of the object,
-   will be reverted at the end of the block.
 
 
 .. class:: SaveSignals()
@@ -1646,3 +1543,119 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 
    Call :func:`os.unlink` on *filename*.  On Windows platforms, this is
    wrapped with a wait loop that checks for the existence fo the file.
+
+
+:mod:`test.support.import_helper` --- Utilities for import tests
+================================================================
+
+.. module:: test.support.import_helper
+   :synopsis: Support for import tests.
+
+The :mod:`test.support.import_helper` module provides support for import tests.
+
+.. versionadded:: 3.10
+
+
+.. function:: forget(module_name)
+
+   Remove the module named *module_name* from ``sys.modules`` and delete any
+   byte-compiled files of the module.
+
+
+.. function:: import_fresh_module(name, fresh=(), blocked=(), deprecated=False)
+
+   This function imports and returns a fresh copy of the named Python module
+   by removing the named module from ``sys.modules`` before doing the import.
+   Note that unlike :func:`reload`, the original module is not affected by
+   this operation.
+
+   *fresh* is an iterable of additional module names that are also removed
+   from the ``sys.modules`` cache before doing the import.
+
+   *blocked* is an iterable of module names that are replaced with ``None``
+   in the module cache during the import to ensure that attempts to import
+   them raise :exc:`ImportError`.
+
+   The named module and any modules named in the *fresh* and *blocked*
+   parameters are saved before starting the import and then reinserted into
+   ``sys.modules`` when the fresh import is complete.
+
+   Module and package deprecation messages are suppressed during this import
+   if *deprecated* is ``True``.
+
+   This function will raise :exc:`ImportError` if the named module cannot be
+   imported.
+
+   Example use::
+
+      # Get copies of the warnings module for testing without affecting the
+      # version being used by the rest of the test suite. One copy uses the
+      # C implementation, the other is forced to use the pure Python fallback
+      # implementation
+      py_warnings = import_fresh_module('warnings', blocked=['_warnings'])
+      c_warnings = import_fresh_module('warnings', fresh=['_warnings'])
+
+   .. versionadded:: 3.1
+
+
+.. function:: import_module(name, deprecated=False, *, required_on())
+
+   This function imports and returns the named module. Unlike a normal
+   import, this function raises :exc:`unittest.SkipTest` if the module
+   cannot be imported.
+
+   Module and package deprecation messages are suppressed during this import
+   if *deprecated* is ``True``.  If a module is required on a platform but
+   optional for others, set *required_on* to an iterable of platform prefixes
+   which will be compared against :data:`sys.platform`.
+
+   .. versionadded:: 3.1
+
+
+.. function:: modules_setup()
+
+   Return a copy of :data:`sys.modules`.
+
+
+.. function:: modules_cleanup(oldmodules)
+
+   Remove modules except for *oldmodules* and ``encodings`` in order to
+   preserve internal cache.
+
+
+.. function:: unload(name)
+
+   Delete *name* from ``sys.modules``.
+
+
+.. function:: make_legacy_pyc(source)
+
+   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
+   system path to the legacy pyc file.  The *source* value is the file system
+   path to the source file.  It does not need to exist, however the PEP
+   3147/488 pyc file must exist.
+
+
+.. class:: CleanImport(*module_names)
+
+   A context manager to force import to return a new module reference.  This
+   is useful for testing module-level behaviors, such as the emission of a
+   DeprecationWarning on import.  Example usage::
+
+      with CleanImport('foo'):
+          importlib.import_module('foo')  # New reference.
+
+
+.. class:: DirsOnSysPath(*paths)
+
+   A context manager to temporarily add directories to sys.path.
+
+   This makes a copy of :data:`sys.path`, appends any directories given
+   as positional arguments, then reverts :data:`sys.path` to the copied
+   settings when the context ends.
+
+   Note that *all* :data:`sys.path` modifications in the body of the
+   context manager, including replacement of the object,
+   will be reverted at the end of the block.
+
+
