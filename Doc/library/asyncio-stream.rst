@@ -109,7 +109,7 @@ and work with streams:
 
       The *ssl_handshake_timeout* and *start_serving* parameters.
 
-   .. versionadded:: 3.9
+   .. versionadded:: 3.10
       Added support for IPAddress
 
 
