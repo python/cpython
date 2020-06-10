@@ -483,6 +483,25 @@ msvcrt_set_error_mode_impl(PyObject *module, int mode)
 #endif /* _DEBUG */
 
 /*[clinic input]
+msvcrt.GetErrorMode
+
+Wrapper around GetErrorMode.
+[clinic start generated code]*/
+
+static PyObject *
+msvcrt_GetErrorMode_impl(PyObject *module)
+/*[clinic end generated code: output=3103fc6145913591 input=5a7fb083b6dd71fd]*/
+{
+    unsigned int res;
+
+    _Py_BEGIN_SUPPRESS_IPH
+    res = GetErrorMode();
+    _Py_END_SUPPRESS_IPH
+
+    return PyLong_FromUnsignedLong(res);
+}
+
+/*[clinic input]
 msvcrt.SetErrorMode
 
     mode: unsigned_int(bitwise=True)
@@ -520,6 +539,7 @@ static struct PyMethodDef msvcrt_functions[] = {
     MSVCRT_GETCHE_METHODDEF
     MSVCRT_PUTCH_METHODDEF
     MSVCRT_UNGETCH_METHODDEF
+    MSVCRT_GETERRORMODE_METHODDEF
     MSVCRT_SETERRORMODE_METHODDEF
     MSVCRT_CRTSETREPORTFILE_METHODDEF
     MSVCRT_CRTSETREPORTMODE_METHODDEF
