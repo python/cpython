@@ -350,9 +350,9 @@ def test_socket():
 
 
 if __name__ == "__main__":
-    from test.libregrtest.setup import suppress_msvcrt_asserts
+    from test.support import suppress_msvcrt_asserts
 
-    suppress_msvcrt_asserts(False)
+    suppress_msvcrt_asserts()
 
     test = sys.argv[1]
     globals()[test]()
