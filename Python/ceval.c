@@ -788,8 +788,8 @@ _PyEval_FiniState(struct _ceval_state *ceval)
 int
 Py_GetRecursionLimit(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    return tstate->interp->ceval.recursion_limit;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return interp->ceval.recursion_limit;
 }
 
 void
