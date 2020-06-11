@@ -486,7 +486,6 @@ static int test_init_from_config(void)
     config.install_signal_handlers = 0;
 
     putenv("PYTHONOLDPARSER=1");
-    config._use_peg_parser = 0;
 
     /* FIXME: test use_environment */
 

@@ -1958,13 +1958,3 @@ def wait_process(pid, *, exitcode, timeout=None):
     # sanity check: it should not fail in practice
     if pid2 != pid:
         raise AssertionError(f"pid {pid2} != pid {pid}")
-
-
-def use_old_parser():
-    import _testinternalcapi
-    config = _testinternalcapi.get_configs()
-    return (config['config']['_use_peg_parser'] == 0)
-
-
-def skip_if_new_parser(msg):
-    return unittest.skipIf(not use_old_parser(), msg)
