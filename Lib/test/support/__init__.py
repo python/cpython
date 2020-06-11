@@ -5,13 +5,10 @@ if __name__ != 'test.support':
 
 import contextlib
 import errno
-import fnmatch
 import functools
-import glob
 import os
 import re
 import stat
-import struct
 import sys
 import sysconfig
 import time
@@ -846,9 +843,11 @@ if hasattr(sys, "getobjects"):
 _vheader = _header + 'n'
 
 def calcobjsize(fmt):
+    import struct
     return struct.calcsize(_header + fmt + _align)
 
 def calcvobjsize(fmt):
+    import struct
     return struct.calcsize(_vheader + fmt + _align)
 
 
@@ -1255,6 +1254,7 @@ def _compile_match_function(patterns):
         # The test.bisect_cmd utility only uses such full test identifiers.
         func = set(patterns).__contains__
     else:
+        import fnmatch
         regex = '|'.join(map(fnmatch.translate, patterns))
         # The search *is* case sensitive on purpose:
         # don't use flags=re.IGNORECASE
@@ -1534,6 +1534,7 @@ class PythonSymlink:
 
     if sys.platform == "win32":
         def _platform_specific(self):
+            import glob
             import _winapi
 
             if os.path.lexists(self.real) and not os.path.exists(self.real):
