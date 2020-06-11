@@ -195,7 +195,8 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
         /* Push arg onto the frame's value stack */
         result = arg ? arg : Py_None;
         Py_INCREF(result);
-        *(f->f_stacktop++) = result;
+        gen->gi_frame->f_valuestack[gen->gi_frame->f_stackdepth] = result;
+        gen->gi_frame->f_stackdepth++;
     }
 
     /* Generators always return to their most recent caller, not
@@ -326,7 +327,7 @@ _PyGen_yf(PyGenObject *gen)
     PyObject *yf = NULL;
     PyFrameObject *f = gen->gi_frame;
 
-    if (f && f->f_stacktop) {
+    if (f) {
         PyObject *bytecode = f->f_code->co_code;
         unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
 
@@ -340,7 +341,8 @@ _PyGen_yf(PyGenObject *gen)
 
         if (code[f->f_lasti + sizeof(_Py_CODEUNIT)] != YIELD_FROM)
             return NULL;
-        yf = f->f_stacktop[-1];
+        assert(f->f_stackdepth > 0);
+        yf = f->f_valuestack[f->f_stackdepth-1];
         Py_INCREF(yf);
     }
 
@@ -454,7 +456,8 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         if (!ret) {
             PyObject *val;
             /* Pop subiterator from stack */
-            ret = *(--gen->gi_frame->f_stacktop);
+            gen->gi_frame->f_stackdepth--;
+            ret = gen->gi_frame->f_valuestack[gen->gi_frame->f_stackdepth];
             assert(ret == yf);
             Py_DECREF(ret);
             /* Termination repetition of YIELD_FROM */

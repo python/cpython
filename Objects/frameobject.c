@@ -300,7 +300,8 @@ first_line_not_before(int *lines, int len, int line)
 static void
 frame_stack_pop(PyFrameObject *f)
 {
-    PyObject *v = (*--f->f_stacktop);
+    f->f_stackdepth--;
+    PyObject *v = f->f_valuestack[f->f_stackdepth];
     Py_DECREF(v);
 }
 
@@ -310,7 +311,7 @@ frame_block_unwind(PyFrameObject *f)
     assert(f->f_iblock > 0);
     f->f_iblock--;
     PyTryBlock *b = &f->f_blockstack[f->f_iblock];
-    intptr_t delta = (f->f_stacktop - f->f_valuestack) - b->b_level;
+    intptr_t delta = f->f_stackdepth - b->b_level;
     while (delta > 0) {
         frame_stack_pop(f);
         delta--;
@@ -584,11 +585,10 @@ frame_dealloc(PyFrameObject *f)
     }
 
     /* Free stack */
-    if (f->f_stacktop != NULL) {
-        for (PyObject **p = valuestack; p < f->f_stacktop; p++) {
-            Py_XDECREF(*p);
-        }
+    for (int i = 0; i < f->f_stackdepth; i++) {
+        Py_XDECREF(f->f_valuestack[i]);
     }
+    f->f_stackdepth = 0;
 
     Py_XDECREF(f->f_back);
     Py_DECREF(f->f_builtins);
@@ -646,10 +646,8 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     }
 
     /* stack */
-    if (f->f_stacktop != NULL) {
-        for (PyObject **p = f->f_valuestack; p < f->f_stacktop; p++) {
-            Py_VISIT(*p);
-        }
+    for (int i = 0; i < f->f_stackdepth; i++) {
+        Py_VISIT(f->f_valuestack[i]);
     }
     return 0;
 }
@@ -662,8 +660,6 @@ frame_tp_clear(PyFrameObject *f)
      * frame may also point to this frame, believe itself to still be
      * active, and try cleaning up this frame again.
      */
-    PyObject **oldtop = f->f_stacktop;
-    f->f_stacktop = NULL;
     f->f_state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
@@ -675,11 +671,10 @@ frame_tp_clear(PyFrameObject *f)
     }
 
     /* stack */
-    if (oldtop != NULL) {
-        for (PyObject **p = f->f_valuestack; p < oldtop; p++) {
-            Py_CLEAR(*p);
-        }
+    for (int i = 0; i < f->f_stackdepth; i++) {
+        Py_CLEAR(f->f_valuestack[i]);
     }
+    f->f_stackdepth = 0;
     return 0;
 }
 
@@ -897,7 +892,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
         return NULL;
     }
 
-    f->f_stacktop = f->f_valuestack;
+    f->f_stackdepth = 0;
     f->f_builtins = builtins;
     Py_XINCREF(back);
     f->f_back = back;

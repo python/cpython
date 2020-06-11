@@ -1349,10 +1349,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         assert(f->f_lasti % sizeof(_Py_CODEUNIT) == 0);
         next_instr += f->f_lasti / sizeof(_Py_CODEUNIT) + 1;
     }
-    f->f_state = FRAME_EXECUTING;
-    stack_pointer = f->f_stacktop;
-    assert(stack_pointer != NULL);
-    f->f_stacktop = NULL;       /* remains NULL unless yield suspends frame */
+    stack_pointer = f->f_valuestack + f->f_stackdepth;
+    /* To help with debugging, set f->f_stackdepth to -1.
+     * Update when returning or calling trace function */
+    f->f_stackdepth = -1;
     f->f_state = FRAME_EXECUTING;
 
     if (co->co_opcache_flag < OPCACHE_MIN_RUNS) {
@@ -1441,7 +1441,7 @@ main_loop:
             int err;
             /* see maybe_call_line_trace
                for expository comments */
-            f->f_stacktop = stack_pointer;
+            f->f_stackdepth = stack_pointer-f->f_valuestack;
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
@@ -1449,10 +1449,7 @@ main_loop:
                                         &instr_lb, &instr_ub, &instr_prev);
             /* Reload possibly changed frame fields */
             JUMPTO(f->f_lasti);
-            if (f->f_stacktop != NULL) {
-                stack_pointer = f->f_stacktop;
-                f->f_stacktop = NULL;
-            }
+            stack_pointer = f->f_valuestack+f->f_stackdepth;
             if (err)
                 /* trace function raised an exception */
                 goto error;
@@ -2244,7 +2241,6 @@ main_loop:
                 DISPATCH();
             }
             /* receiver remains on stack, retval is value to be yielded */
-            f->f_stacktop = stack_pointer;
             /* and repeat... */
             assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
@@ -2264,8 +2260,6 @@ main_loop:
                 }
                 retval = w;
             }
-
-            f->f_stacktop = stack_pointer;
             f->f_state = FRAME_SUSPENDED;
             goto exiting;
         }
@@ -3852,6 +3846,7 @@ exception_unwind:
 
     f->f_state = FRAME_RAISED;
 exiting:
+    f->f_stackdepth = stack_pointer-f->f_valuestack;
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
             if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
