@@ -192,16 +192,16 @@ except_block[excepthandler_ty]:
     | 'except' ':' b=block { _Py_ExceptHandler(NULL, NULL, b, EXTRA) }
 finally_block[asdl_seq*]: 'finally' ':' a=block { a }
 
-match_stmt:
+match_stmt[stmt_ty]:
     | "match" target=expression ':' NEWLINE INDENT cases=case_block+ DEDENT {
         _Py_Match(target, cases, EXTRA) }
-case_block:
+case_block[match_case_ty]:
     | "case" pattern=pattern_no_comma guard=guard? ':' body=block {
         _Py_match_case(pattern, guard, body, p->arena) }
-guard:
+guard[expr_ty]:
     | 'if' guard=named_expression { guard }
 
-pattern_no_comma:
+pattern_no_comma[expr_ty]:
     | pattern=pattern !',' { pattern }
     | pattern error=',' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "tuple displays cannot be used as patterns; did you mean '[...]'?") }
@@ -211,12 +211,12 @@ pattern[expr_ty]:
         _Py_NamedExpr(CHECK(_PyPegen_set_expr_context(p, target, Store)), value, EXTRA) }
     | or_pattern
 
-or_pattern:
+or_pattern[expr_ty]:
     | value=closed_pattern '|' values='|'.closed_pattern+ {
         _Py_BoolOp(Or, CHECK(_PyPegen_seq_insert_in_front(p, value, values)), EXTRA) }
     | closed_pattern
 
-closed_pattern:
+closed_pattern[expr_ty]:
     | name_pattern
     | literal_pattern
     | constant_pattern
@@ -225,9 +225,9 @@ closed_pattern:
     | mapping_pattern
     | class_pattern
 
-name_pattern:
+name_pattern[expr_ty]:
     | name=NAME !('.' | '(' | '=') { _PyPegen_set_expr_context(p, name, Store) }
-literal_pattern:
+literal_pattern[expr_ty]:
     | signed_number !('+' | '-')
     | real=signed_number '+' imag=NUMBER { _Py_BinOp(real, Add, imag, EXTRA) }
     | real=signed_number '-' imag=NUMBER  { _Py_BinOp(real, Sub, imag, EXTRA) }
@@ -235,19 +235,19 @@ literal_pattern:
     | 'None' { _Py_Constant(Py_None, NULL, EXTRA) }
     | 'True' { _Py_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _Py_Constant(Py_False, NULL, EXTRA) }
-constant_pattern:
+constant_pattern[expr_ty]:
     | '.' name=NAME !('.' | '(' | '=') { name }
     | '.'? attr=attr !('.' | '(' | '=') { attr }
-group_pattern:
+group_pattern[expr_ty]:
     | '(' pattern=pattern_no_comma ')' { pattern }
     | error='(' ')' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "tuple displays cannot be used as patterns; did you mean '[]'?") }
-sequence_pattern:
+sequence_pattern[expr_ty]:
     | '[' values=values_pattern? ']' { _Py_List(values, Load, EXTRA) }
-mapping_pattern:
+mapping_pattern[expr_ty]:
     | '{' items=items_pattern? '}' {
         _Py_Dict(CHECK(_PyPegen_get_keys(p, items)), CHECK(_PyPegen_get_values(p, items)), EXTRA) }
-class_pattern:
+class_pattern[expr_ty]:
     | func=name_or_attr '(' ')' { _Py_Call(func, NULL, NULL, EXTRA) }
     | func=name_or_attr '(' args=','.pattern+ ','? ')' {
         _Py_Call(func, args, NULL, EXTRA) }
@@ -260,21 +260,21 @@ class_pattern:
     | func=name_or_attr '(' [','.error_argument_pattern+ ','] error=error_star [',' ','.(error_argument_pattern | error_star)+] ','? ')' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "can't use starred pattern here") }
 
-signed_number:
+signed_number[expr_ty]:
     | NUMBER
     | '-' number=NUMBER { _Py_UnaryOp(USub, number, EXTRA) }
-attr:
+attr[expr_ty]:
     | value=name_or_attr '.' attr=NAME {
         _Py_Attribute(value, attr->v.Name.id, Load, EXTRA) }
-name_or_attr:
+name_or_attr[expr_ty]:
     | attr
     | NAME
 
-values_pattern:
+values_pattern[asdl_seq*]:
     | values=','.value_pattern+ ','? { values }
-items_pattern:
+items_pattern[asdl_seq*]:
     | items=','.key_value_pattern+ ','? { items }
-keyword_pattern:
+keyword_pattern[keyword_ty]:
     | arg=NAME '=' value=or_pattern { _Py_keyword(arg->v.Name.id, value, EXTRA) }
 error_argument_pattern:
     | pattern
@@ -282,10 +282,10 @@ error_argument_pattern:
 error_star[expr_ty]:
     | ('*' | '**') error=NAME { error }
 
-value_pattern:
+value_pattern[expr_ty]:
     | '*' value=name_pattern { _Py_Starred(value, Store, EXTRA) }
     | pattern
-key_value_pattern:
+key_value_pattern[KeyValuePair*]:
     | key=(literal_pattern | constant_pattern) ':' value=or_pattern {
         _PyPegen_key_value_pair(p, key, value) }
     | '**' value=name_pattern { _PyPegen_key_value_pair(p, NULL, value) }

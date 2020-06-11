@@ -486,30 +486,30 @@ static withitem_ty with_item_rule(Parser *p);
 static stmt_ty try_stmt_rule(Parser *p);
 static excepthandler_ty except_block_rule(Parser *p);
 static asdl_seq* finally_block_rule(Parser *p);
-static void *match_stmt_rule(Parser *p);
-static void *case_block_rule(Parser *p);
-static void *guard_rule(Parser *p);
-static void *pattern_no_comma_rule(Parser *p);
+static stmt_ty match_stmt_rule(Parser *p);
+static match_case_ty case_block_rule(Parser *p);
+static expr_ty guard_rule(Parser *p);
+static expr_ty pattern_no_comma_rule(Parser *p);
 static expr_ty pattern_rule(Parser *p);
-static void *or_pattern_rule(Parser *p);
-static void *closed_pattern_rule(Parser *p);
-static void *name_pattern_rule(Parser *p);
-static void *literal_pattern_rule(Parser *p);
-static void *constant_pattern_rule(Parser *p);
-static void *group_pattern_rule(Parser *p);
-static void *sequence_pattern_rule(Parser *p);
-static void *mapping_pattern_rule(Parser *p);
-static void *class_pattern_rule(Parser *p);
-static void *signed_number_rule(Parser *p);
-static void *attr_rule(Parser *p);
-static void *name_or_attr_rule(Parser *p);
-static void *values_pattern_rule(Parser *p);
-static void *items_pattern_rule(Parser *p);
-static void *keyword_pattern_rule(Parser *p);
+static expr_ty or_pattern_rule(Parser *p);
+static expr_ty closed_pattern_rule(Parser *p);
+static expr_ty name_pattern_rule(Parser *p);
+static expr_ty literal_pattern_rule(Parser *p);
+static expr_ty constant_pattern_rule(Parser *p);
+static expr_ty group_pattern_rule(Parser *p);
+static expr_ty sequence_pattern_rule(Parser *p);
+static expr_ty mapping_pattern_rule(Parser *p);
+static expr_ty class_pattern_rule(Parser *p);
+static expr_ty signed_number_rule(Parser *p);
+static expr_ty attr_rule(Parser *p);
+static expr_ty name_or_attr_rule(Parser *p);
+static asdl_seq* values_pattern_rule(Parser *p);
+static asdl_seq* items_pattern_rule(Parser *p);
+static keyword_ty keyword_pattern_rule(Parser *p);
 static void *error_argument_pattern_rule(Parser *p);
 static expr_ty error_star_rule(Parser *p);
-static void *value_pattern_rule(Parser *p);
-static void *key_value_pattern_rule(Parser *p);
+static expr_ty value_pattern_rule(Parser *p);
+static KeyValuePair* key_value_pattern_rule(Parser *p);
 static stmt_ty return_stmt_rule(Parser *p);
 static stmt_ty raise_stmt_rule(Parser *p);
 static stmt_ty function_def_rule(Parser *p);
@@ -2132,7 +2132,7 @@ compound_stmt_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "match_stmt"));
-        void *match_stmt_var;
+        stmt_ty match_stmt_var;
         if (
             (match_stmt_var = match_stmt_rule(p))  // match_stmt
         )
@@ -4677,7 +4677,7 @@ finally_block_rule(Parser *p)
 }
 
 // match_stmt: "match" expression ':' NEWLINE INDENT case_block+ DEDENT
-static void *
+static stmt_ty
 match_stmt_rule(Parser *p)
 {
     D(p->level++);
@@ -4685,7 +4685,7 @@ match_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    stmt_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -4754,7 +4754,7 @@ match_stmt_rule(Parser *p)
 }
 
 // case_block: "case" pattern_no_comma guard? ':' block
-static void *
+static match_case_ty
 case_block_rule(Parser *p)
 {
     D(p->level++);
@@ -4762,7 +4762,7 @@ case_block_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    match_case_ty _res = NULL;
     int _mark = p->mark;
     { // "case" pattern_no_comma guard? ':' block
         if (p->error_indicator) {
@@ -4774,7 +4774,7 @@ case_block_rule(Parser *p)
         Token * _literal;
         asdl_seq* body;
         void *guard;
-        void *pattern;
+        expr_ty pattern;
         if (
             (_keyword = _PyPegen_expect_soft_keyword(p, "case"))  // soft_keyword='"case"'
             &&
@@ -4807,7 +4807,7 @@ case_block_rule(Parser *p)
 }
 
 // guard: 'if' named_expression
-static void *
+static expr_ty
 guard_rule(Parser *p)
 {
     D(p->level++);
@@ -4815,7 +4815,7 @@ guard_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     { // 'if' named_expression
         if (p->error_indicator) {
@@ -4851,7 +4851,7 @@ guard_rule(Parser *p)
 }
 
 // pattern_no_comma: pattern !',' | pattern ','
-static void *
+static expr_ty
 pattern_no_comma_rule(Parser *p)
 {
     D(p->level++);
@@ -4859,7 +4859,7 @@ pattern_no_comma_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     { // pattern !','
         if (p->error_indicator) {
@@ -4948,7 +4948,7 @@ pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c> pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME ':=' or_pattern"));
         Token * _literal;
         expr_ty target;
-        void *value;
+        expr_ty value;
         if (
             (target = _PyPegen_name_token(p))  // NAME
             &&
@@ -4985,7 +4985,7 @@ pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "or_pattern"));
-        void *or_pattern_var;
+        expr_ty or_pattern_var;
         if (
             (or_pattern_var = or_pattern_rule(p))  // or_pattern
         )
@@ -5005,7 +5005,7 @@ pattern_rule(Parser *p)
 }
 
 // or_pattern: closed_pattern '|' '|'.closed_pattern+ | closed_pattern
-static void *
+static expr_ty
 or_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -5013,7 +5013,7 @@ or_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -5031,7 +5031,7 @@ or_pattern_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> or_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "closed_pattern '|' '|'.closed_pattern+"));
         Token * _literal;
-        void *value;
+        expr_ty value;
         asdl_seq * values;
         if (
             (value = closed_pattern_rule(p))  // closed_pattern
@@ -5069,7 +5069,7 @@ or_pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> or_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "closed_pattern"));
-        void *closed_pattern_var;
+        expr_ty closed_pattern_var;
         if (
             (closed_pattern_var = closed_pattern_rule(p))  // closed_pattern
         )
@@ -5096,7 +5096,7 @@ or_pattern_rule(Parser *p)
 //     | sequence_pattern
 //     | mapping_pattern
 //     | class_pattern
-static void *
+static expr_ty
 closed_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -5104,7 +5104,7 @@ closed_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     { // name_pattern
         if (p->error_indicator) {
@@ -5112,7 +5112,7 @@ closed_pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "name_pattern"));
-        void *name_pattern_var;
+        expr_ty name_pattern_var;
         if (
             (name_pattern_var = name_pattern_rule(p))  // name_pattern
         )
@@ -5131,7 +5131,7 @@ closed_pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "literal_pattern"));
-        void *literal_pattern_var;
+        expr_ty literal_pattern_var;
         if (
             (literal_pattern_var = literal_pattern_rule(p))  // literal_pattern
         )
@@ -5150,7 +5150,7 @@ closed_pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "constant_pattern"));
-        void *constant_pattern_var;
+        expr_ty constant_pattern_var;
         if (
             (constant_pattern_var = constant_pattern_rule(p))  // constant_pattern
         )
@@ -5169,7 +5169,7 @@ closed_pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "group_pattern"));
-        void *group_pattern_var;
+        expr_ty group_pattern_var;
         if (
             (group_pattern_var = group_pattern_rule(p))  // group_pattern
         )
@@ -5188,7 +5188,7 @@ closed_pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "sequence_pattern"));
-        void *sequence_pattern_var;
+        expr_ty sequence_pattern_var;
         if (
             (sequence_pattern_var = sequence_pattern_rule(p))  // sequence_pattern
         )
@@ -5207,7 +5207,7 @@ closed_pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "mapping_pattern"));
-        void *mapping_pattern_var;
+        expr_ty mapping_pattern_var;
         if (
             (mapping_pattern_var = mapping_pattern_rule(p))  // mapping_pattern
         )
@@ -5226,7 +5226,7 @@ closed_pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> closed_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "class_pattern"));
-        void *class_pattern_var;
+        expr_ty class_pattern_var;
         if (
             (class_pattern_var = class_pattern_rule(p))  // class_pattern
         )
@@ -5246,7 +5246,7 @@ closed_pattern_rule(Parser *p)
 }
 
 // name_pattern: NAME !('.' | '(' | '=')
-static void *
+static expr_ty
 name_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -5254,7 +5254,7 @@ name_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     { // NAME !('.' | '(' | '=')
         if (p->error_indicator) {
@@ -5296,7 +5296,7 @@ name_pattern_rule(Parser *p)
 //     | 'None'
 //     | 'True'
 //     | 'False'
-static void *
+static expr_ty
 literal_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -5304,7 +5304,7 @@ literal_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -5321,7 +5321,7 @@ literal_pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> literal_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "signed_number !('+' | '-')"));
-        void *signed_number_var;
+        expr_ty signed_number_var;
         if (
             (signed_number_var = signed_number_rule(p))  // signed_number
             &&
@@ -5344,7 +5344,7 @@ literal_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c> literal_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "signed_number '+' NUMBER"));
         Token * _literal;
         expr_ty imag;
-        void *real;
+        expr_ty real;
         if (
             (real = signed_number_rule(p))  // signed_number
             &&
@@ -5383,7 +5383,7 @@ literal_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c> literal_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "signed_number '-' NUMBER"));
         Token * _literal;
         expr_ty imag;
-        void *real;
+        expr_ty real;
         if (
             (real = signed_number_rule(p))  // signed_number
             &&
@@ -5539,7 +5539,7 @@ literal_pattern_rule(Parser *p)
 }
 
 // constant_pattern: '.' NAME !('.' | '(' | '=') | '.'? attr !('.' | '(' | '=')
-static void *
+static expr_ty
 constant_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -5547,7 +5547,7 @@ constant_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     { // '.' NAME !('.' | '(' | '=')
         if (p->error_indicator) {
@@ -5586,7 +5586,7 @@ constant_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c> constant_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'.'? attr !('.' | '(' | '=')"));
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
-        void *attr;
+        expr_ty attr;
         if (
             (_opt_var = _PyPegen_expect_token(p, 23), 1)  // '.'?
             &&
@@ -5615,7 +5615,7 @@ constant_pattern_rule(Parser *p)
 }
 
 // group_pattern: '(' pattern_no_comma ')' | '(' ')'
-static void *
+static expr_ty
 group_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -5623,7 +5623,7 @@ group_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     { // '(' pattern_no_comma ')'
         if (p->error_indicator) {
@@ -5633,7 +5633,7 @@ group_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c> group_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' pattern_no_comma ')'"));
         Token * _literal;
         Token * _literal_1;
-        void *pattern;
+        expr_ty pattern;
         if (
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
@@ -5689,7 +5689,7 @@ group_pattern_rule(Parser *p)
 }
 
 // sequence_pattern: '[' values_pattern? ']'
-static void *
+static expr_ty
 sequence_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -5697,7 +5697,7 @@ sequence_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -5754,7 +5754,7 @@ sequence_pattern_rule(Parser *p)
 }
 
 // mapping_pattern: '{' items_pattern? '}'
-static void *
+static expr_ty
 mapping_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -5762,7 +5762,7 @@ mapping_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -5825,7 +5825,7 @@ mapping_pattern_rule(Parser *p)
 //     | name_or_attr '(' ','.pattern+ ',' ','.keyword_pattern+ ','? ')'
 //     | name_or_attr '(' [','.pattern+ ','] ','.keyword_pattern+ ',' pattern [',' ','.error_argument_pattern+] ','? ')'
 //     | name_or_attr '(' [','.error_argument_pattern+ ','] error_star [',' ','.(error_argument_pattern | error_star)+] ','? ')'
-static void *
+static expr_ty
 class_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -5833,7 +5833,7 @@ class_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -5852,7 +5852,7 @@ class_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c> class_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "name_or_attr '(' ')'"));
         Token * _literal;
         Token * _literal_1;
-        void *func;
+        expr_ty func;
         if (
             (func = name_or_attr_rule(p))  // name_or_attr
             &&
@@ -5894,7 +5894,7 @@ class_pattern_rule(Parser *p)
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_seq * args;
-        void *func;
+        expr_ty func;
         if (
             (func = name_or_attr_rule(p))  // name_or_attr
             &&
@@ -5939,7 +5939,7 @@ class_pattern_rule(Parser *p)
         Token * _literal_1;
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
-        void *func;
+        expr_ty func;
         asdl_seq * keywords;
         if (
             (func = name_or_attr_rule(p))  // name_or_attr
@@ -5987,7 +5987,7 @@ class_pattern_rule(Parser *p)
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         asdl_seq * args;
-        void *func;
+        expr_ty func;
         asdl_seq * keywords;
         if (
             (func = name_or_attr_rule(p))  // name_or_attr
@@ -6044,7 +6044,7 @@ class_pattern_rule(Parser *p)
         void *_opt_var_2;
         UNUSED(_opt_var_2); // Silence compiler warnings
         expr_ty error;
-        void *func;
+        expr_ty func;
         if (
             (func = name_or_attr_rule(p))  // name_or_attr
             &&
@@ -6093,7 +6093,7 @@ class_pattern_rule(Parser *p)
         void *_opt_var_2;
         UNUSED(_opt_var_2); // Silence compiler warnings
         expr_ty error;
-        void *func;
+        expr_ty func;
         if (
             (func = name_or_attr_rule(p))  // name_or_attr
             &&
@@ -6130,7 +6130,7 @@ class_pattern_rule(Parser *p)
 }
 
 // signed_number: NUMBER | '-' NUMBER
-static void *
+static expr_ty
 signed_number_rule(Parser *p)
 {
     D(p->level++);
@@ -6138,7 +6138,7 @@ signed_number_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -6212,12 +6212,12 @@ signed_number_rule(Parser *p)
 
 // Left-recursive
 // attr: name_or_attr '.' NAME
-static void * attr_raw(Parser *);
-static void *
+static expr_ty attr_raw(Parser *);
+static expr_ty
 attr_rule(Parser *p)
 {
     D(p->level++);
-    void * _res = NULL;
+    expr_ty _res = NULL;
     if (_PyPegen_is_memoized(p, attr_type, &_res)) {
         D(p->level--);
         return _res;
@@ -6241,7 +6241,7 @@ attr_rule(Parser *p)
     D(p->level--);
     return _res;
 }
-static void *
+static expr_ty
 attr_raw(Parser *p)
 {
     D(p->level++);
@@ -6249,7 +6249,7 @@ attr_raw(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -6268,7 +6268,7 @@ attr_raw(Parser *p)
         D(fprintf(stderr, "%*c> attr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "name_or_attr '.' NAME"));
         Token * _literal;
         expr_ty attr;
-        void *value;
+        expr_ty value;
         if (
             (value = name_or_attr_rule(p))  // name_or_attr
             &&
@@ -6307,7 +6307,7 @@ attr_raw(Parser *p)
 
 // Left-recursive
 // name_or_attr: attr | NAME
-static void *
+static expr_ty
 name_or_attr_rule(Parser *p)
 {
     D(p->level++);
@@ -6315,7 +6315,7 @@ name_or_attr_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     { // attr
         if (p->error_indicator) {
@@ -6323,7 +6323,7 @@ name_or_attr_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> name_or_attr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "attr"));
-        void *attr_var;
+        expr_ty attr_var;
         if (
             (attr_var = attr_rule(p))  // attr
         )
@@ -6362,7 +6362,7 @@ name_or_attr_rule(Parser *p)
 }
 
 // values_pattern: ','.value_pattern+ ','?
-static void *
+static asdl_seq*
 values_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -6370,7 +6370,7 @@ values_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.value_pattern+ ','?
         if (p->error_indicator) {
@@ -6407,7 +6407,7 @@ values_pattern_rule(Parser *p)
 }
 
 // items_pattern: ','.key_value_pattern+ ','?
-static void *
+static asdl_seq*
 items_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -6415,7 +6415,7 @@ items_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    asdl_seq* _res = NULL;
     int _mark = p->mark;
     { // ','.key_value_pattern+ ','?
         if (p->error_indicator) {
@@ -6452,7 +6452,7 @@ items_pattern_rule(Parser *p)
 }
 
 // keyword_pattern: NAME '=' or_pattern
-static void *
+static keyword_ty
 keyword_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -6460,7 +6460,7 @@ keyword_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    keyword_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -6479,7 +6479,7 @@ keyword_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c> keyword_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME '=' or_pattern"));
         Token * _literal;
         expr_ty arg;
-        void *value;
+        expr_ty value;
         if (
             (arg = _PyPegen_name_token(p))  // NAME
             &&
@@ -6552,7 +6552,7 @@ error_argument_pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> error_argument_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "keyword_pattern"));
-        void *keyword_pattern_var;
+        keyword_ty keyword_pattern_var;
         if (
             (keyword_pattern_var = keyword_pattern_rule(p))  // keyword_pattern
         )
@@ -6616,7 +6616,7 @@ error_star_rule(Parser *p)
 }
 
 // value_pattern: '*' name_pattern | pattern
-static void *
+static expr_ty
 value_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -6624,7 +6624,7 @@ value_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
     if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
         p->error_indicator = 1;
@@ -6642,7 +6642,7 @@ value_pattern_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> value_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' name_pattern"));
         Token * _literal;
-        void *value;
+        expr_ty value;
         if (
             (_literal = _PyPegen_expect_token(p, 16))  // token='*'
             &&
@@ -6699,7 +6699,7 @@ value_pattern_rule(Parser *p)
 // key_value_pattern:
 //     | (literal_pattern | constant_pattern) ':' or_pattern
 //     | '**' name_pattern
-static void *
+static KeyValuePair*
 key_value_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -6707,7 +6707,7 @@ key_value_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    void * _res = NULL;
+    KeyValuePair* _res = NULL;
     int _mark = p->mark;
     { // (literal_pattern | constant_pattern) ':' or_pattern
         if (p->error_indicator) {
@@ -6717,7 +6717,7 @@ key_value_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c> key_value_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "(literal_pattern | constant_pattern) ':' or_pattern"));
         Token * _literal;
         void *key;
-        void *value;
+        expr_ty value;
         if (
             (key = _tmp_75_rule(p))  // literal_pattern | constant_pattern
             &&
@@ -6746,7 +6746,7 @@ key_value_pattern_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> key_value_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'**' name_pattern"));
         Token * _literal;
-        void *value;
+        expr_ty value;
         if (
             (_literal = _PyPegen_expect_token(p, 35))  // token='**'
             &&
@@ -20373,7 +20373,7 @@ _loop1_49_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> _loop1_49[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "case_block"));
-        void *case_block_var;
+        match_case_ty case_block_var;
         while (
             (case_block_var = case_block_rule(p))  // case_block
         )
@@ -20445,7 +20445,7 @@ _loop0_51_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> _loop0_51[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'|' closed_pattern"));
         Token * _literal;
-        void *elem;
+        expr_ty elem;
         while (
             (_literal = _PyPegen_expect_token(p, 18))  // token='|'
             &&
@@ -20509,7 +20509,7 @@ _gather_50_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_50[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "closed_pattern _loop0_51"));
-        void *elem;
+        expr_ty elem;
         asdl_seq * seq;
         if (
             (elem = closed_pattern_rule(p))  // closed_pattern
@@ -20950,7 +20950,7 @@ _loop0_59_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> _loop0_59[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' keyword_pattern"));
         Token * _literal;
-        void *elem;
+        keyword_ty elem;
         while (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
@@ -21014,7 +21014,7 @@ _gather_58_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_58[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "keyword_pattern _loop0_59"));
-        void *elem;
+        keyword_ty elem;
         asdl_seq * seq;
         if (
             (elem = keyword_pattern_rule(p))  // keyword_pattern
@@ -21178,7 +21178,7 @@ _loop0_63_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> _loop0_63[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' keyword_pattern"));
         Token * _literal;
-        void *elem;
+        keyword_ty elem;
         while (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
@@ -21242,7 +21242,7 @@ _gather_62_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_62[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "keyword_pattern _loop0_63"));
-        void *elem;
+        keyword_ty elem;
         asdl_seq * seq;
         if (
             (elem = keyword_pattern_rule(p))  // keyword_pattern
@@ -21331,7 +21331,7 @@ _loop0_66_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> _loop0_66[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' keyword_pattern"));
         Token * _literal;
-        void *elem;
+        keyword_ty elem;
         while (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
@@ -21395,7 +21395,7 @@ _gather_65_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_65[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "keyword_pattern _loop0_66"));
-        void *elem;
+        keyword_ty elem;
         asdl_seq * seq;
         if (
             (elem = keyword_pattern_rule(p))  // keyword_pattern
@@ -21562,7 +21562,7 @@ _loop0_71_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> _loop0_71[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' value_pattern"));
         Token * _literal;
-        void *elem;
+        expr_ty elem;
         while (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
@@ -21626,7 +21626,7 @@ _gather_70_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_70[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "value_pattern _loop0_71"));
-        void *elem;
+        expr_ty elem;
         asdl_seq * seq;
         if (
             (elem = value_pattern_rule(p))  // value_pattern
@@ -21676,7 +21676,7 @@ _loop0_73_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> _loop0_73[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' key_value_pattern"));
         Token * _literal;
-        void *elem;
+        KeyValuePair* elem;
         while (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
@@ -21740,7 +21740,7 @@ _gather_72_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_72[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "key_value_pattern _loop0_73"));
-        void *elem;
+        KeyValuePair* elem;
         asdl_seq * seq;
         if (
             (elem = key_value_pattern_rule(p))  // key_value_pattern
@@ -21834,7 +21834,7 @@ _tmp_75_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_75[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "literal_pattern"));
-        void *literal_pattern_var;
+        expr_ty literal_pattern_var;
         if (
             (literal_pattern_var = literal_pattern_rule(p))  // literal_pattern
         )
@@ -21853,7 +21853,7 @@ _tmp_75_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> _tmp_75[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "constant_pattern"));
-        void *constant_pattern_var;
+        expr_ty constant_pattern_var;
         if (
             (constant_pattern_var = constant_pattern_rule(p))  // constant_pattern
         )
