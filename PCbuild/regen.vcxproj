@@ -155,22 +155,11 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <Target Name="_RegenGrammar" BeforeTargets="Build">
-    <!-- Regenerate Include/graminit.h and Python/graminit.c from Grammar/Grammar using pgen-->
-    <Exec Command="&quot;$(PythonExe)&quot; -m Parser.pgen &quot;$(PySourcePath)Grammar\Grammar&quot; &quot;$(PySourcePath)Grammar\Tokens&quot; &quot;$(IntDir)graminit.h&quot; &quot;$(IntDir)graminit.c&quot;" />
-    <Copy SourceFiles="$(IntDir)graminit.h" DestinationFiles="$(PySourcePath)Include\graminit.h">
-      <Output TaskParameter="CopiedFiles" ItemName="_UpdatedH" />
-    </Copy>
-    <Copy SourceFiles="$(IntDir)graminit.c" DestinationFiles="$(PySourcePath)Python\graminit.c">
-      <Output TaskParameter="CopiedFiles" ItemName="_UpdatedC" />
-    </Copy>
-    <Warning Text="Grammar updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedH)' != '' and '@(_UpdatedC)' != ''" />
-  </Target>
   <Target Name="_RegenPegen" BeforeTargets="Build">
-    <!-- Regenerate Parser/pegen/parse.c -->
+    <!-- Regenerate Parser/parser.c -->
     <SetEnv Name="PYTHONPATH" Prefix="true" Value="$(PySourcePath)Tools\peg_generator\" />
-    <Exec Command="&quot;$(PythonExe)&quot; -m pegen -q c &quot;$(PySourcePath)Grammar\python.gram&quot; &quot;$(PySourcePath)Grammar\Tokens&quot; -o &quot;$(IntDir)parse.c&quot;" />
-    <Copy SourceFiles="$(IntDir)parse.c" DestinationFiles="$(PySourcePath)Parser\pegen\parse.c">
+    <Exec Command="&quot;$(PythonExe)&quot; -m pegen -q c &quot;$(PySourcePath)Grammar\python.gram&quot; &quot;$(PySourcePath)Grammar\Tokens&quot; -o &quot;$(IntDir)parser.c&quot;" />
+    <Copy SourceFiles="$(IntDir)parser.c" DestinationFiles="$(PySourcePath)Parser\parser.c">
       <Output TaskParameter="CopiedFiles" ItemName="_UpdatedParse" />
     </Copy>
     <Warning Text="Pegen updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_UpdatedParse)' != ''" />
