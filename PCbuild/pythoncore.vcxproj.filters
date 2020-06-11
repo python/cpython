@@ -522,9 +522,6 @@
     <ClInclude Include="..\Objects\unicodetype_db.h">
       <Filter>Objects</Filter>
     </ClInclude>
-    <ClInclude Include="..\Parser\parser.h">
-      <Filter>Parser</Filter>
-    </ClInclude>
     <ClInclude Include="..\Parser\tokenizer.h">
       <Filter>Parser</Filter>
     </ClInclude>
@@ -908,12 +905,6 @@
     <ClCompile Include="..\Objects\weakrefobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
-    <ClCompile Include="..\Parser\acceler.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\grammar1.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
     <ClCompile Include="..\Parser\pegen\pegen.c">
       <Filter>Parser</Filter>
     </ClCompile>
@@ -926,19 +917,7 @@
     <ClCompile Include="..\Parser\pegen\peg_api.c">
       <Filter>Parser</Filter>
     </ClCompile>
-    <ClCompile Include="..\Parser\listnode.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
     <ClCompile Include="..\Parser\myreadline.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\node.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\parser.c">
-      <Filter>Parser</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Parser\parsetok.c">
       <Filter>Parser</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\tokenizer.c">

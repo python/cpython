@@ -1,6 +1,6 @@
 #include "pegen_interface.h"
 
-#include "../tokenizer.h"
+#include "tokenizer.h"
 #include "pegen.h"
 
 mod_ty

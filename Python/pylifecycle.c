@@ -18,7 +18,6 @@
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 
-#include "grammar.h"              // PyGrammar_RemoveAccelerators()
 #include <locale.h>               // setlocale()
 
 #ifdef HAVE_SIGNAL_H
@@ -50,7 +49,6 @@ _Py_IDENTIFIER(threading);
 extern "C" {
 #endif
 
-extern grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward declarations */
 static PyStatus add_main_module(PyInterpreterState *interp);
@@ -1301,7 +1299,6 @@ finalize_interp_clear(PyThreadState *tstate)
     _PyWarnings_Fini(tstate->interp);
 
     if (is_main_interp) {
-        PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
         _PyExc_Fini();
     }
 
