@@ -813,9 +813,6 @@ ABC hierarchy::
     methods. Therefore, any loader supplying TraversableReader
     also supplies ResourceReader.
 
-    Loaders that wish to support resource reading are expected to
-    implement this interface.
-
     .. versionadded:: 3.9
 
 
