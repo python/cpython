@@ -461,6 +461,14 @@ PyDoc_STRVAR(os_fchmod__doc__,
 "\n"
 "Change the access permissions of the file given by file descriptor fd.\n"
 "\n"
+"  fd\n"
+"    The file descriptor of the file to be modified.\n"
+"  mode\n"
+"    Operating-system mode bitfield.\n"
+"    Be careful when using number literals for *mode*. The conventional UNIX notation for\n"
+"    numeric modes uses an octal base, which needs to be indicated with a ``0o`` prefix in\n"
+"    Python.\n"
+"\n"
 "Equivalent to os.chmod(fd, mode).");
 
 #define OS_FCHMOD_METHODDEF    \
@@ -8880,4 +8888,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=21d9d6b4e8e03ee8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a0239a555c1a178d input=a9049054013a1b77]*/
