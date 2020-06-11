@@ -1452,10 +1452,12 @@ calculate_init(PyCalculatePath *calculate, const PyConfig *config)
         return DECODE_LOCALE_ERR("VPATH macro", len);
     }
 
-    calculate->lib_python = Py_DecodeLocale(PLATLIBDIR "/python" VERSION, &len);
-    if (!calculate->lib_python) {
+    wchar_t * pyversion = Py_DecodeLocale("python" VERSION, &len);
+    if (!pyversion) {
         return DECODE_LOCALE_ERR("VERSION macro", len);
     }
+    calculate->lib_python = joinpath2(config->platlibdir, pyversion);
+    PyMem_RawFree(pyversion);
 
     calculate->warnings = config->pathconfig_warnings;
     calculate->pythonpath_env = config->pythonpath_env;
