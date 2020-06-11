@@ -497,79 +497,6 @@ The :mod:`test.support` module defines the following functions:
       check_impl_detail(cpython=False)  # Everywhere except CPython.
 
 
-.. function:: check_warnings(\*filters, quiet=True)
-
-   A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
-   easier to test that a warning was correctly raised.  It is approximately
-   equivalent to calling ``warnings.catch_warnings(record=True)`` with
-   :meth:`warnings.simplefilter` set to ``always`` and with the option to
-   automatically validate the results that are recorded.
-
-   ``check_warnings`` accepts 2-tuples of the form ``("message regexp",
-   WarningCategory)`` as positional arguments. If one or more *filters* are
-   provided, or if the optional keyword argument *quiet* is ``False``,
-   it checks to make sure the warnings are as expected:  each specified filter
-   must match at least one of the warnings raised by the enclosed code or the
-   test fails, and if any warnings are raised that do not match any of the
-   specified filters the test fails.  To disable the first of these checks,
-   set *quiet* to ``True``.
-
-   If no arguments are specified, it defaults to::
-
-      check_warnings(("", Warning), quiet=True)
-
-   In this case all warnings are caught and no errors are raised.
-
-   On entry to the context manager, a :class:`WarningRecorder` instance is
-   returned. The underlying warnings list from
-   :func:`~warnings.catch_warnings` is available via the recorder object's
-   :attr:`warnings` attribute.  As a convenience, the attributes of the object
-   representing the most recent warning can also be accessed directly through
-   the recorder object (see example below).  If no warning has been raised,
-   then any of the attributes that would otherwise be expected on an object
-   representing a warning will return ``None``.
-
-   The recorder object also has a :meth:`reset` method, which clears the
-   warnings list.
-
-   The context manager is designed to be used like this::
-
-      with check_warnings(("assertion is always true", SyntaxWarning),
-                          ("", UserWarning)):
-          exec('assert(False, "Hey!")')
-          warnings.warn(UserWarning("Hide me!"))
-
-   In this case if either warning was not raised, or some other warning was
-   raised, :func:`check_warnings` would raise an error.
-
-   When a test needs to look more deeply into the warnings, rather than
-   just checking whether or not they occurred, code like this can be used::
-
-      with check_warnings(quiet=True) as w:
-          warnings.warn("foo")
-          assert str(w.args[0]) == "foo"
-          warnings.warn("bar")
-          assert str(w.args[0]) == "bar"
-          assert str(w.warnings[0].args[0]) == "foo"
-          assert str(w.warnings[1].args[0]) == "bar"
-          w.reset()
-          assert len(w.warnings) == 0
-
-
-   Here all warnings will be caught, and the test code tests the captured
-   warnings directly.
-
-   .. versionchanged:: 3.2
-      New optional arguments *filters* and *quiet*.
-
-
-.. function:: check_no_resource_warning(testcase)
-
-   Context manager to check that no :exc:`ResourceWarning` was raised.  You
-   must remove the object which may emit :exc:`ResourceWarning` before the
-   end of the context manager.
-
-
 .. function:: set_memlimit(limit)
 
    Set the values for :data:`max_memuse` and :data:`real_max_memuse` for big
@@ -851,20 +778,6 @@ The :mod:`test.support` module defines the following functions:
    the offset of the exception.
 
 
-.. function:: check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None)
-
-   Test for syntax warning in *statement* by attempting to compile *statement*.
-   Test also that the :exc:`SyntaxWarning` is emitted only once, and that it
-   will be converted to a :exc:`SyntaxError` when turned into error.
-   *testcase* is the :mod:`unittest` instance for the test.  *errtext* is the
-   regular expression which should match the string representation of the
-   emitted :exc:`SyntaxWarning` and raised :exc:`SyntaxError`.  If *lineno*
-   is not ``None``, compares to the line of the warning and exception.
-   If *offset* is not ``None``, compares to the offset of the exception.
-
-   .. versionadded:: 3.8
-
-
 .. function:: open_urlresource(url, *args, **kw)
 
    Open *url*.  If open fails, raises :exc:`TestFailed`.
@@ -1049,12 +962,6 @@ The :mod:`test.support` module defines the following classes:
    .. method:: match_value(self, k, dv, v)
 
       Try to match a single stored value (*dv*) with a supplied value (*v*).
-
-
-.. class:: WarningsRecorder()
-
-   Class used to record warnings for unit tests. See documentation of
-   :func:`check_warnings` above for more details.
 
 
 .. class:: BasicTestRunner()
@@ -1659,3 +1566,105 @@ The :mod:`test.support.import_helper` module provides support for import tests.
    will be reverted at the end of the block.
 
 
+:mod:`test.support.warnings_helper` --- Utilities for warnings tests
+====================================================================
+
+.. module:: test.support.warnings_helper
+   :synopsis: Support for warnings tests.
+
+The :mod:`test.support.warnings_helper` module provides support for warnings tests.
+
+.. versionadded:: 3.10
+
+
+.. function:: check_no_resource_warning(testcase)
+
+   Context manager to check that no :exc:`ResourceWarning` was raised.  You
+   must remove the object which may emit :exc:`ResourceWarning` before the
+   end of the context manager.
+
+
+.. function:: check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None)
+
+   Test for syntax warning in *statement* by attempting to compile *statement*.
+   Test also that the :exc:`SyntaxWarning` is emitted only once, and that it
+   will be converted to a :exc:`SyntaxError` when turned into error.
+   *testcase* is the :mod:`unittest` instance for the test.  *errtext* is the
+   regular expression which should match the string representation of the
+   emitted :exc:`SyntaxWarning` and raised :exc:`SyntaxError`.  If *lineno*
+   is not ``None``, compares to the line of the warning and exception.
+   If *offset* is not ``None``, compares to the offset of the exception.
+
+   .. versionadded:: 3.8
+
+
+.. function:: check_warnings(\*filters, quiet=True)
+
+   A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
+   easier to test that a warning was correctly raised.  It is approximately
+   equivalent to calling ``warnings.catch_warnings(record=True)`` with
+   :meth:`warnings.simplefilter` set to ``always`` and with the option to
+   automatically validate the results that are recorded.
+
+   ``check_warnings`` accepts 2-tuples of the form ``("message regexp",
+   WarningCategory)`` as positional arguments. If one or more *filters* are
+   provided, or if the optional keyword argument *quiet* is ``False``,
+   it checks to make sure the warnings are as expected:  each specified filter
+   must match at least one of the warnings raised by the enclosed code or the
+   test fails, and if any warnings are raised that do not match any of the
+   specified filters the test fails.  To disable the first of these checks,
+   set *quiet* to ``True``.
+
+   If no arguments are specified, it defaults to::
+
+      check_warnings(("", Warning), quiet=True)
+
+   In this case all warnings are caught and no errors are raised.
+
+   On entry to the context manager, a :class:`WarningRecorder` instance is
+   returned. The underlying warnings list from
+   :func:`~warnings.catch_warnings` is available via the recorder object's
+   :attr:`warnings` attribute.  As a convenience, the attributes of the object
+   representing the most recent warning can also be accessed directly through
+   the recorder object (see example below).  If no warning has been raised,
+   then any of the attributes that would otherwise be expected on an object
+   representing a warning will return ``None``.
+
+   The recorder object also has a :meth:`reset` method, which clears the
+   warnings list.
+
+   The context manager is designed to be used like this::
+
+      with check_warnings(("assertion is always true", SyntaxWarning),
+                          ("", UserWarning)):
+          exec('assert(False, "Hey!")')
+          warnings.warn(UserWarning("Hide me!"))
+
+   In this case if either warning was not raised, or some other warning was
+   raised, :func:`check_warnings` would raise an error.
+
+   When a test needs to look more deeply into the warnings, rather than
+   just checking whether or not they occurred, code like this can be used::
+
+      with check_warnings(quiet=True) as w:
+          warnings.warn("foo")
+          assert str(w.args[0]) == "foo"
+          warnings.warn("bar")
+          assert str(w.args[0]) == "bar"
+          assert str(w.warnings[0].args[0]) == "foo"
+          assert str(w.warnings[1].args[0]) == "bar"
+          w.reset()
+          assert len(w.warnings) == 0
+
+
+   Here all warnings will be caught, and the test code tests the captured
+   warnings directly.
+
+   .. versionchanged:: 3.2
+      New optional arguments *filters* and *quiet*.
+
+
+.. class:: WarningsRecorder()
+
+   Class used to record warnings for unit tests. See documentation of
+   :func:`check_warnings` above for more details.
