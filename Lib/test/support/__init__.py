@@ -17,7 +17,6 @@ import sysconfig
 import time
 import types
 import unittest
-import warnings
 
 from .import_helper import (
     CleanImport, DirsOnSysPath, _ignore_deprecated_imports,
@@ -811,6 +810,7 @@ class _MemoryWatchdog:
         self.started = False
 
     def start(self):
+        import warnings
         try:
             f = open(self.procfile, 'r')
         except OSError as e:
