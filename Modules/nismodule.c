@@ -100,7 +100,7 @@ static struct nis_map {
 };
 
 static char *
-nis_mapname (char *map, int *pfix)
+nis_mapname(char *map, int *pfix)
 {
     int i;
 
@@ -128,7 +128,7 @@ struct ypcallback_data {
 };
 
 static int
-nis_foreach (int instatus, char *inkey, int inkeylen, char *inval,
+nis_foreach(int instatus, char *inkey, int inkeylen, char *inval,
              int invallen, struct ypcallback_data *indata)
 {
     if (instatus == YP_TRUE) {
@@ -182,7 +182,7 @@ nis_get_default_domain(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-nis_match (PyObject *module, PyObject *args, PyObject *kwdict)
+nis_match(PyObject *module, PyObject *args, PyObject *kwdict)
 {
     char *match;
     char *domain = NULL;
@@ -231,7 +231,7 @@ nis_match (PyObject *module, PyObject *args, PyObject *kwdict)
 }
 
 static PyObject *
-nis_cat (PyObject *module, PyObject *args, PyObject *kwdict)
+nis_cat(PyObject *module, PyObject *args, PyObject *kwdict)
 {
     char *domain = NULL;
     char *map;
