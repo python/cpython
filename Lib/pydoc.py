@@ -1817,6 +1817,7 @@ class Helper:
         'False': '',
         'None': '',
         'True': '',
+        '__new_parser__': '',
         'and': 'BOOLEAN',
         'as': 'with',
         'assert': ('assert', ''),
