@@ -1,0 +1,1 @@
+Removed support for loaders implementing .files and supplying TraversableResources.
