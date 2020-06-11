@@ -196,15 +196,15 @@ match_stmt[stmt_ty]:
     | "match" target=expression ':' NEWLINE INDENT cases=case_block+ DEDENT {
         _Py_Match(target, cases, EXTRA) }
 case_block[match_case_ty]:
-    | "case" pattern=pattern_no_comma guard=guard? ':' body=block {
+    | "case" pattern=patterns guard=guard? ':' body=block {
         _Py_match_case(pattern, guard, body, p->arena) }
 guard[expr_ty]:
     | 'if' guard=named_expression { guard }
 
-pattern_no_comma[expr_ty]:
-    | pattern=pattern !',' { pattern }
-    | pattern error=',' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "tuple displays cannot be used as patterns; did you mean '[...]'?") }
+patterns[expr_ty]:
+    | value=value_pattern ',' values=values_pattern? {
+        _Py_Tuple(CHECK(_PyPegen_seq_insert_in_front(p, value, values)), Load, EXTRA) }
+    | pattern
 
 pattern[expr_ty]:
     | target=NAME ':=' value=or_pattern {
@@ -238,11 +238,10 @@ constant_pattern[expr_ty]:
     | '.' name=NAME !('.' | '(' | '=') { name }
     | '.'? attr=attr !('.' | '(' | '=') { attr }
 group_pattern[expr_ty]:
-    | '(' pattern=pattern_no_comma ')' { pattern }
-    | error='(' ')' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(error, "tuple displays cannot be used as patterns; did you mean '[]'?") }
+    | '(' pattern=patterns ')' { pattern }
 sequence_pattern[expr_ty]:
     | '[' values=values_pattern? ']' { _Py_List(values, Load, EXTRA) }
+    | '(' ')' { _Py_Tuple(NULL, Load, EXTRA) }
 mapping_pattern[expr_ty]:
     | '{' items=items_pattern? '}' {
         _Py_Dict(CHECK(_PyPegen_get_keys(p, items)), CHECK(_PyPegen_get_values(p, items)), EXTRA) }

@@ -107,7 +107,7 @@ static KeywordToken *reserved_keywords[] = {
 #define match_stmt_type 1038
 #define case_block_type 1039
 #define guard_type 1040
-#define pattern_no_comma_type 1041
+#define patterns_type 1041
 #define pattern_type 1042
 #define or_pattern_type 1043
 #define closed_pattern_type 1044
@@ -480,7 +480,7 @@ static asdl_seq* finally_block_rule(Parser *p);
 static stmt_ty match_stmt_rule(Parser *p);
 static match_case_ty case_block_rule(Parser *p);
 static expr_ty guard_rule(Parser *p);
-static expr_ty pattern_no_comma_rule(Parser *p);
+static expr_ty patterns_rule(Parser *p);
 static expr_ty pattern_rule(Parser *p);
 static expr_ty or_pattern_rule(Parser *p);
 static expr_ty closed_pattern_rule(Parser *p);
@@ -4744,7 +4744,7 @@ match_stmt_rule(Parser *p)
     return _res;
 }
 
-// case_block: "case" pattern_no_comma guard? ':' block
+// case_block: "case" patterns guard? ':' block
 static match_case_ty
 case_block_rule(Parser *p)
 {
@@ -4755,12 +4755,12 @@ case_block_rule(Parser *p)
     }
     match_case_ty _res = NULL;
     int _mark = p->mark;
-    { // "case" pattern_no_comma guard? ':' block
+    { // "case" patterns guard? ':' block
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> case_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"case\" pattern_no_comma guard? ':' block"));
+        D(fprintf(stderr, "%*c> case_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"case\" patterns guard? ':' block"));
         expr_ty _keyword;
         Token * _literal;
         asdl_seq* body;
@@ -4769,7 +4769,7 @@ case_block_rule(Parser *p)
         if (
             (_keyword = _PyPegen_expect_soft_keyword(p, "case"))  // soft_keyword='"case"'
             &&
-            (pattern = pattern_no_comma_rule(p))  // pattern_no_comma
+            (pattern = patterns_rule(p))  // patterns
             &&
             (guard = guard_rule(p), 1)  // guard?
             &&
@@ -4778,7 +4778,7 @@ case_block_rule(Parser *p)
             (body = block_rule(p))  // block
         )
         {
-            D(fprintf(stderr, "%*c+ case_block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"case\" pattern_no_comma guard? ':' block"));
+            D(fprintf(stderr, "%*c+ case_block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"case\" patterns guard? ':' block"));
             _res = _Py_match_case ( pattern , guard , body , p -> arena );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -4789,7 +4789,7 @@ case_block_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s case_block[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"case\" pattern_no_comma guard? ':' block"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"case\" patterns guard? ':' block"));
     }
     _res = NULL;
   done:
@@ -4841,9 +4841,9 @@ guard_rule(Parser *p)
     return _res;
 }
 
-// pattern_no_comma: pattern !',' | pattern ','
+// patterns: value_pattern ',' values_pattern? | pattern
 static expr_ty
-pattern_no_comma_rule(Parser *p)
+patterns_rule(Parser *p)
 {
     D(p->level++);
     if (p->error_indicator) {
@@ -4852,21 +4852,43 @@ pattern_no_comma_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    { // pattern !','
+    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        D(p->level--);
+        return NULL;
+    }
+    int _start_lineno = p->tokens[_mark]->lineno;
+    UNUSED(_start_lineno); // Only used by EXTRA macro
+    int _start_col_offset = p->tokens[_mark]->col_offset;
+    UNUSED(_start_col_offset); // Only used by EXTRA macro
+    { // value_pattern ',' values_pattern?
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> pattern_no_comma[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "pattern !','"));
-        expr_ty pattern;
+        D(fprintf(stderr, "%*c> patterns[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "value_pattern ',' values_pattern?"));
+        Token * _literal;
+        expr_ty value;
+        void *values;
         if (
-            (pattern = pattern_rule(p))  // pattern
+            (value = value_pattern_rule(p))  // value_pattern
             &&
-            _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 12)  // token=','
+            (_literal = _PyPegen_expect_token(p, 12))  // token=','
+            &&
+            (values = values_pattern_rule(p), 1)  // values_pattern?
         )
         {
-            D(fprintf(stderr, "%*c+ pattern_no_comma[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "pattern !','"));
-            _res = pattern;
+            D(fprintf(stderr, "%*c+ patterns[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "value_pattern ',' values_pattern?"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                D(p->level--);
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _Py_Tuple ( CHECK ( _PyPegen_seq_insert_in_front ( p , value , values ) ) , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -4875,35 +4897,27 @@ pattern_no_comma_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s pattern_no_comma[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "pattern !','"));
+        D(fprintf(stderr, "%*c%s patterns[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "value_pattern ',' values_pattern?"));
     }
-    { // pattern ','
+    { // pattern
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> pattern_no_comma[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "pattern ','"));
-        Token * error;
+        D(fprintf(stderr, "%*c> patterns[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "pattern"));
         expr_ty pattern_var;
         if (
             (pattern_var = pattern_rule(p))  // pattern
-            &&
-            (error = _PyPegen_expect_token(p, 12))  // token=','
         )
         {
-            D(fprintf(stderr, "%*c+ pattern_no_comma[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "pattern ','"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( error , "tuple displays cannot be used as patterns; did you mean '[...]'?" );
-            if (_res == NULL && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                D(p->level--);
-                return NULL;
-            }
+            D(fprintf(stderr, "%*c+ patterns[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "pattern"));
+            _res = pattern_var;
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s pattern_no_comma[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "pattern ','"));
+        D(fprintf(stderr, "%*c%s patterns[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "pattern"));
     }
     _res = NULL;
   done:
@@ -5580,7 +5594,7 @@ constant_pattern_rule(Parser *p)
     return _res;
 }
 
-// group_pattern: '(' pattern_no_comma ')' | '(' ')'
+// group_pattern: '(' patterns ')'
 static expr_ty
 group_pattern_rule(Parser *p)
 {
@@ -5591,24 +5605,24 @@ group_pattern_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    { // '(' pattern_no_comma ')'
+    { // '(' patterns ')'
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> group_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' pattern_no_comma ')'"));
+        D(fprintf(stderr, "%*c> group_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' patterns ')'"));
         Token * _literal;
         Token * _literal_1;
         expr_ty pattern;
         if (
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
-            (pattern = pattern_no_comma_rule(p))  // pattern_no_comma
+            (pattern = patterns_rule(p))  // patterns
             &&
             (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
         )
         {
-            D(fprintf(stderr, "%*c+ group_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' pattern_no_comma ')'"));
+            D(fprintf(stderr, "%*c+ group_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' patterns ')'"));
             _res = pattern;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -5619,34 +5633,7 @@ group_pattern_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s group_pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' pattern_no_comma ')'"));
-    }
-    { // '(' ')'
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> group_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' ')'"));
-        Token * _literal;
-        Token * error;
-        if (
-            (error = _PyPegen_expect_token(p, 7))  // token='('
-            &&
-            (_literal = _PyPegen_expect_token(p, 8))  // token=')'
-        )
-        {
-            D(fprintf(stderr, "%*c+ group_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' ')'"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( error , "tuple displays cannot be used as patterns; did you mean '[]'?" );
-            if (_res == NULL && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                D(p->level--);
-                return NULL;
-            }
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s group_pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' ')'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' patterns ')'"));
     }
     _res = NULL;
   done:
@@ -5654,7 +5641,7 @@ group_pattern_rule(Parser *p)
     return _res;
 }
 
-// sequence_pattern: '[' values_pattern? ']'
+// sequence_pattern: '[' values_pattern? ']' | '(' ')'
 static expr_ty
 sequence_pattern_rule(Parser *p)
 {
@@ -5712,6 +5699,42 @@ sequence_pattern_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s sequence_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'[' values_pattern? ']'"));
+    }
+    { // '(' ')'
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> sequence_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' ')'"));
+        Token * _literal;
+        Token * _literal_1;
+        if (
+            (_literal = _PyPegen_expect_token(p, 7))  // token='('
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
+        )
+        {
+            D(fprintf(stderr, "%*c+ sequence_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' ')'"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                D(p->level--);
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _Py_Tuple ( NULL , Load , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s sequence_pattern[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' ')'"));
     }
     _res = NULL;
   done:

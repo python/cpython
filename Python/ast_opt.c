@@ -800,7 +800,6 @@ astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // TODO: Build out this pattern optimizer.
     switch (node_->kind) {
         case Attribute_kind:
-        case Constant_kind:
             return 1;
         case BinOp_kind:
             CALL(astfold_pattern_complex, expr_ty, node_);
@@ -808,12 +807,14 @@ astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         case BoolOp_kind:
             // TODO: Quite a bit of potential here.
         case Call_kind:
+        case Constant_kind:
         case Dict_kind:
         // Not actually valid, but it's the complier's job to complain:
         case JoinedStr_kind:
         case List_kind:
         case Name_kind:
         case NamedExpr_kind:
+        case Tuple_kind:
             return 1;
         case UnaryOp_kind:
             CALL(astfold_pattern_negative, expr_ty, node_);

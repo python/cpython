@@ -2976,8 +2976,8 @@ compiler_pattern_or(struct compiler *c, expr_ty p, basicblock *fail, PyObject* n
 static int
 compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names)
 {
-    assert(p->kind == List_kind);
-    asdl_seq *values = p->v.List.elts;
+    assert(p->kind == List_kind || p->kind == Tuple_kind);
+    asdl_seq *values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
     Py_ssize_t size = asdl_seq_LEN(values);
     Py_ssize_t star = -1;
     for (Py_ssize_t i = 0; i < size; i++) {
@@ -3039,23 +3039,25 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail, PyObject* name
         case BinOp_kind:
             // Because we allow "2+2j", things like "2+2" make it this far.
             return compiler_error(c, "patterns cannot include operators");
+        case BoolOp_kind:
+            return compiler_pattern_or(c, p, fail, names);
         case Call_kind:
             return compiler_pattern_call(c, p, fail, names);
         case Constant_kind:
             return compiler_pattern_load(c, p, fail);
-        case BoolOp_kind:
-            return compiler_pattern_or(c, p, fail, names);
         case Dict_kind:
             return compiler_pattern_mapping(c, p, fail, names);
+        case JoinedStr_kind:
+            // Because we allow strings, f-strings make it this far.
+            return compiler_error(c, "patterns cannot include f-strings");
         case List_kind:
             return compiler_pattern_sequence(c, p, fail, names);
         case Name_kind:
             return compiler_pattern_name(c, p, fail, names);
         case NamedExpr_kind:
             return compiler_pattern_namedexpr(c, p, fail, names);
-        case JoinedStr_kind:
-            // Because we allow strings, f-strings make it this far.
-            return compiler_error(c, "patterns cannot include f-strings");
+        case Tuple_kind:
+            return compiler_pattern_sequence(c, p, fail, names);
         default:
             Py_UNREACHABLE();
     }
