@@ -45,7 +45,7 @@ Returns an array of all available NIS maps within a domain. If domain\n\
 is not specified it defaults to the system default domain.\n");
 
 typedef struct {
-    PyObject *NisError;
+    PyObject *nis_error;
 } nis_state;
 
 static inline nis_state*
@@ -59,15 +59,14 @@ get_nis_state(PyObject *module)
 static int
 nis_clear(PyObject *m)
 {
-    Py_CLEAR(get_nis_state(m)->NisError);
+    Py_CLEAR(get_nis_state(m)->nis_error);
     return 0;
 }
 
 static int
 nis_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    Py_VISIT(Py_TYPE(m));
-    Py_VISIT(get_nis_state(m)->NisError);
+    Py_VISIT(get_nis_state(m)->nis_error);
     return 0;
 }
 
@@ -85,7 +84,7 @@ static struct PyModuleDef nismodule;
 static PyObject *
 nis_error (int err)
 {
-    PyErr_SetString(nis_state_global->NisError, yperr_string(err));
+    PyErr_SetString(nis_state_global->nis_error, yperr_string(err));
     return NULL;
 }
 
@@ -400,12 +399,12 @@ nis_maplist (char *dom)
         mapi++;
     }
     if (!server) {
-        PyErr_SetString(nis_state_global->NisError, "No NIS master found for any map");
+        PyErr_SetString(nis_state_global->nis_error, "No NIS master found for any map");
         return NULL;
     }
     cl = clnt_create(server, YPPROG, YPVERS, "tcp");
     if (cl == NULL) {
-        PyErr_SetString(nis_state_global->NisError, clnt_spcreateerror(server));
+        PyErr_SetString(nis_state_global->nis_error, clnt_spcreateerror(server));
         goto finally;
     }
     list = nisproc_maplist_2 (&dom, cl);
@@ -498,9 +497,10 @@ PyInit_nis(void)
         return NULL;
     }
     d = PyModule_GetDict(m);
-    get_nis_state(m)->NisError = PyErr_NewException("nis.error", NULL, NULL);
-    if (get_nis_state(m)->NisError != NULL) {
-        PyDict_SetItemString(d, "error", get_nis_state(m)->NisError );
+    nis_state* state = get_nis_state(m);
+    state->nis_error = PyErr_NewException("nis.error", NULL, NULL);
+    if (state->nis_error != NULL) {
+        PyDict_SetItemString(d, "error", state->nis_error);
     }
     return m;
 }
