@@ -7,7 +7,7 @@ extern int Py_DebugFlag;
 #else
 #define D(x)
 #endif
-static const int n_keyword_lists = 15;
+static const int n_keyword_lists = 9;
 static KeywordToken *reserved_keywords[] = {
     NULL,
     NULL,
@@ -15,8 +15,8 @@ static KeywordToken *reserved_keywords[] = {
         {"if", 510},
         {"in", 518},
         {"is", 526},
-        {"as", 531},
-        {"or", 532},
+        {"as", 530},
+        {"or", 531},
         {NULL, -1},
     },
     (KeywordToken[]) {
@@ -25,7 +25,7 @@ static KeywordToken *reserved_keywords[] = {
         {"for", 517},
         {"def", 522},
         {"not", 525},
-        {"and", 533},
+        {"and", 532},
         {NULL, -1},
     },
     (KeywordToken[]) {
@@ -63,15 +63,6 @@ static KeywordToken *reserved_keywords[] = {
     (KeywordToken[]) {
         {"continue", 507},
         {"nonlocal", 509},
-        {NULL, -1},
-    },
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    (KeywordToken[]) {
-        {"__new_parser__", 530},
         {NULL, -1},
     },
 };
@@ -10567,7 +10558,6 @@ slice_rule(Parser *p)
 //     | 'True'
 //     | 'False'
 //     | 'None'
-//     | '__new_parser__'
 //     | &STRING strings
 //     | NUMBER
 //     | &'(' (tuple | group | genexp)
@@ -10710,30 +10700,6 @@ atom_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'None'"));
-    }
-    { // '__new_parser__'
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'__new_parser__'"));
-        Token * _keyword;
-        if (
-            (_keyword = _PyPegen_expect_token(p, 530))  // token='__new_parser__'
-        )
-        {
-            D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'__new_parser__'"));
-            _res = RAISE_SYNTAX_ERROR ( "You found it!" );
-            if (_res == NULL && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                D(p->level--);
-                return NULL;
-            }
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'__new_parser__'"));
     }
     { // &STRING strings
         if (p->error_indicator) {
@@ -17313,7 +17279,7 @@ _tmp_34_rule(Parser *p)
         Token * _keyword;
         expr_ty z;
         if (
-            (_keyword = _PyPegen_expect_token(p, 531))  // token='as'
+            (_keyword = _PyPegen_expect_token(p, 530))  // token='as'
             &&
             (z = _PyPegen_name_token(p))  // NAME
         )
@@ -17471,7 +17437,7 @@ _tmp_37_rule(Parser *p)
         Token * _keyword;
         expr_ty z;
         if (
-            (_keyword = _PyPegen_expect_token(p, 531))  // token='as'
+            (_keyword = _PyPegen_expect_token(p, 530))  // token='as'
             &&
             (z = _PyPegen_name_token(p))  // NAME
         )
@@ -17971,7 +17937,7 @@ _tmp_46_rule(Parser *p)
         Token * _keyword;
         expr_ty t;
         if (
-            (_keyword = _PyPegen_expect_token(p, 531))  // token='as'
+            (_keyword = _PyPegen_expect_token(p, 530))  // token='as'
             &&
             (t = target_rule(p))  // target
         )
@@ -18086,7 +18052,7 @@ _tmp_48_rule(Parser *p)
         Token * _keyword;
         expr_ty z;
         if (
-            (_keyword = _PyPegen_expect_token(p, 531))  // token='as'
+            (_keyword = _PyPegen_expect_token(p, 530))  // token='as'
             &&
             (z = _PyPegen_name_token(p))  // NAME
         )
@@ -23892,7 +23858,7 @@ _tmp_144_rule(Parser *p)
         Token * _keyword;
         expr_ty c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 532))  // token='or'
+            (_keyword = _PyPegen_expect_token(p, 531))  // token='or'
             &&
             (c = conjunction_rule(p))  // conjunction
         )
@@ -23936,7 +23902,7 @@ _tmp_145_rule(Parser *p)
         Token * _keyword;
         expr_ty c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 533))  // token='and'
+            (_keyword = _PyPegen_expect_token(p, 532))  // token='and'
             &&
             (c = inversion_rule(p))  // inversion
         )
