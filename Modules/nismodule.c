@@ -439,31 +439,38 @@ static PyMethodDef nis_methods[] = {
     {NULL,                      NULL}            /* Sentinel */
 };
 
+static int
+nis_exec(PyObject *module)
+{
+    NisError = PyErr_NewException("nis.error", NULL, NULL);
+    Py_INCREF(NisError);
+    if (PyModule_AddObject(module, "error", NisError) < 0) {
+        Py_DECREF(NisError);
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot nis_slots[] = {
+    {Py_mod_exec, nis_exec},
+    {0, NULL}
+};
+
+
 PyDoc_STRVAR(nis__doc__,
 "This module contains functions for accessing NIS maps.\n");
 
 static struct PyModuleDef nismodule = {
     PyModuleDef_HEAD_INIT,
-    "nis",
-    nis__doc__,
-    -1,
-    nis_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "nis",
+    .m_doc = nis__doc__,
+    .m_size = 0,
+    .m_methods = nis_methods,
+    .m_slots = nis_slots,
 };
 
 PyMODINIT_FUNC
 PyInit_nis(void)
 {
-    PyObject *m, *d;
-    m = PyModule_Create(&nismodule);
-    if (m == NULL)
-        return NULL;
-    d = PyModule_GetDict(m);
-    NisError = PyErr_NewException("nis.error", NULL, NULL);
-    if (NisError != NULL)
-        PyDict_SetItemString(d, "error", NisError);
-    return m;
+    return PyModuleDef_Init(&nismodule);
 }
