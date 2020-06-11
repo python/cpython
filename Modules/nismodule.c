@@ -483,6 +483,28 @@ static PyMethodDef nis_methods[] = {
     {NULL,                      NULL}            /* Sentinel */
 };
 
+static int
+nis_exec(PyObject *module)
+{
+    nis_state* state = get_nis_state(module);
+    state->nis_error = PyErr_NewException("nis.error", NULL, NULL);
+    if (state->nis_error == NULL) {
+        return -1;
+    }
+
+    Py_INCREF(state->nis_error);
+    if (PyModule_AddObject(module, "error", state->nis_error) < 0) {
+        Py_DECREF(state->nis_error);
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot nis_slots[] = {
+    {Py_mod_exec, nis_exec},
+    {0, NULL}
+};
+
 PyDoc_STRVAR(nis__doc__,
 "This module contains functions for accessing NIS maps.\n");
 
@@ -495,29 +517,11 @@ static struct PyModuleDef nismodule = {
     .m_traverse = nis_traverse,
     .m_clear = nis_clear,
     .m_free = nis_free,
+    .m_slots = nis_slots,
 };
 
 PyMODINIT_FUNC
 PyInit_nis(void)
 {
-    PyObject *module;
-    module = PyModule_Create(&nismodule);
-    if (module == NULL) {
-        return NULL;
-    }
-
-    nis_state* state = get_nis_state(module);
-    state->nis_error = PyErr_NewException("nis.error", NULL, NULL);
-    if (state->nis_error == NULL) {
-        Py_DECREF(module);
-        return NULL;
-    }
-
-    Py_INCREF(state->nis_error);
-    if (PyModule_AddObject(module, "error", state->nis_error) < 0) {
-        Py_DECREF(module);
-        Py_DECREF(state->nis_error);
-        return NULL;
-    }
-    return module;
+    return PyModuleDef_Init(&nismodule);
 }
