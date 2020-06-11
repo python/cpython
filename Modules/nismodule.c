@@ -505,7 +505,7 @@ PyInit_nis(void)
     }
 
     Py_INCREF(state->nis_error);
-    if (PyModule_AddObject(module, "error",  state->nis_error) < 0) {
+    if (PyModule_AddObject(module, "error", state->nis_error) < 0) {
         Py_DECREF(module);
         Py_DECREF(state->nis_error);
         return NULL;
