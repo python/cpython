@@ -477,7 +477,6 @@ atom[expr_ty]:
     | 'True' { _Py_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _Py_Constant(Py_False, NULL, EXTRA) }
     | 'None' { _Py_Constant(Py_None, NULL, EXTRA) }
-    | '__new_parser__' { RAISE_SYNTAX_ERROR("You found it!") }
     | &STRING strings
     | NUMBER
     | &'(' (tuple | group | genexp)
