@@ -66,8 +66,7 @@ _Py_GetRefTotal(void)
 void
 _PyDebug_PrintTotalRefs(void) {
     fprintf(stderr,
-            "[%" PY_FORMAT_SIZE_T "d refs, "
-            "%" PY_FORMAT_SIZE_T "d blocks]\n",
+            "[%zd refs, %zd blocks]\n",
             _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
 }
 #endif /* Py_REF_DEBUG */
@@ -1876,9 +1875,10 @@ _Py_PrintReferences(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining objects:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", (void *)op, Py_REFCNT(op));
-        if (PyObject_Print(op, fp, 0) != 0)
+        fprintf(fp, "%p [%zd] ", (void *)op, Py_REFCNT(op));
+        if (PyObject_Print(op, fp, 0) != 0) {
             PyErr_Clear();
+        }
         putc('\n', fp);
     }
 }
@@ -1892,7 +1892,7 @@ _Py_PrintReferenceAddresses(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining object addresses:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", (void *)op,
+        fprintf(fp, "%p [%zd] %s\n", (void *)op,
             Py_REFCNT(op), Py_TYPE(op)->tp_name);
 }
 
@@ -2029,8 +2029,8 @@ finally:
 void
 _PyTrash_deposit_object(PyObject *op)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    struct _gc_runtime_state *gcstate = &tstate->interp->gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _gc_runtime_state *gcstate = &interp->gc;
 
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
@@ -2057,8 +2057,8 @@ _PyTrash_thread_deposit_object(PyObject *op)
 void
 _PyTrash_destroy_chain(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    struct _gc_runtime_state *gcstate = &tstate->interp->gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _gc_runtime_state *gcstate = &interp->gc;
 
     while (gcstate->trash_delete_later) {
         PyObject *op = gcstate->trash_delete_later;
