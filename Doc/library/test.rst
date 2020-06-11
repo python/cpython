@@ -922,15 +922,6 @@ The :mod:`test.support` module defines the following functions:
 
 The :mod:`test.support` module defines the following classes:
 
-.. class:: TransientResource(exc, **kwargs)
-
-   Instances are a context manager that raises :exc:`ResourceDenied` if the
-   specified exception type is raised.  Any keyword arguments are treated as
-   attribute/value pairs to be compared against any exception raised within the
-   :keyword:`with` statement.  Only if all pairs match properly against
-   attributes on the exception is :exc:`ResourceDenied` raised.
-
-
 .. class:: SuppressCrashReport()
 
    A context manager used to try to prevent crash dialog popups on tests that

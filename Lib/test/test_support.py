@@ -660,7 +660,6 @@ class TestSupport(unittest.TestCase):
     # findfile
     # check_warnings
     # EnvironmentVarGuard
-    # TransientResource
     # transient_internet
     # run_with_locale
     # set_memlimit
