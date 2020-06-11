@@ -849,7 +849,6 @@ with_openssl
 with_ssl_default_suites
 with_builtin_hashlib_hashes
 with_experimental_isolated_subinterpreters
-with_uuid
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1589,7 +1588,6 @@ Optional Packages:
   --with-experimental-isolated-subinterpreters
                           better isolate subinterpreters, experimental build
                           mode (default is no)
-  --with-uuid=DIR         override rott of libuuid to DIR
 
 Some influential environment variables:
   MACHDEP     name for machine-dependent library files
@@ -9821,103 +9819,16 @@ _ACEOF
 fi
 	# Dynamic linking for HP-UX
 
-uuiddirs="/usr /usr/local /usr/pkg"
-if test "${with_uuid+set}" = set; then :
-  withval=$with_uuid;
-            case "$withval" in
-            "" | y | ye | yes | n | no)
-            as_fn_error $? "Invalid --with-uuid value" "$LINENO" 5
-              ;;
-            *) uuiddirs="$withval"
-              ;;
-            esac
-fi
-
 # checks for uuid.h location
-found=false
-for uuiddir in $uuiddirs; do
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid.h header" >&5
-$as_echo_n "checking for uuid.h header... " >&6; }
-    if test -f "$uuiddir/include/uuid.h"; then
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_UUID_H 1
-_ACEOF
-# AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
-# FreeBSD and OpenBSD provides support as well
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_create" >&5
-$as_echo_n "checking for uuid_create... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <uuid.h>
-int
-main ()
-{
+ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
 
-#ifndef uuid_create
-void *x = uuid_create
-#endif
 
-  ;
-  return 0;
-}
-_ACEOF
-        if ac_fn_c_try_compile "$LINENO"; then :
+$as_echo "#define HAVE_UUID_UUID_H 1" >>confdefs.h
 
-            $as_echo "#define HAVE_UUID_CREATE 1" >>confdefs.h
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-            $as_echo "yes" >&6; }
-            found=true
-            break
-        else
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-            $as_echo "no" >&6; }
-
-        fi
-        rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-# Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
-# stream in big-endian byte-order
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_enc_be" >&5
-$as_echo_n "checking for uuid_enc_be... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <uuid.h>
-int
-main ()
-{
-
-#ifndef uuid_enc_be
-void *x = uuid_enc_be
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-        if ac_fn_c_try_compile "$LINENO"; then :
-
-            $as_echo "#define HAVE_UUID_ENC_BE 1" >>confdefs.h
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-            found=true
-            break
-        else
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-        fi
-        rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-    fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid/uuid.h header" >&5
-$as_echo_n "checking for uuid/uuid.h header... " >&6; }
-    if test -f "$uuiddir/include/uuid/uuid.h"; then
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_UUID_UUID_H 1
-_ACEOF
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_generate_time_safe" >&5
 $as_echo_n "checking for uuid_generate_time_safe... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <uuid/uuid.h>
 int
@@ -9932,28 +9843,96 @@ void *x = uuid_generate_time_safe
   return 0;
 }
 _ACEOF
-        if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_c_try_compile "$LINENO"; then :
 
-            $as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+$as_echo "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-            found=true
-            break
-        else
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-        fi
-        rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-    fi
-    if $found; then
-        CPPFLAGS="-I$uuiddir/include $CPPFLAGS"
-        LDFLAGS="-L$uuidir/lib $LDFLAGS"
-        break
-    fi
-done
+else
+
+ac_fn_c_check_header_mongrel "$LINENO" "uuid.h" "ac_cv_header_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_h" = xyes; then :
+
+
+$as_echo "#define HAVE_UUID_H 1" >>confdefs.h
+
+    # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
+    # FreeBSD and OpenBSD provides support as well
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_create" >&5
+$as_echo_n "checking for uuid_create... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <uuid.h>
+int
+main ()
+{
+
+    #ifndef uuid_create
+    void *x = uuid_create
+    #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_UUID_CREATE 1" >>confdefs.h
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+    # Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
+    # stream in big-endian byte-order
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uuid_enc_be" >&5
+$as_echo_n "checking for uuid_enc_be... " >&6; }
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <uuid.h>
+int
+main ()
+{
+
+#ifndef uuid_enc_be
+void *x = uuid_enc_be
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_UUID_ENC_BE 1" >>confdefs.h
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+
+
+
+fi
 
 
 

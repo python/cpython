@@ -2817,44 +2817,51 @@ AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
 # checks for uuid.h location
-AC_CHECK_HEADERS([uuid/uuid.h uuid.h])
-
-AC_MSG_CHECKING(for uuid_generate_time_safe)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid/uuid.h>]], [[
+AC_CHECK_HEADER(uuid/uuid.h,
+    [
+    AC_DEFINE(HAVE_UUID_UUID_H, 1, Define to 1 if you have the <uuid/uuid.h> header file.)
+    AC_MSG_CHECKING(for uuid_generate_time_safe)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid/uuid.h>]], [[
 #ifndef uuid_generate_time_safe
 void *x = uuid_generate_time_safe
 #endif
-]])],
-  [AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, Define if uuid_generate_time_safe() exists.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
+    ]])],
+    [AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, Define if uuid_generate_time_safe() exists.)
+    AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)]
+    )
+    ],
+    [
+AC_CHECK_HEADER(uuid.h,
+    [
+    AC_DEFINE(HAVE_UUID_H, 1, Define to 1 if you have the <uuid.h> header file.)
+    # AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
+    # FreeBSD and OpenBSD provides support as well
+    AC_MSG_CHECKING(for uuid_create)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
+    #ifndef uuid_create
+    void *x = uuid_create
+    #endif
+    ]])],
+    [AC_DEFINE(HAVE_UUID_CREATE, 1, Define if uuid_create() exists.)
+    AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)]
+    )
 
-# AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
-# FreeBSD and OpenBSD provides support as well
-AC_MSG_CHECKING(for uuid_create)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
-#ifndef uuid_create
-void *x = uuid_create
-#endif
-]])],
-  [AC_DEFINE(HAVE_UUID_CREATE, 1, Define if uuid_create() exists.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
-
-# Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
-# stream in big-endian byte-order
-AC_MSG_CHECKING(for uuid_enc_be)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
+    # Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
+    # stream in big-endian byte-order
+    AC_MSG_CHECKING(for uuid_enc_be)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
 #ifndef uuid_enc_be
 void *x = uuid_enc_be
 #endif
-]])],
-  [AC_DEFINE(HAVE_UUID_ENC_BE, 1, Define if uuid_enc_be() exists.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)]
-)
+    ]])],
+    [AC_DEFINE(HAVE_UUID_ENC_BE, 1, Define if uuid_enc_be() exists.)
+    AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)]
+    )
+    ], [] [])
+], [])
 
 # 'Real Time' functions on Solaris
 # posix4 on Solaris 2.6
