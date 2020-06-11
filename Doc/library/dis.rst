@@ -1189,23 +1189,9 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.6
 
 
-.. opcode:: MATCH (delta)
+.. opcode:: MATCH (count)
 
    TODO
-
-   Pop TOS, TOS1, TOS2, and TOS3.  If TOS2 is an instance of :class:`type` and
-   has a ``__match__`` method, call that method on TOS3.  The returned "proxy"
-   should be non-``None``.
-
-   TOS is an integer argument count, and TOS1 is a :class:`tuple` of attribute
-   names.  Using these together with the ``__match_args__`` and
-   ``__match_args_required__`` attributes (if present) on the "proxy", discover
-   and validate the total collection of attribute names required for a
-   successful match.  If it has all of those attributes, push a reversed
-   :class:`list` of their corresponsing values onto the stack.
-
-   If any part of the above process is unsuccessful, increment the bytecode
-   counter by ``delta``.
 
    .. versionadded:: 3.10
 

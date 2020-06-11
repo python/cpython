@@ -199,7 +199,6 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
             case SETUP_FINALLY:
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
-            case MATCH:
                 j = GETJUMPTGT(code, i);
                 assert(j < len);
                 blocks[j] = 1;
@@ -504,7 +503,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case SETUP_FINALLY:
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
-            case MATCH:
                 j = blocks[j / sizeof(_Py_CODEUNIT) + i + 1] - blocks[i] - 1;
                 j *= sizeof(_Py_CODEUNIT);
                 break;

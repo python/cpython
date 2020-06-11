@@ -999,10 +999,9 @@ get_match_args(PyThreadState *tstate, PyObject *proxy)
 }
 
 static PyObject *
-do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *type, PyObject *target)
+do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *type, PyObject *target)
 {
     // TODO: Break this up, and better error handling ("goto error;"):
-    assert(PyLong_CheckExact(count));
     assert(PyTuple_CheckExact(kwargs));
     if (!PyType_Check(type)) {
         _PyErr_Format(tstate, PyExc_TypeError,
@@ -1025,16 +1024,10 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
         return NULL;
     }
     if (proxy == Py_None) {
-        Py_DECREF(proxy);
-        return NULL;
+        return proxy;
     }
     Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwargs);
-    Py_ssize_t nargs = PyLong_AsSsize_t(count);
-    if (nargs < 0) {
-        Py_DECREF(proxy);
-        return NULL;
-    }
-    nargs -= nkwargs;
+    Py_ssize_t nargs = count - nkwargs;
     PyObject *args;
     PyObject *match_args = get_match_args(tstate, proxy);
     if (!match_args) {
@@ -1076,7 +1069,7 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
         return NULL;
     }
     assert(PyTuple_CheckExact(args) || args == Py_None);
-    PyObject *attrs = PyList_New(nargs + nkwargs);
+    PyObject *attrs = PyList_New(count);
     if (!attrs) {
         Py_DECREF(match_args);
         Py_DECREF(proxy);
@@ -1101,7 +1094,7 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
                       proxy);
         goto error;
     }
-    if (required > nargs + nkwargs) {
+    if (required > count) {
         // TODO: combine with below? Use name?
         _PyErr_Format(tstate, PyExc_TypeError,
                       "not enough match arguments provided");
@@ -1132,7 +1125,7 @@ do_match(PyThreadState *tstate, PyObject *count, PyObject *kwargs, PyObject *typ
         }
     }
     PyObject *name;
-    for (Py_ssize_t i = 0; i < nargs + nkwargs; i++) {
+    for (Py_ssize_t i = 0; i < count; i++) {
         if (i < nargs) {
             if (args == Py_None) {
                 assert(!i);
@@ -3623,25 +3616,18 @@ main_loop:
         }
 
         case TARGET(MATCH): {
-            PyObject *count = TOP();
-            PyObject *names = SECOND();
-            PyObject *type = THIRD();
-            PyObject *target = FOURTH();
-            PyObject *attrs = do_match(tstate, count, names, type, target);
-            Py_DECREF(count);
+            PyObject *names = POP();
+            PyObject *type = TOP();
+            PyObject *target = SECOND();
+            PyObject *attrs = do_match(tstate, oparg, names, type, target);
             Py_DECREF(names);
+            if (!attrs) {
+                goto error;
+            }
             Py_DECREF(type);
             Py_DECREF(target);
-            if (!attrs) {
-                STACK_SHRINK(4);
-                if (_PyErr_Occurred(tstate)) {
-                    goto error;
-                }
-                JUMPBY(oparg);
-                DISPATCH();
-            }
-            STACK_SHRINK(3);
-            SET_TOP(attrs);
+            SET_SECOND(attrs);
+            SET_TOP(PyBool_FromLong(attrs != Py_None));
             DISPATCH();
         }
 
@@ -3673,7 +3659,7 @@ main_loop:
             PyObject *item = PySequence_Fast_GET_ITEM(target, oparg);
             Py_INCREF(item);
             PUSH(item);
-            DISPATCH();
+            FAST_DISPATCH();
         }
 
         case TARGET(MATCH_SEQ_ITEM_END): {
@@ -3683,7 +3669,7 @@ main_loop:
             PyObject *item = PySequence_Fast_GET_ITEM(target, i);
             Py_INCREF(item);
             PUSH(item);
-            DISPATCH();
+            FAST_DISPATCH();
         }
 
         case TARGET(MATCH_SEQ_SLICE): {
@@ -3709,7 +3695,7 @@ main_loop:
                 goto error;
             }
             PUSH(slice);
-            DISPATCH();
+            FAST_DISPATCH();
         }
 
         case TARGET(MATCH_LEN_EQ): {
@@ -3722,9 +3708,8 @@ main_loop:
                 assert(PyList_CheckExact(target) || PyTuple_CheckExact(target));
                 len = PySequence_Fast_GET_SIZE(target);
             }
-            PUSH(len == oparg ? Py_True : Py_False);
-            Py_INCREF(TOP());
-            DISPATCH();
+            PUSH(PyBool_FromLong(len == oparg));
+            FAST_DISPATCH();
         }
 
         case TARGET(MATCH_LEN_GE): {
@@ -3737,9 +3722,8 @@ main_loop:
                 assert(PyList_CheckExact(target) || PyTuple_CheckExact(target));
                 len = PySequence_Fast_GET_SIZE(target);
             }
-            PUSH(len >= oparg ? Py_True : Py_False);
-            Py_INCREF(TOP());
-            DISPATCH();
+            PUSH(PyBool_FromLong(len >= oparg));
+            FAST_DISPATCH();
         }
 
         case TARGET(MATCH_MAP): {
@@ -3766,8 +3750,7 @@ main_loop:
                 SET_TOP(map);
                 Py_DECREF(target);
             }
-            PUSH(match ? Py_True : Py_False);
-            Py_INCREF(TOP());
+            PUSH(PyBool_FromLong(match));
             DISPATCH();
         }
 
@@ -3785,8 +3768,7 @@ main_loop:
                 SET_TOP(seq);
                 Py_DECREF(target);
             }
-            PUSH(match ? Py_True : Py_False);
-            Py_INCREF(TOP());
+            PUSH(PyBool_FromLong(match));
             DISPATCH();
         }
 

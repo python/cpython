@@ -1119,7 +1119,7 @@ stack_effect(int opcode, int oparg, int jump)
         case DICT_UPDATE:
             return -1;
         case MATCH:
-            return jump > 0 ? -4 : -3;
+            return -1;
         case MATCH_MAP_KEYS:
         case MATCH_LEN_EQ:
         case MATCH_LEN_GE:
@@ -2800,10 +2800,8 @@ compiler_pattern_call(struct compiler *c, expr_ty p, basicblock *fail, PyObject*
         PyTuple_SET_ITEM(kwnames, i, name);
     }
     ADDOP_LOAD_CONST_NEW(c, kwnames);
-    PyObject *count;
-    CHECK(count = PyLong_FromSsize_t(nargs + nkwargs));
-    ADDOP_LOAD_CONST_NEW(c, count);
-    ADDOP_JREL(c, MATCH, fail);
+    ADDOP_I(c, MATCH, nargs + nkwargs);
+    ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     for (i = 0; i < nargs; i++) {
         expr_ty arg = asdl_seq_GET(args, i);
         ADDOP_I(c, MATCH_SEQ_ITEM, i);
