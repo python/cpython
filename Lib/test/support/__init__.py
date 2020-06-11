@@ -14,7 +14,6 @@ import sysconfig
 import time
 import types
 import unittest
-import warnings
 
 from .import_helper import (
     CleanImport, DirsOnSysPath, _ignore_deprecated_imports,
@@ -30,6 +29,10 @@ from .os_helper import (
     rmtree, skip_unless_symlink, skip_unless_xattr,
     temp_cwd, temp_dir, temp_umask, unlink,
     EnvironmentVarGuard, FakePath, _longpath)
+from .warnings_helper import (
+    WarningsRecorder, _filterwarnings,
+    check_no_resource_warning, check_no_warnings,
+    check_syntax_warning, check_warnings, ignore_warnings)
 
 from .testresult import get_test_runner
 
@@ -45,7 +48,7 @@ __all__ = [
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_linux_version", "requires_mac_ver",
-    "check_syntax_error", "check_syntax_warning",
+    "check_syntax_error",
     "TransientResource", "time_out", "socket_peer_reset", "ioerror_peer_reset",
     "BasicTestRunner", "run_unittest", "run_doctest",
     "requires_gzip", "requires_bz2", "requires_lzma",
@@ -53,7 +56,6 @@ __all__ = [
     "requires_IEEE_754", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
-    "ignore_warnings",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
     "setswitchinterval",
@@ -62,7 +64,6 @@ __all__ = [
     # processes
     "reap_children",
     # miscellaneous
-    "check_warnings", "check_no_resource_warning", "check_no_warnings",
     "run_with_locale", "swap_item", "findfile",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable",
@@ -127,22 +128,6 @@ class ResourceDenied(unittest.SkipTest):
     has not be enabled.  It is used to distinguish between expected
     and unexpected skips.
     """
-
-def ignore_warnings(*, category):
-    """Decorator to suppress deprecation warnings.
-
-    Use of context managers to hide warnings make diffs
-    more noisy and tools like 'git blame' less useful.
-    """
-    def decorator(test):
-        @functools.wraps(test)
-        def wrapper(self, *args, **kwargs):
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', category=category)
-                return test(self, *args, **kwargs)
-        return wrapper
-    return decorator
-
 
 def anticipate_failure(condition):
     """Decorator to mark a test that is known to be broken in some cases
@@ -511,32 +496,6 @@ def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=N
     if offset is not None:
         testcase.assertEqual(err.offset, offset)
 
-def check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None):
-    # Test also that a warning is emitted only once.
-    with warnings.catch_warnings(record=True) as warns:
-        warnings.simplefilter('always', SyntaxWarning)
-        compile(statement, '<testcase>', 'exec')
-    testcase.assertEqual(len(warns), 1, warns)
-
-    warn, = warns
-    testcase.assertTrue(issubclass(warn.category, SyntaxWarning), warn.category)
-    if errtext:
-        testcase.assertRegex(str(warn.message), errtext)
-    testcase.assertEqual(warn.filename, '<testcase>')
-    testcase.assertIsNotNone(warn.lineno)
-    if lineno is not None:
-        testcase.assertEqual(warn.lineno, lineno)
-
-    # SyntaxWarning should be converted to SyntaxError when raised,
-    # since the latter contains more information and provides better
-    # error report.
-    with warnings.catch_warnings(record=True) as warns:
-        warnings.simplefilter('error', SyntaxWarning)
-        check_syntax_error(testcase, statement, errtext,
-                           lineno=lineno, offset=offset)
-    # No warnings are leaked when a SyntaxError is raised.
-    testcase.assertEqual(warns, [])
-
 
 def open_urlresource(url, *args, **kw):
     import urllib.request, urllib.parse
@@ -590,134 +549,6 @@ def open_urlresource(url, *args, **kw):
     if f is not None:
         return f
     raise TestFailed('invalid resource %r' % fn)
-
-
-class WarningsRecorder(object):
-    """Convenience wrapper for the warnings list returned on
-       entry to the warnings.catch_warnings() context manager.
-    """
-    def __init__(self, warnings_list):
-        self._warnings = warnings_list
-        self._last = 0
-
-    def __getattr__(self, attr):
-        if len(self._warnings) > self._last:
-            return getattr(self._warnings[-1], attr)
-        elif attr in warnings.WarningMessage._WARNING_DETAILS:
-            return None
-        raise AttributeError("%r has no attribute %r" % (self, attr))
-
-    @property
-    def warnings(self):
-        return self._warnings[self._last:]
-
-    def reset(self):
-        self._last = len(self._warnings)
-
-
-def _filterwarnings(filters, quiet=False):
-    """Catch the warnings, then check if all the expected
-    warnings have been raised and re-raise unexpected warnings.
-    If 'quiet' is True, only re-raise the unexpected warnings.
-    """
-    # Clear the warning registry of the calling module
-    # in order to re-raise the warnings.
-    frame = sys._getframe(2)
-    registry = frame.f_globals.get('__warningregistry__')
-    if registry:
-        registry.clear()
-    with warnings.catch_warnings(record=True) as w:
-        # Set filter "always" to record all warnings.  Because
-        # test_warnings swap the module, we need to look up in
-        # the sys.modules dictionary.
-        sys.modules['warnings'].simplefilter("always")
-        yield WarningsRecorder(w)
-    # Filter the recorded warnings
-    reraise = list(w)
-    missing = []
-    for msg, cat in filters:
-        seen = False
-        for w in reraise[:]:
-            warning = w.message
-            # Filter out the matching messages
-            if (re.match(msg, str(warning), re.I) and
-                issubclass(warning.__class__, cat)):
-                seen = True
-                reraise.remove(w)
-        if not seen and not quiet:
-            # This filter caught nothing
-            missing.append((msg, cat.__name__))
-    if reraise:
-        raise AssertionError("unhandled warning %s" % reraise[0])
-    if missing:
-        raise AssertionError("filter (%r, %s) did not catch any warning" %
-                             missing[0])
-
-
-@contextlib.contextmanager
-def check_warnings(*filters, **kwargs):
-    """Context manager to silence warnings.
-
-    Accept 2-tuples as positional arguments:
-        ("message regexp", WarningCategory)
-
-    Optional argument:
-     - if 'quiet' is True, it does not fail if a filter catches nothing
-        (default True without argument,
-         default False if some filters are defined)
-
-    Without argument, it defaults to:
-        check_warnings(("", Warning), quiet=True)
-    """
-    quiet = kwargs.get('quiet')
-    if not filters:
-        filters = (("", Warning),)
-        # Preserve backward compatibility
-        if quiet is None:
-            quiet = True
-    return _filterwarnings(filters, quiet)
-
-
-@contextlib.contextmanager
-def check_no_warnings(testcase, message='', category=Warning, force_gc=False):
-    """Context manager to check that no warnings are emitted.
-
-    This context manager enables a given warning within its scope
-    and checks that no warnings are emitted even with that warning
-    enabled.
-
-    If force_gc is True, a garbage collection is attempted before checking
-    for warnings. This may help to catch warnings emitted when objects
-    are deleted, such as ResourceWarning.
-
-    Other keyword arguments are passed to warnings.filterwarnings().
-    """
-    with warnings.catch_warnings(record=True) as warns:
-        warnings.filterwarnings('always',
-                                message=message,
-                                category=category)
-        yield
-        if force_gc:
-            gc_collect()
-    testcase.assertEqual(warns, [])
-
-
-@contextlib.contextmanager
-def check_no_resource_warning(testcase):
-    """Context manager to check that no ResourceWarning is emitted.
-
-    Usage:
-
-        with check_no_resource_warning(self):
-            f = open(...)
-            ...
-            del f
-
-    You must remove the object which may emit ResourceWarning before
-    the end of the context manager.
-    """
-    with check_no_warnings(testcase, category=ResourceWarning, force_gc=True):
-        yield
 
 
 class TransientResource(object):
@@ -978,6 +809,7 @@ class _MemoryWatchdog:
         self.started = False
 
     def start(self):
+        import warnings
         try:
             f = open(self.procfile, 'r')
         except OSError as e:
