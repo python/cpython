@@ -397,9 +397,9 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    int len = Py_SAFE_DOWNCAST(
-        PyBytes_GET_SIZE(f->f_code->co_code)/sizeof(_Py_CODEUNIT),
-        Py_ssize_t, int);
+    /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
+     * should never overflow. */
+    int len = (int)(PyBytes_GET_SIZE(f->f_code->co_code) / sizeof(_Py_CODEUNIT));
     int *lines = marklines(f->f_code, len);
     if (lines == NULL) {
         return -1;

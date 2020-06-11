@@ -128,6 +128,15 @@ gc_decref(PyGC_Head *g)
 
 #define GEN_HEAD(gcstate, n) (&(gcstate)->generations[n].head)
 
+
+static GCState *
+get_gc_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->gc;
+}
+
+
 void
 _PyGC_InitState(GCState *gcstate)
 {
@@ -1465,8 +1474,7 @@ static PyObject *
 gc_enable_impl(PyObject *module)
 /*[clinic end generated code: output=45a427e9dce9155c input=81ac4940ca579707]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
     gcstate->enabled = 1;
     Py_RETURN_NONE;
 }
@@ -1481,8 +1489,7 @@ static PyObject *
 gc_disable_impl(PyObject *module)
 /*[clinic end generated code: output=97d1030f7aa9d279 input=8c2e5a14e800d83b]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
     gcstate->enabled = 0;
     Py_RETURN_NONE;
 }
@@ -1497,8 +1504,7 @@ static int
 gc_isenabled_impl(PyObject *module)
 /*[clinic end generated code: output=1874298331c49130 input=30005e0422373b31]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
     return gcstate->enabled;
 }
 
@@ -1563,8 +1569,7 @@ static PyObject *
 gc_set_debug_impl(PyObject *module, int flags)
 /*[clinic end generated code: output=7c8366575486b228 input=5e5ce15e84fbed15]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
     gcstate->debug = flags;
     Py_RETURN_NONE;
 }
@@ -1579,8 +1584,7 @@ static int
 gc_get_debug_impl(PyObject *module)
 /*[clinic end generated code: output=91242f3506cd1e50 input=91a101e1c3b98366]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
     return gcstate->debug;
 }
 
@@ -1593,8 +1597,7 @@ PyDoc_STRVAR(gc_set_thresh__doc__,
 static PyObject *
 gc_set_threshold(PyObject *self, PyObject *args)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
     if (!PyArg_ParseTuple(args, "i|ii:set_threshold",
                           &gcstate->generations[0].threshold,
                           &gcstate->generations[1].threshold,
@@ -1617,8 +1620,7 @@ static PyObject *
 gc_get_threshold_impl(PyObject *module)
 /*[clinic end generated code: output=7902bc9f41ecbbd8 input=286d79918034d6e6]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
     return Py_BuildValue("(iii)",
                          gcstate->generations[0].threshold,
                          gcstate->generations[1].threshold,
@@ -1635,8 +1637,7 @@ static PyObject *
 gc_get_count_impl(PyObject *module)
 /*[clinic end generated code: output=354012e67b16398f input=a392794a08251751]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
     return Py_BuildValue("(iii)",
                          gcstate->generations[0].count,
                          gcstate->generations[1].count,
@@ -1679,15 +1680,13 @@ Return the list of objects that directly refer to any of objs.");
 static PyObject *
 gc_get_referrers(PyObject *self, PyObject *args)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    int i;
     PyObject *result = PyList_New(0);
     if (!result) {
         return NULL;
     }
 
-    GCState *gcstate = &tstate->interp->gc;
-    for (i = 0; i < NUM_GENERATIONS; i++) {
+    GCState *gcstate = get_gc_state();
+    for (int i = 0; i < NUM_GENERATIONS; i++) {
         if (!(gc_referrers_for(args, GEN_HEAD(gcstate, i), result))) {
             Py_DECREF(result);
             return NULL;
@@ -1806,11 +1805,10 @@ gc_get_stats_impl(PyObject *module)
 {
     int i;
     struct gc_generation_stats stats[NUM_GENERATIONS], *st;
-    PyThreadState *tstate = _PyThreadState_GET();
 
     /* To get consistent values despite allocations while constructing
        the result list, we use a snapshot of the running stats. */
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
     for (i = 0; i < NUM_GENERATIONS; i++) {
         stats[i] = gcstate->generation_stats[i];
     }
@@ -1901,8 +1899,7 @@ static PyObject *
 gc_freeze_impl(PyObject *module)
 /*[clinic end generated code: output=502159d9cdc4c139 input=b602b16ac5febbe5]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
     for (int i = 0; i < NUM_GENERATIONS; ++i) {
         gc_list_merge(GEN_HEAD(gcstate, i), &gcstate->permanent_generation.head);
         gcstate->generations[i].count = 0;
@@ -1922,8 +1919,7 @@ static PyObject *
 gc_unfreeze_impl(PyObject *module)
 /*[clinic end generated code: output=1c15f2043b25e169 input=2dd52b170f4cef6c]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
     gc_list_merge(&gcstate->permanent_generation.head,
                   GEN_HEAD(gcstate, NUM_GENERATIONS-1));
     Py_RETURN_NONE;
@@ -1939,8 +1935,7 @@ static Py_ssize_t
 gc_get_freeze_count_impl(PyObject *module)
 /*[clinic end generated code: output=61cbd9f43aa032e1 input=45ffbc65cfe2a6ed]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
     return gc_list_size(&gcstate->permanent_generation.head);
 }
 
@@ -2006,8 +2001,7 @@ static struct PyModuleDef gcmodule = {
 PyMODINIT_FUNC
 PyInit_gc(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
 
     PyObject *m = PyModule_Create(&gcmodule);
 
@@ -2316,8 +2310,7 @@ PyObject_GC_Del(void *op)
     if (_PyObject_GC_IS_TRACKED(op)) {
         gc_list_remove(g);
     }
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
+    GCState *gcstate = get_gc_state();
     if (gcstate->generations[0].count > 0) {
         gcstate->generations[0].count--;
     }
