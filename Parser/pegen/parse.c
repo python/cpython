@@ -71,7 +71,7 @@ static KeywordToken *reserved_keywords[] = {
     NULL,
     NULL,
     (KeywordToken[]) {
-        {"__new_parser__", 530},
+        {"__peg_parser__", 530},
         {NULL, -1},
     },
 };
@@ -10567,7 +10567,7 @@ slice_rule(Parser *p)
 //     | 'True'
 //     | 'False'
 //     | 'None'
-//     | '__new_parser__'
+//     | '__peg_parser__'
 //     | &STRING strings
 //     | NUMBER
 //     | &'(' (tuple | group | genexp)
@@ -10711,18 +10711,18 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'None'"));
     }
-    { // '__new_parser__'
+    { // '__peg_parser__'
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'__new_parser__'"));
+        D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'__peg_parser__'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 530))  // token='__new_parser__'
+            (_keyword = _PyPegen_expect_token(p, 530))  // token='__peg_parser__'
         )
         {
-            D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'__new_parser__'"));
+            D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'__peg_parser__'"));
             _res = RAISE_SYNTAX_ERROR ( "You found it!" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -10733,7 +10733,7 @@ atom_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'__new_parser__'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'__peg_parser__'"));
     }
     { // &STRING strings
         if (p->error_indicator) {
