@@ -212,9 +212,8 @@ pattern[expr_ty]:
     | or_pattern
 
 or_pattern[expr_ty]:
-    | value=closed_pattern '|' values='|'.closed_pattern+ {
-        _Py_BoolOp(Or, CHECK(_PyPegen_seq_insert_in_front(p, value, values)), EXTRA) }
-    | closed_pattern
+    | values='|'.closed_pattern+ {
+        asdl_seq_LEN(values) == 1 ? asdl_seq_GET(values, 0) : _Py_BoolOp(Or, values, EXTRA) }
 
 closed_pattern[expr_ty]:
     | name_pattern

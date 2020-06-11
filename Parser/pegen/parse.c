@@ -5004,7 +5004,7 @@ pattern_rule(Parser *p)
     return _res;
 }
 
-// or_pattern: closed_pattern '|' '|'.closed_pattern+ | closed_pattern
+// or_pattern: '|'.closed_pattern+
 static expr_ty
 or_pattern_rule(Parser *p)
 {
@@ -5024,24 +5024,18 @@ or_pattern_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // closed_pattern '|' '|'.closed_pattern+
+    { // '|'.closed_pattern+
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> or_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "closed_pattern '|' '|'.closed_pattern+"));
-        Token * _literal;
-        expr_ty value;
+        D(fprintf(stderr, "%*c> or_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'|'.closed_pattern+"));
         asdl_seq * values;
         if (
-            (value = closed_pattern_rule(p))  // closed_pattern
-            &&
-            (_literal = _PyPegen_expect_token(p, 18))  // token='|'
-            &&
             (values = _gather_50_rule(p))  // '|'.closed_pattern+
         )
         {
-            D(fprintf(stderr, "%*c+ or_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "closed_pattern '|' '|'.closed_pattern+"));
+            D(fprintf(stderr, "%*c+ or_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'|'.closed_pattern+"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -5051,7 +5045,7 @@ or_pattern_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _Py_BoolOp ( Or , CHECK ( _PyPegen_seq_insert_in_front ( p , value , values ) ) , EXTRA );
+            _res = asdl_seq_LEN ( values ) == 1 ? asdl_seq_GET ( values , 0 ) : _Py_BoolOp ( Or , values , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -5061,26 +5055,7 @@ or_pattern_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s or_pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "closed_pattern '|' '|'.closed_pattern+"));
-    }
-    { // closed_pattern
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> or_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "closed_pattern"));
-        expr_ty closed_pattern_var;
-        if (
-            (closed_pattern_var = closed_pattern_rule(p))  // closed_pattern
-        )
-        {
-            D(fprintf(stderr, "%*c+ or_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "closed_pattern"));
-            _res = closed_pattern_var;
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s or_pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "closed_pattern"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'|'.closed_pattern+"));
     }
     _res = NULL;
   done:
