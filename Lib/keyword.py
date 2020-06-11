@@ -19,7 +19,6 @@ kwlist = [
     'False',
     'None',
     'True',
-    '__new_parser__',
     'and',
     'as',
     'assert',
