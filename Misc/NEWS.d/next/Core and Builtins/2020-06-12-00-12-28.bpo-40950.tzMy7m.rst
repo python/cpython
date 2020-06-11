@@ -1,0 +1,1 @@
+Apply :pep:`3121` to :mod:`nis`. Patch by Dong-hee Na.

@@ -44,12 +44,48 @@ PyDoc_STRVAR(maps__doc__,
 Returns an array of all available NIS maps within a domain. If domain\n\
 is not specified it defaults to the system default domain.\n");
 
-static PyObject *NisError;
+typedef struct {
+    PyObject *NisError;
+} nis_state;
+
+static inline nis_state*
+get_nis_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (nis_state *)state;
+}
+
+static int
+nis_clear(PyObject *m)
+{
+    Py_CLEAR(get_nis_state(m)->NisError);
+    return 0;
+}
+
+static int
+nis_traverse(PyObject *m, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(m));
+    Py_VISIT(get_nis_state(m)->NisError);
+    return 0;
+}
+
+static void
+nis_free(void *m)
+{
+    nis_clear((PyObject *) m);
+}
+
+static struct PyModuleDef nismodule;
+
+#define nis_state_global \
+((nis_state *) PyModule_GetState(PyState_FindModule(&nismodule)))
 
 static PyObject *
 nis_error (int err)
 {
-    PyErr_SetString(NisError, yperr_string(err));
+    PyErr_SetString(nis_state_global->NisError, yperr_string(err));
     return NULL;
 }
 
@@ -364,12 +400,12 @@ nis_maplist (char *dom)
         mapi++;
     }
     if (!server) {
-        PyErr_SetString(NisError, "No NIS master found for any map");
+        PyErr_SetString(nis_state_global->NisError, "No NIS master found for any map");
         return NULL;
     }
     cl = clnt_create(server, YPPROG, YPVERS, "tcp");
     if (cl == NULL) {
-        PyErr_SetString(NisError, clnt_spcreateerror(server));
+        PyErr_SetString(nis_state_global->NisError, clnt_spcreateerror(server));
         goto finally;
     }
     list = nisproc_maplist_2 (&dom, cl);
@@ -444,14 +480,13 @@ PyDoc_STRVAR(nis__doc__,
 
 static struct PyModuleDef nismodule = {
     PyModuleDef_HEAD_INIT,
-    "nis",
-    nis__doc__,
-    -1,
-    nis_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "nis",
+    .m_doc = nis__doc__,
+    .m_size = sizeof(nis_state),
+    .m_methods = nis_methods,
+    .m_traverse = nis_traverse,
+    .m_clear = nis_clear,
+    .m_free = nis_free,
 };
 
 PyMODINIT_FUNC
@@ -459,11 +494,13 @@ PyInit_nis(void)
 {
     PyObject *m, *d;
     m = PyModule_Create(&nismodule);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
+    }
     d = PyModule_GetDict(m);
-    NisError = PyErr_NewException("nis.error", NULL, NULL);
-    if (NisError != NULL)
-        PyDict_SetItemString(d, "error", NisError);
+    get_nis_state(m)->NisError = PyErr_NewException("nis.error", NULL, NULL);
+    if (get_nis_state(m)->NisError != NULL) {
+        PyDict_SetItemString(d, "error", get_nis_state(m)->NisError );
+    }
     return m;
 }
