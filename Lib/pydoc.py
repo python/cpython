@@ -1817,7 +1817,6 @@ class Helper:
         'False': '',
         'None': '',
         'True': '',
-        '__peg_parser__': '',
         'and': 'BOOLEAN',
         'as': 'with',
         'assert': ('assert', ''),

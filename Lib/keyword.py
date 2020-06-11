@@ -19,7 +19,6 @@ kwlist = [
     'False',
     'None',
     'True',
-    '__peg_parser__',
     'and',
     'as',
     'assert',
