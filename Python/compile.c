@@ -3033,6 +3033,7 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
 static int
 compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names)
 {
+    SET_LOC(c, p);
     switch (p->kind) {
         case Attribute_kind:
             return compiler_pattern_load(c, p, fail);
@@ -3073,6 +3074,7 @@ compiler_match(struct compiler *c, stmt_ty s)
     assert(cases);
     for (Py_ssize_t i = 0; i < cases; i++) {
         match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
+        SET_LOC(c, m->pattern);
         CHECK(next = compiler_new_block(c));
         if (i != cases - 1) {
             ADDOP(c, DUP_TOP);
