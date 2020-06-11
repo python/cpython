@@ -485,8 +485,6 @@ static int test_init_from_config(void)
 
     config.install_signal_handlers = 0;
 
-    putenv("PYTHONOLDPARSER=1");
-
     /* FIXME: test use_environment */
 
     putenv("PYTHONHASHSEED=42");
@@ -673,7 +671,6 @@ static void set_most_env_vars(void)
     putenv("PYTHONNOUSERSITE=1");
     putenv("PYTHONFAULTHANDLER=1");
     putenv("PYTHONIOENCODING=iso8859-1:replace");
-    putenv("PYTHONOLDPARSER=1");
     putenv("PYTHONPLATLIBDIR=env_platlibdir");
 }
 
