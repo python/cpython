@@ -507,6 +507,18 @@ class TestRetrievingSourceCode(GetSourceBase):
         finally:
             del linecache.cache[co.co_filename]
 
+    def test_getsource_empty_file(self):
+        with support.temp_cwd() as cwd:
+            with open('empty_file.py', 'w'):
+                pass
+            sys.path.insert(0, cwd)
+            try:
+                import empty_file
+                self.assertEqual(inspect.getsource(empty_file), '')
+                self.assertEqual(inspect.getsourcelines(empty_file), ([''], 0))
+            finally:
+                sys.path.remove(cwd)
+
     def test_getfile(self):
         self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
 
