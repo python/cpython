@@ -1,6 +1,5 @@
-# Simplified grammar for Python
+# PEG grammar for Python
 
-@bytecode True
 @trailer '''
 void *
 _PyPegen_parse(Parser *p)
