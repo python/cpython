@@ -2,7 +2,7 @@
 
 #include "tokenizer.h"
 #include "pegen.h"
-#include "parse_string.h"
+#include "string_parser.h"
 
 //// STRING HANDLING FUNCTIONS ////
 

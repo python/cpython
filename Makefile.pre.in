@@ -301,15 +301,15 @@ LIBFFI_INCLUDEDIR=	@LIBFFI_INCLUDEDIR@
 
 PEGEN_OBJS=		\
 		Parser/pegen.o \
-		Parser/parse.o \
-		Parser/parse_string.o \
+		Parser/parser.o \
+		Parser/string_parser.o \
 		Parser/peg_api.o
 
 
 PEGEN_HEADERS= \
 		$(srcdir)/Include/internal/pegen_interface.h \
 		$(srcdir)/Parser/pegen.h \
-		$(srcdir)/Parser/parse_string.h
+		$(srcdir)/Parser/string_parser.h
 
 POBJS=		\
 		Parser/token.o \
@@ -823,8 +823,8 @@ regen-pegen:
 	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -q c \
 		$(srcdir)/Grammar/python.gram \
 		$(srcdir)/Grammar/Tokens \
-		-o $(srcdir)/Parser/parse.new.c
-	$(UPDATE_FILE) $(srcdir)/Parser/parse.c $(srcdir)/Parser/parse.new.c
+		-o $(srcdir)/Parser/parser.new.c
+	$(UPDATE_FILE) $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.new.c
 
 .PHONY=regen-ast
 regen-ast:

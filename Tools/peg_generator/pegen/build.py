@@ -67,7 +67,7 @@ def compile_c_extension(
                 str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
                 str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer.c"),
                 str(MOD_DIR.parent.parent.parent / "Parser" / "pegen.c"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "parse_string.c"),
+                str(MOD_DIR.parent.parent.parent / "Parser" / "string_parser.c"),
                 str(MOD_DIR.parent / "peg_extension" / "peg_extension.c"),
                 generated_source_path,
             ],
