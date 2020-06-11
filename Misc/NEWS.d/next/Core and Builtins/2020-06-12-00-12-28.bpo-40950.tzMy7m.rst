@@ -1,1 +1,1 @@
-Apply :pep:`3121` to :mod:`nis`. Patch by Dong-hee Na.
+Add a state to the :mod:`nis` module (:pep:`3121`). Patch by Dong-hee Na.
