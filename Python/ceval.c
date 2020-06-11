@@ -1148,10 +1148,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
    co_stacksize are ints. */
 #define STACK_LEVEL()     ((int)(stack_pointer - f->f_valuestack))
 #define EMPTY()           (STACK_LEVEL() == 0)
-#define TOP()             (stack_pointer[-1])
-#define SECOND()          (stack_pointer[-2])
-#define THIRD()           (stack_pointer[-3])
-#define FOURTH()          (stack_pointer[-4])
 #define PEEK(n)           (stack_pointer[-(n)])
 #define SET_TOP(v)        (stack_pointer[-1] = (v))
 #define SET_SECOND(v)     (stack_pointer[-2] = (v))
@@ -1164,19 +1160,19 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
 #ifdef LLTRACE
 #define PUSH(v)         { (void)(BASIC_PUSH(v), \
-                          lltrace && prtrace(tstate, TOP(), "push")); \
+                          lltrace && prtrace(tstate, PEEK(1), "push")); \
                           assert(STACK_LEVEL() <= co->co_stacksize); }
-#define POP()           ((void)(lltrace && prtrace(tstate, TOP(), "pop")), \
+#define POP()           ((void)(lltrace && prtrace(tstate, PEEK(1), "pop")), \
                          BASIC_POP())
 #define STACK_GROW(n)   do { \
                           assert(n >= 0); \
                           (void)(BASIC_STACKADJ(n), \
-                          lltrace && prtrace(tstate, TOP(), "stackadj")); \
+                          lltrace && prtrace(tstate, PEEK(1), "stackadj")); \
                           assert(STACK_LEVEL() <= co->co_stacksize); \
                         } while (0)
 #define STACK_SHRINK(n) do { \
                             assert(n >= 0); \
-                            (void)(lltrace && prtrace(tstate, TOP(), "stackadj")); \
+                            (void)(lltrace && prtrace(tstate, PEEK(1), "stackadj")); \
                             (void)(BASIC_STACKADJ(-n)); \
                             assert(STACK_LEVEL() <= co->co_stacksize); \
                         } while (0)
@@ -1530,17 +1526,17 @@ main_loop:
         }
 
         case TARGET(ROT_TWO): {
-            PyObject *top = TOP();
-            PyObject *second = SECOND();
+            PyObject *top = PEEK(1);
+            PyObject *second = PEEK(2);
             SET_TOP(second);
             SET_SECOND(top);
             FAST_DISPATCH();
         }
 
         case TARGET(ROT_THREE): {
-            PyObject *top = TOP();
-            PyObject *second = SECOND();
-            PyObject *third = THIRD();
+            PyObject *top = PEEK(1);
+            PyObject *second = PEEK(2);
+            PyObject *third = PEEK(3);
             SET_TOP(second);
             SET_SECOND(third);
             SET_THIRD(top);
@@ -1548,10 +1544,10 @@ main_loop:
         }
 
         case TARGET(ROT_FOUR): {
-            PyObject *top = TOP();
-            PyObject *second = SECOND();
-            PyObject *third = THIRD();
-            PyObject *fourth = FOURTH();
+            PyObject *top = PEEK(1);
+            PyObject *second = PEEK(2);
+            PyObject *third = PEEK(3);
+            PyObject *fourth = PEEK(4);
             SET_TOP(second);
             SET_SECOND(third);
             SET_THIRD(fourth);
@@ -1560,15 +1556,15 @@ main_loop:
         }
 
         case TARGET(DUP_TOP): {
-            PyObject *top = TOP();
+            PyObject *top = PEEK(1);
             Py_INCREF(top);
             PUSH(top);
             FAST_DISPATCH();
         }
 
         case TARGET(DUP_TOP_TWO): {
-            PyObject *top = TOP();
-            PyObject *second = SECOND();
+            PyObject *top = PEEK(1);
+            PyObject *second = PEEK(2);
             Py_INCREF(top);
             Py_INCREF(second);
             STACK_GROW(2);
@@ -1578,7 +1574,7 @@ main_loop:
         }
 
         case TARGET(UNARY_POSITIVE): {
-            PyObject *value = TOP();
+            PyObject *value = PEEK(1);
             PyObject *res = PyNumber_Positive(value);
             Py_DECREF(value);
             SET_TOP(res);
@@ -1588,7 +1584,7 @@ main_loop:
         }
 
         case TARGET(UNARY_NEGATIVE): {
-            PyObject *value = TOP();
+            PyObject *value = PEEK(1);
             PyObject *res = PyNumber_Negative(value);
             Py_DECREF(value);
             SET_TOP(res);
@@ -1598,7 +1594,7 @@ main_loop:
         }
 
         case TARGET(UNARY_NOT): {
-            PyObject *value = TOP();
+            PyObject *value = PEEK(1);
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
             if (err == 0) {
@@ -1616,7 +1612,7 @@ main_loop:
         }
 
         case TARGET(UNARY_INVERT): {
-            PyObject *value = TOP();
+            PyObject *value = PEEK(1);
             PyObject *res = PyNumber_Invert(value);
             Py_DECREF(value);
             SET_TOP(res);
@@ -1627,7 +1623,7 @@ main_loop:
 
         case TARGET(BINARY_POWER): {
             PyObject *exp = POP();
-            PyObject *base = TOP();
+            PyObject *base = PEEK(1);
             PyObject *res = PyNumber_Power(base, exp, Py_None);
             Py_DECREF(base);
             Py_DECREF(exp);
@@ -1639,7 +1635,7 @@ main_loop:
 
         case TARGET(BINARY_MULTIPLY): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_Multiply(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1651,7 +1647,7 @@ main_loop:
 
         case TARGET(BINARY_MATRIX_MULTIPLY): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_MatrixMultiply(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1663,7 +1659,7 @@ main_loop:
 
         case TARGET(BINARY_TRUE_DIVIDE): {
             PyObject *divisor = POP();
-            PyObject *dividend = TOP();
+            PyObject *dividend = PEEK(1);
             PyObject *quotient = PyNumber_TrueDivide(dividend, divisor);
             Py_DECREF(dividend);
             Py_DECREF(divisor);
@@ -1675,7 +1671,7 @@ main_loop:
 
         case TARGET(BINARY_FLOOR_DIVIDE): {
             PyObject *divisor = POP();
-            PyObject *dividend = TOP();
+            PyObject *dividend = PEEK(1);
             PyObject *quotient = PyNumber_FloorDivide(dividend, divisor);
             Py_DECREF(dividend);
             Py_DECREF(divisor);
@@ -1687,7 +1683,7 @@ main_loop:
 
         case TARGET(BINARY_MODULO): {
             PyObject *divisor = POP();
-            PyObject *dividend = TOP();
+            PyObject *dividend = PEEK(1);
             PyObject *res;
             if (PyUnicode_CheckExact(dividend) && (
                   !PyUnicode_Check(divisor) || PyUnicode_CheckExact(divisor))) {
@@ -1707,7 +1703,7 @@ main_loop:
 
         case TARGET(BINARY_ADD): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *sum;
             /* NOTE(haypo): Please don't try to micro-optimize int+int on
                CPython using bytecode, it is simply worthless.
@@ -1733,7 +1729,7 @@ main_loop:
 
         case TARGET(BINARY_SUBTRACT): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *diff = PyNumber_Subtract(left, right);
             Py_DECREF(right);
             Py_DECREF(left);
@@ -1745,7 +1741,7 @@ main_loop:
 
         case TARGET(BINARY_SUBSCR): {
             PyObject *sub = POP();
-            PyObject *container = TOP();
+            PyObject *container = PEEK(1);
             PyObject *res = PyObject_GetItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
@@ -1757,7 +1753,7 @@ main_loop:
 
         case TARGET(BINARY_LSHIFT): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_Lshift(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1769,7 +1765,7 @@ main_loop:
 
         case TARGET(BINARY_RSHIFT): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_Rshift(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1781,7 +1777,7 @@ main_loop:
 
         case TARGET(BINARY_AND): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_And(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1793,7 +1789,7 @@ main_loop:
 
         case TARGET(BINARY_XOR): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_Xor(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1805,7 +1801,7 @@ main_loop:
 
         case TARGET(BINARY_OR): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_Or(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1841,7 +1837,7 @@ main_loop:
 
         case TARGET(INPLACE_POWER): {
             PyObject *exp = POP();
-            PyObject *base = TOP();
+            PyObject *base = PEEK(1);
             PyObject *res = PyNumber_InPlacePower(base, exp, Py_None);
             Py_DECREF(base);
             Py_DECREF(exp);
@@ -1853,7 +1849,7 @@ main_loop:
 
         case TARGET(INPLACE_MULTIPLY): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_InPlaceMultiply(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1865,7 +1861,7 @@ main_loop:
 
         case TARGET(INPLACE_MATRIX_MULTIPLY): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_InPlaceMatrixMultiply(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1877,7 +1873,7 @@ main_loop:
 
         case TARGET(INPLACE_TRUE_DIVIDE): {
             PyObject *divisor = POP();
-            PyObject *dividend = TOP();
+            PyObject *dividend = PEEK(1);
             PyObject *quotient = PyNumber_InPlaceTrueDivide(dividend, divisor);
             Py_DECREF(dividend);
             Py_DECREF(divisor);
@@ -1889,7 +1885,7 @@ main_loop:
 
         case TARGET(INPLACE_FLOOR_DIVIDE): {
             PyObject *divisor = POP();
-            PyObject *dividend = TOP();
+            PyObject *dividend = PEEK(1);
             PyObject *quotient = PyNumber_InPlaceFloorDivide(dividend, divisor);
             Py_DECREF(dividend);
             Py_DECREF(divisor);
@@ -1901,7 +1897,7 @@ main_loop:
 
         case TARGET(INPLACE_MODULO): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *mod = PyNumber_InPlaceRemainder(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1913,7 +1909,7 @@ main_loop:
 
         case TARGET(INPLACE_ADD): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *sum;
             if (PyUnicode_CheckExact(left) && PyUnicode_CheckExact(right)) {
                 sum = unicode_concatenate(tstate, left, right, f, next_instr);
@@ -1932,7 +1928,7 @@ main_loop:
 
         case TARGET(INPLACE_SUBTRACT): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *diff = PyNumber_InPlaceSubtract(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1944,7 +1940,7 @@ main_loop:
 
         case TARGET(INPLACE_LSHIFT): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_InPlaceLshift(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1956,7 +1952,7 @@ main_loop:
 
         case TARGET(INPLACE_RSHIFT): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_InPlaceRshift(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1968,7 +1964,7 @@ main_loop:
 
         case TARGET(INPLACE_AND): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_InPlaceAnd(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1980,7 +1976,7 @@ main_loop:
 
         case TARGET(INPLACE_XOR): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_InPlaceXor(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -1992,7 +1988,7 @@ main_loop:
 
         case TARGET(INPLACE_OR): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyNumber_InPlaceOr(left, right);
             Py_DECREF(left);
             Py_DECREF(right);
@@ -2003,9 +1999,9 @@ main_loop:
         }
 
         case TARGET(STORE_SUBSCR): {
-            PyObject *sub = TOP();
-            PyObject *container = SECOND();
-            PyObject *v = THIRD();
+            PyObject *sub = PEEK(1);
+            PyObject *container = PEEK(2);
+            PyObject *v = PEEK(3);
             int err;
             STACK_SHRINK(3);
             /* container[sub] = v */
@@ -2019,8 +2015,8 @@ main_loop:
         }
 
         case TARGET(DELETE_SUBSCR): {
-            PyObject *sub = TOP();
-            PyObject *container = SECOND();
+            PyObject *sub = PEEK(1);
+            PyObject *container = PEEK(2);
             int err;
             STACK_SHRINK(2);
             /* del container[sub] */
@@ -2083,7 +2079,7 @@ main_loop:
         case TARGET(GET_AITER): {
             unaryfunc getter = NULL;
             PyObject *iter = NULL;
-            PyObject *obj = TOP();
+            PyObject *obj = PEEK(1);
             PyTypeObject *type = Py_TYPE(obj);
 
             if (type->tp_as_async != NULL) {
@@ -2128,7 +2124,7 @@ main_loop:
             unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
             PyObject *awaitable = NULL;
-            PyObject *aiter = TOP();
+            PyObject *aiter = PEEK(1);
             PyTypeObject *type = Py_TYPE(aiter);
 
             if (PyAsyncGen_CheckExact(aiter)) {
@@ -2177,7 +2173,7 @@ main_loop:
 
         case TARGET(GET_AWAITABLE): {
             PREDICTED(GET_AWAITABLE);
-            PyObject *iterable = TOP();
+            PyObject *iterable = PEEK(1);
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
 
             if (iter == NULL) {
@@ -2218,7 +2214,7 @@ main_loop:
 
         case TARGET(YIELD_FROM): {
             PyObject *v = POP();
-            PyObject *receiver = TOP();
+            PyObject *receiver = PEEK(1);
             int err;
             if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) {
                 retval = _PyGen_Send((PyGenObject *)receiver, v);
@@ -2452,8 +2448,8 @@ main_loop:
 
         case TARGET(STORE_ATTR): {
             PyObject *name = GETITEM(names, oparg);
-            PyObject *owner = TOP();
-            PyObject *v = SECOND();
+            PyObject *owner = PEEK(1);
+            PyObject *v = PEEK(2);
             int err;
             STACK_SHRINK(2);
             err = PyObject_SetAttr(owner, name, v);
@@ -2935,7 +2931,7 @@ main_loop:
         case TARGET(BUILD_CONST_KEY_MAP): {
             Py_ssize_t i;
             PyObject *map;
-            PyObject *keys = TOP();
+            PyObject *keys = PEEK(1);
             if (!PyTuple_CheckExact(keys) ||
                 PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -2996,8 +2992,8 @@ main_loop:
         }
 
         case TARGET(MAP_ADD): {
-            PyObject *value = TOP();
-            PyObject *key = SECOND();
+            PyObject *value = PEEK(1);
+            PyObject *key = PEEK(2);
             PyObject *map;
             int err;
             STACK_SHRINK(2);
@@ -3014,7 +3010,7 @@ main_loop:
 
         case TARGET(LOAD_ATTR): {
             PyObject *name = GETITEM(names, oparg);
-            PyObject *owner = TOP();
+            PyObject *owner = PEEK(1);
             PyObject *res = PyObject_GetAttr(owner, name);
             Py_DECREF(owner);
             SET_TOP(res);
@@ -3026,7 +3022,7 @@ main_loop:
         case TARGET(COMPARE_OP): {
             assert(oparg <= Py_GE);
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             PyObject *res = PyObject_RichCompare(left, right, oparg);
             SET_TOP(res);
             Py_DECREF(left);
@@ -3040,7 +3036,7 @@ main_loop:
 
         case TARGET(IS_OP): {
             PyObject *right = POP();
-            PyObject *left = TOP();
+            PyObject *left = PEEK(1);
             int res = (left == right)^oparg;
             PyObject *b = res ? Py_True : Py_False;
             Py_INCREF(b);
@@ -3116,7 +3112,7 @@ main_loop:
         case TARGET(IMPORT_NAME): {
             PyObject *name = GETITEM(names, oparg);
             PyObject *fromlist = POP();
-            PyObject *level = TOP();
+            PyObject *level = PEEK(1);
             PyObject *res;
             res = import_name(tstate, f, name, fromlist, level);
             Py_DECREF(level);
@@ -3152,7 +3148,7 @@ main_loop:
 
         case TARGET(IMPORT_FROM): {
             PyObject *name = GETITEM(names, oparg);
-            PyObject *from = TOP();
+            PyObject *from = PEEK(1);
             PyObject *res;
             res = import_from(tstate, from, name);
             PUSH(res);
@@ -3216,7 +3212,7 @@ main_loop:
         }
 
         case TARGET(JUMP_IF_FALSE_OR_POP): {
-            PyObject *cond = TOP();
+            PyObject *cond = PEEK(1);
             int err;
             if (cond == Py_True) {
                 STACK_SHRINK(1);
@@ -3240,7 +3236,7 @@ main_loop:
         }
 
         case TARGET(JUMP_IF_TRUE_OR_POP): {
-            PyObject *cond = TOP();
+            PyObject *cond = PEEK(1);
             int err;
             if (cond == Py_False) {
                 STACK_SHRINK(1);
@@ -3283,7 +3279,7 @@ main_loop:
 
         case TARGET(GET_ITER): {
             /* before: [obj]; after [getiter(obj)] */
-            PyObject *iterable = TOP();
+            PyObject *iterable = PEEK(1);
             PyObject *iter = PyObject_GetIter(iterable);
             Py_DECREF(iterable);
             SET_TOP(iter);
@@ -3296,7 +3292,7 @@ main_loop:
 
         case TARGET(GET_YIELD_FROM_ITER): {
             /* before: [obj]; after [getiter(obj)] */
-            PyObject *iterable = TOP();
+            PyObject *iterable = PEEK(1);
             PyObject *iter;
             if (PyCoro_CheckExact(iterable)) {
                 /* `iterable` is a coroutine */
@@ -3326,7 +3322,7 @@ main_loop:
         case TARGET(FOR_ITER): {
             PREDICTED(FOR_ITER);
             /* before: [iter]; after: [iter, iter()] *or* [] */
-            PyObject *iter = TOP();
+            PyObject *iter = PEEK(1);
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
                 PUSH(next);
@@ -3360,7 +3356,7 @@ main_loop:
         case TARGET(BEFORE_ASYNC_WITH): {
             _Py_IDENTIFIER(__aenter__);
             _Py_IDENTIFIER(__aexit__);
-            PyObject *mgr = TOP();
+            PyObject *mgr = PEEK(1);
             PyObject *enter = special_lookup(tstate, mgr, &PyId___aenter__);
             PyObject *res;
             if (enter == NULL) {
@@ -3395,7 +3391,7 @@ main_loop:
         case TARGET(SETUP_WITH): {
             _Py_IDENTIFIER(__enter__);
             _Py_IDENTIFIER(__exit__);
-            PyObject *mgr = TOP();
+            PyObject *mgr = PEEK(1);
             PyObject *enter = special_lookup(tstate, mgr, &PyId___enter__);
             PyObject *res;
             if (enter == NULL) {
@@ -3433,9 +3429,9 @@ main_loop:
             PyObject *exit_func;
             PyObject *exc, *val, *tb, *res;
 
-            exc = TOP();
-            val = SECOND();
-            tb = THIRD();
+            exc = PEEK(1);
+            val = PEEK(2);
+            tb = PEEK(3);
             assert(exc != Py_None);
             assert(!PyLong_Check(exc));
             exit_func = PEEK(7);
@@ -3452,7 +3448,7 @@ main_loop:
         case TARGET(LOAD_METHOD): {
             /* Designed to work in tandem with CALL_METHOD. */
             PyObject *name = GETITEM(names, oparg);
-            PyObject *obj = TOP();
+            PyObject *obj = PEEK(1);
             PyObject *meth = NULL;
 
             int meth_found = _PyObject_GetMethod(obj, name, &meth);
@@ -3500,7 +3496,7 @@ main_loop:
                    Stack layout:
 
                        ... | NULL | callable | arg1 | ... | argN
-                                                            ^- TOP()
+                                                            ^- PEEK(1)
                                                ^- (-oparg)
                                     ^- (-oparg-1)
                              ^- (-oparg-2)
@@ -3516,7 +3512,7 @@ main_loop:
                 /* This is a method call.  Stack layout:
 
                      ... | method | self | arg1 | ... | argN
-                                                        ^- TOP()
+                                                        ^- PEEK(1)
                                            ^- (-oparg)
                                     ^- (-oparg-1)
                            ^- (-oparg-2)
@@ -3578,7 +3574,7 @@ main_loop:
                         goto error;
                     if (_PyDict_MergeEx(d, kwargs, 2) < 0) {
                         Py_DECREF(d);
-                        format_kwargs_error(tstate, SECOND(), kwargs);
+                        format_kwargs_error(tstate, PEEK(2), kwargs);
                         Py_DECREF(kwargs);
                         goto error;
                     }
@@ -3588,7 +3584,7 @@ main_loop:
                 assert(PyDict_CheckExact(kwargs));
             }
             callargs = POP();
-            func = TOP();
+            func = PEEK(1);
             if (!PyTuple_CheckExact(callargs)) {
                 if (check_args_iterable(tstate, func, callargs) < 0) {
                     Py_DECREF(callargs);
@@ -3626,19 +3622,19 @@ main_loop:
             }
 
             if (oparg & 0x08) {
-                assert(PyTuple_CheckExact(TOP()));
+                assert(PyTuple_CheckExact(PEEK(1)));
                 func ->func_closure = POP();
             }
             if (oparg & 0x04) {
-                assert(PyDict_CheckExact(TOP()));
+                assert(PyDict_CheckExact(PEEK(1)));
                 func->func_annotations = POP();
             }
             if (oparg & 0x02) {
-                assert(PyDict_CheckExact(TOP()));
+                assert(PyDict_CheckExact(PEEK(1)));
                 func->func_kwdefaults = POP();
             }
             if (oparg & 0x01) {
-                assert(PyTuple_CheckExact(TOP()));
+                assert(PyTuple_CheckExact(PEEK(1)));
                 func->func_defaults = POP();
             }
 
@@ -3653,7 +3649,7 @@ main_loop:
             else
                 step = NULL;
             stop = POP();
-            start = TOP();
+            start = PEEK(1);
             slice = PySlice_New(start, stop, step);
             Py_DECREF(start);
             Py_DECREF(stop);
