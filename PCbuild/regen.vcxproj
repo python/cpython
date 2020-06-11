@@ -205,8 +205,9 @@
     <Exec Command="&quot;$(PythonExe)&quot; $(PySourcePath)Tools\scripts\generate_token.py py &quot;$(PySourcePath)Grammar\Tokens&quot; &quot;$(PySourcePath)Lib\token.py&quot;" />
   </Target>
   <Target Name="_RegenKeywords" AfterTargets="_RegenTokens">
-    <!-- Regenerate Lib/keyword.py from Grammar/Grammar and Grammar/Tokens using Parser/pgen-->
-    <Exec Command="&quot;$(PythonExe)&quot; -m Parser.pgen.keywordgen &quot;$(PySourcePath)Grammar\Grammar&quot; &quot;$(PySourcePath)Grammar\Tokens&quot; &quot;$(IntDir)keyword.py&quot;" />
+    <!-- Regenerate Lib/keyword.py from Grammar/python.gram and Grammar/Tokens using Tools/peg_generator/pegen-->
+    <SetEnv Name="PYTHONPATH" Prefix="true" Value="$(PySourcePath)Tools\peg_generator\" />
+    <Exec Command="&quot;$(PythonExe)&quot; -m pegen.keywordgen &quot;$(PySourcePath)Grammar\python.gram&quot; &quot;$(PySourcePath)Grammar\Tokens&quot; &quot;$(IntDir)keyword.py&quot;" />
     <Copy SourceFiles="$(IntDir)keyword.py" DestinationFiles="$(PySourcePath)Lib\keyword.py">
       <Output TaskParameter="CopiedFiles" ItemName="_Updated" />
     </Copy>
