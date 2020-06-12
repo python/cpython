@@ -1005,8 +1005,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
     assert(PyTuple_CheckExact(kwargs));
     if (!PyType_Check(type)) {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "called match pattern must be a type; did you mean '%s(...)'?",
-                      Py_TYPE(type)->tp_name);
+                      "called match pattern must be a type");
         return NULL;
     }
     PyObject *method = PyObject_GetAttrString(type, "__match__");
