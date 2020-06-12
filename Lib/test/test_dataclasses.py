@@ -3122,6 +3122,14 @@ class TestMakeDataclass(unittest.TestCase):
                 C = make_dataclass(classname, ['a', 'b'])
                 self.assertEqual(C.__name__, classname)
 
+    def test_normalize_members(self):
+        with self.assertRaisesRegexp(TypeError, "Field name duplicated: 'μ'"):
+            make_dataclass('a', ['\u00b5', '\u03bc'])
+
+    def test_normalized_keywords(self):
+        with self.assertRaisesRegexp(TypeError, "Field names must not be keywords: 'assert'"):
+            make_dataclass('a', ['𝚊ssert'])
+
 class TestReplace(unittest.TestCase):
     def test(self):
         @dataclass(frozen=True)

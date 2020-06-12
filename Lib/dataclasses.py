@@ -7,6 +7,7 @@ import keyword
 import builtins
 import functools
 import _thread
+import unicodedata
 from types import GenericAlias
 
 
@@ -1217,12 +1218,13 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
 
         if not isinstance(name, str) or not name.isidentifier():
             raise TypeError(f'Field names must be valid identifiers: {name!r}')
-        if keyword.iskeyword(name):
-            raise TypeError(f'Field names must not be keywords: {name!r}')
-        if name in seen:
-            raise TypeError(f'Field name duplicated: {name!r}')
+        normalized_name = unicodedata.normalize('NFKC', name)
+        if keyword.iskeyword(normalized_name):
+            raise TypeError(f'Field names must not be keywords: {normalized_name!r}')
+        if normalized_name in seen:
+            raise TypeError(f'Field name duplicated: {normalized_name!r}')
 
-        seen.add(name)
+        seen.add(normalized_name)
         anns[name] = tp
 
     namespace['__annotations__'] = anns
