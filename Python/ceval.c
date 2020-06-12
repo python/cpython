@@ -1149,7 +1149,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 #define STACK_LEVEL()     ((int)(stack_pointer - f->f_valuestack))
 #define EMPTY()           (STACK_LEVEL() == 0)
 #define PEEK(n)           (stack_pointer[-(n)])
-#define BASIC_STACKADJ(n) (stack_pointer += n)
 #define BASIC_PUSH(v)     (*stack_pointer++ = (v))
 #define BASIC_POP()       (*--stack_pointer)
 
@@ -1159,20 +1158,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                           assert(STACK_LEVEL() <= co->co_stacksize); }
 #define POP()           ((void)(lltrace && prtrace(tstate, PEEK(1), "pop")), \
                          BASIC_POP())
-#define STACK_GROW(n)   do { \
-                          assert(n >= 0); \
-                          (void)(BASIC_STACKADJ(n), \
-                          lltrace && prtrace(tstate, PEEK(1), "stackadj")); \
-                          assert(STACK_LEVEL() <= co->co_stacksize); \
-                        } while (0)
-#define EXT_POP(STACK_POINTER) ((void)(lltrace && \
-                                prtrace(tstate, (STACK_POINTER)[-1], "ext_pop")), \
-                                *--(STACK_POINTER))
 #else
 #define PUSH(v)                BASIC_PUSH(v)
 #define POP()                  BASIC_POP()
-#define STACK_GROW(n)          BASIC_STACKADJ(n)
-#define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
 #endif
 
 /* Local variable macros */
@@ -2405,7 +2393,7 @@ main_loop:
                 }
             } else if (unpack_iterable(tstate, seq, oparg, -1,
                                        stack_pointer + oparg)) {
-                STACK_GROW(oparg);
+                stack_pointer += oparg;
             } else {
                 /* unpack_iterable() raised an exception */
                 Py_DECREF(seq);
@@ -5101,7 +5089,7 @@ call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyO
 
     /* Clear the stack of the function object. */
     while ((*pp_stack) > pfunc) {
-        w = EXT_POP(*pp_stack);
+        w = *--(*pp_stack); // pop;
         Py_DECREF(w);
     }
 
