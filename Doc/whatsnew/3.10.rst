@@ -74,6 +74,11 @@ New Features
   number of ones in the binary expansion of a given integer, also known
   as the population count. (Contributed by Niklas Fiekas in :issue:`29882`.)
 
+* The views returned by :meth:`dict.keys`, :meth:`dict.values` and
+  :meth:`dict.items` now all have a ``mapping`` attribute that gives a
+  :class:`types.MappingProxyType` object wrapping the original
+  dictionary. (Contributed by Dennis Sweeney in :issue:`40890`.)
+
 
 Other Language Changes
 ======================
