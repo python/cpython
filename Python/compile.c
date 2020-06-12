@@ -2751,8 +2751,7 @@ compiler_if(struct compiler *c, stmt_ty s)
 
 // TODO: Remove Store part of check if disallowing all usage of _:
 #define WILDCARD_CHECK(N) \
-    ((N)->kind == Name_kind && (N)->v.Name.ctx == Store \
-     && _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
+    ((N)->kind == Name_kind && _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
 
 static int
 compiler_pattern_load(struct compiler *c, expr_ty p, basicblock *fail)

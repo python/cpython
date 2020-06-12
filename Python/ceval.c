@@ -910,7 +910,7 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
     if (!seen) {
         goto fail;
     }
-    values = PyList_New(nkeys);
+    values = PyTuple_New(nkeys);
     if (!values) {
         goto fail;
     }
@@ -929,7 +929,7 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
             goto fail;
         }
         Py_INCREF(value);
-        PyList_SET_ITEM(values, i, value);
+        PyTuple_SET_ITEM(values, i, value);
         if (PyDict_DelItem(map, key)) {
             goto fail;
         }
@@ -1068,7 +1068,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         return NULL;
     }
     assert(PyTuple_CheckExact(args) || args == Py_None);
-    PyObject *attrs = PyList_New(count);
+    PyObject *attrs = PyTuple_New(count);
     if (!attrs) {
         Py_DECREF(match_args);
         Py_DECREF(proxy);
@@ -1129,7 +1129,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
             if (args == Py_None) {
                 assert(!i);
                 Py_INCREF(proxy);
-                PyList_SET_ITEM(attrs, 0, proxy);
+                PyTuple_SET_ITEM(attrs, 0, proxy);
                 continue;
             }
             name = PyTuple_GET_ITEM(args, i);
@@ -1161,7 +1161,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
                               proxy, name);
             }
         }
-        PyList_SET_ITEM(attrs, i, attr);
+        PyTuple_SET_ITEM(attrs, i, attr);
     }
     Py_DECREF(match_args);
     Py_DECREF(proxy);
@@ -3653,21 +3653,44 @@ main_loop:
 
         case TARGET(MATCH_SEQ_ITEM): {
             PyObject *target = TOP();
-            assert(PyList_CheckExact(target) || PyTuple_CheckExact(target));
-            PyObject *item = PySequence_Fast_GET_ITEM(target, oparg);
+            PyObject *item;
+            if (PyTuple_CheckExact(target)) {
+                assert(oparg < PyTuple_GET_SIZE(target));
+                item = PyTuple_GET_ITEM(target, oparg);
+            }
+            else if (PyList_CheckExact(target)) {
+                assert(oparg < PyList_GET_SIZE(target));
+                item = PyList_GET_ITEM(target, oparg);
+            }
+            else {
+                // TODO
+                Py_UNREACHABLE();
+            }
             Py_INCREF(item);
             PUSH(item);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(MATCH_SEQ_ITEM_END): {
             PyObject *target = TOP();
-            assert(PyList_CheckExact(target) || PyTuple_CheckExact(target));
-            Py_ssize_t i = PySequence_Fast_GET_SIZE(target) - 1 - oparg;
-            PyObject *item = PySequence_Fast_GET_ITEM(target, i);
+            PyObject *item;
+            if (PyTuple_CheckExact(target)) {
+                Py_ssize_t i = PyTuple_GET_SIZE(target) - 1 - oparg;
+                assert(i >= 0);
+                item = PyTuple_GET_ITEM(target, i);
+            }
+            else if (PyList_CheckExact(target)) {
+                Py_ssize_t i = PyList_GET_SIZE(target) - 1 - oparg;
+                assert(i >= 0);
+                item = PyList_GET_ITEM(target, i);
+            }
+            else {
+                // TODO
+                Py_UNREACHABLE();
+            }
             Py_INCREF(item);
             PUSH(item);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(MATCH_SEQ_SLICE): {
@@ -3693,7 +3716,7 @@ main_loop:
                 goto error;
             }
             PUSH(slice);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(MATCH_LEN_EQ): {
@@ -3707,7 +3730,7 @@ main_loop:
                 len = PySequence_Fast_GET_SIZE(target);
             }
             PUSH(PyBool_FromLong(len == oparg));
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(MATCH_LEN_GE): {
@@ -3721,7 +3744,7 @@ main_loop:
                 len = PySequence_Fast_GET_SIZE(target);
             }
             PUSH(PyBool_FromLong(len >= oparg));
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(MATCH_MAP): {
