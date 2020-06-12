@@ -2749,12 +2749,18 @@ compiler_if(struct compiler *c, stmt_ty s)
     return 1;
 }
 
+// TODO: Remove Store part of check if disallowing all usage of _:
+#define WILDCARD_CHECK(N) \
+    ((N)->kind == Name_kind && (N)->v.Name.ctx == Store \
+     && _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
+
 static int
 compiler_pattern_load(struct compiler *c, expr_ty p, basicblock *fail)
 {
     assert(p->kind == Attribute_kind || p->kind == Constant_kind || p->kind == Name_kind);
     assert(p->kind != Attribute_kind || p->v.Attribute.ctx == Load);
     assert(p->kind != Name_kind || p->v.Name.ctx == Load);
+    // TODO: Guard against wildcards here?
     VISIT(c, expr, p);
     ADDOP_COMPARE(c, Eq);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, fail);
@@ -2789,11 +2795,17 @@ compiler_pattern_call(struct compiler *c, expr_ty p, basicblock *fail, PyObject*
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     for (i = 0; i < nargs; i++) {
         expr_ty arg = asdl_seq_GET(args, i);
+        if (WILDCARD_CHECK(arg)) {
+            continue;
+        }
         ADDOP_I(c, MATCH_SEQ_ITEM, i);
         CHECK(compiler_pattern(c, arg, block, names));
     }
     for (i = 0; i < nkwargs; i++) {
         keyword_ty kwarg = asdl_seq_GET(kwargs, i);
+        if (WILDCARD_CHECK(kwarg->value)) {
+            continue;
+        }
         ADDOP_I(c, MATCH_SEQ_ITEM, nargs + i);
         CHECK(compiler_pattern(c, kwarg->value, block, names));
     }
@@ -2807,11 +2819,11 @@ compiler_pattern_call(struct compiler *c, expr_ty p, basicblock *fail, PyObject*
 }
 
 static int
-compiler_pattern_store(struct compiler *c, expr_ty p, int anon_ok, PyObject* names) {
+compiler_pattern_store(struct compiler *c, expr_ty p, int wildcard_ok, PyObject* names) {
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
-    if (_PyUnicode_EqualToASCIIString(p->v.Name.id, "_")) {
-        if (!anon_ok) {
+    if (WILDCARD_CHECK(p)) {
+        if (!wildcard_ok) {
             return compiler_error(c, "can't assign to '_' here; consider removing or renaming?");
         }
         ADDOP(c, POP_TOP);
@@ -2858,12 +2870,15 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block_star)
     for (i = 0; i < size - star; i++) {
         expr_ty value = asdl_seq_GET(values, i);
+        if (WILDCARD_CHECK(value)) {
+            continue;
+        }
         ADDOP_I(c, MATCH_SEQ_ITEM, i);
         CHECK(compiler_pattern(c, value, block_star, names));
     }
     ADDOP(c, POP_TOP);
     if (star) {
-        CHECK(compiler_pattern(c, asdl_seq_GET(values, size - 1), fail, names));
+        CHECK(compiler_pattern_store(c, asdl_seq_GET(values, size - 1), 0, names));
     }
     else {
         ADDOP(c, POP_TOP);
@@ -2992,12 +3007,18 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
     }
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);
+        if (WILDCARD_CHECK(value)) {
+            continue;
+        }
         if (star < 0 || i < star) {
             ADDOP_I(c, MATCH_SEQ_ITEM, i);
         }
         else if (i == star) {
             assert(value->kind == Starred_kind);
             value = value->v.Starred.value;
+            if (WILDCARD_CHECK(value)) {
+                continue;
+            }
             // TODO: ERROR CHECKING FOR THESE:
             ADDOP_I(c, MATCH_SEQ_SLICE, (i << 16) + (size - 1 - i));
         }
@@ -3023,7 +3044,7 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail, PyObject* name
         case Attribute_kind:
             return compiler_pattern_load(c, p, fail);
         case BinOp_kind:
-            // Because we allow "2+2j", things like "2+2" make it this far.
+            // Because we allow "2+2j", things like "2+2" make it this far:
             return compiler_error(c, "patterns cannot include operators");
         case BoolOp_kind:
             return compiler_pattern_or(c, p, fail, names);
@@ -3034,7 +3055,7 @@ compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail, PyObject* name
         case Dict_kind:
             return compiler_pattern_mapping(c, p, fail, names);
         case JoinedStr_kind:
-            // Because we allow strings, f-strings make it this far.
+            // Because we allow strings, f-strings make it this far:
             return compiler_error(c, "patterns cannot include f-strings");
         case List_kind:
             return compiler_pattern_sequence(c, p, fail, names);
