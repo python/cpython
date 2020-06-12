@@ -3657,16 +3657,13 @@ main_loop:
         }
 
         case TARGET(MATCH_SEQ_ITEM): {
-            printf("AAA\n");
             PyObject *target = TOP();
             PyObject *item;
             if (PyTuple_CheckExact(target)) {
-                printf("BBB\n");
                 assert(oparg < PyTuple_GET_SIZE(target));
                 item = PyTuple_GET_ITEM(target, oparg);
             }
             else if (PyList_CheckExact(target)) {
-                printf("CCC\n");
                 assert(oparg < PyList_GET_SIZE(target));
                 item = PyList_GET_ITEM(target, oparg);
             }
@@ -3676,7 +3673,6 @@ main_loop:
             }
             Py_INCREF(item);
             PUSH(item);
-            printf("DDD\n");
             DISPATCH();
         }
 
