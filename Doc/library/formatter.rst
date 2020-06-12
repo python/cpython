@@ -8,6 +8,8 @@
 .. deprecated:: 3.4
    Due to lack of usage, the formatter module has been deprecated.
 
+**Source code:** :source:`Lib/formatter.py`
+
 --------------
 
 This module supports two interface definitions, each with multiple

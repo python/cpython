@@ -6,6 +6,8 @@
 
 .. moduleauthor:: Thomas Heller <theller@python.net>
 
+**Source code:** :source:`Lib/ctypes`
+
 --------------
 
 :mod:`ctypes` is a foreign function library for Python.  It provides C compatible

@@ -6,6 +6,8 @@
 
 .. sectionauthor:: A.M. Kuchling <amk@amk.ca>
 
+**Source code:** :source:`Lib/curses/panel.py`
+
 --------------
 
 Panels are windows with the added feature of depth, so they can be stacked on

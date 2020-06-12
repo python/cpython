@@ -5,6 +5,12 @@
 Coroutines and Tasks
 ====================
 
+
+**Source code:** :source:`Lib/asyncio/coroutines.py`,
+:source:`Lib/asyncio/tasks.py`
+
+------------------------------------
+
 This section outlines high-level asyncio APIs to work with coroutines
 and Tasks.
 

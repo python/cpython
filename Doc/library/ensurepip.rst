@@ -7,6 +7,8 @@
 
 .. versionadded:: 3.4
 
+**Source code:** :source:`Lib/ensurepip`
+
 --------------
 
 The :mod:`ensurepip` package provides support for bootstrapping the ``pip``

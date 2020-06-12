@@ -4,6 +4,10 @@
  Using :mod:`!importlib.metadata`
 =================================
 
+**Source code:** :source:`Lib/importlib/metadata.py`
+
+--------------
+
 .. note::
    This functionality is provisional and may deviate from the usual
    version semantics of the standard library.

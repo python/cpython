@@ -7,6 +7,8 @@
 
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`Lib/distutils`
+
 --------------
 
 The :mod:`distutils` package provides support for building and installing

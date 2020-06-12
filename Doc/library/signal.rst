@@ -4,6 +4,8 @@
 .. module:: signal
    :synopsis: Set handlers for asynchronous events.
 
+**Source code:** :source:`Lib/signal.py`
+
 --------------
 
 This module provides mechanisms to use signal handlers in Python.
