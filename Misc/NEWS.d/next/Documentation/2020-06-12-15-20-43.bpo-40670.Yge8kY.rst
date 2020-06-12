@@ -1,0 +1,1 @@
+Improve documentation of method :func:`timeit.timeit`. Enhanced by Edison Abahurire.
