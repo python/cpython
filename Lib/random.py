@@ -39,7 +39,7 @@ General notes on the underlying Mersenne Twister core generator:
 
 from warnings import warn as _warn
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
-from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
+from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin, tau as TWOPI
 from os import urandom as _urandom
 from _collections_abc import Set as _Set, Sequence as _Sequence
 from itertools import accumulate as _accumulate, repeat as _repeat
@@ -54,19 +54,38 @@ except ImportError:
     from hashlib import sha512 as _sha512
 
 
-__all__ = ["Random","seed","random","uniform","randint","choice","sample",
-           "randrange","shuffle","normalvariate","lognormvariate",
-           "expovariate","vonmisesvariate","gammavariate","triangular",
-           "gauss","betavariate","paretovariate","weibullvariate",
-           "getstate","setstate", "getrandbits", "choices",
-           "SystemRandom"]
+__all__ = [
+    "Random",
+    "SystemRandom",
+    "betavariate",
+    "choice",
+    "choices",
+    "expovariate",
+    "gammavariate",
+    "gauss",
+    "getrandbits",
+    "getstate",
+    "lognormvariate",
+    "normalvariate",
+    "paretovariate",
+    "randint",
+    "random",
+    "randrange",
+    "sample",
+    "seed",
+    "setstate",
+    "shuffle",
+    "triangular",
+    "uniform",
+    "vonmisesvariate",
+    "weibullvariate",
+]
 
-NV_MAGICCONST = 4 * _exp(-0.5)/_sqrt(2.0)
-TWOPI = 2.0*_pi
+NV_MAGICCONST = 4 * _exp(-0.5) / _sqrt(2.0)
 LOG4 = _log(4.0)
 SG_MAGICCONST = 1.0 + _log(4.5)
 BPF = 53        # Number of bits in a float
-RECIP_BPF = 2**-BPF
+RECIP_BPF = 2 ** -BPF
 
 
 # Translated by Guido van Rossum from C source provided by
@@ -180,7 +199,7 @@ class Random(_random.Random):
             #   really unsigned 32-bit ints, so we convert negative ints from
             #   version 2 to positive longs for version 3.
             try:
-                internalstate = tuple(x % (2**32) for x in internalstate)
+                internalstate = tuple(x % (2 ** 32) for x in internalstate)
             except ValueError as e:
                 raise TypeError from e
             super().setstate(internalstate)
@@ -271,7 +290,7 @@ class Random(_random.Random):
             return 0
         getrandbits = self.getrandbits
         k = n.bit_length()  # don't use (n-1) here because n can be 1
-        r = getrandbits(k)          # 0 <= r < 2**k
+        r = getrandbits(k)  # 0 <= r < 2**k
         while r >= n:
             r = getrandbits(k)
         return r
@@ -295,7 +314,7 @@ class Random(_random.Random):
         r = random()
         while r >= limit:
             r = random()
-        return int(r*maxsize) % n
+        return int(r * maxsize) % n
 
     _randbelow = _randbelow_with_getrandbits
 
@@ -318,7 +337,7 @@ class Random(_random.Random):
             randbelow = self._randbelow
             for i in reversed(range(1, len(x))):
                 # pick an element in x[:i+1] with which to exchange x[i]
-                j = randbelow(i+1)
+                j = randbelow(i + 1)
                 x[i], x[j] = x[j], x[i]
         else:
             _warn('The *random* parameter to shuffle() has been deprecated\n'
@@ -328,7 +347,7 @@ class Random(_random.Random):
             _int = int
             for i in reversed(range(1, len(x))):
                 # pick an element in x[:i+1] with which to exchange x[i]
-                j = _int(random() * (i+1))
+                j = _int(random() * (i + 1))
                 x[i], x[j] = x[j], x[i]
 
     def sample(self, population, k, *, counts=None):
@@ -413,11 +432,12 @@ class Random(_random.Random):
             setsize += 4 ** _ceil(_log(k * 3, 4)) # table size for big sets
         if n <= setsize:
             # An n-length list is smaller than a k-length set
+            # invariant:  non-selected at pool[0 : n-i]
             pool = list(population)
-            for i in range(k):         # invariant:  non-selected at [0,n-i)
-                j = randbelow(n-i)
+            for i in range(k):
+                j = randbelow(n - i)
                 result[i] = pool[j]
-                pool[j] = pool[n-i-1]   # move non-selected item into vacancy
+                pool[j] = pool[n - i - 1]  # move non-selected item into vacancy
         else:
             selected = set()
             selected_add = selected.add
@@ -462,7 +482,7 @@ class Random(_random.Random):
 
     def uniform(self, a, b):
         "Get a random number in the range [a, b) or [a, b] depending on rounding."
-        return a + (b-a) * self.random()
+        return a + (b - a) * self.random()
 
 ## -------------------- triangular --------------------
 
@@ -502,14 +522,14 @@ class Random(_random.Random):
         # Math Software, 3, (1977), pp257-260.
 
         random = self.random
-        while 1:
+        while True:
             u1 = random()
             u2 = 1.0 - random()
-            z = NV_MAGICCONST*(u1-0.5)/u2
-            zz = z*z/4.0
+            z = NV_MAGICCONST * (u1 - 0.5) / u2
+            zz = z * z / 4.0
             if zz <= -_log(u2):
                 break
-        return mu + z*sigma
+        return mu + z * sigma
 
 ## -------------------- lognormal distribution --------------------
 
@@ -540,7 +560,7 @@ class Random(_random.Random):
 
         # we use 1-random() instead of random() to preclude the
         # possibility of taking the log of zero.
-        return -_log(1.0 - self.random())/lambd
+        return -_log(1.0 - self.random()) / lambd
 
 ## -------------------- von Mises distribution --------------------
 
@@ -571,7 +591,7 @@ class Random(_random.Random):
         s = 0.5 / kappa
         r = s + _sqrt(1.0 + s * s)
 
-        while 1:
+        while True:
             u1 = random()
             z = _cos(_pi * u1)
 
@@ -628,11 +648,11 @@ class Random(_random.Random):
                 if not 1e-7 < u1 < .9999999:
                     continue
                 u2 = 1.0 - random()
-                v = _log(u1/(1.0-u1))/ainv
-                x = alpha*_exp(v)
-                z = u1*u1*u2
-                r = bbb+ccc*v-x
-                if r + SG_MAGICCONST - 4.5*z >= 0.0 or r >= _log(z):
+                v = _log(u1 / (1.0 - u1)) / ainv
+                x = alpha * _exp(v)
+                z = u1 * u1 * u2
+                r = bbb + ccc * v - x
+                if r + SG_MAGICCONST - 4.5 * z >= 0.0 or r >= _log(z):
                     return x * beta
 
         elif alpha == 1.0:
@@ -643,14 +663,14 @@ class Random(_random.Random):
 
             # Uses ALGORITHM GS of Statistical Computing - Kennedy & Gentle
 
-            while 1:
+            while True:
                 u = random()
                 b = (_e + alpha)/_e
-                p = b*u
+                p = b * u
                 if p <= 1.0:
-                    x = p ** (1.0/alpha)
+                    x = p ** (1.0 / alpha)
                 else:
-                    x = -_log((b-p)/alpha)
+                    x = -_log((b - p) / alpha)
                 u1 = random()
                 if p > 1.0:
                     if u1 <= x ** (alpha - 1.0):
@@ -698,7 +718,7 @@ class Random(_random.Random):
             z = _cos(x2pi) * g2rad
             self.gauss_next = _sin(x2pi) * g2rad
 
-        return mu + z*sigma
+        return mu + z * sigma
 
 ## -------------------- beta --------------------
 ## See
@@ -737,7 +757,7 @@ class Random(_random.Random):
         # Jain, pg. 495
 
         u = 1.0 - self.random()
-        return 1.0 / u ** (1.0/alpha)
+        return 1.0 / u ** (1.0 / alpha)
 
 ## -------------------- Weibull --------------------
 
@@ -750,7 +770,7 @@ class Random(_random.Random):
         # Jain, pg. 499; bug fix courtesy Bill Arms
 
         u = 1.0 - self.random()
-        return alpha * (-_log(u)) ** (1.0/beta)
+        return alpha * (-_log(u)) ** (1.0 / beta)
 
 ## --------------- Operating System Random Source  ------------------
 
