@@ -60,6 +60,7 @@ class _EnumDict(dict):
         self._member_names = []
         self._last_values = []
         self._ignore = []
+        self._auto_called = False
 
     def __setitem__(self, key, value):
         """Changes anything not dundered or not a descriptor.
@@ -77,6 +78,9 @@ class _EnumDict(dict):
                     ):
                 raise ValueError('_names_ are reserved for future Enum use')
             if key == '_generate_next_value_':
+                # check if members already defined as auto()
+                if self._auto_called:
+                    raise TypeError("_generate_next_value_ must be defined before members")
                 setattr(self, '_generate_next_value', value)
             elif key == '_ignore_':
                 if isinstance(value, str):
@@ -100,6 +104,7 @@ class _EnumDict(dict):
                 # enum overwriting a descriptor?
                 raise TypeError('%r already defined as: %r' % (key, self[key]))
             if isinstance(value, auto):
+                self._auto_called = True
                 if value.value == _auto_null:
                     value.value = self._generate_next_value(key, 1, len(self._member_names), self._last_values[:])
                 value = value.value
@@ -420,7 +425,7 @@ class EnumMeta(type):
         if module is None:
             try:
                 module = sys._getframe(2).f_globals['__name__']
-            except (AttributeError, ValueError, KeyError) as exc:
+            except (AttributeError, ValueError, KeyError):
                 pass
         if module is None:
             _make_class_unpicklable(enum_class)
@@ -861,28 +866,20 @@ def _decompose(flag, value):
     # _decompose is only called if the value is not named
     not_covered = value
     negative = value < 0
-    # issue29167: wrap accesses to _value2member_map_ in a list to avoid race
-    #             conditions between iterating over it and having more pseudo-
-    #             members added to it
-    if negative:
-        # only check for named flags
-        flags_to_check = [
-                (m, v)
-                for v, m in list(flag._value2member_map_.items())
-                if m.name is not None
-                ]
-    else:
-        # check for named flags and powers-of-two flags
-        flags_to_check = [
-                (m, v)
-                for v, m in list(flag._value2member_map_.items())
-                if m.name is not None or _power_of_two(v)
-                ]
     members = []
-    for member, member_value in flags_to_check:
+    for member in flag:
+        member_value = member.value
         if member_value and member_value & value == member_value:
             members.append(member)
             not_covered &= ~member_value
+    if not negative:
+        tmp = not_covered
+        while tmp:
+            flag_value = 2 ** _high_bit(tmp)
+            if flag_value in flag._value2member_map_:
+                members.append(flag._value2member_map_[flag_value])
+                not_covered &= ~flag_value
+            tmp &= ~flag_value
     if not members and value in flag._value2member_map_:
         members.append(flag._value2member_map_[value])
     members.sort(key=lambda m: m._value_, reverse=True)
@@ -890,8 +887,3 @@ def _decompose(flag, value):
         # we have the breakdown, don't need the value member itself
         members.pop(0)
     return members, not_covered
-
-def _power_of_two(value):
-    if value < 1:
-        return False
-    return value == 2 ** _high_bit(value)

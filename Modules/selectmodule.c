@@ -9,7 +9,7 @@
 #endif
 
 #include "Python.h"
-#include <structmember.h>
+#include "structmember.h"         // PyMemberDef
 
 #ifdef HAVE_SYS_DEVPOLL_H
 #include <sys/resource.h>
@@ -69,8 +69,15 @@ typedef struct {
 
 static struct PyModuleDef selectmodule;
 
-#define _selectstate(o) ((_selectstate *)PyModule_GetState(o))
-#define _selectstate_global _selectstate(PyState_FindModule(&selectmodule))
+static inline _selectstate*
+get_select_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_selectstate *)state;
+}
+
+#define _selectstate_global get_select_state(PyState_FindModule(&selectmodule))
 
 /*[clinic input]
 module select
@@ -232,7 +239,7 @@ select.select
 
 Wait until one or more file descriptors are ready for some kind of I/O.
 
-The first three arguments are sequences of file descriptors to be waited for:
+The first three arguments are iterables of file descriptors to be waited for:
 rlist -- wait until ready for reading
 wlist -- wait until ready for writing
 xlist -- wait for an "exceptional condition"
@@ -257,7 +264,7 @@ descriptors can be used.
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj)
-/*[clinic end generated code: output=2b3cfa824f7ae4cf input=177e72184352df25]*/
+/*[clinic end generated code: output=2b3cfa824f7ae4cf input=e467f5d68033de00]*/
 {
 #ifdef SELECT_USES_HEAP
     pylist *rfd2obj, *wfd2obj, *efd2obj;
@@ -313,7 +320,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     }
 #endif /* SELECT_USES_HEAP */
 
-    /* Convert sequences to fd_sets, and get maximum fd number
+    /* Convert iterables to fd_sets, and get maximum fd number
      * propagates the Python exception set in seq2set()
      */
     rfd2obj[0].sentinel = -1;
@@ -757,6 +764,8 @@ poll_dealloc(pollObject *self)
 
 
 #ifdef HAVE_SYS_DEVPOLL_H
+static PyMethodDef devpoll_methods[];
+
 typedef struct {
     PyObject_HEAD
     int fd_devpoll;
@@ -1447,11 +1456,6 @@ pyepoll_internal_ctl(int epfd, int op, int fd, unsigned int events)
          * though this argument is ignored. */
         Py_BEGIN_ALLOW_THREADS
         result = epoll_ctl(epfd, op, fd, &ev);
-        if (errno == EBADF) {
-            /* fd already closed */
-            result = 0;
-            errno = 0;
-        }
         Py_END_ALLOW_THREADS
         break;
     default:
@@ -2362,7 +2366,7 @@ static PyMethodDef kqueue_queue_methods[] = {
 
 static PyType_Slot kqueue_queue_Type_slots[] = {
     {Py_tp_dealloc, kqueue_queue_dealloc},
-    {Py_tp_doc, select_kqueue__doc__},
+    {Py_tp_doc, (void*)select_kqueue__doc__},
     {Py_tp_getset, kqueue_queue_getsetlist},
     {Py_tp_methods, kqueue_queue_methods},
     {Py_tp_new, select_kqueue},
@@ -2404,24 +2408,24 @@ On Windows, only sockets are supported; on Unix, all file descriptors.");
 static int
 _select_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    Py_VISIT(_selectstate(module)->close);
-    Py_VISIT(_selectstate(module)->poll_Type);
-    Py_VISIT(_selectstate(module)->devpoll_Type);
-    Py_VISIT(_selectstate(module)->pyEpoll_Type);
-    Py_VISIT(_selectstate(module)->kqueue_event_Type);
-    Py_VISIT(_selectstate(module)->kqueue_queue_Type);
+    Py_VISIT(get_select_state(module)->close);
+    Py_VISIT(get_select_state(module)->poll_Type);
+    Py_VISIT(get_select_state(module)->devpoll_Type);
+    Py_VISIT(get_select_state(module)->pyEpoll_Type);
+    Py_VISIT(get_select_state(module)->kqueue_event_Type);
+    Py_VISIT(get_select_state(module)->kqueue_queue_Type);
     return 0;
 }
 
 static int
 _select_clear(PyObject *module)
 {
-    Py_CLEAR(_selectstate(module)->close);
-    Py_CLEAR(_selectstate(module)->poll_Type);
-    Py_CLEAR(_selectstate(module)->devpoll_Type);
-    Py_CLEAR(_selectstate(module)->pyEpoll_Type);
-    Py_CLEAR(_selectstate(module)->kqueue_event_Type);
-    Py_CLEAR(_selectstate(module)->kqueue_queue_Type);
+    Py_CLEAR(get_select_state(module)->close);
+    Py_CLEAR(get_select_state(module)->poll_Type);
+    Py_CLEAR(get_select_state(module)->devpoll_Type);
+    Py_CLEAR(get_select_state(module)->pyEpoll_Type);
+    Py_CLEAR(get_select_state(module)->kqueue_event_Type);
+    Py_CLEAR(get_select_state(module)->kqueue_queue_Type);
     return 0;
 }
 
@@ -2451,7 +2455,7 @@ PyInit_select(void)
     if (m == NULL)
         return NULL;
 
-    _selectstate(m)->close = PyUnicode_InternFromString("close");
+    get_select_state(m)->close = PyUnicode_InternFromString("close");
 
     Py_INCREF(PyExc_OSError);
     PyModule_AddObject(m, "error", PyExc_OSError);
@@ -2477,8 +2481,7 @@ PyInit_select(void)
         PyObject *poll_Type = PyType_FromSpec(&poll_Type_spec);
         if (poll_Type == NULL)
             return NULL;
-        _selectstate(m)->poll_Type = (PyTypeObject *)poll_Type;
-        Py_INCREF(poll_Type);
+        get_select_state(m)->poll_Type = (PyTypeObject *)poll_Type;
 
         PyModule_AddIntMacro(m, POLLIN);
         PyModule_AddIntMacro(m, POLLPRI);
@@ -2513,17 +2516,16 @@ PyInit_select(void)
     PyObject *devpoll_Type = PyType_FromSpec(&devpoll_Type_spec);
     if (devpoll_Type == NULL)
         return NULL;
-    _selectstate(m)->devpoll_Type = (PyTypeObject *)devpoll_Type;
-    Py_INCREF(devpoll_Type);
+    get_select_state(m)->devpoll_Type = (PyTypeObject *)devpoll_Type;
 #endif
 
 #ifdef HAVE_EPOLL
     PyObject *pyEpoll_Type = PyType_FromSpec(&pyEpoll_Type_spec);
     if (pyEpoll_Type == NULL)
         return NULL;
-    _selectstate(m)->pyEpoll_Type = (PyTypeObject *)pyEpoll_Type;
+    get_select_state(m)->pyEpoll_Type = (PyTypeObject *)pyEpoll_Type;
     Py_INCREF(pyEpoll_Type);
-    PyModule_AddObject(m, "epoll", (PyObject *)_selectstate(m)->pyEpoll_Type);
+    PyModule_AddObject(m, "epoll", (PyObject *)get_select_state(m)->pyEpoll_Type);
 
     PyModule_AddIntMacro(m, EPOLLIN);
     PyModule_AddIntMacro(m, EPOLLOUT);
@@ -2568,15 +2570,15 @@ PyInit_select(void)
     PyObject *kqueue_event_Type = PyType_FromSpec(&kqueue_event_Type_spec);
     if (kqueue_event_Type == NULL)
         return NULL;
-    _selectstate(m)->kqueue_event_Type = (PyTypeObject *)kqueue_event_Type;
-    Py_INCREF(_selectstate(m)->kqueue_event_Type);
+    get_select_state(m)->kqueue_event_Type = (PyTypeObject *)kqueue_event_Type;
+    Py_INCREF(get_select_state(m)->kqueue_event_Type);
     PyModule_AddObject(m, "kevent", kqueue_event_Type);
 
     PyObject *kqueue_queue_Type = PyType_FromSpec(&kqueue_queue_Type_spec);
     if (kqueue_queue_Type == NULL)
         return NULL;
-    _selectstate(m)->kqueue_queue_Type = (PyTypeObject *)kqueue_queue_Type;
-    Py_INCREF(_selectstate(m)->kqueue_queue_Type);
+    get_select_state(m)->kqueue_queue_Type = (PyTypeObject *)kqueue_queue_Type;
+    Py_INCREF(get_select_state(m)->kqueue_queue_Type);
     PyModule_AddObject(m, "kqueue", kqueue_queue_Type);
 
     /* event filters */

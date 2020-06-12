@@ -2,11 +2,9 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_bytes_methods.h"
 #include "pycore_object.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
-#include "bytes_methods.h"
 #include "bytesobject.h"
 #include "pystrhex.h"
 
@@ -89,7 +87,7 @@ _canresize(PyByteArrayObject *self)
 PyObject *
 PyByteArray_FromObject(PyObject *input)
 {
-    return _PyObject_CallOneArg((PyObject *)&PyByteArray_Type, input);
+    return PyObject_CallOneArg((PyObject *)&PyByteArray_Type, input);
 }
 
 static PyObject *
@@ -148,7 +146,7 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
             memcpy(new->ob_bytes, bytes, size);
         new->ob_bytes[size] = '\0';  /* Trailing null byte */
     }
-    Py_SIZE(new) = size;
+    Py_SET_SIZE(new, size);
     new->ob_alloc = alloc;
     new->ob_start = new->ob_bytes;
     new->ob_exports = 0;
@@ -206,7 +204,7 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
         }
         else {
             /* Minor downsize; quick exit */
-            Py_SIZE(self) = size;
+            Py_SET_SIZE(self, size);
             PyByteArray_AS_STRING(self)[size] = '\0'; /* Trailing null */
             return 0;
         }
@@ -246,7 +244,7 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
     }
 
     obj->ob_bytes = obj->ob_start = sval;
-    Py_SIZE(self) = size;
+    Py_SET_SIZE(self, size);
     obj->ob_alloc = alloc;
     obj->ob_bytes[size] = '\0'; /* Trailing null byte */
 
@@ -391,7 +389,7 @@ bytearray_getitem(PyByteArrayObject *self, Py_ssize_t i)
 static PyObject *
 bytearray_subscript(PyByteArrayObject *self, PyObject *index)
 {
-    if (PyIndex_Check(index)) {
+    if (_PyIndex_Check(index)) {
         Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
 
         if (i == -1 && PyErr_Occurred())
@@ -498,7 +496,7 @@ bytearray_setslice_linear(PyByteArrayObject *self,
             }
             /* memmove() removed bytes, the bytearray object cannot be
                restored in its previous state. */
-            Py_SIZE(self) += growth;
+            Py_SET_SIZE(self, Py_SIZE(self) + growth);
             res = -1;
         }
         buf = PyByteArray_AS_STRING(self);
@@ -610,7 +608,7 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
     char *buf, *bytes;
     buf = PyByteArray_AS_STRING(self);
 
-    if (PyIndex_Check(index)) {
+    if (_PyIndex_Check(index)) {
         Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
 
         if (i == -1 && PyErr_Occurred())
@@ -809,7 +807,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     }
 
     /* Is it an int? */
-    if (PyIndex_Check(arg)) {
+    if (_PyIndex_Check(arg)) {
         count = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
         if (count == -1 && PyErr_Occurred()) {
             if (!PyErr_ExceptionMatches(PyExc_TypeError))
@@ -856,7 +854,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_Format(PyExc_TypeError,
                          "cannot convert '%.200s' object to bytearray",
-                         arg->ob_type->tp_name);
+                         Py_TYPE(arg)->tp_name);
         }
         return -1;
     }
@@ -886,7 +884,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
 
         /* Append the byte */
         if (Py_SIZE(self) + 1 < self->ob_alloc) {
-            Py_SIZE(self)++;
+            Py_SET_SIZE(self, Py_SIZE(self) + 1);
             PyByteArray_AS_STRING(self)[Py_SIZE(self)] = '\0';
         }
         else if (PyByteArray_Resize((PyObject *)self, Py_SIZE(self)+1) < 0)
@@ -996,8 +994,7 @@ bytearray_repr(PyByteArrayObject *self)
 static PyObject *
 bytearray_str(PyObject *op)
 {
-    PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
-    if (config->bytes_warning) {
+    if (_Py_GetConfig()->bytes_warning) {
         if (PyErr_WarnEx(PyExc_BytesWarning,
                          "str() on a bytearray instance", 1)) {
                 return NULL;
@@ -1022,8 +1019,7 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
     if (rc < 0)
         return NULL;
     if (rc) {
-        PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
-        if (config->bytes_warning && (op == Py_EQ || op == Py_NE)) {
+        if (_Py_GetConfig()->bytes_warning && (op == Py_EQ || op == Py_NE)) {
             if (PyErr_WarnEx(PyExc_BytesWarning,
                             "Comparison between bytearray and string", 1))
                 return NULL;
@@ -1183,6 +1179,71 @@ static PyObject *
 bytearray_endswith(PyByteArrayObject *self, PyObject *args)
 {
     return _Py_bytes_endswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+}
+
+/*[clinic input]
+bytearray.removeprefix as bytearray_removeprefix
+
+    prefix: Py_buffer
+    /
+
+Return a bytearray with the given prefix string removed if present.
+
+If the bytearray starts with the prefix string, return
+bytearray[len(prefix):].  Otherwise, return a copy of the original
+bytearray.
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_removeprefix_impl(PyByteArrayObject *self, Py_buffer *prefix)
+/*[clinic end generated code: output=6cabc585e7f502e0 input=968aada38aedd262]*/
+{
+    const char *self_start = PyByteArray_AS_STRING(self);
+    Py_ssize_t self_len = PyByteArray_GET_SIZE(self);
+    const char *prefix_start = prefix->buf;
+    Py_ssize_t prefix_len = prefix->len;
+
+    if (self_len >= prefix_len
+        && memcmp(self_start, prefix_start, prefix_len) == 0)
+    {
+        return PyByteArray_FromStringAndSize(self_start + prefix_len,
+                                             self_len - prefix_len);
+    }
+
+    return PyByteArray_FromStringAndSize(self_start, self_len);
+}
+
+/*[clinic input]
+bytearray.removesuffix as bytearray_removesuffix
+
+    suffix: Py_buffer
+    /
+
+Return a bytearray with the given suffix string removed if present.
+
+If the bytearray ends with the suffix string and that suffix is not
+empty, return bytearray[:-len(suffix)].  Otherwise, return a copy of
+the original bytearray.
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_removesuffix_impl(PyByteArrayObject *self, Py_buffer *suffix)
+/*[clinic end generated code: output=2bc8cfb79de793d3 input=c1827e810b2f6b99]*/
+{
+    const char *self_start = PyByteArray_AS_STRING(self);
+    Py_ssize_t self_len = PyByteArray_GET_SIZE(self);
+    const char *suffix_start = suffix->buf;
+    Py_ssize_t suffix_len = suffix->len;
+
+    if (self_len >= suffix_len
+        && memcmp(self_start + self_len - suffix_len,
+                  suffix_start, suffix_len) == 0)
+    {
+        return PyByteArray_FromStringAndSize(self_start,
+                                             self_len - suffix_len);
+    }
+
+    return PyByteArray_FromStringAndSize(self_start, self_len);
 }
 
 
@@ -1630,7 +1691,7 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_Format(PyExc_TypeError,
                          "can't extend bytearray with %.100s",
-                         iterable_of_ints->ob_type->tp_name);
+                         Py_TYPE(iterable_of_ints)->tp_name);
         }
         return NULL;
     }
@@ -2015,7 +2076,7 @@ bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
 {
     PyObject *result = _PyBytes_FromHex(string, type == &PyByteArray_Type);
     if (type != &PyByteArray_Type && result != NULL) {
-        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 }
@@ -2207,6 +2268,8 @@ bytearray_methods[] = {
     BYTEARRAY_POP_METHODDEF
     BYTEARRAY_REMOVE_METHODDEF
     BYTEARRAY_REPLACE_METHODDEF
+    BYTEARRAY_REMOVEPREFIX_METHODDEF
+    BYTEARRAY_REMOVESUFFIX_METHODDEF
     BYTEARRAY_REVERSE_METHODDEF
     {"rfind", (PyCFunction)bytearray_rfind, METH_VARARGS, _Py_rfind__doc__},
     {"rindex", (PyCFunction)bytearray_rindex, METH_VARARGS, _Py_rindex__doc__},

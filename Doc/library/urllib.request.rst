@@ -18,7 +18,7 @@ authentication, redirections, cookies and more.
 
 .. seealso::
 
-    The `Requests package <http://docs.python-requests.org/>`_
+    The `Requests package <https://requests.readthedocs.io/en/master/>`_
     is recommended for a higher-level HTTP client interface.
 
 
@@ -1235,7 +1235,7 @@ Here is an example of doing a ``PUT`` request using :class:`Request`::
 
     import urllib.request
     DATA = b'some data'
-    req = urllib.request.Request(url='http://localhost:8080', data=DATA,method='PUT')
+    req = urllib.request.Request(url='http://localhost:8080', data=DATA, method='PUT')
     with urllib.request.urlopen(req) as f:
         pass
     print(f.status)

@@ -356,8 +356,8 @@ class socket(_socket.socket):
                 raise _GiveupOnSendfile(err)  # not a regular file
             if not fsize:
                 return 0  # empty file
-            blocksize = fsize if not count else count
-
+            # Truncate to 1GiB to avoid OverflowError, see bpo-38319.
+            blocksize = min(count or fsize, 2 ** 30)
             timeout = self.gettimeout()
             if timeout == 0:
                 raise ValueError("non-blocking sockets are not supported")
@@ -839,7 +839,11 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
                 sock.close()
 
     if err is not None:
-        raise err
+        try:
+            raise err
+        finally:
+            # Break explicitly a reference cycle
+            err = None
     else:
         raise error("getaddrinfo returns an empty list")
 
@@ -874,7 +878,7 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
     connections. When false it will explicitly disable this option on
     platforms that enable it by default (e.g. Linux).
 
-    >>> with create_server((None, 8000)) as server:
+    >>> with create_server(('', 8000)) as server:
     ...     while True:
     ...         conn, addr = server.accept()
     ...         # handle new connection

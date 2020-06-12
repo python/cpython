@@ -1,7 +1,7 @@
 #include "Python.h"
 #include <ctype.h>
 
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "frameobject.h"
 #include "expat.h"
 
@@ -119,7 +119,7 @@ set_error(xmlparseobject *self, enum XML_Error code)
                                   XML_ErrorString(code), lineno, column);
     if (buffer == NULL)
         return NULL;
-    err = _PyObject_CallOneArg(ErrorObject, buffer);
+    err = PyObject_CallOneArg(ErrorObject, buffer);
     Py_DECREF(buffer);
     if (  err != NULL
           && set_error_attr(err, "code", code)
@@ -938,7 +938,6 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     new_parser->handlers = 0;
     new_parser->intern = self->intern;
     Py_XINCREF(new_parser->intern);
-    PyObject_GC_Track(new_parser);
 
     if (self->buffer != NULL) {
         new_parser->buffer = PyMem_Malloc(new_parser->buffer_size);
@@ -975,6 +974,8 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
                                    handler_info[i].handler);
         }
     }
+
+    PyObject_GC_Track(new_parser);
     return (PyObject *)new_parser;
 }
 
@@ -1059,7 +1060,7 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     static unsigned char template_buffer[256] = {0};
     PyObject* u;
     int i;
-    void *data;
+    const void *data;
     unsigned int kind;
 
     if (PyErr_Occurred())
@@ -1122,7 +1123,6 @@ newxmlparseobject(const char *encoding, const char *namespace_separator, PyObjec
     self->handlers = NULL;
     self->intern = intern;
     Py_XINCREF(self->intern);
-    PyObject_GC_Track(self);
 
     /* namespace_separator is either NULL or contains one char + \0 */
     self->itself = XML_ParserCreate_MM(encoding, &ExpatMemoryHandler,
@@ -1152,6 +1152,7 @@ newxmlparseobject(const char *encoding, const char *namespace_separator, PyObjec
     }
     clear_handlers(self, 1);
 
+    PyObject_GC_Track(self);
     return (PyObject*)self;
 }
 

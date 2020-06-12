@@ -88,6 +88,11 @@ USER_SITE = None
 USER_BASE = None
 
 
+def _trace(message):
+    if sys.flags.verbose:
+        print(message, file=sys.stderr)
+
+
 def makepath(*paths):
     dir = os.path.join(*paths)
     try:
@@ -156,6 +161,7 @@ def addpackage(sitedir, name, known_paths):
     else:
         reset = False
     fullname = os.path.join(sitedir, name)
+    _trace(f"Processing .pth file: {fullname!r}")
     try:
         f = io.TextIOWrapper(io.open_code(fullname))
     except OSError:
@@ -190,6 +196,7 @@ def addpackage(sitedir, name, known_paths):
 def addsitedir(sitedir, known_paths=None):
     """Add 'sitedir' argument to sys.path if missing and handle .pth files in
     'sitedir'"""
+    _trace(f"Adding directory: {sitedir!r}")
     if known_paths is None:
         known_paths = _init_pathinfo()
         reset = True
@@ -310,6 +317,7 @@ def addusersitepackages(known_paths):
     """
     # get the per user site-package path
     # this call will also make sure USER_BASE and USER_SITE are set
+    _trace("Processing user site-packages")
     user_site = getusersitepackages()
 
     if ENABLE_USER_SITE and os.path.isdir(user_site):
@@ -334,17 +342,27 @@ def getsitepackages(prefixes=None):
             continue
         seen.add(prefix)
 
+        libdirs = [sys.platlibdir]
+        if sys.platlibdir != "lib":
+            libdirs.append("lib")
+
         if os.sep == '/':
-            sitepackages.append(os.path.join(prefix, "lib",
-                                        "python%d.%d" % sys.version_info[:2],
-                                        "site-packages"))
+            for libdir in libdirs:
+                path = os.path.join(prefix, libdir,
+                                    "python%d.%d" % sys.version_info[:2],
+                                    "site-packages")
+                sitepackages.append(path)
         else:
             sitepackages.append(prefix)
-            sitepackages.append(os.path.join(prefix, "lib", "site-packages"))
+
+            for libdir in libdirs:
+                path = os.path.join(prefix, libdir, "site-packages")
+                sitepackages.append(path)
     return sitepackages
 
 def addsitepackages(known_paths, prefixes=None):
     """Add site-packages to sys.path"""
+    _trace("Processing global site-packages")
     for sitedir in getsitepackages(prefixes):
         if os.path.isdir(sitedir):
             addsitedir(sitedir, known_paths)
@@ -590,7 +608,7 @@ def _script():
     Exit codes with --user-base or --user-site:
       0 - user site directory is enabled
       1 - user site directory is disabled by user
-      2 - uses site directory is disabled by super user
+      2 - user site directory is disabled by super user
           or for security reasons
      >2 - unknown error
     """

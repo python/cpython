@@ -1,4 +1,0 @@
-Fix a race condition at Python shutdown when waiting for threads. Wait until
-the Python thread state of all non-daemon threads get deleted (join all
-non-daemon threads), rather than just wait until non-daemon Python threads
-complete.

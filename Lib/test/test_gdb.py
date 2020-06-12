@@ -17,12 +17,18 @@ from test.support import findfile, python_is_optimized
 
 def get_gdb_version():
     try:
-        proc = subprocess.Popen(["gdb", "-nx", "--version"],
+        cmd = ["gdb", "-nx", "--version"]
+        proc = subprocess.Popen(cmd,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 universal_newlines=True)
         with proc:
-            version = proc.communicate()[0]
+            version, stderr = proc.communicate()
+
+        if proc.returncode:
+            raise Exception(f"Command {' '.join(cmd)!r} failed "
+                            f"with exit code {proc.returncode}: "
+                            f"stdout={version!r} stderr={stderr!r}")
     except OSError:
         # This is what "no gdb" looks like.  There may, however, be other
         # errors that manifest this way too.
@@ -33,7 +39,8 @@ def get_gdb_version():
     # 'GNU gdb (GDB) Fedora 7.9.1-17.fc22\n' -> 7.9
     # 'GNU gdb 6.1.1 [FreeBSD]\n' -> 6.1
     # 'GNU gdb (GDB) Fedora (7.5.1-37.fc18)\n' -> 7.5
-    match = re.search(r"^GNU gdb.*?\b(\d+)\.(\d+)", version)
+    # 'HP gdb 6.7 for HP Itanium (32 or 64 bit) and target HP-UX 11iv2 and 11iv3.\n' -> 6.7
+    match = re.search(r"^(?:GNU|HP) gdb.*?\b(\d+)\.(\d+)", version)
     if match is None:
         raise Exception("unable to parse GDB version: %r" % version)
     return (version, int(match.group(1)), int(match.group(2)))
@@ -230,6 +237,15 @@ class DebuggerTests(unittest.TestCase):
                                     " because the Program Counter is"
                                     " not present")
 
+        # bpo-40019: Skip the test if gdb failed to read debug information
+        # because the Python binary is optimized.
+        for pattern in (
+            '(frame information optimized out)',
+            'Unable to read information on python frame',
+        ):
+            if pattern in out:
+                raise unittest.SkipTest(f"{pattern!r} found in gdb output")
+
         return out
 
     def get_gdb_repr(self, source,
@@ -255,8 +271,15 @@ class DebuggerTests(unittest.TestCase):
         # gdb can insert additional '\n' and space characters in various places
         # in its output, depending on the width of the terminal it's connected
         # to (using its "wrap_here" function)
-        m = re.match(r'.*#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)?\)\s+at\s+\S*Python/bltinmodule.c.*',
-                     gdb_output, re.DOTALL)
+        m = re.search(
+            # Match '#0 builtin_id(self=..., v=...)'
+            r'#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)?\)'
+            # Match ' at Python/bltinmodule.c'.
+            # bpo-38239: builtin_id() is defined in Python/bltinmodule.c,
+            # but accept any "Directory\file.c" to support Link Time
+            # Optimization (LTO).
+            r'\s+at\s+\S*[A-Za-z]+/[A-Za-z0-9_-]+\.c',
+            gdb_output, re.DOTALL)
         if not m:
             self.fail('Unexpected gdb output: %r\n%s' % (gdb_output, gdb_output))
         return m.group(1), gdb_output

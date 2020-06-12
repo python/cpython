@@ -4,12 +4,12 @@ import errno
 import io
 import os
 import pathlib
-import signal
 import sys
 import re
 import warnings
 import contextlib
 import stat
+import types
 import weakref
 from unittest import mock
 
@@ -200,15 +200,7 @@ class TestRandomNameSequence(BaseTestCase):
             child_value = os.read(read_fd, len(parent_value)).decode("ascii")
         finally:
             if pid:
-                # best effort to ensure the process can't bleed out
-                # via any bugs above
-                try:
-                    os.kill(pid, signal.SIGKILL)
-                except OSError:
-                    pass
-
-                # Read the process exit status to avoid zombie process
-                os.waitpid(pid, 0)
+                support.wait_process(pid, exitcode=0)
 
             os.close(read_fd)
             os.close(write_fd)
@@ -1025,7 +1017,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
         # Verify writelines with a SpooledTemporaryFile
         f = self.do_create()
         f.writelines((b'x', b'y', b'z'))
-        f.seek(0)
+        pos = f.seek(0)
+        self.assertEqual(pos, 0)
         buf = f.read()
         self.assertEqual(buf, b'xyz')
 
@@ -1043,7 +1036,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
         # when that occurs
         f = self.do_create(max_size=30)
         self.assertFalse(f._rolled)
-        f.seek(100, 0)
+        pos = f.seek(100, 0)
+        self.assertEqual(pos, 100)
         self.assertFalse(f._rolled)
         f.write(b'x')
         self.assertTrue(f._rolled)
@@ -1114,7 +1108,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
     def test_text_mode(self):
         # Creating a SpooledTemporaryFile with a text mode should produce
         # a file object reading and writing (Unicode) text strings.
-        f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10)
+        f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10,
+                                          encoding="utf-8")
         f.write("abc\n")
         f.seek(0)
         self.assertEqual(f.read(), "abc\n")
@@ -1124,9 +1119,9 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertFalse(f._rolled)
         self.assertEqual(f.mode, 'w+')
         self.assertIsNone(f.name)
-        self.assertIsNone(f.newlines)
-        self.assertIsNone(f.encoding)
-        self.assertIsNone(f.errors)
+        self.assertEqual(f.newlines, os.linesep)
+        self.assertEqual(f.encoding, "utf-8")
+        self.assertEqual(f.errors, "strict")
 
         f.write("xyzzy\n")
         f.seek(0)
@@ -1139,8 +1134,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertEqual(f.mode, 'w+')
         self.assertIsNotNone(f.name)
         self.assertEqual(f.newlines, os.linesep)
-        self.assertIsNotNone(f.encoding)
-        self.assertIsNotNone(f.errors)
+        self.assertEqual(f.encoding, "utf-8")
+        self.assertEqual(f.errors, "strict")
 
     def test_text_newline_and_encoding(self):
         f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10,
@@ -1152,13 +1147,15 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertFalse(f._rolled)
         self.assertEqual(f.mode, 'w+')
         self.assertIsNone(f.name)
-        self.assertIsNone(f.newlines)
-        self.assertIsNone(f.encoding)
-        self.assertIsNone(f.errors)
+        self.assertIsNotNone(f.newlines)
+        self.assertEqual(f.encoding, "utf-8")
+        self.assertEqual(f.errors, "ignore")
 
-        f.write("\u039B" * 20 + "\r\n")
+        f.write("\u039C" * 10 + "\r\n")
+        f.write("\u039D" * 20)
         f.seek(0)
-        self.assertEqual(f.read(), "\u039B\r\n" + ("\u039B" * 20) + "\r\n")
+        self.assertEqual(f.read(),
+                "\u039B\r\n" + ("\u039C" * 10) + "\r\n" + ("\u039D" * 20))
         self.assertTrue(f._rolled)
         self.assertEqual(f.mode, 'w+')
         self.assertIsNotNone(f.name)
@@ -1226,6 +1223,9 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertTrue(f._rolled)
         self.assertEqual(os.fstat(f.fileno()).st_size, 20)
 
+    def test_class_getitem(self):
+        self.assertIsInstance(tempfile.SpooledTemporaryFile[bytes],
+                      types.GenericAlias)
 
 if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
 

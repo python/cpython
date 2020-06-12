@@ -1004,6 +1004,10 @@ class ConvertTest(unittest.TestCase):
             x = statistics._convert(nan, type(nan))
             self.assertTrue(_nan_equal(x, nan))
 
+    def test_invalid_input_type(self):
+        with self.assertRaises(TypeError):
+            statistics._convert(None, float)
+
 
 class FailNegTest(unittest.TestCase):
     """Test _fail_neg private function."""
@@ -1031,6 +1035,50 @@ class FailNegTest(unittest.TestCase):
         else:
             self.fail("expected exception, but it didn't happen")
         self.assertEqual(errmsg, msg)
+
+
+class FindLteqTest(unittest.TestCase):
+    # Test _find_lteq private function.
+
+    def test_invalid_input_values(self):
+        for a, x in [
+            ([], 1),
+            ([1, 2], 3),
+            ([1, 3], 2)
+        ]:
+            with self.subTest(a=a, x=x):
+                with self.assertRaises(ValueError):
+                    statistics._find_lteq(a, x)
+
+    def test_locate_successfully(self):
+        for a, x, expected_i in [
+            ([1, 1, 1, 2, 3], 1, 0),
+            ([0, 1, 1, 1, 2, 3], 1, 1),
+            ([1, 2, 3, 3, 3], 3, 2)
+        ]:
+            with self.subTest(a=a, x=x):
+                self.assertEqual(expected_i, statistics._find_lteq(a, x))
+
+
+class FindRteqTest(unittest.TestCase):
+    # Test _find_rteq private function.
+
+    def test_invalid_input_values(self):
+        for a, l, x in [
+            ([1], 2, 1),
+            ([1, 3], 0, 2)
+        ]:
+            with self.assertRaises(ValueError):
+                statistics._find_rteq(a, l, x)
+
+    def test_locate_successfully(self):
+        for a, l, x, expected_i in [
+            ([1, 1, 1, 2, 3], 0, 1, 2),
+            ([0, 1, 1, 1, 2, 3], 0, 1, 3),
+            ([1, 2, 3, 3, 3], 0, 3, 4)
+        ]:
+            with self.subTest(a=a, l=l, x=x):
+                self.assertEqual(expected_i, statistics._find_rteq(a, l, x))
 
 
 # === Tests for public functions ===
@@ -1475,6 +1523,18 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         for values in ([-1], [1, -2, 3]):
             with self.subTest(values=values):
                 self.assertRaises(exc, self.func, values)
+
+    def test_invalid_type_error(self):
+        # Test error is raised when input contains invalid type(s)
+        for data in [
+            ['3.14'],               # single string
+            ['1', '2', '3'],        # multiple strings
+            [1, '2', 3, '4', 5],    # mixed strings and valid integers
+            [2.3, 3.4, 4.5, '5.6']  # only one string and valid floats
+        ]:
+            with self.subTest(data=data):
+                with self.assertRaises(TypeError):
+                    self.func(data)
 
     def test_ints(self):
         # Test harmonic mean with ints.
@@ -2192,7 +2252,7 @@ class TestQuantiles(unittest.TestCase):
                 quantiles(padded_data, n=n, method='inclusive'),
                 (n, data),
             )
-            # Invariant under tranlation and scaling
+            # Invariant under translation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
             exp = list(map(f, expected))
@@ -2232,7 +2292,7 @@ class TestQuantiles(unittest.TestCase):
                 result = quantiles(map(datatype, data), n=n, method="inclusive")
                 self.assertTrue(all(type(x) == datatype) for x in result)
                 self.assertEqual(result, list(map(datatype, expected)))
-            # Invariant under tranlation and scaling
+            # Invariant under translation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
             exp = list(map(f, expected))
@@ -2602,6 +2662,21 @@ class TestNormalDist:
         with self.assertRaises(self.module.StatisticsError):
             NormalDist(1, 0).overlap(X)             # left operand sigma is zero
 
+    def test_zscore(self):
+        NormalDist = self.module.NormalDist
+        X = NormalDist(100, 15)
+        self.assertEqual(X.zscore(142), 2.8)
+        self.assertEqual(X.zscore(58), -2.8)
+        self.assertEqual(X.zscore(100), 0.0)
+        with self.assertRaises(TypeError):
+            X.zscore()                              # too few arguments
+        with self.assertRaises(TypeError):
+            X.zscore(1, 1)                          # too may arguments
+        with self.assertRaises(TypeError):
+            X.zscore(None)                          # non-numeric type
+        with self.assertRaises(self.module.StatisticsError):
+            NormalDist(1, 0).zscore(100)            # sigma is zero
+
     def test_properties(self):
         X = self.module.NormalDist(100, 15)
         self.assertEqual(X.mean, 100)
@@ -2651,9 +2726,13 @@ class TestNormalDist:
         nd2 = NormalDist(2, 4)
         nd3 = NormalDist()
         nd4 = NormalDist(2, 4)
+        nd5 = NormalDist(2, 8)
+        nd6 = NormalDist(8, 4)
         self.assertNotEqual(nd1, nd2)
         self.assertEqual(nd1, nd3)
         self.assertEqual(nd2, nd4)
+        self.assertNotEqual(nd2, nd5)
+        self.assertNotEqual(nd2, nd6)
 
         # Test NotImplemented when types are different
         class A:

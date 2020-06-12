@@ -154,11 +154,39 @@ class PlatformTest(unittest.TestCase):
         res = platform.uname()
         self.assertTrue(any(res))
         self.assertEqual(res[0], res.system)
+        self.assertEqual(res[-6], res.system)
         self.assertEqual(res[1], res.node)
+        self.assertEqual(res[-5], res.node)
         self.assertEqual(res[2], res.release)
+        self.assertEqual(res[-4], res.release)
         self.assertEqual(res[3], res.version)
+        self.assertEqual(res[-3], res.version)
         self.assertEqual(res[4], res.machine)
+        self.assertEqual(res[-2], res.machine)
         self.assertEqual(res[5], res.processor)
+        self.assertEqual(res[-1], res.processor)
+        self.assertEqual(len(res), 6)
+
+    def test_uname_cast_to_tuple(self):
+        res = platform.uname()
+        expected = (
+            res.system, res.node, res.release, res.version, res.machine,
+            res.processor,
+        )
+        self.assertEqual(tuple(res), expected)
+
+    @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
+    def test_uname_processor(self):
+        """
+        On some systems, the processor must match the output
+        of 'uname -p'. See Issue 35967 for rationale.
+        """
+        try:
+            proc_res = subprocess.check_output(['uname', '-p'], text=True).strip()
+            expect = platform._unknown_as_blank(proc_res)
+        except (OSError, subprocess.CalledProcessError):
+            expect = ''
+        self.assertEqual(platform.uname().processor, expect)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_ARCHITEW6432(self):
@@ -236,9 +264,7 @@ class PlatformTest(unittest.TestCase):
 
         else:
             # parent
-            cpid, sts = os.waitpid(pid, 0)
-            self.assertEqual(cpid, pid)
-            self.assertEqual(sts, 0)
+            support.wait_process(pid, exitcode=0)
 
     def test_libc_ver(self):
         # check that libc_ver(executable) doesn't raise an exception

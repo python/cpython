@@ -531,7 +531,7 @@ static PyTypeObject record_Type = {
 static PyObject*
 record_new(MSIHANDLE h)
 {
-    msiobj *result = PyObject_NEW(struct msiobj, &record_Type);
+    msiobj *result = PyObject_New(struct msiobj, &record_Type);
 
     if (!result) {
         MsiCloseHandle(h);
@@ -882,7 +882,7 @@ msidb_openview(msiobj *msidb, PyObject *args)
     if ((status = MsiDatabaseOpenView(msidb->h, sql, &hView)) != ERROR_SUCCESS)
         return msierror(status);
 
-    result = PyObject_NEW(struct msiobj, &msiview_Type);
+    result = PyObject_New(struct msiobj, &msiview_Type);
     if (!result) {
         MsiCloseHandle(hView);
         return NULL;
@@ -918,7 +918,7 @@ msidb_getsummaryinformation(msiobj *db, PyObject *args)
     if (status != ERROR_SUCCESS)
         return msierror(status);
 
-    oresult = PyObject_NEW(struct msiobj, &summary_Type);
+    oresult = PyObject_New(struct msiobj, &summary_Type);
     if (!oresult) {
         MsiCloseHandle(result);
         return NULL;
@@ -1013,7 +1013,7 @@ static PyObject* msiopendb(PyObject *obj, PyObject *args)
     if (status != ERROR_SUCCESS)
         return msierror(status);
 
-    result = PyObject_NEW(struct msiobj, &msidb_Type);
+    result = PyObject_New(struct msiobj, &msidb_Type);
     if (!result) {
         MsiCloseHandle(h);
         return NULL;

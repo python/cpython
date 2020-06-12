@@ -42,17 +42,12 @@ An explanation of some terminology and conventions is in order.
   library; for 32-bit systems, it is typically in 2038.
 
 .. index::
-   single: Year 2000
-   single: Y2K
+   single: 2-digit years
 
-.. _time-y2kissues:
-
-* **Year 2000 (Y2K) issues**: Python depends on the platform's C library, which
-  generally doesn't have year 2000 issues, since all dates and times are
-  represented internally as seconds since the epoch.  Function :func:`strptime`
-  can parse 2-digit years when given ``%y`` format code.  When 2-digit years are
-  parsed, they are converted according to the POSIX and ISO C standards: values
-  69--99 are mapped to 1969--1999, and values 0--68 are mapped to 2000--2068.
+* Function :func:`strptime` can parse 2-digit years when given ``%y`` format
+  code. When 2-digit years are parsed, they are converted according to the POSIX
+  and ISO C standards: values 69--99 are mapped to 1969--1999, and values 0--68
+  are mapped to 2000--2068.
 
 .. index::
    single: UTC
@@ -223,7 +218,6 @@ Functions
    Supported clock names and the corresponding functions to read their value
    are:
 
-   * ``'clock'``: :func:`time.clock`
    * ``'monotonic'``: :func:`time.monotonic`
    * ``'perf_counter'``: :func:`time.perf_counter`
    * ``'process_time'``: :func:`time.process_time`
@@ -780,6 +774,16 @@ These constants are used as parameters for :func:`clock_getres` and
 
    .. versionadded:: 3.7
 
+.. data:: CLOCK_TAI
+
+   `International Atomic Time <https://www.nist.gov/pml/time-and-frequency-division/nist-time-frequently-asked-questions-faq#tai>`_
+
+   The system must have a current leap second table in order for this to give
+   the correct answer.  PTP or NTP software can maintain a leap second table.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.9
 
 .. data:: CLOCK_THREAD_CPUTIME_ID
 
@@ -810,7 +814,6 @@ These constants are used as parameters for :func:`clock_getres` and
    .. availability:: macOS 10.12 and newer.
 
    .. versionadded:: 3.8
-
 
 The following constant is the only parameter that can be sent to
 :func:`clock_settime`.

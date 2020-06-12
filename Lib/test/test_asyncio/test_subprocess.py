@@ -1,3 +1,4 @@
+import os
 import signal
 import sys
 import unittest
@@ -143,7 +144,7 @@ class SubprocessMixin:
             return proc.returncode, stdout
 
         task = run(b'some data')
-        task = asyncio.wait_for(task, 60.0)
+        task = asyncio.wait_for(task, support.LONG_TIMEOUT)
         exitcode, stdout = self.loop.run_until_complete(task)
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
@@ -476,12 +477,19 @@ class SubprocessMixin:
             proc.kill = kill
             returncode = transport.get_returncode()
             transport.close()
-            await transport._wait()
+            await asyncio.wait_for(transport._wait(), 5)
             return (returncode, kill_called)
 
         # Ignore "Close running child process: kill ..." log
         with test_utils.disable_logger():
-            returncode, killed = self.loop.run_until_complete(kill_running())
+            try:
+                returncode, killed = self.loop.run_until_complete(
+                    kill_running()
+                )
+            except asyncio.TimeoutError:
+                self.skipTest(
+                    "Timeout failure on waiting for subprocess stopping"
+                )
         self.assertIsNone(returncode)
 
         # transport.close() must kill the process if it is still running
@@ -581,18 +589,6 @@ class SubprocessMixin:
                     break
 
         self.loop.run_until_complete(execute())
-
-    def test_subprocess_protocol_create_warning(self):
-        with self.assertWarns(DeprecationWarning):
-            subprocess.SubprocessStreamProtocol(limit=10, loop=self.loop)
-
-    def test_process_create_warning(self):
-        proto = subprocess.SubprocessStreamProtocol(limit=10, loop=self.loop,
-                                                    _asyncio_internal=True)
-        transp = mock.Mock()
-
-        with self.assertWarns(DeprecationWarning):
-            subprocess.Process(transp, proto, loop=self.loop)
 
     def test_create_subprocess_exec_text_mode_fails(self):
         async def execute():
@@ -702,6 +698,23 @@ if sys.platform != 'win32':
                                      test_utils.TestCase):
 
         Watcher = unix_events.FastChildWatcher
+
+    def has_pidfd_support():
+        if not hasattr(os, 'pidfd_open'):
+            return False
+        try:
+            os.close(os.pidfd_open(os.getpid()))
+        except OSError:
+            return False
+        return True
+
+    @unittest.skipUnless(
+        has_pidfd_support(),
+        "operating system does not support pidfds",
+    )
+    class SubprocessPidfdWatcherTests(SubprocessWatcherMixin,
+                                      test_utils.TestCase):
+        Watcher = unix_events.PidfdChildWatcher
 
 else:
     # Windows

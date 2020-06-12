@@ -234,8 +234,8 @@ determine if an ST was created from source code via :func:`expr` or
 
    .. index:: builtin: compile
 
-   When *st* represents an ``'eval'`` form, this function returns true, otherwise
-   it returns false.  This is useful, since code objects normally cannot be queried
+   When *st* represents an ``'eval'`` form, this function returns ``True``, otherwise
+   it returns ``False``.  This is useful, since code objects normally cannot be queried
    for this information using existing built-in functions.  Note that the code
    objects created by :func:`compilest` cannot be queried like this either, and
    are identical to those created by the built-in :func:`compile` function.

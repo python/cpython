@@ -1,2 +1,0 @@
-Python ignored path passed to :c:func:`Py_SetPath`, fix Python
-initialization to use the specified path.

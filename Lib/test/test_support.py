@@ -1,4 +1,3 @@
-import contextlib
 import errno
 import importlib
 import io
@@ -14,6 +13,7 @@ import time
 import unittest
 from test import support
 from test.support import script_helper
+from test.support import socket_helper
 
 TESTFN = support.TESTFN
 
@@ -91,17 +91,17 @@ class TestSupport(unittest.TestCase):
             support.rmtree('__pycache__')
 
     def test_HOST(self):
-        s = socket.create_server((support.HOST, 0))
+        s = socket.create_server((socket_helper.HOST, 0))
         s.close()
 
     def test_find_unused_port(self):
-        port = support.find_unused_port()
-        s = socket.create_server((support.HOST, port))
+        port = socket_helper.find_unused_port()
+        s = socket.create_server((socket_helper.HOST, port))
         s.close()
 
     def test_bind_port(self):
         s = socket.socket()
-        support.bind_port(s)
+        socket_helper.bind_port(s)
         s.listen()
         s.close()
 
@@ -176,13 +176,10 @@ class TestSupport(unittest.TestCase):
             with support.temp_cwd() as temp_path:
                 pid = os.fork()
                 if pid != 0:
-                    # parent process (child has pid == 0)
+                    # parent process
 
                     # wait for the child to terminate
-                    (pid, status) = os.waitpid(pid, 0)
-                    if status != 0:
-                        raise AssertionError(f"Child process failed with exit "
-                                             f"status indication 0x{status:x}.")
+                    support.wait_process(pid, exitcode=0)
 
                     # Make sure that temp_path is still present. When the child
                     # process leaves the 'temp_cwd'-context, the __exit__()-
@@ -422,7 +419,7 @@ class TestSupport(unittest.TestCase):
             os._exit(0)
 
         t0 = time.monotonic()
-        deadline = time.monotonic() + 60.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
 
         was_altered = support.environment_altered
         try:
@@ -433,8 +430,12 @@ class TestSupport(unittest.TestCase):
                 if time.monotonic() > deadline:
                     self.fail("timeout")
 
-                with contextlib.redirect_stderr(stderr):
+                old_stderr = sys.__stderr__
+                try:
+                    sys.__stderr__ = stderr
                     support.reap_children()
+                finally:
+                    sys.__stderr__ = old_stderr
 
                 # Use environment_altered to check if reap_children() found
                 # the child process
@@ -493,7 +494,6 @@ class TestSupport(unittest.TestCase):
             ['-Wignore', '-X', 'dev'],
             ['-X', 'faulthandler'],
             ['-X', 'importtime'],
-            ['-X', 'showalloccount'],
             ['-X', 'showrefcount'],
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],
@@ -527,6 +527,7 @@ class TestSupport(unittest.TestCase):
         test_access = Test('test.test_os.FileTests.test_access')
         test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')
 
+        # Test acceptance
         with support.swap_attr(support, '_match_test_func', None):
             # match all
             support.set_match_tests([])
@@ -534,44 +535,91 @@ class TestSupport(unittest.TestCase):
             self.assertTrue(support.match_test(test_chdir))
 
             # match all using None
-            support.set_match_tests(None)
+            support.set_match_tests(None, None)
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
             # match the full test identifier
-            support.set_match_tests([test_access.id()])
+            support.set_match_tests([test_access.id()], None)
             self.assertTrue(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
 
             # match the module name
-            support.set_match_tests(['test_os'])
+            support.set_match_tests(['test_os'], None)
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
             # Test '*' pattern
-            support.set_match_tests(['test_*'])
+            support.set_match_tests(['test_*'], None)
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
             # Test case sensitivity
-            support.set_match_tests(['filetests'])
+            support.set_match_tests(['filetests'], None)
             self.assertFalse(support.match_test(test_access))
-            support.set_match_tests(['FileTests'])
+            support.set_match_tests(['FileTests'], None)
             self.assertTrue(support.match_test(test_access))
 
             # Test pattern containing '.' and a '*' metacharacter
-            support.set_match_tests(['*test_os.*.test_*'])
+            support.set_match_tests(['*test_os.*.test_*'], None)
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
             # Multiple patterns
-            support.set_match_tests([test_access.id(), test_chdir.id()])
+            support.set_match_tests([test_access.id(), test_chdir.id()], None)
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
-            support.set_match_tests(['test_access', 'DONTMATCH'])
+            support.set_match_tests(['test_access', 'DONTMATCH'], None)
             self.assertTrue(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
+
+        # Test rejection
+        with support.swap_attr(support, '_match_test_func', None):
+            # match all
+            support.set_match_tests(ignore_patterns=[])
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # match all using None
+            support.set_match_tests(None, None)
+            self.assertTrue(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # match the full test identifier
+            support.set_match_tests(None, [test_access.id()])
+            self.assertFalse(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+
+            # match the module name
+            support.set_match_tests(None, ['test_os'])
+            self.assertFalse(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+            # Test '*' pattern
+            support.set_match_tests(None, ['test_*'])
+            self.assertFalse(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+            # Test case sensitivity
+            support.set_match_tests(None, ['filetests'])
+            self.assertTrue(support.match_test(test_access))
+            support.set_match_tests(None, ['FileTests'])
+            self.assertFalse(support.match_test(test_access))
+
+            # Test pattern containing '.' and a '*' metacharacter
+            support.set_match_tests(None, ['*test_os.*.test_*'])
+            self.assertFalse(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+            # Multiple patterns
+            support.set_match_tests(None, [test_access.id(), test_chdir.id()])
+            self.assertFalse(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+
+            support.set_match_tests(None, ['test_access', 'DONTMATCH'])
+            self.assertFalse(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
 
     def test_fd_count(self):
         # We cannot test the absolute value of fd_count(): on old Linux
@@ -585,6 +633,24 @@ class TestSupport(unittest.TestCase):
             os.close(fd)
         self.assertEqual(more - start, 1)
 
+    def check_print_warning(self, msg, expected):
+        stderr = io.StringIO()
+
+        old_stderr = sys.__stderr__
+        try:
+            sys.__stderr__ = stderr
+            support.print_warning(msg)
+        finally:
+            sys.__stderr__ = old_stderr
+
+        self.assertEqual(stderr.getvalue(), expected)
+
+    def test_print_warning(self):
+        self.check_print_warning("msg",
+                                 "Warning -- msg\n")
+        self.check_print_warning("a\nb",
+                                 'Warning -- a\nWarning -- b\n')
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled
@@ -594,7 +660,6 @@ class TestSupport(unittest.TestCase):
     # findfile
     # check_warnings
     # EnvironmentVarGuard
-    # TransientResource
     # transient_internet
     # run_with_locale
     # set_memlimit
@@ -605,7 +670,6 @@ class TestSupport(unittest.TestCase):
     # run_doctest
     # threading_cleanup
     # reap_threads
-    # strip_python_stderr
     # can_symlink
     # skip_unless_symlink
     # SuppressCrashReport

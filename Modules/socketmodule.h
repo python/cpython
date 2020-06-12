@@ -144,6 +144,10 @@ typedef int socklen_t;
 #include <linux/can/bcm.h>
 #endif
 
+#ifdef HAVE_LINUX_CAN_J1939_H
+#include <linux/can/j1939.h>
+#endif
+
 #ifdef HAVE_SYS_SYS_DOMAIN_H
 #include <sys/sys_domain.h>
 #endif
@@ -235,7 +239,12 @@ typedef union sock_addr {
     struct sockaddr_in6 in6;
     struct sockaddr_storage storage;
 #endif
-#ifdef HAVE_BLUETOOTH_BLUETOOTH_H
+#if defined(HAVE_BLUETOOTH_H) && defined(__FreeBSD__)
+    struct sockaddr_l2cap bt_l2;
+    struct sockaddr_rfcomm bt_rc;
+    struct sockaddr_sco bt_sco;
+    struct sockaddr_hci bt_hci;
+#elif defined(HAVE_BLUETOOTH_BLUETOOTH_H)
     struct sockaddr_l2 bt_l2;
     struct sockaddr_rc bt_rc;
     struct sockaddr_sco bt_sco;
@@ -260,6 +269,9 @@ typedef union sock_addr {
 #endif
 #ifdef AF_VSOCK
     struct sockaddr_vm vm;
+#endif
+#ifdef HAVE_LINUX_TIPC_H
+    struct sockaddr_tipc tipc;
 #endif
 } sock_addr_t;
 

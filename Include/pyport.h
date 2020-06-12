@@ -131,7 +131,9 @@ typedef int Py_ssize_clean_t;
 /* Smallest negative value of type Py_ssize_t. */
 #define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
 
-/* PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
+/* Macro kept for backward compatibility: use "z" in new code.
+ *
+ * PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
  * format to convert an argument with the width of a size_t or Py_ssize_t.
  * C99 introduced "z" for this purpose, but old MSVCs had not supported it.
  * Since MSVC supports "z" since (at least) 2015, we can just use "z"
@@ -338,7 +340,7 @@ extern "C" {
         } \
     } while(0)
 
-/* Py_SET_ERANGE_ON_OVERFLOW(x)
+/* Py_SET_ERANGE_IF_OVERFLOW(x)
  * An alias of Py_SET_ERRNO_ON_MATH_ERROR for backward-compatibility.
  */
 #define Py_SET_ERANGE_IF_OVERFLOW(X) Py_SET_ERRNO_ON_MATH_ERROR(X)
@@ -638,16 +640,18 @@ extern char * _getpty(int *, int, mode_t, int);
 #       define HAVE_DECLSPEC_DLL
 #endif
 
+#include "exports.h"
+
 /* only get special linkage if built as shared or platform is Cygwin */
 #if defined(Py_ENABLE_SHARED) || defined(__CYGWIN__)
 #       if defined(HAVE_DECLSPEC_DLL)
 #               if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#                       define PyAPI_FUNC(RTYPE) __declspec(dllexport) RTYPE
-#                       define PyAPI_DATA(RTYPE) extern __declspec(dllexport) RTYPE
+#                       define PyAPI_FUNC(RTYPE) Py_EXPORTED_SYMBOL RTYPE
+#                       define PyAPI_DATA(RTYPE) extern Py_EXPORTED_SYMBOL RTYPE
         /* module init functions inside the core need no external linkage */
         /* except for Cygwin to handle embedding */
 #                       if defined(__CYGWIN__)
-#                               define PyMODINIT_FUNC __declspec(dllexport) PyObject*
+#                               define PyMODINIT_FUNC Py_EXPORTED_SYMBOL PyObject*
 #                       else /* __CYGWIN__ */
 #                               define PyMODINIT_FUNC PyObject*
 #                       endif /* __CYGWIN__ */
@@ -658,14 +662,14 @@ extern char * _getpty(int *, int, mode_t, int);
         /* failures similar to those described at the bottom of 4.1: */
         /* http://docs.python.org/extending/windows.html#a-cookbook-approach */
 #                       if !defined(__CYGWIN__)
-#                               define PyAPI_FUNC(RTYPE) __declspec(dllimport) RTYPE
+#                               define PyAPI_FUNC(RTYPE) Py_IMPORTED_SYMBOL RTYPE
 #                       endif /* !__CYGWIN__ */
-#                       define PyAPI_DATA(RTYPE) extern __declspec(dllimport) RTYPE
+#                       define PyAPI_DATA(RTYPE) extern Py_IMPORTED_SYMBOL RTYPE
         /* module init functions outside the core must be exported */
 #                       if defined(__cplusplus)
-#                               define PyMODINIT_FUNC extern "C" __declspec(dllexport) PyObject*
+#                               define PyMODINIT_FUNC extern "C" Py_EXPORTED_SYMBOL PyObject*
 #                       else /* __cplusplus */
-#                               define PyMODINIT_FUNC __declspec(dllexport) PyObject*
+#                               define PyMODINIT_FUNC Py_EXPORTED_SYMBOL PyObject*
 #                       endif /* __cplusplus */
 #               endif /* Py_BUILD_CORE */
 #       endif /* HAVE_DECLSPEC_DLL */
@@ -673,16 +677,16 @@ extern char * _getpty(int *, int, mode_t, int);
 
 /* If no external linkage macros defined by now, create defaults */
 #ifndef PyAPI_FUNC
-#       define PyAPI_FUNC(RTYPE) RTYPE
+#       define PyAPI_FUNC(RTYPE) Py_EXPORTED_SYMBOL RTYPE
 #endif
 #ifndef PyAPI_DATA
-#       define PyAPI_DATA(RTYPE) extern RTYPE
+#       define PyAPI_DATA(RTYPE) extern Py_EXPORTED_SYMBOL RTYPE
 #endif
 #ifndef PyMODINIT_FUNC
 #       if defined(__cplusplus)
-#               define PyMODINIT_FUNC extern "C" PyObject*
+#               define PyMODINIT_FUNC extern "C" Py_EXPORTED_SYMBOL PyObject*
 #       else /* __cplusplus */
-#               define PyMODINIT_FUNC PyObject*
+#               define PyMODINIT_FUNC Py_EXPORTED_SYMBOL PyObject*
 #       endif /* __cplusplus */
 #endif
 
@@ -766,11 +770,11 @@ extern char * _getpty(int *, int, mode_t, int);
  */
 
 #ifdef WORDS_BIGENDIAN
-#define PY_BIG_ENDIAN 1
-#define PY_LITTLE_ENDIAN 0
+#  define PY_BIG_ENDIAN 1
+#  define PY_LITTLE_ENDIAN 0
 #else
-#define PY_BIG_ENDIAN 0
-#define PY_LITTLE_ENDIAN 1
+#  define PY_BIG_ENDIAN 0
+#  define PY_LITTLE_ENDIAN 1
 #endif
 
 #ifdef Py_BUILD_CORE
@@ -827,8 +831,9 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif
 
 /* Mark a function which cannot return. Example:
+   PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
 
-   PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void); */
+   XLC support is intentionally omitted due to bpo-40244 */
 #if defined(__clang__) || \
     (defined(__GNUC__) && \
      ((__GNUC__ >= 3) || \

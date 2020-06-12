@@ -247,7 +247,7 @@ Glossary
       Fortran contiguous arrays, the first index varies the fastest.
 
    coroutine
-      Coroutines is a more generalized form of subroutines. Subroutines are
+      Coroutines are a more generalized form of subroutines. Subroutines are
       entered at one point and exited at another point.  Coroutines can be
       entered, exited, and resumed at many different points.  They can be
       implemented with the :keyword:`async def` statement.  See also
@@ -824,9 +824,11 @@ Glossary
       .. _positional-only_parameter:
 
       * :dfn:`positional-only`: specifies an argument that can be supplied only
-        by position.  Python has no syntax for defining positional-only
-        parameters.  However, some built-in functions have positional-only
-        parameters (e.g. :func:`abs`).
+        by position. Positional-only parameters can be defined by including a
+        ``/`` character in the parameter list of the function definition after
+        them, for example *posonly1* and *posonly2* in the following::
+
+           def func(posonly1, posonly2, /, positional_or_keyword): ...
 
       .. _keyword-only_parameter:
 

@@ -34,8 +34,8 @@ def _make_relax_case():
             key = b'PYTHONCASEOK'
 
         def _relax_case():
-            """True if filenames must be checked case-insensitively."""
-            return key in _os.environ
+            """True if filenames must be checked case-insensitively and ignore environment flags are not set."""
+            return not sys.flags.ignore_environment and key in _os.environ
     else:
         def _relax_case():
             """True if filenames must be checked case-insensitively."""
@@ -272,6 +272,12 @@ _code_type = type(_write_atomic.__code__)
 #                         only args in ast.arguments #37593)
 #     Python 3.8b4  3413 (Fix "break" and "continue" in "finally" #37830)
 #     Python 3.9a0  3420 (add LOAD_ASSERTION_ERROR #34880)
+#     Python 3.9a0  3421 (simplified bytecode for with blocks #32949)
+#     Python 3.9a0  3422 (remove BEGIN_FINALLY, END_FINALLY, CALL_FINALLY, POP_FINALLY bytecodes #33387)
+#     Python 3.9a2  3423 (add IS_OP, CONTAINS_OP and JUMP_IF_NOT_EXC_MATCH bytecodes #39156)
+#     Python 3.9a2  3424 (simplify bytecodes for *value unpacking)
+#     Python 3.9a2  3425 (simplify bytecodes for **value unpacking)
+
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -280,7 +286,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3420).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3425).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -710,9 +716,9 @@ class WindowsRegistryFinder:
     @classmethod
     def _open_registry(cls, key):
         try:
-            return _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, key)
+            return winreg.OpenKey(winreg.HKEY_CURRENT_USER, key)
         except OSError:
-            return _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, key)
+            return winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key)
 
     @classmethod
     def _search_registry(cls, fullname):
@@ -724,7 +730,7 @@ class WindowsRegistryFinder:
                                   sys_version='%d.%d' % sys.version_info[:2])
         try:
             with cls._open_registry(key) as hkey:
-                filepath = _winreg.QueryValue(hkey, '')
+                filepath = winreg.QueryValue(hkey, '')
         except OSError:
             return None
         return filepath
@@ -976,32 +982,10 @@ class FileLoader:
             with _io.FileIO(path, 'r') as file:
                 return file.read()
 
-    # ResourceReader ABC API.
-
     @_check_name
     def get_resource_reader(self, module):
-        if self.is_package(module):
-            return self
-        return None
-
-    def open_resource(self, resource):
-        path = _path_join(_path_split(self.path)[0], resource)
-        return _io.FileIO(path, 'r')
-
-    def resource_path(self, resource):
-        if not self.is_resource(resource):
-            raise FileNotFoundError
-        path = _path_join(_path_split(self.path)[0], resource)
-        return path
-
-    def is_resource(self, name):
-        if path_sep in name:
-            return False
-        path = _path_join(_path_split(self.path)[0], name)
-        return _path_isfile(path)
-
-    def contents(self):
-        return iter(_os.listdir(_path_split(self.path)[0]))
+        from importlib.readers import FileReader
+        return FileReader(self)
 
 
 class SourceFileLoader(FileLoader, SourceLoader):
@@ -1578,14 +1562,7 @@ def _setup(_bootstrap_module):
     sys = _bootstrap.sys
     _imp = _bootstrap._imp
 
-    # Directly load built-in modules needed during bootstrap.
     self_module = sys.modules[__name__]
-    for builtin_name in ('_io', '_warnings', 'builtins', 'marshal'):
-        if builtin_name not in sys.modules:
-            builtin_module = _bootstrap._builtin_from_name(builtin_name)
-        else:
-            builtin_module = sys.modules[builtin_name]
-        setattr(self_module, builtin_name, builtin_module)
 
     # Directly load the os module (needed during bootstrap).
     os_details = ('posix', ['/']), ('nt', ['\\', '/'])
@@ -1604,23 +1581,22 @@ def _setup(_bootstrap_module):
                 continue
     else:
         raise ImportError('importlib requires posix or nt')
+
     setattr(self_module, '_os', os_module)
     setattr(self_module, 'path_sep', path_sep)
     setattr(self_module, 'path_separators', ''.join(path_separators))
     setattr(self_module, '_pathseps_with_colon', {f':{s}' for s in path_separators})
 
-    # Directly load the _thread module (needed during bootstrap).
-    thread_module = _bootstrap._builtin_from_name('_thread')
-    setattr(self_module, '_thread', thread_module)
-
-    # Directly load the _weakref module (needed during bootstrap).
-    weakref_module = _bootstrap._builtin_from_name('_weakref')
-    setattr(self_module, '_weakref', weakref_module)
-
-    # Directly load the winreg module (needed during bootstrap).
+    # Directly load built-in modules needed during bootstrap.
+    builtin_names = ['_io', '_warnings', 'marshal']
     if builtin_os == 'nt':
-        winreg_module = _bootstrap._builtin_from_name('winreg')
-        setattr(self_module, '_winreg', winreg_module)
+        builtin_names.append('winreg')
+    for builtin_name in builtin_names:
+        if builtin_name not in sys.modules:
+            builtin_module = _bootstrap._builtin_from_name(builtin_name)
+        else:
+            builtin_module = sys.modules[builtin_name]
+        setattr(self_module, builtin_name, builtin_module)
 
     # Constants
     setattr(self_module, '_relax_case', _make_relax_case())

@@ -18,14 +18,6 @@ class LegacyBase64TestCase(unittest.TestCase):
         int_data = memoryview(b"1234").cast('I')
         self.assertRaises(TypeError, f, int_data)
 
-    def test_encodestring_warns(self):
-        with self.assertWarns(DeprecationWarning):
-            base64.encodestring(b"www.python.org")
-
-    def test_decodestring_warns(self):
-        with self.assertWarns(DeprecationWarning):
-            base64.decodestring(b"d3d3LnB5dGhvbi5vcmc=\n")
-
     def test_encodebytes(self):
         eq = self.assertEqual
         eq(base64.encodebytes(b"www.python.org"), b"d3d3LnB5dGhvbi5vcmc=\n")
@@ -250,6 +242,7 @@ class BaseXYTestCase(unittest.TestCase):
                  (b'3d}==', b'\xdd'),
                  (b'@@', b''),
                  (b'!', b''),
+                 (b"YWJj\n", b"abc"),
                  (b'YWJj\nYWI=', b'abcab'))
         funcs = (
             base64.b64decode,

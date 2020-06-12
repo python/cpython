@@ -39,8 +39,6 @@ class LoggingSilencer(object):
         self.logs.append((level, msg, args))
 
     def get_logs(self, *levels):
-        def _format(msg, args):
-            return msg % args
         return [msg % args for level, msg, args
                 in self.logs if level in levels]
 

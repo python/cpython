@@ -28,7 +28,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
             /* Help register allocation */
             const unsigned char *_p = p;
             while (_p < aligned_end) {
-                size_t value = *(size_t *) _p;
+                size_t value = *(const size_t *) _p;
                 if (value & UCS1_ASCII_CHAR_MASK)
                     return 255;
                 _p += SIZEOF_SIZE_T;

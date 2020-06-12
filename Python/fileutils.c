@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "pycore_fileutils.h"
-#include "osdefs.h"
+#include "osdefs.h"               // SEP
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -1452,7 +1452,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
     PyObject *bytes;
-    char *path_bytes;
+    const char *path_bytes;
 
     assert(PyGILState_Check());
 
@@ -1668,8 +1668,9 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t buflen)
 {
     char *cpath;
     char cbuf[MAXPATHLEN];
+    size_t cbuf_len = Py_ARRAY_LENGTH(cbuf);
     wchar_t *wbuf;
-    int res;
+    Py_ssize_t res;
     size_t r1;
 
     cpath = _Py_EncodeLocaleRaw(path, NULL);
@@ -1677,11 +1678,12 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t buflen)
         errno = EINVAL;
         return -1;
     }
-    res = (int)readlink(cpath, cbuf, Py_ARRAY_LENGTH(cbuf));
+    res = readlink(cpath, cbuf, cbuf_len);
     PyMem_RawFree(cpath);
-    if (res == -1)
+    if (res == -1) {
         return -1;
-    if (res == Py_ARRAY_LENGTH(cbuf)) {
+    }
+    if ((size_t)res == cbuf_len) {
         errno = EINVAL;
         return -1;
     }
