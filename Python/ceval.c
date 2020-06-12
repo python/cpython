@@ -1159,7 +1159,12 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "match proxy %R has no attribute %R",
                               proxy, name);
+                goto error;
             }
+            Py_DECREF(attrs);
+            attrs = Py_None;
+            Py_INCREF(attrs);
+            break;
         }
         PyTuple_SET_ITEM(attrs, i, attr);
     }
@@ -3652,13 +3657,16 @@ main_loop:
         }
 
         case TARGET(MATCH_SEQ_ITEM): {
+            printf("AAA\n");
             PyObject *target = TOP();
             PyObject *item;
             if (PyTuple_CheckExact(target)) {
+                printf("BBB\n");
                 assert(oparg < PyTuple_GET_SIZE(target));
                 item = PyTuple_GET_ITEM(target, oparg);
             }
             else if (PyList_CheckExact(target)) {
+                printf("CCC\n");
                 assert(oparg < PyList_GET_SIZE(target));
                 item = PyList_GET_ITEM(target, oparg);
             }
@@ -3668,6 +3676,7 @@ main_loop:
             }
             Py_INCREF(item);
             PUSH(item);
+            printf("DDD\n");
             DISPATCH();
         }
 
