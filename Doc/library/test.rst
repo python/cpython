@@ -398,25 +398,6 @@ The :mod:`test.support` module defines the following constants:
 
 The :mod:`test.support` module defines the following functions:
 
-.. function:: forget(module_name)
-
-   Remove the module named *module_name* from ``sys.modules`` and delete any
-   byte-compiled files of the module.
-
-
-.. function:: unload(name)
-
-   Delete *name* from ``sys.modules``.
-
-
-.. function:: make_legacy_pyc(source)
-
-   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
-   system path to the legacy pyc file.  The *source* value is the file system
-   path to the source file.  It does not need to exist, however the PEP
-   3147/488 pyc file must exist.
-
-
 .. function:: is_resource_enabled(resource)
 
    Return ``True`` if *resource* is enabled and available. The list of
@@ -514,79 +495,6 @@ The :mod:`test.support` module defines the following functions:
       check_impl_detail()               # Only on CPython (default).
       check_impl_detail(jython=True)    # Only on Jython.
       check_impl_detail(cpython=False)  # Everywhere except CPython.
-
-
-.. function:: check_warnings(\*filters, quiet=True)
-
-   A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
-   easier to test that a warning was correctly raised.  It is approximately
-   equivalent to calling ``warnings.catch_warnings(record=True)`` with
-   :meth:`warnings.simplefilter` set to ``always`` and with the option to
-   automatically validate the results that are recorded.
-
-   ``check_warnings`` accepts 2-tuples of the form ``("message regexp",
-   WarningCategory)`` as positional arguments. If one or more *filters* are
-   provided, or if the optional keyword argument *quiet* is ``False``,
-   it checks to make sure the warnings are as expected:  each specified filter
-   must match at least one of the warnings raised by the enclosed code or the
-   test fails, and if any warnings are raised that do not match any of the
-   specified filters the test fails.  To disable the first of these checks,
-   set *quiet* to ``True``.
-
-   If no arguments are specified, it defaults to::
-
-      check_warnings(("", Warning), quiet=True)
-
-   In this case all warnings are caught and no errors are raised.
-
-   On entry to the context manager, a :class:`WarningRecorder` instance is
-   returned. The underlying warnings list from
-   :func:`~warnings.catch_warnings` is available via the recorder object's
-   :attr:`warnings` attribute.  As a convenience, the attributes of the object
-   representing the most recent warning can also be accessed directly through
-   the recorder object (see example below).  If no warning has been raised,
-   then any of the attributes that would otherwise be expected on an object
-   representing a warning will return ``None``.
-
-   The recorder object also has a :meth:`reset` method, which clears the
-   warnings list.
-
-   The context manager is designed to be used like this::
-
-      with check_warnings(("assertion is always true", SyntaxWarning),
-                          ("", UserWarning)):
-          exec('assert(False, "Hey!")')
-          warnings.warn(UserWarning("Hide me!"))
-
-   In this case if either warning was not raised, or some other warning was
-   raised, :func:`check_warnings` would raise an error.
-
-   When a test needs to look more deeply into the warnings, rather than
-   just checking whether or not they occurred, code like this can be used::
-
-      with check_warnings(quiet=True) as w:
-          warnings.warn("foo")
-          assert str(w.args[0]) == "foo"
-          warnings.warn("bar")
-          assert str(w.args[0]) == "bar"
-          assert str(w.warnings[0].args[0]) == "foo"
-          assert str(w.warnings[1].args[0]) == "bar"
-          w.reset()
-          assert len(w.warnings) == 0
-
-
-   Here all warnings will be caught, and the test code tests the captured
-   warnings directly.
-
-   .. versionchanged:: 3.2
-      New optional arguments *filters* and *quiet*.
-
-
-.. function:: check_no_resource_warning(testcase)
-
-   Context manager to check that no :exc:`ResourceWarning` was raised.  You
-   must remove the object which may emit :exc:`ResourceWarning` before the
-   end of the context manager.
 
 
 .. function:: set_memlimit(limit)
@@ -870,84 +778,9 @@ The :mod:`test.support` module defines the following functions:
    the offset of the exception.
 
 
-.. function:: check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None)
-
-   Test for syntax warning in *statement* by attempting to compile *statement*.
-   Test also that the :exc:`SyntaxWarning` is emitted only once, and that it
-   will be converted to a :exc:`SyntaxError` when turned into error.
-   *testcase* is the :mod:`unittest` instance for the test.  *errtext* is the
-   regular expression which should match the string representation of the
-   emitted :exc:`SyntaxWarning` and raised :exc:`SyntaxError`.  If *lineno*
-   is not ``None``, compares to the line of the warning and exception.
-   If *offset* is not ``None``, compares to the offset of the exception.
-
-   .. versionadded:: 3.8
-
-
 .. function:: open_urlresource(url, *args, **kw)
 
    Open *url*.  If open fails, raises :exc:`TestFailed`.
-
-
-.. function:: import_module(name, deprecated=False, *, required_on())
-
-   This function imports and returns the named module. Unlike a normal
-   import, this function raises :exc:`unittest.SkipTest` if the module
-   cannot be imported.
-
-   Module and package deprecation messages are suppressed during this import
-   if *deprecated* is ``True``.  If a module is required on a platform but
-   optional for others, set *required_on* to an iterable of platform prefixes
-   which will be compared against :data:`sys.platform`.
-
-   .. versionadded:: 3.1
-
-
-.. function:: import_fresh_module(name, fresh=(), blocked=(), deprecated=False)
-
-   This function imports and returns a fresh copy of the named Python module
-   by removing the named module from ``sys.modules`` before doing the import.
-   Note that unlike :func:`reload`, the original module is not affected by
-   this operation.
-
-   *fresh* is an iterable of additional module names that are also removed
-   from the ``sys.modules`` cache before doing the import.
-
-   *blocked* is an iterable of module names that are replaced with ``None``
-   in the module cache during the import to ensure that attempts to import
-   them raise :exc:`ImportError`.
-
-   The named module and any modules named in the *fresh* and *blocked*
-   parameters are saved before starting the import and then reinserted into
-   ``sys.modules`` when the fresh import is complete.
-
-   Module and package deprecation messages are suppressed during this import
-   if *deprecated* is ``True``.
-
-   This function will raise :exc:`ImportError` if the named module cannot be
-   imported.
-
-   Example use::
-
-      # Get copies of the warnings module for testing without affecting the
-      # version being used by the rest of the test suite. One copy uses the
-      # C implementation, the other is forced to use the pure Python fallback
-      # implementation
-      py_warnings = import_fresh_module('warnings', blocked=['_warnings'])
-      c_warnings = import_fresh_module('warnings', fresh=['_warnings'])
-
-   .. versionadded:: 3.1
-
-
-.. function:: modules_setup()
-
-   Return a copy of :data:`sys.modules`.
-
-
-.. function:: modules_cleanup(oldmodules)
-
-   Remove modules except for *oldmodules* and ``encodings`` in order to
-   preserve internal cache.
 
 
 .. function:: reap_children()
@@ -1089,15 +922,6 @@ The :mod:`test.support` module defines the following functions:
 
 The :mod:`test.support` module defines the following classes:
 
-.. class:: TransientResource(exc, **kwargs)
-
-   Instances are a context manager that raises :exc:`ResourceDenied` if the
-   specified exception type is raised.  Any keyword arguments are treated as
-   attribute/value pairs to be compared against any exception raised within the
-   :keyword:`with` statement.  Only if all pairs match properly against
-   attributes on the exception is :exc:`ResourceDenied` raised.
-
-
 .. class:: SuppressCrashReport()
 
    A context manager used to try to prevent crash dialog popups on tests that
@@ -1111,29 +935,6 @@ The :mod:`test.support` module defines the following classes:
    creation.
 
    On both platforms, the old value is restored by :meth:`__exit__`.
-
-
-.. class:: CleanImport(*module_names)
-
-   A context manager to force import to return a new module reference.  This
-   is useful for testing module-level behaviors, such as the emission of a
-   DeprecationWarning on import.  Example usage::
-
-      with CleanImport('foo'):
-          importlib.import_module('foo')  # New reference.
-
-
-.. class:: DirsOnSysPath(*paths)
-
-   A context manager to temporarily add directories to sys.path.
-
-   This makes a copy of :data:`sys.path`, appends any directories given
-   as positional arguments, then reverts :data:`sys.path` to the copied
-   settings when the context ends.
-
-   Note that *all* :data:`sys.path` modifications in the body of the
-   context manager, including replacement of the object,
-   will be reverted at the end of the block.
 
 
 .. class:: SaveSignals()
@@ -1152,12 +953,6 @@ The :mod:`test.support` module defines the following classes:
    .. method:: match_value(self, k, dv, v)
 
       Try to match a single stored value (*dv*) with a supplied value (*v*).
-
-
-.. class:: WarningsRecorder()
-
-   Class used to record warnings for unit tests. See documentation of
-   :func:`check_warnings` above for more details.
 
 
 .. class:: BasicTestRunner()
@@ -1646,3 +1441,221 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 
    Call :func:`os.unlink` on *filename*.  On Windows platforms, this is
    wrapped with a wait loop that checks for the existence fo the file.
+
+
+:mod:`test.support.import_helper` --- Utilities for import tests
+================================================================
+
+.. module:: test.support.import_helper
+   :synopsis: Support for import tests.
+
+The :mod:`test.support.import_helper` module provides support for import tests.
+
+.. versionadded:: 3.10
+
+
+.. function:: forget(module_name)
+
+   Remove the module named *module_name* from ``sys.modules`` and delete any
+   byte-compiled files of the module.
+
+
+.. function:: import_fresh_module(name, fresh=(), blocked=(), deprecated=False)
+
+   This function imports and returns a fresh copy of the named Python module
+   by removing the named module from ``sys.modules`` before doing the import.
+   Note that unlike :func:`reload`, the original module is not affected by
+   this operation.
+
+   *fresh* is an iterable of additional module names that are also removed
+   from the ``sys.modules`` cache before doing the import.
+
+   *blocked* is an iterable of module names that are replaced with ``None``
+   in the module cache during the import to ensure that attempts to import
+   them raise :exc:`ImportError`.
+
+   The named module and any modules named in the *fresh* and *blocked*
+   parameters are saved before starting the import and then reinserted into
+   ``sys.modules`` when the fresh import is complete.
+
+   Module and package deprecation messages are suppressed during this import
+   if *deprecated* is ``True``.
+
+   This function will raise :exc:`ImportError` if the named module cannot be
+   imported.
+
+   Example use::
+
+      # Get copies of the warnings module for testing without affecting the
+      # version being used by the rest of the test suite. One copy uses the
+      # C implementation, the other is forced to use the pure Python fallback
+      # implementation
+      py_warnings = import_fresh_module('warnings', blocked=['_warnings'])
+      c_warnings = import_fresh_module('warnings', fresh=['_warnings'])
+
+   .. versionadded:: 3.1
+
+
+.. function:: import_module(name, deprecated=False, *, required_on())
+
+   This function imports and returns the named module. Unlike a normal
+   import, this function raises :exc:`unittest.SkipTest` if the module
+   cannot be imported.
+
+   Module and package deprecation messages are suppressed during this import
+   if *deprecated* is ``True``.  If a module is required on a platform but
+   optional for others, set *required_on* to an iterable of platform prefixes
+   which will be compared against :data:`sys.platform`.
+
+   .. versionadded:: 3.1
+
+
+.. function:: modules_setup()
+
+   Return a copy of :data:`sys.modules`.
+
+
+.. function:: modules_cleanup(oldmodules)
+
+   Remove modules except for *oldmodules* and ``encodings`` in order to
+   preserve internal cache.
+
+
+.. function:: unload(name)
+
+   Delete *name* from ``sys.modules``.
+
+
+.. function:: make_legacy_pyc(source)
+
+   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
+   system path to the legacy pyc file.  The *source* value is the file system
+   path to the source file.  It does not need to exist, however the PEP
+   3147/488 pyc file must exist.
+
+
+.. class:: CleanImport(*module_names)
+
+   A context manager to force import to return a new module reference.  This
+   is useful for testing module-level behaviors, such as the emission of a
+   DeprecationWarning on import.  Example usage::
+
+      with CleanImport('foo'):
+          importlib.import_module('foo')  # New reference.
+
+
+.. class:: DirsOnSysPath(*paths)
+
+   A context manager to temporarily add directories to sys.path.
+
+   This makes a copy of :data:`sys.path`, appends any directories given
+   as positional arguments, then reverts :data:`sys.path` to the copied
+   settings when the context ends.
+
+   Note that *all* :data:`sys.path` modifications in the body of the
+   context manager, including replacement of the object,
+   will be reverted at the end of the block.
+
+
+:mod:`test.support.warnings_helper` --- Utilities for warnings tests
+====================================================================
+
+.. module:: test.support.warnings_helper
+   :synopsis: Support for warnings tests.
+
+The :mod:`test.support.warnings_helper` module provides support for warnings tests.
+
+.. versionadded:: 3.10
+
+
+.. function:: check_no_resource_warning(testcase)
+
+   Context manager to check that no :exc:`ResourceWarning` was raised.  You
+   must remove the object which may emit :exc:`ResourceWarning` before the
+   end of the context manager.
+
+
+.. function:: check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None)
+
+   Test for syntax warning in *statement* by attempting to compile *statement*.
+   Test also that the :exc:`SyntaxWarning` is emitted only once, and that it
+   will be converted to a :exc:`SyntaxError` when turned into error.
+   *testcase* is the :mod:`unittest` instance for the test.  *errtext* is the
+   regular expression which should match the string representation of the
+   emitted :exc:`SyntaxWarning` and raised :exc:`SyntaxError`.  If *lineno*
+   is not ``None``, compares to the line of the warning and exception.
+   If *offset* is not ``None``, compares to the offset of the exception.
+
+   .. versionadded:: 3.8
+
+
+.. function:: check_warnings(\*filters, quiet=True)
+
+   A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
+   easier to test that a warning was correctly raised.  It is approximately
+   equivalent to calling ``warnings.catch_warnings(record=True)`` with
+   :meth:`warnings.simplefilter` set to ``always`` and with the option to
+   automatically validate the results that are recorded.
+
+   ``check_warnings`` accepts 2-tuples of the form ``("message regexp",
+   WarningCategory)`` as positional arguments. If one or more *filters* are
+   provided, or if the optional keyword argument *quiet* is ``False``,
+   it checks to make sure the warnings are as expected:  each specified filter
+   must match at least one of the warnings raised by the enclosed code or the
+   test fails, and if any warnings are raised that do not match any of the
+   specified filters the test fails.  To disable the first of these checks,
+   set *quiet* to ``True``.
+
+   If no arguments are specified, it defaults to::
+
+      check_warnings(("", Warning), quiet=True)
+
+   In this case all warnings are caught and no errors are raised.
+
+   On entry to the context manager, a :class:`WarningRecorder` instance is
+   returned. The underlying warnings list from
+   :func:`~warnings.catch_warnings` is available via the recorder object's
+   :attr:`warnings` attribute.  As a convenience, the attributes of the object
+   representing the most recent warning can also be accessed directly through
+   the recorder object (see example below).  If no warning has been raised,
+   then any of the attributes that would otherwise be expected on an object
+   representing a warning will return ``None``.
+
+   The recorder object also has a :meth:`reset` method, which clears the
+   warnings list.
+
+   The context manager is designed to be used like this::
+
+      with check_warnings(("assertion is always true", SyntaxWarning),
+                          ("", UserWarning)):
+          exec('assert(False, "Hey!")')
+          warnings.warn(UserWarning("Hide me!"))
+
+   In this case if either warning was not raised, or some other warning was
+   raised, :func:`check_warnings` would raise an error.
+
+   When a test needs to look more deeply into the warnings, rather than
+   just checking whether or not they occurred, code like this can be used::
+
+      with check_warnings(quiet=True) as w:
+          warnings.warn("foo")
+          assert str(w.args[0]) == "foo"
+          warnings.warn("bar")
+          assert str(w.args[0]) == "bar"
+          assert str(w.warnings[0].args[0]) == "foo"
+          assert str(w.warnings[1].args[0]) == "bar"
+          w.reset()
+          assert len(w.warnings) == 0
+
+
+   Here all warnings will be caught, and the test code tests the captured
+   warnings directly.
+
+   .. versionchanged:: 3.2
+      New optional arguments *filters* and *quiet*.
+
+
+.. class:: WarningsRecorder()
+
+   Class used to record warnings for unit tests. See documentation of
+   :func:`check_warnings` above for more details.
