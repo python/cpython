@@ -94,6 +94,7 @@ RECIP_BPF = 2 ** -BPF
 
 import _random
 
+
 class Random(_random.Random):
     """Random number generator base class used by bound module functions.
 
@@ -208,21 +209,21 @@ class Random(_random.Random):
                              "Random.setstate() of version %s" %
                              (version, self.VERSION))
 
-## ---- Methods below this point do not need to be overridden when
-## ---- subclassing for the purpose of using a different core generator.
+    ## ---- Methods below this point do not need to be overridden when
+    ## ---- subclassing for the purpose of using a different core generator.
 
-## -------------------- bytes methods ---------------------
+    ## -------------------- bytes methods ---------------------
 
     def randbytes(self, n):
         """Generate n random bytes."""
         return self.getrandbits(n * 8).to_bytes(n, 'little')
 
-## -------------------- pickle support  -------------------
+    ## -------------------- pickle support  -------------------
 
     # Issue 17489: Since __reduce__ was defined to fix #759889 this is no
     # longer called; we leave it here because it has been here since random was
     # rewritten back in 2001 and why risk breaking something.
-    def __getstate__(self): # for pickle
+    def __getstate__(self):  # for pickle
         return self.getstate()
 
     def __setstate__(self, state):  # for pickle
@@ -231,7 +232,7 @@ class Random(_random.Random):
     def __reduce__(self):
         return self.__class__, (), self.getstate()
 
-## -------------------- integer methods  -------------------
+    ## -------------------- integer methods  -------------------
 
     def randrange(self, start, stop=None, step=1, _int=int):
         """Choose a random item from range(start, stop[, step]).
@@ -275,7 +276,7 @@ class Random(_random.Random):
         if n <= 0:
             raise ValueError("empty range for randrange()")
 
-        return istart + istep*self._randbelow(n)
+        return istart + istep * self._randbelow(n)
 
     def randint(self, a, b):
         """Return random integer in range [a, b], including both end points.
@@ -318,11 +319,12 @@ class Random(_random.Random):
 
     _randbelow = _randbelow_with_getrandbits
 
-## -------------------- sequence methods  -------------------
+    ## -------------------- sequence methods  -------------------
 
     def choice(self, seq):
         """Choose a random element from a non-empty sequence."""
-        return seq[self._randbelow(len(seq))] # raises IndexError if seq is empty
+        # raises IndexError if seq is empty
+        return seq[self._randbelow(len(seq))]
 
     def shuffle(self, x, random=None):
         """Shuffle list x in place, and return None.
@@ -476,15 +478,15 @@ class Random(_random.Random):
         return [population[bisect(cum_weights, random() * total, 0, hi)]
                 for i in _repeat(None, k)]
 
-## -------------------- real-valued distributions  -------------------
+    ## -------------------- real-valued distributions  -------------------
 
-## -------------------- uniform distribution -------------------
+    ## -------------------- uniform distribution -------------------
 
     def uniform(self, a, b):
         "Get a random number in the range [a, b) or [a, b] depending on rounding."
         return a + (b - a) * self.random()
 
-## -------------------- triangular --------------------
+    ## -------------------- triangular --------------------
 
     def triangular(self, low=0.0, high=1.0, mode=None):
         """Triangular distribution.
@@ -506,7 +508,7 @@ class Random(_random.Random):
             low, high = high, low
         return low + (high - low) * _sqrt(u * c)
 
-## -------------------- normal distribution --------------------
+    ## -------------------- normal distribution --------------------
 
     def normalvariate(self, mu, sigma):
         """Normal distribution.
@@ -531,7 +533,7 @@ class Random(_random.Random):
                 break
         return mu + z * sigma
 
-## -------------------- lognormal distribution --------------------
+    ## -------------------- lognormal distribution --------------------
 
     def lognormvariate(self, mu, sigma):
         """Log normal distribution.
@@ -543,7 +545,7 @@ class Random(_random.Random):
         """
         return _exp(self.normalvariate(mu, sigma))
 
-## -------------------- exponential distribution --------------------
+    ## -------------------- exponential distribution --------------------
 
     def expovariate(self, lambd):
         """Exponential distribution.
@@ -562,7 +564,7 @@ class Random(_random.Random):
         # possibility of taking the log of zero.
         return -_log(1.0 - self.random()) / lambd
 
-## -------------------- von Mises distribution --------------------
+    ## -------------------- von Mises distribution --------------------
 
     def vonmisesvariate(self, mu, kappa):
         """Circular data distribution.
@@ -610,7 +612,7 @@ class Random(_random.Random):
 
         return theta
 
-## -------------------- gamma distribution --------------------
+    ## -------------------- gamma distribution --------------------
 
     def gammavariate(self, alpha, beta):
         """Gamma distribution.  Not the gamma function!
@@ -645,7 +647,7 @@ class Random(_random.Random):
 
             while 1:
                 u1 = random()
-                if not 1e-7 < u1 < .9999999:
+                if not 1e-7 < u1 < 0.9999999:
                     continue
                 u2 = 1.0 - random()
                 v = _log(u1 / (1.0 - u1)) / ainv
@@ -659,13 +661,12 @@ class Random(_random.Random):
             # expovariate(1/beta)
             return -_log(1.0 - random()) * beta
 
-        else:   # alpha is between 0 and 1 (exclusive)
-
+        else:
+            # alpha is between 0 and 1 (exclusive)
             # Uses ALGORITHM GS of Statistical Computing - Kennedy & Gentle
-
             while True:
                 u = random()
-                b = (_e + alpha)/_e
+                b = (_e + alpha) / _e
                 p = b * u
                 if p <= 1.0:
                     x = p ** (1.0 / alpha)
@@ -679,7 +680,7 @@ class Random(_random.Random):
                     break
             return x * beta
 
-## -------------------- Gauss (faster alternative) --------------------
+    ## -------------------- Gauss (faster alternative) --------------------
 
     def gauss(self, mu, sigma):
         """Gaussian distribution.
@@ -720,19 +721,19 @@ class Random(_random.Random):
 
         return mu + z * sigma
 
-## -------------------- beta --------------------
-## See
-## http://mail.python.org/pipermail/python-bugs-list/2001-January/003752.html
-## for Ivan Frohne's insightful analysis of why the original implementation:
-##
-##    def betavariate(self, alpha, beta):
-##        # Discrete Event Simulation in C, pp 87-88.
-##
-##        y = self.expovariate(alpha)
-##        z = self.expovariate(1.0/beta)
-##        return z/(y+z)
-##
-## was dead wrong, and how it probably got that way.
+    ## -------------------- beta --------------------
+    ## See
+    ## http://mail.python.org/pipermail/python-bugs-list/2001-January/003752.html
+    ## for Ivan Frohne's insightful analysis of why the original implementation:
+    ##
+    ##    def betavariate(self, alpha, beta):
+    ##        # Discrete Event Simulation in C, pp 87-88.
+    ##
+    ##        y = self.expovariate(alpha)
+    ##        z = self.expovariate(1.0/beta)
+    ##        return z/(y+z)
+    ##
+    ## was dead wrong, and how it probably got that way.
 
     def betavariate(self, alpha, beta):
         """Beta distribution.
@@ -750,7 +751,7 @@ class Random(_random.Random):
         else:
             return y / (y + self.gammavariate(beta, 1.0))
 
-## -------------------- Pareto --------------------
+    ## -------------------- Pareto --------------------
 
     def paretovariate(self, alpha):
         """Pareto distribution.  alpha is the shape parameter."""
@@ -759,7 +760,7 @@ class Random(_random.Random):
         u = 1.0 - self.random()
         return 1.0 / u ** (1.0 / alpha)
 
-## -------------------- Weibull --------------------
+    ## -------------------- Weibull --------------------
 
     def weibullvariate(self, alpha, beta):
         """Weibull distribution.
@@ -771,6 +772,7 @@ class Random(_random.Random):
 
         u = 1.0 - self.random()
         return alpha * (-_log(u)) ** (1.0 / beta)
+
 
 ## --------------- Operating System Random Source  ------------------
 
@@ -809,6 +811,7 @@ class SystemRandom(Random):
         raise NotImplementedError('System entropy source does not have state.')
     getstate = setstate = _notimplemented
 
+
 ## -------------------- test program --------------------
 
 def _test_generator(n, func, args):
@@ -826,11 +829,10 @@ def _test_generator(n, func, args):
         smallest = min(x, smallest)
         largest = max(x, largest)
     t1 = time.perf_counter()
-    print(round(t1-t0, 3), 'sec,', end=' ')
-    avg = total/n
-    stddev = _sqrt(sqsum/n - avg*avg)
-    print('avg %g, stddev %g, min %g, max %g\n' % \
-              (avg, stddev, smallest, largest))
+    print(round(t1 - t0, 3), 'sec,', end=' ')
+    avg = total / n
+    stddev = _sqrt(sqsum / n - avg * avg)
+    print('avg %g, stddev %g, min %g, max %g\n' % (avg, stddev, smallest, largest))
 
 
 def _test(N=2000):
@@ -849,11 +851,11 @@ def _test(N=2000):
     _test_generator(N, gammavariate, (200.0, 1.0))
     _test_generator(N, gauss, (0.0, 1.0))
     _test_generator(N, betavariate, (3.0, 3.0))
-    _test_generator(N, triangular, (0.0, 1.0, 1.0/3.0))
+    _test_generator(N, triangular, (0.0, 1.0, 1.0 / 3.0))
 
 # Create one instance, seeded from current time, and export its methods
 # as module-level functions.  The functions share state across all uses
-#(both in the user's code and in the Python libraries), but that's fine
+# (both in the user's code and in the Python libraries), but that's fine
 # for most programs and is easier for the casual user than making them
 # instantiate their own Random() instance.
 
