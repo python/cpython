@@ -1,0 +1,1 @@
+Eliminate most stack manipulation macros in ``ceval.c`` in favor of only the ``PUSH()``, ``POP()``, and ``PEEK()`` macros.
