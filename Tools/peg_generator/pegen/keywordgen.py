@@ -41,9 +41,7 @@ def main():
         "grammar", type=str, help="The file with the grammar definition in PEG format"
     )
     parser.add_argument(
-        "tokens_file",
-        type=argparse.FileType("r"),
-        help="The file with the token definitions"
+        "tokens_file", type=argparse.FileType("r"), help="The file with the token definitions"
     )
     parser.add_argument(
         "keyword_file",
@@ -61,9 +59,7 @@ def main():
     gen.collect_todo()
 
     with args.keyword_file as thefile:
-        all_keywords = sorted(
-            list(gen.callmakervisitor.keyword_cache.keys()) + EXTRA_KEYWORDS
-        )
+        all_keywords = sorted(list(gen.callmakervisitor.keyword_cache.keys()) + EXTRA_KEYWORDS)
 
         keywords = ",\n    ".join(map(repr, all_keywords))
         thefile.write(TEMPLATE.format(keywords=keywords))
