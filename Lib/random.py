@@ -431,10 +431,10 @@ class Random(_random.Random):
         result = [None] * k
         setsize = 21        # size of a small set minus size of an empty list
         if k > 5:
-            setsize += 4 ** _ceil(_log(k * 3, 4)) # table size for big sets
+            setsize += 4 ** _ceil(_log(k * 3, 4))  # table size for big sets
         if n <= setsize:
-            # An n-length list is smaller than a k-length set
-            # invariant:  non-selected at pool[0 : n-i]
+            # An n-length list is smaller than a k-length set.
+            # Invariant:  non-selected at pool[0 : n-i]
             pool = list(population)
             for i in range(k):
                 j = randbelow(n - i)
@@ -746,10 +746,9 @@ class Random(_random.Random):
         # This version due to Janne Sinkkonen, and matches all the std
         # texts (e.g., Knuth Vol 2 Ed 3 pg 134 "the beta distribution").
         y = self.gammavariate(alpha, 1.0)
-        if y == 0:
-            return 0.0
-        else:
+        if y:
             return y / (y + self.gammavariate(beta, 1.0))
+        return 0.0
 
     ## -------------------- Pareto --------------------
 
