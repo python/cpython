@@ -4122,6 +4122,23 @@ _PyDictView_New(PyObject *dict, PyTypeObject *type)
     return (PyObject *)dv;
 }
 
+static PyObject *
+dictview_mapping(PyObject *view)
+{
+    assert(view != NULL);
+    assert(PyDictKeys_Check(view)
+           || PyDictValues_Check(view)
+           || PyDictItems_Check(view));
+    PyObject *mapping = (PyObject *)((_PyDictViewObject *)view)->dv_dict;
+    return PyDictProxy_New(mapping);
+}
+
+static PyGetSetDef dictview_getset[] = {
+    {"mapping", (getter)dictview_mapping, (setter)NULL,
+     "dictionary that this view refers to", NULL},
+    {0}
+};
+
 /* TODO(guido): The views objects are not complete:
 
  * support more set operations
@@ -4635,7 +4652,7 @@ PyTypeObject PyDictKeys_Type = {
     (getiterfunc)dictkeys_iter,                 /* tp_iter */
     0,                                          /* tp_iternext */
     dictkeys_methods,                           /* tp_methods */
-    0,
+    .tp_getset = dictview_getset,
 };
 
 static PyObject *
@@ -4741,7 +4758,7 @@ PyTypeObject PyDictItems_Type = {
     (getiterfunc)dictitems_iter,                /* tp_iter */
     0,                                          /* tp_iternext */
     dictitems_methods,                          /* tp_methods */
-    0,
+    .tp_getset = dictview_getset,
 };
 
 static PyObject *
@@ -4822,7 +4839,7 @@ PyTypeObject PyDictValues_Type = {
     (getiterfunc)dictvalues_iter,               /* tp_iter */
     0,                                          /* tp_iternext */
     dictvalues_methods,                         /* tp_methods */
-    0,
+    .tp_getset = dictview_getset,
 };
 
 static PyObject *
