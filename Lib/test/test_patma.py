@@ -1187,9 +1187,9 @@ class TestMatch(unittest.TestCase):
     def test_patma_071(self) -> None:
         x = 0
         match x:
-            case 0 if True:
+            case 0 if 1:
                 y = 0
-            case 0 if True:
+            case 0 if 1:
                 y = 1
         self.assertEqual(x, 0)
         self.assertEqual(y, 0)
