@@ -369,6 +369,11 @@ Miscellaneous options
    (filename or built-in module) from which it is loaded.  When given twice
    (:option:`!-vv`), print a message for each file that is checked for when
    searching for a module.  Also provides information on module cleanup at exit.
+
+   .. versionchanged:: 3.10
+      The :mod:`site` module reports the site-specific paths
+      and :file:`.pth` files being processed.
+
    See also :envvar:`PYTHONVERBOSE`.
 
 
