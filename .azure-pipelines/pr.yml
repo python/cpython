@@ -61,7 +61,7 @@ jobs:
   variables:
     testRunTitle: '$(system.pullRequest.TargetBranch)-linux'
     testRunPlatform: linux
-    openssl_version: 1.1.1f
+    openssl_version: 1.1.1g
 
   steps:
   - template: ./posix-steps.yml
@@ -118,7 +118,7 @@ jobs:
   variables:
     testRunTitle: '$(Build.SourceBranchName)-linux-coverage'
     testRunPlatform: linux-coverage
-    openssl_version: 1.1.1f
+    openssl_version: 1.1.1g
 
   steps:
   - template: ./posix-steps.yml
