@@ -1,1 +1,2 @@
-Add a state to the :mod:`nis` module (:pep:`3121`). Patch by Dong-hee Na.
+Add a state to the :mod:`nis` module (:pep:`3121`) and apply
+the multiphase initialization. Patch by Dong-hee Na.
