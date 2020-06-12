@@ -72,12 +72,7 @@ for %%e in (%libraries%) do (
 echo.Fetching external binaries...
 
 set binaries=
-<<<<<<< HEAD
-if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-1.1.1f
-=======
-if NOT "%IncludeLibffi%"=="false"  set binaries=%binaries% libffi
 if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-1.1.1g
->>>>>>> d8332004f9... bpo-40164: Update Windows OpenSSL to 1.1.1g (GH-20834)
 if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.9.0
 if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
 
