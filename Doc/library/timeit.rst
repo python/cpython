@@ -98,12 +98,10 @@ The module defines three convenience functions and a public class:
 
    Class for timing execution speed of small code snippets.
 
-   The constructor takes a statement to be timed, an additional statement used
-   for setup, and a timer function.  Both statements default to ``'pass'``;
-   the timer function is platform-dependent (see the module doc string).
-   *stmt* and *setup* may also contain multiple statements separated by ``;``
-   or newlines, as long as they don't contain multi-line string literals.  The
-   statement will by default be executed within timeit's namespace; this behavior
+   The constructor takes suite of statement to be timed, an additional suite
+   used for setup, and a timer function (default time.perf_counter). Both
+   suites default to 'pass' and may not contain multi-line string literals.
+   The statement will by default be executed within timeit's namespace; this behavior
    can be controlled by passing a namespace to *globals*.
 
    To measure the execution time of the first statement, use the :meth:`.timeit`

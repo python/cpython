@@ -229,7 +229,27 @@ class Timer:
 
 def timeit(stmt="pass", setup="pass", timer=default_timer,
            number=default_number, globals=None):
-    """Convenience function to create Timer object and call timeit method."""
+    """Convenience function to create Timer object and call timeit method.
+
+    Args:
+        stmt (str): The code to be excuted. This can have multiple statements
+            separated by ; and \n.
+        setup (str): Statement to be executed once before the main code.
+            Can include imports and variables.
+        timer: A function to be used as a performance counter. Defaults to
+            timeit.default_timer
+        number (int): How many times the 'stmt' should be executed.
+        globals: If 'globals' is specified, the code will be
+            executed within that namespace (as opposed to inside timeit's
+            namespace).
+
+    Returns:
+        float: The time it takes to execute the statement under given
+            conditions.
+
+    Raises:
+        IndentationError: If 'stmt' is an empty string.
+    """
     return Timer(stmt, setup, timer, globals).timeit(number)
 
 def repeat(stmt="pass", setup="pass", timer=default_timer,
