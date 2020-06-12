@@ -54,9 +54,6 @@ typedef struct
 
 extern PyTypeObject *pysqlite_CursorType;
 
-PyObject* pysqlite_cursor_getiter(pysqlite_Cursor *self);
-PyObject* pysqlite_cursor_iternext(pysqlite_Cursor *self);
-
 int pysqlite_cursor_setup_types(PyObject *module);
 
 #define UNKNOWN (-1)
