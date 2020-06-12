@@ -32,6 +32,7 @@ from asyncio import proactor_events
 from asyncio import selector_events
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import import_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import ALWAYS_EQ, LARGEST, SMALLEST
@@ -2676,7 +2677,7 @@ class GetEventLoopTestsMixin:
             # Issue bpo-32126: The multiprocessing module used by
             # ProcessPoolExecutor is not functional when the
             # multiprocessing.synchronize module cannot be imported.
-            support.import_module('multiprocessing.synchronize')
+            import_helper.import_module('multiprocessing.synchronize')
 
             async def main():
                 pool = concurrent.futures.ProcessPoolExecutor()
