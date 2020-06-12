@@ -234,19 +234,19 @@ except ImportError:
 
 _initial_missing = object()
 
-def reduce(function, iterable, initial=_initial_missing):
+def reduce(function, sequence, initial=_initial_missing):
     """
     reduce(function, iterable[, initial]) -> value
 
-    Apply a function of two arguments cumulatively to the items of an iterable,
-    from left to right, so as to reduce the iterable to a single value.
-    For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
+    Apply a function of two arguments cumulatively to the items of a sequence
+    or iterable, from left to right, so as to reduce the iterable to a single
+    value.  For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
     ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items
     of the iterable in the calculation, and serves as a default when the
     iterable is empty.
     """
 
-    it = iter(iterable)
+    it = iter(sequence)
 
     if initial is _initial_missing:
         try:

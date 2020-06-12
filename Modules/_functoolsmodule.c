@@ -694,9 +694,9 @@ Fail:
 PyDoc_STRVAR(functools_reduce_doc,
 "reduce(function, iterable[, initial]) -> value\n\
 \n\
-Apply a function of two arguments cumulatively to the items of an iterable,\n\
-from left to right, so as to reduce the iterable to a single value.\n\
-For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates\n\
+Apply a function of two arguments cumulatively to the items of a sequence\n\
+or iterable, from left to right, so as to reduce the iterable to a single\n\
+value.  For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates\n\
 ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items\n\
 of the iterable in the calculation, and serves as a default when the\n\
 iterable is empty.");
