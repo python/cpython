@@ -7,7 +7,6 @@ import sys
 import time
 import traceback
 import tokenize
-import _peg_parser
 from glob import glob
 from pathlib import PurePath
 
@@ -16,7 +15,6 @@ from typing import List, Optional, Any, Tuple
 sys.path.insert(0, os.getcwd())
 from pegen.ast_dump import ast_dump
 from pegen.testutil import print_memstats
-from scripts import show_parse
 
 SUCCESS = "\033[92m"
 FAIL = "\033[91m"
@@ -39,9 +37,6 @@ argparser.add_argument(
 )
 argparser.add_argument(
     "-v", "--verbose", action="store_true", help="Display detailed errors for failures"
-)
-argparser.add_argument(
-    "-t", "--tree", action="count", help="Compare parse tree to official AST", default=0
 )
 
 
@@ -79,64 +74,11 @@ def report_status(
             print(f"  {str(error.__class__.__name__)}: {error}")
 
 
-def compare_trees(
-    actual_tree: ast.AST, file: str, verbose: bool, include_attributes: bool = False,
-) -> int:
-    with open(file) as f:
-        expected_tree = _peg_parser.parse_string(f.read(), oldparser=True)
-
-    expected_text = ast_dump(expected_tree, include_attributes=include_attributes)
-    actual_text = ast_dump(actual_tree, include_attributes=include_attributes)
-    if actual_text == expected_text:
-        if verbose:
-            print("Tree for {file}:")
-            print(show_parse.format_tree(actual_tree, include_attributes))
-        return 0
-
-    print(f"Diffing ASTs for {file} ...")
-
-    expected = show_parse.format_tree(expected_tree, include_attributes)
-    actual = show_parse.format_tree(actual_tree, include_attributes)
-
-    if verbose:
-        print("Expected for {file}:")
-        print(expected)
-        print("Actual for {file}:")
-        print(actual)
-        print(f"Diff for {file}:")
-
-    diff = show_parse.diff_trees(expected_tree, actual_tree, include_attributes)
-    for line in diff:
-        print(line)
-
-    return 1
-
-
-def parse_file(source: str, file: str, mode: int, oldparser: bool) -> Tuple[Any, float]:
+def parse_file(source: str, file: str) -> Tuple[Any, float]:
     t0 = time.time()
-    if mode == COMPILE:
-        result = _peg_parser.compile_string(
-            source,
-            filename=file,
-            oldparser=oldparser,
-        )
-    else:
-        result = _peg_parser.parse_string(
-            source,
-            filename=file,
-            oldparser=oldparser,
-            ast=(mode == PARSE),
-        )
+    result = ast.parse(source, filename=file)
     t1 = time.time()
     return result, t1 - t0
-
-
-def is_parsing_failure(source: str) -> bool:
-    try:
-        _peg_parser.parse_string(source, mode="exec", oldparser=True)
-    except SyntaxError:
-        return False
-    return True
 
 
 def generate_time_stats(files, total_seconds) -> None:
@@ -160,27 +102,11 @@ def generate_time_stats(files, total_seconds) -> None:
         )
 
 
-def parse_directory(
-    directory: str,
-    verbose: bool,
-    excluded_files: List[str],
-    tree_arg: int,
-    short: bool,
-    mode: int,
-    oldparser: bool,
-) -> int:
-    if tree_arg:
-        assert mode == PARSE, "Mode should be 1 (parse), when comparing the generated trees"
-
-    if oldparser and tree_arg:
-        print("Cannot specify tree argument with the cpython parser.", file=sys.stderr)
-        return 1
-
+def parse_directory(directory: str, verbose: bool, excluded_files: List[str], short: bool) -> int:
     # For a given directory, traverse files and attempt to parse each one
     # - Output success/failure for each file
     errors = 0
     files = []
-    trees = {}  # Trees to compare (after everything else is done)
     total_seconds = 0
 
     for file in sorted(glob(f"{directory}/**/*.py", recursive=True)):
@@ -192,22 +118,13 @@ def parse_directory(
             source = f.read()
 
         try:
-            result, dt = parse_file(source, file, mode, oldparser)
+            result, dt = parse_file(source, file)
             total_seconds += dt
-            if tree_arg:
-                trees[file] = result
             report_status(succeeded=True, file=file, verbose=verbose, short=short)
         except SyntaxError as error:
-            if is_parsing_failure(source):
-                print(f"File {file} cannot be parsed by either parser.")
-            else:
-                report_status(
-                    succeeded=False, file=file, verbose=verbose, error=error, short=short
-                )
-                errors += 1
+            report_status(succeeded=False, file=file, verbose=verbose, error=error, short=short)
+            errors += 1
         files.append(file)
-
-    t1 = time.time()
 
     generate_time_stats(files, total_seconds)
     if short:
@@ -215,16 +132,6 @@ def parse_directory(
 
     if errors:
         print(f"Encountered {errors} failures.", file=sys.stderr)
-
-    # Compare trees (the dict is empty unless -t is given)
-    compare_trees_errors = 0
-    for file, tree in trees.items():
-        if not short:
-            print("Comparing ASTs for", file)
-        if compare_trees(tree, file, verbose, tree_arg >= 2) == 1:
-            compare_trees_errors += 1
-
-    if errors or compare_trees_errors:
         return 1
 
     return 0
@@ -235,20 +142,8 @@ def main() -> None:
     directory = args.directory
     verbose = args.verbose
     excluded_files = args.exclude
-    tree = args.tree
     short = args.short
-    mode = 1 if args.tree else 2
-    sys.exit(
-        parse_directory(
-            directory,
-            verbose,
-            excluded_files,
-            tree,
-            short,
-            mode,
-            oldparser=False,
-        )
-    )
+    sys.exit(parse_directory(directory, verbose, excluded_files, short))
 
 
 if __name__ == "__main__":
