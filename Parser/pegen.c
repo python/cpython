@@ -141,19 +141,19 @@ _create_dummy_identifier(Parser *p)
 static inline Py_ssize_t
 byte_offset_to_character_offset(PyObject *line, int col_offset)
 {
-    const char *str = PyUnicode_AsUTF8(line);
+    Py_ssize_t linesize;
+    const char *str = PyUnicode_AsUTF8AndSize(line, &linesize);
     if (!str) {
         return 0;
+    }
+    if (col_offset > linesize) {
+        col_offset = (int)linesize;
     }
     PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
     if (!text) {
         return 0;
     }
     Py_ssize_t size = PyUnicode_GET_LENGTH(text);
-    str = PyUnicode_AsUTF8(text);
-    if (str != NULL && (int)strlen(str) == col_offset) {
-        size = strlen(str);
-    }
     Py_DECREF(text);
     return size;
 }
@@ -400,9 +400,6 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 
     if (!error_line) {
         Py_ssize_t size = p->tok->inp - p->tok->buf;
-        if (size && p->tok->buf[size-1] == '\n') {
-            size--;
-        }
         error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
         if (!error_line) {
             goto error;
