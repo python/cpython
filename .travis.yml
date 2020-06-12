@@ -1,7 +1,5 @@
 language: c
-dist: trusty
-sudo: false
-group: beta
+dist: xenial
 
 # To cache doc-building dependencies.
 cache: pip
