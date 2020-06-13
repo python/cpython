@@ -19,6 +19,9 @@ class DummyEditwin:
         self.tabwidth = 8
         self.prompt_last_line = '>>>' # Currently not used by parenmatch.
 
+    def getlineno(self, index):
+        return int(float(self.text.index(index)))
+
 
 class ParenMatchTest(unittest.TestCase):
 
