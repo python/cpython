@@ -641,7 +641,7 @@ class _Threads(list):
 
     def remove(self, thread):
         with self._lock:
-            # suppress ValueError even though unexpected
+            # should not happen, but safe to ignore
             with contextlib.suppress(ValueError):
                 super().remove(thread)
 
@@ -659,6 +659,17 @@ class _Threads(list):
     def join(self):
         for thread in self.pop_all():
             thread.join()
+
+
+class _NoThreads:
+    def append(self, thread):
+        pass
+
+    def join(self):
+        pass
+
+    def remove_current(self):
+        pass
 
 
 class ThreadingMixIn:
@@ -691,18 +702,19 @@ class ThreadingMixIn:
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
-        vars(self).setdefault('_threads', _Threads())
+        vars(self).setdefault(
+            '_threads',
+            _Threads() if self.block_on_close else _NoThreads(),
+        )
         t = threading.Thread(target = self.process_request_thread,
                              args = (request, client_address))
         t.daemon = self.daemon_threads
-        if self.block_on_close:
-            self._threads.append(t)
+        self._threads.append(t)
         t.start()
 
     def server_close(self):
         super().server_close()
-        if self.block_on_close:
-            self._threads.join()
+        self._threads.join()
 
 
 if hasattr(os, "fork"):
