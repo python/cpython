@@ -1639,7 +1639,7 @@ _str_shared(PyObject *obj, _PyCrossInterpreterData *data)
     struct _shared_str_data *shared = PyMem_NEW(struct _shared_str_data, 1);
     shared->kind = PyUnicode_KIND(obj);
     shared->buffer = PyUnicode_DATA(obj);
-    shared->len = PyUnicode_GET_LENGTH(obj) - 1;
+    shared->len = PyUnicode_GET_LENGTH(obj);
     data->data = (void *)shared;
     Py_INCREF(obj);
     data->obj = obj;  // Will be "released" (decref'ed) when data released.
