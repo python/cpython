@@ -128,6 +128,7 @@ import selectors
 import os
 import sys
 import threading
+import contextlib
 from io import BufferedIOBase
 from time import monotonic as time
 
@@ -628,6 +629,38 @@ if hasattr(os, "fork"):
             self.collect_children(blocking=self.block_on_close)
 
 
+class _Threads(list):
+    def __init__(self):
+        self._lock = threading.Lock()
+
+    def append(self, thread):
+        if thread.daemon:
+            return
+        with self._lock:
+            super().append(thread)
+
+    def remove(self, thread):
+        with self._lock:
+            # suppress ValueError even though unexpected
+            with contextlib.suppress(ValueError):
+                super().remove(thread)
+
+    def remove_current(self):
+        """Remove a current non-daemon thread."""
+        thread = threading.current_thread()
+        if not thread.daemon:
+            self.remove(thread)
+
+    def pop_all(self):
+        with self._lock:
+            self[:], result = [], self[:]
+        return result
+
+    def join(self):
+        for thread in self.pop_all():
+            thread.join()
+
+
 class ThreadingMixIn:
     """Mix-in class to handle each request in a new thread."""
 
@@ -636,10 +669,9 @@ class ThreadingMixIn:
     daemon_threads = False
     # If true, server_close() waits until all non-daemonic threads terminate.
     block_on_close = True
-    # For non-daemonic threads, list of threading.Threading objects
+    # Threads object
     # used by server_close() to wait for all threads completion.
     _threads = None
-    _threads_lock = None
 
     def process_request_thread(self, request, client_address):
         """Same as in BaseServer but as a thread.
@@ -655,46 +687,22 @@ class ThreadingMixIn:
             try:
                 self.shutdown_request(request)
             finally:
-                self._remove_thread()
-
-    def _remove_thread(self):
-        """Remove a current thread from threads list."""
-        thread = threading.current_thread()
-        if not thread.daemon:
-            if self._threads_lock is None:
-                self._threads_lock = threading.Lock()
-            with self._threads_lock:
-                if self._threads is not None:
-                    try:
-                        self._threads.remove(thread)
-                    except ValueError:
-                        pass
+                self._threads.remove_current()
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
+        vars(self).setdefault('_threads', _Threads())
         t = threading.Thread(target = self.process_request_thread,
                              args = (request, client_address))
         t.daemon = self.daemon_threads
-        if not t.daemon and self.block_on_close:
-            if self._threads_lock is None:
-                self._threads_lock = threading.Lock()
-            with self._threads_lock:
-                if self._threads is None:
-                    self._threads = []
-                self._threads.append(t)
+        if self.block_on_close:
+            self._threads.append(t)
         t.start()
 
     def server_close(self):
         super().server_close()
         if self.block_on_close:
-            if self._threads_lock is None:
-                self._threads_lock = threading.Lock()
-            with self._threads_lock:
-                threads = self._threads
-                self._threads = None
-            if threads:
-                for thread in threads:
-                    thread.join()
+            self._threads.join()
 
 
 if hasattr(os, "fork"):
