@@ -1461,6 +1461,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     path_bytes = PyBytes_AS_STRING(bytes);
 
     if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
+        Py_DECREF(bytes);
         return NULL;
     }
 
