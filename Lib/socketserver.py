@@ -688,7 +688,7 @@ class ThreadingMixIn:
     block_on_close = True
     # Threads object
     # used by server_close() to wait for all threads completion.
-    _threads = None
+    _threads = _NoThreads()
 
     def process_request_thread(self, request, client_address):
         """Same as in BaseServer but as a thread.
@@ -708,10 +708,8 @@ class ThreadingMixIn:
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
-        vars(self).setdefault(
-            '_threads',
-            _Threads() if self.block_on_close else _NoThreads(),
-        )
+        if self.block_on_close:
+            vars(self).setdefault('_threads', _Threads())
         t = threading.Thread(target = self.process_request_thread,
                              args = (request, client_address))
         t.daemon = self.daemon_threads
