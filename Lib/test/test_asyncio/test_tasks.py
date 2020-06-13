@@ -2963,7 +2963,7 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self._run_loop(self.one_loop)
         self.assertTrue(fut.done())
         cb.assert_called_once_with(fut)
-        self.assertFalse(fut.cancelled())
+        self.assertTrue(fut.cancelled())
         self.assertIsInstance(fut.exception(), asyncio.CancelledError)
         # Does nothing
         c.set_result(3)
@@ -2994,7 +2994,7 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self.assertEqual(res, [1, zde, None, 3, None, rte])
         cb.assert_called_once_with(fut)
 
-    def test_gather_is_cancelled_is_true_when_gather_cancel_is_true(self):
+    def test_gather_is_cancelled_when_gather_cancelled_directly(self):
         for re in [True, False]:
             with self.subTest(return_exceptions=re):
 
@@ -3013,7 +3013,42 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
                     self.one_loop.run_until_complete(gather_)
                 self.assertTrue(gather_.cancelled())
 
-    def test_gather_is_cancelled_is_false_when_gather_cancel_is_false(self):
+    def test_gather_is_cancelled_when_child_cancelled_externally_and_return_exceptions_false(self):
+
+        # thread state and cleanup
+        asyncio.set_event_loop(self.one_loop)
+        self.addCleanup(asyncio.set_event_loop, None)
+
+        # setup gather
+        child = asyncio.ensure_future(asyncio.sleep(1, result=1))
+        gather_ = asyncio.gather(child, return_exceptions=False)
+        self.assertTrue(child.cancel())
+
+        # run and assert
+        self.assertFalse(gather_.cancelled())
+        with self.assertRaises(asyncio.CancelledError):
+            self.one_loop.run_until_complete(gather_)
+        self.assertTrue(gather_.cancelled())
+
+    def test_gather_is_not_cancelled_when_child_cancelled_externally_and_return_exceptions_true(self):
+
+        # thread state and cleanup
+        asyncio.set_event_loop(self.one_loop)
+        self.addCleanup(asyncio.set_event_loop, None)
+
+        # setup gather
+        child = asyncio.ensure_future(asyncio.sleep(1, result=1))
+        gather_ = asyncio.gather(child, return_exceptions=True)
+        self.assertTrue(child.cancel())
+
+        # run and assert
+        self.assertFalse(gather_.cancelled())
+        result = self.one_loop.run_until_complete(gather_)
+        self.assertEqual(len(result), 1)
+        self.assertTrue(isinstance(result[0], asyncio.CancelledError))
+        self.assertFalse(gather_.cancelled())
+
+    def test_gather_is_cancelled_is_false_when_gather_child_succeeds(self):
         for re in [True, False]:
             with self.subTest(return_exceptions=re):
 
