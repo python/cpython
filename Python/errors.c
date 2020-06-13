@@ -1079,7 +1079,6 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *modulename = NULL;
-    PyObject *classname = NULL;
     PyObject *mydict = NULL;
     PyObject *bases = NULL;
     PyObject *result = NULL;
@@ -1125,7 +1124,6 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
   failure:
     Py_XDECREF(bases);
     Py_XDECREF(mydict);
-    Py_XDECREF(classname);
     Py_XDECREF(modulename);
     return result;
 }
