@@ -630,6 +630,9 @@ if hasattr(os, "fork"):
 
 
 class _Threads(list):
+    """
+    Joinable list of all non-daemon threads.
+    """
     def __init__(self):
         self._lock = threading.Lock()
 
@@ -662,6 +665,9 @@ class _Threads(list):
 
 
 class _NoThreads:
+    """
+    Degenerate version of _Threads.
+    """
     def append(self, thread):
         pass
 
