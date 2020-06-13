@@ -950,7 +950,7 @@ Test cases
    | :meth:`assertLogs(logger, level)                        | The ``with`` block logs on *logger*  | 3.4        |
    | <TestCase.assertLogs>`                                  | with minimum *level*                 |            |
    +---------------------------------------------------------+--------------------------------------+------------+
-   | :meth:`assertNoLogs(logger, level)                      | The ``with`` block does not log on   | 3.9        |
+   | :meth:`assertNoLogs(logger, level)                      | The ``with`` block does not log on   | 3.10       |
    | <TestCase.assertNoLogs>`                                |  *logger* with minimum *level*       |            |
    +---------------------------------------------------------+--------------------------------------+------------+
 
@@ -1142,7 +1142,7 @@ Test cases
       is a recording helper. It is expected to have recorded nothing if the
       test passes.
 
-      .. versionadded:: 3.9
+      .. versionadded:: 3.10
 
    There are also other methods used to perform more specific checks, such as:
 
