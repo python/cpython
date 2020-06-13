@@ -710,7 +710,10 @@ class _GatheringFuture(futures.Future):
         self._cancel_requested = False
 
     def cancelled(self):
-        return self.done() and self._cancel_requested
+        # we assume to never raise for exception() because
+        # done() ensures !_PENDING and _CANCELLED cannot be set
+        # on _GatheringFuture.
+        return self.done() and isinstance(self.exception(), exceptions.CancelledError)
 
     def cancel(self, msg=None):
         if self.done():
