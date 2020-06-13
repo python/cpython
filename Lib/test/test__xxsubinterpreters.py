@@ -378,6 +378,9 @@ class ShareableTypeTests(unittest.TestCase):
         self._assert_values(i.to_bytes(2, 'little', signed=True)
                             for i in range(-1, 258))
 
+    def test_strs(self):
+        self._assert_values(['hello world', '你好世界', ''])
+
     def test_int(self):
         self._assert_values(itertools.chain(range(-1, 258),
                                             [sys.maxsize, -sys.maxsize - 1]))
