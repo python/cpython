@@ -490,6 +490,23 @@ class MiscTestCase(unittest.TestCase):
         self.assertEqual(server.shutdown_called, 1)
         server.server_close()
 
+    def test_threads_reaped(self):
+        """
+        In #37193, users reported a memory leak
+        due to the saving of every request thread. Ensure that the
+        threads are cleaned up after the requests complete.
+        """
+        class MyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+            pass
+
+        server = MyServer((HOST, 0), socketserver.StreamRequestHandler)
+        for n in range(10):
+            with socket.create_connection(server.server_address):
+                server.handle_request()
+        [thread.join() for thread in server._threads]
+        self.assertEqual(len(server._threads), 0)
+        server.server_close()
+
 
 if __name__ == "__main__":
     unittest.main()
