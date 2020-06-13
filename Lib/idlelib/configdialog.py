@@ -41,6 +41,14 @@ reloadables = (AutoComplete, CodeContext, ParenMatch, FormatParagraph,
                Squeezer)
 
 
+def init_validators(page):
+    digits_or_empty_re = re.compile(r'[0-9]*')
+    def is_digits_or_empty(s):
+        "Return 's is blank or contains only digits'"
+        return digits_or_empty_re.fullmatch(s) is not None
+    return (page.register(is_digits_or_empty), '%P',)
+
+
 class ConfigDialog(Toplevel):
     """Config dialog for IDLE.
     """
@@ -120,7 +128,7 @@ class ConfigDialog(Toplevel):
         note.add(self.fontpage, text='Fonts/Tabs')
         note.add(self.highpage, text='Highlights')
         note.add(self.keyspage, text=' Keys ')
-        note.add(self.editpage, text=' Editor ')
+        note.add(self.editpage, text=' Editor/Shell ')
         note.add(self.genpage, text=' General ')
         note.add(self.extpage, text='Extensions')
         note.enable_traversal()
@@ -1781,6 +1789,7 @@ class EditPage(Frame):
 
     def __init__(self, master):
         super().__init__(master)
+        self.digits_only = init_validators(self)
         self.create_page_editor()
         self.load_editor_cfg()
 
@@ -1926,17 +1935,9 @@ class GenPage(Frame):
 
     def __init__(self, master):
         super().__init__(master)
-
-        self.init_validators()
+        self.digits_only = init_validators(self)
         self.create_page_general()
         self.load_general_cfg()
-
-    def init_validators(self):
-        digits_or_empty_re = re.compile(r'[0-9]*')
-        def is_digits_or_empty(s):
-            "Return 's is blank or contains only digits'"
-            return digits_or_empty_re.fullmatch(s) is not None
-        self.digits_only = (self.register(is_digits_or_empty), '%P',)
 
     def create_page_general(self):
         """Return frame of widgets for General tab.

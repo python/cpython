@@ -1228,10 +1228,14 @@ class EditPageTest(unittest.TestCase):
         d.autosave.set(1)
         d.format_width.set(1)
         d.context_lines.set(1)
+        d.line_numbers_default.set(True)
+        d.auto_squeeze_min_lines.set(1)
         d.load_editor_cfg()
         eq(d.autosave.get(), 0)
         eq(d.format_width.get(), '72')
         eq(d.context_lines.get(), '15')
+        eq(d.line_numbers_default.get(), False)
+        eq(d.auto_squeeze_min_lines.get(), '50')
 
     def test_autosave(self):
         d = self.page
@@ -1249,6 +1253,19 @@ class EditPageTest(unittest.TestCase):
         self.page.context_int.delete(0, 'end')
         self.page.context_int.insert(0, '1')
         self.assertEqual(extpage, {'CodeContext': {'maxlines': '1'}})
+
+    def test_line_numbers(self):
+        d = self.page
+        d.line_numbers_default.set(True)
+        d.line_numbers_default_bool.invoke()
+        self.assertEqual(mainpage, {'EditorWindow': {'line-numbers-default': 'False'}})
+        d.line_numbers_default_bool.invoke()
+        self.assertEqual(mainpage, {'EditorWindow': {'line-numbers-default': 'True'}})
+
+    def test_auto_squeeze(self):
+        self.page.auto_squeeze_min_lines_int.delete(0, 'end')
+        self.page.auto_squeeze_min_lines_int.insert(0, '99')
+        self.assertEqual(mainpage, {'PyShell': {'auto-squeeze-min-lines': '99'}})
 
 
 class GenPageTest(unittest.TestCase):
