@@ -23,6 +23,13 @@
 
 #include "row.h"
 #include "cursor.h"
+#include "clinic/row.c.h"
+
+/*[clinic input]
+module _sqlite3
+class _sqlite3.Row "pysqlite_Row *" "&pysqlite_RowType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5fe72209a8a6e40c]*/
 
 void pysqlite_row_dealloc(pysqlite_Row* self)
 {
@@ -32,29 +39,24 @@ void pysqlite_row_dealloc(pysqlite_Row* self)
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
+/*[clinic input]
+@classmethod
+_sqlite3.Row.__new__ as pysqlite_row_new
+
+    cursor: object(type='pysqlite_Cursor *', subclass_of='&pysqlite_CursorType')
+    data: object(subclass_of='&PyTuple_Type')
+    /
+
+[clinic start generated code]*/
+
 static PyObject *
-pysqlite_row_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+pysqlite_row_new_impl(PyTypeObject *type, pysqlite_Cursor *cursor,
+                      PyObject *data)
+/*[clinic end generated code: output=10d58b09a819a4c1 input=3bb62e4657f18d81]*/
 {
     pysqlite_Row *self;
-    PyObject* data;
-    pysqlite_Cursor* cursor;
 
     assert(type != NULL && type->tp_alloc != NULL);
-
-    if (!_PyArg_NoKeywords("Row", kwargs))
-        return NULL;
-    if (!PyArg_ParseTuple(args, "OO", &cursor, &data))
-        return NULL;
-
-    if (!PyObject_TypeCheck((PyObject*)cursor, &pysqlite_CursorType)) {
-        PyErr_SetString(PyExc_TypeError, "instance of cursor required for first argument");
-        return NULL;
-    }
-
-    if (!PyTuple_Check(data)) {
-        PyErr_SetString(PyExc_TypeError, "tuple required for second argument");
-        return NULL;
-    }
 
     self = (pysqlite_Row *) type->tp_alloc(type, 0);
     if (self == NULL)
@@ -156,7 +158,15 @@ pysqlite_row_length(pysqlite_Row* self)
     return PyTuple_GET_SIZE(self->data);
 }
 
-PyObject* pysqlite_row_keys(pysqlite_Row* self, PyObject *Py_UNUSED(ignored))
+/*[clinic input]
+_sqlite3.Row.keys as pysqlite_row_keys
+
+Returns the keys of the row.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_row_keys_impl(pysqlite_Row *self)
+/*[clinic end generated code: output=efe3dfb3af6edc07 input=7549a122827c5563]*/
 {
     PyObject* list;
     Py_ssize_t nitems, i;
@@ -221,8 +231,7 @@ static PySequenceMethods pysqlite_row_as_sequence = {
 
 
 static PyMethodDef pysqlite_row_methods[] = {
-    {"keys", (PyCFunction)pysqlite_row_keys, METH_NOARGS,
-        PyDoc_STR("Returns the keys of the row.")},
+    PYSQLITE_ROW_KEYS_METHODDEF
     {NULL, NULL}
 };
 
