@@ -7,6 +7,7 @@ from tkinter import Tk, Text
 from unittest import mock
 from idlelib import config
 from idlelib import editor
+from idlelib import format
 
 
 usercfg = zzdummy.idleConf.userCfg
@@ -27,13 +28,12 @@ class C1():
 
 
 class DummyEditwin:
-    get_region = editor.EditorWindow.get_region
-    set_region = editor.EditorWindow.set_region
     get_selection_indices = editor.EditorWindow.get_selection_indices
     def __init__(self, root, text):
         self.root = root
         self.top = root
         self.text = text
+        self.fregion = format.FormatRegion(self)
         self.text.undo_block_start = mock.Mock()
         self.text.undo_block_stop = mock.Mock()
 

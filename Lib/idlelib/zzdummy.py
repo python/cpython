@@ -12,11 +12,11 @@ def format_selection(format_line):
 
     @wraps(format_line)
     def apply(self, event=None):
-        head, tail, chars, lines = self.editwin.get_region()
+        head, tail, chars, lines = self.formatter.get_region()
         for pos in range(len(lines) - 1):
             line = lines[pos]
             lines[pos] = format_line(self, line)
-        self.editwin.set_region(head, tail, chars, lines)
+        self.formatter.set_region(head, tail, chars, lines)
         return 'break'
 
     return apply
@@ -37,6 +37,7 @@ class ZzDummy:
         "Initialize the settings for this extension."
         self.editwin = editwin
         self.text = editwin.text
+        self.formatter = editwin.fregion
 
     @classmethod
     def reload(cls):
