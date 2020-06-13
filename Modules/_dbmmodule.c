@@ -495,7 +495,8 @@ static int
 _dbm_exec(PyObject *module)
 {
     _dbm_state *state = get_dbm_state(module);
-    state->dbm_type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &dbmtype_spec, NULL);
+    state->dbm_type = (PyTypeObject *)PyType_FromModuleAndSpec(module,
+                                                        &dbmtype_spec, NULL);
     if (state->dbm_type == NULL) {
         return -1;
     }
