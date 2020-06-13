@@ -131,8 +131,8 @@ Other modules that provide Tk support include:
    Basic dialogs and convenience functions.
 
 :mod:`tkinter.dnd`
-   Drag-and-drop support for :mod:`tkinter`. This is experimental and should
-   become deprecated when it is replaced  with the Tk DND.
+   Deprecated drag-and-drop support for :mod:`tkinter`
+   (see the :ref:`tkinter-tkdnd` section)
 
 :mod:`turtle`
    Turtle graphics in a Tk window.
@@ -304,6 +304,583 @@ The legal values of *someOptions* is action dependent.  Some actions, like
 ``disable``, require no arguments, others, like a text-entry box's ``delete``
 command, would need arguments to specify what range of text to delete.
 
+
+.. _tkinter-tkdnd:
+
+TkDND Support
+-------------
+
+:mod:`tkinter` has support for a native, platform specific drag and drop
+mechanism, through `Tkdnd <https://github.com/petasis/tkdnd>`_, with the user
+able to register widgets as drag sources or drop targets.
+
+On Windows, TkDND is packaged with
+Tcl/Tk so should work "out-of-the-box" with a standard installation. On
+other platforms, it will need to be installed seperately.
+
+.. note:: As a result of this functionality, the :mod:`tkinter.dnd` module is
+ now deprecated.
+
+.. versionadded:: 3.10
+
+Functions
+^^^^^^^^^
+
+.. function:: Tk.load_dnd(dnd_path=None)
+
+   This command will load the TkDND library and is called when ``Tk`` class is
+   instantiated. However, if the library is installed in a different
+   directory, this method will need to be called manually to load the library.
+   If the TkDND library has been found, ``True`` wil be returned, otherwise
+   ``False`` will be returned.
+
+   If the TkDND library has already been successfully loaded, ``True`` will be
+   returned and no action taken. If Tk has not been loaded for the
+   interpreter (a call was made to ``tkinter.Tcl`` rather than ``tkinter.Tk``),
+   the value returned will always be ``False`` and no action taken.
+
+   .. note:: Calling this method on one ``Tk`` instance will not affect any
+    others (i.e. the TkDND install directory will need to be declared to every
+    ``Tk`` instance where DND capabilities are required).
+
+.. function:: Misc.dnd_loaded()
+
+   This function returns whether the TkDND library has been successfully loaded
+   for this ``Tk`` instance.
+
+.. function:: Misc.drop_target_register(types=())
+
+   This command will register the widget as a drop target (a widget than can
+   accept a drop action). An optional type-list can be provided, which
+   contains one or more types that the widget will accept during a drop
+   action.
+
+   .. note:: This command can be executed multiple times on the same widget.
+
+.. function:: Misc.drop_target_unregister()
+
+   This command will stop the widget from being a drop target. Thus, it will
+   stop receiving events related to drop operations.
+
+.. function:: Misc.drag_source_register(types=(), mouse_buttons=1)
+
+   This command will register the widget as a drag source. A drag source is a
+   widget than can start a drag action. When the widget is registered as a
+   drag source, an optional type-list can be provided. This type list can
+   contain one or more types that the widget will provide during a drag
+   action. However, this type list is indicative/informative and the widget
+   *can* initiate a drag action with a type not in the list.
+
+   Finally, ``mouse_buttons`` is one or more mouse buttons that can be used
+   for starting the drag action. It can have any of the values:
+
+   * 1 - Left mouse button
+   * 2 - Middle mouse button (wheel)
+   * 3 - Right mouse button
+
+   Multiple mouse buttons can be specified as a list/tuple of values.
+
+   .. note:: This command can be executed multiple times on the same widget.
+
+.. function:: Misc.drag_source_unregister()
+
+   This command will stop the widget from being a drag source. Thus, it will
+   stop receiving events related to drag operations.
+
+.. function:: Misc.platform_specific_types(types)
+
+   This command will accept a list of types that can contain platform
+   independent or platform specific types. A new list will be returned, where
+   each platform independent type in type-list will be substituted by one or
+   more platform specific types. Thus, the returned list may have more
+   elements than type-list.
+
+.. function:: Misc.platform_independent_types(types)
+
+   This command will accept a list of types that can contain platform
+   independent or platform specific types. A new list will be returned, where
+   each platform specific type in type-list will be substituted by one or more
+   platform independent types. Thus, the returned list may have more elements
+   than type-list.
+
+.. function:: Misc.get_drop_file_temp_directory()
+
+   This command will return the temporary directory used by TkDND for storing
+   temporary files. When the package is loaded, this temporary directory will
+   be initialised to a proper directory according to the operating system.
+
+   The default initial value can be changed by the following environment
+   variables:
+
+   * ``TKDND_TEMP_DIR``
+   * ``TEMP``
+   * ``TMP``
+
+.. function:: Misc.set_drop_file_temp_directory(directory)
+
+   This command will change the temporary directory used by TkDND for storing
+   temporary files to the given directory.
+
+Constants
+^^^^^^^^^
+
+In order to declare the format that the data that will transferred during a
+drag and drop operation, all drag and drop protocols use the notion of types.
+Unfortunately, each protocol defines its own, usually platform specific,
+types. TkDND, trying to maintain portability among different platforms, offers
+some predefined types for basic kinds of data, like text and filenames.
+
+Platform Independent Types
+>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Currently, the following predefined cross-platform values are available:
+
+.. data:: DND_ALL
+
+   All supported types for the platform.
+
+   .. warning:: ``DND_ALL`` can declare support for unexpected formats. For
+    example, it can declare special formats to receive text not declared by
+    ``DND_TEXT`` (such as RTF and HTML). While it appears to be able to receive
+    these types, support outside of the formats found as constants is not
+    guaranteed.
+
+.. data:: DND_TEXT
+
+   This type can be used for transferring textual data. Internally, it is
+   translated to the following platform specific formats:
+
+   +----------+------------------------------+
+   | Platform | Type/s                       |
+   +==========+==============================+
+   | Windows  | .. data:: CF_UNICODETEXT     |
+   |          |           CF_TEXT            |
+   |          |           :noindex:          |
+   +----------+------------------------------+
+   | Unix     | .. data:: TEXT_PLAIN_UNICODE |
+   |          |           TEXT_PLAIN         |
+   |          |           :noindex:          |
+   +----------+------------------------------+
+   | Mac      | .. data:: NSSTRINGPBOARDTYPE |
+   |          |           :noindex:          |
+   +----------+------------------------------+
+
+.. data:: DND_FILES
+
+   This type can be used for transferring a list of filepaths/URLs.
+   Internally, it is translated to the following platform specific
+   formats:
+
+   +----------+---------------------------------+
+   | Platform | Type/s                          |
+   +==========+=================================+
+   | Windows  | .. data:: CF_HDROP              |
+   |          |           :noindex:             |
+   +----------+---------------------------------+
+   | Unix     | .. data:: URI_LIST              |
+   |          |           :noindex:             |
+   +----------+---------------------------------+
+   | Mac      | .. data:: NSFILENAMESPBOARDTYPE |
+   |          |           :noindex:             |
+   +----------+---------------------------------+
+
+Platform Specific Types
+>>>>>>>>>>>>>>>>>>>>>>>
+
+Additionally to the platform independent types, TkDND supports the following
+platform specific types (though it is often better to use an independent type
+where possible):
+
+**Windows:**
+
+   .. data:: CF_UNICODETEXT
+
+      Text transfer encoded in Unicode.
+
+   .. data:: CF_TEXT
+
+      Text transfer with application dependent encoding. If the source has
+      specified an encoding it is used, else the system encoding is used for
+      the conversion.
+
+   .. data:: CF_HDROP
+
+      Filepath/URL transfer encoded in UTF-8.
+
+**Unix:**
+
+   .. data:: TEXT_PLAIN_UNICODE
+
+      Text transfer encoded in Unicode.
+
+   .. data:: TEXT_PLAIN
+
+      Text transfer with application dependent encoding. If the source has
+      specified an encoding it is used, else the system encoding is used for
+      the conversion.
+
+   .. data:: URI_LIST
+
+      Filepath/URL transfer encoded in ASCII.
+
+**Mac:**
+
+   .. data:: NSSTRINGPBOARDTYPE
+
+      Text transfer encoded using the system encoding.
+
+   .. data:: NSFILENAMESPBOARDTYPE
+
+      Filepath/URL transfer encoded using the system encoding.
+
+Finally, format types used for drop types can have wildcards, following the
+same rules as "string match". For example, registering a drop target with the
+type ``'*'`` (``DND_ALL``), will accept any drop, no matter what the drop
+format is.
+
+Supported Actions
+>>>>>>>>>>>>>>>>>
+
+These actions are returned by the relevant bindings to specify the action
+that should take place.
+
+.. data:: ASK
+
+   A dialog will be displayed to the user, in order to select an action.
+
+.. data:: COPY
+
+   The data will be copied.
+
+.. data:: LINK
+
+   The data will be linked.
+
+.. data:: MOVE
+
+   The data will be moved.
+
+.. data:: PRIVATE
+
+   A private action will be performed by the drop target.
+
+.. data:: REFUSE_DROP
+
+   A drop cannot occur.
+
+Events
+^^^^^^
+
+Widgets registered as either drop targets or drag sources, will receive
+certain events, during drag and drop operations. As a result, the widgets
+are expected to have bindings for some of these events. Some events are
+mandatory (in the sense that a drag or drop operation can be stopped if the
+bindings do not exist), while others are not.
+
+In the following two sections all virtual events defined by the TkDND package
+are presented.
+
+.. note:: It is a good practice to define bindings for all events, so that the
+ application will behave as expected during drag and drop operations.
+
+.. note:: While these event bindings are regular Tk events, they have a small
+ difference from plain Tk events, in that most of them are expected to return
+ a value.
+
+Drop Target Events
+>>>>>>>>>>>>>>>>>>
+
+A widget registered as a drop target, can have bindings for the following
+virtual events:
+
+``<<DropEnter>>``
+
+   This event is triggered when the mouse enters the widget during a drop
+   action. The intention of this event is to change the visual state of the
+   widget, so as to notify the user whether the drop will be accepted or not.
+   The binding script is expected to return a single value that will define
+   the drop action.
+
+   .. note:: This event is not mandatory, but if it is defined, it has to
+    return an action (otherwise the drop is refused).
+
+``<<DropPosition>>``
+
+   This event is triggered when the mouse moves inside the widget during a
+   drop action (similar to the normal ``<Motion>`` event). The intention of
+   this event is to let widget decide if it will accept the drop and the
+   action of the drop, if a drop is going to happen at the specific mouse
+   coordinates.
+
+   Thus, the script binding for such an event can get the mouse coordinates
+   and the pressed modifier buttons (such as ctrl, shift or alt), and is
+   expected to return the drop action.
+
+   .. note:: This event is not mandatory, but if it is defined, it has to
+    return an action (otherwise the drop is refused).
+
+``<<DropLeave>>``
+
+   This event is triggered when the mouse leaves the area covered by the
+   widget, without a drop happening. The binding of such an event is expected
+   to restore the visual state of the widget to normal (i.e. the visual state
+   the widget was in before the ``<<DropEnter>>`` event was triggered).
+
+   This event is not mandatory, and is not expected to return a value.
+
+``<<Drop>>``
+
+   This event is triggered by a drop action, and it is expected to handle the
+   dropped data and reset the visual state of the widget. The binding script
+   is expected to return a value, which will be the action that has been
+   performed to the data.
+
+   .. note:: This event is not mandatory, but if it is defined, it has to
+    return an action (otherwise the drop is refused).
+
+``*_DROP``
+
+   This event is a specialisation of the generic ``<<Drop>>`` event, augmented
+   with a type. If such a binding exists and the drop type matches type, this
+   event binding will be executed, instead of the generic ``<<Drop>>`` event
+   binding.
+
+   For each content type constant (**except** ``DND_ALL``), there is a
+   ``_DROP`` version of it to provide the binding (e.g. the binding for a drop
+   of ``DND_FILES`` would be ``DND_FILES_DROP``)
+
+   These events allow for easy specialisation of drop bindings, according to
+   the type of the dropped data. The binding script of such an event is
+   expected to return a value, which will be the action that has been
+   performed to the data.
+
+   .. note:: This event is not mandatory, but if it is defined, it has to
+    return an action (otherwise the drop is refused).
+
+Drag Source Events
+>>>>>>>>>>>>>>>>>>
+
+A widget registered as a drag source, is expected to have bindings for the
+following virtual events:
+
+``<<DragInitCmd>>``
+
+   This event is triggered when a drag action is about to start. This is a
+   mandatory event (whose absence will cancel the drag action), and is
+   responsible for providing a list containing three things:
+
+   * A list of actions supported by the drag source
+   * A list format types supported by the drag source
+   * The data to be dropped
+
+   A simple example of such a binding, is: ::
+
+    drag_source.bind('<<DragInitCmd>>', lambda event: \
+        (COPY, DND_TEXT, 'Spam & eggs'))
+
+``<<DragEndCmd>>``
+
+   This event is triggered when the drag action has finished (either when the
+   drop was successful or not). Its main purpose is to process the dropped
+   data according to the drop action returned by the drop target.
+
+   This event is not mandatory, and is not expected to return a value.
+
+Event Data
+>>>>>>>>>>
+
+.. data:: Event.action
+
+   The current action of the drag/drop operation.
+
+.. data:: Event.code
+
+   The code of the current type of the drag and drop operation.
+
+.. data:: Event.common_source_types
+
+   The list of types from the drag source type list that are common to the
+   drop target type list.
+
+.. data:: Event.common_target_types
+
+   The list of types from the drop target type list that are common to the
+   drag source type list.
+
+.. data:: Event.data
+
+   The data that has been dropped. Under some platforms the data will be
+   available before the drop has occurred. The format of the data is the
+   current type of the drop operation.
+
+   .. note:: This is always a list/tuple, even for text where there will only
+    be one item in the list/tuple.
+
+.. data:: Event.event_name
+
+   The name of the current virtual event. One of ``<<DropEnter>>``,
+   ``<<DropPosition>>``, ``<<DropLeave>>``, ``<<Drop:type>>``, ``<<Drop>>``,
+   ``<<DragInitCmd>>`` and ``<<DragEndCmd>>``.
+
+.. data:: Event.modifiers
+
+   The list of modifier keyboard keys that are pressed. Modifier keys are some
+   special keys, like Shift, Control or Alt. Valid modifiers are "shift",
+   "ctrl" and "alt" (under all operating systems), and "mod1" to "mod5" under
+   Unix.
+
+   .. note:: The usefulness of modifiers may differ across operating systems.
+
+    For example, under Windows the drop target must examine
+    the modifiers, and decide upon the drop action that must be performed (by
+    selecting an action from the list of actions supported by the drag source).
+
+    However, under Unix, the drag source is expected to decide on the drop
+    action, not the drop target. The drop target is expected to either accept
+    the action selected by the drag source (and return it back), or select
+    ``COPY``, ``DEFAULT``, or ``ASK``. So, under Unix examining the pressed
+    modifier keys fulfills only informative purposes.
+
+.. data:: Event.mouse_buttons
+
+   The numbers of the mouse buttons pressed during a drag/drop operation.
+
+   .. note:: Typically only a single mouse button is reported as pressed, even
+    if more than one mouse buttons are actually pressed.
+
+    On Unix, however, the value will always be "1" unless the XKeyboard
+    extension is installed (in which case, the mouse buttons will be reported
+    correctly).
+
+.. data:: Event.source_actions
+
+   The action list supported by the drag source.
+
+.. data:: Event.source_codes
+
+   The codes of the list of types supported by the drag source. Codes are in
+   the same order as the list of types obtained through the ``source_types_t``
+   attribute.
+
+.. data:: Event.source_types_L
+
+   The list of types supported by the drag source (from the ``%L`` substitution).
+
+.. data:: Event.source_types_ST
+
+   The list of types supported by the drag source (from the ``%ST`` substitution).
+
+.. data:: Event.source_types_t
+
+   The list of types supported by the drag source (from the ``%t`` substitution).
+
+.. data:: Event.target_types
+
+   The list of types supported by the drop target.
+
+.. data:: Event.type
+
+   The current type of the drag and drop operation.
+
+.. data:: Event.widget
+
+   The widget that the event is delivered to.
+
+.. data:: Event.x
+
+   The mouse pointer x coordinate, relative to the drop target widget.
+
+.. data:: Event.x_root
+
+   The mouse pointer x coordinate, relative to the root window.
+
+.. data:: Event.y
+
+   The mouse pointer y coordinate, relative to the drop target widget.
+
+.. data:: Event.y_root
+
+   The mouse pointer y coordinate, relative to the root window.
+
+Examples
+^^^^^^^^
+
+Specifying Drop Targets
+>>>>>>>>>>>>>>>>>>>>>>>
+
+Creating drop targets is easy: we have to only register a widget as a drop
+target with the list of format types it can accept, and add a few bindings.
+For example, a widget that accepts textual drops can be as follows: ::
+
+    def dropenter(event):
+        event.widget.configure(bg='yellow')
+        return COPY
+    drop_target = Label(text='Text Drop Target!', bg='white')
+    drop_target.pack()
+    drop_target.drop_target_register(DND_TEXT)
+    drop_target.bind('<<DropEnter>>', dropenter)
+    drop_target.bind('<<DropPosition>>', lambda event: COPY)
+    drop_target.bind('<<DropLeave>>', lambda event: event.widget.configure(bg='white'))
+    drop_target.bind('<<Drop>>', lambda event: \
+        event.widget.configure(text=event.data, bg='white'))
+
+From the above bindings, none is obligatory. However, we usually want to
+receive dropped data (thus the ``<<Drop>>`` event must be handled) and we want
+to give visual feedback to the users through the ``<<DropEnter>>`` and
+``<<DropLeave>>`` events. Finally, ``<<DropPosition>>`` is only necessary if
+we want to only accept drops on specific areas of the widget, or we want to
+change the drop action according to the pressed modifiers.
+
+Now, if we want to also add the ability to receive file drops, we could add: ::
+
+    def filedrop(event):
+        print(event.data)
+        event.widget.configure(bg='white')
+    drop_target.drop_target_register(DND_FILES)
+    drop_target.bind(DND_FILES_DROP, filedrop)
+
+Note that we have added a "specialised" drop binding, for the event
+``DND_FILES_DROP``: this means that when a text portion is dropped over the
+widget, the ``<<Drop>>`` event binding will be executed. But when a list of
+files is dropped onto the widget, the ``DND_FILES_DROP`` event binding will be
+executed. If we proceed and define a binding for the ``DND_TEXT_DROP`` event,
+the binding of the "general" ``<<Drop>>`` event will never be executed.
+
+Specifying Drag Sources
+>>>>>>>>>>>>>>>>>>>>>>>
+
+In order to specify a drag source, we need to register a widget as a drag
+source: ::
+
+    text_drag_source.drag_source_register()
+
+The above command defines a drag source with an empty type list (and which
+will be declared in the ``<<DragInitCmd>>`` event binding) and arranges mouse
+bindings such as a drag will be started with the left mouse button. Then, it
+is absolutely necessary to define a binding for the ``<<DragInitCmd>>``: this
+event binding must return the list of actions, the list of format types and
+the actual data to be dropped: ::
+
+    text_drag_source.bind('<<DragInitCmd>>', lambda event: \
+        ((COPY, MOVE), DND_TEXT, 'Hello from Tk!'))
+
+Please note that all specified format types must be compatible to each other,
+as they all characterise the same data.
+
+Specifying Drag Sources With Multiple Data Types
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+In the case the drag source wants to send a set of (incompatible) data types,
+the result of the ``<<DragInitCmd>>`` event binding must be slightly
+different, as it must return two items (instead of three described
+previously).
+
+The first element is again a list of allowable actions. However, the second
+item is a list of "format type" and "data" pairs (each pair is **not** in
+their own tuple/list): ::
+
+    text_drag_source.bind('<<DragInitCmd>>', lambda event:
+        ((COPY, MOVE), (DND_TEXT, 'Hello from Tk!', DND_FILES, '/tmp')))
 
 .. _tkinter-basic-mapping:
 

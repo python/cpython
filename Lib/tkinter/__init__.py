@@ -31,6 +31,7 @@ tk.mainloop()
 """
 
 import enum
+import os
 import sys
 import types
 
@@ -48,6 +49,7 @@ READABLE = _tkinter.READABLE
 WRITABLE = _tkinter.WRITABLE
 EXCEPTION = _tkinter.EXCEPTION
 
+_DND_SUPPORT = {}
 
 _magic_re = re.compile(r'([\\{}])')
 _space_re = re.compile(r'([\s])', re.ASCII)
@@ -765,6 +767,117 @@ class Misc:
         if name == 'none' or not name: return None
         return self._nametowidget(name)
 
+    def dnd_loaded(self):
+        """This function returns whether the TkDND library has been
+        successfully loaded for this Tk instance.
+        """
+        return _DND_SUPPORT[self.tk]
+
+    def _check_dnd(self):
+        """Checks if the interpreter has found the TkDND library and raises
+        a TclError if not (to protect methods which require TkDND).
+        """
+        if not _DND_SUPPORT[self.tk]:
+            raise TclError("The TkDND library hasn't successfully loaded. If "
+                           'TkDND is already installed, try calling the '
+                           '"load_dnd" method with the install location.')
+
+    def drop_target_register(self, types=()):
+        """This command will register the widget as a drop target (a widget
+        than can accept a drop action). An optional type-list can be provided,
+        which contains one or more types that the widget will accept during a
+        drop action.
+
+        Note: This command can be executed multiple times on the same widget.
+        """
+        self._check_dnd()
+        self.tk.call(('tkdnd::drop_target', 'register', self._w, types))
+
+    def drop_target_unregister(self):
+        """This command will stop the widget from being a drop target. Thus, it
+        will stop receiving events related to drop operations.
+
+        Warning: This command will raise a TclError if the widget has not been
+                 registered as a drop target.
+        """
+        self._check_dnd()
+        self.tk.call(('tkdnd::drop_target', 'unregister', self._w))
+
+    def drag_source_register(self, types=(), mouse_buttons=1):
+        """This command will register the widget as a drag source. A drag
+        source is a widget than can start a drag action. When the widget is
+        registered as a drag source, an optional type-list can be provided.
+        This type list can contain one or more types that the widget will
+        provide during a drag action. However, this type list is
+        indicative/informative and the widget can initiate a drag action with a
+        type not in the list.
+
+        Finally, mouse_buttons is one or more mouse buttons that can be used
+        for starting the drag action. It can have any of the values:
+            1 - Left mouse button
+            2 - Middle mouse button (wheel)
+            3 - Right mouse button
+
+        Multiple mouse buttons can be specified as a list/tuple of values.
+
+        Note: This command can be executed multiple times on the same widget.
+        """
+        self._check_dnd()
+        self.tk.call(('tkdnd::drag_source', 'register',
+                      self._w, types, mouse_buttons))
+
+    def drag_source_unregister(self):
+        """This command will stop the widget from being a drag source. Thus, it
+        will stop receiving events related to drag operations.
+
+        Warning: This command will raise a TclError if the widget has not been
+                 registered as a drag source.
+        """
+        self._check_dnd()
+        self.tk.call(('tkdnd::drag_source', 'unregister', self._w))
+
+    def platform_specific_types(self, types):
+        """This command will accept a list of types that can contain platform
+        independent or platform specific types. A new list will be returned,
+        where each platform independent type in type-list will be substituted
+        by one or more platform specific types. Thus, the returned list may
+        have more elements than type-list.
+        """
+        self._check_dnd()
+        return self.tk.call(('tkdnd::platform_specific_types', types))
+
+    def platform_independent_types(self, types):
+        """This command will accept a list of types that can contain platform
+        independent or platform specific types. A new list will be returned,
+        where each platform specific type in type-list will be substituted by
+        one or more platform independent types. Thus, the returned list may
+        have more elements than type-list.
+        """
+        self._check_dnd()
+        return self.tk.call(('tkdnd::platform_independent_types', types))
+
+    def get_drop_file_temp_directory(self):
+        """This command will return the temporary directory used by TkDND for
+        storing temporary files. When the package is loaded, this temporary
+        directory will be initialised to a proper directory according to the
+        operating system.
+
+        The default initial value can be changed by the following environment
+        variables:
+            TKDND_TEMP_DIR
+            TEMP
+            TMP
+        """
+        self._check_dnd()
+        return self.tk.call('tkdnd::GetDropFileTempDirectory')
+
+    def set_drop_file_temp_directory(self, directory):
+        """This command will change the temporary directory used by TkDND for
+        storing temporary files to the given directory.
+        """
+        self._check_dnd()
+        self.tk.call(('tkdnd::SetDropFileTempDirectory', directory))
+
     def tk_focusFollowsMouse(self):
         """The widget under mouse will get automatically focus. Can not
         be disabled easily."""
@@ -1332,7 +1445,8 @@ class Misc:
         elif func:
             funcid = self._register(func, self._substitute,
                         needcleanup)
-            cmd = ('%sif {"[%s %s]" == "break"} break\n'
+            cmd = ('%sset dat [%s %s];if {"$dat" == "break"} {break} '
+                   'elseif {"$dat" != ""} {set dndrtn $dat}\n'
                    %
                    (add and '+' or '',
                 funcid, self._subst_format_str))
@@ -1532,9 +1646,12 @@ class Misc:
         w = self
         while w.master: w = w.master
         return w
-    _subst_format = ('%#', '%b', '%f', '%h', '%k',
-             '%s', '%t', '%w', '%x', '%y',
-             '%A', '%E', '%K', '%N', '%W', '%T', '%X', '%Y', '%D')
+    _subst_format = ('%#', '{%a}', '{%b}', '{%c}', '%e',
+                     '%f', '%h', '%k', '{%m}', '%s',
+                     '{%t}', '%w', '%x', '%y',
+                     '%A', '%C', '{%CST}', '{%CTT}', '{%D}',
+                     '%E', '%K', '{%L}', '%N', '{%ST}',
+                     '%T', '{%TT}', '%W', '%X', '%Y')
     _subst_format_str = " ".join(_subst_format)
 
     def _substitute(self, *args):
@@ -1550,7 +1667,21 @@ class Misc:
             except (ValueError, TclError):
                 return s
 
-        nsign, b, f, h, k, s, t, w, x, y, A, E, K, N, W, T, X, Y, D = args
+        def getlist_event(s):
+            if s.startswith('{') and s.endswith('}'):
+                s = s[1:-1]
+            else:
+                return s,
+            s = s.translate((None, '\x00'))
+            if not s:
+                return '',
+            try:
+                return self.tk.splitlist(s)
+            except ValueError:
+                return s,
+
+        nsign, a, b, c, ed, f, h, k, m, s, t, w, x, y, \
+            A, C, CST, CTT, D, E, K, L, N, ST, T, TT, W, X, Y = args
         # Missing: (a, c, d, m, o, v, B, R)
         e = Event()
         # serial field: valid for all events
@@ -1566,26 +1697,43 @@ class Misc:
         # keysym as decimal: KeyPress and KeyRelease events only
         # x_root, y_root fields: ButtonPress, ButtonRelease, KeyPress,
         # KeyRelease, and Motion events
-        e.serial = getint(nsign)
-        e.num = getint_event(b)
+        try:
+            e.serial = getint(nsign)
+        except (ValueError, TclError):
+            e.serial = None
+        e.source_actions = getlist_event(a)
+        e.mouse_buttons = tuple(map(getint_event, getlist_event(b)))
+        e.num = e.mouse_buttons[0]
+        e.source_codes = tuple(map(getint_event, getlist_event(c)))
+        e.event_name = ed
         try: e.focus = getboolean(f)
         except TclError: pass
         e.height = getint_event(h)
         e.keycode = getint_event(k)
+        e.modifiers = getlist_event(m)
         e.state = getint_event(s)
-        e.time = getint_event(t)
+        e.source_types_t = getlist_event(t)
+        e.time = getint_event(e.source_types_t[0])
         e.width = getint_event(w)
         e.x = getint_event(x)
         e.y = getint_event(y)
         e.char = A
+        e.action = e.char
+        e.code = getint_event(C)
+        e.common_source_types = getlist_event(CST)
+        e.common_target_types = getlist_event(CTT)
+        e.data = getlist_event(D)
         try: e.send_event = getboolean(E)
         except TclError: pass
         e.keysym = K
+        e.source_types_L = getlist_event(L)
         e.keysym_num = getint_event(N)
+        e.source_types_ST = getlist_event(ST)
         try:
             e.type = EventType(T)
         except ValueError:
             e.type = T
+        e.target_types = getlist_event(TT)
         try:
             e.widget = self._nametowidget(W)
         except KeyError:
@@ -2261,6 +2409,7 @@ class Tk(Misc, Wm):
                 baseName = baseName + ext
         interactive = False
         self.tk = _tkinter.create(screenName, baseName, className, interactive, wantobjects, useTk, sync, use)
+        _DND_SUPPORT[self.tk] = False
         if useTk:
             self._loadtk()
         if not sys.flags.ignore_environment:
@@ -2297,6 +2446,34 @@ class Tk(Misc, Wm):
         if _support_default_root and not _default_root:
             _default_root = self
         self.protocol("WM_DELETE_WINDOW", self.destroy)
+
+        self.load_dnd()
+
+    def load_dnd(self, dnd_path=None):
+        """This command will load the TkDND library and is called when Tk class
+        is instantiated. However, if the library is installed in a different
+        directory, this method will need to be called manually to load the
+        library. If the TkDND library has been found, True wil be returned,
+        otherwise False will be returned.
+
+        Note: If the TkDND library has already been successfully loaded, True
+              will be returned and no action taken.
+        """
+        if _DND_SUPPORT.get(self.tk, False):
+            return True
+        if not self._tkloaded:
+            return False
+        if dnd_path is not None:
+            # An absolute path must always be used
+            self.tk.call(('lappend', 'auto_path', os.path.abspath(dnd_path)))
+        try:
+            self.tk.call(('package', 'require', 'tkdnd'))
+        except TclError:
+            sup = False
+        else:
+            sup = True
+        _DND_SUPPORT[self.tk] = sup
+        return sup
 
     def destroy(self):
         """Destroy this and all descendants widgets. This will

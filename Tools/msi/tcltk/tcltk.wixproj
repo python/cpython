@@ -28,6 +28,14 @@
             <Group>tcltk_lib</Group>
         </InstallFiles>
 
+        <InstallFiles Include="$(tkdndDir)\*">
+            <SourceBase>$(tkdndDir)</SourceBase>
+            <Source>$(tkdndDir)</Source>
+            <TargetBase>$(tkdndDir)</TargetBase>
+            <Target_>tcl\$(tkdndDest)\</Target_>
+            <Group>tcltk_lib</Group>
+        </InstallFiles>
+
         <InstallFiles Include="$(PySourcePath)Lib\tkinter\**\*;$(PySourcePath)Lib\idlelib\**\*;$(PySourcePath)Lib\turtledemo\**\*"
                       Exclude="$(PySourcePath)Lib\**\*.pyc;$(PySourcePath)Lib\**\*.pyo">
             <SourceBase>$(PySourcePath)</SourceBase>

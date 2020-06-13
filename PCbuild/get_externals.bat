@@ -58,6 +58,7 @@ set libraries=%libraries%                                       sqlite-3.31.1.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.9.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tk-8.6.9.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tix-8.4.3.6
+if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tkdnd-2.9.2
 set libraries=%libraries%                                       xz-5.2.2
 set libraries=%libraries%                                       zlib-1.2.11
 
@@ -79,6 +80,7 @@ set binaries=
 if NOT "%IncludeLibffi%"=="false"  set binaries=%binaries% libffi
 if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-1.1.1g
 if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.9.0
+if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tkdnd-bin-2.9.2
 if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
 
 for %%b in (%binaries%) do (
