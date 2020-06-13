@@ -22,8 +22,21 @@
  */
 
 #include "prepare_protocol.h"
+#include "clinic/prepare_protocol.c.h"
 
-int pysqlite_prepare_protocol_init(pysqlite_PrepareProtocol* self, PyObject* args, PyObject* kwargs)
+/*[clinic input]
+module _sqlite3
+class _sqlite3.PrepareProtocol "pysqlite_PrepareProtocol *" "&pysqlite_PrepareProtocolType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4a79a14f268f3a66]*/
+
+/*[clinic input]
+_sqlite3.PrepareProtocol.__init__ as pysqlite_prepare_protocol_init
+[clinic start generated code]*/
+
+static int
+pysqlite_prepare_protocol_init_impl(pysqlite_PrepareProtocol *self)
+/*[clinic end generated code: output=3b31d0c14febd335 input=39127fc4f4923519]*/
 {
     return 0;
 }
