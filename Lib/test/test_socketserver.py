@@ -276,6 +276,13 @@ class SocketServerTest(unittest.TestCase):
             t.join()
             s.server_close()
 
+    def test_close_immediately(self):
+        class MyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+            pass
+
+        server = MyServer((HOST, 0), lambda: None)
+        server.server_close()
+
     def test_tcpserver_bind_leak(self):
         # Issue #22435: the server socket wouldn't be closed if bind()/listen()
         # failed.
