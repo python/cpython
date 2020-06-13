@@ -212,8 +212,9 @@ static PyObject *
 _dbm_dbm_close_impl(dbmobject *self)
 /*[clinic end generated code: output=c8dc5b6709600b86 input=046db72377d51be8]*/
 {
-    if (self->di_dbm)
+    if (self->di_dbm) {
         dbm_close(self->di_dbm);
+    }
     self->di_dbm = NULL;
     Py_RETURN_NONE;
 }
@@ -240,8 +241,9 @@ _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls)
     }
     check_dbmobject_open(self, state->dbm_error);
     v = PyList_New(0);
-    if (v == NULL)
+    if (v == NULL) {
         return NULL;
+    }
     for (key = dbm_firstkey(self->di_dbm); key.dptr;
          key = dbm_nextkey(self->di_dbm)) {
         item = PyBytes_FromStringAndSize(key.dptr, key.dsize);
@@ -359,8 +361,9 @@ _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
         return PyBytes_FromStringAndSize(val.dptr, val.dsize);
     if (default_value == NULL) {
         default_value = PyBytes_FromStringAndSize(NULL, 0);
-        if (default_value == NULL)
+        if (default_value == NULL) {
             return NULL;
+        }
         val.dptr = NULL;
         val.dsize = 0;
     }
