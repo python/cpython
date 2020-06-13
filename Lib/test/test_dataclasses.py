@@ -3332,6 +3332,23 @@ class TestReplace(unittest.TestCase):
 
     ##     replace(c, x=5)
 
+class TestMatchArgs(unittest.TestCase):
+    def test_match_args(self):
+        @dataclass
+        class B:
+            x: int
+
+        o = B(4)
+        self.assertEqual(o.__match_args__, ['x'])
+
+    def test_explicit_match_args(self):
+        @dataclass
+        class B:
+            x: int
+            __match_args__ = []
+
+        o = B(4)
+        self.assertEqual(o.__match_args__, [])
 
 if __name__ == '__main__':
     unittest.main()

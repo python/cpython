@@ -151,6 +151,16 @@ __all__ = ['dataclass',
 #
 # See _hash_action (below) for a coded version of this table.
 
+# __match_args__
+#
+# |  no   |  yes  |  <--- class has __match_args__ in __dict__?
+# +=======+=======+
+# | add   |       |  <- the default
+# +=======+=======+
+# __match_args__ is always added unless the class already defines it.
+# __match_args__ contains the set of names of __init__ parameters.
+# Non-init fields must be matched by name.
+
 
 # Raised when an attempt is made to modify a frozen class.
 class FrozenInstanceError(AttributeError): pass
@@ -991,6 +1001,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
         # Create a class doc-string.
         cls.__doc__ = (cls.__name__ +
                        str(inspect.signature(cls)).replace(' -> None', ''))
+
+    match_args = cls.__dict__.get('__match_args__', MISSING)
+    if match_args is MISSING:
+        # Create a __match_args__ attribute.
+        _set_new_attribute(cls, '__match_args__', [f.name for f in flds if f.init])
 
     return cls
 
