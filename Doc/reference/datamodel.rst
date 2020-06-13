@@ -672,9 +672,8 @@ Callable types
          pair: C; language
 
       A built-in function object is a wrapper around a C function.  Examples of
-      built-in functions are :func:`len` and :func:`math.sin` (:mod:`math` is a
-      standard built-in module). The number and type of the arguments are
-      determined by the C function. Special read-only attributes:
+      built-in functions are :func:`len` and :func:`math.sin`. The number and type of the
+      arguments are determined by the C function. Special read-only attributes:
       :attr:`__doc__` is the function's documentation string, or ``None`` if
       unavailable; :attr:`~definition.__name__` is the function's name; :attr:`__self__` is
       set to ``None`` (but see the next item); :attr:`__module__` is the name of
