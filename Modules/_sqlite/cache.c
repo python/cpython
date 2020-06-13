@@ -23,6 +23,13 @@
 
 #include "cache.h"
 #include <limits.h>
+#include "clinic/cache.c.h"
+
+/*[clinic input]
+module _sqlite3
+class _sqlite3.Cache "pysqlite_Cache *" "&pysqlite_CacheType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=94e9b64faa911d27]*/
 
 /* only used internally */
 pysqlite_Node* pysqlite_new_node(PyObject* key, PyObject* data)
@@ -54,16 +61,19 @@ void pysqlite_node_dealloc(pysqlite_Node* self)
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
-int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
+/*[clinic input]
+_sqlite3.Cache.__init__ as pysqlite_cache_init
+
+    factory: object
+    size: int = 10
+    /
+[clinic start generated code]*/
+
+static int
+pysqlite_cache_init_impl(pysqlite_Cache *self, PyObject *factory, int size)
+/*[clinic end generated code: output=3a3b3e0486364359 input=5c1df5f8291291b0]*/
 {
-    PyObject* factory;
-    int size = 10;
-
     self->factory = NULL;
-
-    if (!PyArg_ParseTuple(args, "O|i", &factory, &size)) {
-        return -1;
-    }
 
     /* minimum cache size is 5 entries */
     if (size < 5) {
@@ -112,7 +122,18 @@ void pysqlite_cache_dealloc(pysqlite_Cache* self)
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
-PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* key)
+/*[clinic input]
+_sqlite3.Cache.get as pysqlite_cache_get
+
+    key: object
+    /
+
+Gets an entry from the cache or calls the factory function to produce one.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_cache_get(pysqlite_Cache *self, PyObject *key)
+/*[clinic end generated code: output=149ad799afafcdc8 input=07aef9c27e458441]*/
 {
     pysqlite_Node* node;
     pysqlite_Node* ptr;
@@ -217,7 +238,15 @@ PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* key)
     return node->data;
 }
 
-PyObject* pysqlite_cache_display(pysqlite_Cache* self, PyObject* args)
+/*[clinic input]
+_sqlite3.Cache.display as pysqlite_cache_display
+
+For debugging only.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_cache_display_impl(pysqlite_Cache *self)
+/*[clinic end generated code: output=4010f6d5a649271c input=916727d67499366c]*/
 {
     pysqlite_Node* ptr;
     PyObject* prevkey;
@@ -254,10 +283,8 @@ PyObject* pysqlite_cache_display(pysqlite_Cache* self, PyObject* args)
 }
 
 static PyMethodDef cache_methods[] = {
-    {"get", (PyCFunction)pysqlite_cache_get, METH_O,
-        PyDoc_STR("Gets an entry from the cache or calls the factory function to produce one.")},
-    {"display", (PyCFunction)pysqlite_cache_display, METH_NOARGS,
-        PyDoc_STR("For debugging only.")},
+    PYSQLITE_CACHE_GET_METHODDEF
+    PYSQLITE_CACHE_DISPLAY_METHODDEF
     {NULL, NULL}
 };
 

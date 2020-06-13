@@ -368,6 +368,8 @@ static int check_cursor(pysqlite_Cursor* cur)
 static PyObject *
 _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
 {
+    _Py_IDENTIFIER(get);
+    pysqlite_Statement *stmt;
     PyObject* operation;
     PyObject* parameters_list = NULL;
     PyObject* parameters_iter = NULL;
@@ -462,8 +464,9 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
         (void)pysqlite_statement_reset(self->statement);
     }
 
-    Py_XSETREF(self->statement,
-              (pysqlite_Statement *)pysqlite_cache_get(self->connection->statement_cache, func_args));
+    stmt = (pysqlite_Statement *)_PyObject_CallMethodIdOneArg((PyObject *)self->connection->statement_cache,
+                                                              &PyId_get, func_args);
+    Py_XSETREF(self->statement, stmt);
     Py_DECREF(func_args);
 
     if (!self->statement) {
