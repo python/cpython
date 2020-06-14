@@ -72,20 +72,28 @@ class GlobTests(unittest.TestCase):
             self.assertCountEqual([os.path.join(self.tempdir, x) for x in res2],
                                   expected)
             self.assertCountEqual(glob.iglob(pattern, **kwargs), res2)
+            bpattern = os.fsencode(pattern)
             bres2 = [os.fsencode(x) for x in res2]
-            self.assertCountEqual(glob.glob(os.fsencode(pattern), **kwargs), bres2)
-            self.assertCountEqual(glob.iglob(os.fsencode(pattern), **kwargs), bres2)
+            self.assertCountEqual(glob.glob(bpattern, **kwargs), bres2)
+            self.assertCountEqual(glob.iglob(bpattern, **kwargs), bres2)
 
         self.assertCountEqual(glob.glob(pattern, root_dir=self.tempdir, **kwargs), res2)
         self.assertCountEqual(glob.iglob(pattern, root_dir=self.tempdir, **kwargs), res2)
-        self.assertCountEqual(glob.glob(os.fsencode(pattern), root_dir=os.fsencode(self.tempdir), **kwargs), bres2)
-        self.assertCountEqual(glob.iglob(os.fsencode(pattern), root_dir=os.fsencode(self.tempdir), **kwargs), bres2)
+        btempdir = os.fsencode(self.tempdir)
+        self.assertCountEqual(
+            glob.glob(bpattern, root_dir=btempdir, **kwargs), bres2)
+        self.assertCountEqual(
+            glob.iglob(bpattern, root_dir=btempdir, **kwargs), bres2)
 
         if self.dir_fd is not None:
-            self.assertCountEqual(glob.glob(pattern, dir_fd=self.dir_fd, **kwargs), res2)
-            self.assertCountEqual(glob.iglob(pattern, dir_fd=self.dir_fd, **kwargs), res2)
-            self.assertCountEqual(glob.glob(os.fsencode(pattern), dir_fd=self.dir_fd, **kwargs), bres2)
-            self.assertCountEqual(glob.iglob(os.fsencode(pattern), dir_fd=self.dir_fd, **kwargs), bres2)
+            self.assertCountEqual(
+                glob.glob(pattern, dir_fd=self.dir_fd, **kwargs), res2)
+            self.assertCountEqual(
+                glob.iglob(pattern, dir_fd=self.dir_fd, **kwargs), res2)
+            self.assertCountEqual(
+                glob.glob(bpattern, dir_fd=self.dir_fd, **kwargs), bres2)
+            self.assertCountEqual(
+                glob.iglob(bpattern, dir_fd=self.dir_fd, **kwargs), bres2)
 
         return res
 

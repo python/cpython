@@ -71,7 +71,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
 
-   .. versionchanged:: 3.9
+   .. versionchanged:: 3.10
       Added the *root_dir* and *dir_fd* parameters.
 
 
