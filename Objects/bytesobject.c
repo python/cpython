@@ -3,11 +3,10 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_abstract.h"   // _PyIndex_Check()
+#include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h"
 #include "pycore_object.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // PYMEM_CLEANBYTE
 
 #include "pystrhex.h"
 #include <stddef.h>
@@ -257,27 +256,29 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
         }
 
         case 'd':
-            if (longflag)
+            if (longflag) {
                 sprintf(buffer, "%ld", va_arg(vargs, long));
-            else if (size_tflag)
-                sprintf(buffer, "%" PY_FORMAT_SIZE_T "d",
-                    va_arg(vargs, Py_ssize_t));
-            else
+            }
+            else if (size_tflag) {
+                sprintf(buffer, "%zd", va_arg(vargs, Py_ssize_t));
+            }
+            else {
                 sprintf(buffer, "%d", va_arg(vargs, int));
+            }
             assert(strlen(buffer) < sizeof(buffer));
             WRITE_BYTES(buffer);
             break;
 
         case 'u':
-            if (longflag)
-                sprintf(buffer, "%lu",
-                    va_arg(vargs, unsigned long));
-            else if (size_tflag)
-                sprintf(buffer, "%" PY_FORMAT_SIZE_T "u",
-                    va_arg(vargs, size_t));
-            else
-                sprintf(buffer, "%u",
-                    va_arg(vargs, unsigned int));
+            if (longflag) {
+                sprintf(buffer, "%lu", va_arg(vargs, unsigned long));
+            }
+            else if (size_tflag) {
+                sprintf(buffer, "%zu", va_arg(vargs, size_t));
+            }
+            else {
+                sprintf(buffer, "%u", va_arg(vargs, unsigned int));
+            }
             assert(strlen(buffer) < sizeof(buffer));
             WRITE_BYTES(buffer);
             break;
@@ -456,7 +457,7 @@ formatlong(PyObject *v, int flags, int prec, int type)
     if (PyNumber_Check(v)) {
         /* make sure number is a type of integer for o, x, and X */
         if (type == 'o' || type == 'x' || type == 'X')
-            iobj = PyNumber_Index(v);
+            iobj = _PyNumber_Index(v);
         else
             iobj = PyNumber_Long(v);
         if (iobj == NULL) {
@@ -1342,8 +1343,7 @@ bytes_repr(PyObject *op)
 static PyObject *
 bytes_str(PyObject *op)
 {
-    PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
-    if (config->bytes_warning) {
+    if (_Py_GetConfig()->bytes_warning) {
         if (PyErr_WarnEx(PyExc_BytesWarning,
                          "str() on a bytes instance", 1)) {
             return NULL;
@@ -1500,8 +1500,7 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
 
     /* Make sure both arguments are strings. */
     if (!(PyBytes_Check(a) && PyBytes_Check(b))) {
-        PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
-        if (config->bytes_warning && (op == Py_EQ || op == Py_NE)) {
+        if (_Py_GetConfig()->bytes_warning && (op == Py_EQ || op == Py_NE)) {
             rc = PyObject_IsInstance((PyObject*)a,
                                      (PyObject*)&PyUnicode_Type);
             if (!rc)
@@ -2185,6 +2184,81 @@ bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
 
 /** End DALKE **/
 
+/*[clinic input]
+bytes.removeprefix as bytes_removeprefix
+
+    prefix: Py_buffer
+    /
+
+Return a bytes object with the given prefix string removed if present.
+
+If the bytes starts with the prefix string, return bytes[len(prefix):].
+Otherwise, return a copy of the original bytes.
+[clinic start generated code]*/
+
+static PyObject *
+bytes_removeprefix_impl(PyBytesObject *self, Py_buffer *prefix)
+/*[clinic end generated code: output=f006865331a06ab6 input=0c93bac817a8502c]*/
+{
+    const char *self_start = PyBytes_AS_STRING(self);
+    Py_ssize_t self_len = PyBytes_GET_SIZE(self);
+    const char *prefix_start = prefix->buf;
+    Py_ssize_t prefix_len = prefix->len;
+
+    if (self_len >= prefix_len
+        && prefix_len > 0
+        && memcmp(self_start, prefix_start, prefix_len) == 0)
+    {
+        return PyBytes_FromStringAndSize(self_start + prefix_len,
+                                         self_len - prefix_len);
+    }
+
+    if (PyBytes_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
+    }
+
+    return PyBytes_FromStringAndSize(self_start, self_len);
+}
+
+/*[clinic input]
+bytes.removesuffix as bytes_removesuffix
+
+    suffix: Py_buffer
+    /
+
+Return a bytes object with the given suffix string removed if present.
+
+If the bytes ends with the suffix string and that suffix is not empty,
+return bytes[:-len(prefix)].  Otherwise, return a copy of the original
+bytes.
+[clinic start generated code]*/
+
+static PyObject *
+bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix)
+/*[clinic end generated code: output=d887d308e3242eeb input=9f4e1da8c637bbf1]*/
+{
+    const char *self_start = PyBytes_AS_STRING(self);
+    Py_ssize_t self_len = PyBytes_GET_SIZE(self);
+    const char *suffix_start = suffix->buf;
+    Py_ssize_t suffix_len = suffix->len;
+
+    if (self_len >= suffix_len
+        && suffix_len > 0
+        && memcmp(self_start + self_len - suffix_len,
+                  suffix_start, suffix_len) == 0)
+    {
+        return PyBytes_FromStringAndSize(self_start,
+                                         self_len - suffix_len);
+    }
+
+    if (PyBytes_CheckExact(self)) {
+        Py_INCREF(self);
+        return (PyObject *)self;
+    }
+
+    return PyBytes_FromStringAndSize(self_start, self_len);
+}
 
 static PyObject *
 bytes_startswith(PyBytesObject *self, PyObject *args)
@@ -2424,6 +2498,8 @@ bytes_methods[] = {
     BYTES_MAKETRANS_METHODDEF
     BYTES_PARTITION_METHODDEF
     BYTES_REPLACE_METHODDEF
+    BYTES_REMOVEPREFIX_METHODDEF
+    BYTES_REMOVESUFFIX_METHODDEF
     {"rfind", (PyCFunction)bytes_rfind, METH_VARARGS, _Py_rfind__doc__},
     {"rindex", (PyCFunction)bytes_rindex, METH_VARARGS, _Py_rindex__doc__},
     STRINGLIB_RJUST_METHODDEF

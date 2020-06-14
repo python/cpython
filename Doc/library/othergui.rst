@@ -30,10 +30,11 @@ available for Python:
       for generating bindings for C++ libraries as Python classes, and
       is specifically designed for Python.
 
-   `PySide <https://wiki.qt.io/PySide>`_
-      PySide is a newer binding to the Qt toolkit, provided by Nokia.
-      Compared to PyQt, its licensing scheme is friendlier to non-open source
-      applications.
+   `PySide2 <https://doc.qt.io/qtforpython/>`_
+      Also known as the Qt for Python project, PySide2 is a newer binding to the
+      Qt toolkit. It is provided by The Qt Company and aims to provide a
+      complete port of PySide to Qt 5. Compared to PyQt, its licensing scheme is
+      friendlier to non-open source applications.
 
    `wxPython <https://www.wxpython.org>`_
       wxPython is a cross-platform GUI toolkit for Python that is built around
@@ -47,7 +48,7 @@ available for Python:
       an XML-based resource format and more, including an ever growing library
       of user-contributed modules.
 
-PyGTK, PyQt, and wxPython, all have a modern look and feel and more
+PyGTK, PyQt, PySide2, and wxPython, all have a modern look and feel and more
 widgets than Tkinter. In addition, there are many other GUI toolkits for
 Python, both cross-platform, and platform-specific. See the `GUI Programming
 <https://wiki.python.org/moin/GuiProgramming>`_ page in the Python Wiki for a

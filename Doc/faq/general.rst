@@ -17,12 +17,13 @@ What is Python?
 
 Python is an interpreted, interactive, object-oriented programming language.  It
 incorporates modules, exceptions, dynamic typing, very high level dynamic data
-types, and classes.  Python combines remarkable power with very clear syntax.
-It has interfaces to many system calls and libraries, as well as to various
-window systems, and is extensible in C or C++.  It is also usable as an
-extension language for applications that need a programmable interface.
-Finally, Python is portable: it runs on many Unix variants, on the Mac, and on
-Windows 2000 and later.
+types, and classes.  It supports multiple programming paradigms beyond
+object-oriented programming, such as procedural and functional programming.
+Python combines remarkable power with very clear syntax. It has interfaces to
+many system calls and libraries, as well as to various window systems, and is
+extensible in C or C++.  It is also usable as an extension language for
+applications that need a programmable interface. Finally, Python is portable:
+it runs on many Unix variants including Linux and macOS, and on Windows.
 
 To find out more, start with :ref:`tutorial-index`.  The `Beginner's Guide to
 Python <https://wiki.python.org/moin/BeginnersGuide>`_ links to other

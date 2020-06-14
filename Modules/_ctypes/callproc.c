@@ -55,7 +55,7 @@
  */
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #ifdef MS_WIN32
 #include <windows.h>
@@ -751,7 +751,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 #if defined(MS_WIN32) && !defined(_WIN32_WCE)
 /*
 Per: https://msdn.microsoft.com/en-us/library/7572ztz4.aspx
-To be returned by value in RAX, user-defined types must have a length 
+To be returned by value in RAX, user-defined types must have a length
 of 1, 2, 4, 8, 16, 32, or 64 bits
 */
 int can_return_struct_as_int(size_t s)
@@ -1073,6 +1073,14 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 #endif
 
 /*
+ * bpo-13097: Max number of arguments _ctypes_callproc will accept.
+ *
+ * This limit is enforced for the `alloca()` call in `_ctypes_callproc`,
+ * to avoid allocating a massive buffer on the stack.
+ */
+#define CTYPES_MAX_ARGCOUNT 1024
+
+/*
  * Requirements, must be ensured by the caller:
  * - argtuple is tuple of arguments
  * - argtypes is either NULL, or a tuple of the same size as argtuple
@@ -1106,6 +1114,13 @@ PyObject *_ctypes_callproc(PPROC pProc,
     if (pIunk)
         ++argcount;
 #endif
+
+    if (argcount > CTYPES_MAX_ARGCOUNT)
+    {
+        PyErr_Format(PyExc_ArgError, "too many arguments (%zi), maximum is %i",
+                     argcount, CTYPES_MAX_ARGCOUNT);
+        return NULL;
+    }
 
     args = (struct argument *)alloca(sizeof(struct argument) * argcount);
     if (!args) {
@@ -1216,7 +1231,9 @@ PyObject *_ctypes_callproc(PPROC pProc,
     if (rtype->type != FFI_TYPE_FLOAT
         && rtype->type != FFI_TYPE_STRUCT
         && rtype->size < sizeof(ffi_arg))
+    {
         resbuf = (char *)resbuf + sizeof(ffi_arg) - rtype->size;
+    }
 #endif
 
 #ifdef MS_WIN32

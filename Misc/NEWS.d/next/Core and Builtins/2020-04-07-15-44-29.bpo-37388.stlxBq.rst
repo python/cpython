@@ -1,4 +1,0 @@
-str.encode() and str.decode() no longer check the encoding and errors in
-development mode or in debug mode during Python finalization. The codecs
-machinery can no longer work on very late calls to str.encode() and
-str.decode().

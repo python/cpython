@@ -1,13 +1,15 @@
 /* Path configuration like module_search_path (sys.path) */
 
 #include "Python.h"
-#include "osdefs.h"
+#include "osdefs.h"               // DELIM
 #include "pycore_initconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include <wchar.h>
+#ifdef MS_WINDOWS
+#  include <windows.h>            // GetFullPathNameW(), MAX_PATH
+#endif
 
 #ifdef __cplusplus
 extern "C" {

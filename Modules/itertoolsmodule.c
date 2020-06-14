@@ -2,7 +2,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_tupleobject.h"
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 
 /* Itertools module written and maintained
    by Raymond D. Hettinger <python@rcn.com>
@@ -999,8 +999,7 @@ cycle_dealloc(cycleobject *lz)
 static int
 cycle_traverse(cycleobject *lz, visitproc visit, void *arg)
 {
-    if (lz->it)
-        Py_VISIT(lz->it);
+    Py_VISIT(lz->it);
     Py_VISIT(lz->saved);
     return 0;
 }

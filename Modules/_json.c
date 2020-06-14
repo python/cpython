@@ -9,7 +9,7 @@
 #endif
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "pycore_accu.h"
 
 typedef struct {
@@ -647,6 +647,7 @@ scanner_dealloc(PyObject *self)
 static int
 scanner_traverse(PyScannerObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->object_hook);
     Py_VISIT(self->object_pairs_hook);
     Py_VISIT(self->parse_float);
@@ -1745,6 +1746,7 @@ encoder_dealloc(PyObject *self)
 static int
 encoder_traverse(PyEncoderObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->markers);
     Py_VISIT(self->defaultfn);
     Py_VISIT(self->encoder);

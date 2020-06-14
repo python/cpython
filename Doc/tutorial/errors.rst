@@ -67,7 +67,7 @@ The rest of the line provides detail based on the type of exception and what
 caused it.
 
 The preceding part of the error message shows the context where the exception
-happened, in the form of a stack traceback. In general it contains a stack
+occurred, in the form of a stack traceback. In general it contains a stack
 traceback listing source lines; however, it will not display lines read from
 standard input.
 

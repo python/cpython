@@ -3,7 +3,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_object.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include <stdbool.h>
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -253,12 +253,6 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         }
         else
             self->fd = -1;
-    }
-
-    if (PyFloat_Check(nameobj)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float");
-        return -1;
     }
 
     fd = _PyLong_AsInt(nameobj);
@@ -895,10 +889,6 @@ portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_er
         pos = 0;
     }
     else {
-        if(PyFloat_Check(posobj)) {
-            PyErr_SetString(PyExc_TypeError, "an integer is required");
-            return NULL;
-        }
 #if defined(HAVE_LARGEFILE_SUPPORT)
         pos = PyLong_AsLongLong(posobj);
 #else

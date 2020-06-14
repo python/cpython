@@ -8,7 +8,7 @@
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"    // _PyThreadState_GET()
 
 #ifndef MS_WINDOWS
 #include "posixmodule.h"
@@ -103,8 +103,6 @@ class sigset_t_converter(CConverter):
    only oddity is that the thread executing the Python signal handler
    may not be the thread that received the signal.
 */
-
-#include "pythread.h"
 
 static volatile struct {
     _Py_atomic_int tripped;
@@ -1781,11 +1779,13 @@ PyOS_FiniInterrupts(void)
     finisignal();
 }
 
+
+// The caller doesn't have to hold the GIL
 int
-PyOS_InterruptOccurred(void)
+_PyOS_InterruptOccurred(PyThreadState *tstate)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    if (!_Py_ThreadCanHandleSignals(interp)) {
+    _Py_EnsureTstateNotNULL(tstate);
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
 
@@ -1797,14 +1797,26 @@ PyOS_InterruptOccurred(void)
     return 1;
 }
 
+
+// The caller must to hold the GIL
+int
+PyOS_InterruptOccurred(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyOS_InterruptOccurred(tstate);
+}
+
+
+#ifdef HAVE_FORK
 static void
 _clear_pending_signals(void)
 {
-    int i;
-    if (!_Py_atomic_load(&is_tripped))
+    if (!_Py_atomic_load(&is_tripped)) {
         return;
+    }
+
     _Py_atomic_store(&is_tripped, 0);
-    for (i = 1; i < NSIG; ++i) {
+    for (int i = 1; i < NSIG; ++i) {
         _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
     }
 }
@@ -1817,11 +1829,13 @@ _PySignal_AfterFork(void)
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
 }
+#endif   /* HAVE_FORK */
+
 
 int
 _PyOS_IsMainThread(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     return _Py_ThreadCanHandleSignals(interp);
 }
 

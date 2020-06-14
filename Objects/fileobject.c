@@ -2,7 +2,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_runtime.h"  // _PyRuntime
 
 #if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
 /* clang MemorySanitizer doesn't yet understand getc_unlocked. */

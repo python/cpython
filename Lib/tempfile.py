@@ -738,7 +738,7 @@ class SpooledTemporaryFile:
         return self._file.readlines(*args)
 
     def seek(self, *args):
-        self._file.seek(*args)
+        return self._file.seek(*args)
 
     def tell(self):
         return self._file.tell()

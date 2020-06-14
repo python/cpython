@@ -17,7 +17,7 @@
 
 #include "Python.h"
 #include "ucnhash.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #include <stdbool.h>
 

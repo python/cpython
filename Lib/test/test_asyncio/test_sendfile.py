@@ -10,6 +10,7 @@ from asyncio import base_events
 from asyncio import constants
 from unittest import mock
 from test import support
+from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 
 try:
@@ -163,9 +164,9 @@ class SockSendfileMixin(SendfileBase):
 
     def prepare_socksendfile(self):
         proto = MyProto(self.loop)
-        port = support.find_unused_port()
+        port = socket_helper.find_unused_port()
         srv_sock = self.make_socket(cleanup=False)
-        srv_sock.bind((support.HOST, port))
+        srv_sock.bind((socket_helper.HOST, port))
         server = self.run_loop(self.loop.create_server(
             lambda: proto, sock=srv_sock))
         self.reduce_receive_buffer_size(srv_sock)
@@ -240,7 +241,7 @@ class SendfileMixin(SendfileBase):
     # Note: sendfile via SSL transport is equal to sendfile fallback
 
     def prepare_sendfile(self, *, is_ssl=False, close_after=0):
-        port = support.find_unused_port()
+        port = socket_helper.find_unused_port()
         srv_proto = MySendfileProto(loop=self.loop,
                                     close_after=close_after)
         if is_ssl:
@@ -252,17 +253,17 @@ class SendfileMixin(SendfileBase):
             srv_ctx = None
             cli_ctx = None
         srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        srv_sock.bind((support.HOST, port))
+        srv_sock.bind((socket_helper.HOST, port))
         server = self.run_loop(self.loop.create_server(
             lambda: srv_proto, sock=srv_sock, ssl=srv_ctx))
         self.reduce_receive_buffer_size(srv_sock)
 
         if is_ssl:
-            server_hostname = support.HOST
+            server_hostname = socket_helper.HOST
         else:
             server_hostname = None
         cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        cli_sock.connect((support.HOST, port))
+        cli_sock.connect((socket_helper.HOST, port))
 
         cli_proto = MySendfileProto(loop=self.loop)
         tr, pr = self.run_loop(self.loop.create_connection(

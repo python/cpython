@@ -2,7 +2,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"   // _PyIndex_Check()
-#include "pycore_pystate.h"
+#include "pycore_interp.h"     // _PyInterpreterState_LookUpID()
 #include "interpreteridobject.h"
 
 
@@ -270,7 +270,7 @@ _PyInterpreterState_GetIDObject(PyInterpreterState *interp)
     if (_PyInterpreterState_IDInitref(interp) != 0) {
         return NULL;
     };
-    PY_INT64_T id = PyInterpreterState_GetID(interp);
+    int64_t id = PyInterpreterState_GetID(interp);
     if (id < 0) {
         return NULL;
     }

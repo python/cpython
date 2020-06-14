@@ -316,6 +316,105 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(cm.exception.value.value, 2)
 
 
+class GeneratorThrowTest(unittest.TestCase):
+
+    def test_exception_context_with_yield(self):
+        def f():
+            try:
+                raise KeyError('a')
+            except Exception:
+                yield
+
+        gen = f()
+        gen.send(None)
+        with self.assertRaises(ValueError) as cm:
+            gen.throw(ValueError)
+        context = cm.exception.__context__
+        self.assertEqual((type(context), context.args), (KeyError, ('a',)))
+
+    def test_exception_context_with_yield_inside_generator(self):
+        # Check that the context is also available from inside the generator
+        # with yield, as opposed to outside.
+        def f():
+            try:
+                raise KeyError('a')
+            except Exception:
+                try:
+                    yield
+                except Exception as exc:
+                    self.assertEqual(type(exc), ValueError)
+                    context = exc.__context__
+                    self.assertEqual((type(context), context.args),
+                        (KeyError, ('a',)))
+                    yield 'b'
+
+        gen = f()
+        gen.send(None)
+        actual = gen.throw(ValueError)
+        # This ensures that the assertions inside were executed.
+        self.assertEqual(actual, 'b')
+
+    def test_exception_context_with_yield_from(self):
+        def f():
+            yield
+
+        def g():
+            try:
+                raise KeyError('a')
+            except Exception:
+                yield from f()
+
+        gen = g()
+        gen.send(None)
+        with self.assertRaises(ValueError) as cm:
+            gen.throw(ValueError)
+        context = cm.exception.__context__
+        self.assertEqual((type(context), context.args), (KeyError, ('a',)))
+
+    def test_exception_context_with_yield_from_with_context_cycle(self):
+        # Check trying to create an exception context cycle:
+        # https://bugs.python.org/issue40696
+        has_cycle = None
+
+        def f():
+            yield
+
+        def g(exc):
+            nonlocal has_cycle
+            try:
+                raise exc
+            except Exception:
+                try:
+                    yield from f()
+                except Exception as exc:
+                    has_cycle = (exc is exc.__context__)
+            yield
+
+        exc = KeyError('a')
+        gen = g(exc)
+        gen.send(None)
+        gen.throw(exc)
+        # This also distinguishes from the initial has_cycle=None.
+        self.assertEqual(has_cycle, False)
+
+    def test_throw_after_none_exc_type(self):
+        def g():
+            try:
+                raise KeyError
+            except KeyError:
+                pass
+
+            try:
+                yield
+            except Exception:
+                raise RuntimeError
+
+        gen = g()
+        gen.send(None)
+        with self.assertRaises(RuntimeError) as cm:
+            gen.throw(ValueError)
+
+
 class YieldFromTests(unittest.TestCase):
     def test_generator_gi_yieldfrom(self):
         def a():
@@ -1856,10 +1955,11 @@ Traceback (most recent call last):
   ...
 SyntaxError: 'yield' outside function
 
->>> def f(): x = yield = y
-Traceback (most recent call last):
-  ...
-SyntaxError: assignment to yield expression not possible
+# Pegen does not produce this error message yet
+# >>> def f(): x = yield = y
+# Traceback (most recent call last):
+#   ...
+# SyntaxError: assignment to yield expression not possible
 
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):
@@ -1869,7 +1969,7 @@ SyntaxError: cannot assign to yield expression
 >>> def f(): (yield bar) += y
 Traceback (most recent call last):
   ...
-SyntaxError: cannot assign to yield expression
+SyntaxError: 'yield expression' is an illegal expression for augmented assignment
 
 
 Now check some throw() conditions:

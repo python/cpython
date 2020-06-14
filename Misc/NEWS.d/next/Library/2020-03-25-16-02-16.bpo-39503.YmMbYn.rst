@@ -1,3 +1,0 @@
-:class:`~urllib.request.AbstractBasicAuthHandler` of :mod:`urllib.request`
-now parses all WWW-Authenticate HTTP headers and accepts multiple challenges
-per header: use the realm of the first Basic challenge.

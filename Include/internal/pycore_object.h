@@ -8,7 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_pystate.h"   /* PyInterpreterState.gc */
+#include "pycore_gc.h"         // _PyObject_GC_IS_TRACKED()
+#include "pycore_interp.h"     // PyInterpreterState.gc
+#include "pycore_pystate.h"    // _PyThreadState_GET()
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
@@ -98,6 +100,15 @@ _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
     return ((type->tp_flags & feature) != 0);
+}
+
+// Fast inlined version of PyObject_IS_GC()
+static inline int
+_PyObject_IS_GC(PyObject *obj)
+{
+    return (PyType_IS_GC(Py_TYPE(obj))
+            && (Py_TYPE(obj)->tp_is_gc == NULL
+                || Py_TYPE(obj)->tp_is_gc(obj)));
 }
 
 // Fast inlined version of PyType_IS_GC()

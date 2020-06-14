@@ -11,7 +11,7 @@ module instead.
 #define MODULE_VERSION "1.0"
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include <stdbool.h>
 
 
@@ -112,8 +112,6 @@ typedef struct {
 
 static PyTypeObject Reader_Type;
 
-#define ReaderObject_Check(v)   Py_IS_TYPE(v, &Reader_Type)
-
 typedef struct {
     PyObject_HEAD
 
@@ -149,13 +147,6 @@ get_dialect_from_registry(PyObject * name_obj)
 }
 
 static PyObject *
-get_string(PyObject *str)
-{
-    Py_XINCREF(str);
-    return str;
-}
-
-static PyObject *
 get_nullchar_as_None(Py_UCS4 c)
 {
     if (c == '\0') {
@@ -168,7 +159,8 @@ get_nullchar_as_None(Py_UCS4 c)
 static PyObject *
 Dialect_get_lineterminator(DialectObj *self, void *Py_UNUSED(ignored))
 {
-    return get_string(self->lineterminator);
+    Py_XINCREF(self->lineterminator);
+    return self->lineterminator;
 }
 
 static PyObject *
@@ -812,7 +804,7 @@ Reader_iternext(ReaderObj *self)
             PyErr_Format(_csvstate_global->error_obj,
                          "iterator should return strings, "
                          "not %.200s "
-                         "(did you open the file in text mode?)",
+                         "(the file should be opened in text mode)",
                          Py_TYPE(lineobj)->tp_name
                 );
             Py_DECREF(lineobj);

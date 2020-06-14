@@ -13,8 +13,6 @@
 #include "Python.h"
 #include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
 #include "pystrhex.h"
 #include <stddef.h>
 
@@ -1580,7 +1578,7 @@ pylong_as_ld(PyObject *item)
     PyObject *tmp;
     long ld;
 
-    tmp = PyNumber_Index(item);
+    tmp = _PyNumber_Index(item);
     if (tmp == NULL)
         return -1;
 
@@ -1595,7 +1593,7 @@ pylong_as_lu(PyObject *item)
     PyObject *tmp;
     unsigned long lu;
 
-    tmp = PyNumber_Index(item);
+    tmp = _PyNumber_Index(item);
     if (tmp == NULL)
         return (unsigned long)-1;
 
@@ -1610,7 +1608,7 @@ pylong_as_lld(PyObject *item)
     PyObject *tmp;
     long long lld;
 
-    tmp = PyNumber_Index(item);
+    tmp = _PyNumber_Index(item);
     if (tmp == NULL)
         return -1;
 
@@ -1625,7 +1623,7 @@ pylong_as_llu(PyObject *item)
     PyObject *tmp;
     unsigned long long llu;
 
-    tmp = PyNumber_Index(item);
+    tmp = _PyNumber_Index(item);
     if (tmp == NULL)
         return (unsigned long long)-1;
 
@@ -1640,7 +1638,7 @@ pylong_as_zd(PyObject *item)
     PyObject *tmp;
     Py_ssize_t zd;
 
-    tmp = PyNumber_Index(item);
+    tmp = _PyNumber_Index(item);
     if (tmp == NULL)
         return -1;
 
@@ -1655,7 +1653,7 @@ pylong_as_zu(PyObject *item)
     PyObject *tmp;
     size_t zu;
 
-    tmp = PyNumber_Index(item);
+    tmp = _PyNumber_Index(item);
     if (tmp == NULL)
         return (size_t)-1;
 

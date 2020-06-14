@@ -5,7 +5,6 @@ Note: test_regrtest cannot be run twice in parallel.
 """
 
 import contextlib
-import faulthandler
 import glob
 import io
 import os.path
