@@ -700,11 +700,7 @@ PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, P
            table, we use it, otherwise we assume it really _is_
            a Win32 error code
         */
-        if (i == ENOENT && GetLastError() == ERROR_PATH_NOT_FOUND) {
-            message = PyUnicode_FromString("No such path or path exceeds "
-                                           "maximum allowed length");
-        }
-        else if (i > 0 && i < _sys_nerr) {
+        if (i > 0 && i < _sys_nerr) {
             message = PyUnicode_FromString(_sys_errlist[i]);
         }
         else {

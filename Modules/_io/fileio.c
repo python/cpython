@@ -370,6 +370,9 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         }
 
         errno = 0;
+#ifdef MS_WINDOWS
+        _doserrno = 0;
+#endif
         if (opener == Py_None) {
             do {
                 Py_BEGIN_ALLOW_THREADS
@@ -418,7 +421,12 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 
         fd_is_own = 1;
         if (self->fd < 0) {
+#ifdef MS_WINDOWS
+            PyErr_SetExcFromWindowsErrWithFilenameObject(
+                    PyExc_OSError, _doserrno, nameobj);
+#else
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
+#endif
             goto error;
         }
 
