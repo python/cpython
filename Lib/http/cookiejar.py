@@ -81,8 +81,7 @@ def _timegm(tt):
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-MONTHS_LOWER = []
-for month in MONTHS: MONTHS_LOWER.append(month.lower())
+MONTHS_LOWER = [month.lower() for month in MONTHS]
 
 def time2isoz(t=None):
     """Return a string representing time in seconds since epoch, t.
@@ -1752,23 +1751,16 @@ class CookieJar:
 
     def __len__(self):
         """Return number of contained cookies."""
-        i = 0
-        for cookie in self: i = i + 1
-        return i
+        return len([cookie for cookie in self])
 
     def __repr__(self):
-        r = []
-        for cookie in self: r.append(repr(cookie))
-        return "<%s[%s]>" % (self.__class__.__name__, ", ".join(r))
+        return "<%s[%s]>" % (self.__class__.__name__, ", ".join([repr(cookie) for cookie in self]))
 
     def __str__(self):
-        r = []
-        for cookie in self: r.append(str(cookie))
-        return "<%s[%s]>" % (self.__class__.__name__, ", ".join(r))
+        return "<%s[%s]>" % (self.__class__.__name__, ", ".join([str(cookie) for cookie in self]))
 
-
-# derives from OSError for backwards-compatibility with Python 2.4.0
-class LoadError(OSError): pass
+class LoadError(OSError):
+    pass
 
 class FileCookieJar(CookieJar):
     """CookieJar that can be loaded from and saved to a file."""
