@@ -11,17 +11,7 @@ def from_package(package):
     Return a Traversable object for the given package.
 
     """
-    spec = package.__spec__
-    return from_traversable_resources(spec) or fallback_resources(spec)
-
-
-def from_traversable_resources(spec):
-    """
-    If the spec.loader implements TraversableResources,
-    directly or implicitly, it will have a ``files()`` method.
-    """
-    with contextlib.suppress(AttributeError):
-        return spec.loader.files()
+    return fallback_resources(package.__spec__)
 
 
 def fallback_resources(spec):
