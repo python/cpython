@@ -185,8 +185,12 @@ loops that truncate the stream.
 
 .. classmethod:: chain.from_iterable(iterable)
 
-   Alternate constructor for :func:`chain`.  Gets chained inputs from a
-   single iterable argument that is evaluated lazily.  Roughly equivalent to::
+   Alternate constructor for :func:`chain`.  This is an optimization for the case
+   of an iterable containing a large number of iterables.  Instead of calling
+   ``chain(*iterables)`` and implicitly loading ``iterables`` as a huge tuple in
+   memory, call ``chain.from_iterable(iterables)`` to load the iterables lazily.
+
+   Roughly equivalent to::
 
       def from_iterable(iterables):
           # chain.from_iterable(['ABC', 'DEF']) --> A B C D E F
