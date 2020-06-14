@@ -166,6 +166,7 @@ class BaseSockTestsMixin:
         listener.listen(1)
 
         # make connection
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
         sock.setblocking(False)
         task = asyncio.create_task(
             self.loop.sock_connect(sock, listener.getsockname()))
@@ -176,10 +177,13 @@ class BaseSockTestsMixin:
         with server:
             await task
 
-            # fill the buffer
-            with self.assertRaises(BlockingIOError):
-                while True:
-                    sock.send(b' ' * 5)
+            # fill the buffer until sending 5 chars would block
+            size = 8192
+            while size >= 4:
+                with self.assertRaises(BlockingIOError):
+                    while True:
+                        sock.send(b' ' * size)
+                size = int(size / 2)
 
             # cancel a blocked sock_sendall
             task = asyncio.create_task(
@@ -187,19 +191,21 @@ class BaseSockTestsMixin:
             await asyncio.sleep(0)
             task.cancel()
 
-            # clear the buffer
-            async def recv_until():
-                data = b''
-                while not data:
-                    data = await self.loop.sock_recv(server, 1024)
-                    data = data.strip()
-                return data
-            task = asyncio.create_task(recv_until())
+            # receive everything that is not a space
+            async def recv_all():
+                rv = b''
+                while True:
+                    buf = await self.loop.sock_recv(server, 8192)
+                    if not buf:
+                        return rv
+                    rv += buf.strip()
+            task = asyncio.create_task(recv_all())
 
-            # immediately register another sock_sendall
+            # immediately make another sock_sendall call
             await self.loop.sock_sendall(sock, b'world')
+            sock.shutdown(socket.SHUT_WR)
             data = await task
-            # ProactorEventLoop could deliver hello
+            # ProactorEventLoop could deliver hello, so endswith is necessary
             self.assertTrue(data.endswith(b'world'))
 
     # After the first connect attempt before the listener is ready,
