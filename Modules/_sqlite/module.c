@@ -56,57 +56,82 @@ PyObject* _pysqlite_converters = NULL;
 int _pysqlite_enable_callback_tracebacks = 0;
 int pysqlite_BaseTypeAdapted = 0;
 
-static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
-        kwargs)
+/* Python seems to have no way of extracting a single keyword-arg at
+ * C-level, so this code is redundant with the one in connection_init in
+ * connection.c and must always be copied from there ... */
+/*[clinic input]
+_sqlite3.connect as pysqlite_connect
+
+    database: object(converter='PyUnicode_FSConverter')
+    timeout: double = 5.0
+    detect_types: int = 0
+    isolation_level: object = NULL
+    check_same_thread: int = 1
+    factory: object(c_default='(PyObject*)&pysqlite_ConnectionType') = ConnectionType
+    cached_statements: int = 100
+    uri: bool = False
+
+Opens a connection to the SQLite database file database.
+
+You can use ":memory:" to open a database connection to a database that resides
+in RAM instead of on disk.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
+                      int detect_types, PyObject *isolation_level,
+                      int check_same_thread, PyObject *factory,
+                      int cached_statements, int uri)
+/*[clinic end generated code: output=450ac9078b4868bb input=f9f43e3bd4497723]*/
 {
-    /* Python seems to have no way of extracting a single keyword-arg at
-     * C-level, so this code is redundant with the one in connection_init in
-     * connection.c and must always be copied from there ... */
-
-    static char *kwlist[] = {
-        "database", "timeout", "detect_types", "isolation_level",
-        "check_same_thread", "factory", "cached_statements", "uri",
-        NULL
-    };
-    PyObject* database;
-    int detect_types = 0;
-    PyObject* isolation_level;
-    PyObject* factory = NULL;
-    int check_same_thread = 1;
-    int cached_statements;
-    int uri = 0;
-    double timeout = 5.0;
-
+    PyObject* obj_timeout;
+    PyObject* obj_detect_types;
+    PyObject* obj_check_same_thread;
+    PyObject* obj_cached_statements;
+    PyObject* obj_uri;
     PyObject* result;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|diOiOip", kwlist,
-                                     &database, &timeout, &detect_types,
-                                     &isolation_level, &check_same_thread,
-                                     &factory, &cached_statements, &uri))
-    {
-        return NULL;
-    }
-
-    if (factory == NULL) {
-        factory = (PyObject*)&pysqlite_ConnectionType;
-    }
+    int decref_isolation_level = 0;
 
     if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
         return NULL;
     }
 
-    result = PyObject_Call(factory, args, kwargs);
+    if (!isolation_level) {
+        isolation_level = PyUnicode_FromString("");
+        if (!isolation_level) {
+            return NULL;
+        }
+        decref_isolation_level = 1;
+    }
+
+    obj_timeout = PyFloat_FromDouble(timeout);
+    obj_detect_types = PyLong_FromLong(detect_types);
+    obj_check_same_thread = PyLong_FromLong(check_same_thread);
+    obj_cached_statements = PyLong_FromLong(cached_statements);
+    obj_uri = PyBool_FromLong(uri);
+
+    result = PyObject_CallFunctionObjArgs(factory,
+                                          database,
+                                          obj_timeout,
+                                          obj_detect_types,
+                                          isolation_level,
+                                          obj_check_same_thread,
+                                          factory,
+                                          obj_cached_statements,
+                                          obj_uri,
+                                          NULL);
+    if (decref_isolation_level) {
+        Py_DECREF(isolation_level);
+    }
+    Py_XDECREF(database);
+    Py_XDECREF(obj_timeout);
+    Py_XDECREF(obj_detect_types);
+    Py_XDECREF(obj_check_same_thread);
+    Py_XDECREF(obj_cached_statements);
+    Py_XDECREF(obj_uri);
 
     return result;
 }
-
-PyDoc_STRVAR(module_connect_doc,
-"connect(database[, timeout, detect_types, isolation_level,\n\
-        check_same_thread, factory, cached_statements, uri])\n\
-\n\
-Opens a connection to the SQLite database file *database*. You can use\n\
-\":memory:\" to open a database connection to a database that resides in\n\
-RAM instead of on disk.");
 
 /*[clinic input]
 _sqlite3.complete_statement as pysqlite_complete_statement
@@ -276,10 +301,9 @@ static void converters_init(PyObject* dict)
 }
 
 static PyMethodDef module_methods[] = {
-    {"connect",  (PyCFunction)(void(*)(void))module_connect,
-     METH_VARARGS | METH_KEYWORDS, module_connect_doc},
     PYSQLITE_ADAPT_METHODDEF
     PYSQLITE_COMPLETE_STATEMENT_METHODDEF
+    PYSQLITE_CONNECT_METHODDEF
     PYSQLITE_ENABLE_CALLBACK_TRACE_METHODDEF
     PYSQLITE_ENABLE_SHARED_CACHE_METHODDEF
     PYSQLITE_REGISTER_ADAPTER_METHODDEF

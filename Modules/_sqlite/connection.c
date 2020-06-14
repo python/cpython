@@ -58,32 +58,29 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 
 
-int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
+/*[clinic input]
+_sqlite3.Connection.__init__ as pysqlite_connection_init
+
+    database as database_obj: object(converter='PyUnicode_FSConverter')
+    timeout: double = 5.0
+    detect_types: int = 0
+    isolation_level: object = NULL
+    check_same_thread: int = 1
+    factory: object(c_default='(PyObject*)&pysqlite_ConnectionType') = ConnectionType
+    cached_statements: int = 100
+    uri: bool = False
+[clinic start generated code]*/
+
+static int
+pysqlite_connection_init_impl(pysqlite_Connection *self,
+                              PyObject *database_obj, double timeout,
+                              int detect_types, PyObject *isolation_level,
+                              int check_same_thread, PyObject *factory,
+                              int cached_statements, int uri)
+/*[clinic end generated code: output=dc19df1c0e2b7b77 input=f7f8a772a2df3427]*/
 {
-    static char *kwlist[] = {
-        "database", "timeout", "detect_types", "isolation_level",
-        "check_same_thread", "factory", "cached_statements", "uri",
-        NULL
-    };
-
     const char* database;
-    PyObject* database_obj;
-    int detect_types = 0;
-    PyObject* isolation_level = NULL;
-    PyObject* factory = NULL;
-    int check_same_thread = 1;
-    int cached_statements = 100;
-    int uri = 0;
-    double timeout = 5.0;
     int rc;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|diOiOip", kwlist,
-                                     PyUnicode_FSConverter, &database_obj, &timeout, &detect_types,
-                                     &isolation_level, &check_same_thread,
-                                     &factory, &cached_statements, &uri))
-    {
-        return -1;
-    }
 
     database = PyBytes_AsString(database_obj);
 
