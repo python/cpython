@@ -831,7 +831,7 @@ def findsource(object):
         lines = linecache.getlines(file, module.__dict__)
     else:
         lines = linecache.getlines(file)
-    if not lines and not hasattr(module, '__file__'):
+    if not lines:
         raise OSError('could not get source code')
 
     if ismodule(object):
@@ -992,9 +992,6 @@ def getsourcelines(object):
     raised if the source code cannot be retrieved."""
     object = unwrap(object)
     lines, lnum = findsource(object)
-
-    if not lines:
-        lines = ['']
 
     if istraceback(object):
         object = object.tb_frame
