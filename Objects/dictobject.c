@@ -4123,8 +4123,7 @@ _PyDictView_New(PyObject *dict, PyTypeObject *type)
 }
 
 static PyObject *
-dictview_mapping(PyObject *view)
-{
+dictview_mapping(PyObject *view, void *Py_UNUSED(ignored)) {
     assert(view != NULL);
     assert(PyDictKeys_Check(view)
            || PyDictValues_Check(view)
@@ -4134,7 +4133,7 @@ dictview_mapping(PyObject *view)
 }
 
 static PyGetSetDef dictview_getset[] = {
-    {"mapping", (getter)dictview_mapping, (setter)NULL,
+    {"mapping", dictview_mapping, (setter)NULL,
      "dictionary that this view refers to", NULL},
     {0}
 };
