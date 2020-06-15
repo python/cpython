@@ -98,9 +98,6 @@ dbm_length(dbmobject *dp)
     PyTypeObject *tp = Py_TYPE(dp);
     _dbm_state *state =  PyType_GetModuleState(tp);
     assert(state != NULL);
-    if (state == NULL) {
-        return -1;
-    }
     if (dp->di_dbm == NULL) {
              PyErr_SetString(state->dbm_error, "DBM object has already been closed");
              return -1;
@@ -125,11 +122,10 @@ dbm_subscript(dbmobject *dp, PyObject *key)
     Py_ssize_t tmp_size;
     PyTypeObject *tp = Py_TYPE(dp);
     _dbm_state *state =  PyType_GetModuleState(tp);
-    if (state == NULL) {
+    assert(state != NULL);
+    if (!PyArg_Parse(key, "s#", &krec.dptr, &tmp_size)) {
         return NULL;
     }
-    if (!PyArg_Parse(key, "s#", &krec.dptr, &tmp_size) )
-        return NULL;
 
     krec.dsize = tmp_size;
     check_dbmobject_open(dp, state->dbm_error);
@@ -159,9 +155,7 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
     }
     PyTypeObject *tp = Py_TYPE(dp);
     _dbm_state *state =  PyType_GetModuleState(tp);
-    if (state == NULL) {
-        return -1;
-    }
+    assert(state != NULL);
     krec.dsize = tmp_size;
     if (dp->di_dbm == NULL) {
              PyErr_SetString(state->dbm_error, "DBM object has already been closed");
@@ -237,9 +231,7 @@ _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls)
     int err;
 
     _dbm_state *state = PyType_GetModuleState(cls);
-    if (state == NULL) {
-        return NULL;
-    }
+    assert(state != NULL);
     check_dbmobject_open(self, state->dbm_error);
     v = PyList_New(0);
     if (v == NULL) {
@@ -271,9 +263,7 @@ dbm_contains(PyObject *self, PyObject *arg)
 
     PyTypeObject *tp = Py_TYPE(dp);
     _dbm_state *state = PyType_GetModuleState(tp);
-    if (state == NULL) {
-        return -1;
-    }
+    assert(state != NULL);
     if ((dp)->di_dbm == NULL) {
         PyErr_SetString(state->dbm_error,
                         "DBM object has already been closed");
@@ -316,15 +306,14 @@ _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
 {
     datum dbm_key, val;
     _dbm_state *state =  PyType_GetModuleState(cls);
-    if (state == NULL) {
-        return NULL;
-    }
+    assert(state != NULL);
     dbm_key.dptr = (char *)key;
     dbm_key.dsize = key_length;
     check_dbmobject_open(self, state->dbm_error);
     val = dbm_fetch(self->di_dbm, dbm_key);
-    if (val.dptr != NULL)
+    if (val.dptr != NULL) {
         return PyBytes_FromStringAndSize(val.dptr, val.dsize);
+    }
 
     Py_INCREF(default_value);
     return default_value;
@@ -351,15 +340,14 @@ _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
     datum dbm_key, val;
     Py_ssize_t tmp_size;
     _dbm_state *state =  PyType_GetModuleState(cls);
-    if (state == NULL) {
-        return NULL;
-    }
+    assert(state != NULL);
     dbm_key.dptr = (char *)key;
     dbm_key.dsize = key_length;
     check_dbmobject_open(self, state->dbm_error);
     val = dbm_fetch(self->di_dbm, dbm_key);
-    if (val.dptr != NULL)
+    if (val.dptr != NULL) {
         return PyBytes_FromStringAndSize(val.dptr, val.dsize);
+    }
     if (default_value == NULL) {
         default_value = PyBytes_FromStringAndSize(NULL, 0);
         if (default_value == NULL) {
@@ -461,19 +449,23 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
 {
     int iflags;
     _dbm_state *state =  get_dbm_state(module);
-    if (state == NULL) {
-        return NULL;
-    }
-    if ( strcmp(flags, "r") == 0 )
+    assert(state != NULL);
+    if (strcmp(flags, "r") == 0) {
         iflags = O_RDONLY;
-    else if ( strcmp(flags, "w") == 0 )
+    }
+    else if (strcmp(flags, "w") == 0) {
         iflags = O_RDWR;
-    else if ( strcmp(flags, "rw") == 0 ) /* B/W compat */
+    }
+    else if (strcmp(flags, "rw") == 0) {
+        /* B/W compat */
         iflags = O_RDWR|O_CREAT;
-    else if ( strcmp(flags, "c") == 0 )
+    }
+    else if (strcmp(flags, "c") == 0) {
         iflags = O_RDWR|O_CREAT;
-    else if ( strcmp(flags, "n") == 0 )
+    }
+    else if (strcmp(flags, "n") == 0) {
         iflags = O_RDWR|O_CREAT|O_TRUNC;
+    }
     else {
         PyErr_SetString(state->dbm_error,
                         "arg 2 to open should be 'r', 'w', 'c', or 'n'");
