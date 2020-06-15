@@ -97,8 +97,7 @@ dbm_dealloc(dbmobject *dp)
 static Py_ssize_t
 dbm_length(dbmobject *dp)
 {
-    PyTypeObject *tp = Py_TYPE(dp);
-    _dbm_state *state =  PyType_GetModuleState(tp);
+    _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
     if (dp->di_dbm == NULL) {
              PyErr_SetString(state->dbm_error, "DBM object has already been closed");
@@ -122,8 +121,7 @@ dbm_subscript(dbmobject *dp, PyObject *key)
 {
     datum drec, krec;
     Py_ssize_t tmp_size;
-    PyTypeObject *tp = Py_TYPE(dp);
-    _dbm_state *state =  PyType_GetModuleState(tp);
+    _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
     if (!PyArg_Parse(key, "s#", &krec.dptr, &tmp_size)) {
         return NULL;
@@ -155,8 +153,7 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
                         "dbm mappings have bytes or string keys only");
         return -1;
     }
-    PyTypeObject *tp = Py_TYPE(dp);
-    _dbm_state *state =  PyType_GetModuleState(tp);
+    _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
     krec.dsize = tmp_size;
     if (dp->di_dbm == NULL) {
@@ -263,8 +260,7 @@ dbm_contains(PyObject *self, PyObject *arg)
     datum key, val;
     Py_ssize_t size;
 
-    PyTypeObject *tp = Py_TYPE(dp);
-    _dbm_state *state = PyType_GetModuleState(tp);
+    _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
     if ((dp)->di_dbm == NULL) {
         PyErr_SetString(state->dbm_error,
@@ -307,7 +303,7 @@ _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
 /*[clinic end generated code: output=34851b5dc1c664dc input=66b993b8349fa8c1]*/
 {
     datum dbm_key, val;
-    _dbm_state *state =  PyType_GetModuleState(cls);
+    _dbm_state *state = PyType_GetModuleState(cls);
     assert(state != NULL);
     dbm_key.dptr = (char *)key;
     dbm_key.dsize = key_length;
@@ -341,7 +337,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
 {
     datum dbm_key, val;
     Py_ssize_t tmp_size;
-    _dbm_state *state =  PyType_GetModuleState(cls);
+    _dbm_state *state = PyType_GetModuleState(cls);
     assert(state != NULL);
     dbm_key.dptr = (char *)key;
     dbm_key.dsize = key_length;
