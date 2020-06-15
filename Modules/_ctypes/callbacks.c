@@ -84,7 +84,7 @@ PrintError(const char *msg, ...)
     va_list marker;
 
     va_start(marker, msg);
-    vsnprintf(buf, sizeof(buf), msg, marker);
+    PyOS_vsnprintf(buf, sizeof(buf), msg, marker);
     va_end(marker);
     if (f != NULL && f != Py_None)
         PyFile_WriteString(buf, f);
