@@ -48,7 +48,7 @@
 
 
 /* Always force the list to the expected size. */
-#define FIX_PREALLOC_SIZE(list) Py_SIZE(list) = count
+#define FIX_PREALLOC_SIZE(list) Py_SET_SIZE(list, count)
 
 Py_LOCAL_INLINE(PyObject *)
 STRINGLIB(split_whitespace)(PyObject* str_obj,

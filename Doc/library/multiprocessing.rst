@@ -102,7 +102,7 @@ to start a process.  These *start methods* are
     will not be inherited.  Starting a process using this method is
     rather slow compared to using *fork* or *forkserver*.
 
-    Available on Unix and Windows.  The default on Windows.
+    Available on Unix and Windows.  The default on Windows and macOS.
 
   *fork*
     The parent process uses :func:`os.fork` to fork the Python
@@ -124,6 +124,12 @@ to start a process.  These *start methods* are
     Available on Unix platforms which support passing file descriptors
     over Unix pipes.
 
+.. versionchanged:: 3.8
+
+   On macOS, the *spawn* start method is now the default.  The *fork* start
+   method should be considered unsafe as it can lead to crashes of the
+   subprocess. See :issue:`33725`.
+
 .. versionchanged:: 3.4
    *spawn* added on all unix platforms, and *forkserver* added for
    some unix platforms.
@@ -131,13 +137,17 @@ to start a process.  These *start methods* are
    handles on Windows.
 
 On Unix using the *spawn* or *forkserver* start methods will also
-start a *semaphore tracker* process which tracks the unlinked named
-semaphores created by processes of the program.  When all processes
-have exited the semaphore tracker unlinks any remaining semaphores.
+start a *resource tracker* process which tracks the unlinked named
+system resources (such as named semaphores or
+:class:`~multiprocessing.shared_memory.SharedMemory` objects) created
+by processes of the program.  When all processes
+have exited the resource tracker unlinks any remaining tracked object.
 Usually there should be none, but if a process was killed by a signal
-there may be some "leaked" semaphores.  (Unlinking the named semaphores
-is a serious matter since the system allows only a limited number, and
-they will not be automatically unlinked until the next reboot.)
+there may be some "leaked" resources.  (Neither leaked semaphores nor shared
+memory segments will be automatically unlinked until the next reboot. This is
+problematic for both objects because the system allows only a limited number of
+named semaphores, and shared memory segments occupy some space in the main
+memory.)
 
 To select a start method you use the :func:`set_start_method` in
 the ``if __name__ == '__main__'`` clause of the main module.  For
@@ -185,6 +195,13 @@ the *fork* context cannot be passed to processes started using the
 A library which wants to use a particular start method should probably
 use :func:`get_context` to avoid interfering with the choice of the
 library user.
+
+.. warning::
+
+   The ``'spawn'`` and ``'forkserver'`` start methods cannot currently
+   be used with "frozen" executables (i.e., binaries produced by
+   packages like **PyInstaller** and **cx_Freeze**) on Unix.
+   The ``'fork'`` start method does work.
 
 
 Exchanging objects between processes
@@ -422,7 +439,8 @@ process which created it.
       >>> def f(x):
       ...     return x*x
       ...
-      >>> p.map(f, [1,2,3])
+      >>> with p:
+      ...   p.map(f, [1,2,3])
       Process PoolWorker-1:
       Process PoolWorker-2:
       Process PoolWorker-3:
@@ -435,7 +453,7 @@ process which created it.
 
    (If you try this it will actually output three full tracebacks
    interleaved in a semi-random fashion, and then you may have to
-   stop the master process somehow.)
+   stop the parent process somehow.)
 
 
 Reference
@@ -621,18 +639,19 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    Example usage of some of the methods of :class:`Process`:
 
    .. doctest::
+      :options: +ELLIPSIS
 
        >>> import multiprocessing, time, signal
        >>> p = multiprocessing.Process(target=time.sleep, args=(1000,))
        >>> print(p, p.is_alive())
-       <Process(Process-1, initial)> False
+       <Process ... initial> False
        >>> p.start()
        >>> print(p, p.is_alive())
-       <Process(Process-1, started)> True
+       <Process ... started> True
        >>> p.terminate()
        >>> time.sleep(0.1)
        >>> print(p, p.is_alive())
-       <Process(Process-1, stopped[SIGTERM])> False
+       <Process ... stopped exitcode=-SIGTERM> False
        >>> p.exitcode == -signal.SIGTERM
        True
 
@@ -786,6 +805,10 @@ For an example of the usage of queues for interprocess communication see
       available, else raise the :exc:`queue.Full` exception (*timeout* is
       ignored in that case).
 
+      .. versionchanged:: 3.8
+         If the queue is closed, :exc:`ValueError` is raised instead of
+         :exc:`AssertionError`.
+
    .. method:: put_nowait(obj)
 
       Equivalent to ``put(obj, False)``.
@@ -799,6 +822,10 @@ For an example of the usage of queues for interprocess communication see
       exception if no item was available within that time.  Otherwise (block is
       ``False``), return an item if one is immediately available, else raise the
       :exc:`queue.Empty` exception (*timeout* is ignored in that case).
+
+      .. versionchanged:: 3.8
+         If the queue is closed, :exc:`ValueError` is raised instead of
+         :exc:`OSError`.
 
    .. method:: get_nowait()
 
@@ -850,6 +877,16 @@ For an example of the usage of queues for interprocess communication see
 .. class:: SimpleQueue()
 
    It is a simplified :class:`Queue` type, very close to a locked :class:`Pipe`.
+
+   .. method:: close()
+
+      Close the queue: release internal resources.
+
+      A queue must not be used anymore after it is closed. For example,
+      :meth:`get`, :meth:`put` and :meth:`empty` methods must no longer be
+      called.
+
+      .. versionadded:: 3.9
 
    .. method:: empty()
 
@@ -923,6 +960,14 @@ Miscellaneous
    Return the :class:`Process` object corresponding to the current process.
 
    An analogue of :func:`threading.current_thread`.
+
+.. function:: parent_process()
+
+   Return the :class:`Process` object corresponding to the parent process of
+   the :func:`current_process`. For the main process, ``parent_process`` will
+   be ``None``.
+
+   .. versionadded:: 3.8
 
 .. function:: freeze_support()
 
@@ -1638,7 +1683,7 @@ their parent process exits.  The manager classes are defined in the
       Connect a local manager object to a remote manager process::
 
       >>> from multiprocessing.managers import BaseManager
-      >>> m = BaseManager(address=('127.0.0.1', 5000), authkey=b'abc')
+      >>> m = BaseManager(address=('127.0.0.1', 50000), authkey=b'abc')
       >>> m.connect()
 
    .. method:: shutdown()
@@ -2093,6 +2138,16 @@ with the :class:`Pool` class.
    Note that the methods of the pool object should only be called by
    the process which created the pool.
 
+   .. warning::
+      :class:`multiprocessing.pool` objects have internal resources that need to be
+      properly managed (like any other resource) by using the pool as a context manager
+      or by calling :meth:`close` and :meth:`terminate` manually. Failure to do this
+      can lead to the process hanging on finalization.
+
+      Note that it is **not correct** to rely on the garbage collector to destroy the pool
+      as CPython does not assure that the finalizer of the pool will be called
+      (see :meth:`object.__del__` for more information).
+
    .. versionadded:: 3.2
       *maxtasksperchild*
 
@@ -2135,11 +2190,16 @@ with the :class:`Pool` class.
    .. method:: map(func, iterable[, chunksize])
 
       A parallel equivalent of the :func:`map` built-in function (it supports only
-      one *iterable* argument though).  It blocks until the result is ready.
+      one *iterable* argument though, for multiple iterables see :meth:`starmap`).
+      It blocks until the result is ready.
 
       This method chops the iterable into a number of chunks which it submits to
       the process pool as separate tasks.  The (approximate) size of these
       chunks can be specified by setting *chunksize* to a positive integer.
+
+      Note that it may cause high memory usage for very long iterables. Consider
+      using :meth:`imap` or :meth:`imap_unordered` with explicit *chunksize*
+      option for better efficiency.
 
    .. method:: map_async(func, iterable[, chunksize[, callback[, error_callback]]])
 
@@ -2159,7 +2219,7 @@ with the :class:`Pool` class.
 
    .. method:: imap(func, iterable[, chunksize])
 
-      A lazier version of :meth:`map`.
+      A lazier version of :meth:`.map`.
 
       The *chunksize* argument is the same as the one used by the :meth:`.map`
       method.  For very long iterables using a large value for *chunksize* can
@@ -2240,7 +2300,11 @@ with the :class:`Pool` class.
    .. method:: successful()
 
       Return whether the call completed without raising an exception.  Will
-      raise :exc:`AssertionError` if the result is not ready.
+      raise :exc:`ValueError` if the result is not ready.
+
+      .. versionchanged:: 3.7
+         If the result is not ready, :exc:`ValueError` is raised instead of
+         :exc:`AssertionError`.
 
 The following example demonstrates the use of a pool::
 

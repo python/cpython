@@ -785,6 +785,8 @@ _operator_length_hint_impl(PyObject *module, PyObject *obj,
     return PyObject_LengthHint(obj, default_value);
 }
 
+/* NOTE: Keep in sync with _hashopenssl.c implementation. */
+
 /*[clinic input]
 _operator._compare_digest = _operator.eq
 
@@ -937,6 +939,7 @@ typedef struct {
     PyObject_HEAD
     Py_ssize_t nitems;
     PyObject *item;
+    Py_ssize_t index; // -1 unless *item* is a single non-negative integer index
 } itemgetterobject;
 
 static PyTypeObject itemgetter_type;
@@ -948,6 +951,7 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     itemgetterobject *ig;
     PyObject *item;
     Py_ssize_t nitems;
+    Py_ssize_t index;
 
     if (!_PyArg_NoKeywords("itemgetter", kwds))
         return NULL;
@@ -967,6 +971,21 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_INCREF(item);
     ig->item = item;
     ig->nitems = nitems;
+    ig->index = -1;
+    if (PyLong_CheckExact(item)) {
+        index = PyLong_AsSsize_t(item);
+        if (index < 0) {
+            /* If we get here, then either the index conversion failed
+             * due to being out of range, or the index was a negative
+             * integer.  Either way, we clear any possible exception
+             * and fall back to the slow path, where ig->index is -1.
+             */
+            PyErr_Clear();
+        }
+        else {
+            ig->index = index;
+        }
+    }
 
     PyObject_GC_Track(ig);
     return (PyObject *)ig;
@@ -993,12 +1012,24 @@ itemgetter_call(itemgetterobject *ig, PyObject *args, PyObject *kw)
     PyObject *obj, *result;
     Py_ssize_t i, nitems=ig->nitems;
 
+    assert(PyTuple_CheckExact(args));
     if (!_PyArg_NoKeywords("itemgetter", kw))
         return NULL;
-    if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &obj))
+    if (!_PyArg_CheckPositional("itemgetter", PyTuple_GET_SIZE(args), 1, 1))
         return NULL;
-    if (nitems == 1)
+
+    obj = PyTuple_GET_ITEM(args, 0);
+    if (nitems == 1) {
+        if (ig->index >= 0
+            && PyTuple_CheckExact(obj)
+            && ig->index < PyTuple_GET_SIZE(obj))
+        {
+            result = PyTuple_GET_ITEM(obj, ig->index);
+            Py_INCREF(result);
+            return result;
+        }
         return PyObject_GetItem(obj, ig->item);
+    }
 
     assert(PyTuple_Check(ig->item));
     assert(PyTuple_GET_SIZE(ig->item) == nitems);
@@ -1069,10 +1100,10 @@ static PyTypeObject itemgetter_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)itemgetter_dealloc,     /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)itemgetter_repr,          /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1141,7 +1172,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     for (idx = 0; idx < nattrs; ++idx) {
         PyObject *item = PyTuple_GET_ITEM(args, idx);
         Py_ssize_t item_len;
-        void *data;
+        const void *data;
         unsigned int kind;
         int dot_count;
 
@@ -1285,8 +1316,9 @@ attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
 
     if (!_PyArg_NoKeywords("attrgetter", kw))
         return NULL;
-    if (!PyArg_UnpackTuple(args, "attrgetter", 1, 1, &obj))
+    if (!_PyArg_CheckPositional("attrgetter", PyTuple_GET_SIZE(args), 1, 1))
         return NULL;
+    obj = PyTuple_GET_ITEM(args, 0);
     if (ag->nattrs == 1) /* ag->attr is always a tuple */
         return dotted_getattr(obj, PyTuple_GET_ITEM(ag->attr, 0));
 
@@ -1413,10 +1445,10 @@ static PyTypeObject attrgetter_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)attrgetter_dealloc,     /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)attrgetter_repr,          /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1529,8 +1561,9 @@ methodcaller_call(methodcallerobject *mc, PyObject *args, PyObject *kw)
 
     if (!_PyArg_NoKeywords("methodcaller", kw))
         return NULL;
-    if (!PyArg_UnpackTuple(args, "methodcaller", 1, 1, &obj))
+    if (!_PyArg_CheckPositional("methodcaller", PyTuple_GET_SIZE(args), 1, 1))
         return NULL;
+    obj = PyTuple_GET_ITEM(args, 0);
     method = PyObject_GetAttr(obj, mc->name);
     if (method == NULL)
         return NULL;
@@ -1583,6 +1616,7 @@ methodcaller_repr(methodcallerobject *mc)
                 goto done;
             if (i >= numtotalargs) {
                 i = -1;
+                Py_DECREF(onerepr);
                 break;
             }
             PyTuple_SET_ITEM(argreprs, i, onerepr);
@@ -1650,7 +1684,7 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
 
         newargs[0] = (PyObject *)Py_TYPE(mc);
         newargs[1] = mc->name;
-        constructor = _PyObject_FastCallDict(partial, newargs, 2, mc->kwds);
+        constructor = PyObject_VectorcallDict(partial, newargs, 2, mc->kwds);
 
         Py_DECREF(partial);
         return Py_BuildValue("NO", constructor, mc->args);
@@ -1677,10 +1711,10 @@ static PyTypeObject methodcaller_type = {
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)methodcaller_dealloc, /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)methodcaller_repr,        /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1714,16 +1748,38 @@ static PyTypeObject methodcaller_type = {
 };
 
 
-/* Initialization function for the module (*must* be called PyInit__operator) */
+static int
+operator_exec(PyObject *module)
+{
+    PyTypeObject *types[] = {
+        &itemgetter_type,
+        &attrgetter_type,
+        &methodcaller_type
+    };
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
+        if (PyModule_AddType(module, types[i]) < 0) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+
+static struct PyModuleDef_Slot operator_slots[] = {
+    {Py_mod_exec, operator_exec},
+    {0, NULL}
+};
 
 
 static struct PyModuleDef operatormodule = {
     PyModuleDef_HEAD_INIT,
     "_operator",
     operator_doc,
-    -1,
+    0,
     operator_methods,
-    NULL,
+    operator_slots,
     NULL,
     NULL,
     NULL
@@ -1732,26 +1788,5 @@ static struct PyModuleDef operatormodule = {
 PyMODINIT_FUNC
 PyInit__operator(void)
 {
-    PyObject *m;
-
-    /* Create the module and add the functions */
-    m = PyModule_Create(&operatormodule);
-    if (m == NULL)
-        return NULL;
-
-    if (PyType_Ready(&itemgetter_type) < 0)
-        return NULL;
-    Py_INCREF(&itemgetter_type);
-    PyModule_AddObject(m, "itemgetter", (PyObject *)&itemgetter_type);
-
-    if (PyType_Ready(&attrgetter_type) < 0)
-        return NULL;
-    Py_INCREF(&attrgetter_type);
-    PyModule_AddObject(m, "attrgetter", (PyObject *)&attrgetter_type);
-
-    if (PyType_Ready(&methodcaller_type) < 0)
-        return NULL;
-    Py_INCREF(&methodcaller_type);
-    PyModule_AddObject(m, "methodcaller", (PyObject *)&methodcaller_type);
-    return m;
+    return PyModuleDef_Init(&operatormodule);
 }

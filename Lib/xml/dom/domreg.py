@@ -6,6 +6,8 @@ registerDOMImplementation should be imported from xml.dom."""
 # should be published by posting to xml-sig@python.org, and are
 # subsequently recorded in this file.
 
+import sys
+
 well_known_implementations = {
     'minidom':'xml.dom.minidom',
     '4DOM': 'xml.dom.DOMImplementation',
@@ -55,7 +57,7 @@ def getDOMImplementation(name=None, features=()):
         return mod.getDOMImplementation()
     elif name:
         return registered[name]()
-    elif "PYTHON_DOM" in os.environ:
+    elif not sys.flags.ignore_environment and "PYTHON_DOM" in os.environ:
         return getDOMImplementation(name = os.environ["PYTHON_DOM"])
 
     # User did not specify a name, try implementations in arbitrary

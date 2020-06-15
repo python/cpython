@@ -279,6 +279,9 @@ class FrameSummary:
         return "<FrameSummary file {filename}, line {lineno} in {name}>".format(
             filename=self.filename, lineno=self.lineno, name=self.name)
 
+    def __len__(self):
+        return 4
+
     @property
     def line(self):
         if self._line is None:
@@ -309,6 +312,8 @@ def walk_tb(tb):
         yield tb.tb_frame, tb.tb_lineno
         tb = tb.tb_next
 
+
+_RECURSIVE_CUTOFF = 3 # Also hardcoded in traceback.c.
 
 class StackSummary(list):
     """A stack of frames."""
@@ -398,18 +403,21 @@ class StackSummary(list):
         last_name = None
         count = 0
         for frame in self:
-            if (last_file is not None and last_file == frame.filename and
-                last_line is not None and last_line == frame.lineno and
-                last_name is not None and last_name == frame.name):
-                count += 1
-            else:
-                if count > 3:
-                    result.append(f'  [Previous line repeated {count-3} more times]\n')
+            if (last_file is None or last_file != frame.filename or
+                last_line is None or last_line != frame.lineno or
+                last_name is None or last_name != frame.name):
+                if count > _RECURSIVE_CUTOFF:
+                    count -= _RECURSIVE_CUTOFF
+                    result.append(
+                        f'  [Previous line repeated {count} more '
+                        f'time{"s" if count > 1 else ""}]\n'
+                    )
                 last_file = frame.filename
                 last_line = frame.lineno
                 last_name = frame.name
                 count = 0
-            if count >= 3:
+            count += 1
+            if count > _RECURSIVE_CUTOFF:
                 continue
             row = []
             row.append('  File "{}", line {}, in {}\n'.format(
@@ -420,8 +428,12 @@ class StackSummary(list):
                 for name, value in sorted(frame.locals.items()):
                     row.append('    {name} = {value}\n'.format(name=name, value=value))
             result.append(''.join(row))
-        if count > 3:
-            result.append(f'  [Previous line repeated {count-3} more times]\n')
+        if count > _RECURSIVE_CUTOFF:
+            count -= _RECURSIVE_CUTOFF
+            result.append(
+                f'  [Previous line repeated {count} more '
+                f'time{"s" if count > 1 else ""}]\n'
+            )
         return result
 
 
@@ -526,7 +538,9 @@ class TracebackException:
             self.__cause__._load_lines()
 
     def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+        if isinstance(other, TracebackException):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
 
     def __str__(self):
         return self._str
@@ -537,7 +551,7 @@ class TracebackException:
         The return value is a generator of strings, each ending in a newline.
 
         Normally, the generator emits a single string; however, for
-        SyntaxError exceptions, it emites several lines that (when
+        SyntaxError exceptions, it emits several lines that (when
         printed) display detailed information about where the syntax
         error occurred.
 
@@ -555,23 +569,30 @@ class TracebackException:
 
         if not issubclass(self.exc_type, SyntaxError):
             yield _format_final_exc_line(stype, self._str)
-            return
+        else:
+            yield from self._format_syntax_error(stype)
 
-        # It was a syntax error; show exactly where the problem was found.
+    def _format_syntax_error(self, stype):
+        """Format SyntaxError exceptions (internal helper)."""
+        # Show exactly where the problem was found.
         filename = self.filename or "<string>"
         lineno = str(self.lineno) or '?'
         yield '  File "{}", line {}\n'.format(filename, lineno)
 
-        badline = self.text
-        offset = self.offset
-        if badline is not None:
-            yield '    {}\n'.format(badline.strip())
-            if offset is not None:
-                caretspace = badline.rstrip('\n')
-                offset = min(len(caretspace), offset) - 1
-                caretspace = caretspace[:offset].lstrip()
+        text = self.text
+        if text is not None:
+            # text  = "   foo\n"
+            # rtext = "   foo"
+            # ltext =    "foo"
+            rtext = text.rstrip('\n')
+            ltext = rtext.lstrip(' \n\f')
+            spaces = len(rtext) - len(ltext)
+            yield '    {}\n'.format(ltext)
+            # Convert 1-based column offset to 0-based index into stripped text
+            caret = (self.offset or 0) - 1 - spaces
+            if caret >= 0:
                 # non-space whitespace (likes tabs) must be kept for alignment
-                caretspace = ((c.isspace() and c or ' ') for c in caretspace)
+                caretspace = ((c if c.isspace() else ' ') for c in ltext[:caret])
                 yield '    {}^\n'.format(''.join(caretspace))
         msg = self.msg or "<no detail available>"
         yield "{}: {}\n".format(stype, msg)

@@ -1,7 +1,7 @@
 """Interface to the compiler's internal symbol tables"""
 
 import _symtable
-from _symtable import (USE, DEF_GLOBAL, DEF_LOCAL, DEF_PARAM,
+from _symtable import (USE, DEF_GLOBAL, DEF_NONLOCAL, DEF_LOCAL, DEF_PARAM,
      DEF_IMPORT, DEF_BOUND, DEF_ANNOT, SCOPE_OFF, SCOPE_MASK, FREE,
      LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL)
 
@@ -82,10 +82,6 @@ class SymbolTable(object):
     def has_children(self):
         return bool(self._table.children)
 
-    def has_exec(self):
-        """Return true if the scope uses exec.  Deprecated method."""
-        return False
-
     def get_identifiers(self):
         return self._table.symbols.keys()
 
@@ -117,6 +113,7 @@ class Function(SymbolTable):
     __locals = None
     __frees = None
     __globals = None
+    __nonlocals = None
 
     def __idents_matching(self, test_func):
         return tuple(ident for ident in self.get_identifiers()
@@ -140,6 +137,11 @@ class Function(SymbolTable):
             test = lambda x:((x >> SCOPE_OFF) & SCOPE_MASK) in glob
             self.__globals = self.__idents_matching(test)
         return self.__globals
+
+    def get_nonlocals(self):
+        if self.__nonlocals is None:
+            self.__nonlocals = self.__idents_matching(lambda x:x & DEF_NONLOCAL)
+        return self.__nonlocals
 
     def get_frees(self):
         if self.__frees is None:
@@ -184,11 +186,14 @@ class Symbol(object):
     def is_global(self):
         return bool(self.__scope in (GLOBAL_IMPLICIT, GLOBAL_EXPLICIT))
 
+    def is_nonlocal(self):
+        return bool(self.__flags & DEF_NONLOCAL)
+
     def is_declared_global(self):
         return bool(self.__scope == GLOBAL_EXPLICIT)
 
     def is_local(self):
-        return bool(self.__flags & DEF_BOUND)
+        return bool(self.__scope in (LOCAL, CELL))
 
     def is_annotated(self):
         return bool(self.__flags & DEF_ANNOT)

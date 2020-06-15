@@ -2,10 +2,14 @@ import unittest
 from test import support
 import os
 import sys
+import sysconfig
 import subprocess
 
 
 SYMBOL_FILE              = support.findfile('symbol.py')
+GEN_SYMBOL_FILE          = os.path.join(os.path.dirname(__file__),
+                                        '..', '..', 'Tools', 'scripts',
+                                        'generate_symbol_py.py')
 GRAMMAR_FILE             = os.path.join(os.path.dirname(__file__),
                                         '..', '..', 'Include', 'graminit.h')
 TEST_PY_FILE             = 'symbol_test.py'
@@ -22,7 +26,7 @@ class TestSymbolGeneration(unittest.TestCase):
 
     def _generate_symbols(self, grammar_file, target_symbol_py_file):
         proc = subprocess.Popen([sys.executable,
-                                 SYMBOL_FILE,
+                                 GEN_SYMBOL_FILE,
                                  grammar_file,
                                  target_symbol_py_file], stderr=subprocess.PIPE)
         stderr = proc.communicate()[1]
@@ -35,8 +39,8 @@ class TestSymbolGeneration(unittest.TestCase):
             lines2 = fp.readlines()
         self.assertEqual(lines1, lines2)
 
-    @unittest.skipIf(not os.path.exists(GRAMMAR_FILE),
-                     'test only works from source build directory')
+    @unittest.skipUnless(sysconfig.is_python_build(),
+                         'test only works from source build directory')
     def test_real_grammar_and_symbol_file(self):
         output = support.TESTFN
         self.addCleanup(support.unlink, output)

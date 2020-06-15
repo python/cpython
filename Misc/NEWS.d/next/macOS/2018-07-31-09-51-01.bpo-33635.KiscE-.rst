@@ -1,5 +1,0 @@
-In macOS stat on some file descriptors (/dev/fd/3 f.e) will result in bad
-file descriptor OSError. Guard against this exception was added in is_dir,
-is_file and similar methods. DirEntry.is_dir can also throw this exception
-so _RecursiveWildcardSelector._iterate_directories was also extended with
-the same error ignoring pattern.

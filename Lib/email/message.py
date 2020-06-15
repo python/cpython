@@ -1041,7 +1041,16 @@ class MIMEPart(Message):
         maintype, subtype = self.get_content_type().split('/')
         if maintype != 'multipart' or subtype == 'alternative':
             return
-        parts = self.get_payload().copy()
+        payload = self.get_payload()
+        # Certain malformed messages can have content type set to `multipart/*`
+        # but still have single part body, in which case payload.copy() can
+        # fail with AttributeError.
+        try:
+            parts = payload.copy()
+        except AttributeError:
+            # payload is not a list, it is most probably a string.
+            return
+
         if maintype == 'multipart' and subtype == 'related':
             # For related, we treat everything but the root as an attachment.
             # The root may be indicated by 'start'; if there's no start or we

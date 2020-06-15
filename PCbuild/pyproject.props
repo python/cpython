@@ -1,6 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" TreatAsLocalProperty="Py_IntDir">
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" TreatAsLocalProperty="Py_IntDir">
+  <Import Project="python.props" Condition="$(__Python_Props_Imported) != 'true'" />
   <PropertyGroup Label="Globals">
+    <__PyProject_Props_Imported>true</__PyProject_Props_Imported>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <OutDir>$(BuildPath)</OutDir>
@@ -27,9 +29,9 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)PC;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)Include\internal;$(PySourcePath)PC;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PydPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      
+
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <StringPooling>true</StringPooling>
@@ -41,7 +43,8 @@
       <CompileAs>Default</CompileAs>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <EnableEnhancedInstructionSet Condition="'$(Platform)'=='Win32'">NoExtensions</EnableEnhancedInstructionSet>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">OnlyExplicitInline</InlineFunctionExpansion>
+      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">OnlyExplicitInline</InlineFunctionExpansion>
     </ClCompile>
     <ClCompile Condition="$(Configuration) == 'Debug'">
       <Optimization>Disabled</Optimization>
@@ -62,10 +65,13 @@
       <IgnoreSpecificDefaultLibraries>LIBC;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <TargetMachine>MachineX86</TargetMachine>
       <TargetMachine Condition="'$(Platform)' == 'x64'">MachineX64</TargetMachine>
+      <TargetMachine Condition="'$(Platform)'=='ARM'">MachineARM</TargetMachine>
+      <TargetMachine Condition="'$(Platform)'=='ARM64'">MachineARM64</TargetMachine>
       <ProfileGuidedDatabase Condition="$(SupportPGO)">$(OutDir)$(TargetName).pgd</ProfileGuidedDatabase>
       <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">PGInstrument</LinkTimeCodeGeneration>
       <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">PGUpdate</LinkTimeCodeGeneration>
+      <AdditionalDependencies>advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">true</LinkTimeCodeGeneration>
@@ -109,33 +115,48 @@
       <FileName Required="true" />
     </ParameterGroup>
     <Task>
-      <Code Type="Fragment" Language="cs">
+      <Using Namespace="System.Diagnostics"/>
+      <Using Namespace="System.IO"/>
+      <Using Namespace="System.Runtime.InteropServices"/>
+      <Using Namespace="System.Text"/>
+      <Code Type="Method" Language="cs">
 <![CDATA[
-string fullPath = System.IO.Path.GetFullPath(FileName);
-Log.LogMessage("Looking for " + fullPath, MessageImportance.Normal);
-foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses()) {
-    try {
-        Log.LogMessage("Found running process: " + p.MainModule.FileName, MessageImportance.Low);
-        if (fullPath.Equals(System.IO.Path.GetFullPath(p.MainModule.FileName), StringComparison.OrdinalIgnoreCase)) {
-            Log.LogMessage("Terminating " + p.MainModule.FileName, MessageImportance.High);
-            p.Kill();
+[DllImport("kernel32.dll", SetLastError=true, CharSet=CharSet.Unicode)]
+public static extern bool QueryFullProcessImageName([In]IntPtr hProcess, [In]int dwFlags,
+                                                    [Out]StringBuilder lpExeName, ref int lpdwSize);
+public override bool Execute() {
+    string fullPath = Path.GetFullPath(FileName);
+    Log.LogMessage("Looking for " + fullPath, MessageImportance.Normal);
+    foreach (Process p in Process.GetProcesses()) {
+        try {
+            int pathLength = 32768;
+            StringBuilder pathBuilder = new StringBuilder(pathLength);
+            if (QueryFullProcessImageName(p.Handle, 0, pathBuilder, ref pathLength)) {
+                string exeName = Path.GetFullPath(pathBuilder.ToString());
+                Log.LogMessage("Found running process: " + exeName, MessageImportance.Low);
+                if (fullPath.Equals(exeName, StringComparison.OrdinalIgnoreCase)) {
+                    Log.LogMessage("Terminating " + exeName, MessageImportance.High);
+                    p.Kill();
+                }
+            }
+        } catch {
         }
-    } catch {
     }
+    return true;
 }
 ]]>
       </Code>
     </Task>
   </UsingTask>
-  
+
   <Target Name="KillPython" BeforeTargets="PrepareForBuild" Condition="'$(KillPython)' == 'true'">
     <Message Text="Killing any running python$(PyDebugExt)$(PyTestExt).exe instances..." Importance="high" />
     <KillPython FileName="$(OutDir)python$(PyDebugExt)$(PyTestExt).exe" />
   </Target>
-  
+
   <!--
   A default target to handle msbuild pcbuild.proj /t:CleanAll.
-  
+
   Some externals projects don't respond to /t:Clean, so we invoke
   CleanAll on them when we really want to clean up.
   -->
@@ -169,12 +190,52 @@ foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot81)\bin\x86</SdkBinPath>
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot)\bin\x86</SdkBinPath>
     <SdkBinPath Condition="!Exists($(SdkBinPath))">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A@InstallationFolder)\Bin\</SdkBinPath>
-    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificate)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /q /a /n "$(SigningCertificate)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
+    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificate)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /a /n "$(SigningCertificate)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
+    <_SignCommand Condition="Exists($(SdkBinPath)) and '$(SigningCertificateSha1)' != '' and $(SupportSigning)">"$(SdkBinPath)\signtool.exe" sign /a /sha1 "$(SigningCertificateSha1)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
     <_MakeCatCommand Condition="Exists($(SdkBinPath))">"$(SdkBinPath)\makecat.exe"</_MakeCatCommand>
   </PropertyGroup>
-  
-  <Target Name="_SignBuild" AfterTargets="AfterBuild" Condition="'$(SigningCertificate)' != '' and $(SupportSigning)">
+
+  <Target Name="_SignBuild" AfterTargets="AfterBuild" Condition="'$(_SignCommand)' != '' and $(SupportSigning)">
     <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
     <Exec Command='$(_SignCommand) "$(TargetPath)" || $(_SignCommand) "$(TargetPath)" || $(_SignCommand) "$(TargetPath)"' ContinueOnError="false" />
+  </Target>
+
+
+  <Target Name="FindVCRedistDir">
+    <!-- Hard coded path for VS 2015 -->
+    <PropertyGroup Condition="$(PlatformToolset) == 'v140'">
+      <VCRedistDir>$(VCInstallDir)\redist\</VCRedistDir>
+    </PropertyGroup>
+
+    <!-- Search for version number in some broken Build Tools installs -->
+    <ItemGroup Condition="$(VCRedistDir) == '' and $(VCToolsRedistVersion) == ''">
+      <_RedistFiles Include="$(VCInstallDir)\Redist\MSVC\*\*.*" />
+    </ItemGroup>
+    <PropertyGroup Condition="$(VCRedistDir) == '' and $(VCToolsRedistVersion) == ''">
+      <_RedistDir>%(_RedistFiles.Directory)</_RedistDir>
+      <VCToolsRedistVersion>$([System.IO.Path]::GetFileName($(_RedistDir.Trim(`\`))))</VCToolsRedistVersion>
+    </PropertyGroup>
+
+    <!-- Use correct path for VS 2017 and later -->
+    <PropertyGroup Condition="$(VCRedistDir) == ''">
+      <VCRedistDir>$(VCInstallDir)\Redist\MSVC\$(VCToolsRedistVersion)\</VCRedistDir>
+    </PropertyGroup>
+
+    <PropertyGroup>
+      <VCRedistDir Condition="$(Platform) == 'Win32'">$(VCRedistDir)x86\</VCRedistDir>
+      <VCRedistDir Condition="$(Platform) != 'Win32'">$(VCRedistDir)$(Platform)\</VCRedistDir>
+    </PropertyGroup>
+
+    <Message Text="VC Redist Directory: $(VCRedistDir)" />
+    <Message Text="VC Redist Version: $(VCToolsRedistVersion)" />
+  </Target>
+
+  <Target Name="FindVCRuntime" Returns="VCRuntimeDLL" DependsOnTargets="FindVCRedistDir">
+    <ItemGroup Condition="$(VCInstallDir) != ''">
+      <VCRuntimeDLL Include="$(VCRedistDir)\Microsoft.VC*.CRT\vcruntime*.dll" />
+    </ItemGroup>
+
+    <Warning Text="vcruntime*.dll not found under $(VCRedistDir)." Condition="@(VCRuntimeDLL) == ''" />
+    <Message Text="VC Runtime DLL(s):%0A- @(VCRuntimeDLL,'%0A- ')" />
   </Target>
 </Project>

@@ -1,3 +1,4 @@
+#include "pycore_interp.h"    // _PyInterpreterState.pythread_stacksize
 
 /* Posix threads interface */
 
@@ -11,6 +12,18 @@
 #undef destructor
 #endif
 #include <signal.h>
+
+#if defined(__linux__)
+#   include <sys/syscall.h>     /* syscall(SYS_gettid) */
+#elif defined(__FreeBSD__)
+#   include <pthread_np.h>      /* pthread_getthreadid_np() */
+#elif defined(__OpenBSD__)
+#   include <unistd.h>          /* getthrid() */
+#elif defined(_AIX)
+#   include <sys/thread.h>      /* thread_self() */
+#elif defined(__NetBSD__)
+#   include <lwp.h>             /* _lwp_self() */
+#endif
 
 /* The POSIX spec requires that use of pthread_attr_setstacksize
    be conditional on _POSIX_THREAD_ATTR_STACKSIZE being defined. */
@@ -28,11 +41,26 @@
  */
 #if defined(__APPLE__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
 #undef  THREAD_STACK_SIZE
-#define THREAD_STACK_SIZE       0x500000
+/* Note: This matches the value of -Wl,-stack_size in configure.ac */
+#define THREAD_STACK_SIZE       0x1000000
 #endif
 #if defined(__FreeBSD__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
 #undef  THREAD_STACK_SIZE
 #define THREAD_STACK_SIZE       0x400000
+#endif
+#if defined(_AIX) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
+#undef  THREAD_STACK_SIZE
+#define THREAD_STACK_SIZE       0x200000
+#endif
+/* bpo-38852: test_threading.test_recursion_limit() checks that 1000 recursive
+   Python calls (default recursion limit) doesn't crash, but raise a regular
+   RecursionError exception. In debug mode, Python function calls allocates
+   more memory on the stack, so use a stack of 8 MiB. */
+#if defined(__ANDROID__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
+#   ifdef Py_DEBUG
+#   undef  THREAD_STACK_SIZE
+#   define THREAD_STACK_SIZE    0x800000
+#   endif
 #endif
 /* for safety, ensure a viable minimum stacksize */
 #define THREAD_STACK_MIN        0x8000  /* 32 KiB */
@@ -54,16 +82,6 @@
 #include <semaphore.h>
 #include <errno.h>
 #endif
-#endif
-
-#if !defined(pthread_attr_default)
-#  define pthread_attr_default ((pthread_attr_t *)NULL)
-#endif
-#if !defined(pthread_mutexattr_default)
-#  define pthread_mutexattr_default ((pthread_mutexattr_t *)NULL)
-#endif
-#if !defined(pthread_condattr_default)
-#  define pthread_condattr_default ((pthread_condattr_t *)NULL)
 #endif
 
 
@@ -90,17 +108,10 @@
 #endif
 
 
-/* We assume all modern POSIX systems have gettimeofday() */
-#ifdef GETTIMEOFDAY_NO_TZ
-#define GETTIMEOFDAY(ptv) gettimeofday(ptv)
-#else
-#define GETTIMEOFDAY(ptv) gettimeofday(ptv, (struct timezone *)NULL)
-#endif
-
 #define MICROSECONDS_TO_TIMESPEC(microseconds, ts) \
 do { \
     struct timeval tv; \
-    GETTIMEOFDAY(&tv); \
+    gettimeofday(&tv, NULL); \
     tv.tv_usec += microseconds % 1000000; \
     tv.tv_sec += microseconds / 1000000; \
     tv.tv_sec += tv.tv_usec / 1000000; \
@@ -108,6 +119,56 @@ do { \
     ts.tv_sec = tv.tv_sec; \
     ts.tv_nsec = tv.tv_usec * 1000; \
 } while(0)
+
+
+/*
+ * pthread_cond support
+ */
+
+#if defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+// monotonic is supported statically.  It doesn't mean it works on runtime.
+#define CONDATTR_MONOTONIC
+#endif
+
+// NULL when pthread_condattr_setclock(CLOCK_MONOTONIC) is not supported.
+static pthread_condattr_t *condattr_monotonic = NULL;
+
+static void
+init_condattr()
+{
+#ifdef CONDATTR_MONOTONIC
+    static pthread_condattr_t ca;
+    pthread_condattr_init(&ca);
+    if (pthread_condattr_setclock(&ca, CLOCK_MONOTONIC) == 0) {
+        condattr_monotonic = &ca;  // Use monotonic clock
+    }
+#endif
+}
+
+int
+_PyThread_cond_init(PyCOND_T *cond)
+{
+    return pthread_cond_init(cond, condattr_monotonic);
+}
+
+void
+_PyThread_cond_after(long long us, struct timespec *abs)
+{
+#ifdef CONDATTR_MONOTONIC
+    if (condattr_monotonic) {
+        clock_gettime(CLOCK_MONOTONIC, abs);
+        abs->tv_sec  += us / 1000000;
+        abs->tv_nsec += (us % 1000000) * 1000;
+        abs->tv_sec  += abs->tv_nsec / 1000000000;
+        abs->tv_nsec %= 1000000000;
+        return;
+    }
+#endif
+
+    struct timespec ts;
+    MICROSECONDS_TO_TIMESPEC(us, ts);
+    *abs = ts;
+}
 
 
 /* A pthread mutex isn't sufficient to model the Python lock type
@@ -146,12 +207,35 @@ PyThread__init_thread(void)
     extern void pthread_init(void);
     pthread_init();
 #endif
+    init_condattr();
 }
 
 /*
  * Thread support.
  */
 
+/* bpo-33015: pythread_callback struct and pythread_wrapper() cast
+   "void func(void *)" to "void* func(void *)": always return NULL.
+
+   PyThread_start_new_thread() uses "void func(void *)" type, whereas
+   pthread_create() requires a void* return value. */
+typedef struct {
+    void (*func) (void *);
+    void *arg;
+} pythread_callback;
+
+static void *
+pythread_wrapper(void *arg)
+{
+    /* copy func and func_arg and free the temporary structure */
+    pythread_callback *callback = arg;
+    void (*func)(void *) = callback->func;
+    void *func_arg = callback->arg;
+    PyMem_RawFree(arg);
+
+    func(func_arg);
+    return NULL;
+}
 
 unsigned long
 PyThread_start_new_thread(void (*func)(void *), void *arg)
@@ -174,7 +258,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         return PYTHREAD_INVALID_THREAD_ID;
 #endif
 #if defined(THREAD_STACK_SIZE)
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     size_t stacksize = tstate ? tstate->interp->pythread_stacksize : 0;
     tss = (stacksize != 0) ? stacksize : THREAD_STACK_SIZE;
     if (tss != 0) {
@@ -188,21 +272,31 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
 #endif
 
+    pythread_callback *callback = PyMem_RawMalloc(sizeof(pythread_callback));
+
+    if (callback == NULL) {
+      return PYTHREAD_INVALID_THREAD_ID;
+    }
+
+    callback->func = func;
+    callback->arg = arg;
+
     status = pthread_create(&th,
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
                              &attrs,
 #else
                              (pthread_attr_t*)NULL,
 #endif
-                             (void* (*)(void *))func,
-                             (void *)arg
-                             );
+                             pythread_wrapper, callback);
 
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
     pthread_attr_destroy(&attrs);
 #endif
-    if (status != 0)
+
+    if (status != 0) {
+        PyMem_RawFree(callback);
         return PYTHREAD_INVALID_THREAD_ID;
+    }
 
     pthread_detach(th);
 
@@ -229,7 +323,36 @@ PyThread_get_thread_ident(void)
     return (unsigned long) threadid;
 }
 
-void
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+unsigned long
+PyThread_get_thread_native_id(void)
+{
+    if (!initialized)
+        PyThread_init_thread();
+#ifdef __APPLE__
+    uint64_t native_id;
+    (void) pthread_threadid_np(NULL, &native_id);
+#elif defined(__linux__)
+    pid_t native_id;
+    native_id = syscall(SYS_gettid);
+#elif defined(__FreeBSD__)
+    int native_id;
+    native_id = pthread_getthreadid_np();
+#elif defined(__OpenBSD__)
+    pid_t native_id;
+    native_id = getthrid();
+#elif defined(_AIX)
+    tid_t native_id;
+    native_id = thread_self();
+#elif defined(__NetBSD__)
+    lwpid_t native_id;
+    native_id = _lwp_self();
+#endif
+    return (unsigned long) native_id;
+}
+#endif
+
+void _Py_NO_RETURN
 PyThread_exit_thread(void)
 {
     dprintf(("PyThread_exit_thread called\n"));
@@ -266,7 +389,7 @@ PyThread_allocate_lock(void)
         }
     }
 
-    dprintf(("PyThread_allocate_lock() -> %p\n", lock));
+    dprintf(("PyThread_allocate_lock() -> %p\n", (void *)lock));
     return (PyThread_type_lock)lock;
 }
 
@@ -425,13 +548,11 @@ PyThread_allocate_lock(void)
     if (!initialized)
         PyThread_init_thread();
 
-    lock = (pthread_lock *) PyMem_RawMalloc(sizeof(pthread_lock));
+    lock = (pthread_lock *) PyMem_RawCalloc(1, sizeof(pthread_lock));
     if (lock) {
-        memset((void *)lock, '\0', sizeof(pthread_lock));
         lock->locked = 0;
 
-        status = pthread_mutex_init(&lock->mut,
-                                    pthread_mutexattr_default);
+        status = pthread_mutex_init(&lock->mut, NULL);
         CHECK_STATUS_PTHREAD("pthread_mutex_init");
         /* Mark the pthread mutex underlying a Python mutex as
            pure happens-before.  We can't simply mark the
@@ -440,8 +561,7 @@ PyThread_allocate_lock(void)
            will cause errors. */
         _Py_ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX(&lock->mut);
 
-        status = pthread_cond_init(&lock->lock_released,
-                                   pthread_condattr_default);
+        status = _PyThread_cond_init(&lock->lock_released);
         CHECK_STATUS_PTHREAD("pthread_cond_init");
 
         if (error) {
@@ -450,7 +570,7 @@ PyThread_allocate_lock(void)
         }
     }
 
-    dprintf(("PyThread_allocate_lock() -> %p\n", lock));
+    dprintf(("PyThread_allocate_lock() -> %p\n", (void *)lock));
     return (PyThread_type_lock) lock;
 }
 
@@ -500,9 +620,10 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             success = PY_LOCK_ACQUIRED;
         }
         else if (microseconds != 0) {
-            struct timespec ts;
-            if (microseconds > 0)
-                MICROSECONDS_TO_TIMESPEC(microseconds, ts);
+            struct timespec abs;
+            if (microseconds > 0) {
+                _PyThread_cond_after(microseconds, &abs);
+            }
             /* continue trying until we get the lock */
 
             /* mut must be locked by me -- part of the condition
@@ -511,10 +632,13 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
                 if (microseconds > 0) {
                     status = pthread_cond_timedwait(
                         &thelock->lock_released,
-                        &thelock->mut, &ts);
+                        &thelock->mut, &abs);
+                    if (status == 1) {
+                        break;
+                    }
                     if (status == ETIMEDOUT)
                         break;
-                    CHECK_STATUS_PTHREAD("pthread_cond_timed_wait");
+                    CHECK_STATUS_PTHREAD("pthread_cond_timedwait");
                 }
                 else {
                     status = pthread_cond_wait(
@@ -571,6 +695,26 @@ PyThread_release_lock(PyThread_type_lock lock)
 #endif /* USE_SEMAPHORES */
 
 int
+_PyThread_at_fork_reinit(PyThread_type_lock *lock)
+{
+    PyThread_type_lock new_lock = PyThread_allocate_lock();
+    if (new_lock == NULL) {
+        return -1;
+    }
+
+    /* bpo-6721, bpo-40089: The old lock can be in an inconsistent state.
+       fork() can be called in the middle of an operation on the lock done by
+       another thread. So don't call PyThread_free_lock(*lock).
+
+       Leak memory on purpose. Don't release the memory either since the
+       address of a mutex is relevant. Putting two mutexes at the same address
+       can lead to problems. */
+
+    *lock = new_lock;
+    return 0;
+}
+
+int
 PyThread_acquire_lock(PyThread_type_lock lock, int waitflag)
 {
     return PyThread_acquire_lock_timed(lock, waitflag ? -1 : 0, /*intr_flag=*/0);
@@ -591,7 +735,7 @@ _pythread_pthread_set_stacksize(size_t size)
 
     /* set to default */
     if (size == 0) {
-        PyThreadState_GET()->interp->pythread_stacksize = 0;
+        _PyInterpreterState_GET()->pythread_stacksize = 0;
         return 0;
     }
 
@@ -608,7 +752,7 @@ _pythread_pthread_set_stacksize(size_t size)
             rc = pthread_attr_setstacksize(&attrs, size);
             pthread_attr_destroy(&attrs);
             if (rc == 0) {
-                PyThreadState_GET()->interp->pythread_stacksize = size;
+                _PyInterpreterState_GET()->pythread_stacksize = size;
                 return 0;
             }
         }

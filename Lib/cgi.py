@@ -200,7 +200,10 @@ def parse_multipart(fp, pdict, encoding="utf-8", errors="replace"):
     ctype = "multipart/form-data; boundary={}".format(boundary)
     headers = Message()
     headers.set_type(ctype)
-    headers['Content-Length'] = pdict['CONTENT-LENGTH']
+    try:
+        headers['Content-Length'] = pdict['CONTENT-LENGTH']
+    except KeyError:
+        pass
     fs = FieldStorage(fp, headers=headers, encoding=encoding, errors=errors,
         environ={'REQUEST_METHOD': 'POST'})
     return {k: fs.getlist(k) for k in fs}
@@ -311,7 +314,8 @@ class FieldStorage:
     """
     def __init__(self, fp=None, headers=None, outerboundary=b'',
                  environ=os.environ, keep_blank_values=0, strict_parsing=0,
-                 limit=None, encoding='utf-8', errors='replace'):
+                 limit=None, encoding='utf-8', errors='replace',
+                 max_num_fields=None):
         """Constructor.  Read multipart/* until last part.
 
         Arguments, all optional:
@@ -351,10 +355,14 @@ class FieldStorage:
             for the page sending the form (content-type : meta http-equiv or
             header)
 
+        max_num_fields: int. If set, then __init__ throws a ValueError
+            if there are more than n fields read by parse_qsl().
+
         """
         method = 'GET'
         self.keep_blank_values = keep_blank_values
         self.strict_parsing = strict_parsing
+        self.max_num_fields = max_num_fields
         if 'REQUEST_METHOD' in environ:
             method = environ['REQUEST_METHOD'].upper()
         self.qs_on_post = None
@@ -456,7 +464,7 @@ class FieldStorage:
             if maxlen and clen > maxlen:
                 raise ValueError('Maximum content length exceeded')
         self.length = clen
-        if self.limit is None and clen:
+        if self.limit is None and clen >= 0:
             self.limit = clen
 
         self.list = self.file = None
@@ -578,12 +586,11 @@ class FieldStorage:
         qs = qs.decode(self.encoding, self.errors)
         if self.qs_on_post:
             qs += '&' + self.qs_on_post
-        self.list = []
         query = urllib.parse.parse_qsl(
             qs, self.keep_blank_values, self.strict_parsing,
-            encoding=self.encoding, errors=self.errors)
-        for key, value in query:
-            self.list.append(MiniFieldStorage(key, value))
+            encoding=self.encoding, errors=self.errors,
+            max_num_fields=self.max_num_fields)
+        self.list = [MiniFieldStorage(key, value) for key, value in query]
         self.skip_lines()
 
     FieldStorageClass = None
@@ -597,9 +604,9 @@ class FieldStorage:
         if self.qs_on_post:
             query = urllib.parse.parse_qsl(
                 self.qs_on_post, self.keep_blank_values, self.strict_parsing,
-                encoding=self.encoding, errors=self.errors)
-            for key, value in query:
-                self.list.append(MiniFieldStorage(key, value))
+                encoding=self.encoding, errors=self.errors,
+                max_num_fields=self.max_num_fields)
+            self.list.extend(MiniFieldStorage(key, value) for key, value in query)
 
         klass = self.FieldStorageClass or self.__class__
         first_line = self.fp.readline() # bytes
@@ -613,6 +620,11 @@ class FieldStorage:
                 first_line):
             first_line = self.fp.readline()
             self.bytes_read += len(first_line)
+
+        # Propagate max_num_fields into the sub class appropriately
+        max_num_fields = self.max_num_fields
+        if max_num_fields is not None:
+            max_num_fields -= len(self.list)
 
         while True:
             parser = FeedParser()
@@ -633,9 +645,19 @@ class FieldStorage:
             if 'content-length' in headers:
                 del headers['content-length']
 
+            limit = None if self.limit is None \
+                else self.limit - self.bytes_read
             part = klass(self.fp, headers, ib, environ, keep_blank_values,
-                         strict_parsing,self.limit-self.bytes_read,
-                         self.encoding, self.errors)
+                         strict_parsing, limit,
+                         self.encoding, self.errors, max_num_fields)
+
+            if max_num_fields is not None:
+                max_num_fields -= 1
+                if part.list:
+                    max_num_fields -= len(part.list)
+                if max_num_fields < 0:
+                    raise ValueError('Max number of fields exceeded')
+
             self.bytes_read += part.bytes_read
             self.list.append(part)
             if part.done or self.bytes_read >= self.length > 0:
@@ -717,7 +739,8 @@ class FieldStorage:
         last_line_lfend = True
         _read = 0
         while 1:
-            if _read >= self.limit:
+
+            if self.limit is not None and 0 <= self.limit <= _read:
                 break
             line = self.fp.readline(1<<16) # bytes
             self.bytes_read += len(line)

@@ -56,7 +56,7 @@ def _combinations(*l):
 Whitespace = r'[ \f\t]*'
 Comment = r'#[^\r\n]*'
 Ignore = Whitespace + any(r'\\\r?\n' + Whitespace) + maybe(Comment)
-Name = r'[a-zA-Z_]\w*'
+Name = r'\w+'
 
 Binnumber = r'0[bB]_?[01]+(?:_[01]+)*'
 Hexnumber = r'0[xX]_?[\da-fA-F]+(?:_[\da-fA-F]+)*[lL]?'
@@ -93,7 +93,7 @@ Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"<>", r"!=",
                  r"~")
 
 Bracket = '[][(){}]'
-Special = group(r'\r?\n', r'[:;.,`@]')
+Special = group(r'\r?\n', r':=', r'[:;.,`@]')
 Funny = group(Operator, Bracket, Special)
 
 PlainToken = group(Number, Funny, String, Name)
@@ -107,8 +107,8 @@ ContStr = group(_litprefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
 PseudoExtras = group(r'\\\r?\n', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 
-tokenprog, pseudoprog, single3prog, double3prog = list(map(
-    re.compile, (Token, PseudoToken, Single3, Double3)))
+tokenprog, pseudoprog, single3prog, double3prog = map(
+    re.compile, (Token, PseudoToken, Single3, Double3))
 
 _strprefixes = (
     _combinations('r', 'R', 'f', 'F') |
@@ -321,7 +321,7 @@ def untokenize(iterable):
     Round-trip invariant for full input:
         Untokenized source will match input source exactly
 
-    Round-trip invariant for limited intput:
+    Round-trip invariant for limited input:
         # Output text will tokenize the back to the input
         t1 = [tok[:2] for tok in generate_tokens(f.readline)]
         newcode = untokenize(t1)
@@ -346,10 +346,9 @@ def generate_tokens(readline):
     column where the token begins in the source; a 2-tuple (erow, ecol) of
     ints specifying the row and column where the token ends in the source;
     and the line on which the token was found. The line passed is the
-    logical line; continuation lines are included.
+    physical line.
     """
     lnum = parenlev = continued = 0
-    namechars, numchars = string.ascii_letters + '_', '0123456789'
     contstr, needcont = '', 0
     contline = None
     indents = [0]
@@ -451,7 +450,7 @@ def generate_tokens(readline):
                 spos, epos, pos = (lnum, start), (lnum, end), end
                 token, initial = line[start:end], line[start]
 
-                if initial in numchars or \
+                if initial in string.digits or \
                    (initial == '.' and token != '.'):      # ordinary number
                     yield (NUMBER, token, spos, epos, line)
                 elif initial in '\r\n':
@@ -501,7 +500,7 @@ def generate_tokens(readline):
                             yield stashed
                             stashed = None
                         yield (STRING, token, spos, epos, line)
-                elif initial in namechars:                 # ordinary name
+                elif initial.isidentifier():               # ordinary name
                     if token in ('async', 'await'):
                         if async_def:
                             yield (ASYNC if token == 'async' else AWAIT,

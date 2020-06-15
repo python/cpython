@@ -11,7 +11,7 @@
 
 import re
 import io
-from os import path
+from os import getenv, path
 from time import asctime
 from pprint import pformat
 from docutils.io import StringOutput
@@ -22,10 +22,13 @@ from docutils import nodes, utils
 
 from sphinx import addnodes
 from sphinx.builders import Builder
+try:
+    from sphinx.errors import NoUri
+except ImportError:
+    from sphinx.environment import NoUri
 from sphinx.locale import translators
-from sphinx.util import status_iterator
+from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
-from sphinx.writers.html import HTMLTranslator
 from sphinx.writers.text import TextWriter, TextTranslator
 from sphinx.writers.latex import LaTeXTranslator
 from sphinx.domains.python import PyModulelevel, PyClassmember
@@ -44,37 +47,6 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['upperalpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
-
-# monkey-patch HTML and LaTeX translators to keep doctest blocks in the
-# doctest docs themselves
-orig_visit_literal_block = HTMLTranslator.visit_literal_block
-orig_depart_literal_block = LaTeXTranslator.depart_literal_block
-
-
-def new_visit_literal_block(self, node):
-    meta = self.builder.env.metadata[self.builder.current_docname]
-    old_trim_doctest_flags = self.highlighter.trim_doctest_flags
-    if 'keepdoctest' in meta:
-        self.highlighter.trim_doctest_flags = False
-    try:
-        orig_visit_literal_block(self, node)
-    finally:
-        self.highlighter.trim_doctest_flags = old_trim_doctest_flags
-
-
-def new_depart_literal_block(self, node):
-    meta = self.builder.env.metadata[self.curfilestack[-1]]
-    old_trim_doctest_flags = self.highlighter.trim_doctest_flags
-    if 'keepdoctest' in meta:
-        self.highlighter.trim_doctest_flags = False
-    try:
-        orig_depart_literal_block(self, node)
-    finally:
-        self.highlighter.trim_doctest_flags = old_trim_doctest_flags
-
-
-HTMLTranslator.visit_literal_block = new_visit_literal_block
-LaTeXTranslator.depart_literal_block = new_depart_literal_block
 
 
 # Support for marking up and linking to bugs.python.org issues
@@ -131,6 +103,129 @@ class ImplementationDetail(Directive):
         return [pnode]
 
 
+# Support for documenting platform availability
+
+class Availability(Directive):
+
+    has_content = False
+    required_arguments = 1
+    optional_arguments = 0
+    final_argument_whitespace = True
+
+    def run(self):
+        availability_ref = ':ref:`Availability <availability>`: '
+        pnode = nodes.paragraph(availability_ref + self.arguments[0],
+                                classes=["availability"],)
+        n, m = self.state.inline_text(availability_ref, self.lineno)
+        pnode.extend(n + m)
+        n, m = self.state.inline_text(self.arguments[0], self.lineno)
+        pnode.extend(n + m)
+        return [pnode]
+
+
+# Support for documenting audit event
+
+class AuditEvent(Directive):
+
+    has_content = True
+    required_arguments = 1
+    optional_arguments = 2
+    final_argument_whitespace = True
+
+    _label = [
+        "Raises an :ref:`auditing event <auditing>` {name} with no arguments.",
+        "Raises an :ref:`auditing event <auditing>` {name} with argument {args}.",
+        "Raises an :ref:`auditing event <auditing>` {name} with arguments {args}.",
+    ]
+
+    @property
+    def logger(self):
+        cls = type(self)
+        return logging.getLogger(cls.__module__ + "." + cls.__name__)
+
+    def run(self):
+        name = self.arguments[0]
+        if len(self.arguments) >= 2 and self.arguments[1]:
+            args = (a.strip() for a in self.arguments[1].strip("'\"").split(","))
+            args = [a for a in args if a]
+        else:
+            args = []
+
+        label = translators['sphinx'].gettext(self._label[min(2, len(args))])
+        text = label.format(name="``{}``".format(name),
+                            args=", ".join("``{}``".format(a) for a in args if a))
+
+        env = self.state.document.settings.env
+        if not hasattr(env, 'all_audit_events'):
+            env.all_audit_events = {}
+
+        new_info = {
+            'source': [],
+            'args': args
+        }
+        info = env.all_audit_events.setdefault(name, new_info)
+        if info is not new_info:
+            if not self._do_args_match(info['args'], new_info['args']):
+                self.logger.warn(
+                    "Mismatched arguments for audit-event {}: {!r} != {!r}"
+                    .format(name, info['args'], new_info['args'])
+                )
+
+        ids = []
+        try:
+            target = self.arguments[2].strip("\"'")
+        except (IndexError, TypeError):
+            target = None
+        if not target:
+            target = "audit_event_{}_{}".format(
+                re.sub(r'\W', '_', name),
+                len(info['source']),
+            )
+            ids.append(target)
+
+        info['source'].append((env.docname, target))
+
+        pnode = nodes.paragraph(text, classes=["audit-hook"], ids=ids)
+        if self.content:
+            self.state.nested_parse(self.content, self.content_offset, pnode)
+        else:
+            n, m = self.state.inline_text(text, self.lineno)
+            pnode.extend(n + m)
+
+        return [pnode]
+
+    # This list of sets are allowable synonyms for event argument names.
+    # If two names are in the same set, they are treated as equal for the
+    # purposes of warning. This won't help if number of arguments is
+    # different!
+    _SYNONYMS = [
+        {"file", "path", "fd"},
+    ]
+
+    def _do_args_match(self, args1, args2):
+        if args1 == args2:
+            return True
+        if len(args1) != len(args2):
+            return False
+        for a1, a2 in zip(args1, args2):
+            if a1 == a2:
+                continue
+            if any(a1 in s and a2 in s for s in self._SYNONYMS):
+                continue
+            return False
+        return True
+
+
+class audit_event_list(nodes.General, nodes.Element):
+    pass
+
+
+class AuditEventListDirective(Directive):
+
+    def run(self):
+        return [audit_event_list('')]
+
+
 # Support for documenting decorators
 
 class PyDecoratorMixin(object):
@@ -163,6 +258,13 @@ class PyCoroutineMixin(object):
         return ret
 
 
+class PyAwaitableMixin(object):
+    def handle_signature(self, sig, signode):
+        ret = super(PyAwaitableMixin, self).handle_signature(sig, signode)
+        signode.insert(0, addnodes.desc_annotation('awaitable ', 'awaitable '))
+        return ret
+
+
 class PyCoroutineFunction(PyCoroutineMixin, PyModulelevel):
     def run(self):
         self.name = 'py:function'
@@ -170,6 +272,18 @@ class PyCoroutineFunction(PyCoroutineMixin, PyModulelevel):
 
 
 class PyCoroutineMethod(PyCoroutineMixin, PyClassmember):
+    def run(self):
+        self.name = 'py:method'
+        return PyClassmember.run(self)
+
+
+class PyAwaitableFunction(PyAwaitableMixin, PyClassmember):
+    def run(self):
+        self.name = 'py:function'
+        return PyClassmember.run(self)
+
+
+class PyAwaitableMethod(PyAwaitableMixin, PyClassmember):
     def run(self):
         self.name = 'py:method'
         return PyClassmember.run(self)
@@ -197,7 +311,8 @@ class DeprecatedRemoved(Directive):
     final_argument_whitespace = True
     option_spec = {}
 
-    _label = 'Deprecated since version {deprecated}, will be removed in version {removed}'
+    _deprecated_label = 'Deprecated since version {deprecated}, will be removed in version {removed}'
+    _removed_label = 'Deprecated since version {deprecated}, removed in version {removed}'
 
     def run(self):
         node = addnodes.versionmodified()
@@ -205,7 +320,15 @@ class DeprecatedRemoved(Directive):
         node['type'] = 'deprecated-removed'
         version = (self.arguments[0], self.arguments[1])
         node['version'] = version
-        label = translators['sphinx'].gettext(self._label)
+        env = self.state.document.settings.env
+        current_version = tuple(int(e) for e in env.config.version.split('.'))
+        removed_version = tuple(int(e) for e in self.arguments[1].split('.'))
+        if current_version < removed_version:
+            label = self._deprecated_label
+        else:
+            label = self._removed_label
+
+        label = translators['sphinx'].gettext(label)
         text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
@@ -232,7 +355,7 @@ class DeprecatedRemoved(Directive):
                                    translatable=False)
             node.append(para)
         env = self.state.document.settings.env
-        env.note_versionchange('deprecated', version[0], node, self.lineno)
+        env.get_domain('changeset').note_changeset(node)
         return [node] + messages
 
 
@@ -253,7 +376,9 @@ class MiscNews(Directive):
         fname = self.arguments[0]
         source = self.state_machine.input_lines.source(
             self.lineno - self.state_machine.input_offset - 1)
-        source_dir = path.dirname(path.abspath(source))
+        source_dir = getenv('PY_MISC_NEWS_DIR')
+        if not source_dir:
+            source_dir = path.dirname(path.abspath(source))
         fpath = path.join(source_dir, fname)
         self.state.document.settings.record_dependencies.add(fpath)
         try:
@@ -314,7 +439,7 @@ class PydocTopicsBuilder(Builder):
                                      'building topics... ',
                                      length=len(pydoc_topic_labels)):
             if label not in self.env.domaindata['std']['labels']:
-                self.warn('label %r not in documentation' % label)
+                self.env.logger.warn('label %r not in documentation' % label)
                 continue
             docname, labelid, sectname = self.env.domaindata['std']['labels'][label]
             doctree = self.env.get_and_resolve_doctree(docname, self)
@@ -378,22 +503,90 @@ def parse_pdb_command(env, sig, signode):
     return fullname
 
 
+def process_audit_events(app, doctree, fromdocname):
+    for node in doctree.traverse(audit_event_list):
+        break
+    else:
+        return
+
+    env = app.builder.env
+
+    table = nodes.table(cols=3)
+    group = nodes.tgroup(
+        '',
+        nodes.colspec(colwidth=30),
+        nodes.colspec(colwidth=55),
+        nodes.colspec(colwidth=15),
+        cols=3,
+    )
+    head = nodes.thead()
+    body = nodes.tbody()
+
+    table += group
+    group += head
+    group += body
+
+    row = nodes.row()
+    row += nodes.entry('', nodes.paragraph('', nodes.Text('Audit event')))
+    row += nodes.entry('', nodes.paragraph('', nodes.Text('Arguments')))
+    row += nodes.entry('', nodes.paragraph('', nodes.Text('References')))
+    head += row
+
+    for name in sorted(getattr(env, "all_audit_events", ())):
+        audit_event = env.all_audit_events[name]
+
+        row = nodes.row()
+        node = nodes.paragraph('', nodes.Text(name))
+        row += nodes.entry('', node)
+
+        node = nodes.paragraph()
+        for i, a in enumerate(audit_event['args']):
+            if i:
+                node += nodes.Text(", ")
+            node += nodes.literal(a, nodes.Text(a))
+        row += nodes.entry('', node)
+
+        node = nodes.paragraph()
+        backlinks = enumerate(sorted(set(audit_event['source'])), start=1)
+        for i, (doc, label) in backlinks:
+            if isinstance(label, str):
+                ref = nodes.reference("", nodes.Text("[{}]".format(i)), internal=True)
+                try:
+                    ref['refuri'] = "{}#{}".format(
+                        app.builder.get_relative_uri(fromdocname, doc),
+                        label,
+                    )
+                except NoUri:
+                    continue
+                node += ref
+        row += nodes.entry('', node)
+
+        body += row
+
+    for node in doctree.traverse(audit_event_list):
+        node.replace_self(table)
+
+
 def setup(app):
     app.add_role('issue', issue_role)
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
+    app.add_directive('availability', Availability)
+    app.add_directive('audit-event', AuditEvent)
+    app.add_directive('audit-event-table', AuditEventListDirective)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
-    app.add_description_unit('opcode', 'opcode', '%s (opcode)',
-                             parse_opcode_signature)
-    app.add_description_unit('pdbcommand', 'pdbcmd', '%s (pdb command)',
-                             parse_pdb_command)
-    app.add_description_unit('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
+    app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
+    app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
+    app.add_object_type('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
     app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
     app.add_directive_to_domain('py', 'coroutinemethod', PyCoroutineMethod)
+    app.add_directive_to_domain('py', 'awaitablefunction', PyAwaitableFunction)
+    app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
+    app.connect('doctree-resolved', process_audit_events)
     return {'version': '1.0', 'parallel_read_safe': True}

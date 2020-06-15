@@ -188,7 +188,15 @@ class UnixCCompiler(CCompiler):
                         i = 1
                         while '=' in linker[i]:
                             i += 1
-                    linker[i] = self.compiler_cxx[i]
+
+                    if os.path.basename(linker[i]) == 'ld_so_aix':
+                        # AIX platforms prefix the compiler with the ld_so_aix
+                        # script, so we need to adjust our linker index
+                        offset = 1
+                    else:
+                        offset = 0
+
+                    linker[i+offset] = self.compiler_cxx[i]
 
                 if sys.platform == 'darwin':
                     linker = _osx_support.compiler_fixup(linker, ld_args)
@@ -280,7 +288,7 @@ class UnixCCompiler(CCompiler):
             # vs
             #   /usr/lib/libedit.dylib
             cflags = sysconfig.get_config_var('CFLAGS')
-            m = re.search(r'-isysroot\s+(\S+)', cflags)
+            m = re.search(r'-isysroot\s*(\S+)', cflags)
             if m is None:
                 sysroot = '/'
             else:

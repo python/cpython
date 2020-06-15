@@ -110,7 +110,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	rulesf="@rules.$$"
 	trap 'rm -f $rulesf' 0 1 2 3
 	echo "
-# Rules appended by makedepend
+# Rules appended by makesetup
 " >$rulesf
 	DEFS=
 	BUILT=
@@ -233,7 +233,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			case $doconfig in
 			no)	cc="$cc \$(CCSHARED) \$(PY_CFLAGS) \$(PY_CPPFLAGS)";;
 			*)
-				cc="$cc \$(PY_STDMODULE_CFLAGS)";;
+				cc="$cc \$(PY_BUILTIN_MODULE_CFLAGS)";;
 			esac
 			rule="$obj: $src; $cc $cpps -c $src -o $obj"
 			echo "$rule" >>$rulesf

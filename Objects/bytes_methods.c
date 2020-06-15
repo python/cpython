@@ -1,6 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "bytes_methods.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
+#include "pycore_bytes_methods.h"
 
 PyDoc_STRVAR_shared(_Py_isspace__doc__,
 "B.isspace() -> bool\n\
@@ -12,7 +13,7 @@ PyObject*
 _Py_bytes_isspace(const char *cptr, Py_ssize_t len)
 {
     const unsigned char *p
-        = (unsigned char *) cptr;
+        = (const unsigned char *) cptr;
     const unsigned char *e;
 
     /* Shortcut for single character strings */
@@ -42,7 +43,7 @@ PyObject*
 _Py_bytes_isalpha(const char *cptr, Py_ssize_t len)
 {
     const unsigned char *p
-        = (unsigned char *) cptr;
+        = (const unsigned char *) cptr;
     const unsigned char *e;
 
     /* Shortcut for single character strings */
@@ -72,7 +73,7 @@ PyObject*
 _Py_bytes_isalnum(const char *cptr, Py_ssize_t len)
 {
     const unsigned char *p
-        = (unsigned char *) cptr;
+        = (const unsigned char *) cptr;
     const unsigned char *e;
 
     /* Shortcut for single character strings */
@@ -123,7 +124,7 @@ _Py_bytes_isascii(const char *cptr, Py_ssize_t len)
             /* Help allocation */
             const char *_p = p;
             while (_p < aligned_end) {
-                unsigned long value = *(unsigned long *) _p;
+                unsigned long value = *(const unsigned long *) _p;
                 if (value & ASCII_CHAR_MASK) {
                     Py_RETURN_FALSE;
                 }
@@ -154,7 +155,7 @@ PyObject*
 _Py_bytes_isdigit(const char *cptr, Py_ssize_t len)
 {
     const unsigned char *p
-        = (unsigned char *) cptr;
+        = (const unsigned char *) cptr;
     const unsigned char *e;
 
     /* Shortcut for single character strings */
@@ -184,7 +185,7 @@ PyObject*
 _Py_bytes_islower(const char *cptr, Py_ssize_t len)
 {
     const unsigned char *p
-        = (unsigned char *) cptr;
+        = (const unsigned char *) cptr;
     const unsigned char *e;
     int cased;
 
@@ -218,7 +219,7 @@ PyObject*
 _Py_bytes_isupper(const char *cptr, Py_ssize_t len)
 {
     const unsigned char *p
-        = (unsigned char *) cptr;
+        = (const unsigned char *) cptr;
     const unsigned char *e;
     int cased;
 
@@ -254,7 +255,7 @@ PyObject*
 _Py_bytes_istitle(const char *cptr, Py_ssize_t len)
 {
     const unsigned char *p
-        = (unsigned char *) cptr;
+        = (const unsigned char *) cptr;
     const unsigned char *e;
     int cased, previous_is_cased;
 
@@ -361,23 +362,9 @@ and the rest lower-cased.");
 void
 _Py_bytes_capitalize(char *result, const char *s, Py_ssize_t len)
 {
-    Py_ssize_t i;
-
-    if (0 < len) {
-        int c = Py_CHARMASK(*s++);
-        if (Py_ISLOWER(c))
-            *result = Py_TOUPPER(c);
-        else
-            *result = c;
-        result++;
-    }
-    for (i = 1; i < len; i++) {
-        int c = Py_CHARMASK(*s++);
-        if (Py_ISUPPER(c))
-            *result = Py_TOLOWER(c);
-        else
-            *result = c;
-        result++;
+    if (len > 0) {
+        *result = Py_TOUPPER(*s);
+        _Py_bytes_lower(result + 1, s + 1, len - 1);
     }
 }
 
@@ -480,7 +467,7 @@ parse_args_finds_byte(const char *function_name, PyObject *args,
         return 1;
     }
 
-    if (!PyIndex_Check(tmp_subobj)) {
+    if (!_PyIndex_Check(tmp_subobj)) {
         PyErr_Format(PyExc_TypeError,
                      "argument should be integer or bytes-like object, "
                      "not '%.200s'",
@@ -757,7 +744,7 @@ tailmatch(const char *str, Py_ssize_t len, PyObject *substr,
 
     if (direction < 0) {
         /* startswith */
-        if (start + slen > len)
+        if (start > len - slen)
             goto notfound;
     } else {
         /* endswith */

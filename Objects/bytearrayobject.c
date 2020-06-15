@@ -2,10 +2,9 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
-#include "structmember.h"
-#include "bytes_methods.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_bytes_methods.h"
+#include "pycore_object.h"
 #include "bytesobject.h"
 #include "pystrhex.h"
 
@@ -15,17 +14,6 @@ class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=5535b77c37a119e0]*/
 
 char _PyByteArray_empty_string[] = "";
-
-void
-PyByteArray_Fini(void)
-{
-}
-
-int
-PyByteArray_Init(void)
-{
-    return 1;
-}
 
 /* end nullbytes support */
 
@@ -41,7 +29,6 @@ _getbytevalue(PyObject* arg, int *value)
     } else {
         PyObject *index = PyNumber_Index(arg);
         if (index == NULL) {
-            PyErr_Format(PyExc_TypeError, "an integer is required");
             *value = -1;
             return 0;
         }
@@ -100,8 +87,7 @@ _canresize(PyByteArrayObject *self)
 PyObject *
 PyByteArray_FromObject(PyObject *input)
 {
-    return PyObject_CallFunctionObjArgs((PyObject *)&PyByteArray_Type,
-                                        input, NULL);
+    return PyObject_CallOneArg((PyObject *)&PyByteArray_Type, input);
 }
 
 static PyObject *
@@ -160,7 +146,7 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
             memcpy(new->ob_bytes, bytes, size);
         new->ob_bytes[size] = '\0';  /* Trailing null byte */
     }
-    Py_SIZE(new) = size;
+    Py_SET_SIZE(new, size);
     new->ob_alloc = alloc;
     new->ob_start = new->ob_bytes;
     new->ob_exports = 0;
@@ -218,7 +204,7 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
         }
         else {
             /* Minor downsize; quick exit */
-            Py_SIZE(self) = size;
+            Py_SET_SIZE(self, size);
             PyByteArray_AS_STRING(self)[size] = '\0'; /* Trailing null */
             return 0;
         }
@@ -258,7 +244,7 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
     }
 
     obj->ob_bytes = obj->ob_start = sval;
-    Py_SIZE(self) = size;
+    Py_SET_SIZE(self, size);
     obj->ob_alloc = alloc;
     obj->ob_bytes[size] = '\0'; /* Trailing null byte */
 
@@ -393,8 +379,6 @@ bytearray_irepeat(PyByteArrayObject *self, Py_ssize_t count)
 static PyObject *
 bytearray_getitem(PyByteArrayObject *self, Py_ssize_t i)
 {
-    if (i < 0)
-        i += Py_SIZE(self);
     if (i < 0 || i >= Py_SIZE(self)) {
         PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return NULL;
@@ -405,7 +389,7 @@ bytearray_getitem(PyByteArrayObject *self, Py_ssize_t i)
 static PyObject *
 bytearray_subscript(PyByteArrayObject *self, PyObject *index)
 {
-    if (PyIndex_Check(index)) {
+    if (_PyIndex_Check(index)) {
         Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
 
         if (i == -1 && PyErr_Occurred())
@@ -421,7 +405,8 @@ bytearray_subscript(PyByteArrayObject *self, PyObject *index)
         return PyLong_FromLong((unsigned char)(PyByteArray_AS_STRING(self)[i]));
     }
     else if (PySlice_Check(index)) {
-        Py_ssize_t start, stop, step, slicelength, cur, i;
+        Py_ssize_t start, stop, step, slicelength, i;
+        size_t cur;
         if (PySlice_Unpack(index, &start, &stop, &step) < 0) {
             return NULL;
         }
@@ -511,7 +496,7 @@ bytearray_setslice_linear(PyByteArrayObject *self,
             }
             /* memmove() removed bytes, the bytearray object cannot be
                restored in its previous state. */
-            Py_SIZE(self) += growth;
+            Py_SET_SIZE(self, Py_SIZE(self) + growth);
             res = -1;
         }
         buf = PyByteArray_AS_STRING(self);
@@ -623,7 +608,7 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
     char *buf, *bytes;
     buf = PyByteArray_AS_STRING(self);
 
-    if (PyIndex_Check(index)) {
+    if (_PyIndex_Check(index)) {
         Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
 
         if (i == -1 && PyErr_Occurred())
@@ -784,7 +769,9 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     if (arg == NULL) {
         if (encoding != NULL || errors != NULL) {
             PyErr_SetString(PyExc_TypeError,
-                            "encoding or errors without sequence argument");
+                            encoding != NULL ?
+                            "encoding without a string argument" :
+                            "errors without a string argument");
             return -1;
         }
         return 0;
@@ -813,15 +800,17 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     /* If it's not unicode, there can't be encoding or errors */
     if (encoding != NULL || errors != NULL) {
         PyErr_SetString(PyExc_TypeError,
-                        "encoding or errors without a string argument");
+                        encoding != NULL ?
+                        "encoding without a string argument" :
+                        "errors without a string argument");
         return -1;
     }
 
     /* Is it an int? */
-    if (PyIndex_Check(arg)) {
+    if (_PyIndex_Check(arg)) {
         count = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
         if (count == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError))
+            if (!PyErr_ExceptionMatches(PyExc_TypeError))
                 return -1;
             PyErr_Clear();  /* fall through */
         }
@@ -861,8 +850,14 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
 
     /* Get the iterator */
     it = PyObject_GetIter(arg);
-    if (it == NULL)
+    if (it == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Format(PyExc_TypeError,
+                         "cannot convert '%.200s' object to bytearray",
+                         Py_TYPE(arg)->tp_name);
+        }
         return -1;
+    }
     iternext = *Py_TYPE(it)->tp_iternext;
 
     /* Run the iterator to exhaustion */
@@ -889,7 +884,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
 
         /* Append the byte */
         if (Py_SIZE(self) + 1 < self->ob_alloc) {
-            Py_SIZE(self)++;
+            Py_SET_SIZE(self, Py_SIZE(self) + 1);
             PyByteArray_AS_STRING(self)[Py_SIZE(self)] = '\0';
         }
         else if (PyByteArray_Resize((PyObject *)self, Py_SIZE(self)+1) < 0)
@@ -999,7 +994,7 @@ bytearray_repr(PyByteArrayObject *self)
 static PyObject *
 bytearray_str(PyObject *op)
 {
-    if (Py_BytesWarningFlag) {
+    if (_Py_GetConfig()->bytes_warning) {
         if (PyErr_WarnEx(PyExc_BytesWarning,
                          "str() on a bytearray instance", 1)) {
                 return NULL;
@@ -1024,7 +1019,7 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
     if (rc < 0)
         return NULL;
     if (rc) {
-        if (Py_BytesWarningFlag && (op == Py_EQ || op == Py_NE)) {
+        if (_Py_GetConfig()->bytes_warning && (op == Py_EQ || op == Py_NE)) {
             if (PyErr_WarnEx(PyExc_BytesWarning,
                             "Comparison between bytearray and string", 1))
                 return NULL;
@@ -1184,6 +1179,71 @@ static PyObject *
 bytearray_endswith(PyByteArrayObject *self, PyObject *args)
 {
     return _Py_bytes_endswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+}
+
+/*[clinic input]
+bytearray.removeprefix as bytearray_removeprefix
+
+    prefix: Py_buffer
+    /
+
+Return a bytearray with the given prefix string removed if present.
+
+If the bytearray starts with the prefix string, return
+bytearray[len(prefix):].  Otherwise, return a copy of the original
+bytearray.
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_removeprefix_impl(PyByteArrayObject *self, Py_buffer *prefix)
+/*[clinic end generated code: output=6cabc585e7f502e0 input=968aada38aedd262]*/
+{
+    const char *self_start = PyByteArray_AS_STRING(self);
+    Py_ssize_t self_len = PyByteArray_GET_SIZE(self);
+    const char *prefix_start = prefix->buf;
+    Py_ssize_t prefix_len = prefix->len;
+
+    if (self_len >= prefix_len
+        && memcmp(self_start, prefix_start, prefix_len) == 0)
+    {
+        return PyByteArray_FromStringAndSize(self_start + prefix_len,
+                                             self_len - prefix_len);
+    }
+
+    return PyByteArray_FromStringAndSize(self_start, self_len);
+}
+
+/*[clinic input]
+bytearray.removesuffix as bytearray_removesuffix
+
+    suffix: Py_buffer
+    /
+
+Return a bytearray with the given suffix string removed if present.
+
+If the bytearray ends with the suffix string and that suffix is not
+empty, return bytearray[:-len(suffix)].  Otherwise, return a copy of
+the original bytearray.
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_removesuffix_impl(PyByteArrayObject *self, Py_buffer *suffix)
+/*[clinic end generated code: output=2bc8cfb79de793d3 input=c1827e810b2f6b99]*/
+{
+    const char *self_start = PyByteArray_AS_STRING(self);
+    Py_ssize_t self_len = PyByteArray_GET_SIZE(self);
+    const char *suffix_start = suffix->buf;
+    Py_ssize_t suffix_len = suffix->len;
+
+    if (self_len >= suffix_len
+        && memcmp(self_start + self_len - suffix_len,
+                  suffix_start, suffix_len) == 0)
+    {
+        return PyByteArray_FromStringAndSize(self_start,
+                                             self_len - suffix_len);
+    }
+
+    return PyByteArray_FromStringAndSize(self_start, self_len);
 }
 
 
@@ -1627,8 +1687,14 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
     }
 
     it = PyObject_GetIter(iterable_of_ints);
-    if (it == NULL)
+    if (it == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Format(PyExc_TypeError,
+                         "can't extend bytearray with %.100s",
+                         Py_TYPE(iterable_of_ints)->tp_name);
+        }
         return NULL;
+    }
 
     /* Try to determine the length of the argument. 32 is arbitrary. */
     buf_size = PyObject_LengthHint(iterable_of_ints, 32);
@@ -1689,6 +1755,10 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
         return NULL;
     }
     Py_DECREF(bytearray_obj);
+
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -2006,24 +2076,41 @@ bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
 {
     PyObject *result = _PyBytes_FromHex(string, type == &PyByteArray_Type);
     if (type != &PyByteArray_Type && result != NULL) {
-        Py_SETREF(result, PyObject_CallFunctionObjArgs((PyObject *)type,
-                                                       result, NULL));
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 }
 
-PyDoc_STRVAR(hex__doc__,
-"B.hex() -> string\n\
-\n\
-Create a string of hexadecimal numbers from a bytearray object.\n\
-Example: bytearray([0xb9, 0x01, 0xef]).hex() -> 'b901ef'.");
+/*[clinic input]
+bytearray.hex
+
+    sep: object = NULL
+        An optional single character or byte to separate hex bytes.
+    bytes_per_sep: int = 1
+        How many bytes between separators.  Positive values count from the
+        right, negative values count from the left.
+
+Create a str of hexadecimal numbers from a bytearray object.
+
+Example:
+>>> value = bytearray([0xb9, 0x01, 0xef])
+>>> value.hex()
+'b901ef'
+>>> value.hex(':')
+'b9:01:ef'
+>>> value.hex(':', 2)
+'b9:01ef'
+>>> value.hex(':', -2)
+'b901:ef'
+[clinic start generated code]*/
 
 static PyObject *
-bytearray_hex(PyBytesObject *self, PyObject *Py_UNUSED(ignored))
+bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep, int bytes_per_sep)
+/*[clinic end generated code: output=29c4e5ef72c565a0 input=814c15830ac8c4b5]*/
 {
     char* argbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t arglen = PyByteArray_GET_SIZE(self);
-    return _Py_strhex(argbuf, arglen);
+    return _Py_strhex_with_sep(argbuf, arglen, sep, bytes_per_sep);
 }
 
 static PyObject *
@@ -2033,9 +2120,10 @@ _common_reduce(PyByteArrayObject *self, int proto)
     _Py_IDENTIFIER(__dict__);
     char *buf;
 
-    dict = _PyObject_GetAttrId((PyObject *)self, &PyId___dict__);
+    if (_PyObject_LookupAttrId((PyObject *)self, &PyId___dict__, &dict) < 0) {
+        return NULL;
+    }
     if (dict == NULL) {
-        PyErr_Clear();
         dict = Py_None;
         Py_INCREF(dict);
     }
@@ -2152,7 +2240,7 @@ bytearray_methods[] = {
     {"find", (PyCFunction)bytearray_find, METH_VARARGS,
      _Py_find__doc__},
     BYTEARRAY_FROMHEX_METHODDEF
-    {"hex", (PyCFunction)bytearray_hex, METH_NOARGS, hex__doc__},
+    BYTEARRAY_HEX_METHODDEF
     {"index", (PyCFunction)bytearray_index, METH_VARARGS, _Py_index__doc__},
     BYTEARRAY_INSERT_METHODDEF
     {"isalnum", stringlib_isalnum, METH_NOARGS,
@@ -2180,6 +2268,8 @@ bytearray_methods[] = {
     BYTEARRAY_POP_METHODDEF
     BYTEARRAY_REMOVE_METHODDEF
     BYTEARRAY_REPLACE_METHODDEF
+    BYTEARRAY_REMOVEPREFIX_METHODDEF
+    BYTEARRAY_REMOVESUFFIX_METHODDEF
     BYTEARRAY_REVERSE_METHODDEF
     {"rfind", (PyCFunction)bytearray_rfind, METH_VARARGS, _Py_rfind__doc__},
     {"rindex", (PyCFunction)bytearray_rindex, METH_VARARGS, _Py_rindex__doc__},
@@ -2239,10 +2329,10 @@ PyTypeObject PyByteArray_Type = {
     sizeof(PyByteArrayObject),
     0,
     (destructor)bytearray_dealloc,       /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)bytearray_repr,           /* tp_repr */
     &bytearray_as_number,               /* tp_as_number */
     &bytearray_as_sequence,             /* tp_as_sequence */
@@ -2342,11 +2432,12 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     if (it->it_seq != NULL) {
-        return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
                              it->it_seq, it->it_index);
     } else {
-        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
     }
 }
 
@@ -2385,10 +2476,10 @@ PyTypeObject PyByteArrayIter_Type = {
     0,                                 /* tp_itemsize */
     /* methods */
     (destructor)bytearrayiter_dealloc, /* tp_dealloc */
-    0,                                 /* tp_print */
+    0,                                 /* tp_vectorcall_offset */
     0,                                 /* tp_getattr */
     0,                                 /* tp_setattr */
-    0,                                 /* tp_reserved */
+    0,                                 /* tp_as_async */
     0,                                 /* tp_repr */
     0,                                 /* tp_as_number */
     0,                                 /* tp_as_sequence */

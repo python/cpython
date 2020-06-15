@@ -233,7 +233,7 @@ PyDoc_STRVAR(_curses_window_bkgd__doc__,
 "    Background attributes.");
 
 #define _CURSES_WINDOW_BKGD_METHODDEF    \
-    {"bkgd", (PyCFunction)_curses_window_bkgd, METH_FASTCALL, _curses_window_bkgd__doc__},
+    {"bkgd", (PyCFunction)(void(*)(void))_curses_window_bkgd, METH_FASTCALL, _curses_window_bkgd__doc__},
 
 static PyObject *
 _curses_window_bkgd_impl(PyCursesWindowObject *self, PyObject *ch, long attr);
@@ -245,10 +245,18 @@ _curses_window_bkgd(PyCursesWindowObject *self, PyObject *const *args, Py_ssize_
     PyObject *ch;
     long attr = A_NORMAL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|l:bkgd",
-        &ch, &attr)) {
+    if (!_PyArg_CheckPositional("bkgd", nargs, 1, 2)) {
         goto exit;
     }
+    ch = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    attr = PyLong_AsLong(args[1]);
+    if (attr == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _curses_window_bkgd_impl(self, ch, attr);
 
 exit:
@@ -273,7 +281,8 @@ _curses_window_attroff(PyCursesWindowObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     long attr;
 
-    if (!PyArg_Parse(arg, "l:attroff", &attr)) {
+    attr = PyLong_AsLong(arg);
+    if (attr == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_window_attroff_impl(self, attr);
@@ -300,7 +309,8 @@ _curses_window_attron(PyCursesWindowObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     long attr;
 
-    if (!PyArg_Parse(arg, "l:attron", &attr)) {
+    attr = PyLong_AsLong(arg);
+    if (attr == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_window_attron_impl(self, attr);
@@ -327,7 +337,8 @@ _curses_window_attrset(PyCursesWindowObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     long attr;
 
-    if (!PyArg_Parse(arg, "l:attrset", &attr)) {
+    attr = PyLong_AsLong(arg);
+    if (attr == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_window_attrset_impl(self, attr);
@@ -348,7 +359,7 @@ PyDoc_STRVAR(_curses_window_bkgdset__doc__,
 "    Background attributes.");
 
 #define _CURSES_WINDOW_BKGDSET_METHODDEF    \
-    {"bkgdset", (PyCFunction)_curses_window_bkgdset, METH_FASTCALL, _curses_window_bkgdset__doc__},
+    {"bkgdset", (PyCFunction)(void(*)(void))_curses_window_bkgdset, METH_FASTCALL, _curses_window_bkgdset__doc__},
 
 static PyObject *
 _curses_window_bkgdset_impl(PyCursesWindowObject *self, PyObject *ch,
@@ -361,10 +372,18 @@ _curses_window_bkgdset(PyCursesWindowObject *self, PyObject *const *args, Py_ssi
     PyObject *ch;
     long attr = A_NORMAL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|l:bkgdset",
-        &ch, &attr)) {
+    if (!_PyArg_CheckPositional("bkgdset", nargs, 1, 2)) {
         goto exit;
     }
+    ch = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    attr = PyLong_AsLong(args[1]);
+    if (attr == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _curses_window_bkgdset_impl(self, ch, attr);
 
 exit:
@@ -403,7 +422,7 @@ PyDoc_STRVAR(_curses_window_border__doc__,
 "used for that parameter.");
 
 #define _CURSES_WINDOW_BORDER_METHODDEF    \
-    {"border", (PyCFunction)_curses_window_border, METH_FASTCALL, _curses_window_border__doc__},
+    {"border", (PyCFunction)(void(*)(void))_curses_window_border, METH_FASTCALL, _curses_window_border__doc__},
 
 static PyObject *
 _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
@@ -424,11 +443,42 @@ _curses_window_border(PyCursesWindowObject *self, PyObject *const *args, Py_ssiz
     PyObject *bl = NULL;
     PyObject *br = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "border",
-        0, 8,
-        &ls, &rs, &ts, &bs, &tl, &tr, &bl, &br)) {
+    if (!_PyArg_CheckPositional("border", nargs, 0, 8)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    ls = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    rs = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    ts = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    bs = args[3];
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    tl = args[4];
+    if (nargs < 6) {
+        goto skip_optional;
+    }
+    tr = args[5];
+    if (nargs < 7) {
+        goto skip_optional;
+    }
+    bl = args[6];
+    if (nargs < 8) {
+        goto skip_optional;
+    }
+    br = args[7];
+skip_optional:
     return_value = _curses_window_border_impl(self, ls, rs, ts, bs, tl, tr, bl, br);
 
 exit:
@@ -592,7 +642,7 @@ PyDoc_STRVAR(_curses_window_echochar__doc__,
 "    Attributes for the character.");
 
 #define _CURSES_WINDOW_ECHOCHAR_METHODDEF    \
-    {"echochar", (PyCFunction)_curses_window_echochar, METH_FASTCALL, _curses_window_echochar__doc__},
+    {"echochar", (PyCFunction)(void(*)(void))_curses_window_echochar, METH_FASTCALL, _curses_window_echochar__doc__},
 
 static PyObject *
 _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
@@ -605,10 +655,18 @@ _curses_window_echochar(PyCursesWindowObject *self, PyObject *const *args, Py_ss
     PyObject *ch;
     long attr = A_NORMAL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O|l:echochar",
-        &ch, &attr)) {
+    if (!_PyArg_CheckPositional("echochar", nargs, 1, 2)) {
         goto exit;
     }
+    ch = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    attr = PyLong_AsLong(args[1]);
+    if (attr == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _curses_window_echochar_impl(self, ch, attr);
 
 exit:
@@ -629,7 +687,7 @@ PyDoc_STRVAR(_curses_window_enclose__doc__,
 "    X-coordinate.");
 
 #define _CURSES_WINDOW_ENCLOSE_METHODDEF    \
-    {"enclose", (PyCFunction)_curses_window_enclose, METH_FASTCALL, _curses_window_enclose__doc__},
+    {"enclose", (PyCFunction)(void(*)(void))_curses_window_enclose, METH_FASTCALL, _curses_window_enclose__doc__},
 
 static long
 _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x);
@@ -642,8 +700,15 @@ _curses_window_enclose(PyCursesWindowObject *self, PyObject *const *args, Py_ssi
     int x;
     long _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:enclose",
-        &y, &x)) {
+    if (!_PyArg_CheckPositional("enclose", nargs, 2, 2)) {
+        goto exit;
+    }
+    y = _PyLong_AsInt(args[0]);
+    if (y == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    x = _PyLong_AsInt(args[1]);
+    if (x == -1 && PyErr_Occurred()) {
         goto exit;
     }
     _return_value = _curses_window_enclose_impl(self, y, x);
@@ -1198,7 +1263,8 @@ _curses_window_is_linetouched(PyCursesWindowObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int line;
 
-    if (!PyArg_Parse(arg, "i:is_linetouched", &line)) {
+    line = _PyLong_AsInt(arg);
+    if (line == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_window_is_linetouched_impl(self, line);
@@ -1426,7 +1492,7 @@ PyDoc_STRVAR(_curses_window_redrawln__doc__,
 "They should be completely redrawn on the next refresh() call.");
 
 #define _CURSES_WINDOW_REDRAWLN_METHODDEF    \
-    {"redrawln", (PyCFunction)_curses_window_redrawln, METH_FASTCALL, _curses_window_redrawln__doc__},
+    {"redrawln", (PyCFunction)(void(*)(void))_curses_window_redrawln, METH_FASTCALL, _curses_window_redrawln__doc__},
 
 static PyObject *
 _curses_window_redrawln_impl(PyCursesWindowObject *self, int beg, int num);
@@ -1438,8 +1504,15 @@ _curses_window_redrawln(PyCursesWindowObject *self, PyObject *const *args, Py_ss
     int beg;
     int num;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:redrawln",
-        &beg, &num)) {
+    if (!_PyArg_CheckPositional("redrawln", nargs, 2, 2)) {
+        goto exit;
+    }
+    beg = _PyLong_AsInt(args[0]);
+    if (beg == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    num = _PyLong_AsInt(args[1]);
+    if (num == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_window_redrawln_impl(self, beg, num);
@@ -1517,7 +1590,7 @@ PyDoc_STRVAR(_curses_window_setscrreg__doc__,
 "All scrolling actions will take place in this region.");
 
 #define _CURSES_WINDOW_SETSCRREG_METHODDEF    \
-    {"setscrreg", (PyCFunction)_curses_window_setscrreg, METH_FASTCALL, _curses_window_setscrreg__doc__},
+    {"setscrreg", (PyCFunction)(void(*)(void))_curses_window_setscrreg, METH_FASTCALL, _curses_window_setscrreg__doc__},
 
 static PyObject *
 _curses_window_setscrreg_impl(PyCursesWindowObject *self, int top,
@@ -1530,8 +1603,15 @@ _curses_window_setscrreg(PyCursesWindowObject *self, PyObject *const *args, Py_s
     int top;
     int bottom;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:setscrreg",
-        &top, &bottom)) {
+    if (!_PyArg_CheckPositional("setscrreg", nargs, 2, 2)) {
+        goto exit;
+    }
+    top = _PyLong_AsInt(args[0]);
+    if (top == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    bottom = _PyLong_AsInt(args[1]);
+    if (bottom == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_window_setscrreg_impl(self, top, bottom);
@@ -1843,7 +1923,7 @@ PyDoc_STRVAR(_curses_cbreak__doc__,
 "Calling first raw() then cbreak() leaves the terminal in cbreak mode.");
 
 #define _CURSES_CBREAK_METHODDEF    \
-    {"cbreak", (PyCFunction)_curses_cbreak, METH_FASTCALL, _curses_cbreak__doc__},
+    {"cbreak", (PyCFunction)(void(*)(void))_curses_cbreak, METH_FASTCALL, _curses_cbreak__doc__},
 
 static PyObject *
 _curses_cbreak_impl(PyObject *module, int flag);
@@ -1854,10 +1934,17 @@ _curses_cbreak(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int flag = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:cbreak",
-        &flag)) {
+    if (!_PyArg_CheckPositional("cbreak", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    flag = _PyLong_AsInt(args[0]);
+    if (flag == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _curses_cbreak_impl(module, flag);
 
 exit:
@@ -1888,8 +1975,24 @@ _curses_color_content(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     short color_number;
 
-    if (!PyArg_Parse(arg, "h:color_content", &color_number)) {
-        goto exit;
+    {
+        long ival = PyLong_AsLong(arg);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            color_number = (short) ival;
+        }
     }
     return_value = _curses_color_content_impl(module, color_number);
 
@@ -1921,8 +2024,24 @@ _curses_color_pair(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     short color_number;
 
-    if (!PyArg_Parse(arg, "h:color_pair", &color_number)) {
-        goto exit;
+    {
+        long ival = PyLong_AsLong(arg);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            color_number = (short) ival;
+        }
     }
     return_value = _curses_color_pair_impl(module, color_number);
 
@@ -1956,7 +2075,8 @@ _curses_curs_set(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int visibility;
 
-    if (!PyArg_Parse(arg, "i:curs_set", &visibility)) {
+    visibility = _PyLong_AsInt(arg);
+    if (visibility == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_curs_set_impl(module, visibility);
@@ -2030,7 +2150,8 @@ _curses_delay_output(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int ms;
 
-    if (!PyArg_Parse(arg, "i:delay_output", &ms)) {
+    ms = _PyLong_AsInt(arg);
+    if (ms == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_delay_output_impl(module, ms);
@@ -2069,7 +2190,7 @@ PyDoc_STRVAR(_curses_echo__doc__,
 "In echo mode, each character input is echoed to the screen as it is entered.");
 
 #define _CURSES_ECHO_METHODDEF    \
-    {"echo", (PyCFunction)_curses_echo, METH_FASTCALL, _curses_echo__doc__},
+    {"echo", (PyCFunction)(void(*)(void))_curses_echo, METH_FASTCALL, _curses_echo__doc__},
 
 static PyObject *
 _curses_echo_impl(PyObject *module, int flag);
@@ -2080,10 +2201,17 @@ _curses_echo(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int flag = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:echo",
-        &flag)) {
+    if (!_PyArg_CheckPositional("echo", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    flag = _PyLong_AsInt(args[0]);
+    if (flag == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _curses_echo_impl(module, flag);
 
 exit:
@@ -2227,7 +2355,7 @@ PyDoc_STRVAR(_curses_ungetmouse__doc__,
 "The following getmouse() will return the given state data.");
 
 #define _CURSES_UNGETMOUSE_METHODDEF    \
-    {"ungetmouse", (PyCFunction)_curses_ungetmouse, METH_FASTCALL, _curses_ungetmouse__doc__},
+    {"ungetmouse", (PyCFunction)(void(*)(void))_curses_ungetmouse, METH_FASTCALL, _curses_ungetmouse__doc__},
 
 static PyObject *
 _curses_ungetmouse_impl(PyObject *module, short id, int x, int y, int z,
@@ -2243,10 +2371,45 @@ _curses_ungetmouse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int z;
     unsigned long bstate;
 
-    if (!_PyArg_ParseStack(args, nargs, "hiiik:ungetmouse",
-        &id, &x, &y, &z, &bstate)) {
+    if (!_PyArg_CheckPositional("ungetmouse", nargs, 5, 5)) {
         goto exit;
     }
+    {
+        long ival = PyLong_AsLong(args[0]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            id = (short) ival;
+        }
+    }
+    x = _PyLong_AsInt(args[1]);
+    if (x == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    y = _PyLong_AsInt(args[2]);
+    if (y == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    z = _PyLong_AsInt(args[3]);
+    if (z == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!PyLong_Check(args[4])) {
+        _PyArg_BadArgument("ungetmouse", "argument 5", "int", args[4]);
+        goto exit;
+    }
+    bstate = PyLong_AsUnsignedLongMask(args[4]);
     return_value = _curses_ungetmouse_impl(module, id, x, y, z, bstate);
 
 exit:
@@ -2290,8 +2453,24 @@ _curses_halfdelay(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     unsigned char tenths;
 
-    if (!PyArg_Parse(arg, "b:halfdelay", &tenths)) {
-        goto exit;
+    {
+        long ival = PyLong_AsLong(arg);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < 0) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "unsigned byte integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > UCHAR_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "unsigned byte integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            tenths = (unsigned char) ival;
+        }
     }
     return_value = _curses_halfdelay_impl(module, tenths);
 
@@ -2376,7 +2555,8 @@ _curses_has_key(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int key;
 
-    if (!PyArg_Parse(arg, "i:has_key", &key)) {
+    key = _PyLong_AsInt(arg);
+    if (key == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_has_key_impl(module, key);
@@ -2407,7 +2587,7 @@ PyDoc_STRVAR(_curses_init_color__doc__,
 "most terminals; it is active only if can_change_color() returns 1.");
 
 #define _CURSES_INIT_COLOR_METHODDEF    \
-    {"init_color", (PyCFunction)_curses_init_color, METH_FASTCALL, _curses_init_color__doc__},
+    {"init_color", (PyCFunction)(void(*)(void))_curses_init_color, METH_FASTCALL, _curses_init_color__doc__},
 
 static PyObject *
 _curses_init_color_impl(PyObject *module, short color_number, short r,
@@ -2422,9 +2602,84 @@ _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     short g;
     short b;
 
-    if (!_PyArg_ParseStack(args, nargs, "hhhh:init_color",
-        &color_number, &r, &g, &b)) {
+    if (!_PyArg_CheckPositional("init_color", nargs, 4, 4)) {
         goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(args[0]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            color_number = (short) ival;
+        }
+    }
+    {
+        long ival = PyLong_AsLong(args[1]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            r = (short) ival;
+        }
+    }
+    {
+        long ival = PyLong_AsLong(args[2]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            g = (short) ival;
+        }
+    }
+    {
+        long ival = PyLong_AsLong(args[3]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            b = (short) ival;
+        }
     }
     return_value = _curses_init_color_impl(module, color_number, r, g, b);
 
@@ -2449,7 +2704,7 @@ PyDoc_STRVAR(_curses_init_pair__doc__,
 "all occurrences of that color-pair are changed to the new definition.");
 
 #define _CURSES_INIT_PAIR_METHODDEF    \
-    {"init_pair", (PyCFunction)_curses_init_pair, METH_FASTCALL, _curses_init_pair__doc__},
+    {"init_pair", (PyCFunction)(void(*)(void))_curses_init_pair, METH_FASTCALL, _curses_init_pair__doc__},
 
 static PyObject *
 _curses_init_pair_impl(PyObject *module, short pair_number, short fg,
@@ -2463,9 +2718,65 @@ _curses_init_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     short fg;
     short bg;
 
-    if (!_PyArg_ParseStack(args, nargs, "hhh:init_pair",
-        &pair_number, &fg, &bg)) {
+    if (!_PyArg_CheckPositional("init_pair", nargs, 3, 3)) {
         goto exit;
+    }
+    {
+        long ival = PyLong_AsLong(args[0]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            pair_number = (short) ival;
+        }
+    }
+    {
+        long ival = PyLong_AsLong(args[1]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            fg = (short) ival;
+        }
+    }
+    {
+        long ival = PyLong_AsLong(args[2]);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            bg = (short) ival;
+        }
     }
     return_value = _curses_init_pair_impl(module, pair_number, fg, bg);
 
@@ -2507,7 +2818,7 @@ PyDoc_STRVAR(_curses_setupterm__doc__,
 "    If not supplied, the file descriptor for sys.stdout will be used.");
 
 #define _CURSES_SETUPTERM_METHODDEF    \
-    {"setupterm", (PyCFunction)_curses_setupterm, METH_FASTCALL|METH_KEYWORDS, _curses_setupterm__doc__},
+    {"setupterm", (PyCFunction)(void(*)(void))_curses_setupterm, METH_FASTCALL|METH_KEYWORDS, _curses_setupterm__doc__},
 
 static PyObject *
 _curses_setupterm_impl(PyObject *module, const char *term, int fd);
@@ -2517,19 +2828,180 @@ _curses_setupterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"term", "fd", NULL};
-    static _PyArg_Parser _parser = {"|zi:setupterm", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "setupterm", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *term = NULL;
     int fd = -1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &term, &fd)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        if (args[0] == Py_None) {
+            term = NULL;
+        }
+        else if (PyUnicode_Check(args[0])) {
+            Py_ssize_t term_length;
+            term = PyUnicode_AsUTF8AndSize(args[0], &term_length);
+            if (term == NULL) {
+                goto exit;
+            }
+            if (strlen(term) != (size_t)term_length) {
+                PyErr_SetString(PyExc_ValueError, "embedded null character");
+                goto exit;
+            }
+        }
+        else {
+            _PyArg_BadArgument("setupterm", "argument 'term'", "str or None", args[0]);
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    fd = _PyLong_AsInt(args[1]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = _curses_setupterm_impl(module, term, fd);
 
 exit:
     return return_value;
 }
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+
+PyDoc_STRVAR(_curses_get_escdelay__doc__,
+"get_escdelay($module, /)\n"
+"--\n"
+"\n"
+"Gets the curses ESCDELAY setting.\n"
+"\n"
+"Gets the number of milliseconds to wait after reading an escape character,\n"
+"to distinguish between an individual escape character entered on the\n"
+"keyboard from escape sequences sent by cursor and function keys.");
+
+#define _CURSES_GET_ESCDELAY_METHODDEF    \
+    {"get_escdelay", (PyCFunction)_curses_get_escdelay, METH_NOARGS, _curses_get_escdelay__doc__},
+
+static PyObject *
+_curses_get_escdelay_impl(PyObject *module);
+
+static PyObject *
+_curses_get_escdelay(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_get_escdelay_impl(module);
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+
+PyDoc_STRVAR(_curses_set_escdelay__doc__,
+"set_escdelay($module, ms, /)\n"
+"--\n"
+"\n"
+"Sets the curses ESCDELAY setting.\n"
+"\n"
+"  ms\n"
+"    length of the delay in milliseconds.\n"
+"\n"
+"Sets the number of milliseconds to wait after reading an escape character,\n"
+"to distinguish between an individual escape character entered on the\n"
+"keyboard from escape sequences sent by cursor and function keys.");
+
+#define _CURSES_SET_ESCDELAY_METHODDEF    \
+    {"set_escdelay", (PyCFunction)_curses_set_escdelay, METH_O, _curses_set_escdelay__doc__},
+
+static PyObject *
+_curses_set_escdelay_impl(PyObject *module, int ms);
+
+static PyObject *
+_curses_set_escdelay(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int ms;
+
+    ms = _PyLong_AsInt(arg);
+    if (ms == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_set_escdelay_impl(module, ms);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+
+PyDoc_STRVAR(_curses_get_tabsize__doc__,
+"get_tabsize($module, /)\n"
+"--\n"
+"\n"
+"Gets the curses TABSIZE setting.\n"
+"\n"
+"Gets the number of columns used by the curses library when converting a tab\n"
+"character to spaces as it adds the tab to a window.");
+
+#define _CURSES_GET_TABSIZE_METHODDEF    \
+    {"get_tabsize", (PyCFunction)_curses_get_tabsize, METH_NOARGS, _curses_get_tabsize__doc__},
+
+static PyObject *
+_curses_get_tabsize_impl(PyObject *module);
+
+static PyObject *
+_curses_get_tabsize(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_get_tabsize_impl(module);
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
+
+#if (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102)
+
+PyDoc_STRVAR(_curses_set_tabsize__doc__,
+"set_tabsize($module, size, /)\n"
+"--\n"
+"\n"
+"Sets the curses TABSIZE setting.\n"
+"\n"
+"  size\n"
+"    rendered cell width of a tab character.\n"
+"\n"
+"Sets the number of columns used by the curses library when converting a tab\n"
+"character to spaces as it adds the tab to a window.");
+
+#define _CURSES_SET_TABSIZE_METHODDEF    \
+    {"set_tabsize", (PyCFunction)_curses_set_tabsize, METH_O, _curses_set_tabsize__doc__},
+
+static PyObject *
+_curses_set_tabsize_impl(PyObject *module, int size);
+
+static PyObject *
+_curses_set_tabsize(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int size;
+
+    size = _PyLong_AsInt(arg);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_set_tabsize_impl(module, size);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102) */
 
 PyDoc_STRVAR(_curses_intrflush__doc__,
 "intrflush($module, flag, /)\n"
@@ -2548,7 +3020,8 @@ _curses_intrflush(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    if (!PyArg_Parse(arg, "i:intrflush", &flag)) {
+    flag = _PyLong_AsInt(arg);
+    if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_intrflush_impl(module, flag);
@@ -2589,7 +3062,7 @@ PyDoc_STRVAR(_curses_is_term_resized__doc__,
 "    Width.");
 
 #define _CURSES_IS_TERM_RESIZED_METHODDEF    \
-    {"is_term_resized", (PyCFunction)_curses_is_term_resized, METH_FASTCALL, _curses_is_term_resized__doc__},
+    {"is_term_resized", (PyCFunction)(void(*)(void))_curses_is_term_resized, METH_FASTCALL, _curses_is_term_resized__doc__},
 
 static PyObject *
 _curses_is_term_resized_impl(PyObject *module, int nlines, int ncols);
@@ -2601,8 +3074,15 @@ _curses_is_term_resized(PyObject *module, PyObject *const *args, Py_ssize_t narg
     int nlines;
     int ncols;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:is_term_resized",
-        &nlines, &ncols)) {
+    if (!_PyArg_CheckPositional("is_term_resized", nargs, 2, 2)) {
+        goto exit;
+    }
+    nlines = _PyLong_AsInt(args[0]);
+    if (nlines == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    ncols = _PyLong_AsInt(args[1]);
+    if (ncols == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_is_term_resized_impl(module, nlines, ncols);
@@ -2634,7 +3114,8 @@ _curses_keyname(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int key;
 
-    if (!PyArg_Parse(arg, "i:keyname", &key)) {
+    key = _PyLong_AsInt(arg);
+    if (key == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_keyname_impl(module, key);
@@ -2703,7 +3184,8 @@ _curses_meta(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int yes;
 
-    if (!PyArg_Parse(arg, "i:meta", &yes)) {
+    yes = _PyLong_AsInt(arg);
+    if (yes == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_meta_impl(module, yes);
@@ -2739,7 +3221,8 @@ _curses_mouseinterval(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int interval;
 
-    if (!PyArg_Parse(arg, "i:mouseinterval", &interval)) {
+    interval = _PyLong_AsInt(arg);
+    if (interval == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_mouseinterval_impl(module, interval);
@@ -2775,9 +3258,11 @@ _curses_mousemask(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     unsigned long newmask;
 
-    if (!PyArg_Parse(arg, "k:mousemask", &newmask)) {
+    if (!PyLong_Check(arg)) {
+        _PyArg_BadArgument("mousemask", "argument", "int", arg);
         goto exit;
     }
+    newmask = PyLong_AsUnsignedLongMask(arg);
     return_value = _curses_mousemask_impl(module, newmask);
 
 exit:
@@ -2807,7 +3292,8 @@ _curses_napms(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int ms;
 
-    if (!PyArg_Parse(arg, "i:napms", &ms)) {
+    ms = _PyLong_AsInt(arg);
+    if (ms == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_napms_impl(module, ms);
@@ -2828,7 +3314,7 @@ PyDoc_STRVAR(_curses_newpad__doc__,
 "    Width.");
 
 #define _CURSES_NEWPAD_METHODDEF    \
-    {"newpad", (PyCFunction)_curses_newpad, METH_FASTCALL, _curses_newpad__doc__},
+    {"newpad", (PyCFunction)(void(*)(void))_curses_newpad, METH_FASTCALL, _curses_newpad__doc__},
 
 static PyObject *
 _curses_newpad_impl(PyObject *module, int nlines, int ncols);
@@ -2840,8 +3326,15 @@ _curses_newpad(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int nlines;
     int ncols;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:newpad",
-        &nlines, &ncols)) {
+    if (!_PyArg_CheckPositional("newpad", nargs, 2, 2)) {
+        goto exit;
+    }
+    nlines = _PyLong_AsInt(args[0]);
+    if (nlines == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    ncols = _PyLong_AsInt(args[1]);
+    if (ncols == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_newpad_impl(module, nlines, ncols);
@@ -2918,7 +3411,7 @@ PyDoc_STRVAR(_curses_nl__doc__,
 "newline into return and line-feed on output.  Newline mode is initially on.");
 
 #define _CURSES_NL_METHODDEF    \
-    {"nl", (PyCFunction)_curses_nl, METH_FASTCALL, _curses_nl__doc__},
+    {"nl", (PyCFunction)(void(*)(void))_curses_nl, METH_FASTCALL, _curses_nl__doc__},
 
 static PyObject *
 _curses_nl_impl(PyObject *module, int flag);
@@ -2929,10 +3422,17 @@ _curses_nl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int flag = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:nl",
-        &flag)) {
+    if (!_PyArg_CheckPositional("nl", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    flag = _PyLong_AsInt(args[0]);
+    if (flag == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _curses_nl_impl(module, flag);
 
 exit:
@@ -3062,8 +3562,24 @@ _curses_pair_content(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     short pair_number;
 
-    if (!PyArg_Parse(arg, "h:pair_content", &pair_number)) {
-        goto exit;
+    {
+        long ival = PyLong_AsLong(arg);
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        else if (ival < SHRT_MIN) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is less than minimum");
+            goto exit;
+        }
+        else if (ival > SHRT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "signed short integer is greater than maximum");
+            goto exit;
+        }
+        else {
+            pair_number = (short) ival;
+        }
     }
     return_value = _curses_pair_content_impl(module, pair_number);
 
@@ -3091,7 +3607,8 @@ _curses_pair_number(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int attr;
 
-    if (!PyArg_Parse(arg, "i:pair_number", &attr)) {
+    attr = _PyLong_AsInt(arg);
+    if (attr == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_pair_number_impl(module, attr);
@@ -3142,7 +3659,7 @@ PyDoc_STRVAR(_curses_qiflush__doc__,
 "will be flushed when the INTR, QUIT and SUSP characters are read.");
 
 #define _CURSES_QIFLUSH_METHODDEF    \
-    {"qiflush", (PyCFunction)_curses_qiflush, METH_FASTCALL, _curses_qiflush__doc__},
+    {"qiflush", (PyCFunction)(void(*)(void))_curses_qiflush, METH_FASTCALL, _curses_qiflush__doc__},
 
 static PyObject *
 _curses_qiflush_impl(PyObject *module, int flag);
@@ -3153,10 +3670,17 @@ _curses_qiflush(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int flag = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:qiflush",
-        &flag)) {
+    if (!_PyArg_CheckPositional("qiflush", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    flag = _PyLong_AsInt(args[0]);
+    if (flag == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _curses_qiflush_impl(module, flag);
 
 exit:
@@ -3173,23 +3697,13 @@ PyDoc_STRVAR(_curses_update_lines_cols__doc__,
 #define _CURSES_UPDATE_LINES_COLS_METHODDEF    \
     {"update_lines_cols", (PyCFunction)_curses_update_lines_cols, METH_NOARGS, _curses_update_lines_cols__doc__},
 
-static int
+static PyObject *
 _curses_update_lines_cols_impl(PyObject *module);
 
 static PyObject *
 _curses_update_lines_cols(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    int _return_value;
-
-    _return_value = _curses_update_lines_cols_impl(module);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong((long)_return_value);
-
-exit:
-    return return_value;
+    return _curses_update_lines_cols_impl(module);
 }
 
 #endif /* (defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM)) */
@@ -3208,7 +3722,7 @@ PyDoc_STRVAR(_curses_raw__doc__,
 "curses input functions one by one.");
 
 #define _CURSES_RAW_METHODDEF    \
-    {"raw", (PyCFunction)_curses_raw, METH_FASTCALL, _curses_raw__doc__},
+    {"raw", (PyCFunction)(void(*)(void))_curses_raw, METH_FASTCALL, _curses_raw__doc__},
 
 static PyObject *
 _curses_raw_impl(PyObject *module, int flag);
@@ -3219,10 +3733,17 @@ _curses_raw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int flag = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|i:raw",
-        &flag)) {
+    if (!_PyArg_CheckPositional("raw", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    flag = _PyLong_AsInt(args[0]);
+    if (flag == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _curses_raw_impl(module, flag);
 
 exit:
@@ -3300,7 +3821,7 @@ PyDoc_STRVAR(_curses_resizeterm__doc__,
 "window dimensions (in particular the SIGWINCH handler).");
 
 #define _CURSES_RESIZETERM_METHODDEF    \
-    {"resizeterm", (PyCFunction)_curses_resizeterm, METH_FASTCALL, _curses_resizeterm__doc__},
+    {"resizeterm", (PyCFunction)(void(*)(void))_curses_resizeterm, METH_FASTCALL, _curses_resizeterm__doc__},
 
 static PyObject *
 _curses_resizeterm_impl(PyObject *module, int nlines, int ncols);
@@ -3312,8 +3833,15 @@ _curses_resizeterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int nlines;
     int ncols;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:resizeterm",
-        &nlines, &ncols)) {
+    if (!_PyArg_CheckPositional("resizeterm", nargs, 2, 2)) {
+        goto exit;
+    }
+    nlines = _PyLong_AsInt(args[0]);
+    if (nlines == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    ncols = _PyLong_AsInt(args[1]);
+    if (ncols == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_resizeterm_impl(module, nlines, ncols);
@@ -3344,7 +3872,7 @@ PyDoc_STRVAR(_curses_resize_term__doc__,
 "without additional interaction with the application.");
 
 #define _CURSES_RESIZE_TERM_METHODDEF    \
-    {"resize_term", (PyCFunction)_curses_resize_term, METH_FASTCALL, _curses_resize_term__doc__},
+    {"resize_term", (PyCFunction)(void(*)(void))_curses_resize_term, METH_FASTCALL, _curses_resize_term__doc__},
 
 static PyObject *
 _curses_resize_term_impl(PyObject *module, int nlines, int ncols);
@@ -3356,8 +3884,15 @@ _curses_resize_term(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int nlines;
     int ncols;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:resize_term",
-        &nlines, &ncols)) {
+    if (!_PyArg_CheckPositional("resize_term", nargs, 2, 2)) {
+        goto exit;
+    }
+    nlines = _PyLong_AsInt(args[0]);
+    if (nlines == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    ncols = _PyLong_AsInt(args[1]);
+    if (ncols == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_resize_term_impl(module, nlines, ncols);
@@ -3402,7 +3937,7 @@ PyDoc_STRVAR(_curses_setsyx__doc__,
 "If y and x are both -1, then leaveok is set.");
 
 #define _CURSES_SETSYX_METHODDEF    \
-    {"setsyx", (PyCFunction)_curses_setsyx, METH_FASTCALL, _curses_setsyx__doc__},
+    {"setsyx", (PyCFunction)(void(*)(void))_curses_setsyx, METH_FASTCALL, _curses_setsyx__doc__},
 
 static PyObject *
 _curses_setsyx_impl(PyObject *module, int y, int x);
@@ -3414,8 +3949,15 @@ _curses_setsyx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int y;
     int x;
 
-    if (!_PyArg_ParseStack(args, nargs, "ii:setsyx",
-        &y, &x)) {
+    if (!_PyArg_CheckPositional("setsyx", nargs, 2, 2)) {
+        goto exit;
+    }
+    y = _PyLong_AsInt(args[0]);
+    if (y == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    x = _PyLong_AsInt(args[1]);
+    if (x == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_setsyx_impl(module, y, x);
@@ -3511,7 +4053,17 @@ _curses_tigetflag(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *capname;
 
-    if (!PyArg_Parse(arg, "s:tigetflag", &capname)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("tigetflag", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t capname_length;
+    capname = PyUnicode_AsUTF8AndSize(arg, &capname_length);
+    if (capname == NULL) {
+        goto exit;
+    }
+    if (strlen(capname) != (size_t)capname_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _curses_tigetflag_impl(module, capname);
@@ -3544,7 +4096,17 @@ _curses_tigetnum(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *capname;
 
-    if (!PyArg_Parse(arg, "s:tigetnum", &capname)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("tigetnum", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t capname_length;
+    capname = PyUnicode_AsUTF8AndSize(arg, &capname_length);
+    if (capname == NULL) {
+        goto exit;
+    }
+    if (strlen(capname) != (size_t)capname_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _curses_tigetnum_impl(module, capname);
@@ -3577,7 +4139,17 @@ _curses_tigetstr(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *capname;
 
-    if (!PyArg_Parse(arg, "s:tigetstr", &capname)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("tigetstr", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t capname_length;
+    capname = PyUnicode_AsUTF8AndSize(arg, &capname_length);
+    if (capname == NULL) {
+        goto exit;
+    }
+    if (strlen(capname) != (size_t)capname_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _curses_tigetstr_impl(module, capname);
@@ -3597,7 +4169,7 @@ PyDoc_STRVAR(_curses_tparm__doc__,
 "    Parameterized byte string obtained from the terminfo database.");
 
 #define _CURSES_TPARM_METHODDEF    \
-    {"tparm", (PyCFunction)_curses_tparm, METH_FASTCALL, _curses_tparm__doc__},
+    {"tparm", (PyCFunction)(void(*)(void))_curses_tparm, METH_FASTCALL, _curses_tparm__doc__},
 
 static PyObject *
 _curses_tparm_impl(PyObject *module, const char *str, int i1, int i2, int i3,
@@ -3653,7 +4225,8 @@ _curses_typeahead(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!PyArg_Parse(arg, "i:typeahead", &fd)) {
+    fd = _PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_typeahead_impl(module, fd);
@@ -3727,7 +4300,8 @@ _curses_use_env(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    if (!PyArg_Parse(arg, "i:use_env", &flag)) {
+    flag = _PyLong_AsInt(arg);
+    if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = _curses_use_env_impl(module, flag);
@@ -3795,6 +4369,22 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define _CURSES_HAS_KEY_METHODDEF
 #endif /* !defined(_CURSES_HAS_KEY_METHODDEF) */
 
+#ifndef _CURSES_GET_ESCDELAY_METHODDEF
+    #define _CURSES_GET_ESCDELAY_METHODDEF
+#endif /* !defined(_CURSES_GET_ESCDELAY_METHODDEF) */
+
+#ifndef _CURSES_SET_ESCDELAY_METHODDEF
+    #define _CURSES_SET_ESCDELAY_METHODDEF
+#endif /* !defined(_CURSES_SET_ESCDELAY_METHODDEF) */
+
+#ifndef _CURSES_GET_TABSIZE_METHODDEF
+    #define _CURSES_GET_TABSIZE_METHODDEF
+#endif /* !defined(_CURSES_GET_TABSIZE_METHODDEF) */
+
+#ifndef _CURSES_SET_TABSIZE_METHODDEF
+    #define _CURSES_SET_TABSIZE_METHODDEF
+#endif /* !defined(_CURSES_SET_TABSIZE_METHODDEF) */
+
 #ifndef _CURSES_IS_TERM_RESIZED_METHODDEF
     #define _CURSES_IS_TERM_RESIZED_METHODDEF
 #endif /* !defined(_CURSES_IS_TERM_RESIZED_METHODDEF) */
@@ -3838,4 +4428,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=763ffe3abc3a97c7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=478d93f7692385eb input=a9049054013a1b77]*/

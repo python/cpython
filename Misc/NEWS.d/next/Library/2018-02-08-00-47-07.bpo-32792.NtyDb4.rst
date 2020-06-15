@@ -1,1 +1,0 @@
-collections.ChainMap() preserves the order of the underlying mappings.

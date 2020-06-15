@@ -44,7 +44,7 @@ Added BUILD_CONST_KEY_MAP opcode.
 .. nonce: EAnCS7
 .. section: Core and Builtins
 
-Add support for os.PathLike objects to open() (part of PEP 519).
+Add support for os.PathLike objects to open() (part of :pep:`519`).
 
 ..
 
@@ -126,7 +126,7 @@ work at runtime anyway.
 .. nonce: ffzxpX
 .. section: Library
 
-Generated names for Tkinter widgets are now more meanful and recognizirable.
+Generated names for Tkinter widgets are now more meaningful and recognizable.
 
 ..
 
@@ -215,7 +215,7 @@ bytes patterns.
 .. nonce: UYiwoh
 .. section: Library
 
-Add os.PathLike support to DirEntry (part of PEP 519). Initial patch by
+Add os.PathLike support to DirEntry (part of :pep:`519`). Initial patch by
 Jelle Zijlstra.
 
 ..
@@ -246,7 +246,7 @@ PEP 519). Initial patch by Dusty Phillips.
 .. section: Library
 
 Add support for os.PathLike objects to os.fsencode() and os.fsdecode() (part
-of PEP 519).
+of :pep:`519`).
 
 ..
 
@@ -255,7 +255,7 @@ of PEP 519).
 .. nonce: y7YRfj
 .. section: Library
 
-Introduce os.PathLike and os.fspath() (part of PEP 519).
+Introduce os.PathLike and os.fspath() (part of :pep:`519`).
 
 ..
 
@@ -268,7 +268,7 @@ A new version of typing.py provides several new classes and features:
 @overload outside stubs, Reversible, DefaultDict, Text, ContextManager,
 Type[], NewType(), TYPE_CHECKING, and numerous bug fixes (note that some of
 the new features are not yet implemented in mypy or other static analyzers).
-Also classes for PEP 492 (Awaitable, AsyncIterable, AsyncIterator) have been
+Also classes for :pep:`492` (Awaitable, AsyncIterable, AsyncIterator) have been
 added (in fact they made it into 3.5.1 but were never mentioned).
 
 ..
@@ -516,7 +516,7 @@ are added to cover changes.
 
 IDLE requires tk 8.5 and availability ttk widgets. Delete now unneeded tk
 version tests and code for older versions. Add test for IDLE syntax
-colorizoer.
+colorizer.
 
 ..
 
@@ -534,7 +534,7 @@ idlelib.macosx.isXyzTk functions initialize as needed.
 .. nonce: t7ckly
 .. section: IDLE
 
-move Aqua unbinding code, which enable context menus, to maxosx.
+move Aqua unbinding code, which enable context menus, to macosx.
 
 ..
 
@@ -689,7 +689,7 @@ to use lowercase.  Patch by Sean Rodman, test by Kaushik Nadikuditi.
 .. nonce: MUK0zK
 .. section: Documentation
 
-Document the new PEP 448 unpacking syntax of 3.5.
+Document the new :pep:`448` unpacking syntax of 3.5.
 
 ..
 
@@ -770,7 +770,7 @@ https://github.com/python/pythondotorg/issues/945)
 .. nonce: Ll8R-t
 .. section: C API
 
-Add the PyOS_FSPath() function (part of PEP 519).
+Add the PyOS_FSPath() function (part of :pep:`519`).
 
 ..
 

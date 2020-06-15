@@ -1,0 +1,110 @@
+name: Tests
+
+# bpo-40548: "paths-ignore" is not used to skip documentation-only PRs, because
+# it prevents to mark a job as mandatory. A PR cannot be merged if a job is
+# mandatory but not scheduled because of "paths-ignore".
+on:
+  push:
+    branches:
+    - master
+    - 3.9
+    - 3.8
+    - 3.7
+  pull_request:
+    branches:
+    - master
+    - 3.9
+    - 3.8
+    - 3.7
+
+jobs:
+  check_source:
+    name: 'Check for source changes'
+    runs-on: ubuntu-latest
+    outputs:
+      run_tests: ${{ steps.check.outputs.run_tests }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check for source changes
+        id: check
+        run: |
+          if [ -z "GITHUB_BASE_REF" ]; then
+            echo '::set-output name=run_tests::true'
+          else
+            git fetch origin $GITHUB_BASE_REF --depth=1
+            git diff --name-only origin/$GITHUB_BASE_REF... | grep -qvE '(\.rst$|^Doc|^Misc)' && echo '::set-output name=run_tests::true' || true
+          fi
+  build_win32:
+    name: 'Windows (x86)'
+    runs-on: windows-latest
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build CPython
+      run: .\PCbuild\build.bat -e -p Win32
+    - name: Display build info
+      run: .\python.bat -m test.pythoninfo
+    - name: Tests
+      run: .\PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+
+  build_win_amd64:
+    name: 'Windows (x64)'
+    runs-on: windows-latest
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build CPython
+      run: .\PCbuild\build.bat -e -p x64
+    - name: Display build info
+      run: .\python.bat -m test.pythoninfo
+    - name: Tests
+      run: .\PCbuild\rt.bat -x64 -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+
+  build_macos:
+    name: 'macOS'
+    runs-on: macos-latest
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Configure CPython
+      run: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-dev
+    - name: Build CPython
+      run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+    - name: Tests
+      run: make buildbottest TESTOPTS="-j4 -uall,-cpu"
+
+  build_ubuntu:
+    name: 'Ubuntu'
+    runs-on: ubuntu-latest
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    env:
+      OPENSSL_VER: 1.1.1f
+    steps:
+    - uses: actions/checkout@v2
+    - name: Register gcc problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+    - name: Install Dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: 'Restore OpenSSL build'
+      id: cache-openssl
+      uses: actions/cache@v1
+      with:
+        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
+        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+    - name: Install OpenSSL
+      if: steps.cache-openssl.outputs.cache-hit != 'true'
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $PWD/multissl --openssl $OPENSSL_VER --system Linux
+    - name: Configure CPython
+      run: ./configure --with-pydebug --with-openssl=$PWD/multissl/openssl/$OPENSSL_VER
+    - name: Build CPython
+      run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+    - name: Tests
+      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"

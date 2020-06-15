@@ -11,24 +11,55 @@
 **/*context*                  @1st1
 **/*genobject*                @1st1
 **/*hamt*                     @1st1
+Objects/set*                  @rhettinger
+Objects/dict*                 @methane
 
 # Hashing
-**/*hashlib*                  @python/crypto-team
-**/*pyhash*                   @python/crypto-team
+**/*hashlib*                  @python/crypto-team @tiran
+**/*pyhash*                   @python/crypto-team @tiran
+**/*sha*                      @python/crypto-team @tiran
+**/*md5*                      @python/crypto-team @tiran
+**/*blake*                    @python/crypto-team @tiran
+/Modules/_blake2/**           @python/crypto-team @tiran
+/Modules/_sha3/**             @python/crypto-team @tiran
+
+# logging
+**/*logging*                  @vsajip
+
+# venv
+**/*venv*                     @vsajip
+
+# Launcher
+/PC/launcher.c                @vsajip
+
+# HTML
+/Lib/html/                    @ezio-melotti
+/Lib/_markupbase.py           @ezio-melotti
+/Lib/test/test_html*.py       @ezio-melotti
 
 # Import (including importlib).
 # Ignoring importlib.h so as to not get flagged on
-# all pull requests that change the the emitted
+# all pull requests that change the emitted
 # bytecode.
-**/*import*.c                 @python/import-team
-**/*import*.py                @python/import-team
+**/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
+**/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
 
 
 # SSL
-**/*ssl*                      @python/crypto-team
+**/*ssl*                      @python/crypto-team @tiran
+**/*.pem                      @python/crypto-team @tiran
 
 # CSPRNG
-Python/bootstrap_hash.c       @python/crypto-team
+Python/bootstrap_hash.c       @python/crypto-team @tiran
+
+# Dates and times
+**/*datetime*                 @pganssle @abalkin
+**/*str*time*                 @pganssle @abalkin
+Doc/library/time.rst          @pganssle @abalkin
+Lib/test/test_time.py         @pganssle @abalkin
+Modules/timemodule.c          @pganssle @abalkin
+Python/pytime.c               @pganssle @abalkin
+Include/pytime.h              @pganssle @abalkin
 
 # Email and related
 **/*mail*                     @python/email-team
@@ -37,24 +68,42 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*imap*                     @python/email-team
 **/*poplib*                   @python/email-team
 
+# Garbage collector
+/Modules/gcmodule.c           @pablogsal
+/Doc/library/gc.rst           @pablogsal
+
+# Parser/Pgen
+/Parser/pgen/                 @pablogsal
+/Parser/pegen/                @pablogsal
+/Tools/peg_generator/         @pablogsal
+
+# SQLite 3
+**/*sqlite*                   @berkerpeksag
+
 # subprocess
-**/*subprocess*               @gpshead
+/Lib/subprocess.py            @gpshead
+/Lib/test/test_subprocess.py  @gpshead
+/Modules/*subprocess*         @gpshead
 
 # Windows
 /PC/                          @python/windows-team
 /PCbuild/                     @python/windows-team
 
+# Urllib
+**/*robotparser*              @berkerpeksag
+
 # Windows installer packages
 /Tools/msi/                   @python/windows-team
 /Tools/nuget/                 @python/windows-team
 
+# Misc
 **/*itertools*                @rhettinger
 **/*collections*              @rhettinger
 **/*random*                   @rhettinger
 **/*queue*                    @rhettinger
 **/*bisect*                   @rhettinger
 **/*heapq*                    @rhettinger
-**/*functools*                @ncoghlan @rhettinger
+**/*functools*                @rhettinger
 **/*decimal*                  @rhettinger @skrah
 
 **/*dataclasses*              @ericvsmith
@@ -62,3 +111,16 @@ Python/bootstrap_hash.c       @python/crypto-team
 **/*idlelib*                  @terryjreedy
 
 **/*typing*                   @gvanrossum @ilevkivskyi
+
+**/*asyncore                  @giampaolo
+**/*asynchat                  @giampaolo
+**/*ftplib                    @giampaolo
+**/*shutil                    @giampaolo
+
+**/*enum*                     @ethanfurman
+**/*cgi*                      @ethanfurman
+**/*tarfile*                  @ethanfurman
+
+# macOS
+/Mac/                         @python/macos-team
+**/*osx_support*              @python/macos-team

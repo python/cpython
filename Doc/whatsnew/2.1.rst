@@ -52,7 +52,7 @@ The function :func:`g` will always raise a :exc:`NameError` exception, because
 the binding of the name ``g`` isn't in either its local namespace or in the
 module-level namespace.  This isn't much of a problem in practice (how often do
 you recursively define interior functions like this?), but this also made using
-the :keyword:`lambda` statement clumsier, and this was a problem in practice.
+the :keyword:`lambda` expression clumsier, and this was a problem in practice.
 In code which uses :keyword:`lambda` you can often find local variables being
 copied by passing them as the default values of arguments. ::
 
@@ -112,8 +112,8 @@ anyway).
 
 Compatibility concerns have led to nested scopes being introduced gradually; in
 Python 2.1, they aren't enabled by default, but can be turned on within a module
-by using a future statement as described in PEP 236.  (See the following section
-for further discussion of PEP 236.)  In Python 2.2, nested scopes will become
+by using a future statement as described in :pep:`236`.  (See the following section
+for further discussion of :pep:`236`.)  In Python 2.2, nested scopes will become
 the default and there will be no way to turn them off, but users will have had
 all of 2.1's lifetime to fix any breakage resulting from their introduction.
 
@@ -143,7 +143,7 @@ The syntax uses a ``from...import`` statement using the reserved module name
 While it looks like a normal :keyword:`import` statement, it's not; there are
 strict rules on where such a future statement can be put. They can only be at
 the top of a module, and must precede any Python code or regular
-:keyword:`import` statements.  This is because such statements can affect how
+:keyword:`!import` statements.  This is because such statements can affect how
 the Python bytecode compiler parses code and generates bytecode, so they must
 precede any statement that will result in bytecodes being produced.
 
@@ -213,7 +213,7 @@ otherwise it will call the appropriate method and can return any Python object.
 
 There are also corresponding changes of interest to C programmers; there's a new
 slot ``tp_richcmp`` in type objects and an API for performing a given rich
-comparison.  I won't cover the C API here, but will refer you to PEP 207, or to
+comparison.  I won't cover the C API here, but will refer you to :pep:`207`, or to
 2.1's C API documentation, for the full list of related functions.
 
 
@@ -548,7 +548,7 @@ registering software at the Vaults is optional, and many people don't bother.
 As a first small step toward fixing the problem, Python software packaged using
 the Distutils :command:`sdist` command will include a file named
 :file:`PKG-INFO` containing information about the package such as its name,
-version, and author (metadata, in cataloguing terminology).  PEP 241 contains
+version, and author (metadata, in cataloguing terminology).  :pep:`241` contains
 the full list of fields that can be present in the :file:`PKG-INFO` file.  As
 people began to package their software using Python 2.1, more and more packages
 will include metadata, making it possible to build automated cataloguing systems
@@ -561,7 +561,7 @@ package to a catalog server.
 You can start creating packages containing :file:`PKG-INFO` even if you're not
 using Python 2.1, since a new release of the Distutils will be made for users of
 earlier Python versions.  Version 1.0.2 of the Distutils includes the changes
-described in PEP 241, as well as various bugfixes and enhancements.  It will be
+described in :pep:`241`, as well as various bugfixes and enhancements.  It will be
 available from the Distutils SIG at https://www.python.org/community/sigs/current/distutils-sig/.
 
 
