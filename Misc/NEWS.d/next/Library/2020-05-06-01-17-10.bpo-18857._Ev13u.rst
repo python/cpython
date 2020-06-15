@@ -1,4 +1,4 @@
-Added ``standalone_keys`` flag (disabled-by-default) to
+Added ``standalone_keys`` flag (disabled by default) to
 ``urllib.parse.parse_qs`` and ``urllib.parse.parse_qsl``.
 
 This flag allows developers to unambiguously read ``None`` values (as
