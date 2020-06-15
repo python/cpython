@@ -42,7 +42,8 @@ warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char,
 static PyObject *
 decode_utf8(const char **sPtr, const char *end)
 {
-    const char *s, *t;
+    const char *s;
+    const char *t;
     t = s = *sPtr;
     while (s < end && (*s & 0x80)) {
         s++;
@@ -54,7 +55,8 @@ decode_utf8(const char **sPtr, const char *end)
 static PyObject *
 decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
 {
-    PyObject *v, *u;
+    PyObject *v;
+    PyObject *u;
     char *buf;
     char *p;
     const char *end;
@@ -86,7 +88,8 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
             PyObject *w;
             int kind;
             void *data;
-            Py_ssize_t len, i;
+            Py_ssize_t w_len;
+            Py_ssize_t i;
             w = decode_utf8(&s, end);
             if (w == NULL) {
                 Py_DECREF(u);
@@ -94,8 +97,8 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
             }
             kind = PyUnicode_KIND(w);
             data = PyUnicode_DATA(w);
-            len = PyUnicode_GET_LENGTH(w);
-            for (i = 0; i < len; i++) {
+            w_len = PyUnicode_GET_LENGTH(w);
+            for (i = 0; i < w_len; i++) {
                 Py_UCS4 chr = PyUnicode_READ(kind, data, i);
                 sprintf(p, "\\U%08x", chr);
                 p += 10;
@@ -169,18 +172,18 @@ _PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
     if (Py_ISALPHA(quote)) {
         while (!*bytesmode || !*rawmode) {
             if (quote == 'b' || quote == 'B') {
-                quote = *++s;
+                quote =(unsigned char)*++s;
                 *bytesmode = 1;
             }
             else if (quote == 'u' || quote == 'U') {
-                quote = *++s;
+                quote = (unsigned char)*++s;
             }
             else if (quote == 'r' || quote == 'R') {
-                quote = *++s;
+                quote = (unsigned char)*++s;
                 *rawmode = 1;
             }
             else if (quote == 'f' || quote == 'F') {
-                quote = *++s;
+                quote = (unsigned char)*++s;
                 fmode = 1;
             }
             else {
@@ -370,112 +373,112 @@ static void fstring_shift_arguments(expr_ty parent, arguments_ty args, int linen
     fstring_shift_seq_locations(parent, args->defaults, lineno, col_offset);
 }
 
-static void fstring_shift_children_locations(expr_ty n, int lineno, int col_offset) {
-    switch (n->kind) {
+static void fstring_shift_children_locations(expr_ty node, int lineno, int col_offset) {
+    switch (node->kind) {
         case BoolOp_kind:
-            fstring_shift_seq_locations(n, n->v.BoolOp.values, lineno, col_offset);
+            fstring_shift_seq_locations(node, node->v.BoolOp.values, lineno, col_offset);
             break;
         case NamedExpr_kind:
-            shift_expr(n, n->v.NamedExpr.target, lineno, col_offset);
-            shift_expr(n, n->v.NamedExpr.value, lineno, col_offset);
+            shift_expr(node, node->v.NamedExpr.target, lineno, col_offset);
+            shift_expr(node, node->v.NamedExpr.value, lineno, col_offset);
             break;
         case BinOp_kind:
-            shift_expr(n, n->v.BinOp.left, lineno, col_offset);
-            shift_expr(n, n->v.BinOp.right, lineno, col_offset);
+            shift_expr(node, node->v.BinOp.left, lineno, col_offset);
+            shift_expr(node, node->v.BinOp.right, lineno, col_offset);
             break;
         case UnaryOp_kind:
-            shift_expr(n, n->v.UnaryOp.operand, lineno, col_offset);
+            shift_expr(node, node->v.UnaryOp.operand, lineno, col_offset);
             break;
         case Lambda_kind:
-            fstring_shift_arguments(n, n->v.Lambda.args, lineno, col_offset);
-            shift_expr(n, n->v.Lambda.body, lineno, col_offset);
+            fstring_shift_arguments(node, node->v.Lambda.args, lineno, col_offset);
+            shift_expr(node, node->v.Lambda.body, lineno, col_offset);
             break;
         case IfExp_kind:
-            shift_expr(n, n->v.IfExp.test, lineno, col_offset);
-            shift_expr(n, n->v.IfExp.body, lineno, col_offset);
-            shift_expr(n, n->v.IfExp.orelse, lineno, col_offset);
+            shift_expr(node, node->v.IfExp.test, lineno, col_offset);
+            shift_expr(node, node->v.IfExp.body, lineno, col_offset);
+            shift_expr(node, node->v.IfExp.orelse, lineno, col_offset);
             break;
         case Dict_kind:
-            fstring_shift_seq_locations(n, n->v.Dict.keys, lineno, col_offset);
-            fstring_shift_seq_locations(n, n->v.Dict.values, lineno, col_offset);
+            fstring_shift_seq_locations(node, node->v.Dict.keys, lineno, col_offset);
+            fstring_shift_seq_locations(node, node->v.Dict.values, lineno, col_offset);
             break;
         case Set_kind:
-            fstring_shift_seq_locations(n, n->v.Set.elts, lineno, col_offset);
+            fstring_shift_seq_locations(node, node->v.Set.elts, lineno, col_offset);
             break;
         case ListComp_kind:
-            shift_expr(n, n->v.ListComp.elt, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(n->v.ListComp.generators); i < l; i++) {
-                comprehension_ty comp = asdl_seq_GET(n->v.ListComp.generators, i);
-                fstring_shift_comprehension(n, comp, lineno, col_offset);
+            shift_expr(node, node->v.ListComp.elt, lineno, col_offset);
+            for (Py_ssize_t i = 0, l = asdl_seq_LEN(node->v.ListComp.generators); i < l; i++) {
+                comprehension_ty comp = asdl_seq_GET(node->v.ListComp.generators, i);
+                fstring_shift_comprehension(node, comp, lineno, col_offset);
             }
             break;
         case SetComp_kind:
-            shift_expr(n, n->v.SetComp.elt, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(n->v.SetComp.generators); i < l; i++) {
-                comprehension_ty comp = asdl_seq_GET(n->v.SetComp.generators, i);
-                fstring_shift_comprehension(n, comp, lineno, col_offset);
+            shift_expr(node, node->v.SetComp.elt, lineno, col_offset);
+            for (Py_ssize_t i = 0, l = asdl_seq_LEN(node->v.SetComp.generators); i < l; i++) {
+                comprehension_ty comp = asdl_seq_GET(node->v.SetComp.generators, i);
+                fstring_shift_comprehension(node, comp, lineno, col_offset);
             }
             break;
         case DictComp_kind:
-            shift_expr(n, n->v.DictComp.key, lineno, col_offset);
-            shift_expr(n, n->v.DictComp.value, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(n->v.DictComp.generators); i < l; i++) {
-                comprehension_ty comp = asdl_seq_GET(n->v.DictComp.generators, i);
-                fstring_shift_comprehension(n, comp, lineno, col_offset);
+            shift_expr(node, node->v.DictComp.key, lineno, col_offset);
+            shift_expr(node, node->v.DictComp.value, lineno, col_offset);
+            for (Py_ssize_t i = 0, l = asdl_seq_LEN(node->v.DictComp.generators); i < l; i++) {
+                comprehension_ty comp = asdl_seq_GET(node->v.DictComp.generators, i);
+                fstring_shift_comprehension(node, comp, lineno, col_offset);
             }
             break;
         case GeneratorExp_kind:
-            shift_expr(n, n->v.GeneratorExp.elt, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(n->v.GeneratorExp.generators); i < l; i++) {
-                comprehension_ty comp = asdl_seq_GET(n->v.GeneratorExp.generators, i);
-                fstring_shift_comprehension(n, comp, lineno, col_offset);
+            shift_expr(node, node->v.GeneratorExp.elt, lineno, col_offset);
+            for (Py_ssize_t i = 0, l = asdl_seq_LEN(node->v.GeneratorExp.generators); i < l; i++) {
+                comprehension_ty comp = asdl_seq_GET(node->v.GeneratorExp.generators, i);
+                fstring_shift_comprehension(node, comp, lineno, col_offset);
             }
             break;
         case Await_kind:
-            shift_expr(n, n->v.Await.value, lineno, col_offset);
+            shift_expr(node, node->v.Await.value, lineno, col_offset);
             break;
         case Yield_kind:
-            shift_expr(n, n->v.Yield.value, lineno, col_offset);
+            shift_expr(node, node->v.Yield.value, lineno, col_offset);
             break;
         case YieldFrom_kind:
-            shift_expr(n, n->v.YieldFrom.value, lineno, col_offset);
+            shift_expr(node, node->v.YieldFrom.value, lineno, col_offset);
             break;
         case Compare_kind:
-            shift_expr(n, n->v.Compare.left, lineno, col_offset);
-            fstring_shift_seq_locations(n, n->v.Compare.comparators, lineno, col_offset);
+            shift_expr(node, node->v.Compare.left, lineno, col_offset);
+            fstring_shift_seq_locations(node, node->v.Compare.comparators, lineno, col_offset);
             break;
         case Call_kind:
-            shift_expr(n, n->v.Call.func, lineno, col_offset);
-            fstring_shift_seq_locations(n, n->v.Call.args, lineno, col_offset);
-            for (Py_ssize_t i = 0, l = asdl_seq_LEN(n->v.Call.keywords); i < l; i++) {
-                keyword_ty keyword = asdl_seq_GET(n->v.Call.keywords, i);
-                shift_expr(n, keyword->value, lineno, col_offset);
+            shift_expr(node, node->v.Call.func, lineno, col_offset);
+            fstring_shift_seq_locations(node, node->v.Call.args, lineno, col_offset);
+            for (Py_ssize_t i = 0, l = asdl_seq_LEN(node->v.Call.keywords); i < l; i++) {
+                keyword_ty keyword = asdl_seq_GET(node->v.Call.keywords, i);
+                shift_expr(node, keyword->value, lineno, col_offset);
             }
             break;
         case Attribute_kind:
-            shift_expr(n, n->v.Attribute.value, lineno, col_offset);
+            shift_expr(node, node->v.Attribute.value, lineno, col_offset);
             break;
         case Subscript_kind:
-            shift_expr(n, n->v.Subscript.value, lineno, col_offset);
-            fstring_shift_slice_locations(n, n->v.Subscript.slice, lineno, col_offset);
-            shift_expr(n, n->v.Subscript.slice, lineno, col_offset);
+            shift_expr(node, node->v.Subscript.value, lineno, col_offset);
+            fstring_shift_slice_locations(node, node->v.Subscript.slice, lineno, col_offset);
+            shift_expr(node, node->v.Subscript.slice, lineno, col_offset);
             break;
         case Starred_kind:
-            shift_expr(n, n->v.Starred.value, lineno, col_offset);
+            shift_expr(node, node->v.Starred.value, lineno, col_offset);
             break;
         case List_kind:
-            fstring_shift_seq_locations(n, n->v.List.elts, lineno, col_offset);
+            fstring_shift_seq_locations(node, node->v.List.elts, lineno, col_offset);
             break;
         case Tuple_kind:
-            fstring_shift_seq_locations(n, n->v.Tuple.elts, lineno, col_offset);
+            fstring_shift_seq_locations(node, node->v.Tuple.elts, lineno, col_offset);
             break;
         case JoinedStr_kind:
-            fstring_shift_seq_locations(n, n->v.JoinedStr.values, lineno, col_offset);
+            fstring_shift_seq_locations(node, node->v.JoinedStr.values, lineno, col_offset);
             break;
         case FormattedValue_kind:
-            shift_expr(n, n->v.FormattedValue.value, lineno, col_offset);
-            if (n->v.FormattedValue.format_spec) {
-                shift_expr(n, n->v.FormattedValue.format_spec, lineno, col_offset);
+            shift_expr(node, node->v.FormattedValue.value, lineno, col_offset);
+            if (node->v.FormattedValue.format_spec) {
+                shift_expr(node, node->v.FormattedValue.format_spec, lineno, col_offset);
             }
             break;
         default:
@@ -710,15 +713,17 @@ fstring_find_literal(Parser *p, const char **str, const char *end, int raw,
     assert(s == end || *s == '{' || *s == '}');
 done:
     if (literal_start != s) {
-        if (raw)
+        if (raw) {
             *literal = PyUnicode_DecodeUTF8Stateful(literal_start,
                                                     s - literal_start,
                                                     NULL, NULL);
-        else
+        } else {
             *literal = decode_unicode_with_escapes(p, literal_start,
                                                    s - literal_start, t);
-        if (!*literal)
+        }
+        if (!*literal) {
             return -1;
+        }
     }
     return result;
 }
@@ -790,10 +795,11 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
         /* Loop invariants. */
         assert(nested_depth >= 0);
         assert(*str >= expr_start && *str < end);
-        if (quote_char)
+        if (quote_char) {
             assert(string_type == 1 || string_type == 3);
-        else
+        } else {
             assert(string_type == 0);
+        }
 
         ch = **str;
         /* Nowhere inside an expression is a backslash allowed. */
@@ -890,7 +896,7 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
                 goto error;
             }
             nested_depth--;
-            int opening = parenstack[nested_depth];
+            int opening = (unsigned char)parenstack[nested_depth];
             if (!((opening == '(' && ch == ')') ||
                   (opening == '[' && ch == ']') ||
                   (opening == '{' && ch == '}')))
@@ -915,20 +921,22 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
         goto error;
     }
     if (nested_depth) {
-        int opening = parenstack[nested_depth - 1];
+        int opening = (unsigned char)parenstack[nested_depth - 1];
         RAISE_SYNTAX_ERROR("f-string: unmatched '%c'", opening);
         goto error;
     }
 
-    if (*str >= end)
+    if (*str >= end) {
         goto unexpected_end_of_string;
+    }
 
     /* Compile the expression as soon as possible, so we show errors
        related to the expression before errors related to the
        conversion or format_spec. */
     simple_expression = fstring_compile_expr(p, expr_start, expr_end, t);
-    if (!simple_expression)
+    if (!simple_expression) {
         goto error;
+    }
 
     /* Check for =, which puts the text value of the expression in
        expr_text. */
@@ -957,10 +965,11 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     /* Check for a conversion char, if present. */
     if (**str == '!') {
         *str += 1;
-        if (*str >= end)
+        if (*str >= end) {
             goto unexpected_end_of_string;
+        }
 
-        conversion = **str;
+        conversion = (unsigned char)**str;
         *str += 1;
 
         /* Validate the conversion. */
@@ -974,22 +983,26 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     }
 
     /* Check for the format spec, if present. */
-    if (*str >= end)
+    if (*str >= end) {
         goto unexpected_end_of_string;
+    }
     if (**str == ':') {
         *str += 1;
-        if (*str >= end)
+        if (*str >= end) {
             goto unexpected_end_of_string;
+        }
 
         /* Parse the format spec. */
         format_spec = fstring_parse(p, str, end, raw, recurse_lvl+1,
                                     first_token, t, last_token);
-        if (!format_spec)
+        if (!format_spec) {
             goto error;
+        }
     }
 
-    if (*str >= end || **str != '}')
+    if (*str >= end || **str != '}') {
         goto unexpected_end_of_string;
+    }
 
     /* We're at a right brace. Consume it. */
     assert(*str < end);
@@ -1009,8 +1022,9 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
                                  format_spec, first_token->lineno,
                                  first_token->col_offset, last_token->end_lineno,
                                  last_token->end_col_offset, p->arena);
-    if (!*expression)
+    if (!*expression) {
         goto error;
+    }
 
     return 0;
 
@@ -1059,28 +1073,32 @@ fstring_find_literal_and_expr(Parser *p, const char **str, const char *end, int 
 
     /* Get any literal string. */
     result = fstring_find_literal(p, str, end, raw, literal, recurse_lvl, t);
-    if (result < 0)
+    if (result < 0) {
         goto error;
+    }
 
     assert(result == 0 || result == 1);
 
-    if (result == 1)
+    if (result == 1) {
         /* We have a literal, but don't look at the expression. */
         return 1;
+    }
 
-    if (*str >= end || **str == '}')
+    if (*str >= end || **str == '}') {
         /* We're at the end of the string or the end of a nested
            f-string: no expression. The top-level error case where we
            expect to be at the end of the string but we're at a '}' is
            handled later. */
         return 0;
+    }
 
     /* We must now be the start of an expression, on a '{'. */
     assert(**str == '{');
 
     if (fstring_find_expr(p, str, end, raw, recurse_lvl, expr_text,
-                          expression, first_token, t, last_token) < 0)
+                          expression, first_token, t, last_token) < 0) {
         goto error;
+    }
 
     return 0;
 
@@ -1099,8 +1117,9 @@ ExprList_check_invariants(ExprList *l)
        hasn't been deallocated. */
     assert(l->size >= 0);
     assert(l->p != NULL);
-    if (l->size <= EXPRLIST_N_CACHED)
+    if (l->size <= EXPRLIST_N_CACHED) {
         assert(l->data == l->p);
+    }
 }
 #endif
 
@@ -1130,11 +1149,13 @@ ExprList_Append(ExprList *l, expr_ty exp)
             /* We're still using the cached data. Switch to
                alloc-ing. */
             l->p = PyMem_RawMalloc(sizeof(expr_ty) * new_size);
-            if (!l->p)
+            if (!l->p) {
                 return -1;
+            }
             /* Copy the cached data into the new buffer. */
-            for (i = 0; i < l->size; i++)
+            for (i = 0; i < l->size; i++) {
                 l->p[i] = l->data[i];
+            }
         } else {
             /* Just realloc. */
             expr_ty *tmp = PyMem_RawRealloc(l->p, sizeof(expr_ty) * new_size);
@@ -1184,8 +1205,9 @@ ExprList_Finish(ExprList *l, PyArena *arena)
     seq = _Py_asdl_seq_new(l->size, arena);
     if (seq) {
         Py_ssize_t i;
-        for (i = 0; i < l->size; i++)
+        for (i = 0; i < l->size; i++) {
             asdl_seq_SET(seq, i, l->p[i]);
+        }
     }
     ExprList_Dealloc(l);
     return seq;
@@ -1197,8 +1219,9 @@ ExprList_Finish(ExprList *l, PyArena *arena)
 static void
 FstringParser_check_invariants(FstringParser *state)
 {
-    if (state->last_str)
+    if (state->last_str) {
         assert(PyUnicode_CheckExact(state->last_str));
+    }
     ExprList_check_invariants(&state->expr_list);
 }
 #endif
@@ -1268,8 +1291,9 @@ _PyPegen_FstringParser_ConcatAndDel(FstringParser *state, PyObject *str)
     } else {
         /* Concatenate this with the previous string. */
         PyUnicode_AppendAndDel(&state->last_str, str);
-        if (!state->last_str)
+        if (!state->last_str) {
             return -1;
+        }
     }
     FstringParser_check_invariants(state);
     return 0;
@@ -1298,8 +1322,9 @@ _PyPegen_FstringParser_ConcatFstring(Parser *p, FstringParser *state, const char
         int result = fstring_find_literal_and_expr(p, str, end, raw, recurse_lvl,
                                                    &literal, &expr_text,
                                                    &expression, first_token, t, last_token);
-        if (result < 0)
+        if (result < 0) {
             return -1;
+        }
 
         /* Add the literal, if any. */
         if (literal && _PyPegen_FstringParser_ConcatAndDel(state, literal) < 0) {
@@ -1318,12 +1343,14 @@ _PyPegen_FstringParser_ConcatFstring(Parser *p, FstringParser *state, const char
            and expression, while ignoring the expression this
            time. This is used for un-doubling braces, as an
            optimization. */
-        if (result == 1)
+        if (result == 1) {
             continue;
+        }
 
-        if (!expression)
+        if (!expression) {
             /* We're done with this f-string. */
             break;
+        }
 
         /* We know we have an expression. Convert any existing string
            to a Constant node. */
@@ -1331,13 +1358,15 @@ _PyPegen_FstringParser_ConcatFstring(Parser *p, FstringParser *state, const char
             /* Do nothing. No previous literal. */
         } else {
             /* Convert the existing last_str literal to a Constant node. */
-            expr_ty str = make_str_node_and_del(p, &state->last_str, first_token, last_token);
-            if (!str || ExprList_Append(&state->expr_list, str) < 0)
+            expr_ty last_str = make_str_node_and_del(p, &state->last_str, first_token, last_token);
+            if (!last_str || ExprList_Append(&state->expr_list, last_str) < 0) {
                 return -1;
+            }
         }
 
-        if (ExprList_Append(&state->expr_list, expression) < 0)
+        if (ExprList_Append(&state->expr_list, expression) < 0) {
             return -1;
+        }
     }
 
     /* If recurse_lvl is zero, then we must be at the end of the
@@ -1373,8 +1402,9 @@ _PyPegen_FstringParser_Finish(Parser *p, FstringParser *state, Token* first_toke
         if (!state->last_str) {
             /* Create a zero length string. */
             state->last_str = PyUnicode_FromStringAndSize(NULL, 0);
-            if (!state->last_str)
+            if (!state->last_str) {
                 goto error;
+            }
         }
         return make_str_node_and_del(p, &state->last_str, first_token, last_token);
     }
@@ -1383,15 +1413,17 @@ _PyPegen_FstringParser_Finish(Parser *p, FstringParser *state, Token* first_toke
        last node in our expression list. */
     if (state->last_str) {
         expr_ty str = make_str_node_and_del(p, &state->last_str, first_token, last_token);
-        if (!str || ExprList_Append(&state->expr_list, str) < 0)
+        if (!str || ExprList_Append(&state->expr_list, str) < 0) {
             goto error;
+        }
     }
     /* This has already been freed. */
     assert(state->last_str == NULL);
 
     seq = ExprList_Finish(&state->expr_list, p->arena);
-    if (!seq)
+    if (!seq) {
         goto error;
+    }
 
     return _Py_JoinedStr(seq, first_token->lineno, first_token->col_offset,
                          last_token->end_lineno, last_token->end_col_offset, p->arena);
