@@ -105,6 +105,7 @@ class CCallMakerVisitor(GrammarVisitor):
         self.non_exact_tokens = non_exact_tokens
         self.cache: Dict[Any, FunctionCall] = {}
         self.keyword_cache: Dict[str, int] = {}
+        self.soft_keywords: Set[str] = set()
 
     def keyword_helper(self, keyword: str) -> FunctionCall:
         if keyword not in self.keyword_cache:
@@ -119,6 +120,7 @@ class CCallMakerVisitor(GrammarVisitor):
         )
 
     def soft_keyword_helper(self, value: str) -> FunctionCall:
+        self.soft_keywords.add(value.replace('"', ""))
         return FunctionCall(
             assigned_variable="_keyword",
             function="_PyPegen_expect_soft_keyword",
