@@ -573,7 +573,10 @@ parse_grow_buff(ReaderObj *self)
 static int
 parse_add_char(ReaderObj *self, Py_UCS4 c)
 {
-    long limit = self->field_limit == -1 ? _csvstate_global->field_limit : self->field_limit;
+    long limit = self->field_limit;
+    if (limit == -1) {
+        limit = _csvstate_global->field_limit;
+    }
     if (self->field_len >= limit) {
         PyErr_Format(_csvstate_global->error_obj, "field larger than field limit (%ld)",
                      limit);
@@ -1023,8 +1026,7 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
         }
         self->field_limit = limit;
     }
-    Py_DECREF(_field_size_limit);
-    _field_size_limit = NULL;
+    Py_CLEAR(_field_size_limit);
 
     if (parse_reset(self) < 0) {
         goto fail;
@@ -1746,7 +1748,7 @@ PyInit__csv(void)
         return NULL;
 
     /* Add the CSV exception object to the module. */
-    _csvstate(module)->error_obj = PyErr_NewException("csv.Error", NULL, NULL);
+    _csvstate(module)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
     if (_csvstate(module)->error_obj == NULL)
         return NULL;
     Py_INCREF(_csvstate(module)->error_obj);

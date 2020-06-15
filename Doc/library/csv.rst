@@ -419,8 +419,8 @@ Reader objects have the following public attributes:
 
 .. attribute:: csvreader.field_size_limit
 
-    The maximum field size allowed by this reader. If :const:`None`,
-    *csv.field_size_limit()* is used.
+   The maximum field size allowed by this reader. If :const:`None`,
+   csv.field_size_limit() is used.
 
 DictReader objects have the following public attribute:
 
