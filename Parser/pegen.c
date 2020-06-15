@@ -145,7 +145,7 @@ byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
     if (!str) {
         return 0;
     }
-    assert(col_offset > 0 && (unsigned long)col_offset <= strlen(str));
+    assert(col_offset >= 0 && (unsigned long)col_offset <= strlen(str));
     PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
     if (!text) {
         return 0;
