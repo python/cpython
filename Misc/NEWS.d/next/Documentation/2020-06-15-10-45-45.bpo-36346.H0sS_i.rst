@@ -1,0 +1,2 @@
+Update some deprecated unicode APIs which are documented as "will be removed
+in 4.0" to "will be removed to 3.11".
