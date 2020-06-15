@@ -1502,7 +1502,18 @@ def _link_or_symlink(os_method, srcs, dst, **kwargs):
             create_link_at(link_name)
 
 def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
-    _link_or_symlink(os.link, srcs, dst, overwrite=overwrite, follow_symlinks=follow_symlinks)
+    """Create a hard link XXX  TODO: complete me.
+
+    If follow_symlinks is False, and the last element of the path to operate
+    on is a symbolic link, the function will operate on the symbolic link
+    itself rather than the file pointed to by the link. (For POSIX systems,
+    Python will call the l... variant of the function.)
+
+    TODO: Check if posix ln utility follows the above behaviour with symlinks.
+    """
+    _link_or_symlink(os.link, srcs, dst, overwrite=overwrite,
+                     follow_symlinks=follow_symlinks)
+
 
 def symlink(srcs, dst, *, overwrite=False, target_is_directory=False):
     """Create symbolic link(s) in `dst` pointing at `srcs`.
