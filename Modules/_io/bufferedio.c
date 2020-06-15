@@ -1487,7 +1487,7 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
     if (n == -1 && PyErr_Occurred()) {
         _PyErr_FormatFromCause(
             PyExc_OSError,
-            "raw readinto() returned invalid value"
+            "raw readinto() failed"
         );
         return -1;
     }
