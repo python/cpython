@@ -198,7 +198,7 @@ Scheduling callbacks
    Each callback will be called exactly once.
    
    A callback is a standard Python function. Passing a coroutine
-   as the `callback` argument will result in an error.
+   as the *callback* argument will result in an error.
 
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` for the *callback* to run in.
