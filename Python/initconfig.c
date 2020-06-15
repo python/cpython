@@ -600,6 +600,8 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->run_module);
     CLEAR(config->run_filename);
     CLEAR(config->check_hash_pycs_mode);
+
+    _PyWideStringList_Clear(&config->_orig_argv);
 #undef CLEAR
 }
 
