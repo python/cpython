@@ -196,7 +196,7 @@ Scheduling callbacks
 
    Callbacks are called in the order in which they are registered.
    Each callback will be called exactly once.
-   
+
    A callback is a standard Python function. Passing a coroutine
    as the *callback* argument will result in an error.
 
