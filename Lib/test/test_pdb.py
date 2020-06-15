@@ -1578,6 +1578,7 @@ class PdbTestCase(unittest.TestCase):
         stdout, _ = self.run_pdb_script('', commands + '\n')
 
         self.assertEqual(stdout.splitlines()[1:], [
+            '-> ',
             '(Pdb) *** SyntaxError: unexpected EOF while parsing',
 
             '(Pdb) ENTERING RECURSIVE DEBUGGER',
