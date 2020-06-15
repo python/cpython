@@ -119,7 +119,7 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
             additional_paths.append(os.path.join(tmpdir, wheel_name))
 
         # Construct the arguments to be passed to the pip command
-        args = ["install", "--no-index", "--find-links", tmpdir]
+        args = ["install", "--no-cache-dir", "--no-index", "--find-links", tmpdir]
         if root:
             args += ["--root", root]
         if upgrade:
