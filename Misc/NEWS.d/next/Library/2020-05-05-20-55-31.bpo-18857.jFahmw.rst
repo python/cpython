@@ -1,5 +1,5 @@
-Added ``standalone_keys`` flag (disabled-by-default) to
-``urllib.parse.urlencode``.
+Added ``standalone_keys`` flag (disabled by default) to
+:meth:`urllib.parse.urlencode`.
 
 This flag allows developers to unambiguously render ``None`` values (as
 opposed to empty strings) when serializing query-string parameters.
