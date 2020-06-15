@@ -56,9 +56,11 @@ typedef struct {
 
 #include "clinic/_dbmmodule.c.h"
 
-#define check_dbmobject_open(v, err) if ((v)->di_dbm == NULL) \
-               { PyErr_SetString(err, "DBM object has already been closed"); \
-                 return NULL; }
+#define check_dbmobject_open(v, err)                            \
+if ((v)->di_dbm == NULL) {                                      \
+    PyErr_SetString(err, "DBM object has already been closed"); \
+    return NULL;                                                \
+}
 
 static PyObject *
 newdbmobject(_dbm_state *state, const char *file, int flags, int mode)
