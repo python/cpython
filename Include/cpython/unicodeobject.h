@@ -543,7 +543,7 @@ PyAPI_FUNC(void) _PyUnicode_FastFill(
    only allowed if u was set to NULL.
 
    The buffer is copied into the new object. */
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(PyObject*) PyUnicode_FromUnicode(
+Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_FromUnicode(
     const Py_UNICODE *u,        /* Unicode buffer */
     Py_ssize_t size             /* size of buffer */
     );
@@ -572,7 +572,7 @@ PyAPI_FUNC(Py_UCS4) _PyUnicode_FindMaxChar (
    Py_UNICODE buffer.
    If the wchar_t/Py_UNICODE representation is not yet available, this
    function will calculate it. */
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicode(
+Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicode(
     PyObject *unicode           /* Unicode object */
     );
 
@@ -587,7 +587,7 @@ PyAPI_FUNC(const Py_UNICODE *) _PyUnicode_AsUnicode(
    If the wchar_t/Py_UNICODE representation is not yet available, this
    function will calculate it. */
 
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicodeAndSize(
+Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicodeAndSize(
     PyObject *unicode,          /* Unicode object */
     Py_ssize_t *size            /* location where to save the length */
     );
@@ -974,7 +974,7 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeMBCS(
 
 */
 
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
+Py_DEPRECATED(3.3) PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
     Py_UNICODE *s,              /* Unicode buffer */
     Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
     char *output,               /* Output buffer; must have size >= length */
@@ -987,7 +987,7 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeMBCS(
    Returns a new Unicode string on success, NULL on failure.
 */
 
-/* Py_DEPRECATED(3.3) */
+Py_DEPRECATED(3.3)
 PyAPI_FUNC(PyObject*) PyUnicode_TransformDecimalToASCII(
     Py_UNICODE *s,              /* Unicode buffer */
     Py_ssize_t length           /* Number of Py_UNICODE chars to transform */
@@ -1090,11 +1090,11 @@ PyAPI_FUNC(int) _PyUnicode_IsLinebreak(
     const Py_UCS4 ch         /* Unicode character */
     );
 
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToLowercase(
+Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UCS4) _PyUnicode_ToLowercase(
     Py_UCS4 ch       /* Unicode character */
     );
 
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToUppercase(
+Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UCS4) _PyUnicode_ToUppercase(
     Py_UCS4 ch       /* Unicode character */
     );
 
