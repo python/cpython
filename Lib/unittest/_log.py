@@ -25,12 +25,12 @@ class _CapturingHandler(logging.Handler):
         self.watcher.output.append(msg)
 
 
-class _AssertLogsBaseContext(_BaseTestCaseContext):
-    """Base class for assertLogs() and assertNoLogs() """
+class _AssertLogsContext(_BaseTestCaseContext):
+    """A context manager for assertLogs() and assertNoLogs() """
 
     LOGGING_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 
-    def __init__(self, test_case, logger_name, level):
+    def __init__(self, test_case, logger_name, level, no_logs):
         _BaseTestCaseContext.__init__(self, test_case)
         self.logger_name = logger_name
         if level:
@@ -38,6 +38,7 @@ class _AssertLogsBaseContext(_BaseTestCaseContext):
         else:
             self.level = logging.INFO
         self.msg = None
+        self.no_logs = no_logs
 
     def __enter__(self):
         if isinstance(self.logger_name, logging.Logger):
@@ -65,26 +66,18 @@ class _AssertLogsBaseContext(_BaseTestCaseContext):
             # let unexpected exceptions pass through
             return False
 
-        self.check_records()
-
-
-class _AssertLogsContext(_AssertLogsBaseContext):
-    """A context manager used to implement TestCase.assertLogs()."""
-
-    def check_records(self):
-        if len(self.watcher.records) == 0:
-            self._raiseFailure(
-                "no logs of level {} or higher triggered on {}"
-                .format(logging.getLevelName(self.level), self.logger.name))
-
-
-class _AssertNoLogsContext(_AssertLogsBaseContext):
-    """A context manager used to implement TestCase.assertNoLogs()."""
-
-    def check_records(self):
-        if len(self.watcher.records) > 0:
-            self._raiseFailure(
-                "Unexpected logs found: {!r}".format(
-                    self.watcher.output
+        if self.no_logs:
+            # assertNoLogs
+            if len(self.watcher.records) > 0:
+                self._raiseFailure(
+                    "Unexpected logs found: {!r}".format(
+                        self.watcher.output
+                    )
                 )
-            )
+
+        else:
+            # assertLogs
+            if len(self.watcher.records) == 0:
+                self._raiseFailure(
+                    "no logs of level {} or higher triggered on {}"
+                    .format(logging.getLevelName(self.level), self.logger.name))

@@ -787,7 +787,7 @@ class TestCase(object):
         """
         # Lazy import to avoid importing logging if it is not needed.
         from ._log import _AssertLogsContext
-        return _AssertLogsContext(self, logger, level)
+        return _AssertLogsContext(self, logger, level, no_logs=False)
 
     def assertNoLogs(self, logger=None, level=None):
         """ Fail unless no log messages of level *level* or higher are emitted
@@ -796,8 +796,8 @@ class TestCase(object):
         This method must be used as a context manager, and will yield
         a recording object expected to have recorded nothing.
         """
-        from ._log import _AssertNoLogsContext
-        return _AssertNoLogsContext(self, logger, level)
+        from ._log import _AssertLogsContext
+        return _AssertLogsContext(self, logger, level, no_logs=True)
 
     def _getAssertEqualityFunc(self, first, second):
         """Get a detailed comparison function for the types of the two args.
