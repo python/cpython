@@ -15,6 +15,37 @@ extern "C" {
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
+// Fast inlined version of PyType_HasFeature()
+static inline int
+_PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
+    return ((type->tp_flags & feature) != 0);
+}
+
+/* Inline functions trading binary compatibility for speed:
+   _PyObject_Init() is the fast version of PyObject_Init(), and
+   _PyObject_InitVar() is the fast version of PyObject_InitVar().
+
+   These inline functions must not be called with op=NULL. */
+static inline void
+_PyObject_Init(PyObject *op, PyTypeObject *typeobj)
+{
+    assert(op != NULL);
+    Py_SET_TYPE(op, typeobj);
+    if (_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE)) {
+        Py_INCREF(typeobj);
+    }
+    _Py_NewReference(op);
+}
+
+static inline void
+_PyObject_InitVar(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
+{
+    assert(op != NULL);
+    Py_SET_SIZE(op, size);
+    _PyObject_Init((PyObject *)op, typeobj);
+}
+
+
 /* Tell the GC to track this object.
  *
  * NB: While the object is tracked by the collector, it must be safe to call the
@@ -94,12 +125,6 @@ _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 {
     Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
     return (PyObject **)((char *)op + offset);
-}
-
-// Fast inlined version of PyType_HasFeature()
-static inline int
-_PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-    return ((type->tp_flags & feature) != 0);
 }
 
 // Fast inlined version of PyObject_IS_GC()
