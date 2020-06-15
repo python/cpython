@@ -1350,8 +1350,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         next_instr += f->f_lasti / sizeof(_Py_CODEUNIT) + 1;
     }
     stack_pointer = f->f_valuestack + f->f_stackdepth;
-    /* To help with debugging, set f->f_stackdepth to -1.
-     * Update when returning or calling trace function */
+    /* Set f->f_stackdepth to -1.
+     * Update when returning or calling trace function.
+       Having f_stackdepth <= 0 ensures that invalid
+       values are not visible to the cycle GC.
+       We choose -1 rather than 0 to assist debugging.
+     */
     f->f_stackdepth = -1;
     f->f_state = FRAME_EXECUTING;
 
@@ -1450,6 +1454,7 @@ main_loop:
             /* Reload possibly changed frame fields */
             JUMPTO(f->f_lasti);
             stack_pointer = f->f_valuestack+f->f_stackdepth;
+            f->f_stackdepth = -1;
             if (err)
                 /* trace function raised an exception */
                 goto error;
@@ -2075,6 +2080,7 @@ main_loop:
             assert(f->f_iblock == 0);
             assert(EMPTY());
             f->f_state = FRAME_RETURNED;
+            f->f_stackdepth = 0;
             goto exiting;
         }
 
@@ -2245,6 +2251,7 @@ main_loop:
             assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
             f->f_state = FRAME_SUSPENDED;
+            f->f_stackdepth = stack_pointer-f->f_valuestack;
             goto exiting;
         }
 
@@ -2261,6 +2268,7 @@ main_loop:
                 retval = w;
             }
             f->f_state = FRAME_SUSPENDED;
+            f->f_stackdepth = stack_pointer-f->f_valuestack;
             goto exiting;
         }
 
@@ -3843,10 +3851,9 @@ exception_unwind:
         PyObject *o = POP();
         Py_XDECREF(o);
     }
-
+    f->f_stackdepth = 0;
     f->f_state = FRAME_RAISED;
 exiting:
-    f->f_stackdepth = stack_pointer-f->f_valuestack;
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
             if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,

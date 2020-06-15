@@ -300,6 +300,7 @@ first_line_not_before(int *lines, int len, int line)
 static void
 frame_stack_pop(PyFrameObject *f)
 {
+    assert(f->f_stackdepth >= 0);
     f->f_stackdepth--;
     PyObject *v = f->f_valuestack[f->f_stackdepth];
     Py_DECREF(v);
@@ -308,6 +309,7 @@ frame_stack_pop(PyFrameObject *f)
 static void
 frame_block_unwind(PyFrameObject *f)
 {
+    assert(f->f_stackdepth >= 0);
     assert(f->f_iblock > 0);
     f->f_iblock--;
     PyTryBlock *b = &f->f_blockstack[f->f_iblock];
