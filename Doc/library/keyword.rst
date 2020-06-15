@@ -8,16 +8,17 @@
 
 --------------
 
-This module allows a Python program to determine if a string is a keyword.
+This module allows a Python program to determine if a string is a
+:ref:`keyword <keywords>`.
 
 
 .. function:: iskeyword(s)
 
-   Return ``True`` if *s* is a Python keyword.
+   Return ``True`` if *s* is a Python :ref:`keyword <keywords>`.
 
 
 .. data:: kwlist
 
-   Sequence containing all the keywords defined for the interpreter.  If any
-   keywords are defined to only be active when particular :mod:`__future__`
-   statements are in effect, these will be included as well.
+   Sequence containing all the :ref:`keywords <keywords>` defined for the
+   interpreter.  If any keywords are defined to only be active when particular
+   :mod:`__future__` statements are in effect, these will be included as well.

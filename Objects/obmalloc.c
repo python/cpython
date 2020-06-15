@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_pymem.h"
+#include "pycore_pymem.h"         // _PyTraceMalloc_Config
 
 #include <stdbool.h>
 
@@ -2361,26 +2361,22 @@ _PyMem_DebugRealloc(void *ctx, void *ptr, size_t nbytes)
 static void
 _PyMem_DebugCheckAddress(const char *func, char api, const void *p)
 {
+    assert(p != NULL);
+
     const uint8_t *q = (const uint8_t *)p;
-    char msgbuf[64];
-    const char *msg;
     size_t nbytes;
     const uint8_t *tail;
     int i;
     char id;
 
-    if (p == NULL) {
-        msg = "didn't expect a NULL pointer";
-        goto error;
-    }
-
     /* Check the API id */
     id = (char)q[-SST];
     if (id != api) {
-        msg = msgbuf;
-        snprintf(msgbuf, sizeof(msgbuf), "bad ID: Allocated using API '%c', verified using API '%c'", id, api);
-        msgbuf[sizeof(msgbuf)-1] = 0;
-        goto error;
+        _PyObject_DebugDumpAddress(p);
+        _Py_FatalErrorFormat(func,
+                             "bad ID: Allocated using API '%c', "
+                             "verified using API '%c'",
+                             id, api);
     }
 
     /* Check the stuff at the start of p first:  if there's underwrite
@@ -2389,8 +2385,8 @@ _PyMem_DebugCheckAddress(const char *func, char api, const void *p)
      */
     for (i = SST-1; i >= 1; --i) {
         if (*(q-i) != PYMEM_FORBIDDENBYTE) {
-            msg = "bad leading pad byte";
-            goto error;
+            _PyObject_DebugDumpAddress(p);
+            _Py_FatalErrorFunc(func, "bad leading pad byte");
         }
     }
 
@@ -2398,16 +2394,10 @@ _PyMem_DebugCheckAddress(const char *func, char api, const void *p)
     tail = q + nbytes;
     for (i = 0; i < SST; ++i) {
         if (tail[i] != PYMEM_FORBIDDENBYTE) {
-            msg = "bad trailing pad byte";
-            goto error;
+            _PyObject_DebugDumpAddress(p);
+            _Py_FatalErrorFunc(func, "bad trailing pad byte");
         }
     }
-
-    return;
-
-error:
-    _PyObject_DebugDumpAddress(p);
-    _Py_FatalErrorFunc(func, msg);
 }
 
 /* Display info to stderr about the memory block at p. */
@@ -2430,8 +2420,7 @@ _PyObject_DebugDumpAddress(const void *p)
     fprintf(stderr, " API '%c'\n", id);
 
     nbytes = read_size_t(q - 2*SST);
-    fprintf(stderr, "    %" PY_FORMAT_SIZE_T "u bytes originally "
-                    "requested\n", nbytes);
+    fprintf(stderr, "    %zu bytes originally requested\n", nbytes);
 
     /* In case this is nuts, check the leading pad bytes first. */
     fprintf(stderr, "    The %d pad bytes at p-%d are ", SST-1, SST-1);
@@ -2487,8 +2476,9 @@ _PyObject_DebugDumpAddress(const void *p)
 
 #ifdef PYMEM_DEBUG_SERIALNO
     size_t serial = read_size_t(tail + SST);
-    fprintf(stderr, "    The block was made by call #%" PY_FORMAT_SIZE_T
-                    "u to debug malloc/realloc.\n", serial);
+    fprintf(stderr,
+            "    The block was made by call #%zu to debug malloc/realloc.\n",
+            serial);
 #endif
 
     if (nbytes > 0) {
@@ -2563,7 +2553,7 @@ _PyDebugAllocatorStats(FILE *out,
     char buf1[128];
     char buf2[128];
     PyOS_snprintf(buf1, sizeof(buf1),
-                  "%d %ss * %" PY_FORMAT_SIZE_T "d bytes each",
+                  "%d %ss * %zd bytes each",
                   num_blocks, block_name, sizeof_block);
     PyOS_snprintf(buf2, sizeof(buf2),
                   "%48s ", buf1);
@@ -2704,10 +2694,7 @@ _PyObject_DebugMallocStats(FILE *out)
             assert(b == 0 && f == 0);
             continue;
         }
-        fprintf(out, "%5u %6u "
-                        "%11" PY_FORMAT_SIZE_T "u "
-                        "%15" PY_FORMAT_SIZE_T "u "
-                        "%13" PY_FORMAT_SIZE_T "u\n",
+        fprintf(out, "%5u %6u %11zu %15zu %13zu\n",
                 i, size, p, b, f);
         allocated_bytes += b * size;
         available_bytes += f * size;
@@ -2726,8 +2713,8 @@ _PyObject_DebugMallocStats(FILE *out)
     (void)printone(out, "# arenas allocated current", narenas);
 
     PyOS_snprintf(buf, sizeof(buf),
-        "%" PY_FORMAT_SIZE_T "u arenas * %d bytes/arena",
-        narenas, ARENA_SIZE);
+                  "%zu arenas * %d bytes/arena",
+                  narenas, ARENA_SIZE);
     (void)printone(out, buf, narenas * ARENA_SIZE);
 
     fputc('\n', out);

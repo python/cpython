@@ -1,8 +1,9 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
+#include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
-#include "frameobject.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "frameobject.h"          // PyFrame_GetBack()
 #include "clinic/_warnings.c.h"
 
 #define MODULE_NAME "_warnings"
@@ -31,14 +32,14 @@ _Py_IDENTIFIER(__name__);
 static WarningsState *
 warnings_get_state(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate == NULL) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                          "warnings_get_state: could not identify "
-                          "current interpreter");
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "warnings_get_state: could not identify "
+                        "current interpreter");
         return NULL;
     }
-    return &tstate->interp->warnings;
+    return &interp->warnings;
 }
 
 /* Clear the given warnings module state. */
@@ -211,7 +212,7 @@ get_warnings_attr(_Py_Identifier *attr_id, int try_import)
            gone, then we can't even use PyImport_GetModule without triggering
            an interpreter abort.
         */
-        if (!_PyInterpreterState_GET_UNSAFE()->modules) {
+        if (!_PyInterpreterState_GET()->modules) {
             return NULL;
         }
         warnings_module = PyImport_GetModule(warnings_str);
@@ -435,7 +436,7 @@ normalize_module(PyObject *filename)
 {
     PyObject *module;
     int kind;
-    void *data;
+    const void *data;
     Py_ssize_t len;
 
     len = PyUnicode_GetLength(filename);
@@ -491,8 +492,9 @@ show_warning(PyObject *filename, int lineno, PyObject *text,
     PyOS_snprintf(lineno_str, sizeof(lineno_str), ":%d: ", lineno);
 
     name = _PyObject_GetAttrId(category, &PyId___name__);
-    if (name == NULL)  /* XXX Can an object lack a '__name__' attribute? */
+    if (name == NULL) {
         goto error;
+    }
 
     f_stderr = _PySys_GetObjectId(&PyId_stderr);
     if (f_stderr == NULL) {
@@ -518,7 +520,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text,
     /* Print "  source_line\n" */
     if (sourceline) {
         int kind;
-        void *data;
+        const void *data;
         Py_ssize_t i, len;
         Py_UCS4 ch;
         PyObject *truncated;
@@ -760,7 +762,6 @@ is_internal_frame(PyFrameObject *frame)
 {
     static PyObject *importlib_string = NULL;
     static PyObject *bootstrap_string = NULL;
-    PyObject *filename;
     int contains;
 
     if (importlib_string == NULL) {
@@ -778,14 +779,21 @@ is_internal_frame(PyFrameObject *frame)
         Py_INCREF(bootstrap_string);
     }
 
-    if (frame == NULL || frame->f_code == NULL ||
-            frame->f_code->co_filename == NULL) {
+    if (frame == NULL) {
         return 0;
     }
-    filename = frame->f_code->co_filename;
+
+    PyCodeObject *code = PyFrame_GetCode(frame);
+    PyObject *filename = code->co_filename;
+    Py_DECREF(code);
+
+    if (filename == NULL) {
+        return 0;
+    }
     if (!PyUnicode_Check(filename)) {
         return 0;
     }
+
     contains = PyUnicode_Contains(filename, importlib_string);
     if (contains < 0) {
         return 0;
@@ -807,7 +815,9 @@ static PyFrameObject *
 next_external_frame(PyFrameObject *frame)
 {
     do {
-        frame = frame->f_back;
+        PyFrameObject *back = PyFrame_GetBack(frame);
+        Py_DECREF(frame);
+        frame = back;
     } while (frame != NULL && is_internal_frame(frame));
 
     return frame;
@@ -823,12 +833,15 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     PyObject *globals;
 
     /* Setup globals, filename and lineno. */
-    PyFrameObject *f = _PyThreadState_GET()->frame;
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyFrameObject *f = PyThreadState_GetFrame(tstate);
     // Stack level comparisons to Python code is off by one as there is no
     // warnings-related stack level to avoid.
     if (stack_level <= 0 || is_internal_frame(f)) {
         while (--stack_level > 0 && f != NULL) {
-            f = f->f_back;
+            PyFrameObject *back = PyFrame_GetBack(f);
+            Py_DECREF(f);
+            f = back;
         }
     }
     else {
@@ -838,15 +851,18 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
 
     if (f == NULL) {
-        globals = _PyInterpreterState_GET_UNSAFE()->sysdict;
+        globals = _PyInterpreterState_GET()->sysdict;
         *filename = PyUnicode_FromString("sys");
         *lineno = 1;
     }
     else {
         globals = f->f_globals;
-        *filename = f->f_code->co_filename;
+        PyCodeObject *code = PyFrame_GetCode(f);
+        *filename = code->co_filename;
+        Py_DECREF(code);
         Py_INCREF(*filename);
         *lineno = PyFrame_GetLineNumber(f);
+        Py_DECREF(f);
     }
 
     *module = NULL;
@@ -858,7 +874,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     if (*registry == NULL) {
         int rc;
 
-        if (PyErr_Occurred()) {
+        if (_PyErr_Occurred(tstate)) {
             goto handle_error;
         }
         *registry = PyDict_New();
@@ -877,7 +893,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     if (*module == Py_None || (*module != NULL && PyUnicode_Check(*module))) {
         Py_INCREF(*module);
     }
-    else if (PyErr_Occurred()) {
+    else if (_PyErr_Occurred(tstate)) {
         goto handle_error;
     }
     else {
@@ -1128,6 +1144,23 @@ PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level,
     return res;
 }
 
+static int
+_PyErr_WarnFormat(PyObject *source, PyObject *category, Py_ssize_t stack_level,
+                  const char *format, ...)
+{
+    int res;
+    va_list vargs;
+
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    res = _PyErr_WarnFormatV(source, category, stack_level, format, vargs);
+    va_end(vargs);
+    return res;
+}
+
 int
 PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level,
                       const char *format, ...)
@@ -1296,9 +1329,9 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
         PyErr_WriteUnraisable(coro);
     }
     if (!warned) {
-        if (PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
-                             "coroutine '%.50S' was never awaited",
-                             ((PyCoroObject *)coro)->cr_qualname) < 0)
+        if (_PyErr_WarnFormat(coro, PyExc_RuntimeWarning, 1,
+                              "coroutine '%S' was never awaited",
+                              ((PyCoroObject *)coro)->cr_qualname) < 0)
         {
             PyErr_WriteUnraisable(coro);
         }

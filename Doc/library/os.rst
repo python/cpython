@@ -135,6 +135,9 @@ process and user.
    ``os.environ``, and when one of the :meth:`pop` or :meth:`clear` methods is
    called.
 
+   .. versionchanged:: 3.9
+      Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
+
 
 .. data:: environb
 
@@ -147,6 +150,9 @@ process and user.
    ``True``.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.9
+      Updated to support :pep:`584`'s merge (``|``) and update (``|=``) operators.
 
 
 .. function:: chdir(path)
@@ -1145,7 +1151,8 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Combine the functionality of :func:`os.readv` and :func:`os.pread`.
 
    .. availability:: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
-      OpenBSD 2.7 and newer. Using flags requires Linux 4.6 or newer.
+      OpenBSD 2.7 and newer, AIX 7.1 and newer. Using flags requires
+      Linux 4.6 or newer.
 
    .. versionadded:: 3.7
 
@@ -1204,6 +1211,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    - :data:`RWF_DSYNC`
    - :data:`RWF_SYNC`
+   - :data:`RWF_APPEND`
 
    Return the total number of bytes actually written.
 
@@ -1213,15 +1221,16 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
 
    .. availability:: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
-      OpenBSD 2.7 and newer. Using flags requires Linux 4.7 or newer.
+      OpenBSD 2.7 and newer, AIX 7.1 and newer. Using flags requires
+      Linux 4.7 or newer.
 
    .. versionadded:: 3.7
 
 
 .. data:: RWF_DSYNC
 
-   Provide a per-write equivalent of the :data:`O_DSYNC` ``open(2)`` flag. This
-   flag effect applies only to the data range written by the system call.
+   Provide a per-write equivalent of the :data:`O_DSYNC` :func:`os.open` flag.
+   This flag effect applies only to the data range written by the system call.
 
    .. availability:: Linux 4.7 and newer.
 
@@ -1230,12 +1239,26 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. data:: RWF_SYNC
 
-   Provide a per-write equivalent of the :data:`O_SYNC` ``open(2)`` flag. This
-   flag effect applies only to the data range written by the system call.
+   Provide a per-write equivalent of the :data:`O_SYNC` :func:`os.open` flag.
+   This flag effect applies only to the data range written by the system call.
 
    .. availability:: Linux 4.7 and newer.
 
    .. versionadded:: 3.7
+
+
+.. data:: RWF_APPEND
+
+    Provide a per-write equivalent of the :data:`O_APPEND` :func:`os.open`
+    flag. This flag is meaningful only for :func:`os.pwritev`, and its
+    effect applies only to the data range written by the system call. The
+    *offset* argument does not affect the write operation; the data is always
+    appended to the end of the file. However, if the *offset* argument is
+    ``-1``, the current file *offset* is updated.
+
+   .. availability:: Linux 4.16 and newer.
+
+   .. versionadded:: 3.10
 
 
 .. function:: read(fd, n)
@@ -1260,7 +1283,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 
 .. function:: sendfile(out_fd, in_fd, offset, count)
-              sendfile(out_fd, in_fd, offset, count, [headers], [trailers], flags=0)
+              sendfile(out_fd, in_fd, offset, count, headers=(), trailers=(), flags=0)
 
    Copy *count* bytes from file descriptor *in_fd* to file descriptor *out_fd*
    starting at *offset*.
@@ -3659,6 +3682,11 @@ written in Python, such as a mail server's external command delivery program.
    subprocess was killed.)  On Windows systems, the return value
    contains the signed integer return code from the child process.
 
+   On Unix, :func:`waitstatus_to_exitcode` can be used to convert the ``close``
+   method result (exit status) into an exit code if it is not ``None``. On
+   Windows, the ``close`` method result is directly the exit code
+   (or ``None``).
+
    This is implemented using :class:`subprocess.Popen`; see that class's
    documentation for more powerful ways to manage and communicate with
    subprocesses.
@@ -3962,6 +3990,10 @@ written in Python, such as a mail server's external command delivery program.
    to using this function.  See the :ref:`subprocess-replacements` section in
    the :mod:`subprocess` documentation for some helpful recipes.
 
+   On Unix, :func:`waitstatus_to_exitcode` can be used to convert the result
+   (exit status) into an exit code. On Windows, the result is directly the exit
+   code.
+
    .. audit-event:: os.system command os.system
 
    .. availability:: Unix, Windows.
@@ -4002,7 +4034,15 @@ written in Python, such as a mail server's external command delivery program.
    number is zero); the high bit of the low byte is set if a core file was
    produced.
 
+   :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
+   exit code.
+
    .. availability:: Unix.
+
+   .. seealso::
+
+      :func:`waitpid` can be used to wait for the completion of a specific
+      child process and has more options.
 
 .. function:: waitid(idtype, id, options)
 
@@ -4099,6 +4139,9 @@ written in Python, such as a mail server's external command delivery program.
    id is known, not necessarily a child process. The :func:`spawn\* <spawnl>`
    functions called with :const:`P_NOWAIT` return suitable process handles.
 
+   :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
+   exit code.
+
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
       exception, the function now retries the system call instead of raising an
@@ -4114,6 +4157,9 @@ written in Python, such as a mail server's external command delivery program.
    information.  The option argument is the same as that provided to
    :func:`waitpid` and :func:`wait4`.
 
+   :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
+   exitcode.
+
    .. availability:: Unix.
 
 
@@ -4125,7 +4171,40 @@ written in Python, such as a mail server's external command delivery program.
    resource usage information.  The arguments to :func:`wait4` are the same
    as those provided to :func:`waitpid`.
 
+   :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
+   exitcode.
+
    .. availability:: Unix.
+
+
+.. function:: waitstatus_to_exitcode(status)
+
+   Convert a wait status to an exit code.
+
+   On Unix:
+
+   * If the process exited normally (if ``WIFEXITED(status)`` is true),
+     return the process exit status (return ``WEXITSTATUS(status)``):
+     result greater than or equal to 0.
+   * If the process was terminated by a signal (if ``WIFSIGNALED(status)`` is
+     true), return ``-signum`` where *signum* is the number of the signal that
+     caused the process to terminate (return ``-WTERMSIG(status)``):
+     result less than 0.
+   * Otherwise, raise a :exc:`ValueError`.
+
+   On Windows, return *status* shifted right by 8 bits.
+
+   On Unix, if the process is being traced or if :func:`waitpid` was called
+   with :data:`WUNTRACED` option, the caller must first check if
+   ``WIFSTOPPED(status)`` is true. This function must not be called if
+   ``WIFSTOPPED(status)`` is true.
+
+   .. seealso::
+
+      :func:`WIFEXITED`, :func:`WEXITSTATUS`, :func:`WIFSIGNALED`,
+      :func:`WTERMSIG`, :func:`WIFSTOPPED`, :func:`WSTOPSIG` functions.
+
+   .. versionadded:: 3.9
 
 
 .. data:: WNOHANG
@@ -4161,28 +4240,36 @@ used to determine the disposition of a process.
    Return ``True`` if a core dump was generated for the process, otherwise
    return ``False``.
 
+   This function should be employed only if :func:`WIFSIGNALED` is true.
+
    .. availability:: Unix.
 
 
 .. function:: WIFCONTINUED(status)
 
-   Return ``True`` if the process has been continued from a job control stop,
-   otherwise return ``False``.
+   Return ``True`` if a stopped child has been resumed by delivery of
+   :data:`~signal.SIGCONT` (if the process has been continued from a job
+   control stop), otherwise return ``False``.
+
+   See :data:`WCONTINUED` option.
 
    .. availability:: Unix.
 
 
 .. function:: WIFSTOPPED(status)
 
-   Return ``True`` if the process has been stopped, otherwise return
-   ``False``.
+   Return ``True`` if the process was stopped by delivery of a signal,
+   otherwise return ``False``.
+
+   :func:`WIFSTOPPED` only returns ``True`` if the :func:`waitpid` call was
+   done using :data:`WUNTRACED` option or when the process is being traced (see
+   :manpage:`ptrace(2)`).
 
    .. availability:: Unix.
 
-
 .. function:: WIFSIGNALED(status)
 
-   Return ``True`` if the process exited due to a signal, otherwise return
+   Return ``True`` if the process was terminated by a signal, otherwise return
    ``False``.
 
    .. availability:: Unix.
@@ -4190,7 +4277,8 @@ used to determine the disposition of a process.
 
 .. function:: WIFEXITED(status)
 
-   Return ``True`` if the process exited using the :manpage:`exit(2)` system call,
+   Return ``True`` if the process exited terminated normally, that is,
+   by calling ``exit()`` or ``_exit()``, or by returning from ``main()``;
    otherwise return ``False``.
 
    .. availability:: Unix.
@@ -4198,8 +4286,9 @@ used to determine the disposition of a process.
 
 .. function:: WEXITSTATUS(status)
 
-   If ``WIFEXITED(status)`` is true, return the integer parameter to the
-   :manpage:`exit(2)` system call.  Otherwise, the return value is meaningless.
+   Return the process exit status.
+
+   This function should be employed only if :func:`WIFEXITED` is true.
 
    .. availability:: Unix.
 
@@ -4208,12 +4297,16 @@ used to determine the disposition of a process.
 
    Return the signal which caused the process to stop.
 
+   This function should be employed only if :func:`WIFSTOPPED` is true.
+
    .. availability:: Unix.
 
 
 .. function:: WTERMSIG(status)
 
-   Return the signal which caused the process to exit.
+   Return the number of the signal that caused the process to terminate.
+
+   This function should be employed only if :func:`WIFSIGNALED` is true.
 
    .. availability:: Unix.
 

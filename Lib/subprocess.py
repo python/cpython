@@ -52,6 +52,7 @@ import threading
 import warnings
 import contextlib
 from time import monotonic as _time
+import types
 
 try:
     import pwd
@@ -446,17 +447,7 @@ class CompletedProcess(object):
             args.append('stderr={!r}'.format(self.stderr))
         return "{}({})".format(type(self).__name__, ', '.join(args))
 
-    def __class_getitem__(cls, type):
-        """Provide minimal support for using this class as generic
-        (for example in type annotations).
-
-        See PEP 484 and PEP 560 for more details. For example,
-        `CompletedProcess[bytes]` is a valid expression at runtime
-        (type argument `bytes` indicates the type used for stdout).
-        Note, no type checking happens at runtime, but a static type
-        checker can be used.
-        """
-        return cls
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
     def check_returncode(self):
@@ -1000,16 +991,7 @@ class Popen(object):
             obj_repr = obj_repr[:76] + "...>"
         return obj_repr
 
-    def __class_getitem__(cls, type):
-        """Provide minimal support for using this class as generic
-        (for example in type annotations).
-
-        See PEP 484 and PEP 560 for more details. For example, `Popen[bytes]`
-        is a valid expression at runtime (type argument `bytes` indicates the
-        type used for stdout). Note, no type checking happens at runtime, but
-        a static type checker can be used.
-        """
-        return cls
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     @property
     def universal_newlines(self):
@@ -1838,23 +1820,17 @@ class Popen(object):
                 raise child_exception_type(err_msg)
 
 
-        def _handle_exitstatus(self, sts, _WIFSIGNALED=os.WIFSIGNALED,
-                _WTERMSIG=os.WTERMSIG, _WIFEXITED=os.WIFEXITED,
-                _WEXITSTATUS=os.WEXITSTATUS, _WIFSTOPPED=os.WIFSTOPPED,
-                _WSTOPSIG=os.WSTOPSIG):
+        def _handle_exitstatus(self, sts,
+                               waitstatus_to_exitcode=os.waitstatus_to_exitcode,
+                               _WIFSTOPPED=os.WIFSTOPPED,
+                               _WSTOPSIG=os.WSTOPSIG):
             """All callers to this function MUST hold self._waitpid_lock."""
             # This method is called (indirectly) by __del__, so it cannot
             # refer to anything outside of its local scope.
-            if _WIFSIGNALED(sts):
-                self.returncode = -_WTERMSIG(sts)
-            elif _WIFEXITED(sts):
-                self.returncode = _WEXITSTATUS(sts)
-            elif _WIFSTOPPED(sts):
+            if _WIFSTOPPED(sts):
                 self.returncode = -_WSTOPSIG(sts)
             else:
-                # Should never happen
-                raise SubprocessError("Unknown child exit status!")
-
+                self.returncode = waitstatus_to_exitcode(sts)
 
         def _internal_poll(self, _deadstate=None, _waitpid=os.waitpid,
                 _WNOHANG=os.WNOHANG, _ECHILD=errno.ECHILD):

@@ -283,7 +283,7 @@ class AST_Tests(unittest.TestCase):
             x.vararg
 
         with self.assertRaises(TypeError):
-            # "_ast.AST constructor takes 0 positional arguments"
+            # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
 
     def test_AST_garbage_collection(self):
@@ -401,6 +401,15 @@ class AST_Tests(unittest.TestCase):
 
         self.assertRaises(TypeError, ast.Num, 1, None, 2)
         self.assertRaises(TypeError, ast.Num, 1, None, 2, lineno=0)
+
+        # Arbitrary keyword arguments are supported
+        self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
+        self.assertEqual(ast.Num(1, foo='bar').foo, 'bar')
+
+        with self.assertRaisesRegex(TypeError, "Num got multiple values for argument 'n'"):
+            ast.Num(1, n=2)
+        with self.assertRaisesRegex(TypeError, "Constant got multiple values for argument 'value'"):
+            ast.Constant(1, value=2)
 
         self.assertEqual(ast.Num(42).n, 42)
         self.assertEqual(ast.Num(4.25).n, 4.25)
@@ -573,7 +582,7 @@ class AST_Tests(unittest.TestCase):
         m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
-        self.assertIn("but got <_ast.expr", str(cm.exception))
+        self.assertIn("but got <ast.expr", str(cm.exception))
 
     def test_invalid_identifier(self):
         m = ast.Module([ast.Expr(ast.Name(42, ast.Load()))], [])
@@ -582,13 +591,22 @@ class AST_Tests(unittest.TestCase):
             compile(m, "<test>", "exec")
         self.assertIn("identifier must be of type str", str(cm.exception))
 
+    def test_invalid_constant(self):
+        for invalid_constant in int, (1, 2, int), frozenset((1, 2, int)):
+            e = ast.Expression(body=ast.Constant(invalid_constant))
+            ast.fix_missing_locations(e)
+            with self.assertRaisesRegex(
+                TypeError, "invalid type in Constant: type"
+            ):
+                compile(e, "<test>", "eval")
+
     def test_empty_yield_from(self):
         # Issue 16546: yield from value is not optional.
         empty_yield_from = ast.parse("def f():\n yield from g()")
         empty_yield_from.body[0].body[0].value.value = None
         with self.assertRaises(ValueError) as cm:
             compile(empty_yield_from, "<test>", "exec")
-        self.assertIn("field value is required", str(cm.exception))
+        self.assertIn("field 'value' is required", str(cm.exception))
 
     @support.cpython_only
     def test_issue31592(self):
@@ -635,6 +653,28 @@ class AST_Tests(unittest.TestCase):
         tree = ast.parse('@a.b.c\ndef f(): pass')
         attr_b = tree.body[0].decorator_list[0].value
         self.assertEqual(attr_b.end_col_offset, 4)
+
+    def test_ast_asdl_signature(self):
+        self.assertEqual(ast.withitem.__doc__, "withitem(expr context_expr, expr? optional_vars)")
+        self.assertEqual(ast.GtE.__doc__, "GtE")
+        self.assertEqual(ast.Name.__doc__, "Name(identifier id, expr_context ctx)")
+        self.assertEqual(ast.cmpop.__doc__, "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn")
+        expressions = [f"     | {node.__doc__}" for node in ast.expr.__subclasses__()]
+        expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
+        self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
+
+    def test_issue40614_feature_version(self):
+        ast.parse('f"{x=}"', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('f"{x=}"', feature_version=(3, 7))
+
+    def test_constant_as_name(self):
+        for constant in "True", "False", "None":
+            expr = ast.Expression(ast.Name(constant, ast.Load()))
+            ast.fix_missing_locations(expr)
+            with self.assertRaisesRegex(ValueError, f"Name node can't be used with '{constant}' constant"):
+                compile(expr, "<test>", "eval")
+
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
@@ -945,6 +985,12 @@ Module(
         self.assertRaises(ValueError, ast.literal_eval, '3+-6j')
         self.assertRaises(ValueError, ast.literal_eval, '3+(0+6j)')
         self.assertRaises(ValueError, ast.literal_eval, '-(3+6j)')
+
+    def test_literal_eval_malformed_dict_nodes(self):
+        malformed = ast.Dict(keys=[ast.Constant(1), ast.Constant(2)], values=[ast.Constant(3)])
+        self.assertRaises(ValueError, ast.literal_eval, malformed)
+        malformed = ast.Dict(keys=[ast.Constant(1)], values=[ast.Constant(2), ast.Constant(3)])
+        self.assertRaises(ValueError, ast.literal_eval, malformed)
 
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values
@@ -1826,6 +1872,17 @@ class EndPositionTests(unittest.TestCase):
         cdef = ast.parse(s).body[0]
         self.assertEqual(ast.get_source_segment(s, cdef.body[0], padded=True), s_method)
 
+    def test_source_segment_missing_info(self):
+        s = 'v = 1\r\nw = 1\nx = 1\n\ry = 1\r\n'
+        v, w, x, y = ast.parse(s).body
+        del v.lineno
+        del w.end_lineno
+        del x.col_offset
+        del y.end_col_offset
+        self.assertIsNone(ast.get_source_segment(s, v))
+        self.assertIsNone(ast.get_source_segment(s, w))
+        self.assertIsNone(ast.get_source_segment(s, x))
+        self.assertIsNone(ast.get_source_segment(s, y))
 
 class NodeVisitorTests(unittest.TestCase):
     def test_old_constant_nodes(self):
@@ -1987,7 +2044,7 @@ eval_results = [
 ('Expression', ('GeneratorExp', (1, 0, 1, 22), ('Tuple', (1, 1, 1, 6), [('Name', (1, 2, 1, 3), 'a', ('Load',)), ('Name', (1, 4, 1, 5), 'b', ('Load',))], ('Load',)), [('comprehension', ('Tuple', (1, 11, 1, 16), [('Name', (1, 12, 1, 13), 'a', ('Store',)), ('Name', (1, 14, 1, 15), 'b', ('Store',))], ('Store',)), ('Name', (1, 20, 1, 21), 'c', ('Load',)), [], 0)])),
 ('Expression', ('GeneratorExp', (1, 0, 1, 22), ('Tuple', (1, 1, 1, 6), [('Name', (1, 2, 1, 3), 'a', ('Load',)), ('Name', (1, 4, 1, 5), 'b', ('Load',))], ('Load',)), [('comprehension', ('List', (1, 11, 1, 16), [('Name', (1, 12, 1, 13), 'a', ('Store',)), ('Name', (1, 14, 1, 15), 'b', ('Store',))], ('Store',)), ('Name', (1, 20, 1, 21), 'c', ('Load',)), [], 0)])),
 ('Expression', ('Compare', (1, 0, 1, 9), ('Constant', (1, 0, 1, 1), 1, None), [('Lt',), ('Lt',)], [('Constant', (1, 4, 1, 5), 2, None), ('Constant', (1, 8, 1, 9), 3, None)])),
-('Expression', ('Call', (1, 0, 1, 17), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('Constant', (1, 2, 1, 3), 1, None), ('Constant', (1, 4, 1, 5), 2, None), ('Starred', (1, 10, 1, 12), ('Name', (1, 11, 1, 12), 'd', ('Load',)), ('Load',))], [('keyword', 'c', ('Constant', (1, 8, 1, 9), 3, None)), ('keyword', None, ('Name', (1, 15, 1, 16), 'e', ('Load',)))])),
+('Expression', ('Call', (1, 0, 1, 17), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('Constant', (1, 2, 1, 3), 1, None), ('Constant', (1, 4, 1, 5), 2, None), ('Starred', (1, 10, 1, 12), ('Name', (1, 11, 1, 12), 'd', ('Load',)), ('Load',))], [('keyword', (1, 6, 1, 9), 'c', ('Constant', (1, 8, 1, 9), 3, None)), ('keyword', (1, 13, 1, 16), None, ('Name', (1, 15, 1, 16), 'e', ('Load',)))])),
 ('Expression', ('Call', (1, 0, 1, 10), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('Starred', (1, 2, 1, 9), ('List', (1, 3, 1, 9), [('Constant', (1, 4, 1, 5), 0, None), ('Constant', (1, 7, 1, 8), 1, None)], ('Load',)), ('Load',))], [])),
 ('Expression', ('Call', (1, 0, 1, 15), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('GeneratorExp', (1, 1, 1, 15), ('Name', (1, 2, 1, 3), 'a', ('Load',)), [('comprehension', ('Name', (1, 8, 1, 9), 'a', ('Store',)), ('Name', (1, 13, 1, 14), 'b', ('Load',)), [], 0)])], [])),
 ('Expression', ('Constant', (1, 0, 1, 2), 10, None)),

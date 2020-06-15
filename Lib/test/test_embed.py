@@ -365,6 +365,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'program_name': GET_DEFAULT_CONFIG,
         'parse_argv': 0,
         'argv': [""],
+        '_orig_argv': [],
 
         'xoptions': [],
         'warnoptions': [],
@@ -379,6 +380,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'exec_prefix': GET_DEFAULT_CONFIG,
         'base_exec_prefix': GET_DEFAULT_CONFIG,
         'module_search_paths': GET_DEFAULT_CONFIG,
+        'platlibdir': sys.platlibdir,
 
         'site_import': 1,
         'bytes_warning': 0,
@@ -405,6 +407,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'check_hash_pycs_mode': 'default',
         'pathconfig_warnings': 1,
         '_init_main': 1,
+        '_isolated_interpreter': 0,
     }
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
@@ -583,13 +586,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if value is self.GET_DEFAULT_CONFIG:
                 expected[key] = config[key]
 
-        pythonpath_env = expected['pythonpath_env']
-        if pythonpath_env is not None:
-            paths = pythonpath_env.split(os.path.pathsep)
-            expected['module_search_paths'] = [*paths, *expected['module_search_paths']]
-        if modify_path_cb is not None:
-            expected['module_search_paths'] = expected['module_search_paths'].copy()
-            modify_path_cb(expected['module_search_paths'])
+        if expected['module_search_paths'] is not self.IGNORE_CONFIG:
+            pythonpath_env = expected['pythonpath_env']
+            if pythonpath_env is not None:
+                paths = pythonpath_env.split(os.path.pathsep)
+                expected['module_search_paths'] = [*paths, *expected['module_search_paths']]
+            if modify_path_cb is not None:
+                expected['module_search_paths'] = expected['module_search_paths'].copy()
+                modify_path_cb(expected['module_search_paths'])
 
         for key in self.COPY_PRE_CONFIG:
             if key not in expected_preconfig:
@@ -734,7 +738,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             'pycache_prefix': 'conf_pycache_prefix',
             'program_name': './conf_program_name',
-            'argv': ['-c', 'arg2', ],
+            'argv': ['-c', 'arg2'],
+            '_orig_argv': ['python3',
+                           '-W', 'cmdline_warnoption',
+                           '-X', 'cmdline_xoption',
+                           '-c', 'pass',
+                           'arg2'],
             'parse_argv': 1,
             'xoptions': [
                 'config_xoption1=3',
@@ -761,9 +770,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'buffered_stdio': 0,
             'user_site_directory': 0,
             'faulthandler': 1,
+            'platlibdir': 'my_platlibdir',
+            'module_search_paths': self.IGNORE_CONFIG,
 
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
+
+            '_isolated_interpreter': 1,
         }
         self.check_all_configs("test_init_from_config", config, preconfig,
                                api=API_COMPAT)
@@ -790,6 +803,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'user_site_directory': 0,
             'faulthandler': 1,
             'warnoptions': ['EnvVar'],
+            'platlibdir': 'env_platlibdir',
+            'module_search_paths': self.IGNORE_CONFIG,
         }
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
@@ -817,6 +832,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'user_site_directory': 0,
             'faulthandler': 1,
             'warnoptions': ['EnvVar'],
+            'platlibdir': 'env_platlibdir',
+            'module_search_paths': self.IGNORE_CONFIG,
         }
         self.check_all_configs("test_init_python_env", config, preconfig,
                                api=API_PYTHON)
@@ -857,6 +874,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         config = {
             'argv': ['script.py'],
+            '_orig_argv': ['python3', '-X', 'dev', 'script.py'],
             'run_filename': os.path.abspath('script.py'),
             'dev_mode': 1,
             'faulthandler': 1,
@@ -871,9 +889,14 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         preconfig = {
             'isolated': 0,
         }
+        argv = ["python3",
+               "-E", "-I",
+               "-X", "dev",
+               "-X", "utf8",
+               "script.py"]
         config = {
-            'argv': ["python3", "-E", "-I",
-                     "-X", "dev", "-X", "utf8", "script.py"],
+            'argv': argv,
+            '_orig_argv': argv,
             'isolated': 0,
         }
         self.check_all_configs("test_preinit_dont_parse_argv", config, preconfig,
@@ -952,6 +975,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'ignore:::sysadd_warnoption',
                 'ignore:::config_warnoption',
             ],
+            '_orig_argv': ['python3',
+                           '-W', 'ignore:::cmdline_warnoption',
+                           '-X', 'cmdline_xoption'],
         }
         self.check_all_configs("test_init_sys_add", config, api=API_PYTHON)
 
@@ -960,6 +986,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'print(json.dumps(_testinternalcapi.get_configs()))')
         config = {
             'argv': ['-c', 'arg2'],
+            '_orig_argv': ['python3', '-c', code, 'arg2'],
             'program_name': './python3',
             'run_command': code + '\n',
             'parse_argv': 1,
@@ -971,6 +998,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'print(json.dumps(_testinternalcapi.get_configs()))')
         config = {
             'argv': ['-c', 'arg2'],
+            '_orig_argv': ['python3',
+                           '-c', code,
+                           'arg2'],
             'program_name': './python3',
             'run_command': code + '\n',
             'parse_argv': 1,
@@ -984,6 +1014,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = {
             'parse_argv': 1,
             'argv': ['-c', 'arg1', '-v', 'arg3'],
+            '_orig_argv': ['./argv0', '-E', '-c', 'pass', 'arg1', '-v', 'arg3'],
             'program_name': './argv0',
             'run_command': 'pass\n',
             'use_environment': 0,
@@ -997,6 +1028,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = {
             'parse_argv': 0,
             'argv': ['./argv0', '-E', '-c', 'pass', 'arg1', '-v', 'arg3'],
+            '_orig_argv': ['./argv0', '-E', '-c', 'pass', 'arg1', '-v', 'arg3'],
             'program_name': './argv0',
         }
         self.check_all_configs("test_init_dont_parse_argv", config, pre_config,
@@ -1284,9 +1316,16 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'faulthandler': 1,
             'bytes_warning': 1,
             'warnoptions': warnoptions,
+            '_orig_argv': ['python3',
+                           '-Wignore:::cmdline1',
+                           '-Wignore:::cmdline2'],
         }
         self.check_all_configs("test_init_warnoptions", config, preconfig,
                                api=API_PYTHON)
+
+    def test_get_argc_argv(self):
+        self.run_embedded_interpreter("test_get_argc_argv")
+        # ignore output
 
 
 class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):

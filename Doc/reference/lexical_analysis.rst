@@ -325,7 +325,7 @@ of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
 4.1 can be found at
-https://www.dcl.hpi.uni-potsdam.de/home/loewis/table-3131.html.
+https://www.unicode.org/Public/13.0.0/ucd/DerivedCoreProperties.txt
 
 
 .. _keywords:
@@ -376,11 +376,11 @@ characters:
       information on this convention.
 
 ``__*__``
-   System-defined names. These names are defined by the interpreter and its
-   implementation (including the standard library).  Current system names are
-   discussed in the :ref:`specialnames` section and elsewhere.  More will likely
-   be defined in future versions of Python.  *Any* use of ``__*__`` names, in
-   any context, that does not follow explicitly documented use, is subject to
+   System-defined names, informally known as "dunder" names. These names are
+   defined by the interpreter and its implementation (including the standard library).
+   Current system names are discussed in the :ref:`specialnames` section and elsewhere.
+   More will likely be defined in future versions of Python.  *Any* use of ``__*__`` names,
+   in any context, that does not follow explicitly documented use, is subject to
    breakage without warning.
 
 ``__*``
@@ -704,7 +704,7 @@ Top-level format specifiers may include nested replacement fields. These nested
 fields may include their own conversion fields and :ref:`format specifiers
 <formatspec>`, but may not include more deeply-nested replacement fields. The
 :ref:`format specifier mini-language <formatspec>` is the same as that used by
-the string .format() method.
+the :meth:`str.format` method.
 
 Formatted string literals may be concatenated, but replacement fields
 cannot be split across literals.

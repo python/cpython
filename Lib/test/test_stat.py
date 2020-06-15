@@ -2,8 +2,8 @@ import unittest
 import os
 import socket
 import sys
-from test.support import (TESTFN, import_fresh_module,
-                          skip_unless_bind_unix_socket)
+from test.support import socket_helper
+from test.support import TESTFN, import_fresh_module
 
 c_stat = import_fresh_module('stat', fresh=['_stat'])
 py_stat = import_fresh_module('stat', blocked=['_stat'])
@@ -193,7 +193,7 @@ class TestFilemode:
                 self.assertS_IS("BLK", st_mode)
                 break
 
-    @skip_unless_bind_unix_socket
+    @socket_helper.skip_unless_bind_unix_socket
     def test_socket(self):
         with socket.socket(socket.AF_UNIX) as s:
             s.bind(TESTFN)

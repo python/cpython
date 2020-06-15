@@ -1,2 +1,0 @@
-Using :data:`NotImplemented` in a boolean context has been deprecated. Patch
-contributed by Josh Rosenberg.

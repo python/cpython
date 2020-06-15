@@ -1,5 +1,0 @@
-:mod:`multiprocessing` now supports abstract socket addresses (if abstract sockets
-are supported in the running platform). When creating arbitrary addresses (like when
-default-constructing :class:`multiprocessing.connection.Listener` objects) abstract
-sockets are preferred to avoid the case when the temporary-file-generated address is
-too large for an AF_UNIX socket address. Patch by Pablo Galindo.

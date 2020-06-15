@@ -9,7 +9,7 @@
 #endif
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 PyDoc_STRVAR(pickle_module_doc,
 "Optimized C implementation for the Python pickle module.");
@@ -1715,7 +1715,7 @@ memo_get(PicklerObject *self, PyObject *key)
     if (!self->bin) {
         pdata[0] = GET;
         PyOS_snprintf(pdata + 1, sizeof(pdata) - 1,
-                      "%" PY_FORMAT_SIZE_T "d\n", *value);
+                      "%zd\n", *value);
         len = strlen(pdata);
     }
     else {
@@ -1772,7 +1772,7 @@ memo_put(PicklerObject *self, PyObject *obj)
     else if (!self->bin) {
         pdata[0] = PUT;
         PyOS_snprintf(pdata + 1, sizeof(pdata) - 1,
-                      "%" PY_FORMAT_SIZE_T "d\n", idx);
+                      "%zd\n", idx);
         len = strlen(pdata);
     }
     else {
@@ -2581,7 +2581,7 @@ raw_unicode_escape(PyObject *obj)
 {
     char *p;
     Py_ssize_t i, size;
-    void *data;
+    const void *data;
     unsigned int kind;
     _PyBytesWriter writer;
 
@@ -7873,6 +7873,7 @@ _pickle_load_impl(PyObject *module, PyObject *file, int fix_imports,
 _pickle.loads
 
   data: object
+  /
   *
   fix_imports: bool = True
   encoding: str = 'ASCII'
@@ -7899,7 +7900,7 @@ static PyObject *
 _pickle_loads_impl(PyObject *module, PyObject *data, int fix_imports,
                    const char *encoding, const char *errors,
                    PyObject *buffers)
-/*[clinic end generated code: output=82ac1e6b588e6d02 input=9c2ab6a0960185ea]*/
+/*[clinic end generated code: output=82ac1e6b588e6d02 input=b3615540d0535087]*/
 {
     PyObject *result;
     UnpicklerObject *unpickler = _Unpickler_New();
@@ -7993,10 +7994,6 @@ PyInit__pickle(void)
         return m;
     }
 
-    if (PyType_Ready(&Unpickler_Type) < 0)
-        return NULL;
-    if (PyType_Ready(&Pickler_Type) < 0)
-        return NULL;
     if (PyType_Ready(&Pdata_Type) < 0)
         return NULL;
     if (PyType_Ready(&PicklerMemoProxyType) < 0)
@@ -8010,16 +8007,15 @@ PyInit__pickle(void)
         return NULL;
 
     /* Add types */
-    Py_INCREF(&Pickler_Type);
-    if (PyModule_AddObject(m, "Pickler", (PyObject *)&Pickler_Type) < 0)
+    if (PyModule_AddType(m, &Pickler_Type) < 0) {
         return NULL;
-    Py_INCREF(&Unpickler_Type);
-    if (PyModule_AddObject(m, "Unpickler", (PyObject *)&Unpickler_Type) < 0)
+    }
+    if (PyModule_AddType(m, &Unpickler_Type) < 0) {
         return NULL;
-    Py_INCREF(&PyPickleBuffer_Type);
-    if (PyModule_AddObject(m, "PickleBuffer",
-                           (PyObject *)&PyPickleBuffer_Type) < 0)
+    }
+    if (PyModule_AddType(m, &PyPickleBuffer_Type) < 0) {
         return NULL;
+    }
 
     st = _Pickle_GetState(m);
 

@@ -1,10 +1,12 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <ctype.h>
-#include "structmember.h" /* we need the offsetof() macro from there */
+#include <stddef.h>               // offsetof()
 #include "longintrepr.h"
 
 
@@ -159,7 +161,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 
     ms = Py_TYPE(o)->tp_as_sequence;
     if (ms && ms->sq_item) {
-        if (PyIndex_Check(key)) {
+        if (_PyIndex_Check(key)) {
             Py_ssize_t key_value;
             key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
             if (key_value == -1 && PyErr_Occurred())
@@ -175,6 +177,12 @@ PyObject_GetItem(PyObject *o, PyObject *key)
     if (PyType_Check(o)) {
         PyObject *meth, *result;
         _Py_IDENTIFIER(__class_getitem__);
+
+        // Special case type[int], but disallow other types so str[int] fails
+        if ((PyTypeObject*)o == &PyType_Type) {
+            return Py_GenericAlias(o, key);
+        }
+
         if (_PyObject_LookupAttrId(o, &PyId___class_getitem__, &meth) < 0) {
             return NULL;
         }
@@ -202,7 +210,7 @@ PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
         return m->mp_ass_subscript(o, key, value);
 
     if (Py_TYPE(o)->tp_as_sequence) {
-        if (PyIndex_Check(key)) {
+        if (_PyIndex_Check(key)) {
             Py_ssize_t key_value;
             key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
             if (key_value == -1 && PyErr_Occurred())
@@ -234,7 +242,7 @@ PyObject_DelItem(PyObject *o, PyObject *key)
         return m->mp_ass_subscript(o, key, (PyObject*)NULL);
 
     if (Py_TYPE(o)->tp_as_sequence) {
-        if (PyIndex_Check(key)) {
+        if (_PyIndex_Check(key)) {
             Py_ssize_t key_value;
             key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
             if (key_value == -1 && PyErr_Occurred())
@@ -269,6 +277,16 @@ PyObject_DelItemString(PyObject *o, const char *key)
     Py_DECREF(okey);
     return ret;
 }
+
+
+/* Return 1 if the getbuffer function is available, otherwise return 0. */
+int
+PyObject_CheckBuffer(PyObject *obj)
+{
+    PyBufferProcs *tp_as_buffer = Py_TYPE(obj)->tp_as_buffer;
+    return (tp_as_buffer != NULL && tp_as_buffer->bf_getbuffer != NULL);
+}
+
 
 /* We release the buffer right after use of this function which could
    cause issues later on.  Don't use these functions in new code.
@@ -882,7 +900,7 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
         Py_DECREF(result);
 
         if (op_slot == NB_SLOT(nb_rshift) &&
-            PyCFunction_Check(v) &&
+            PyCFunction_CheckExact(v) &&
             strcmp(((PyCFunctionObject *)v)->m_ml->ml_name, "print") == 0)
         {
             PyErr_Format(PyExc_TypeError,
@@ -1013,7 +1031,7 @@ static PyObject *
 sequence_repeat(ssizeargfunc repeatfunc, PyObject *seq, PyObject *n)
 {
     Py_ssize_t count;
-    if (PyIndex_Check(n)) {
+    if (_PyIndex_Check(n)) {
         count = PyNumber_AsSsize_t(n, PyExc_OverflowError);
         if (count == -1 && PyErr_Occurred())
             return NULL;
@@ -1290,21 +1308,21 @@ PyNumber_Absolute(PyObject *o)
     return type_error("bad operand type for abs(): '%.200s'", o);
 }
 
-#undef PyIndex_Check
 
 int
 PyIndex_Check(PyObject *obj)
 {
-    return Py_TYPE(obj)->tp_as_number != NULL &&
-           Py_TYPE(obj)->tp_as_number->nb_index != NULL;
+    return _PyIndex_Check(obj);
 }
 
+
 /* Return a Python int from the object item.
+   Can return an instance of int subclass.
    Raise TypeError if the result is not an int
    or if the object cannot be interpreted as an index.
 */
 PyObject *
-PyNumber_Index(PyObject *item)
+_PyNumber_Index(PyObject *item)
 {
     PyObject *result = NULL;
     if (item == NULL) {
@@ -1315,7 +1333,7 @@ PyNumber_Index(PyObject *item)
         Py_INCREF(item);
         return item;
     }
-    if (!PyIndex_Check(item)) {
+    if (!_PyIndex_Check(item)) {
         PyErr_Format(PyExc_TypeError,
                      "'%.200s' object cannot be interpreted "
                      "as an integer", Py_TYPE(item)->tp_name);
@@ -1343,6 +1361,20 @@ PyNumber_Index(PyObject *item)
     return result;
 }
 
+/* Return an exact Python int from the object item.
+   Raise TypeError if the result is not an int
+   or if the object cannot be interpreted as an index.
+*/
+PyObject *
+PyNumber_Index(PyObject *item)
+{
+    PyObject *result = _PyNumber_Index(item);
+    if (result != NULL && !PyLong_CheckExact(result)) {
+        Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
+    }
+    return result;
+}
+
 /* Return an error on Overflow only if err is not NULL*/
 
 Py_ssize_t
@@ -1350,7 +1382,7 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 {
     Py_ssize_t result;
     PyObject *runerr;
-    PyObject *value = PyNumber_Index(item);
+    PyObject *value = _PyNumber_Index(item);
     if (value == NULL)
         return -1;
 
@@ -1409,18 +1441,32 @@ PyNumber_Long(PyObject *o)
     }
     m = Py_TYPE(o)->tp_as_number;
     if (m && m->nb_int) { /* This should include subclasses of int */
-        result = _PyLong_FromNbInt(o);
-        if (result != NULL && !PyLong_CheckExact(result)) {
-            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
+        /* Convert using the nb_int slot, which should return something
+           of exact type int. */
+        result = m->nb_int(o);
+        if (!result || PyLong_CheckExact(result))
+            return result;
+        if (!PyLong_Check(result)) {
+            PyErr_Format(PyExc_TypeError,
+                        "__int__ returned non-int (type %.200s)",
+                        result->ob_type->tp_name);
+            Py_DECREF(result);
+            return NULL;
         }
+        /* Issue #17576: warn if 'result' not of exact type int. */
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "__int__ returned non-int (type %.200s).  "
+                "The ability to return an instance of a strict subclass of int "
+                "is deprecated, and may be removed in a future version of Python.",
+                result->ob_type->tp_name)) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
         return result;
     }
     if (m && m->nb_index) {
-        result = _PyLong_FromNbIndexOrNbInt(o);
-        if (result != NULL && !PyLong_CheckExact(result)) {
-            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
-        }
-        return result;
+        return PyNumber_Index(o);
     }
     trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
     if (trunc_func) {
@@ -1435,8 +1481,7 @@ PyNumber_Long(PyObject *o)
         }
         /* __trunc__ is specified to return an Integral type,
            but int() needs to return an int. */
-        m = Py_TYPE(result)->tp_as_number;
-        if (m == NULL || (m->nb_index == NULL && m->nb_int == NULL)) {
+        if (!PyIndex_Check(result)) {
             PyErr_Format(
                 PyExc_TypeError,
                 "__trunc__ returned non-Integral (type %.200s)",
@@ -1444,10 +1489,7 @@ PyNumber_Long(PyObject *o)
             Py_DECREF(result);
             return NULL;
         }
-        Py_SETREF(result, _PyLong_FromNbIndexOrNbInt(result));
-        if (result != NULL && !PyLong_CheckExact(result)) {
-            Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
-        }
+        Py_SETREF(result, PyNumber_Index(result));
         return result;
     }
     if (PyErr_Occurred())
@@ -1530,7 +1572,7 @@ PyNumber_Float(PyObject *o)
         return PyFloat_FromDouble(val);
     }
     if (m && m->nb_index) {
-        PyObject *res = PyNumber_Index(o);
+        PyObject *res = _PyNumber_Index(o);
         if (!res) {
             return NULL;
         }
@@ -1556,7 +1598,7 @@ PyNumber_ToBase(PyObject *n, int base)
                         "PyNumber_ToBase: base must be 2, 8, 10 or 16");
         return NULL;
     }
-    PyObject *index = PyNumber_Index(n);
+    PyObject *index = _PyNumber_Index(n);
     if (!index)
         return NULL;
     PyObject *res = _PyLong_Format(index, base);
@@ -2270,7 +2312,7 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
             PyErr_Format(PyExc_TypeError,
                          "%.200s.%U() returned a non-iterable (type %.200s)",
                          Py_TYPE(o)->tp_name,
-                         meth_id->object,
+                         _PyUnicode_FromId(meth_id),
                          Py_TYPE(meth_output)->tp_name);
         }
         Py_DECREF(meth_output);

@@ -44,7 +44,7 @@ The special characters are:
     "|"      A|B, creates an RE that will match either A or B.
     (...)    Matches the RE inside the parentheses.
              The contents can be retrieved or matched later in the string.
-    (?aiLmsux) Set the A, I, L, M, S, U, or X flag for the RE (see below).
+    (?aiLmsux) The letters set the corresponding flags defined below.
     (?:...)  Non-grouping version of regular parentheses.
     (?P<name>...) The substring matched by the group is accessible by name.
     (?P=name)     Matches the text matched earlier by the group named name.
@@ -97,7 +97,9 @@ This module exports the following functions:
     purge     Clear the regular expression cache.
     escape    Backslash all non-alphanumerics in a string.
 
-Some of the functions in this module takes flags as optional parameters:
+Each function other than purge and escape can take an optional 'flags' argument
+consisting of one or more of the following module constants, joined by "|".
+A, L, and U are mutually exclusive.
     A  ASCII       For string patterns, make \w, \W, \b, \B, \d, \D
                    match the corresponding ASCII character categories
                    (rather than the whole Unicode categories, which is the

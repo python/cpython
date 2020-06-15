@@ -87,6 +87,8 @@ library that Python uses on your platform. On most platforms the
    that the hashing algorithm is not used in a security context, e.g. as a
    non-cryptographic one-way compression function.
 
+   Hashlib now uses SHA3 and SHAKE from OpenSSL 1.1.1 and newer.
+
 For example, to obtain the digest of the byte string ``b'Nobody inspects the
 spammish repetition'``::
 

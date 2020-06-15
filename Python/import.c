@@ -8,13 +8,13 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pyhash.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_interp.h"        // _PyInterpreterState_ClearModules()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_sysmodule.h"
 #include "errcode.h"
 #include "marshal.h"
 #include "code.h"
-#include "frameobject.h"
-#include "osdefs.h"
 #include "importdl.h"
 #include "pydtrace.h"
 
@@ -101,7 +101,7 @@ _PyImportZip_Init(PyThreadState *tstate)
         goto error;
     }
 
-    int verbose = tstate->interp->config.verbose;
+    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
     if (verbose) {
         PySys_WriteStderr("# installing zipimport hook\n");
     }
@@ -148,9 +148,7 @@ _PyImportZip_Init(PyThreadState *tstate)
    in different threads to return with a partially loaded module.
    These calls are serialized by the global interpreter lock. */
 
-#include "pythread.h"
-
-static PyThread_type_lock import_lock = 0;
+static PyThread_type_lock import_lock = NULL;
 static unsigned long import_lock_thread = PYTHREAD_INVALID_THREAD_ID;
 static int import_lock_level = 0;
 
@@ -173,7 +171,7 @@ _PyImport_AcquireLock(void)
         !PyThread_acquire_lock(import_lock, 0))
     {
         PyThreadState *tstate = PyEval_SaveThread();
-        PyThread_acquire_lock(import_lock, 1);
+        PyThread_acquire_lock(import_lock, WAIT_LOCK);
         PyEval_RestoreThread(tstate);
     }
     assert(import_lock_level == 0);
@@ -198,35 +196,33 @@ _PyImport_ReleaseLock(void)
     return 1;
 }
 
-/* This function is called from PyOS_AfterFork_Child to ensure that newly
+#ifdef HAVE_FORK
+/* This function is called from PyOS_AfterFork_Child() to ensure that newly
    created child processes do not share locks with the parent.
    We now acquire the import lock around fork() calls but on some platforms
    (Solaris 9 and earlier? see isue7242) that still left us with problems. */
-
-void
+PyStatus
 _PyImport_ReInitLock(void)
 {
     if (import_lock != NULL) {
-        import_lock = PyThread_allocate_lock();
-        if (import_lock == NULL) {
-            Py_FatalError("PyImport_ReInitLock failed to create a new lock");
+        if (_PyThread_at_fork_reinit(&import_lock) < 0) {
+            return _PyStatus_ERR("failed to create a new lock");
         }
     }
+
     if (import_lock_level > 1) {
         /* Forked as a side effect of import */
         unsigned long me = PyThread_get_thread_ident();
-        /* The following could fail if the lock is already held, but forking as
-           a side-effect of an import is a) rare, b) nuts, and c) difficult to
-           do thanks to the lock only being held when doing individual module
-           locks per import. */
-        PyThread_acquire_lock(import_lock, NOWAIT_LOCK);
+        PyThread_acquire_lock(import_lock, WAIT_LOCK);
         import_lock_thread = me;
         import_lock_level--;
     } else {
         import_lock_thread = PYTHREAD_INVALID_THREAD_ID;
         import_lock_level = 0;
     }
+    return _PyStatus_OK();
 }
+#endif
 
 /*[clinic input]
 _imp.lock_held
@@ -299,6 +295,7 @@ _PyImport_Fini2(void)
 
     /* Free memory allocated by PyImport_ExtendInittab() */
     PyMem_RawFree(inittab_copy);
+    inittab_copy = NULL;
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -308,9 +305,9 @@ _PyImport_Fini2(void)
 PyObject *
 PyImport_GetModuleDict(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->modules == NULL) {
-        Py_FatalError("no module dictionary");
+        Py_FatalError("interpreter has no modules dictionary");
     }
     return interp->modules;
 }
@@ -445,7 +442,7 @@ _PyImport_Cleanup(PyThreadState *tstate)
 
     /* XXX Perhaps these precautions are obsolete. Who knows? */
 
-    int verbose = interp->config.verbose;
+    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
     if (verbose) {
         PySys_WriteStderr("# clear builtins._\n");
     }
@@ -642,7 +639,7 @@ long
 PyImport_GetMagicNumber(void)
 {
     long res;
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *external, *pyc_magic;
 
     external = PyObject_GetAttrString(interp->importlib, "_bootstrap_external");
@@ -810,7 +807,7 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
         return NULL;
     }
 
-    int verbose = tstate->interp->config.verbose;
+    int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
     if (verbose) {
         PySys_FormatStderr("import %U # previously loaded (%R)\n",
                            name, filename);
@@ -978,11 +975,11 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
             goto error;
     }
     else if (cpathobj != NULL) {
-        PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+        PyInterpreterState *interp = _PyInterpreterState_GET();
         _Py_IDENTIFIER(_get_sourcefile);
 
         if (interp == NULL) {
-            Py_FatalError("no interpreter!");
+            Py_FatalError("no current interpreter");
         }
 
         external= PyObject_GetAttrString(interp->importlib,
@@ -1522,7 +1519,7 @@ remove_importlib_frames(PyThreadState *tstate)
        which end with a call to "_call_with_frames_removed". */
 
     _PyErr_Fetch(tstate, &exception, &value, &base_tb);
-    if (!exception || tstate->interp->config.verbose) {
+    if (!exception || _PyInterpreterState_GetConfig(tstate->interp)->verbose) {
         goto done;
     }
 
@@ -1536,7 +1533,7 @@ remove_importlib_frames(PyThreadState *tstate)
         PyTracebackObject *traceback = (PyTracebackObject *)tb;
         PyObject *next = (PyObject *) traceback->tb_next;
         PyFrameObject *frame = traceback->tb_frame;
-        PyCodeObject *code = frame->f_code;
+        PyCodeObject *code = PyFrame_GetCode(frame);
         int now_in_importlib;
 
         assert(PyTraceBack_Check(tb));
@@ -1558,6 +1555,7 @@ remove_importlib_frames(PyThreadState *tstate)
         else {
             prev_link = (PyObject **) &traceback->tb_next;
         }
+        Py_DECREF(code);
         tb = next;
     }
 done:
@@ -1726,7 +1724,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     _Py_IDENTIFIER(_find_and_load);
     PyObject *mod = NULL;
     PyInterpreterState *interp = tstate->interp;
-    int import_time = interp->config.import_time;
+    int import_time = _PyInterpreterState_GetConfig(interp)->import_time;
     static int import_level;
     static _PyTime_t accumulated;
 
@@ -1735,10 +1733,10 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     PyObject *sys_path = PySys_GetObject("path");
     PyObject *sys_meta_path = PySys_GetObject("meta_path");
     PyObject *sys_path_hooks = PySys_GetObject("path_hooks");
-    if (PySys_Audit("import", "OOOOO",
-                    abs_name, Py_None, sys_path ? sys_path : Py_None,
-                    sys_meta_path ? sys_meta_path : Py_None,
-                    sys_path_hooks ? sys_path_hooks : Py_None) < 0) {
+    if (_PySys_Audit(tstate, "import", "OOOOO",
+                     abs_name, Py_None, sys_path ? sys_path : Py_None,
+                     sys_meta_path ? sys_meta_path : Py_None,
+                     sys_path_hooks ? sys_path_hooks : Py_None) < 0) {
         return NULL;
     }
 
@@ -1762,14 +1760,14 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
     }
 
     if (PyDTrace_IMPORT_FIND_LOAD_START_ENABLED())
-        PyDTrace_IMPORT_FIND_LOAD_START((char *)PyUnicode_AsUTF8(abs_name));
+        PyDTrace_IMPORT_FIND_LOAD_START(PyUnicode_AsUTF8(abs_name));
 
     mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                         &PyId__find_and_load, abs_name,
                                         interp->import_func, NULL);
 
     if (PyDTrace_IMPORT_FIND_LOAD_DONE_ENABLED())
-        PyDTrace_IMPORT_FIND_LOAD_DONE((char *)PyUnicode_AsUTF8(abs_name),
+        PyDTrace_IMPORT_FIND_LOAD_DONE(PyUnicode_AsUTF8(abs_name),
                                        mod != NULL);
 
     if (import_time) {
@@ -1977,23 +1975,23 @@ PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals
 PyObject *
 PyImport_ReloadModule(PyObject *m)
 {
-    _Py_IDENTIFIER(imp);
+    _Py_IDENTIFIER(importlib);
     _Py_IDENTIFIER(reload);
     PyObject *reloaded_module = NULL;
-    PyObject *imp = _PyImport_GetModuleId(&PyId_imp);
-    if (imp == NULL) {
+    PyObject *importlib = _PyImport_GetModuleId(&PyId_importlib);
+    if (importlib == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
         }
 
-        imp = PyImport_ImportModule("imp");
-        if (imp == NULL) {
+        importlib = PyImport_ImportModule("importlib");
+        if (importlib == NULL) {
             return NULL;
         }
     }
 
-    reloaded_module = _PyObject_CallMethodIdOneArg(imp, &PyId_reload, m);
-    Py_DECREF(imp);
+    reloaded_module = _PyObject_CallMethodIdOneArg(importlib, &PyId_reload, m);
+    Py_DECREF(importlib);
     return reloaded_module;
 }
 
@@ -2412,7 +2410,7 @@ PyInit__imp(void)
         goto failure;
     }
 
-    const wchar_t *mode = _PyInterpreterState_Get()->config.check_hash_pycs_mode;
+    const wchar_t *mode = _Py_GetConfig()->check_hash_pycs_mode;
     PyObject *pyc_mode = PyUnicode_FromWideChar(mode, -1);
     if (pyc_mode == NULL) {
         goto failure;

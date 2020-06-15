@@ -6,10 +6,9 @@
 #undef NDEBUG
 
 #include <Python.h>
-#include "pycore_initconfig.h"   /* _PyConfig_InitCompatConfig() */
-#include "pycore_pystate.h"      /* _PyRuntime */
+#include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
+#include "pycore_runtime.h"       // _PyRuntime
 #include <Python.h>
-#include "pythread.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <wchar.h>
@@ -546,6 +545,13 @@ static int test_init_from_config(void)
     /* FIXME: test home */
     /* FIXME: test path config: module_search_path .. dll_path */
 
+    putenv("PYTHONPLATLIBDIR=env_platlibdir");
+    status = PyConfig_SetBytesString(&config, &config.platlibdir, "my_platlibdir");
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
+
     putenv("PYTHONVERBOSE=0");
     Py_VerboseFlag = 0;
     config.verbose = 1;
@@ -600,6 +606,8 @@ static int test_init_from_config(void)
 
     Py_FrozenFlag = 0;
     config.pathconfig_warnings = 0;
+
+    config._isolated_interpreter = 1;
 
     init_from_config_clear(&config);
 
@@ -663,6 +671,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONNOUSERSITE=1");
     putenv("PYTHONFAULTHANDLER=1");
     putenv("PYTHONIOENCODING=iso8859-1:replace");
+    putenv("PYTHONPLATLIBDIR=env_platlibdir");
 }
 
 
@@ -1321,6 +1330,7 @@ static int test_init_read_set(void)
     return 0;
 
 fail:
+    PyConfig_Clear(&config);
     Py_ExitStatusException(status);
 }
 
@@ -1579,6 +1589,46 @@ static int test_run_main(void)
 }
 
 
+static int test_get_argc_argv(void)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    wchar_t *argv[] = {L"python3", L"-c",
+                       (L"import sys; "
+                        L"print(f'Py_RunMain(): sys.argv={sys.argv}')"),
+                       L"arg2"};
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config_set_string(&config, &config.program_name, L"./python3");
+
+    // Calling PyConfig_Read() twice must not change Py_GetArgcArgv() result.
+    // The second call is done by Py_InitializeFromConfig().
+    PyStatus status = PyConfig_Read(&config);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
+
+    init_from_config_clear(&config);
+
+    int get_argc;
+    wchar_t **get_argv;
+    Py_GetArgcArgv(&get_argc, &get_argv);
+    printf("argc: %i\n", get_argc);
+    assert(get_argc == Py_ARRAY_LENGTH(argv));
+    for (int i=0; i < get_argc; i++) {
+        printf("argv[%i]: %ls\n", i, get_argv[i]);
+        assert(wcscmp(get_argv[i], argv[i]) == 0);
+    }
+
+    Py_Finalize();
+
+    printf("\n");
+    printf("test ok\n");
+    return 0;
+}
+
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -1636,6 +1686,7 @@ static struct TestCase TestCases[] = {
     {"test_init_setpythonhome", test_init_setpythonhome},
     {"test_init_warnoptions", test_init_warnoptions},
     {"test_run_main", test_run_main},
+    {"test_get_argc_argv", test_get_argc_argv},
 
     {"test_open_code_hook", test_open_code_hook},
     {"test_audit", test_audit},

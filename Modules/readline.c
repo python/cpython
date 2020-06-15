@@ -86,13 +86,18 @@ typedef struct {
   PyObject *endidx;
 } readlinestate;
 
-
-#define readline_state(o) ((readlinestate *)PyModule_GetState(o))
+static inline readlinestate*
+get_readline_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (readlinestate *)state;
+}
 
 static int
 readline_clear(PyObject *m)
 {
-   readlinestate *state = readline_state(m);
+   readlinestate *state = get_readline_state(m);
    Py_CLEAR(state->completion_display_matches_hook);
    Py_CLEAR(state->startup_hook);
    Py_CLEAR(state->pre_input_hook);
@@ -105,7 +110,7 @@ readline_clear(PyObject *m)
 static int
 readline_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    readlinestate *state = readline_state(m);
+    readlinestate *state = get_readline_state(m);
     Py_VISIT(state->completion_display_matches_hook);
     Py_VISIT(state->startup_hook);
     Py_VISIT(state->pre_input_hook);
@@ -229,7 +234,7 @@ static PyObject *
 write_history_file(PyObject *self, PyObject *args)
 {
     PyObject *filename_obj = Py_None, *filename_bytes;
-    char *filename;
+    const char *filename;
     int err;
     if (!PyArg_ParseTuple(args, "|O:write_history_file", &filename_obj))
         return NULL;
@@ -265,7 +270,7 @@ append_history_file(PyObject *self, PyObject *args)
 {
     int nelements;
     PyObject *filename_obj = Py_None, *filename_bytes;
-    char *filename;
+    const char *filename;
     int err;
     if (!PyArg_ParseTuple(args, "i|O:append_history_file", &nelements, &filename_obj))
         return NULL;

@@ -17,8 +17,7 @@ typedef struct _stmt *stmt_ty;
 
 typedef struct _expr *expr_ty;
 
-typedef enum _expr_context { Load=1, Store=2, Del=3, AugLoad=4, AugStore=5,
-                             Param=6 } expr_context_ty;
+typedef enum _expr_context { Load=1, Store=2, Del=3 } expr_context_ty;
 
 typedef enum _boolop { And=1, Or=2 } boolop_ty;
 
@@ -428,6 +427,10 @@ struct _arg {
 struct _keyword {
     identifier arg;
     expr_ty value;
+    int lineno;
+    int col_offset;
+    int end_lineno;
+    int end_col_offset;
 };
 
 struct _alias {
@@ -671,8 +674,10 @@ arguments_ty _Py_arguments(asdl_seq * posonlyargs, asdl_seq * args, arg_ty
 arg_ty _Py_arg(identifier arg, expr_ty annotation, string type_comment, int
                lineno, int col_offset, int end_lineno, int end_col_offset,
                PyArena *arena);
-#define keyword(a0, a1, a2) _Py_keyword(a0, a1, a2)
-keyword_ty _Py_keyword(identifier arg, expr_ty value, PyArena *arena);
+#define keyword(a0, a1, a2, a3, a4, a5, a6) _Py_keyword(a0, a1, a2, a3, a4, a5, a6)
+keyword_ty _Py_keyword(identifier arg, expr_ty value, int lineno, int
+                       col_offset, int end_lineno, int end_col_offset, PyArena
+                       *arena);
 #define alias(a0, a1, a2) _Py_alias(a0, a1, a2)
 alias_ty _Py_alias(identifier name, identifier asname, PyArena *arena);
 #define withitem(a0, a1, a2) _Py_withitem(a0, a1, a2)

@@ -1673,7 +1673,8 @@ PyObject_GenericSetAttr:PyObject*:name:0:
 PyObject_GenericSetAttr:PyObject*:value:+1:
 
 PyObject_GenericSetDict:int:::
-PyObject_GenericSetDict:PyObject*:o:+1:
+PyObject_GenericSetDict:PyObject*:o:0:
+PyObject_GenericSetDict:PyObject*:value:+1:
 PyObject_GenericSetDict:void*:context::
 
 PyObject_GetAttr:PyObject*::+1:

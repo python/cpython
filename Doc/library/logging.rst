@@ -159,6 +159,7 @@ is the module's name in the Python package namespace.
       message format string, and the *args* are the arguments which are merged into
       *msg* using the string formatting operator. (Note that this means that you can
       use keywords in the format string, together with a single dictionary argument.)
+      No % formatting operation is performed on *msg* when no *args* are supplied.
 
       There are four keyword arguments in *kwargs* which are inspected:
       *exc_info*, *stack_info*, *stacklevel* and *extra*.
@@ -606,6 +607,9 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
          overridden at the instance level when desired. The names of the
          attributes are ``default_time_format`` (for the strptime format string)
          and ``default_msec_format`` (for appending the millisecond value).
+
+      .. versionchanged:: 3.9
+         The ``default_msec_format`` can be ``None``.
 
    .. method:: formatException(exc_info)
 

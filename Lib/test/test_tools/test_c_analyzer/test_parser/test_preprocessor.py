@@ -1,4 +1,3 @@
-import itertools
 import textwrap
 import unittest
 import sys

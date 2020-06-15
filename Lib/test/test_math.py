@@ -502,14 +502,10 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.factorial, -10**100)
 
     def testFactorialNonIntegers(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(math.factorial(5.0), 120)
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(ValueError, math.factorial, 5.2)
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(ValueError, math.factorial, -1.0)
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(ValueError, math.factorial, -1e100)
+        self.assertRaises(TypeError, math.factorial, 5.0)
+        self.assertRaises(TypeError, math.factorial, 5.2)
+        self.assertRaises(TypeError, math.factorial, -1.0)
+        self.assertRaises(TypeError, math.factorial, -1e100)
         self.assertRaises(TypeError, math.factorial, decimal.Decimal('5'))
         self.assertRaises(TypeError, math.factorial, decimal.Decimal('5.2'))
         self.assertRaises(TypeError, math.factorial, "5")
@@ -520,8 +516,7 @@ class MathTests(unittest.TestCase):
         # Currently raises OverflowError for inputs that are too large
         # to fit into a C long.
         self.assertRaises(OverflowError, math.factorial, 10**100)
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(OverflowError, math.factorial, 1e100)
+        self.assertRaises(TypeError, math.factorial, 1e100)
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
@@ -1991,6 +1986,22 @@ class MathTests(unittest.TestCase):
         for x in (0.0, 1.0, 2 ** 52, 2 ** 64, INF):
             with self.subTest(x=x):
                 self.assertEqual(math.ulp(-x), math.ulp(x))
+
+    def test_issue39871(self):
+        # A SystemError should not be raised if the first arg to atan2(),
+        # copysign(), or remainder() cannot be converted to a float.
+        class F:
+            def __float__(self):
+                self.converted = True
+                1/0
+        for func in math.atan2, math.copysign, math.remainder:
+            y = F()
+            with self.assertRaises(TypeError):
+                func("not a number", y)
+
+            # There should not have been any attempt to convert the second
+            # argument to a float.
+            self.assertFalse(getattr(y, "converted", False))
 
     # Custom assertions.
 

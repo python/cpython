@@ -14,7 +14,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 /* -------------------------------------------------------------------- */
 /* configuration */
@@ -101,7 +101,13 @@ static struct PyModuleDef elementtreemodule;
 /* Given a module object (assumed to be _elementtree), get its per-module
  * state.
  */
-#define ET_STATE(mod) ((elementtreestate *) PyModule_GetState(mod))
+static inline elementtreestate*
+get_elementtree_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (elementtreestate *)state;
+}
 
 /* Find the module instance imported in the currently running sub-interpreter
  * and get its state.
@@ -112,7 +118,7 @@ static struct PyModuleDef elementtreemodule;
 static int
 elementtree_clear(PyObject *m)
 {
-    elementtreestate *st = ET_STATE(m);
+    elementtreestate *st = get_elementtree_state(m);
     Py_CLEAR(st->parseerror_obj);
     Py_CLEAR(st->deepcopy_obj);
     Py_CLEAR(st->elementpath_obj);
@@ -124,7 +130,7 @@ elementtree_clear(PyObject *m)
 static int
 elementtree_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    elementtreestate *st = ET_STATE(m);
+    elementtreestate *st = get_elementtree_state(m);
     Py_VISIT(st->parseerror_obj);
     Py_VISIT(st->deepcopy_obj);
     Py_VISIT(st->elementpath_obj);
@@ -1126,7 +1132,7 @@ checkpath(PyObject* tag)
 
     if (PyUnicode_Check(tag)) {
         const Py_ssize_t len = PyUnicode_GET_LENGTH(tag);
-        void *data = PyUnicode_DATA(tag);
+        const void *data = PyUnicode_DATA(tag);
         unsigned int kind = PyUnicode_KIND(tag);
         if (len >= 3 && PyUnicode_READ(kind, data, 0) == '{' && (
                 PyUnicode_READ(kind, data, 1) == '}' || (
@@ -1147,7 +1153,7 @@ checkpath(PyObject* tag)
         return 0;
     }
     if (PyBytes_Check(tag)) {
-        char *p = PyBytes_AS_STRING(tag);
+        const char *p = PyBytes_AS_STRING(tag);
         const Py_ssize_t len = PyBytes_GET_SIZE(tag);
         if (len >= 3 && p[0] == '{' && (
                 p[1] == '}' || (p[1] == '*' && p[2] == '}'))) {
@@ -3812,6 +3818,17 @@ xmlparser_dealloc(XMLParserObject* self)
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
+Py_LOCAL_INLINE(int)
+_check_xmlparser(XMLParserObject* self)
+{
+    if (self->target == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "XMLParser.__init__() wasn't called");
+        return 0;
+    }
+    return 1;
+}
+
 LOCAL(PyObject*)
 expat_parse(XMLParserObject* self, const char* data, int data_len, int final)
 {
@@ -3848,6 +3865,10 @@ _elementtree_XMLParser_close_impl(XMLParserObject *self)
     /* end feeding data to parser */
 
     PyObject* res;
+
+    if (!_check_xmlparser(self)) {
+        return NULL;
+    }
     res = expat_parse(self, "", 0, 1);
     if (!res)
         return NULL;
@@ -3879,6 +3900,9 @@ _elementtree_XMLParser_feed(XMLParserObject *self, PyObject *data)
 {
     /* feed data to parser */
 
+    if (!_check_xmlparser(self)) {
+        return NULL;
+    }
     if (PyUnicode_Check(data)) {
         Py_ssize_t data_len;
         const char *data_ptr = PyUnicode_AsUTF8AndSize(data, &data_len);
@@ -3926,6 +3950,9 @@ _elementtree_XMLParser__parse_whole(XMLParserObject *self, PyObject *file)
     PyObject* temp;
     PyObject* res;
 
+    if (!_check_xmlparser(self)) {
+        return NULL;
+    }
     reader = PyObject_GetAttrString(file, "read");
     if (!reader)
         return NULL;
@@ -4013,6 +4040,9 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     TreeBuilderObject *target;
     PyObject *events_append, *events_seq;
 
+    if (!_check_xmlparser(self)) {
+        return NULL;
+    }
     if (!TreeBuilder_CheckExact(self->target)) {
         PyErr_SetString(
             PyExc_TypeError,
@@ -4377,7 +4407,7 @@ PyInit__elementtree(void)
     m = PyModule_Create(&elementtreemodule);
     if (!m)
         return NULL;
-    st = ET_STATE(m);
+    st = get_elementtree_state(m);
 
     if (!(temp = PyImport_ImportModule("copy")))
         return NULL;
@@ -4413,16 +4443,22 @@ PyInit__elementtree(void)
         "xml.etree.ElementTree.ParseError", PyExc_SyntaxError, NULL
         );
     Py_INCREF(st->parseerror_obj);
-    PyModule_AddObject(m, "ParseError", st->parseerror_obj);
+    if (PyModule_AddObject(m, "ParseError", st->parseerror_obj) < 0) {
+        Py_DECREF(st->parseerror_obj);
+        return NULL;
+    }
 
-    Py_INCREF((PyObject *)&Element_Type);
-    PyModule_AddObject(m, "Element", (PyObject *)&Element_Type);
+    PyTypeObject *types[] = {
+        &Element_Type,
+        &TreeBuilder_Type,
+        &XMLParser_Type
+    };
 
-    Py_INCREF((PyObject *)&TreeBuilder_Type);
-    PyModule_AddObject(m, "TreeBuilder", (PyObject *)&TreeBuilder_Type);
-
-    Py_INCREF((PyObject *)&XMLParser_Type);
-    PyModule_AddObject(m, "XMLParser", (PyObject *)&XMLParser_Type);
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
+        if (PyModule_AddType(m, types[i]) < 0) {
+            return NULL;
+        }
+    }
 
     return m;
 }

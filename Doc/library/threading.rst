@@ -280,8 +280,6 @@ since it is impossible to detect the termination of alien threads.
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
 
-   Daemon threads must not be used in subinterpreters.
-
    .. versionchanged:: 3.3
       Added the *daemon* argument.
 
@@ -295,12 +293,6 @@ since it is impossible to detect the termination of alien threads.
 
       This method will raise a :exc:`RuntimeError` if called more than once
       on the same thread object.
-
-      Raise a :exc:`RuntimeError` if the thread is a daemon thread and the
-      method is called from a subinterpreter.
-
-      .. versionchanged:: 3.9
-         In a subinterpreter, spawning a daemon thread now raises an exception.
 
    .. method:: run()
 
@@ -357,13 +349,12 @@ since it is impossible to detect the termination of alien threads.
 
    .. attribute:: native_id
 
-      The native integral thread ID of this thread.
+      The Thread ID (``TID``) of this thread, as assigned by the OS (kernel).
       This is a non-negative integer, or ``None`` if the thread has not
       been started. See the :func:`get_native_id` function.
-      This represents the Thread ID (``TID``) as assigned to the
-      thread by the OS (kernel).  Its value may be used to uniquely identify
-      this particular thread system-wide (until the thread terminates,
-      after which the value may be recycled by the OS).
+      This value may be used to uniquely identify this particular thread
+      system-wide (until the thread terminates, after which the value
+      may be recycled by the OS).
 
       .. note::
 

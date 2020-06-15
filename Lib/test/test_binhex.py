@@ -7,7 +7,7 @@ import unittest
 from test import support
 
 with support.check_warnings(('', DeprecationWarning)):
-    import binhex
+    binhex = support.import_fresh_module('binhex')
 
 
 class BinHexTestCase(unittest.TestCase):

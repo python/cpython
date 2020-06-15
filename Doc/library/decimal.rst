@@ -2193,4 +2193,3 @@ are expected to be exact.
 .. [#]
     .. versionchanged:: 3.9
        This approach now works for all exact results except for non-integer powers.
-       Also backported to 3.7 and 3.8.

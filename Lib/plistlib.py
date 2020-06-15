@@ -51,7 +51,6 @@ __all__ = [
 
 import binascii
 import codecs
-import contextlib
 import datetime
 import enum
 from io import BytesIO
@@ -59,7 +58,6 @@ import itertools
 import os
 import re
 import struct
-from warnings import warn
 from xml.parsers.expat import ParserCreate
 
 

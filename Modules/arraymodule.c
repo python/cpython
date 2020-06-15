@@ -5,7 +5,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
@@ -235,7 +235,7 @@ BB_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 static PyObject *
 u_getitem(arrayobject *ap, Py_ssize_t i)
 {
-    return PyUnicode_FromOrdinal(((Py_UNICODE *) ap->ob_item)[i]);
+    return PyUnicode_FromOrdinal(((wchar_t *) ap->ob_item)[i]);
 }
 
 static int
@@ -274,7 +274,6 @@ u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     return 0;
 #endif /* USE_UNICODE_WCHAR_CACHE */
 }
-
 
 static PyObject *
 h_getitem(arrayobject *ap, Py_ssize_t i)
@@ -349,17 +348,6 @@ II_getitem(arrayobject *ap, Py_ssize_t i)
         (unsigned long) ((unsigned int *)ap->ob_item)[i]);
 }
 
-static PyObject *
-get_int_unless_float(PyObject *v)
-{
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "array item must be integer");
-        return NULL;
-    }
-    return _PyLong_FromNbIndexOrNbInt(v);
-}
-
 static int
 II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
@@ -367,7 +355,7 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        v = get_int_unless_float(v);
+        v = _PyNumber_Index(v);
         if (NULL == v) {
             return -1;
         }
@@ -427,7 +415,7 @@ LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        v = get_int_unless_float(v);
+        v = _PyNumber_Index(v);
         if (NULL == v) {
             return -1;
         }
@@ -480,7 +468,7 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     int do_decref = 0; /* if nb_int was called */
 
     if (!PyLong_Check(v)) {
-        v = get_int_unless_float(v);
+        v = _PyNumber_Index(v);
         if (NULL == v) {
             return -1;
         }
@@ -549,7 +537,7 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 
 DEFINE_COMPAREITEMS(b, signed char)
 DEFINE_COMPAREITEMS(BB, unsigned char)
-DEFINE_COMPAREITEMS(u, Py_UNICODE)
+DEFINE_COMPAREITEMS(u, wchar_t)
 DEFINE_COMPAREITEMS(h, short)
 DEFINE_COMPAREITEMS(HH, unsigned short)
 DEFINE_COMPAREITEMS(i, int)
@@ -567,7 +555,7 @@ DEFINE_COMPAREITEMS(QQ, unsigned long long)
 static const struct arraydescr descriptors[] = {
     {'b', 1, b_getitem, b_setitem, b_compareitems, "b", 1, 1},
     {'B', 1, BB_getitem, BB_setitem, BB_compareitems, "B", 1, 0},
-    {'u', sizeof(Py_UNICODE), u_getitem, u_setitem, u_compareitems, "u", 0, 0},
+    {'u', sizeof(wchar_t), u_getitem, u_setitem, u_compareitems, "u", 0, 0},
     {'h', sizeof(short), h_getitem, h_setitem, h_compareitems, "h", 1, 1},
     {'H', sizeof(short), HH_getitem, HH_setitem, HH_compareitems, "H", 1, 0},
     {'i', sizeof(int), i_getitem, i_setitem, i_compareitems, "i", 1, 1},
@@ -1741,14 +1729,12 @@ static PyObject *
 array_array_tounicode_impl(arrayobject *self)
 /*[clinic end generated code: output=08e442378336e1ef input=127242eebe70b66d]*/
 {
-    char typecode;
-    typecode = self->ob_descr->typecode;
-    if (typecode != 'u') {
+    if (self->ob_descr->typecode != 'u') {
         PyErr_SetString(PyExc_ValueError,
              "tounicode() may only be called on unicode type arrays");
         return NULL;
     }
-    return PyUnicode_FromWideChar((Py_UNICODE *) self->ob_item, Py_SIZE(self));
+    return PyUnicode_FromWideChar((wchar_t *) self->ob_item, Py_SIZE(self));
 }
 
 /*[clinic input]
@@ -2560,14 +2546,14 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
     Py_INCREF(self);
     if (view->buf == NULL)
         view->buf = (void *)emptybuf;
-    view->len = (Py_SIZE(self)) * self->ob_descr->itemsize;
+    view->len = Py_SIZE(self) * self->ob_descr->itemsize;
     view->readonly = 0;
     view->ndim = 1;
     view->itemsize = self->ob_descr->itemsize;
     view->suboffsets = NULL;
     view->shape = NULL;
     if ((flags & PyBUF_ND)==PyBUF_ND) {
-        view->shape = &((Py_SIZE(self)));
+        view->shape = &((PyVarObject*)self)->ob_size;
     }
     view->strides = NULL;
     if ((flags & PyBUF_STRIDES)==PyBUF_STRIDES)
@@ -2752,7 +2738,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                         return NULL;
                     }
                     self->ob_item = item;
-                    Py_SIZE(self) = n;
+                    Py_SET_SIZE(self, n);
                     PyUnicode_AsWideChar(initial, (wchar_t*)item, n);
                     self->allocated = Py_SIZE(self);
                 }

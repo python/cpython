@@ -1,4 +1,0 @@
-Port python-gdb.py to FreeBSD. python-gdb.py now checks for "take_gil"
-function name to check if a frame tries to acquire the GIL, instead of
-checking for "pthread_cond_timedwait" which is specific to Linux and can be
-a different condition than the GIL.

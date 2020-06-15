@@ -1,2 +1,0 @@
-:c:func:`PyDescr_NewMethod` and :c:func:`PyCFunction_NewEx` now include the
-method name in the SystemError "bad call flags" error message to ease debug.
