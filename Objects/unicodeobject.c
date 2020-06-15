@@ -1435,11 +1435,10 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
      * it's data buffer.
      */
     obj = (PyObject *) PyObject_MALLOC(struct_size + (size + 1) * char_size);
-    if (obj == NULL)
+    if (obj == NULL) {
         return PyErr_NoMemory();
-    obj = PyObject_INIT(obj, &PyUnicode_Type);
-    if (obj == NULL)
-        return NULL;
+    }
+    _PyObject_Init(obj, &PyUnicode_Type);
 
     unicode = (PyCompactUnicodeObject *)obj;
     if (is_ascii)
@@ -8392,9 +8391,11 @@ PyUnicode_BuildEncodingMap(PyObject* string)
     /* Create a three-level trie */
     result = PyObject_MALLOC(sizeof(struct encoding_map) +
                              16*count2 + 128*count3 - 1);
-    if (!result)
+    if (!result) {
         return PyErr_NoMemory();
-    PyObject_Init(result, &EncodingMapType);
+    }
+
+    _PyObject_Init(result, &EncodingMapType);
     mresult = (struct encoding_map*)result;
     mresult->count2 = count2;
     mresult->count3 = count3;

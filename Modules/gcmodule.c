@@ -2263,8 +2263,10 @@ PyObject *
 _PyObject_GC_New(PyTypeObject *tp)
 {
     PyObject *op = _PyObject_GC_Malloc(_PyObject_SIZE(tp));
-    if (op != NULL)
-        op = PyObject_INIT(op, tp);
+    if (op == NULL) {
+        return NULL;
+    }
+    _PyObject_Init(op, tp);
     return op;
 }
 
@@ -2280,8 +2282,10 @@ _PyObject_GC_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
     }
     size = _PyObject_VAR_SIZE(tp, nitems);
     op = (PyVarObject *) _PyObject_GC_Malloc(size);
-    if (op != NULL)
-        op = PyObject_INIT_VAR(op, tp, nitems);
+    if (op == NULL) {
+        return NULL;
+    }
+    _PyObject_InitVar(op, tp, nitems);
     return op;
 }
 

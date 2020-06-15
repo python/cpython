@@ -4,8 +4,9 @@
    for any kind of float exception without losing portability. */
 
 #include "Python.h"
-#include "pycore_dtoa.h"
+#include "pycore_dtoa.h"          // _Py_dg_dtoa()
 #include "pycore_interp.h"        // _PyInterpreterState.float_state
+#include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include <ctype.h>
@@ -129,7 +130,7 @@ PyFloat_FromDouble(double fval)
             return PyErr_NoMemory();
         }
     }
-    (void)PyObject_INIT(op, &PyFloat_Type);
+    _PyObject_Init((PyObject*)op, &PyFloat_Type);
     op->ob_fval = fval;
     return (PyObject *) op;
 }
