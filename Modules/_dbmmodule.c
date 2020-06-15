@@ -84,11 +84,11 @@ newdbmobject(_dbm_state *state, const char *file, int flags, int mode)
 static void
 dbm_dealloc(dbmobject *dp)
 {
-    if ( dp->di_dbm )
+    if (dp->di_dbm) {
         dbm_close(dp->di_dbm);
+    }
     PyTypeObject *tp = Py_TYPE(dp);
-    freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
-    free_func(dp);
+    tp->tp_free(dp);
     Py_DECREF(tp);
 }
 
@@ -97,6 +97,7 @@ dbm_length(dbmobject *dp)
 {
     PyTypeObject *tp = Py_TYPE(dp);
     _dbm_state *state =  PyType_GetModuleState(tp);
+    assert(state != NULL);
     if (state == NULL) {
         return -1;
     }
@@ -419,9 +420,14 @@ static PyType_Slot dbmtype_spec_slots[] = {
     {0, 0}
 };
 
+
 static PyType_Spec dbmtype_spec = {
     .name = "_dbm.dbm",
     .basicsize = sizeof(dbmobject),
+    /*
+    Calling PyType_GetModuleState() is safe
+    because Py_TPFLAGS_BASETYPE flag is not used.
+    */
     .flags = Py_TPFLAGS_DEFAULT,
     .slots = dbmtype_spec_slots,
 };
