@@ -145,15 +145,12 @@ byte_offset_to_character_offset(PyObject *line, int col_offset)
     if (!str) {
         return 0;
     }
+    assert(col_offset <= strlen(str));
     PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
     if (!text) {
         return 0;
     }
     Py_ssize_t size = PyUnicode_GET_LENGTH(text);
-    str = PyUnicode_AsUTF8(text);
-    if (str != NULL && (int)strlen(str) == col_offset) {
-        size = strlen(str);
-    }
     Py_DECREF(text);
     return size;
 }
@@ -400,16 +397,17 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 
     if (!error_line) {
         Py_ssize_t size = p->tok->inp - p->tok->buf;
-        if (size && p->tok->buf[size-1] == '\n') {
-            size--;
-        }
         error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
         if (!error_line) {
             goto error;
         }
     }
 
-    Py_ssize_t col_number = byte_offset_to_character_offset(error_line, col_offset);
+    Py_ssize_t col_number = col_offset;
+
+    if (p->tok->encoding != NULL) {
+        col_number = byte_offset_to_character_offset(error_line, col_offset);
+    }
 
     tmp = Py_BuildValue("(OiiN)", p->tok->filename, lineno, col_number, error_line);
     if (!tmp) {
