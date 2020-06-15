@@ -1751,6 +1751,11 @@ test case
             with self.assertNoLogs():
                 raise ZeroDivisionError("Unexpected")
 
+    def testAssertNoLogsYieldsNone(self):
+        with self.assertNoLogs() as value:
+            pass
+        self.assertIsNone(value)
+
     def testDeprecatedMethodNames(self):
         """
         Test that the deprecated methods raise a DeprecationWarning. See #9424.

@@ -1138,9 +1138,8 @@ Test cases
       its string equivalent (for example either ``"ERROR"`` or
       :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
 
-      Like :meth:`assertLogs`, the object returned by the context manager
-      is a recording helper. It is expected to have recorded nothing if the
-      test passes.
+      Unlike :meth:`assertLogs`, nothing will be returned by the context
+      manager.
 
       .. versionadded:: 3.10
 
