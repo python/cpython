@@ -46,9 +46,11 @@
     Py_UNICODE_ISDIGIT(ch) || \
     Py_UNICODE_ISNUMERIC(ch))
 
+/* Py_DEPRECATED(3.3) */
 #define Py_UNICODE_COPY(target, source, length) \
     memcpy((target), (source), (length)*sizeof(Py_UNICODE))
 
+/* Py_DEPRECATED(3.3) */
 #define Py_UNICODE_FILL(target, value, length) \
     do {Py_ssize_t i_; Py_UNICODE *t_ = (target); Py_UNICODE v_ = (value);\
         for (i_ = 0; i_ < (length); i_++) t_[i_] = v_;\
@@ -70,6 +72,7 @@
 /* Check if substring matches at given offset.  The offset must be
    valid, and the substring must not be empty. */
 
+/* Py_DEPRECATED(3.3) */
 #define Py_UNICODE_MATCH(string, offset, substring) \
     ((*((string)->wstr + (offset)) == *((substring)->wstr)) && \
      ((*((string)->wstr + (offset) + (substring)->wstr_length-1) == *((substring)->wstr + (substring)->wstr_length-1))) && \
@@ -247,6 +250,7 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     int check_content);
 
 /* Fast access macros */
+/* Py_DEPRECATED(3.3) */
 #define PyUnicode_WSTR_LENGTH(op) \
     (PyUnicode_IS_COMPACT_ASCII(op) ?                  \
      ((PyASCIIObject*)op)->length :                    \
@@ -578,7 +582,7 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicode(
 
 /* Similar to PyUnicode_AsUnicode(), but raises a ValueError if the string
    contains null characters. */
-PyAPI_FUNC(const Py_UNICODE *) _PyUnicode_AsUnicode(
+Py_DEPRECATED(3.3) PyAPI_FUNC(const Py_UNICODE *) _PyUnicode_AsUnicode(
     PyObject *unicode           /* Unicode object */
     );
 
