@@ -1,6 +1,8 @@
 #include "Python.h"
 
-/* snprintf() wrappers.  If the platform has vsnprintf, we use it, else we
+/* snprintf() and vsnprintf() wrappers.
+
+   If the platform has vsnprintf, we use it, else we
    emulate it in a half-hearted way.  Even if the platform has it, we wrap
    it because platforms differ in what vsnprintf does in case the buffer
    is too small:  C99 behavior is to return the number of characters that
@@ -52,16 +54,17 @@ PyOS_snprintf(char *str, size_t size, const  char  *format, ...)
 int
 PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
 {
-    int len;  /* # bytes written, excluding \0 */
-#ifdef HAVE_SNPRINTF
-#define _PyOS_vsnprintf_EXTRA_SPACE 1
-#else
-#define _PyOS_vsnprintf_EXTRA_SPACE 512
-    char *buffer;
-#endif
     assert(str != NULL);
     assert(size > 0);
     assert(format != NULL);
+
+    int len;  /* # bytes written, excluding \0 */
+#if defined(_MSC_VER) || defined(HAVE_SNPRINTF)
+#  define _PyOS_vsnprintf_EXTRA_SPACE 1
+#else
+#  define _PyOS_vsnprintf_EXTRA_SPACE 512
+    char *buffer;
+#endif
     /* We take a size_t as input but return an int.  Sanity check
      * our input so that it won't cause an overflow in the
      * vsnprintf return value or the buffer malloc size.  */
@@ -70,10 +73,12 @@ PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
         goto Done;
     }
 
-#ifdef HAVE_SNPRINTF
+#if defined(_MSC_VER)
+    len = _vsnprintf(str, size, format, va);
+#elif defined(HAVE_SNPRINTF)
     len = vsnprintf(str, size, format, va);
 #else
-    /* Emulate it. */
+    /* Emulate vsnprintf(). */
     buffer = PyMem_MALLOC(size + _PyOS_vsnprintf_EXTRA_SPACE);
     if (buffer == NULL) {
         len = -666;
@@ -96,9 +101,11 @@ PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
     }
     PyMem_FREE(buffer);
 #endif
+
 Done:
-    if (size > 0)
+    if (size > 0) {
         str[size-1] = '\0';
+    }
     return len;
 #undef _PyOS_vsnprintf_EXTRA_SPACE
 }
