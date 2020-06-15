@@ -21,13 +21,18 @@ the python source tree and run:
 Alternatively, you can run 'make regen-keyword'.
 """
 
-__all__ = ["iskeyword", "kwlist"]
+__all__ = ["iskeyword", "issoftkeyword", "kwlist", "softkwlist"]
 
 kwlist = [
-    {keywords}
+{keywords}
+]
+
+softkwlist = [
+{soft_keywords}
 ]
 
 iskeyword = frozenset(kwlist).__contains__
+issoftkeyword = frozenset(softkwlist).__contains__
 '''.lstrip()
 
 EXTRA_KEYWORDS = ["async", "await"]
@@ -61,12 +66,12 @@ def main():
     gen.collect_todo()
 
     with args.keyword_file as thefile:
-        all_keywords = sorted(
-            list(gen.callmakervisitor.keyword_cache.keys()) + EXTRA_KEYWORDS
-        )
+        all_keywords = sorted(list(gen.callmakervisitor.keyword_cache.keys()) + EXTRA_KEYWORDS)
+        all_soft_keywords = sorted(gen.callmakervisitor.soft_keywords)
 
-        keywords = ",\n    ".join(map(repr, all_keywords))
-        thefile.write(TEMPLATE.format(keywords=keywords))
+        keywords = "" if not all_keywords else "    " + ",\n    ".join(map(repr, all_keywords))
+        soft_keywords = "" if not all_soft_keywords else "    " + ",\n    ".join(map(repr, all_soft_keywords))
+        thefile.write(TEMPLATE.format(keywords=keywords, soft_keywords=soft_keywords))
 
 
 if __name__ == "__main__":
