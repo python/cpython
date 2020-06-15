@@ -1,0 +1,1 @@
+Fix a bug, where the :exc:`SyntaxError` text is empty, when a file ends with a line that contains a line continuation character. With the old parser the error text contained the text of the last line.
