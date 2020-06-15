@@ -165,7 +165,7 @@ class GzipFile(_compression.BaseStream):
 
         """
 
-        if mode and ('t' in mode or 'U' in mode):
+        if mode and 't' in mode:
             raise ValueError("Invalid mode: {!r}".format(mode))
         if mode and 'b' not in mode:
             mode += 'b'
