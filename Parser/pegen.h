@@ -34,7 +34,7 @@ typedef struct _memo {
 typedef struct {
     int type;
     PyObject *bytes;
-    int lineno, col_offset, end_lineno, end_col_offset;
+    Py_ssize_t lineno, col_offset, end_lineno, end_col_offset;
     Memo *memo;
 } Token;
 
