@@ -175,8 +175,8 @@ available for subclassing as well:
    .. versionchanged:: 3.8
       The keyword parameter *mode* and *openhook* are now keyword-only.
 
-   .. versionremoved:: 3.10
-      The ``'rU'`` and ``'U'`` modes.
+   .. versionchanged:: 3.10
+      The ``'rU'`` and ``'U'`` modes have been removed.
 
 
 **Optional in-place filtering:** if the keyword argument ``inplace=True`` is
