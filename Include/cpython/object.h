@@ -2,13 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
-
-#ifdef Py_TRACE_REFS
-/* Py_TRACE_REFS is such major surgery that we call external routines. */
-PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
-#endif
-
 #ifdef Py_REF_DEBUG
 PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 #endif

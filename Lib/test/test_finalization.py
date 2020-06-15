@@ -8,12 +8,12 @@ import unittest
 import weakref
 
 try:
-    from _testcapi import with_tp_del
+    from _testinternalcapi import with_tp_del
 except ImportError:
     def with_tp_del(cls):
         class C(object):
             def __new__(cls, *args, **kwargs):
-                raise TypeError('requires _testcapi.with_tp_del')
+                raise TypeError('requires _testinternalcapi.with_tp_del')
         return C
 
 from test import support

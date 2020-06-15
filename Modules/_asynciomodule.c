@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_object.h"        // _Py_NewReference()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include <stddef.h>               // offsetof()
 

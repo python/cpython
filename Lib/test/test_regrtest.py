@@ -1177,11 +1177,11 @@ class ArgsTestCase(BaseTestCase):
     @support.cpython_only
     def test_findleaks(self):
         code = textwrap.dedent(r"""
-            import _testcapi
+            import _testinternalcapi
             import gc
             import unittest
 
-            @_testcapi.with_tp_del
+            @_testinternalcapi.with_tp_del
             class Garbage:
                 def __tp_del__(self):
                     pass

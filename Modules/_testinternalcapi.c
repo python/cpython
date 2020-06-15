@@ -15,6 +15,7 @@
 #include "pycore_bitutils.h"     // _Py_bswap32()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
+#include "pycore_object.h"       // _Py_NewReference()
 #include "pycore_gc.h"           // PyGC_Head
 
 
@@ -231,6 +232,81 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static void
+slot_tp_del(PyObject *self)
+{
+    _Py_IDENTIFIER(__tp_del__);
+    PyObject *del, *res;
+    PyObject *error_type, *error_value, *error_traceback;
+
+    /* Temporarily resurrect the object. */
+    assert(Py_REFCNT(self) == 0);
+    Py_SET_REFCNT(self, 1);
+
+    /* Save the current exception, if any. */
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+    /* Execute __del__ method, if any. */
+    del = _PyObject_LookupSpecial(self, &PyId___tp_del__);
+    if (del != NULL) {
+        res = _PyObject_CallNoArg(del);
+        if (res == NULL)
+            PyErr_WriteUnraisable(del);
+        else
+            Py_DECREF(res);
+        Py_DECREF(del);
+    }
+
+    /* Restore the saved exception. */
+    PyErr_Restore(error_type, error_value, error_traceback);
+
+    /* Undo the temporary resurrection; can't use DECREF here, it would
+     * cause a recursive call.
+     */
+    assert(Py_REFCNT(self) > 0);
+    Py_SET_REFCNT(self, Py_REFCNT(self) - 1);
+    if (Py_REFCNT(self) == 0) {
+        /* this is the normal path out */
+        return;
+    }
+
+    /* __del__ resurrected it!  Make it look like the original Py_DECREF
+     * never happened.
+     */
+    {
+        Py_ssize_t refcnt = Py_REFCNT(self);
+        _Py_NewReference(self);
+        Py_SET_REFCNT(self, refcnt);
+    }
+    assert(!PyType_IS_GC(Py_TYPE(self)) || PyObject_GC_IsTracked(self));
+    /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
+       _Py_RefTotal, so we need to undo that. */
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
+}
+
+
+static PyObject *
+with_tp_del(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    PyTypeObject *tp;
+
+    if (!PyArg_ParseTuple(args, "O:with_tp_del", &obj))
+        return NULL;
+    tp = (PyTypeObject *) obj;
+    if (!PyType_Check(obj) || !PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
+        PyErr_Format(PyExc_TypeError,
+                     "heap type expected, got %R", obj);
+        return NULL;
+    }
+    tp->tp_del = slot_tp_del;
+    Py_INCREF(obj);
+    return obj;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -238,6 +314,7 @@ static PyMethodDef TestMethods[] = {
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
     {"test_hashtable", test_hashtable, METH_NOARGS},
+    {"with_tp_del", with_tp_del, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

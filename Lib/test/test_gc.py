@@ -15,12 +15,12 @@ import time
 import weakref
 
 try:
-    from _testcapi import with_tp_del
+    from _testinternalcapi import with_tp_del
 except ImportError:
     def with_tp_del(cls):
         class C(object):
             def __new__(cls, *args, **kwargs):
-                raise TypeError('requires _testcapi.with_tp_del')
+                raise TypeError('requires _testinternalcapi.with_tp_del')
         return C
 
 try:
@@ -664,8 +664,8 @@ class GCTests(unittest.TestCase):
         import subprocess
         code = """if 1:
             import gc
-            import _testcapi
-            @_testcapi.with_tp_del
+            import _testinternalcapi
+            @_testinternalcapi.with_tp_del
             class X:
                 def __init__(self, name):
                     self.name = name

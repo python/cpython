@@ -15,11 +15,16 @@ extern "C" {
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
-/* Update the Python traceback of an object. This function must be called
-   when a memory block is reused from a free list.
+PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
 
-   Internal function called by _Py_NewReference(). */
+/* Update the Python traceback of an object. This function must be called
+   when a memory block is reused from a free list. */
 extern int _PyTraceMalloc_NewReference(PyObject *op);
+
+#ifdef Py_TRACE_REFS
+/* Py_TRACE_REFS is such major surgery that we call external routines. */
+PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
+#endif
 
 // Fast inlined version of PyType_HasFeature()
 static inline int

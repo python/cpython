@@ -181,3 +181,7 @@ Porting to Python 3.10
 
 Removed
 -------
+
+* Remove the :c:func:`_Py_NewReference` and :c:func:`_Py_ForgetReference`
+  functions from the public C API: move them to the internal C API.
+  (Contributed by Victor Stinner in :issue:`40989`.)

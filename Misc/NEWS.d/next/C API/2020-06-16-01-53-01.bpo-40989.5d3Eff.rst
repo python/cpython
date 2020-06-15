@@ -1,0 +1,2 @@
+Remove the :c:func:`_Py_NewReference` and :c:func:`_Py_ForgetReference`
+functions from the public C API:(move them to the internal C API.
