@@ -49,6 +49,7 @@ class TempFile:
 
 class GetLineTestsGoodData(TempFile):
     # file_list   = ['list\n', 'of\n', 'good\n', 'strings\n']
+    # test_list   = file_list
 
     def setUp(self):
         self.file_byte_string = ''.join(self.file_list).encode('utf-8')
@@ -65,8 +66,7 @@ class GetLineTestsGoodData(TempFile):
 
     def test_getlines(self):
         lines = linecache.getlines(self.file_name)
-        test_lines = getattr(self, 'test_list', self.file_list)
-        self.assertEqual(lines, test_lines)
+        self.assertEqual(lines, self.test_list)
 
 
 class GetLineTestsBadData(TempFile):
@@ -88,10 +88,12 @@ class EmptyFile(GetLineTestsGoodData, unittest.TestCase):
 
 class SingleEmptyLine(GetLineTestsGoodData, unittest.TestCase):
     file_list = ['\n']
+    test_list = file_list
 
 
 class GoodUnicode(GetLineTestsGoodData, unittest.TestCase):
     file_list = ['á\n', 'b\n', 'abcdef\n', 'ááááá\n']
+    test_list = file_list
 
 
 class BadUnicode(GetLineTestsBadData, unittest.TestCase):
