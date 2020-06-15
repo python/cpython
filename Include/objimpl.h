@@ -118,7 +118,14 @@ PyAPI_FUNC(void) PyObject_Free(void *ptr);
 /* Functions */
 PyAPI_FUNC(PyObject *) PyObject_Init(PyObject *, PyTypeObject *);
 PyAPI_FUNC(PyVarObject *) PyObject_InitVar(PyVarObject *,
-                                                 PyTypeObject *, Py_ssize_t);
+                                           PyTypeObject *, Py_ssize_t);
+
+#define PyObject_INIT(op, typeobj) \
+    PyObject_Init(_PyObject_CAST(op), (typeobj))
+#define PyObject_INIT_VAR(op, typeobj, size) \
+    PyObject_InitVar(_PyVarObject_CAST(op), (typeobj), (size))
+
+
 PyAPI_FUNC(PyObject *) _PyObject_New(PyTypeObject *);
 PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 
@@ -134,19 +141,6 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 // Alias to PyObject_New(). In Python 3.8, PyObject_NEW() called directly
 // PyObject_MALLOC() with _PyObject_VAR_SIZE().
 #define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, typeobj, n)
-
-
-#ifdef Py_LIMITED_API
-/* Define PyObject_INIT() and PyObject_INIT_VAR() as aliases to PyObject_Init()
-   and PyObject_InitVar() in the limited C API for compatibility with the
-   CPython C API. */
-#  define PyObject_INIT(op, typeobj) \
-        PyObject_Init(_PyObject_CAST(op), (typeobj))
-#  define PyObject_INIT_VAR(op, typeobj, size) \
-        PyObject_InitVar(_PyVarObject_CAST(op), (typeobj), (size))
-#else
-/* PyObject_INIT() and PyObject_INIT_VAR() are defined in cpython/objimpl.h */
-#endif
 
 
 /*

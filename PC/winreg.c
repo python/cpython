@@ -14,6 +14,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_object.h"        // _PyObject_Init()
 #include "structmember.h"         // PyMemberDef
 #include <windows.h>
 
@@ -457,13 +458,12 @@ clinic_HKEY_converter(PyObject *ob, void *p)
 PyObject *
 PyHKEY_FromHKEY(HKEY h)
 {
-    PyHKEYObject *op;
-
     /* Inline PyObject_New */
-    op = (PyHKEYObject *) PyObject_MALLOC(sizeof(PyHKEYObject));
-    if (op == NULL)
+    PyHKEYObject *op = (PyHKEYObject *) PyObject_MALLOC(sizeof(PyHKEYObject));
+    if (op == NULL) {
         return PyErr_NoMemory();
-    PyObject_INIT(op, &PyHKEY_Type);
+    }
+    _PyObject_Init(op, &PyHKEY_Type);
     op->hkey = h;
     return (PyObject *)op;
 }
