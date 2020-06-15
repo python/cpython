@@ -2847,7 +2847,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
     asdl_seq *values = p->v.Dict.values;
     Py_ssize_t size = asdl_seq_LEN(values);
     int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
-    ADDOP(c, MATCH_MAP);
+    ADDOP_I(c, MATCH_MAP, star);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     if (size - star) {
         ADDOP_I(c, MATCH_LEN_GE, size - star);
@@ -2865,7 +2865,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
         VISIT(c, expr, asdl_seq_GET(keys, i));
     }
     ADDOP_I(c, BUILD_TUPLE, size - star);
-    ADDOP(c, MATCH_MAP_KEYS);
+    ADDOP_I(c, MATCH_MAP_KEYS, star);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block_star)
     for (i = 0; i < size - star; i++) {
         expr_ty value = asdl_seq_GET(values, i);
@@ -2979,6 +2979,7 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
     asdl_seq *values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
     Py_ssize_t size = asdl_seq_LEN(values);
     Py_ssize_t star = -1;
+    int copy = 0;
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);
         if (value->kind != Starred_kind) {
@@ -2988,11 +2989,12 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
             return compiler_error(c, "multiple starred names in pattern");
         }
         star = i;
+        copy = !WILDCARD_CHECK(value->v.Starred.value);
     }
     basicblock *block, *end;
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
-    ADDOP(c, MATCH_SEQ);
+    ADDOP_I(c, MATCH_SEQ, copy);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     if (star >= 0) {
         if (size) {

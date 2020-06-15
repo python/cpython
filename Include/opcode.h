@@ -30,9 +30,6 @@ extern "C" {
 #define BINARY_TRUE_DIVIDE       27
 #define INPLACE_FLOOR_DIVIDE     28
 #define INPLACE_TRUE_DIVIDE      29
-#define MATCH_SEQ                30
-#define MATCH_MAP                31
-#define MATCH_MAP_KEYS           32
 #define RERAISE                  48
 #define WITH_EXCEPT_START        49
 #define GET_AITER                50
@@ -131,11 +128,14 @@ extern "C" {
 #define DICT_MERGE              164
 #define DICT_UPDATE             165
 #define MATCH                   166
-#define MATCH_LEN_EQ            171
-#define MATCH_LEN_GE            172
-#define MATCH_SEQ_SLICE         173
-#define MATCH_SEQ_ITEM          174
-#define MATCH_SEQ_ITEM_END      175
+#define MATCH_MAP               167
+#define MATCH_MAP_KEYS          168
+#define MATCH_LEN_EQ            169
+#define MATCH_LEN_GE            170
+#define MATCH_SEQ               171
+#define MATCH_SEQ_ITEM          172
+#define MATCH_SEQ_ITEM_END      173
+#define MATCH_SEQ_SLICE         174
 
 /* EXCEPT_HANDLER is a special, implicit block type which is created when
    entering an except handler. It is not an opcode but we define it here

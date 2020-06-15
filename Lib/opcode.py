@@ -83,10 +83,6 @@ def_op('BINARY_TRUE_DIVIDE', 27)
 def_op('INPLACE_FLOOR_DIVIDE', 28)
 def_op('INPLACE_TRUE_DIVIDE', 29)
 
-def_op('MATCH_SEQ', 30)
-def_op('MATCH_MAP', 31)
-def_op('MATCH_MAP_KEYS', 32)
-
 def_op('RERAISE', 48)
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
@@ -218,12 +214,14 @@ def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
 
-jrel_op('MATCH', 166)
-
-def_op('MATCH_LEN_EQ', 171)
-def_op('MATCH_LEN_GE', 172)
-def_op('MATCH_SEQ_SLICE', 173)
-def_op('MATCH_SEQ_ITEM', 174)
-def_op('MATCH_SEQ_ITEM_END', 175)
+def_op('MATCH', 166)
+def_op('MATCH_MAP', 167)
+def_op('MATCH_MAP_KEYS', 168)
+def_op('MATCH_LEN_EQ', 169)
+def_op('MATCH_LEN_GE', 170)
+def_op('MATCH_SEQ', 171)
+def_op('MATCH_SEQ_ITEM', 172)
+def_op('MATCH_SEQ_ITEM_END', 173)
+def_op('MATCH_SEQ_SLICE', 174)
 
 del def_op, name_op, jrel_op, jabs_op

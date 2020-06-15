@@ -896,14 +896,14 @@ match_seq(PyObject *target)
 }
 
 static PyObject*
-match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
+match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, int pop)
 {
-    assert(PyDict_CheckExact(map));
+    assert(pop ? PyDict_CheckExact(map) : 1);
     assert(PyTuple_CheckExact(keys));
     Py_ssize_t nkeys = PyTuple_GET_SIZE(keys);
     PyObject *seen = NULL;
     PyObject *values = NULL;
-    if (PyDict_GET_SIZE(map) < nkeys) {
+    if (PyMapping_Length(map) < nkeys) {
         goto fail;
     }
     seen = PySet_New(NULL);
@@ -924,13 +924,16 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
             }
             goto fail;
         }
-        PyObject *value = PyDict_GetItemWithError(map, key);
+        if (!PyMapping_HasKey(map, key)) {
+            goto fail;
+        }
+        PyObject *value = PyObject_GetItem(map, key);
         if (!value) {
             goto fail;
         }
         Py_INCREF(value);
         PyTuple_SET_ITEM(values, i, value);
-        if (PyDict_DelItem(map, key)) {
+        if (pop && PyDict_DelItem(map, key)) {
             goto fail;
         }
     }
@@ -943,12 +946,12 @@ fail:
 }
 
 static Py_ssize_t
-get_match_args_required(PyThreadState *tstate, PyObject *proxy)
+get_match_args_required(PyThreadState *tstate, PyObject *type)
 {
-    if (!PyObject_HasAttrString(proxy, "__match_args_required__")) {
+    if (!PyObject_HasAttrString(type, "__match_args_required__")) {
         return 0;
     }
-    PyObject *mar = PyObject_GetAttrString(proxy, "__match_args_required__");
+    PyObject *mar = PyObject_GetAttrString(type, "__match_args_required__");
     if (!mar) {
         return -1;
     }
@@ -973,26 +976,28 @@ get_match_args_required(PyThreadState *tstate, PyObject *proxy)
 }
 
 static PyObject *
-get_match_args(PyThreadState *tstate, PyObject *proxy)
+get_match_args(PyThreadState *tstate, PyObject *type)
 {
-    if (!PyObject_HasAttrString(proxy, "__match_args__")) {
+    if (!PyObject_HasAttrString(type, "__match_args__")) {
         Py_RETURN_NONE;
     }
-    PyObject *ma = PyObject_GetAttrString(proxy, "__match_args__");
+    PyObject *ma = PyObject_GetAttrString(type, "__match_args__");
     if (!ma) {
         return NULL;
     }
     // TODO: PySequence_FAST
     // TODO We should probably just check for string items here
     // TODO: Allow duplicate items? Hm...
-    if (PyList_CheckExact(ma)) {
-        return PyList_AsTuple(ma);
-    }
-    if (ma == Py_None) {
+    if (PyTuple_CheckExact(ma) || ma == Py_None) {
         return ma;
     }
+    if (PyList_CheckExact(ma)) {
+        PyObject *tuple = PyList_AsTuple(ma);
+        Py_DECREF(ma);
+        return tuple;
+    }
     _PyErr_Format(tstate, PyExc_TypeError,
-                    "__match_args__ must be a list or None (got %s)",
+                    "__match_args__ must be a list, tuple, or None (got %s)",
                     Py_TYPE(ma)->tp_name);
     Py_DECREF(ma);
     return NULL;
@@ -1028,7 +1033,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
     Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwargs);
     Py_ssize_t nargs = count - nkwargs;
     PyObject *args;
-    PyObject *match_args = get_match_args(tstate, proxy);
+    PyObject *match_args = get_match_args(tstate, type);
     if (!match_args) {
         Py_DECREF(proxy);
         return NULL;
@@ -1083,7 +1088,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         Py_DECREF(attrs);
         return NULL;
     }
-    Py_ssize_t required = get_match_args_required(tstate, proxy);
+    Py_ssize_t required = get_match_args_required(tstate, type);
     if (required < 0) {
         goto error;
     }
@@ -1135,7 +1140,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
             name = PyTuple_GET_ITEM(args, i);
             if (!PyUnicode_CheckExact(name)) {
                 _PyErr_Format(tstate, PyExc_TypeError,
-                              "__match_args__ elements must be str (got %s)",
+                              "__match_args__ elements must be strings (got %s)",
                               Py_TYPE(name)->tp_name);
                 goto error;
             }
@@ -3637,7 +3642,7 @@ main_loop:
         case TARGET(MATCH_MAP_KEYS): {
             PyObject *keys = TOP();
             PyObject *target = SECOND();
-            PyObject *values = match_map_items(tstate, target, keys);
+            PyObject *values = match_map_items(tstate, target, keys, oparg);
             if (!values) {
                 if (_PyErr_Occurred(tstate)) {
                     goto error;
@@ -3657,66 +3662,29 @@ main_loop:
         }
 
         case TARGET(MATCH_SEQ_ITEM): {
-            PyObject *target = TOP();
-            PyObject *item;
-            if (PyTuple_CheckExact(target)) {
-                assert(oparg < PyTuple_GET_SIZE(target));
-                item = PyTuple_GET_ITEM(target, oparg);
+            PyObject *item = PySequence_GetItem(TOP(), oparg);
+            if (!item) {
+                goto error;
             }
-            else if (PyList_CheckExact(target)) {
-                assert(oparg < PyList_GET_SIZE(target));
-                item = PyList_GET_ITEM(target, oparg);
-            }
-            else {
-                // TODO
-                Py_UNREACHABLE();
-            }
-            Py_INCREF(item);
             PUSH(item);
             DISPATCH();
         }
 
         case TARGET(MATCH_SEQ_ITEM_END): {
-            PyObject *target = TOP();
-            PyObject *item;
-            if (PyTuple_CheckExact(target)) {
-                Py_ssize_t i = PyTuple_GET_SIZE(target) - 1 - oparg;
-                assert(i >= 0);
-                item = PyTuple_GET_ITEM(target, i);
+            PyObject *item = PySequence_GetItem(TOP(), -oparg - 1);
+            if (!item) {
+                goto error;
             }
-            else if (PyList_CheckExact(target)) {
-                Py_ssize_t i = PyList_GET_SIZE(target) - 1 - oparg;
-                assert(i >= 0);
-                item = PyList_GET_ITEM(target, i);
-            }
-            else {
-                // TODO
-                Py_UNREACHABLE();
-            }
-            Py_INCREF(item);
             PUSH(item);
             DISPATCH();
         }
 
         case TARGET(MATCH_SEQ_SLICE): {
             PyObject *target = TOP();
-            assert(PyList_CheckExact(target) || PyTuple_CheckExact(target));
-            Py_ssize_t pre = oparg >> 16;
-            Py_ssize_t post = oparg & 0xFF;
-            PyObject *slice;
-            if (PyList_CheckExact(target)) {
-                post = PyList_GET_SIZE(target) - post;
-                slice = PyList_GetSlice(target, pre, post);
-            }
-            else {
-                post = PyTuple_GET_SIZE(target) - post;
-                PyObject *tslice = PyTuple_GetSlice(target, pre, post);
-                if (!tslice) {
-                    goto error;
-                }
-                slice = PySequence_List(tslice);
-                Py_DECREF(tslice);
-            }
+            assert(PyList_CheckExact(target));
+            Py_ssize_t start = oparg >> 16;
+            Py_ssize_t stop = PyList_GET_SIZE(target) - (oparg & 0xFF);
+            PyObject *slice = PyList_GetSlice(target, start, stop);
             if (!slice) {
                 goto error;
             }
@@ -3725,28 +3693,18 @@ main_loop:
         }
 
         case TARGET(MATCH_LEN_EQ): {
-            PyObject *target = TOP();
-            Py_ssize_t len;
-            if (PyDict_CheckExact(target)) {
-                len = PyDict_GET_SIZE(target);
-            }
-            else {
-                assert(PyList_CheckExact(target) || PyTuple_CheckExact(target));
-                len = PySequence_Fast_GET_SIZE(target);
+            Py_ssize_t len = PyObject_Length(TOP());
+            if (len < 0) {
+                goto error;
             }
             PUSH(PyBool_FromLong(len == oparg));
             DISPATCH();
         }
 
         case TARGET(MATCH_LEN_GE): {
-            PyObject *target = TOP();
-            Py_ssize_t len;
-            if (PyDict_CheckExact(target)) {
-                len = PyDict_GET_SIZE(target);
-            }
-            else {
-                assert(PyList_CheckExact(target) || PyTuple_CheckExact(target));
-                len = PySequence_Fast_GET_SIZE(target);
+            Py_ssize_t len = PyObject_Length(TOP());
+            if (len < 0) {
+                goto error;
             }
             PUSH(PyBool_FromLong(len >= oparg));
             DISPATCH();
@@ -3758,7 +3716,7 @@ main_loop:
             if (match < 0) {
                 goto error;
             }
-            if (match) {
+            if (match && oparg) {
                 PyObject *map;
                 if (PyDict_CheckExact(target)) {
                     map = PyDict_Copy(target);
@@ -3786,8 +3744,9 @@ main_loop:
             if (match < 0) {
                 goto error;
             }
-            if (match) {
-                PyObject *seq = PySequence_Fast(target, "TODO");  // TODO
+            // TODO: Really needed?
+            if (match && oparg && !PyList_CheckExact(target)) {
+                PyObject *seq = PySequence_List(target);
                 if (!seq) {
                     goto error;
                 }
