@@ -1,6 +1,7 @@
 // Resource script for Python core DLL.
 // Currently only holds version information.
 //
+#pragma code_page(1252)
 #include "winver.h"
 
 #define PYTHON_COMPANY   "Python Software Foundation"
