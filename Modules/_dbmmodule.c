@@ -56,11 +56,11 @@ typedef struct {
 
 #include "clinic/_dbmmodule.c.h"
 
-#define check_dbmobject_open(v, err)                            \
-if ((v)->di_dbm == NULL) {                                      \
-    PyErr_SetString(err, "DBM object has already been closed"); \
-    return NULL;                                                \
-}
+#define check_dbmobject_open(v, err)                                \
+    if ((v)->di_dbm == NULL) {                                      \
+        PyErr_SetString(err, "DBM object has already been closed"); \
+        return NULL;                                                \
+    }
 
 static PyObject *
 newdbmobject(_dbm_state *state, const char *file, int flags, int mode)
@@ -411,7 +411,8 @@ static PyType_Spec dbmtype_spec = {
     .name = "_dbm.dbm",
     .basicsize = sizeof(dbmobject),
     // Calling PyType_GetModuleState() on a subclass is not safe.
-    // dbmtype_spec does not have Py_TPFLAGS_BASETYPE flag which prevents to create a subclass.
+    // dbmtype_spec does not have Py_TPFLAGS_BASETYPE flag
+    // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
     .flags = Py_TPFLAGS_DEFAULT,
     .slots = dbmtype_spec_slots,
@@ -454,7 +455,7 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
         iflags = O_RDWR;
     }
     else if (strcmp(flags, "rw") == 0) {
-        /* B/W compat */
+        /* Backward compatibility */
         iflags = O_RDWR|O_CREAT;
     }
     else if (strcmp(flags, "c") == 0) {
@@ -499,12 +500,13 @@ _dbm_exec(PyObject *module)
         return -1;
     }
     state->dbm_error = PyErr_NewException("_dbm.error", PyExc_OSError, NULL);
+    if (state->dbm_error == NULL) {
+        return -1;
+    }
     if (PyModule_AddStringConstant(module, "library", which_dbm) < 0) {
         return -1;
     }
-    Py_INCREF(state->dbm_error);
-    if (PyModule_AddObject(module, "error", state->dbm_error) < 0) {
-        Py_DECREF(state->dbm_error);
+    if (PyModule_AddType(module, (PyTypeObject *)state->dbm_error) < 0) {
         return -1;
     }
     return 0;
