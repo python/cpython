@@ -414,10 +414,9 @@ static PyType_Slot dbmtype_spec_slots[] = {
 static PyType_Spec dbmtype_spec = {
     .name = "_dbm.dbm",
     .basicsize = sizeof(dbmobject),
-    /*
-    Calling PyType_GetModuleState() is safe
-    because Py_TPFLAGS_BASETYPE flag is not used.
-    */
+    // Calling PyType_GetModuleState() on a subclass is not safe.
+    // dbmtype_spec does not have Py_TPFLAGS_BASETYPE flag which prevents to create a subclass.
+    // So calling PyType_GetModuleState() in this file is always safe.
     .flags = Py_TPFLAGS_DEFAULT,
     .slots = dbmtype_spec_slots,
 };
