@@ -79,9 +79,10 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
         op = (PyBytesObject *)PyObject_Calloc(1, PyBytesObject_SIZE + size);
     else
         op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE + size);
-    if (op == NULL)
+    if (op == NULL) {
         return PyErr_NoMemory();
-    (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
+    }
+    _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
     op->ob_shash = -1;
     if (!use_calloc)
         op->ob_sval[size] = '\0';
@@ -148,9 +149,10 @@ PyBytes_FromString(const char *str)
 
     /* Inline PyObject_NewVar */
     op = (PyBytesObject *)PyObject_MALLOC(PyBytesObject_SIZE + size);
-    if (op == NULL)
+    if (op == NULL) {
         return PyErr_NoMemory();
-    (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
+    }
+    _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
     op->ob_shash = -1;
     memcpy(op->ob_sval, str, size+1);
     /* share short strings */
@@ -1435,9 +1437,10 @@ bytes_repeat(PyBytesObject *a, Py_ssize_t n)
         return NULL;
     }
     op = (PyBytesObject *)PyObject_MALLOC(PyBytesObject_SIZE + nbytes);
-    if (op == NULL)
+    if (op == NULL) {
         return PyErr_NoMemory();
-    (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
+    }
+    _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
     op->ob_shash = -1;
     op->ob_sval[size] = '\0';
     if (Py_SIZE(a) == 1 && n > 0) {

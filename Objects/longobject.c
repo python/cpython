@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_popcount32()
 #include "pycore_interp.h"        // _PY_NSMALLPOSINTS
+#include "pycore_object.h"        // _PyObject_InitVar()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "longintrepr.h"
 
@@ -146,7 +147,8 @@ _PyLong_New(Py_ssize_t size)
         PyErr_NoMemory();
         return NULL;
     }
-    return (PyLongObject*)PyObject_INIT_VAR(result, &PyLong_Type, size);
+    _PyObject_InitVar((PyVarObject*)result, &PyLong_Type, size);
+    return result;
 }
 
 PyObject *
