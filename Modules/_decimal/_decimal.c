@@ -2500,7 +2500,7 @@ dectuple_as_str(PyObject *dectuple)
         goto error;
     }
 
-    n = PyOS_snprintf(cp, mem, "%s", sign_special);
+    n = snprintf(cp, mem, "%s", sign_special);
     if (n < 0 || n >= mem) {
         PyErr_SetString(PyExc_RuntimeError,
             "internal error in dec_sequence_as_str");
@@ -2540,7 +2540,7 @@ dectuple_as_str(PyObject *dectuple)
     if (sign_special[1] == '\0') {
         /* not a special number */
         *cp++ = 'E';
-        n = PyOS_snprintf(cp, MPD_EXPDIGITS+2, "%" PRI_mpd_ssize_t, exp);
+        n = snprintf(cp, MPD_EXPDIGITS+2, "%" PRI_mpd_ssize_t, exp);
         if (n < 0 || n >= MPD_EXPDIGITS+2) {
             PyErr_SetString(PyExc_RuntimeError,
                 "internal error in dec_sequence_as_str");
