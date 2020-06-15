@@ -910,10 +910,10 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertIn(first, second, msg=None)
-               assertNotIn(first, second, msg=None)
+   .. method:: assertIn(member, container, msg=None)
+               assertNotIn(member, container, msg=None)
 
-      Test that *first* is (or is not) in *second*.
+      Test that *member* is (or is not) in *container*.
 
       .. versionadded:: 3.1
 

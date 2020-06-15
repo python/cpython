@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "pycore_fileutils.h"
-#include "osdefs.h"
+#include "osdefs.h"               // SEP
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -1452,7 +1452,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
     PyObject *bytes;
-    char *path_bytes;
+    const char *path_bytes;
 
     assert(PyGILState_Check());
 
@@ -1461,6 +1461,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     path_bytes = PyBytes_AS_STRING(bytes);
 
     if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
+        Py_DECREF(bytes);
         return NULL;
     }
 

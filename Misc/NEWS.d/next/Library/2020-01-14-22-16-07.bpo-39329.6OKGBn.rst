@@ -1,2 +1,0 @@
-:class:`~smtplib.LMTP` constructor now has an optional *timeout* parameter.
-Patch by Dong-hee Na.

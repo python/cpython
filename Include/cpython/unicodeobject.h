@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Py_UNICODE was the native Unicode storage format (code unit) used by
    Python and represents a single Unicode element in the Unicode type.
    With PEP 393, Py_UNICODE is deprecated and replaced with a
@@ -726,12 +722,6 @@ PyAPI_FUNC(int) _PyUnicode_FormatAdvancedWriter(
     Py_ssize_t start,
     Py_ssize_t end);
 
-/* --- wchar_t support for platforms which support it --------------------- */
-
-#ifdef HAVE_WCHAR_H
-PyAPI_FUNC(void*) _PyUnicode_AsKind(PyObject *s, unsigned int kind);
-#endif
-
 /* --- Manage the default encoding ---------------------------------------- */
 
 /* Returns a pointer to the default encoding (UTF-8) of the
@@ -746,12 +736,6 @@ PyAPI_FUNC(void*) _PyUnicode_AsKind(PyObject *s, unsigned int kind);
 
    _PyUnicode_AsStringAndSize is a #define for PyUnicode_AsUTF8AndSize to
    support the previous internal function with the same behaviour.
-
-   *** This API is for interpreter INTERNAL USE ONLY and will likely
-   *** be removed or changed in the future.
-
-   *** If you need to access the Unicode object as UTF-8 bytes string,
-   *** please use PyUnicode_AsUTF8String() instead.
 */
 
 PyAPI_FUNC(const char *) PyUnicode_AsUTF8AndSize(
@@ -1227,13 +1211,9 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) PyUnicode_AsUnicodeCopy(
 
 /* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
 PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
-/* Clear all static strings. */
-PyAPI_FUNC(void) _PyUnicode_ClearStaticStrings(void);
 
 /* Fast equality check when the inputs are known to be exact unicode types
    and where the hash values are equal (i.e. a very probable match) */
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
 
-#ifdef __cplusplus
-}
-#endif
+PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);

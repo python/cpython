@@ -51,21 +51,22 @@ extern int _PyFloat_Init(void);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
 extern PyStatus _PyTypes_Init(void);
+extern PyStatus _PyTypes_InitSlotDefs(void);
 extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
 extern PyStatus _PyGC_Init(PyThreadState *tstate);
 
 
 /* Various internal finalizers */
 
-extern void _PyFrame_Fini(void);
+extern void _PyFrame_Fini(PyThreadState *tstate);
 extern void _PyDict_Fini(void);
-extern void _PyTuple_Fini(void);
-extern void _PyList_Fini(void);
+extern void _PyTuple_Fini(PyThreadState *tstate);
+extern void _PyList_Fini(PyThreadState *tstate);
 extern void _PySet_Fini(void);
 extern void _PyBytes_Fini(void);
-extern void _PyFloat_Fini(void);
-extern void _PySlice_Fini(void);
-extern void _PyAsyncGen_Fini(void);
+extern void _PyFloat_Fini(PyThreadState *tstate);
+extern void _PySlice_Fini(PyThreadState *tstate);
+extern void _PyAsyncGen_Fini(PyThreadState *tstate);
 
 extern void PyOS_FiniInterrupts(void);
 
@@ -82,7 +83,7 @@ extern void _PyHash_Fini(void);
 extern void _PyTraceMalloc_Fini(void);
 extern void _PyWarnings_Fini(PyInterpreterState *interp);
 
-extern void _PyGILState_Init(PyThreadState *tstate);
+extern PyStatus _PyGILState_Init(PyThreadState *tstate);
 extern void _PyGILState_Fini(PyThreadState *tstate);
 
 PyAPI_FUNC(void) _PyGC_DumpShutdownStats(PyThreadState *tstate);
@@ -103,7 +104,7 @@ PyAPI_FUNC(void) _PyErr_Print(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyErr_Display(PyObject *file, PyObject *exception,
                                 PyObject *value, PyObject *tb);
 
-PyAPI_FUNC(void) _PyThreadState_DeleteCurrent(struct pyruntimestate *runtime);
+PyAPI_FUNC(void) _PyThreadState_DeleteCurrent(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }

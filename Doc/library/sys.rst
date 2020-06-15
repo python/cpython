@@ -343,6 +343,8 @@ always available.
    .. versionadded:: 3.7
       __breakpointhook__
 
+   .. versionadded:: 3.8
+      __unraisablehook__
 
 .. function:: exc_info()
 
@@ -428,9 +430,9 @@ always available.
    The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ============================= =============================
+   ============================= ================================================================
    attribute                     flag
-   ============================= =============================
+   ============================= ================================================================
    :const:`debug`                :option:`-d`
    :const:`inspect`              :option:`-i`
    :const:`interactive`          :option:`-i`
@@ -444,9 +446,9 @@ always available.
    :const:`bytes_warning`        :option:`-b`
    :const:`quiet`                :option:`-q`
    :const:`hash_randomization`   :option:`-R`
-   :const:`dev_mode`             :option:`-X` ``dev``
-   :const:`utf8_mode`            :option:`-X` ``utf8``
-   ============================= =============================
+   :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
+   :const:`utf8_mode`            :option:`-X utf8 <-X>`
+   ============================= ================================================================
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -461,8 +463,9 @@ always available.
       Added ``isolated`` attribute for :option:`-I` ``isolated`` flag.
 
    .. versionchanged:: 3.7
-      Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag
-      and ``utf8_mode`` attribute for the new  :option:`-X` ``utf8`` flag.
+      Added the ``dev_mode`` attribute for the new :ref:`Python Development
+      Mode <devmode>` and the ``utf8_mode`` attribute for the new  :option:`-X`
+      ``utf8`` flag.
 
 
 .. data:: float_info
@@ -1133,6 +1136,28 @@ always available.
 
       The :mod:`platform` module provides detailed checks for the
       system's identity.
+
+
+.. data:: platlibdir
+
+   Name of the platform-specific library directory. It is used to build the
+   path of standard library and the paths of installed extension modules.
+
+   It is equal to ``"lib"`` on most platforms. On Fedora and SuSE, it is equal
+   to ``"lib64"`` on 64-bit platforms which gives the following ``sys.path``
+   paths (where ``X.Y`` is the Python ``major.minor`` version):
+
+   * ``/usr/lib64/pythonX.Y/``:
+     Standard library (like ``os.py`` of the :mod:`os` module)
+   * ``/usr/lib64/pythonX.Y/lib-dynload/``:
+     C extension modules of the standard library (like the :mod:`errno` module,
+     the exact filename is platform specific)
+   * ``/usr/lib/pythonX.Y/site-packages/`` (always use ``lib``, not
+     :data:`sys.platlibdir`): Third-party modules
+   * ``/usr/lib64/pythonX.Y/site-packages/``:
+     C extension modules of third-party packages
+
+   .. versionadded:: 3.9
 
 
 .. data:: prefix

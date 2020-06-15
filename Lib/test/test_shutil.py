@@ -579,6 +579,48 @@ class TestCopyTree(BaseTest, unittest.TestCase):
             shutil.rmtree(src_dir)
             shutil.rmtree(os.path.dirname(dst_dir))
 
+    def test_copytree_arg_types_of_ignore(self):
+        join = os.path.join
+        exists = os.path.exists
+
+        tmp_dir = self.mkdtemp()
+        src_dir = join(tmp_dir, "source")
+
+        os.mkdir(join(src_dir))
+        os.mkdir(join(src_dir, 'test_dir'))
+        os.mkdir(os.path.join(src_dir, 'test_dir', 'subdir'))
+        write_file((src_dir, 'test_dir', 'subdir', 'test.txt'), '456')
+
+        invokations = []
+
+        def _ignore(src, names):
+            invokations.append(src)
+            self.assertIsInstance(src, str)
+            self.assertIsInstance(names, list)
+            self.assertEqual(len(names), len(set(names)))
+            for name in names:
+                self.assertIsInstance(name, str)
+            return []
+
+        dst_dir = join(self.mkdtemp(), 'destination')
+        shutil.copytree(src_dir, dst_dir, ignore=_ignore)
+        self.assertTrue(exists(join(dst_dir, 'test_dir', 'subdir',
+                                    'test.txt')))
+
+        dst_dir = join(self.mkdtemp(), 'destination')
+        shutil.copytree(pathlib.Path(src_dir), dst_dir, ignore=_ignore)
+        self.assertTrue(exists(join(dst_dir, 'test_dir', 'subdir',
+                                    'test.txt')))
+
+        dst_dir = join(self.mkdtemp(), 'destination')
+        src_dir_entry = list(os.scandir(tmp_dir))[0]
+        self.assertIsInstance(src_dir_entry, os.DirEntry)
+        shutil.copytree(src_dir_entry, dst_dir, ignore=_ignore)
+        self.assertTrue(exists(join(dst_dir, 'test_dir', 'subdir',
+                                    'test.txt')))
+
+        self.assertEqual(len(invokations), 9)
+
     def test_copytree_retains_permissions(self):
         tmp_dir = self.mkdtemp()
         src_dir = os.path.join(tmp_dir, 'source')
@@ -1204,7 +1246,7 @@ class TestArchives(BaseTest, unittest.TestCase):
 
     ### shutil.make_archive
 
-    @support.requires_zlib
+    @support.requires_zlib()
     def test_make_tarball(self):
         # creating something to tar
         root_dir, base_dir = self._create_files('')
@@ -1260,7 +1302,7 @@ class TestArchives(BaseTest, unittest.TestCase):
             write_file((root_dir, 'outer'), 'xxx')
         return root_dir, base_dir
 
-    @support.requires_zlib
+    @support.requires_zlib()
     @unittest.skipUnless(shutil.which('tar'),
                          'Need the tar command to run')
     def test_tarfile_vs_tar(self):
@@ -1293,7 +1335,7 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
 
-    @support.requires_zlib
+    @support.requires_zlib()
     def test_make_zipfile(self):
         # creating something to zip
         root_dir, base_dir = self._create_files()
@@ -1330,7 +1372,7 @@ class TestArchives(BaseTest, unittest.TestCase):
                     ['dist/', 'dist/sub/', 'dist/sub2/',
                      'dist/file1', 'dist/file2', 'dist/sub/file3'])
 
-    @support.requires_zlib
+    @support.requires_zlib()
     @unittest.skipUnless(shutil.which('zip'),
                          'Need the zip command to run')
     def test_zipfile_vs_zip(self):
@@ -1356,7 +1398,7 @@ class TestArchives(BaseTest, unittest.TestCase):
             names2 = zf.namelist()
         self.assertEqual(sorted(names), sorted(names2))
 
-    @support.requires_zlib
+    @support.requires_zlib()
     @unittest.skipUnless(shutil.which('unzip'),
                          'Need the unzip command to run')
     def test_unzip_zipfile(self):
@@ -1385,7 +1427,7 @@ class TestArchives(BaseTest, unittest.TestCase):
         base_name = os.path.join(tmpdir, 'archive')
         self.assertRaises(ValueError, make_archive, base_name, 'xxx')
 
-    @support.requires_zlib
+    @support.requires_zlib()
     def test_make_archive_owner_group(self):
         # testing make_archive with owner and group, with various combinations
         # this works even if there's not gid/uid support
@@ -1413,7 +1455,7 @@ class TestArchives(BaseTest, unittest.TestCase):
         self.assertTrue(os.path.isfile(res))
 
 
-    @support.requires_zlib
+    @support.requires_zlib()
     @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
     def test_tarfile_root_owner(self):
         root_dir, base_dir = self._create_files()
@@ -1458,7 +1500,7 @@ class TestArchives(BaseTest, unittest.TestCase):
             self.assertEqual(make_archive('test', 'tar'), 'test.tar')
             self.assertTrue(os.path.isfile('test.tar'))
 
-    @support.requires_zlib
+    @support.requires_zlib()
     def test_make_zipfile_in_curdir(self):
         # Issue #21280
         root_dir = self.mkdtemp()
@@ -1513,20 +1555,20 @@ class TestArchives(BaseTest, unittest.TestCase):
     def test_unpack_archive_tar(self):
         self.check_unpack_archive('tar')
 
-    @support.requires_zlib
+    @support.requires_zlib()
     def test_unpack_archive_gztar(self):
         self.check_unpack_archive('gztar')
 
-    @support.requires_bz2
+    @support.requires_bz2()
     def test_unpack_archive_bztar(self):
         self.check_unpack_archive('bztar')
 
-    @support.requires_lzma
+    @support.requires_lzma()
     @unittest.skipIf(AIX and not _maxdataOK(), "AIX MAXDATA must be 0x20000000 or larger")
     def test_unpack_archive_xztar(self):
         self.check_unpack_archive('xztar')
 
-    @support.requires_zlib
+    @support.requires_zlib()
     def test_unpack_archive_zip(self):
         self.check_unpack_archive('zip')
 
@@ -1624,12 +1666,17 @@ class TestMisc(BaseTest, unittest.TestCase):
         shutil.chown(dirname, group=gid)
         check_chown(dirname, gid=gid)
 
-        user = pwd.getpwuid(uid)[0]
-        group = grp.getgrgid(gid)[0]
-        shutil.chown(filename, user, group)
-        check_chown(filename, uid, gid)
-        shutil.chown(dirname, user, group)
-        check_chown(dirname, uid, gid)
+        try:
+            user = pwd.getpwuid(uid)[0]
+            group = grp.getgrgid(gid)[0]
+        except KeyError:
+            # On some systems uid/gid cannot be resolved.
+            pass
+        else:
+            shutil.chown(filename, user, group)
+            check_chown(filename, uid, gid)
+            shutil.chown(dirname, user, group)
+            check_chown(dirname, uid, gid)
 
 
 class TestWhich(BaseTest, unittest.TestCase):

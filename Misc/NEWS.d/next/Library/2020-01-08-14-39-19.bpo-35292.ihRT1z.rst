@@ -1,1 +1,0 @@
-Proxy the `SimpleHTTPRequestHandler.guess_type` to `mimetypes.guess_type` so the `mimetypes.init` is called lazily to avoid unnecessary costs when :mod:`http.server` module is imported.

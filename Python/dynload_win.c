@@ -12,12 +12,6 @@
 #include "patchlevel.h"
 #include <windows.h>
 
-// "activation context" magic - see dl_nt.c...
-#if HAVE_SXS
-extern ULONG_PTR _Py_ActivateActCtx();
-void _Py_DeactivateActCtx(ULONG_PTR cookie);
-#endif
-
 #ifdef _DEBUG
 #define PYD_DEBUG_SUFFIX "_d"
 #else
@@ -187,16 +181,10 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
     {
         HINSTANCE hDLL = NULL;
         unsigned int old_mode;
-#if HAVE_SXS
-        ULONG_PTR cookie = 0;
-#endif
 
         /* Don't display a message box when Python can't load a DLL */
         old_mode = SetErrorMode(SEM_FAILCRITICALERRORS);
 
-#if HAVE_SXS
-        cookie = _Py_ActivateActCtx();
-#endif
         /* bpo-36085: We use LoadLibraryEx with restricted search paths
            to avoid DLL preloading attacks and enable use of the
            AddDllDirectory function. We add SEARCH_DLL_LOAD_DIR to
@@ -206,9 +194,6 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                               LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
                               LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
         Py_END_ALLOW_THREADS
-#if HAVE_SXS
-        _Py_DeactivateActCtx(cookie);
-#endif
 
         /* restore old error mode settings */
         SetErrorMode(old_mode);

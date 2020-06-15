@@ -53,6 +53,7 @@ raised for division by zero and mod by zero.
  */
 
 #include "Python.h"
+#include "pycore_dtoa.h"
 #include "_math.h"
 
 #include "clinic/mathmodule.c.h"
@@ -825,35 +826,123 @@ m_log10(double x)
 }
 
 
-/*[clinic input]
-math.gcd
-
-    x as a: object
-    y as b: object
-    /
-
-greatest common divisor of x and y
-[clinic start generated code]*/
-
 static PyObject *
-math_gcd_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=7b2e0c151bd7a5d8 input=c2691e57fb2a98fa]*/
+math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
-    PyObject *g;
+    PyObject *res, *x;
+    Py_ssize_t i;
 
-    a = PyNumber_Index(a);
-    if (a == NULL)
-        return NULL;
-    b = PyNumber_Index(b);
-    if (b == NULL) {
-        Py_DECREF(a);
+    if (nargs == 0) {
+        return PyLong_FromLong(0);
+    }
+    res = PyNumber_Index(args[0]);
+    if (res == NULL) {
         return NULL;
     }
-    g = _PyLong_GCD(a, b);
-    Py_DECREF(a);
-    Py_DECREF(b);
-    return g;
+    if (nargs == 1) {
+        Py_SETREF(res, PyNumber_Absolute(res));
+        return res;
+    }
+    for (i = 1; i < nargs; i++) {
+        x = _PyNumber_Index(args[i]);
+        if (x == NULL) {
+            Py_DECREF(res);
+            return NULL;
+        }
+        if (res == _PyLong_One) {
+            /* Fast path: just check arguments.
+               It is okay to use identity comparison here. */
+            Py_DECREF(x);
+            continue;
+        }
+        Py_SETREF(res, _PyLong_GCD(res, x));
+        Py_DECREF(x);
+        if (res == NULL) {
+            return NULL;
+        }
+    }
+    return res;
 }
+
+PyDoc_STRVAR(math_gcd_doc,
+"gcd($module, *integers)\n"
+"--\n"
+"\n"
+"Greatest Common Divisor.");
+
+
+static PyObject *
+long_lcm(PyObject *a, PyObject *b)
+{
+    PyObject *g, *m, *f, *ab;
+
+    if (Py_SIZE(a) == 0 || Py_SIZE(b) == 0) {
+        return PyLong_FromLong(0);
+    }
+    g = _PyLong_GCD(a, b);
+    if (g == NULL) {
+        return NULL;
+    }
+    f = PyNumber_FloorDivide(a, g);
+    Py_DECREF(g);
+    if (f == NULL) {
+        return NULL;
+    }
+    m = PyNumber_Multiply(f, b);
+    Py_DECREF(f);
+    if (m == NULL) {
+        return NULL;
+    }
+    ab = PyNumber_Absolute(m);
+    Py_DECREF(m);
+    return ab;
+}
+
+
+static PyObject *
+math_lcm(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
+{
+    PyObject *res, *x;
+    Py_ssize_t i;
+
+    if (nargs == 0) {
+        return PyLong_FromLong(1);
+    }
+    res = PyNumber_Index(args[0]);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (nargs == 1) {
+        Py_SETREF(res, PyNumber_Absolute(res));
+        return res;
+    }
+    for (i = 1; i < nargs; i++) {
+        x = PyNumber_Index(args[i]);
+        if (x == NULL) {
+            Py_DECREF(res);
+            return NULL;
+        }
+        if (res == _PyLong_Zero) {
+            /* Fast path: just check arguments.
+               It is okay to use identity comparison here. */
+            Py_DECREF(x);
+            continue;
+        }
+        Py_SETREF(res, long_lcm(res, x));
+        Py_DECREF(x);
+        if (res == NULL) {
+            return NULL;
+        }
+    }
+    return res;
+}
+
+
+PyDoc_STRVAR(math_lcm_doc,
+"lcm($module, *integers)\n"
+"--\n"
+"\n"
+"Least Common Multiple.");
 
 
 /* Call is_error when errno != 0, and where x is the result libm
@@ -1017,9 +1106,13 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
     if (!_PyArg_CheckPositional(funcname, nargs, 2, 2))
         return NULL;
     x = PyFloat_AsDouble(args[0]);
-    y = PyFloat_AsDouble(args[1]);
-    if ((x == -1.0 || y == -1.0) && PyErr_Occurred())
+    if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
+    }
+    y = PyFloat_AsDouble(args[1]);
+    if (y == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
     errno = 0;
     r = (*func)(x, y);
     if (Py_IS_NAN(r)) {
@@ -1630,7 +1723,7 @@ math_isqrt(PyObject *module, PyObject *n)
     uint64_t m, u;
     PyObject *a = NULL, *b;
 
-    n = PyNumber_Index(n);
+    n = _PyNumber_Index(n);
     if (n == NULL) {
         return NULL;
     }
@@ -1954,37 +2047,9 @@ math_factorial(PyObject *module, PyObject *arg)
 {
     long x, two_valuation;
     int overflow;
-    PyObject *result, *odd_part, *pyint_form;
+    PyObject *result, *odd_part;
 
-    if (PyFloat_Check(arg)) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "Using factorial() with floats is deprecated",
-                         1) < 0)
-        {
-            return NULL;
-        }
-        PyObject *lx;
-        double dx = PyFloat_AS_DOUBLE((PyFloatObject *)arg);
-        if (!(Py_IS_FINITE(dx) && dx == floor(dx))) {
-            PyErr_SetString(PyExc_ValueError,
-                            "factorial() only accepts integral values");
-            return NULL;
-        }
-        lx = PyLong_FromDouble(dx);
-        if (lx == NULL)
-            return NULL;
-        x = PyLong_AsLongAndOverflow(lx, &overflow);
-        Py_DECREF(lx);
-    }
-    else {
-        pyint_form = PyNumber_Index(arg);
-        if (pyint_form == NULL) {
-            return NULL;
-        }
-        x = PyLong_AsLongAndOverflow(pyint_form, &overflow);
-        Py_DECREF(pyint_form);
-    }
-
+    x = PyLong_AsLongAndOverflow(arg, &overflow);
     if (x == -1 && PyErr_Occurred()) {
         return NULL;
     }
@@ -3038,23 +3103,10 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     if (n == NULL) {
         return NULL;
     }
-    if (!PyLong_CheckExact(n)) {
-        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
-        if (n == NULL) {
-            return NULL;
-        }
-    }
     k = PyNumber_Index(k);
     if (k == NULL) {
         Py_DECREF(n);
         return NULL;
-    }
-    if (!PyLong_CheckExact(k)) {
-        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
-        if (k == NULL) {
-            Py_DECREF(n);
-            return NULL;
-        }
     }
 
     if (Py_SIZE(n) < 0) {
@@ -3161,23 +3213,10 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     if (n == NULL) {
         return NULL;
     }
-    if (!PyLong_CheckExact(n)) {
-        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
-        if (n == NULL) {
-            return NULL;
-        }
-    }
     k = PyNumber_Index(k);
     if (k == NULL) {
         Py_DECREF(n);
         return NULL;
-    }
-    if (!PyLong_CheckExact(k)) {
-        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
-        if (k == NULL) {
-            Py_DECREF(n);
-            return NULL;
-        }
     }
 
     if (Py_SIZE(n) < 0) {
@@ -3287,8 +3326,14 @@ static PyObject *
 math_nextafter_impl(PyObject *module, double x, double y)
 /*[clinic end generated code: output=750c8266c1c540ce input=02b2d50cd1d9f9b6]*/
 {
-    double f = nextafter(x, y);
-    return PyFloat_FromDouble(f);
+#if defined(_AIX)
+    if (x == y) {
+        /* On AIX 7.1, libm nextafter(-0.0, +0.0) returns -0.0.
+           Bug fixed in bos.adt.libm 7.2.2.0 by APAR IV95512. */
+        return PyFloat_FromDouble(y);
+    }
+#endif
+    return PyFloat_FromDouble(nextafter(x, y));
 }
 
 
@@ -3322,6 +3367,29 @@ math_ulp_impl(PyObject *module, double x)
     return x2 - x;
 }
 
+static int
+math_exec(PyObject *module)
+{
+    if (PyModule_AddObject(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObject(module, "e", PyFloat_FromDouble(Py_MATH_E)) < 0) {
+        return -1;
+    }
+    // 2pi
+    if (PyModule_AddObject(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObject(module, "inf", PyFloat_FromDouble(m_inf())) < 0) {
+        return -1;
+    }
+#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
+    if (PyModule_AddObject(module, "nan", PyFloat_FromDouble(m_nan())) < 0) {
+        return -1;
+    }
+#endif
+    return 0;
+}
 
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
@@ -3348,13 +3416,14 @@ static PyMethodDef math_methods[] = {
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
-    MATH_GCD_METHODDEF
+    {"gcd",             (PyCFunction)(void(*)(void))math_gcd,       METH_FASTCALL,  math_gcd_doc},
     {"hypot",           (PyCFunction)(void(*)(void))math_hypot,     METH_FASTCALL,  math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
+    {"lcm",             (PyCFunction)(void(*)(void))math_lcm,       METH_FASTCALL,  math_lcm_doc},
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     MATH_LOG_METHODDEF
@@ -3379,41 +3448,26 @@ static PyMethodDef math_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static PyModuleDef_Slot math_slots[] = {
+    {Py_mod_exec, math_exec},
+    {0, NULL}
+};
 
 PyDoc_STRVAR(module_doc,
 "This module provides access to the mathematical functions\n"
 "defined by the C standard.");
 
-
 static struct PyModuleDef mathmodule = {
     PyModuleDef_HEAD_INIT,
-    "math",
-    module_doc,
-    -1,
-    math_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "math",
+    .m_doc = module_doc,
+    .m_size = 0,
+    .m_methods = math_methods,
+    .m_slots = math_slots,
 };
 
 PyMODINIT_FUNC
 PyInit_math(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&mathmodule);
-    if (m == NULL)
-        goto finally;
-
-    PyModule_AddObject(m, "pi", PyFloat_FromDouble(Py_MATH_PI));
-    PyModule_AddObject(m, "e", PyFloat_FromDouble(Py_MATH_E));
-    PyModule_AddObject(m, "tau", PyFloat_FromDouble(Py_MATH_TAU));  /* 2pi */
-    PyModule_AddObject(m, "inf", PyFloat_FromDouble(m_inf()));
-#if !defined(PY_NO_SHORT_FLOAT_REPR) || defined(Py_NAN)
-    PyModule_AddObject(m, "nan", PyFloat_FromDouble(m_nan()));
-#endif
-
-  finally:
-    return m;
+    return PyModuleDef_Init(&mathmodule);
 }

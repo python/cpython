@@ -12,7 +12,6 @@ __author__ = "Nadeem Vawda <nadeem.vawda@gmail.com>"
 from builtins import open as _builtin_open
 import io
 import os
-import warnings
 import _compression
 from threading import RLock
 

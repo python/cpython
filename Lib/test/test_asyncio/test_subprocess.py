@@ -477,12 +477,19 @@ class SubprocessMixin:
             proc.kill = kill
             returncode = transport.get_returncode()
             transport.close()
-            await transport._wait()
+            await asyncio.wait_for(transport._wait(), 5)
             return (returncode, kill_called)
 
         # Ignore "Close running child process: kill ..." log
         with test_utils.disable_logger():
-            returncode, killed = self.loop.run_until_complete(kill_running())
+            try:
+                returncode, killed = self.loop.run_until_complete(
+                    kill_running()
+                )
+            except asyncio.TimeoutError:
+                self.skipTest(
+                    "Timeout failure on waiting for subprocess stopping"
+                )
         self.assertIsNone(returncode)
 
         # transport.close() must kill the process if it is still running

@@ -1,3 +1,0 @@
-Add an entry for ``__module__`` in the "function" & "method" sections of the
-`inspect docs types and members table
-<https://docs.python.org/3/library/inspect.html#types-and-members>`_

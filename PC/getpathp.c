@@ -80,10 +80,9 @@
 
 
 #include "Python.h"
-#include "pycore_initconfig.h"   /* PyStatus */
-#include "pycore_pathconfig.h"   /* _PyPathConfig */
-#include "pycore_pystate.h"
-#include "osdefs.h"
+#include "pycore_initconfig.h"    // PyStatus
+#include "pycore_pathconfig.h"    // _PyPathConfig
+#include "osdefs.h"               // SEP, ALTSEP
 #include <wchar.h>
 
 #ifndef MS_WINDOWS
@@ -91,6 +90,7 @@
 #endif
 
 #include <windows.h>
+#include <pathcch.h>
 #include <shlwapi.h>
 
 #ifdef HAVE_SYS_TYPES_H
@@ -242,41 +242,13 @@ ismodule(wchar_t *filename, int update_filename)
    stuff as fits will be appended.
 */
 
-static int _PathCchCombineEx_Initialized = 0;
-typedef HRESULT(__stdcall *PPathCchCombineEx) (PWSTR pszPathOut, size_t cchPathOut,
-                                               PCWSTR pszPathIn, PCWSTR pszMore,
-                                               unsigned long dwFlags);
-static PPathCchCombineEx _PathCchCombineEx;
-
 static void
 join(wchar_t *buffer, const wchar_t *stuff)
 {
-    if (_PathCchCombineEx_Initialized == 0) {
-        HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
-        if (pathapi) {
-            _PathCchCombineEx = (PPathCchCombineEx)GetProcAddress(pathapi, "PathCchCombineEx");
-        }
-        else {
-            _PathCchCombineEx = NULL;
-        }
-        _PathCchCombineEx_Initialized = 1;
-    }
-
-    if (_PathCchCombineEx) {
-        if (FAILED(_PathCchCombineEx(buffer, MAXPATHLEN+1, buffer, stuff, 0))) {
-            Py_FatalError("buffer overflow in getpathp.c's join()");
-        }
-    } else {
-        if (!PathCombineW(buffer, buffer, stuff)) {
-            Py_FatalError("buffer overflow in getpathp.c's join()");
-        }
+    if (FAILED(PathCchCombineEx(buffer, MAXPATHLEN+1, buffer, stuff, 0))) {
+        Py_FatalError("buffer overflow in getpathp.c's join()");
     }
 }
-
-static int _PathCchCanonicalizeEx_Initialized = 0;
-typedef HRESULT(__stdcall *PPathCchCanonicalizeEx) (PWSTR pszPathOut, size_t cchPathOut,
-    PCWSTR pszPathIn, unsigned long dwFlags);
-static PPathCchCanonicalizeEx _PathCchCanonicalizeEx;
 
 /* Call PathCchCanonicalizeEx(path): remove navigation elements such as "."
    and ".." to produce a direct, well-formed path. */
@@ -287,26 +259,8 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
         return _PyStatus_NO_MEMORY();
     }
 
-    if (_PathCchCanonicalizeEx_Initialized == 0) {
-        HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
-        if (pathapi) {
-            _PathCchCanonicalizeEx = (PPathCchCanonicalizeEx)GetProcAddress(pathapi, "PathCchCanonicalizeEx");
-        }
-        else {
-            _PathCchCanonicalizeEx = NULL;
-        }
-        _PathCchCanonicalizeEx_Initialized = 1;
-    }
-
-    if (_PathCchCanonicalizeEx) {
-        if (FAILED(_PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, path, 0))) {
-            return INIT_ERR_BUFFER_OVERFLOW();
-        }
-    }
-    else {
-        if (!PathCanonicalizeW(buffer, path)) {
-            return INIT_ERR_BUFFER_OVERFLOW();
-        }
+    if (FAILED(PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, path, 0))) {
+        return INIT_ERR_BUFFER_OVERFLOW();
     }
     return _PyStatus_OK();
 }
@@ -404,7 +358,7 @@ getpythonregpath(HKEY keyBase, int skipcore)
         goto done;
     }
     /* Find out how big our core buffer is, and how many subkeys we have */
-    rc = RegQueryInfoKey(newKey, NULL, NULL, NULL, &numKeys, NULL, NULL,
+    rc = RegQueryInfoKeyW(newKey, NULL, NULL, NULL, &numKeys, NULL, NULL,
                     NULL, NULL, &dataSize, NULL, NULL);
     if (rc!=ERROR_SUCCESS) {
         goto done;
@@ -415,11 +369,10 @@ getpythonregpath(HKEY keyBase, int skipcore)
     /* Allocate a temp array of char buffers, so we only need to loop
        reading the registry once
     */
-    ppPaths = PyMem_RawMalloc( sizeof(WCHAR *) * numKeys );
+    ppPaths = PyMem_RawCalloc(numKeys, sizeof(WCHAR *));
     if (ppPaths==NULL) {
         goto done;
     }
-    memset(ppPaths, 0, sizeof(WCHAR *) * numKeys);
     /* Loop over all subkeys, allocating a temp sub-buffer. */
     for(index=0;index<numKeys;index++) {
         WCHAR keyBuf[MAX_PATH+1];
@@ -829,8 +782,11 @@ calculate_module_search_path(PyCalculatePath *calculate,
 {
     int skiphome = calculate->home==NULL ? 0 : 1;
 #ifdef Py_ENABLE_SHARED
-    calculate->machine_path = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
-    calculate->user_path = getpythonregpath(HKEY_CURRENT_USER, skiphome);
+    if (!Py_IgnoreEnvironmentFlag) {
+        calculate->machine_path = getpythonregpath(HKEY_LOCAL_MACHINE,
+                                                   skiphome);
+        calculate->user_path = getpythonregpath(HKEY_CURRENT_USER, skiphome);
+    }
 #endif
     /* We only use the default relative PYTHONPATH if we haven't
        anything better to use! */

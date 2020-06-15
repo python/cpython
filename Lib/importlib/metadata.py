@@ -79,6 +79,16 @@ class EntryPoint(
         return functools.reduce(getattr, attrs, module)
 
     @property
+    def module(self):
+        match = self.pattern.match(self.value)
+        return match.group('module')
+
+    @property
+    def attr(self):
+        match = self.pattern.match(self.value)
+        return match.group('attr')
+
+    @property
     def extras(self):
         match = self.pattern.match(self.value)
         return list(re.finditer(r'\w+', match.group('extras') or ''))
@@ -170,7 +180,7 @@ class Distribution:
         """
         for resolver in cls._discover_resolvers():
             dists = resolver(DistributionFinder.Context(name=name))
-            dist = next(dists, None)
+            dist = next(iter(dists), None)
             if dist is not None:
                 return dist
         else:
@@ -212,6 +222,17 @@ class Distribution:
             for finder in sys.meta_path
             )
         return filter(None, declared)
+
+    @classmethod
+    def _local(cls, root='.'):
+        from pep517 import build, meta
+        system = build.compat_system(root)
+        builder = functools.partial(
+            meta.build,
+            source_dir=root,
+            system=system,
+            )
+        return PathDistribution(zipfile.Path(meta.build_as_zip(builder)))
 
     @property
     def metadata(self):
@@ -391,6 +412,7 @@ class FastPath:
 
     def __init__(self, root):
         self.root = root
+        self.base = os.path.basename(self.root).lower()
 
     def joinpath(self, child):
         return pathlib.Path(self.root, child)
@@ -407,18 +429,17 @@ class FastPath:
         names = zip_path.root.namelist()
         self.joinpath = zip_path.joinpath
 
-        return (
-            posixpath.split(child)[0]
+        return dict.fromkeys(
+            child.split(posixpath.sep, 1)[0]
             for child in names
             )
 
     def is_egg(self, search):
-        root_n_low = os.path.split(self.root)[1].lower()
-
+        base = self.base
         return (
-            root_n_low == search.normalized + '.egg'
-            or root_n_low.startswith(search.prefix)
-            and root_n_low.endswith('.egg'))
+            base == search.versionless_egg_name
+            or base.startswith(search.prefix)
+            and base.endswith('.egg'))
 
     def search(self, name):
         for child in self.children():
@@ -439,6 +460,7 @@ class Prepared:
     prefix = ''
     suffixes = '.dist-info', '.egg-info'
     exact_matches = [''][:0]
+    versionless_egg_name = ''
 
     def __init__(self, name):
         self.name = name
@@ -448,6 +470,7 @@ class Prepared:
         self.prefix = self.normalized + '-'
         self.exact_matches = [
             self.normalized + suffix for suffix in self.suffixes]
+        self.versionless_egg_name = self.normalized + '.egg'
 
 
 class MetadataPathFinder(DistributionFinder):
@@ -471,7 +494,6 @@ class MetadataPathFinder(DistributionFinder):
             path.search(Prepared(name))
             for path in map(FastPath, paths)
             )
-
 
 
 class PathDistribution(Distribution):

@@ -311,7 +311,8 @@ class DeprecatedRemoved(Directive):
     final_argument_whitespace = True
     option_spec = {}
 
-    _label = 'Deprecated since version {deprecated}, will be removed in version {removed}'
+    _deprecated_label = 'Deprecated since version {deprecated}, will be removed in version {removed}'
+    _removed_label = 'Deprecated since version {deprecated}, removed in version {removed}'
 
     def run(self):
         node = addnodes.versionmodified()
@@ -319,7 +320,15 @@ class DeprecatedRemoved(Directive):
         node['type'] = 'deprecated-removed'
         version = (self.arguments[0], self.arguments[1])
         node['version'] = version
-        label = translators['sphinx'].gettext(self._label)
+        env = self.state.document.settings.env
+        current_version = tuple(int(e) for e in env.config.version.split('.'))
+        removed_version = tuple(int(e) for e in self.arguments[1].split('.'))
+        if current_version < removed_version:
+            label = self._deprecated_label
+        else:
+            label = self._removed_label
+
+        label = translators['sphinx'].gettext(label)
         text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],

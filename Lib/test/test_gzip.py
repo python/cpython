@@ -358,6 +358,26 @@ class TestGzip(BaseTest):
             isizeBytes = fRead.read(4)
             self.assertEqual(isizeBytes, struct.pack('<i', len(data1)))
 
+    def test_compresslevel_metadata(self):
+        # see RFC 1952: http://www.faqs.org/rfcs/rfc1952.html
+        # specifically, discussion of XFL in section 2.3.1
+        cases = [
+            ('fast', 1, b'\x04'),
+            ('best', 9, b'\x02'),
+            ('tradeoff', 6, b'\x00'),
+        ]
+        xflOffset = 8
+
+        for (name, level, expectedXflByte) in cases:
+            with self.subTest(name):
+                fWrite = gzip.GzipFile(self.filename, 'w', compresslevel=level)
+                with fWrite:
+                    fWrite.write(data1)
+                with open(self.filename, 'rb') as fRead:
+                    fRead.seek(xflOffset)
+                    xflByte = fRead.read(1)
+                    self.assertEqual(xflByte, expectedXflByte)
+
     def test_with_open(self):
         # GzipFile supports the context management protocol
         with gzip.GzipFile(self.filename, "wb") as f:

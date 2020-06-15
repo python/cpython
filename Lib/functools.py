@@ -10,14 +10,16 @@
 # See C source code for _functools credits/copyright
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
-           'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial',
-           'partialmethod', 'singledispatch', 'singledispatchmethod']
+           'total_ordering', 'cache', 'cmp_to_key', 'lru_cache', 'reduce',
+           'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
+           'cached_property']
 
 from abc import get_cache_token
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
+from types import GenericAlias
 
 
 ################################################################################
@@ -94,6 +96,8 @@ def _gt_from_lt(self, other, NotImplemented=NotImplemented):
 def _le_from_lt(self, other, NotImplemented=NotImplemented):
     'Return a <= b.  Computed by @total_ordering from (a < b) or (a == b).'
     op_result = self.__lt__(other)
+    if op_result is NotImplemented:
+        return op_result
     return op_result or self == other
 
 def _ge_from_lt(self, other, NotImplemented=NotImplemented):
@@ -134,6 +138,8 @@ def _lt_from_gt(self, other, NotImplemented=NotImplemented):
 def _ge_from_gt(self, other, NotImplemented=NotImplemented):
     'Return a >= b.  Computed by @total_ordering from (a > b) or (a == b).'
     op_result = self.__gt__(other)
+    if op_result is NotImplemented:
+        return op_result
     return op_result or self == other
 
 def _le_from_gt(self, other, NotImplemented=NotImplemented):
@@ -406,6 +412,9 @@ class partialmethod(object):
     def __isabstractmethod__(self):
         return getattr(self.func, "__isabstractmethod__", False)
 
+    __class_getitem__ = classmethod(GenericAlias)
+
+
 # Helper functions
 
 def _unwrap_partial(func):
@@ -632,6 +641,15 @@ try:
     from _functools import _lru_cache_wrapper
 except ImportError:
     pass
+
+
+################################################################################
+### cache -- simplified access to the infinity cache
+################################################################################
+
+def cache(user_function, /):
+    'Simple lightweight unbounded cache.  Sometimes called "memoize".'
+    return lru_cache(maxsize=None)(user_function)
 
 
 ################################################################################
@@ -958,3 +976,5 @@ class cached_property:
                         )
                         raise TypeError(msg) from None
         return val
+
+    __class_getitem__ = classmethod(GenericAlias)
