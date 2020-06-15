@@ -916,7 +916,7 @@ class UrlParseTestCase(unittest.TestCase):
         )
         self.assertEqual(result, 'a=1&a&b')
 
-    def test_urlencode_sequences_trivial(self):
+    def test_urlencode_sequences___str__(self):
         class Trivial:
             def __str__(self):
                 return 'trivial'
