@@ -6,7 +6,7 @@
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"      // _PyThreadState_GET()
 #include "pycore_tupleobject.h"
 
 _Py_IDENTIFIER(__builtins__);
@@ -739,7 +739,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     }
 
     if (flags &
-        ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT | PyCF_ONLY_AST | PyCF_TYPE_COMMENTS))
+        ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_COMPILE_MASK))
     {
         PyErr_SetString(PyExc_ValueError,
                         "compile(): unrecognised flags");
@@ -817,6 +817,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
         goto error;
 
     result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
+
     Py_XDECREF(source_copy);
     goto finally;
 
@@ -2493,17 +2494,17 @@ issubclass as builtin_issubclass
     class_or_tuple: object
     /
 
-Return whether 'cls' is a derived from another class or is the same class.
+Return whether 'cls' is derived from another class or is the same class.
 
 A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the target to
 check against. This is equivalent to ``issubclass(x, A) or issubclass(x, B)
-or ...`` etc.
+or ...``.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_issubclass_impl(PyObject *module, PyObject *cls,
                         PyObject *class_or_tuple)
-/*[clinic end generated code: output=358412410cd7a250 input=af5f35e9ceaddaf6]*/
+/*[clinic end generated code: output=358412410cd7a250 input=a24b9f3d58c370d6]*/
 {
     int retval;
 
@@ -2648,12 +2649,15 @@ static PyMethodDef zip_methods[] = {
 };
 
 PyDoc_STRVAR(zip_doc,
-"zip(*iterables) --> zip object\n\
+"zip(*iterables) --> A zip object yielding tuples until an input is exhausted.\n\
 \n\
-Return a zip object whose .__next__() method returns a tuple where\n\
-the i-th element comes from the i-th iterable argument.  The .__next__()\n\
-method continues until the shortest iterable in the argument sequence\n\
-is exhausted and then it raises StopIteration.");
+   >>> list(zip('abcdefg', range(3), range(4)))\n\
+   [('a', 0, 0), ('b', 1, 1), ('c', 2, 2)]\n\
+\n\
+The zip object yields n-length tuples, where n is the number of iterables\n\
+passed as positional arguments to zip().  The i-th element in every tuple\n\
+comes from the i-th iterable argument to zip().  This continues until the\n\
+shortest argument is exhausted.");
 
 PyTypeObject PyZip_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -2770,7 +2774,7 @@ _PyBuiltin_Init(PyThreadState *tstate)
 {
     PyObject *mod, *dict, *debug;
 
-    const PyConfig *config = &tstate->interp->config;
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
 
     if (PyType_Ready(&PyFilter_Type) < 0 ||
         PyType_Ready(&PyMap_Type) < 0 ||

@@ -11,6 +11,7 @@ import errno
 import tempfile
 import time
 import traceback
+import types
 import selectors
 import sysconfig
 import select
@@ -1435,8 +1436,8 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(c.exception.filename, '/some/nonexistent/directory')
 
     def test_class_getitems(self):
-        self.assertIs(subprocess.Popen[bytes], subprocess.Popen)
-        self.assertIs(subprocess.CompletedProcess[str], subprocess.CompletedProcess)
+        self.assertIsInstance(subprocess.Popen[bytes], types.GenericAlias)
+        self.assertIsInstance(subprocess.CompletedProcess[str], types.GenericAlias)
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):

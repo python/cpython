@@ -26,6 +26,15 @@ class EOFTestCase(unittest.TestCase):
         else:
             raise support.TestFailed
 
+    def test_eof_with_line_continuation(self):
+        expect = "unexpected EOF while parsing (<string>, line 1)"
+        try:
+            compile('"\\xhh" \\',  '<string>', 'exec', dont_inherit=True)
+        except SyntaxError as msg:
+            self.assertEqual(str(msg), expect)
+        else:
+            raise support.TestFailed
+
     def test_line_continuation_EOF(self):
         """A continuation at the end of input must be an error; bpo2180."""
         expect = 'unexpected EOF while parsing (<string>, line 1)'
@@ -43,10 +52,14 @@ class EOFTestCase(unittest.TestCase):
             file_name = script_helper.make_script(temp_dir, 'foo', '\\')
             rc, out, err = script_helper.assert_python_failure(file_name)
             self.assertIn(b'unexpected EOF while parsing', err)
+            self.assertIn(b'line 2', err)
+            self.assertIn(b'\\', err)
 
             file_name = script_helper.make_script(temp_dir, 'foo', 'y = 6\\')
             rc, out, err = script_helper.assert_python_failure(file_name)
             self.assertIn(b'unexpected EOF while parsing', err)
+            self.assertIn(b'line 2', err)
+            self.assertIn(b'y = 6\\', err)
 
 if __name__ == "__main__":
     unittest.main()

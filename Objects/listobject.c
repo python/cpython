@@ -1,8 +1,8 @@
 /* List object implementation */
 
 #include "Python.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"
-#include "pycore_pystate.h"
 #include "pycore_tupleobject.h"
 #include "pycore_accu.h"
 
@@ -96,61 +96,67 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
     return 0;
 }
 
-/* Empty list reuse scheme to save calls to malloc and free */
-#ifndef PyList_MAXFREELIST
-#define PyList_MAXFREELIST 80
-#endif
-static PyListObject *free_list[PyList_MAXFREELIST];
-static int numfree = 0;
-
-int
-PyList_ClearFreeList(void)
+void
+_PyList_ClearFreeList(PyThreadState *tstate)
 {
-    PyListObject *op;
-    int ret = numfree;
-    while (numfree) {
-        op = free_list[--numfree];
+    struct _Py_list_state *state = &tstate->interp->list;
+    while (state->numfree) {
+        PyListObject *op = state->free_list[--state->numfree];
         assert(PyList_CheckExact(op));
         PyObject_GC_Del(op);
     }
-    return ret;
 }
 
 void
-_PyList_Fini(void)
+_PyList_Fini(PyThreadState *tstate)
 {
-    PyList_ClearFreeList();
+    _PyList_ClearFreeList(tstate);
+#ifdef Py_DEBUG
+    struct _Py_list_state *state = &tstate->interp->list;
+    state->numfree = -1;
+#endif
 }
 
 /* Print summary info about the state of the optimized allocator */
 void
 _PyList_DebugMallocStats(FILE *out)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_list_state *state = &interp->list;
     _PyDebugAllocatorStats(out,
                            "free PyListObject",
-                           numfree, sizeof(PyListObject));
+                           state->numfree, sizeof(PyListObject));
 }
 
 PyObject *
 PyList_New(Py_ssize_t size)
 {
-    PyListObject *op;
-
     if (size < 0) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    if (numfree) {
-        numfree--;
-        op = free_list[numfree];
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_list_state *state = &interp->list;
+    PyListObject *op;
+#ifdef Py_DEBUG
+    // PyList_New() must not be called after _PyList_Fini()
+    assert(state->numfree != -1);
+#endif
+    if (state->numfree) {
+        state->numfree--;
+        op = state->free_list[state->numfree];
         _Py_NewReference((PyObject *)op);
-    } else {
-        op = PyObject_GC_New(PyListObject, &PyList_Type);
-        if (op == NULL)
-            return NULL;
     }
-    if (size <= 0)
+    else {
+        op = PyObject_GC_New(PyListObject, &PyList_Type);
+        if (op == NULL) {
+            return NULL;
+        }
+    }
+    if (size <= 0) {
         op->ob_item = NULL;
+    }
     else {
         op->ob_item = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
         if (op->ob_item == NULL) {
@@ -257,12 +263,8 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (n == PY_SSIZE_T_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-            "cannot add more objects to list");
-        return -1;
-    }
 
+    assert((size_t)n + 1 < PY_SSIZE_T_MAX);
     if (list_resize(self, n+1) < 0)
         return -1;
 
@@ -297,12 +299,7 @@ app1(PyListObject *self, PyObject *v)
     Py_ssize_t n = PyList_GET_SIZE(self);
 
     assert (v != NULL);
-    if (n == PY_SSIZE_T_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-            "cannot add more objects to list");
-        return -1;
-    }
-
+    assert((size_t)n + 1 < PY_SSIZE_T_MAX);
     if (list_resize(self, n+1) < 0)
         return -1;
 
@@ -339,10 +336,18 @@ list_dealloc(PyListObject *op)
         }
         PyMem_FREE(op->ob_item);
     }
-    if (numfree < PyList_MAXFREELIST && PyList_CheckExact(op))
-        free_list[numfree++] = op;
-    else
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_list_state *state = &interp->list;
+#ifdef Py_DEBUG
+    // list_dealloc() must not be called after _PyList_Fini()
+    assert(state->numfree != -1);
+#endif
+    if (state->numfree < PyList_MAXFREELIST && PyList_CheckExact(op)) {
+        state->free_list[state->numfree++] = op;
+    }
+    else {
         Py_TYPE(op)->tp_free((PyObject *)op);
+    }
     Py_TRASHCAN_END
 }
 
@@ -499,8 +504,7 @@ list_concat(PyListObject *a, PyObject *bb)
         return NULL;
     }
 #define b ((PyListObject *)bb)
-    if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
-        return PyErr_NoMemory();
+    assert((size_t)Py_SIZE(a) + (size_t)Py_SIZE(b) < PY_SSIZE_T_MAX);
     size = Py_SIZE(a) + Py_SIZE(b);
     np = (PyListObject *) list_new_prealloc(size);
     if (np == NULL) {
@@ -2780,6 +2784,7 @@ static PyMethodDef list_methods[] = {
     LIST_COUNT_METHODDEF
     LIST_REVERSE_METHODDEF
     LIST_SORT_METHODDEF
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -2799,7 +2804,7 @@ static PySequenceMethods list_as_sequence = {
 static PyObject *
 list_subscript(PyListObject* self, PyObject* item)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         Py_ssize_t i;
         i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
@@ -2854,7 +2859,7 @@ list_subscript(PyListObject* self, PyObject* item)
 static int
 list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return -1;

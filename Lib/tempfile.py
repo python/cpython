@@ -44,6 +44,7 @@ import shutil as _shutil
 import errno as _errno
 from random import Random as _Random
 import sys as _sys
+import types as _types
 import weakref as _weakref
 import _thread
 _allocate_lock = _thread.allocate_lock
@@ -643,17 +644,7 @@ class SpooledTemporaryFile:
                                    'encoding': encoding, 'newline': newline,
                                    'dir': dir, 'errors': errors}
 
-    def __class_getitem__(cls, type):
-        """Provide minimal support for using this class as generic
-        (for example in type annotations).
-
-        See PEP 484 and PEP 560 for more details. For example,
-        `SpooledTemporaryFile[str]` is a valid expression at runtime (type
-        argument `str` indicates whether the file is open in bytes or text
-        mode). Note, no type checking happens at runtime, but a static type
-        checker can be used.
-        """
-        return cls
+    __class_getitem__ = classmethod(_types.GenericAlias)
 
     def _check(self, file):
         if self._rolled: return
@@ -747,7 +738,7 @@ class SpooledTemporaryFile:
         return self._file.readlines(*args)
 
     def seek(self, *args):
-        self._file.seek(*args)
+        return self._file.seek(*args)
 
     def tell(self):
         return self._file.tell()
@@ -838,3 +829,5 @@ class TemporaryDirectory(object):
     def cleanup(self):
         if self._finalizer.detach():
             self._rmtree(self.name)
+
+    __class_getitem__ = classmethod(_types.GenericAlias)

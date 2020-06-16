@@ -43,6 +43,7 @@ Functions:
 * :c:func:`Py_PreInitializeFromArgs`
 * :c:func:`Py_PreInitializeFromBytesArgs`
 * :c:func:`Py_RunMain`
+* :c:func:`Py_GetArgcArgv`
 
 The preconfiguration (``PyPreConfig`` type) is stored in
 ``_PyRuntime.preconfig`` and the configuration (``PyConfig`` type) is stored in
@@ -435,6 +436,14 @@ PyConfig
    .. c:member:: wchar_t* base_prefix
 
       :data:`sys.base_prefix`.
+
+   .. c:member:: wchar_t* platlibdir
+
+      :data:`sys.platlibdir`: platform library directory name, set at configure time
+      by ``--with-platlibdir``, overrideable by the ``PYTHONPLATLIBDIR``
+      environment variable.
+
+      .. versionadded:: 3.9
 
    .. c:member:: int buffered_stdio
 
@@ -874,6 +883,7 @@ Path Configuration
 * Path configuration inputs:
 
   * :c:member:`PyConfig.home`
+  * :c:member:`PyConfig.platlibdir`
   * :c:member:`PyConfig.pathconfig_warnings`
   * :c:member:`PyConfig.program_name`
   * :c:member:`PyConfig.pythonpath_env`
@@ -965,6 +975,14 @@ customized Python always running in isolated mode using
 :c:func:`Py_RunMain`.
 
 
+Py_GetArgcArgv()
+----------------
+
+.. c:function:: void Py_GetArgcArgv(int *argc, wchar_t ***argv)
+
+   Get the original command line arguments, before Python modified them.
+
+
 Multi-Phase Initialization Private Provisional API
 --------------------------------------------------
 
@@ -994,6 +1012,8 @@ Private provisional API:
 
 * :c:member:`PyConfig._init_main`: if set to 0,
   :c:func:`Py_InitializeFromConfig` stops at the "Core" initialization phase.
+* :c:member:`PyConfig._isolated_interpreter`: if non-zero,
+  disallow threads, subprocesses and fork.
 
 .. c:function:: PyStatus _Py_InitializeMain(void)
 

@@ -8,7 +8,7 @@
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_pyerrors.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"    // _PyThreadState_GET()
 
 #ifndef MS_WINDOWS
 #include "posixmodule.h"
@@ -103,8 +103,6 @@ class sigset_t_converter(CConverter):
    only oddity is that the thread executing the Python signal handler
    may not be the thread that received the signal.
 */
-
-#include "pythread.h"
 
 static volatile struct {
     _Py_atomic_int tripped;
@@ -252,14 +250,11 @@ trip_signal(int sig_num)
        cleared in PyErr_CheckSignals() before .tripped. */
     _Py_atomic_store(&is_tripped, 1);
 
-    /* Get the Python thread state using PyGILState API, since
-       _PyThreadState_GET() returns NULL if the GIL is released.
-       For example, signal.raise_signal() releases the GIL. */
-    PyThreadState *tstate = PyGILState_GetThisThreadState();
-    assert(tstate != NULL);
+    /* Signals are always handled by the main interpreter */
+    PyInterpreterState *interp = _PyRuntime.interpreters.main;
 
     /* Notify ceval.c */
-    _PyEval_SignalReceived(tstate);
+    _PyEval_SignalReceived(interp);
 
     /* And then write to the wakeup fd *after* setting all the globals and
        doing the _PyEval_SignalReceived. We used to write to the wakeup fd
@@ -299,7 +294,7 @@ trip_signal(int sig_num)
                 {
                     /* _PyEval_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    _PyEval_AddPendingCall(tstate,
+                    _PyEval_AddPendingCall(interp,
                                            report_wakeup_send_error,
                                            (void *)(intptr_t) last_error);
                 }
@@ -318,7 +313,7 @@ trip_signal(int sig_num)
                 {
                     /* _PyEval_AddPendingCall() isn't signal-safe, but we
                        still use it for this exceptional case. */
-                    _PyEval_AddPendingCall(tstate,
+                    _PyEval_AddPendingCall(interp,
                                            report_wakeup_write_error,
                                            (void *)(intptr_t)errno);
                 }
@@ -476,7 +471,7 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
 #endif
 
     PyThreadState *tstate = _PyThreadState_GET();
-    if (!_Py_ThreadCanHandleSignals(tstate)) {
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         _PyErr_SetString(tstate, PyExc_ValueError,
                          "signal only works in main thread "
                          "of the main interpreter");
@@ -704,7 +699,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args, PyObject *kwds)
 #endif
 
     PyThreadState *tstate = _PyThreadState_GET();
-    if (!_Py_ThreadCanHandleSignals(tstate)) {
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         _PyErr_SetString(tstate, PyExc_ValueError,
                          "set_wakeup_fd only works in main thread "
                          "of the main interpreter");
@@ -1681,7 +1676,7 @@ int
 PyErr_CheckSignals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (!_Py_ThreadCanHandleSignals(tstate)) {
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
 
@@ -1784,11 +1779,13 @@ PyOS_FiniInterrupts(void)
     finisignal();
 }
 
+
+// The caller doesn't have to hold the GIL
 int
-PyOS_InterruptOccurred(void)
+_PyOS_InterruptOccurred(PyThreadState *tstate)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (!_Py_ThreadCanHandleSignals(tstate)) {
+    _Py_EnsureTstateNotNULL(tstate);
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
 
@@ -1800,14 +1797,26 @@ PyOS_InterruptOccurred(void)
     return 1;
 }
 
+
+// The caller must to hold the GIL
+int
+PyOS_InterruptOccurred(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyOS_InterruptOccurred(tstate);
+}
+
+
+#ifdef HAVE_FORK
 static void
 _clear_pending_signals(void)
 {
-    int i;
-    if (!_Py_atomic_load(&is_tripped))
+    if (!_Py_atomic_load(&is_tripped)) {
         return;
+    }
+
     _Py_atomic_store(&is_tripped, 0);
-    for (i = 1; i < NSIG; ++i) {
+    for (int i = 1; i < NSIG; ++i) {
         _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
     }
 }
@@ -1820,12 +1829,14 @@ _PySignal_AfterFork(void)
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
 }
+#endif   /* HAVE_FORK */
+
 
 int
 _PyOS_IsMainThread(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    return _Py_ThreadCanHandleSignals(tstate);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return _Py_ThreadCanHandleSignals(interp);
 }
 
 #ifdef MS_WINDOWS

@@ -1,11 +1,10 @@
 /* Return the initial module search path. */
 
 #include "Python.h"
-#include "pycore_initconfig.h"
-#include "osdefs.h"
 #include "pycore_fileutils.h"
+#include "pycore_initconfig.h"
 #include "pycore_pathconfig.h"
-#include "pycore_pystate.h"
+#include "osdefs.h"               // DELIM
 
 #include <sys/types.h>
 #include <string.h>
@@ -106,8 +105,8 @@ extern "C" {
 
 
 #if (!defined(PREFIX) || !defined(EXEC_PREFIX) \
-        || !defined(VERSION) || !defined(VPATH) || !defined(PLATLIBDIR))
-#error "PREFIX, EXEC_PREFIX, VERSION, VPATH and PLATLIBDIR macros must be defined"
+        || !defined(VERSION) || !defined(VPATH))
+#error "PREFIX, EXEC_PREFIX, VERSION and VPATH macros must be defined"
 #endif
 
 #ifndef LANDMARK
@@ -129,16 +128,16 @@ typedef struct {
     wchar_t *pythonpath_macro;         /* PYTHONPATH macro */
     wchar_t *prefix_macro;             /* PREFIX macro */
     wchar_t *exec_prefix_macro;        /* EXEC_PREFIX macro */
-    wchar_t *platlibdir_macro;         /* PLATLIBDIR macro */
     wchar_t *vpath_macro;              /* VPATH macro */
 
-    wchar_t *lib_python;               /* "lib/pythonX.Y" */
+    wchar_t *lib_python;               /* <platlibdir> / "pythonX.Y" */
 
     int prefix_found;         /* found platform independent libraries? */
     int exec_prefix_found;    /* found the platform dependent libraries? */
 
     int warnings;
     const wchar_t *pythonpath_env;
+    const wchar_t *platlibdir;
 
     wchar_t *argv0_path;
     wchar_t *zip_path;
@@ -811,8 +810,8 @@ calculate_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
                 "Could not find platform dependent libraries <exec_prefix>\n");
         }
 
-        /* <PLATLIBDIR> / "lib-dynload" */
-        wchar_t *lib_dynload = joinpath2(calculate->platlibdir_macro,
+        /* <platlibdir> / "lib-dynload" */
+        wchar_t *lib_dynload = joinpath2(calculate->platlibdir,
                                          L"lib-dynload");
         if (lib_dynload == NULL) {
             return _PyStatus_NO_MEMORY();
@@ -1297,8 +1296,10 @@ calculate_zip_path(PyCalculatePath *calculate)
 {
     PyStatus res;
 
-    /* Path: <PLATLIBDIR> / "python00.zip" */
-    wchar_t *path = joinpath2(calculate->platlibdir_macro, L"python00.zip");
+    /* Path: <platlibdir> / "pythonXY.zip" */
+    wchar_t *path = joinpath2(calculate->platlibdir,
+                              L"python" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION)
+                              L".zip");
     if (path == NULL) {
         return _PyStatus_NO_MEMORY();
     }
@@ -1306,7 +1307,7 @@ calculate_zip_path(PyCalculatePath *calculate)
     if (calculate->prefix_found > 0) {
         /* Use the reduced prefix returned by Py_GetPrefix()
 
-           Path: <basename(basename(prefix))> / <PLATLIBDIR> / "python00.zip" */
+           Path: <basename(basename(prefix))> / <platlibdir> / "pythonXY.zip" */
         wchar_t *parent = _PyMem_RawWcsdup(calculate->prefix);
         if (parent == NULL) {
             res = _PyStatus_NO_MEMORY();
@@ -1325,11 +1326,6 @@ calculate_zip_path(PyCalculatePath *calculate)
         res = _PyStatus_NO_MEMORY();
         goto done;
     }
-
-    /* Replace "00" with version */
-    size_t len = wcslen(calculate->zip_path);
-    calculate->zip_path[len - 6] = VERSION[0];
-    calculate->zip_path[len - 5] = VERSION[2];
 
     res = _PyStatus_OK();
 
@@ -1432,6 +1428,11 @@ static PyStatus
 calculate_init(PyCalculatePath *calculate, const PyConfig *config)
 {
     size_t len;
+
+    calculate->warnings = config->pathconfig_warnings;
+    calculate->pythonpath_env = config->pythonpath_env;
+    calculate->platlibdir = config->platlibdir;
+
     const char *path = getenv("PATH");
     if (path) {
         calculate->path_env = Py_DecodeLocale(path, &len);
@@ -1457,18 +1458,17 @@ calculate_init(PyCalculatePath *calculate, const PyConfig *config)
     if (!calculate->vpath_macro) {
         return DECODE_LOCALE_ERR("VPATH macro", len);
     }
-    calculate->platlibdir_macro = Py_DecodeLocale(PLATLIBDIR, &len);
-    if (!calculate->platlibdir_macro) {
-        return DECODE_LOCALE_ERR("PLATLIBDIR macro", len);
-    }
 
-    calculate->lib_python = Py_DecodeLocale(PLATLIBDIR "/python" VERSION, &len);
-    if (!calculate->lib_python) {
+    // <platlibdir> / "pythonX.Y"
+    wchar_t *pyversion = Py_DecodeLocale("python" VERSION, &len);
+    if (!pyversion) {
         return DECODE_LOCALE_ERR("VERSION macro", len);
     }
-
-    calculate->warnings = config->pathconfig_warnings;
-    calculate->pythonpath_env = config->pythonpath_env;
+    calculate->lib_python = joinpath2(config->platlibdir, pyversion);
+    PyMem_RawFree(pyversion);
+    if (calculate->lib_python == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
 
     return _PyStatus_OK();
 }
@@ -1481,7 +1481,6 @@ calculate_free(PyCalculatePath *calculate)
     PyMem_RawFree(calculate->prefix_macro);
     PyMem_RawFree(calculate->exec_prefix_macro);
     PyMem_RawFree(calculate->vpath_macro);
-    PyMem_RawFree(calculate->platlibdir_macro);
     PyMem_RawFree(calculate->lib_python);
     PyMem_RawFree(calculate->path_env);
     PyMem_RawFree(calculate->zip_path);

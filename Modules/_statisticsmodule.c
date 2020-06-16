@@ -1,7 +1,6 @@
 /* statistics accelerator C extension: _statistics module. */
 
 #include "Python.h"
-#include "structmember.h"
 #include "clinic/_statisticsmodule.c.h"
 
 /*[clinic input]

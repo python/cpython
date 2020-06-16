@@ -928,7 +928,7 @@ a class like this::
            self.x, self.y = x, y
 
 Now you want to store the point in a single SQLite column.  First you'll have to
-choose one of the supported types first to be used for representing the point.
+choose one of the supported types to be used for representing the point.
 Let's just use str and separate the coordinates using a semicolon. Then you need
 to give your class a method ``__conform__(self, protocol)`` which must return
 the converted value. The parameter *protocol* will be :class:`PrepareProtocol`.

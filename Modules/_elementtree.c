@@ -14,7 +14,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 /* -------------------------------------------------------------------- */
 /* configuration */
@@ -1132,7 +1132,7 @@ checkpath(PyObject* tag)
 
     if (PyUnicode_Check(tag)) {
         const Py_ssize_t len = PyUnicode_GET_LENGTH(tag);
-        void *data = PyUnicode_DATA(tag);
+        const void *data = PyUnicode_DATA(tag);
         unsigned int kind = PyUnicode_KIND(tag);
         if (len >= 3 && PyUnicode_READ(kind, data, 0) == '{' && (
                 PyUnicode_READ(kind, data, 1) == '}' || (
@@ -1153,7 +1153,7 @@ checkpath(PyObject* tag)
         return 0;
     }
     if (PyBytes_Check(tag)) {
-        char *p = PyBytes_AS_STRING(tag);
+        const char *p = PyBytes_AS_STRING(tag);
         const Py_ssize_t len = PyBytes_GET_SIZE(tag);
         if (len >= 3 && p[0] == '{' && (
                 p[1] == '}' || (p[1] == '*' && p[2] == '}'))) {
@@ -3818,6 +3818,17 @@ xmlparser_dealloc(XMLParserObject* self)
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
+Py_LOCAL_INLINE(int)
+_check_xmlparser(XMLParserObject* self)
+{
+    if (self->target == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "XMLParser.__init__() wasn't called");
+        return 0;
+    }
+    return 1;
+}
+
 LOCAL(PyObject*)
 expat_parse(XMLParserObject* self, const char* data, int data_len, int final)
 {
@@ -3854,6 +3865,10 @@ _elementtree_XMLParser_close_impl(XMLParserObject *self)
     /* end feeding data to parser */
 
     PyObject* res;
+
+    if (!_check_xmlparser(self)) {
+        return NULL;
+    }
     res = expat_parse(self, "", 0, 1);
     if (!res)
         return NULL;
@@ -3885,6 +3900,9 @@ _elementtree_XMLParser_feed(XMLParserObject *self, PyObject *data)
 {
     /* feed data to parser */
 
+    if (!_check_xmlparser(self)) {
+        return NULL;
+    }
     if (PyUnicode_Check(data)) {
         Py_ssize_t data_len;
         const char *data_ptr = PyUnicode_AsUTF8AndSize(data, &data_len);
@@ -3932,6 +3950,9 @@ _elementtree_XMLParser__parse_whole(XMLParserObject *self, PyObject *file)
     PyObject* temp;
     PyObject* res;
 
+    if (!_check_xmlparser(self)) {
+        return NULL;
+    }
     reader = PyObject_GetAttrString(file, "read");
     if (!reader)
         return NULL;
@@ -4019,6 +4040,9 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     TreeBuilderObject *target;
     PyObject *events_append, *events_seq;
 
+    if (!_check_xmlparser(self)) {
+        return NULL;
+    }
     if (!TreeBuilder_CheckExact(self->target)) {
         PyErr_SetString(
             PyExc_TypeError,

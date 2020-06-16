@@ -7,6 +7,7 @@ import keyword
 import builtins
 import functools
 import _thread
+from types import GenericAlias
 
 
 __all__ = ['dataclass',
@@ -283,6 +284,8 @@ class Field:
             # There is a __set_name__ method on the descriptor, call
             # it.
             func(self.default, owner, name)
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class _DataclassParams:

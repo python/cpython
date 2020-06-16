@@ -23,7 +23,6 @@
 
 #include "Python.h"
 
-#include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
 #include "Python-ast.h"
 #include "ast.h"
 #include "code.h"
@@ -323,7 +322,6 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     PyCodeObject *co = NULL;
     PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
     int merged;
-    PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
 
     if (!__doc__) {
         __doc__ = PyUnicode_InternFromString("__doc__");
@@ -350,7 +348,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_future->ff_features = merged;
     flags->cf_flags = merged;
     c.c_flags = flags;
-    c.c_optimize = (optimize == -1) ? config->optimization_level : optimize;
+    c.c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c.c_nestlevel = 0;
     c.c_do_not_emit_bytecode = 0;
 
@@ -390,21 +388,6 @@ PyAST_CompileEx(mod_ty mod, const char *filename_str, PyCompilerFlags *flags,
     Py_DECREF(filename);
     return co;
 
-}
-
-PyCodeObject *
-PyNode_Compile(struct _node *n, const char *filename)
-{
-    PyCodeObject *co = NULL;
-    mod_ty mod;
-    PyArena *arena = PyArena_New();
-    if (!arena)
-        return NULL;
-    mod = PyAST_FromNode(n, NULL, filename, arena);
-    if (mod)
-        co = PyAST_Compile(mod, filename, NULL, arena);
-    PyArena_Free(arena);
-    return co;
 }
 
 static void
@@ -2155,6 +2138,55 @@ compiler_default_arguments(struct compiler *c, arguments_ty args)
 }
 
 static int
+forbidden_name(struct compiler *c, identifier name, expr_context_ty ctx)
+{
+
+    if (ctx == Store && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
+        compiler_error(c, "cannot assign to __debug__");
+        return 1;
+    }
+    return 0;
+}
+
+static int
+compiler_check_debug_one_arg(struct compiler *c, arg_ty arg)
+{
+    if (arg != NULL) {
+        if (forbidden_name(c, arg->arg, Store))
+            return 0;
+    }
+    return 1;
+}
+
+static int
+compiler_check_debug_args_seq(struct compiler *c, asdl_seq *args)
+{
+    if (args != NULL) {
+        for (Py_ssize_t i = 0, n = asdl_seq_LEN(args); i < n; i++) {
+            if (!compiler_check_debug_one_arg(c, asdl_seq_GET(args, i)))
+                return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+compiler_check_debug_args(struct compiler *c, arguments_ty args)
+{
+    if (!compiler_check_debug_args_seq(c, args->posonlyargs))
+        return 0;
+    if (!compiler_check_debug_args_seq(c, args->args))
+        return 0;
+    if (!compiler_check_debug_one_arg(c, args->vararg))
+        return 0;
+    if (!compiler_check_debug_args_seq(c, args->kwonlyargs))
+        return 0;
+    if (!compiler_check_debug_one_arg(c, args->kwarg))
+        return 0;
+    return 1;
+}
+
+static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
@@ -2190,6 +2222,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
         scope_type = COMPILER_SCOPE_FUNCTION;
     }
+
+    if (!compiler_check_debug_args(c, args))
+        return 0;
 
     if (!compiler_decorators(c, decos))
         return 0;
@@ -2597,6 +2632,9 @@ compiler_lambda(struct compiler *c, expr_ty e)
     Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
+
+    if (!compiler_check_debug_args(c, args))
+        return 0;
 
     if (!name) {
         name = PyUnicode_InternFromString("<lambda>");
@@ -3507,6 +3545,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
            !_PyUnicode_EqualToASCIIString(name, "True") &&
            !_PyUnicode_EqualToASCIIString(name, "False"));
 
+    if (forbidden_name(c, name, ctx))
+        return 0;
+
     mangled = _Py_Mangle(c->u->u_private, name);
     if (!mangled)
         return 0;
@@ -4050,6 +4091,35 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 }
 
 static int
+validate_keywords(struct compiler *c, asdl_seq *keywords)
+{
+    Py_ssize_t nkeywords = asdl_seq_LEN(keywords);
+    for (Py_ssize_t i = 0; i < nkeywords; i++) {
+        keyword_ty key = ((keyword_ty)asdl_seq_GET(keywords, i));
+        if (key->arg == NULL) {
+            continue;
+        }
+        if (forbidden_name(c, key->arg, Store)) {
+            return -1;
+        }
+        for (Py_ssize_t j = i + 1; j < nkeywords; j++) {
+            keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
+            if (other->arg && !PyUnicode_Compare(key->arg, other->arg)) {
+                PyObject *msg = PyUnicode_FromFormat("keyword argument repeated: %U", key->arg);
+                if (msg == NULL) {
+                    return -1;
+                }
+                c->u->u_col_offset = other->col_offset;
+                compiler_error(c, PyUnicode_AsUTF8(msg));
+                Py_DECREF(msg);
+                return -1;
+            }
+        }
+    }
+    return 0;
+}
+
+static int
 compiler_call(struct compiler *c, expr_ty e)
 {
     int ret = maybe_optimize_method_call(c, e);
@@ -4165,6 +4235,10 @@ compiler_call_helper(struct compiler *c,
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
 
+    if (validate_keywords(c, keywords) == -1) {
+        return 0;
+    }
+
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
 
@@ -4231,6 +4305,9 @@ ex_call:
                 if (nseen) {
                     if (!compiler_subkwargs(c, keywords, i - nseen, i)) {
                         return 0;
+                    }
+                    if (have_dict) {
+                        ADDOP_I(c, DICT_MERGE, 1);
                     }
                     have_dict = 1;
                     nseen = 0;
@@ -4985,6 +5062,8 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
         case Store:
+            if (forbidden_name(c, e->v.Attribute.attr, e->v.Attribute.ctx))
+                return 0;
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
@@ -5155,6 +5234,8 @@ compiler_annassign(struct compiler *c, stmt_ty s)
     }
     switch (targ->kind) {
     case Name_kind:
+        if (forbidden_name(c, targ->v.Name.id, Store))
+            return 0;
         /* If we have a simple name in a module or class, store annotation. */
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
@@ -5172,6 +5253,8 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         }
         break;
     case Attribute_kind:
+        if (forbidden_name(c, targ->v.Attribute.attr, Store))
+            return 0;
         if (!s->v.AnnAssign.value &&
             !check_ann_expr(c, targ->v.Attribute.value)) {
             return 0;

@@ -10,15 +10,17 @@
 
    The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
    macro defined, but only the public C API must be tested here. */
+
 #undef Py_BUILD_CORE_MODULE
+/* Always enable assertions */
+#undef NDEBUG
 
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
 #include "datetime.h"
 #include "marshal.h"
-#include "pythread.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include <float.h>
 #include <signal.h>
 
@@ -3588,7 +3590,7 @@ slot_tp_del(PyObject *self)
         _Py_NewReference(self);
         Py_SET_REFCNT(self, refcnt);
     }
-    assert(!PyType_IS_GC(Py_TYPE(self)) || _PyObject_GC_IS_TRACKED(self));
+    assert(!PyType_IS_GC(Py_TYPE(self)) || PyObject_GC_IsTracked(self));
     /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
        _Py_RefTotal, so we need to undo that. */
 #ifdef Py_REF_DEBUG
@@ -6296,6 +6298,47 @@ static PyType_Spec HeapCTypeSubclass_spec = {
     HeapCTypeSubclass_slots
 };
 
+PyDoc_STRVAR(heapctypewithbuffer__doc__,
+"Heap type with buffer support.\n\n"
+"The buffer is set to [b'1', b'2', b'3', b'4']");
+
+typedef struct {
+    HeapCTypeObject base;
+    char buffer[4];
+} HeapCTypeWithBufferObject;
+
+static int
+heapctypewithbuffer_getbuffer(HeapCTypeWithBufferObject *self, Py_buffer *view, int flags)
+{
+    self->buffer[0] = '1';
+    self->buffer[1] = '2';
+    self->buffer[2] = '3';
+    self->buffer[3] = '4';
+    return PyBuffer_FillInfo(
+        view, (PyObject*)self, (void *)self->buffer, 4, 1, flags);
+}
+
+static void
+heapctypewithbuffer_releasebuffer(HeapCTypeWithBufferObject *self, Py_buffer *view)
+{
+    assert(view->obj == (void*) self);
+}
+
+static PyType_Slot HeapCTypeWithBuffer_slots[] = {
+    {Py_bf_getbuffer, heapctypewithbuffer_getbuffer},
+    {Py_bf_releasebuffer, heapctypewithbuffer_releasebuffer},
+    {Py_tp_doc, (char*)heapctypewithbuffer__doc__},
+    {0, 0},
+};
+
+static PyType_Spec HeapCTypeWithBuffer_spec = {
+    "_testcapi.HeapCTypeWithBuffer",
+    sizeof(HeapCTypeWithBufferObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    HeapCTypeWithBuffer_slots
+};
+
 PyDoc_STRVAR(heapctypesubclasswithfinalizer__doc__,
 "Subclass of HeapCType with a finalizer that reassigns __class__.\n\n"
 "__class__ is set to plain HeapCTypeSubclass during finalization.\n"
@@ -6716,7 +6759,6 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(ULLONG_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
-    PyModule_AddObject(m, "SIZEOF_PYGC_HEAD", PyLong_FromSsize_t(sizeof(PyGC_Head)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
     Py_INCREF(&PyInstanceMethod_Type);
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
@@ -6773,6 +6815,12 @@ PyInit__testcapi(void)
         return NULL;
     }
     PyModule_AddObject(m, "HeapCTypeWithWeakref", HeapCTypeWithWeakref);
+
+    PyObject *HeapCTypeWithBuffer = PyType_FromSpec(&HeapCTypeWithBuffer_spec);
+    if (HeapCTypeWithBuffer == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "HeapCTypeWithBuffer", HeapCTypeWithBuffer);
 
     PyObject *subclass_with_finalizer_bases = PyTuple_Pack(1, HeapCTypeSubclass);
     if (subclass_with_finalizer_bases == NULL) {
