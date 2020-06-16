@@ -216,6 +216,13 @@ class ReprTests(unittest.TestCase):
         r(y)
         r(z)
 
+    def test___init__(self):
+        a = "a"*40
+        r = Repr()
+        self.assertEqual(r.repr(a), "'aaaaaaaaaaaa...aaaaaaaaaaaaa'")
+        r = Repr(maxstring=10)
+        self.assertEqual(r.repr(a), "'aa...aaa'")
+
 def write_file(path, text):
     with open(path, 'w', encoding='ASCII') as fp:
         fp.write(text)

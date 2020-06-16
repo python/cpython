@@ -1,0 +1,2 @@
+:class:`reprlib.Repr` attributes can now be set when creating an instance.
+Patch contributed by Rémi Lapeyre.
