@@ -199,12 +199,12 @@ class TestInterpreterAttrs(TestBase):
         with self.assertRaises(AttributeError):
             interp.id = 2
 
-    @unittest.skip('not ready yet (see BPO-...)')
+    @unittest.skip('not ready yet (see bpo-32604)')
     def test_main_isolated(self):
         main = interpreters.get_main()
         self.assertFalse(main.isolated)
 
-    @unittest.skip('not ready yet (see BPO-...)')
+    @unittest.skip('not ready yet (see bpo-32604)')
     def test_subinterpreter_isolated_default(self):
         interp = interpreters.create()
         self.assertFalse(interp.isolated)
@@ -215,7 +215,7 @@ class TestInterpreterAttrs(TestBase):
         self.assertTrue(interp1.isolated)
         self.assertFalse(interp2.isolated)
 
-    @unittest.skip('not ready yet (see BPO-...)')
+    @unittest.skip('not ready yet (see bpo-32604)')
     def test_custom_isolated_default(self):
         interp = interpreters.Interpreter(1)
         self.assertFalse(interp.isolated)

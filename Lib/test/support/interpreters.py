@@ -73,6 +73,7 @@ class Interpreter:
     def isolated(self):
         if self._isolated is None:
             # XXX The low-level function has not been added yet.
+            # See bpo-....
             self._isolated = _interpreters.is_isolated(self._id)
         return self._isolated
 
@@ -180,6 +181,7 @@ class SendChannel(_ChannelEnd):
         """
         _interpreters.channel_send(self._id, obj)
         # XXX We are missing a low-level channel_send_wait().
+        # See bpo-32604 and gh-19829.
         # Until that shows up we fake it:
         time.sleep(2)
 
@@ -191,4 +193,5 @@ class SendChannel(_ChannelEnd):
         """
         # XXX Note that at the moment channel_send() only ever returns
         # None.  This should be fixed when channel_send_wait() is added.
+        # See bpo-32604 and gh-19829.
         return _interpreters.channel_send(self._id, obj)
