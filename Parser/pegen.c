@@ -67,10 +67,11 @@ _PyPegen_check_barry_as_flufl(Parser *p) {
     assert(t->type == NOTEQUAL);
 
     char* tok_str = PyBytes_AS_STRING(t->bytes);
-    if (p->flags & PyPARSE_BARRY_AS_BDFL && strcmp(tok_str, "<>")){
+    if (p->flags & PyPARSE_BARRY_AS_BDFL && strcmp(tok_str, "<>") != 0) {
         RAISE_SYNTAX_ERROR("with Barry as BDFL, use '<>' instead of '!='");
         return -1;
-    } else if (!(p->flags & PyPARSE_BARRY_AS_BDFL)) {
+    }
+    if (!(p->flags & PyPARSE_BARRY_AS_BDFL)) {
         return strcmp(tok_str, "!=");
     }
     return 0;
@@ -245,7 +246,10 @@ raise_decode_error(Parser *p)
         errtype = "value error";
     }
     if (errtype) {
-        PyObject *type, *value, *tback, *errstr;
+        PyObject *type;
+        PyObject *value;
+        PyObject *tback;
+        PyObject *errstr;
         PyErr_Fetch(&type, &value, &tback);
         errstr = PyObject_Str(value);
         if (errstr) {
@@ -274,7 +278,9 @@ raise_tokenizer_init_error(PyObject *filename)
     }
     PyObject *errstr = NULL;
     PyObject *tuple = NULL;
-    PyObject *type, *value, *tback;
+    PyObject *type;
+    PyObject *value;
+    PyObject *tback;
     PyErr_Fetch(&type, &value, &tback);
     errstr = PyObject_Str(value);
     if (!errstr) {
@@ -548,7 +554,8 @@ growable_comment_array_deallocate(growable_comment_array *arr) {
 int
 _PyPegen_fill_token(Parser *p)
 {
-    const char *start, *end;
+    const char *start;
+    const char *end;
     int type = PyTokenizer_Get(p->tok, &start, &end);
 
     // Record and skip '# type: ignore' comments
@@ -589,9 +596,8 @@ _PyPegen_fill_token(Parser *p)
             PyErr_NoMemory();
             return -1;
         }
-        else {
-            p->tokens = new_tokens;
-        }
+        p->tokens = new_tokens;
+
         for (int i = p->size; i < newsize; i++) {
             p->tokens[i] = PyMem_Malloc(sizeof(Token));
             if (p->tokens[i] == NULL) {
@@ -615,7 +621,8 @@ _PyPegen_fill_token(Parser *p)
     int lineno = type == STRING ? p->tok->first_lineno : p->tok->lineno;
     const char *line_start = type == STRING ? p->tok->multi_line_start : p->tok->line_start;
     int end_lineno = p->tok->lineno;
-    int col_offset = -1, end_col_offset = -1;
+    int col_offset = -1;
+    int end_col_offset = -1;
     if (start != NULL && start >= line_start) {
         col_offset = (int)(start - line_start);
     }
@@ -634,9 +641,8 @@ _PyPegen_fill_token(Parser *p)
         if (p->tok->done == E_DECODE) {
             return raise_decode_error(p);
         }
-        else {
-            return tokenizer_error(p);
-        }
+        return tokenizer_error(p);
+
     }
 
     return 0;
@@ -847,33 +853,36 @@ parsenumber_raw(const char *s)
             return PyLong_FromString(s, (char **)0, 0);
         }
     }
-    else
+    else {
         x = PyOS_strtol(s, (char **)&end, 0);
+    }
     if (*end == '\0') {
-        if (errno != 0)
+        if (errno != 0) {
             return PyLong_FromString(s, (char **)0, 0);
+        }
         return PyLong_FromLong(x);
     }
     /* XXX Huge floats may silently fail */
     if (imflag) {
         compl.real = 0.;
         compl.imag = PyOS_string_to_double(s, (char **)&end, NULL);
-        if (compl.imag == -1.0 && PyErr_Occurred())
+        if (compl.imag == -1.0 && PyErr_Occurred()) {
             return NULL;
+        }
         return PyComplex_FromCComplex(compl);
     }
-    else {
-        dx = PyOS_string_to_double(s, NULL, NULL);
-        if (dx == -1.0 && PyErr_Occurred())
-            return NULL;
-        return PyFloat_FromDouble(dx);
+    dx = PyOS_string_to_double(s, NULL, NULL);
+    if (dx == -1.0 && PyErr_Occurred()) {
+        return NULL;
     }
+    return PyFloat_FromDouble(dx);
 }
 
 static PyObject *
 parsenumber(const char *s)
 {
-    char *dup, *end;
+    char *dup;
+    char *end;
     PyObject *res = NULL;
 
     assert(s != NULL);

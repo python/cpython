@@ -6,7 +6,9 @@
 /* Submitted by Jim Hugunin */
 
 #include "Python.h"
+#include "pycore_object.h"        // _PyObject_Init()
 #include "structmember.h"         // PyMemberDef
+
 
 /*[clinic input]
 class complex "PyComplexObject *" "&PyComplex_Type"
@@ -229,13 +231,12 @@ complex_subtype_from_c_complex(PyTypeObject *type, Py_complex cval)
 PyObject *
 PyComplex_FromCComplex(Py_complex cval)
 {
-    PyComplexObject *op;
-
     /* Inline PyObject_New */
-    op = (PyComplexObject *) PyObject_MALLOC(sizeof(PyComplexObject));
-    if (op == NULL)
+    PyComplexObject *op = PyObject_MALLOC(sizeof(PyComplexObject));
+    if (op == NULL) {
         return PyErr_NoMemory();
-    (void)PyObject_INIT(op, &PyComplex_Type);
+    }
+    _PyObject_Init((PyObject*)op, &PyComplex_Type);
     op->cval = cval;
     return (PyObject *) op;
 }
