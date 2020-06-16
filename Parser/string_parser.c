@@ -6,11 +6,6 @@
 
 //// STRING HANDLING FUNCTIONS ////
 
-// These functions are ported directly from Python/ast.c with some modifications
-// to account for the use of "Parser *p", the fact that don't have parser nodes
-// to pass around and the usage of some specialized APIs present only in this
-// file (like "_PyPegen_raise_syntax_error").
-
 static int
 warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char, Token *t)
 {
