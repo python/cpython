@@ -15968,7 +15968,10 @@ PyUnicode_AsUnicodeCopy(PyObject *unicode)
         PyErr_BadArgument();
         return NULL;
     }
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     u = PyUnicode_AsUnicodeAndSize(unicode, &len);
+_Py_COMP_DIAG_POP
     if (u == NULL)
         return NULL;
     /* Ensure we won't overflow the size. */
