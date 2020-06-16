@@ -36,6 +36,9 @@
 #  error "_testcapi must test the public Python C API, not CPython internal C API"
 #endif
 
+/* Ignore use of deprecated APIs */
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 static struct PyModuleDef _testcapimodule;
 
 static PyObject *TestError;     /* set to exception object in init */
