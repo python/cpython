@@ -482,6 +482,30 @@ class TestSendRecv(TestBase):
             assert obj is not orig, 'expected: obj is not orig'
             """))
 
+    @unittest.skip('broken (see BPO-...)')
+    def test_send_recv_different_interpreters(self):
+        r1, s1 = interpreters.create_channel()
+        r2, s2 = interpreters.create_channel()
+        orig1 = b'spam'
+        s1.send_nowait(orig1)
+        out = _run_output(
+            interpreters.create(),
+            dedent(f"""
+                obj1 = r.recv()
+                assert obj1 == b'spam', 'expected: obj1 == orig1'
+                # When going to another interpreter we get a copy.
+                assert id(obj1) != {id(orig1)}, 'expected: obj1 is not orig1'
+                orig2 = b'eggs'
+                print(id(orig2))
+                s.send_nowait(orig2)
+                """),
+            channels=dict(r=r1, s=s2),
+            )
+        obj2 = r2.recv()
+
+        self.assertEqual(obj2, b'eggs')
+        self.assertNotEqual(id(obj2), int(out))
+
     def test_send_recv_different_threads(self):
         r, s = interpreters.create_channel()
 
@@ -531,3 +555,27 @@ class TestSendRecv(TestBase):
             # When going back to the same interpreter we get the same object.
             assert obj is not orig, 'expected: obj is not orig'
             """))
+
+    @unittest.skip('broken (see BPO-...)')
+    def test_send_recv_nowait_different_interpreters(self):
+        r1, s1 = interpreters.create_channel()
+        r2, s2 = interpreters.create_channel()
+        orig1 = b'spam'
+        s1.send_nowait(orig1)
+        out = _run_output(
+            interpreters.create(),
+            dedent(f"""
+                obj1 = r.recv_nowait()
+                assert obj1 == b'spam', 'expected: obj1 == orig1'
+                # When going to another interpreter we get a copy.
+                assert id(obj1) != {id(orig1)}, 'expected: obj1 is not orig1'
+                orig2 = b'eggs'
+                print(id(orig2))
+                s.send_nowait(orig2)
+                """),
+            channels=dict(r=r1, s=s2),
+            )
+        obj2 = r2.recv_nowait()
+
+        self.assertEqual(obj2, b'eggs')
+        self.assertNotEqual(id(obj2), int(out))
