@@ -1,0 +1,3 @@
+Typing opening and closing parentheses inside the parentheses of a function
+call will no longer cause unnecessary "flashing" off and on of an existing
+open call-tip, e.g. when typed in a string literal.

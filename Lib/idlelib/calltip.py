@@ -55,18 +55,46 @@ class Calltip:
             self.open_calltip(False)
 
     def open_calltip(self, evalfuncs):
-        self.remove_calltip_window()
-
         hp = HyperParser(self.editwin, "insert")
         sur_paren = hp.get_surrounding_brackets('(')
         if not sur_paren:
+            # Not inside parentheses: Don't open a calltip, and close one if
+            # currently open.
+            self.remove_calltip_window()
             return
+
+        if self.active_calltip:
+            opener_line, opener_col = map(int, sur_paren[0].split('.'))
+            if (
+                (opener_line, opener_col) ==
+                (self.active_calltip.parenline, self.active_calltip.parencol)
+            ):
+                # After the same opening parenthesis as for the currently open
+                # calltip: Do nothing.
+                return
+
         hp.set_index(sur_paren[0])
-        expression  = hp.get_expression()
+        try:
+            expression = hp.get_expression()
+        except ValueError:
+            expression = None
         if not expression:
+            # No expression before the opening parenthesis, e.g. because it's
+            # in a string or the opener for a tuple: Do nothing.
             return
+
+        # At this point, the current index is after an opening parenthesis, in
+        # a section of code, preceded by a valid expression. If there is an
+        # existing open calltip, it's not for the same index, and it should
+        # definitely be closed.
+        self.remove_calltip_window()
+
+        # If the preceding expression includes an opening parenthesis, it
+        # likely includes a function call. So if evalfuncs is false, a calltip
+        # should not be opened.
         if not evalfuncs and (expression.find('(') != -1):
             return
+
         argspec = self.fetch_tip(expression)
         if not argspec:
             return
