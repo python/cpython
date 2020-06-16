@@ -719,7 +719,7 @@ Event Data
 .. data:: Event.event_name
 
    The name of the current virtual event. One of ``<<DropEnter>>``,
-   ``<<DropPosition>>``, ``<<DropLeave>>``, ``<<Drop:type>>``, ``<<Drop>>``,
+   ``<<DropPosition>>``, ``<<DropLeave>>``, ``*_DROP``, ``<<Drop>>``,
    ``<<DragInitCmd>>`` and ``<<DragEndCmd>>``.
 
 .. data:: Event.modifiers
