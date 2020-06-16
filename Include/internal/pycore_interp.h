@@ -13,7 +13,12 @@ extern "C" {
 #include "pycore_gc.h"        /* struct _gc_runtime_state */
 #include "pycore_warnings.h"  /* struct _warnings_runtime_state */
 
-/* ceval state */
+struct _Py_parser_state {
+    struct {
+        int level;
+        int atbol;
+    } listnode;
+};
 
 struct _pending_calls {
     PyThread_type_lock lock;
@@ -63,6 +68,73 @@ struct _Py_unicode_fs_codec {
 struct _Py_unicode_state {
     struct _Py_unicode_fs_codec fs_codec;
 };
+
+/* Speed optimization to avoid frequent malloc/free of small tuples */
+#ifndef PyTuple_MAXSAVESIZE
+   // Largest tuple to save on free list
+#  define PyTuple_MAXSAVESIZE 20
+#endif
+#ifndef PyTuple_MAXFREELIST
+   // Maximum number of tuples of each size to save
+#  define PyTuple_MAXFREELIST 2000
+#endif
+
+struct _Py_tuple_state {
+#if PyTuple_MAXSAVESIZE > 0
+    /* Entries 1 up to PyTuple_MAXSAVESIZE are free lists,
+       entry 0 is the empty tuple () of which at most one instance
+       will be allocated. */
+    PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
+    int numfree[PyTuple_MAXSAVESIZE];
+#endif
+};
+
+/* Empty list reuse scheme to save calls to malloc and free */
+#ifndef PyList_MAXFREELIST
+#  define PyList_MAXFREELIST 80
+#endif
+
+struct _Py_list_state {
+    PyListObject *free_list[PyList_MAXFREELIST];
+    int numfree;
+};
+
+struct _Py_float_state {
+    /* Special free list
+       free_list is a singly-linked list of available PyFloatObjects,
+       linked via abuse of their ob_type members. */
+    int numfree;
+    PyFloatObject *free_list;
+};
+
+struct _Py_frame_state {
+    PyFrameObject *free_list;
+    /* number of frames currently in free_list */
+    int numfree;
+};
+
+#ifndef _PyAsyncGen_MAXFREELIST
+#  define _PyAsyncGen_MAXFREELIST 80
+#endif
+
+struct _Py_async_gen_state {
+    /* Freelists boost performance 6-10%; they also reduce memory
+       fragmentation, as _PyAsyncGenWrappedValue and PyAsyncGenASend
+       are short-living objects that are instantiated for every
+       __anext__() call. */
+    struct _PyAsyncGenWrappedValue* value_freelist[_PyAsyncGen_MAXFREELIST];
+    int value_numfree;
+
+    struct PyAsyncGenASend* asend_freelist[_PyAsyncGen_MAXFREELIST];
+    int asend_numfree;
+};
+
+struct _Py_context_state {
+    // List of free PyContext objects
+    PyContext *freelist;
+    int numfree;
+};
+
 
 
 /* interpreter state */
@@ -142,12 +214,7 @@ struct _is {
 
     PyObject *audit_hooks;
 
-    struct {
-        struct {
-            int level;
-            int atbol;
-        } listnode;
-    } parser;
+    struct _Py_parser_state parser;
 
 #if _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS > 0
     /* Small integers are preallocated in this array so that they
@@ -157,6 +224,16 @@ struct _is {
     */
     PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
 #endif
+    struct _Py_tuple_state tuple;
+    struct _Py_list_state list;
+    struct _Py_float_state float_state;
+    struct _Py_frame_state frame;
+    struct _Py_async_gen_state async_gen;
+    struct _Py_context_state context;
+
+    /* Using a cache is very effective since typically only a single slice is
+       created and then deleted again. */
+    PySliceObject *slice_cache;
 };
 
 /* Used by _PyImport_Cleanup() */

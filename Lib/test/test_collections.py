@@ -2123,29 +2123,6 @@ class TestCounter(unittest.TestCase):
                 set_result = setop(set(p.elements()), set(q.elements()))
                 self.assertEqual(counter_result, dict.fromkeys(set_result, 1))
 
-    def test_subset_superset_not_implemented(self):
-        # Verify that multiset comparison operations are not implemented.
-
-        # These operations were intentionally omitted because multiset
-        # comparison semantics conflict with existing dict equality semantics.
-
-        # For multisets, we would expect that if p<=q and p>=q are both true,
-        # then p==q.  However, dict equality semantics require that p!=q when
-        # one of sets contains an element with a zero count and the other
-        # doesn't.
-
-        p = Counter(a=1, b=0)
-        q = Counter(a=1, c=0)
-        self.assertNotEqual(p, q)
-        with self.assertRaises(TypeError):
-            p < q
-        with self.assertRaises(TypeError):
-            p <= q
-        with self.assertRaises(TypeError):
-            p > q
-        with self.assertRaises(TypeError):
-            p >= q
-
     def test_inplace_operations(self):
         elements = 'abcd'
         for i in range(1000):
@@ -2234,49 +2211,32 @@ class TestCounter(unittest.TestCase):
             self.assertEqual(set(cp - cq), sp - sq)
             self.assertEqual(set(cp | cq), sp | sq)
             self.assertEqual(set(cp & cq), sp & sq)
-            self.assertEqual(cp.isequal(cq), sp == sq)
-            self.assertEqual(cp.issubset(cq), sp.issubset(sq))
-            self.assertEqual(cp.issuperset(cq), sp.issuperset(sq))
-            self.assertEqual(cp.isdisjoint(cq), sp.isdisjoint(sq))
+            self.assertEqual(cp == cq, sp == sq)
+            self.assertEqual(cp != cq, sp != sq)
+            self.assertEqual(cp <= cq, sp <= sq)
+            self.assertEqual(cp >= cq, sp >= sq)
+            self.assertEqual(cp < cq, sp < sq)
+            self.assertEqual(cp > cq, sp > sq)
 
-    def test_multiset_equal(self):
-        self.assertTrue(Counter(a=3, b=2, c=0).isequal('ababa'))
-        self.assertFalse(Counter(a=3, b=2).isequal('babab'))
+    def test_eq(self):
+        self.assertEqual(Counter(a=3, b=2, c=0), Counter('ababa'))
+        self.assertNotEqual(Counter(a=3, b=2), Counter('babab'))
 
-    def test_multiset_subset(self):
-        self.assertTrue(Counter(a=3, b=2, c=0).issubset('ababa'))
-        self.assertFalse(Counter(a=3, b=2).issubset('babab'))
+    def test_le(self):
+        self.assertTrue(Counter(a=3, b=2, c=0) <= Counter('ababa'))
+        self.assertFalse(Counter(a=3, b=2) <= Counter('babab'))
 
-    def test_multiset_superset(self):
-        self.assertTrue(Counter(a=3, b=2, c=0).issuperset('aab'))
-        self.assertFalse(Counter(a=3, b=2, c=0).issuperset('aabd'))
+    def test_lt(self):
+        self.assertTrue(Counter(a=3, b=1, c=0) < Counter('ababa'))
+        self.assertFalse(Counter(a=3, b=2, c=0) < Counter('ababa'))
 
-    def test_multiset_disjoint(self):
-        self.assertTrue(Counter(a=3, b=2, c=0).isdisjoint('cde'))
-        self.assertFalse(Counter(a=3, b=2, c=0).isdisjoint('bcd'))
+    def test_ge(self):
+        self.assertTrue(Counter(a=2, b=1, c=0) >= Counter('aab'))
+        self.assertFalse(Counter(a=3, b=2, c=0) >= Counter('aabd'))
 
-    def test_multiset_predicates_with_negative_counts(self):
-        # Multiset predicates run on the output of the elements() method,
-        # meaning that zero counts and negative counts are ignored.
-        # The tests below confirm that we get that same results as the
-        # tests above, even after a negative count has been included
-        # in either *self* or *other*.
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isequal('ababa'))
-        self.assertFalse(Counter(a=3, b=2, d=-1).isequal('babab'))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issubset('ababa'))
-        self.assertFalse(Counter(a=3, b=2, d=-1).issubset('babab'))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issuperset('aab'))
-        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).issuperset('aabd'))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isdisjoint('cde'))
-        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).isdisjoint('bcd'))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isequal(Counter(a=3, b=2, c=-1)))
-        self.assertFalse(Counter(a=3, b=2, d=-1).isequal(Counter(a=2, b=3, c=-1)))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issubset(Counter(a=3, b=2, c=-1)))
-        self.assertFalse(Counter(a=3, b=2, d=-1).issubset(Counter(a=2, b=3, c=-1)))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issuperset(Counter(a=2, b=1, c=-1)))
-        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).issuperset(Counter(a=2, b=1, c=-1, d=1)))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isdisjoint(Counter(c=1, d=2, e=3, f=-1)))
-        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).isdisjoint(Counter(b=1, c=1, d=1, e=-1)))
+    def test_gt(self):
+        self.assertTrue(Counter(a=3, b=2, c=0) > Counter('aab'))
+        self.assertFalse(Counter(a=2, b=1, c=0) > Counter('aab'))
 
 
 ################################################################################

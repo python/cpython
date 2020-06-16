@@ -614,8 +614,7 @@ Running in Threads
    allowing context variables from the event loop thread to be accessed in the
    separate thread.
 
-   Return an :class:`asyncio.Future` which represents the eventual result of
-   *func*.
+   Return a coroutine that can be awaited to get the eventual result of *func*.
 
    This coroutine function is primarily intended to be used for executing
    IO-bound functions/methods that would otherwise block the event loop if

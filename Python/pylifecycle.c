@@ -18,7 +18,6 @@
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 
-#include "grammar.h"              // PyGrammar_RemoveAccelerators()
 #include <locale.h>               // setlocale()
 
 #ifdef HAVE_SIGNAL_H
@@ -50,7 +49,6 @@ _Py_IDENTIFIER(threading);
 extern "C" {
 #endif
 
-extern grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward declarations */
 static PyStatus add_main_module(PyInterpreterState *interp);
@@ -460,7 +458,10 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
         return _PyStatus_ERR("can't make main interpreter");
     }
 
-    _PyConfig_Write(config, runtime);
+    status = _PyConfig_Write(config, runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     status = _PyInterpreterState_SetConfig(interp, config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -486,7 +487,10 @@ pycore_init_runtime(_PyRuntimeState *runtime,
         return _PyStatus_ERR("main interpreter already initialized");
     }
 
-    _PyConfig_Write(config, runtime);
+    PyStatus status = _PyConfig_Write(config, runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     /* Py_Finalize leaves _Py_Finalizing set in order to help daemon
      * threads behave a little more gracefully at interpreter shutdown.
@@ -499,7 +503,7 @@ pycore_init_runtime(_PyRuntimeState *runtime,
      */
     _PyRuntimeState_SetFinalizing(runtime, NULL);
 
-    PyStatus status = _Py_HashRandomization_Init(config);
+    status = _Py_HashRandomization_Init(config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -746,8 +750,6 @@ pyinit_config(_PyRuntimeState *runtime,
               PyThreadState **tstate_p,
               const PyConfig *config)
 {
-    _PyConfig_Write(config, runtime);
-
     PyStatus status = pycore_init_runtime(runtime, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1249,38 +1251,27 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyThreadState *tstate, int is_main_interp)
 {
+    _PyFrame_Fini(tstate);
+    _PyAsyncGen_Fini(tstate);
+    _PyContext_Fini(tstate);
+
     if (is_main_interp) {
-        /* Sundry finalizers */
-        _PyFrame_Fini();
-        _PyTuple_Fini();
-        _PyList_Fini();
         _PySet_Fini();
+    }
+    if (is_main_interp) {
+        _PyDict_Fini();
+    }
+    _PyList_Fini(tstate);
+    _PyTuple_Fini(tstate);
+
+    _PySlice_Fini(tstate);
+
+    if (is_main_interp) {
         _PyBytes_Fini();
     }
-
-    _PyLong_Fini(tstate);
-
-    if (is_main_interp) {
-        _PyFloat_Fini();
-        _PyDict_Fini();
-        _PySlice_Fini();
-    }
-
-    _PyWarnings_Fini(tstate->interp);
-
-    if (is_main_interp) {
-        _Py_HashRandomization_Fini();
-        _PyArg_Fini();
-        _PyAsyncGen_Fini();
-        _PyContext_Fini();
-    }
-
-    /* Cleanup Unicode implementation */
     _PyUnicode_Fini(tstate);
-
-    if (is_main_interp) {
-        _Py_ClearFileSystemEncoding();
-    }
+    _PyFloat_Fini(tstate);
+    _PyLong_Fini(tstate);
 }
 
 
@@ -1297,21 +1288,21 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyGC_CollectNoFail();
     }
 
-    finalize_interp_types(tstate, is_main_interp);
+    _PyGC_Fini(tstate);
 
     if (is_main_interp) {
-        /* XXX Still allocated:
-           - various static ad-hoc pointers to interned strings
-           - int and float free list blocks
-           - whatever various modules and libraries allocate
-        */
+        _Py_HashRandomization_Fini();
+        _PyArg_Fini();
+        _Py_ClearFileSystemEncoding();
+    }
 
-        PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
+    _PyWarnings_Fini(tstate->interp);
 
+    if (is_main_interp) {
         _PyExc_Fini();
     }
 
-    _PyGC_Fini(tstate);
+    finalize_interp_types(tstate, is_main_interp);
 }
 
 

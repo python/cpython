@@ -4770,7 +4770,11 @@ else
 fi
 
 
-# Check for --with-libdir-name
+AC_SUBST(BINLIBDEST)
+BINLIBDEST='$(LIBDIR)/python$(VERSION)'
+
+
+# Check for --with-platlibdir
 # /usr/$LIDIRNAME/python$VERSION
 AC_SUBST(PLATLIBDIR)
 PLATLIBDIR="lib"
@@ -4787,6 +4791,7 @@ if test -n "$withval" -a "$withval" != yes -a "$withval" != no
 then
   AC_MSG_RESULT(yes)
   PLATLIBDIR="$withval"
+  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)'
 else
   AC_MSG_RESULT(no)
 fi],
@@ -5433,7 +5438,7 @@ do
 done
 
 AC_SUBST(SRCDIRS)
-SRCDIRS="Parser Parser/pegen Objects Python Modules Modules/_io Programs"
+SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
 AC_MSG_CHECKING(for build directories)
 for dir in $SRCDIRS; do
     if test ! -d $dir; then

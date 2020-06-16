@@ -853,7 +853,8 @@ class PyBuildExt(build_ext):
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
         self.add(Extension('_datetime', ['_datetimemodule.c'],
-                           libraries=['m']))
+                           libraries=['m'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # zoneinfo module
         self.add(Extension('_zoneinfo', ['_zoneinfo.c'])),
         # random number generator implemented in C
@@ -916,9 +917,6 @@ class PyBuildExt(build_ext):
 
         # select(2); not on ancient System V
         self.add(Extension('select', ['selectmodule.c']))
-
-        # Fred Drake's interface to the Python parser
-        self.add(Extension('parser', ['parsermodule.c']))
 
         # Memory-mapped files (also works on Win32).
         self.add(Extension('mmap', ['mmapmodule.c']))

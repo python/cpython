@@ -2089,6 +2089,10 @@ class TestVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
         self.assertEqual(result, exact)
         self.assertIsInstance(result, Decimal)
 
+    def test_center_not_at_mean(self):
+        data = (1.0, 2.0)
+        self.assertEqual(self.func(data), 0.5)
+        self.assertEqual(self.func(data, xbar=2.0), 1.0)
 
 class TestPStdev(VarianceStdevMixin, NumericTestCase):
     # Tests for population standard deviation.
@@ -2101,6 +2105,11 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         expected = math.sqrt(statistics.pvariance(data))
         self.assertEqual(self.func(data), expected)
 
+    def test_center_not_at_mean(self):
+        # See issue: 40855
+        data = (3, 6, 7, 10)
+        self.assertEqual(self.func(data), 2.5)
+        self.assertEqual(self.func(data, mu=0.5), 6.5)
 
 class TestStdev(VarianceStdevMixin, NumericTestCase):
     # Tests for sample standard deviation.
@@ -2118,6 +2127,9 @@ class TestStdev(VarianceStdevMixin, NumericTestCase):
         expected = math.sqrt(statistics.variance(data))
         self.assertEqual(self.func(data), expected)
 
+    def test_center_not_at_mean(self):
+        data = (1.0, 2.0)
+        self.assertEqual(self.func(data, xbar=2.0), 1.0)
 
 class TestGeometricMean(unittest.TestCase):
 

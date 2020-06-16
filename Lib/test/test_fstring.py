@@ -12,7 +12,7 @@ import os
 import types
 import decimal
 import unittest
-from test.support import temp_cwd, use_old_parser
+from test.support import temp_cwd
 from test.support.script_helper import assert_python_failure
 
 a_global = 'global variable'
@@ -725,9 +725,11 @@ non-important content
         #  a function into a generator
         def fn(y):
             f'y:{yield y*2}'
+            f'{yield}'
 
         g = fn(4)
         self.assertEqual(next(g), 8)
+        self.assertEqual(next(g), None)
 
     def test_yield_send(self):
         def fn(x):
@@ -1047,7 +1049,6 @@ non-important content
                              r"f'{1000:j}'",
                             ])
 
-    @unittest.skipIf(use_old_parser(), "The old parser only supports <fstring> as the filename")
     def test_filename_in_syntaxerror(self):
         # see issue 38964
         with temp_cwd() as cwd:
