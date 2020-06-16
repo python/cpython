@@ -746,13 +746,15 @@ class PydocDocTest(unittest.TestCase):
 
     def test_is_package_when_not_package(self):
         with test.support.temp_cwd() as test_dir:
-            self.assertFalse(pydoc.ispackage(test_dir))
+            with self.assertWarns(DeprecationWarning):
+                self.assertFalse(pydoc.ispackage(test_dir))
 
     def test_is_package_when_is_package(self):
         with test.support.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, '__init__.py')
             open(init_path, 'w').close()
-            self.assertTrue(pydoc.ispackage(test_dir))
+            with self.assertWarns(DeprecationWarning):
+                self.assertTrue(pydoc.ispackage(test_dir))
             os.remove(init_path)
 
     def test_allmethods(self):
