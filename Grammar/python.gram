@@ -1,6 +1,5 @@
-# Simplified grammar for Python
+# PEG grammar for Python
 
-@bytecode True
 @trailer '''
 void *
 _PyPegen_parse(Parser *p)
@@ -92,7 +91,7 @@ assignment[stmt_ty]:
     | a=('(' b=single_target ')' { b }
          | single_subscript_attribute_target) ':' b=expression c=['=' d=annotated_rhs { d }] {
         CHECK_VERSION(6, "Variable annotations syntax is", _Py_AnnAssign(a, b, c, 0, EXTRA)) }
-    | a=(z=star_targets '=' { z })+ b=(yield_expr | star_expressions) tc=[TYPE_COMMENT] {
+    | a=(z=star_targets '=' { z })+ b=(yield_expr | star_expressions) !'=' tc=[TYPE_COMMENT] {
          _Py_Assign(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | a=single_target b=augassign c=(yield_expr | star_expressions) {
          _Py_AugAssign(a, b->kind, c, EXTRA) }
@@ -329,7 +328,11 @@ expression[expr_ty] (memo):
     | lambdef
 
 lambdef[expr_ty]:
-    | 'lambda' a=[lambda_parameters] ':' b=expression { _Py_Lambda((a) ? a : CHECK(_PyPegen_empty_arguments(p)), b, EXTRA) }
+    | 'lambda' a=[lambda_params] ':' b=expression { _Py_Lambda((a) ? a : CHECK(_PyPegen_empty_arguments(p)), b, EXTRA) }
+
+lambda_params[arguments_ty]:
+    | invalid_lambda_parameters
+    | lambda_parameters
 
 # lambda_parameters etc. duplicates parameters but without annotations
 # or type comments, and if there's no comma after a parameter, we expect
@@ -473,7 +476,6 @@ atom[expr_ty]:
     | 'True' { _Py_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _Py_Constant(Py_False, NULL, EXTRA) }
     | 'None' { _Py_Constant(Py_None, NULL, EXTRA) }
-    | '__new_parser__' { RAISE_SYNTAX_ERROR("You found it!") }
     | &STRING strings
     | NUMBER
     | &'(' (tuple | group | genexp)
@@ -646,10 +648,11 @@ invalid_assignment:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not tuple) can be annotated") }
     | a=expression ':' expression ['=' annotated_rhs] {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "illegal target for annotation") }
-    | a=star_expressions '=' (yield_expr | star_expressions) {
+    | (star_targets '=')* a=star_expressions '=' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             _PyPegen_get_invalid_target(a),
             "cannot assign to %s", _PyPegen_get_expr_name(_PyPegen_get_invalid_target(a))) }
+    | (star_targets '=')* a=yield_expr '=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "assignment to yield expression not possible") }
     | a=star_expressions augassign (yield_expr | star_expressions) {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION( 
             a, 
@@ -667,6 +670,9 @@ invalid_dict_comprehension:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "dict unpacking cannot be used in dict comprehension") }
 invalid_parameters:
     | param_no_default* (slash_with_default | param_with_default+) param_no_default {
+        RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
+invalid_lambda_parameters:
+    | lambda_param_no_default* (lambda_slash_with_default | lambda_param_with_default+) lambda_param_no_default {
         RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
 invalid_star_etc:
     | '*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }

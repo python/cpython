@@ -999,8 +999,7 @@ cycle_dealloc(cycleobject *lz)
 static int
 cycle_traverse(cycleobject *lz, visitproc visit, void *arg)
 {
-    if (lz->it)
-        Py_VISIT(lz->it);
+    Py_VISIT(lz->it);
     Py_VISIT(lz->saved);
     return 0;
 }

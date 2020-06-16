@@ -12,13 +12,13 @@ from . import _bundled
 __all__ = ["version", "bootstrap"]
 
 
-_SETUPTOOLS_VERSION = "46.1.3"
+_SETUPTOOLS_VERSION = "47.1.0"
 
-_PIP_VERSION = "20.1"
+_PIP_VERSION = "20.1.1"
 
 _PROJECTS = [
-    ("setuptools", _SETUPTOOLS_VERSION, 'py3'),
-    ("pip", _PIP_VERSION, 'py2.py3'),
+    ("setuptools", _SETUPTOOLS_VERSION, "py3"),
+    ("pip", _PIP_VERSION, "py2.py3"),
 ]
 
 
@@ -119,7 +119,7 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
             additional_paths.append(os.path.join(tmpdir, wheel_name))
 
         # Construct the arguments to be passed to the pip command
-        args = ["install", "--no-index", "--find-links", tmpdir]
+        args = ["install", "--no-cache-dir", "--no-index", "--find-links", tmpdir]
         if root:
             args += ["--root", root]
         if upgrade:

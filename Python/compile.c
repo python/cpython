@@ -390,21 +390,6 @@ PyAST_CompileEx(mod_ty mod, const char *filename_str, PyCompilerFlags *flags,
 
 }
 
-PyCodeObject *
-PyNode_Compile(struct _node *n, const char *filename)
-{
-    PyCodeObject *co = NULL;
-    mod_ty mod;
-    PyArena *arena = PyArena_New();
-    if (!arena)
-        return NULL;
-    mod = PyAST_FromNode(n, NULL, filename, arena);
-    if (mod)
-        co = PyAST_Compile(mod, filename, NULL, arena);
-    PyArena_Free(arena);
-    return co;
-}
-
 static void
 compiler_free(struct compiler *c)
 {
@@ -4320,6 +4305,9 @@ ex_call:
                 if (nseen) {
                     if (!compiler_subkwargs(c, keywords, i - nseen, i)) {
                         return 0;
+                    }
+                    if (have_dict) {
+                        ADDOP_I(c, DICT_MERGE, 1);
                     }
                     have_dict = 1;
                     nseen = 0;

@@ -1,9 +1,72 @@
 import os
 import pathlib
-import zipfile
 import tempfile
 import functools
 import contextlib
+import types
+import importlib
+
+from typing import Union, Any, Optional
+from .abc import ResourceReader
+
+Package = Union[types.ModuleType, str]
+
+
+def files(package):
+    """
+    Get a Traversable resource from a package
+    """
+    return from_package(get_package(package))
+
+
+def normalize_path(path):
+    # type: (Any) -> str
+    """Normalize a path by ensuring it is a string.
+
+    If the resulting string contains path separators, an exception is raised.
+    """
+    str_path = str(path)
+    parent, file_name = os.path.split(str_path)
+    if parent:
+        raise ValueError('{!r} must be only a file name'.format(path))
+    return file_name
+
+
+def get_resource_reader(package):
+    # type: (types.ModuleType) -> Optional[ResourceReader]
+    """
+    Return the package's loader if it's a ResourceReader.
+    """
+    # We can't use
+    # a issubclass() check here because apparently abc.'s __subclasscheck__()
+    # hook wants to create a weak reference to the object, but
+    # zipimport.zipimporter does not support weak references, resulting in a
+    # TypeError.  That seems terrible.
+    spec = package.__spec__
+    reader = getattr(spec.loader, 'get_resource_reader', None)
+    if reader is None:
+        return None
+    return reader(spec.name)
+
+
+def resolve(cand):
+    # type: (Package) -> types.ModuleType
+    return (
+        cand if isinstance(cand, types.ModuleType)
+        else importlib.import_module(cand)
+        )
+
+
+def get_package(package):
+    # type: (Package) -> types.ModuleType
+    """Take a package name or module object and return the module.
+
+    Raise an exception if the resolved module is not a package.
+    """
+    resolved = resolve(package)
+    if resolved.__spec__.submodule_search_locations is None:
+        raise TypeError('{!r} is not a package'.format(package))
+    return resolved
 
 
 def from_package(package):
@@ -12,27 +75,8 @@ def from_package(package):
 
     """
     spec = package.__spec__
-    return from_traversable_resources(spec) or fallback_resources(spec)
-
-
-def from_traversable_resources(spec):
-    """
-    If the spec.loader implements TraversableResources,
-    directly or implicitly, it will have a ``files()`` method.
-    """
-    with contextlib.suppress(AttributeError):
-        return spec.loader.files()
-
-
-def fallback_resources(spec):
-    package_directory = pathlib.Path(spec.origin).parent
-    try:
-        archive_path = spec.loader.archive
-        rel_path = package_directory.relative_to(archive_path)
-        return zipfile.Path(archive_path, str(rel_path) + '/')
-    except Exception:
-        pass
-    return package_directory
+    reader = spec.loader.get_resource_reader(spec.name)
+    return reader.files()
 
 
 @contextlib.contextmanager

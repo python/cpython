@@ -13,6 +13,7 @@ from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
 import builtins
 import encodings
 import glob
+import io
 import os
 import re
 import shutil
@@ -319,6 +320,14 @@ class HelperFunctionsTests(unittest.TestCase):
             mock_isdir.assert_called_once_with(user_site)
             mock_addsitedir.assert_not_called()
             self.assertFalse(known_paths)
+
+    def test_trace(self):
+        message = "bla-bla-bla"
+        for verbose, out in (True, message + "\n"), (False, ""):
+            with mock.patch('sys.flags', mock.Mock(verbose=verbose)), \
+                    mock.patch('sys.stderr', io.StringIO()):
+                site._trace(message)
+                self.assertEqual(sys.stderr.getvalue(), out)
 
 
 class PthFile(object):

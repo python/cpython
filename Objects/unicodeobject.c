@@ -1356,19 +1356,18 @@ _PyUnicode_Dump(PyObject *op)
     }
     else
         data = unicode->data.any;
-    printf("%s: len=%" PY_FORMAT_SIZE_T "u, ",
-           unicode_kind_name(op), ascii->length);
+    printf("%s: len=%zu, ", unicode_kind_name(op), ascii->length);
 
     if (ascii->wstr == data)
         printf("shared ");
     printf("wstr=%p", (void *)ascii->wstr);
 
     if (!(ascii->state.ascii == 1 && ascii->state.compact == 1)) {
-        printf(" (%" PY_FORMAT_SIZE_T "u), ", compact->wstr_length);
-        if (!ascii->state.compact && compact->utf8 == unicode->data.any)
+        printf(" (%zu), ", compact->wstr_length);
+        if (!ascii->state.compact && compact->utf8 == unicode->data.any) {
             printf("shared ");
-        printf("utf8=%p (%" PY_FORMAT_SIZE_T "u)",
-               (void *)compact->utf8, compact->utf8_length);
+        }
+        printf("utf8=%p (%zu)", (void *)compact->utf8, compact->utf8_length);
     }
     printf(", data=%p\n", data);
 }
@@ -1436,11 +1435,10 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
      * it's data buffer.
      */
     obj = (PyObject *) PyObject_MALLOC(struct_size + (size + 1) * char_size);
-    if (obj == NULL)
+    if (obj == NULL) {
         return PyErr_NoMemory();
-    obj = PyObject_INIT(obj, &PyUnicode_Type);
-    if (obj == NULL)
-        return NULL;
+    }
+    _PyObject_Init(obj, &PyUnicode_Type);
 
     unicode = (PyCompactUnicodeObject *)obj;
     if (is_ascii)
@@ -2275,17 +2273,23 @@ PyUnicode_FromString(const char *u)
 PyObject *
 _PyUnicode_FromId(_Py_Identifier *id)
 {
-    if (!id->object) {
-        id->object = PyUnicode_DecodeUTF8Stateful(id->string,
-                                                  strlen(id->string),
-                                                  NULL, NULL);
-        if (!id->object)
-            return NULL;
-        PyUnicode_InternInPlace(&id->object);
-        assert(!id->next);
-        id->next = static_strings;
-        static_strings = id;
+    if (id->object) {
+        return id->object;
     }
+
+    PyObject *obj;
+    obj = PyUnicode_DecodeUTF8Stateful(id->string,
+                                       strlen(id->string),
+                                       NULL, NULL);
+    if (!obj) {
+        return NULL;
+    }
+    PyUnicode_InternInPlace(&obj);
+
+    assert(!id->next);
+    id->object = obj;
+    id->next = static_strings;
+    static_strings = id;
     return id->object;
 }
 
@@ -2839,35 +2843,35 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         Py_ssize_t arglen;
 
         if (*f == 'u') {
-            if (longflag)
-                len = sprintf(buffer, "%lu",
-                        va_arg(*vargs, unsigned long));
-            else if (longlongflag)
-                len = sprintf(buffer, "%llu",
-                        va_arg(*vargs, unsigned long long));
-            else if (size_tflag)
-                len = sprintf(buffer, "%" PY_FORMAT_SIZE_T "u",
-                        va_arg(*vargs, size_t));
-            else
-                len = sprintf(buffer, "%u",
-                        va_arg(*vargs, unsigned int));
+            if (longflag) {
+                len = sprintf(buffer, "%lu", va_arg(*vargs, unsigned long));
+            }
+            else if (longlongflag) {
+                len = sprintf(buffer, "%llu", va_arg(*vargs, unsigned long long));
+            }
+            else if (size_tflag) {
+                len = sprintf(buffer, "%zu", va_arg(*vargs, size_t));
+            }
+            else {
+                len = sprintf(buffer, "%u", va_arg(*vargs, unsigned int));
+            }
         }
         else if (*f == 'x') {
             len = sprintf(buffer, "%x", va_arg(*vargs, int));
         }
         else {
-            if (longflag)
-                len = sprintf(buffer, "%li",
-                        va_arg(*vargs, long));
-            else if (longlongflag)
-                len = sprintf(buffer, "%lli",
-                        va_arg(*vargs, long long));
-            else if (size_tflag)
-                len = sprintf(buffer, "%" PY_FORMAT_SIZE_T "i",
-                        va_arg(*vargs, Py_ssize_t));
-            else
-                len = sprintf(buffer, "%i",
-                        va_arg(*vargs, int));
+            if (longflag) {
+                len = sprintf(buffer, "%li", va_arg(*vargs, long));
+            }
+            else if (longlongflag) {
+                len = sprintf(buffer, "%lli", va_arg(*vargs, long long));
+            }
+            else if (size_tflag) {
+                len = sprintf(buffer, "%zi", va_arg(*vargs, Py_ssize_t));
+            }
+            else {
+                len = sprintf(buffer, "%i", va_arg(*vargs, int));
+            }
         }
         assert(len >= 0);
 
@@ -8387,9 +8391,11 @@ PyUnicode_BuildEncodingMap(PyObject* string)
     /* Create a three-level trie */
     result = PyObject_MALLOC(sizeof(struct encoding_map) +
                              16*count2 + 128*count3 - 1);
-    if (!result)
+    if (!result) {
         return PyErr_NoMemory();
-    PyObject_Init(result, &EncodingMapType);
+    }
+
+    _PyObject_Init(result, &EncodingMapType);
     mresult = (struct encoding_map*)result;
     mresult->count2 = count2;
     mresult->count3 = count3;
@@ -14617,7 +14623,7 @@ mainformatlong(PyObject *v,
     /* make sure number is a type of integer for o, x, and X */
     if (!PyLong_Check(v)) {
         if (type == 'o' || type == 'x' || type == 'X') {
-            iobj = PyNumber_Index(v);
+            iobj = _PyNumber_Index(v);
             if (iobj == NULL) {
                 if (PyErr_ExceptionMatches(PyExc_TypeError))
                     goto wrongtype;
@@ -15651,8 +15657,7 @@ unicode_release_interned(void)
 
     Py_ssize_t n = PyList_GET_SIZE(keys);
 #ifdef INTERNED_STATS
-    fprintf(stderr, "releasing %" PY_FORMAT_SIZE_T "d interned strings\n",
-            n);
+    fprintf(stderr, "releasing %zd interned strings\n", n);
 
     Py_ssize_t immortal_size = 0, mortal_size = 0;
 #endif
@@ -15663,13 +15668,13 @@ unicode_release_interned(void)
         }
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_INTERNED_IMMORTAL:
-            Py_REFCNT(s) += 1;
+            Py_SET_REFCNT(s, Py_REFCNT(s) + 1);
 #ifdef INTERNED_STATS
             immortal_size += PyUnicode_GET_LENGTH(s);
 #endif
             break;
         case SSTATE_INTERNED_MORTAL:
-            Py_REFCNT(s) += 2;
+            Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
 #ifdef INTERNED_STATS
             mortal_size += PyUnicode_GET_LENGTH(s);
 #endif
@@ -15682,9 +15687,9 @@ unicode_release_interned(void)
         _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
     }
 #ifdef INTERNED_STATS
-    fprintf(stderr, "total size of all interned strings: "
-            "%" PY_FORMAT_SIZE_T "d/%" PY_FORMAT_SIZE_T "d "
-            "mortal/immortal\n", mortal_size, immortal_size);
+    fprintf(stderr,
+            "total size of all interned strings: %zd/%zd mortal/immortal\n",
+            mortal_size, immortal_size);
 #endif
     Py_DECREF(keys);
     PyDict_Clear(interned);

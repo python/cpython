@@ -22,7 +22,7 @@ data/xxl.py:
 
 build: peg_extension/parse.c
 
-peg_extension/parse.c: $(GRAMMAR) $(TOKENS) pegen/*.py peg_extension/peg_extension.c ../../Parser/pegen/pegen.c ../../Parser/pegen/parse_string.c ../../Parser/pegen/*.h pegen/grammar_parser.py
+peg_extension/parse.c: $(GRAMMAR) $(TOKENS) pegen/*.py peg_extension/peg_extension.c ../../Parser/pegen.c ../../Parser/string_parser.c ../../Parser/*.h pegen/grammar_parser.py
 	$(PYTHON) -m pegen -q c $(GRAMMAR) $(TOKENS) -o peg_extension/parse.c --compile-extension
 
 clean:
@@ -70,23 +70,13 @@ stats: peg_extension/parse.c data/xxl.py
 time: time_compile
 
 time_compile: venv data/xxl.py
-	$(VENVPYTHON) scripts/benchmark.py --parser=pegen --target=xxl compile
+	$(VENVPYTHON) scripts/benchmark.py --target=xxl compile
 
 time_parse: venv data/xxl.py
-	$(VENVPYTHON) scripts/benchmark.py --parser=pegen --target=xxl parse
-
-time_old: time_old_compile
-
-time_old_compile: venv data/xxl.py
-	$(VENVPYTHON) scripts/benchmark.py --parser=cpython --target=xxl compile
-
-time_old_parse: venv data/xxl.py
-	$(VENVPYTHON) scripts/benchmark.py --parser=cpython --target=xxl parse
+	$(VENVPYTHON) scripts/benchmark.py --target=xxl parse
 
 time_peg_dir: venv
 	$(VENVPYTHON) scripts/test_parse_directory.py \
-		--grammar-file $(GRAMMAR) \
-		--tokens-file $(TOKENS) \
 		-d $(TESTDIR) \
 		$(TESTFLAGS) \
 		--exclude "*/failset/*" \
@@ -95,12 +85,8 @@ time_peg_dir: venv
 
 time_stdlib: $(CPYTHON) venv
 	$(VENVPYTHON) scripts/test_parse_directory.py \
-		--grammar-file $(GRAMMAR) \
-		--tokens-file $(TOKENS) \
 		-d $(CPYTHON) \
 		$(TESTFLAGS) \
-		--exclude "*/test2to3/*" \
-		--exclude "*/test2to3/**/*" \
 		--exclude "*/bad*" \
 		--exclude "*/lib2to3/tests/data/*"
 

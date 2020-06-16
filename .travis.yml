@@ -89,11 +89,13 @@ matrix:
         - ./venv/bin/python -m pip install -U coverage
         - ./venv/bin/python -m pip install -r Misc/requirements-test.txt
         - ./venv/bin/python -m test.pythoninfo
+        - export PYTHONPATH=`find venv -name fullcoverage`
       script:
         # Skip tests that re-run the entire test suite.
         - xvfb-run ./venv/bin/python -m coverage run --branch --pylib -m test --fail-env-changed -uall,-cpu -x test_multiprocessing_fork -x test_multiprocessing_forkserver -x test_multiprocessing_spawn -x test_concurrent_futures || true
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         # Make the `coverage` command available to Codecov w/ a version of Python that can parse all source files.
+        - export PYTHONPATH=
         - source ./venv/bin/activate
         - bash <(curl -s https://codecov.io/bash) -y .github/codecov.yml
     - name: "Test code coverage (C)"

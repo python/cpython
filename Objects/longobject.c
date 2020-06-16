@@ -3,8 +3,10 @@
 /* XXX The functional organization of this file is terrible */
 
 #include "Python.h"
-#include "pycore_interp.h"    // _PY_NSMALLPOSINTS
-#include "pycore_pystate.h"   // _Py_IsMainInterpreter()
+#include "pycore_bitutils.h"      // _Py_popcount32()
+#include "pycore_interp.h"        // _PY_NSMALLPOSINTS
+#include "pycore_object.h"        // _PyObject_InitVar()
+#include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "longintrepr.h"
 
 #include <float.h>
@@ -40,8 +42,8 @@ static PyObject *
 get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *v = (PyObject*)tstate->interp->small_ints[ival + NSMALLNEGINTS];
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *v = (PyObject*)interp->small_ints[ival + NSMALLNEGINTS];
     Py_INCREF(v);
     return v;
 }
@@ -145,7 +147,8 @@ _PyLong_New(Py_ssize_t size)
         PyErr_NoMemory();
         return NULL;
     }
-    return (PyLongObject*)PyObject_INIT_VAR(result, &PyLong_Type, size);
+    _PyObject_InitVar((PyVarObject*)result, &PyLong_Type, size);
+    return result;
 }
 
 PyObject *
@@ -394,7 +397,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
         v = (PyLongObject *)vv;
     }
     else {
-        v = (PyLongObject *)PyNumber_Index(vv);
+        v = (PyLongObject *)_PyNumber_Index(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -674,7 +677,7 @@ PyLong_AsUnsignedLongMask(PyObject *op)
         return _PyLong_AsUnsignedLongMask(op);
     }
 
-    lo = (PyLongObject *)PyNumber_Index(op);
+    lo = (PyLongObject *)_PyNumber_Index(op);
     if (lo == NULL)
         return (unsigned long)-1;
 
@@ -694,6 +697,13 @@ _PyLong_Sign(PyObject *vv)
     return Py_SIZE(v) == 0 ? 0 : (Py_SIZE(v) < 0 ? -1 : 1);
 }
 
+static int
+bit_length_digit(digit x)
+{
+    Py_BUILD_ASSERT(PyLong_SHIFT <= sizeof(unsigned long) * 8);
+    return _Py_bit_length((unsigned long)x);
+}
+
 size_t
 _PyLong_NumBits(PyObject *vv)
 {
@@ -711,7 +721,7 @@ _PyLong_NumBits(PyObject *vv)
         if ((size_t)(ndigits - 1) > SIZE_MAX / (size_t)PyLong_SHIFT)
             goto Overflow;
         result = (size_t)(ndigits - 1) * (size_t)PyLong_SHIFT;
-        msd_bits = _Py_bit_length(msd);
+        msd_bits = bit_length_digit(msd);
         if (SIZE_MAX - msd_bits < result)
             goto Overflow;
         result += msd_bits;
@@ -1132,7 +1142,7 @@ PyLong_AsLongLong(PyObject *vv)
         v = (PyLongObject *)vv;
     }
     else {
-        v = (PyLongObject *)PyNumber_Index(vv);
+        v = (PyLongObject *)_PyNumber_Index(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -1247,7 +1257,7 @@ PyLong_AsUnsignedLongLongMask(PyObject *op)
         return _PyLong_AsUnsignedLongLongMask(op);
     }
 
-    lo = (PyLongObject *)PyNumber_Index(op);
+    lo = (PyLongObject *)_PyNumber_Index(op);
     if (lo == NULL)
         return (unsigned long long)-1;
 
@@ -1287,7 +1297,7 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
         v = (PyLongObject *)vv;
     }
     else {
-        v = (PyLongObject *)PyNumber_Index(vv);
+        v = (PyLongObject *)_PyNumber_Index(vv);
         if (v == NULL)
             return -1;
         do_decref = 1;
@@ -1821,7 +1831,7 @@ long_format_binary(PyObject *aa, int base, int alternate,
             return -1;
         }
         size_a_in_bits = (size_a - 1) * PyLong_SHIFT +
-                         _Py_bit_length(a->ob_digit[size_a - 1]);
+                         bit_length_digit(a->ob_digit[size_a - 1]);
         /* Allow 1 character for a '-' sign. */
         sz = negative + (size_a_in_bits + (bits - 1)) / bits;
     }
@@ -2641,7 +2651,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 
     /* normalize: shift w1 left so that its top digit is >= PyLong_BASE/2.
        shift v1 left by the same amount.  Results go into w and v. */
-    d = PyLong_SHIFT - _Py_bit_length(w1->ob_digit[size_w-1]);
+    d = PyLong_SHIFT - bit_length_digit(w1->ob_digit[size_w-1]);
     carry = v_lshift(w->ob_digit, w1->ob_digit, size_w, d);
     assert(carry == 0);
     carry = v_lshift(v->ob_digit, v1->ob_digit, size_v, d);
@@ -2763,7 +2773,7 @@ _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e)
         *e = 0;
         return 0.0;
     }
-    a_bits = _Py_bit_length(a->ob_digit[a_size-1]);
+    a_bits = bit_length_digit(a->ob_digit[a_size-1]);
     /* The following is an overflow-free version of the check
        "if ((a_size - 1) * PyLong_SHIFT + a_bits > PY_SSIZE_T_MAX) ..." */
     if (a_size >= (PY_SSIZE_T_MAX - 1) / PyLong_SHIFT + 1 &&
@@ -3856,8 +3866,8 @@ long_true_divide(PyObject *v, PyObject *w)
         /* Extreme underflow */
         goto underflow_or_zero;
     /* Next line is now safe from overflowing a Py_ssize_t */
-    diff = diff * PyLong_SHIFT + _Py_bit_length(a->ob_digit[a_size - 1]) -
-        _Py_bit_length(b->ob_digit[b_size - 1]);
+    diff = diff * PyLong_SHIFT + bit_length_digit(a->ob_digit[a_size - 1]) -
+        bit_length_digit(b->ob_digit[b_size - 1]);
     /* Now diff = a_bits - b_bits. */
     if (diff > DBL_MAX_EXP)
         goto overflow;
@@ -3933,7 +3943,7 @@ long_true_divide(PyObject *v, PyObject *w)
     }
     x_size = Py_ABS(Py_SIZE(x));
     assert(x_size > 0); /* result of division is never zero */
-    x_bits = (x_size-1)*PyLong_SHIFT+_Py_bit_length(x->ob_digit[x_size-1]);
+    x_bits = (x_size-1)*PyLong_SHIFT+bit_length_digit(x->ob_digit[x_size-1]);
 
     /* The number of extra bits that have to be rounded away. */
     extra_bits = Py_MAX(x_bits, DBL_MIN_EXP - shift) - DBL_MANT_DIG;
@@ -4747,7 +4757,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
     alloc_b = Py_SIZE(b);
     /* reduce until a fits into 2 digits */
     while ((size_a = Py_SIZE(a)) > 2) {
-        nbits = _Py_bit_length(a->ob_digit[size_a-1]);
+        nbits = bit_length_digit(a->ob_digit[size_a-1]);
         /* extract top 2*PyLong_SHIFT bits of a into x, along with
            corresponding bits of b into y */
         size_b = Py_SIZE(b);
@@ -5180,7 +5190,7 @@ long_round(PyObject *self, PyObject *args)
     if (o_ndigits == NULL)
         return long_long(self);
 
-    ndigits = PyNumber_Index(o_ndigits);
+    ndigits = _PyNumber_Index(o_ndigits);
     if (ndigits == NULL)
         return NULL;
 
@@ -5268,7 +5278,7 @@ int_bit_length_impl(PyObject *self)
         return PyLong_FromLong(0);
 
     msd = ((PyLongObject *)self)->ob_digit[ndigits-1];
-    msd_bits = _Py_bit_length(msd);
+    msd_bits = bit_length_digit(msd);
 
     if (ndigits <= PY_SSIZE_T_MAX/PyLong_SHIFT)
         return PyLong_FromSsize_t((ndigits-1)*PyLong_SHIFT + msd_bits);
@@ -5304,6 +5314,73 @@ int_bit_length_impl(PyObject *self)
     return NULL;
 }
 
+static int
+popcount_digit(digit d)
+{
+    // digit can be larger than uint32_t, but only PyLong_SHIFT bits
+    // of it will be ever used.
+    Py_BUILD_ASSERT(PyLong_SHIFT <= 32);
+    return _Py_popcount32((uint32_t)d);
+}
+
+/*[clinic input]
+int.bit_count
+
+Number of ones in the binary representation of the absolute value of self.
+
+Also known as the population count.
+
+>>> bin(13)
+'0b1101'
+>>> (13).bit_count()
+3
+[clinic start generated code]*/
+
+static PyObject *
+int_bit_count_impl(PyObject *self)
+/*[clinic end generated code: output=2e571970daf1e5c3 input=7e0adef8e8ccdf2e]*/
+{
+    assert(self != NULL);
+    assert(PyLong_Check(self));
+
+    PyLongObject *z = (PyLongObject *)self;
+    Py_ssize_t ndigits = Py_ABS(Py_SIZE(z));
+    Py_ssize_t bit_count = 0;
+
+    /* Each digit has up to PyLong_SHIFT ones, so the accumulated bit count
+       from the first PY_SSIZE_T_MAX/PyLong_SHIFT digits can't overflow a
+       Py_ssize_t. */
+    Py_ssize_t ndigits_fast = Py_MIN(ndigits, PY_SSIZE_T_MAX/PyLong_SHIFT);
+    for (Py_ssize_t i = 0; i < ndigits_fast; i++) {
+        bit_count += popcount_digit(z->ob_digit[i]);
+    }
+
+    PyObject *result = PyLong_FromSsize_t(bit_count);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    /* Use Python integers if bit_count would overflow. */
+    for (Py_ssize_t i = ndigits_fast; i < ndigits; i++) {
+        PyObject *x = PyLong_FromLong(popcount_digit(z->ob_digit[i]));
+        if (x == NULL) {
+            goto error;
+        }
+        PyObject *y = long_add((PyLongObject *)result, (PyLongObject *)x);
+        Py_DECREF(x);
+        if (y == NULL) {
+            goto error;
+        }
+        Py_DECREF(result);
+        result = y;
+    }
+
+    return result;
+
+  error:
+    Py_DECREF(result);
+    return NULL;
+}
 
 /*[clinic input]
 int.as_integer_ratio
@@ -5460,6 +5537,7 @@ static PyMethodDef long_methods[] = {
     {"conjugate",       long_long_meth, METH_NOARGS,
      "Returns self, the complex conjugate of any int."},
     INT_BIT_LENGTH_METHODDEF
+    INT_BIT_COUNT_METHODDEF
     INT_TO_BYTES_METHODDEF
     INT_FROM_BYTES_METHODDEF
     INT_AS_INTEGER_RATIO_METHODDEF

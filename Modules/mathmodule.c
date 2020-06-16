@@ -53,6 +53,7 @@ raised for division by zero and mod by zero.
  */
 
 #include "Python.h"
+#include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_dtoa.h"
 #include "_math.h"
 
@@ -844,7 +845,7 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
         return res;
     }
     for (i = 1; i < nargs; i++) {
-        x = PyNumber_Index(args[i]);
+        x = _PyNumber_Index(args[i]);
         if (x == NULL) {
             Py_DECREF(res);
             return NULL;
@@ -1723,7 +1724,7 @@ math_isqrt(PyObject *module, PyObject *n)
     uint64_t m, u;
     PyObject *a = NULL, *b;
 
-    n = PyNumber_Index(n);
+    n = _PyNumber_Index(n);
     if (n == NULL) {
         return NULL;
     }
@@ -3103,23 +3104,10 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     if (n == NULL) {
         return NULL;
     }
-    if (!PyLong_CheckExact(n)) {
-        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
-        if (n == NULL) {
-            return NULL;
-        }
-    }
     k = PyNumber_Index(k);
     if (k == NULL) {
         Py_DECREF(n);
         return NULL;
-    }
-    if (!PyLong_CheckExact(k)) {
-        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
-        if (k == NULL) {
-            Py_DECREF(n);
-            return NULL;
-        }
     }
 
     if (Py_SIZE(n) < 0) {
@@ -3226,23 +3214,10 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     if (n == NULL) {
         return NULL;
     }
-    if (!PyLong_CheckExact(n)) {
-        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
-        if (n == NULL) {
-            return NULL;
-        }
-    }
     k = PyNumber_Index(k);
     if (k == NULL) {
         Py_DECREF(n);
         return NULL;
-    }
-    if (!PyLong_CheckExact(k)) {
-        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
-        if (k == NULL) {
-            Py_DECREF(n);
-            return NULL;
-        }
     }
 
     if (Py_SIZE(n) < 0) {

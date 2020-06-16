@@ -19,6 +19,7 @@ import unittest
 import warnings
 from test import support
 from test.support import _4G, bigmemtest, import_fresh_module
+from test.support import threading_helper
 from http.client import HTTPException
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
@@ -870,7 +871,7 @@ class HashLibTestCase(unittest.TestCase):
             '1cfceca95989f51f658e3f3ffe7f1cd43726c9e088c13ee10b46f57cef135b94'
         )
 
-    @support.reap_threads
+    @threading_helper.reap_threads
     def test_threaded_hashing(self):
         # Updating the same hash object from several threads at once
         # using data chunk sizes containing the same byte sequences.

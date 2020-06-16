@@ -79,9 +79,10 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
         op = (PyBytesObject *)PyObject_Calloc(1, PyBytesObject_SIZE + size);
     else
         op = (PyBytesObject *)PyObject_Malloc(PyBytesObject_SIZE + size);
-    if (op == NULL)
+    if (op == NULL) {
         return PyErr_NoMemory();
-    (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
+    }
+    _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
     op->ob_shash = -1;
     if (!use_calloc)
         op->ob_sval[size] = '\0';
@@ -148,9 +149,10 @@ PyBytes_FromString(const char *str)
 
     /* Inline PyObject_NewVar */
     op = (PyBytesObject *)PyObject_MALLOC(PyBytesObject_SIZE + size);
-    if (op == NULL)
+    if (op == NULL) {
         return PyErr_NoMemory();
-    (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
+    }
+    _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
     op->ob_shash = -1;
     memcpy(op->ob_sval, str, size+1);
     /* share short strings */
@@ -256,27 +258,29 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
         }
 
         case 'd':
-            if (longflag)
+            if (longflag) {
                 sprintf(buffer, "%ld", va_arg(vargs, long));
-            else if (size_tflag)
-                sprintf(buffer, "%" PY_FORMAT_SIZE_T "d",
-                    va_arg(vargs, Py_ssize_t));
-            else
+            }
+            else if (size_tflag) {
+                sprintf(buffer, "%zd", va_arg(vargs, Py_ssize_t));
+            }
+            else {
                 sprintf(buffer, "%d", va_arg(vargs, int));
+            }
             assert(strlen(buffer) < sizeof(buffer));
             WRITE_BYTES(buffer);
             break;
 
         case 'u':
-            if (longflag)
-                sprintf(buffer, "%lu",
-                    va_arg(vargs, unsigned long));
-            else if (size_tflag)
-                sprintf(buffer, "%" PY_FORMAT_SIZE_T "u",
-                    va_arg(vargs, size_t));
-            else
-                sprintf(buffer, "%u",
-                    va_arg(vargs, unsigned int));
+            if (longflag) {
+                sprintf(buffer, "%lu", va_arg(vargs, unsigned long));
+            }
+            else if (size_tflag) {
+                sprintf(buffer, "%zu", va_arg(vargs, size_t));
+            }
+            else {
+                sprintf(buffer, "%u", va_arg(vargs, unsigned int));
+            }
             assert(strlen(buffer) < sizeof(buffer));
             WRITE_BYTES(buffer);
             break;
@@ -455,7 +459,7 @@ formatlong(PyObject *v, int flags, int prec, int type)
     if (PyNumber_Check(v)) {
         /* make sure number is a type of integer for o, x, and X */
         if (type == 'o' || type == 'x' || type == 'X')
-            iobj = PyNumber_Index(v);
+            iobj = _PyNumber_Index(v);
         else
             iobj = PyNumber_Long(v);
         if (iobj == NULL) {
@@ -1433,9 +1437,10 @@ bytes_repeat(PyBytesObject *a, Py_ssize_t n)
         return NULL;
     }
     op = (PyBytesObject *)PyObject_MALLOC(PyBytesObject_SIZE + nbytes);
-    if (op == NULL)
+    if (op == NULL) {
         return PyErr_NoMemory();
-    (void)PyObject_INIT_VAR(op, &PyBytes_Type, size);
+    }
+    _PyObject_InitVar((PyVarObject*)op, &PyBytes_Type, size);
     op->ob_shash = -1;
     op->ob_sval[size] = '\0';
     if (Py_SIZE(a) == 1 && n > 0) {
