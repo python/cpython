@@ -669,7 +669,7 @@ FSTRINGS_TRACEBACKS = {
             {a$b}
             '''
         """,
-        '(a$b)',
+        '(a$b)\n',
     ),
     'multiline_fstring_brace_on_next_line': (
         """
@@ -677,7 +677,7 @@ FSTRINGS_TRACEBACKS = {
             {a$b
             }'''
         """,
-        '(a$b',
+        '(a$b\n',
     ),
     'multiline_fstring_brace_on_previous_line': (
         """
@@ -685,7 +685,7 @@ FSTRINGS_TRACEBACKS = {
             {
             a$b}'''
         """,
-        'a$b)',
+        'a$b)\n',
     ),
 }
 
