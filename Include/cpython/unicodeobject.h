@@ -1096,15 +1096,15 @@ PyAPI_FUNC(int) _PyUnicode_IsLinebreak(
     const Py_UCS4 ch         /* Unicode character */
     );
 
-PyAPI_FUNC(Py_UCS4) _PyUnicode_ToLowercase(
+/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToLowercase(
     Py_UCS4 ch       /* Unicode character */
     );
 
-PyAPI_FUNC(Py_UCS4) _PyUnicode_ToUppercase(
+/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToUppercase(
     Py_UCS4 ch       /* Unicode character */
     );
 
-PyAPI_FUNC(Py_UCS4) _PyUnicode_ToTitlecase(
+/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToTitlecase(
     Py_UCS4 ch       /* Unicode character */
     );
 
