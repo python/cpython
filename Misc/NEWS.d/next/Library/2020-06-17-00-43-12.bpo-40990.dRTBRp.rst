@@ -1,0 +1,4 @@
+A ``tls`` argument has been added to :class:`http.server.HTTPServer` and
+:class:`ThreadingHTTPServer` to enable HTTPS. The ``--tls-cert`` and
+``--tls-key`` argument have been added to ``python -m http.server``. Patch
+contributed by Rémi Lapeyre.

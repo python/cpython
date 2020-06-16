@@ -32,14 +32,26 @@ handler.  Code to create and run the server looks like this::
        httpd.serve_forever()
 
 
-.. class:: HTTPServer(server_address, RequestHandlerClass)
+.. class:: HTTPServer(server_address, RequestHandlerClass, \
+                      bind_and_activate=True, *, tls=None)
 
    This class builds on the :class:`~socketserver.TCPServer` class by storing
    the server address as instance variables named :attr:`server_name` and
    :attr:`server_port`. The server is accessible by the handler, typically
    through the handler's :attr:`server` instance variable.
 
-.. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
+   HTTPS support can be enabled using the *tls* argument. In this case, it must
+   be a tuple of two strings, the first being the path to an SSL certificate and
+   the second the path to its private key.
+
+   .. warning::
+
+      The HTTPS support is for development and test puposes and must not be used
+      in production.
+
+
+.. class:: ThreadingHTTPServer(server_address, RequestHandlerClass, \
+                               bind_and_activate=True, *, tls=None)
 
    This class is identical to HTTPServer but uses threads to handle
    requests by using the :class:`~socketserver.ThreadingMixIn`. This

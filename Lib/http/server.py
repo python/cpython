@@ -101,6 +101,7 @@ import shutil
 import socket # For gethostbyaddr()
 import socketserver
 import sys
+import ssl
 import time
 import urllib.parse
 import contextlib
@@ -131,7 +132,23 @@ DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 
 class HTTPServer(socketserver.TCPServer):
 
-    allow_reuse_address = 1    # Seems to make sense in testing environment
+    allow_reuse_address = True    # Seems to make sense in testing environment
+
+    def __init__(self, server_address, RequestHandlerClass,
+            bind_and_activate=True, *, tls=None):
+        if tls is None:
+            self.tls_cert = self.tls_key = None
+        else:
+            self.tls_cert, self.tls_key = tls
+        super().__init__(server_address, RequestHandlerClass, bind_and_activate)
+
+    def server_activate(self):
+        """Wrap the socket in SSLSocket if TLS is enabled"""
+        super().server_activate()
+        if self.tls_cert and self.tls_key:
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            context.load_cert_chain(self.tls_cert, self.tls_key)
+            self.socket = context.wrap_socket(self.socket, server_side=True)
 
     def server_bind(self):
         """Override server_bind to store the server name."""
@@ -1237,7 +1254,7 @@ def _get_best_family(*address):
 
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
-         protocol="HTTP/1.0", port=8000, bind=None):
+         protocol="HTTP/1.0", port=8000, bind=None, tls=None):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
@@ -1246,12 +1263,13 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     ServerClass.address_family, addr = _get_best_family(bind, port)
 
     HandlerClass.protocol_version = protocol
-    with ServerClass(addr, HandlerClass) as httpd:
+    with ServerClass(addr, HandlerClass, tls=tls) as httpd:
         host, port = httpd.socket.getsockname()[:2]
         url_host = f'[{host}]' if ':' in host else host
+        protocol = 'HTTPS' if tls else 'HTTP'
         print(
-            f"Serving HTTP on {host} port {port} "
-            f"(http://{url_host}:{port}/) ..."
+            f"Serving {protocol} on {host} port {port} "
+            f"({protocol.lower()}://{url_host}:{port}/) ..."
         )
         try:
             httpd.serve_forever()
@@ -1275,7 +1293,19 @@ if __name__ == '__main__':
                         default=8000, type=int,
                         nargs='?',
                         help='Specify alternate port [default: 8000]')
+    parser.add_argument('--tls-cert',
+                        help='Specify the path to a TLS certificate')
+    parser.add_argument('--tls-key',
+                        help='Specify the path to a TLS key')
     args = parser.parse_args()
+
+    if args.tls_cert is None and args.tls_key is None:
+        tls = None
+    elif not args.tls_cert or not args.tls_key:
+        parser.error('Both --tls-cert and --tls-key must be provided to enable TLS')
+    else:
+        tls = (args.tls_cert, args.tls_key)
+
     if args.cgi:
         handler_class = CGIHTTPRequestHandler
     else:
@@ -1296,4 +1326,5 @@ if __name__ == '__main__':
         ServerClass=DualStackServer,
         port=args.port,
         bind=args.bind,
+        tls=tls
     )

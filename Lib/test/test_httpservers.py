@@ -21,6 +21,7 @@ import email.utils
 import html
 import http.client
 import urllib.parse
+import ssl
 import tempfile
 import time
 import datetime
@@ -43,13 +44,18 @@ class NoLogRequestHandler:
 
 
 class TestServerThread(threading.Thread):
-    def __init__(self, test_object, request_handler):
+    def __init__(self, test_object, request_handler, tls=None):
         threading.Thread.__init__(self)
         self.request_handler = request_handler
         self.test_object = test_object
+        self.tls = tls
 
     def run(self):
-        self.server = HTTPServer(('localhost', 0), self.request_handler)
+        self.server = HTTPServer(
+            ('localhost', 0),
+            self.request_handler,
+            tls=self.tls
+        )
         self.test_object.HOST, self.test_object.PORT = self.server.socket.getsockname()
         self.test_object.server_started.set()
         self.test_object = None
@@ -64,11 +70,13 @@ class TestServerThread(threading.Thread):
 
 
 class BaseTestCase(unittest.TestCase):
+    tls = None
+
     def setUp(self):
         self._threads = threading_helper.threading_setup()
         os.environ = support.EnvironmentVarGuard()
         self.server_started = threading.Event()
-        self.thread = TestServerThread(self, self.request_handler)
+        self.thread = TestServerThread(self, self.request_handler, self.tls)
         self.thread.start()
         self.server_started.wait()
 
@@ -289,6 +297,31 @@ class BaseHTTPServerTestCase(BaseTestCase):
 
             data = res.read()
             self.assertEqual(b'', data)
+
+
+class BaseHTTPSServerTestCase(BaseTestCase):
+    # This is a simple test for the HTTPS support. If the GET works we don't
+    # need to test everything else as it will have been covered by
+    # BaseHTTPServerTestCase.
+
+    # We have to use the correct path from the folder created by regtest
+    tls = ('../../Lib/test/ssl_cert.pem', '../../Lib/test/ssl_key.pem')
+
+    class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
+        pass
+
+    def test_get(self):
+        response = self.request('/')
+        self.assertEqual(response.status, HTTPStatus.OK)
+
+    def request(self, uri, method='GET', body=None, headers={}):
+        self.connection = http.client.HTTPSConnection(
+            self.HOST,
+            self.PORT,
+            context=ssl._create_unverified_context()
+        )
+        self.connection.request(method, uri, body, headers)
+        return self.connection.getresponse()
 
 
 class RequestHandlerLoggingTestCase(BaseTestCase):
