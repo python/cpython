@@ -78,26 +78,15 @@ PyDoc_STRVAR(_gdbm_gdbm_close__doc__,
 "Close the database.");
 
 #define _GDBM_GDBM_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)(void(*)(void))_gdbm_gdbm_close, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _gdbm_gdbm_close__doc__},
+    {"close", (PyCFunction)_gdbm_gdbm_close, METH_NOARGS, _gdbm_gdbm_close__doc__},
 
 static PyObject *
-_gdbm_gdbm_close_impl(gdbmobject *self, PyTypeObject *cls);
+_gdbm_gdbm_close_impl(gdbmobject *self);
 
 static PyObject *
-_gdbm_gdbm_close(gdbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_close(gdbmobject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":close", _keywords, 0};
-
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
-        goto exit;
-    }
-    return_value = _gdbm_gdbm_close_impl(self, cls);
-
-exit:
-    return return_value;
+    return _gdbm_gdbm_close_impl(self);
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_keys__doc__,
@@ -351,4 +340,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fddd7296906c23a8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e84bc6ac82fcb6d4 input=a9049054013a1b77]*/

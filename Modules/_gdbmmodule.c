@@ -297,14 +297,12 @@ _gdbm_gdbm_setdefault_impl(gdbmobject *self, PyObject *key,
 /*[clinic input]
 _gdbm.gdbm.close
 
-    cls: defining_class
-
 Close the database.
 [clinic start generated code]*/
 
 static PyObject *
-_gdbm_gdbm_close_impl(gdbmobject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=21f68c7287b95fcc input=6550e13739ef0351]*/
+_gdbm_gdbm_close_impl(gdbmobject *self)
+/*[clinic end generated code: output=f5abb4d6bb9e52d5 input=0a203447379b45fd]*/
 {
     if (self->di_dbm) {
         gdbm_close(self->di_dbm);
