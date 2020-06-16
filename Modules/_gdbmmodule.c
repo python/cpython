@@ -200,6 +200,7 @@ gdbm_subscript(gdbmobject *dp, PyObject *key)
 
 /*[clinic input]
 _gdbm.gdbm.get
+
     key: object
     default: object = None
     /
@@ -209,7 +210,7 @@ Get the value for key, or default if not present.
 
 static PyObject *
 _gdbm_gdbm_get_impl(gdbmobject *self, PyObject *key, PyObject *default_value)
-/*[clinic end generated code: output=92421838f3a852f4 input=618634935698f696]*/
+/*[clinic end generated code: output=92421838f3a852f4 input=a9c20423f34c17b6]*/
 {
     PyObject *res;
 
@@ -268,6 +269,7 @@ gdbm_ass_sub(gdbmobject *dp, PyObject *v, PyObject *w)
 
 /*[clinic input]
 _gdbm.gdbm.setdefault
+
     key: object
     default: object = None
     /
@@ -278,7 +280,7 @@ Get value for key, or set it to default and return default if not present.
 static PyObject *
 _gdbm_gdbm_setdefault_impl(gdbmobject *self, PyObject *key,
                            PyObject *default_value)
-/*[clinic end generated code: output=f3246e880509f142 input=8233d2ab10a30d38]*/
+/*[clinic end generated code: output=f3246e880509f142 input=0db46b69e9680171]*/
 {
     PyObject *res;
 
@@ -430,6 +432,7 @@ _gdbm_gdbm_firstkey_impl(gdbmobject *self, PyTypeObject *cls)
 
 /*[clinic input]
 _gdbm.gdbm.nextkey
+
     cls: defining_class
     key: str(accept={str, robuffer}, zeroes=True)
     /
@@ -448,7 +451,7 @@ to create a list in memory that contains them all:
 static PyObject *
 _gdbm_gdbm_nextkey_impl(gdbmobject *self, PyTypeObject *cls, const char *key,
                         Py_ssize_clean_t key_length)
-/*[clinic end generated code: output=204964441fdbaf02 input=3bfcaf6eaa26c59e]*/
+/*[clinic end generated code: output=204964441fdbaf02 input=fcf6a51a96ce0172]*/
 {
     PyObject *v;
     datum dbm_key, nextkey;
@@ -577,6 +580,7 @@ static PyType_Spec gdbmtype_spec = {
 
 /*[clinic input]
 _gdbm.open as dbmopen
+
     filename: unicode
     flags: str="r"
     mode: int(py_default="0o666") = 0o666
@@ -609,7 +613,7 @@ when the database has to be created.  It defaults to octal 0o666.
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
              int mode)
-/*[clinic end generated code: output=9527750f5df90764 input=3be0b0875974b928]*/
+/*[clinic end generated code: output=9527750f5df90764 input=812b7d74399ceb0e]*/
 {
     int iflags;
     _gdbm_state *state = get_gdbm_state(module);
