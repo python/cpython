@@ -34,7 +34,7 @@ typedef struct _memo {
 typedef struct {
     int type;
     PyObject *bytes;
-    int lineno, col_offset, end_lineno, end_col_offset;
+    Py_ssize_t lineno, col_offset, end_lineno, end_col_offset;
     Memo *memo;
 } Token;
 
@@ -132,7 +132,7 @@ void *_PyPegen_string_token(Parser *p);
 const char *_PyPegen_get_expr_name(expr_ty);
 void *_PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...);
 void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
-                                          int lineno, int col_offset,
+                                          Py_ssize_t lineno, Py_ssize_t col_offset,
                                           const char *errmsg, va_list va);
 void *_PyPegen_dummy_name(Parser *p, ...);
 
