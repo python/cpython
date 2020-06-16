@@ -36,9 +36,6 @@
 #  error "_testcapi must test the public Python C API, not CPython internal C API"
 #endif
 
-/* Ignore use of deprecated APIs */
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-
 static struct PyModuleDef _testcapimodule;
 
 static PyObject *TestError;     /* set to exception object in init */
@@ -1671,6 +1668,10 @@ exit:
 
 static volatile int x;
 
+/* Ignore use of deprecated APIs */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 /* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
    of an error.
 */
@@ -1847,6 +1848,7 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     Py_RETURN_NONE;
 }
+_Py_COMP_DIAG_POP
 
 static PyObject *
 unicode_aswidechar(PyObject *self, PyObject *args)
