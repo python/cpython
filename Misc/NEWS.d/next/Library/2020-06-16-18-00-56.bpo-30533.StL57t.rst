@@ -1,0 +1,2 @@
+Add :func:`inspect.getmembers_static` , it return all members without
+calling properties and other dynamic. Patch by Weipeng Hong.
