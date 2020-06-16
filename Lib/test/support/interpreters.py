@@ -91,7 +91,7 @@ class Interpreter:
         Run the given source code in the interpreter.
         This blocks the current Python thread until done.
         """
-        _interpreters.run_string(self._id, src_str)
+        _interpreters.run_string(self._id, src_str, channels)
 
 
 def create_channel():

@@ -31,10 +31,10 @@ def clean_up_interpreters():
             pass  # already destroyed
 
 
-def _run_output(interp, request, shared=None):
+def _run_output(interp, request, channels=None):
     script, rpipe = _captured_script(request)
     with rpipe:
-        interp.run(script)
+        interp.run(script, channels=channels)
         return rpipe.read()
 
 
@@ -464,7 +464,7 @@ class TestSendRecv(TestBase):
     def test_send_recv_main(self):
         r, s = interpreters.create_channel()
         orig = b'spam'
-        s.send(orig)
+        s.send_nowait(orig)
         obj = r.recv()
 
         self.assertEqual(obj, orig)
@@ -472,14 +472,14 @@ class TestSendRecv(TestBase):
 
     def test_send_recv_same_interpreter(self):
         interp = interpreters.create()
-        out = _run_output(interp, dedent("""
+        interp.run(dedent("""
             from test.support import interpreters
             r, s = interpreters.create_channel()
             orig = b'spam'
-            s.send(orig)
+            s.send_nowait(orig)
             obj = r.recv()
-            assert obj is not orig
-            assert obj == orig
+            assert obj == orig, 'expected: obj == orig'
+            assert obj is not orig, 'expected: obj is not orig'
             """))
 
     def test_send_recv_different_threads(self):
@@ -496,40 +496,38 @@ class TestSendRecv(TestBase):
         t = threading.Thread(target=f)
         t.start()
 
-        s.send(b'spam')
+        orig = b'spam'
+        s.send(orig)
         t.join()
         obj = r.recv()
 
-        self.assertEqual(obj, b'spam')
+        self.assertEqual(obj, orig)
+        self.assertIsNot(obj, orig)
 
     def test_send_recv_nowait_main(self):
         r, s = interpreters.create_channel()
         orig = b'spam'
-        s.send(orig)
+        s.send_nowait(orig)
         obj = r.recv_nowait()
 
         self.assertEqual(obj, orig)
         self.assertIsNot(obj, orig)
 
+    def test_send_recv_nowait_main_with_default(self):
+        r, _ = interpreters.create_channel()
+        obj = r.recv_nowait(None)
+
+        self.assertIsNone(obj)
+
     def test_send_recv_nowait_same_interpreter(self):
         interp = interpreters.create()
-        out = _run_output(interp, dedent("""
+        interp.run(dedent("""
             from test.support import interpreters
             r, s = interpreters.create_channel()
             orig = b'spam'
-            s.send(orig)
+            s.send_nowait(orig)
             obj = r.recv_nowait()
-            assert obj is not orig
-            assert obj == orig
+            assert obj == orig, 'expected: obj == orig'
+            # When going back to the same interpreter we get the same object.
+            assert obj is not orig, 'expected: obj is not orig'
             """))
-
-        r, s = interpreters.create_channel()
-
-        def f():
-            while True:
-                try:
-                    obj = r.recv_nowait()
-                    break
-                except _interpreters.ChannelEmptyError:
-                    time.sleep(0.1)
-            s.send(obj)
