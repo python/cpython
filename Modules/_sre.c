@@ -2308,10 +2308,19 @@ match_repr(MatchObject *self)
     PyObject *group0 = match_getslice_by_index(self, 0, Py_None);
     if (group0 == NULL)
         return NULL;
-    result = PyUnicode_FromFormat(
-            "<%s object; span=(%zd, %zd), match=%.50R>",
-            Py_TYPE(self)->tp_name,
-            self->mark[0], self->mark[1], group0);
+
+    /* Truncate group0 with ... if repr will be longer than 50 characters */
+    if (PySequence_Length(group0) <= 48 - PyBytes_Check(group0)) {
+        result = PyUnicode_FromFormat(
+                "<%s object; span=(%zd, %zd), match=%.50R>",
+                Py_TYPE(self)->tp_name,
+                self->mark[0], self->mark[1], group0);
+    } else {
+        result = PyUnicode_FromFormat(
+                "<%s object; span=(%zd, %zd), match=%.47R...>",
+                Py_TYPE(self)->tp_name,
+                self->mark[0], self->mark[1], group0);
+    }
     Py_DECREF(group0);
     return result;
 }

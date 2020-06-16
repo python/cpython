@@ -1784,6 +1784,20 @@ class ReTests(unittest.TestCase):
         )
         self.assertRegex(repr(second), pattern)
 
+        # Issue 39949: Verify truncation of long match
+        self.assertEqual(
+            repr(re.match(r'\w*', ('abcde'*10)[:48])),
+            "<re.Match object; span=(0, 48), match='abcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabc'>")
+        self.assertEqual(
+            repr(re.match(r'\w*', ('abcde'*10)[:49])),
+            "<re.Match object; span=(0, 49), match='abcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdea...>")
+        self.assertEqual(
+            repr(re.match(rb'\w*', (b'aoeui'*10)[:47])),
+            "<re.Match object; span=(0, 47), match=b'aoeuiaoeuiaoeuiaoeuiaoeuiaoeuiaoeuiaoeuiaoeuiao'>")
+        self.assertEqual(
+            repr(re.match(rb'\w*', (b'aoeui'*10)[:48])),
+            "<re.Match object; span=(0, 48), match=b'aoeuiaoeuiaoeuiaoeuiaoeuiaoeuiaoeuiaoeuiaoeui...>")
+
     def test_zerowidth(self):
         # Issues 852532, 1647489, 3262, 25054.
         self.assertEqual(re.split(r"\b", "a::bc"), ['', 'a', '::', 'bc', ''])
