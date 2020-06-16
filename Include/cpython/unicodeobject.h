@@ -71,15 +71,6 @@ Py_UNICODE_FILL(Py_UNICODE *target, Py_UNICODE value, Py_ssize_t length) {
 /* low surrogate = bottom 10 bits added to DC00 */
 #define Py_UNICODE_LOW_SURROGATE(ch) (0xDC00 + ((ch) & 0x3FF))
 
-/* Check if substring matches at given offset.  The offset must be
-   valid, and the substring must not be empty. */
-
-/* Py_DEPRECATED(3.3) */
-#define Py_UNICODE_MATCH(string, offset, substring) \
-    ((*((string)->wstr + (offset)) == *((substring)->wstr)) && \
-     ((*((string)->wstr + (offset) + (substring)->wstr_length-1) == *((substring)->wstr + (substring)->wstr_length-1))) && \
-     !memcmp((string)->wstr + (offset), (substring)->wstr, (substring)->wstr_length*sizeof(Py_UNICODE)))
-
 /* --- Unicode Type ------------------------------------------------------- */
 
 /* ASCII-only strings created through PyUnicode_New use the PyASCIIObject
@@ -252,11 +243,6 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     int check_content);
 
 /* Fast access macros */
-/* Py_DEPRECATED(3.3) */
-#define PyUnicode_WSTR_LENGTH(op) \
-    (PyUnicode_IS_COMPACT_ASCII(op) ?                  \
-     ((PyASCIIObject*)op)->length :                    \
-     ((PyCompactUnicodeObject*)op)->wstr_length)
 
 /* Returns the deprecated Py_UNICODE representation's size in code units
    (this includes surrogate pairs as 2 units).
@@ -450,6 +436,16 @@ enum PyUnicode_Kind {
        (PyUnicode_KIND(op) == PyUnicode_2BYTE_KIND ?                    \
         (0xffffU) :                                                     \
         (0x10ffffU)))))
+
+/* Py_DEPRECATED(3.3) */
+#define PyUnicode_WSTR_LENGTH(op) _PyUnicode_WSTR_LENGTH_impl((PyObject*)op)
+
+Py_DEPRECATED(3.3)
+static inline Py_ssize_t _PyUnicode_WSTR_LENGTH_impl(PyObject *op) {
+    return PyUnicode_IS_COMPACT_ASCII(op) ?
+            ((PyASCIIObject*)op)->length :
+            ((PyCompactUnicodeObject*)op)->wstr_length;
+}
 
 /* === Public API ========================================================= */
 

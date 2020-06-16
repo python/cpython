@@ -120,6 +120,13 @@ extern "C" {
          _PyUnicode_UTF8_LENGTH(op))
 #define _PyUnicode_WSTR(op)                             \
     (((PyASCIIObject*)(op))->wstr)
+
+/* Don't use deprecated macro in unicodeobject.h */
+#undef PyUnicode_WSTR_LENGTH
+#define PyUnicode_WSTR_LENGTH(op) \
+    (PyUnicode_IS_COMPACT_ASCII(op) ?                  \
+     ((PyASCIIObject*)op)->length :                    \
+     ((PyCompactUnicodeObject*)op)->wstr_length)
 #define _PyUnicode_WSTR_LENGTH(op)                      \
     (((PyCompactUnicodeObject*)(op))->wstr_length)
 #define _PyUnicode_LENGTH(op)                           \
