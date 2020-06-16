@@ -226,7 +226,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=7295902222e6b311]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=1543f4511d2356a5]*/
 {
     unsigned i;
 
