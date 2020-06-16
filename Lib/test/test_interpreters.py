@@ -583,7 +583,8 @@ class TestSendRecv(TestBase):
         obj = r.recv()
 
         self.assertEqual(obj, orig)
-        self.assertIsNot(obj, orig)
+        # When going back to the same interpreter we get the same object.
+        self.assertIs(obj, orig)
 
     def test_send_recv_same_interpreter(self):
         interp = interpreters.create()
@@ -594,7 +595,8 @@ class TestSendRecv(TestBase):
             s.send_nowait(orig)
             obj = r.recv()
             assert obj == orig, 'expected: obj == orig'
-            assert obj is not orig, 'expected: obj is not orig'
+            # When going back to the same interpreter we get the same object.
+            assert obj is orig, 'expected: obj is orig'
             """))
 
     @unittest.skip('broken (see BPO-...)')
@@ -641,7 +643,8 @@ class TestSendRecv(TestBase):
         obj = r.recv()
 
         self.assertEqual(obj, orig)
-        self.assertIsNot(obj, orig)
+        # When going back to the same interpreter we get the same object.
+        self.assertIs(obj, orig)
 
     def test_send_recv_nowait_main(self):
         r, s = interpreters.create_channel()
@@ -650,7 +653,8 @@ class TestSendRecv(TestBase):
         obj = r.recv_nowait()
 
         self.assertEqual(obj, orig)
-        self.assertIsNot(obj, orig)
+        # When going back to the same interpreter we get the same object.
+        self.assertIs(obj, orig)
 
     def test_send_recv_nowait_main_with_default(self):
         r, _ = interpreters.create_channel()
@@ -668,7 +672,7 @@ class TestSendRecv(TestBase):
             obj = r.recv_nowait()
             assert obj == orig, 'expected: obj == orig'
             # When going back to the same interpreter we get the same object.
-            assert obj is not orig, 'expected: obj is not orig'
+            assert obj is orig, 'expected: obj is orig'
             """))
 
     @unittest.skip('broken (see BPO-...)')
