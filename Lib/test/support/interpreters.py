@@ -99,7 +99,7 @@ class Interpreter:
 
 def create_channel():
     """Return (recv, send) for a new cross-interpreter channel.
-    
+
     The channel may be used to pass data safely between interpreters.
     """
     cid = _interpreters.channel_create()
