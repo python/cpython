@@ -89,8 +89,9 @@ hard-to-guess URLs, and similar.
 
    Return a random URL-safe text string, containing *nbytes* random
    bytes.  The text is Base64 encoded, so on average each byte results
-   in approximately 1.3 characters.  If *nbytes* is ``None`` or not
-   supplied, a reasonable default is used.
+   in approximately 1.3 characters.  All Base64 padding (=) is removed.  
+   If *nbytes* is ``None`` or not supplied, a reasonable default is 
+   used.
 
    .. doctest::
 
