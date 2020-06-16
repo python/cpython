@@ -1,0 +1,1 @@
+Add ... when truncating group0 match in :func:`repr` of re.match objects.
