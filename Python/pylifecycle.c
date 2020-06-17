@@ -1939,7 +1939,6 @@ static PyStatus
 init_sys_streams(PyThreadState *tstate)
 {
     PyObject *iomod = NULL;
-    PyObject *m;
     PyObject *std = NULL;
     int fd;
     PyObject * encoding_attr;
@@ -1958,18 +1957,6 @@ init_sys_streams(PyThreadState *tstate)
         return _PyStatus_ERR("<stdin> is a directory, cannot continue");
     }
 #endif
-
-    /* Hack to avoid a nasty recursion issue when Python is invoked
-       in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
-    if ((m = PyImport_ImportModule("encodings.utf_8")) == NULL) {
-        goto error;
-    }
-    Py_DECREF(m);
-
-    if (!(m = PyImport_ImportModule("encodings.latin_1"))) {
-        goto error;
-    }
-    Py_DECREF(m);
 
     if (!(iomod = PyImport_ImportModule("io"))) {
         goto error;
