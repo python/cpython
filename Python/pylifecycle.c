@@ -1644,7 +1644,9 @@ Py_FinalizeEx(void)
 
     /* Get current thread state and interpreter pointer */
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+#if (defined(Py_REF_DEBUG) || defined(Py_TRACE_REFS) || defined(WITH_PYMALLOC))
     PyInterpreterState *interp = tstate->interp;
+#endif
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
