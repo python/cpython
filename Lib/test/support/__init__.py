@@ -315,7 +315,7 @@ def _requires_unix_version(sysname, min_version):
     return unittest.skipIf(
         skip,
         f"{sysname} version {min_version_txt} or higher required, not "
-        f"{version_txt}."
+        f"{version_txt}"
     )
 
 
