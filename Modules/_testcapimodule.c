@@ -1668,6 +1668,10 @@ exit:
 
 static volatile int x;
 
+/* Ignore use of deprecated APIs */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 /* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
    of an error.
 */
@@ -1844,6 +1848,7 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     Py_RETURN_NONE;
 }
+_Py_COMP_DIAG_POP
 
 static PyObject *
 unicode_aswidechar(PyObject *self, PyObject *args)
@@ -2064,6 +2069,10 @@ unicode_transformdecimaltoascii(PyObject *self, PyObject *args)
     return PyUnicode_TransformDecimalToASCII(unicode, length);
 }
 
+/* Ignore use of deprecated APIs */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 static PyObject *
 unicode_legacy_string(PyObject *self, PyObject *args)
 {
@@ -2086,6 +2095,7 @@ unicode_legacy_string(PyObject *self, PyObject *args)
 
     return u;
 }
+_Py_COMP_DIAG_POP
 
 static PyObject *
 getargs_w_star(PyObject *self, PyObject *args)
