@@ -2658,8 +2658,9 @@ check:
     }
     if (i) {
         PyErr_Clear();
-        return PyErr_Format(PyExc_ValueError, "%s() argument %d is too short",
-                            Py_TYPE(lz)->tp_name, i + 1);
+        return PyErr_Format(PyExc_ValueError,
+                            "%s() arg %d is shorter than the preceding arg%s",
+                            Py_TYPE(lz)->tp_name, i + 1, i == 1 ? "" : "s");
     }
     for (i = 1; i < tuplesize; i++) {
         it = PyTuple_GET_ITEM(lz->ittuple, i);
@@ -2667,8 +2668,9 @@ check:
         if (item) {
             Py_DECREF(item);
             PyErr_Clear();
-            return PyErr_Format(PyExc_ValueError, "%s() argument %d is too long",
-                                Py_TYPE(lz)->tp_name, i + 1);
+            return PyErr_Format(PyExc_ValueError,
+                                "%s() arg %d is longer than the preceding arg%s",
+                                Py_TYPE(lz)->tp_name, i + 1, i == 1 ? "" : "s");
         }
         if (PyErr_Occurred()) {
             return NULL;
