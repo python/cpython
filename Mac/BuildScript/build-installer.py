@@ -1066,13 +1066,40 @@ def buildPythonDocs():
     curDir = os.getcwd()
     os.chdir(buildDir)
     runCommand('make clean')
-    # Create virtual environment for docs builds with blurb and sphinx
-    runCommand('make venv')
-    runCommand('make html PYTHON=venv/bin/python')
+
+    # Search third-party source directory for a pre-built version of the docs.
+    #   Use the naming convention of the docs.python.org html downloads:
+    #       python-3.9.0b1-docs-html.tar.bz2
+    doctarfiles = [ f for f in os.listdir(DEPSRC)
+        if f.startswith('python-'+getFullVersion())
+        if f.endswith('-docs-html.tar.bz2') ]
+    if doctarfiles:
+        doctarfile = doctarfiles[0]
+        if not os.path.exists('build'):
+            os.mkdir('build')
+        # if build directory existed, it was emptied by make clean, above
+        os.chdir('build')
+        # Extract the first archive found for this version into build
+        runCommand('tar xjf %s'%shellQuote(os.path.join(DEPSRC, doctarfile)))
+        # see if tar extracted a directory ending in -docs-html
+        archivefiles = [ f for f in os.listdir('.')
+            if f.endswith('-docs-html')
+            if os.path.isdir(f) ]
+        if archivefiles:
+            archivefile = archivefiles[0]
+            # make it our 'Docs/build/html' directory
+            print(' -- using pre-built python documentation from %s'%archivefile)
+            os.rename(archivefile, 'html')
+        os.chdir(buildDir)
+
+    htmlDir = os.path.join('build', 'html')
+    if not os.path.exists(htmlDir):
+        # Create virtual environment for docs builds with blurb and sphinx
+        runCommand('make venv')
+        runCommand('venv/bin/python3 -m pip install -U Sphinx==2.3.1')
+        runCommand('make html PYTHON=venv/bin/python')
+    os.rename(htmlDir, docdir)
     os.chdir(curDir)
-    if not os.path.exists(docdir):
-        os.mkdir(docdir)
-    os.rename(os.path.join(buildDir, 'build', 'html'), docdir)
 
 
 def buildPython():
@@ -1217,7 +1244,8 @@ def buildPython():
             if ln.startswith('VERSION='):
                 VERSION=ln.split()[1]
             if ln.startswith('ABIFLAGS='):
-                ABIFLAGS=ln.split()[1]
+                ABIFLAGS=ln.split()
+                ABIFLAGS=ABIFLAGS[1] if len(ABIFLAGS) > 1 else ''
             if ln.startswith('LDVERSION='):
                 LDVERSION=ln.split()[1]
         fp.close()
@@ -1268,7 +1296,8 @@ def buildPython():
     import pprint
     if getVersionMajorMinor() >= (3, 6):
         # XXX this is extra-fragile
-        path = os.path.join(path_to_lib, '_sysconfigdata_m_darwin_darwin.py')
+        path = os.path.join(path_to_lib,
+            '_sysconfigdata_%s_darwin_darwin.py' % (ABIFLAGS,))
     else:
         path = os.path.join(path_to_lib, '_sysconfigdata.py')
     fp = open(path, 'r')
@@ -1305,12 +1334,6 @@ def buildPython():
                    os.path.join(usr_local_bin, fn))
 
     os.chdir(curdir)
-
-    if PYTHON_3:
-        # Remove the 'Current' link, that way we don't accidentally mess
-        # with an already installed version of python 2
-        os.unlink(os.path.join(rootDir, 'Library', 'Frameworks',
-                            'Python.framework', 'Versions', 'Current'))
 
 def patchFile(inPath, outPath):
     data = fileContents(inPath)
