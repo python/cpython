@@ -2069,6 +2069,10 @@ unicode_transformdecimaltoascii(PyObject *self, PyObject *args)
     return PyUnicode_TransformDecimalToASCII(unicode, length);
 }
 
+/* Ignore use of deprecated APIs */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 static PyObject *
 unicode_legacy_string(PyObject *self, PyObject *args)
 {
@@ -2091,6 +2095,7 @@ unicode_legacy_string(PyObject *self, PyObject *args)
 
     return u;
 }
+_Py_COMP_DIAG_POP
 
 static PyObject *
 getargs_w_star(PyObject *self, PyObject *args)

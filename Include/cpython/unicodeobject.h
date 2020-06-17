@@ -437,15 +437,13 @@ enum PyUnicode_Kind {
         (0xffffU) :                                                     \
         (0x10ffffU)))))
 
-/* Py_DEPRECATED(3.3) */
-#define PyUnicode_WSTR_LENGTH(op) _PyUnicode_WSTR_LENGTH_impl((PyObject*)op)
-
 Py_DEPRECATED(3.3)
 static inline Py_ssize_t _PyUnicode_WSTR_LENGTH_impl(PyObject *op) {
     return PyUnicode_IS_COMPACT_ASCII(op) ?
             ((PyASCIIObject*)op)->length :
             ((PyCompactUnicodeObject*)op)->wstr_length;
 }
+#define PyUnicode_WSTR_LENGTH(op) _PyUnicode_WSTR_LENGTH_impl((PyObject*)op)
 
 /* === Public API ========================================================= */
 
@@ -1100,7 +1098,7 @@ PyAPI_FUNC(int) _PyUnicode_IsLinebreak(
     Py_UCS4 ch       /* Unicode character */
     );
 
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UCS4) _PyUnicode_ToTitlecase(
+Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UCS4) _PyUnicode_ToTitlecase(
     Py_UCS4 ch       /* Unicode character */
     );
 
