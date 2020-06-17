@@ -103,7 +103,7 @@ class HashLibTestCase(unittest.TestCase):
         try:
             return importlib.import_module(module_name)
         except ModuleNotFoundError as error:
-            if self._warn_on_extension_import:
+            if self._warn_on_extension_import and module_name in builtin_hashes:
                 warnings.warn('Did a C extension fail to compile? %s' % error)
         return None
 
