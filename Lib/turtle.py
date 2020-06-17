@@ -1965,7 +1965,7 @@ class TNavigator(object):
 
         Examples (for a Turtle instance named turtle):
         >>> turtle.circle(50)           # full circle of radius 50 drawn counter-clockwise
-        >>> turtle.circle(-50)          # full circle of radius 75 drawn clockwise
+        >>> turtle.circle(-75)          # full circle of radius 75 drawn clockwise
         >>> turtle.circle(-50, 60)      # 60 degree arc with radius 50 drawn clockwise
         >>> turtle.circle(80, steps=6)  # regular hexagon
 
