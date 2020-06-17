@@ -449,10 +449,25 @@ class HTTPResponse(io.BufferedIOBase):
             return b""
 
         if amt is not None:
-            # Amount is given, implement using readinto
-            b = bytearray(amt)
-            n = self.readinto(b)
-            return memoryview(b)[:n].tobytes()
+            if self.chunked:
+                # XXX create a _read_chunked for better performance
+                b = bytearray(amt)
+                n = self.readinto(b)
+                return memoryview(b)[:n].tobytes()
+            else:
+                if self.length is not None and amt > self.length:
+                    # clip the read to the "end of response"
+                    amt = self.length
+                s = self.fp.read(amt)
+                if not s and amt:
+                    # Ideally, we would raise IncompleteRead if the content-length
+                    # wasn't satisfied, but it might break compatibility.
+                    self._close_conn()
+                elif self.length is not None:
+                    self.length -= len(s)
+                    if not self.length:
+                        self._close_conn()
+                return s
         else:
             # Amount is not given (unbounded read) so we must check self.length
             # and self.chunked
