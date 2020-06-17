@@ -120,6 +120,13 @@ extern "C" {
          _PyUnicode_UTF8_LENGTH(op))
 #define _PyUnicode_WSTR(op)                             \
     (((PyASCIIObject*)(op))->wstr)
+
+/* Don't use deprecated macro of unicodeobject.h */
+#undef PyUnicode_WSTR_LENGTH
+#define PyUnicode_WSTR_LENGTH(op) \
+    (PyUnicode_IS_COMPACT_ASCII(op) ?                  \
+     ((PyASCIIObject*)op)->length :                    \
+     ((PyCompactUnicodeObject*)op)->wstr_length)
 #define _PyUnicode_WSTR_LENGTH(op)                      \
     (((PyCompactUnicodeObject*)(op))->wstr_length)
 #define _PyUnicode_LENGTH(op)                           \
@@ -970,11 +977,14 @@ ensure_unicode(PyObject *obj)
 #include "stringlib/find_max_char.h"
 #include "stringlib/undef.h"
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
 #include "stringlib/unicodedefs.h"
 #include "stringlib/fastsearch.h"
 #include "stringlib/count.h"
 #include "stringlib/find.h"
 #include "stringlib/undef.h"
+_Py_COMP_DIAG_POP
 
 /* --- Unicode Object ----------------------------------------------------- */
 
@@ -4097,6 +4107,11 @@ PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
     return w;
 }
 
+/* Deprecated APIs */
+
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 Py_UNICODE *
 PyUnicode_AsUnicode(PyObject *unicode)
 {
@@ -4134,6 +4149,8 @@ PyUnicode_GetSize(PyObject *unicode)
   onError:
     return -1;
 }
+
+_Py_COMP_DIAG_POP
 
 Py_ssize_t
 PyUnicode_GetLength(PyObject *unicode)
@@ -12364,6 +12381,8 @@ PyUnicode_IsIdentifier(PyObject *self)
         return len && i == len;
     }
     else {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         Py_ssize_t i = 0, len = PyUnicode_GET_SIZE(self);
         if (len == 0) {
             /* an empty string is not a valid identifier */
@@ -12401,6 +12420,7 @@ PyUnicode_IsIdentifier(PyObject *self)
             }
         }
         return 1;
+_Py_COMP_DIAG_POP
     }
 }
 
@@ -15955,7 +15975,10 @@ PyUnicode_AsUnicodeCopy(PyObject *unicode)
         PyErr_BadArgument();
         return NULL;
     }
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     u = PyUnicode_AsUnicodeAndSize(unicode, &len);
+_Py_COMP_DIAG_POP
     if (u == NULL)
         return NULL;
     /* Ensure we won't overflow the size. */
