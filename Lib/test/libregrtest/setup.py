@@ -1,19 +1,19 @@
 import atexit
+import faulthandler
 import os
 import signal
 import sys
 import unittest
 from test import support
+try:
+    import gc
+except ImportError:
+    gc = None
+
 from test.libregrtest.utils import setup_unraisable_hook
 
 
 def setup_tests(ns):
-    import faulthandler
-    try:
-        import gc
-    except ImportError:
-        gc = None
-
     try:
         stderr_fd = sys.__stderr__.fileno()
     except (ValueError, AttributeError):
