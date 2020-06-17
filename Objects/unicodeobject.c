@@ -121,7 +121,7 @@ extern "C" {
 #define _PyUnicode_WSTR(op)                             \
     (((PyASCIIObject*)(op))->wstr)
 
-/* Don't use deprecated macro in unicodeobject.h */
+/* Don't use deprecated macro of unicodeobject.h */
 #undef PyUnicode_WSTR_LENGTH
 #define PyUnicode_WSTR_LENGTH(op) \
     (PyUnicode_IS_COMPACT_ASCII(op) ?                  \
