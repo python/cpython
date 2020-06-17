@@ -1027,6 +1027,9 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'u': /* raw unicode buffer (Py_UNICODE *) */
     case 'Z': /* raw unicode buffer or None */
     {
+        // TODO: Raise DeprecationWarning
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
 
         if (*format == '#') {
@@ -1066,6 +1069,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                                   arg, msgbuf, bufsize);
         }
         break;
+_Py_COMP_DIAG_POP
     }
 
     case 'e': {/* encoded string */
