@@ -1,1 +1,1 @@
-Pin Sphinx version to 1.8.2 in ``Doc/Makefile``.
+Pin Sphinx version to 2.3.1 in ``Doc/Makefile``.
