@@ -919,6 +919,14 @@ The :mod:`test.support` module defines the following functions:
 
    .. versionadded:: 3.6
 
+.. function:: skip_if_broken_multiprocessing_synchronize()
+
+   Skip tests if the :mod:`multiprocessing.synchronize` module is missing, if
+   there is no available semaphore implementation, or if creating a lock raises
+   an :exc:`OSError`.
+
+   .. versionadded:: 3.10
+
 
 The :mod:`test.support` module defines the following classes:
 
