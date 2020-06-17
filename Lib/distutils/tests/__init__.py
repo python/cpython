@@ -15,7 +15,6 @@ by import rather than matching pre-defined names.
 import os
 import sys
 import unittest
-import warnings
 from test.support import run_unittest
 from test.support.warnings_helper import save_restore_warnings_filters
 
