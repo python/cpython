@@ -3368,3 +3368,12 @@ class catch_threading_exception:
         del self.exc_value
         del self.exc_traceback
         del self.thread
+
+
+@contextlib.contextmanager
+def save_restore_warnings_filters():
+    old_filters = warnings.filters[:]
+    try:
+        yield
+    finally:
+        warnings.filters[:] = old_filters
