@@ -1,0 +1,2 @@
+Update the macOS installer build scripts to build with Python 3.x and to
+build correctly on newer macOS systems with SIP.
