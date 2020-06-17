@@ -53,7 +53,8 @@ Py_UNICODE_COPY(Py_UNICODE *target, const Py_UNICODE *source, Py_ssize_t length)
 
 Py_DEPRECATED(3.3) static inline void
 Py_UNICODE_FILL(Py_UNICODE *target, Py_UNICODE value, Py_ssize_t length) {
-    for (Py_ssize_t i = 0; i < length; i++) {
+    Py_ssize_t i;
+    for (i = 0; i < length; i++) {
         target[i] = value;
     }
 }
