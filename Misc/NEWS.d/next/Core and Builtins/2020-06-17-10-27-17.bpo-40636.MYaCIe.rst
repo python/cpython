@@ -1,0 +1,4 @@
+:func:`zip` now supports :pep:`618`'s ``strict`` parameter, which raises a
+:exc:`ValueError` if the arguments are exhausted at differing lengths.
+
+Patch by Brandt Bucher.
