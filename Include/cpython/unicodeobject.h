@@ -438,12 +438,12 @@ enum PyUnicode_Kind {
         (0x10ffffU)))))
 
 Py_DEPRECATED(3.3)
-static inline Py_ssize_t _PyUnicode_WSTR_LENGTH_impl(PyObject *op) {
+static inline Py_ssize_t _PyUnicode_get_wstr_length(PyObject *op) {
     return PyUnicode_IS_COMPACT_ASCII(op) ?
             ((PyASCIIObject*)op)->length :
             ((PyCompactUnicodeObject*)op)->wstr_length;
 }
-#define PyUnicode_WSTR_LENGTH(op) _PyUnicode_WSTR_LENGTH_impl((PyObject*)op)
+#define PyUnicode_WSTR_LENGTH(op) _PyUnicode_get_wstr_length((PyObject*)op)
 
 /* === Public API ========================================================= */
 
