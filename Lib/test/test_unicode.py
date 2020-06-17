@@ -725,7 +725,9 @@ class UnicodeTest(string_tests.CommonTest,
         import _testcapi
         u = '𝖀𝖓𝖎𝖈𝖔𝖉𝖊'
         self.assertTrue(u.isidentifier())
-        self.assertTrue(_testcapi.unicode_legacy_string(u).isidentifier())
+        with support.check_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            self.assertTrue(_testcapi.unicode_legacy_string(u).isidentifier())
 
     def test_isprintable(self):
         self.assertTrue("".isprintable())
