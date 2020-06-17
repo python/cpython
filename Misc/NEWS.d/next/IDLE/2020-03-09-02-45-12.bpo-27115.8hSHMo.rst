@@ -1,2 +1,0 @@
-For 'Go to Line', use a Query box subclass with IDLE standard behavior
-and improved error checking.

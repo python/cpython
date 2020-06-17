@@ -1,1 +1,0 @@
-Avoid opening Finder window if running installer from the command line.
