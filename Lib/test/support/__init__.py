@@ -3159,3 +3159,12 @@ def use_old_parser():
 
 def skip_if_new_parser(msg):
     return unittest.skipIf(not use_old_parser(), msg)
+
+
+@contextlib.contextmanager
+def save_restore_warnings_filters():
+    old_filters = warnings.filters[:]
+    try:
+        yield
+    finally:
+        warnings.filters[:] = old_filters
