@@ -1172,6 +1172,7 @@ Removed
 * Remove ``_PyUnicode_ClearStaticStrings()`` function.
   (Contributed by Victor Stinner in :issue:`39465`.)
 
-* Remove ``Py_UNICODE_MATCH``.  It has been deprecated by :pep:`393`, and
-  broken since Python 3.3.
+* Remove ``Py_UNICODE_MATCH``. It has been deprecated by :pep:`393`, and
+  broken since Python 3.3. The :c:func:`PyUnicode_Tailmatch` function can be
+  used instead.
   (Contributed by Inada Naoki in :issue:`36346`.)
