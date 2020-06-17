@@ -103,6 +103,11 @@ Improved Modules
 Optimizations
 =============
 
+* The :mod:`runpy` module now imports less modules.
+  The ``python3 -m module-name`` command startup time is 1.3x faster in
+  average.
+  (Contributed by Victor Stinner in :issue:`41006`.)
+
 
 Deprecated
 ==========
