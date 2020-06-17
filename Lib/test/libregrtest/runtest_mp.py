@@ -1,4 +1,5 @@
 import collections
+import faulthandler
 import json
 import os
 import queue
@@ -380,7 +381,6 @@ class MultiprocessTestRunner:
             worker.wait_stopped(start_time)
 
     def _get_result(self):
-        import faulthandler
         if not any(worker.is_alive() for worker in self.workers):
             # all worker threads are done: consume pending results
             try:
@@ -443,7 +443,6 @@ class MultiprocessTestRunner:
         return False
 
     def run_tests(self):
-        import faulthandler
         self.start_workers()
 
         self.test_index = 0
