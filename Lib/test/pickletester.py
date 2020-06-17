@@ -21,19 +21,25 @@ try:
 except ImportError:
     _testbuffer = None
 
-try:
-    import numpy as np
-except ImportError:
-    np = None
-
 from test import support
 from test.support import (
     TestFailed, TESTFN, run_with_locale, no_tracing,
     _2G, _4G, bigmemtest, forget,
     )
 from test.support import threading_helper
+from test.support.warnings_helper import save_restore_warnings_filters
 
 from pickle import bytes_types
+
+
+# bpo-41003: Save/restore warnings filters to leave them unchanged.
+# Ignore filters installed by numpy.
+try:
+    with save_restore_warnings_filters():
+        import numpy as np
+except ImportError:
+    np = None
+
 
 requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
                                    "test is only meaningful on 32-bit builds")
