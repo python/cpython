@@ -759,21 +759,9 @@ class DestroyTests(TestBase):
 
 class RunStringTests(TestBase):
 
-    SCRIPT = dedent("""
-        with open('{}', 'w') as out:
-            out.write('{}')
-        """)
-    FILENAME = 'spam'
-
     def setUp(self):
         super().setUp()
         self.id = interpreters.create()
-        self._fs = None
-
-    def tearDown(self):
-        if self._fs is not None:
-            self._fs.close()
-        super().tearDown()
 
     def test_success(self):
         script, file = _captured_script('print("it worked!", end="")')
