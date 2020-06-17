@@ -360,7 +360,7 @@ class _OutputRedirectingPdb(pdb.Pdb):
         self.__out = out
         self.__debugger_used = False
         # do not play signal games in the pdb
-        pdb.Pdb.__init__(self, stdout=out, nosigint=True)
+        super().__init__(stdout=out, nosigint=True)
         # still use input() to get user input
         self.use_rawinput = 1
 
@@ -368,13 +368,13 @@ class _OutputRedirectingPdb(pdb.Pdb):
         self.__debugger_used = True
         if frame is None:
             frame = sys._getframe().f_back
-        pdb.Pdb.set_trace(self, frame)
+        super().set_trace(frame)
 
     def set_continue(self):
         # Calling set_continue unconditionally would break unit test
         # coverage reporting, as Bdb.set_continue calls sys.settrace(None).
         if self.__debugger_used:
-            pdb.Pdb.set_continue(self)
+            super().set_continue()
 
     def trace_dispatch(self, *args):
         # Redirect stdout to the given stream.
@@ -382,7 +382,7 @@ class _OutputRedirectingPdb(pdb.Pdb):
         sys.stdout = self.__out
         # Call Pdb's trace dispatch method.
         try:
-            return pdb.Pdb.trace_dispatch(self, *args)
+            return super().trace_dispatch(*args)
         finally:
             sys.stdout = save_stdout
 
