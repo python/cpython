@@ -724,7 +724,7 @@ class BZ2DecompressorTest(BaseTest):
             decompressed = None
 
     def testPickle(self):
-        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.assertRaises(TypeError):
                 pickle.dumps(BZ2Decompressor(), proto)
 
