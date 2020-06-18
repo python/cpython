@@ -251,9 +251,9 @@ class ExceptionTests(unittest.TestCase):
         check('def f():\n  x, y: int', 2, 3)
         check('[*x for x in xs]', 1, 2)
         check('foo(x for x in range(10), 100)', 1, 5)
+        check('for 1 in []: pass', 1, 5)
         check('(yield i) = 2', 1, 2)
         check('def f(*):\n  pass', 1, 8)
-        check('for 1 in []: pass', 1, 7)
 
     @cpython_only
     def testSettingException(self):

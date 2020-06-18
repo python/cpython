@@ -380,7 +380,6 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
     return NULL;
 }
 
-
 void *
 _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t lineno, Py_ssize_t col_offset,
@@ -2086,7 +2085,7 @@ _PyPegen_make_module(Parser *p, asdl_seq *a) {
 // Error reporting helpers
 
 expr_ty
-_PyPegen_get_invalid_target(expr_ty e)
+_PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type)
 {
     if (e == NULL) {
         return NULL;
@@ -2096,7 +2095,7 @@ _PyPegen_get_invalid_target(expr_ty e)
         Py_ssize_t len = asdl_seq_LEN(CONTAINER->v.TYPE.elts);\
         for (Py_ssize_t i = 0; i < len; i++) {\
             expr_ty other = asdl_seq_GET(CONTAINER->v.TYPE.elts, i);\
-            expr_ty child = _PyPegen_get_invalid_target(other);\
+            expr_ty child = _PyPegen_get_invalid_target(other, targets_type);\
             if (child != NULL) {\
                 return child;\
             }\
@@ -2110,16 +2109,29 @@ _PyPegen_get_invalid_target(expr_ty e)
     // we don't need to visit it recursively.
 
     switch (e->kind) {
-        case List_kind: {
+        case List_kind:
             VISIT_CONTAINER(e, List);
             return NULL;
-        }
-        case Tuple_kind: {
+        case Tuple_kind:
             VISIT_CONTAINER(e, Tuple);
             return NULL;
-        }
         case Starred_kind:
-            return _PyPegen_get_invalid_target(e->v.Starred.value);
+            if (targets_type == DEL_TARGETS) {
+                return e;
+            }
+            return _PyPegen_get_invalid_target(e->v.Starred.value, targets_type);
+        case Compare_kind:
+            // This is needed, because the `a in b` in `for a in b` gets parsed
+            // as a comparison, and so we need to search the left side of the comparison
+            // for invalid targets.
+            if (targets_type == FOR_TARGETS) {
+                cmpop_ty cmpop = (cmpop_ty) asdl_seq_GET(e->v.Compare.ops, 0);
+                if (cmpop == In) {
+                    return _PyPegen_get_invalid_target(e->v.Compare.left, targets_type);
+                }
+                return NULL;
+            }
+            return e;
         case Name_kind:
         case Subscript_kind:
         case Attribute_kind:
