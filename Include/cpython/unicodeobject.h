@@ -50,13 +50,18 @@ extern "C" {
     Py_UNICODE_ISDIGIT(ch) || \
     Py_UNICODE_ISNUMERIC(ch))
 
-#define Py_UNICODE_COPY(target, source, length) \
-    memcpy((target), (source), (length)*sizeof(Py_UNICODE))
+Py_DEPRECATED(3.3) static inline void
+Py_UNICODE_COPY(Py_UNICODE *target, const Py_UNICODE *source, Py_ssize_t length) {
+    memcpy(target, source, length * sizeof(Py_UNICODE));
+}
 
-#define Py_UNICODE_FILL(target, value, length) \
-    do {Py_ssize_t i_; Py_UNICODE *t_ = (target); Py_UNICODE v_ = (value);\
-        for (i_ = 0; i_ < (length); i_++) t_[i_] = v_;\
-    } while (0)
+Py_DEPRECATED(3.3) static inline void
+Py_UNICODE_FILL(Py_UNICODE *target, Py_UNICODE value, Py_ssize_t length) {
+    Py_ssize_t i;
+    for (i = 0; i < length; i++) {
+        target[i] = value;
+    }
+}
 
 /* macros to work with surrogates */
 #define Py_UNICODE_IS_SURROGATE(ch) (0xD800 <= (ch) && (ch) <= 0xDFFF)
@@ -70,14 +75,6 @@ extern "C" {
 #define Py_UNICODE_HIGH_SURROGATE(ch) (0xD800 - (0x10000 >> 10) + ((ch) >> 10))
 /* low surrogate = bottom 10 bits added to DC00 */
 #define Py_UNICODE_LOW_SURROGATE(ch) (0xDC00 + ((ch) & 0x3FF))
-
-/* Check if substring matches at given offset.  The offset must be
-   valid, and the substring must not be empty. */
-
-#define Py_UNICODE_MATCH(string, offset, substring) \
-    ((*((string)->wstr + (offset)) == *((substring)->wstr)) && \
-     ((*((string)->wstr + (offset) + (substring)->wstr_length-1) == *((substring)->wstr + (substring)->wstr_length-1))) && \
-     !memcmp((string)->wstr + (offset), (substring)->wstr, (substring)->wstr_length*sizeof(Py_UNICODE)))
 
 /* --- Unicode Type ------------------------------------------------------- */
 
@@ -251,10 +248,6 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     int check_content);
 
 /* Fast access macros */
-#define PyUnicode_WSTR_LENGTH(op) \
-    (PyUnicode_IS_COMPACT_ASCII(op) ?                  \
-     ((PyASCIIObject*)op)->length :                    \
-     ((PyCompactUnicodeObject*)op)->wstr_length)
 
 /* Returns the deprecated Py_UNICODE representation's size in code units
    (this includes surrogate pairs as 2 units).
@@ -449,6 +442,14 @@ enum PyUnicode_Kind {
         (0xffffU) :                                                     \
         (0x10ffffU)))))
 
+Py_DEPRECATED(3.3)
+static inline Py_ssize_t _PyUnicode_get_wstr_length(PyObject *op) {
+    return PyUnicode_IS_COMPACT_ASCII(op) ?
+            ((PyASCIIObject*)op)->length :
+            ((PyCompactUnicodeObject*)op)->wstr_length;
+}
+#define PyUnicode_WSTR_LENGTH(op) _PyUnicode_get_wstr_length((PyObject*)op)
+
 /* === Public API ========================================================= */
 
 /* --- Plain Py_UNICODE --------------------------------------------------- */
@@ -547,7 +548,7 @@ PyAPI_FUNC(void) _PyUnicode_FastFill(
    only allowed if u was set to NULL.
 
    The buffer is copied into the new object. */
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(PyObject*) PyUnicode_FromUnicode(
+Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_FromUnicode(
     const Py_UNICODE *u,        /* Unicode buffer */
     Py_ssize_t size             /* size of buffer */
     );
@@ -576,13 +577,13 @@ PyAPI_FUNC(Py_UCS4) _PyUnicode_FindMaxChar (
    Py_UNICODE buffer.
    If the wchar_t/Py_UNICODE representation is not yet available, this
    function will calculate it. */
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicode(
+Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicode(
     PyObject *unicode           /* Unicode object */
     );
 
 /* Similar to PyUnicode_AsUnicode(), but raises a ValueError if the string
    contains null characters. */
-PyAPI_FUNC(const Py_UNICODE *) _PyUnicode_AsUnicode(
+Py_DEPRECATED(3.3) PyAPI_FUNC(const Py_UNICODE *) _PyUnicode_AsUnicode(
     PyObject *unicode           /* Unicode object */
     );
 
@@ -591,7 +592,7 @@ PyAPI_FUNC(const Py_UNICODE *) _PyUnicode_AsUnicode(
    If the wchar_t/Py_UNICODE representation is not yet available, this
    function will calculate it. */
 
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicodeAndSize(
+Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicodeAndSize(
     PyObject *unicode,          /* Unicode object */
     Py_ssize_t *size            /* location where to save the length */
     );

@@ -1,0 +1,4 @@
+Mark ``Py_UNICODE_COPY``, ``Py_UNICODE_FILL``, ``PyUnicode_WSTR_LENGTH``,
+``PyUnicode_FromUnicode``, ``PyUnicode_AsUnicode``, ``_PyUnicode_AsUnicode``,
+and ``PyUnicode_AsUnicodeAndSize`` as deprecated in C. Remove ``Py_UNICODE_MATCH``
+which was deprecated and broken since Python 3.3.
