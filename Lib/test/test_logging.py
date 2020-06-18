@@ -3710,6 +3710,9 @@ class FormatterTest(unittest.TestCase):
             'args': (2, 'placeholders'),
         }
         self.variants = {
+            'custom': {
+                'custom': 1234
+            }
         }
 
     def get_record(self, name=None):
@@ -3925,6 +3928,26 @@ class FormatterTest(unittest.TestCase):
             logging.Formatter, 'foo', style='$'
         )
         self.assertRaises(ValueError, logging.Formatter, '${asctime', style='$')
+
+    def test_defaults_parameter(self):
+        fmts = ['%(custom)s %(message)s', '{custom} {message}', '$custom $message']
+        styles = ['%', '{', '$']
+        for fmt, style in zip(fmts, styles):
+            f = logging.Formatter(fmt, style=style, defaults={'custom': 'Default'})
+            r = self.get_record()
+            self.assertEqual(f.format(r), 'Default Message with 2 placeholders')
+            r = self.get_record("custom")
+            self.assertEqual(f.format(r), '1234 Message with 2 placeholders')
+
+            # Without default
+            f = logging.Formatter(fmt, style=style)
+            r = self.get_record()
+            self.assertRaises(ValueError, f.format, r)
+
+            # Non-existing default is ignored
+            f = logging.Formatter(fmt, style=style, defaults={'Non-existing': 'Default'})
+            r = self.get_record("custom")
+            self.assertEqual(f.format(r), '1234 Message with 2 placeholders')
 
     def test_invalid_style(self):
         self.assertRaises(ValueError, logging.Formatter, None, None, 'x')
