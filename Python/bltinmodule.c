@@ -2662,8 +2662,8 @@ check:
         PyErr_Clear();
         const char* plural = i == 1 ? " " : "s 1-";
         return PyErr_Format(PyExc_ValueError,
-                            "%s() argument %d is shorter than argument%s%d",
-                            Py_TYPE(lz)->tp_name, i + 1, plural, i);
+                            "zip() argument %d is shorter than argument%s%d",
+                            i + 1, plural, i);
     }
     for (i = 1; i < tuplesize; i++) {
         it = PyTuple_GET_ITEM(lz->ittuple, i);
@@ -2673,8 +2673,8 @@ check:
             PyErr_Clear();
             const char* plural = i == 1 ? " " : "s 1-";
             return PyErr_Format(PyExc_ValueError,
-                                "%s() argument %d is longer than argument%s%d",
-                                Py_TYPE(lz)->tp_name, i + 1, plural, i);
+                                "zip() argument %d is longer than argument%s%d",
+                                i + 1, plural, i);
         }
         if (PyErr_Occurred()) {
             return NULL;
