@@ -7625,7 +7625,8 @@ exit:
 PyDoc_STRVAR(os_eventfd__doc__,
 "eventfd($module, /, initval, flags=EFD_CLOEXEC)\n"
 "--\n"
-"\n");
+"\n"
+"Creates and returns an event notification file descriptor.");
 
 #define OS_EVENTFD_METHODDEF    \
     {"eventfd", (PyCFunction)(void(*)(void))os_eventfd, METH_FASTCALL|METH_KEYWORDS, os_eventfd__doc__},
@@ -7660,6 +7661,86 @@ os_eventfd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     }
 skip_optional_pos:
     return_value = os_eventfd_impl(module, initval, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_EVENTFD) */
+
+#if defined(HAVE_EVENTFD)
+
+PyDoc_STRVAR(os_eventfd_read__doc__,
+"eventfd_read($module, /, fd)\n"
+"--\n"
+"\n"
+"Read eventfd value");
+
+#define OS_EVENTFD_READ_METHODDEF    \
+    {"eventfd_read", (PyCFunction)(void(*)(void))os_eventfd_read, METH_FASTCALL|METH_KEYWORDS, os_eventfd_read__doc__},
+
+static PyObject *
+os_eventfd_read_impl(PyObject *module, int fd);
+
+static PyObject *
+os_eventfd_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"fd", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "eventfd_read", 0};
+    PyObject *argsbuf[1];
+    int fd;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    return_value = os_eventfd_read_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_EVENTFD) */
+
+#if defined(HAVE_EVENTFD)
+
+PyDoc_STRVAR(os_eventfd_write__doc__,
+"eventfd_write($module, /, fd, value)\n"
+"--\n"
+"\n"
+"Write eventfd value");
+
+#define OS_EVENTFD_WRITE_METHODDEF    \
+    {"eventfd_write", (PyCFunction)(void(*)(void))os_eventfd_write, METH_FASTCALL|METH_KEYWORDS, os_eventfd_write__doc__},
+
+static PyObject *
+os_eventfd_write_impl(PyObject *module, int fd, unsigned long long value);
+
+static PyObject *
+os_eventfd_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"fd", "value", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "eventfd_write", 0};
+    PyObject *argsbuf[2];
+    int fd;
+    unsigned long long value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (!_PyLong_UnsignedLongLong_Converter(args[1], &value)) {
+        goto exit;
+    }
+    return_value = os_eventfd_write_impl(module, fd, value);
 
 exit:
     return return_value;
@@ -8935,6 +9016,14 @@ exit:
     #define OS_EVENTFD_METHODDEF
 #endif /* !defined(OS_EVENTFD_METHODDEF) */
 
+#ifndef OS_EVENTFD_READ_METHODDEF
+    #define OS_EVENTFD_READ_METHODDEF
+#endif /* !defined(OS_EVENTFD_READ_METHODDEF) */
+
+#ifndef OS_EVENTFD_WRITE_METHODDEF
+    #define OS_EVENTFD_WRITE_METHODDEF
+#endif /* !defined(OS_EVENTFD_WRITE_METHODDEF) */
+
 #ifndef OS_GET_TERMINAL_SIZE_METHODDEF
     #define OS_GET_TERMINAL_SIZE_METHODDEF
 #endif /* !defined(OS_GET_TERMINAL_SIZE_METHODDEF) */
@@ -8970,4 +9059,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=d807dbad9890d0ef input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ffd140427fab051 input=a9049054013a1b77]*/

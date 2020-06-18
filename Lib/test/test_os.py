@@ -3530,45 +3530,64 @@ class MemfdCreateTests(unittest.TestCase):
 
 
 @unittest.skipUnless(hasattr(os, 'eventfd'), 'requires os.eventfd')
-@support.requires_linux_version(2, 30)
+@support.requires_linux_version(2, 6, 30)
 class EventfdTests(unittest.TestCase):
-    fmt = "@Q"  # native uint64_t
-    size = 8  # read/write 8 bytes
-
-    def pack(self, value):
-        return struct.pack(self.fmt, value)
-
     def test_eventfd_initval(self):
+        def pack(value):
+            """Pack as native uint64_t
+            """
+            return struct.pack("@Q", value)
+        size = 8  # read/write 8 bytes
         initval = 42
         fd = os.eventfd(initval)
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
         self.assertFalse(os.get_inheritable(fd))
 
-        res = os.read(fd, self.size)
-        self.assertEqual(res, self.pack(initval))
+        # test with raw read/write
+        res = os.read(fd, size)
+        self.assertEqual(res, pack(initval))
 
-        os.write(fd, struct.pack(self.fmt, 23))
-        res = os.read(fd, self.size)
-        self.assertEqual(res, self.pack(23))
+        os.write(fd, pack(23))
+        res = os.read(fd, size)
+        self.assertEqual(res, pack(23))
+
+        os.write(fd, pack(40))
+        os.write(fd, pack(2))
+        res = os.read(fd, size)
+        self.assertEqual(res, pack(42))
+
+        # test with eventfd_read/eventfd_write
+        os.eventfd_write(fd, 20)
+        os.eventfd_write(fd, 3)
+        res = os.eventfd_read(fd)
+        self.assertEqual(res, 23)
 
     def test_eventfd_semaphore(self):
         initval = 2
-        one = self.pack(1)
-
         flags = os.EFD_CLOEXEC | os.EFD_SEMAPHORE | os.EFD_NONBLOCK
         fd = os.eventfd(initval, flags)
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
 
         # semaphore starts has initval 2, two reads return '1'
-        res = os.read(fd, self.size)
-        self.assertEqual(res, one)
-        res = os.read(fd, self.size)
-        self.assertEqual(res, one)
+        res = os.eventfd_read(fd)
+        self.assertEqual(res, 1)
+        res = os.eventfd_read(fd)
+        self.assertEqual(res, 1)
         # third read would block
         with self.assertRaises(BlockingIOError):
-            os.read(fd, self.size)
+            os.eventfd_read(fd)
+        with self.assertRaises(BlockingIOError):
+            os.read(fd, 8)
+
+        # increase semaphore counter, read one
+        os.eventfd_write(fd, 1)
+        res = os.eventfd_read(fd)
+        self.assertEqual(res, 1)
+        # next read would block, too
+        with self.assertRaises(BlockingIOError):
+            os.eventfd_read(fd)
 
 
 class OSErrorTests(unittest.TestCase):

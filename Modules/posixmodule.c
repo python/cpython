@@ -12871,13 +12871,18 @@ os.eventfd
     initval: unsigned_int
     flags: int(c_default="EFD_CLOEXEC") = EFD_CLOEXEC
 
+Creates and returns an event notification file descriptor.
 [clinic start generated code]*/
 
 static PyObject *
 os_eventfd_impl(PyObject *module, unsigned int initval, int flags)
-/*[clinic end generated code: output=ce9c9bbd1446f2de input=93c05fbffd6a8d33]*/
+/*[clinic end generated code: output=ce9c9bbd1446f2de input=66203e3c50c4028b]*/
 {
     int fd;
+    if (initval > (PY_ULLONG_MAX - 1)) {
+        PyErr_SetString(PyExc_OverflowError, "initval too large");
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
     fd = eventfd(initval, flags);
     Py_END_ALLOW_THREADS
@@ -12886,7 +12891,57 @@ os_eventfd_impl(PyObject *module, unsigned int initval, int flags)
     }
     return PyLong_FromLong(fd);
 }
-#endif
+
+/*[clinic input]
+os.eventfd_read
+
+    fd: fildes
+
+Read eventfd value
+[clinic start generated code]*/
+
+static PyObject *
+os_eventfd_read_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=8f2c7b59a3521fd1 input=110f8b57fa596afe]*/
+{
+    eventfd_t value;
+    int result;
+    Py_BEGIN_ALLOW_THREADS
+    result = eventfd_read(fd, &value);
+    Py_END_ALLOW_THREADS
+    if (result == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return PyLong_FromUnsignedLongLong(value);
+}
+
+/*[clinic input]
+os.eventfd_write
+
+    fd: fildes
+    value: unsigned_long_long
+
+Write eventfd value
+[clinic start generated code]*/
+
+static PyObject *
+os_eventfd_write_impl(PyObject *module, int fd, unsigned long long value)
+/*[clinic end generated code: output=bebd9040bbf987f5 input=82da3dd0d6e62f28]*/
+{
+    int result;
+    if (value > (PY_ULLONG_MAX - 1)) {
+        PyErr_SetString(PyExc_OverflowError, "value too large");
+        return NULL;
+    }
+    Py_BEGIN_ALLOW_THREADS
+    result = eventfd_write(fd, value);
+    Py_END_ALLOW_THREADS
+    if (result == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    Py_RETURN_NONE;
+}
+#endif  /* HAVE_EVENTFD */
 
 /* Terminal size querying */
 
@@ -14649,6 +14704,8 @@ static PyMethodDef posix_methods[] = {
     OS_GETRANDOM_METHODDEF
     OS_MEMFD_CREATE_METHODDEF
     OS_EVENTFD_METHODDEF
+    OS_EVENTFD_READ_METHODDEF
+    OS_EVENTFD_WRITE_METHODDEF
     OS__ADD_DLL_DIRECTORY_METHODDEF
     OS__REMOVE_DLL_DIRECTORY_METHODDEF
     OS_WAITSTATUS_TO_EXITCODE_METHODDEF
