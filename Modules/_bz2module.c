@@ -273,13 +273,13 @@ _bz2_BZ2Compressor_flush_impl(BZ2Compressor *self)
 }
 
 /*[clinic input]
-_bz2.BZ2Compressor.__reduce__ as _bz2_compressor_reduce
+_bz2.BZ2Compressor.__reduce__
 
 [clinic start generated code]*/
 
 static PyObject *
-_bz2_compressor_reduce_impl(BZ2Compressor *self)
-/*[clinic end generated code: output=8b4e32a4a405409b input=598cfb30699bd0ee]*/
+_bz2_BZ2Compressor___reduce___impl(BZ2Compressor *self)
+/*[clinic end generated code: output=d13db66ae043e141 input=e09bccef0e6731b2]*/
 {
     PyErr_Format(PyExc_TypeError,
                  "cannot pickle %s object",
@@ -393,7 +393,7 @@ BZ2Compressor_dealloc(BZ2Compressor *self)
 static PyMethodDef BZ2Compressor_methods[] = {
     _BZ2_BZ2COMPRESSOR_COMPRESS_METHODDEF
     _BZ2_BZ2COMPRESSOR_FLUSH_METHODDEF
-    _BZ2_COMPRESSOR_REDUCE_METHODDEF
+    _BZ2_BZ2COMPRESSOR___REDUCE___METHODDEF
     {NULL}
 };
 
@@ -636,13 +636,13 @@ _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
 }
 
 /*[clinic input]
-_bz2.BZ2Decompressor.__reduce__ as _bz2_decompressor_reduce
+_bz2.BZ2Decompressor.__reduce__
 
 [clinic start generated code]*/
 
 static PyObject *
-_bz2_decompressor_reduce_impl(BZ2Decompressor *self)
-/*[clinic end generated code: output=c79772d813bf4271 input=486b9c8c0205e116]*/
+_bz2_BZ2Decompressor___reduce___impl(BZ2Decompressor *self)
+/*[clinic end generated code: output=f6a40650813f482e input=8db9175a609fdd43]*/
 {
     PyErr_Format(PyExc_TypeError,
                  "cannot pickle %s object",
@@ -735,7 +735,7 @@ BZ2Decompressor_dealloc(BZ2Decompressor *self)
 
 static PyMethodDef BZ2Decompressor_methods[] = {
     _BZ2_BZ2DECOMPRESSOR_DECOMPRESS_METHODDEF
-    _BZ2_DECOMPRESSOR_REDUCE_METHODDEF
+    _BZ2_BZ2DECOMPRESSOR___REDUCE___METHODDEF
     {NULL}
 };
 
