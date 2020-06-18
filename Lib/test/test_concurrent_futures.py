@@ -3,7 +3,7 @@ from test import support
 # Skip tests if _multiprocessing wasn't built.
 support.import_module('_multiprocessing')
 # Skip tests if sem_open implementation is broken.
-support.import_module('multiprocessing.synchronize')
+support.skip_if_broken_multiprocessing_synchronize()
 
 from test.support import hashlib_helper
 from test.support.script_helper import assert_python_ok
