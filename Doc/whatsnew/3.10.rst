@@ -100,6 +100,14 @@ New Modules
 Improved Modules
 ================
 
+glob
+----
+
+Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
+:func:`~glob.iglob` which allow to specify the root directory for searching.
+(Contributed by Serhiy Storchaka in :issue:`38144`.)
+
+
 Optimizations
 =============
 
