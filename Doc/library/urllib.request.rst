@@ -109,6 +109,11 @@ The :mod:`urllib.request` module defines the following functions:
    .. versionchanged:: 3.4.3
       *context* was added.
 
+   .. versionchanged:: 3.10
+      HTTPS connection now send an ALPN extension with protocol indicator
+      ``http/1.1`` when no *context* is given. Custom *context* should set
+      ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocol`.
+
    .. deprecated:: 3.6
 
        *cafile*, *capath* and *cadefault* are deprecated in favor of *context*.
