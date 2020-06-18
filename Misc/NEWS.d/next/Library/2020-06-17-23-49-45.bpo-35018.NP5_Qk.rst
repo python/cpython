@@ -1,0 +1,2 @@
+Add the :class:`xml.sax.handler.LexicalHandler` class that is present in
+other SAX XML implementations.
