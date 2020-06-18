@@ -394,7 +394,7 @@ def get_versions():
 
     If not possible it returns None for it.
     """
-    commands = ['gcc -dumpversion', 'ld -v', 'dllwrap --version']
+    commands = ['gcc -dumpfullversion -dumpversion', 'ld -v', 'dllwrap --version']
     return tuple([_find_exe_version(cmd) for cmd in commands])
 
 def is_cygwingcc():
