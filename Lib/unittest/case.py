@@ -661,7 +661,8 @@ class TestCase(object):
             function, args, kwargs = self._cleanups.pop(-1)
             function(*args, **kwargs)
 
-    def skipTest(self, reason):
+    @classmethod
+    def skipTest(cls, reason):
         """Skip this test."""
         raise SkipTest(reason)
 
