@@ -299,26 +299,25 @@ def _requires_unix_version(sysname, min_version):
     For example, @_requires_unix_version('FreeBSD', (7, 2)) raises SkipTest if
     the FreeBSD version is less than 7.2.
     """
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kw):
-            import platform
-            if platform.system() == sysname:
-                version_txt = platform.release().split('-', 1)[0]
-                try:
-                    version = tuple(map(int, version_txt.split('.')))
-                except ValueError:
-                    pass
-                else:
-                    if version < min_version:
-                        min_version_txt = '.'.join(map(str, min_version))
-                        raise unittest.SkipTest(
-                            "%s version %s or higher required, not %s"
-                            % (sysname, min_version_txt, version_txt))
-            return func(*args, **kw)
-        wrapper.min_version = min_version
-        return wrapper
-    return decorator
+    import platform
+    min_version_txt = '.'.join(map(str, min_version))
+    version_txt = platform.release().split('-', 1)[0]
+    if platform.system() == sysname:
+        try:
+            version = tuple(map(int, version_txt.split('.')))
+        except ValueError:
+            skip = False
+        else:
+            skip = version < min_version
+    else:
+        skip = False
+
+    return unittest.skipIf(
+        skip,
+        f"{sysname} version {min_version_txt} or higher required, not "
+        f"{version_txt}"
+    )
+
 
 def requires_freebsd_version(*min_version):
     """Decorator raising SkipTest if the OS is FreeBSD and the FreeBSD version is
@@ -1958,3 +1957,25 @@ def wait_process(pid, *, exitcode, timeout=None):
     # sanity check: it should not fail in practice
     if pid2 != pid:
         raise AssertionError(f"pid {pid2} != pid {pid}")
+
+def skip_if_broken_multiprocessing_synchronize():
+    """
+    Skip tests if the multiprocessing.synchronize module is missing, if there
+    is no available semaphore implementation, or if creating a lock raises an
+    OSError.
+    """
+
+    # Skip tests if the _multiprocessing extension is missing.
+    import_module('_multiprocessing')
+
+    # Skip tests if there is no available semaphore implementation:
+    # multiprocessing.synchronize requires _multiprocessing.SemLock.
+    synchronize = import_module('multiprocessing.synchronize')
+
+    try:
+        # bpo-38377: On Linux, creating a semaphore is the current user
+        # does not have the permission to create a file in /dev/shm.
+        # Create a semaphore to check permissions.
+        synchronize.Lock(ctx=None)
+    except OSError as exc:
+        raise unittest.SkipTest(f"broken multiprocessing SemLock: {exc!r}")

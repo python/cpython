@@ -7,7 +7,6 @@ import importlib.util
 import importlib.machinery
 import os
 import os.path
-import re
 import sys
 from types import ModuleType
 import warnings
@@ -638,9 +637,7 @@ def get_data(package, resource):
     return loader.get_data(resource_name)
 
 
-_DOTTED_WORDS = r'(?!\d)(\w+)(\.(?!\d)(\w+))*'
-_NAME_PATTERN = re.compile(f'^(?P<pkg>{_DOTTED_WORDS})(?P<cln>:(?P<obj>{_DOTTED_WORDS})?)?$', re.U)
-del _DOTTED_WORDS
+_NAME_PATTERN = None
 
 def resolve_name(name):
     """
@@ -674,6 +671,15 @@ def resolve_name(name):
     AttributeError - if a failure occurred when traversing the object hierarchy
                      within the imported package to get to the desired object)
     """
+    global _NAME_PATTERN
+    if _NAME_PATTERN is None:
+        # Lazy import to speedup Python startup time
+        import re
+        dotted_words = r'(?!\d)(\w+)(\.(?!\d)(\w+))*'
+        _NAME_PATTERN = re.compile(f'^(?P<pkg>{dotted_words})'
+                                   f'(?P<cln>:(?P<obj>{dotted_words})?)?$',
+                                   re.UNICODE)
+
     m = _NAME_PATTERN.match(name)
     if not m:
         raise ValueError(f'invalid format: {name!r}')
