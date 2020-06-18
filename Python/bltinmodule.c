@@ -2665,7 +2665,7 @@ check:
     if (i) {
         // ValueError: zip() argument 2 is shorter than argument 1
         // ValueError: zip() argument 3 is shorter than arguments 1-2
-        const char* plural = i == 1 ? " " : "s 1-";  //         ^^^^
+        const char* plural = i == 1 ? " " : "s 1-";
         return PyErr_Format(PyExc_ValueError,
                             "zip() argument %d is shorter than argument%s%d",
                             i + 1, plural, i);
