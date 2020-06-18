@@ -65,6 +65,23 @@ _bz2_BZ2Compressor_flush(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
     return _bz2_BZ2Compressor_flush_impl(self);
 }
 
+PyDoc_STRVAR(_bz2_compressor_reduce__doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n");
+
+#define _BZ2_COMPRESSOR_REDUCE_METHODDEF    \
+    {"__reduce__", (PyCFunction)_bz2_compressor_reduce, METH_NOARGS, _bz2_compressor_reduce__doc__},
+
+static PyObject *
+_bz2_compressor_reduce_impl(BZ2Compressor *self);
+
+static PyObject *
+_bz2_compressor_reduce(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
+{
+    return _bz2_compressor_reduce_impl(self);
+}
+
 PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
 "decompress($self, /, data, max_length=-1)\n"
 "--\n"
@@ -139,4 +156,21 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ed10705d7a9fd598 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_bz2_decompressor_reduce__doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n");
+
+#define _BZ2_DECOMPRESSOR_REDUCE_METHODDEF    \
+    {"__reduce__", (PyCFunction)_bz2_decompressor_reduce, METH_NOARGS, _bz2_decompressor_reduce__doc__},
+
+static PyObject *
+_bz2_decompressor_reduce_impl(BZ2Decompressor *self);
+
+static PyObject *
+_bz2_decompressor_reduce(BZ2Decompressor *self, PyObject *Py_UNUSED(ignored))
+{
+    return _bz2_decompressor_reduce_impl(self);
+}
+/*[clinic end generated code: output=afbb47be9b4b4283 input=a9049054013a1b77]*/
