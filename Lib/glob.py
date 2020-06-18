@@ -228,6 +228,3 @@ def escape(pathname):
 
 
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
-
-if {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd:
-    os.supports_dir_fd.update((glob, iglob))
