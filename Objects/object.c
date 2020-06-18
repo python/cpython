@@ -139,23 +139,23 @@ Py_DecRef(PyObject *o)
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
 {
-    /* Any changes should be reflected in PyObject_INIT() macro */
     if (op == NULL) {
         return PyErr_NoMemory();
     }
 
-    return PyObject_INIT(op, tp);
+    _PyObject_Init(op, tp);
+    return op;
 }
 
 PyVarObject *
 PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
 {
-    /* Any changes should be reflected in PyObject_INIT_VAR() macro */
     if (op == NULL) {
         return (PyVarObject *) PyErr_NoMemory();
     }
 
-    return PyObject_INIT_VAR(op, tp, size);
+    _PyObject_InitVar(op, tp, size);
+    return op;
 }
 
 PyObject *
@@ -165,7 +165,7 @@ _PyObject_New(PyTypeObject *tp)
     if (op == NULL) {
         return PyErr_NoMemory();
     }
-    PyObject_INIT(op, tp);
+    _PyObject_Init(op, tp);
     return op;
 }
 
@@ -175,9 +175,11 @@ _PyObject_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
     PyVarObject *op;
     const size_t size = _PyObject_VAR_SIZE(tp, nitems);
     op = (PyVarObject *) PyObject_MALLOC(size);
-    if (op == NULL)
+    if (op == NULL) {
         return (PyVarObject *)PyErr_NoMemory();
-    return PyObject_INIT_VAR(op, tp, nitems);
+    }
+    _PyObject_InitVar(op, tp, nitems);
+    return op;
 }
 
 void
@@ -2029,8 +2031,8 @@ finally:
 void
 _PyTrash_deposit_object(PyObject *op)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    struct _gc_runtime_state *gcstate = &tstate->interp->gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _gc_runtime_state *gcstate = &interp->gc;
 
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
@@ -2057,8 +2059,8 @@ _PyTrash_thread_deposit_object(PyObject *op)
 void
 _PyTrash_destroy_chain(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    struct _gc_runtime_state *gcstate = &tstate->interp->gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _gc_runtime_state *gcstate = &interp->gc;
 
     while (gcstate->trash_delete_later) {
         PyObject *op = gcstate->trash_delete_later;

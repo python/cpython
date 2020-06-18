@@ -102,6 +102,45 @@ test_popcount(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static int
+check_bit_length(unsigned long x, int expected)
+{
+    // Use volatile to prevent the compiler to optimize out the whole test
+    volatile unsigned long u = x;
+    int len = _Py_bit_length(u);
+    if (len != expected) {
+        PyErr_Format(PyExc_AssertionError,
+                     "_Py_bit_length(%lu) returns %i, expected %i",
+                     x, len, expected);
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject*
+test_bit_length(PyObject *self, PyObject *Py_UNUSED(args))
+{
+#define CHECK(X, RESULT) \
+    do { \
+        if (check_bit_length(X, RESULT) < 0) { \
+            return NULL; \
+        } \
+    } while (0)
+
+    CHECK(0, 0);
+    CHECK(1, 1);
+    CHECK(0x1000, 13);
+    CHECK(0x1234, 13);
+    CHECK(0x54321, 19);
+    CHECK(0x7FFFFFFF, 31);
+    CHECK(0xFFFFFFFF, 32);
+    Py_RETURN_NONE;
+
+#undef CHECK
+}
+
+
 #define TO_PTR(ch) ((void*)(uintptr_t)ch)
 #define FROM_PTR(ptr) ((uintptr_t)ptr)
 #define VALUE(key) (1 + ((int)(key) - 'a'))
@@ -197,6 +236,7 @@ static PyMethodDef TestMethods[] = {
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
+    {"test_bit_length", test_bit_length, METH_NOARGS},
     {"test_hashtable", test_hashtable, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };

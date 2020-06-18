@@ -227,12 +227,4 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
  * behavior. */
 #define _Py_InIntegralTypeRange(type, v) (_Py_IntegralTypeMin(type) <= v && v <= _Py_IntegralTypeMax(type))
 
-/* Return the smallest integer k such that n < 2**k, or 0 if n == 0.
- * Equivalent to floor(log2(x))+1.  Also equivalent to: bitwidth_of_type -
- * count_leading_zero_bits(x)
- */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(unsigned int) _Py_bit_length(unsigned long d);
-#endif
-
 #endif /* Py_PYMATH_H */

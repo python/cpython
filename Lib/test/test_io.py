@@ -1587,6 +1587,22 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
         with self.assertRaisesRegex(TypeError, "BufferedReader"):
             self.tp(io.BytesIO(), 1024, 1024, 1024)
 
+    def test_bad_readinto_value(self):
+        rawio = io.BufferedReader(io.BytesIO(b"12"))
+        rawio.readinto = lambda buf: -1
+        bufio = self.tp(rawio)
+        with self.assertRaises(OSError) as cm:
+            bufio.readline()
+        self.assertIsNone(cm.exception.__cause__)
+
+    def test_bad_readinto_type(self):
+        rawio = io.BufferedReader(io.BytesIO(b"12"))
+        rawio.readinto = lambda buf: b''
+        bufio = self.tp(rawio)
+        with self.assertRaises(OSError) as cm:
+            bufio.readline()
+        self.assertIsInstance(cm.exception.__cause__, TypeError)
+
 
 class PyBufferedReaderTest(BufferedReaderTest):
     tp = pyio.BufferedReader

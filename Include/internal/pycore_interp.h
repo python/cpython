@@ -13,7 +13,12 @@ extern "C" {
 #include "pycore_gc.h"        /* struct _gc_runtime_state */
 #include "pycore_warnings.h"  /* struct _warnings_runtime_state */
 
-/* ceval state */
+struct _Py_parser_state {
+    struct {
+        int level;
+        int atbol;
+    } listnode;
+};
 
 struct _pending_calls {
     PyThread_type_lock lock;
@@ -209,12 +214,7 @@ struct _is {
 
     PyObject *audit_hooks;
 
-    struct {
-        struct {
-            int level;
-            int atbol;
-        } listnode;
-    } parser;
+    struct _Py_parser_state parser;
 
 #if _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS > 0
     /* Small integers are preallocated in this array so that they
