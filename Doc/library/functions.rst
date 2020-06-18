@@ -1722,7 +1722,8 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: zip(*iterables, strict=False)
 
-   Invert a series of iterables, turning rows into columns, and columns into rows.
+   Iterate over several iterables in parallel, producing tuples with an item
+   from each one.
 
    Example::
 
@@ -1735,6 +1736,10 @@ are always available.  They are listed here in alphabetical order.
 
    More formally: :func:`zip` returns an iterator of tuples, where the *i*-th
    tuple contains the *i*-th element from each of the argument iterables.
+
+   Another way to think of :func:`zip` is that it turns rows into columns, and
+   columns into rows.  This is similar to `transposing a matrix
+   <https://en.wikipedia.org/wiki/Transpose>`_.
 
    :func:`zip` is lazy: The elements wouldn't be processed until the iterable
    is iterated on, e.g. by wrapping in a :class:`list`.
@@ -1756,7 +1761,7 @@ are always available.  They are listed here in alphabetical order.
      option. Its output is the same as regular :func:`zip`::
 
         >>> list(zip(('a', 'b', 'c'), (1, 2, 3), strict=True))
-        (('a', 1), ('b', 2), ('c', 3))
+        [('a', 1), ('b', 2), ('c', 3)]
 
      Unlike the default behavior, it checks that the lengths of iterables is
      identical, raising a :exc:`ValueError` if they aren't:
