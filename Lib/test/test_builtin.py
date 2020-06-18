@@ -1669,6 +1669,64 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(next(x), 2)
         self.assertEqual(next(z), 1)
 
+    def test_zip_strict_error_handling(self):
+        class E(Exception):
+            pass
+        class I:
+            def __init__(self, size):
+                self.size = size
+            def __iter__(self):
+                return self
+            def __next__(self):
+                self.size -= 1
+                if self.size < 0:
+                    raise E
+                return self.size
+        with self.assertRaises(E):
+            list(zip("AB", I(1), strict=True))
+        with self.assertRaises(ValueError):
+            list(zip("AB", I(2), "A", strict=True))
+        with self.assertRaises(E):
+            list(zip("AB", I(2), "ABC", strict=True))
+        with self.assertRaises(ValueError):
+            list(zip("AB", I(3), strict=True))
+        with self.assertRaises(E):
+            list(zip(I(1), "AB", strict=True))
+        with self.assertRaises(ValueError):
+            list(zip(I(2), "A", strict=True))
+        with self.assertRaises(E):
+            list(zip(I(2), "ABC", strict=True))
+        with self.assertRaises(ValueError):
+            list(zip(I(3), "AB", strict=True))
+
+    def test_zip_strict_error_handling_stopiteration(self):
+        class I:
+            def __init__(self, size):
+                self.size = size
+            def __iter__(self):
+                return self
+            def __next__(self):
+                self.size -= 1
+                if self.size < 0:
+                    raise StopIteration
+                return self.size
+        with self.assertRaises(ValueError):
+            list(zip("AB", I(1), strict=True))
+        with self.assertRaises(ValueError):
+            list(zip("AB", I(2), "A", strict=True))
+        with self.assertRaises(ValueError):
+            list(zip("AB", I(2), "ABC", strict=True))
+        with self.assertRaises(ValueError):
+            list(zip("AB", I(3), strict=True))
+        with self.assertRaises(ValueError):
+            list(zip(I(1), "AB", strict=True))
+        with self.assertRaises(ValueError):
+            list(zip(I(2), "A", strict=True))
+        with self.assertRaises(ValueError):
+            list(zip(I(2), "ABC", strict=True))
+        with self.assertRaises(ValueError):
+            list(zip(I(3), "AB", strict=True))
+
     def test_format(self):
         # Test the basic machinery of the format() builtin.  Don't test
         #  the specifics of the various formatters
