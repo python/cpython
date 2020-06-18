@@ -1573,6 +1573,28 @@ class BuiltinTest(unittest.TestCase):
             z1 = zip(a, b)
             self.check_iter_pickle(z1, t, proto)
 
+    def test_zip_pickle_strict(self):
+        a = (1, 2, 3)
+        b = (4, 5, 6)
+        t = [(1, 4), (2, 5), (3, 6)]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            z1 = zip(a, b, strict=True)
+            self.check_iter_pickle(z1, t, proto)
+
+    def test_zip_pickle_strict_fail(self):
+        a = (1, 2, 3)
+        b = (4, 5, 6, 7)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            z1 = zip(a, b, strict=True)
+            z2 = pickle.loads(pickle.dumps(z1, proto))
+            self.assertEqual(next(z1), next(z2))
+            self.assertEqual(next(z1), next(z2))
+            self.assertEqual(next(z1), next(z2))
+            with self.assertRaises(ValueError):
+                next(z1)
+            with self.assertRaises(ValueError):
+                next(z2)
+
     def test_zip_bad_iterable(self):
         exception = TypeError()
 
