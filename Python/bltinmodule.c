@@ -2517,9 +2517,10 @@ builtin_issubclass_impl(PyObject *module, PyObject *cls,
 
 typedef struct {
     PyObject_HEAD
-    Py_ssize_t tuplesize;  /* negative when strict=True */
+    Py_ssize_t tuplesize;
     PyObject *ittuple;     /* tuple of iterators */
     PyObject *result;
+    int strict;
 } zipobject;
 
 static PyObject *
@@ -2583,8 +2584,9 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     lz->ittuple = ittuple;
-    lz->tuplesize = strict ? -tuplesize : tuplesize;
+    lz->tuplesize = tuplesize;
     lz->result = result;
+    lz->strict = strict;
 
     return (PyObject *)lz;
 }
@@ -2610,7 +2612,7 @@ static PyObject *
 zip_next(zipobject *lz)
 {
     Py_ssize_t i;
-    Py_ssize_t tuplesize = Py_ABS(lz->tuplesize);
+    Py_ssize_t tuplesize = lz->tuplesize;
     PyObject *result = lz->result;
     PyObject *it;
     PyObject *item;
@@ -2625,7 +2627,7 @@ zip_next(zipobject *lz)
             item = (*Py_TYPE(it)->tp_iternext)(it);
             if (item == NULL) {
                 Py_DECREF(result);
-                if (lz->tuplesize < 0) {
+                if (lz->strict) {
                     goto check;
                 }
                 return NULL;
@@ -2643,7 +2645,7 @@ zip_next(zipobject *lz)
             item = (*Py_TYPE(it)->tp_iternext)(it);
             if (item == NULL) {
                 Py_DECREF(result);
-                if (lz->tuplesize < 0) {
+                if (lz->strict) {
                     goto check;
                 }
                 return NULL;
@@ -2685,7 +2687,7 @@ static PyObject *
 zip_reduce(zipobject *lz, PyObject *Py_UNUSED(ignored))
 {
     /* Just recreate the zip with the internal iterator tuple */
-    if (lz->tuplesize < 0) {
+    if (lz->strict) {
         return Py_BuildValue("OOO", Py_TYPE(lz), lz->ittuple, Py_True);
     }
     return Py_BuildValue("OO", Py_TYPE(lz), lz->ittuple);
@@ -2700,7 +2702,7 @@ zip_setstate(zipobject *lz, PyObject *state)
     if (strict < 0) {
         return NULL;
     }
-    lz->tuplesize = strict ? -Py_ABS(lz->tuplesize) : Py_ABS(lz->tuplesize);
+    lz->strict = strict;
     Py_RETURN_NONE;
 }
 
