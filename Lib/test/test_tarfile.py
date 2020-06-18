@@ -2586,10 +2586,9 @@ class SymlinkOverwriteTest(unittest.TestCase):
 
     @support.skip_unless_symlink
     def test_overwrite_symlink(self):
-        tmpdir = support.temp_cwd('overwrite_symlink')
-        source = 'source'
-        link = 'link'
-        try:
+        with support.temp_cwd('overwrite_symlink'):
+            source = 'source'
+            link = 'link'
             with open(source, 'wb'):
                 pass
             os.symlink(source, link)
@@ -2600,23 +2599,12 @@ class SymlinkOverwriteTest(unittest.TestCase):
             with open(tmpname, 'rb') as fileobj:
                 with tarfile.open(fileobj=fileobj, mode='r|') as tar:
                     tar.extractall(path=support.SAVEDCWD)
-        finally:
-            try:
-                os.unlink(link)
-            except:
-                pass
-
-            try:
-                os.unlink(source)
-            except:
-                pass
 
     @support.skip_unless_symlink
     def test_overwrite_file_with_symlink(self):
-        tmpdir = support.temp_cwd('overwrite_file_with_symlink')
-        source = 'source'
-        link = 'link'
-        try:
+        with support.temp_cwd('overwrite_file_with_symlink'):
+            source = 'source'
+            link = 'link'
             with open(source, 'wb'):
                 pass
             os.symlink(source, link)
@@ -2632,17 +2620,6 @@ class SymlinkOverwriteTest(unittest.TestCase):
             with open(tmpname, 'rb') as fileobj:
                 with tarfile.open(fileobj=fileobj, mode='r|') as tar:
                     tar.extractall(path=support.SAVEDCWD)
-        finally:
-            try:
-                os.unlink(link)
-            except:
-                pass
-
-            try:
-                os.unlink(source)
-            except:
-                pass
-
 
 def root_is_uid_gid_0():
     try:
