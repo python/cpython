@@ -31,7 +31,7 @@ from test import support
 # Skip tests if _multiprocessing wasn't built.
 _multiprocessing = test.support.import_module('_multiprocessing')
 # Skip tests if sem_open implementation is broken.
-test.support.import_module('multiprocessing.synchronize')
+support.skip_if_broken_multiprocessing_synchronize()
 import threading
 
 import multiprocessing.connection
