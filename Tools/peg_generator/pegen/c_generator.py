@@ -456,9 +456,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print("p->error_indicator = 1;")
             self.add_return("NULL")
         self.print("}")
-        self.print("int _start_lineno = p->tokens[_mark]->lineno;")
+        self.print("Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;")
         self.print("UNUSED(_start_lineno); // Only used by EXTRA macro")
-        self.print("int _start_col_offset = p->tokens[_mark]->col_offset;")
+        self.print("Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;")
         self.print("UNUSED(_start_col_offset); // Only used by EXTRA macro")
 
     def _set_up_token_end_metadata_extraction(self) -> None:
@@ -467,9 +467,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         with self.indent():
             self.add_return("NULL")
         self.print("}")
-        self.print("int _end_lineno = _token->end_lineno;")
+        self.print("Py_ssize_t _end_lineno = _token->end_lineno;")
         self.print("UNUSED(_end_lineno); // Only used by EXTRA macro")
-        self.print("int _end_col_offset = _token->end_col_offset;")
+        self.print("Py_ssize_t _end_col_offset = _token->end_col_offset;")
         self.print("UNUSED(_end_col_offset); // Only used by EXTRA macro")
 
     def _check_for_errors(self) -> None:

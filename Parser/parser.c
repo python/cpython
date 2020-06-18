@@ -1278,9 +1278,9 @@ statement_newline_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // compound_stmt NEWLINE
         if (p->error_indicator) {
@@ -1345,9 +1345,9 @@ statement_newline_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _PyPegen_singleton_seq ( p , CHECK ( _Py_Pass ( EXTRA ) ) );
             if (_res == NULL && PyErr_Occurred()) {
@@ -1501,9 +1501,9 @@ small_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // assignment
         if (p->error_indicator) {
@@ -1541,9 +1541,9 @@ small_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Expr ( e , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -1637,9 +1637,9 @@ small_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Pass ( EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -1733,9 +1733,9 @@ small_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Break ( EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -1766,9 +1766,9 @@ small_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Continue ( EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -2023,9 +2023,9 @@ assignment_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME ':' expression ['=' annotated_rhs]
         if (p->error_indicator) {
@@ -2053,9 +2053,9 @@ assignment_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = CHECK_VERSION ( 6 , "Variable annotation syntax is" , _Py_AnnAssign ( CHECK ( _PyPegen_set_expr_context ( p , a , Store ) ) , b , c , 1 , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
@@ -2095,9 +2095,9 @@ assignment_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = CHECK_VERSION ( 6 , "Variable annotations syntax is" , _Py_AnnAssign ( a , b , c , 0 , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
@@ -2136,9 +2136,9 @@ assignment_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Assign ( a , b , NEW_TYPE_COMMENT ( p , tc ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -2175,9 +2175,9 @@ assignment_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_AugAssign ( a , b -> kind , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -2574,9 +2574,9 @@ global_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'global' ','.NAME+
         if (p->error_indicator) {
@@ -2598,9 +2598,9 @@ global_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Global ( CHECK ( _PyPegen_map_names_to_ids ( p , a ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -2636,9 +2636,9 @@ nonlocal_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'nonlocal' ','.NAME+
         if (p->error_indicator) {
@@ -2660,9 +2660,9 @@ nonlocal_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Nonlocal ( CHECK ( _PyPegen_map_names_to_ids ( p , a ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -2698,9 +2698,9 @@ yield_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // yield_expr
         if (p->error_indicator) {
@@ -2719,9 +2719,9 @@ yield_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Expr ( y , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -2757,9 +2757,9 @@ assert_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'assert' expression [',' expression]
         if (p->error_indicator) {
@@ -2784,9 +2784,9 @@ assert_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Assert ( a , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -2822,9 +2822,9 @@ del_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'del' del_targets
         if (p->error_indicator) {
@@ -2846,9 +2846,9 @@ del_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Delete ( a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -2939,9 +2939,9 @@ import_name_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'import' dotted_as_names
         if (p->error_indicator) {
@@ -2963,9 +2963,9 @@ import_name_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Import ( a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -3003,9 +3003,9 @@ import_from_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'from' (('.' | '...'))* dotted_name 'import' import_from_targets
         if (p->error_indicator) {
@@ -3036,9 +3036,9 @@ import_from_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_ImportFrom ( b -> v . Name . id , c , _PyPegen_seq_count_dots ( a ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -3078,9 +3078,9 @@ import_from_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_ImportFrom ( NULL , b , _PyPegen_seq_count_dots ( a ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -3503,9 +3503,9 @@ if_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'if' named_expression ':' block elif_stmt
         if (p->error_indicator) {
@@ -3536,9 +3536,9 @@ if_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_If ( a , b , CHECK ( _PyPegen_singleton_seq ( p , c ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -3581,9 +3581,9 @@ if_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_If ( a , b , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -3621,9 +3621,9 @@ elif_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'elif' named_expression ':' block elif_stmt
         if (p->error_indicator) {
@@ -3654,9 +3654,9 @@ elif_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_If ( a , b , CHECK ( _PyPegen_singleton_seq ( p , c ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -3699,9 +3699,9 @@ elif_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_If ( a , b , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -3784,9 +3784,9 @@ while_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'while' named_expression ':' block else_block?
         if (p->error_indicator) {
@@ -3817,9 +3817,9 @@ while_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_While ( a , b , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -3857,9 +3857,9 @@ for_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'for' star_targets 'in' star_expressions ':' TYPE_COMMENT? block else_block?
         if (p->error_indicator) {
@@ -3899,9 +3899,9 @@ for_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_For ( t , ex , b , el , NEW_TYPE_COMMENT ( p , tc ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -3956,9 +3956,9 @@ for_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = CHECK_VERSION ( 5 , "Async for loops are" , _Py_AsyncFor ( t , ex , b , el , NEW_TYPE_COMMENT ( p , tc ) , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
@@ -3998,9 +3998,9 @@ with_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'with' '(' ','.with_item+ ','? ')' ':' block
         if (p->error_indicator) {
@@ -4038,9 +4038,9 @@ with_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_With ( a , b , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -4083,9 +4083,9 @@ with_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_With ( a , b , NEW_TYPE_COMMENT ( p , tc ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -4138,9 +4138,9 @@ with_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = CHECK_VERSION ( 5 , "Async with statements are" , _Py_AsyncWith ( a , b , NULL , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
@@ -4186,9 +4186,9 @@ with_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = CHECK_VERSION ( 5 , "Async with statements are" , _Py_AsyncWith ( a , b , NEW_TYPE_COMMENT ( p , tc ) , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
@@ -4270,9 +4270,9 @@ try_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'try' ':' block finally_block
         if (p->error_indicator) {
@@ -4300,9 +4300,9 @@ try_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Try ( b , NULL , NULL , f , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -4348,9 +4348,9 @@ try_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Try ( b , ex , el , f , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -4386,9 +4386,9 @@ except_block_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'except' expression ['as' NAME] ':' block
         if (p->error_indicator) {
@@ -4419,9 +4419,9 @@ except_block_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_ExceptHandler ( e , ( t ) ? ( ( expr_ty ) t ) -> v . Name . id : NULL , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -4458,9 +4458,9 @@ except_block_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_ExceptHandler ( NULL , NULL , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -4543,9 +4543,9 @@ return_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'return' star_expressions?
         if (p->error_indicator) {
@@ -4567,9 +4567,9 @@ return_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Return ( a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -4605,9 +4605,9 @@ raise_stmt_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'raise' expression ['from' expression]
         if (p->error_indicator) {
@@ -4632,9 +4632,9 @@ raise_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Raise ( a , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -4665,9 +4665,9 @@ raise_stmt_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Raise ( NULL , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -4768,9 +4768,9 @@ function_def_raw_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'def' NAME '(' params? ')' ['->' expression] ':' func_type_comment? block
         if (p->error_indicator) {
@@ -4813,9 +4813,9 @@ function_def_raw_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_FunctionDef ( n -> v . Name . id , ( params ) ? params : CHECK ( _PyPegen_empty_arguments ( p ) ) , b , NULL , a , NEW_TYPE_COMMENT ( p , tc ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -4873,9 +4873,9 @@ function_def_raw_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = CHECK_VERSION ( 5 , "Async functions are" , _Py_AsyncFunctionDef ( n -> v . Name . id , ( params ) ? params : CHECK ( _PyPegen_empty_arguments ( p ) ) , b , NULL , a , NEW_TYPE_COMMENT ( p , tc ) , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
@@ -5795,9 +5795,9 @@ param_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME annotation?
         if (p->error_indicator) {
@@ -5819,9 +5819,9 @@ param_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_arg ( a -> v . Name . id , b , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -6049,9 +6049,9 @@ class_def_raw_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'class' NAME ['(' arguments? ')'] ':' block
         if (p->error_indicator) {
@@ -6082,9 +6082,9 @@ class_def_raw_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_ClassDef ( a -> v . Name . id , ( b ) ? ( ( expr_ty ) b ) -> v . Call . args : NULL , ( b ) ? ( ( expr_ty ) b ) -> v . Call . keywords : NULL , c , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -6261,9 +6261,9 @@ star_expressions_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // star_expression ((',' star_expression))+ ','?
         if (p->error_indicator) {
@@ -6289,9 +6289,9 @@ star_expressions_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Tuple ( CHECK ( _PyPegen_seq_insert_in_front ( p , a , b ) ) , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -6325,9 +6325,9 @@ star_expressions_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Tuple ( CHECK ( _PyPegen_singleton_seq ( p , a ) ) , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -6386,9 +6386,9 @@ star_expression_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '*' bitwise_or
         if (p->error_indicator) {
@@ -6410,9 +6410,9 @@ star_expression_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Starred ( a , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -6513,9 +6513,9 @@ star_named_expression_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '*' bitwise_or
         if (p->error_indicator) {
@@ -6537,9 +6537,9 @@ star_named_expression_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Starred ( a , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -6594,9 +6594,9 @@ named_expression_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME ':=' expression
         if (p->error_indicator) {
@@ -6621,9 +6621,9 @@ named_expression_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_NamedExpr ( CHECK ( _PyPegen_set_expr_context ( p , a , Store ) ) , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -6754,9 +6754,9 @@ expressions_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // expression ((',' expression))+ ','?
         if (p->error_indicator) {
@@ -6782,9 +6782,9 @@ expressions_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Tuple ( CHECK ( _PyPegen_seq_insert_in_front ( p , a , b ) ) , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -6818,9 +6818,9 @@ expressions_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Tuple ( CHECK ( _PyPegen_singleton_seq ( p , a ) ) , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -6879,9 +6879,9 @@ expression_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // disjunction 'if' disjunction 'else' expression
         if (p->error_indicator) {
@@ -6912,9 +6912,9 @@ expression_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_IfExp ( b , a , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -6989,9 +6989,9 @@ lambdef_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'lambda' lambda_params? ':' expression
         if (p->error_indicator) {
@@ -7019,9 +7019,9 @@ lambdef_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Lambda ( ( a ) ? a : CHECK ( _PyPegen_empty_arguments ( p ) ) , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -7836,9 +7836,9 @@ lambda_param_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME
         if (p->error_indicator) {
@@ -7857,9 +7857,9 @@ lambda_param_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_arg ( a -> v . Name . id , NULL , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -7899,9 +7899,9 @@ disjunction_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // conjunction (('or' conjunction))+
         if (p->error_indicator) {
@@ -7923,9 +7923,9 @@ disjunction_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BoolOp ( Or , CHECK ( _PyPegen_seq_insert_in_front ( p , a , b ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -7985,9 +7985,9 @@ conjunction_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // inversion (('and' inversion))+
         if (p->error_indicator) {
@@ -8009,9 +8009,9 @@ conjunction_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BoolOp ( And , CHECK ( _PyPegen_seq_insert_in_front ( p , a , b ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -8071,9 +8071,9 @@ inversion_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'not' inversion
         if (p->error_indicator) {
@@ -8095,9 +8095,9 @@ inversion_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_UnaryOp ( Not , a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -8153,9 +8153,9 @@ comparison_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // bitwise_or compare_op_bitwise_or_pair+
         if (p->error_indicator) {
@@ -8177,9 +8177,9 @@ comparison_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Compare ( a , CHECK ( _PyPegen_get_cmpops ( p , b ) ) , CHECK ( _PyPegen_get_exprs ( p , b ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -8927,9 +8927,9 @@ bitwise_or_raw(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // bitwise_or '|' bitwise_xor
         if (p->error_indicator) {
@@ -8954,9 +8954,9 @@ bitwise_or_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BinOp ( a , BitOr , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9041,9 +9041,9 @@ bitwise_xor_raw(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // bitwise_xor '^' bitwise_and
         if (p->error_indicator) {
@@ -9068,9 +9068,9 @@ bitwise_xor_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BinOp ( a , BitXor , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9155,9 +9155,9 @@ bitwise_and_raw(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // bitwise_and '&' shift_expr
         if (p->error_indicator) {
@@ -9182,9 +9182,9 @@ bitwise_and_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BinOp ( a , BitAnd , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9269,9 +9269,9 @@ shift_expr_raw(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // shift_expr '<<' sum
         if (p->error_indicator) {
@@ -9296,9 +9296,9 @@ shift_expr_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BinOp ( a , LShift , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9335,9 +9335,9 @@ shift_expr_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BinOp ( a , RShift , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9422,9 +9422,9 @@ sum_raw(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // sum '+' term
         if (p->error_indicator) {
@@ -9449,9 +9449,9 @@ sum_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BinOp ( a , Add , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9488,9 +9488,9 @@ sum_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BinOp ( a , Sub , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9581,9 +9581,9 @@ term_raw(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // term '*' factor
         if (p->error_indicator) {
@@ -9608,9 +9608,9 @@ term_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BinOp ( a , Mult , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9647,9 +9647,9 @@ term_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BinOp ( a , Div , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9686,9 +9686,9 @@ term_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BinOp ( a , FloorDiv , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9725,9 +9725,9 @@ term_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BinOp ( a , Mod , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9764,9 +9764,9 @@ term_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = CHECK_VERSION ( 5 , "The '@' operator is" , _Py_BinOp ( a , MatMult , b , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9825,9 +9825,9 @@ factor_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '+' factor
         if (p->error_indicator) {
@@ -9849,9 +9849,9 @@ factor_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_UnaryOp ( UAdd , a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9885,9 +9885,9 @@ factor_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_UnaryOp ( USub , a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9921,9 +9921,9 @@ factor_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_UnaryOp ( Invert , a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -9979,9 +9979,9 @@ power_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // await_primary '**' factor
         if (p->error_indicator) {
@@ -10006,9 +10006,9 @@ power_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_BinOp ( a , Pow , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -10067,9 +10067,9 @@ await_primary_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // AWAIT primary
         if (p->error_indicator) {
@@ -10091,9 +10091,9 @@ await_primary_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = CHECK_VERSION ( 5 , "Await expressions are" , _Py_Await ( a , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
@@ -10184,9 +10184,9 @@ primary_raw(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // primary '.' NAME
         if (p->error_indicator) {
@@ -10211,9 +10211,9 @@ primary_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Attribute ( a , b -> v . Name . id , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -10247,9 +10247,9 @@ primary_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Call ( a , CHECK ( _PyPegen_singleton_seq ( p , b ) ) , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -10289,9 +10289,9 @@ primary_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Call ( a , ( b ) ? ( ( expr_ty ) b ) -> v . Call . args : NULL , ( b ) ? ( ( expr_ty ) b ) -> v . Call . keywords : NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -10331,9 +10331,9 @@ primary_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Subscript ( a , b , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -10388,9 +10388,9 @@ slices_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // slice !','
         if (p->error_indicator) {
@@ -10439,9 +10439,9 @@ slices_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Tuple ( a , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -10477,9 +10477,9 @@ slice_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // expression? ':' expression? [':' expression?]
         if (p->error_indicator) {
@@ -10507,9 +10507,9 @@ slice_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Slice ( a , b , c , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -10579,9 +10579,9 @@ atom_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME
         if (p->error_indicator) {
@@ -10619,9 +10619,9 @@ atom_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Constant ( Py_True , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -10652,9 +10652,9 @@ atom_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Constant ( Py_False , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -10685,9 +10685,9 @@ atom_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Constant ( Py_None , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -10821,9 +10821,9 @@ atom_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Constant ( Py_Ellipsis , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -10905,9 +10905,9 @@ list_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '[' star_named_expressions? ']'
         if (p->error_indicator) {
@@ -10932,9 +10932,9 @@ list_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_List ( a , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -10970,9 +10970,9 @@ listcomp_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '[' named_expression for_if_clauses ']'
         if (p->error_indicator) {
@@ -11000,9 +11000,9 @@ listcomp_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_ListComp ( a , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -11057,9 +11057,9 @@ tuple_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '(' [star_named_expression ',' star_named_expressions?] ')'
         if (p->error_indicator) {
@@ -11084,9 +11084,9 @@ tuple_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Tuple ( a , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -11169,9 +11169,9 @@ genexp_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '(' expression for_if_clauses ')'
         if (p->error_indicator) {
@@ -11199,9 +11199,9 @@ genexp_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_GeneratorExp ( a , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -11256,9 +11256,9 @@ set_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '{' expressions_list '}'
         if (p->error_indicator) {
@@ -11283,9 +11283,9 @@ set_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Set ( a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -11321,9 +11321,9 @@ setcomp_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '{' expression for_if_clauses '}'
         if (p->error_indicator) {
@@ -11351,9 +11351,9 @@ setcomp_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_SetComp ( a , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -11408,9 +11408,9 @@ dict_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '{' double_starred_kvpairs? '}'
         if (p->error_indicator) {
@@ -11435,9 +11435,9 @@ dict_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Dict ( CHECK ( _PyPegen_get_keys ( p , a ) ) , CHECK ( _PyPegen_get_values ( p , a ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -11473,9 +11473,9 @@ dictcomp_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '{' kvpair for_if_clauses '}'
         if (p->error_indicator) {
@@ -11503,9 +11503,9 @@ dictcomp_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_DictComp ( a -> key , a -> value , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -11845,9 +11845,9 @@ yield_expr_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // 'yield' 'from' expression
         if (p->error_indicator) {
@@ -11872,9 +11872,9 @@ yield_expr_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_YieldFrom ( a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -11908,9 +11908,9 @@ yield_expr_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Yield ( a , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -12017,9 +12017,9 @@ args_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // starred_expression [',' args]
         if (p->error_indicator) {
@@ -12041,9 +12041,9 @@ args_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Call ( _PyPegen_dummy_name ( p ) , ( b ) ? CHECK ( _PyPegen_seq_insert_in_front ( p , a , ( ( expr_ty ) b ) -> v . Call . args ) ) : CHECK ( _PyPegen_singleton_seq ( p , a ) ) , ( b ) ? ( ( expr_ty ) b ) -> v . Call . keywords : NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -12074,9 +12074,9 @@ args_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Call ( _PyPegen_dummy_name ( p ) , CHECK_NULL_ALLOWED ( _PyPegen_seq_extract_starred_exprs ( p , a ) ) , CHECK_NULL_ALLOWED ( _PyPegen_seq_delete_starred_exprs ( p , a ) ) , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -12110,9 +12110,9 @@ args_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Call ( _PyPegen_dummy_name ( p ) , ( b ) ? CHECK ( _PyPegen_seq_insert_in_front ( p , a , ( ( expr_ty ) b ) -> v . Call . args ) ) : CHECK ( _PyPegen_singleton_seq ( p , a ) ) , ( b ) ? ( ( expr_ty ) b ) -> v . Call . keywords : NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -12236,9 +12236,9 @@ starred_expression_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '*' expression
         if (p->error_indicator) {
@@ -12260,9 +12260,9 @@ starred_expression_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Starred ( a , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -12298,9 +12298,9 @@ kwarg_or_starred_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME '=' expression
         if (p->error_indicator) {
@@ -12325,9 +12325,9 @@ kwarg_or_starred_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _PyPegen_keyword_or_starred ( p , CHECK ( _Py_keyword ( a -> v . Name . id , b , EXTRA ) ) , 1 );
             if (_res == NULL && PyErr_Occurred()) {
@@ -12406,9 +12406,9 @@ kwarg_or_double_starred_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME '=' expression
         if (p->error_indicator) {
@@ -12433,9 +12433,9 @@ kwarg_or_double_starred_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _PyPegen_keyword_or_starred ( p , CHECK ( _Py_keyword ( a -> v . Name . id , b , EXTRA ) ) , 1 );
             if (_res == NULL && PyErr_Occurred()) {
@@ -12469,9 +12469,9 @@ kwarg_or_double_starred_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _PyPegen_keyword_or_starred ( p , CHECK ( _Py_keyword ( NULL , a , EXTRA ) ) , 1 );
             if (_res == NULL && PyErr_Occurred()) {
@@ -12526,9 +12526,9 @@ star_targets_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // star_target !','
         if (p->error_indicator) {
@@ -12580,9 +12580,9 @@ star_targets_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Tuple ( CHECK ( _PyPegen_seq_insert_in_front ( p , a , b ) ) , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -12671,9 +12671,9 @@ star_target_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '*' (!'*' star_target)
         if (p->error_indicator) {
@@ -12695,9 +12695,9 @@ star_target_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Starred ( CHECK ( _PyPegen_set_expr_context ( p , a , Store ) ) , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -12736,9 +12736,9 @@ star_target_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Attribute ( a , b -> v . Name . id , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -12780,9 +12780,9 @@ star_target_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Subscript ( a , b , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -12842,9 +12842,9 @@ star_atom_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME
         if (p->error_indicator) {
@@ -12923,9 +12923,9 @@ star_atom_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Tuple ( a , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -12962,9 +12962,9 @@ star_atom_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_List ( a , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -13092,9 +13092,9 @@ single_subscript_attribute_target_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // t_primary '.' NAME !t_lookahead
         if (p->error_indicator) {
@@ -13121,9 +13121,9 @@ single_subscript_attribute_target_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Attribute ( a , b -> v . Name . id , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -13165,9 +13165,9 @@ single_subscript_attribute_target_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Subscript ( a , b , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -13255,9 +13255,9 @@ del_target_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // t_primary '.' NAME &del_target_end
         if (p->error_indicator) {
@@ -13284,9 +13284,9 @@ del_target_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Attribute ( a , b -> v . Name . id , Del , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -13328,9 +13328,9 @@ del_target_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Subscript ( a , b , Del , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -13391,9 +13391,9 @@ del_t_atom_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME &del_target_end
         if (p->error_indicator) {
@@ -13474,9 +13474,9 @@ del_t_atom_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Tuple ( a , Del , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -13513,9 +13513,9 @@ del_t_atom_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_List ( a , Del , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -13734,9 +13734,9 @@ target_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // t_primary '.' NAME !t_lookahead
         if (p->error_indicator) {
@@ -13763,9 +13763,9 @@ target_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Attribute ( a , b -> v . Name . id , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -13807,9 +13807,9 @@ target_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Subscript ( a , b , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -13900,9 +13900,9 @@ t_primary_raw(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // t_primary '.' NAME &t_lookahead
         if (p->error_indicator) {
@@ -13929,9 +13929,9 @@ t_primary_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Attribute ( a , b -> v . Name . id , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -13973,9 +13973,9 @@ t_primary_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Subscript ( a , b , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -14011,9 +14011,9 @@ t_primary_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Call ( a , CHECK ( _PyPegen_singleton_seq ( p , b ) ) , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -14055,9 +14055,9 @@ t_primary_raw(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Call ( a , ( b ) ? ( ( expr_ty ) b ) -> v . Call . args : NULL , ( b ) ? ( ( expr_ty ) b ) -> v . Call . keywords : NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -14193,9 +14193,9 @@ t_atom_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    int _start_lineno = p->tokens[_mark]->lineno;
+    Py_ssize_t _start_lineno = p->tokens[_mark]->lineno;
     UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
+    Py_ssize_t _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // NAME
         if (p->error_indicator) {
@@ -14274,9 +14274,9 @@ t_atom_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_Tuple ( b , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
@@ -14313,9 +14313,9 @@ t_atom_rule(Parser *p)
                 D(p->level--);
                 return NULL;
             }
-            int _end_lineno = _token->end_lineno;
+            Py_ssize_t _end_lineno = _token->end_lineno;
             UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
+            Py_ssize_t _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
             _res = _Py_List ( b , Store , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {

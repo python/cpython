@@ -398,7 +398,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     if (p->start_rule == Py_file_input) {
-        error_line = PyErr_ProgramTextObject(p->tok->filename, lineno);
+        error_line = PyErr_ProgramTextObject(p->tok->filename, (int) lineno);
     }
 
     if (!error_line) {
@@ -822,8 +822,8 @@ _PyPegen_name_token(Parser *p)
         p->error_indicator = 1;
         return NULL;
     }
-    return Name(id, Load, t->lineno, t->col_offset, t->end_lineno, t->end_col_offset,
-                p->arena);
+    return Name(id, Load, (int) t->lineno, (int) t->col_offset, (int) t->end_lineno,
+                (int) t->end_col_offset, p->arena);
 }
 
 void *
@@ -938,8 +938,8 @@ _PyPegen_number_token(Parser *p)
         return NULL;
     }
 
-    return Constant(c, NULL, t->lineno, t->col_offset, t->end_lineno, t->end_col_offset,
-                    p->arena);
+    return Constant(c, NULL, (int) t->lineno, (int) t->col_offset, (int) t->end_lineno,
+                    (int) t->end_col_offset, p->arena);
 }
 
 static int // bool
@@ -2043,8 +2043,8 @@ _PyPegen_concatenate_strings(Parser *p, asdl_seq *strings)
         if (PyArena_AddPyObject(p->arena, bytes_str) < 0) {
             goto error;
         }
-        return Constant(bytes_str, NULL, first->lineno, first->col_offset, last->end_lineno,
-                        last->end_col_offset, p->arena);
+        return Constant(bytes_str, NULL, (int) first->lineno, (int) first->col_offset,
+                        (int) last->end_lineno, (int) last->end_col_offset, p->arena);
     }
 
     return _PyPegen_FstringParser_Finish(p, &state, first, last);

@@ -15,7 +15,7 @@ warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char,
         return -1;
     }
     if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg, p->tok->filename,
-                                 t->lineno, NULL, NULL) < 0) {
+                                 (int) t->lineno, NULL, NULL) < 0) {
         if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
             /* Replace the DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
@@ -615,7 +615,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
                                      NULL, p->arena);
     p2->starting_lineno = p->starting_lineno + p->tok->first_lineno - 1;
     p2->starting_col_offset = p->tok->first_lineno == p->tok->lineno
-                              ? p->starting_col_offset + t->col_offset : 0;
+                              ? p->starting_col_offset + (int) t->col_offset : 0;
 
     expr = _PyPegen_run_parser(p2);
 
@@ -1014,9 +1014,9 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
        entire expression with the conversion and format spec. */
     //TODO: Fix this
     *expression = FormattedValue(simple_expression, conversion,
-                                 format_spec, first_token->lineno,
-                                 first_token->col_offset, last_token->end_lineno,
-                                 last_token->end_col_offset, p->arena);
+                                 format_spec, (int) first_token->lineno,
+                                 (int) first_token->col_offset, (int) last_token->end_lineno,
+                                 (int) last_token->end_col_offset, p->arena);
     if (!*expression) {
         goto error;
     }
@@ -1260,8 +1260,8 @@ make_str_node_and_del(Parser *p, PyObject **str, Token* first_token, Token *last
         return NULL;
     }
 
-    return Constant(s, kind, first_token->lineno, first_token->col_offset,
-                    last_token->end_lineno, last_token->end_col_offset, p->arena);
+    return Constant(s, kind, (int) first_token->lineno, (int) first_token->col_offset,
+                    (int) last_token->end_lineno, (int) last_token->end_col_offset, p->arena);
 
 }
 
@@ -1420,8 +1420,8 @@ _PyPegen_FstringParser_Finish(Parser *p, FstringParser *state, Token* first_toke
         goto error;
     }
 
-    return _Py_JoinedStr(seq, first_token->lineno, first_token->col_offset,
-                         last_token->end_lineno, last_token->end_col_offset, p->arena);
+    return _Py_JoinedStr(seq, (int) first_token->lineno, (int) first_token->col_offset,
+                         (int) last_token->end_lineno, (int) last_token->end_col_offset, p->arena);
 
 error:
     _PyPegen_FstringParser_Dealloc(state);
