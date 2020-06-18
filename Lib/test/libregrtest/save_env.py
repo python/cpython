@@ -12,7 +12,7 @@ import warnings
 from test import support
 from test.libregrtest.utils import print_warning
 try:
-    import _multiprocessing, multiprocessing.process
+    import multiprocessing.process
 except ImportError:
     multiprocessing = None
 
