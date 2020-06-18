@@ -60,6 +60,11 @@ try:
 except ImportError:
     INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
+try:
+    import select
+except ImportError:
+    select = None
+
 from test.support.script_helper import assert_python_ok
 from test.support import unix_shell
 from test.support.os_helper import FakePath
@@ -3588,6 +3593,31 @@ class EventfdTests(unittest.TestCase):
         # next read would block, too
         with self.assertRaises(BlockingIOError):
             os.eventfd_read(fd)
+
+    @unittest.skipUnless(
+        hasattr(select, "select"), reason="test needs select.select"
+    )
+    def test_eventfd_select(self):
+        flags = os.EFD_CLOEXEC | os.EFD_NONBLOCK
+        fd = os.eventfd(0, flags)
+        self.assertNotEqual(fd, -1)
+        self.addCleanup(os.close, fd)
+
+        # counter is zero, only writeable
+        rfd, wfd, xfd = select.select([fd], [fd], [fd], 0)
+        self.assertEqual((rfd, wfd, xfd), ([], [fd], []))
+
+        # counter is non-zero, read and writeable
+        os.eventfd_write(fd, 23)
+        rfd, wfd, xfd = select.select([fd], [fd], [fd], 0)
+        self.assertEqual((rfd, wfd, xfd), ([fd], [fd], []))
+        self.assertEqual(os.eventfd_read(fd), 23)
+
+        # counter at max, only readable
+        os.eventfd_write(fd, (2**64) - 2)
+        rfd, wfd, xfd = select.select([fd], [fd], [fd], 0)
+        self.assertEqual((rfd, wfd, xfd), ([fd], [], []))
+        os.eventfd_read(fd)
 
 
 class OSErrorTests(unittest.TestCase):
