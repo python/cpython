@@ -1,0 +1,1 @@
+Fix obtaining version number for gcc-7 in distutils/cygwincompiler :func:`get_version`. Patch by Matteo Barbera
