@@ -1726,7 +1726,7 @@ are always available.  They are listed here in alphabetical order.
 
    Example::
 
-      >>> for item in zip(('a', 'b', 'c'), (1, 2, 3)):
+      >>> for item in zip(['a', 'b', 'c'], [1, 2, 3]):
       ...     print(item)
       ...
       ('a', 1)
@@ -1734,36 +1734,34 @@ are always available.  They are listed here in alphabetical order.
       ('c', 3)
 
    More formally: :func:`zip` returns an iterator of tuples, where the *i*-th
-   tuple contains the *i*-th element from each of the argument sequences or
-   iterables.
+   tuple contains the *i*-th element from each of the argument iterables.
 
-   :func:`zip` returns a lazy iterable. The elements wouldn't be processed
-   until the iterable is iterated on, e.g. by wrapping in a :class:`tuple`.
+   :func:`zip` is lazy: The elements wouldn't be processed until the iterable
+   is iterated on, e.g. by wrapping in a :class:`list`.
 
-   One possible wrinkle is that the iterables passed to :func:`zip` could have
+   One thing to consider is that the iterables passed to :func:`zip` could have
    different lengths; sometimes by design, and sometimes because of a bug in
    the code that prepared these iterables.  Python offers three different
    approaches to dealing with this issue:
 
-   * By default, :func:`zip` has short-circuit behavior.  If any of the
-     iterables are shorter than the rest, :func:`zip` will ignore the remainders
-     of the longer iterables, cutting off the result to the length of the shortest
-     iterable::
+   * By default, :func:`zip` stops when the shortest iterable is exhausted.
+     :func:`zip` will ignore the remaining items in the longer iterables, cutting
+     off the result to the length of the shortest iterable::
 
-        >>> tuple(zip(range(3), ['fee', 'fi', 'fo', 'fum']))
-        ((0, 'fee'), (1, 'fi'), (2, 'fo'))
+        >>> list(zip(range(3), ['fee', 'fi', 'fo', 'fum']))
+        [(0, 'fee'), (1, 'fi'), (2, 'fo')]
 
    * :func:`zip` is often used in cases where the iterables are assumed to be
-     equal.  In such cases, it's recommended to use the ``strict=True`` option.
-     Its output is the same as regular :func:`zip`::
+     of equal length.  In such cases, it's recommended to use the ``strict=True``
+     option. Its output is the same as regular :func:`zip`::
 
-        >>> tuple(zip(('a', 'b', 'c'), (1, 2, 3), strict=True))
+        >>> list(zip(('a', 'b', 'c'), (1, 2, 3), strict=True))
         (('a', 1), ('b', 2), ('c', 3))
 
-     Unlike the default behavior, it asserts that the lengths of iterables is
+     Unlike the default behavior, it checks that the lengths of iterables is
      identical, raising a :exc:`ValueError` if they aren't:
 
-        >>> tuple(zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True))
+        >>> list(zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True))
         ValueError: zip() argument 2 is longer than argument 1
 
      Without the ``strict=True`` argument, any bug that results in iterables of
@@ -1780,24 +1778,23 @@ are always available.  They are listed here in alphabetical order.
 
    * The left-to-right evaluation order of the iterables is guaranteed. This
      makes possible an idiom for clustering a data series into n-length groups
-     using ``zip(*[iter(s)]*n)``.  This repeats the *same* iterator ``n`` times
-     so that each output tuple has the result of ``n`` calls to the iterator.
-     This has the effect of dividing the input into n-length chunks.
+     using ``zip(*[iter(s)]*n, strict=True)``.  This repeats the *same* iterator
+     ``n`` times so that each output tuple has the result of ``n`` calls to the
+     iterator. This has the effect of dividing the input into n-length chunks.
 
    * :func:`zip` in conjunction with the ``*`` operator can be used to unzip a
      list::
 
         >>> x = [1, 2, 3]
         >>> y = [4, 5, 6]
-        >>> zipped = zip(x, y)
-        >>> list(zipped)
+        >>> list(zip(x, y))
         [(1, 4), (2, 5), (3, 6)]
         >>> x2, y2 = zip(*zip(x, y))
         >>> x == list(x2) and y == list(y2)
         True
 
    .. versionchanged:: 3.10
-      The ``strict`` argument was added
+      Added the ``strict`` argument.
 
 
 .. function:: __import__(name, globals=None, locals=None, fromlist=(), level=0)
