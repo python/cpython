@@ -1720,50 +1720,84 @@ are always available.  They are listed here in alphabetical order.
    dictionary are ignored.
 
 
-.. function:: zip(*iterables)
+.. function:: zip(*iterables, strict=False)
 
-   Make an iterator that aggregates elements from each of the iterables.
+   Invert a series of iterables, turning rows into columns, and columns into rows.
 
-   Returns an iterator of tuples, where the *i*-th tuple contains
-   the *i*-th element from each of the argument sequences or iterables.  The
-   iterator stops when the shortest input iterable is exhausted. With a single
-   iterable argument, it returns an iterator of 1-tuples.  With no arguments,
-   it returns an empty iterator.  Equivalent to::
+   Example::
 
-        def zip(*iterables):
-            # zip('ABCD', 'xy') --> Ax By
-            sentinel = object()
-            iterators = [iter(it) for it in iterables]
-            while iterators:
-                result = []
-                for it in iterators:
-                    elem = next(it, sentinel)
-                    if elem is sentinel:
-                        return
-                    result.append(elem)
-                yield tuple(result)
+      >>> for item in zip(('a', 'b', 'c'), (1, 2, 3)):
+      ...     print(item)
+      ...
+      ('a', 1)
+      ('b', 2)
+      ('c', 3)
 
-   The left-to-right evaluation order of the iterables is guaranteed. This
-   makes possible an idiom for clustering a data series into n-length groups
-   using ``zip(*[iter(s)]*n)``.  This repeats the *same* iterator ``n`` times
-   so that each output tuple has the result of ``n`` calls to the iterator.
-   This has the effect of dividing the input into n-length chunks.
+   More formally: :func:`zip` returns an iterator of tuples, where the *i*-th
+   tuple contains the *i*-th element from each of the argument sequences or
+   iterables.
 
-   :func:`zip` should only be used with unequal length inputs when you don't
-   care about trailing, unmatched values from the longer iterables.  If those
-   values are important, use :func:`itertools.zip_longest` instead.
+   :func:`zip` returns a lazy iterable. The elements wouldn't be processed
+   until the iterable is iterated on, e.g. by wrapping in a :class:`tuple`.
 
-   :func:`zip` in conjunction with the ``*`` operator can be used to unzip a
-   list::
+   One possible wrinkle is that the iterables passed to :func:`zip` could have
+   different lengths; sometimes by design, and sometimes because of a bug in
+   the code that prepared these iterables.  Python offers three different
+   approaches to dealing with this issue:
 
-      >>> x = [1, 2, 3]
-      >>> y = [4, 5, 6]
-      >>> zipped = zip(x, y)
-      >>> list(zipped)
-      [(1, 4), (2, 5), (3, 6)]
-      >>> x2, y2 = zip(*zip(x, y))
-      >>> x == list(x2) and y == list(y2)
-      True
+   * By default, :func:`zip` has short-circuit behavior.  If any of the
+     iterables are shorter than the rest, :func:`zip` will ignore the remainders
+     of the longer iterables, cutting off the result to the length of the shortest
+     iterable::
+
+        >>> tuple(zip(range(3), ['fee', 'fi', 'fo', 'fum']))
+        ((0, 'fee'), (1, 'fi'), (2, 'fo'))
+
+   * :func:`zip` is often used in cases where the iterables are assumed to be
+     equal.  In such cases, it's recommended to use the ``strict=True`` option.
+     Its output is the same as regular :func:`zip`::
+
+        >>> tuple(zip(('a', 'b', 'c'), (1, 2, 3), strict=True))
+        (('a', 1), ('b', 2), ('c', 3))
+
+     Unlike the default behavior, it asserts that the lengths of iterables is
+     identical, raising a :exc:`ValueError` if they aren't:
+
+        >>> tuple(zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True))
+        ValueError: zip() argument 2 is longer than argument 1
+
+     Without the ``strict=True`` argument, any bug that results in iterables of
+     different lengths will be silenced, possibly mainfesting as a hard-to-find
+     bug in another part of the program.
+
+   * Shorter iterables can be padded with a constant value to make all the
+     iterables equal. This is done by :func:`itertools.zip_longest`.
+
+   Special cases: With a single iterable argument, :func:`zip` returns an
+   iterator of 1-tuples.  With no arguments, it returns an empty iterator.
+
+   Tips and tricks:
+
+   * The left-to-right evaluation order of the iterables is guaranteed. This
+     makes possible an idiom for clustering a data series into n-length groups
+     using ``zip(*[iter(s)]*n)``.  This repeats the *same* iterator ``n`` times
+     so that each output tuple has the result of ``n`` calls to the iterator.
+     This has the effect of dividing the input into n-length chunks.
+
+   * :func:`zip` in conjunction with the ``*`` operator can be used to unzip a
+     list::
+
+        >>> x = [1, 2, 3]
+        >>> y = [4, 5, 6]
+        >>> zipped = zip(x, y)
+        >>> list(zipped)
+        [(1, 4), (2, 5), (3, 6)]
+        >>> x2, y2 = zip(*zip(x, y))
+        >>> x == list(x2) and y == list(y2)
+        True
+
+   .. versionchanged:: 3.10
+      The ``strict`` argument was added
 
 
 .. function:: __import__(name, globals=None, locals=None, fromlist=(), level=0)
