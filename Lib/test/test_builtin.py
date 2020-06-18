@@ -1674,10 +1674,10 @@ class BuiltinTest(unittest.TestCase):
 
     def test_zip_strict_error_handling(self):
 
-        class E(Exception):
+        class Error(Exception):
             pass
 
-        class I:
+        class Iter:
             def __init__(self, size):
                 self.size = size
             def __iter__(self):
@@ -1685,29 +1685,29 @@ class BuiltinTest(unittest.TestCase):
             def __next__(self):
                 self.size -= 1
                 if self.size < 0:
-                    raise E
+                    raise Error
                 return self.size
 
-        l1 = self.iter_error(zip("AB", I(1), strict=True), E)
-        l2 = self.iter_error(zip("AB", I(2), "A", strict=True), ValueError)
-        l3 = self.iter_error(zip("AB", I(2), "ABC", strict=True), E)
-        l4 = self.iter_error(zip("AB", I(3), strict=True), ValueError)
-        l5 = self.iter_error(zip(I(1), "AB", strict=True), E)
-        l6 = self.iter_error(zip(I(2), "A", strict=True), ValueError)
-        l7 = self.iter_error(zip(I(2), "ABC", strict=True), E)
-        l8 = self.iter_error(zip(I(3), "AB", strict=True), ValueError)
+        l1 = self.iter_error(zip("AB", Iter(1), strict=True), Error)
         self.assertEqual(l1, [("A", 0)])
+        l2 = self.iter_error(zip("AB", Iter(2), "A", strict=True), ValueError)
         self.assertEqual(l2, [("A", 1, "A")])
+        l3 = self.iter_error(zip("AB", Iter(2), "ABC", strict=True), Error)
         self.assertEqual(l3, [("A", 1, "A"), ("B", 0, "B")])
+        l4 = self.iter_error(zip("AB", Iter(3), strict=True), ValueError)
         self.assertEqual(l4, [("A", 2), ("B", 1)])
+        l5 = self.iter_error(zip(Iter(1), "AB", strict=True), Error)
         self.assertEqual(l5, [(0, "A")])
+        l6 = self.iter_error(zip(Iter(2), "A", strict=True), ValueError)
         self.assertEqual(l6, [(1, "A")])
+        l7 = self.iter_error(zip(Iter(2), "ABC", strict=True), Error)
         self.assertEqual(l7, [(1, "A"), (0, "B")])
+        l8 = self.iter_error(zip(Iter(3), "AB", strict=True), ValueError)
         self.assertEqual(l8, [(2, "A"), (1, "B")])
 
     def test_zip_strict_error_handling_stopiteration(self):
 
-        class I:
+        class Iter:
             def __init__(self, size):
                 self.size = size
             def __iter__(self):
@@ -1718,21 +1718,21 @@ class BuiltinTest(unittest.TestCase):
                     raise StopIteration
                 return self.size
 
-        l1 = self.iter_error(zip("AB", I(1), strict=True), ValueError)
-        l2 = self.iter_error(zip("AB", I(2), "A", strict=True), ValueError)
-        l3 = self.iter_error(zip("AB", I(2), "ABC", strict=True), ValueError)
-        l4 = self.iter_error(zip("AB", I(3), strict=True), ValueError)
-        l5 = self.iter_error(zip(I(1), "AB", strict=True), ValueError)
-        l6 = self.iter_error(zip(I(2), "A", strict=True), ValueError)
-        l7 = self.iter_error(zip(I(2), "ABC", strict=True), ValueError)
-        l8 = self.iter_error(zip(I(3), "AB", strict=True), ValueError)
+        l1 = self.iter_error(zip("AB", Iter(1), strict=True), ValueError)
         self.assertEqual(l1, [("A", 0)])
+        l2 = self.iter_error(zip("AB", Iter(2), "A", strict=True), ValueError)
         self.assertEqual(l2, [("A", 1, "A")])
+        l3 = self.iter_error(zip("AB", Iter(2), "ABC", strict=True), ValueError)
         self.assertEqual(l3, [("A", 1, "A"), ("B", 0, "B")])
+        l4 = self.iter_error(zip("AB", Iter(3), strict=True), ValueError)
         self.assertEqual(l4, [("A", 2), ("B", 1)])
+        l5 = self.iter_error(zip(Iter(1), "AB", strict=True), ValueError)
         self.assertEqual(l5, [(0, "A")])
+        l6 = self.iter_error(zip(Iter(2), "A", strict=True), ValueError)
         self.assertEqual(l6, [(1, "A")])
+        l7 = self.iter_error(zip(Iter(2), "ABC", strict=True), ValueError)
         self.assertEqual(l7, [(1, "A"), (0, "B")])
+        l8 = self.iter_error(zip(Iter(3), "AB", strict=True), ValueError)
         self.assertEqual(l8, [(2, "A"), (1, "B")])
 
     def test_format(self):
