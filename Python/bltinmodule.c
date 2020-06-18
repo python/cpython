@@ -2655,12 +2655,17 @@ zip_next(zipobject *lz)
     }
     return result;
 check:
-    if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_StopIteration)) {
-        return NULL;
+    if (PyErr_Occurred()) {
+        if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+            // next() on argument i raised an exception (not StopIteration)
+            return NULL;
+        }
+        PyErr_Clear();
     }
     if (i) {
-        PyErr_Clear();
-        const char* plural = i == 1 ? " " : "s 1-";
+        // ValueError: zip() argument 2 is shorter than argument 1
+        // ValueError: zip() argument 3 is shorter than arguments 1-2
+        const char* plural = i == 1 ? " " : "s 1-";  //         ^^^^
         return PyErr_Format(PyExc_ValueError,
                             "zip() argument %d is shorter than argument%s%d",
                             i + 1, plural, i);
@@ -2670,16 +2675,21 @@ check:
         item = (*Py_TYPE(it)->tp_iternext)(it);
         if (item) {
             Py_DECREF(item);
-            PyErr_Clear();
             const char* plural = i == 1 ? " " : "s 1-";
             return PyErr_Format(PyExc_ValueError,
                                 "zip() argument %d is longer than argument%s%d",
                                 i + 1, plural, i);
         }
         if (PyErr_Occurred()) {
-            return NULL;
+            if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+                // next() on argument i raised an exception (not StopIteration)
+                return NULL;
+            }
+            PyErr_Clear();
         }
+        // Argument i is exhausted. So far so good...
     }
+    // All arguments are exhausted. Success!
     return NULL;
 }
 
