@@ -47,7 +47,6 @@ _csv_clear(PyObject *m)
 static int
 _csv_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    Py_VISIT(Py_TYPE(m));
     _csvstate *state = get_csv_state(m);
     Py_VISIT(state->error_obj);
     Py_VISIT(state->dialects);
@@ -63,10 +62,10 @@ _csv_free(void *m)
    _csv_clear((PyObject *)m);
 }
 
-PyDoc_STRVAR(unused_reduce_doc, "__reduce__() -> (cls, state)");
+PyDoc_STRVAR(reduce_always_fail_doc, "__reduce__() -> (cls, state)");
 
 static PyObject *
-unused_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
+reduce_always_fail(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyErr_Format(PyExc_TypeError,
                  "cannot pickle %s object",
@@ -488,7 +487,7 @@ err:
 }
 
 static struct PyMethodDef Dialect_methods[] = {
-    { "__reduce__", (PyCFunction)unused_reduce, METH_NOARGS, unused_reduce_doc},
+    { "__reduce__", (PyCFunction)reduce_always_fail, METH_NOARGS, reduce_always_fail_doc},
     { NULL, NULL }
 };
 
@@ -932,7 +931,7 @@ PyDoc_STRVAR(Reader_Type_doc,
 );
 
 static struct PyMethodDef Reader_methods[] = {
-    { "__reduce__", (PyCFunction)unused_reduce, METH_NOARGS, unused_reduce_doc},
+    { "__reduce__", (PyCFunction)reduce_always_fail, METH_NOARGS, reduce_always_fail_doc},
     { NULL, NULL }
 };
 #define R_OFF(x) offsetof(ReaderObj, x)
@@ -1324,7 +1323,7 @@ csv_writerows(WriterObj *self, PyObject *seqseq)
 static struct PyMethodDef Writer_methods[] = {
     { "writerow", (PyCFunction)csv_writerow, METH_O, csv_writerow_doc},
     { "writerows", (PyCFunction)csv_writerows, METH_O, csv_writerows_doc},
-    { "__reduce__", (PyCFunction)unused_reduce, METH_NOARGS, unused_reduce_doc},
+    { "__reduce__", (PyCFunction)reduce_always_fail, METH_NOARGS, reduce_always_fail_doc},
     { NULL, NULL }
 };
 
