@@ -1727,12 +1727,12 @@ are always available.  They are listed here in alphabetical order.
 
    Example::
 
-      >>> for item in zip(['a', 'b', 'c'], [1, 2, 3]):
+      >>> for item in zip([1, 2, 3], ['sugar', 'spice', 'everything nice']):
       ...     print(item)
       ...
-      ('a', 1)
-      ('b', 2)
-      ('c', 3)
+      (1, 'sugar')
+      (2, 'spice')
+      (3, 'everything nice')
 
    More formally: :func:`zip` returns an iterator of tuples, where the *i*-th
    tuple contains the *i*-th element from each of the argument iterables.
@@ -1741,8 +1741,9 @@ are always available.  They are listed here in alphabetical order.
    columns into rows.  This is similar to `transposing a matrix
    <https://en.wikipedia.org/wiki/Transpose>`_.
 
-   :func:`zip` is lazy: The elements wouldn't be processed until the iterable
-   is iterated on, e.g. by wrapping in a :class:`list`.
+   :func:`zip` is lazy: The elements won't be processed until the iterable is
+   iterated on, e.g. by a :keyword:`!for` loop or by wrapping in a
+   :class:`list`.
 
    One thing to consider is that the iterables passed to :func:`zip` could have
    different lengths; sometimes by design, and sometimes because of a bug in
@@ -1750,8 +1751,8 @@ are always available.  They are listed here in alphabetical order.
    approaches to dealing with this issue:
 
    * By default, :func:`zip` stops when the shortest iterable is exhausted.
-     :func:`zip` will ignore the remaining items in the longer iterables, cutting
-     off the result to the length of the shortest iterable::
+     It will ignore the remaining items in the longer iterables, cutting off
+     the result to the length of the shortest iterable::
 
         >>> list(zip(range(3), ['fee', 'fi', 'fo', 'fum']))
         [(0, 'fee'), (1, 'fi'), (2, 'fo')]
@@ -1776,7 +1777,7 @@ are always available.  They are listed here in alphabetical order.
    * Shorter iterables can be padded with a constant value to make all the
      iterables equal. This is done by :func:`itertools.zip_longest`.
 
-   Special cases: With a single iterable argument, :func:`zip` returns an
+   Edge cases: With a single iterable argument, :func:`zip` returns an
    iterator of 1-tuples.  With no arguments, it returns an empty iterator.
 
    Tips and tricks:
