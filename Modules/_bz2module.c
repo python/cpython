@@ -305,7 +305,9 @@ BZ2_Free(void* ctx, void *ptr)
     PyMem_RawFree(ptr);
 }
 
-// TODO: Convert it to clinic
+
+/* Argument Clinic is not used since the Argument Clinic always want to
+   check the type which would be wrong here */
 static int
 _bz2_BZ2Compressor___init___impl(BZ2Compressor *self, int compresslevel)
 {
@@ -415,7 +417,7 @@ static PyType_Spec bz2_compressor_type_spec = {
     .name = "_bz2.BZ2Compressor",
     .basicsize = sizeof(BZ2Compressor),
     // Calling PyType_GetModuleState() on a subclass is not safe.
-    // dbmtype_spec does not have Py_TPFLAGS_BASETYPE flag
+    // bz2_compressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
     .flags = Py_TPFLAGS_DEFAULT,
@@ -655,7 +657,8 @@ _bz2_BZ2Decompressor___reduce___impl(BZ2Decompressor *self)
     return NULL;
 }
 
-// TODO: Convert it to clinic
+/* Argument Clinic is not used since the Argument Clinic always want to
+   check the type which would be wrong here */
 static int
 _bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self)
 {
@@ -781,7 +784,7 @@ static PyType_Spec bz2_decompressor_type_spec = {
     .name = "_bz2.BZ2Decompressor",
     .basicsize = sizeof(BZ2Decompressor),
     // Calling PyType_GetModuleState() on a subclass is not safe.
-    // dbmtype_spec does not have Py_TPFLAGS_BASETYPE flag
+    // bz2_decompressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
     .flags = Py_TPFLAGS_DEFAULT,
