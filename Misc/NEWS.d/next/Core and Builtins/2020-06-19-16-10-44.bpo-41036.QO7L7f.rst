@@ -1,0 +1,3 @@
+Provide a default tp_traverse implementation for the base object type for
+heap types which have no tp_traverse function. The traverse function visits
+the type if the type is a heap type.

@@ -1139,8 +1139,10 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
         Py_VISIT(type);
     }
 
-    if (basetraverse)
+    // Don't call object_traverse() to avoid visiting the type twice
+    if (basetraverse && base != &PyBaseObject_Type) {
         return basetraverse(self, visit, arg);
+    }
     return 0;
 }
 
@@ -4906,6 +4908,18 @@ error:
     return result;
 }
 
+static int
+object_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    PyTypeObject *type = Py_TYPE(op);
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // For instance of heap types, tp_type is a strong reference
+        // to the type.
+        Py_VISIT(type);
+    }
+    return 0;
+}
+
 static PyMethodDef object_methods[] = {
     OBJECT___REDUCE_EX___METHODDEF
     OBJECT___REDUCE___METHODDEF
@@ -4947,7 +4961,7 @@ PyTypeObject PyBaseObject_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
     object_doc,                                 /* tp_doc */
-    0,                                          /* tp_traverse */
+    object_traverse,                            /* tp_traverse */
     0,                                          /* tp_clear */
     object_richcompare,                         /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
