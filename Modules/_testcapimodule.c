@@ -6868,29 +6868,36 @@ test_buildvalue_issue38913(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *res;
     const char str[] = "string";
     const Py_UNICODE unicode[] = L"unicode";
-    PyErr_SetNone(PyExc_ZeroDivisionError);
+    assert(!PyErr_Occurred());
 
     res = Py_BuildValue("(s#O)", str, 1, Py_None);
     assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
         return NULL;
     }
+    PyErr_Clear();
+
     res = Py_BuildValue("(z#O)", str, 1, Py_None);
     assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
         return NULL;
     }
+    PyErr_Clear();
+
     res = Py_BuildValue("(y#O)", str, 1, Py_None);
     assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
         return NULL;
     }
+    PyErr_Clear();
+
     res = Py_BuildValue("(u#O)", unicode, 1, Py_None);
     assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
         return NULL;
     }
-
     PyErr_Clear();
+
+
     Py_RETURN_NONE;
 }

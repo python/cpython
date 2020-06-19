@@ -155,6 +155,13 @@ New Features
 Porting to Python 3.10
 ----------------------
 
+* The ``PY_SSIZE_T_CLEAN`` macro must now be defined to use
+  :c:func:`PyArg_ParseTuple` and :c:func:`Py_BuildValue` formats which use
+  ``#``: ``es#``, ``et#``, ``s#``, ``u#``, ``y#``, ``z#``, ``U#`` and ``Z#``.
+  See :ref:`Parsing arguments and building values
+  <arg-parsing>` and the :pep:`353`.
+  (Contributed by Victor Stinner in :issue:`40943`.)
+
 * Since :c:func:`Py_TYPE()` is changed to the inline static function,
   ``Py_TYPE(obj) = new_type`` must be replaced with ``Py_SET_TYPE(obj, new_type)``:
   see :c:func:`Py_SET_TYPE()` (available since Python 3.9). For backward
