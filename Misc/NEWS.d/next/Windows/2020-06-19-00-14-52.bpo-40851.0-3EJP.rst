@@ -1,0 +1,2 @@
+On Windows, :class:`subprocess.Popen` no longer sets ``wShowWindow`` if the
+``startupinfo`` argument has the flag ``STARTF_USESHOWWINDOW``.
