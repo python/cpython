@@ -19,6 +19,7 @@ import email.generator
 import io
 import contextlib
 from types import GenericAlias
+from pathlib import Path
 try:
     import fcntl
 except ImportError:
@@ -36,7 +37,7 @@ class Mailbox:
 
     def __init__(self, path, factory=None, create=True):
         """Initialize a Mailbox instance."""
-        self._path = os.path.abspath(os.path.expanduser(path))
+        self._path = Path(path).expanduser().resolve()
         self._factory = factory
 
     def add(self, message):
@@ -157,7 +158,7 @@ class Mailbox:
     def popitem(self):
         """Delete an arbitrary (key, message) pair and return it."""
         for key in self.iterkeys():
-            return (key, self.pop(key))     # This is only run once.
+            return key, self.pop(key)  # This is only run once.
         else:
             raise KeyError('No messages in mailbox')
 
@@ -273,15 +274,15 @@ class Maildir(Mailbox):
         """Initialize a Maildir instance."""
         Mailbox.__init__(self, dirname, factory, create)
         self._paths = {
-            'tmp': os.path.join(self._path, 'tmp'),
-            'new': os.path.join(self._path, 'new'),
-            'cur': os.path.join(self._path, 'cur'),
+            'tmp': self._path / 'tmp',
+            'new': self._path / 'new',
+            'cur': self._path / 'cur',
             }
-        if not os.path.exists(self._path):
+        if not self._path.exists():
             if create:
-                os.mkdir(self._path, 0o700)
+                self._path.mkdir(mode=0o700)
                 for path in self._paths.values():
-                    os.mkdir(path, 0o700)
+                    path.mkdir(mode=0o700)
             else:
                 raise NoSuchMailboxError(self._path)
         self._toc = {}
@@ -307,8 +308,8 @@ class Maildir(Mailbox):
         else:
             subdir = 'new'
             suffix = ''
-        uniq = os.path.basename(tmp_file.name).split(self.colon)[0]
-        dest = os.path.join(self._path, subdir, uniq + suffix)
+        uniq = Path(tmp_file.name).name.split(self.colon)[0]
+        dest = self._path / subdir / (uniq + suffix)
         if isinstance(message, MaildirMessage):
             os.utime(tmp_file.name,
                      (os.path.getatime(tmp_file.name), message.get_date()))
@@ -317,9 +318,9 @@ class Maildir(Mailbox):
         # from other programs
         try:
             try:
-                os.link(tmp_file.name, dest)
+                Path(tmp_file.name).link_to(dest)
             except (AttributeError, PermissionError):
-                os.rename(tmp_file.name, dest)
+                Path(tmp_file.name).rename(dest)
             else:
                 os.remove(tmp_file.name)
         except OSError as e:
@@ -333,7 +334,7 @@ class Maildir(Mailbox):
 
     def remove(self, key):
         """Remove the keyed message; raise KeyError if it doesn't exist."""
-        os.remove(os.path.join(self._path, self._lookup(key)))
+        os.remove(self._path / self._lookup(key))
 
     def discard(self, key):
         """If the keyed message exists, remove it."""
@@ -355,25 +356,25 @@ class Maildir(Mailbox):
             # temp's subdir and suffix were defaults from add().
             dominant_subpath = old_subpath
         subdir = os.path.dirname(dominant_subpath)
-        if self.colon in dominant_subpath:
-            suffix = self.colon + dominant_subpath.split(self.colon)[-1]
+        if self.colon in os.fspath(dominant_subpath):
+            suffix = self.colon + os.fspath(dominant_subpath).split(self.colon)[-1]
         else:
             suffix = ''
         self.discard(key)
-        tmp_path = os.path.join(self._path, temp_subpath)
-        new_path = os.path.join(self._path, subdir, key + suffix)
+        tmp_path = self._path / temp_subpath
+        new_path = self._path / subdir / (key + suffix)
         if isinstance(message, MaildirMessage):
             os.utime(tmp_path,
                      (os.path.getatime(tmp_path), message.get_date()))
         # No file modification should be done after the file is moved to its
         # final position in order to prevent race conditions with changes
         # from other programs
-        os.rename(tmp_path, new_path)
+        Path(tmp_path).rename(new_path)
 
     def get_message(self, key):
         """Return a Message representation or raise a KeyError."""
         subpath = self._lookup(key)
-        with open(os.path.join(self._path, subpath), 'rb') as f:
+        with open(self._path / subpath, 'rb') as f:
             if self._factory:
                 msg = self._factory(f)
             else:
@@ -382,17 +383,17 @@ class Maildir(Mailbox):
         msg.set_subdir(subdir)
         if self.colon in name:
             msg.set_info(name.split(self.colon)[-1])
-        msg.set_date(os.path.getmtime(os.path.join(self._path, subpath)))
+        msg.set_date(os.path.getmtime(self._path / subpath))
         return msg
 
     def get_bytes(self, key):
         """Return a bytes representation or raise a KeyError."""
-        with open(os.path.join(self._path, self._lookup(key)), 'rb') as f:
+        with open(self._path / self._lookup(key), 'rb') as f:
             return f.read().replace(linesep, b'\n')
 
     def get_file(self, key):
         """Return a file-like representation or raise a KeyError."""
-        f = open(os.path.join(self._path, self._lookup(key)), 'rb')
+        f = open(self._path / self._lookup(key), 'rb')
         return _ProxyFile(f)
 
     def iterkeys(self):
@@ -436,52 +437,50 @@ class Maildir(Mailbox):
     def list_folders(self):
         """Return a list of folder names."""
         result = []
+        # TODO: Need to look into this carefully.
         for entry in os.listdir(self._path):
             if len(entry) > 1 and entry[0] == '.' and \
-               os.path.isdir(os.path.join(self._path, entry)):
+               (self._path / entry).is_dir():
                 result.append(entry[1:])
         return result
 
     def get_folder(self, folder):
         """Return a Maildir instance for the named folder."""
-        return Maildir(os.path.join(self._path, '.' + folder),
-                       factory=self._factory,
-                       create=False)
+        return Maildir(self._path / ('.' + folder),
+                       factory=self._factory, create=False)
 
     def add_folder(self, folder):
         """Create a folder and return a Maildir instance representing it."""
-        path = os.path.join(self._path, '.' + folder)
+        path = self._path / ('.' + folder)
         result = Maildir(path, factory=self._factory)
-        maildirfolder_path = os.path.join(path, 'maildirfolder')
-        if not os.path.exists(maildirfolder_path):
-            os.close(os.open(maildirfolder_path, os.O_CREAT | os.O_WRONLY,
-                0o666))
+        maildirfolder_path = path / 'maildirfolder'
+        if not maildirfolder_path.exists():
+            os.close(os.open(maildirfolder_path, os.O_CREAT | os.O_WRONLY, 0o666))
         return result
 
     def remove_folder(self, folder):
         """Delete the named folder, which must be empty."""
-        path = os.path.join(self._path, '.' + folder)
-        for entry in os.listdir(os.path.join(path, 'new')) + \
-                     os.listdir(os.path.join(path, 'cur')):
+        path = self._path / ('.' + folder)
+        for entry in os.listdir(path / 'new') + os.listdir(path / 'cur'):
             if len(entry) < 1 or entry[0] != '.':
                 raise NotEmptyError('Folder contains message(s): %s' % folder)
         for entry in os.listdir(path):
             if entry != 'new' and entry != 'cur' and entry != 'tmp' and \
-               os.path.isdir(os.path.join(path, entry)):
+               (path / entry).is_dir():
                 raise NotEmptyError("Folder contains subdirectory '%s': %s" %
                                     (folder, entry))
         for root, dirs, files in os.walk(path, topdown=False):
             for entry in files:
-                os.remove(os.path.join(root, entry))
+                os.remove(Path(root) / Path(entry))
             for entry in dirs:
-                os.rmdir(os.path.join(root, entry))
+                os.rmdir(Path(root) / Path(entry))
         os.rmdir(path)
 
     def clean(self):
         """Delete old files in "tmp"."""
         now = time.time()
-        for entry in os.listdir(os.path.join(self._path, 'tmp')):
-            path = os.path.join(self._path, 'tmp', entry)
+        for entry in os.listdir(self._path / 'tmp'):
+            path = self._path / 'tmp' / entry
             if now - os.path.getatime(path) > 129600:   # 60 * 60 * 36
                 os.remove(path)
 
@@ -497,7 +496,7 @@ class Maildir(Mailbox):
             hostname = hostname.replace(':', r'\072')
         uniq = "%s.M%sP%sQ%s.%s" % (int(now), int(now % 1 * 1e6), os.getpid(),
                                     Maildir._count, hostname)
-        path = os.path.join(self._path, 'tmp', uniq)
+        path = self._path / 'tmp' / uniq
         try:
             os.stat(path)
         except FileNotFoundError:
@@ -540,17 +539,17 @@ class Maildir(Mailbox):
         for subdir in self._toc_mtimes:
             path = self._paths[subdir]
             for entry in os.listdir(path):
-                p = os.path.join(path, entry)
-                if os.path.isdir(p):
+                p = path / entry
+                if p.is_dir():
                     continue
                 uniq = entry.split(self.colon)[0]
-                self._toc[uniq] = os.path.join(subdir, entry)
+                self._toc[uniq] = Path(subdir) / Path(entry)
         self._last_read = time.time()
 
     def _lookup(self, key):
-        """Use TOC to return subpath for given key, or raise a KeyError."""
+        """Use TOC to return subpath for a given key, or raise a KeyError."""
         try:
-            if os.path.exists(os.path.join(self._path, self._toc[key])):
+            if (self._path / self._toc[key]).exists():
                 return self._toc[key]
         except KeyError:
             pass
@@ -700,12 +699,12 @@ class _singlefileMailbox(Mailbox):
         self._file.close()
         # Make sure the new file's mode is the same as the old file's
         mode = os.stat(self._path).st_mode
-        os.chmod(new_file.name, mode)
+        Path(new_file.name).chmod(mode)
         try:
-            os.rename(new_file.name, self._path)
+            Path(new_file.name).rename(self._path)
         except FileExistsError:
             os.remove(self._path)
-            os.rename(new_file.name, self._path)
+            Path(new_file.name).rename(self._path)
         self._file = open(self._path, 'rb+')
         self._toc = new_toc
         self._pending = False
@@ -938,13 +937,13 @@ class MH(Mailbox):
     def __init__(self, path, factory=None, create=True):
         """Initialize an MH instance."""
         Mailbox.__init__(self, path, factory, create)
-        if not os.path.exists(self._path):
+        if not self._path.exists():
             if create:
-                os.mkdir(self._path, 0o700)
-                os.close(os.open(os.path.join(self._path, '.mh_sequences'),
+                self._path.mkdir(mode=0o700)
+                os.close(os.open(self._path / '.mh_sequences',
                                  os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600))
             else:
-                raise NoSuchMailboxError(self._path)
+                raise NoSuchMailboxError(os.fspath(self._path))
         self._locked = False
 
     def add(self, message):
@@ -954,7 +953,7 @@ class MH(Mailbox):
             new_key = 1
         else:
             new_key = max(keys) + 1
-        new_path = os.path.join(self._path, str(new_key))
+        new_path = self._path / str(new_key)
         f = _create_carefully(new_path)
         closed = False
         try:
@@ -983,7 +982,7 @@ class MH(Mailbox):
 
     def remove(self, key):
         """Remove the keyed message; raise KeyError if it doesn't exist."""
-        path = os.path.join(self._path, str(key))
+        path = self._path / str(key)
         try:
             f = open(path, 'rb+')
         except OSError as e:
@@ -997,7 +996,7 @@ class MH(Mailbox):
 
     def __setitem__(self, key, message):
         """Replace the keyed message; raise KeyError if it doesn't exist."""
-        path = os.path.join(self._path, str(key))
+        path = self._path / str(key)
         try:
             f = open(path, 'rb+')
         except OSError as e:
@@ -1023,9 +1022,9 @@ class MH(Mailbox):
         """Return a Message representation or raise a KeyError."""
         try:
             if self._locked:
-                f = open(os.path.join(self._path, str(key)), 'rb+')
+                f = open(self._path / str(key), 'rb+')
             else:
-                f = open(os.path.join(self._path, str(key)), 'rb')
+                f = open(self._path / str(key), 'rb')
         except OSError as e:
             if e.errno == errno.ENOENT:
                 raise KeyError('No message with key: %s' % key)
@@ -1048,9 +1047,9 @@ class MH(Mailbox):
         """Return a bytes representation or raise a KeyError."""
         try:
             if self._locked:
-                f = open(os.path.join(self._path, str(key)), 'rb+')
+                f = open(self._path / str(key), 'rb+')
             else:
-                f = open(os.path.join(self._path, str(key)), 'rb')
+                f = open(self._path / str(key), 'rb')
         except OSError as e:
             if e.errno == errno.ENOENT:
                 raise KeyError('No message with key: %s' % key)
@@ -1068,7 +1067,7 @@ class MH(Mailbox):
     def get_file(self, key):
         """Return a file-like representation or raise a KeyError."""
         try:
-            f = open(os.path.join(self._path, str(key)), 'rb')
+            f = open(self._path / str(key), 'rb')
         except OSError as e:
             if e.errno == errno.ENOENT:
                 raise KeyError('No message with key: %s' % key)
@@ -1083,7 +1082,7 @@ class MH(Mailbox):
 
     def __contains__(self, key):
         """Return True if the keyed message exists, False otherwise."""
-        return os.path.exists(os.path.join(self._path, str(key)))
+        return (self._path / str(key)).exists()
 
     def __len__(self):
         """Return a count of messages in the mailbox."""
@@ -1092,7 +1091,7 @@ class MH(Mailbox):
     def lock(self):
         """Lock the mailbox."""
         if not self._locked:
-            self._file = open(os.path.join(self._path, '.mh_sequences'), 'rb+')
+            self._file = open(self._path / '.mh_sequences', 'rb+')
             _lock_file(self._file)
             self._locked = True
 
@@ -1117,36 +1116,36 @@ class MH(Mailbox):
         """Return a list of folder names."""
         result = []
         for entry in os.listdir(self._path):
-            if os.path.isdir(os.path.join(self._path, entry)):
+            if (self._path / entry).is_dir():
                 result.append(entry)
         return result
 
     def get_folder(self, folder):
         """Return an MH instance for the named folder."""
-        return MH(os.path.join(self._path, folder),
+        return MH(self._path / folder,
                   factory=self._factory, create=False)
 
     def add_folder(self, folder):
         """Create a folder and return an MH instance representing it."""
-        return MH(os.path.join(self._path, folder),
+        return MH(self._path / folder,
                   factory=self._factory)
 
     def remove_folder(self, folder):
         """Delete the named folder, which must be empty."""
-        path = os.path.join(self._path, folder)
+        path = self._path / folder
         entries = os.listdir(path)
         if entries == ['.mh_sequences']:
-            os.remove(os.path.join(path, '.mh_sequences'))
+            os.remove(path / '.mh_sequences')
         elif entries == []:
             pass
         else:
-            raise NotEmptyError('Folder not empty: %s' % self._path)
+            raise NotEmptyError('Folder not empty: %s' % os.fspath(self._path))
         os.rmdir(path)
 
     def get_sequences(self):
         """Return a name-to-key-list dictionary to define each sequence."""
         results = {}
-        with open(os.path.join(self._path, '.mh_sequences'), 'r', encoding='ASCII') as f:
+        with open(self._path / '.mh_sequences', 'r', encoding='ASCII') as f:
             all_keys = set(self.keys())
             for line in f:
                 try:
@@ -1169,7 +1168,7 @@ class MH(Mailbox):
 
     def set_sequences(self, sequences):
         """Set sequences using the given name-to-key-list dictionary."""
-        f = open(os.path.join(self._path, '.mh_sequences'), 'r+', encoding='ASCII')
+        f = open(self._path / '.mh_sequences', 'r+', encoding='ASCII')
         try:
             os.close(os.open(f.name, os.O_WRONLY | os.O_TRUNC))
             for name, keys in sequences.items():
@@ -1205,13 +1204,11 @@ class MH(Mailbox):
             if key - 1 != prev:
                 changes.append((key, prev + 1))
                 try:
-                    os.link(os.path.join(self._path, str(key)),
-                            os.path.join(self._path, str(prev + 1)))
+                    (self._path / str(key)).link_to(self._path / str(prev + 1))
                 except (AttributeError, PermissionError):
-                    os.rename(os.path.join(self._path, str(key)),
-                              os.path.join(self._path, str(prev + 1)))
+                    (self._path / str(key)).rename(self._path / str(prev + 1))
                 else:
-                    os.unlink(os.path.join(self._path, str(key)))
+                    (self._path / str(key)).unlink()
             prev += 1
         self._next_key = prev + 1
         if len(changes) == 0:
@@ -2084,13 +2081,13 @@ def _lock_file(f, dotlock=True):
                     raise
             try:
                 try:
-                    os.link(pre_lock.name, f.name + '.lock')
+                    Path(pre_lock.name).link_to(f.name + '.lock')
                     dotlock_done = True
                 except (AttributeError, PermissionError):
-                    os.rename(pre_lock.name, f.name + '.lock')
+                    Path(pre_lock.name).rename(f.name + '.lock')
                     dotlock_done = True
                 else:
-                    os.unlink(pre_lock.name)
+                    Path(pre_lock.name).unlink()
             except FileExistsError:
                 os.remove(pre_lock.name)
                 raise ExternalClashError('dot lock unavailable: %s' %
@@ -2106,7 +2103,7 @@ def _unlock_file(f):
     """Unlock file f using lockf and dot locking."""
     if fcntl:
         fcntl.lockf(f, fcntl.LOCK_UN)
-    if os.path.exists(f.name + '.lock'):
+    if Path(f.name + '.lock').exists():
         os.remove(f.name + '.lock')
 
 def _create_carefully(path):

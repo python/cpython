@@ -13,7 +13,7 @@ import unittest
 import textwrap
 import mailbox
 import glob
-
+from pathlib import Path
 
 class TestBase:
 
@@ -674,7 +674,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
 
     def _check_basics(self, factory=None):
         # (Used by test_open_new() and test_open_existing().)
-        self.assertEqual(self._box._path, os.path.abspath(self._path))
+        self.assertEqual(self._box._path, Path(self._path).resolve())
         self.assertEqual(self._box._factory, factory)
         for subdir in '', 'tmp', 'new', 'cur':
             path = os.path.join(self._path, subdir)
@@ -791,15 +791,15 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         key1 = self._box.add(self._template % 1)
         self.assertEqual(self._box._toc, {})
         self._box._refresh()
-        self.assertEqual(self._box._toc, {key0: os.path.join('new', key0),
-                                          key1: os.path.join('new', key1)})
+        self.assertEqual(self._box._toc, {key0: Path('new', key0),
+                                          key1: Path('new', key1)})
         key2 = self._box.add(self._template % 2)
-        self.assertEqual(self._box._toc, {key0: os.path.join('new', key0),
-                                          key1: os.path.join('new', key1)})
+        self.assertEqual(self._box._toc, {key0: Path('new', key0),
+                                          key1: Path('new', key1)})
         self._box._refresh()
-        self.assertEqual(self._box._toc, {key0: os.path.join('new', key0),
-                                          key1: os.path.join('new', key1),
-                                          key2: os.path.join('new', key2)})
+        self.assertEqual(self._box._toc, {key0: Path('new', key0),
+                                          key1: Path('new', key1),
+                                          key2: Path('new', key2)})
 
     def test_refresh_after_safety_period(self):
         # Issue #13254: Call _refresh after the "file system safety
@@ -824,9 +824,9 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         # Look up message subpaths in the TOC
         self.assertRaises(KeyError, lambda: self._box._lookup('foo'))
         key0 = self._box.add(self._template % 0)
-        self.assertEqual(self._box._lookup(key0), os.path.join('new', key0))
+        self.assertEqual(self._box._lookup(key0), Path('new', key0))
         os.remove(os.path.join(self._path, 'new', key0))
-        self.assertEqual(self._box._toc, {key0: os.path.join('new', key0)})
+        self.assertEqual(self._box._toc, {key0: Path('new', key0)})
         # Be sure that the TOC is read back from disk (see issue #6896
         # about bad mtime behaviour on some systems).
         self._box.flush()
