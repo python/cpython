@@ -36,7 +36,7 @@ class Mailbox:
 
     def __init__(self, path, factory=None, create=True):
         """Initialize a Mailbox instance."""
-        self._path = os.path.abspath(os.path.expanduser(path))
+        self._path = os.path.abspath(os.path.expanduser(os.fspath(path)))
         self._factory = factory
 
     def add(self, message):

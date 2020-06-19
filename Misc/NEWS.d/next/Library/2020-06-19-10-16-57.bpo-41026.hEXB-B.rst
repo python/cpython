@@ -1,0 +1,2 @@
+:mod:`mailbox` now supports a :term:`path-like object`.  Patch by Laurence
+Alexander Hurst.
