@@ -1764,7 +1764,7 @@ are always available.  They are listed here in alphabetical order.
         >>> list(zip(('a', 'b', 'c'), (1, 2, 3), strict=True))
         [('a', 1), ('b', 2), ('c', 3)]
 
-     Unlike the default behavior, it checks that the lengths of iterables is
+     Unlike the default behavior, it checks that the lengths of iterables are
      identical, raising a :exc:`ValueError` if they aren't:
 
         >>> list(zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True))
@@ -1777,7 +1777,8 @@ are always available.  They are listed here in alphabetical order.
      bug in another part of the program.
 
    * Shorter iterables can be padded with a constant value to make all the
-     iterables equal. This is done by :func:`itertools.zip_longest`.
+     iterables have the same length.  This is done by
+     :func:`itertools.zip_longest`.
 
    Edge cases: With a single iterable argument, :func:`zip` returns an
    iterator of 1-tuples.  With no arguments, it returns an empty iterator.
