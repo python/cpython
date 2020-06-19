@@ -79,6 +79,9 @@ New Features
   :class:`types.MappingProxyType` object wrapping the original
   dictionary. (Contributed by Dennis Sweeney in :issue:`40890`.)
 
+* :pep:`618`: The :func:`zip` function now has an optional ``strict`` flag, used
+  to require that all the iterables have an equal length.
+
 
 Other Language Changes
 ======================
