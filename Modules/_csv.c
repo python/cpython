@@ -38,9 +38,6 @@ _csv_clear(PyObject *m)
     _csvstate *state = get_csv_state(m);
     Py_CLEAR(state->error_obj);
     Py_CLEAR(state->dialects);
-    Py_CLEAR(state->dialect_type);
-    Py_CLEAR(state->reader_type);
-    Py_CLEAR(state->writer_type);
     return 0;
 }
 
@@ -50,9 +47,6 @@ _csv_traverse(PyObject *m, visitproc visit, void *arg)
     _csvstate *state = get_csv_state(m);
     Py_VISIT(state->error_obj);
     Py_VISIT(state->dialects);
-    Py_VISIT(state->dialect_type);
-    Py_VISIT(state->reader_type);
-    Py_VISIT(state->writer_type);
     return 0;
 }
 
