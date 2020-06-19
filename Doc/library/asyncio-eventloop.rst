@@ -191,7 +191,7 @@ Scheduling callbacks
 
 .. method:: loop.call_soon(callback, *args, context=None)
 
-   Schedule a non-async *callback* to be called with *args* 
+   Schedule a synchronous *callback* to be called with *args* 
    arguments at the next iteration of the event loop.
 
    Callbacks are called in the order in which they are registered.
