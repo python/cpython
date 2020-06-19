@@ -1972,10 +1972,11 @@ def skip_if_broken_multiprocessing_synchronize():
     # multiprocessing.synchronize requires _multiprocessing.SemLock.
     synchronize = import_module('multiprocessing.synchronize')
 
-    try:
-        # bpo-38377: On Linux, creating a semaphore is the current user
-        # does not have the permission to create a file in /dev/shm.
-        # Create a semaphore to check permissions.
-        synchronize.Lock(ctx=None)
-    except OSError as exc:
-        raise unittest.SkipTest(f"broken multiprocessing SemLock: {exc!r}")
+    if sys.platform == "linux":
+        try:
+            # bpo-38377: On Linux, creating a semaphore is the current user
+            # does not have the permission to create a file in /dev/shm.
+            # Create a semaphore to check permissions.
+            synchronize.Lock(ctx=None)
+        except OSError as exc:
+            raise unittest.SkipTest(f"broken multiprocessing SemLock: {exc!r}")
