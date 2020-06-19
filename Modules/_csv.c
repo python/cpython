@@ -569,9 +569,7 @@ parse_add_char(ReaderObj *self, Py_UCS4 c)
 {
     PyTypeObject *reader_type = Py_TYPE(self);
     _csvstate *state = PyType_GetModuleState(reader_type);
-    if (state == NULL) {
-        return -1;
-    }
+    assert(state != NULL);
     if (self->field_len >= state->field_limit) {
         PyErr_Format(state->error_obj, "field larger than field limit (%ld)",
                      state->field_limit);
@@ -589,6 +587,7 @@ parse_process_char(ReaderObj *self, Py_UCS4 c)
     DialectObj *dialect = self->dialect;
     PyTypeObject *reader_type = Py_TYPE(self);
     _csvstate *state = PyType_GetModuleState(reader_type);
+    assert(state != NULL);
     switch (self->state) {
     case START_RECORD:
         /* start of record */
@@ -788,7 +787,7 @@ Reader_iternext(ReaderObj *self)
     PyObject *lineobj;
     PyTypeObject* reader_type = Py_TYPE(self);
     _csvstate *state = PyType_GetModuleState(reader_type);
-
+    assert(state != NULL);
     if (parse_reset(self) < 0)
         return NULL;
     do {
