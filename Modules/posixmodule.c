@@ -12877,12 +12877,10 @@ Creates and returns an event notification file descriptor.
 static PyObject *
 os_eventfd_impl(PyObject *module, unsigned int initval, int flags)
 /*[clinic end generated code: output=ce9c9bbd1446f2de input=66203e3c50c4028b]*/
+
 {
+    /* initval is limited to uint32_t, internal counter is uint64_t */
     int fd;
-    if (initval > (PY_ULLONG_MAX - 1)) {
-        PyErr_SetString(PyExc_OverflowError, "initval too large");
-        return NULL;
-    }
     Py_BEGIN_ALLOW_THREADS
     fd = eventfd(initval, flags);
     Py_END_ALLOW_THREADS
@@ -12921,18 +12919,14 @@ os.eventfd_write
     fd: fildes
     value: unsigned_long_long
 
-Write eventfd value
+Write eventfd value.
 [clinic start generated code]*/
 
 static PyObject *
 os_eventfd_write_impl(PyObject *module, int fd, unsigned long long value)
-/*[clinic end generated code: output=bebd9040bbf987f5 input=82da3dd0d6e62f28]*/
+/*[clinic end generated code: output=bebd9040bbf987f5 input=156de8555be5a949]*/
 {
     int result;
-    if (value > (PY_ULLONG_MAX - 1)) {
-        PyErr_SetString(PyExc_OverflowError, "value too large");
-        return NULL;
-    }
     Py_BEGIN_ALLOW_THREADS
     result = eventfd_write(fd, value);
     Py_END_ALLOW_THREADS

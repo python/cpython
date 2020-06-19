@@ -229,6 +229,10 @@ os
 Added :func:`os.cpu_count()` support for VxWorks RTOS.
 (Contributed by Peixing Xin in :issue:`41440`.)
 
+A new :func:`os.eventfd` function and related helpers were added to wrap the
+``eventfd2`` syscall on Linux
+(Contributed by Christian Heimes in :issue:`41001`.)
+
 py_compile
 ----------
 

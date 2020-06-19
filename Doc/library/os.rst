@@ -3283,6 +3283,14 @@ features:
    :func:`~select.select`, :func:`~select.poll` and similar. By default, the
    new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
 
+   *initval* is the initial value of the event counter. The initial value
+   must be an 32 bit unsigned integer. Please note that the initial value is
+   limited to a 32 bit unsigned int although the event counter is an unsigned
+   64 bit integer with a maximum value of 2\ :sup:`64`\ -\ 2.
+
+   *flags* can be constructed from :const:`EFD_CLOEXEC`,
+   :const:`EFD_NONBLOCK`, and :const:`EFD_SEMAPHORE`.
+
    If :const:`EFD_SEMAPHORE` is specified and the event counter is non-zero,
    :func:`eventfd_read` returns 1 and decrements the counter by one.
 
@@ -3292,13 +3300,9 @@ features:
 
    If the event counter is zero, :func:`eventfd_read` blocks.
 
-   :func:`eventfd_write` increments the event counter.
-
-   *initval* is the initial value of the event counter. It must be an
-   unsigned integer between 0 and 2\ :sup:`64`\ -\ 2.
-
-   *flags* can be constructed from :const:`EFD_CLOEXEC`,
-   :const:`EFD_NONBLOCK`, and :const:`EFD_SEMAPHORE`.
+   :func:`eventfd_write` increments the event counter. Write blocks if the
+   write operation would increment the counter to a value larger than
+   2\ :sup:`64`\ -\ 2.
 
    .. availability:: Linux 2.6.27 or newer with glibc 2.8 or newer.
 
@@ -3306,23 +3310,27 @@ features:
 
 .. function:: eventfd_read(fd)
 
-   Read value from an :func:`eventfd` file descriptor and return
-   an unsigned integer between 0 and 2\ :sup:`64`\ -\ 2. The function does
-   not verify that *fd* is an :func:`eventfd`.
+   Read value from an :func:`eventfd` file descriptor and return a 64 bit
+   unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
+
+   .. availability:: See :func:`eventfd`
 
    .. versionadded:: 3.10
 
 .. function:: eventfd_write(fd, value)
 
-   Add value to an :func:`eventfd` file descriptor. *value* must be
-   an unsigned integer between 0 and 2\ :sup:`64`\ -\ 2. The function does
-   not verify that *fd* is an :func:`eventfd`.
+   Add value to an :func:`eventfd` file descriptor. *value* must be a 64 bit
+   unsigned int. The function does not verify that *fd* is an :func:`eventfd`.
+
+   .. availability:: See :func:`eventfd`
 
    .. versionadded:: 3.10
 
 .. data:: EFD_CLOEXEC
 
    Set close-on-exec flag for new :func:`eventfd` file descriptor.
+
+   .. availability:: See :func:`eventfd`
 
    .. versionadded:: 3.10
 
@@ -3331,6 +3339,8 @@ features:
    Set :const:`O_NONBLOCK` status flag for new :func:`eventfd` file
    descriptor.
 
+   .. availability:: See :func:`eventfd`
+
    .. versionadded:: 3.10
 
 .. data:: EFD_SEMAPHORE
@@ -3338,7 +3348,7 @@ features:
    Provide semaphore-like semantics for reads from a :func:`eventfd` file
    descriptor. On read the internal counter is decremented by one.
 
-   .. availability:: Linux 2.6.30 or newer
+   .. availability:: Linux 2.6.30 or newer with glibc 2.8 or newer.
 
    .. versionadded:: 3.10
 

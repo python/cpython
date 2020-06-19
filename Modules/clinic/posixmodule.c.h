@@ -7712,7 +7712,7 @@ PyDoc_STRVAR(os_eventfd_write__doc__,
 "eventfd_write($module, /, fd, value)\n"
 "--\n"
 "\n"
-"Write eventfd value");
+"Write eventfd value.");
 
 #define OS_EVENTFD_WRITE_METHODDEF    \
     {"eventfd_write", (PyCFunction)(void(*)(void))os_eventfd_write, METH_FASTCALL|METH_KEYWORDS, os_eventfd_write__doc__},
@@ -9059,4 +9059,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=0ffd140427fab051 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=49b7ed768242ef7c input=a9049054013a1b77]*/
