@@ -354,11 +354,8 @@ _bz2_BZ2Compressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     int compresslevel = 9;
-    _bz2_state *state = PyType_GetModuleState(Py_TYPE(self));
-    assert(state != NULL);
 
-    if (Py_IS_TYPE(self, state->bz2_compressor_type) &&
-        !_PyArg_NoKeywords("BZ2Compressor", kwargs)) {
+    if (!_PyArg_NoKeywords("BZ2Compressor", kwargs)) {
         goto exit;
     }
     if (!_PyArg_CheckPositional("BZ2Compressor", PyTuple_GET_SIZE(args), 0, 1)) {
@@ -691,15 +688,11 @@ static int
 _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    _bz2_state *state = PyType_GetModuleState(Py_TYPE(self));
-    assert(state != NULL);
     
-    if (Py_IS_TYPE(self, state->bz2_decompressor_type) &&
-        !_PyArg_NoPositional("BZ2Decompressor", args)) {
+    if (!_PyArg_NoPositional("BZ2Decompressor", args)) {
         goto exit;
     }
-    if (Py_IS_TYPE(self, state->bz2_decompressor_type) &&
-        !_PyArg_NoKeywords("BZ2Decompressor", kwargs)) {
+    if (!_PyArg_NoKeywords("BZ2Decompressor", kwargs)) {
         goto exit;
     }
     return_value = _bz2_BZ2Decompressor___init___impl((BZ2Decompressor *)self);
