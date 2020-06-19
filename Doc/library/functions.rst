@@ -1768,6 +1768,8 @@ are always available.  They are listed here in alphabetical order.
      identical, raising a :exc:`ValueError` if they aren't:
 
         >>> list(zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True))
+        Traceback (most recent call last):
+          ...
         ValueError: zip() argument 2 is longer than argument 1
 
      Without the ``strict=True`` argument, any bug that results in iterables of
