@@ -735,7 +735,7 @@ BZ2Decompressor_dealloc(BZ2Decompressor *self)
 }
 
 static int
-BZ2Decompressor_traverse(BZ2Compressor *self, visitproc visit, void *arg)
+BZ2Decompressor_traverse(BZ2Decompressor *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
