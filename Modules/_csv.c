@@ -1496,11 +1496,11 @@ csv_field_size_limit(PyObject *module, PyObject *args)
             return NULL;
         }
        
-        state->field_limit = PyLong_AsLong(new_limit);
-        if (state->field_limit == -1 && PyErr_Occurred()) {
-            state->field_limit = old_limit;
+        long tmp_limit = PyLong_AsLong(new_limit);
+        if (tmp_limit == -1 && PyErr_Occurred()) {
             return NULL;
         }
+        state->field_limit = tmp_limit;
     }
     return PyLong_FromLong(old_limit);
 }
