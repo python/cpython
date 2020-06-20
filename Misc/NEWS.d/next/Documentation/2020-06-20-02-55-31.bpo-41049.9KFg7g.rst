@@ -1,0 +1,2 @@
+Document pointer comparison (identity-implies-equality) for
+Py_RichCompareBool().
