@@ -145,7 +145,7 @@ Object Protocol
    the Python expression ``o1 op o2``, where ``op`` is the operator corresponding
    to *opid*. Returns the value of the comparison on success, or ``NULL`` on failure.
 
-   If the two pointers are the same, the const:`Py_EQ` operation always returns
+   If the two pointers are the same, the :const:`Py_EQ` operation always returns
    ``True`` and the :const:`Py_NE` operation always returns ``False``.
 
 .. c:function:: int PyObject_RichCompareBool(PyObject *o1, PyObject *o2, int opid)
