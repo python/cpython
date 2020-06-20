@@ -608,7 +608,6 @@ class SimpleCookie(BaseCookie):
         """
         Return an unquoted string, from the cookie header in a reversed fasion of value_encode.
         """
-
         return _unquote(val), val
 
     def value_encode(self, val):
