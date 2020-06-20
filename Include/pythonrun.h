@@ -64,7 +64,25 @@ PyAPI_FUNC(struct _mod *) PyParser_ASTFromFileObject(
     PyCompilerFlags *flags,
     int *errcode,
     PyArena *arena);
+#endif
 
+#ifndef PyParser_SimpleParseString
+#define PyParser_SimpleParseString(S, B) \
+    PyParser_SimpleParseStringFlags(S, B, 0)
+#define PyParser_SimpleParseFile(FP, S, B) \
+    PyParser_SimpleParseFileFlags(FP, S, B, 0)
+#endif
+PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlags(const char *, int,
+                                                           int);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
+PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlagsFilename(const char *,
+                                                                   const char *,
+                                                                   int, int);
+#endif
+PyAPI_FUNC(struct _node *) PyParser_SimpleParseFileFlags(FILE *, const char *,
+                                                         int, int);
+
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyRun_StringFlags(const char *, int, PyObject *,
                                          PyObject *, PyCompilerFlags *);
 
