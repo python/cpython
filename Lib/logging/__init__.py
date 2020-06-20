@@ -411,8 +411,9 @@ class PercentStyle(object):
     asctime_search = '%(asctime)'
     validation_pattern = re.compile(r'%\(\w+\)[#0+ -]*(\*|\d+)?(\.(\*|\d+))?[diouxefgcrsa%]', re.I)
 
-    def __init__(self, fmt):
+    def __init__(self, fmt, *, defaults=None):
         self._fmt = fmt or self.default_format
+        self._defaults = defaults
 
     def usesTime(self):
         return self._fmt.find(self.asctime_search) >= 0
@@ -423,7 +424,11 @@ class PercentStyle(object):
             raise ValueError("Invalid format '%s' for '%s' style" % (self._fmt, self.default_format[0]))
 
     def _format(self, record):
-        return self._fmt % record.__dict__
+        if defaults := self._defaults:
+            values = defaults | record.__dict__
+        else:
+            values = record.__dict__
+        return self._fmt % values
 
     def format(self, record):
         try:
@@ -441,7 +446,11 @@ class StrFormatStyle(PercentStyle):
     field_spec = re.compile(r'^(\d+|\w+)(\.\w+|\[[^]]+\])*$')
 
     def _format(self, record):
-        return self._fmt.format(**record.__dict__)
+        if defaults := self._defaults:
+            values = defaults | record.__dict__
+        else:
+            values = record.__dict__
+        return self._fmt.format(**values)
 
     def validate(self):
         """Validate the input format, ensure it is the correct string formatting style"""
@@ -467,8 +476,8 @@ class StringTemplateStyle(PercentStyle):
     asctime_format = '${asctime}'
     asctime_search = '${asctime}'
 
-    def __init__(self, fmt):
-        self._fmt = fmt or self.default_format
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._tpl = Template(self._fmt)
 
     def usesTime(self):
@@ -490,7 +499,11 @@ class StringTemplateStyle(PercentStyle):
             raise ValueError('invalid format: no fields')
 
     def _format(self, record):
-        return self._tpl.substitute(**record.__dict__)
+        if defaults := self._defaults:
+            values = defaults | record.__dict__
+        else:
+            values = record.__dict__
+        return self._tpl.substitute(**values)
 
 
 BASIC_FORMAT = "%(levelname)s:%(name)s:%(message)s"
@@ -546,7 +559,8 @@ class Formatter(object):
 
     converter = time.localtime
 
-    def __init__(self, fmt=None, datefmt=None, style='%', validate=True):
+    def __init__(self, fmt=None, datefmt=None, style='%', validate=True, *,
+                 defaults=None):
         """
         Initialize the formatter with specified format strings.
 
@@ -565,7 +579,7 @@ class Formatter(object):
         if style not in _STYLES:
             raise ValueError('Style must be one of: %s' % ','.join(
                              _STYLES.keys()))
-        self._style = _STYLES[style][0](fmt)
+        self._style = _STYLES[style][0](fmt, defaults=defaults)
         if validate:
             self._style.validate()
 

@@ -79,6 +79,9 @@ New Features
   :class:`types.MappingProxyType` object wrapping the original
   dictionary. (Contributed by Dennis Sweeney in :issue:`40890`.)
 
+* :pep:`618`: The :func:`zip` function now has an optional ``strict`` flag, used
+  to require that all the iterables have an equal length.
+
 
 Other Language Changes
 ======================
@@ -99,6 +102,14 @@ New Modules
 
 Improved Modules
 ================
+
+glob
+----
+
+Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
+:func:`~glob.iglob` which allow to specify the root directory for searching.
+(Contributed by Serhiy Storchaka in :issue:`38144`.)
+
 
 Optimizations
 =============
@@ -146,6 +157,13 @@ New Features
 
 Porting to Python 3.10
 ----------------------
+
+* The ``PY_SSIZE_T_CLEAN`` macro must now be defined to use
+  :c:func:`PyArg_ParseTuple` and :c:func:`Py_BuildValue` formats which use
+  ``#``: ``es#``, ``et#``, ``s#``, ``u#``, ``y#``, ``z#``, ``U#`` and ``Z#``.
+  See :ref:`Parsing arguments and building values
+  <arg-parsing>` and the :pep:`353`.
+  (Contributed by Victor Stinner in :issue:`40943`.)
 
 * Since :c:func:`Py_TYPE()` is changed to the inline static function,
   ``Py_TYPE(obj) = new_type`` must be replaced with ``Py_SET_TYPE(obj, new_type)``:
