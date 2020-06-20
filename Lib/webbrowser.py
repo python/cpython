@@ -413,7 +413,7 @@ class Grail(BaseBrowser):
         tempdir = os.path.join(tempfile.gettempdir(),
                                ".grail-unix")
         user = pwd.getpwuid(os.getuid())[0]
-        filename = os.path.join(tempdir, user + "-*")
+        filename = os.path.join(glob.escape(tempdir), glob.escape(user) + "-*")
         maybes = glob.glob(filename)
         if not maybes:
             return None
