@@ -1,2 +1,2 @@
-Added support for empty .pth lines in the :mod:`site.py`
+Ignore empty or whitespace-only lines according to the existing documentation.
 By Ido Michael, contributors Malcolm Smith and Tal Einat.

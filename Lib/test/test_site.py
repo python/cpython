@@ -163,14 +163,14 @@ class HelperFunctionsTests(unittest.TestCase):
         # Issue 33689
         pth_dir, pth_fn = self.make_pth("\n\n  \n\n")
         known_paths = site.addpackage(pth_dir, pth_fn, set())
-        self.assertEqual(len(known_paths), 0)
+        self.assertEqual(known_paths, set())
 
     def test_addpackage_import_bad_pth_file(self):
         # Issue 5258
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
         with captured_stderr() as err_out:
             self.assertFalse(site.addpackage(pth_dir, pth_fn, set()))
-        self.assertEqual(err_out.getvalue(), "")
+        self.asserLib/site.pytEqual(err_out.getvalue(), "")
         for path in sys.path:
             if isinstance(path, str):
                 self.assertNotIn("abc\x00def", path)
@@ -590,16 +590,6 @@ class StartupImportTests(unittest.TestCase):
         r = subprocess.Popen([sys.executable, '-I', '-c',
             'import site, sys; site.enablerlcompleter(); sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
         self.assertTrue(r, "'__interactivehook__' not added by enablerlcompleter()")
-
-    @classmethod
-    def _calc_sys_path_for_underpth_nosite(self, sys_prefix, lines):
-        sys_path = []
-        for line in lines:
-            if not line or line[0] == '#':
-                continue
-            abs_path = os.path.abspath(os.path.join(sys_prefix, line))
-            sys_path.append(abs_path)
-        return sys_path
 
 @unittest.skipUnless(sys.platform == 'win32', "only supported on Windows")
 class _pthFileTests(unittest.TestCase):
