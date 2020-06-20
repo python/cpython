@@ -397,7 +397,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     if (p->start_rule == Py_file_input) {
-        error_line = PyErr_ProgramTextObject(p->tok->filename, lineno);
+        error_line = PyErr_ProgramTextObject(p->tok->filename, (int) lineno);
     }
 
     if (!error_line) {
