@@ -93,9 +93,9 @@ class PythonCallMakerVisitor(GrammarVisitor):
 
     def visit_Opt(self, node: Opt) -> Tuple[str, str]:
         name, call = self.visit(node.node)
-        # Note trailing comma (if there isn't already one,
-        # which can occur when rules have both repeat0 and optional
-        # marker, e.g: [rule*])
+        # Note trailing comma (the call may already have one comma
+        # at the end, for example when rules have both repeat0 and optional
+        # markers, e.g: [rule*])
         if call.endswith(","):
             return "opt", call
         else:

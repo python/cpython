@@ -497,8 +497,8 @@ class TestPegen(unittest.TestCase):
         grammar = """
         start: [NAME*]
         """
-        # This case was failing because of double trailing comma at the end
-        # of the generated parser. See bpo-41044
+        # This case was failing because of a double trailing comma at the end
+        # of a line in the generated source. See bpo-41044
         make_parser(grammar)
 
     def test_left_recursion_too_complex(self) -> None:
