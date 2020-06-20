@@ -653,9 +653,7 @@ invalid_assignment:
     | a=expression ':' expression ['=' annotated_rhs] {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "illegal target for annotation") }
     | (star_targets '=')* a=star_expressions '=' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
-            GET_INVALID_TARGET(a),
-            "cannot assign to %s", _PyPegen_get_expr_name(GET_INVALID_TARGET(a))) }
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
     | (star_targets '=')* a=yield_expr '=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "assignment to yield expression not possible") }
     | a=star_expressions augassign (yield_expr | star_expressions) {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION( 
@@ -665,12 +663,7 @@ invalid_assignment:
         )}
 invalid_del_stmt:
     | 'del' a=star_expressions {
-        GET_INVALID_DEL_TARGET(a) != NULL ?
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
-            GET_INVALID_DEL_TARGET(a),
-            "cannot delete %s", _PyPegen_get_expr_name(GET_INVALID_DEL_TARGET(a))
-        ) :
-        RAISE_SYNTAX_ERROR("invalid syntax") }
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:
@@ -695,19 +688,11 @@ invalid_double_type_comments:
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
 invalid_with_item:
     | expression 'as' a=expression {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
-            GET_INVALID_TARGET(a),
-            "cannot assign to %s", _PyPegen_get_expr_name(GET_INVALID_TARGET(a))
-        ) }
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
 
 invalid_for_target:
     | ASYNC? 'for' a=star_expressions {
-        GET_INVALID_FOR_TARGET(a) != NULL ?
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
-            GET_INVALID_FOR_TARGET(a),
-            "cannot assign to %s", _PyPegen_get_expr_name(GET_INVALID_FOR_TARGET(a))
-        ) :
-        RAISE_SYNTAX_ERROR("invalid syntax") }
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(FOR_TARGETS, a) }
 
 invalid_group:
     | '(' a=starred_expression ')' {
