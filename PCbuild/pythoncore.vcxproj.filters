@@ -42,9 +42,6 @@
     <ClInclude Include="..\Include\ast.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\bitset.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\boolobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -183,12 +180,6 @@
     <ClInclude Include="..\Include\genobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\graminit.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\grammar.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\import.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -318,9 +309,6 @@
     <ClInclude Include="..\Include\moduleobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\node.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\object.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -334,9 +322,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\osmodule.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\parsetok.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\patchlevel.h">
@@ -1008,9 +993,6 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\getversion.c">
-      <Filter>Python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\graminit.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\hamt.h">

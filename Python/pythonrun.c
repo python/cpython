@@ -20,13 +20,10 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 
-#include "node.h"                 // node
 #include "token.h"                // INDENT
-#include "parsetok.h"             // perrdetail
 #include "errcode.h"              // E_EOF
 #include "code.h"                 // PyCodeObject
 #include "symtable.h"             // PySymtable_BuildObject()
-#include "ast.h"                  // PyAST_FromNodeObject()
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
 
 #include "pegen_interface.h"      // PyPegen_ASTFrom*
