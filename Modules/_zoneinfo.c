@@ -1622,7 +1622,7 @@ parse_abbr(const char *const p, PyObject **abbr)
     }
 
     *abbr = PyUnicode_FromStringAndSize(str_start, str_end - str_start);
-    if (abbr == NULL) {
+    if (*abbr == NULL) {
         return -1;
     }
 
