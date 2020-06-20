@@ -1,0 +1,1 @@
+Deprecate :c:func:`PyParser_SimpleParseStringFlags`, :c:func:`PyParser_SimpleParseStringFlagsFilename` and :c:func:`PyParser_SimpleParseFileFlags`.
