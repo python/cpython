@@ -1011,6 +1011,7 @@ class SourceFileLoader(FileLoader, SourceLoader):
             parent, part = _path_split(parent)
             path_parts.append(part)
         # Create needed directories.
+        just_created_cache_dir = False
         for part in reversed(path_parts):
             parent = _path_join(parent, part)
             try:
@@ -1024,6 +1025,11 @@ class SourceFileLoader(FileLoader, SourceLoader):
                 _bootstrap._verbose_message('could not create {!r}: {!r}',
                                             parent, exc)
                 return
+            else:
+                just_created_cache_dir = True
+        # To avoid polluting backups with __pycache__ directories and .pyc files
+        if just_created_cache_dir:
+            _exclude_directory_from_backups(parent)
         try:
             _write_atomic(path, data, _mode)
             _bootstrap._verbose_message('created {!r}', path)
@@ -1031,6 +1037,21 @@ class SourceFileLoader(FileLoader, SourceLoader):
             # Same as above: just don't write the bytecode.
             _bootstrap._verbose_message('could not create {!r}: {!r}', path,
                                         exc)
+
+
+def _exclude_directory_from_backups(directory):
+    """Exclude the directory from backups using a CACHEDIR.TAG file.
+
+    If the file exists or there's a permission error this is a no-op.
+    """
+    try:
+        with open(_path_join(directory, 'CACHEDIR.TAG'), 'x') as f:
+            f.write("""Signature: 8a477f597d28d172789f06886806bc55
+# This file is a cache directory tag automtically created by CPython.
+# For information about cache directory tags see https://bford.info/cachedir/
+""")
+    except (FileExistsError, PermissionError):
+        pass
 
 
 class SourcelessFileLoader(FileLoader, _LoaderBasics):

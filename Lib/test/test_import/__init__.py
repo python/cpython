@@ -862,6 +862,21 @@ class PycacheTests(unittest.TestCase):
                         'bytecode file {!r} for {!r} does not '
                         'exist'.format(pyc_path, TESTFN))
 
+    @skip_if_dont_write_bytecode
+    def test_cachedir_tag_exists(self):
+        self.assertFalse(os.path.exists('__pycache__'))
+        __import__(TESTFN)
+        self.assertTrue(os.path.exists('__pycache__'))
+        cachedir_tag = os.path.join('__pycache__', 'CACHEDIR.TAG')
+        self.assertTrue(os.path.exists(cachedir_tag),
+                        f'CACHEDIR.TAG file {cachedir_tag} for {TESTFN} does not exist')
+        with open(cachedir_tag) as f:
+            cachedir_tag_content = f.read()
+        self.assertTrue(
+            cachedir_tag_content.startswith('Signature: 8a477f597d28d172789f06886806bc55'),
+            f'CACHEDIR.TAG file {cachedir_tag} for {TESTFN} does not contain the right signature',
+        )
+
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
     @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
