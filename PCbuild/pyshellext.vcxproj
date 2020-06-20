@@ -77,80 +77,61 @@
   <PropertyGroup Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <When Condition="'$(Configuration)|$(Platform)'=='PGInstrument|ARM'">
-    <PropertyGroup Label="Configuration">
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-    </PropertyGroup>
-    <PropertyGroup>
-      <LinkIncremental>false</LinkIncremental>
-    </PropertyGroup>
-  </When>
+    <Choose>
+      <When Condition="'$(Configuration)|$(Platform)'=='PGInstrument|ARM'">
+        <PropertyGroup Label="Configuration">
+          <WholeProgramOptimization>true</WholeProgramOptimization>
+        </PropertyGroup>
+      </When>
 
-  <When Condition="'$(Configuration)|$(Platform)'=='PGUpdate|ARM'">
-    <PropertyGroup Label="Configuration">
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-    </PropertyGroup>
-    <PropertyGroup>
-      <LinkIncremental>false</LinkIncremental>
-    </PropertyGroup>
-  </When>
-  <When Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
-    <PropertyGroup Label="Configuration">
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
-      <LinkIncremental>false</LinkIncremental>
-    </PropertyGroup>
-  </When>
-  <When Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">
-    <PropertyGroup Label="Configuration">
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-    </PropertyGroup>
-    <PropertyGroup>
-      <LinkIncremental>false</LinkIncremental>
-    </PropertyGroup>
-  </When>
-  <When Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">
-    <PropertyGroup Label="Configuration">
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-    </PropertyGroup>
-    <PropertyGroup>
-      <LinkIncremental>false</LinkIncremental>
-    </PropertyGroup>
-  </When>
-  <When Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <PropertyGroup Label="Configuration">
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-    </PropertyGroup>
-    <PropertyGroup>
-      <LinkIncremental>false</LinkIncremental>
-    </PropertyGroup>
-  </When>
-  <When Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">
-    <PropertyGroup Label="Configuration">
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-    </PropertyGroup>
-    <PropertyGroup>
-      <LinkIncremental>false</LinkIncremental>
-    </PropertyGroup>
-  </When>
-  <When Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">
-    <PropertyGroup Label="Configuration">
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-    </PropertyGroup>
-    <PropertyGroup>
-      <LinkIncremental>false</LinkIncremental>
-    </PropertyGroup>
-  </When>
-  <When Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <PropertyGroup Label="Configuration">
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-    </PropertyGroup>
-    <PropertyGroup>
-      <LinkIncremental>false</LinkIncremental>
-    </PropertyGroup>
-  </When>
+      <When Condition="'$(Configuration)|$(Platform)'=='PGUpdate|ARM'">
+        <PropertyGroup Label="Configuration">
+          <WholeProgramOptimization>true</WholeProgramOptimization>
+        </PropertyGroup>
+      </When>
+      <When Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+        <PropertyGroup Label="Configuration">
+          <WholeProgramOptimization>true</WholeProgramOptimization>
+        </PropertyGroup>
+      </When>
+      <When Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">
+        <PropertyGroup Label="Configuration">
+          <WholeProgramOptimization>true</WholeProgramOptimization>
+        </PropertyGroup>
+      </When>
+      <When Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">
+        <PropertyGroup Label="Configuration">
+          <WholeProgramOptimization>true</WholeProgramOptimization>
+        </PropertyGroup>
+      </When>
+      <When Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+        <PropertyGroup Label="Configuration">
+          <WholeProgramOptimization>true</WholeProgramOptimization>
+        </PropertyGroup>
+      </When>
+      <When Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">
+        <PropertyGroup Label="Configuration">
+          <WholeProgramOptimization>true</WholeProgramOptimization>
+        </PropertyGroup>
+      </When>
+      <When Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">
+        <PropertyGroup Label="Configuration">
+          <WholeProgramOptimization>true</WholeProgramOptimization>
+        </PropertyGroup>
+      </When>
+      <When Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <PropertyGroup Label="Configuration">
+          <WholeProgramOptimization>true</WholeProgramOptimization>
+        </PropertyGroup>
+      </When>
+    </Choose>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+
+  
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -165,136 +146,73 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <When Condition="'$(Configuration)|$(Platform)'=='PGInstrument|ARM'">
-        <Optimization>MinSpace</Optimization>
-        <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-        <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-        <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      </When>
-      <When Condition="'$(Configuration)|$(Platform)'=='PGUpdate|ARM'">
-        <Optimization>MinSpace</Optimization>
-        <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-        <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-        <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      </When>
-      <When Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
-        <Optimization>MinSpace</Optimization>
-        <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-        <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-        <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      </When>
-      <When Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">
-        <Optimization>MinSpace</Optimization>
-        <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-        <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-        <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      </When>
-      <When Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">
-        <Optimization>MinSpace</Optimization>
-        <InlineFunctionExpansionAnySuitable</InlineFunctionExpansion>
-        <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-        <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      </When>
-      <When Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-        <Optimization>MinSpace</Optimization>
-        <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-        <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-        <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      </When>
-      <When Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">
-        <Optimization>MinSpace</Optimization>
-        <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-        <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-        <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      </When>
-      <When Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">
-        <Optimization>MinSpace</Optimization>
-        <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-        <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-        <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      </When>
-      <When Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-        <Optimization>MinSpace</Optimization>
-        <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-        <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-        <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      </When>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">/Zo</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGInstrument|ARM'">/Zo</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGUpdate|ARM'">/Zo</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">/Zo</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">/Zo</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">/Zo</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">/Zo</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">/Zo</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/Zo</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">/Zo</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">/Zo</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/Zo</AdditionalOptions>
-
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">MinSpace</Optimization>
-      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">AnySuitable</InlineFunctionExpansion>
-      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">Size</FavorSizeOrSpeed>
-      <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</WholeProgramOptimization>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MinSpace</Optimization>
-      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AnySuitable</InlineFunctionExpansion>
-      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Size</FavorSizeOrSpeed>
-      <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</WholeProgramOptimization>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">MinSpace</Optimization>
-      <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AnySuitable</InlineFunctionExpansion>
-      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Size</FavorSizeOrSpeed>
-      <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</WholeProgramOptimization>
-      <RuntimeTypeInfo Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">false</RuntimeTypeInfo>
-      <RuntimeTypeInfo Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</RuntimeTypeInfo>
-      <RuntimeTypeInfo Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</RuntimeTypeInfo>
+      <Optimization>MinSpace</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <AdditionalOptions>/Zo</AdditionalOptions>
+      <Choose>
+        <When Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+          <WholeProgramOptimization>true</WholeProgramOptimization>
+        </When>
+        <When Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+          <WholeProgramOptimization>true</WholeProgramOptimization>
+        </When>
+        <When Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+          <WholeProgramOptimization>true</WholeProgramOptimization>
+        </When>
+      </Choose>
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <ModuleDefinitionFile>..\PC\pyshellext$(PyDebugExt).def</ModuleDefinitionFile>
-      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='PGInstrument|ARM'">true</OptimizeReferences>
-      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='PGInstrument|ARM'">true</EnableCOMDATFolding>
-      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='PGUpdate|ARM'">true</OptimizeReferences>
-      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='PGUpdate|ARM'">true</EnableCOMDATFolding>
-      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</OptimizeReferences>
-      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">true</EnableCOMDATFolding>
-      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">true</OptimizeReferences>
-      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">true</EnableCOMDATFolding>
-      <LinkTimeCodeGeneration Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">true</OptimizeReferences>
-      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">true</EnableCOMDATFolding>
-      <LinkTimeCodeGeneration Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</OptimizeReferences>
-      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</EnableCOMDATFolding>
-      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">true</OptimizeReferences>
-      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">true</EnableCOMDATFolding>
-      <LinkTimeCodeGeneration Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">true</OptimizeReferences>
-      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">true</EnableCOMDATFolding>
-      <LinkTimeCodeGeneration Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</OptimizeReferences>
-      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</EnableCOMDATFolding>
-      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">DebugFull</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='PGInstrument|ARM'">DebugFull</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='PGUpdate|ARM'">DebugFull</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">DebugFull</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">DebugFull</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">DebugFull</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">DebugFull</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">DebugFull</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">DebugFull</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">DebugFull</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">DebugFull</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">DebugFull</GenerateDebugInformation>
-      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</OptimizeReferences>
-      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">true</EnableCOMDATFolding>
-      <LinkTimeCodeGeneration Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</OptimizeReferences>
-      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</EnableCOMDATFolding>
-      <LinkTimeCodeGeneration Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</OptimizeReferences>
-      <EnableCOMDATFolding Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</EnableCOMDATFolding>
-      <LinkTimeCodeGeneration Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <PropertyGroup>
+        <Choose>
+          <When Condition="'$(Configuration)|$(Platform)'=='PGUpdate|ARM'">
+            <OptimizeReferences>true</OptimizeReferences>
+          </When>
+          <When Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+            <OptimizeReferences>true</OptimizeReferences>
+          </When>
+          <When Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">
+            <OptimizeReferences>true</OptimizeReferences>
+            <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+          </When>
+          <When Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">
+            <OptimizeReferences>true</OptimizeReferences>
+            <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+          </When>
+          <When Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+            <OptimizeReferences>true</OptimizeReferences>
+          </When>
+          <When Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">
+            <OptimizeReferences>true</OptimizeReferences>
+            <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+          </When>
+          <When Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">
+            <OptimizeReferences>true</OptimizeReferences>
+            <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+          </When>
+          <When Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+            <OptimizeReferences>true</OptimizeReferences>
+          </When>
+          <When Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+            <OptimizeReferences>true</OptimizeReferences>
+            <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+          </When>
+          <When Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+            <OptimizeReferences>true</OptimizeReferences>
+            <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+          </When>
+          <When Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+            <OptimizeReferences>true</OptimizeReferences>
+            <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+          </When>
+        </Choose>
+      </PropertyGroup>
     </Link>
     <Midl>
       <CompileInterface>true</CompileInterface>
