@@ -278,13 +278,11 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
         instance =
             PyObject_CallMethod(weak_cache, "setdefault", "OO", key, tmp);
-        ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
-
         Py_DECREF(tmp);
-
         if (instance == NULL) {
             return NULL;
         }
+        ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
     }
 
     update_strong_cache(type, key, instance);
