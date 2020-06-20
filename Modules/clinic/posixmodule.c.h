@@ -6803,8 +6803,7 @@ os_fpathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("fpathconf", nargs, 2, 2)) {
         goto exit;
     }
-    fd = _PyLong_AsInt(args[0]);
-    if (fd == -1 && PyErr_Occurred()) {
+    if (!fildes_converter(args[0], &fd)) {
         goto exit;
     }
     if (!conv_path_confname(args[1], &name)) {
@@ -8877,4 +8876,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=767780ea3beacf34 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7c1212a94613496 input=a9049054013a1b77]*/
