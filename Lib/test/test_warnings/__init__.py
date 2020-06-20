@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 import linecache
 import os
-from io import StringIO
+from io import BufferedWriter, BytesIO, StringIO, TextIOWrapper
 import re
 import sys
 import textwrap
@@ -899,6 +899,14 @@ class WarningsDisplayTests(BaseTest):
         self.module.showwarning(message, category, file_name, line_num,
                                 file_object, expected_file_line)
         self.assertEqual(expect, file_object.getvalue())
+        # Test that file is flushed after writing the warning.
+        raw = BytesIO()
+        file_object = TextIOWrapper(BufferedWriter(raw), 'utf-8')
+        expect = self.module.formatwarning(message, category, file_name,
+                                           line_num)
+        self.module.showwarning(message, category, file_name, line_num,
+                                file_object)
+        self.assertEqual(raw.getvalue().decode('utf-8'), expect)
 
     def test_formatwarning_override(self):
         # bpo-35178: Test that a custom formatwarning function gets the 'line'
