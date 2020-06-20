@@ -486,7 +486,7 @@ class ImportTests(unittest.TestCase):
             pyexe = os.path.join(tmp, os.path.basename(sys.executable))
             shutil.copy(sys.executable, pyexe)
             shutil.copy(dllname, tmp)
-            for f in glob.glob(os.path.join(sys.prefix, "vcruntime*.dll")):
+            for f in glob.glob(os.path.join(glob.escape(sys.prefix), "vcruntime*.dll")):
                 shutil.copy(f, tmp)
 
             shutil.copy(pydname, tmp2)
