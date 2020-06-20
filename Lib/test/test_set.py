@@ -317,20 +317,6 @@ class TestJointOps:
             name = repr(s).partition('(')[0]    # strip class name
             self.assertEqual(repr(s), '%s({%s(...)})' % (name, name))
 
-    def test_cyclical_print(self):
-        w = ReprWrapper()
-        s = self.thetype([w])
-        w.value = s
-        fo = open(support.TESTFN, "w")
-        try:
-            fo.write(str(s))
-            fo.close()
-            fo = open(support.TESTFN, "r")
-            self.assertEqual(fo.read(), repr(s))
-        finally:
-            fo.close()
-            support.unlink(support.TESTFN)
-
     def test_do_not_rehash_dict_keys(self):
         n = 10
         d = dict.fromkeys(map(HashCountingInt, range(n)))
@@ -802,17 +788,6 @@ class TestBasicOps:
         sorted_repr_values = [repr(value) for value in self.values]
         sorted_repr_values.sort()
         self.assertEqual(result, sorted_repr_values)
-
-    def test_print(self):
-        try:
-            fo = open(support.TESTFN, "w")
-            fo.write(str(self.set))
-            fo.close()
-            fo = open(support.TESTFN, "r")
-            self.assertEqual(fo.read(), repr(self.set))
-        finally:
-            fo.close()
-            support.unlink(support.TESTFN)
 
     def test_length(self):
         self.assertEqual(len(self.set), self.length)
