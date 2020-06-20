@@ -771,6 +771,7 @@ class HTTPConnection:
 
         (self.host, self.port) = self._get_hostport(host, port)
 
+        self._validate_host(self.host)
         # This is stored as an instance variable to allow unit
         # tests to replace it with a suitable mockup
         self._create_connection = socket.create_connection
@@ -1083,6 +1084,17 @@ class HTTPConnection:
                 "URL can't contain control characters. {url!r} "
                 "(found at least {matched!r})"
             ).format(matched=match.group(), **locals())
+            raise InvalidURL(msg)
+
+    def _validate_host(self, host):
+        """Validate a host so it doesn't contain control characters."""
+        # Prevent CVE-2019-18348.
+        match = _contains_disallowed_url_pchar_re.search(host)
+        if match:
+            msg = (
+                "URL can't contain control characters. {host!r} "
+                "(found at least {matched!r})"
+            ).format(matched=match.group(), host=host)
             raise InvalidURL(msg)
 
     def putheader(self, header, *values):
