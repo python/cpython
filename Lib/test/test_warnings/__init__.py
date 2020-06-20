@@ -901,7 +901,8 @@ class WarningsDisplayTests(BaseTest):
         self.assertEqual(expect, file_object.getvalue())
         # Test that file is flushed after writing the warning.
         raw = BytesIO()
-        file_object = TextIOWrapper(BufferedWriter(raw), 'utf-8')
+        file_object = TextIOWrapper(BufferedWriter(raw), 'utf-8',
+                                    newline='')
         expect = self.module.formatwarning(message, category, file_name,
                                            line_num)
         self.module.showwarning(message, category, file_name, line_num,
