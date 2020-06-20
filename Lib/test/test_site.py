@@ -543,7 +543,7 @@ class StartupImportTests(unittest.TestCase):
         # found in sys.path (see site.addpackage()). Skip the test if at least
         # one .pth file is found.
         for path in isolated_paths:
-            pth_files = glob.glob(os.path.join(path, "*.pth"))
+            pth_files = glob.glob(os.path.join(glob.escape(path), "*.pth"))
             if pth_files:
                 self.skipTest(f"found {len(pth_files)} .pth files in: {path}")
 
