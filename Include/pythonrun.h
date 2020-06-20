@@ -32,9 +32,42 @@ PyAPI_FUNC(int) PyRun_InteractiveLoopFlags(
     const char *filename,       /* decoded from the filesystem encoding */
     PyCompilerFlags *flags);
 
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromString(
+    const char *s,
+    const char *filename,       /* decoded from the filesystem encoding */
+    int start,
+    PyCompilerFlags *flags,
+    PyArena *arena);
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromStringObject(
+    const char *s,
+    PyObject *filename,
+    int start,
+    PyCompilerFlags *flags,
+    PyArena *arena);
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromFile(
+    FILE *fp,
+    const char *filename,       /* decoded from the filesystem encoding */
+    const char* enc,
+    int start,
+    const char *ps1,
+    const char *ps2,
+    PyCompilerFlags *flags,
+    int *errcode,
+    PyArena *arena);
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromFileObject(
+    FILE *fp,
+    PyObject *filename,
+    const char* enc,
+    int start,
+    const char *ps1,
+    const char *ps2,
+    PyCompilerFlags *flags,
+    int *errcode,
+    PyArena *arena);
 
 PyAPI_FUNC(PyObject *) PyRun_StringFlags(const char *, int, PyObject *,
                                          PyObject *, PyCompilerFlags *);
+
 PyAPI_FUNC(PyObject *) PyRun_FileExFlags(
     FILE *fp,
     const char *filename,       /* decoded from the filesystem encoding */
