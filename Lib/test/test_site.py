@@ -170,7 +170,7 @@ class HelperFunctionsTests(unittest.TestCase):
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
         with captured_stderr() as err_out:
             self.assertFalse(site.addpackage(pth_dir, pth_fn, set()))
-        self.asserLib/site.pytEqual(err_out.getvalue(), "")
+        self.assertEqual(err_out.getvalue(), "")
         for path in sys.path:
             if isinstance(path, str):
                 self.assertNotIn("abc\x00def", path)
