@@ -808,7 +808,8 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
     /* borrowed reference */
     c.c_filename = filename;
     c.c_normalize = NULL;
-    c.c_feature_version = flags ? flags->cf_feature_version : PY_MINOR_VERSION;
+    c.c_feature_version = flags && (flags->cf_flags & PyCF_ONLY_AST) ?
+        flags->cf_feature_version : PY_MINOR_VERSION;
 
     if (TYPE(n) == encoding_decl)
         n = CHILD(n, 0);
