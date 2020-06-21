@@ -434,7 +434,7 @@ The lexical handlers are used in the same manner as content handlers.
 
 Set the LexicalHandler of an XMLReader by using the setProperty method
 with the property identifier
-``'http://xml.org/sax/handlers/LexicalHandler'``.
+``'http://xml.org/sax/properties/lexical-handler'``.
 
 
 .. method:: LexicalHandler.comment(content)

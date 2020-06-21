@@ -353,7 +353,7 @@ class LexicalHandler:
 
     To set the LexicalHandler of an XMLReader, use the setProperty
     method with the property identifier
-    'http://xml.org/sax/handlers/LexicalHandler'."""
+    'http://xml.org/sax/properties/lexical-handler'."""
 
     def comment(self, content):
         """Reports a comment anywhere in the document (including the
