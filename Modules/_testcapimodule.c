@@ -3468,6 +3468,8 @@ run_in_subinterp(PyObject *self, PyObject *args)
     const char *code;
     int r;
     PyThreadState *substate, *mainstate;
+    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
+    PyCompilerFlags cflags = {0};
 
     if (!PyArg_ParseTuple(args, "s:run_in_subinterp",
                           &code))
@@ -3486,7 +3488,7 @@ run_in_subinterp(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
         return NULL;
     }
-    r = PyRun_SimpleString(code);
+    r = PyRun_SimpleStringFlags(code, &cflags);
     Py_EndInterpreter(substate);
 
     PyThreadState_Swap(mainstate);
