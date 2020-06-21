@@ -1,0 +1,1 @@
+:func:`pdb.find_function` now correctly determines the source file encoding.
