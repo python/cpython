@@ -71,7 +71,7 @@ class MimeTypesTestCase(unittest.TestCase):
         # Not with locale encoding. _bootlocale has been imported because io.open(...)
         # uses it.
         with support.temp_dir() as directory:
-            data = "application/no-mans-land  శ్రీనివాస్\n"
+            data = "application/no-mans-land  Fran\u00E7ais"
             file = pathlib.Path(directory, "sample.mimetype")
             file.write_text(data)
             import _bootlocale
@@ -79,7 +79,7 @@ class MimeTypesTestCase(unittest.TestCase):
             self.addCleanup(setattr, _bootlocale, 'getpreferredencoding', getpreferredencoding)
             _bootlocale.getpreferredencoding = lambda x: 'ASCII'
             mime_dict = mimetypes.read_mime_types(file)
-            eq(mime_dict[".శ్రీనివాస్"], "application/no-mans-land")
+            eq(mime_dict[".Français"], "application/no-mans-land")
 
     def test_non_standard_types(self):
         eq = self.assertEqual
