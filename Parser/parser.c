@@ -14818,7 +14818,7 @@ invalid_assignment_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_assignment[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "((star_targets '='))* star_expressions '='"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( GET_INVALID_TARGET ( a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( GET_INVALID_TARGET ( a ) ) );
+            _res = RAISE_SYNTAX_ERROR_INVALID_TARGET ( STAR_TARGETS , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -14922,7 +14922,7 @@ invalid_del_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_del_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'del' star_expressions"));
-            _res = GET_INVALID_DEL_TARGET ( a ) != NULL ? RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( GET_INVALID_DEL_TARGET ( a ) , "cannot delete %s" , _PyPegen_get_expr_name ( GET_INVALID_DEL_TARGET ( a ) ) ) : RAISE_SYNTAX_ERROR ( "invalid syntax" );
+            _res = RAISE_SYNTAX_ERROR_INVALID_TARGET ( DEL_TARGETS , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -15379,7 +15379,7 @@ invalid_with_item_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_with_item[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression 'as' expression"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( GET_INVALID_TARGET ( a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( GET_INVALID_TARGET ( a ) ) );
+            _res = RAISE_SYNTAX_ERROR_INVALID_TARGET ( STAR_TARGETS , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -15427,7 +15427,7 @@ invalid_for_target_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_for_target[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "ASYNC? 'for' star_expressions"));
-            _res = GET_INVALID_FOR_TARGET ( a ) != NULL ? RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( GET_INVALID_FOR_TARGET ( a ) , "cannot assign to %s" , _PyPegen_get_expr_name ( GET_INVALID_FOR_TARGET ( a ) ) ) : RAISE_SYNTAX_ERROR ( "invalid syntax" );
+            _res = RAISE_SYNTAX_ERROR_INVALID_TARGET ( FOR_TARGETS , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
