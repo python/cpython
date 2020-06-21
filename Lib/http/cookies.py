@@ -605,14 +605,12 @@ class SimpleCookie(BaseCookie):
     received from HTTP are kept as strings.
     """
     def value_decode(self, val):
-        """
-        Return an unquoted string, from the cookie header in a reversed fasion of value_encode.
+        """Return an unquoted string, from the cookie header in a reversed fasion of value_encode.
         """
         return _unquote(val), val
 
     def value_encode(self, val):
-        """
-        Return an escaped quoted string, if needed, for the cookie header usage.
+        """Return an escaped quoted string, if needed, for the cookie header usage.
         Will include non-compliant characters in the cookie value if exist.
         """
         strval = str(val)
