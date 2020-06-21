@@ -269,7 +269,7 @@ typedef enum {
     FOR_TARGETS
 } TARGETS_TYPE;
 expr_ty _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type);
-#define GET_INVALID_TARGET(type, e) ((expr_ty)CHECK(_PyPegen_get_invalid_target(e, type)))
+#define GET_INVALID_TARGET(type, e) ((expr_ty)CHECK_NULL_ALLOWED(_PyPegen_get_invalid_target(e, type)))
 #define RAISE_SYNTAX_ERROR_INVALID_TARGET(type, a) _RAISE_SYNTAX_ERROR_INVALID_TARGET(p, type, a)
 
 Py_LOCAL_INLINE(void *)
