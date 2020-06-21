@@ -110,6 +110,13 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
+xml
+---
+
+Add a :class:`~xml.sax.handler.LexicalHandler` class to the
+:mod:`xml.sax.handler` module.
+(Contributed by Jonathan Gossage and Zackery Spytz in :issue:`35018`.)
+
 
 Optimizations
 =============
