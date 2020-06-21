@@ -62,14 +62,14 @@ class TestMain(unittest.TestCase):
         os.mkdir(self.py3_dest_dir)
         # Turn it into a package with a few files.
         self.setup_files = []
-        open(os.path.join(self.py2_src_dir, "__init__.py"), "w").close()
+        open(os.path.join(self.py2_src_dir, "__init__.py"), "wb").close()
         self.setup_files.append("__init__.py")
         shutil.copy(PY2_TEST_MODULE, self.py2_src_dir)
         self.setup_files.append(os.path.basename(PY2_TEST_MODULE))
         self.trivial_py2_file = os.path.join(self.py2_src_dir, "trivial.py")
         self.init_py2_file = os.path.join(self.py2_src_dir, "__init__.py")
-        with open(self.trivial_py2_file, "w") as trivial:
-            trivial.write("print 'I need a simple conversion.'")
+        with open(self.trivial_py2_file, "wb") as trivial:
+            trivial.write(b"print 'I need a simple conversion.'")
         self.setup_files.append("trivial.py")
 
     def test_filename_changing_on_output_single_dir(self):

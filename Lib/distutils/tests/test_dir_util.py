@@ -90,8 +90,8 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
 
         mkpath(self.target, verbose=0)
         a_file = os.path.join(self.target, 'ok.txt')
-        with open(a_file, 'w') as f:
-            f.write('some content')
+        with open(a_file, 'wb') as f:
+            f.write(b'some content')
 
         wanted = ['copying %s -> %s' % (a_file, self.target2)]
         copy_tree(self.target, self.target2, verbose=1)
@@ -106,8 +106,8 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
         a_file = os.path.join(self.target, 'ok.txt')
         nfs_file = os.path.join(self.target, '.nfs123abc')
         for f in a_file, nfs_file:
-            with open(f, 'w') as fh:
-                fh.write('some content')
+            with open(f, 'wb') as fh:
+                fh.write(b'some content')
 
         copy_tree(self.target, self.target2)
         self.assertEqual(os.listdir(self.target2), ['ok.txt'])

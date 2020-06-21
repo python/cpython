@@ -1036,7 +1036,8 @@ class DistributionMetadata:
 
     def __init__(self, path=None):
         if path is not None:
-            self.read_pkg_file(open(path))
+            with open(path, encoding='utf-8') as f:
+                self.read_pkg_file(f)
         else:
             self.name = None
             self.version = None

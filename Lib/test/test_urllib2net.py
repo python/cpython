@@ -145,7 +145,7 @@ class OtherNetworkTests(unittest.TestCase):
         TESTFN = os_helper.TESTFN
         f = open(TESTFN, 'w')
         try:
-            f.write('hi there\n')
+            f.write(b'hi there\n')
             f.close()
             urls = [
                 'file:' + sanepathname2url(os.path.abspath(TESTFN)),

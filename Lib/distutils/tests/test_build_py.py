@@ -18,16 +18,10 @@ class BuildPyTestCase(support.TempdirManager,
 
     def test_package_data(self):
         sources = self.mkdtemp()
-        f = open(os.path.join(sources, "__init__.py"), "w")
-        try:
+        with open(os.path.join(sources, "__init__.py"), "w", encoding='ascii') as f:
             f.write("# Pretend this is a package.")
-        finally:
-            f.close()
-        f = open(os.path.join(sources, "README.txt"), "w")
-        try:
+        with open(os.path.join(sources, "README.txt"), "w", encoding='ascii') as f:
             f.write("Info about this package")
-        finally:
-            f.close()
 
         destination = self.mkdtemp()
 
@@ -68,11 +62,11 @@ class BuildPyTestCase(support.TempdirManager,
     def test_empty_package_dir(self):
         # See bugs #1668596/#1720897
         sources = self.mkdtemp()
-        open(os.path.join(sources, "__init__.py"), "w").close()
+        open(os.path.join(sources, "__init__.py"), "wb").close()
 
         testdir = os.path.join(sources, "doc")
         os.mkdir(testdir)
-        open(os.path.join(testdir, "testfile"), "w").close()
+        open(os.path.join(testdir, "testfile"), "wb").close()
 
         os.chdir(sources)
         dist = Distribution({"packages": ["pkg"],
@@ -134,11 +128,11 @@ class BuildPyTestCase(support.TempdirManager,
         pkg_dir = os.path.join(sources, "pkg")
 
         os.mkdir(pkg_dir)
-        open(os.path.join(pkg_dir, "__init__.py"), "w").close()
+        open(os.path.join(pkg_dir, "__init__.py"), "wb").close()
 
         docdir = os.path.join(pkg_dir, "doc")
         os.mkdir(docdir)
-        open(os.path.join(docdir, "testfile"), "w").close()
+        open(os.path.join(docdir, "testfile"), "wb").close()
 
         # create the directory that could be incorrectly detected as a file
         os.mkdir(os.path.join(docdir, 'otherdir'))

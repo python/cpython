@@ -262,7 +262,7 @@ class TestProcessTokens(TestCase):
         """A python source code without any whitespace related problems."""
 
         with TemporaryPyFile(SOURCE_CODES["error_free"]) as file_path:
-            with open(file_path) as f:
+            with open(file_path, encoding='ascii') as f:
                 tabnanny.process_tokens(tokenize.generate_tokens(f.readline))
             self.assertFalse(MockNannyNag.called)
 
@@ -278,7 +278,7 @@ class TestProcessTokens(TestCase):
         for key in ["tab_space_errored_1", "tab_space_errored_2"]:
             with self.subTest(key=key):
                 with TemporaryPyFile(SOURCE_CODES[key]) as file_path:
-                    with open(file_path) as f:
+                    with open(file_path, encoding='ascii') as f:
                         tokens = tokenize.generate_tokens(f.readline)
                         with self.assertRaises(tabnanny.NannyNag):
                             tabnanny.process_tokens(tokens)

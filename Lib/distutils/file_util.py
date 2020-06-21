@@ -230,9 +230,6 @@ def write_file (filename, contents):
     """Create a file with the specified name and write 'contents' (a
     sequence of strings without line terminators) to it.
     """
-    f = open(filename, "w")
-    try:
+    with open(filename, "w", encoding='ascii') as f:
         for line in contents:
             f.write(line + "\n")
-    finally:
-        f.close()

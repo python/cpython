@@ -1585,8 +1585,8 @@ class TestTemporaryDirectory(BaseTestCase):
 
                     tmp2 = os.path.join(tmp.name, 'test_dir')
                     os.mkdir(tmp2)
-                    with open(os.path.join(tmp2, "test0.txt"), "w") as f:
-                        f.write("Hello world!")
+                    with open(os.path.join(tmp2, "test0.txt"), "wb") as f:
+                        f.write(b"Hello world!")
 
                     {mod}.tmp = tmp
 

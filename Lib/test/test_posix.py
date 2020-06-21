@@ -164,8 +164,6 @@ class PosixTester(unittest.TestCase):
         try:
             self.assertTrue(posix.fstatvfs(fp.fileno()))
             self.assertTrue(posix.statvfs(fp.fileno()))
-        finally:
-            fp.close()
 
     @unittest.skipUnless(hasattr(posix, 'ftruncate'),
                          'test needs posix.ftruncate()')
@@ -173,11 +171,9 @@ class PosixTester(unittest.TestCase):
         fp = open(os_helper.TESTFN, 'w+')
         try:
             # we need to have some data to truncate
-            fp.write('test')
+            fp.write(b'test')
             fp.flush()
             posix.ftruncate(fp.fileno(), 0)
-        finally:
-            fp.close()
 
     @unittest.skipUnless(hasattr(posix, 'truncate'), "test needs posix.truncate()")
     def test_truncate(self):
@@ -553,8 +549,6 @@ class PosixTester(unittest.TestCase):
             fd = posix.dup(fp.fileno())
             self.assertIsInstance(fd, int)
             os.close(fd)
-        finally:
-            fp.close()
 
     @unittest.skipUnless(hasattr(posix, 'confstr'),
                          'test needs posix.confstr()')
@@ -569,9 +563,6 @@ class PosixTester(unittest.TestCase):
         fp2 = open(os_helper.TESTFN)
         try:
             posix.dup2(fp1.fileno(), fp2.fileno())
-        finally:
-            fp1.close()
-            fp2.close()
 
     @unittest.skipUnless(hasattr(os, 'O_CLOEXEC'), "needs os.O_CLOEXEC")
     @support.requires_linux_version(2, 6, 23)
@@ -625,8 +616,6 @@ class PosixTester(unittest.TestCase):
             self.assertRaisesRegex(TypeError,
                     'should be string, bytes, os.PathLike or integer, not',
                     posix.stat, float(fp.fileno()))
-        finally:
-            fp.close()
 
     def test_stat(self):
         self.assertTrue(posix.stat(os_helper.TESTFN))
@@ -804,8 +793,6 @@ class PosixTester(unittest.TestCase):
             fd = test_file.fileno()
             self._test_all_chown_common(posix.fchown, fd,
                                         getattr(posix, 'fstat', None))
-        finally:
-            test_file.close()
 
     @unittest.skipUnless(hasattr(posix, 'lchown'), "test needs os.lchown()")
     def test_lchown(self):
@@ -945,7 +932,7 @@ class PosixTester(unittest.TestCase):
             new_st = os.stat(target_file)
             self.assertEqual(st.st_flags | stat.UF_IMMUTABLE, new_st.st_flags)
             try:
-                fd = open(target_file, 'w+')
+                fd = open(target_file, 'wb+')
             except OSError as e:
                 self.assertEqual(e.errno, errno.EPERM)
         finally:
@@ -1562,7 +1549,7 @@ class _PosixSpawnMixin:
         self.addCleanup(os_helper.unlink, pidfile)
         script = f"""if 1:
             import os
-            with open({pidfile!r}, "w") as pidfile:
+            with open({pidfile!r}, "w", encoding='utf-8') as pidfile:
                 pidfile.write(str(os.getpid()))
             """
         args = self.python_args('-c', script)

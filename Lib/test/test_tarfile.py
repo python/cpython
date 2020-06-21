@@ -110,7 +110,7 @@ class UstarReadTest(ReadTest, unittest.TestCase):
     def test_fileobj_readlines(self):
         self.tar.extract("ustar/regtype", TEMPDIR)
         tarinfo = self.tar.getmember("ustar/regtype")
-        with open(os.path.join(TEMPDIR, "ustar/regtype"), "r") as fobj1:
+        with open(os.path.join(TEMPDIR, "ustar/regtype"), "r", encoding='ascii') as fobj1:
             lines1 = fobj1.readlines()
 
         with self.tar.extractfile(tarinfo) as fobj:
@@ -128,7 +128,7 @@ class UstarReadTest(ReadTest, unittest.TestCase):
     def test_fileobj_iter(self):
         self.tar.extract("ustar/regtype", TEMPDIR)
         tarinfo = self.tar.getmember("ustar/regtype")
-        with open(os.path.join(TEMPDIR, "ustar/regtype"), "r") as fobj1:
+        with open(os.path.join(TEMPDIR, "ustar/regtype"), "r", encoding='ascii') as fobj1:
             lines1 = fobj1.readlines()
         with self.tar.extractfile(tarinfo) as fobj2:
             lines2 = list(io.TextIOWrapper(fobj2))
@@ -1224,8 +1224,8 @@ class WriteTest(WriteTestBase, unittest.TestCase):
     def test_ordered_recursion(self):
         path = os.path.join(TEMPDIR, "directory")
         os.mkdir(path)
-        open(os.path.join(path, "1"), "a").close()
-        open(os.path.join(path, "2"), "a").close()
+        open(os.path.join(path, "1"), "ab").close()
+        open(os.path.join(path, "2"), "ab").close()
         try:
             tar = tarfile.open(tmpname, self.mode)
             try:
@@ -1388,7 +1388,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
         try:
             source_file = os.path.join(tempdir,'source')
             target_file = os.path.join(tempdir,'symlink')
-            with open(source_file,'w') as f:
+            with open(source_file,'w', encoding='ascii') as f:
                 f.write('something\n')
             os.symlink(source_file, target_file)
             with tarfile.open(temparchive, 'w') as tar:

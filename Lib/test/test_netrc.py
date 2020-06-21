@@ -273,7 +273,7 @@ class NetrcTestCase(unittest.TestCase):
         os.mkdir(d)
         self.addCleanup(os_helper.rmtree, d)
         fn = os.path.join(d, '.netrc')
-        with open(fn, 'wt') as f:
+        with open(fn, 'w', encoding='ascii') as f:
             f.write("""\
                 machine foo.domain.com login bar password pass
                 default login foo password pass

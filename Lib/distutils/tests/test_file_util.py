@@ -35,11 +35,8 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
         super(FileUtilTestCase, self).tearDown()
 
     def test_move_file_verbosity(self):
-        f = open(self.source, 'w')
-        try:
-            f.write('some content')
-        finally:
-            f.close()
+        with open(self.source, 'wb') as f:
+            f.write(b'some content')
 
         move_file(self.source, self.target, verbose=0)
         wanted = []
@@ -66,8 +63,8 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
         # see issue 22182
         with patch("os.rename", side_effect=OSError("wrong", 1)), \
              self.assertRaises(DistutilsFileError):
-            with open(self.source, 'w') as fobj:
-                fobj.write('spam eggs')
+            with open(self.source, 'wb') as fobj:
+                fobj.write(b'spam eggs')
             move_file(self.source, self.target, verbose=0)
 
     def test_move_file_exception_unpacking_unlink(self):
@@ -75,14 +72,14 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
         with patch("os.rename", side_effect=OSError(errno.EXDEV, "wrong")), \
              patch("os.unlink", side_effect=OSError("wrong", 1)), \
              self.assertRaises(DistutilsFileError):
-            with open(self.source, 'w') as fobj:
-                fobj.write('spam eggs')
+            with open(self.source, 'wb') as fobj:
+                fobj.write(b'spam eggs')
             move_file(self.source, self.target, verbose=0)
 
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
     def test_copy_file_hard_link(self):
-        with open(self.source, 'w') as f:
-            f.write('some content')
+        with open(self.source, 'wb') as f:
+            f.write(b'some content')
         # Check first that copy_file() will not fall back on copying the file
         # instead of creating the hard link.
         try:
@@ -97,16 +94,16 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
         st3 = os.stat(self.target)
         self.assertTrue(os.path.samestat(st, st2), (st, st2))
         self.assertTrue(os.path.samestat(st2, st3), (st2, st3))
-        with open(self.source, 'r') as f:
-            self.assertEqual(f.read(), 'some content')
+        with open(self.source, 'rb') as f:
+            self.assertEqual(f.read(), b'some content')
 
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
     def test_copy_file_hard_link_failure(self):
         # If hard linking fails, copy_file() falls back on copying file
         # (some special filesystems don't support hard linking even under
         #  Unix, see issue #8876).
-        with open(self.source, 'w') as f:
-            f.write('some content')
+        with open(self.source, 'wb') as f:
+            f.write(b'some content')
         st = os.stat(self.source)
         with patch("os.link", side_effect=OSError(0, "linking unsupported")):
             copy_file(self.source, self.target, link='hard')
@@ -115,8 +112,8 @@ class FileUtilTestCase(support.TempdirManager, unittest.TestCase):
         self.assertTrue(os.path.samestat(st, st2), (st, st2))
         self.assertFalse(os.path.samestat(st2, st3), (st2, st3))
         for fn in (self.source, self.target):
-            with open(fn, 'r') as f:
-                self.assertEqual(f.read(), 'some content')
+            with open(fn, 'rb') as f:
+                self.assertEqual(f.read(), b'some content')
 
 
 def test_suite():

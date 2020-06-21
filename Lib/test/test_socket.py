@@ -5721,7 +5721,7 @@ def isTipcAvailable():
         return False
     with f:
         for line in f:
-            if line.startswith("tipc "):
+            if line.startswith(b"tipc "):
                 return True
     return False
 

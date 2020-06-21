@@ -106,7 +106,7 @@ class config(Command):
 
     def _gen_temp_sourcefile(self, body, headers, lang):
         filename = "_configtest" + LANG_EXT[lang]
-        with open(filename, "w") as file:
+        with open(filename, "w", encoding='ascii') as file:
             if headers:
                 for header in headers:
                     file.write("#include <%s>\n" % header)
@@ -202,7 +202,7 @@ class config(Command):
         if isinstance(pattern, str):
             pattern = re.compile(pattern)
 
-        with open(out) as file:
+        with open(out, encoding='ascii') as file:
             match = False
             while True:
                 line = file.readline()
@@ -337,8 +337,5 @@ def dump_file(filename, head=None):
         log.info('%s', filename)
     else:
         log.info(head)
-    file = open(filename)
-    try:
+    with open(filename, encoding='ascii', errors='backslashreplace') as file:
         log.info(file.read())
-    finally:
-        file.close()

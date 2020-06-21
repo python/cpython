@@ -130,12 +130,9 @@ class RegisterTestCase(BasePyPIRCCommandTestCase):
         self.assertTrue(os.path.exists(self.rc))
 
         # with the content similar to WANTED_PYPIRC
-        f = open(self.rc)
-        try:
+        with open(self.rc, encoding='ascii') as f:
             content = f.read()
-            self.assertEqual(content, WANTED_PYPIRC)
-        finally:
-            f.close()
+        self.assertEqual(content, WANTED_PYPIRC)
 
         # now let's make sure the .pypirc file generated
         # really works : we shouldn't be asked anything

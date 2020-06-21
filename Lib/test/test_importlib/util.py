@@ -105,7 +105,7 @@ def case_insensitive_tests(test):
                             "requires a case-insensitive filesystem")(test)
 
 
-def submodule(parent, name, pkg_dir, content=''):
+def submodule(parent, name, pkg_dir, content=b''):
     path = os.path.join(pkg_dir, name + '.py')
     with open(path, 'w', encoding='utf-8') as subfile:
         subfile.write(content)

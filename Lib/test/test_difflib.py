@@ -238,7 +238,7 @@ class TestSFpatches(unittest.TestCase):
         actual = full.replace('</body>','\n%s\n</body>' % tables)
 
         # temporarily uncomment next two lines to baseline this test
-        #with open('test_difflib_expect.html','w') as fp:
+        #with open('test_difflib_expect.html','w', encoding='utf-8') as fp:
         #    fp.write(actual)
 
         with open(findfile('test_difflib_expect.html'), encoding="utf-8") as fp:

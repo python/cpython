@@ -195,12 +195,12 @@ class TclTest(unittest.TestCase):
         self.addCleanup(os_helper.unlink, filename)
         with open(filename, 'w') as f:
             f.write("""set a 1
-            set b 2
-            set c [ expr $a + $b ]
+            set ß 2
+            set c [ expr $a + ${ß} ]
             """)
         tcl.evalfile(filename)
         self.assertEqual(tcl.eval('set a'),'1')
-        self.assertEqual(tcl.eval('set b'),'2')
+        self.assertEqual(tcl.eval('set ß'),'2')
         self.assertEqual(tcl.eval('set c'),'3')
 
     def test_evalfile_null_in_result(self):

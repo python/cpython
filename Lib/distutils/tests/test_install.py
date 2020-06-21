@@ -196,11 +196,8 @@ class InstallTestCase(support.TempdirManager,
         cmd.ensure_finalized()
         cmd.run()
 
-        f = open(cmd.record)
-        try:
+        with open(cmd.record, encoding='ascii') as f:
             content = f.read()
-        finally:
-            f.close()
 
         found = [os.path.basename(line) for line in content.splitlines()]
         expected = ['hello.py', 'hello.%s.pyc' % sys.implementation.cache_tag,
@@ -231,11 +228,8 @@ class InstallTestCase(support.TempdirManager,
         cmd.ensure_finalized()
         cmd.run()
 
-        f = open(cmd.record)
-        try:
+        with open(cmd.record, encoding='ascii') as f:
             content = f.read()
-        finally:
-            f.close()
 
         found = [os.path.basename(line) for line in content.splitlines()]
         expected = [_make_ext_name('xx'),

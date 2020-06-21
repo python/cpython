@@ -46,7 +46,7 @@ def _running(interp):
     def run():
         interp.run(dedent(f"""
             # wait for "signal"
-            with open({r}) as rpipe:
+            with open({r}, 'rb') as rpipe:
                 rpipe.read()
             """))
 
@@ -55,8 +55,8 @@ def _running(interp):
 
     yield
 
-    with open(w, 'w') as spipe:
-        spipe.write('done')
+    with open(w, 'wb') as spipe:
+        spipe.write(b'done')
     t.join()
 
 

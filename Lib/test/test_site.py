@@ -374,7 +374,7 @@ class PthFile(object):
         Make sure to call self.cleanup() to undo anything done by this method.
 
         """
-        FILE = open(self.file_path, 'w')
+        FILE = open(self.file_path, 'w', encoding='ascii')
         try:
             print("#import @bad module name", file=FILE)
             print("\n", file=FILE)

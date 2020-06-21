@@ -172,24 +172,18 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
 
     def test_parse_makefile_base(self):
         self.makefile = TESTFN
-        fd = open(self.makefile, 'w')
-        try:
+        with open(self.makefile, 'w', encoding='ascii') as fd:
             fd.write(r"CONFIG_ARGS=  '--arg1=optarg1' 'ENV=LIB'" '\n')
             fd.write('VAR=$OTHER\nOTHER=foo')
-        finally:
-            fd.close()
         d = sysconfig.parse_makefile(self.makefile)
         self.assertEqual(d, {'CONFIG_ARGS': "'--arg1=optarg1' 'ENV=LIB'",
                              'OTHER': 'foo'})
 
     def test_parse_makefile_literal_dollar(self):
         self.makefile = TESTFN
-        fd = open(self.makefile, 'w')
-        try:
+        with open(self.makefile, 'w', encoding='ascii') as fd:
             fd.write(r"CONFIG_ARGS=  '--arg1=optarg1' 'ENV=\$$LIB'" '\n')
             fd.write('VAR=$OTHER\nOTHER=foo')
-        finally:
-            fd.close()
         d = sysconfig.parse_makefile(self.makefile)
         self.assertEqual(d, {'CONFIG_ARGS': r"'--arg1=optarg1' 'ENV=\$LIB'",
                              'OTHER': 'foo'})
@@ -232,7 +226,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
         # Issue #21923: test that a Distribution compiler
         # instance can be called without an explicit call to
         # get_config_vars().
-        with open(TESTFN, 'w') as f:
+        with open(TESTFN, 'w', encoding='ascii') as f:
             f.writelines(textwrap.dedent('''\
                 from distutils.core import Distribution
                 config = Distribution().get_command_obj('config')

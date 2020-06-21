@@ -696,7 +696,7 @@ class PyBuildExt(build_ext):
         multiarch_path_component = ''
         try:
             if ret == 0:
-                with open(tmpfile) as fp:
+                with open(tmpfile, errors='surrogateescape') as fp:
                     multiarch_path_component = fp.readline().strip()
         finally:
             os.unlink(tmpfile)
@@ -721,7 +721,7 @@ class PyBuildExt(build_ext):
             (opt, tmpfile))
         try:
             if ret == 0:
-                with open(tmpfile) as fp:
+                with open(tmpfile, errors='surrogateescape') as fp:
                     multiarch_path_component = fp.readline().strip()
                 add_dir_to_list(self.compiler.library_dirs,
                                 '/usr/lib/' + multiarch_path_component)
@@ -786,7 +786,7 @@ class PyBuildExt(build_ext):
         in_incdirs = False
         try:
             if ret == 0:
-                with open(tmpfile) as fp:
+                with open(tmpfile, errors='surrogateescape') as fp:
                     for line in fp.readlines():
                         if line.startswith("gcc version"):
                             is_gcc = True
@@ -888,7 +888,7 @@ class PyBuildExt(build_ext):
                                            system_include_dirs))
 
         config_h = sysconfig.get_config_h_filename()
-        with open(config_h) as file:
+        with open(config_h, errors='surrogateescape') as file:
             self.config_h_vars = sysconfig.parse_config_h(file)
 
         # OSF/1 and Unixware have some stuff in /usr/ccs/lib (like -ldb)
@@ -1056,7 +1056,7 @@ class PyBuildExt(build_ext):
             else:
                 ret = 1
             if ret == 0:
-                with open(tmpfile) as fp:
+                with open(tmpfile, errors='surrogateescape') as fp:
                     for ln in fp:
                         if 'curses' in ln:
                             readline_termcap_library = re.sub(

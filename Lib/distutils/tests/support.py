@@ -75,7 +75,7 @@ class TempdirManager(object):
         self.tempdirs.append(d)
         return d
 
-    def write_file(self, path, content='xxx'):
+    def write_file(self, path, content='xxx', *, encoding='ascii'):
         """Writes a file in the given path.
 
 
@@ -83,11 +83,10 @@ class TempdirManager(object):
         """
         if isinstance(path, (list, tuple)):
             path = os.path.join(*path)
-        f = open(path, 'w')
-        try:
+        if isinstance(content, str):
+            content = content.encode(encoding)
+        with open(path, 'wb') as f:
             f.write(content)
-        finally:
-            f.close()
 
     def create_dist(self, pkg_name='foo', **kw):
         """Will generate a test environment.

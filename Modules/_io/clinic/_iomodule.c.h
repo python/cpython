@@ -140,7 +140,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *file;
     const char *mode = "r";
     int buffering = -1;
-    const char *encoding = NULL;
+    const char *encoding = default_encoding;
     const char *errors = NULL;
     const char *newline = NULL;
     int closefd = 1;

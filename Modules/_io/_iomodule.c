@@ -60,7 +60,7 @@ PyDoc_STRVAR(module_doc,
 "   possible.\n"
     );
 
-
+static const char default_encoding[] = "NO ENCODING";
 /*
  * The main open() function
  */
@@ -71,7 +71,7 @@ _io.open
     file: object
     mode: str = "r"
     buffering: int = -1
-    encoding: str(accept={str, NoneType}) = None
+    encoding: str(accept={str, NoneType}, c_default="default_encoding") = None
     errors: str(accept={str, NoneType}) = None
     newline: str(accept={str, NoneType}) = None
     closefd: bool(accept={int}) = True
@@ -288,6 +288,13 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         goto error;
     }
 
+    if (encoding == default_encoding) {
+        if (!binary && !errors) {
+            PyErr_SetString(PyExc_SystemError, "No encoding");
+            return NULL;
+        }
+        encoding = NULL;
+    }
     if (binary && encoding != NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "binary mode doesn't take an encoding argument");

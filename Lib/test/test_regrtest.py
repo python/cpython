@@ -775,7 +775,7 @@ class ArgsTestCase(BaseTestCase):
         self.addCleanup(os_helper.unlink, filename)
 
         # test format '0:00:00 [2/7] test_opcodes -- test_grammar took 0 sec'
-        with open(filename, "w") as fp:
+        with open(filename, "w", encoding='ascii') as fp:
             previous = None
             for index, name in enumerate(tests, 1):
                 line = ("00:00:%02i [%s/%s] %s"
@@ -789,7 +789,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, tests)
 
         # test format '[2/7] test_opcodes'
-        with open(filename, "w") as fp:
+        with open(filename, "w", encoding='ascii') as fp:
             for index, name in enumerate(tests, 1):
                 print("[%s/%s] %s" % (index, len(tests), name), file=fp)
 
@@ -797,7 +797,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, tests)
 
         # test format 'test_opcodes'
-        with open(filename, "w") as fp:
+        with open(filename, "w", encoding='ascii') as fp:
             for name in tests:
                 print(name, file=fp)
 
@@ -805,7 +805,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, tests)
 
         # test format 'Lib/test/test_opcodes.py'
-        with open(filename, "w") as fp:
+        with open(filename, "w", encoding='ascii') as fp:
             for name in tests:
                 print('Lib/test/%s.py' % name, file=fp)
 
@@ -899,7 +899,7 @@ class ArgsTestCase(BaseTestCase):
         line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
         self.assertIn(line2, output)
 
-        with open(filename) as fp:
+        with open(filename, encoding='ascii') as fp:
             reflog = fp.read()
             self.assertIn(line2, reflog)
 
@@ -1006,7 +1006,7 @@ class ArgsTestCase(BaseTestCase):
             'test_method1',
             # ignore the full identifier
             '%s.Tests.test_method3' % testname]
-        with open(filename, "w") as fp:
+        with open(filename, "w", encoding='ascii') as fp:
             for name in subset:
                 print(name, file=fp)
 
@@ -1047,7 +1047,7 @@ class ArgsTestCase(BaseTestCase):
             'test_method1',
             # match the full identifier
             '%s.Tests.test_method3' % testname]
-        with open(filename, "w") as fp:
+        with open(filename, "w", encoding='ascii') as fp:
             for name in subset:
                 print(name, file=fp)
 
@@ -1062,7 +1062,7 @@ class ArgsTestCase(BaseTestCase):
 
             class Tests(unittest.TestCase):
                 def test_env_changed(self):
-                    open("env_changed", "w").close()
+                    open("env_changed", "wb").close()
         """)
         testname = self.create_test(code=code)
 
