@@ -5,6 +5,7 @@ import os
 import pdb
 import sys
 import types
+import codecs
 import unittest
 import subprocess
 import textwrap
@@ -1226,9 +1227,7 @@ class PdbTestCase(unittest.TestCase):
         return self._run_pdb(['-m', self.module_name], commands)
 
     def _assert_find_function(self, file_content, func_name, expected):
-        file_content = textwrap.dedent(file_content)
-
-        with open(support.TESTFN, 'w') as f:
+        with open(support.TESTFN, 'wb') as f:
             f.write(file_content)
 
         expected = None if not expected else (
@@ -1237,22 +1236,49 @@ class PdbTestCase(unittest.TestCase):
             expected, pdb.find_function(func_name, support.TESTFN))
 
     def test_find_function_empty_file(self):
-        self._assert_find_function('', 'foo', None)
+        self._assert_find_function(b'', 'foo', None)
 
     def test_find_function_found(self):
         self._assert_find_function(
             """\
-            def foo():
-                pass
+def foo():
+    pass
 
-            def bar():
-                pass
+def bœr():
+    pass
 
-            def quux():
-                pass
-            """,
-            'bar',
-            ('bar', 4),
+def quux():
+    pass
+""".encode(),
+            'bœr',
+            ('bœr', 4),
+        )
+
+    def test_find_function_found_with_encoding_cookie(self):
+        self._assert_find_function(
+            """\
+# coding: iso-8859-15
+def foo():
+    pass
+
+def bœr():
+    pass
+
+def quux():
+    pass
+""".encode('iso-8859-15'),
+            'bœr',
+            ('bœr', 5),
+        )
+
+    def test_find_function_found_with_bom(self):
+        self._assert_find_function(
+            codecs.BOM_UTF8 + """\
+def bœr():
+    pass
+""".encode(),
+            'bœr',
+            ('bœr', 1),
         )
 
     def test_issue7964(self):
