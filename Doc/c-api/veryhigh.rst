@@ -187,6 +187,15 @@ the same library that the Python runtime is using.
       :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`.
 
 
+.. c:function:: struct _node* PyParser_SimpleParseString(const char *str, int start)
+
+   This is a simplified interface to
+   :c:func:`PyParser_SimpleParseStringFlagsFilename` below, leaving  *filename* set
+   to ``NULL`` and *flags* set to ``0``.
+
+   .. deprecated-removed:: 3.9 3.10
+
+
 .. c:function:: struct _node* PyParser_SimpleParseStringFlags( const char *str, int start, int flags)
 
    This is a simplified interface to
@@ -203,6 +212,14 @@ the same library that the Python runtime is using.
    be evaluated efficiently. This is useful if a code fragment must be evaluated
    many times. *filename* is decoded from the filesystem encoding
    (:func:`sys.getfilesystemencoding`).
+
+   .. deprecated-removed:: 3.9 3.10
+
+
+.. c:function:: struct _node* PyParser_SimpleParseFile(FILE *fp, const char *filename, int start)
+
+   This is a simplified interface to :c:func:`PyParser_SimpleParseFileFlags` below,
+   leaving *flags* set to ``0``.
 
    .. deprecated-removed:: 3.9 3.10
 
