@@ -5,22 +5,21 @@ extern "C" {
 #endif
 
 #include "Python.h"
-#include "Python-ast.h"
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(mod_ty) PyParser_ASTFromString(
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromString(
     const char *str,
     const char *filename,
     int mode,
     PyCompilerFlags *flags,
     PyArena *arena);
-PyAPI_FUNC(mod_ty) PyParser_ASTFromStringObject(
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromStringObject(
     const char *str,
     PyObject* filename,
     int mode,
     PyCompilerFlags *flags,
     PyArena *arena);
-PyAPI_FUNC(mod_ty) PyParser_ASTFromFile(
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromFile(
     FILE *fp,
     const char *filename,
     const char* enc,
@@ -30,7 +29,7 @@ PyAPI_FUNC(mod_ty) PyParser_ASTFromFile(
     PyCompilerFlags *flags,
     int *errcode,
     PyArena *arena);
-PyAPI_FUNC(mod_ty) PyParser_ASTFromFileObject(
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromFileObject(
     FILE *fp,
     PyObject *filename_ob,
     const char *enc,
@@ -40,7 +39,7 @@ PyAPI_FUNC(mod_ty) PyParser_ASTFromFileObject(
     PyCompilerFlags *flags,
     int *errcode,
     PyArena *arena);
-PyAPI_FUNC(mod_ty) PyParser_ASTFromFilename(
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromFilename(
     const char *filename,
     int mode,
     PyCompilerFlags *flags,
