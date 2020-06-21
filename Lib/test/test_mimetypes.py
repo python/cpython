@@ -73,12 +73,10 @@ class MimeTypesTestCase(unittest.TestCase):
         with support.temp_dir() as directory:
             data = "application/no-mans-land  Fran\u00E7ais"
             file = pathlib.Path(directory, "sample.mimetype")
-            file.write_text(data)
+            file.write_text(data, encoding='utf-8')
             import _bootlocale
-            getpreferredencoding = _bootlocale.getpreferredencoding(False)
-            self.addCleanup(setattr, _bootlocale, 'getpreferredencoding', getpreferredencoding)
-            _bootlocale.getpreferredencoding = lambda x: 'ASCII'
-            mime_dict = mimetypes.read_mime_types(file)
+            with support.swap_attr(_bootlocale, 'getpreferredencoding', lambda do_setlocale=True: 'ASCII'):
+                mime_dict = mimetypes.read_mime_types(file)
             eq(mime_dict[".Français"], "application/no-mans-land")
 
     def test_non_standard_types(self):
