@@ -4235,11 +4235,11 @@ static PyObject*
 pymarshal_write_long_to_file(PyObject* self, PyObject *args)
 {
     long value;
-    char *filename;
+    const char *filename;
     int version;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "lsi:pymarshal_write_long_to_file",
+    if (!PyArg_ParseTuple(args, "lyi:pymarshal_write_long_to_file",
                           &value, &filename, &version))
         return NULL;
 
@@ -4261,11 +4261,11 @@ static PyObject*
 pymarshal_write_object_to_file(PyObject* self, PyObject *args)
 {
     PyObject *obj;
-    char *filename;
+    const char *filename;
     int version;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "Osi:pymarshal_write_object_to_file",
+    if (!PyArg_ParseTuple(args, "Oyi:pymarshal_write_object_to_file",
                           &obj, &filename, &version))
         return NULL;
 
@@ -4288,10 +4288,10 @@ pymarshal_read_short_from_file(PyObject* self, PyObject *args)
 {
     int value;
     long pos;
-    char *filename;
+    const char *filename;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "s:pymarshal_read_short_from_file", &filename))
+    if (!PyArg_ParseTuple(args, "y:pymarshal_read_short_from_file", &filename))
         return NULL;
 
     fp = fopen(filename, "rb");
@@ -4313,10 +4313,10 @@ static PyObject*
 pymarshal_read_long_from_file(PyObject* self, PyObject *args)
 {
     long value, pos;
-    char *filename;
+    const char *filename;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "s:pymarshal_read_long_from_file", &filename))
+    if (!PyArg_ParseTuple(args, "y:pymarshal_read_long_from_file", &filename))
         return NULL;
 
     fp = fopen(filename, "rb");
@@ -4339,10 +4339,10 @@ pymarshal_read_last_object_from_file(PyObject* self, PyObject *args)
 {
     PyObject *obj;
     long pos;
-    char *filename;
+    const char *filename;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "s:pymarshal_read_last_object_from_file", &filename))
+    if (!PyArg_ParseTuple(args, "y:pymarshal_read_last_object_from_file", &filename))
         return NULL;
 
     fp = fopen(filename, "rb");
@@ -4363,10 +4363,10 @@ pymarshal_read_object_from_file(PyObject* self, PyObject *args)
 {
     PyObject *obj;
     long pos;
-    char *filename;
+    const char *filename;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "s:pymarshal_read_object_from_file", &filename))
+    if (!PyArg_ParseTuple(args, "y:pymarshal_read_object_from_file", &filename))
         return NULL;
 
     fp = fopen(filename, "rb");

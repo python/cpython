@@ -518,7 +518,7 @@ class TestCommandLine(unittest.TestCase):
                     f()
             """))
         status, stdout, _ = assert_python_ok('-m', 'trace', '-cs', filename)
-        stdout = stdout.decode()
+        stdout = os.fsdecode(stdout)
         self.assertEqual(status, 0)
         self.assertIn('lines   cov%   module   (path)', stdout)
         self.assertIn(f'6   100%   {TESTFN}   ({filename})', stdout)

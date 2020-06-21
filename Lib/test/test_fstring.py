@@ -1055,8 +1055,9 @@ non-important content
             file_path = os.path.join(cwd, 't.py')
             with open(file_path, 'w') as f:
                 f.write('f"{a b}"') # This generates a SyntaxError
-            _, _, stderr = assert_python_failure(file_path)
-        self.assertIn(file_path, stderr.decode('utf-8'))
+            _, _, stderr = assert_python_failure(file_path,
+                                                 PYTHONIOENCODING='ascii')
+        self.assertIn(file_path.encode('ascii', 'backslashreplace'), stderr)
 
     def test_loop(self):
         for i in range(1000):
