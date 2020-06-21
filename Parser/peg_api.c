@@ -1,4 +1,4 @@
-#include "pegen_interface.h"
+#include "parser_interface.h"
 
 #include "tokenizer.h"
 #include "pegen.h"

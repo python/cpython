@@ -212,7 +212,7 @@
     <ClInclude Include="..\Include\osdefs.h" />
     <ClInclude Include="..\Include\osmodule.h" />
     <ClInclude Include="..\Include\patchlevel.h" />
-    <ClInclude Include="..\Include\pegen_interface.h" />
+    <ClInclude Include="..\Include\parser_interface.h" />
     <ClInclude Include="..\Include\picklebufobject.h" />
     <ClInclude Include="..\Include\py_curses.h" />
     <ClInclude Include="..\Include\pyarena.h" />
