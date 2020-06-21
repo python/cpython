@@ -269,9 +269,28 @@ typedef enum {
     FOR_TARGETS
 } TARGETS_TYPE;
 expr_ty _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type);
-#define GET_INVALID_TARGET(e) (expr_ty)CHECK(_PyPegen_get_invalid_target(e, STAR_TARGETS))
-#define GET_INVALID_DEL_TARGET(e) (expr_ty)CHECK_NULL_ALLOWED(_PyPegen_get_invalid_target(e, DEL_TARGETS))
-#define GET_INVALID_FOR_TARGET(e) (expr_ty)CHECK_NULL_ALLOWED(_PyPegen_get_invalid_target(e, FOR_TARGETS))
+#define RAISE_SYNTAX_ERROR_INVALID_TARGET(type, e) _RAISE_SYNTAX_ERROR_INVALID_TARGET(p, type, e)
+
+Py_LOCAL_INLINE(void *)
+_RAISE_SYNTAX_ERROR_INVALID_TARGET(Parser *p, TARGETS_TYPE type, void *e)
+{
+    expr_ty invalid_target = CHECK_NULL_ALLOWED(_PyPegen_get_invalid_target(e, type));
+    if (invalid_target != NULL) {
+        const char *msg;
+        if (type == STAR_TARGETS || type == FOR_TARGETS) {
+            msg = "cannot assign to %s";
+        }
+        else {
+            msg = "cannot delete %s";
+        }
+        return RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            invalid_target,
+            msg,
+            _PyPegen_get_expr_name(invalid_target)
+        );
+    }
+    return RAISE_SYNTAX_ERROR("invalid syntax");
+}
 
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args);

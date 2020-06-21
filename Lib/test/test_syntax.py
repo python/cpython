@@ -191,6 +191,10 @@ SyntaxError: cannot assign to function call
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+>>> for a, b
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
 >>> with a as b(): pass
 Traceback (most recent call last):
 SyntaxError: cannot assign to function call
@@ -214,6 +218,10 @@ SyntaxError: cannot assign to function call
 >>> with a as b, c as d(): pass
 Traceback (most recent call last):
 SyntaxError: cannot assign to function call
+
+>>> with a as b
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 >>> p = p =
 Traceback (most recent call last):
