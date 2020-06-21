@@ -433,7 +433,8 @@ well as section boundaries for the DTD and for any CDATA sections.
 The lexical handlers are used in the same manner as content handlers.
 
 Set the LexicalHandler of an XMLReader by using the setProperty method
-with the property identifier.
+with the property identifier
+``'http://xml.org/sax/handlers/LexicalHandler'``.
 
 
 .. method:: LexicalHandler.comment(content)
