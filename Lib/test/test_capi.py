@@ -590,7 +590,6 @@ class SubinterpreterTest(unittest.TestCase):
             import pickle
             with open({:d}, "wb") as f:
 
-                @(lambda x:x)  # Py 3.9
                 def noop(x): return x
 
                 a = (b := f'1{{2}}3') + noop('x')  # Py 3.8 (:=) / 3.6 (f'')
