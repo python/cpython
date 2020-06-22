@@ -1,13 +1,14 @@
 """ Test suite for the code in msilib """
 import os
 import unittest
-from test.support import TESTFN, import_module, unlink
+from test.support import TESTFN, TESTFN_ASCII, import_module, unlink
 msilib = import_module('msilib')
 import msilib.schema
 
 
 def init_database():
-    path = TESTFN + '.msi'
+    # MSIOpenDatabase() currently works correctly only with ASCII names
+    path = TESTFN_ASCII + '.msi'
     db = msilib.init_database(
         path,
         msilib.schema,
