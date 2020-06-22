@@ -887,11 +887,11 @@ match_seq(PyObject *target)
         }
     }
     return (
-        PyObject_IsInstance(target, interp->seq_abc)
+        !PyType_FastSubclass(Py_TYPE(target),
+            Py_TPFLAGS_UNICODE_SUBCLASS | Py_TPFLAGS_BYTES_SUBCLASS)
         && !PyIter_Check(target)
-        && !PyUnicode_Check(target)
-        && !PyBytes_Check(target)
         && !PyByteArray_Check(target)
+        && PyObject_IsInstance(target, interp->seq_abc)
     );
 }
 
@@ -943,36 +943,6 @@ fail:
     Py_XDECREF(seen);
     Py_XDECREF(values);
     return NULL;
-}
-
-static Py_ssize_t
-get_match_args_required(PyThreadState *tstate, PyObject *type)
-{
-    if (!PyObject_HasAttrString(type, "__match_args_required__")) {
-        return 0;
-    }
-    PyObject *mar = PyObject_GetAttrString(type, "__match_args_required__");
-    if (!mar) {
-        return -1;
-    }
-    if (!PyLong_CheckExact(mar)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "__match_args_required__ must be an int (got %s)",
-                      Py_TYPE(mar)->tp_name);
-        Py_DECREF(mar);
-        return -1;
-    }
-    Py_ssize_t required = PyLong_AsSsize_t(mar);
-    Py_DECREF(mar);
-    if (required < 0) {
-        if (!_PyErr_Occurred(tstate)) {
-            _PyErr_Format(tstate, PyExc_TypeError,
-                        "__match_args_required__ must be nonnegative (got %d)",
-                        required);
-        }
-        return -1;
-    }
-    return required;
 }
 
 static PyObject *
@@ -1087,46 +1057,6 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         Py_DECREF(args);
         Py_DECREF(attrs);
         return NULL;
-    }
-    Py_ssize_t required = get_match_args_required(tstate, type);
-    if (required < 0) {
-        goto error;
-    }
-    if ((match_args == Py_None ? 1 : PyTuple_GET_SIZE(match_args)) < required) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "__match_args_required__ is larger than __match_args__",
-                      proxy);
-        goto error;
-    }
-    if (required > count) {
-        // TODO: combine with below? Use name?
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "not enough match arguments provided");
-        goto error;
-    }
-    if (required > nargs) {
-        if (match_args == Py_None) {
-            assert(required == 1);
-            assert(!nargs);
-            // TODO: combine with above? Use name?
-            _PyErr_Format(tstate, PyExc_TypeError,
-                          "not enough match arguments provided");
-            goto error;
-        }
-        assert(PyTuple_CheckExact(match_args));
-        for (Py_ssize_t i = nargs; i < required; i++) {
-            PyObject *name = PyTuple_GET_ITEM(match_args, i);
-            int ok = PySequence_Contains(kwargs, name);
-            if (ok < 0) {
-                goto error;
-            }
-            if (!ok) {
-                // TODO: Combine with above? Use name?
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "not enough match arguments provided");
-                goto error;
-            }
-        }
     }
     PyObject *name;
     for (Py_ssize_t i = 0; i < count; i++) {
