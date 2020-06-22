@@ -1,0 +1,1 @@
+Fixes a reference to deallocated stack space during startup when constructing sys.path involving a relative symlink when code was supplied via -c.  (discovered via Coverity)
