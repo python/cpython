@@ -1106,13 +1106,9 @@ stack_effect(int opcode, int oparg, int jump)
         case MATCH:
             return -1;
         case MATCH_MAP_KEYS:
-        case MATCH_LEN_EQ:
-        case MATCH_LEN_GE:
+        case GET_LEN:
         case MATCH_MAP:
         case MATCH_SEQ:
-        case MATCH_SEQ_ITEM:
-        case MATCH_SEQ_ITEM_END:
-        case MATCH_SEQ_SLICE:
             return 1;
         default:
             return PY_INVALID_STACK_EFFECT;
@@ -2797,7 +2793,9 @@ compiler_pattern_call(struct compiler *c, expr_ty p, basicblock *fail, PyObject*
         if (WILDCARD_CHECK(arg)) {
             continue;
         }
-        ADDOP_I(c, MATCH_SEQ_ITEM, i);
+        ADDOP(c, DUP_TOP);
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
+        ADDOP(c, BINARY_SUBSCR);
         CHECK(compiler_pattern(c, arg, block, names));
     }
     for (i = 0; i < nkwargs; i++) {
@@ -2805,7 +2803,9 @@ compiler_pattern_call(struct compiler *c, expr_ty p, basicblock *fail, PyObject*
         if (WILDCARD_CHECK(kwarg->value)) {
             continue;
         }
-        ADDOP_I(c, MATCH_SEQ_ITEM, nargs + i);
+        ADDOP(c, DUP_TOP);
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(nargs + i));
+        ADDOP(c, BINARY_SUBSCR);
         CHECK(compiler_pattern(c, kwarg->value, block, names));
     }
     ADDOP(c, POP_TOP);
@@ -2850,7 +2850,9 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
     ADDOP_I(c, MATCH_MAP, star);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     if (size - star) {
-        ADDOP_I(c, MATCH_LEN_GE, size - star);
+        ADDOP(c, GET_LEN);
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star));
+        ADDOP_COMPARE(c, GtE);
         ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     }
     Py_ssize_t i;
@@ -2872,7 +2874,9 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
         if (WILDCARD_CHECK(value)) {
             continue;
         }
-        ADDOP_I(c, MATCH_SEQ_ITEM, i);
+        ADDOP(c, DUP_TOP);
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
+        ADDOP(c, BINARY_SUBSCR);
         CHECK(compiler_pattern(c, value, block_star, names));
     }
     ADDOP(c, POP_TOP);
@@ -2979,7 +2983,6 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
     asdl_seq *values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
     Py_ssize_t size = asdl_seq_LEN(values);
     Py_ssize_t star = -1;
-    int copy = 0;
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);
         if (value->kind != Starred_kind) {
@@ -2989,21 +2992,24 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
             return compiler_error(c, "multiple starred names in pattern");
         }
         star = i;
-        copy = !WILDCARD_CHECK(value->v.Starred.value);
     }
     basicblock *block, *end;
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
-    ADDOP_I(c, MATCH_SEQ, copy);
+    ADDOP_I(c, MATCH_SEQ, 0);  // TODO: No arg
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     if (star >= 0) {
         if (size) {
-            ADDOP_I(c, MATCH_LEN_GE, size - 1);
+            ADDOP(c, GET_LEN);
+            ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - 1));
+            ADDOP_COMPARE(c, GtE);
             ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
         }
     }
     else {
-        ADDOP_I(c, MATCH_LEN_EQ, size);
+        ADDOP(c, GET_LEN);
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
+        ADDOP_COMPARE(c, Eq);
         ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     }
     for (Py_ssize_t i = 0; i < size; i++) {
@@ -3012,7 +3018,9 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
             continue;
         }
         if (star < 0 || i < star) {
-            ADDOP_I(c, MATCH_SEQ_ITEM, i);
+            ADDOP(c, DUP_TOP);
+            ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
+            ADDOP(c, BINARY_SUBSCR);
         }
         else if (i == star) {
             assert(value->kind == Starred_kind);
@@ -3020,11 +3028,29 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
             if (WILDCARD_CHECK(value)) {
                 continue;
             }
-            // TODO: ERROR CHECKING FOR THESE:
-            ADDOP_I(c, MATCH_SEQ_SLICE, (i << 16) + (size - 1 - i));
+            ADDOP(c, DUP_TOP);
+            ADDOP_I(c, BUILD_LIST, 0);
+            ADDOP(c, ROT_TWO);
+            if (i) {
+                ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
+            }
+            else {
+                ADDOP_LOAD_CONST(c, Py_None);
+            }
+            if (i != size - 1) {
+                ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(-(size - 1 - i)));
+            }
+            else {
+                ADDOP_LOAD_CONST(c, Py_None);
+            }
+            ADDOP_I(c, BUILD_SLICE, 2);
+            ADDOP(c, BINARY_SUBSCR);
+            ADDOP_I(c, LIST_EXTEND, 1);
         }
         else {
-            ADDOP_I(c, MATCH_SEQ_ITEM_END, size - 1 - i);
+            ADDOP(c, DUP_TOP);
+            ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(-(size - i)));
+            ADDOP(c, BINARY_SUBSCR);
         }
         CHECK(compiler_pattern(c, value, block, names));
     }

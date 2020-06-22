@@ -1217,35 +1217,7 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.10
 
 
-.. opcode:: MATCH_SEQ_ITEM (i)
-
-   TODO
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: MATCH_SEQ_ITEM_END (i)
-
-   TODO
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: MATCH_SEQ_ITEM_SLICE (ij)
-
-   TODO
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: MATCH_LEN_EQ (size)
-
-   TODO
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: MATCH_LEN_GE (size)
+.. opcode:: GET_LEN
 
    TODO
 

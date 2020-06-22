@@ -3591,52 +3591,17 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(MATCH_SEQ_ITEM): {
-            PyObject *item = PySequence_GetItem(TOP(), oparg);
-            if (!item) {
-                goto error;
-            }
-            PUSH(item);
-            DISPATCH();
-        }
-
-        case TARGET(MATCH_SEQ_ITEM_END): {
-            PyObject *item = PySequence_GetItem(TOP(), -oparg - 1);
-            if (!item) {
-                goto error;
-            }
-            PUSH(item);
-            DISPATCH();
-        }
-
-        case TARGET(MATCH_SEQ_SLICE): {
+        case TARGET(GET_LEN): {
             PyObject *target = TOP();
-            assert(PyList_CheckExact(target));
-            Py_ssize_t start = oparg >> 16;
-            Py_ssize_t stop = PyList_GET_SIZE(target) - (oparg & 0xFF);
-            PyObject *slice = PyList_GetSlice(target, start, stop);
-            if (!slice) {
+            Py_ssize_t l = PyObject_Length(target);
+            if (l < 0) {
                 goto error;
             }
-            PUSH(slice);
-            DISPATCH();
-        }
-
-        case TARGET(MATCH_LEN_EQ): {
-            Py_ssize_t len = PyObject_Length(TOP());
-            if (len < 0) {
+            PyObject *len = PyLong_FromSsize_t(l);
+            if (!len) {
                 goto error;
             }
-            PUSH(PyBool_FromLong(len == oparg));
-            DISPATCH();
-        }
-
-        case TARGET(MATCH_LEN_GE): {
-            Py_ssize_t len = PyObject_Length(TOP());
-            if (len < 0) {
-                goto error;
-            }
-            PUSH(PyBool_FromLong(len >= oparg));
+            PUSH(len);
             DISPATCH();
         }
 
@@ -3646,6 +3611,7 @@ main_loop:
             if (match < 0) {
                 goto error;
             }
+            // TODO: Move to MATCH_MAP_ITEMS:
             if (match && oparg) {
                 PyObject *map;
                 if (PyDict_CheckExact(target)) {
@@ -3673,15 +3639,6 @@ main_loop:
             int match = match_seq(target);
             if (match < 0) {
                 goto error;
-            }
-            // TODO: Really needed?
-            if (match && oparg && !PyList_CheckExact(target)) {
-                PyObject *seq = PySequence_List(target);
-                if (!seq) {
-                    goto error;
-                }
-                SET_TOP(seq);
-                Py_DECREF(target);
             }
             PUSH(PyBool_FromLong(match));
             DISPATCH();
