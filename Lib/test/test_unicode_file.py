@@ -41,7 +41,7 @@ class TestUnicodeFiles(unittest.TestCase):
         self._do_copyish(filename, filename)
         # Filename should appear in glob output
         self.assertTrue(
-            os.path.abspath(filename)==os.path.abspath(glob.glob(filename)[0]))
+            os.path.abspath(filename)==os.path.abspath(glob.glob(glob.escape(filename))[0]))
         # basename should appear in listdir.
         path, base = os.path.split(os.path.abspath(filename))
         file_list = os.listdir(path)

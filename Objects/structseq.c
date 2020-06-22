@@ -8,8 +8,8 @@
 */
 
 #include "Python.h"
-#include "pycore_tupleobject.h"
-#include "pycore_object.h"
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "structmember.h"         // PyMemberDef
 
 static const char visible_length_key[] = "n_sequence_fields";

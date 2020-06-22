@@ -62,7 +62,7 @@ tuple_alloc(struct _Py_tuple_state *state, Py_ssize_t size)
         assert(size != 0);
         state->free_list[size] = (PyTupleObject *) op->ob_item[0];
         state->numfree[size]--;
-        /* Inline PyObject_InitVar */
+        /* Inlined _PyObject_InitVar() without _PyType_HasFeature() test */
 #ifdef Py_TRACE_REFS
         Py_SET_SIZE(op, size);
         Py_SET_TYPE(op, &PyTuple_Type);

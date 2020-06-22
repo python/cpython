@@ -132,7 +132,7 @@ void *_PyPegen_string_token(Parser *p);
 const char *_PyPegen_get_expr_name(expr_ty);
 void *_PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...);
 void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
-                                          int lineno, int col_offset,
+                                          Py_ssize_t lineno, Py_ssize_t col_offset,
                                           const char *errmsg, va_list va);
 void *_PyPegen_dummy_name(Parser *p, ...);
 
@@ -263,11 +263,40 @@ int _PyPegen_check_barry_as_flufl(Parser *);
 mod_ty _PyPegen_make_module(Parser *, asdl_seq *);
 
 // Error reporting helpers
-expr_ty _PyPegen_get_invalid_target(expr_ty e);
+typedef enum {
+    STAR_TARGETS,
+    DEL_TARGETS,
+    FOR_TARGETS
+} TARGETS_TYPE;
+expr_ty _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type);
+#define RAISE_SYNTAX_ERROR_INVALID_TARGET(type, e) _RAISE_SYNTAX_ERROR_INVALID_TARGET(p, type, e)
+
+Py_LOCAL_INLINE(void *)
+_RAISE_SYNTAX_ERROR_INVALID_TARGET(Parser *p, TARGETS_TYPE type, void *e)
+{
+    expr_ty invalid_target = CHECK_NULL_ALLOWED(_PyPegen_get_invalid_target(e, type));
+    if (invalid_target != NULL) {
+        const char *msg;
+        if (type == STAR_TARGETS || type == FOR_TARGETS) {
+            msg = "cannot assign to %s";
+        }
+        else {
+            msg = "cannot delete %s";
+        }
+        return RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            invalid_target,
+            msg,
+            _PyPegen_get_expr_name(invalid_target)
+        );
+    }
+    return RAISE_SYNTAX_ERROR("invalid syntax");
+}
+
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args);
 
 
+// Generated function in parse.c - function definition in python.gram
 void *_PyPegen_parse(Parser *);
 
 #endif

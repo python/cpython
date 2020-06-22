@@ -1,0 +1,1 @@
+Fix a bug that caused the :exc:`SyntaxError` text to be empty when a file ends with a line ending in a line continuation character (i.e. backslash). The error text should contain the text of the last line.
