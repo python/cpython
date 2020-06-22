@@ -26,7 +26,7 @@
 typedef struct {
     PyTypeObject *lzma_compressor_type;
     PyTypeObject *lzma_decompressor_type;
-    PyObject *error_type;
+    PyObject *error;
     PyObject *empty_tuple;
 } _lzma_state;
 
@@ -82,31 +82,31 @@ catch_lzma_error(_lzma_state *state, lzma_ret lzret)
         case LZMA_STREAM_END:
             return 0;
         case LZMA_UNSUPPORTED_CHECK:
-            PyErr_SetString(state->error_type, "Unsupported integrity check");
+            PyErr_SetString(state->error, "Unsupported integrity check");
             return 1;
         case LZMA_MEM_ERROR:
             PyErr_NoMemory();
             return 1;
         case LZMA_MEMLIMIT_ERROR:
-            PyErr_SetString(state->error_type, "Memory usage limit exceeded");
+            PyErr_SetString(state->error, "Memory usage limit exceeded");
             return 1;
         case LZMA_FORMAT_ERROR:
-            PyErr_SetString(state->error_type, "Input format not supported by decoder");
+            PyErr_SetString(state->error, "Input format not supported by decoder");
             return 1;
         case LZMA_OPTIONS_ERROR:
-            PyErr_SetString(state->error_type, "Invalid or unsupported options");
+            PyErr_SetString(state->error, "Invalid or unsupported options");
             return 1;
         case LZMA_DATA_ERROR:
-            PyErr_SetString(state->error_type, "Corrupt input data");
+            PyErr_SetString(state->error, "Corrupt input data");
             return 1;
         case LZMA_BUF_ERROR:
-            PyErr_SetString(state->error_type, "Insufficient buffer space");
+            PyErr_SetString(state->error, "Insufficient buffer space");
             return 1;
         case LZMA_PROG_ERROR:
-            PyErr_SetString(state->error_type, "Internal error");
+            PyErr_SetString(state->error, "Internal error");
             return 1;
         default:
-            PyErr_Format(state->error_type, "Unrecognized error from liblzma: %d", lzret);
+            PyErr_Format(state->error, "Unrecognized error from liblzma: %d", lzret);
             return 1;
     }
 }
@@ -230,7 +230,7 @@ parse_filter_spec_lzma(_lzma_state *state, PyObject *spec)
 
     if (lzma_lzma_preset(options, preset)) {
         PyMem_Free(options);
-        PyErr_Format(state->error_type, "Invalid compression preset: %u", preset);
+        PyErr_Format(state->error, "Invalid compression preset: %u", preset);
         return NULL;
     }
 
@@ -648,7 +648,7 @@ Compressor_init_alone(_lzma_state *state, lzma_stream *lzs, uint32_t preset, PyO
         lzma_options_lzma options;
 
         if (lzma_lzma_preset(&options, preset)) {
-            PyErr_Format(state->error_type, "Invalid compression preset: %u", preset);
+            PyErr_Format(state->error, "Invalid compression preset: %u", preset);
             return -1;
         }
         lzret = lzma_alone_encoder(lzs, &options);
@@ -1568,13 +1568,12 @@ lzma_exec(PyObject *module)
     ADD_INT_PREFIX_MACRO(module, PRESET_DEFAULT);
     ADD_INT_PREFIX_MACRO(module, PRESET_EXTREME);
 
-
-    state->error_type = PyErr_NewExceptionWithDoc("_lzma.LZMAError", "Call to liblzma failed.", NULL, NULL);
-    if (state->error_type == NULL) {
+    state->error = PyErr_NewExceptionWithDoc("_lzma.LZMAError", "Call to liblzma failed.", NULL, NULL);
+    if (state->error == NULL) {
         return -1;
     }
 
-    if (PyModule_AddType(module, (PyTypeObject *)state->error_type) < 0) {
+    if (PyModule_AddType(module, (PyTypeObject *)state->error) < 0) {
         return -1;
     }
 
@@ -1620,7 +1619,7 @@ lzma_traverse(PyObject *module, visitproc visit, void *arg)
     _lzma_state *state = get_lzma_state(module);
     Py_VISIT(state->lzma_compressor_type);
     Py_VISIT(state->lzma_decompressor_type);
-    Py_VISIT(state->error_type);
+    Py_VISIT(state->error);
     Py_VISIT(state->empty_tuple);
     return 0;
 }
@@ -1631,7 +1630,7 @@ lzma_clear(PyObject *module)
     _lzma_state *state = get_lzma_state(module);
     Py_CLEAR(state->lzma_compressor_type);
     Py_CLEAR(state->lzma_decompressor_type);
-    Py_CLEAR(state->error_type);
+    Py_CLEAR(state->error);
     Py_CLEAR(state->empty_tuple);
     return 0;
 }
