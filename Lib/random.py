@@ -235,7 +235,7 @@ class Random(_random.Random):
 
     ## -------------------- integer methods  -------------------
 
-    def randrange(self, start, stop=None, step=1, _int=int):
+    def randrange(self, start, stop=None, step=1):
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
@@ -245,7 +245,7 @@ class Random(_random.Random):
 
         # This code is a bit messy to make it fast for the
         # common case while still doing adequate error checking.
-        istart = _int(start)
+        istart = int(start)
         if istart != start:
             raise ValueError("non-integer arg 1 for randrange()")
         if stop is None:
@@ -254,7 +254,7 @@ class Random(_random.Random):
             raise ValueError("empty range for randrange()")
 
         # stop argument supplied.
-        istop = _int(stop)
+        istop = int(stop)
         if istop != stop:
             raise ValueError("non-integer stop for randrange()")
         width = istop - istart
@@ -264,7 +264,7 @@ class Random(_random.Random):
             raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
 
         # Non-unit step argument supplied.
-        istep = _int(step)
+        istep = int(step)
         if istep != step:
             raise ValueError("non-integer step for randrange()")
         if istep > 0:
