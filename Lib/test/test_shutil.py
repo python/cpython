@@ -2822,10 +2822,11 @@ class LinkSymlink(unittest.TestCase):
     def test_symlink_single_src_overwrite_existing_not_directory(self):
         src = self.src_file1
         dsts_not_dir = {k: v for k, v in self.path_types.items()
-                        if k not in ['absent', 'directory']}
+                        if k != 'directory'}
         for description, dst in dsts_not_dir.items():
             with self.subTest(type=description):
-                self.assertTrue(os.path.lexists(dst))
+                if description != 'absent':
+                    self.assertTrue(os.path.lexists(dst))
                 shutil.symlink(src, dst, overwrite=True)
                 self.assertEqual(os.readlink(dst), src)
 
