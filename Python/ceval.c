@@ -1088,9 +1088,10 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         }
         PyObject *attr = PyObject_GetAttr(proxy, name);
         if (!attr) {
+            // TODO: Only clear AttributeError?
             _PyErr_Clear(tstate);
             // TODO: iterate manually (and check for strings)
-            if (match_args == Py_None || !PySequence_Contains(match_args, name)) {
+            if (match_args != Py_None && !PySequence_Contains(match_args, name)) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                               "match proxy %R has no attribute %R",
                               proxy, name);
