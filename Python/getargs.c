@@ -2,7 +2,7 @@
 /* New getargs implementation */
 
 #include "Python.h"
-#include "pycore_tupleobject.h"
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 #include <ctype.h>
 #include <float.h>
