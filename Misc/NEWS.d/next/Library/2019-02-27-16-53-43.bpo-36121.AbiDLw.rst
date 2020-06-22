@@ -1,0 +1,2 @@
+``csv.field_size_limit`` can now be overriden for each csv.Reader
+instance. Contributed by Rémi Lapeyre.

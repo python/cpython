@@ -108,6 +108,7 @@ typedef struct {
     Py_ssize_t field_len;       /* length of current field */
     int numeric_field;          /* treat field as numeric */
     unsigned long line_num;     /* Source-file line number */
+    long field_limit;           /* field limit for current reader */
 } ReaderObj;
 
 static PyTypeObject Reader_Type;
@@ -570,13 +571,18 @@ parse_grow_buff(ReaderObj *self)
 static int
 parse_add_char(ReaderObj *self, Py_UCS4 c)
 {
-    if (self->field_len >= _csvstate_global->field_limit) {
+    long limit = self->field_limit;
+    if (limit == -1) {
+        limit = _csvstate_global->field_limit;
+    }
+    if (self->field_len >= limit) {
         PyErr_Format(_csvstate_global->error_obj, "field larger than field limit (%ld)",
-                     _csvstate_global->field_limit);
+                     limit);
         return -1;
     }
-    if (self->field_len == self->field_size && !parse_grow_buff(self))
+    if (self->field_len == self->field_size && !parse_grow_buff(self)) {
         return -1;
+    }
     self->field[self->field_len++] = c;
     return 0;
 }
@@ -892,6 +898,45 @@ static struct PyMemberDef Reader_memberlist[] = {
     { NULL }
 };
 
+static PyObject *
+Reader_get_field_size_limit(PyObject *self, void *Py_UNUSED(ignored))
+{
+    ReaderObj *reader = (ReaderObj *)self;
+    if (reader->field_limit == -1) {  // -1 is used as a flag for unset value
+        Py_RETURN_NONE;
+    }
+    else {
+        return PyLong_FromLong(reader->field_limit);
+    }
+}
+
+static int
+Reader_set_field_size_limit(PyObject *self, PyObject *arg, void *Py_UNUSED(ignored))
+{
+    ReaderObj *reader = (ReaderObj *)self;
+    if (arg == NULL || arg == Py_None) {
+        reader->field_limit = -1;
+        return 0;
+    }
+    else {
+        long limit = PyLong_AsLong(arg);
+        if (limit == -1 && PyErr_Occurred()) {
+            return -1;
+        }
+        if (limit <= 0) {
+            PyErr_Format(PyExc_ValueError, "field_size_limit must greater than 0");
+            return -1;
+        }
+        reader->field_limit = limit;
+        return 0;
+    }
+}
+
+static PyGetSetDef Reader_getset[] = {
+    { "field_size_limit", Reader_get_field_size_limit,
+        Reader_set_field_size_limit, PyDoc_STR("field size limit") },
+    { NULL },
+};
 
 static PyTypeObject Reader_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -925,18 +970,19 @@ static PyTypeObject Reader_Type = {
     (getiterfunc)Reader_iternext,           /*tp_iternext*/
     Reader_methods,                         /*tp_methods*/
     Reader_memberlist,                      /*tp_members*/
-    0,                                      /*tp_getset*/
-
+    Reader_getset,                          /*tp_getset*/
 };
 
 static PyObject *
 csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
     PyObject * iterator, * dialect = NULL;
+    PyObject * _field_size_limit = NULL;
     ReaderObj * self = PyObject_GC_New(ReaderObj, &Reader_Type);
 
-    if (!self)
+    if (!self) {
         return NULL;
+    }
 
     self->dialect = NULL;
     self->fields = NULL;
@@ -945,30 +991,66 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
     self->field_size = 0;
     self->line_num = 0;
 
+    _field_size_limit = PyUnicode_FromString("field_size_limit");
+    if (_field_size_limit == NULL) {
+        goto fail;
+    }
+    PyObject *field_size_limit = NULL;
+    if (keyword_args != NULL) {
+        field_size_limit = PyDict_GetItemWithError(keyword_args, _field_size_limit);
+        if (PyErr_Occurred()) {
+            goto fail;
+        }
+    }
+    if (field_size_limit == NULL) {
+        self->field_limit = -1;
+    } else if (field_size_limit == Py_None) {
+        self->field_limit = -1;
+        if (PyDict_DelItem(keyword_args, _field_size_limit) < 0) {
+            goto fail;
+        }
+    }
+    else {
+        long limit = PyLong_AsLong(field_size_limit);
+        if (PyErr_Occurred()) {
+            goto fail;
+        }
+        if (limit <= 0) {
+            PyErr_Format(PyExc_ValueError, "field_size_limit must greater than 0");
+            goto fail;
+        }
+        if (PyDict_DelItem(keyword_args, _field_size_limit) < 0) {
+            goto fail;
+        }
+        self->field_limit = limit;
+    }
+    Py_CLEAR(_field_size_limit);
+
     if (parse_reset(self) < 0) {
-        Py_DECREF(self);
-        return NULL;
+        goto fail;
     }
 
     if (!PyArg_UnpackTuple(args, "", 1, 2, &iterator, &dialect)) {
-        Py_DECREF(self);
-        return NULL;
+        goto fail;
     }
     self->input_iter = PyObject_GetIter(iterator);
     if (self->input_iter == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "argument 1 must be an iterator");
-        Py_DECREF(self);
-        return NULL;
+        goto fail;
     }
     self->dialect = (DialectObj *)_call_dialect(dialect, keyword_args);
     if (self->dialect == NULL) {
-        Py_DECREF(self);
-        return NULL;
+        goto fail;
     }
 
     PyObject_GC_Track(self);
     return (PyObject *)self;
+
+fail:
+    Py_XDECREF(_field_size_limit);
+    Py_DECREF(self);
+    return NULL;
 }
 
 /*
@@ -1538,8 +1620,8 @@ PyDoc_STRVAR(csv_module_doc,
 "        written as two quotes\n");
 
 PyDoc_STRVAR(csv_reader_doc,
-"    csv_reader = reader(iterable [, dialect='excel']\n"
-"                        [optional keyword args])\n"
+"    csv_reader = reader(iterable , dialect='excel',\n"
+"                    field_size_limit=None, **fmtparams)\n"
 "    for row in csv_reader:\n"
 "        process(row)\n"
 "\n"

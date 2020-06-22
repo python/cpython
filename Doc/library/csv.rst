@@ -53,7 +53,7 @@ The :mod:`csv` module defines the following functions:
 .. index::
    single: universal newlines; csv.reader function
 
-.. function:: reader(csvfile, dialect='excel', **fmtparams)
+.. function:: reader(csvfile, dialect='excel', field_size_limit=None, **fmtparams)
 
    Return a reader object which will iterate over lines in the given *csvfile*.
    *csvfile* can be any object which supports the :term:`iterator` protocol and returns a
@@ -421,6 +421,10 @@ Reader objects have the following public attributes:
    The number of lines read from the source iterator. This is not the same as the
    number of records returned, as records can span multiple lines.
 
+.. attribute:: csvreader.field_size_limit
+
+   The maximum field size allowed by this reader. If :const:`None`,
+   csv.field_size_limit() is used.
 
 DictReader objects have the following public attribute:
 
