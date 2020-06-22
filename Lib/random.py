@@ -815,24 +815,20 @@ class SystemRandom(Random):
 ## -------------------- test program --------------------
 
 def _test_generator(n, func, args):
-    import time
-    print(n, 'times', func.__name__)
-    total = 0.0
-    sqsum = 0.0
-    smallest = 1e10
-    largest = -1e10
-    t0 = time.perf_counter()
-    for i in range(n):
-        x = func(*args)
-        total += x
-        sqsum = sqsum + x*x
-        smallest = min(x, smallest)
-        largest = max(x, largest)
-    t1 = time.perf_counter()
-    print(round(t1 - t0, 3), 'sec,', end=' ')
-    avg = total / n
-    stddev = _sqrt(sqsum / n - avg * avg)
-    print('avg %g, stddev %g, min %g, max %g\n' % (avg, stddev, smallest, largest))
+    from statistics import stdev, fmean as mean
+    from time import perf_counter
+
+    t0 = perf_counter()
+    data = [func(*args) for i in range(n)]
+    t1 = perf_counter()
+
+    xbar = mean(data)
+    sigma = stdev(data, xbar)
+    low = min(data)
+    high = max(data)
+
+    print(f'{t1 - t0:.3f} sec, {n} times {func.__name__}')
+    print('avg %g, stddev %g, min %g, max %g\n' % (xbar, sigma, low, high))
 
 
 def _test(N=2000):
