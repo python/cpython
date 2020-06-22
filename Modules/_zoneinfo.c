@@ -278,13 +278,11 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
         instance =
             PyObject_CallMethod(weak_cache, "setdefault", "OO", key, tmp);
-        ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
-
         Py_DECREF(tmp);
-
         if (instance == NULL) {
             return NULL;
         }
+        ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
     }
 
     update_strong_cache(type, key, instance);
@@ -1622,7 +1620,7 @@ parse_abbr(const char *const p, PyObject **abbr)
     }
 
     *abbr = PyUnicode_FromStringAndSize(str_start, str_end - str_start);
-    if (abbr == NULL) {
+    if (*abbr == NULL) {
         return -1;
     }
 
