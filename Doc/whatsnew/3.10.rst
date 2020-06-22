@@ -202,5 +202,15 @@ Porting to Python 3.10
   for historical reason. It is no longer allowed.
   (Contributed by Victor Stinner in :issue:`40839`.)
 
+* Convert ``PyTuple`` and ``PyList`` macros to static inline functions:
+
+  * :c:func:`PyTuple_GET_SIZE`, :c:func:`PyList_GET_SIZE`
+  * :c:func:`PyTuple_GET_ITEM`, :c:func:`PyList_GET_ITEM`
+  * :c:func:`PyTuple_SET_ITEM`, :c:func:`PyList_SET_ITEM`
+
+  It is no longer possible to write ``&PyTuple_GET_ITEM()`` or
+  ``&PyList_GET_ITEM()``.
+  (Contributed by Victor Stinner in :issue:`41078`.)
+
 Removed
 -------

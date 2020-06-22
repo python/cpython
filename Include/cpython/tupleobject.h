@@ -18,11 +18,28 @@ PyAPI_FUNC(void) _PyTuple_MaybeUntrack(PyObject *);
 /* Cast argument to PyTupleObject* type. */
 #define _PyTuple_CAST(op) (assert(PyTuple_Check(op)), (PyTupleObject *)(op))
 
-#define PyTuple_GET_SIZE(op)    Py_SIZE(_PyTuple_CAST(op))
 
-#define PyTuple_GET_ITEM(op, i) (_PyTuple_CAST(op)->ob_item[i])
+static inline Py_ssize_t _PyTuple_GET_SIZE(PyTupleObject *op)
+{
+    return Py_SIZE(op);
+}
+#define PyTuple_GET_SIZE(op) _PyTuple_GET_SIZE(_PyTuple_CAST(op))
 
-/* Macro, *only* to be used to fill in brand new tuples */
-#define PyTuple_SET_ITEM(op, i, v) (_PyTuple_CAST(op)->ob_item[i] = v)
+
+static inline PyObject* _PyTuple_GET_ITEM(PyTupleObject *op, Py_ssize_t i)
+{
+    return op->ob_item[i];
+}
+#define PyTuple_GET_ITEM(op, i) _PyTuple_GET_ITEM(_PyTuple_CAST(op), i)
+
+
+static inline void _PyTuple_SET_ITEM(PyTupleObject *op, Py_ssize_t i, PyObject *item)
+{
+    op->ob_item[i] = item;
+}
+/* Function, *only* to be used to fill in brand new tuples */
+#define PyTuple_SET_ITEM(op, i, item) \
+    _PyTuple_SET_ITEM(_PyTuple_CAST(op), i, item)
+
 
 PyAPI_FUNC(void) _PyTuple_DebugMallocStats(FILE *out);

@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
 
 typedef struct {
@@ -308,7 +309,7 @@ ga_getitem(PyObject *self, PyObject *item)
     }
     int is_tuple = PyTuple_Check(item);
     Py_ssize_t nitems = is_tuple ? PyTuple_GET_SIZE(item) : 1;
-    PyObject **argitems = is_tuple ? &PyTuple_GET_ITEM(item, 0) : &item;
+    PyObject **argitems = is_tuple ? _PyTuple_ITEMS(item) : &item;
     if (nitems != nparams) {
         return PyErr_Format(PyExc_TypeError,
                             "Too %s arguments for %R",
