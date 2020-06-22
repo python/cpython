@@ -165,8 +165,8 @@
     <ClInclude Include="..\Include\internal\pycore_abstract.h" />
     <ClInclude Include="..\Include\internal\pycore_accu.h" />
     <ClInclude Include="..\Include\internal\pycore_atomic.h" />
-    <ClInclude Include="..\Include\internal\pycore_bytes_methods.h" />
     <ClInclude Include="..\Include\internal\pycore_bitutils.h" />
+    <ClInclude Include="..\Include\internal\pycore_bytes_methods.h" />
     <ClInclude Include="..\Include\internal\pycore_call.h" />
     <ClInclude Include="..\Include\internal\pycore_ceval.h" />
     <ClInclude Include="..\Include\internal\pycore_code.h" />
@@ -181,6 +181,7 @@
     <ClInclude Include="..\Include\internal\pycore_import.h" />
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
+    <ClInclude Include="..\Include\internal\pycore_list.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
