@@ -9,6 +9,9 @@ extern "C" {
 
 /* Public interface */
 struct _node; /* Declare the existence of this type */
+#ifndef Py_BUILD_CORE
+Py_DEPRECATED(3.9)
+#endif
 PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
 /* XXX (ncoghlan): Unprefixed type name in a public API! */
 
