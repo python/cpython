@@ -297,7 +297,7 @@ class Random(_random.Random):
             r = getrandbits(k)
         return r
 
-    def _randbelow_without_getrandbits(self, n, int=int, maxsize=1<<BPF):
+    def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
         """Return a random int in the range [0,n).  Returns 0 if n==0.
 
         The implementation does not use getrandbits, but only random.
