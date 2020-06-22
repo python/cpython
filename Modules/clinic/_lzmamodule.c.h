@@ -65,6 +65,23 @@ _lzma_LZMACompressor_flush(Compressor *self, PyObject *Py_UNUSED(ignored))
     return _lzma_LZMACompressor_flush_impl(self);
 }
 
+PyDoc_STRVAR(_lzma_LZMACompressor___reduce____doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n");
+
+#define _LZMA_LZMACOMPRESSOR___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)_lzma_LZMACompressor___reduce__, METH_NOARGS, _lzma_LZMACompressor___reduce____doc__},
+
+static PyObject *
+_lzma_LZMACompressor___reduce___impl(Compressor *self);
+
+static PyObject *
+_lzma_LZMACompressor___reduce__(Compressor *self, PyObject *Py_UNUSED(ignored))
+{
+    return _lzma_LZMACompressor___reduce___impl(self);
+}
+
 PyDoc_STRVAR(_lzma_LZMADecompressor_decompress__doc__,
 "decompress($self, /, data, max_length=-1)\n"
 "--\n"
@@ -211,6 +228,23 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_lzma_LZMADecompressor___reduce____doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n");
+
+#define _LZMA_LZMADECOMPRESSOR___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)_lzma_LZMADecompressor___reduce__, METH_NOARGS, _lzma_LZMADecompressor___reduce____doc__},
+
+static PyObject *
+_lzma_LZMADecompressor___reduce___impl(Decompressor *self);
+
+static PyObject *
+_lzma_LZMADecompressor___reduce__(Decompressor *self, PyObject *Py_UNUSED(ignored))
+{
+    return _lzma_LZMADecompressor___reduce___impl(self);
+}
+
 PyDoc_STRVAR(_lzma_is_check_supported__doc__,
 "is_check_supported($module, check_id, /)\n"
 "--\n"
@@ -238,39 +272,6 @@ _lzma_is_check_supported(PyObject *module, PyObject *arg)
     return_value = _lzma_is_check_supported_impl(module, check_id);
 
 exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_lzma__encode_filter_properties__doc__,
-"_encode_filter_properties($module, filter, /)\n"
-"--\n"
-"\n"
-"Return a bytes object encoding the options (properties) of the filter specified by *filter* (a dict).\n"
-"\n"
-"The result does not include the filter ID itself, only the options.");
-
-#define _LZMA__ENCODE_FILTER_PROPERTIES_METHODDEF    \
-    {"_encode_filter_properties", (PyCFunction)_lzma__encode_filter_properties, METH_O, _lzma__encode_filter_properties__doc__},
-
-static PyObject *
-_lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter);
-
-static PyObject *
-_lzma__encode_filter_properties(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    lzma_filter filter = {LZMA_VLI_UNKNOWN, NULL};
-
-    if (!lzma_filter_converter(arg, &filter)) {
-        goto exit;
-    }
-    return_value = _lzma__encode_filter_properties_impl(module, filter);
-
-exit:
-    /* Cleanup for filter */
-    if (filter.id != LZMA_VLI_UNKNOWN)
-       PyMem_Free(filter.options);
-
     return return_value;
 }
 
@@ -319,4 +320,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d6e997ebc269f78f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d89b6159e98544be input=a9049054013a1b77]*/
