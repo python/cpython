@@ -1120,7 +1120,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_runtime.h \
 		$(srcdir)/Include/internal/pycore_sysmodule.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
-		$(srcdir)/Include/internal/pycore_tupleobject.h \
+		$(srcdir)/Include/internal/pycore_tuple.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(DTRACE_HEADERS)
 
