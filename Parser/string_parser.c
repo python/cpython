@@ -370,6 +370,8 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
         return NULL;
     }
 
+    // Having curly braces at the beginning and at the end is needed so that the call
+    // to strstr in fstring_find_expr_location works correctly.
     str[0] = '{';
     memcpy(str+1, expr_start, len);
     str[len+1] = '}';
@@ -378,6 +380,8 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     int lines, cols;
     fstring_find_expr_location(t, str, &lines, &cols);
 
+    // The parentheses are needed in order to allow for leading whitespace. This
+    // consequently gets parsed as a group (see the group rule in python.gram).
     str[0] = '(';
     str[len+1] = ')';
 
