@@ -273,7 +273,7 @@
     <ClInclude Include="..\Include\internal\pycore_traceback.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_tupleobject.h">
+    <ClInclude Include="..\Include\internal\pycore_tuple.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_warnings.h">

@@ -1,10 +1,10 @@
 /* List object implementation */
 
 #include "Python.h"
-#include "pycore_abstract.h"   // _PyIndex_Check()
-#include "pycore_object.h"
-#include "pycore_tupleobject.h"
-#include "pycore_accu.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_interp.h"        // PyInterpreterState.list
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
