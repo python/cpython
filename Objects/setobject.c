@@ -978,38 +978,16 @@ make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
 static PyObject *
 make_new_frozenset(PyTypeObject *type, PyObject *iterable)
 {
-    PyObject *res;
-
     if (type != &PyFrozenSet_Type) {
         return make_new_set(type, iterable);
     }
 
-    if (iterable != NULL) {
-        if (PyFrozenSet_CheckExact(iterable)) {
-            /* frozenset(f) is idempotent */
-            Py_INCREF(iterable);
-            return iterable;
-        }
-        res = make_new_set((PyTypeObject *)type, iterable);
-        if (res == NULL || PySet_GET_SIZE(res) != 0) {
-            return res;
-        }
-        /* If the created frozenset is empty, return the empty frozenset singleton instead */
-        Py_DECREF(res);
+    if (iterable != NULL && PyFrozenSet_CheckExact(iterable)) {
+        /* frozenset(f) is idempotent */
+        Py_INCREF(iterable);
+        return iterable;
     }
-
-    // The empty frozenset is a singleton
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    res = interp->empty_frozenset;
-    if (res == NULL) {
-        interp->empty_frozenset = make_new_set((PyTypeObject *)type, NULL);
-        res = interp->empty_frozenset;
-        if (res == NULL) {
-            return NULL;
-        }
-    }
-    Py_INCREF(res);
-    return res;
+    return make_new_set((PyTypeObject *)type, iterable);
 }
 
 static PyObject *
@@ -2302,12 +2280,6 @@ PySet_Add(PyObject *anyset, PyObject *key)
         return -1;
     }
     return set_add_key((PySetObject *)anyset, key);
-}
-
-void
-_PySet_Fini(PyThreadState *tstate)
-{
-    Py_CLEAR(tstate->interp->empty_frozenset);
 }
 
 int
