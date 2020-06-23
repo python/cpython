@@ -231,28 +231,19 @@ get_unicode_state(void)
 
 
 // Return a borrowed reference to the empty string singleton.
-// Return NULL if the singleton was not created yet.
 static inline PyObject* unicode_get_empty(void)
 {
     struct _Py_unicode_state *state = get_unicode_state();
+    // unicode_get_empty() must not be called before _PyUnicode_Init()
+    // or after _PyUnicode_Fini()
+    assert(state->empty != NULL);
     return state->empty;
 }
 
 static inline PyObject* unicode_new_empty(void)
 {
-    struct _Py_unicode_state *state = get_unicode_state();
-    PyObject *empty = state->empty;
-    if (empty != NULL) {
-        Py_INCREF(empty);
-    }
-    else {
-        empty = PyUnicode_New(0, 0);
-        if (empty != NULL) {
-            Py_INCREF(empty);
-            assert(_PyUnicode_CheckConsistency(empty, 1));
-            state->empty = empty;
-        }
-    }
+    PyObject *empty = unicode_get_empty();
+    Py_INCREF(empty);
     return empty;
 }
 
@@ -696,12 +687,9 @@ unicode_result_ready(PyObject *unicode)
         PyObject *empty = unicode_get_empty();
         if (unicode != empty) {
             Py_DECREF(unicode);
-
             Py_INCREF(empty);
-            return empty;
         }
-        // unicode is the empty string singleton
-        return unicode;
+        return empty;
     }
 
 #ifdef LATIN1_SINGLETONS
@@ -959,7 +947,7 @@ ensure_unicode(PyObject *obj)
 
 /* Compilation of templated routines */
 
-#define STRINGLIB_GET_EMPTY()    unicode_get_empty()
+#define STRINGLIB_GET_EMPTY() unicode_get_empty()
 
 #include "stringlib/asciilib.h"
 #include "stringlib/fastsearch.h"
@@ -1260,11 +1248,7 @@ _PyUnicode_New(Py_ssize_t length)
 
     /* Optimization for empty strings */
     if (length == 0) {
-        PyObject *empty = unicode_get_empty();
-        if (empty != NULL) {
-            Py_INCREF(empty);
-            return (PyUnicodeObject *)empty;
-        }
+        return (PyUnicodeObject *)unicode_new_empty();
     }
 
     /* Ensure we won't overflow the size. */
@@ -1416,11 +1400,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
 {
     /* Optimization for empty strings */
     if (size == 0) {
-        PyObject *empty = unicode_get_empty();
-        if (empty != NULL) {
-            Py_INCREF(empty);
-            return empty;
-        }
+        return unicode_new_empty();
     }
 
     PyObject *obj;
@@ -2001,8 +1981,7 @@ unicode_dealloc(PyObject *unicode)
 static int
 unicode_is_singleton(PyObject *unicode)
 {
-    struct _Py_unicode_state *state = get_unicode_state();
-    if (unicode == state->empty) {
+    if (unicode == unicode_get_empty()) {
         return 1;
     }
 #ifdef LATIN1_SINGLETONS
@@ -2059,8 +2038,6 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
 
     if (length == 0) {
         PyObject *empty = unicode_new_empty();
-        if (!empty)
-            return -1;
         Py_SETREF(*p_unicode, empty);
         return 0;
     }
@@ -10868,10 +10845,7 @@ replace(PyObject *self, PyObject *str1,
         }
         new_size = slen + n * (len2 - len1);
         if (new_size == 0) {
-            PyObject *empty = unicode_new_empty();
-            if (!empty)
-                goto error;
-            u = empty;
+            u = unicode_new_empty();
             goto done;
         }
         if (new_size > (PY_SSIZE_T_MAX / rkind)) {
@@ -13293,13 +13267,7 @@ PyUnicode_Partition(PyObject *str_obj, PyObject *sep_obj)
     len2 = PyUnicode_GET_LENGTH(sep_obj);
     if (kind1 < kind2 || len1 < len2) {
         PyObject *empty = unicode_get_empty();  // Borrowed reference
-        if (!empty) {
-            out = NULL;
-        }
-        else {
-            out = PyTuple_Pack(3, str_obj, empty, empty);
-        }
-        return out;
+        return PyTuple_Pack(3, str_obj, empty, empty);
     }
     buf1 = PyUnicode_DATA(str_obj);
     buf2 = PyUnicode_DATA(sep_obj);
@@ -13351,13 +13319,7 @@ PyUnicode_RPartition(PyObject *str_obj, PyObject *sep_obj)
     len2 = PyUnicode_GET_LENGTH(sep_obj);
     if (kind1 < kind2 || len1 < len2) {
         PyObject *empty = unicode_get_empty();  // Borrowed reference
-        if (!empty) {
-            out = NULL;
-        }
-        else {
-            out = PyTuple_Pack(3, empty, empty, str_obj);
-        }
-        return out;
+        return PyTuple_Pack(3, empty, empty, str_obj);
     }
     buf1 = PyUnicode_DATA(str_obj);
     buf2 = PyUnicode_DATA(sep_obj);
@@ -15589,12 +15551,20 @@ _PyUnicode_Init(PyThreadState *tstate)
         0x2029, /* PARAGRAPH SEPARATOR */
     };
 
-    /* Init the implementation */
-    PyObject *empty = unicode_new_empty();
-    if (!empty) {
+    // Use size=1 rather than size=0, so PyUnicode_New(0, maxchar) can be
+    // optimized to always use state->empty without having to check if it is
+    // NULL or not.
+    PyObject *empty = PyUnicode_New(1, 0);
+    if (empty == NULL) {
         return _PyStatus_NO_MEMORY();
     }
-    Py_DECREF(empty);
+    PyUnicode_1BYTE_DATA(empty)[0] = 0;
+    _PyUnicode_LENGTH(empty) = 0;
+    assert(_PyUnicode_CheckConsistency(empty, 1));
+
+    struct _Py_unicode_state *state = &tstate->interp->unicode;
+    assert(state->empty == NULL);
+    state->empty = empty;
 
     if (_Py_IsMainInterpreter(tstate)) {
         /* initialize the linebreak bloom filter */
