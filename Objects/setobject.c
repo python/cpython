@@ -986,7 +986,7 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
         /* frozenset(f) is idempotent */
         Py_INCREF(iterable);
         return iterable;
-        }
+    }
     return make_new_set((PyTypeObject *)type, iterable);
 }
 
