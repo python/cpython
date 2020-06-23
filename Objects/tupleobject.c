@@ -14,19 +14,28 @@ class tuple "PyTupleObject *" "&PyTuple_Type"
 
 #include "clinic/tupleobject.c.h"
 
+
+static struct _Py_tuple_state *
+get_tuple_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->tuple;
+}
+
+
 static inline void
 tuple_gc_track(PyTupleObject *op)
 {
     _PyObject_GC_TRACK(op);
 }
 
+
 /* Print summary info about the state of the optimized allocator */
 void
 _PyTuple_DebugMallocStats(FILE *out)
 {
 #if PyTuple_MAXSAVESIZE > 0
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_tuple_state *state = &interp->tuple;
+    struct _Py_tuple_state *state = get_tuple_state();
     for (int i = 1; i < PyTuple_MAXSAVESIZE; i++) {
         char buf[128];
         PyOS_snprintf(buf, sizeof(buf),
@@ -89,8 +98,7 @@ PyTuple_New(Py_ssize_t size)
 {
     PyTupleObject *op;
 #if PyTuple_MAXSAVESIZE > 0
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_tuple_state *state = &interp->tuple;
+    struct _Py_tuple_state *state = get_tuple_state();
     if (size == 0 && state->free_list[0]) {
         op = state->free_list[0];
         Py_INCREF(op);
@@ -198,8 +206,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
         return PyTuple_New(0);
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_tuple_state *state = &interp->tuple;
+    struct _Py_tuple_state *state = get_tuple_state();
 
     va_start(vargs, n);
     PyTupleObject *result = tuple_alloc(state, n);
@@ -233,8 +240,7 @@ tupledealloc(PyTupleObject *op)
             Py_XDECREF(op->ob_item[i]);
         }
 #if PyTuple_MAXSAVESIZE > 0
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        struct _Py_tuple_state *state = &interp->tuple;
+        struct _Py_tuple_state *state = get_tuple_state();
 #ifdef Py_DEBUG
         // tupledealloc() must not be called after _PyTuple_Fini()
         assert(state->numfree[0] != -1);
@@ -420,8 +426,7 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
         return PyTuple_New(0);
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_tuple_state *state = &interp->tuple;
+    struct _Py_tuple_state *state = get_tuple_state();
     PyTupleObject *tuple = tuple_alloc(state, n);
     if (tuple == NULL) {
         return NULL;
@@ -492,8 +497,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
         return PyTuple_New(0);
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_tuple_state *state = &interp->tuple;
+    struct _Py_tuple_state *state = get_tuple_state();
     np = tuple_alloc(state, size);
     if (np == NULL) {
         return NULL;
@@ -537,8 +541,7 @@ tuplerepeat(PyTupleObject *a, Py_ssize_t n)
     if (n > PY_SSIZE_T_MAX / Py_SIZE(a))
         return PyErr_NoMemory();
     size = Py_SIZE(a) * n;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_tuple_state *state = &interp->tuple;
+    struct _Py_tuple_state *state = get_tuple_state();
     np = tuple_alloc(state, size);
     if (np == NULL)
         return NULL;
@@ -804,8 +807,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
             return (PyObject *)self;
         }
         else {
-            PyInterpreterState *interp = _PyInterpreterState_GET();
-            struct _Py_tuple_state *state = &interp->tuple;
+            struct _Py_tuple_state *state = get_tuple_state();
             PyTupleObject* result = tuple_alloc(state, slicelength);
             if (!result) return NULL;
 
