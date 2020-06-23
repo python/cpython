@@ -1389,6 +1389,14 @@ PyTypeObject PyAsyncGen_Type = {
 };
 
 
+static struct _Py_async_gen_state *
+get_async_gen_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->async_gen;
+}
+
+
 PyObject *
 PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 {
@@ -1477,8 +1485,7 @@ async_gen_asend_dealloc(PyAsyncGenASend *o)
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->ags_gen);
     Py_CLEAR(o->ags_sendval);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_async_gen_state *state = &interp->async_gen;
+    struct _Py_async_gen_state *state = get_async_gen_state();
 #ifdef Py_DEBUG
     // async_gen_asend_dealloc() must not be called after _PyAsyncGen_Fini()
     assert(state->asend_numfree != -1);
@@ -1639,8 +1646,7 @@ static PyObject *
 async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
 {
     PyAsyncGenASend *o;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_async_gen_state *state = &interp->async_gen;
+    struct _Py_async_gen_state *state = get_async_gen_state();
 #ifdef Py_DEBUG
     // async_gen_asend_new() must not be called after _PyAsyncGen_Fini()
     assert(state->asend_numfree != -1);
@@ -1678,8 +1684,7 @@ async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
 {
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->agw_val);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_async_gen_state *state = &interp->async_gen;
+    struct _Py_async_gen_state *state = get_async_gen_state();
 #ifdef Py_DEBUG
     // async_gen_wrapped_val_dealloc() must not be called after _PyAsyncGen_Fini()
     assert(state->value_numfree != -1);
@@ -1752,8 +1757,7 @@ _PyAsyncGenValueWrapperNew(PyObject *val)
     _PyAsyncGenWrappedValue *o;
     assert(val);
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_async_gen_state *state = &interp->async_gen;
+    struct _Py_async_gen_state *state = get_async_gen_state();
 #ifdef Py_DEBUG
     // _PyAsyncGenValueWrapperNew() must not be called after _PyAsyncGen_Fini()
     assert(state->value_numfree != -1);

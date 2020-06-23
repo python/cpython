@@ -66,6 +66,14 @@ static int
 contextvar_del(PyContextVar *var);
 
 
+static struct _Py_context_state *
+get_context_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->context;
+}
+
+
 PyObject *
 _PyContext_NewHamtForTests(void)
 {
@@ -332,8 +340,7 @@ class _contextvars.Context "PyContext *" "&PyContext_Type"
 static inline PyContext *
 _context_alloc(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_context_state *state = &interp->context;
+    struct _Py_context_state *state = get_context_state();
     PyContext *ctx;
 #ifdef Py_DEBUG
     // _context_alloc() must not be called after _PyContext_Fini()
@@ -462,8 +469,7 @@ context_tp_dealloc(PyContext *self)
     }
     (void)context_tp_clear(self);
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_context_state *state = &interp->context;
+    struct _Py_context_state *state = get_context_state();
 #ifdef Py_DEBUG
     // _context_alloc() must not be called after _PyContext_Fini()
     assert(state->numfree != -1);
