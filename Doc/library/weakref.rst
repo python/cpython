@@ -88,6 +88,9 @@ support weak references but can add support through subclassing::
 Extension types can easily be made to support weak references; see
 :ref:`weakref-support`.
 
+``__slots__`` existence in a type (and the contents) affects whether that type
+supports weak references. See :ref:`__slots__ documentation <slots>` for details.
+
 
 .. class:: ref(object[, callback])
 
