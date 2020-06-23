@@ -244,8 +244,6 @@ struct _is {
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
     PySliceObject *slice_cache;
-    // The empty frozenset is a singleton.
-    PyObject *empty_frozenset;
 
     struct _Py_tuple_state tuple;
     struct _Py_list_state list;
