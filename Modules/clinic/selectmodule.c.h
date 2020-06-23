@@ -630,7 +630,8 @@ exit:
 #if defined(HAVE_EPOLL)
 
 PyDoc_STRVAR(select_epoll_register__doc__,
-"register($self, /, fd, eventmask=EPOLLIN | EPOLLPRI | EPOLLOUT)\n"
+"register($self, /, fd,\n"
+"         eventmask=select.EPOLLIN | select.EPOLLPRI | select.EPOLLOUT)\n"
 "--\n"
 "\n"
 "Registers a new fd or raises an OSError if the fd is already registered.\n"
@@ -1175,4 +1176,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=a055330869acbd16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=14a367e7b376db1c input=a9049054013a1b77]*/
