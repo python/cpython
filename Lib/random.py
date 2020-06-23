@@ -39,7 +39,8 @@ General notes on the underlying Mersenne Twister core generator:
 
 from warnings import warn as _warn
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
-from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin, tau as TWOPI
+from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
+from math import tau as TWOPI, floor as _floor
 from os import urandom as _urandom
 from _collections_abc import Set as _Set, Sequence as _Sequence
 from itertools import accumulate as _accumulate, repeat as _repeat
@@ -234,7 +235,7 @@ class Random(_random.Random):
 
     ## -------------------- integer methods  -------------------
 
-    def randrange(self, start, stop=None, step=1, _int=int):
+    def randrange(self, start, stop=None, step=1):
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
@@ -244,7 +245,7 @@ class Random(_random.Random):
 
         # This code is a bit messy to make it fast for the
         # common case while still doing adequate error checking.
-        istart = _int(start)
+        istart = int(start)
         if istart != start:
             raise ValueError("non-integer arg 1 for randrange()")
         if stop is None:
@@ -253,7 +254,7 @@ class Random(_random.Random):
             raise ValueError("empty range for randrange()")
 
         # stop argument supplied.
-        istop = _int(stop)
+        istop = int(stop)
         if istop != stop:
             raise ValueError("non-integer stop for randrange()")
         width = istop - istart
@@ -263,7 +264,7 @@ class Random(_random.Random):
             raise ValueError("empty range for randrange() (%d, %d, %d)" % (istart, istop, width))
 
         # Non-unit step argument supplied.
-        istep = _int(step)
+        istep = int(step)
         if istep != step:
             raise ValueError("non-integer step for randrange()")
         if istep > 0:
@@ -296,7 +297,7 @@ class Random(_random.Random):
             r = getrandbits(k)
         return r
 
-    def _randbelow_without_getrandbits(self, n, int=int, maxsize=1<<BPF):
+    def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
         """Return a random int in the range [0,n).  Returns 0 if n==0.
 
         The implementation does not use getrandbits, but only random.
@@ -307,7 +308,7 @@ class Random(_random.Random):
             _warn("Underlying random() generator does not supply \n"
                 "enough bits to choose from a population range this large.\n"
                 "To remove the range limitation, add a getrandbits() method.")
-            return int(random() * n)
+            return _floor(random() * n)
         if n == 0:
             return 0
         rem = maxsize % n
@@ -315,7 +316,7 @@ class Random(_random.Random):
         r = random()
         while r >= limit:
             r = random()
-        return int(r * maxsize) % n
+        return _floor(r * maxsize) % n
 
     _randbelow = _randbelow_with_getrandbits
 
@@ -346,10 +347,10 @@ class Random(_random.Random):
                   'since Python 3.9 and will be removed in a subsequent '
                   'version.',
                   DeprecationWarning, 2)
-            _int = int
+            floor = _floor
             for i in reversed(range(1, len(x))):
                 # pick an element in x[:i+1] with which to exchange x[i]
-                j = _int(random() * (i + 1))
+                j = floor(random() * (i + 1))
                 x[i], x[j] = x[j], x[i]
 
     def sample(self, population, k, *, counts=None):
@@ -462,9 +463,9 @@ class Random(_random.Random):
         n = len(population)
         if cum_weights is None:
             if weights is None:
-                _int = int
+                floor = _floor
                 n += 0.0    # convert to float for a small speed improvement
-                return [population[_int(random() * n)] for i in _repeat(None, k)]
+                return [population[floor(random() * n)] for i in _repeat(None, k)]
             cum_weights = list(_accumulate(weights))
         elif weights is not None:
             raise TypeError('Cannot specify both weights and cumulative weights')
@@ -814,24 +815,20 @@ class SystemRandom(Random):
 ## -------------------- test program --------------------
 
 def _test_generator(n, func, args):
-    import time
-    print(n, 'times', func.__name__)
-    total = 0.0
-    sqsum = 0.0
-    smallest = 1e10
-    largest = -1e10
-    t0 = time.perf_counter()
-    for i in range(n):
-        x = func(*args)
-        total += x
-        sqsum = sqsum + x*x
-        smallest = min(x, smallest)
-        largest = max(x, largest)
-    t1 = time.perf_counter()
-    print(round(t1 - t0, 3), 'sec,', end=' ')
-    avg = total / n
-    stddev = _sqrt(sqsum / n - avg * avg)
-    print('avg %g, stddev %g, min %g, max %g\n' % (avg, stddev, smallest, largest))
+    from statistics import stdev, fmean as mean
+    from time import perf_counter
+
+    t0 = perf_counter()
+    data = [func(*args) for i in range(n)]
+    t1 = perf_counter()
+
+    xbar = mean(data)
+    sigma = stdev(data, xbar)
+    low = min(data)
+    high = max(data)
+
+    print(f'{t1 - t0:.3f} sec, {n} times {func.__name__}')
+    print('avg %g, stddev %g, min %g, max %g\n' % (xbar, sigma, low, high))
 
 
 def _test(N=2000):
