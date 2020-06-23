@@ -409,7 +409,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     if (p->start_rule == Py_fstring_input) {
-        col_offset -= p->fstring_col_offset;
+        col_offset -= p->starting_col_offset;
     }
     Py_ssize_t col_number = col_offset;
 
@@ -1072,7 +1072,6 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
 
     p->starting_lineno = 0;
     p->starting_col_offset = 0;
-    p->fstring_col_offset = 0;
     p->flags = flags;
     p->feature_version = feature_version;
     p->known_err_token = NULL;

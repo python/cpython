@@ -67,7 +67,6 @@ typedef struct {
     PyObject* normalize;
     int starting_lineno;
     int starting_col_offset;
-    int fstring_col_offset; // The column offset within the f-string (starting from the 'f')
     int error_indicator;
     int flags;
     int feature_version;

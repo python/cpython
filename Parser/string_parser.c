@@ -397,7 +397,6 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
                                      NULL, p->arena);
     p2->starting_lineno = t->lineno + lines - 1;
     p2->starting_col_offset = p->tok->first_lineno == p->tok->lineno ? t->col_offset + cols : cols;
-    p2->fstring_col_offset = cols;
 
     expr = _PyPegen_run_parser(p2);
 
