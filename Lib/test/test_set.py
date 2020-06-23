@@ -661,15 +661,6 @@ class TestFrozenSet(TestJointOps, unittest.TestCase):
         s.__init__(self.otherword)
         self.assertEqual(s, set(self.word))
 
-    def test_singleton_empty_frozenset(self):
-        f = frozenset()
-        efs = [frozenset(), frozenset([]), frozenset(()), frozenset(''),
-               frozenset(), frozenset([]), frozenset(()), frozenset(''),
-               frozenset(range(0)), frozenset(frozenset()),
-               frozenset(f), f]
-        # All of the empty frozensets should have just one id()
-        self.assertEqual(len(set(map(id, efs))), 1)
-
     def test_constructor_identity(self):
         s = self.thetype(range(3))
         t = self.thetype(s)
