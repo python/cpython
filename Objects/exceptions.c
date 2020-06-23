@@ -488,6 +488,13 @@ SimpleExtendsException(PyExc_Exception, TypeError,
 
 
 /*
+ *    ImpossibleMatchError extends TypeError
+ */
+SimpleExtendsException(PyExc_TypeError, ImpossibleMatchError,
+                       "Incorrect use of a match-case statement.");
+
+
+/*
  *    StopAsyncIteration extends Exception
  */
 SimpleExtendsException(PyExc_Exception, StopAsyncIteration,
@@ -2529,6 +2536,7 @@ _PyExc_Init(void)
     PRE_INIT(BaseException);
     PRE_INIT(Exception);
     PRE_INIT(TypeError);
+    PRE_INIT(ImpossibleMatchError);
     PRE_INIT(StopAsyncIteration);
     PRE_INIT(StopIteration);
     PRE_INIT(GeneratorExit);
@@ -2664,6 +2672,7 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     POST_INIT(BaseException);
     POST_INIT(Exception);
     POST_INIT(TypeError);
+    POST_INIT(ImpossibleMatchError);
     POST_INIT(StopAsyncIteration);
     POST_INIT(StopIteration);
     POST_INIT(GeneratorExit);

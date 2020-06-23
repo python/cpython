@@ -919,7 +919,7 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, int pop)
         int dupe = PySet_Contains(seen, key);
         if (dupe || PySet_Add(seen, key)) {
             if (!_PyErr_Occurred(tstate)) {
-                _PyErr_Format(tstate, PyExc_ValueError,
+                _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
                               "mapping pattern checks duplicate key (%R)", key);
             }
             goto fail;
@@ -987,7 +987,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
     if (!method || method == Py_None) {
         Py_XDECREF(method);
         _PyErr_Clear(tstate);
-        _PyErr_Format(tstate, PyExc_TypeError,
+        _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
                       "type %s cannot be matched",
                       Py_TYPE(type)->tp_name);
         return NULL;
@@ -1015,7 +1015,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
                 Py_DECREF(match_args);
                 Py_DECREF(proxy);
                 // TODO: Add expected and actual counts:
-                _PyErr_SetString(tstate, PyExc_TypeError,
+                _PyErr_SetString(tstate, PyExc_ImpossibleMatchError,
                                  "too many positional matches in pattern");
                 return NULL;
             }
@@ -1027,7 +1027,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
                 Py_DECREF(match_args);
                 Py_DECREF(proxy);
                 // TODO: Add expected and actual counts:
-                _PyErr_SetString(tstate, PyExc_TypeError,
+                _PyErr_SetString(tstate, PyExc_ImpossibleMatchError,
                                  "too many positional matches in pattern");
                 return NULL;
             }
@@ -1081,7 +1081,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         int dupe = PySet_Contains(seen, name);
         if (dupe || PySet_Add(seen, name)) {
             if (!_PyErr_Occurred(tstate)) {
-                _PyErr_Format(tstate, PyExc_TypeError,
+                _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
                               "multiple patterns bound to attribute %R", name);
             }
             goto error;
@@ -1092,7 +1092,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
             _PyErr_Clear(tstate);
             // TODO: iterate manually (and check for strings)
             if (match_args != Py_None && !PySequence_Contains(match_args, name)) {
-                _PyErr_Format(tstate, PyExc_TypeError,
+                _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
                               "match proxy %R has no attribute %R",
                               proxy, name);
                 goto error;
