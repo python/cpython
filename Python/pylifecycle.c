@@ -595,11 +595,9 @@ pycore_init_types(PyThreadState *tstate)
         return _PyStatus_ERR("can't init longs");
     }
 
-    if (is_main_interp) {
-        status = _PyUnicode_Init();
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
+    status = _PyUnicode_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     status = _PyExc_Init(tstate);
