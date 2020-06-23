@@ -975,12 +975,11 @@ make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
     return make_new_set(type, iterable);
 }
 
-/* The empty frozenset is a singleton */
-static PyObject *emptyfrozenset = NULL;
-
 static PyObject *
 make_new_frozenset(PyTypeObject *type, PyObject *iterable)
 {
+    PyObject *res;
+
     if (type != &PyFrozenSet_Type) {
         return make_new_set(type, iterable);
     }
@@ -991,7 +990,7 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
             Py_INCREF(iterable);
             return iterable;
         }
-        PyObject *res = make_new_set((PyTypeObject *)type, iterable);
+        res = make_new_set((PyTypeObject *)type, iterable);
         if (res == NULL || PySet_GET_SIZE(res) != 0) {
             return res;
         }
@@ -1000,11 +999,17 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
     }
 
     // The empty frozenset is a singleton
-    if (emptyfrozenset == NULL) {
-        emptyfrozenset = make_new_set((PyTypeObject *)type, NULL);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    res = interp->empty_frozenset;
+    if (res == NULL) {
+        interp->empty_frozenset = make_new_set((PyTypeObject *)type, NULL);
+        res = interp->empty_frozenset;
+        if (res == NULL) {
+            return NULL;
+        }
     }
-    Py_XINCREF(emptyfrozenset);
-    return emptyfrozenset;
+    Py_INCREF(res);
+    return res;
 }
 
 static PyObject *
@@ -2300,9 +2305,9 @@ PySet_Add(PyObject *anyset, PyObject *key)
 }
 
 void
-_PySet_Fini(void)
+_PySet_Fini(PyThreadState *tstate)
 {
-    Py_CLEAR(emptyfrozenset);
+    Py_CLEAR(tstate->interp->empty_frozenset);
 }
 
 int
