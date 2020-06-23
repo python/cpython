@@ -249,6 +249,15 @@ static uint64_t pydict_global_version = 0;
 
 #include "clinic/dictobject.c.h"
 
+
+static struct _Py_dict_state *
+get_dict_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->dict_state;
+}
+
+
 void
 _PyDict_ClearFreeList(PyThreadState *tstate)
 {
@@ -269,8 +278,7 @@ _PyDict_Fini(PyThreadState *tstate)
 {
     _PyDict_ClearFreeList(tstate);
 #ifdef Py_DEBUG
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_dict_state *state = &interp->dict_state;
+    struct _Py_dict_state *state = get_dict_state();
     state->numfree = -1;
     state->keys_numfree = -1;
 #endif
@@ -281,8 +289,7 @@ _PyDict_Fini(PyThreadState *tstate)
 void
 _PyDict_DebugMallocStats(FILE *out)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_dict_state *state = &interp->dict_state;
+    struct _Py_dict_state *state = get_dict_state();
     _PyDebugAllocatorStats(out, "free PyDictObject",
                            state->numfree, sizeof(PyDictObject));
 }
@@ -557,8 +564,7 @@ new_keys_object(Py_ssize_t size)
         es = sizeof(Py_ssize_t);
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_dict_state *state = &interp->dict_state;
+    struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
     // new_keys_object() must not be called after _PyDict_Fini()
     assert(state->keys_numfree != -1);
@@ -598,8 +604,7 @@ free_keys_object(PyDictKeysObject *keys)
         Py_XDECREF(entries[i].me_key);
         Py_XDECREF(entries[i].me_value);
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_dict_state *state = &interp->dict_state;
+    struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
     // free_keys_object() must not be called after _PyDict_Fini()
     assert(state->keys_numfree != -1);
@@ -620,8 +625,7 @@ new_dict(PyDictKeysObject *keys, PyObject **values)
 {
     PyDictObject *mp;
     assert(keys != NULL);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_dict_state *state = &interp->dict_state;
+    struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
     // new_dict() must not be called after _PyDict_Fini()
     assert(state->numfree != -1);
@@ -1281,8 +1285,7 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
 #ifdef Py_REF_DEBUG
         _Py_RefTotal--;
 #endif
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        struct _Py_dict_state *state = &interp->dict_state;
+        struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
         // dictresize() must not be called after _PyDict_Fini()
         assert(state->keys_numfree != -1);
@@ -2032,8 +2035,7 @@ dict_dealloc(PyDictObject *mp)
         assert(keys->dk_refcnt == 1);
         dictkeys_decref(keys);
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_dict_state *state = &interp->dict_state;
+    struct _Py_dict_state *state = get_dict_state();
 #ifdef Py_DEBUG
     // new_dict() must not be called after _PyDict_Fini()
     assert(state->numfree != -1);

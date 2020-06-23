@@ -19,6 +19,15 @@ class list "PyListObject *" "&PyList_Type"
 
 #include "clinic/listobject.c.h"
 
+
+static struct _Py_list_state *
+get_list_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->list;
+}
+
+
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
@@ -121,8 +130,7 @@ _PyList_Fini(PyThreadState *tstate)
 void
 _PyList_DebugMallocStats(FILE *out)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_list_state *state = &interp->list;
+    struct _Py_list_state *state = get_list_state();
     _PyDebugAllocatorStats(out,
                            "free PyListObject",
                            state->numfree, sizeof(PyListObject));
@@ -136,8 +144,7 @@ PyList_New(Py_ssize_t size)
         return NULL;
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_list_state *state = &interp->list;
+    struct _Py_list_state *state = get_list_state();
     PyListObject *op;
 #ifdef Py_DEBUG
     // PyList_New() must not be called after _PyList_Fini()
@@ -336,8 +343,7 @@ list_dealloc(PyListObject *op)
         }
         PyMem_FREE(op->ob_item);
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_list_state *state = &interp->list;
+    struct _Py_list_state *state = get_list_state();
 #ifdef Py_DEBUG
     // list_dealloc() must not be called after _PyList_Fini()
     assert(state->numfree != -1);
