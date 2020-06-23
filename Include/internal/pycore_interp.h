@@ -69,6 +69,14 @@ struct _Py_unicode_state {
     struct _Py_unicode_fs_codec fs_codec;
 };
 
+struct _Py_float_state {
+    /* Special free list
+       free_list is a singly-linked list of available PyFloatObjects,
+       linked via abuse of their ob_type members. */
+    int numfree;
+    PyFloatObject *free_list;
+};
+
 /* Speed optimization to avoid frequent malloc/free of small tuples */
 #ifndef PyTuple_MAXSAVESIZE
    // Largest tuple to save on free list
@@ -99,12 +107,16 @@ struct _Py_list_state {
     int numfree;
 };
 
-struct _Py_float_state {
-    /* Special free list
-       free_list is a singly-linked list of available PyFloatObjects,
-       linked via abuse of their ob_type members. */
+#ifndef PyDict_MAXFREELIST
+#  define PyDict_MAXFREELIST 80
+#endif
+
+struct _Py_dict_state {
+    /* Dictionary reuse scheme to save calls to malloc and free */
+    PyDictObject *free_list[PyDict_MAXFREELIST];
     int numfree;
-    PyFloatObject *free_list;
+    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
+    int keys_numfree;
 };
 
 struct _Py_frame_state {
@@ -134,7 +146,6 @@ struct _Py_context_state {
     PyContext *freelist;
     int numfree;
 };
-
 
 
 /* interpreter state */
@@ -182,8 +193,6 @@ struct _is {
     PyObject *codec_error_registry;
     int codecs_initialized;
 
-    struct _Py_unicode_state unicode;
-
     PyConfig config;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
@@ -224,16 +233,18 @@ struct _is {
     */
     PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
 #endif
-    struct _Py_tuple_state tuple;
-    struct _Py_list_state list;
+    struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
-    struct _Py_frame_state frame;
-    struct _Py_async_gen_state async_gen;
-    struct _Py_context_state context;
-
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
     PySliceObject *slice_cache;
+
+    struct _Py_tuple_state tuple;
+    struct _Py_list_state list;
+    struct _Py_dict_state dict_state;
+    struct _Py_frame_state frame;
+    struct _Py_async_gen_state async_gen;
+    struct _Py_context_state context;
 };
 
 /* Used by _PyImport_Cleanup() */
