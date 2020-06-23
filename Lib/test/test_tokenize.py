@@ -1605,7 +1605,7 @@ class TestRoundtrip(TestCase):
         import glob, random
         fn = support.findfile("tokenize_tests.txt")
         tempdir = os.path.dirname(fn) or os.curdir
-        testfiles = glob.glob(os.path.join(tempdir, "test*.py"))
+        testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
 
         # Tokenize is broken on test_pep3131.py because regular expressions are
         # broken on the obscure unicode identifiers in it. *sigh*

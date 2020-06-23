@@ -67,10 +67,11 @@ _PyPegen_check_barry_as_flufl(Parser *p) {
     assert(t->type == NOTEQUAL);
 
     char* tok_str = PyBytes_AS_STRING(t->bytes);
-    if (p->flags & PyPARSE_BARRY_AS_BDFL && strcmp(tok_str, "<>")){
+    if (p->flags & PyPARSE_BARRY_AS_BDFL && strcmp(tok_str, "<>") != 0) {
         RAISE_SYNTAX_ERROR("with Barry as BDFL, use '<>' instead of '!='");
         return -1;
-    } else if (!(p->flags & PyPARSE_BARRY_AS_BDFL)) {
+    }
+    if (!(p->flags & PyPARSE_BARRY_AS_BDFL)) {
         return strcmp(tok_str, "!=");
     }
     return 0;
@@ -139,21 +140,18 @@ _create_dummy_identifier(Parser *p)
 }
 
 static inline Py_ssize_t
-byte_offset_to_character_offset(PyObject *line, int col_offset)
+byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
 {
     const char *str = PyUnicode_AsUTF8(line);
     if (!str) {
         return 0;
     }
+    assert(col_offset >= 0 && (unsigned long)col_offset <= strlen(str));
     PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
     if (!text) {
         return 0;
     }
     Py_ssize_t size = PyUnicode_GET_LENGTH(text);
-    str = PyUnicode_AsUTF8(text);
-    if (str != NULL && (int)strlen(str) == col_offset) {
-        size = strlen(str);
-    }
     Py_DECREF(text);
     return size;
 }
@@ -245,7 +243,10 @@ raise_decode_error(Parser *p)
         errtype = "value error";
     }
     if (errtype) {
-        PyObject *type, *value, *tback, *errstr;
+        PyObject *type;
+        PyObject *value;
+        PyObject *tback;
+        PyObject *errstr;
         PyErr_Fetch(&type, &value, &tback);
         errstr = PyObject_Str(value);
         if (errstr) {
@@ -274,7 +275,9 @@ raise_tokenizer_init_error(PyObject *filename)
     }
     PyObject *errstr = NULL;
     PyObject *tuple = NULL;
-    PyObject *type, *value, *tback;
+    PyObject *type;
+    PyObject *value;
+    PyObject *tback;
     PyErr_Fetch(&type, &value, &tback);
     errstr = PyObject_Str(value);
     if (!errstr) {
@@ -360,7 +363,7 @@ void *
 _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 {
     Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
-    int col_offset;
+    Py_ssize_t col_offset;
     if (t->col_offset == -1) {
         col_offset = Py_SAFE_DOWNCAST(p->tok->cur - p->tok->buf,
                                       intptr_t, int);
@@ -377,10 +380,9 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
     return NULL;
 }
 
-
 void *
 _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
-                                    int lineno, int col_offset,
+                                    Py_ssize_t lineno, Py_ssize_t col_offset,
                                     const char *errmsg, va_list va)
 {
     PyObject *value = NULL;
@@ -395,21 +397,22 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     }
 
     if (p->start_rule == Py_file_input) {
-        error_line = PyErr_ProgramTextObject(p->tok->filename, lineno);
+        error_line = PyErr_ProgramTextObject(p->tok->filename, (int) lineno);
     }
 
     if (!error_line) {
         Py_ssize_t size = p->tok->inp - p->tok->buf;
-        if (size && p->tok->buf[size-1] == '\n') {
-            size--;
-        }
         error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
         if (!error_line) {
             goto error;
         }
     }
 
-    Py_ssize_t col_number = byte_offset_to_character_offset(error_line, col_offset);
+    Py_ssize_t col_number = col_offset;
+
+    if (p->tok->encoding != NULL) {
+        col_number = byte_offset_to_character_offset(error_line, col_offset);
+    }
 
     tmp = Py_BuildValue("(OiiN)", p->tok->filename, lineno, col_number, error_line);
     if (!tmp) {
@@ -548,7 +551,8 @@ growable_comment_array_deallocate(growable_comment_array *arr) {
 int
 _PyPegen_fill_token(Parser *p)
 {
-    const char *start, *end;
+    const char *start;
+    const char *end;
     int type = PyTokenizer_Get(p->tok, &start, &end);
 
     // Record and skip '# type: ignore' comments
@@ -589,9 +593,8 @@ _PyPegen_fill_token(Parser *p)
             PyErr_NoMemory();
             return -1;
         }
-        else {
-            p->tokens = new_tokens;
-        }
+        p->tokens = new_tokens;
+
         for (int i = p->size; i < newsize; i++) {
             p->tokens[i] = PyMem_Malloc(sizeof(Token));
             if (p->tokens[i] == NULL) {
@@ -615,7 +618,8 @@ _PyPegen_fill_token(Parser *p)
     int lineno = type == STRING ? p->tok->first_lineno : p->tok->lineno;
     const char *line_start = type == STRING ? p->tok->multi_line_start : p->tok->line_start;
     int end_lineno = p->tok->lineno;
-    int col_offset = -1, end_col_offset = -1;
+    int col_offset = -1;
+    int end_col_offset = -1;
     if (start != NULL && start >= line_start) {
         col_offset = (int)(start - line_start);
     }
@@ -634,9 +638,8 @@ _PyPegen_fill_token(Parser *p)
         if (p->tok->done == E_DECODE) {
             return raise_decode_error(p);
         }
-        else {
-            return tokenizer_error(p);
-        }
+        return tokenizer_error(p);
+
     }
 
     return 0;
@@ -847,33 +850,36 @@ parsenumber_raw(const char *s)
             return PyLong_FromString(s, (char **)0, 0);
         }
     }
-    else
+    else {
         x = PyOS_strtol(s, (char **)&end, 0);
+    }
     if (*end == '\0') {
-        if (errno != 0)
+        if (errno != 0) {
             return PyLong_FromString(s, (char **)0, 0);
+        }
         return PyLong_FromLong(x);
     }
     /* XXX Huge floats may silently fail */
     if (imflag) {
         compl.real = 0.;
         compl.imag = PyOS_string_to_double(s, (char **)&end, NULL);
-        if (compl.imag == -1.0 && PyErr_Occurred())
+        if (compl.imag == -1.0 && PyErr_Occurred()) {
             return NULL;
+        }
         return PyComplex_FromCComplex(compl);
     }
-    else {
-        dx = PyOS_string_to_double(s, NULL, NULL);
-        if (dx == -1.0 && PyErr_Occurred())
-            return NULL;
-        return PyFloat_FromDouble(dx);
+    dx = PyOS_string_to_double(s, NULL, NULL);
+    if (dx == -1.0 && PyErr_Occurred()) {
+        return NULL;
     }
+    return PyFloat_FromDouble(dx);
 }
 
 static PyObject *
 parsenumber(const char *s)
 {
-    char *dup, *end;
+    char *dup;
+    char *end;
     PyObject *res = NULL;
 
     assert(s != NULL);
@@ -2079,7 +2085,7 @@ _PyPegen_make_module(Parser *p, asdl_seq *a) {
 // Error reporting helpers
 
 expr_ty
-_PyPegen_get_invalid_target(expr_ty e)
+_PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type)
 {
     if (e == NULL) {
         return NULL;
@@ -2089,7 +2095,7 @@ _PyPegen_get_invalid_target(expr_ty e)
         Py_ssize_t len = asdl_seq_LEN(CONTAINER->v.TYPE.elts);\
         for (Py_ssize_t i = 0; i < len; i++) {\
             expr_ty other = asdl_seq_GET(CONTAINER->v.TYPE.elts, i);\
-            expr_ty child = _PyPegen_get_invalid_target(other);\
+            expr_ty child = _PyPegen_get_invalid_target(other, targets_type);\
             if (child != NULL) {\
                 return child;\
             }\
@@ -2103,16 +2109,29 @@ _PyPegen_get_invalid_target(expr_ty e)
     // we don't need to visit it recursively.
 
     switch (e->kind) {
-        case List_kind: {
+        case List_kind:
             VISIT_CONTAINER(e, List);
             return NULL;
-        }
-        case Tuple_kind: {
+        case Tuple_kind:
             VISIT_CONTAINER(e, Tuple);
             return NULL;
-        }
         case Starred_kind:
-            return _PyPegen_get_invalid_target(e->v.Starred.value);
+            if (targets_type == DEL_TARGETS) {
+                return e;
+            }
+            return _PyPegen_get_invalid_target(e->v.Starred.value, targets_type);
+        case Compare_kind:
+            // This is needed, because the `a in b` in `for a in b` gets parsed
+            // as a comparison, and so we need to search the left side of the comparison
+            // for invalid targets.
+            if (targets_type == FOR_TARGETS) {
+                cmpop_ty cmpop = (cmpop_ty) asdl_seq_GET(e->v.Compare.ops, 0);
+                if (cmpop == In) {
+                    return _PyPegen_get_invalid_target(e->v.Compare.left, targets_type);
+                }
+                return NULL;
+            }
+            return e;
         case Name_kind:
         case Subscript_kind:
         case Attribute_kind:

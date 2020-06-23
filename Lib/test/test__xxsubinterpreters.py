@@ -378,6 +378,9 @@ class ShareableTypeTests(unittest.TestCase):
         self._assert_values(i.to_bytes(2, 'little', signed=True)
                             for i in range(-1, 258))
 
+    def test_strs(self):
+        self._assert_values(['hello world', '你好世界', ''])
+
     def test_int(self):
         self._assert_values(itertools.chain(range(-1, 258),
                                             [sys.maxsize, -sys.maxsize - 1]))
@@ -470,6 +473,7 @@ class IsRunningTests(TestBase):
         main = interpreters.get_main()
         self.assertTrue(interpreters.is_running(main))
 
+    @unittest.skip('Fails on FreeBSD')
     def test_subinterpreter(self):
         interp = interpreters.create()
         self.assertFalse(interpreters.is_running(interp))
@@ -756,21 +760,9 @@ class DestroyTests(TestBase):
 
 class RunStringTests(TestBase):
 
-    SCRIPT = dedent("""
-        with open('{}', 'w') as out:
-            out.write('{}')
-        """)
-    FILENAME = 'spam'
-
     def setUp(self):
         super().setUp()
         self.id = interpreters.create()
-        self._fs = None
-
-    def tearDown(self):
-        if self._fs is not None:
-            self._fs.close()
-        super().tearDown()
 
     def test_success(self):
         script, file = _captured_script('print("it worked!", end="")')
