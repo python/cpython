@@ -1253,7 +1253,9 @@ finalize_interp_types(PyThreadState *tstate, int is_main_interp)
     _PyAsyncGen_Fini(tstate);
     _PyContext_Fini(tstate);
 
-    _PySet_Fini(tstate);
+    if (is_main_interp) {
+        _PySet_Fini();
+    }
     _PyDict_Fini(tstate);
     _PyList_Fini(tstate);
     _PyTuple_Fini(tstate);
