@@ -152,6 +152,13 @@ struct _Py_context_state {
     int numfree;
 };
 
+struct _Py_exc_state {
+    // The dict mapping from errno codes to OSError subclasses
+    PyObject *errnomap;
+    PyBaseExceptionObject *memerrors_freelist;
+    int memerrors_numfree;
+};
+
 
 /* interpreter state */
 
@@ -251,6 +258,7 @@ struct _is {
     struct _Py_frame_state frame;
     struct _Py_async_gen_state async_gen;
     struct _Py_context_state context;
+    struct _Py_exc_state exc_state;
 };
 
 /* Used by _PyImport_Cleanup() */
