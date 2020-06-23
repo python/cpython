@@ -45,9 +45,20 @@ def isdir(s):
     return stat.S_ISDIR(st.st_mode)
 
 
-def getsize(filename):
-    """Return the size of a file, reported by os.stat()."""
-    return os.stat(filename).st_size
+def getsize(filename, apparent=True):
+    """Return the size of a file, reported by os.stat().
+
+    If 'apparent' is True (default), the apparent size (number of bytes) of the
+    file is returned. If False, the actual size (disk space occupied) is
+    returned. The actual size reflects the block size, meaning it will
+    typically be larger than the apparent size. However, the inverse may also
+    be true due to holes in ("sparse") files, internal fragmentation, indirect
+    blocks, etc.
+    """
+    if apparent:
+        return os.stat(filename).st_size
+    else:
+        return os.stat(filename).st_blocks * 512
 
 
 def getmtime(filename):
