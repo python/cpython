@@ -1,10 +1,9 @@
 Each interpreter now its has own free lists, singletons and caches:
 
 * Free lists: float, tuple, list, dict, frame, context,
-  asynchronous generator.
+  asynchronous generator, MemoryError.
 * Singletons: empty tuple, empty bytes string,
   single byte character.
 * Slice cache.
 
 They are no longer shared by all interpreters.
-
