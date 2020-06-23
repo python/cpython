@@ -169,6 +169,7 @@ class BaseServer:
     - get_request() -> request, client_address
     - handle_timeout()
     - verify_request(request, client_address)
+    - server_shutdown()
     - server_close()
     - process_request(request, client_address)
     - shutdown_request(request)
@@ -221,10 +222,6 @@ class BaseServer:
         """
         self.__is_shut_down.clear()
         try:
-            # XXX: Consider using another file descriptor or connecting to the
-            # socket to wake this up instead of polling. Polling reduces our
-            # responsiveness to a shutdown request and wastes cpu at all other
-            # times.
             with _ServerSelector() as selector:
                 selector.register(self, selectors.EVENT_READ)
 
@@ -249,6 +246,7 @@ class BaseServer:
         deadlock.
         """
         self.__shutdown_request = True
+        self.server_shutdown() # selector.select() will return immediately
         self.__is_shut_down.wait()
 
     def service_actions(self):
@@ -346,6 +344,10 @@ class BaseServer:
         """
         self.finish_request(request, client_address)
         self.shutdown_request(request)
+
+    def server_shutdown(self):
+        """Called to shutdown and close the server."""
+        pass
 
     def server_close(self):
         """Called to clean-up the server.
