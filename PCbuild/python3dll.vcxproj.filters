@@ -11,11 +11,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\PC\python3.def">
-      <Filter>Source Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\PC\python3dll.c">
       <Filter>Source Files</Filter>
     </ClCompile>
