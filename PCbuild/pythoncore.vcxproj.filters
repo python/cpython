@@ -240,6 +240,9 @@
     <ClInclude Include="..\Include\internal\pycore_interp.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_list.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -273,7 +276,7 @@
     <ClInclude Include="..\Include\internal\pycore_traceback.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_tupleobject.h">
+    <ClInclude Include="..\Include\internal\pycore_tuple.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_warnings.h">

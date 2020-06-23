@@ -1,5 +1,5 @@
-#ifndef Py_INTERNAL_TUPLEOBJECT_H
-#define Py_INTERNAL_TUPLEOBJECT_H
+#ifndef Py_INTERNAL_TUPLE_H
+#define Py_INTERNAL_TUPLE_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,9 +11,10 @@ extern "C" {
 #include "tupleobject.h"   /* _PyTuple_CAST() */
 
 #define _PyTuple_ITEMS(op) (_PyTuple_CAST(op)->ob_item)
+
 PyAPI_FUNC(PyObject *) _PyTuple_FromArray(PyObject *const *, Py_ssize_t);
 
 #ifdef __cplusplus
 }
 #endif
-#endif   /* !Py_INTERNAL_TUPLEOBJECT_H */
+#endif   /* !Py_INTERNAL_TUPLE_H */
