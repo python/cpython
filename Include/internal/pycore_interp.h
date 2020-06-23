@@ -71,6 +71,8 @@ struct _Py_bytes_state {
 };
 
 struct _Py_unicode_state {
+    // The empty Unicode object is a singleton to improve performance.
+    PyObject *empty;
     struct _Py_unicode_fs_codec fs_codec;
 };
 
