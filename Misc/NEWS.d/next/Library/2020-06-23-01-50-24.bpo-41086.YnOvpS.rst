@@ -1,0 +1,1 @@
+Added validation check of instantiation on ConfigParser's interpolation parameter.
