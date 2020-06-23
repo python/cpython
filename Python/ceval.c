@@ -898,7 +898,26 @@ match_seq(PyObject *target)
 static PyObject*
 match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, int pop)
 {
-    assert(pop ? PyDict_CheckExact(map) : 1);
+    if (pop) {
+        PyObject *copy;
+        if (PyDict_CheckExact(map)) {
+            copy = PyDict_Copy(map);
+            if (!copy) {
+                return NULL;
+            }
+        }
+        else {
+            copy = PyDict_New();
+            if (!copy || PyDict_Update(copy, map)) {
+                Py_XDECREF(copy);
+                return NULL;
+            }
+        }
+        map = copy;
+    }
+    else {
+        Py_INCREF(map);
+    }
     assert(PyTuple_CheckExact(keys));
     Py_ssize_t nkeys = PyTuple_GET_SIZE(keys);
     PyObject *seen = NULL;
@@ -938,10 +957,12 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, int pop)
         }
     }
     Py_DECREF(seen);
+    Py_DECREF(map);
     return values;
 fail:
     Py_XDECREF(seen);
     Py_XDECREF(values);
+    Py_DECREF(map);
     return NULL;
 }
 
@@ -3570,6 +3591,28 @@ main_loop:
             DISPATCH();
         }
 
+        case TARGET(MATCH_MAP): {
+            PyObject *target = TOP();
+            // TODO: Just move the body of this function here:
+            int match = match_map(target);
+            if (match < 0) {
+                goto error;
+            }
+            PUSH(PyBool_FromLong(match));
+            DISPATCH();
+        }
+
+        case TARGET(MATCH_SEQ): {
+            PyObject *target = TOP();
+            // TODO: Just move the body of this function here:
+            int match = match_seq(target);
+            if (match < 0) {
+                goto error;
+            }
+            PUSH(PyBool_FromLong(match));
+            DISPATCH();
+        }
+
         case TARGET(MATCH_MAP_KEYS): {
             PyObject *keys = TOP();
             PyObject *target = SECOND();
@@ -3603,45 +3646,6 @@ main_loop:
                 goto error;
             }
             PUSH(len);
-            DISPATCH();
-        }
-
-        case TARGET(MATCH_MAP): {
-            PyObject *target = TOP();
-            int match = match_map(target);
-            if (match < 0) {
-                goto error;
-            }
-            // TODO: Move to MATCH_MAP_ITEMS:
-            if (match && oparg) {
-                PyObject *map;
-                if (PyDict_CheckExact(target)) {
-                    map = PyDict_Copy(target);
-                    if (!map) {
-                        goto error;
-                    }
-                }
-                else {
-                    map = PyDict_New();
-                    if (!map || PyDict_Update(map, target)) {
-                        Py_XDECREF(map);
-                        goto error;
-                    }
-                }
-                SET_TOP(map);
-                Py_DECREF(target);
-            }
-            PUSH(PyBool_FromLong(match));
-            DISPATCH();
-        }
-
-        case TARGET(MATCH_SEQ): {
-            PyObject *target = TOP();
-            int match = match_seq(target);
-            if (match < 0) {
-                goto error;
-            }
-            PUSH(PyBool_FromLong(match));
             DISPATCH();
         }
 

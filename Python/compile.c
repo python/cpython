@@ -2847,7 +2847,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
     asdl_seq *values = p->v.Dict.values;
     Py_ssize_t size = asdl_seq_LEN(values);
     int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
-    ADDOP_I(c, MATCH_MAP, star);
+    ADDOP(c, MATCH_MAP);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     if (size - star) {
         ADDOP(c, GET_LEN);
@@ -2996,7 +2996,7 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
     basicblock *block, *end;
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
-    ADDOP_I(c, MATCH_SEQ, 0);  // TODO: No arg
+    ADDOP(c, MATCH_SEQ);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     if (star >= 0) {
         if (size) {

@@ -751,6 +751,27 @@ iterations of the loop.
    .. versionadded:: 3.2
 
 
+.. opcode:: GET_LEN
+
+   TODO
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_MAP
+
+   TODO
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_SEQ
+
+   TODO
+
+   .. versionadded:: 3.10
+
+
 All of the following opcodes use their arguments.
 
 .. opcode:: STORE_NAME (namei)
@@ -1196,28 +1217,7 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.10
 
 
-.. opcode:: MATCH_MAP
-
-   TODO
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: MATCH_MAP_KEYS
-
-   TODO
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: MATCH_SEQ
-
-   TODO
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: GET_LEN
+.. opcode:: MATCH_MAP_KEYS (copy)
 
    TODO
 
