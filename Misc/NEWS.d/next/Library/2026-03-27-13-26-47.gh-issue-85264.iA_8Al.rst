@@ -1,0 +1,2 @@
+Add support for an ``apparent`` option for ``os.get_size`` to allow
+retrieving the actual on-disk size of sparse files.
