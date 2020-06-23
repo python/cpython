@@ -1,6 +1,10 @@
 #ifndef STRINGLIB_STRINGDEFS_H
 #define STRINGLIB_STRINGDEFS_H
 
+#ifndef STRINGLIB_GET_EMPTY
+#  error "STRINGLIB_GET_EMPTY macro must be defined"
+#endif
+
 /* this is sort of a hack.  there's at least one place (formatting
    floats) where some stringlib code takes a different path if it's
    compiled as unicode. */
@@ -13,7 +17,6 @@
 #define STRINGLIB_CHAR           char
 #define STRINGLIB_TYPE_NAME      "string"
 #define STRINGLIB_PARSE_CODE     "S"
-#define STRINGLIB_EMPTY          nullstring
 #define STRINGLIB_ISSPACE        Py_ISSPACE
 #define STRINGLIB_ISLINEBREAK(x) ((x == '\n') || (x == '\r'))
 #define STRINGLIB_ISDECIMAL(x)   ((x >= '0') && (x <= '9'))
