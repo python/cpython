@@ -418,6 +418,7 @@ class TCPServer(BaseServer):
 
     - server_bind()
     - server_activate()
+    - server_shutdown()
     - get_request() -> request, client_address
     - handle_timeout()
     - verify_request(request, client_address)
@@ -492,6 +493,21 @@ class TCPServer(BaseServer):
         """
         self.socket.listen(self.request_queue_size)
 
+    def server_shutdown(self):
+        """Called to shutdown the server.
+
+        May be overriden.
+
+        """
+        # NOTE: This function does not make select()
+        # return immediately on the darwin (mac os) platform
+        try:
+            self.socket.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass  # Don't call shutdown on a bad file descriptor
+        # on windows we need to call close to make select return immediately
+        self.socket.close()
+
     def server_close(self):
         """Called to clean-up the server.
 
@@ -549,6 +565,10 @@ class UDPServer(TCPServer):
 
     def server_activate(self):
         # No need to call listen() for UDP.
+        pass
+
+    def server_shutdown(self):
+        # No need to shutdown a udp socket
         pass
 
     def shutdown_request(self, request):
