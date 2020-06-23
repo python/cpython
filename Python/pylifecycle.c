@@ -685,24 +685,22 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
         return status;
     }
 
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-    if (_Py_IsMainInterpreter(tstate)) {
-        /* Initialize _warnings. */
-        status = _PyWarnings_InitState(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
+    /* Initialize _warnings. */
+    status = _PyWarnings_InitState(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
-        if (config->_install_importlib) {
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->_install_importlib) {
+        if (_Py_IsMainInterpreter(tstate)) {
             status = _PyConfig_WritePathConfig(config);
             if (_PyStatus_EXCEPTION(status)) {
                 return status;
             }
         }
-    }
 
-    /* This call sets up builtin and frozen import support */
-    if (config->_install_importlib) {
+        /* This call sets up builtin and frozen import support */
         status = init_importlib(tstate, sysmod);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
