@@ -1446,7 +1446,7 @@ class Misc:
             funcid = self._register(func, self._substitute,
                         needcleanup)
             cmd = ('%sset dat [%s %s];if {"$dat" == "break"} {break} '
-                   'elseif {"$dat" != ""} {set dndrtn $dat}\n'
+                   'elseif {"$dat" != ""} {return -level 0 $dat}\n'
                    %
                    (add and '+' or '',
                 funcid, self._subst_format_str))
