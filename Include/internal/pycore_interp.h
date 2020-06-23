@@ -65,6 +65,11 @@ struct _Py_unicode_fs_codec {
     _Py_error_handler error_handler;
 };
 
+struct _Py_bytes_state {
+    PyBytesObject *characters[256];
+    PyBytesObject *empty_string;
+};
+
 struct _Py_unicode_state {
     struct _Py_unicode_fs_codec fs_codec;
 };
@@ -233,6 +238,7 @@ struct _is {
     */
     PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
 #endif
+    struct _Py_bytes_state bytes;
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
     /* Using a cache is very effective since typically only a single slice is
