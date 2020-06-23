@@ -407,6 +407,7 @@ class TCPServer(BaseServer):
 
     - server_bind()
     - server_activate()
+    - server_shutdown()
     - get_request() -> request, client_address
     - handle_timeout()
     - verify_request(request, client_address)
@@ -475,6 +476,11 @@ class TCPServer(BaseServer):
 
         """
         self.socket.listen(self.request_queue_size)
+
+    def server_shutdown(self):
+        """Called to shutdown and close the server."""
+        self.socket.shutdown(socket.SHUT_RDWR)
+        self.server_close()
 
     def server_close(self):
         """Called to clean-up the server.
