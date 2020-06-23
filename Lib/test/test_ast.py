@@ -242,6 +242,28 @@ eval_tests = [
 
 ]
 
+def _get_replaced_identifier_trees(identifier="True"):
+    # Recursively search the given statements and replace
+    # all 'x's with the given identifier
+    for statement, name in [
+        ("def x(): pass", "FunctionDef"),
+        ("async def x(): pass", "AsyncFunctionDef"),
+        ("class x: pass", "ClassDef"),
+        ("from a import x", "ImportFrom"),
+        ("from a import b as x", "ImportFrom"),
+        ("from a import b, c, d as x", "ImportFrom"),
+        ("import x", "Import"),
+        ("import a, b, x", "Import"),
+        ("try: pass\nexcept A as x: pass", "ExceptHandler"),
+        ("try: pass\nexcept A as b: pass\nexcept B as x: pass\n",  "ExceptHandler"),
+    ]:
+        tree = ast.parse(statement)
+        for node in ast.walk(tree):
+            for field, value in ast.iter_fields(node):
+                if value == "x":
+                    setattr(node, field, identifier)
+        yield tree, name
+
 # TODO: expr_context, slice, boolop, operator, unaryop, cmpop, comprehension
 # excepthandler, arguments, keywords, alias
 
@@ -672,8 +694,13 @@ class AST_Tests(unittest.TestCase):
         for constant in "True", "False", "None":
             expr = ast.Expression(ast.Name(constant, ast.Load()))
             ast.fix_missing_locations(expr)
-            with self.assertRaisesRegex(ValueError, f"Name node can't be used with '{constant}' constant"):
+            with self.assertRaisesRegex(ValueError, f"'Name' node can't be used with '{constant}' constant"):
                 compile(expr, "<test>", "eval")
+
+    def test_constant_usage_in_identifier_fields(self):
+        for tree, node_name in _get_replaced_identifier_trees(identifier="True"):
+            with self.assertRaisesRegex(ValueError, f"'{node_name}' node can't be used with 'True' constant"):
+                compile(tree, "<test>", "exec")
 
 
 class ASTHelpers_Test(unittest.TestCase):

@@ -1,0 +1,2 @@
+All identifiers that might crash the interpreter on a debug build is now
+validated in the ``PyAST_Validate`` interface (used by :func:`compile`).
