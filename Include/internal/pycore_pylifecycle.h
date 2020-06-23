@@ -63,7 +63,7 @@ extern void _PyDict_Fini(PyThreadState *tstate);
 extern void _PyTuple_Fini(PyThreadState *tstate);
 extern void _PyList_Fini(PyThreadState *tstate);
 extern void _PySet_Fini(PyThreadState *tstate);
-extern void _PyBytes_Fini(void);
+extern void _PyBytes_Fini(PyThreadState *tstate);
 extern void _PyFloat_Fini(PyThreadState *tstate);
 extern void _PySlice_Fini(PyThreadState *tstate);
 extern void _PyAsyncGen_Fini(PyThreadState *tstate);

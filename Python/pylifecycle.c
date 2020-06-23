@@ -1262,9 +1262,7 @@ finalize_interp_types(PyThreadState *tstate, int is_main_interp)
 
     _PySlice_Fini(tstate);
 
-    if (is_main_interp) {
-        _PyBytes_Fini();
-    }
+    _PyBytes_Fini(tstate);
     _PyUnicode_Fini(tstate);
     _PyFloat_Fini(tstate);
     _PyLong_Fini(tstate);
