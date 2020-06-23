@@ -2,20 +2,25 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Resource Files">
-      <UniqueIdentifier>{0434cf11-a311-4a92-8a6c-4164aa79a7f2}</UniqueIdentifier>
+      <UniqueIdentifier>{de05f656-4dcb-4fe7-9946-5c325ea2d842}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{e1d8ea6b-c65d-42f4-9eed-6010846ed378}</UniqueIdentifier>
+      <UniqueIdentifier>{4102e199-3e5c-42d0-b37b-d42394b20d9e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\PC\WinMain.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <None Include="..\PC\pyconw.ico">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\pythonw_exe.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\PC\python_uwp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
