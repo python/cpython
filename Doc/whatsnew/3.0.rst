@@ -2,8 +2,6 @@
   What's New In Python 3.0
 ****************************
 
-TEST CHANGE TO BE UNDONE
-
 .. XXX Add trademark info for Apple, Microsoft.
 
 :Author: Guido van Rossum
