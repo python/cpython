@@ -2197,7 +2197,6 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
     parameters = []
     empty = Parameter.empty
-    invalid = object()
 
     module = None
     module_dict = {}
@@ -2247,17 +2246,12 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
     def p(name_node, default_node, default=empty):
         name = parse_name(name_node)
-        if name is invalid:
-            return None
         if default_node and default_node is not _empty:
             try:
                 default_node = RewriteSymbolics().visit(default_node)
-                o = ast.literal_eval(default_node)
+                default = ast.literal_eval(default_node)
             except ValueError:
-                o = invalid
-            if o is invalid:
                 return None
-            default = o if o is not invalid else default
         parameters.append(Parameter(name, kind, default=default, annotation=empty))
 
     # non-keyword-only parameters
