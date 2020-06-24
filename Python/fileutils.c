@@ -1278,7 +1278,7 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
         if (pathname_obj == NULL) {
             return -1;
         }
-        if (PySys_Audit("open", "OOi", pathname, Py_None, flags) < 0) {
+        if (PySys_Audit("open", "OOi", pathname_obj, Py_None, flags) < 0) {
             Py_DECREF(pathname_obj);
             return -1;
         }
