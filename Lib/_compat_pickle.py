@@ -250,8 +250,6 @@ PYTHON3_IMPORTERROR_EXCEPTIONS = (
 for excname in PYTHON3_IMPORTERROR_EXCEPTIONS:
     REVERSE_NAME_MAPPING[('builtins', excname)] = ('exceptions', 'ImportError')
 
-
-
 PYTHON3_TYPEERROR_EXCEPTIONS = (
     'ImpossibleMatchError',
 )

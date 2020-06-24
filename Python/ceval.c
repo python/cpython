@@ -847,59 +847,11 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 
 // Need these for pattern matching:
 
-static int
-match_map(PyObject *target)
-{
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    if (!interp) {
-        return -1;
-    }
-    if (!interp->map_abc) {
-        PyObject *abc = PyImport_ImportModule("_collections_abc");
-        if (!abc) {
-            return -1;
-        }
-        interp->map_abc = PyObject_GetAttrString(abc, "Mapping");
-        Py_DECREF(abc);
-        if (!interp->map_abc) {
-            return -1;
-        }
-    }
-    return PyObject_IsInstance(target, interp->map_abc);
-}
-
-static int
-match_seq(PyObject *target)
-{
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    if (!interp) {
-        return -1;
-    }
-    if (!interp->seq_abc) {
-        PyObject *abc = PyImport_ImportModule("_collections_abc");
-        if (!abc) {
-            return -1;
-        }
-        interp->seq_abc = PyObject_GetAttrString(abc, "Sequence");
-        Py_DECREF(abc);
-        if (!interp->seq_abc) {
-            return -1;
-        }
-    }
-    return (
-        !PyType_FastSubclass(Py_TYPE(target),
-            Py_TPFLAGS_UNICODE_SUBCLASS | Py_TPFLAGS_BYTES_SUBCLASS)
-        && !PyIter_Check(target)
-        && !PyByteArray_Check(target)
-        && PyObject_IsInstance(target, interp->seq_abc)
-    );
-}
-
 static PyObject*
 match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, int pop)
 {
+    PyObject *copy = NULL;
     if (pop) {
-        PyObject *copy;
         if (PyDict_CheckExact(map)) {
             copy = PyDict_Copy(map);
             if (!copy) {
@@ -913,10 +865,6 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, int pop)
                 return NULL;
             }
         }
-        map = copy;
-    }
-    else {
-        Py_INCREF(map);
     }
     assert(PyTuple_CheckExact(keys));
     Py_ssize_t nkeys = PyTuple_GET_SIZE(keys);
@@ -943,7 +891,7 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, int pop)
             }
             goto fail;
         }
-        if (!PyMapping_HasKey(map, key)) {
+        if (!PySequence_Contains(map, key)) {
             goto fail;
         }
         PyObject *value = PyObject_GetItem(map, key);
@@ -953,16 +901,19 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, int pop)
         Py_INCREF(value);
         PyTuple_SET_ITEM(values, i, value);
         if (pop && PyDict_DelItem(map, key)) {
-            goto fail;
+            if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+                goto fail;
+            }
+            PyErr_Clear();
         }
     }
+    Py_XDECREF(copy);
     Py_DECREF(seen);
-    Py_DECREF(map);
     return values;
 fail:
+    Py_XDECREF(copy);
     Py_XDECREF(seen);
     Py_XDECREF(values);
-    Py_DECREF(map);
     return NULL;
 }
 
@@ -977,8 +928,6 @@ get_match_args(PyThreadState *tstate, PyObject *type)
         return NULL;
     }
     // TODO: PySequence_FAST
-    // TODO We should probably just check for string items here
-    // TODO: Allow duplicate items? Hm...
     if (PyTuple_CheckExact(ma) || ma == Py_None) {
         return ma;
     }
@@ -3592,9 +3541,22 @@ main_loop:
         }
 
         case TARGET(MATCH_MAP): {
-            PyObject *target = TOP();
-            // TODO: Just move the body of this function here:
-            int match = match_map(target);
+            PyInterpreterState *interp = PyInterpreterState_Get();
+            if (!interp) {
+                    goto error;
+            }
+            if (!interp->map_abc) {
+                PyObject *abc = PyImport_ImportModule("_collections_abc");
+                if (!abc) {
+                    goto error;
+                }
+                interp->map_abc = PyObject_GetAttrString(abc, "Mapping");
+                Py_DECREF(abc);
+                if (!interp->map_abc) {
+                    goto error;
+                }
+            }
+            int match = PyObject_IsInstance(TOP(), interp->map_abc);
             if (match < 0) {
                 goto error;
             }
@@ -3604,8 +3566,31 @@ main_loop:
 
         case TARGET(MATCH_SEQ): {
             PyObject *target = TOP();
-            // TODO: Just move the body of this function here:
-            int match = match_seq(target);
+            if (PyType_FastSubclass(Py_TYPE(target),
+                    Py_TPFLAGS_UNICODE_SUBCLASS | Py_TPFLAGS_BYTES_SUBCLASS)
+                || PyIter_Check(target)
+                || PyByteArray_Check(target))
+            {
+                Py_INCREF(Py_False);
+                PUSH(Py_False);
+                DISPATCH();
+            }
+            PyInterpreterState *interp = PyInterpreterState_Get();
+            if (!interp) {
+                goto error;
+            }
+            if (!interp->seq_abc) {
+                PyObject *abc = PyImport_ImportModule("_collections_abc");
+                if (!abc) {
+                    goto error;
+                }
+                interp->seq_abc = PyObject_GetAttrString(abc, "Sequence");
+                Py_DECREF(abc);
+                if (!interp->seq_abc) {
+                    goto error;
+                }
+            }
+            int match = PyObject_IsInstance(target, interp->seq_abc);
             if (match < 0) {
                 goto error;
             }
