@@ -1452,10 +1452,10 @@ def _create_or_replace(dst, create_temp_dst):
     where the temporary file to replace `dst` should be created.  If it
     raises FileExistsError, it will be called again with another temp pathname.
     """
-    temp_path = ''
     try:
         # Loop until successful creation of previously non-existent temp pathname
         while True:
+            temp_path = ''  # Avoid later NameError if mktemp raises exception
             # Deprecated mktemp is used because the pathname must not already
             # exist in the case of os.link and os.symlink.
             temp_path = tempfile.mktemp(dir=os.path.dirname(dst))
@@ -1469,7 +1469,7 @@ def _create_or_replace(dst, create_temp_dst):
         os.replace(temp_path, dst)  # If successful, POSIX guarantees atomicity
 
     except BaseException as e:
-        if temp_path and os.path.lexists(temp_path):
+        if os.path.lexists(temp_path):
             os.remove(temp_path)
         raise e
 
