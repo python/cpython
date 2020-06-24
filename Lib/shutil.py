@@ -1446,22 +1446,28 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
 def _create_or_replace(dst, create_temp_dst):
     """Create or overwrite file `dst` atomically via os.replace.
 
-    The file to replace `dst` is created at a temporary destination.
+    The file to replace `dst` is first created with a temporary pathname.
 
     `create_temp_dst` is a callable taking a single argument: a pathname
-    where the temporary file to replace `dst` will be created.
+    where the temporary file to replace `dst` should be created.  If it
+    raises FileExistsError, it will be called again with another temp pathname.
     """
     temp_path = ''
     try:
+        # Loop until successful creation of previously non-existent temp pathname
         while True:
-            # Try to create temporary symlink, try again on FileExistsError
+            # Deprecated mktemp is used because the pathname must not already
+            # exist in the case of os.link and os.symlink.
             temp_path = tempfile.mktemp(dir=os.path.dirname(dst))
             try:
                 create_temp_dst(temp_path)
-                break
+                break  # Success - no exception raised
             except FileExistsError:
-                pass
-        os.replace(temp_path, dst)
+                # Race condition: temporary pathname was created after generation
+                pass  # Try again
+
+        os.replace(temp_path, dst)  # If successful, POSIX guarantees atomicity
+
     except BaseException as e:
         if temp_path and os.path.lexists(temp_path):
             os.remove(temp_path)
@@ -1502,14 +1508,17 @@ def _link_or_symlink(os_method, srcs, dst, **kwargs):
             create_link_at(link_name)
 
 def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
-    """Create a hard link XXX  TODO: complete me.
+    """Create a hard link XXX
 
-    If follow_symlinks is False, and the last element of the path to operate
+    TODO: complete me after python-mentor@ feedback on symlink
+
+    If `follow_symlinks` is False, and the last element of the path to operate
     on is a symbolic link, the function will operate on the symbolic link
     itself rather than the file pointed to by the link. (For POSIX systems,
     Python will call the l... variant of the function.)
 
-    TODO: Check if posix ln utility follows the above behaviour with symlinks.
+    TODO: Check if above comment is correct and if POSIX ln follows the same
+    behaviour with symlinks.
     """
     _link_or_symlink(os.link, srcs, dst, overwrite=overwrite,
                      follow_symlinks=follow_symlinks)
@@ -1527,13 +1536,12 @@ def symlink(srcs, dst, *, overwrite=False, target_is_directory=False):
      - Replacing symlinks to directories (with `overwrite=True`)
 
     With `overwrite=False`, FileExistsError is raised if the destination
-    pathname already exists.
+    pathname already exists in any form.
 
     With `overwrite=True`, overwrite an existing destination.
      - Raises IsADirectoryError if `dst` is a directory
-     - Symlinks to directories are treated as files
-
-    With `follow_symlinks=False`, create symlinks to symlinks XXXXXXXXX
+     - Symlinks to directories are treated as files and overwritten
+       - To dereference a linked directory, use "link/"
 
     On Windows, a symlink represents either a file or a directory, and does
     not morph to the target dynamically. If the target is present, the type
