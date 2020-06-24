@@ -31,7 +31,7 @@ PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
 /* Various one-time initializers */
 
-extern PyStatus _PyUnicode_Init(void);
+extern PyStatus _PyUnicode_Init(PyThreadState *tstate);
 extern int _PyStructSequence_Init(void);
 extern int _PyLong_Init(PyThreadState *tstate);
 extern PyStatus _PyFaulthandler_Init(int enable);
@@ -43,7 +43,7 @@ extern PyStatus _PySys_Create(
 extern PyStatus _PySys_ReadPreinitWarnOptions(PyWideStringList *options);
 extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
 extern int _PySys_InitMain(PyThreadState *tstate);
-extern PyStatus _PyExc_Init(void);
+extern PyStatus _PyExc_Init(PyThreadState *tstate);
 extern PyStatus _PyErr_Init(void);
 extern PyStatus _PyBuiltins_AddExceptions(PyObject * bltinmod);
 extern PyStatus _PyImportHooks_Init(PyThreadState *tstate);
@@ -59,18 +59,17 @@ extern PyStatus _PyGC_Init(PyThreadState *tstate);
 /* Various internal finalizers */
 
 extern void _PyFrame_Fini(PyThreadState *tstate);
-extern void _PyDict_Fini(void);
+extern void _PyDict_Fini(PyThreadState *tstate);
 extern void _PyTuple_Fini(PyThreadState *tstate);
 extern void _PyList_Fini(PyThreadState *tstate);
-extern void _PySet_Fini(void);
-extern void _PyBytes_Fini(void);
+extern void _PyBytes_Fini(PyThreadState *tstate);
 extern void _PyFloat_Fini(PyThreadState *tstate);
 extern void _PySlice_Fini(PyThreadState *tstate);
 extern void _PyAsyncGen_Fini(PyThreadState *tstate);
 
 extern void PyOS_FiniInterrupts(void);
 
-extern void _PyExc_Fini(void);
+extern void _PyExc_Fini(PyThreadState *tstate);
 extern void _PyImport_Fini(void);
 extern void _PyImport_Fini2(void);
 extern void _PyGC_Fini(PyThreadState *tstate);

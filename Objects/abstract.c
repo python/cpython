@@ -3,7 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
-#include "pycore_pyerrors.h"
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <ctype.h>
 #include <stddef.h>               // offsetof()
@@ -23,9 +23,11 @@ type_error(const char *msg, PyObject *obj)
 static PyObject *
 null_error(void)
 {
-    if (!PyErr_Occurred())
-        PyErr_SetString(PyExc_SystemError,
-                        "null argument to internal routine");
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (!_PyErr_Occurred(tstate)) {
+        _PyErr_SetString(tstate, PyExc_SystemError,
+                         "null argument to internal routine");
+    }
     return NULL;
 }
 
@@ -94,11 +96,12 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
     if (_PyObject_HasLen(o)) {
         res = PyObject_Length(o);
         if (res < 0) {
-            assert(PyErr_Occurred());
-            if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyThreadState *tstate = _PyThreadState_GET();
+            assert(_PyErr_Occurred(tstate));
+            if (!_PyErr_ExceptionMatches(tstate, PyExc_TypeError)) {
                 return -1;
             }
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
         }
         else {
             return res;
@@ -114,8 +117,9 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
     result = _PyObject_CallNoArg(hint);
     Py_DECREF(hint);
     if (result == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_Clear();
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError)) {
+            _PyErr_Clear(tstate);
             return defaultvalue;
         }
         return -1;
@@ -708,7 +712,7 @@ PyBuffer_FillInfo(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
 {
     if (view == NULL) {
         PyErr_SetString(PyExc_BufferError,
-            "PyBuffer_FillInfo: view==NULL argument is obsolete");
+                        "PyBuffer_FillInfo: view==NULL argument is obsolete");
         return -1;
     }
 
@@ -790,10 +794,12 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     /* Find the (unbound!) __format__ method */
     meth = _PyObject_LookupSpecial(obj, &PyId___format__);
     if (meth == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_Format(PyExc_TypeError,
-                         "Type %.100s doesn't define __format__",
-                         Py_TYPE(obj)->tp_name);
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (!_PyErr_Occurred(tstate)) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "Type %.100s doesn't define __format__",
+                          Py_TYPE(obj)->tp_name);
+        }
         goto done;
     }
 
@@ -803,8 +809,8 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
 
     if (result && !PyUnicode_Check(result)) {
         PyErr_Format(PyExc_TypeError,
-             "__format__ must return a str, not %.200s",
-             Py_TYPE(result)->tp_name);
+                     "__format__ must return a str, not %.200s",
+                     Py_TYPE(result)->tp_name);
         Py_DECREF(result);
         result = NULL;
         goto done;
@@ -1388,17 +1394,23 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 
     /* We're done if PyLong_AsSsize_t() returns without error. */
     result = PyLong_AsSsize_t(value);
-    if (result != -1 || !(runerr = PyErr_Occurred()))
+    if (result != -1)
         goto finish;
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    runerr = _PyErr_Occurred(tstate);
+    if (!runerr) {
+        goto finish;
+    }
 
     /* Error handling code -- only manage OverflowError differently */
-    if (!PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError))
+    if (!PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError)) {
         goto finish;
+    }
+    _PyErr_Clear(tstate);
 
-    PyErr_Clear();
     /* If no error-handling desired then the default clipping
-       is sufficient.
-     */
+       is sufficient. */
     if (!err) {
         assert(PyLong_Check(value));
         /* Whether or not it is less than or equal to
@@ -1411,9 +1423,9 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
     }
     else {
         /* Otherwise replace the error with caller's error object. */
-        PyErr_Format(err,
-                     "cannot fit '%.200s' into an index-sized integer",
-                     Py_TYPE(item)->tp_name);
+        _PyErr_Format(tstate, err,
+                      "cannot fit '%.200s' into an index-sized integer",
+                      Py_TYPE(item)->tp_name);
     }
 
  finish:
@@ -1448,8 +1460,8 @@ PyNumber_Long(PyObject *o)
             return result;
         if (!PyLong_Check(result)) {
             PyErr_Format(PyExc_TypeError,
-                        "__int__ returned non-int (type %.200s)",
-                        result->ob_type->tp_name);
+                         "__int__ returned non-int (type %.200s)",
+                         result->ob_type->tp_name);
             Py_DECREF(result);
             return NULL;
         }
@@ -2052,8 +2064,10 @@ PySequence_Fast(PyObject *v, const char *m)
 
     it = PyObject_GetIter(v);
     if (it == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError))
-            PyErr_SetString(PyExc_TypeError, m);
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError)) {
+            _PyErr_SetString(tstate, PyExc_TypeError, m);
+        }
         return NULL;
     }
 
@@ -2310,12 +2324,13 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
     }
     it = PyObject_GetIter(meth_output);
     if (it == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_Format(PyExc_TypeError,
-                         "%.200s.%U() returned a non-iterable (type %.200s)",
-                         Py_TYPE(o)->tp_name,
-                         _PyUnicode_FromId(meth_id),
-                         Py_TYPE(meth_output)->tp_name);
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError)) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "%.200s.%U() returned a non-iterable (type %.200s)",
+                          Py_TYPE(o)->tp_name,
+                          _PyUnicode_FromId(meth_id),
+                          Py_TYPE(meth_output)->tp_name);
         }
         Py_DECREF(meth_output);
         return NULL;
@@ -2460,8 +2475,10 @@ check_class(PyObject *cls, const char *error)
     PyObject *bases = abstract_get_bases(cls);
     if (bases == NULL) {
         /* Do not mask errors. */
-        if (!PyErr_Occurred())
-            PyErr_SetString(PyExc_TypeError, error);
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (!_PyErr_Occurred(tstate)) {
+            _PyErr_SetString(tstate, PyExc_TypeError, error);
+        }
         return 0;
     }
     Py_DECREF(bases);
@@ -2719,10 +2736,14 @@ PyIter_Next(PyObject *iter)
 {
     PyObject *result;
     result = (*Py_TYPE(iter)->tp_iternext)(iter);
-    if (result == NULL &&
-        PyErr_Occurred() &&
-        PyErr_ExceptionMatches(PyExc_StopIteration))
-        PyErr_Clear();
+    if (result == NULL) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (_PyErr_Occurred(tstate)
+            && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
+        {
+            _PyErr_Clear(tstate);
+        }
+    }
     return result;
 }
 
