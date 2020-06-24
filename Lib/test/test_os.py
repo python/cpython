@@ -15,6 +15,7 @@ import locale
 import mmap
 import os
 import pickle
+import select
 import shutil
 import signal
 import socket
@@ -60,10 +61,6 @@ try:
 except ImportError:
     INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
-try:
-    import select
-except ImportError:
-    select = None
 
 from test.support.script_helper import assert_python_ok
 from test.support import unix_shell
@@ -3594,9 +3591,6 @@ class EventfdTests(unittest.TestCase):
         with self.assertRaises(BlockingIOError):
             os.eventfd_read(fd)
 
-    @unittest.skipUnless(
-        hasattr(select, "select"), reason="test needs select.select"
-    )
     def test_eventfd_select(self):
         flags = os.EFD_CLOEXEC | os.EFD_NONBLOCK
         fd = os.eventfd(0, flags)
