@@ -1366,9 +1366,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
         with open(startup, "w", encoding="utf-8") as f:
             print("pass", file=f)
         try:
-            env = {**remove_python_envvars(), "PYTHONSTARTUP": startup,
-                   #"PYTHONIOENCODING": sys.getfilesystemencoding()}
-                   "PYTHONIOENCODING": 'ascii:backslashreplace'}
+            env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
             self.run_embedded_interpreter("test_audit_run_startup",
                                           timeout=support.SHORT_TIMEOUT,
                                           returncode=10, env=env)
