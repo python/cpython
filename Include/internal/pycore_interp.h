@@ -73,6 +73,9 @@ struct _Py_bytes_state {
 struct _Py_unicode_state {
     // The empty Unicode object is a singleton to improve performance.
     PyObject *empty;
+    /* Single character Unicode strings in the Latin-1 range are being
+       shared as well. */
+    PyObject *latin1[256];
     struct _Py_unicode_fs_codec fs_codec;
 };
 
