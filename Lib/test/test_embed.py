@@ -1349,7 +1349,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
                                       returncode=1)
 
     def test_audit_run_interactivehook(self):
-        startup = os.path.join(self.oldcwd, support.TESTFN) + (support.TESTFN or '') + ".py"
+        startup = os.path.join(self.oldcwd, support.TESTFN) + (support.FS_NONASCII or '') + ".py"
         with open(startup, "w", encoding="utf-8") as f:
             print("import sys", file=f)
             print("sys.__interactivehook__ = lambda: None", file=f)
@@ -1362,7 +1362,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
             os.unlink(startup)
 
     def test_audit_run_startup(self):
-        startup = os.path.join(self.oldcwd, support.TESTFN) + (support.TESTFN or '') + ".py"
+        startup = os.path.join(self.oldcwd, support.TESTFN) + (support.FS_NONASCII or '') + ".py"
         with open(startup, "w", encoding="utf-8") as f:
             print("pass", file=f)
         try:
