@@ -1092,7 +1092,7 @@ def _asdict_inner(obj, dict_factory):
         # method, because:
         # - it does not recurse in to the namedtuple fields and
         #   convert them to dicts (using dict_factory).
-        # - I don't actually want to return a dict here.  The the main
+        # - I don't actually want to return a dict here.  The main
         #   use case here is json.dumps, and it handles converting
         #   namedtuples to lists.  Admittedly we're losing some
         #   information here when we produce a json list instead of a
