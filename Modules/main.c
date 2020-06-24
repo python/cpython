@@ -391,13 +391,20 @@ pymain_run_startup(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
     if (startup == NULL) {
         return 0;
     }
-    if (PySys_Audit("cpython.run_startup", "s", startup) < 0) {
+    PyObject *startup_obj = PyUnicode_DecodeFSDefault(startup);
+    if (startup_obj == NULL) {
         return pymain_err_print(exitcode);
     }
+    if (PySys_Audit("cpython.run_startup", "O", startup_obj) < 0) {
+        Py_DECREF(startup_obj);
+        return pymain_err_print(exitcode);
+    }
+    Py_DECREF(startup_obj);
 
     FILE *fp = _Py_fopen(startup, "r");
     if (fp == NULL) {
         int save_errno = errno;
+        PyErr_Clear();
         PySys_WriteStderr("Could not open PYTHONSTARTUP\n");
 
         errno = save_errno;
