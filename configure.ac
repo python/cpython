@@ -218,7 +218,7 @@ AC_ARG_WITH(universal-archs,
     AS_HELP_STRING([--with-universal-archs=ARCH],
                    [specify the kind of universal binary that should be created. this option is
                     only valid when --enable-universalsdk is set; options are:
-                    ("32-bit", "64-bit", "3-way", "intel", "intel-32", "intel-64", or "all")
+                    ("universal2", "32-bit", "64-bit", "3-way", "intel", "intel-32", "intel-64", or "all")
                     see Mac/README.rst]),
 [
 	UNIVERSAL_ARCHS="$withval"
@@ -1864,6 +1864,11 @@ yes)
         if test "${enable_universalsdk}"
         then
             case "$UNIVERSAL_ARCHS" in
+            universal2)
+               UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
+               LIPO_32BIT_FLAGS=""
+               ARCH_RUN_32BIT="true"
+               ;;
             32-bit)
                UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
                LIPO_32BIT_FLAGS=""

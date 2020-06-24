@@ -1,0 +1,3 @@
+Support building "Universal 2" binaries on macOS 11 using
+"--with-universal-archs=universal2". This results in binaries that contain
+both x86_64 and arm64 code.

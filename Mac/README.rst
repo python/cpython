@@ -120,6 +120,8 @@ support ppc (Xcode 4 on 10.6 and later systems).  The flavor can be specified
 using the configure option ``--with-universal-archs=VALUE``. The following
 values are available:
 
+  * ``universal2``: ``arm64``, ``x86_64``
+
   * ``intel``:	  ``i386``, ``x86_64``
 
   * ``intel-32``: ``i386``

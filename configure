@@ -1509,8 +1509,8 @@ Optional Packages:
                           specify the kind of universal binary that should be
                           created. this option is only valid when
                           --enable-universalsdk is set; options are:
-                          ("32-bit", "64-bit", "3-way", "intel", "intel-32",
-                          "intel-64", or "all") see Mac/README.rst
+                          ("universal2", "32-bit", "64-bit", "3-way", "intel",
+                          "intel-32", "intel-64", or "all") see Mac/README.rst
   --with-framework-name=FRAMEWORK
                           specify the name for the python framework on macOS
                           only valid when --enable-framework is set. see
@@ -7457,6 +7457,11 @@ $as_echo "$CC" >&6; }
         if test "${enable_universalsdk}"
         then
             case "$UNIVERSAL_ARCHS" in
+            universal2)
+               UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
+               LIPO_32BIT_FLAGS=""
+               ARCH_RUN_32BIT="true"
+               ;;
             32-bit)
                UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
                LIPO_32BIT_FLAGS=""
@@ -16806,7 +16811,7 @@ do
 done
 
 
-SRCDIRS="Parser Parser/pegen Objects Python Modules Modules/_io Programs"
+SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build directories" >&5
 $as_echo_n "checking for build directories... " >&6; }
 for dir in $SRCDIRS; do
