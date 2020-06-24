@@ -381,6 +381,7 @@ pymain_run_startup(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
     }
     PyObject *startup_obj = PyUnicode_DecodeFSDefault(startup);
     if (startup_obj == NULL) {
+        fprintf(stderr, "Fail to decode PYTHONSTARTUP=\"%s\"\n", startup);
         return pymain_err_print(exitcode);
     }
     if (PySys_Audit("cpython.run_startup", "O", startup_obj) < 0) {
