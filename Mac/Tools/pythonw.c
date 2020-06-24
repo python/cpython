@@ -119,10 +119,16 @@ setup_spawnattr(posix_spawnattr_t* spawnattr)
 
 #elif defined(__ppc__)
     cpu_types[0] = CPU_TYPE_POWERPC;
+
 #elif defined(__i386__)
     cpu_types[0] = CPU_TYPE_X86;
+
+#elif defined(__arm64__)
+    cpu_types[0] = CPU_TYPE_ARM64;
+
 #else
 #       error "Unknown CPU"
+
 #endif
 
     if (posix_spawnattr_setbinpref_np(spawnattr, count,

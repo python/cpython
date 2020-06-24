@@ -1,0 +1,2 @@
+Support the new "arm64" architecture for macOS in the pythonw executable in
+framework builds.
