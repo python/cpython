@@ -1328,7 +1328,6 @@ def buildPython():
         l_dict = {}
         exec(data, g_dict, l_dict)
         build_time_vars = l_dict['build_time_vars']
-    exec(data)
     vars = {}
     for k, v in build_time_vars.items():
         if type(v) == type(''):

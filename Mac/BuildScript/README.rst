@@ -30,7 +30,7 @@ building on a newer version of macOS that will run on older versions
 by setting MACOSX_DEPLOYMENT_TARGET. This is because the various
 Python C modules do not yet support runtime testing of macOS
 feature availability (for example, by using macOS AvailabilityMacros.h
-and weak-linking).  To build a Python that is used to be used on a
+and weak-linking).  To build a Python that is to be used on a
 range of macOS releases, always build on the oldest release to be
 supported; the necessary shared libraries for that release will
 normally also be available on later systems, with the occasional
@@ -40,7 +40,7 @@ build-installer requires Apple Developer tools, either from the
 Command Line Tools package or from a full Xcode installation.
 You should use the most recent version of either for the operating
 system version in use.  (One notable exception: on macOS 10.6,
-Snow Leopards, use Xcode 3, not Xcode 4 which was released later
+Snow Leopard, use Xcode 3, not Xcode 4 which was released later
 in the 10.6 support cycle.)
 
 1.  64-bit, x86_64, for OS X 10.9 (and later)::
