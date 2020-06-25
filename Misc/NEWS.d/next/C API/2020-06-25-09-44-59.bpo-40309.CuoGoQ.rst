@@ -1,0 +1,1 @@
+Properly handle trailing spaces in :c:func:`Py_BuildValue` format strings.

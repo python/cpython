@@ -1016,6 +1016,31 @@ test_buildvalue_N(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_buildvalue_ignore_char(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *res = Py_BuildValue("(i )", 0);
+    if (res == NULL) {
+        return NULL;
+    }
+    Py_DECREF(res);
+    res = Py_BuildValue("i, ", 0);
+    if (res == NULL) {
+        return NULL;
+    }
+    Py_DECREF(res);
+    res = Py_BuildValue("i, :", 0);
+    if (res == NULL) {
+        return NULL;
+    }
+    Py_DECREF(res);
+    res = Py_BuildValue("i, :   ", 0);
+    if (res == NULL) {
+        return NULL;
+    }
+    Py_DECREF(res);
+    Py_RETURN_NONE;
+}
 
 static PyObject *
 get_args(PyObject *self, PyObject *args)
@@ -5339,6 +5364,7 @@ static PyMethodDef TestMethods[] = {
     {"getbuffer_with_null_view", getbuffer_with_null_view, METH_O},
     {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat, METH_VARARGS},
     {"test_buildvalue_N",       test_buildvalue_N,               METH_NOARGS},
+    {"test_buildvalue_ignore_char", test_buildvalue_ignore_char, METH_NOARGS},
     {"test_buildvalue_issue38913", test_buildvalue_issue38913,   METH_NOARGS},
     {"get_args", get_args, METH_VARARGS},
     {"get_kwargs", (PyCFunction)(void(*)(void))get_kwargs, METH_VARARGS|METH_KEYWORDS},
