@@ -490,7 +490,7 @@ case $ac_sys_system/$ac_sys_release in
   # has no effect, don't bother defining them
   Darwin/@<:@6789@:>@.*)
     define_xopen_source=no;;
-  Darwin/1@<:@0-9@:>@.*)
+  Darwin/@<:@[12]@:>@@<:@0-9@:>@.*)
     define_xopen_source=no;;
   # On AIX 4 and 5.1, mbstate_t is defined only when _XOPEN_SOURCE == 500 but
   # used in wcsnrtombs() and mbsnrtowcs() even if _XOPEN_SOURCE is not defined
