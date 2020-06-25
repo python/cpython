@@ -406,7 +406,7 @@ Functions
    each platform specific type in type-list will be substituted by one or more
    platform independent types. Thus, the returned list may have more elements
    than type-list.
-   
+
    .. warning:: In many TkDND versions, there is a bug that causes this method
     to raise a :class:`TclError`, so it should generally be avoided.
 
@@ -473,6 +473,7 @@ Currently, the following predefined generic type-values are available:
 .. data:: DND_RTF
 
    This type can be used for transferring RTF textual data.
+
 .. data:: DND_TEXT
 
    This type can be used for transferring textual data.
