@@ -1,4 +1,5 @@
 import ast
+import collections
 import types
 import typing
 import unittest
@@ -1646,8 +1647,7 @@ class TestMatch(unittest.TestCase):
         self.assertEqual(y, 1)
 
     def test_patma_119(self) -> None:
-        from collections import defaultdict
-        x = defaultdict(int)
+        x = collections.defaultdict(int)
         match x:
             case {0: 0}:
                 y = 0
@@ -1657,14 +1657,134 @@ class TestMatch(unittest.TestCase):
         self.assertEqual(y, 1)
 
     def test_patma_120(self) -> None:
-        from collections import defaultdict
-        x = defaultdict(int)
+        x = collections.defaultdict(int)
         match x:
             case {0: 0}:
                 y = 0
             case {**z}:
                 y = 1
         self.assertEqual(x, {})
+        self.assertEqual(y, 1)
+        self.assertEqual(z, {})
+
+    def test_patma_121(self) -> None:
+        match ():
+            case ():
+                x = 0
+        self.assertEqual(x, 0)
+
+    def test_patma_122(self) -> None:
+        match (0, 1, 2):
+            case (*x,):
+                y = 0
+        self.assertEqual(x, [0, 1, 2])
+        self.assertEqual(y, 0)
+
+    def test_patma_123(self) -> None:
+        match (0, 1, 2):
+            case 0, *x:
+                y = 0
+        self.assertEqual(x, [1, 2])
+        self.assertEqual(y, 0)
+
+    def test_patma_124(self) -> None:
+        match (0, 1, 2):
+            case (0, 1, *x,):
+                y = 0
+        self.assertEqual(x, [2])
+        self.assertEqual(y, 0)
+
+    def test_patma_125(self) -> None:
+        match (0, 1, 2):
+            case 0, 1, 2, *x:
+                y = 0
+        self.assertEqual(x, [])
+        self.assertEqual(y, 0)
+
+    def test_patma_126(self) -> None:
+        match (0, 1, 2):
+            case *x, 2,:
+                y = 0
+        self.assertEqual(x, [0, 1])
+        self.assertEqual(y, 0)
+
+    def test_patma_127(self) -> None:
+        match (0, 1, 2):
+            case (*x, 1, 2):
+                y = 0
+        self.assertEqual(x, [0])
+        self.assertEqual(y, 0)
+
+    def test_patma_128(self) -> None:
+        match (0, 1, 2):
+            case *x, 0, 1, 2,:
+                y = 0
+        self.assertEqual(x, [])
+        self.assertEqual(y, 0)
+
+    def test_patma_129(self) -> None:
+        match (0, 1, 2):
+            case (0, *x, 2):
+                y = 0
+        self.assertEqual(x, [1])
+        self.assertEqual(y, 0)
+
+    def test_patma_130(self) -> None:
+        match (0, 1, 2):
+            case 0, 1, *x, 2,:
+                y = 0
+        self.assertEqual(x, [])
+        self.assertEqual(y, 0)
+
+    def test_patma_131(self) -> None:
+        match (0, 1, 2):
+            case (0, *x, 1, 2):
+                y = 0
+        self.assertEqual(x, [])
+        self.assertEqual(y, 0)
+
+    def test_patma_132(self) -> None:
+        match (0, 1, 2):
+            case *x,:
+                y = 0
+        self.assertEqual(x, [0, 1, 2])
+        self.assertEqual(y, 0)
+
+    def test_patma_133(self) -> None:
+        x = collections.defaultdict(int, {0: 1})
+        match x:
+            case {1: 0}:
+                y = 0
+            case {0: 0}:
+                y = 0
+            case {}:
+                y = 1
+        self.assertEqual(x, {0: 1})
+        self.assertEqual(y, 1)
+
+    def test_patma_134(self) -> None:
+        x = collections.defaultdict(int, {0: 1})
+        match x:
+            case {1: 0}:
+                y = 0
+            case {0: 0}:
+                y = 0
+            case {**z}:
+                y = 1
+        self.assertEqual(x, {0: 1})
+        self.assertEqual(y, 1)
+        self.assertEqual(z, {0: 1})
+
+    def test_patma_135(self) -> None:
+        x = collections.defaultdict(int, {0: 1})
+        match x:
+            case {1: 0}:
+                y = 0
+            case {0: 0}:
+                y = 0
+            case {0: _, **z}:
+                y = 1
+        self.assertEqual(x, {0: 1})
         self.assertEqual(y, 1)
         self.assertEqual(z, {})
 
