@@ -10,10 +10,11 @@ import time
 import unittest
 
 from test import support
+from test.support import import_helper
 from test.support import script_helper
 
 
-interpreters = support.import_module('_xxsubinterpreters')
+interpreters = import_helper.import_module('_xxsubinterpreters')
 
 
 ##################################
