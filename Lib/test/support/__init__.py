@@ -720,21 +720,21 @@ else:
 # Filename used for testing
 if os.name == 'java':
     # Jython disallows @ in module names
-    TESTFN = '$test'
+    TESTFN_ASCII = '$test'
 else:
-    TESTFN = '@test'
+    TESTFN_ASCII = '@test'
 
 # Disambiguate TESTFN for parallel testing, while letting it remain a valid
 # module name.
-TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
+TESTFN_ASCII = "{}_{}_tmp".format(TESTFN_ASCII, os.getpid())
 
 # Define the URL of a dedicated HTTP server for the network tests.
 # The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
 TEST_HTTP_URL = "http://www.pythontest.net"
 
 # FS_NONASCII: non-ASCII character encodable by os.fsencode(),
-# or None if there is no such character.
-FS_NONASCII = None
+# or an empty string if there is no such character.
+FS_NONASCII = ''
 for character in (
     # First try printable and common characters to have a readable filename.
     # For each character, the encoding list are just example of encodings able
@@ -781,7 +781,7 @@ for character in (
         break
 
 # TESTFN_UNICODE is a non-ascii filename
-TESTFN_UNICODE = TESTFN + "-\xe0\xf2\u0258\u0141\u011f"
+TESTFN_UNICODE = TESTFN_ASCII + "-\xe0\xf2\u0258\u0141\u011f"
 if sys.platform == 'darwin':
     # In Mac OS X's VFS API file names are, by definition, canonically
     # decomposed Unicode, encoded using UTF-8. See QA1173:
@@ -799,7 +799,7 @@ if os.name == 'nt':
     if sys.getwindowsversion().platform >= 2:
         # Different kinds of characters from various languages to minimize the
         # probability that the whole name is encodable to MBCS (issue #9819)
-        TESTFN_UNENCODABLE = TESTFN + "-\u5171\u0141\u2661\u0363\uDC80"
+        TESTFN_UNENCODABLE = TESTFN_ASCII + "-\u5171\u0141\u2661\u0363\uDC80"
         try:
             TESTFN_UNENCODABLE.encode(TESTFN_ENCODING)
         except UnicodeEncodeError:
@@ -816,7 +816,7 @@ elif sys.platform != 'darwin':
         b'\xff'.decode(TESTFN_ENCODING)
     except UnicodeDecodeError:
         # 0xff will be encoded using the surrogate character u+DCFF
-        TESTFN_UNENCODABLE = TESTFN \
+        TESTFN_UNENCODABLE = TESTFN_ASCII \
             + b'-\xff'.decode(TESTFN_ENCODING, 'surrogateescape')
     else:
         # File system encoding (eg. ISO-8859-* encodings) can encode
@@ -850,13 +850,14 @@ for name in (
     try:
         name.decode(TESTFN_ENCODING)
     except UnicodeDecodeError:
-        TESTFN_UNDECODABLE = os.fsencode(TESTFN) + name
+        TESTFN_UNDECODABLE = os.fsencode(TESTFN_ASCII) + name
         break
 
 if FS_NONASCII:
-    TESTFN_NONASCII = TESTFN + '-' + FS_NONASCII
+    TESTFN_NONASCII = TESTFN_ASCII + FS_NONASCII
 else:
     TESTFN_NONASCII = None
+TESTFN = TESTFN_NONASCII or TESTFN_ASCII
 
 # Save the initial cwd
 SAVEDCWD = os.getcwd()
