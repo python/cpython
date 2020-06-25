@@ -197,7 +197,7 @@ except_block[excepthandler_ty]:
 finally_block[asdl_seq*]: 'finally' ':' a=block { a }
 
 match_stmt[stmt_ty]:
-    | "match" target=expression ':' NEWLINE INDENT cases=case_block+ DEDENT {
+    | "match" target=star_expressions ':' NEWLINE INDENT cases=case_block+ DEDENT {
         _Py_Match(target, cases, EXTRA) }
 case_block[match_case_ty]:
     | "case" pattern=patterns guard=guard? ':' body=block {

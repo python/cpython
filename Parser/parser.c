@@ -4783,7 +4783,7 @@ finally_block_rule(Parser *p)
     return _res;
 }
 
-// match_stmt: "match" expression ':' NEWLINE INDENT case_block+ DEDENT
+// match_stmt: "match" star_expressions ':' NEWLINE INDENT case_block+ DEDENT
 static stmt_ty
 match_stmt_rule(Parser *p)
 {
@@ -4803,12 +4803,12 @@ match_stmt_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // "match" expression ':' NEWLINE INDENT case_block+ DEDENT
+    { // "match" star_expressions ':' NEWLINE INDENT case_block+ DEDENT
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> match_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"match\" expression ':' NEWLINE INDENT case_block+ DEDENT"));
+        D(fprintf(stderr, "%*c> match_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"match\" star_expressions ':' NEWLINE INDENT case_block+ DEDENT"));
         expr_ty _keyword;
         Token * _literal;
         asdl_seq * cases;
@@ -4819,7 +4819,7 @@ match_stmt_rule(Parser *p)
         if (
             (_keyword = _PyPegen_expect_soft_keyword(p, "match"))  // soft_keyword='"match"'
             &&
-            (target = expression_rule(p))  // expression
+            (target = star_expressions_rule(p))  // star_expressions
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -4832,7 +4832,7 @@ match_stmt_rule(Parser *p)
             (dedent_var = _PyPegen_expect_token(p, DEDENT))  // token='DEDENT'
         )
         {
-            D(fprintf(stderr, "%*c+ match_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"match\" expression ':' NEWLINE INDENT case_block+ DEDENT"));
+            D(fprintf(stderr, "%*c+ match_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"match\" star_expressions ':' NEWLINE INDENT case_block+ DEDENT"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -4852,7 +4852,7 @@ match_stmt_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s match_stmt[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"match\" expression ':' NEWLINE INDENT case_block+ DEDENT"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"match\" star_expressions ':' NEWLINE INDENT case_block+ DEDENT"));
     }
     _res = NULL;
   done:
