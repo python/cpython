@@ -27,6 +27,7 @@ from pathlib import Path
 from test.support import verbose
 from test.support.os_helper import TESTFN
 from test.support.os_helper import unlink as safe_unlink
+from test.support import os_helper
 from test.support import warnings_helper
 from test import support
 from unittest import mock
@@ -41,7 +42,7 @@ class BaseTests:
     # temp file's name.
     def writeTmp(self, content, *, mode='w'):  # opening in text mode is the default
         fd, name = tempfile.mkstemp()
-        self.addCleanup(safe_unlink, name)
+        self.addCleanup(os_helper.unlink, name)
         with open(fd, mode) as f:
             f.write(content)
         return name
