@@ -1,5 +1,8 @@
 """Random variable generators.
 
+    bytes
+    -----  uniform within 0 to 255
+
     integers
     --------
            uniform within range
@@ -37,6 +40,10 @@ General notes on the underlying Mersenne Twister core generator:
 
 """
 
+# Translated by Guido van Rossum from C source provided by
+# Adrian Baddeley.  Adapted by Raymond Hettinger for use with
+# the Mersenne Twister  and os.urandom() core generators.
+
 from warnings import warn as _warn
 from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
@@ -46,6 +53,7 @@ from _collections_abc import Set as _Set, Sequence as _Sequence
 from itertools import accumulate as _accumulate, repeat as _repeat
 from bisect import bisect as _bisect
 import os as _os
+import _random
 
 try:
     # hashlib is pretty heavy to load, try lean internal module first
@@ -53,7 +61,6 @@ try:
 except ImportError:
     # fallback to official implementation
     from hashlib import sha512 as _sha512
-
 
 __all__ = [
     "Random",
@@ -87,13 +94,6 @@ LOG4 = _log(4.0)
 SG_MAGICCONST = 1.0 + _log(4.5)
 BPF = 53        # Number of bits in a float
 RECIP_BPF = 2 ** -BPF
-
-
-# Translated by Guido van Rossum from C source provided by
-# Adrian Baddeley.  Adapted by Raymond Hettinger for use with
-# the Mersenne Twister  and os.urandom() core generators.
-
-import _random
 
 
 class Random(_random.Random):
