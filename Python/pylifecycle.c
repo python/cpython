@@ -607,6 +607,11 @@ pycore_init_types(PyThreadState *tstate)
         return status;
     }
 
+    status = _PyBytes_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     status = _PyExc_Init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
