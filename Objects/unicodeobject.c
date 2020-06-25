@@ -41,16 +41,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_abstract.h"       // _PyIndex_Check()
-#include "pycore_bytes_methods.h"
-#include "pycore_fileutils.h"
-#include "pycore_initconfig.h"
+#include "pycore_bytes_methods.h"  // _Py_bytes_lower()
+#include "pycore_initconfig.h"     // _PyStatus_OK()
 #include "pycore_interp.h"         // PyInterpreterState.fs_codec
-#include "pycore_object.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pylifecycle.h"
+#include "pycore_object.h"         // _PyObject_GC_TRACK()
+#include "pycore_pathconfig.h"     // _Py_DumpPathConfig()
+#include "pycore_pylifecycle.h"    // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"        // _PyInterpreterState_GET()
-#include "ucnhash.h"
-#include "stringlib/eq.h"
+#include "ucnhash.h"               // _PyUnicode_Name_CAPI
+#include "stringlib/eq.h"          // unicode_eq()
 
 #ifdef MS_WINDOWS
 #include <windows.h>
@@ -236,10 +235,12 @@ static inline PyObject* unicode_get_empty(void)
     struct _Py_unicode_state *state = get_unicode_state();
     // unicode_get_empty() must not be called before _PyUnicode_Init()
     // or after _PyUnicode_Fini()
-    assert(state->empty != NULL);
-    return state->empty;
+    assert(state->empty_string != NULL);
+    return state->empty_string;
 }
 
+
+// Return a strong reference to the empty string singleton.
 static inline PyObject* unicode_new_empty(void)
 {
     PyObject *empty = unicode_get_empty();
@@ -1385,6 +1386,26 @@ _PyUnicode_Dump(PyObject *op)
 }
 #endif
 
+static int
+unicode_create_empty_string_singleton(struct _Py_unicode_state *state)
+{
+    // Use size=1 rather than size=0, so PyUnicode_New(0, maxchar) can be
+    // optimized to always use state->empty_string without having to check if
+    // it is NULL or not.
+    PyObject *empty = PyUnicode_New(1, 0);
+    if (empty == NULL) {
+        return -1;
+    }
+    PyUnicode_1BYTE_DATA(empty)[0] = 0;
+    _PyUnicode_LENGTH(empty) = 0;
+    assert(_PyUnicode_CheckConsistency(empty, 1));
+
+    assert(state->empty_string == NULL);
+    state->empty_string = empty;
+    return 0;
+}
+
+
 PyObject *
 PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
 {
@@ -1972,7 +1993,7 @@ static int
 unicode_is_singleton(PyObject *unicode)
 {
     struct _Py_unicode_state *state = get_unicode_state();
-    if (unicode == state->empty) {
+    if (unicode == state->empty_string) {
         return 1;
     }
     PyASCIIObject *ascii = (PyASCIIObject *)unicode;
@@ -15542,20 +15563,10 @@ _PyUnicode_Init(PyThreadState *tstate)
         0x2029, /* PARAGRAPH SEPARATOR */
     };
 
-    // Use size=1 rather than size=0, so PyUnicode_New(0, maxchar) can be
-    // optimized to always use state->empty without having to check if it is
-    // NULL or not.
-    PyObject *empty = PyUnicode_New(1, 0);
-    if (empty == NULL) {
+    struct _Py_unicode_state *state = &tstate->interp->unicode;
+    if (unicode_create_empty_string_singleton(state) < 0) {
         return _PyStatus_NO_MEMORY();
     }
-    PyUnicode_1BYTE_DATA(empty)[0] = 0;
-    _PyUnicode_LENGTH(empty) = 0;
-    assert(_PyUnicode_CheckConsistency(empty, 1));
-
-    struct _Py_unicode_state *state = &tstate->interp->unicode;
-    assert(state->empty == NULL);
-    state->empty = empty;
 
     if (_Py_IsMainInterpreter(tstate)) {
         /* initialize the linebreak bloom filter */
@@ -16223,7 +16234,7 @@ _PyUnicode_Fini(PyThreadState *tstate)
 #endif /* __INSURE__ */
     }
 
-    Py_CLEAR(state->empty);
+    Py_CLEAR(state->empty_string);
 
     for (Py_ssize_t i = 0; i < 256; i++) {
         Py_CLEAR(state->latin1[i]);
