@@ -80,8 +80,8 @@ class BaseTest(unittest.TestCase):
     def get_env_file(self, *args):
         return os.path.join(self.env_dir, *args)
 
-    def get_text_file_contents(self, *args):
-        with open(self.get_env_file(*args), 'r') as f:
+    def get_text_file_contents(self, *args, encoding='utf-8'):
+        with open(self.get_env_file(*args), 'r', encoding=encoding) as f:
             result = f.read()
         return result
 
