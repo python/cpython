@@ -1,0 +1,2 @@
+Convert :exc: UnicodeError to :exc: UnicodeEncodeError or :exc: UnicodeDecodeError where appropriate.
+Patch by Srinivas Reddy Thatiparthy

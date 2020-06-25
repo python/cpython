@@ -1,4 +1,4 @@
-""" Codec for the Punicode encoding, as specified in RFC 3492
+""" Codec for the Punycode encoding, as specified in RFC 3492
 
 Written by Martin v. Löwis.
 """
@@ -74,7 +74,9 @@ def T(j, bias):
     if res > 26: return 26
     return res
 
+
 digits = b"abcdefghijklmnopqrstuvwxyz0123456789"
+
 def generate_generalized_integer(N, bias):
     """3.3 Generalized variable-length integers"""
     result = bytearray()
@@ -111,7 +113,7 @@ def generate_integers(baselen, deltas):
     for points, delta in enumerate(deltas):
         s = generate_generalized_integer(delta, bias)
         result.extend(s)
-        bias = adapt(delta, points==0, baselen+points+1)
+        bias = adapt(delta, points == 0, baselen+points+1)
     return bytes(result)
 
 def punycode_encode(text):
@@ -134,7 +136,8 @@ def decode_generalized_number(extended, extpos, bias, errors):
             char = ord(extended[extpos])
         except IndexError:
             if errors == "strict":
-                raise UnicodeError("incomplete punicode string")
+                raise UnicodeDecodeError("punycode", bytes(extended[extpos], "utf-8"), extpos, extpos+1,
+                                         "incomplete punycode string")
             return extpos + 1, None
         extpos += 1
         if 0x41 <= char <= 0x5A: # A-Z
@@ -142,8 +145,8 @@ def decode_generalized_number(extended, extpos, bias, errors):
         elif 0x30 <= char <= 0x39:
             digit = char - 22 # 0x30-26
         elif errors == "strict":
-            raise UnicodeError("Invalid extended code point '%s'"
-                               % extended[extpos-1])
+            raise UnicodeDecodeError("punycode", bytes(extended[extpos-1], "utf-8"), extpos-1, extpos,
+                                     "Invalid extended code point '%s'" % extended[extpos-1])
         else:
             return extpos, None
         t = T(j, bias)
@@ -171,7 +174,7 @@ def insertion_sort(base, extended, errors):
         char += pos // (len(base) + 1)
         if char > 0x10FFFF:
             if errors == "strict":
-                raise UnicodeError("Invalid character U+%x" % char)
+                raise UnicodeDecodeError("punycode", bytes(char, "utf-8"), 0, len(char), "Invalid character U+%x" % char)
             char = ord('?')
         pos = pos % (len(base) + 1)
         base = base[:pos] + chr(char) + base[pos:]
@@ -217,13 +220,13 @@ class IncrementalDecoder(codecs.IncrementalDecoder):
             raise UnicodeError("Unsupported error handling "+self.errors)
         return punycode_decode(input, self.errors)
 
-class StreamWriter(Codec,codecs.StreamWriter):
+class StreamWriter(Codec, codecs.StreamWriter):
     pass
 
-class StreamReader(Codec,codecs.StreamReader):
+class StreamReader(Codec, codecs.StreamReader):
     pass
 
-### encodings module API
+# encodings module API
 
 def getregentry():
     return codecs.CodecInfo(

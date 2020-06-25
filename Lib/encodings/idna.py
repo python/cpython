@@ -63,14 +63,14 @@ def ToASCII(label):
     try:
         # Step 1: try ASCII
         label = label.encode("ascii")
-    except UnicodeError:
+    except UnicodeEncodeError:
         pass
     else:
         # Skip to step 3: UseSTD3ASCIIRules is false, so
         # Skip to step 8.
         if 0 < len(label) < 64:
             return label
-        raise UnicodeError("label empty or too long")
+        raise UnicodeEncodeError("ascii", label, 0, len(label), "label empty or too long")
 
     # Step 2: nameprep
     label = nameprep(label)
@@ -79,17 +79,17 @@ def ToASCII(label):
     # Step 4: try ASCII
     try:
         label = label.encode("ascii")
-    except UnicodeError:
+    except UnicodeEncodeError:
         pass
     else:
         # Skip to step 8.
         if 0 < len(label) < 64:
             return label
-        raise UnicodeError("label empty or too long")
+        raise UnicodeEncodeError("ascii", label, 0, len(label), "label empty or too long")
 
     # Step 5: Check ACE prefix
     if label.startswith(sace_prefix):
-        raise UnicodeError("Label starts with ACE prefix")
+        raise UnicodeEncodeError("ascii", label, 0, len(label), "Label starts with ACE prefix")
 
     # Step 6: Encode with PUNYCODE
     label = label.encode("punycode")
@@ -100,7 +100,7 @@ def ToASCII(label):
     # Step 8: Check size
     if 0 < len(label) < 64:
         return label
-    raise UnicodeError("label empty or too long")
+    raise UnicodeEncodeError("punycode", label, 0, len(label), "label empty or too long")
 
 def ToUnicode(label):
     # Step 1: Check for ASCII
@@ -110,7 +110,7 @@ def ToUnicode(label):
         try:
             label = label.encode("ascii")
             pure_ascii = True
-        except UnicodeError:
+        except UnicodeEncodeError:
             pure_ascii = False
     if not pure_ascii:
         # Step 2: Perform nameprep
@@ -118,8 +118,8 @@ def ToUnicode(label):
         # It doesn't say this, but apparently, it should be ASCII now
         try:
             label = label.encode("ascii")
-        except UnicodeError:
-            raise UnicodeError("Invalid character in IDN label")
+        except UnicodeEncodeError:
+            raise UnicodeEncodeError("ascii", label, 0, len(label), "Invalid character in IDN label")
     # Step 3: Check for ACE prefix
     if not label.startswith(ace_prefix):
         return str(label, "ascii")
@@ -162,9 +162,9 @@ class Codec(codecs.Codec):
             labels = result.split(b'.')
             for label in labels[:-1]:
                 if not (0 < len(label) < 64):
-                    raise UnicodeError("label empty or too long")
+                    raise UnicodeEncodeError("ascii", label, 0, len(label), "label empty or too long")
             if len(labels[-1]) >= 64:
-                raise UnicodeError("label too long")
+                raise UnicodeEncodeError("ascii", labels[-1], 0, len(labels[-1]), "label too long")
             return result, len(input)
 
         result = bytearray()
