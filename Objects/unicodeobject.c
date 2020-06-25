@@ -15660,12 +15660,10 @@ PyUnicode_InternFromString(const char *cp)
 static void
 unicode_release_interned(void)
 {
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+
     if (interned == NULL || !PyDict_Check(interned)) {
-        return;
-    }
-    PyObject *keys = PyDict_Keys(interned);
-    if (keys == NULL || !PyList_Check(keys)) {
-        PyErr_Clear();
         return;
     }
 
@@ -15673,44 +15671,40 @@ unicode_release_interned(void)
        detector, interned unicode strings are not forcibly deallocated;
        rather, we give them their stolen references back, and then clear
        and DECREF the interned dict. */
-
-    Py_ssize_t n = PyList_GET_SIZE(keys);
 #ifdef INTERNED_STATS
-    fprintf(stderr, "releasing %zd interned strings\n", n);
+    fprintf(stderr, "releasing %zd interned strings\n", PyDict_Size(interned));
 
     Py_ssize_t immortal_size = 0, mortal_size = 0;
 #endif
-    for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *s = PyList_GET_ITEM(keys, i);
-        if (PyUnicode_READY(s) == -1) {
+    while (PyDict_Next(interned, &pos, &key, &value)) {
+        if (PyUnicode_READY(key) == -1) {
             Py_UNREACHABLE();
         }
-        switch (PyUnicode_CHECK_INTERNED(s)) {
-        case SSTATE_INTERNED_IMMORTAL:
-            Py_SET_REFCNT(s, Py_REFCNT(s) + 1);
+        switch (PyUnicode_CHECK_INTERNED(key)) {
+            case SSTATE_INTERNED_IMMORTAL:
+                Py_SET_REFCNT(key, Py_REFCNT(key) + 1);
 #ifdef INTERNED_STATS
-            immortal_size += PyUnicode_GET_LENGTH(s);
+                immortal_size += PyUnicode_GET_LENGTH(key);
 #endif
-            break;
-        case SSTATE_INTERNED_MORTAL:
-            Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
+                break;
+            case SSTATE_INTERNED_MORTAL:
+                Py_SET_REFCNT(key, Py_REFCNT(key) + 2);
 #ifdef INTERNED_STATS
-            mortal_size += PyUnicode_GET_LENGTH(s);
+                mortal_size += PyUnicode_GET_LENGTH(key);
 #endif
-            break;
-        case SSTATE_NOT_INTERNED:
-            /* fall through */
-        default:
-            Py_UNREACHABLE();
+                break;
+            case SSTATE_NOT_INTERNED:
+                /* fall through */
+            default:
+                Py_UNREACHABLE();
         }
-        _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
+        _PyUnicode_STATE(key).interned = SSTATE_NOT_INTERNED;
     }
 #ifdef INTERNED_STATS
     fprintf(stderr,
             "total size of all interned strings: %zd/%zd mortal/immortal\n",
             mortal_size, immortal_size);
 #endif
-    Py_DECREF(keys);
     PyDict_Clear(interned);
     Py_CLEAR(interned);
 }
