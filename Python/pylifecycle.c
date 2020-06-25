@@ -583,13 +583,20 @@ pycore_init_types(PyThreadState *tstate)
         return status;
     }
 
+    // Create the empty tuple singleton. It must be created before the first
+    // PyType_Ready() call since PyType_Ready() creates tuples, for tp_bases
+    // for example.
+    status = _PyTuple_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     if (is_main_interp) {
         status = _PyTypes_Init();
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
     }
-
 
     if (!_PyLong_Init(tstate)) {
         return _PyStatus_ERR("can't init longs");

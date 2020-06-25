@@ -1,13 +1,13 @@
 """ Test suite for the code in msilib """
 import os
 import unittest
-from test.support import TESTFN, import_module, unlink
+from test.support import TESTFN, FS_NONASCII, import_module, unlink
 msilib = import_module('msilib')
 import msilib.schema
 
 
 def init_database():
-    path = TESTFN + '.msi'
+    path = TESTFN + (FS_NONASCII or '') + '.msi'
     db = msilib.init_database(
         path,
         msilib.schema,
@@ -40,6 +40,16 @@ class MsiDatabaseTestCase(unittest.TestCase):
                 'Manufacturer', 'ProductLanguage',
             ]
         )
+        self.addCleanup(unlink, db_path)
+
+    def test_view_non_ascii(self):
+        db, db_path = init_database()
+        view = db.OpenView("SELECT 'ß-розпад' FROM Property")
+        view.Execute(None)
+        record = view.Fetch()
+        self.assertEqual(record.GetString(1), 'ß-розпад')
+        view.Close()
+        db.Close()
         self.addCleanup(unlink, db_path)
 
     def test_summaryinfo_getproperty_issue1104(self):
