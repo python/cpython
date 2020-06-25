@@ -9,7 +9,7 @@ __name__ = 'datetime'   # For pickling
 
 import time as _time
 import math as _math
-import sys
+import sys as _sys
 from operator import index as _index
 
 def _cmp(x, y):
@@ -1660,7 +1660,7 @@ class datetime(date):
             # thus we can't perform fold detection for values of time less
             # than the max time fold. See comments in _datetimemodule's
             # version of this method for more details.
-            if t < max_fold_seconds and sys.platform.startswith("win"):
+            if t < max_fold_seconds and _sys.platform.startswith("win"):
                 return result
 
             y, m, d, hh, mm, ss = converter(t - max_fold_seconds)[:6]
