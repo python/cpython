@@ -196,8 +196,13 @@ except_block[excepthandler_ty]:
     | 'except' ':' b=block { _Py_ExceptHandler(NULL, NULL, b, EXTRA) }
 finally_block[asdl_seq*]: 'finally' ':' a=block { a }
 
+match_expr[expr_ty]:
+    | value=star_named_expression ',' values=star_named_expressions? {
+        _Py_Tuple(CHECK(_PyPegen_seq_insert_in_front(p, value, values)), Load, EXTRA) }
+    | named_expression
+
 match_stmt[stmt_ty]:
-    | "match" target=star_expressions ':' NEWLINE INDENT cases=case_block+ DEDENT {
+    | "match" target=match_expr ':' NEWLINE INDENT cases=case_block+ DEDENT {
         _Py_Match(target, cases, EXTRA) }
 case_block[match_case_ty]:
     | "case" pattern=patterns guard=guard? ':' body=block {
