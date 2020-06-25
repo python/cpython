@@ -1,5 +1,4 @@
 import tempfile
-import _thread
 import tkinter as tk
 import unittest
 from tkinter.test.support import AbstractTkTest
