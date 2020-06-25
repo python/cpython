@@ -1,7 +1,8 @@
 """Random variable generators.
 
     bytes
-    -----  uniform within 0 to 255
+    -----
+           uniform bytes (values between 0 and 255)
 
     integers
     --------
