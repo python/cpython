@@ -18,7 +18,6 @@
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 
-#include "grammar.h"              // PyGrammar_RemoveAccelerators()
 #include <locale.h>               // setlocale()
 
 #ifdef HAVE_SIGNAL_H
@@ -50,7 +49,6 @@ _Py_IDENTIFIER(threading);
 extern "C" {
 #endif
 
-extern grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward declarations */
 static PyStatus add_main_module(PyInterpreterState *interp);
@@ -585,6 +583,14 @@ pycore_init_types(PyThreadState *tstate)
         return status;
     }
 
+    // Create the empty tuple singleton. It must be created before the first
+    // PyType_Ready() call since PyType_Ready() creates tuples, for tp_bases
+    // for example.
+    status = _PyTuple_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     if (is_main_interp) {
         status = _PyTypes_Init();
         if (_PyStatus_EXCEPTION(status)) {
@@ -592,19 +598,16 @@ pycore_init_types(PyThreadState *tstate)
         }
     }
 
-
     if (!_PyLong_Init(tstate)) {
         return _PyStatus_ERR("can't init longs");
     }
 
-    if (is_main_interp) {
-        status = _PyUnicode_Init();
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
+    status = _PyUnicode_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
-    status = _PyExc_Init();
+    status = _PyExc_Init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -687,24 +690,22 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
         return status;
     }
 
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-    if (_Py_IsMainInterpreter(tstate)) {
-        /* Initialize _warnings. */
-        status = _PyWarnings_InitState(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
+    /* Initialize _warnings. */
+    status = _PyWarnings_InitState(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
-        if (config->_install_importlib) {
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->_install_importlib) {
+        if (_Py_IsMainInterpreter(tstate)) {
             status = _PyConfig_WritePathConfig(config);
             if (_PyStatus_EXCEPTION(status)) {
                 return status;
             }
         }
-    }
 
-    /* This call sets up builtin and frozen import support */
-    if (config->_install_importlib) {
+        /* This call sets up builtin and frozen import support */
         status = init_importlib(tstate, sysmod);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
@@ -1253,24 +1254,18 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyThreadState *tstate, int is_main_interp)
 {
+    _PyExc_Fini(tstate);
     _PyFrame_Fini(tstate);
     _PyAsyncGen_Fini(tstate);
     _PyContext_Fini(tstate);
 
-    if (is_main_interp) {
-        _PySet_Fini();
-    }
-    if (is_main_interp) {
-        _PyDict_Fini();
-    }
+    _PyDict_Fini(tstate);
     _PyList_Fini(tstate);
     _PyTuple_Fini(tstate);
 
     _PySlice_Fini(tstate);
 
-    if (is_main_interp) {
-        _PyBytes_Fini();
-    }
+    _PyBytes_Fini(tstate);
     _PyUnicode_Fini(tstate);
     _PyFloat_Fini(tstate);
     _PyLong_Fini(tstate);
@@ -1299,11 +1294,6 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     _PyWarnings_Fini(tstate->interp);
-
-    if (is_main_interp) {
-        PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
-        _PyExc_Fini();
-    }
 
     finalize_interp_types(tstate, is_main_interp);
 }
@@ -1942,7 +1932,6 @@ static PyStatus
 init_sys_streams(PyThreadState *tstate)
 {
     PyObject *iomod = NULL;
-    PyObject *m;
     PyObject *std = NULL;
     int fd;
     PyObject * encoding_attr;
@@ -1961,18 +1950,6 @@ init_sys_streams(PyThreadState *tstate)
         return _PyStatus_ERR("<stdin> is a directory, cannot continue");
     }
 #endif
-
-    /* Hack to avoid a nasty recursion issue when Python is invoked
-       in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
-    if ((m = PyImport_ImportModule("encodings.utf_8")) == NULL) {
-        goto error;
-    }
-    Py_DECREF(m);
-
-    if (!(m = PyImport_ImportModule("encodings.latin_1"))) {
-        goto error;
-    }
-    Py_DECREF(m);
 
     if (!(iomod = PyImport_ImportModule("io"))) {
         goto error;

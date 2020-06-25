@@ -13,6 +13,7 @@ from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
 import builtins
 import encodings
 import glob
+import io
 import os
 import re
 import shutil
@@ -320,6 +321,14 @@ class HelperFunctionsTests(unittest.TestCase):
             mock_addsitedir.assert_not_called()
             self.assertFalse(known_paths)
 
+    def test_trace(self):
+        message = "bla-bla-bla"
+        for verbose, out in (True, message + "\n"), (False, ""):
+            with mock.patch('sys.flags', mock.Mock(verbose=verbose)), \
+                    mock.patch('sys.stderr', io.StringIO()):
+                site._trace(message)
+                self.assertEqual(sys.stderr.getvalue(), out)
+
 
 class PthFile(object):
     """Helper class for handling testing of .pth files"""
@@ -534,7 +543,7 @@ class StartupImportTests(unittest.TestCase):
         # found in sys.path (see site.addpackage()). Skip the test if at least
         # one .pth file is found.
         for path in isolated_paths:
-            pth_files = glob.glob(os.path.join(path, "*.pth"))
+            pth_files = glob.glob(os.path.join(glob.escape(path), "*.pth"))
             if pth_files:
                 self.skipTest(f"found {len(pth_files)} .pth files in: {path}")
 

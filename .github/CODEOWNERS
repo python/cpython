@@ -72,10 +72,10 @@ Include/pytime.h              @pganssle @abalkin
 /Modules/gcmodule.c           @pablogsal
 /Doc/library/gc.rst           @pablogsal
 
-# Parser/Pgen
-/Parser/pgen/                 @pablogsal
-/Parser/pegen/                @pablogsal
+# Parser
+/Parser/                      @pablogsal
 /Tools/peg_generator/         @pablogsal
+/Lib/test/test_peg_generator/ @pablogsal
 
 # SQLite 3
 **/*sqlite*                   @berkerpeksag

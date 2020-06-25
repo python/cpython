@@ -1133,7 +1133,7 @@ verify_identifier(struct tok_state *tok)
         Py_DECREF(s);
         // PyUnicode_FromFormatV() does not support %X
         char hex[9];
-        snprintf(hex, sizeof(hex), "%04X", ch);
+        (void)PyOS_snprintf(hex, sizeof(hex), "%04X", ch);
         if (Py_UNICODE_ISPRINTABLE(ch)) {
             syntaxerror(tok, "invalid character '%c' (U+%s)", ch, hex);
         }
