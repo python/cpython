@@ -109,6 +109,7 @@ __all__ = [
     'NoReturn',
     'overload',
     'runtime_checkable',
+    'sealed',
     'Text',
     'TYPE_CHECKING',
 ]
@@ -1560,6 +1561,42 @@ def final(f):
     There is no runtime checking of these properties.
     """
     return f
+
+
+def sealed(cls):
+    """A decorator to indicate sealed classes.
+
+    Use this decorator to indicate to type checkers that all subclasses of this
+    class must be defined in the current module. The type checker can then treat
+    the sealed base class as a union of all its known subclasses, allowing for
+    static exhaustiveness checks. For example:
+
+      @sealed
+      class Parent:
+          ...
+
+      class Child(Parent):
+          ...
+
+      class X(Child):
+          ...
+
+      class Y(Child):
+          ...
+
+      class Z(Parent):
+          ...
+
+    With this definition:
+
+    - Child can be treated as Union[X, Y]
+    - Parent can be treated as Union[X, Y, Z]
+
+    There is no runtime-checking of this property.
+    """
+    if not isinstance(cls, type):
+        raise TypeError("only classes can be @sealed")
+    return cls
 
 
 # Some unconstrained type variables.  These are used by the container types.

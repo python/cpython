@@ -23,6 +23,7 @@ from typing import NamedTuple, TypedDict
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
 from typing import Annotated, ForwardRef
+from typing import sealed
 import abc
 import typing
 import weakref
@@ -2301,6 +2302,17 @@ class FinalTests(BaseTestCase):
     def test_final_unmodified(self):
         def func(x): ...
         self.assertIs(func, final(func))
+
+    def test_sealed_unmodified(self):
+        class C: ...
+        self.assertIs(C, sealed(C))
+
+    def test_sealed_type(self):
+        def f(): ...
+        with self.assertRaises(TypeError):
+            sealed(f)
+        with self.assertRaises(TypeError):
+            sealed(42)
 
 
 class CastTests(BaseTestCase):
