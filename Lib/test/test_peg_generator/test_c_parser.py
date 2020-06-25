@@ -365,8 +365,8 @@ class TestCParser(TempdirManager, unittest.TestCase):
         start: expr+ NEWLINE? ENDMARKER
         expr: NAME
         """
-        test_source = """
-        for text in ("a b 42 b a", "名 名 42 名 名"):
+        test_source = r"""
+        for text in ("a b 42 b a", "\u540d \u540d 42 \u540d \u540d"):
             try:
                 parse.parse_string(text, mode=0)
             except SyntaxError as e:
