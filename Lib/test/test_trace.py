@@ -488,7 +488,8 @@ class TestCommandLine(unittest.TestCase):
         with open(TESTFN, 'w') as fd:
             self.addCleanup(unlink, TESTFN)
             fd.write("a = 1\n")
-            status, stdout, stderr = assert_python_ok('-m', 'trace', '-l', TESTFN)
+            status, stdout, stderr = assert_python_ok('-m', 'trace', '-l', TESTFN,
+                                                      PYTHONIOENCODING='utf-8')
             self.assertIn(b'functions called:', stdout)
 
     def test_sys_argv_list(self):
@@ -498,7 +499,8 @@ class TestCommandLine(unittest.TestCase):
             fd.write("print(type(sys.argv))\n")
 
         status, direct_stdout, stderr = assert_python_ok(TESTFN)
-        status, trace_stdout, stderr = assert_python_ok('-m', 'trace', '-l', TESTFN)
+        status, trace_stdout, stderr = assert_python_ok('-m', 'trace', '-l', TESTFN,
+                                                        PYTHONIOENCODING='utf-8')
         self.assertIn(direct_stdout.strip(), trace_stdout)
 
     def test_count_and_summary(self):
@@ -517,7 +519,8 @@ class TestCommandLine(unittest.TestCase):
                 for i in range(10):
                     f()
             """))
-        status, stdout, _ = assert_python_ok('-m', 'trace', '-cs', filename)
+        status, stdout, _ = assert_python_ok('-m', 'trace', '-cs', filename,
+                                             PYTHONIOENCODING='utf-8')
         stdout = stdout.decode()
         self.assertEqual(status, 0)
         self.assertIn('lines   cov%   module   (path)', stdout)
