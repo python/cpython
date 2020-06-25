@@ -4,7 +4,7 @@ Nick Mathewson
 """
 
 import unittest
-from test import support
+from test.support import os_helper
 
 import os
 import stat
@@ -174,10 +174,10 @@ class UUStdIOTest(unittest.TestCase):
 class UUFileTest(unittest.TestCase):
 
     def setUp(self):
-        self.tmpin  = support.TESTFN + "i"
-        self.tmpout = support.TESTFN + "o"
-        self.addCleanup(support.unlink, self.tmpin)
-        self.addCleanup(support.unlink, self.tmpout)
+        self.tmpin  = os_helper.TESTFN + "i"
+        self.tmpout = os_helper.TESTFN + "o"
+        self.addCleanup(os_helper.unlink, self.tmpin)
+        self.addCleanup(os_helper.unlink, self.tmpout)
 
     def test_encode(self):
         with open(self.tmpin, 'wb') as fin:
