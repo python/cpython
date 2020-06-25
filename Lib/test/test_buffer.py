@@ -16,7 +16,7 @@
 import contextlib
 import unittest
 from test import support
-from test.support import os_helper 
+from test.support import os_helper
 from itertools import permutations, product
 from random import randrange, sample, choice
 import warnings
