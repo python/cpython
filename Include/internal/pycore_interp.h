@@ -66,13 +66,13 @@ struct _Py_unicode_fs_codec {
 };
 
 struct _Py_bytes_state {
+    PyObject *empty_string;
     PyBytesObject *characters[256];
-    PyBytesObject *empty_string;
 };
 
 struct _Py_unicode_state {
     // The empty Unicode object is a singleton to improve performance.
-    PyObject *empty;
+    PyObject *empty_string;
     /* Single character Unicode strings in the Latin-1 range are being
        shared as well. */
     PyObject *latin1[256];
