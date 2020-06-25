@@ -1773,7 +1773,7 @@ are always available.  They are listed here in alphabetical order.
         ValueError: zip() argument 2 is longer than argument 1
 
      Without the ``strict=True`` argument, any bug that results in iterables of
-     different lengths will be silenced, possibly mainfesting as a hard-to-find
+     different lengths will be silenced, possibly manifesting as a hard-to-find
      bug in another part of the program.
 
    * Shorter iterables can be padded with a constant value to make all the
