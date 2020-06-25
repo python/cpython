@@ -543,6 +543,10 @@ that should take place.
 
    The data will be copied.
 
+.. data:: DEFAULT
+
+   Select the preferred action of the drag source.
+
 .. data:: LINK
 
    The data will be linked.

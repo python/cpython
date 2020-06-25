@@ -165,6 +165,7 @@ NSFILENAMESPBOARDTYPE_DROP = f'<<Drop:{NSFILENAMESPBOARDTYPE}>>'
 
 ASK = 'ask'
 COPY = 'copy'
+DEFAULT = 'default'
 LINK = 'link'
 MOVE = 'move'
 PRIVATE = 'private'
