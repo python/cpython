@@ -637,6 +637,12 @@ The following functions are used to create and modify Unicode exceptions from C.
    *object*, *length*, *start*, *end* and *reason*. *encoding* and *reason* are
    UTF-8 encoded strings.
 
+   .. deprecated:: 3.3
+
+      ``Py_UNICODE`` is deprecated since Python 3.3. This API will be removed
+      in Python 3.11. Please migrate to
+      ``PyObject_CallFunction(PyExc_UnicodeEncodeError, "sOnns", ...)``.
+
 .. c:function:: PyObject* PyUnicodeTranslateError_Create(const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
 
    Create a :class:`UnicodeTranslateError` object with the attributes *object*,
