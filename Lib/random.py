@@ -121,26 +121,6 @@ class Random(_random.Random):
         self.seed(x)
         self.gauss_next = None
 
-    def __init_subclass__(cls, /, **kwargs):
-        """Control how subclasses generate random integers.
-
-        The algorithm a subclass can use depends on the random() and/or
-        getrandbits() implementation available to it and determines
-        whether it can generate random integers from arbitrarily large
-        ranges.
-        """
-
-        for c in cls.__mro__:
-            if '_randbelow' in c.__dict__:
-                # just inherit it
-                break
-            if 'getrandbits' in c.__dict__:
-                cls._randbelow = cls._randbelow_with_getrandbits
-                break
-            if 'random' in c.__dict__:
-                cls._randbelow = cls._randbelow_without_getrandbits
-                break
-
     def seed(self, a=None, version=2):
         """Initialize internal state from a seed.
 
@@ -210,14 +190,11 @@ class Random(_random.Random):
                              "Random.setstate() of version %s" %
                              (version, self.VERSION))
 
-    ## ---- Methods below this point do not need to be overridden when
-    ## ---- subclassing for the purpose of using a different core generator.
 
-    ## -------------------- bytes methods ---------------------
+    ## -------------------------------------------------------
+    ## ---- Methods below this point do not need to be overridden or extended
+    ## ---- when subclassing for the purpose of using a different core generator.
 
-    def randbytes(self, n):
-        """Generate n random bytes."""
-        return self.getrandbits(n * 8).to_bytes(n, 'little')
 
     ## -------------------- pickle support  -------------------
 
@@ -232,6 +209,80 @@ class Random(_random.Random):
 
     def __reduce__(self):
         return self.__class__, (), self.getstate()
+
+
+    ## ---- internal support method for evenly distributed integers ----
+
+    def __init_subclass__(cls, /, **kwargs):
+        """Control how subclasses generate random integers.
+
+        The algorithm a subclass can use depends on the random() and/or
+        getrandbits() implementation available to it and determines
+        whether it can generate random integers from arbitrarily large
+        ranges.
+        """
+
+        for c in cls.__mro__:
+            if '_randbelow' in c.__dict__:
+                # just inherit it
+                break
+            if 'getrandbits' in c.__dict__:
+                cls._randbelow = cls._randbelow_with_getrandbits
+                break
+            if 'random' in c.__dict__:
+                cls._randbelow = cls._randbelow_without_getrandbits
+                break
+
+    def _randbelow_with_getrandbits(self, n):
+        "Return a random int in the range [0,n).  Returns 0 if n==0."
+
+        if not n:
+            return 0
+        getrandbits = self.getrandbits
+        k = n.bit_length()  # don't use (n-1) here because n can be 1
+        r = getrandbits(k)  # 0 <= r < 2**k
+        while r >= n:
+            r = getrandbits(k)
+        return r
+
+    def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
+        """Return a random int in the range [0,n).  Returns 0 if n==0.
+
+        The implementation does not use getrandbits, but only random.
+        """
+
+        random = self.random
+        if n >= maxsize:
+            _warn("Underlying random() generator does not supply \n"
+                "enough bits to choose from a population range this large.\n"
+                "To remove the range limitation, add a getrandbits() method.")
+            return _floor(random() * n)
+        if n == 0:
+            return 0
+        rem = maxsize % n
+        limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
+        r = random()
+        while r >= limit:
+            r = random()
+        return _floor(r * maxsize) % n
+
+    _randbelow = _randbelow_with_getrandbits
+
+
+    ## --------------------------------------------------------
+    ## ---- Methods below this point generate custom distributions
+    ## ---- based on the methods defined above.  They do not
+    ## ---- directly touch the underlying generator and only
+    ## ---- access randomness through the methods:  random(),
+    ## ---- getrandbits(), or _randbelow().
+
+
+    ## -------------------- bytes methods ---------------------
+
+    def randbytes(self, n):
+        """Generate n random bytes."""
+        return self.getrandbits(n * 8).to_bytes(n, 'little')
+
 
     ## -------------------- integer methods  -------------------
 
@@ -285,40 +336,6 @@ class Random(_random.Random):
 
         return self.randrange(a, b+1)
 
-    def _randbelow_with_getrandbits(self, n):
-        "Return a random int in the range [0,n).  Returns 0 if n==0."
-
-        if not n:
-            return 0
-        getrandbits = self.getrandbits
-        k = n.bit_length()  # don't use (n-1) here because n can be 1
-        r = getrandbits(k)  # 0 <= r < 2**k
-        while r >= n:
-            r = getrandbits(k)
-        return r
-
-    def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
-        """Return a random int in the range [0,n).  Returns 0 if n==0.
-
-        The implementation does not use getrandbits, but only random.
-        """
-
-        random = self.random
-        if n >= maxsize:
-            _warn("Underlying random() generator does not supply \n"
-                "enough bits to choose from a population range this large.\n"
-                "To remove the range limitation, add a getrandbits() method.")
-            return _floor(random() * n)
-        if n == 0:
-            return 0
-        rem = maxsize % n
-        limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
-        r = random()
-        while r >= limit:
-            r = random()
-        return _floor(r * maxsize) % n
-
-    _randbelow = _randbelow_with_getrandbits
 
     ## -------------------- sequence methods  -------------------
 
@@ -479,15 +496,12 @@ class Random(_random.Random):
         return [population[bisect(cum_weights, random() * total, 0, hi)]
                 for i in _repeat(None, k)]
 
-    ## -------------------- real-valued distributions  -------------------
 
-    ## -------------------- uniform distribution -------------------
+    ## -------------------- real-valued distributions  -------------------
 
     def uniform(self, a, b):
         "Get a random number in the range [a, b) or [a, b] depending on rounding."
         return a + (b - a) * self.random()
-
-    ## -------------------- triangular --------------------
 
     def triangular(self, low=0.0, high=1.0, mode=None):
         """Triangular distribution.
@@ -509,16 +523,12 @@ class Random(_random.Random):
             low, high = high, low
         return low + (high - low) * _sqrt(u * c)
 
-    ## -------------------- normal distribution --------------------
-
     def normalvariate(self, mu, sigma):
         """Normal distribution.
 
         mu is the mean, and sigma is the standard deviation.
 
         """
-        # mu = mean, sigma = standard deviation
-
         # Uses Kinderman and Monahan method. Reference: Kinderman,
         # A.J. and Monahan, J.F., "Computer generation of random
         # variables using the ratio of uniform deviates", ACM Trans
@@ -534,8 +544,6 @@ class Random(_random.Random):
                 break
         return mu + z * sigma
 
-    ## -------------------- lognormal distribution --------------------
-
     def lognormvariate(self, mu, sigma):
         """Log normal distribution.
 
@@ -545,8 +553,6 @@ class Random(_random.Random):
 
         """
         return _exp(self.normalvariate(mu, sigma))
-
-    ## -------------------- exponential distribution --------------------
 
     def expovariate(self, lambd):
         """Exponential distribution.
@@ -565,8 +571,6 @@ class Random(_random.Random):
         # possibility of taking the log of zero.
         return -_log(1.0 - self.random()) / lambd
 
-    ## -------------------- von Mises distribution --------------------
-
     def vonmisesvariate(self, mu, kappa):
         """Circular data distribution.
 
@@ -576,10 +580,6 @@ class Random(_random.Random):
         to a uniform random angle over the range 0 to 2*pi.
 
         """
-        # mu:    mean angle (in radians between 0 and 2*pi)
-        # kappa: concentration parameter kappa (>= 0)
-        # if kappa = 0 generate uniform random angle
-
         # Based upon an algorithm published in: Fisher, N.I.,
         # "Statistical Analysis of Circular Data", Cambridge
         # University Press, 1993.
@@ -613,8 +613,6 @@ class Random(_random.Random):
 
         return theta
 
-    ## -------------------- gamma distribution --------------------
-
     def gammavariate(self, alpha, beta):
         """Gamma distribution.  Not the gamma function!
 
@@ -627,7 +625,6 @@ class Random(_random.Random):
                       math.gamma(alpha) * beta ** alpha
 
         """
-
         # alpha > 0, beta > 0, mean is alpha*beta, variance is alpha*beta**2
 
         # Warning: a few older sources define the gamma distribution in terms
@@ -681,8 +678,6 @@ class Random(_random.Random):
                     break
             return x * beta
 
-    ## -------------------- Gauss (faster alternative) --------------------
-
     def gauss(self, mu, sigma):
         """Gaussian distribution.
 
@@ -692,7 +687,6 @@ class Random(_random.Random):
         Not thread-safe without a lock around calls.
 
         """
-
         # When x and y are two variables from [0, 1), uniformly
         # distributed, then
         #
@@ -722,20 +716,6 @@ class Random(_random.Random):
 
         return mu + z * sigma
 
-    ## -------------------- beta --------------------
-    ## See
-    ## http://mail.python.org/pipermail/python-bugs-list/2001-January/003752.html
-    ## for Ivan Frohne's insightful analysis of why the original implementation:
-    ##
-    ##    def betavariate(self, alpha, beta):
-    ##        # Discrete Event Simulation in C, pp 87-88.
-    ##
-    ##        y = self.expovariate(alpha)
-    ##        z = self.expovariate(1.0/beta)
-    ##        return z/(y+z)
-    ##
-    ## was dead wrong, and how it probably got that way.
-
     def betavariate(self, alpha, beta):
         """Beta distribution.
 
@@ -743,6 +723,18 @@ class Random(_random.Random):
         Returned values range between 0 and 1.
 
         """
+        ## See
+        ## http://mail.python.org/pipermail/python-bugs-list/2001-January/003752.html
+        ## for Ivan Frohne's insightful analysis of why the original implementation:
+        ##
+        ##    def betavariate(self, alpha, beta):
+        ##        # Discrete Event Simulation in C, pp 87-88.
+        ##
+        ##        y = self.expovariate(alpha)
+        ##        z = self.expovariate(1.0/beta)
+        ##        return z/(y+z)
+        ##
+        ## was dead wrong, and how it probably got that way.
 
         # This version due to Janne Sinkkonen, and matches all the std
         # texts (e.g., Knuth Vol 2 Ed 3 pg 134 "the beta distribution").
@@ -751,16 +743,12 @@ class Random(_random.Random):
             return y / (y + self.gammavariate(beta, 1.0))
         return 0.0
 
-    ## -------------------- Pareto --------------------
-
     def paretovariate(self, alpha):
         """Pareto distribution.  alpha is the shape parameter."""
         # Jain, pg. 495
 
         u = 1.0 - self.random()
         return 1.0 / u ** (1.0 / alpha)
-
-    ## -------------------- Weibull --------------------
 
     def weibullvariate(self, alpha, beta):
         """Weibull distribution.
@@ -774,7 +762,9 @@ class Random(_random.Random):
         return alpha * (-_log(u)) ** (1.0 / beta)
 
 
+## ------------------------------------------------------------------
 ## --------------- Operating System Random Source  ------------------
+
 
 class SystemRandom(Random):
     """Alternate random number generator using sources provided
@@ -782,6 +772,7 @@ class SystemRandom(Random):
     CryptGenRandom on Windows).
 
      Not available on all systems (see os.urandom() for details).
+
     """
 
     def random(self):
@@ -812,7 +803,41 @@ class SystemRandom(Random):
     getstate = setstate = _notimplemented
 
 
-## -------------------- test program --------------------
+# ----------------------------------------------------------------------
+# Create one instance, seeded from current time, and export its methods
+# as module-level functions.  The functions share state across all uses
+# (both in the user's code and in the Python libraries), but that's fine
+# for most programs and is easier for the casual user than making them
+# instantiate their own Random() instance.
+
+_inst = Random()
+seed = _inst.seed
+random = _inst.random
+uniform = _inst.uniform
+triangular = _inst.triangular
+randint = _inst.randint
+choice = _inst.choice
+randrange = _inst.randrange
+sample = _inst.sample
+shuffle = _inst.shuffle
+choices = _inst.choices
+normalvariate = _inst.normalvariate
+lognormvariate = _inst.lognormvariate
+expovariate = _inst.expovariate
+vonmisesvariate = _inst.vonmisesvariate
+gammavariate = _inst.gammavariate
+gauss = _inst.gauss
+betavariate = _inst.betavariate
+paretovariate = _inst.paretovariate
+weibullvariate = _inst.weibullvariate
+getstate = _inst.getstate
+setstate = _inst.setstate
+getrandbits = _inst.getrandbits
+randbytes = _inst.randbytes
+
+
+## ------------------------------------------------------
+## ----------------- test program -----------------------
 
 def _test_generator(n, func, args):
     from statistics import stdev, fmean as mean
@@ -849,36 +874,9 @@ def _test(N=2000):
     _test_generator(N, betavariate, (3.0, 3.0))
     _test_generator(N, triangular, (0.0, 1.0, 1.0 / 3.0))
 
-# Create one instance, seeded from current time, and export its methods
-# as module-level functions.  The functions share state across all uses
-# (both in the user's code and in the Python libraries), but that's fine
-# for most programs and is easier for the casual user than making them
-# instantiate their own Random() instance.
 
-_inst = Random()
-seed = _inst.seed
-random = _inst.random
-uniform = _inst.uniform
-triangular = _inst.triangular
-randint = _inst.randint
-choice = _inst.choice
-randrange = _inst.randrange
-sample = _inst.sample
-shuffle = _inst.shuffle
-choices = _inst.choices
-normalvariate = _inst.normalvariate
-lognormvariate = _inst.lognormvariate
-expovariate = _inst.expovariate
-vonmisesvariate = _inst.vonmisesvariate
-gammavariate = _inst.gammavariate
-gauss = _inst.gauss
-betavariate = _inst.betavariate
-paretovariate = _inst.paretovariate
-weibullvariate = _inst.weibullvariate
-getstate = _inst.getstate
-setstate = _inst.setstate
-getrandbits = _inst.getrandbits
-randbytes = _inst.randbytes
+## ------------------------------------------------------
+## ------------------ fork support  ---------------------
 
 if hasattr(_os, "fork"):
     _os.register_at_fork(after_in_child=_inst.seed)
