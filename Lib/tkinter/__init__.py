@@ -844,7 +844,7 @@ class Misc:
         have more elements than type-list.
         """
         self._check_dnd()
-        return self.tk.call(('tkdnd::platform_specific_types', types))
+        return self.tk.splitlist(self.tk.call(('tkdnd::platform_specific_types', types)))
 
     def platform_independent_types(self, types):
         """This command will accept a list of types that can contain platform
@@ -854,7 +854,7 @@ class Misc:
         have more elements than type-list.
         """
         self._check_dnd()
-        return self.tk.call(('tkdnd::platform_independent_types', types))
+        return self.tk.splitlist(self.tk.call(('tkdnd::platform_independent_types', types)))
 
     def get_drop_file_temp_directory(self):
         """This command will return the temporary directory used by TkDND for

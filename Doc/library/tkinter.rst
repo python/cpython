@@ -132,7 +132,7 @@ Other modules that provide Tk support include:
 
 :mod:`tkinter.dnd`
    Deprecated drag-and-drop support for :mod:`tkinter`
-   (see the :ref:`tkinter-tkdnd` section)
+   (see the :ref:`tkinter-tkdnd` section for details on the new bindings)
 
 :mod:`turtle`
    Turtle graphics in a Tk window.
@@ -311,15 +311,19 @@ TkDND Support
 -------------
 
 :mod:`tkinter` has support for a native, platform specific drag and drop
-mechanism, through `Tkdnd <https://github.com/petasis/tkdnd>`_, with the user
+mechanism, through `TkDND <https://github.com/petasis/tkdnd>`_, with the user
 able to register widgets as drag sources or drop targets.
 
-On Windows, TkDND is packaged with
-Tcl/Tk so should work "out-of-the-box" with a standard installation. On
-other platforms, it will need to be installed seperately.
+On Windows and MacOS, TkDND is packaged with Tcl/Tk so should work "out-of-the-box"
+with a standard installation. On other platforms, it will need to be installed
+separately.
 
 .. note:: As a result of this functionality, the :mod:`tkinter.dnd` module is
  now deprecated.
+
+.. warning:: These bindings were written for TkDND 2.9 and, at the time of
+ writing, many third-party distributers are still using 2.6 meaning some
+ functionality described here is not guaranteed.
 
 .. versionadded:: 3.10
 
@@ -331,7 +335,7 @@ Functions
    This command will load the TkDND library and is called when ``Tk`` class is
    instantiated. However, if the library is installed in a different
    directory, this method will need to be called manually to load the library.
-   If the TkDND library has been found, ``True`` wil be returned, otherwise
+   If the TkDND library has been found, ``True`` will be returned, otherwise
    ``False`` will be returned.
 
    If the TkDND library has already been successfully loaded, ``True`` will be
@@ -402,6 +406,9 @@ Functions
    each platform specific type in type-list will be substituted by one or more
    platform independent types. Thus, the returned list may have more elements
    than type-list.
+   
+   .. warning:: In many TkDND versions, there is a bug that causes this method
+    to raise a :class:`TclError`, so it should generally be avoided.
 
 .. function:: Misc.get_drop_file_temp_directory()
 
@@ -430,113 +437,96 @@ Unfortunately, each protocol defines its own, usually platform specific,
 types. TkDND, trying to maintain portability among different platforms, offers
 some predefined types for basic kinds of data, like text and filenames.
 
-Platform Independent Types
->>>>>>>>>>>>>>>>>>>>>>>>>>
+Generic data formats
+>>>>>>>>>>>>>>>>>>>>
 
-Currently, the following predefined cross-platform values are available:
+.. note:: Not all of the following types are cross-platform and are instead a
+    generic type that then defines support for more specific types
+
+Currently, the following predefined generic type-values are available:
 
 .. data:: DND_ALL
 
    All supported types for the platform.
 
-   .. warning:: ``DND_ALL`` can declare support for unexpected formats. For
-    example, it can declare special formats to receive text not declared by
-    ``DND_TEXT`` (such as RTF and HTML). While it appears to be able to receive
-    these types, support outside of the formats found as constants is not
-    guaranteed.
+   .. warning:: ``DND_ALL`` can declare support for unexpected formats and
+    support outside of the formats found as constants is not guaranteed.
 
-.. data:: DND_TEXT
+.. data:: DND_COLOR
 
-   This type can be used for transferring textual data. Internally, it is
-   translated to the following platform specific formats:
+   This type can be used for transferring colour data.
 
-   +----------+------------------------------+
-   | Platform | Type/s                       |
-   +==========+==============================+
-   | Windows  | .. data:: CF_UNICODETEXT     |
-   |          |           CF_TEXT            |
-   |          |           :noindex:          |
-   +----------+------------------------------+
-   | Unix     | .. data:: TEXT_PLAIN_UNICODE |
-   |          |           TEXT_PLAIN         |
-   |          |           :noindex:          |
-   +----------+------------------------------+
-   | Mac      | .. data:: NSSTRINGPBOARDTYPE |
-   |          |           :noindex:          |
-   +----------+------------------------------+
+.. data:: DND_COLOUR
+
+   Same as ``DND_COLOR``.
 
 .. data:: DND_FILES
 
-   This type can be used for transferring a list of filepaths/URLs.
-   Internally, it is translated to the following platform specific
-   formats:
+   This type can be used for transferring a list of filepaths. On some
+   platforms it also supports URLs, though on Windows this needs to be
+   specified using the separate ``DND_URL``.
 
-   +----------+---------------------------------+
-   | Platform | Type/s                          |
-   +==========+=================================+
-   | Windows  | .. data:: CF_HDROP              |
-   |          |           :noindex:             |
-   +----------+---------------------------------+
-   | Unix     | .. data:: URI_LIST              |
-   |          |           :noindex:             |
-   +----------+---------------------------------+
-   | Mac      | .. data:: NSFILENAMESPBOARDTYPE |
-   |          |           :noindex:             |
-   +----------+---------------------------------+
+.. data:: DND_HTML
 
-Platform Specific Types
->>>>>>>>>>>>>>>>>>>>>>>
+   This type can be used for transferring HTML textual data.
 
-Additionally to the platform independent types, TkDND supports the following
-platform specific types (though it is often better to use an independent type
-where possible):
+.. data:: DND_RTF
 
-**Windows:**
+   This type can be used for transferring RTF textual data.
+.. data:: DND_TEXT
 
-   .. data:: CF_UNICODETEXT
+   This type can be used for transferring textual data.
 
-      Text transfer encoded in Unicode.
+.. data:: DND_URL
 
-   .. data:: CF_TEXT
+   This type can be used for transferring URL textual data.
 
-      Text transfer with application dependent encoding. If the source has
-      specified an encoding it is used, else the system encoding is used for
-      the conversion.
+Specific data formats
+>>>>>>>>>>>>>>>>>>>>>
 
-   .. data:: CF_HDROP
+Internally, these types are translated to more specific types (as shown
+below):
 
-      Filepath/URL transfer encoded in UTF-8.
+.. note:: In almost all circumstances, the generic types should be used. The
+ specific types should be used when a particular internal behaviour is
+ required of the operating system.
 
-**Unix:**
-
-   .. data:: TEXT_PLAIN_UNICODE
-
-      Text transfer encoded in Unicode.
-
-   .. data:: TEXT_PLAIN
-
-      Text transfer with application dependent encoding. If the source has
-      specified an encoding it is used, else the system encoding is used for
-      the conversion.
-
-   .. data:: URI_LIST
-
-      Filepath/URL transfer encoded in ASCII.
-
-**Mac:**
-
-   .. data:: NSSTRINGPBOARDTYPE
-
-      Text transfer encoded using the system encoding.
-
-   .. data:: NSFILENAMESPBOARDTYPE
-
-      Filepath/URL transfer encoded using the system encoding.
-
-Finally, format types used for drop types can have wildcards, following the
-same rules as "string match". For example, registering a drop target with the
-type ``'*'`` (``DND_ALL``), will accept any drop, no matter what the drop
-format is.
++----------------------+----------+----------------------------------+
+| Generic type         | Platform | Specific type/s                  |
++======================+==========+==================================+
+| .. data:: DND_COLOR  | Unix     | .. data:: APPLICATION_X_COLOR    |
+|           DND_COLOUR |          |                                  |
+|           :noindex:  |          |                                  |
++----------------------+----------+----------------------------------+
+| .. data:: DND_FILES  | Windows  | .. data:: CF_HDROP               |
+|           :noindex:  +----------+----------------------------------+
+|                      | Unix     | .. data:: URI_LIST               |
+|                      +----------+----------------------------------+
+|                      | Mac      | .. data:: NSFILENAMESPBOARDTYPE  |
++----------------------+----------+----------------------------------+
+| .. data:: DND_HTML   | Windows  | .. data:: CF_HTML                |
+|           :noindex:  |          |           HTML_FORMAT            |
+|                      +----------+----------------------------------+
+|                      | Unix     | .. data:: TEXT_HTML              |
+|                      |          |           TEXT_HTML_UNICODE      |
+|                      +----------+----------------------------------+
+|                      | Mac      | .. data:: NSPASTEBOARDTYPEHTML   |
++----------------------+----------+----------------------------------+
+| .. data:: DND_RTF    | Windows  | .. data:: CF_RTF                 |
+|           :noindex:  |          |           CF_RTFTEXT             |
+|                      |          |           RICH_TEXT_FORMAT       |
++----------------------+----------+----------------------------------+
+| .. data:: DND_TEXT   | Windows  | .. data:: CF_TEXT                |
+|           :noindex:  |          |           CF_UNICODETEXT         |
+|                      +----------+----------------------------------+
+|                      | Unix     | .. data:: TEXT_PLAIN             |
+|                      |          |           TEXT_PLAIN_UNICODE     |
+|                      +----------+----------------------------------+
+|                      | Mac      | .. data:: NSSTRINGPBOARDTYPE     |
++----------------------+----------+----------------------------------+
+| .. data:: DND_URL    | Windows  | .. data:: UNIFORMRESOURCELOCATOR |
+|           :noindex:  |          |                                  |
++----------------------+----------+----------------------------------+
 
 Supported Actions
 >>>>>>>>>>>>>>>>>
@@ -546,7 +536,7 @@ that should take place.
 
 .. data:: ASK
 
-   A dialog will be displayed to the user, in order to select an action.
+   A dialog will be displayed to the user for them to select an action.
 
 .. data:: COPY
 
@@ -577,7 +567,7 @@ are expected to have bindings for some of these events. Some events are
 mandatory (in the sense that a drag or drop operation can be stopped if the
 bindings do not exist), while others are not.
 
-In the following two sections all virtual events defined by the TkDND package
+In the following two sections, all virtual events defined by the TkDND package
 are presented.
 
 .. note:: It is a good practice to define bindings for all events, so that the
@@ -590,7 +580,7 @@ are presented.
 Drop Target Events
 >>>>>>>>>>>>>>>>>>
 
-A widget registered as a drop target, can have bindings for the following
+A widget registered as a drop target can have bindings for the following
 virtual events:
 
 ``<<DropEnter>>``
@@ -602,14 +592,14 @@ virtual events:
    the drop action.
 
    .. note:: This event is not mandatory, but if it is defined, it has to
-    return an action (otherwise the drop is refused).
+    return an action (otherwise the drop could be refused).
 
 ``<<DropPosition>>``
 
    This event is triggered when the mouse moves inside the widget during a
    drop action (similar to the normal ``<Motion>`` event). The intention of
    this event is to let widget decide if it will accept the drop and the
-   action of the drop, if a drop is going to happen at the specific mouse
+   action of the drop if a drop is going to happen at the specific mouse
    coordinates.
 
    Thus, the script binding for such an event can get the mouse coordinates
@@ -617,7 +607,7 @@ virtual events:
    expected to return the drop action.
 
    .. note:: This event is not mandatory, but if it is defined, it has to
-    return an action (otherwise the drop is refused).
+    return an action (otherwise the drop could be refused).
 
 ``<<DropLeave>>``
 
@@ -626,7 +616,7 @@ virtual events:
    to restore the visual state of the widget to normal (i.e. the visual state
    the widget was in before the ``<<DropEnter>>`` event was triggered).
 
-   This event is not mandatory, and is not expected to return a value.
+   This event is not mandatory and is not expected to return a value.
 
 ``<<Drop>>``
 
@@ -636,7 +626,7 @@ virtual events:
    performed to the data.
 
    .. note:: This event is not mandatory, but if it is defined, it has to
-    return an action (otherwise the drop is refused).
+    return an action (otherwise the drop could be refused).
 
 ``*_DROP``
 
@@ -655,13 +645,13 @@ virtual events:
    performed to the data.
 
    .. note:: This event is not mandatory, but if it is defined, it has to
-    return an action (otherwise the drop is refused).
+    return an action (otherwise the drop could be refused).
 
 Drag Source Events
 >>>>>>>>>>>>>>>>>>
 
-A widget registered as a drag source, is expected to have bindings for the
-following virtual events:
+A widget registered as a drag source can have bindings for the following
+virtual events:
 
 ``<<DragInitCmd>>``
 
@@ -684,7 +674,7 @@ following virtual events:
    drop was successful or not). Its main purpose is to process the dropped
    data according to the drop action returned by the drop target.
 
-   This event is not mandatory, and is not expected to return a value.
+   This event is not mandatory and is not expected to return a value.
 
 Event Data
 >>>>>>>>>>
@@ -739,7 +729,7 @@ Event Data
     action, not the drop target. The drop target is expected to either accept
     the action selected by the drag source (and return it back), or select
     ``COPY``, ``DEFAULT``, or ``ASK``. So, under Unix examining the pressed
-    modifier keys fulfills only informative purposes.
+    modifier keys fulfils only informative purposes.
 
 .. data:: Event.mouse_buttons
 
@@ -808,8 +798,8 @@ Examples
 Specifying Drop Targets
 >>>>>>>>>>>>>>>>>>>>>>>
 
-Creating drop targets is easy: we have to only register a widget as a drop
-target with the list of format types it can accept, and add a few bindings.
+Creating drop targets is easy: we only have to register a widget as a drop
+target with the list of format types it can accept and add a few bindings.
 For example, a widget that accepts textual drops can be as follows: ::
 
     def dropenter(event):
