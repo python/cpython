@@ -15661,7 +15661,7 @@ static void
 unicode_release_interned(void)
 {
     Py_ssize_t pos = 0;
-    PyObject *key, *value;
+    PyObject *s, *ignored_value;
 
     if (interned == NULL || !PyDict_Check(interned)) {
         return;
@@ -15676,21 +15676,21 @@ unicode_release_interned(void)
 
     Py_ssize_t immortal_size = 0, mortal_size = 0;
 #endif
-    while (PyDict_Next(interned, &pos, &key, &value)) {
-        if (PyUnicode_READY(key) == -1) {
+    while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
+        if (PyUnicode_READY(s) == -1) {
             Py_UNREACHABLE();
         }
-        switch (PyUnicode_CHECK_INTERNED(key)) {
+        switch (PyUnicode_CHECK_INTERNED(s)) {
             case SSTATE_INTERNED_IMMORTAL:
-                Py_SET_REFCNT(key, Py_REFCNT(key) + 1);
+                Py_SET_REFCNT(s, Py_REFCNT(s) + 1);
 #ifdef INTERNED_STATS
-                immortal_size += PyUnicode_GET_LENGTH(key);
+                immortal_size += PyUnicode_GET_LENGTH(s);
 #endif
                 break;
             case SSTATE_INTERNED_MORTAL:
-                Py_SET_REFCNT(key, Py_REFCNT(key) + 2);
+                Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
 #ifdef INTERNED_STATS
-                mortal_size += PyUnicode_GET_LENGTH(key);
+                mortal_size += PyUnicode_GET_LENGTH(s);
 #endif
                 break;
             case SSTATE_NOT_INTERNED:
@@ -15698,7 +15698,7 @@ unicode_release_interned(void)
             default:
                 Py_UNREACHABLE();
         }
-        _PyUnicode_STATE(key).interned = SSTATE_NOT_INTERNED;
+        _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
     }
 #ifdef INTERNED_STATS
     fprintf(stderr,
