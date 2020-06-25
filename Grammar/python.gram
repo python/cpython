@@ -646,18 +646,18 @@ invalid_named_expression:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
 invalid_assignment:
-    | a=list ':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not list) can be annotated") }
-    | a=tuple ':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not tuple) can be annotated") }
-    | a=star_named_expression ',' star_named_expressions* ':' {
+    | a=list ':' expression { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not list) can be annotated") }
+    | a=tuple ':' expression { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not tuple) can be annotated") }
+    | a=star_named_expression ',' star_named_expressions* ':' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not tuple) can be annotated") }
-    | a=expression ':' expression ['=' annotated_rhs] {
+    | a=expression ':' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "illegal target for annotation") }
     | (star_targets '=')* a=star_expressions '=' {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
     | (star_targets '=')* a=yield_expr '=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "assignment to yield expression not possible") }
     | a=star_expressions augassign (yield_expr | star_expressions) {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION( 
-            a, 
+            a,
             "'%s' is an illegal expression for augmented assignment",
             _PyPegen_get_expr_name(a)
         )}
