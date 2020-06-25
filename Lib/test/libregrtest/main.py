@@ -597,6 +597,7 @@ class Regrtest:
             test_cwd = 'test_python_worker_{}'.format(pid)
         else:
             test_cwd = 'test_python_{}'.format(pid)
+        test_cwd += support.FS_NONASCII
         test_cwd = os.path.join(self.tmp_dir, test_cwd)
         return test_cwd
 

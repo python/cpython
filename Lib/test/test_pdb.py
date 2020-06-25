@@ -1198,6 +1198,7 @@ class PdbTestCase(unittest.TestCase):
                 stdout=subprocess.PIPE,
                 stdin=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
+                env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
         ) as proc:
             stdout, stderr = proc.communicate(str.encode(commands))
         stdout = stdout and bytes.decode(stdout)
@@ -1353,10 +1354,11 @@ def bœr():
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            env={**os.environ, 'PYTHONIOENCODING': 'utf-8'}
             )
         self.addCleanup(proc.stdout.close)
         stdout, stderr = proc.communicate(b'cont\n')
-        self.assertNotIn('Error', stdout.decode(),
+        self.assertNotIn(b'Error', stdout,
                          "Got an error running test script under PDB")
 
     def test_issue36250(self):
@@ -1382,10 +1384,11 @@ def bœr():
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
             )
         self.addCleanup(proc.stdout.close)
         stdout, stderr = proc.communicate(b'cont\ncont\n')
-        self.assertNotIn('Error', stdout.decode(),
+        self.assertNotIn(b'Error', stdout,
                          "Got an error running test script under PDB")
 
     def test_issue16180(self):
@@ -1425,8 +1428,8 @@ def bœr():
                 )
                 with proc:
                     stdout, stderr = proc.communicate(b'q\n')
-                    self.assertNotIn("NameError: name 'invalid' is not defined",
-                                  stdout.decode())
+                    self.assertNotIn(b"NameError: name 'invalid' is not defined",
+                                  stdout)
 
         finally:
             if save_home is not None:
