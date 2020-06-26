@@ -1788,11 +1788,53 @@ class TestMatch(unittest.TestCase):
         self.assertEqual(y, 1)
         self.assertEqual(z, {})
 
+    def test_patma_136(self) -> None:
+        x = {0: 1}
+        match x:
+            case {1: 0}:
+                y = 0
+            case {0: 0}:
+                y = 0
+            case {}:
+                y = 1
+        self.assertEqual(x, {0: 1})
+        self.assertEqual(y, 1)
 
-if __name__ == "__main__":  # XXX: For quick test debugging...
-    import dis
+    def test_patma_137(self) -> None:
+        x = {0: 1}
+        match x:
+            case {1: 0}:
+                y = 0
+            case {0: 0}:
+                y = 0
+            case {**z}:
+                y = 1
+        self.assertEqual(x, {0: 1})
+        self.assertEqual(y, 1)
+        self.assertEqual(z, {0: 1})
 
-    match_cases = [
-        MatchCase("([0, 1]) or {'XXX': (1 or (z := 2))} or (0, q, [[[{}]]])", "pass")
-    ]
-    dis.dis(TestAST.compile_match("", "x", match_cases, ""))
+    def test_patma_138(self) -> None:
+        x = {0: 1}
+        match x:
+            case {1: 0}:
+                y = 0
+            case {0: 0}:
+                y = 0
+            case {0: _, **z}:
+                y = 1
+        self.assertEqual(x, {0: 1})
+        self.assertEqual(y, 1)
+        self.assertEqual(z, {})
+
+    def run_perf(self):
+        # ./python -m pyperf timeit -s 'from test.test_patma import TestMatch; t = TestMatch()' 't.run_perf()'
+        attrs = vars(type(self)).items()
+        tests = [attr for name, attr in attrs if name.startswith("test_")]
+        assert_equal = self.assertEqual
+        try:
+            self.assertEqual = lambda *_: None
+            for _ in range(1 << 10):
+                for test in tests:
+                    test(self)
+        finally:
+            self.assertEqual = assert_equal
