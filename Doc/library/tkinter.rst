@@ -408,7 +408,7 @@ Functions
    than type-list.
 
    .. warning:: In many TkDND versions, there is a bug that causes this method
-    to raise a :class:`TclError`, so it should generally be avoided.
+    to raise a :class:`TclError`, so it should be used with caution.
 
 .. function:: Misc.get_drop_file_temp_directory()
 
