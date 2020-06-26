@@ -57,6 +57,7 @@ from functools import partial
 import itertools
 import sys
 import traceback
+import signal
 
 
 _threads_wakeups = weakref.WeakKeyDictionary()
@@ -314,10 +315,10 @@ class _ExecutorManagerThread(threading.Thread):
         while True:
             self.add_call_item_to_queue()
 
-            result_item, is_broken, cause = self.wait_result_broken_or_wakeup()
+            result_item, is_broken, cause, codes = self.wait_result_broken_or_wakeup()
 
             if is_broken:
-                self.terminate_broken(cause)
+                self.terminate_broken(cause, codes)
                 return
             if result_item is not None:
                 self.process_result_item(result_item)
@@ -389,10 +390,14 @@ class _ExecutorManagerThread(threading.Thread):
         elif wakeup_reader in ready:
             is_broken = False
 
+        failed = [p for p in self.processes.values() if p.sentinel in ready]
+        exitcodes = [p.exitcode for p in failed]
+        exitcodes = [signal.Signals(-c) if c < 0 else c for c in exitcodes]
+
         with self.shutdown_lock:
             self.thread_wakeup.clear()
 
-        return result_item, is_broken, cause
+        return result_item, is_broken, cause, exitcodes
 
     def process_result_item(self, result_item):
         # Process the received a result_item. This can be either the PID of a
@@ -427,7 +432,7 @@ class _ExecutorManagerThread(threading.Thread):
         return (_global_shutdown or executor is None
                 or executor._shutdown_thread)
 
-    def terminate_broken(self, cause):
+    def terminate_broken(self, cause, exitcodes):
         # Terminate the executor because it is in a broken state. The cause
         # argument can be used to display more information on the error that
         # lead the executor into becoming broken.
@@ -449,6 +454,10 @@ class _ExecutorManagerThread(threading.Thread):
         if cause is not None:
             bpe.__cause__ = _RemoteTraceback(
                 f"\n'''\n{''.join(cause)}'''")
+        elif exitcodes:
+            bpe.__cause__ = mp.ProcessError(
+                f"Processes exited with codes: {', '.join(map(str, exitcodes))}"
+            )
 
         # Mark pending tasks as failed.
         for work_id, work_item in self.pending_work_items.items():
