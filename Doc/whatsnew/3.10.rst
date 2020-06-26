@@ -49,7 +49,7 @@ This article explains the new features in Python 3.10, compared to 3.9.
 
 For full details, see the :ref:`changelog <changelog>`.
 
-.. note:: XXX TkDND is a new optional dependecy for Python 3.10.
+.. note:: XXX TkDND is a new optional dependency for Python 3.10.
 
 .. note::
 
