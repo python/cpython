@@ -1,0 +1,4 @@
+On Linux, skip tests using multiprocessing if the current user cannot create
+a file in ``/dev/shm/`` directory. Add the
+:func:`~test.support.skip_if_broken_multiprocessing_synchronize` function to
+the :mod:`test.support` module.

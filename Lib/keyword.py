@@ -13,7 +13,7 @@ the python source tree and run:
 Alternatively, you can run 'make regen-keyword'.
 """
 
-__all__ = ["iskeyword", "kwlist"]
+__all__ = ["iskeyword", "issoftkeyword", "kwlist", "softkwlist"]
 
 kwlist = [
     'False',
@@ -53,4 +53,9 @@ kwlist = [
     'yield'
 ]
 
+softkwlist = [
+
+]
+
 iskeyword = frozenset(kwlist).__contains__
+issoftkeyword = frozenset(softkwlist).__contains__

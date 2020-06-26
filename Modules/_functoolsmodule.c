@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_tupleobject.h"
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
 
 /* _functools module written and maintained

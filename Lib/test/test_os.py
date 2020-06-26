@@ -1174,7 +1174,7 @@ class WalkTests(unittest.TestCase):
         os.makedirs(t2_path)
 
         for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path, tmp5_path:
-            with open(path, "x") as f:
+            with open(path, "x", encoding='utf-8') as f:
                 f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
 
         if support.can_symlink():
@@ -2360,7 +2360,7 @@ class Win32ListdirTests(unittest.TestCase):
             file_name = 'FILE%d' % i
             file_path = os.path.join(support.TESTFN, file_name)
             os.makedirs(dir_path)
-            with open(file_path, 'w') as f:
+            with open(file_path, 'w', encoding='utf-8') as f:
                 f.write("I'm %s and proud of it. Blame test_os.\n" % file_path)
             self.created_paths.extend([dir_name, file_name])
         self.created_paths.sort()
@@ -3738,7 +3738,7 @@ class PathTConverterTests(unittest.TestCase):
         if os.name == 'nt':
             bytes_fspath = bytes_filename = None
         else:
-            bytes_filename = support.TESTFN.encode('ascii')
+            bytes_filename = os.fsencode(support.TESTFN)
             bytes_fspath = FakePath(bytes_filename)
         fd = os.open(FakePath(str_filename), os.O_WRONLY|os.O_CREAT)
         self.addCleanup(support.unlink, support.TESTFN)

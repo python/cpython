@@ -133,10 +133,6 @@
     </None>
     <None Include="..\Grammar\Tokens">
     </None>
-    <None Include="..\Include\graminit.h">
-    </None>
-    <None Include="..\Python\graminit.c">
-    </None>
     <None Include="..\Include\token.h">
     </None>
     <None Include="..\Include\opcode.h">
@@ -202,18 +198,12 @@
     </Copy>
     <Warning Text="Keywords updated. You will need to rebuild pythoncore to see the changes." Condition="'@(_Updated)' != ''" />
   </Target>
-  <Target Name="_RegenSymbols" AfterTargets="_RegenKeywords">
-    <!-- Regenerate Lib/symbol.py from Include/graminit.h using Tools/scripts/generate_symbol_py.py-->
-    <Exec Command="&quot;$(PythonExe)&quot; $(PySourcePath)Tools\scripts\generate_symbol_py.py &quot;$(PySourcePath)Include\graminit.h&quot;  &quot;$(PySourcePath)Lib\symbol.py&quot;" />
-  </Target>
   <Target Name="_CleanFiles" BeforeTargets="CoreClean">
     <ItemGroup>
       <Clean Include="$(IntDir)keyword.py" />
       <Clean Include="$(IntDir)opcode.h" />
       <Clean Include="$(IntDir)Python-ast.c" />
       <Clean Include="$(IntDir)Python-ast.h" />
-      <Clean Include="$(IntDir)graminit.h.new" />
-      <Clean Include="$(IntDir)graminit.c.new" />
     </ItemGroup>
   </Target>
 </Project>

@@ -375,29 +375,70 @@ pymain_run_file(const PyConfig *config, PyCompilerFlags *cf)
 static int
 pymain_run_startup(PyConfig *config, PyCompilerFlags *cf, int *exitcode)
 {
+    int ret;
+    PyObject *startup_obj = NULL;
+    if (!config->use_environment) {
+        return 0;
+    }
+#ifdef MS_WINDOWS
+    const wchar_t *wstartup = _wgetenv(L"PYTHONSTARTUP");
+    if (wstartup == NULL || wstartup[0] == L'\0') {
+        return 0;
+    }
+    PyObject *startup_bytes = NULL;
+    startup_obj = PyUnicode_FromWideChar(wstartup, wcslen(wstartup));
+    if (startup_obj == NULL) {
+        goto error;
+    }
+    startup_bytes = PyUnicode_EncodeFSDefault(startup_obj);
+    if (startup_bytes == NULL) {
+        goto error;
+    }
+    const char *startup = PyBytes_AS_STRING(startup_bytes);
+#else
     const char *startup = _Py_GetEnv(config->use_environment, "PYTHONSTARTUP");
     if (startup == NULL) {
         return 0;
     }
-    if (PySys_Audit("cpython.run_startup", "s", startup) < 0) {
-        return pymain_err_print(exitcode);
+    startup_obj = PyUnicode_DecodeFSDefault(startup);
+    if (startup_obj == NULL) {
+        goto error;
+    }
+#endif
+    if (PySys_Audit("cpython.run_startup", "O", startup_obj) < 0) {
+        goto error;
     }
 
+#ifdef MS_WINDOWS
+    FILE *fp = _Py_wfopen(wstartup, L"r");
+#else
     FILE *fp = _Py_fopen(startup, "r");
+#endif
     if (fp == NULL) {
         int save_errno = errno;
+        PyErr_Clear();
         PySys_WriteStderr("Could not open PYTHONSTARTUP\n");
 
         errno = save_errno;
-        PyErr_SetFromErrnoWithFilename(PyExc_OSError, startup);
-
-        return pymain_err_print(exitcode);
+        PyErr_SetFromErrnoWithFilenameObjects(PyExc_OSError, startup_obj, NULL);
+        goto error;
     }
 
     (void) PyRun_SimpleFileExFlags(fp, startup, 0, cf);
     PyErr_Clear();
     fclose(fp);
-    return 0;
+    ret = 0;
+
+done:
+#ifdef MS_WINDOWS
+    Py_XDECREF(startup_bytes);
+#endif
+    Py_XDECREF(startup_obj);
+    return ret;
+
+error:
+    ret = pymain_err_print(exitcode);
+    goto done;
 }
 
 

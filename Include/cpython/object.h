@@ -9,10 +9,6 @@ PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
 PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
 #endif
 
-/* Update the Python traceback of an object. This function must be called
-   when a memory block is reused from a free list. */
-PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
-
 #ifdef Py_REF_DEBUG
 PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 #endif

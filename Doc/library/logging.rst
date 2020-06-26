@@ -529,7 +529,8 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
 :ref:`logrecord-attributes`.
 
 
-.. class:: Formatter(fmt=None, datefmt=None, style='%', validate=True)
+.. class:: Formatter(fmt=None, datefmt=None, style='%', validate=True, *,
+   defaults=None)
 
    Returns a new instance of the :class:`Formatter` class.  The instance is
    initialized with a format string for the message as a whole, as well as a
@@ -545,6 +546,10 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
    :ref:`formatting-styles` for more information on using {- and $-formatting
    for log messages.
 
+   The *defaults* parameter can be a dictionary with default values to use in
+   custom fields. For example:
+   ``logging.Formatter('%(ip)s %(message)s', defaults={"ip": None})``
+
    .. versionchanged:: 3.2
       The *style* parameter was added.
 
@@ -552,6 +557,9 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
       The *validate* parameter was added. Incorrect or mismatched style and fmt
       will raise a ``ValueError``.
       For example: ``logging.Formatter('%(asctime)s - %(message)s', style='{')``.
+
+   .. versionchanged:: 3.10
+      The *defaults* parameter was added.
 
    .. method:: format(record)
 

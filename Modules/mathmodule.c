@@ -53,6 +53,7 @@ raised for division by zero and mod by zero.
  */
 
 #include "Python.h"
+#include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_dtoa.h"
 #include "_math.h"
 
@@ -1255,9 +1256,15 @@ static PyObject *
 math_floor(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=c6a65c4884884b8a input=63af6b5d7ebcc3d6]*/
 {
+    double x;
+
     _Py_IDENTIFIER(__floor__);
 
-    if (!PyFloat_CheckExact(number)) {
+    if (PyFloat_CheckExact(number)) {
+        x = PyFloat_AS_DOUBLE(number);
+    }
+    else
+    {
         PyObject *method = _PyObject_LookupSpecial(number, &PyId___floor__);
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArg(method);
@@ -1266,11 +1273,10 @@ math_floor(PyObject *module, PyObject *number)
         }
         if (PyErr_Occurred())
             return NULL;
+        x = PyFloat_AsDouble(number);
+        if (x == -1.0 && PyErr_Occurred())
+            return NULL;
     }
-    double x = PyFloat_AsDouble(number);
-    if (x == -1.0 && PyErr_Occurred())
-        return NULL;
-
     return PyLong_FromDouble(floor(x));
 }
 

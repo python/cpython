@@ -178,3 +178,12 @@ def _filterwarnings(filters, quiet=False):
     if missing:
         raise AssertionError("filter (%r, %s) did not catch any warning" %
                              missing[0])
+
+
+@contextlib.contextmanager
+def save_restore_warnings_filters():
+    old_filters = warnings.filters[:]
+    try:
+        yield
+    finally:
+        warnings.filters[:] = old_filters
