@@ -1451,7 +1451,7 @@ class TestTemporaryDirectory(BaseTestCase):
 
             # Check for the resource warning
             with warnings_helper.check_warnings(('Implicitly',
-                                                ResourceWarning),
+                                                 ResourceWarning),
                                                 quiet=False):
                 warnings.filterwarnings("always", category=ResourceWarning)
                 del d
