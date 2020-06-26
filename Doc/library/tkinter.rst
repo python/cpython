@@ -563,6 +563,16 @@ that should take place.
 
    A drop cannot occur.
 
+TkDND Version
+>>>>>>>>>>>>>
+
+.. data:: TkdndVersion
+
+   This variable contains the TkDND version loaded as a float (like
+   ``TclVersion`` and ``TkVersion``), but only once TkDND has been successfully
+   loaded. Before TkDND has been loaded (while ``dnd_loaded()`` returns
+   ``False``), its value is ``None``.
+
 Events
 ^^^^^^
 

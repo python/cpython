@@ -44,6 +44,7 @@ wantobjects = 1
 
 TkVersion = float(_tkinter.TK_VERSION)
 TclVersion = float(_tkinter.TCL_VERSION)
+TkdndVersion = None
 
 READABLE = _tkinter.READABLE
 WRITABLE = _tkinter.WRITABLE
@@ -2450,6 +2451,7 @@ class Tk(Misc, Wm):
         self.load_dnd()
 
     def load_dnd(self, dnd_path=None):
+        global TkdndVersion
         """This command will load the TkDND library and is called when Tk class
         is instantiated. However, if the library is installed in a different
         directory, this method will need to be called manually to load the
@@ -2467,7 +2469,7 @@ class Tk(Misc, Wm):
             # An absolute path must always be used
             self.tk.call(('lappend', 'auto_path', os.path.abspath(dnd_path)))
         try:
-            self.tk.call(('package', 'require', 'tkdnd'))
+            TkdndVersion = float(self.tk.call(('package', 'require', 'tkdnd')))
         except TclError:
             sup = False
         else:
