@@ -213,14 +213,13 @@ Removed
 * Removed macros manipulating ``Py_UNICODE*`` strings.
   (Contributed by Inada Naoki in :issue:`41123`.)
 
-   * :c:macro:`Py_UNICODE_strlen`: use :c:func:`PyUnicode_GetLength` or
+   * ``Py_UNICODE_strlen``: use :c:func:`PyUnicode_GetLength` or
      :c:macro:`PyUnicode_GET_LENGTH`
-   * :c:macro:`Py_UNICODE_strcat`: use :c:func:`PyUnicode_CopyCharacters` or
+   * ``Py_UNICODE_strcat``: use :c:func:`PyUnicode_CopyCharacters` or
      :c:func:`PyUnicode_FromFormat`
-   * :c:macro:`Py_UNICODE_strcpy`, :c:macro:`Py_UNICODE_strncpy`,
-     :c:macro:`Py_UNICODE_COPY`: use :c:func:`PyUnicode_CopyCharacters` or
-     :c:func:`PyUnicode_Substring`
-   * :c:macro:`Py_UNICODE_strcmp`: use :c:func:`PyUnicode_Compare`
-   * :c:macro:`Py_UNICODE_strncmp`: use :c:func:`PyUnicode_Tailmatch`
-   * :c:macro:`Py_UNICODE_strchr`, :c:macro:`Py_UNICODE_strrchr`: use
+   * ``Py_UNICODE_strcpy``, ``Py_UNICODE_strncpy``: use
+     :c:func:`PyUnicode_CopyCharacters` or :c:func:`PyUnicode_Substring`
+   * ``Py_UNICODE_strcmp``: use :c:func:`PyUnicode_Compare`
+   * ``Py_UNICODE_strncmp``: use :c:func:`PyUnicode_Tailmatch`
+   * ``Py_UNICODE_strchr``, ``Py_UNICODE_strrchr``: use
      :c:func:`PyUnicode_FindChar`
