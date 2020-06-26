@@ -434,7 +434,7 @@ class Regrtest:
 
             # Unload the newly imported modules (best effort finalization)
             for module in sys.modules.keys():
-                if module not in save_modules and module.startswith("test."):
+                if module not in save_modules:
                     support.unload(module)
 
             if self.ns.failfast and is_failed(result, self.ns):
