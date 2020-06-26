@@ -210,7 +210,7 @@ Removed
   :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release`.
   (Contributed by Inada Naoki in :issue:`41103`.)
 
-* Removed macros manipulating ``Py_UNICODE*`` strings.
+* Removed ``Py_UNICODE_str*`` functions manipulating ``Py_UNICODE*`` strings.
   (Contributed by Inada Naoki in :issue:`41123`.)
 
    * ``Py_UNICODE_strlen``: use :c:func:`PyUnicode_GetLength` or
