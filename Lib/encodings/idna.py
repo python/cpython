@@ -162,9 +162,11 @@ class Codec(codecs.Codec):
             labels = result.split(b'.')
             for label in labels[:-1]:
                 if not (0 < len(label) < 64):
-                    raise UnicodeEncodeError("ascii", str(label), 0, len(label), "label empty or too long")
+                    raise UnicodeEncodeError("ascii", label.decode('ascii'), 0, len(label.decode('ascii')),
+                                             "label empty or too long")
             if len(labels[-1]) >= 64:
-                raise UnicodeEncodeError("ascii", str(labels[-1]), 0, len(labels[-1]), "label too long")
+                raise UnicodeEncodeError("ascii", labels[-1].decode('ascii'), 0, len(labels[-1].decode('ascii')),
+                                         "label too long")
             return result, len(input)
 
         result = bytearray()
