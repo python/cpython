@@ -70,7 +70,7 @@ def ToASCII(label):
         # Skip to step 8.
         if 0 < len(label) < 64:
             return label
-        raise UnicodeEncodeError("ascii", label, 0, len(label), "label empty or too long")
+        raise UnicodeEncodeError("ascii", str(label), 0, len(label), "label empty or too long")
 
     # Step 2: nameprep
     label = nameprep(label)
@@ -85,11 +85,11 @@ def ToASCII(label):
         # Skip to step 8.
         if 0 < len(label) < 64:
             return label
-        raise UnicodeEncodeError("ascii", label, 0, len(label), "label empty or too long")
+        raise UnicodeEncodeError("ascii", str(label), 0, len(label), "label empty or too long")
 
     # Step 5: Check ACE prefix
     if label.startswith(sace_prefix):
-        raise UnicodeEncodeError("ascii", label, 0, len(label), "Label starts with ACE prefix")
+        raise UnicodeEncodeError("ascii", str(label), 0, len(label), "Label starts with ACE prefix")
 
     # Step 6: Encode with PUNYCODE
     label = label.encode("punycode")
@@ -100,7 +100,7 @@ def ToASCII(label):
     # Step 8: Check size
     if 0 < len(label) < 64:
         return label
-    raise UnicodeEncodeError("punycode", label, 0, len(label), "label empty or too long")
+    raise UnicodeEncodeError("punycode", str(label), 0, len(label), "label empty or too long")
 
 def ToUnicode(label):
     # Step 1: Check for ASCII
@@ -162,9 +162,9 @@ class Codec(codecs.Codec):
             labels = result.split(b'.')
             for label in labels[:-1]:
                 if not (0 < len(label) < 64):
-                    raise UnicodeEncodeError("ascii", label, 0, len(label), "label empty or too long")
+                    raise UnicodeEncodeError("ascii", str(label), 0, len(label), "label empty or too long")
             if len(labels[-1]) >= 64:
-                raise UnicodeEncodeError("ascii", labels[-1], 0, len(labels[-1]), "label too long")
+                raise UnicodeEncodeError("ascii", str(labels[-1]), 0, len(labels[-1]), "label too long")
             return result, len(input)
 
         result = bytearray()
