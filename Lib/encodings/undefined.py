@@ -1,6 +1,6 @@
 """ Python 'undefined' Codec
 
-    This codec will always raise a ValueError exception when being
+    This codec will always raise a UnicodeEncodeError | UnicodeDecodeError exception when being
     used. It is intended for use by the site.py file to switch off
     automatic string to Unicode coercion.
 
@@ -16,18 +16,18 @@ import codecs
 class Codec(codecs.Codec):
 
     def encode(self,input,errors='strict'):
-        raise UnicodeError("undefined encoding")
+        raise UnicodeEncodeError("undefined", str(input), 0, len(input), "undefined encoding")
 
     def decode(self,input,errors='strict'):
-        raise UnicodeError("undefined encoding")
+        raise UnicodeDecodeError("undefined", bytes(input), 0, len(input), "undefined decoding")
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
-        raise UnicodeError("undefined encoding")
+        raise UnicodeEncodeError("undefined", str(input), 0, len(input), "undefined encoding")
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
-        raise UnicodeError("undefined encoding")
+        raise UnicodeDecodeError("undefined", bytes(input), 0, len(input), "undefined decoding")
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass

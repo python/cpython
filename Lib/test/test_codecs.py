@@ -1334,13 +1334,13 @@ class PunycodeTest(unittest.TestCase):
 
     def test_decode_invalid(self):
         testcases = [
-            (b"xn--w&", "strict", UnicodeError()),
+            (b"xn--w&", "strict", UnicodeDecodeError("punycode", b"xn--w&", 0, 0, "")),
             (b"xn--w&", "ignore", "xn-"),
         ]
         for puny, errors, expected in testcases:
             with self.subTest(puny=puny, errors=errors):
                 if isinstance(expected, Exception):
-                    self.assertRaises(UnicodeError, puny.decode, "punycode", errors)
+                    self.assertRaises(UnicodeDecodeError, puny.decode, "punycode", errors)
                 else:
                     self.assertEqual(puny.decode("punycode", errors), expected)
 

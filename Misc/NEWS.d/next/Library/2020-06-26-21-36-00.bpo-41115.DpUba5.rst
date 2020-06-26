@@ -1,0 +1,2 @@
+Modified source to raise Unicode{Decode, Encode} Error rather than bare
+UnicodeError Patch By Utkarsh Pandey

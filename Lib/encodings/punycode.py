@@ -134,7 +134,8 @@ def decode_generalized_number(extended, extpos, bias, errors):
             char = ord(extended[extpos])
         except IndexError:
             if errors == "strict":
-                raise UnicodeError("incomplete punicode string")
+                raise UnicodeDecodeError("punycode", bytes(extended[extpos], "utf-8"), extpos, extpos+1,
+                                       "incomplete punycode string")
             return extpos + 1, None
         extpos += 1
         if 0x41 <= char <= 0x5A: # A-Z
@@ -142,8 +143,8 @@ def decode_generalized_number(extended, extpos, bias, errors):
         elif 0x30 <= char <= 0x39:
             digit = char - 22 # 0x30-26
         elif errors == "strict":
-            raise UnicodeError("Invalid extended code point '%s'"
-                               % extended[extpos-1])
+            raise UnicodeDecodeError("punycode", bytes(extended[extpos-1], "utf-8"), extpos-1, extpos,
+                                     "Invalid extended code point '%s'" % extended[extpos-1])
         else:
             return extpos, None
         t = T(j, bias)
@@ -171,7 +172,7 @@ def insertion_sort(base, extended, errors):
         char += pos // (len(base) + 1)
         if char > 0x10FFFF:
             if errors == "strict":
-                raise UnicodeError("Invalid character U+%x" % char)
+                raise UnicodeDecodeError("punycode", bytes(char, "utf-8"), 0, len(char), "Invalid character U+%x" % char)
             char = ord('?')
         pos = pos % (len(base) + 1)
         base = base[:pos] + chr(char) + base[pos:]
