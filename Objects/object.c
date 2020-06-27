@@ -66,8 +66,7 @@ _Py_GetRefTotal(void)
 void
 _PyDebug_PrintTotalRefs(void) {
     fprintf(stderr,
-            "[%" PY_FORMAT_SIZE_T "d refs, "
-            "%" PY_FORMAT_SIZE_T "d blocks]\n",
+            "[%zd refs, %zd blocks]\n",
             _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
 }
 #endif /* Py_REF_DEBUG */
@@ -140,23 +139,23 @@ Py_DecRef(PyObject *o)
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
 {
-    /* Any changes should be reflected in PyObject_INIT() macro */
     if (op == NULL) {
         return PyErr_NoMemory();
     }
 
-    return PyObject_INIT(op, tp);
+    _PyObject_Init(op, tp);
+    return op;
 }
 
 PyVarObject *
 PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
 {
-    /* Any changes should be reflected in PyObject_INIT_VAR() macro */
     if (op == NULL) {
         return (PyVarObject *) PyErr_NoMemory();
     }
 
-    return PyObject_INIT_VAR(op, tp, size);
+    _PyObject_InitVar(op, tp, size);
+    return op;
 }
 
 PyObject *
@@ -166,7 +165,7 @@ _PyObject_New(PyTypeObject *tp)
     if (op == NULL) {
         return PyErr_NoMemory();
     }
-    PyObject_INIT(op, tp);
+    _PyObject_Init(op, tp);
     return op;
 }
 
@@ -176,9 +175,11 @@ _PyObject_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
     PyVarObject *op;
     const size_t size = _PyObject_VAR_SIZE(tp, nitems);
     op = (PyVarObject *) PyObject_MALLOC(size);
-    if (op == NULL)
+    if (op == NULL) {
         return (PyVarObject *)PyErr_NoMemory();
-    return PyObject_INIT_VAR(op, tp, nitems);
+    }
+    _PyObject_InitVar(op, tp, nitems);
+    return op;
 }
 
 void
@@ -1876,9 +1877,10 @@ _Py_PrintReferences(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining objects:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", (void *)op, Py_REFCNT(op));
-        if (PyObject_Print(op, fp, 0) != 0)
+        fprintf(fp, "%p [%zd] ", (void *)op, Py_REFCNT(op));
+        if (PyObject_Print(op, fp, 0) != 0) {
             PyErr_Clear();
+        }
         putc('\n', fp);
     }
 }
@@ -1892,7 +1894,7 @@ _Py_PrintReferenceAddresses(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining object addresses:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", (void *)op,
+        fprintf(fp, "%p [%zd] %s\n", (void *)op,
             Py_REFCNT(op), Py_TYPE(op)->tp_name);
 }
 
@@ -2029,8 +2031,8 @@ finally:
 void
 _PyTrash_deposit_object(PyObject *op)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    struct _gc_runtime_state *gcstate = &tstate->interp->gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _gc_runtime_state *gcstate = &interp->gc;
 
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
@@ -2057,8 +2059,8 @@ _PyTrash_thread_deposit_object(PyObject *op)
 void
 _PyTrash_destroy_chain(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    struct _gc_runtime_state *gcstate = &tstate->interp->gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _gc_runtime_state *gcstate = &interp->gc;
 
     while (gcstate->trash_delete_later) {
         PyObject *op = gcstate->trash_delete_later;

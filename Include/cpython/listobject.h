@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct {
     PyObject_VAR_HEAD
     /* Vector of pointers to list elements.  list[0] is ob_item[0], etc. */
@@ -36,8 +32,3 @@ PyAPI_FUNC(void) _PyList_DebugMallocStats(FILE *out);
 #define PyList_GET_ITEM(op, i) (_PyList_CAST(op)->ob_item[i])
 #define PyList_SET_ITEM(op, i, v) (_PyList_CAST(op)->ob_item[i] = (v))
 #define PyList_GET_SIZE(op)    Py_SIZE(_PyList_CAST(op))
-#define _PyList_ITEMS(op)      (_PyList_CAST(op)->ob_item)
-
-#ifdef __cplusplus
-}
-#endif

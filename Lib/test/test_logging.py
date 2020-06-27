@@ -43,6 +43,7 @@ import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
 from test.support import socket_helper
+from test.support import threading_helper
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
@@ -79,7 +80,7 @@ class BaseTest(unittest.TestCase):
     def setUp(self):
         """Setup the default logging stream to an internal StringIO instance,
         so that we can examine log output as we want."""
-        self._threading_key = support.threading_setup()
+        self._threading_key = threading_helper.threading_setup()
 
         logger_dict = logging.getLogger().manager.loggerDict
         logging._acquireLock()
@@ -150,7 +151,7 @@ class BaseTest(unittest.TestCase):
             logging._releaseLock()
 
         self.doCleanups()
-        support.threading_cleanup(*self._threading_key)
+        threading_helper.threading_cleanup(*self._threading_key)
 
     def assert_log_lines(self, expected_values, stream=None, pat=None):
         """Match the collected log lines against the regular expression
@@ -865,7 +866,7 @@ class TestSMTPServer(smtpd.SMTPServer):
         Wait for the server thread to terminate.
         """
         self.close()
-        support.join_thread(self._thread)
+        threading_helper.join_thread(self._thread)
         self._thread = None
         asyncore.close_all(map=self._map, ignore_all=True)
 
@@ -915,7 +916,7 @@ class ControlMixin(object):
         """
         self.shutdown()
         if self._thread is not None:
-            support.join_thread(self._thread)
+            threading_helper.join_thread(self._thread)
             self._thread = None
         self.server_close()
         self.ready.clear()
@@ -3212,7 +3213,7 @@ class ConfigDictTest(BaseTest):
         finally:
             t.ready.wait(2.0)
             logging.config.stopListening()
-            support.join_thread(t)
+            threading_helper.join_thread(t)
 
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
@@ -3629,9 +3630,9 @@ if hasattr(logging.handlers, 'QueueListener'):
 
         @patch.object(logging.handlers.QueueListener, 'handle')
         def test_handle_called_with_mp_queue(self, mock_handle):
-            # Issue 28668: The multiprocessing (mp) module is not functional
+            # bpo-28668: The multiprocessing (mp) module is not functional
             # when the mp.synchronize module cannot be imported.
-            support.import_module('multiprocessing.synchronize')
+            support.skip_if_broken_multiprocessing_synchronize()
             for i in range(self.repeat):
                 log_queue = multiprocessing.Queue()
                 self.setup_and_log(log_queue, '%s_%s' % (self.id(), i))
@@ -3655,9 +3656,9 @@ if hasattr(logging.handlers, 'QueueListener'):
             indicates that messages were not registered on the queue until
             _after_ the QueueListener stopped.
             """
-            # Issue 28668: The multiprocessing (mp) module is not functional
+            # bpo-28668: The multiprocessing (mp) module is not functional
             # when the mp.synchronize module cannot be imported.
-            support.import_module('multiprocessing.synchronize')
+            support.skip_if_broken_multiprocessing_synchronize()
             for i in range(self.repeat):
                 queue = multiprocessing.Queue()
                 self.setup_and_log(queue, '%s_%s' %(self.id(), i))
@@ -3709,6 +3710,9 @@ class FormatterTest(unittest.TestCase):
             'args': (2, 'placeholders'),
         }
         self.variants = {
+            'custom': {
+                'custom': 1234
+            }
         }
 
     def get_record(self, name=None):
@@ -3924,6 +3928,26 @@ class FormatterTest(unittest.TestCase):
             logging.Formatter, 'foo', style='$'
         )
         self.assertRaises(ValueError, logging.Formatter, '${asctime', style='$')
+
+    def test_defaults_parameter(self):
+        fmts = ['%(custom)s %(message)s', '{custom} {message}', '$custom $message']
+        styles = ['%', '{', '$']
+        for fmt, style in zip(fmts, styles):
+            f = logging.Formatter(fmt, style=style, defaults={'custom': 'Default'})
+            r = self.get_record()
+            self.assertEqual(f.format(r), 'Default Message with 2 placeholders')
+            r = self.get_record("custom")
+            self.assertEqual(f.format(r), '1234 Message with 2 placeholders')
+
+            # Without default
+            f = logging.Formatter(fmt, style=style)
+            r = self.get_record()
+            self.assertRaises(ValueError, f.format, r)
+
+            # Non-existing default is ignored
+            f = logging.Formatter(fmt, style=style, defaults={'Non-existing': 'Default'})
+            r = self.get_record("custom")
+            self.assertEqual(f.format(r), '1234 Message with 2 placeholders')
 
     def test_invalid_style(self):
         self.assertRaises(ValueError, logging.Formatter, None, None, 'x')

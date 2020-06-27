@@ -4,10 +4,10 @@
 #include "code.h"
 #include "opcode.h"
 #include "structmember.h"         // PyMemberDef
-#include "pycore_code.h"
+#include "pycore_code.h"          // _PyOpcache
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_tupleobject.h"
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
 
 /* Holder for co_extra information */
@@ -163,6 +163,14 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         return NULL;
     }
     if (intern_string_constants(consts, NULL) < 0) {
+        return NULL;
+    }
+
+    /* Make sure that code is indexable with an int, this is
+       a long running assumption in ceval.c and many parts of
+       the interpreter. */
+    if (PyBytes_GET_SIZE(code) > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "co_code larger than INT_MAX");
         return NULL;
     }
 

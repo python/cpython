@@ -2305,7 +2305,8 @@ class CommandLineTest(unittest.TestCase):
     def test_test_command_verbose(self):
         for tar_name in testtarnames:
             for opt in '-v', '--verbose':
-                out = self.tarfilecmd(opt, '-t', tar_name)
+                out = self.tarfilecmd(opt, '-t', tar_name,
+                                      PYTHONIOENCODING='utf-8')
                 self.assertIn(b'is a tar archive.\n', out)
 
     def test_test_command_invalid_file(self):
@@ -2376,7 +2377,8 @@ class CommandLineTest(unittest.TestCase):
                                   'and-utf8-bom-sig-only.txt')]
         for opt in '-v', '--verbose':
             try:
-                out = self.tarfilecmd(opt, '-c', tmpname, *files)
+                out = self.tarfilecmd(opt, '-c', tmpname, *files,
+                                      PYTHONIOENCODING='utf-8')
                 self.assertIn(b' file created.', out)
                 with tarfile.open(tmpname) as tar:
                     tar.getmembers()
@@ -2434,7 +2436,8 @@ class CommandLineTest(unittest.TestCase):
         for opt in '-v', '--verbose':
             try:
                 with support.temp_cwd(tarextdir):
-                    out = self.tarfilecmd(opt, '-e', tmpname)
+                    out = self.tarfilecmd(opt, '-e', tmpname,
+                                          PYTHONIOENCODING='utf-8')
                 self.assertIn(b' file is extracted.', out)
             finally:
                 support.rmtree(tarextdir)

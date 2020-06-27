@@ -80,7 +80,7 @@
     </Lib>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(PySourcePath)PC;$(PySourcePath)Include;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>$(_DebugPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ORIGINAL_FILENAME=\"$(TargetName)$(TargetExt)\";FIELD3=$(Field3Value);$(_DebugPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Midl>
@@ -94,21 +94,6 @@
       <ProxyFileName>$(MSBuildProjectName)_p.c</ProxyFileName>
     </Midl>
   </ItemDefinitionGroup>
-
-  <Target Name="GeneratePythonNtRcH"
-          BeforeTargets="ClCompile"
-          Inputs="$(PySourcePath)Include\patchlevel.h"
-          Outputs="$(IntDir)pythonnt_rc.h">
-    <WriteLinesToFile File="$(IntDir)pythonnt_rc.h" Overwrite="true" Encoding="ascii"
-                      Lines='/* This file created by pyproject.props /t:GeneratePythonNtRcH */
-#define FIELD3 $(Field3Value)
-#define MS_DLL_ID "$(SysWinVer)"
-#define PYTHON_DLL_NAME "$(TargetName)$(TargetExt)"
-' />
-    <ItemGroup>
-        <FileWrites Include="$(IntDir)pythonnt_rc.h" />
-    </ItemGroup>
-  </Target>
 
   <UsingTask TaskName="KillPython" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>

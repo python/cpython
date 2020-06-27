@@ -4,6 +4,7 @@
 
 import unittest
 from test import support
+from test.support import os_helper
 from test.support import _2G
 import weakref
 import pickle
@@ -366,13 +367,13 @@ class BaseTest:
     def test_tofromfile(self):
         a = array.array(self.typecode, 2*self.example)
         self.assertRaises(TypeError, a.tofile)
-        support.unlink(support.TESTFN)
-        f = open(support.TESTFN, 'wb')
+        os_helper.unlink(os_helper.TESTFN)
+        f = open(os_helper.TESTFN, 'wb')
         try:
             a.tofile(f)
             f.close()
             b = array.array(self.typecode)
-            f = open(support.TESTFN, 'rb')
+            f = open(os_helper.TESTFN, 'rb')
             self.assertRaises(TypeError, b.fromfile)
             b.fromfile(f, len(self.example))
             self.assertEqual(b, array.array(self.typecode, self.example))
@@ -383,27 +384,27 @@ class BaseTest:
         finally:
             if not f.closed:
                 f.close()
-            support.unlink(support.TESTFN)
+            os_helper.unlink(os_helper.TESTFN)
 
     def test_fromfile_ioerror(self):
         # Issue #5395: Check if fromfile raises a proper OSError
         # instead of EOFError.
         a = array.array(self.typecode)
-        f = open(support.TESTFN, 'wb')
+        f = open(os_helper.TESTFN, 'wb')
         try:
             self.assertRaises(OSError, a.fromfile, f, len(self.example))
         finally:
             f.close()
-            support.unlink(support.TESTFN)
+            os_helper.unlink(os_helper.TESTFN)
 
     def test_filewrite(self):
         a = array.array(self.typecode, 2*self.example)
-        f = open(support.TESTFN, 'wb')
+        f = open(os_helper.TESTFN, 'wb')
         try:
             f.write(a)
             f.close()
             b = array.array(self.typecode)
-            f = open(support.TESTFN, 'rb')
+            f = open(os_helper.TESTFN, 'rb')
             b.fromfile(f, len(self.example))
             self.assertEqual(b, array.array(self.typecode, self.example))
             self.assertNotEqual(a, b)
@@ -413,7 +414,7 @@ class BaseTest:
         finally:
             if not f.closed:
                 f.close()
-            support.unlink(support.TESTFN)
+            os_helper.unlink(os_helper.TESTFN)
 
     def test_tofromlist(self):
         a = array.array(self.typecode, 2*self.example)

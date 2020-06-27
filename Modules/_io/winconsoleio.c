@@ -281,12 +281,6 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
             self->handle = INVALID_HANDLE_VALUE;
     }
 
-    if (PyFloat_Check(nameobj)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float");
-        return -1;
-    }
-
     fd = _PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {

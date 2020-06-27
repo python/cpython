@@ -25,6 +25,7 @@ from test.support import (
     unlink, unload, cpython_only, TESTFN_UNENCODABLE,
     temp_dir, DirsOnSysPath)
 from test.support import script_helper
+from test.support import threading_helper
 from test.test_importlib.util import uncache
 from types import ModuleType
 
@@ -459,7 +460,7 @@ class ImportTests(unittest.TestCase):
                 event = threading.Event()
                 threads = [threading.Thread(target=run) for x in range(2)]
                 try:
-                    with test.support.start_threads(threads, event.set):
+                    with threading_helper.start_threads(threads, event.set):
                         time.sleep(0)
                 finally:
                     sys.modules.pop('package', None)
@@ -485,7 +486,7 @@ class ImportTests(unittest.TestCase):
             pyexe = os.path.join(tmp, os.path.basename(sys.executable))
             shutil.copy(sys.executable, pyexe)
             shutil.copy(dllname, tmp)
-            for f in glob.glob(os.path.join(sys.prefix, "vcruntime*.dll")):
+            for f in glob.glob(os.path.join(glob.escape(sys.prefix), "vcruntime*.dll")):
                 shutil.copy(f, tmp)
 
             shutil.copy(pydname, tmp2)

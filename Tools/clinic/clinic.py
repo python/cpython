@@ -2736,11 +2736,6 @@ class bool_converter(CConverter):
             # XXX PyFloat_Check can be removed after the end of the
             # deprecation in _PyLong_FromNbIndexOrNbInt.
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {paramname} = _PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
@@ -2821,11 +2816,6 @@ class unsigned_char_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'b':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {{{{
                     long ival = PyLong_AsLong({argname});
                     if (ival == -1 && PyErr_Occurred()) {{{{
@@ -2848,14 +2838,9 @@ class unsigned_char_converter(CConverter):
                 """.format(argname=argname, paramname=self.name)
         elif self.format_unit == 'B':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {{{{
-                    long ival = PyLong_AsUnsignedLongMask({argname});
-                    if (ival == -1 && PyErr_Occurred()) {{{{
+                    unsigned long ival = PyLong_AsUnsignedLongMask({argname});
+                    if (ival == (unsigned long)-1 && PyErr_Occurred()) {{{{
                         goto exit;
                     }}}}
                     else {{{{
@@ -2876,11 +2861,6 @@ class short_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'h':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {{{{
                     long ival = PyLong_AsLong({argname});
                     if (ival == -1 && PyErr_Occurred()) {{{{
@@ -2917,11 +2897,6 @@ class unsigned_short_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'H':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {paramname} = (unsigned short)PyLong_AsUnsignedLongMask({argname});
                 if ({paramname} == (unsigned short)-1 && PyErr_Occurred()) {{{{
                     goto exit;
@@ -2947,11 +2922,6 @@ class int_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'i':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {paramname} = _PyLong_AsInt({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
@@ -2989,11 +2959,6 @@ class unsigned_int_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'I':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {paramname} = (unsigned int)PyLong_AsUnsignedLongMask({argname});
                 if ({paramname} == (unsigned int)-1 && PyErr_Occurred()) {{{{
                     goto exit;
@@ -3010,11 +2975,6 @@ class long_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'l':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {paramname} = PyLong_AsLong({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
@@ -3054,11 +3014,6 @@ class long_long_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'L':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {paramname} = PyLong_AsLongLong({argname});
                 if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
@@ -3105,14 +3060,9 @@ class Py_ssize_t_converter(CConverter):
     def parse_arg(self, argname, displayname):
         if self.format_unit == 'n':
             return """
-                if (PyFloat_Check({argname})) {{{{
-                    PyErr_SetString(PyExc_TypeError,
-                                    "integer argument expected, got float" );
-                    goto exit;
-                }}}}
                 {{{{
                     Py_ssize_t ival = -1;
-                    PyObject *iobj = PyNumber_Index({argname});
+                    PyObject *iobj = _PyNumber_Index({argname});
                     if (iobj != NULL) {{{{
                         ival = PyLong_AsSsize_t(iobj);
                         Py_DECREF(iobj);

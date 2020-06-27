@@ -10,6 +10,7 @@ from asyncio import base_subprocess
 from asyncio import subprocess
 from test.test_asyncio import utils as test_utils
 from test import support
+from test.support import os_helper
 
 if sys.platform != 'win32':
     from asyncio import unix_events
@@ -626,10 +627,10 @@ class SubprocessMixin:
     def test_create_subprocess_exec_with_path(self):
         async def execute():
             p = await subprocess.create_subprocess_exec(
-                support.FakePath(sys.executable), '-c', 'pass')
+                os_helper.FakePath(sys.executable), '-c', 'pass')
             await p.wait()
             p = await subprocess.create_subprocess_exec(
-                sys.executable, '-c', 'pass', support.FakePath('.'))
+                sys.executable, '-c', 'pass', os_helper.FakePath('.'))
             await p.wait()
 
         self.assertIsNone(self.loop.run_until_complete(execute()))
@@ -737,7 +738,7 @@ class GenericWatcherTests:
 
             with self.assertRaises(RuntimeError):
                 await subprocess.create_subprocess_exec(
-                    support.FakePath(sys.executable), '-c', 'pass')
+                    os_helper.FakePath(sys.executable), '-c', 'pass')
 
             watcher.add_child_handler.assert_not_called()
 

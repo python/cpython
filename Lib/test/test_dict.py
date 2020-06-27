@@ -105,6 +105,26 @@ class DictTest(unittest.TestCase):
         self.assertRaises(TypeError, d.items, None)
         self.assertEqual(repr(dict(a=1).items()), "dict_items([('a', 1)])")
 
+    def test_views_mapping(self):
+        mappingproxy = type(type.__dict__)
+        class Dict(dict):
+            pass
+        for cls in [dict, Dict]:
+            d = cls()
+            m1 = d.keys().mapping
+            m2 = d.values().mapping
+            m3 = d.items().mapping
+
+            for m in [m1, m2, m3]:
+                self.assertIsInstance(m, mappingproxy)
+                self.assertEqual(m, d)
+
+            d["foo"] = "bar"
+
+            for m in [m1, m2, m3]:
+                self.assertIsInstance(m, mappingproxy)
+                self.assertEqual(m, d)
+
     def test_contains(self):
         d = {}
         self.assertNotIn('a', d)
@@ -696,6 +716,16 @@ class DictTest(unittest.TestCase):
         self.assertEqual(k1 | k2, {(1,1), (2,2), (3,3)})
         self.assertEqual(k1 ^ k2, {(3,3)})
         self.assertEqual(k1 ^ k3, {(1,1), (2,2), (4,4)})
+
+    def test_items_symmetric_difference(self):
+        rr = random.randrange
+        for _ in range(100):
+            left = {x:rr(3) for x in range(20) if rr(2)}
+            right = {x:rr(3) for x in range(20) if rr(2)}
+            with self.subTest(left=left, right=right):
+                expected = set(left.items()) ^ set(right.items())
+                actual = left.items() ^ right.items()
+                self.assertEqual(actual, expected)
 
     def test_dictview_mixed_set_operations(self):
         # Just a few for .keys()

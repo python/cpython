@@ -19,6 +19,7 @@ import unittest
 import warnings
 from test import support
 from test.support import _4G, bigmemtest, import_fresh_module
+from test.support import threading_helper
 from http.client import HTTPException
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
@@ -102,7 +103,7 @@ class HashLibTestCase(unittest.TestCase):
         try:
             return importlib.import_module(module_name)
         except ModuleNotFoundError as error:
-            if self._warn_on_extension_import:
+            if self._warn_on_extension_import and module_name in builtin_hashes:
                 warnings.warn('Did a C extension fail to compile? %s' % error)
         return None
 
@@ -870,7 +871,7 @@ class HashLibTestCase(unittest.TestCase):
             '1cfceca95989f51f658e3f3ffe7f1cd43726c9e088c13ee10b46f57cef135b94'
         )
 
-    @support.reap_threads
+    @threading_helper.reap_threads
     def test_threaded_hashing(self):
         # Updating the same hash object from several threads at once
         # using data chunk sizes containing the same byte sequences.
@@ -1004,17 +1005,31 @@ class KDFTests(unittest.TestCase):
                     self.assertEqual(out, expected,
                                      (digest_name, password, salt, rounds))
 
-        self.assertRaises(TypeError, pbkdf2, b'sha1', b'pass', b'salt', 1)
-        self.assertRaises(TypeError, pbkdf2, 'sha1', 'pass', 'salt', 1)
-        self.assertRaises(ValueError, pbkdf2, 'sha1', b'pass', b'salt', 0)
-        self.assertRaises(ValueError, pbkdf2, 'sha1', b'pass', b'salt', -1)
-        self.assertRaises(ValueError, pbkdf2, 'sha1', b'pass', b'salt', 1, 0)
-        self.assertRaises(ValueError, pbkdf2, 'sha1', b'pass', b'salt', 1, -1)
         with self.assertRaisesRegex(ValueError, 'unsupported hash type'):
             pbkdf2('unknown', b'pass', b'salt', 1)
-        out = pbkdf2(hash_name='sha1', password=b'password', salt=b'salt',
-            iterations=1, dklen=None)
-        self.assertEqual(out, self.pbkdf2_results['sha1'][0][0])
+
+        if 'sha1' in supported:
+            self.assertRaises(
+                TypeError, pbkdf2, b'sha1', b'pass', b'salt', 1
+            )
+            self.assertRaises(
+                TypeError, pbkdf2, 'sha1', 'pass', 'salt', 1
+            )
+            self.assertRaises(
+                ValueError, pbkdf2, 'sha1', b'pass', b'salt', 0
+            )
+            self.assertRaises(
+                ValueError, pbkdf2, 'sha1', b'pass', b'salt', -1
+            )
+            self.assertRaises(
+                ValueError, pbkdf2, 'sha1', b'pass', b'salt', 1, 0
+            )
+            self.assertRaises(
+                ValueError, pbkdf2, 'sha1', b'pass', b'salt', 1, -1
+            )
+            out = pbkdf2(hash_name='sha1', password=b'password', salt=b'salt',
+                iterations=1, dklen=None)
+            self.assertEqual(out, self.pbkdf2_results['sha1'][0][0])
 
     def test_pbkdf2_hmac_py(self):
         self._test_pbkdf2_hmac(py_hashlib.pbkdf2_hmac, builtin_hashes)

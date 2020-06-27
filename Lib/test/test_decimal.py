@@ -34,8 +34,9 @@ import numbers
 import locale
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
                           requires_IEEE_754, requires_docstrings)
-from test.support import (import_fresh_module, TestFailed,
+from test.support import (TestFailed,
                           run_with_locale, cpython_only)
+from test.support.import_helper import import_fresh_module
 import random
 import inspect
 import threading
@@ -5201,6 +5202,7 @@ class CWhitebox(unittest.TestCase):
         DefaultContext = C.DefaultContext
 
         InvalidOperation = C.InvalidOperation
+        FloatOperation = C.FloatOperation
         DivisionByZero = C.DivisionByZero
         Overflow = C.Overflow
         Subnormal = C.Subnormal
@@ -5274,6 +5276,7 @@ class CWhitebox(unittest.TestCase):
           Underflow: C.DecUnderflow,
           Overflow: C.DecOverflow,
           DivisionByZero: C.DecDivisionByZero,
+          FloatOperation: C.DecFloatOperation,
           InvalidOperation: C.DecIEEEInvalidOperation
         }
         IntCond = [

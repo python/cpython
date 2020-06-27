@@ -1,7 +1,7 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
-from test.support import check_syntax_error, check_syntax_warning, use_old_parser
+from test.support import check_syntax_error, check_syntax_warning
 import inspect
 import unittest
 import sys
@@ -1714,69 +1714,53 @@ class GrammarTests(unittest.TestCase):
         with manager() as x, manager():
             pass
 
-        if not use_old_parser():
-            test_cases = [
-                """if 1:
-                    with (
-                        manager()
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager() as x
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager() as (x, y),
-                        manager() as z,
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager(),
-                        manager()
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager() as x,
-                        manager() as y
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager() as x,
-                        manager()
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager() as x,
-                        manager() as y,
-                        manager() as z,
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager() as x,
-                        manager() as y,
-                        manager(),
-                    ):
-                        pass
-                """,
-            ]
-            for case in test_cases:
-                with self.subTest(case=case):
-                    compile(case, "<string>", "exec")
+        with (
+            manager()
+        ):
+            pass
 
+        with (
+            manager() as x
+        ):
+            pass
+
+        with (
+            manager() as (x, y),
+            manager() as z,
+        ):
+            pass
+
+        with (
+            manager(),
+            manager()
+        ):
+            pass
+
+        with (
+            manager() as x,
+            manager() as y
+        ):
+            pass
+
+        with (
+            manager() as x,
+            manager()
+        ):
+            pass
+
+        with (
+            manager() as x,
+            manager() as y,
+            manager() as z,
+        ):
+            pass
+
+        with (
+            manager() as x,
+            manager() as y,
+            manager(),
+        ):
+            pass
 
     def test_if_else_expr(self):
         # Test ifelse expressions in various cases
