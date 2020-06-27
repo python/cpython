@@ -20,7 +20,7 @@ from .import_helper import (
     forget, import_fresh_module, import_module, make_legacy_pyc,
     modules_cleanup, modules_setup, unload)
 from .os_helper import (
-    FS_NONASCII, SAVEDCWD, TESTFN, TESTFN_NONASCII,
+    FS_NONASCII, SAVEDCWD, TESTFN, TESTFN_ASCII, TESTFN_NONASCII,
     TESTFN_UNENCODABLE, TESTFN_UNDECODABLE,
     TESTFN_UNICODE, can_symlink, can_xattr,
     change_cwd, create_empty_file, fd_count,

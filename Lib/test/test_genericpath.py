@@ -534,7 +534,7 @@ class CommonTest(GenericTest):
 class PathLikeTests(unittest.TestCase):
 
     def setUp(self):
-        self.file_name = support.TESTFN.lower()
+        self.file_name = support.TESTFN
         self.file_path = FakePath(support.TESTFN)
         self.addCleanup(support.unlink, self.file_name)
         create_file(self.file_name, b"test_genericpath.PathLikeTests")
