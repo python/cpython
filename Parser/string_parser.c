@@ -592,7 +592,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
 
     len = expr_end - expr_start;
     /* Allocate 3 extra bytes: open paren, close paren, null byte. */
-    str = PyMem_RawMalloc(len + 3);
+    str = PyMem_Malloc(len + 3);
     if (str == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -605,7 +605,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
 
     struct tok_state* tok = PyTokenizer_FromString(str, 1);
     if (tok == NULL) {
-        PyMem_RawFree(str);
+        PyMem_Free(str);
         return NULL;
     }
     Py_INCREF(p->tok->filename);
@@ -631,7 +631,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     result = expr;
 
 exit:
-    PyMem_RawFree(str);
+    PyMem_Free(str);
     _PyPegen_Parser_Free(p2);
     PyTokenizer_Free(tok);
     return result;
@@ -1143,7 +1143,7 @@ ExprList_Append(ExprList *l, expr_ty exp)
             Py_ssize_t i;
             /* We're still using the cached data. Switch to
                alloc-ing. */
-            l->p = PyMem_RawMalloc(sizeof(expr_ty) * new_size);
+            l->p = PyMem_Malloc(sizeof(expr_ty) * new_size);
             if (!l->p) {
                 return -1;
             }
@@ -1153,9 +1153,9 @@ ExprList_Append(ExprList *l, expr_ty exp)
             }
         } else {
             /* Just realloc. */
-            expr_ty *tmp = PyMem_RawRealloc(l->p, sizeof(expr_ty) * new_size);
+            expr_ty *tmp = PyMem_Realloc(l->p, sizeof(expr_ty) * new_size);
             if (!tmp) {
-                PyMem_RawFree(l->p);
+                PyMem_Free(l->p);
                 l->p = NULL;
                 return -1;
             }
@@ -1183,7 +1183,7 @@ ExprList_Dealloc(ExprList *l)
         /* Do nothing. */
     } else {
         /* We have dynamically allocated. Free the memory. */
-        PyMem_RawFree(l->p);
+        PyMem_Free(l->p);
     }
     l->p = NULL;
     l->size = -1;
