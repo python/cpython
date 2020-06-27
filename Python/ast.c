@@ -4898,7 +4898,7 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
 
     len = expr_end - expr_start;
     /* Allocate 3 extra bytes: open paren, close paren, null byte. */
-    str = PyMem_RawMalloc(len + 3);
+    str = PyMem_Malloc(len + 3);
     if (str == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -4914,7 +4914,7 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     mod_n = PyParser_SimpleParseStringFlagsFilename(str, "<fstring>",
                                                     Py_eval_input, 0);
     if (!mod_n) {
-        PyMem_RawFree(str);
+        PyMem_Free(str);
         return NULL;
     }
     /* Reuse str to find the correct column offset. */
@@ -4922,7 +4922,7 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     str[len+1] = '}';
     fstring_fix_node_location(n, mod_n, str);
     mod = PyAST_FromNode(mod_n, &cf, "<fstring>", c->c_arena);
-    PyMem_RawFree(str);
+    PyMem_Free(str);
     PyNode_Free(mod_n);
     if (!mod)
         return NULL;
@@ -5438,7 +5438,7 @@ ExprList_Append(ExprList *l, expr_ty exp)
             Py_ssize_t i;
             /* We're still using the cached data. Switch to
                alloc-ing. */
-            l->p = PyMem_RawMalloc(sizeof(expr_ty) * new_size);
+            l->p = PyMem_Malloc(sizeof(expr_ty) * new_size);
             if (!l->p)
                 return -1;
             /* Copy the cached data into the new buffer. */
@@ -5446,9 +5446,9 @@ ExprList_Append(ExprList *l, expr_ty exp)
                 l->p[i] = l->data[i];
         } else {
             /* Just realloc. */
-            expr_ty *tmp = PyMem_RawRealloc(l->p, sizeof(expr_ty) * new_size);
+            expr_ty *tmp = PyMem_Realloc(l->p, sizeof(expr_ty) * new_size);
             if (!tmp) {
-                PyMem_RawFree(l->p);
+                PyMem_Free(l->p);
                 l->p = NULL;
                 return -1;
             }
@@ -5476,7 +5476,7 @@ ExprList_Dealloc(ExprList *l)
         /* Do nothing. */
     } else {
         /* We have dynamically allocated. Free the memory. */
-        PyMem_RawFree(l->p);
+        PyMem_Free(l->p);
     }
     l->p = NULL;
     l->size = -1;
