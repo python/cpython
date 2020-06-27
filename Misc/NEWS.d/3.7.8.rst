@@ -1,0 +1,21 @@
+.. bpo: 41009
+.. date: 2020-06-17-17-27-07
+.. nonce: Rvn6OQ
+.. release date: 2020-06-27
+.. section: Tests
+
+Fix use of ``support.require_{linux|mac|freebsd}_version()`` decorators as
+class decorator.
+
+..
+
+.. bpo: 41100
+.. date: 2020-06-24-13-51-57
+.. nonce: mcHdc5
+.. section: macOS
+
+Fix configure error when building on macOS 11. Note that 3.7.8 was released
+shortly after the first developer preview of macOS 11 (Big Sur); there are
+other known issues with building and running on the developer preview. Big
+Sur is expected to be fully supported in a future bugfix release of Python
+3.8.x and with 3.9.0.
