@@ -733,6 +733,19 @@ SyntaxError: trailing comma not allowed without surrounding parentheses
 Traceback (most recent call last):
 SyntaxError: trailing comma not allowed without surrounding parentheses
 
+>>> (): int
+Traceback (most recent call last):
+SyntaxError: only single target (not tuple) can be annotated
+>>> []: int
+Traceback (most recent call last):
+SyntaxError: only single target (not list) can be annotated
+>>> (()): int
+Traceback (most recent call last):
+SyntaxError: only single target (not tuple) can be annotated
+>>> ([]): int
+Traceback (most recent call last):
+SyntaxError: only single target (not list) can be annotated
+
 Corner-cases that used to fail to raise the correct error:
 
     >>> def f(*, x=lambda __debug__:0): pass
