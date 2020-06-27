@@ -207,8 +207,9 @@ it's unnecessary to subscribe to the mailing list.
 every day, and Usenet readers are often more able to cope with this volume.
 
 Announcements of new software releases and events can be found in
-comp.lang.python.announce, a low-traffic moderated list that receives about five
-postings per day.  It's available as `the python-announce mailing list
+comp.lang.python.announce, a low-traffic moderated list that receives a
+postings about every one or two per days.  It's available as `the
+python-announce mailing list
 <https://mail.python.org/mailman/listinfo/python-announce-list>`_.
 
 More info about other mailing lists and newsgroups
