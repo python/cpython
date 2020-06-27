@@ -370,8 +370,12 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
         return NULL;
     }
 
-    // Having curly braces at the beginning and at the end is needed so that the call
-    // to strstr in fstring_find_expr_location works correctly.
+    // The call to fstring_find_expr_location is responsible for finding the column offset
+    // the generated AST nodes need to be shifted to the right, which is equal to the number
+    // of the f-string characters before the expression starts. In order to correctly compute
+    // this offset, strstr gets called in fstring_find_expr_location which only succeeds
+    // if curly braces appear before and after the f-string expression (exactly like they do
+    // in the f-string itself), hence the following lines.
     str[0] = '{';
     memcpy(str+1, expr_start, len);
     str[len+1] = '}';
@@ -380,8 +384,9 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     int lines, cols;
     fstring_find_expr_location(t, str, &lines, &cols);
 
-    // The parentheses are needed in order to allow for leading whitespace. This
-    // consequently gets parsed as a group (see the group rule in python.gram).
+    // The parentheses are needed in order to allow for leading whitespace withing
+    // the f-string expression. This consequently gets parsed as a group (see the
+    // group rule in python.gram).
     str[0] = '(';
     str[len+1] = ')';
 
