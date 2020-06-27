@@ -715,8 +715,6 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Match_kind:
         CALL(astfold_expr, expr_ty, node_->v.Match.target);
         CALL_SEQ(astfold_match_case, match_case_ty, node_->v.Match.cases);
-        // TODO: Mark unreachable cases for removal? Maybe pattern == NULL?
-        // TODO: We can even optimize patterns across cases...
         break;
     default:
         break;
@@ -797,7 +795,6 @@ static int
 astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     // Don't blindly optimize the pattern as an expr; it plays by its own rules!
-    // TODO: Build out this pattern optimizer.
     switch (node_->kind) {
         case Attribute_kind:
             return 1;
@@ -805,7 +802,6 @@ astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
             CALL(astfold_pattern_complex, expr_ty, node_);
             return 1;
         case BoolOp_kind:
-            // TODO: Quite a bit of potential here.
         case Call_kind:
         case Constant_kind:
         case Dict_kind:

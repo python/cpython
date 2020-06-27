@@ -82,8 +82,6 @@ def_op('BINARY_TRUE_DIVIDE', 27)
 def_op('INPLACE_FLOOR_DIVIDE', 28)
 def_op('INPLACE_TRUE_DIVIDE', 29)
 def_op('GET_LEN', 30)
-def_op('MATCH_MAP', 31)
-def_op('MATCH_SEQ', 32)
 
 def_op('RERAISE', 48)
 def_op('WITH_EXCEPT_START', 49)
@@ -160,8 +158,7 @@ jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
 name_op('LOAD_GLOBAL', 116)     # Index in name list
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
-def_op('MATCH', 119)
-def_op('MATCH_MAP_KEYS', 120)
+
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 jrel_op('SETUP_FINALLY', 122)   # Distance to target address
 
@@ -196,6 +193,10 @@ def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
 def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
+def_op('MATCH_CLS', 149)
+def_op('MATCH_MAP_KEYS', 150)
+jrel_op('MATCH_MAP', 151)
+jrel_op('MATCH_SEQ', 152)
 
 jrel_op('SETUP_ASYNC_WITH', 154)
 def_op('FORMAT_VALUE', 155)

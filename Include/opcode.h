@@ -31,8 +31,6 @@ extern "C" {
 #define INPLACE_FLOOR_DIVIDE     28
 #define INPLACE_TRUE_DIVIDE      29
 #define GET_LEN                  30
-#define MATCH_MAP                31
-#define MATCH_SEQ                32
 #define RERAISE                  48
 #define WITH_EXCEPT_START        49
 #define GET_AITER                50
@@ -99,8 +97,6 @@ extern "C" {
 #define LOAD_GLOBAL             116
 #define IS_OP                   117
 #define CONTAINS_OP             118
-#define MATCH                   119
-#define MATCH_MAP_KEYS          120
 #define JUMP_IF_NOT_EXC_MATCH   121
 #define SETUP_FINALLY           122
 #define LOAD_FAST               124
@@ -122,6 +118,10 @@ extern "C" {
 #define SET_ADD                 146
 #define MAP_ADD                 147
 #define LOAD_CLASSDEREF         148
+#define MATCH_CLS               149
+#define MATCH_MAP_KEYS          150
+#define MATCH_MAP               151
+#define MATCH_SEQ               152
 #define SETUP_ASYNC_WITH        154
 #define FORMAT_VALUE            155
 #define BUILD_CONST_KEY_MAP     156

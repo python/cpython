@@ -1103,13 +1103,14 @@ stack_effect(int opcode, int oparg, int jump)
         case DICT_MERGE:
         case DICT_UPDATE:
             return -1;
-        case MATCH:
+        case MATCH_CLS:
             return -1;
         case MATCH_MAP_KEYS:
         case GET_LEN:
+            return 1;
         case MATCH_MAP:
         case MATCH_SEQ:
-            return 1;
+            return 0;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -2786,7 +2787,7 @@ compiler_pattern_call(struct compiler *c, expr_ty p, basicblock *fail, PyObject*
         PyTuple_SET_ITEM(kwnames, i, name);
     }
     ADDOP_LOAD_CONST_NEW(c, kwnames);
-    ADDOP_I(c, MATCH, nargs + nkwargs);
+    ADDOP_I(c, MATCH_CLS, nargs + nkwargs);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     for (i = 0; i < nargs; i++) {
         expr_ty arg = asdl_seq_GET(args, i);
@@ -2847,8 +2848,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
     asdl_seq *values = p->v.Dict.values;
     Py_ssize_t size = asdl_seq_LEN(values);
     int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
-    ADDOP(c, MATCH_MAP);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+    ADDOP_JREL(c, MATCH_MAP, block);
     if (size - star) {
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star));
@@ -2996,8 +2996,7 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
     basicblock *block, *end;
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
-    ADDOP(c, MATCH_SEQ);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+    ADDOP_JREL(c, MATCH_SEQ, block);
     if (star >= 0) {
         if (size) {
             ADDOP(c, GET_LEN);

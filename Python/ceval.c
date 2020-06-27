@@ -3506,7 +3506,7 @@ main_loop:
 #endif
         }
 
-        case TARGET(MATCH): {
+        case TARGET(MATCH_CLS): {
             PyObject *names = POP();
             PyObject *type = TOP();
             PyObject *target = SECOND();
@@ -3542,7 +3542,9 @@ main_loop:
             if (match < 0) {
                 goto error;
             }
-            PUSH(PyBool_FromLong(match));
+            if (!match) {
+                JUMPBY(oparg);
+            }
             DISPATCH();
         }
 
@@ -3553,8 +3555,7 @@ main_loop:
                 || PyIter_Check(target)
                 || PyByteArray_Check(target))
             {
-                Py_INCREF(Py_False);
-                PUSH(Py_False);
+                JUMPBY(oparg);
                 DISPATCH();
             }
             PyInterpreterState *interp = PyInterpreterState_Get();
@@ -3576,7 +3577,9 @@ main_loop:
             if (match < 0) {
                 goto error;
             }
-            PUSH(PyBool_FromLong(match));
+            if (!match) {
+                JUMPBY(oparg);
+            }
             DISPATCH();
         }
 

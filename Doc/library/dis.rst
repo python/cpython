@@ -753,21 +753,7 @@ iterations of the loop.
 
 .. opcode:: GET_LEN
 
-   TODO
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: MATCH_MAP
-
-   TODO
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: MATCH_SEQ
-
-   TODO
+   Pushes ``len(TOS)`` onto the stack.
 
    .. versionadded:: 3.10
 
@@ -1210,9 +1196,26 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.6
 
 
-.. opcode:: MATCH (count)
+.. opcode:: MATCH_CLS (count)
 
    TODO
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_MAP (delta)
+
+   If TOS is not a subclass of :class:`collections.abc.Mapping`, increment the
+   bytecode counter by *delta*.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_SEQ (delta)
+
+   If TOS is a subclass of :class:`string`/:class:`bytes`/:class:`bytearray`, is
+   an :term:`iterator`, or is not a subclass of
+   :class:`collections.abc.Sequence`, increment the bytecode counter by *delta*.
 
    .. versionadded:: 3.10
 
