@@ -423,6 +423,9 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         }
     }
 
+    if (p->start_rule == Py_fstring_input) {
+        col_offset -= p->starting_col_offset;
+    }
     Py_ssize_t col_number = col_offset;
 
     if (p->tok->encoding != NULL) {
