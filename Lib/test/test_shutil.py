@@ -2580,7 +2580,6 @@ class TestGetTerminalSize(unittest.TestCase):
             self.assertEqual(size.columns, 30)
             self.assertEqual(size.lines, 40)
 
-# https://devguide.python.org/committing/#what-s-new-and-news-entries
 
 class LinkSymlink(unittest.TestCase):
 
