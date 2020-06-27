@@ -203,7 +203,7 @@ There is a newsgroup, :newsgroup:`comp.lang.python`, and a mailing list,
 `python-list <https://mail.python.org/mailman/listinfo/python-list>`_.  The
 newsgroup and mailing list are gatewayed into each other -- if you can read news
 it's unnecessary to subscribe to the mailing list.
-:newsgroup:`comp.lang.python` is high-traffic, receiving hundreds of postings
+:newsgroup:`comp.lang.python` is high-traffic, receiving about 20 postings
 every day, and Usenet readers are often more able to cope with this volume.
 
 Announcements of new software releases and events can be found in
