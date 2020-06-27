@@ -665,7 +665,7 @@ APIs:
 Deprecated Py_UNICODE APIs
 """"""""""""""""""""""""""
 
-.. deprecated-removed:: 3.3 4.0
+.. deprecated:: 3.3
 
 These API functions are deprecated with the implementation of :pep:`393`.
 Extension modules can continue using them, as they will not be removed in Python
@@ -687,8 +687,9 @@ Extension modules can continue using them, as they will not be removed in Python
    string content has been filled before using any of the access macros such as
    :c:func:`PyUnicode_KIND`.
 
-   Please migrate to using :c:func:`PyUnicode_FromKindAndData`,
-   :c:func:`PyUnicode_FromWideChar` or :c:func:`PyUnicode_New`.
+   .. deprecated-removed:: 3.3 4.0
+      Please migrate to using :c:func:`PyUnicode_FromKindAndData`,
+      :c:func:`PyUnicode_FromWideChar` or :c:func:`PyUnicode_New`.
 
 
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicode(PyObject *unicode)
@@ -701,9 +702,10 @@ Extension modules can continue using them, as they will not be removed in Python
    embedded null code points, which would cause the string to be truncated when
    used in most C functions.
 
-   Please migrate to using :c:func:`PyUnicode_AsUCS4`,
-   :c:func:`PyUnicode_AsWideChar`, :c:func:`PyUnicode_ReadChar` or similar new
-   APIs.
+   .. deprecated-removed:: 3.3 4.0
+      Please migrate to using :c:func:`PyUnicode_AsUCS4`,
+      :c:func:`PyUnicode_AsWideChar`, :c:func:`PyUnicode_ReadChar` or similar new
+      APIs.
 
 
 .. c:function:: PyObject* PyUnicode_TransformDecimalToASCII(Py_UNICODE *s, Py_ssize_t size)
@@ -712,6 +714,7 @@ Extension modules can continue using them, as they will not be removed in Python
    :c:type:`Py_UNICODE` buffer of the given *size* by ASCII digits 0--9
    according to their decimal value.  Return ``NULL`` if an exception occurs.
 
+   .. deprecated-removed:: 3.3 3.10
 
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
 
@@ -723,6 +726,7 @@ Extension modules can continue using them, as they will not be removed in Python
 
    .. versionadded:: 3.3
 
+   .. deprecated-removed:: 3.3 4.0
 
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicodeCopy(PyObject *unicode)
 
@@ -735,7 +739,8 @@ Extension modules can continue using them, as they will not be removed in Python
 
    .. versionadded:: 3.2
 
-   Please migrate to using :c:func:`PyUnicode_AsUCS4Copy` or similar new APIs.
+   .. deprecated-removed:: 3.3 3.10
+      Please migrate to using :c:func:`PyUnicode_AsUCS4Copy` or similar new APIs.
 
 
 .. c:function:: Py_ssize_t PyUnicode_GetSize(PyObject *unicode)
@@ -743,7 +748,8 @@ Extension modules can continue using them, as they will not be removed in Python
    Return the size of the deprecated :c:type:`Py_UNICODE` representation, in
    code units (this includes surrogate pairs as 2 units).
 
-   Please migrate to using :c:func:`PyUnicode_GetLength`.
+   .. deprecated-removed:: 3.3 4.0
+      Please migrate to using :c:func:`PyUnicode_GetLength`.
 
 
 .. c:function:: PyObject* PyUnicode_FromObject(PyObject *obj)
@@ -754,6 +760,7 @@ Extension modules can continue using them, as they will not be removed in Python
 
    Objects other than Unicode or its subtypes will cause a :exc:`TypeError`.
 
+   .. deprecated-removed:: 3.3 3.10
 
 Locale Encoding
 """""""""""""""
@@ -1038,7 +1045,7 @@ These are the generic codec APIs:
    to be used is looked up using the Python codec registry.  Return ``NULL`` if an
    exception was raised by the codec.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.10
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsEncodedString`.
 
@@ -1108,7 +1115,7 @@ These are the UTF-8 codec APIs:
    return a Python bytes object.  Return ``NULL`` if an exception was raised by
    the codec.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.10
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsUTF8String`, :c:func:`PyUnicode_AsUTF8AndSize` or
       :c:func:`PyUnicode_AsEncodedString`.
@@ -1182,7 +1189,7 @@ These are the UTF-32 codec APIs:
 
    Return ``NULL`` if an exception was raised by the codec.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.10
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsUTF32String` or :c:func:`PyUnicode_AsEncodedString`.
 
@@ -1257,7 +1264,7 @@ These are the UTF-16 codec APIs:
 
    Return ``NULL`` if an exception was raised by the codec.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.10
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsUTF16String` or :c:func:`PyUnicode_AsEncodedString`.
 
@@ -1295,7 +1302,7 @@ These are the UTF-7 codec APIs:
    nonzero, whitespace will be encoded in base-64.  Both are set to zero for the
    Python "utf-7" codec.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.10
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsEncodedString`.
 
@@ -1325,7 +1332,7 @@ These are the "Unicode Escape" codec APIs:
    Encode the :c:type:`Py_UNICODE` buffer of the given *size* using Unicode-Escape and
    return a bytes object.  Return ``NULL`` if an exception was raised by the codec.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.10
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsUnicodeEscapeString`.
 
@@ -1356,7 +1363,7 @@ These are the "Raw Unicode Escape" codec APIs:
    Encode the :c:type:`Py_UNICODE` buffer of the given *size* using Raw-Unicode-Escape
    and return a bytes object.  Return ``NULL`` if an exception was raised by the codec.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.10
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsRawUnicodeEscapeString` or
       :c:func:`PyUnicode_AsEncodedString`.
@@ -1388,7 +1395,7 @@ ordinals and only these are accepted by the codecs during encoding.
    return a Python bytes object.  Return ``NULL`` if an exception was raised by
    the codec.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.10
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsLatin1String` or
       :c:func:`PyUnicode_AsEncodedString`.
@@ -1420,7 +1427,7 @@ codes generate errors.
    return a Python bytes object.  Return ``NULL`` if an exception was raised by
    the codec.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.10
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsASCIIString` or
       :c:func:`PyUnicode_AsEncodedString`.
@@ -1472,7 +1479,7 @@ These are the mapping codec APIs:
    *mapping* object and return the result as a bytes object.  Return ``NULL`` if
    an exception was raised by the codec.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.10
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsCharmapString` or
       :c:func:`PyUnicode_AsEncodedString`.
@@ -1500,7 +1507,7 @@ The following codec API is special in that maps Unicode to Unicode.
    character *mapping* table to it and return the resulting Unicode object.
    Return ``NULL`` when an exception was raised by the codec.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.10
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_Translate`. or :ref:`generic codec based API
       <codec-registry>`
@@ -1551,7 +1558,7 @@ the user settings on the machine running the codec.
    a Python bytes object.  Return ``NULL`` if an exception was raised by the
    codec.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.10
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsMBCSString`, :c:func:`PyUnicode_EncodeCodePage` or
       :c:func:`PyUnicode_AsEncodedString`.
