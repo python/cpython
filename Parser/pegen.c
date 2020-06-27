@@ -395,7 +395,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         const char *fstring_msg = "f-string: ";
         Py_ssize_t len = strlen(fstring_msg) + strlen(errmsg);
 
-        char *new_errmsg = PyMem_RawMalloc(len + 1); // Lengths of both strings plus NULL character
+        char *new_errmsg = PyMem_Malloc(len + 1); // Lengths of both strings plus NULL character
         if (!new_errmsg) {
             return (void *) PyErr_NoMemory();
         }
@@ -443,7 +443,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     Py_DECREF(errstr);
     Py_DECREF(value);
     if (p->start_rule == Py_fstring_input) {
-        PyMem_RawFree((void *)errmsg);
+        PyMem_Free((void *)errmsg);
     }
     return NULL;
 
@@ -451,7 +451,7 @@ error:
     Py_XDECREF(errstr);
     Py_XDECREF(error_line);
     if (p->start_rule == Py_fstring_input) {
-        PyMem_RawFree((void *)errmsg);
+        PyMem_Free((void *)errmsg);
     }
     return NULL;
 }
