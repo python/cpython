@@ -1,7 +1,7 @@
 # Things remaining to do for final submission
 
 ## Mentor
-* Check with python mentor on infinite loop
+* Check with core-mentorship@python.org on infinite loop
 
 ## Functionality
 * Allow `distutils.copytree` to update if there are symlinks to be overwritten.

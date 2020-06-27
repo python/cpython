@@ -1513,7 +1513,7 @@ def _link_or_symlink(os_method, srcs, dst, **kwargs):
 def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
     """Create a hard link XXX
 
-    TODO: complete me after python-mentor@ feedback on symlink
+    TODO: complete this after core-mentorship@python.org feedback on symlink
 
     If `follow_symlinks` is False, and the last element of the path to operate
     on is a symbolic link, the function will operate on the symbolic link
