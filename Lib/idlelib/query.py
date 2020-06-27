@@ -222,7 +222,12 @@ class ModuleName(Query):
             return None
         except ImportError:
             # Some special modules require this (e.g. os.path)
-            file_path = spec.loader.get_filename()
+            try:
+                file_path = spec.loader.get_filename()
+            except TypeError:
+                self.showerror("loader failed to get filename",
+                          parent=self)
+                return None
         return file_path
 
 
