@@ -220,6 +220,9 @@ class ModuleName(Query):
             self.showerror("loader does not support get_filename",
                       parent=self)
             return None
+        except ImportError:
+            # Some special modules require this (e.g. os.path)
+            file_path = spec.loader.get_filename()
         return file_path
 
 
