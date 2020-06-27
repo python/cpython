@@ -1,0 +1,2 @@
+Document most of ``Py_UNICODE`` APIs will be removed in Python 3.10, instead
+of Python 4.0.
