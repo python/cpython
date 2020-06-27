@@ -1443,6 +1443,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
                     return name
     return None
 
+
 def _create_or_replace(dst, create_temp_dst):
     """Create or overwrite file `dst` atomically via os.replace.
 
@@ -1472,6 +1473,7 @@ def _create_or_replace(dst, create_temp_dst):
         if os.path.lexists(temp_path):
             os.remove(temp_path)
         raise e
+
 
 def _link_or_symlink(os_method, srcs, dst, **kwargs):
     """Create either links or symlinks based upon the value of `os_method`.
@@ -1506,6 +1508,7 @@ def _link_or_symlink(os_method, srcs, dst, **kwargs):
             _create_or_replace(link_name, create_link_at)
         else:
             create_link_at(link_name)
+
 
 def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
     """Create a hard link XXX
