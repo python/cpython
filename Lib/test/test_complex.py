@@ -100,8 +100,7 @@ class ComplexTest(unittest.TestCase):
                            complex(random(), random()))
 
         self.assertRaises(ZeroDivisionError, complex.__truediv__, 1+1j, 0+0j)
-        # FIXME: The following currently crashes on Alpha
-        # self.assertRaises(OverflowError, pow, 1e200+1j, 1e200+1j)
+        self.assertRaises(OverflowError, pow, 1e200+1j, 1e200+1j)
 
         self.assertAlmostEqual(complex.__truediv__(2+0j, 1+1j), 1-1j)
         self.assertRaises(ZeroDivisionError, complex.__truediv__, 1+1j, 0+0j)
@@ -500,22 +499,6 @@ class ComplexTest(unittest.TestCase):
 
     def test_neg(self):
         self.assertEqual(-(1+6j), -1-6j)
-
-    def test_file(self):
-        a = 3.33+4.43j
-        b = 5.1+2.3j
-
-        fo = None
-        try:
-            fo = open(support.TESTFN, "w")
-            print(a, b, file=fo)
-            fo.close()
-            fo = open(support.TESTFN, "r")
-            self.assertEqual(fo.read(), ("%s %s\n" % (a, b)))
-        finally:
-            if (fo is not None) and (not fo.closed):
-                fo.close()
-            support.unlink(support.TESTFN)
 
     def test_getnewargs(self):
         self.assertEqual((1+2j).__getnewargs__(), (1.0, 2.0))

@@ -177,9 +177,14 @@ Everything else in the file should be familiar, except for some code in
 
 This initializes the :class:`Custom` type, filling in a number of members
 to the appropriate default values, including :attr:`ob_type` that we initially
-set to *NULL*. ::
+set to ``NULL``. ::
 
-   PyModule_AddObject(m, "Custom", (PyObject *) &CustomType);
+   Py_INCREF(&CustomType);
+   if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
+       Py_DECREF(&CustomType);
+       Py_DECREF(m);
+       return NULL;
+   }
 
 This adds the type to the module dictionary.  This allows us to create
 :class:`Custom` instances by calling the :class:`Custom` class:
@@ -270,7 +275,7 @@ which is assigned to the :c:member:`~PyTypeObject.tp_dealloc` member::
 
 This method first clears the reference counts of the two Python attributes.
 :c:func:`Py_XDECREF` correctly handles the case where its argument is
-*NULL* (which might happen here if ``tp_new`` failed midway).  It then
+``NULL`` (which might happen here if ``tp_new`` failed midway).  It then
 calls the :c:member:`~PyTypeObject.tp_free` member of the object's type
 (computed by ``Py_TYPE(self)``) to free the object's memory.  Note that
 the object's type might not be :class:`CustomType`, because the object may
@@ -316,7 +321,7 @@ objects of the type.  It is exposed in Python as the :meth:`__new__` method.
 It is not required to define a ``tp_new`` member, and indeed many extension
 types will simply reuse :c:func:`PyType_GenericNew` as done in the first
 version of the ``Custom`` type above.  In this case, we use the ``tp_new``
-handler to initialize the ``first`` and ``last`` attributes to non-*NULL*
+handler to initialize the ``first`` and ``last`` attributes to non-``NULL``
 default values.
 
 ``tp_new`` is passed the type being instantiated (not necessarily ``CustomType``,
@@ -336,7 +341,7 @@ slot to allocate memory::
    self = (CustomObject *) type->tp_alloc(type, 0);
 
 Since memory allocation may fail, we must check the :c:member:`~PyTypeObject.tp_alloc`
-result against *NULL* before proceeding.
+result against ``NULL`` before proceeding.
 
 .. note::
    We didn't fill the :c:member:`~PyTypeObject.tp_alloc` slot ourselves. Rather
@@ -450,9 +455,9 @@ below for details.
 A disadvantage of this approach is that it doesn't provide a way to restrict the
 types of objects that can be assigned to the Python attributes.  We expect the
 first and last names to be strings, but any Python objects can be assigned.
-Further, the attributes can be deleted, setting the C pointers to *NULL*.  Even
-though we can make sure the members are initialized to non-*NULL* values, the
-members can be set to *NULL* if the attributes are deleted.
+Further, the attributes can be deleted, setting the C pointers to ``NULL``.  Even
+though we can make sure the members are initialized to non-``NULL`` values, the
+members can be set to ``NULL`` if the attributes are deleted.
 
 We define a single method, :meth:`Custom.name()`, that outputs the objects name as the
 concatenation of the first and last names. ::
@@ -484,8 +489,8 @@ equivalent to the Python method:
        return "%s %s" % (self.first, self.last)
 
 Note that we have to check for the possibility that our :attr:`first` and
-:attr:`last` members are *NULL*.  This is because they can be deleted, in which
-case they are set to *NULL*.  It would be better to prevent deletion of these
+:attr:`last` members are ``NULL``.  This is because they can be deleted, in which
+case they are set to ``NULL``.  It would be better to prevent deletion of these
 attributes and to restrict the attribute values to be strings.  We'll see how to
 do that in the next section.
 
@@ -579,7 +584,7 @@ could, for example, be used to allow a single set of getter and setter functions
 that decide the attribute to get or set based on data in the closure.)
 
 The setter function is passed the :class:`Custom` object, the new value, and the
-closure.  The new value may be *NULL*, in which case the attribute is being
+closure.  The new value may be ``NULL``, in which case the attribute is being
 deleted.  In our setter, we raise an error if the attribute is deleted or if its
 new value is not a string.
 
@@ -598,7 +603,7 @@ and register it in the :c:member:`~PyTypeObject.tp_getset` slot::
    .tp_getset = Custom_getsetters,
 
 The last item in a :c:type:`PyGetSetDef` structure is the "closure" mentioned
-above.  In this case, we aren't using a closure, so we just pass *NULL*.
+above.  In this case, we aren't using a closure, so we just pass ``NULL``.
 
 We also remove the member definitions for these attributes::
 
@@ -638,7 +643,7 @@ allow strings [#]_ to be passed::
    }
 
 With these changes, we can assure that the ``first`` and ``last`` members are
-never *NULL* so we can remove checks for *NULL* values in almost all cases.
+never ``NULL`` so we can remove checks for ``NULL`` values in almost all cases.
 This means that most of the :c:func:`Py_XDECREF` calls can be converted to
 :c:func:`Py_DECREF` calls.  The only place we can't change these calls is in
 the ``tp_dealloc`` implementation, where there is the possibility that the
@@ -744,7 +749,7 @@ participate in cycles::
 Notice the use of the :c:func:`Py_CLEAR` macro.  It is the recommended and safe
 way to clear data attributes of arbitrary types while decrementing
 their reference counts.  If you were to call :c:func:`Py_XDECREF` instead
-on the attribute before setting it to *NULL*, there is a possibility
+on the attribute before setting it to ``NULL``, there is a possibility
 that the attribute's destructor would call back into code that reads the
 attribute again (*especially* if there is a reference cycle).
 
@@ -864,7 +869,12 @@ function::
            return NULL;
 
        Py_INCREF(&SubListType);
-       PyModule_AddObject(m, "SubList", (PyObject *) &SubListType);
+       if (PyModule_AddObject(m, "SubList", (PyObject *) &SubListType) < 0) {
+           Py_DECREF(&SubListType);
+           Py_DECREF(m);
+           return NULL;
+       }
+
        return m;
    }
 

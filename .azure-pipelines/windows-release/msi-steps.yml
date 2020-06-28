@@ -54,6 +54,7 @@ steps:
   - powershell: |
       copy $(Build.BinariesDirectory)\amd64\Activate.ps1 Lib\venv\scripts\common\Activate.ps1 -Force
     displayName: 'Copy signed files into sources'
+    condition: and(succeeded(), variables['SigningCertificate'])
 
   - script: |
       call Tools\msi\get_externals.bat

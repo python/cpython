@@ -100,8 +100,8 @@ class GroupDatabaseTestCase(unittest.TestCase):
             self.skipTest('no groups')
         # Choose an existent gid.
         gid = entries[0][2]
-        self.assertWarns(DeprecationWarning, grp.getgrgid, float(gid))
-        self.assertWarns(DeprecationWarning, grp.getgrgid, str(gid))
+        self.assertRaises(TypeError, grp.getgrgid, float(gid))
+        self.assertRaises(TypeError, grp.getgrgid, str(gid))
 
 
 if __name__ == "__main__":

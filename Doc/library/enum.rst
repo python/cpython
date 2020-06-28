@@ -55,7 +55,7 @@ helper, :class:`auto`.
 
 .. class:: auto
 
-    Instances are replaced with an appropriate value for Enum members.
+    Instances are replaced with an appropriate value for Enum members.  By default, the initial value starts at 1.
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 
@@ -272,6 +272,10 @@ overridden::
     The goal of the default :meth:`_generate_next_value_` methods is to provide
     the next :class:`int` in sequence with the last :class:`int` provided, but
     the way it does this is an implementation detail and may change.
+
+.. note::
+
+    The :meth:`_generate_next_value_` method must be defined before any members.
 
 Iteration
 ---------

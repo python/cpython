@@ -1,4 +1,0 @@
-Add --cleanup option to python3 -m test to remove ``test_python_*``
-directories of previous failed jobs. Add "make cleantest" to run
-``python3 -m test --cleanup``.
-

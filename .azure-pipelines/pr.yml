@@ -33,14 +33,16 @@ jobs:
 - job: macOS_PR_Tests
   displayName: macOS PR Tests
   dependsOn: Prebuild
-  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+  #condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+  # bpo-39837: macOS tests on Azure Pipelines are disabled
+  condition: false
 
   variables:
     testRunTitle: '$(system.pullRequest.TargetBranch)-macos'
     testRunPlatform: macos
 
   pool:
-    vmImage: xcode9-macos10.13
+    vmImage: macos-10.14
 
   steps:
   - template: ./macos-steps.yml
@@ -59,7 +61,7 @@ jobs:
   variables:
     testRunTitle: '$(system.pullRequest.TargetBranch)-linux'
     testRunPlatform: linux
-    openssl_version: 1.1.1c
+    openssl_version: 1.1.1g
 
   steps:
   - template: ./posix-steps.yml
@@ -116,7 +118,7 @@ jobs:
   variables:
     testRunTitle: '$(Build.SourceBranchName)-linux-coverage'
     testRunPlatform: linux-coverage
-    openssl_version: 1.1.1c
+    openssl_version: 1.1.1g
 
   steps:
   - template: ./posix-steps.yml
@@ -131,7 +133,7 @@ jobs:
   condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
 
   pool:
-    vmImage: vs2017-win2016
+    vmImage: windows-2019
 
   strategy:
     matrix:
@@ -145,7 +147,10 @@ jobs:
         buildOpt: '-p x64'
         testRunTitle: '$(System.PullRequest.TargetBranch)-win64'
         testRunPlatform: win64
-    maxParallel: 2
+      winarm64:
+        arch: arm64
+        buildOpt: '-p arm64'
+    maxParallel: 4
 
   steps:
   - template: ./windows-steps.yml

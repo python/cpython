@@ -4,8 +4,8 @@
 More Control Flow Tools
 ***********************
 
-Besides the :keyword:`while` statement just introduced, Python knows the usual
-control flow statements known from other languages, with some twists.
+Besides the :keyword:`while` statement just introduced, Python uses the usual
+flow control statements known from other languages, with some twists.
 
 
 .. _tut-if:
@@ -69,6 +69,9 @@ they appear in the sequence.  For example (no pun intended):
 Code that modifies a collection while iterating over that same collection can
 be tricky to get right.  Instead, it is usually more straight-forward to loop
 over a copy of the collection or to create a new collection::
+
+    # Create a sample collection
+    users = {'Hans': 'active', 'Éléonore': 'inactive', '景太郎': 'active'}
 
     # Strategy:  Iterate over a copy
     for user, status in users.copy().items():
@@ -142,7 +145,7 @@ the list, thus saving space.
 We say such an object is :term:`iterable`, that is, suitable as a target for
 functions and constructs that expect something from which they can
 obtain successive items until the supply is exhausted.  We have seen that
-the :keyword:`for` statement is such a construct, while an example of function
+the :keyword:`for` statement is such a construct, while an example of a function
 that takes an iterable is :func:`sum`::
 
     >>> sum(range(4))  # 0 + 1 + 2 + 3
@@ -695,7 +698,7 @@ As guidance:
 * Use keyword-only when names have meaning and the function definition is
   more understandable by being explicit with names or you want to prevent
   users relying on the position of the argument being passed.
-* For an API, use positional-only to prevent prevent breaking API changes
+* For an API, use positional-only to prevent breaking API changes
   if the parameter's name is modified in the future.
 
 .. _tut-arbitraryargs:

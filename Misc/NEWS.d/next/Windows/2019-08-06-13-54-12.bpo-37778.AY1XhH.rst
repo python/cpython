@@ -1,1 +1,0 @@
-Fixes the icons used for file associations to the Microsoft Store package.

@@ -1,1 +1,0 @@
-Do not always create a :class:`collections.deque` in :class:`asyncio.Lock`.

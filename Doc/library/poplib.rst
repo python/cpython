@@ -47,6 +47,9 @@ The :mod:`poplib` module provides two classes:
       ``poplib.putline`` with arguments ``self`` and ``line``,
       where ``line`` is the bytes about to be sent to the remote host.
 
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
 
 .. class:: POP3_SSL(host, port=POP3_SSL_PORT, keyfile=None, certfile=None, timeout=None, context=None)
 
@@ -84,6 +87,10 @@ The :mod:`poplib` module provides two classes:
        Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
        :func:`ssl.create_default_context` select the system's trusted CA
        certificates for you.
+
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
 
 One exception is defined as an attribute of the :mod:`poplib` module:
 
@@ -268,4 +275,3 @@ retrieves and prints all messages::
 
 At the end of the module, there is a test section that contains a more extensive
 example of usage.
-

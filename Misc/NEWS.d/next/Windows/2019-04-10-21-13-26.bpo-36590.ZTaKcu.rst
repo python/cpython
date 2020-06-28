@@ -1,1 +1,0 @@
-Add native Bluetooth RFCOMM support to socket module.

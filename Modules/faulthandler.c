@@ -1,7 +1,6 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
 #include "pycore_traceback.h"
-#include "pythread.h"
 #include <signal.h>
 #include <object.h>
 #include <frameobject.h>
@@ -18,8 +17,6 @@
 
 /* Allocate at maximum 100 MiB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100 * 1024 * 1024)
-
-#define FAULTHANDLER_LATER
 
 #ifndef MS_WINDOWS
    /* register() is useless on Windows, because only SIGSEGV, SIGABRT and
@@ -60,7 +57,6 @@ static struct {
 #endif
 } fatal_error = {0, NULL, -1, 0};
 
-#ifdef FAULTHANDLER_LATER
 static struct {
     PyObject *file;
     int fd;
@@ -77,7 +73,6 @@ static struct {
     /* released by child thread when joined */
     PyThread_type_lock running;
 } thread;
-#endif
 
 #ifdef FAULTHANDLER_USER
 typedef struct {
@@ -544,7 +539,7 @@ faulthandler_py_enable(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_XSETREF(fatal_error.file, file);
     fatal_error.fd = fd;
     fatal_error.all_threads = all_threads;
-    fatal_error.interp = tstate->interp;
+    fatal_error.interp = PyThreadState_GetInterpreter(tstate);
 
     if (faulthandler_enable() < 0) {
         return NULL;
@@ -589,8 +584,6 @@ faulthandler_is_enabled(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyBool_FromLong(fatal_error.enabled);
 }
 
-#ifdef FAULTHANDLER_LATER
-
 static void
 faulthandler_thread(void *unused)
 {
@@ -631,6 +624,11 @@ faulthandler_thread(void *unused)
 static void
 cancel_dump_traceback_later(void)
 {
+    /* If not scheduled, nothing to cancel */
+    if (!thread.cancel_event) {
+        return;
+    }
+
     /* Notify cancellation */
     PyThread_release_lock(thread.cancel_event);
 
@@ -757,7 +755,7 @@ faulthandler_dump_traceback_later(PyObject *self,
     /* the downcast is safe: we check that 0 < timeout_us < PY_TIMEOUT_MAX */
     thread.timeout_us = (PY_TIMEOUT_T)timeout_us;
     thread.repeat = repeat;
-    thread.interp = tstate->interp;
+    thread.interp = PyThreadState_GetInterpreter(tstate);
     thread.exit = exit;
     thread.header = header;
     thread.header_len = header_len;
@@ -785,7 +783,6 @@ faulthandler_cancel_dump_traceback_later_py(PyObject *self,
     cancel_dump_traceback_later();
     Py_RETURN_NONE;
 }
-#endif  /* FAULTHANDLER_LATER */
 
 
 #ifdef FAULTHANDLER_USER
@@ -913,10 +910,9 @@ faulthandler_register_py(PyObject *self,
         return NULL;
 
     if (user_signals == NULL) {
-        user_signals = PyMem_Malloc(NSIG * sizeof(user_signal_t));
+        user_signals = PyMem_Calloc(NSIG, sizeof(user_signal_t));
         if (user_signals == NULL)
             return PyErr_NoMemory();
-        memset(user_signals, 0, NSIG * sizeof(user_signal_t));
     }
     user = &user_signals[signum];
 
@@ -941,7 +937,7 @@ faulthandler_register_py(PyObject *self,
     user->fd = fd;
     user->all_threads = all_threads;
     user->chain = chain;
-    user->interp = tstate->interp;
+    user->interp = PyThreadState_GetInterpreter(tstate);
     user->enabled = 1;
 
     Py_RETURN_NONE;
@@ -1067,24 +1063,10 @@ faulthandler_sigsegv(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static void
+static void _Py_NO_RETURN
 faulthandler_fatal_error_thread(void *plock)
 {
-#ifndef __clang__
-    PyThread_type_lock *lock = (PyThread_type_lock *)plock;
-#endif
-
     Py_FatalError("in new thread");
-
-#ifndef __clang__
-    /* Issue #28152: Py_FatalError() is declared with
-       __attribute__((__noreturn__)).  GCC emits a warning without
-       "PyThread_release_lock()" (compiler bug?), but Clang is smarter and
-       emits a warning on the return. */
-
-    /* notify the caller that we are done */
-    PyThread_release_lock(lock);
-#endif
 }
 
 static PyObject *
@@ -1163,18 +1145,14 @@ faulthandler_fatal_error_py(PyObject *self, PyObject *args)
 #if defined(FAULTHANDLER_USE_ALT_STACK)
 #define FAULTHANDLER_STACK_OVERFLOW
 
-#ifdef __INTEL_COMPILER
-   /* Issue #23654: Turn off ICC's tail call optimization for the
-    * stack_overflow generator. ICC turns the recursive tail call into
-    * a loop. */
-#  pragma intel optimization_level 0
-#endif
-static
-uintptr_t
+static uintptr_t
 stack_overflow(uintptr_t min_sp, uintptr_t max_sp, size_t *depth)
 {
-    /* allocate 4096 bytes on the stack at each call */
-    unsigned char buffer[4096];
+    /* Allocate (at least) 4096 bytes on the stack at each call.
+
+       bpo-23654, bpo-38965: use volatile keyword to prevent tail call
+       optimization. */
+    volatile unsigned char buffer[4096];
     uintptr_t sp = (uintptr_t)&buffer;
     *depth += 1;
     if (sp < min_sp || max_sp < sp)
@@ -1225,9 +1203,7 @@ faulthandler_stack_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
 static int
 faulthandler_traverse(PyObject *module, visitproc visit, void *arg)
 {
-#ifdef FAULTHANDLER_LATER
     Py_VISIT(thread.file);
-#endif
 #ifdef FAULTHANDLER_USER
     if (user_signals != NULL) {
         for (size_t signum=0; signum < NSIG; signum++)
@@ -1268,7 +1244,6 @@ static PyMethodDef module_methods[] = {
      PyDoc_STR("dump_traceback(file=sys.stderr, all_threads=True): "
                "dump the traceback of the current thread, or of all threads "
                "if all_threads is True, into file")},
-#ifdef FAULTHANDLER_LATER
     {"dump_traceback_later",
      (PyCFunction)(void(*)(void))faulthandler_dump_traceback_later, METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("dump_traceback_later(timeout, repeat=False, file=sys.stderrn, exit=False):\n"
@@ -1279,8 +1254,6 @@ static PyMethodDef module_methods[] = {
      faulthandler_cancel_dump_traceback_later_py, METH_NOARGS,
      PyDoc_STR("cancel_dump_traceback_later():\ncancel the previous call "
                "to dump_traceback_later().")},
-#endif
-
 #ifdef FAULTHANDLER_USER
     {"register",
      (PyCFunction)(void(*)(void))faulthandler_register_py, METH_VARARGS|METH_KEYWORDS,
@@ -1293,7 +1266,6 @@ static PyMethodDef module_methods[] = {
      PyDoc_STR("unregister(signum): unregister the handler of the signal "
                 "'signum' registered by register()")},
 #endif
-
     {"_read_null", faulthandler_read_null, METH_NOARGS,
      PyDoc_STR("_read_null(): read from NULL, raise "
                "a SIGSEGV or SIGBUS signal depending on the platform")},
@@ -1342,25 +1314,36 @@ PyInit_faulthandler(void)
 #ifdef MS_WINDOWS
     /* RaiseException() codes (prefixed by an underscore) */
     if (PyModule_AddIntConstant(m, "_EXCEPTION_ACCESS_VIOLATION",
-                                EXCEPTION_ACCESS_VIOLATION))
-        return NULL;
+                                EXCEPTION_ACCESS_VIOLATION)) {
+        goto error;
+    }
     if (PyModule_AddIntConstant(m, "_EXCEPTION_INT_DIVIDE_BY_ZERO",
-                                EXCEPTION_INT_DIVIDE_BY_ZERO))
-        return NULL;
+                                EXCEPTION_INT_DIVIDE_BY_ZERO)) {
+        goto error;
+    }
     if (PyModule_AddIntConstant(m, "_EXCEPTION_STACK_OVERFLOW",
-                                EXCEPTION_STACK_OVERFLOW))
-        return NULL;
+                                EXCEPTION_STACK_OVERFLOW)) {
+        goto error;
+    }
 
     /* RaiseException() flags (prefixed by an underscore) */
     if (PyModule_AddIntConstant(m, "_EXCEPTION_NONCONTINUABLE",
-                                EXCEPTION_NONCONTINUABLE))
-        return NULL;
+                                EXCEPTION_NONCONTINUABLE)) {
+        goto error;
+    }
     if (PyModule_AddIntConstant(m, "_EXCEPTION_NONCONTINUABLE_EXCEPTION",
-                                EXCEPTION_NONCONTINUABLE_EXCEPTION))
-        return NULL;
+                                EXCEPTION_NONCONTINUABLE_EXCEPTION)) {
+        goto error;
+    }
 #endif
 
     return m;
+
+#ifdef MS_WINDOWS
+error:
+    Py_DECREF(m);
+    return NULL;
+#endif
 }
 
 static int
@@ -1394,9 +1377,7 @@ _PyFaulthandler_Init(int enable)
     stack.ss_size = SIGSTKSZ * 2;
 #endif
 
-#ifdef FAULTHANDLER_LATER
     memset(&thread, 0, sizeof(thread));
-#endif
 
     if (enable) {
         if (faulthandler_init_enable() < 0) {
@@ -1408,7 +1389,6 @@ _PyFaulthandler_Init(int enable)
 
 void _PyFaulthandler_Fini(void)
 {
-#ifdef FAULTHANDLER_LATER
     /* later */
     if (thread.cancel_event) {
         cancel_dump_traceback_later();
@@ -1420,7 +1400,6 @@ void _PyFaulthandler_Fini(void)
         PyThread_free_lock(thread.running);
         thread.running = NULL;
     }
-#endif
 
 #ifdef FAULTHANDLER_USER
     /* user */

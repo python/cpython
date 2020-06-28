@@ -105,8 +105,8 @@ The module defines the following user-callable items:
    causes the file to roll over to an on-disk file regardless of its size.
 
    The returned object is a file-like object whose :attr:`_file` attribute
-   is either an :class:`io.BytesIO` or :class:`io.StringIO` object (depending on
-   whether binary or text *mode* was specified) or a true file
+   is either an :class:`io.BytesIO` or :class:`io.TextIOWrapper` object
+   (depending on whether binary or text *mode* was specified) or a true file
    object, depending on whether :func:`rollover` has been called.  This
    file-like object can be used in a :keyword:`with` statement, just like
    a normal file.
@@ -191,6 +191,9 @@ The module defines the following user-callable items:
       *suffix* and *prefix* now accept and default to ``None`` to cause
       an appropriate default value to be used.
 
+   .. versionchanged:: 3.6
+      The *dir* parameter now accepts a :term:`path-like object`.
+
 
 .. function:: mkdtemp(suffix=None, prefix=None, dir=None)
 
@@ -213,6 +216,9 @@ The module defines the following user-callable items:
       obtain a bytes return value.  Prior to this, only str was allowed.
       *suffix* and *prefix* now accept and default to ``None`` to cause
       an appropriate default value to be used.
+
+   .. versionchanged:: 3.6
+      The *dir* parameter now accepts a :term:`path-like object`.
 
 
 .. function:: gettempdir()

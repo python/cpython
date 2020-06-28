@@ -76,6 +76,10 @@ class NoIterClass:
         return i
     __iter__ = None
 
+class BadIterableClass:
+    def __iter__(self):
+        raise ZeroDivisionError
+
 # Main test suite
 
 class TestCase(unittest.TestCase):
@@ -658,6 +662,7 @@ class TestCase(unittest.TestCase):
 
         self.assertRaises(TypeError, lambda: 3 in 12)
         self.assertRaises(TypeError, lambda: 3 not in map)
+        self.assertRaises(ZeroDivisionError, lambda: 3 in BadIterableClass())
 
         d = {"one": 1, "two": 2, "three": 3, 1j: 2j}
         for k in d:
@@ -740,6 +745,7 @@ class TestCase(unittest.TestCase):
 
         self.assertRaises(TypeError, indexOf, 42, 1)
         self.assertRaises(TypeError, indexOf, indexOf, indexOf)
+        self.assertRaises(ZeroDivisionError, indexOf, BadIterableClass(), 1)
 
         f = open(TESTFN, "w")
         try:
@@ -1027,6 +1033,7 @@ class TestCase(unittest.TestCase):
     def test_error_iter(self):
         for typ in (DefaultIterClass, NoIterClass):
             self.assertRaises(TypeError, iter, typ())
+        self.assertRaises(ZeroDivisionError, iter, BadIterableClass())
 
 
 def test_main():

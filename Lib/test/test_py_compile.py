@@ -51,7 +51,7 @@ class SourceDateEpochTestMeta(type(unittest.TestCase)):
 class PyCompileTestsBase:
 
     def setUp(self):
-        self.directory = tempfile.mkdtemp()
+        self.directory = tempfile.mkdtemp(dir=os.getcwd())
         self.source_path = os.path.join(self.directory, '_test.py')
         self.pyc_path = self.source_path + 'c'
         self.cache_path = importlib.util.cache_from_source(self.source_path)

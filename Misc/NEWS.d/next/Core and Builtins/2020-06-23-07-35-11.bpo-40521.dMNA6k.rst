@@ -1,0 +1,1 @@
+Empty frozensets are no longer singletons.
