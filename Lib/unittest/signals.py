@@ -10,19 +10,9 @@ class _InterruptHandler(object):
     def __init__(self, default_handler):
         self.called = False
         self.original_handler = default_handler
-        if isinstance(default_handler, int):
-            if default_handler == signal.SIG_DFL:
-                # Pretend it's signal.default_int_handler instead.
-                default_handler = signal.default_int_handler
-            elif default_handler == signal.SIG_IGN:
-                # Not quite the same thing as SIG_IGN, but the closest we
-                # can make it: do nothing.
-                def default_handler(unused_signum, unused_frame):
-                    pass
-            else:
-                raise TypeError("expected SIGINT signal handler to be "
-                                "signal.SIG_IGN, signal.SIG_DFL, or a "
-                                "callable object")
+        if default_handler == signal.SIG_DFL:
+            # Pretend it's signal.default_int_handler instead.
+            default_handler = signal.default_int_handler
         self.default_handler = default_handler
 
     def __call__(self, signum, frame):
