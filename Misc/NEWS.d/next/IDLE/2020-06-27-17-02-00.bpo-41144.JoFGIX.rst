@@ -1,1 +1,1 @@
-Fix ImportError when opening special modules (e.g. os.path)
+Make Open Module open a special module such as os.path.
