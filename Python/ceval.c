@@ -885,10 +885,10 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, PyObject *
         Py_INCREF(value);
         PyTuple_SET_ITEM(values, i, value);
         if (copy && PyDict_DelItem(copy, key)) {
-            if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+            if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                 goto fail;
             }
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
         }
     }
     Py_DECREF(seen);
@@ -902,33 +902,31 @@ fail:
 static PyObject *
 get_match_args(PyThreadState *tstate, PyObject *type)
 {
-    if (!PyObject_HasAttrString(type, "__match_args__")) {
-        Py_RETURN_NONE;
-    }
-    PyObject *ma = PyObject_GetAttrString(type, "__match_args__");
-    if (!ma) {
+    PyObject *match_args = PyObject_GetAttrString(type, "__match_args__");
+    if (!match_args) {
+        if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+            _PyErr_Clear(tstate);
+        }
         return NULL;
     }
-    // TODO: PySequence_FAST
-    if (PyTuple_CheckExact(ma) || ma == Py_None) {
-        return ma;
-    }
-    if (PyList_CheckExact(ma)) {
-        PyObject *tuple = PyList_AsTuple(ma);
-        Py_DECREF(ma);
-        return tuple;
+    if (PyList_CheckExact(match_args) || PyTuple_CheckExact(match_args)) {
+        return match_args;
     }
     _PyErr_Format(tstate, PyExc_TypeError,
-                    "__match_args__ must be a list, tuple, or None (got %s)",
-                    Py_TYPE(ma)->tp_name);
-    Py_DECREF(ma);
+                  "__match_args__ must be a list or tuple (got %s)",
+                  Py_TYPE(match_args)->tp_name);
+    Py_DECREF(match_args);
     return NULL;
 }
 
 static PyObject *
 do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *type, PyObject *target)
 {
-    // TODO: Break this up, and better error handling ("goto error;"):
+    // TODO: Break this up!
+    PyObject *match_args = NULL;
+    PyObject *args = NULL;
+    PyObject *attrs = NULL;
+    PyObject *seen = NULL;
     assert(PyTuple_CheckExact(kwargs));
     if (!PyType_Check(type)) {
         _PyErr_Format(tstate, PyExc_TypeError,
@@ -954,66 +952,60 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
     }
     Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwargs);
     Py_ssize_t nargs = count - nkwargs;
-    PyObject *args;
-    PyObject *match_args = get_match_args(tstate, type);
-    if (!match_args) {
-        Py_DECREF(proxy);
-        return NULL;
+    match_args = get_match_args(tstate, type);
+    assert(!match_args || PyList_CheckExact(match_args) || PyTuple_CheckExact(match_args));
+    if (!match_args && _PyErr_Occurred(tstate)) {
+        goto error;
     }
-    assert(PyTuple_CheckExact(match_args) || match_args == Py_None);
-    if (nargs) {
-        if (match_args == Py_None) {
+    if (!nargs) {
+        args = PyTuple_New(0);
+        if (!args) {
+            goto error;
+        }
+    }
+    else if (!match_args) {
+        if (PyType_HasFeature((PyTypeObject *)type, _Py_TPFLAGS_SIMPLE_MATCH)) {
             if (nargs > 1) {
-                Py_DECREF(match_args);
-                Py_DECREF(proxy);
-                // TODO: Add expected and actual counts:
-                _PyErr_SetString(tstate, PyExc_ImpossibleMatchError,
-                                 "too many positional matches in pattern");
-                return NULL;
+                _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
+                    "too many positional matches in pattern (expected at most 1, got %d)",
+                    nargs);
+                goto error;
             }
-            args = match_args;
         }
         else {
-            if (PyTuple_GET_SIZE(match_args) < nargs) {
-                // TODO: Combine with above:
-                Py_DECREF(match_args);
-                Py_DECREF(proxy);
-                // TODO: Add expected and actual counts:
-                _PyErr_SetString(tstate, PyExc_ImpossibleMatchError,
-                                 "too many positional matches in pattern");
-                return NULL;
-            }
-            args = PyTuple_GetSlice(match_args, 0, nargs);
+            _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
+                "too many positional matches in pattern (expected none, got %d)",
+                nargs);
+            goto error;
         }
     }
     else {
-        args = PyTuple_New(0);
+        Py_ssize_t nmatch_args = PySequence_Fast_GET_SIZE(match_args);
+        if (nmatch_args < nargs) {
+            // TODO: Combine with above:
+            _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
+                "too many positional matches in pattern (expected at most %d, got %d)",
+                nmatch_args, nargs);
+            return NULL;
+        }
+        args = PyList_CheckExact(match_args) ? PyList_GetSlice(match_args, 0, nargs) : PyTuple_GetSlice(match_args, 0, nargs);
+        if (!args) {
+            goto error;
+        }
     }
-    if (!args) {
-        Py_DECREF(match_args);
-        Py_DECREF(proxy);
-        return NULL;
-    }
-    assert(PyTuple_CheckExact(args) || args == Py_None);
-    PyObject *attrs = PyTuple_New(count);
+    assert(!args || PyList_CheckExact(args) || PyTuple_CheckExact(args));
+    attrs = PyTuple_New(count);
     if (!attrs) {
-        Py_DECREF(match_args);
-        Py_DECREF(proxy);
-        Py_DECREF(args);
-        return NULL;
+        goto error;
     }
-    PyObject *seen = PySet_New(NULL);
+    seen = PySet_New(NULL);
     if (!seen) {
-        Py_DECREF(match_args);
-        Py_DECREF(proxy);
-        Py_DECREF(args);
-        Py_DECREF(attrs);
-        return NULL;
+        goto error;
     }
     PyObject *name;
     for (Py_ssize_t i = 0; i < count; i++) {
         if (i < nargs) {
-            if (args == Py_None) {
+            if (!args) {
                 assert(!i);
                 Py_INCREF(proxy);
                 PyTuple_SET_ITEM(attrs, 0, proxy);
@@ -1043,30 +1035,28 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
             // TODO: Only clear AttributeError?
             _PyErr_Clear(tstate);
             // TODO: iterate manually (and check for strings)
-            if (match_args != Py_None && !PySequence_Contains(match_args, name)) {
+            if (match_args && !PySequence_Contains(match_args, name)) {
                 _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
                               "match proxy %R has no attribute %R",
                               proxy, name);
                 goto error;
             }
-            Py_DECREF(attrs);
-            attrs = Py_None;
-            Py_INCREF(attrs);
+            Py_SETREF(attrs, Py_None);
             break;
         }
         PyTuple_SET_ITEM(attrs, i, attr);
     }
-    Py_DECREF(match_args);
     Py_DECREF(proxy);
-    Py_DECREF(args);
+    Py_XDECREF(match_args);
+    Py_XDECREF(args);
     Py_DECREF(seen);
     return attrs;
 error:
-    Py_DECREF(match_args);
     Py_DECREF(proxy);
-    Py_DECREF(args);
-    Py_DECREF(seen);
-    Py_DECREF(attrs);
+    Py_XDECREF(match_args);
+    Py_XDECREF(args);
+    Py_XDECREF(seen);
+    Py_XDECREF(attrs);
     return NULL;
 }
 
