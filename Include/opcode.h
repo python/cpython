@@ -118,10 +118,10 @@ extern "C" {
 #define SET_ADD                 146
 #define MAP_ADD                 147
 #define LOAD_CLASSDEREF         148
-#define MATCH_CLS               149
-#define MATCH_MAP_KEYS          150
-#define MATCH_MAP               151
-#define MATCH_SEQ               152
+#define MATCH_TYPE              149
+#define MATCH_KEYS              150
+#define JUMP_IF_NOT_MAP         151
+#define JUMP_IF_NOT_SEQ         152
 #define SETUP_ASYNC_WITH        154
 #define FORMAT_VALUE            155
 #define BUILD_CONST_KEY_MAP     156

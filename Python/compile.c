@@ -1103,13 +1103,13 @@ stack_effect(int opcode, int oparg, int jump)
         case DICT_MERGE:
         case DICT_UPDATE:
             return -1;
-        case MATCH_CLS:
+        case MATCH_TYPE:
             return -1;
-        case MATCH_MAP_KEYS:
+        case MATCH_KEYS:
         case GET_LEN:
             return 1;
-        case MATCH_MAP:
-        case MATCH_SEQ:
+        case JUMP_IF_NOT_MAP:
+        case JUMP_IF_NOT_SEQ:
             return 0;
         default:
             return PY_INVALID_STACK_EFFECT;
@@ -2787,7 +2787,7 @@ compiler_pattern_call(struct compiler *c, expr_ty p, basicblock *fail, PyObject*
         PyTuple_SET_ITEM(kwnames, i, name);
     }
     ADDOP_LOAD_CONST_NEW(c, kwnames);
-    ADDOP_I(c, MATCH_CLS, nargs + nkwargs);
+    ADDOP_I(c, MATCH_TYPE, nargs + nkwargs);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     for (i = 0; i < nargs; i++) {
         expr_ty arg = asdl_seq_GET(args, i);
@@ -2848,7 +2848,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
     asdl_seq *values = p->v.Dict.values;
     Py_ssize_t size = asdl_seq_LEN(values);
     int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
-    ADDOP_JREL(c, MATCH_MAP, block);
+    ADDOP_JREL(c, JUMP_IF_NOT_MAP, block);
     if (size - star) {
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star));
@@ -2867,7 +2867,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
         VISIT(c, expr, asdl_seq_GET(keys, i));
     }
     ADDOP_I(c, BUILD_TUPLE, size - star);
-    ADDOP_I(c, MATCH_MAP_KEYS, star);
+    ADDOP_I(c, MATCH_KEYS, star);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block_star)
     for (i = 0; i < size - star; i++) {
         expr_ty value = asdl_seq_GET(values, i);
@@ -2996,7 +2996,7 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
     basicblock *block, *end;
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
-    ADDOP_JREL(c, MATCH_SEQ, block);
+    ADDOP_JREL(c, JUMP_IF_NOT_SEQ, block);
     if (star >= 0) {
         if (size) {
             ADDOP(c, GET_LEN);

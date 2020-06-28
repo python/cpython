@@ -1196,31 +1196,31 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.6
 
 
-.. opcode:: MATCH_CLS (count)
+.. opcode:: MATCH_TYPE (count)
 
    TODO
 
    .. versionadded:: 3.10
 
 
-.. opcode:: MATCH_MAP (delta)
+.. opcode:: JUMP_IF_NOT_MAP (delta)
 
-   If TOS is not a subclass of :class:`collections.abc.Mapping`, increment the
+   If TOS is not an instance of :class:`collections.abc.Mapping`, increment the
    bytecode counter by *delta*.
 
    .. versionadded:: 3.10
 
 
-.. opcode:: MATCH_SEQ (delta)
+.. opcode:: JUMP_IF_NOT_SEQ (delta)
 
-   If TOS is a subclass of :class:`string`/:class:`bytes`/:class:`bytearray`, is
-   an :term:`iterator`, or is not a subclass of
+   If TOS is an instance of :class:`string`/:class:`bytes`/:class:`bytearray`,
+   is an :term:`iterator`, or is not an instance of
    :class:`collections.abc.Sequence`, increment the bytecode counter by *delta*.
 
    .. versionadded:: 3.10
 
 
-.. opcode:: MATCH_MAP_KEYS (copy)
+.. opcode:: MATCH_KEYS (copy)
 
    TODO
 

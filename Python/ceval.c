@@ -857,7 +857,7 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, PyObject *
     if (PyMapping_Length(map) < nkeys) {
         goto fail;
     }
-    seen = PySet_New(NULL);
+    seen = PyList_New(0);
     if (!seen) {
         goto fail;
     }
@@ -867,8 +867,8 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, PyObject *
     }
     for (Py_ssize_t i = 0; i < nkeys; i++) {
         PyObject *key = PyTuple_GET_ITEM(keys, i);
-        int dupe = PySet_Contains(seen, key);
-        if (dupe || PySet_Add(seen, key)) {
+        int dupe = PySequence_Contains(seen, key);
+        if (dupe || PyList_Append(seen, key)) {
             if (!_PyErr_Occurred(tstate)) {
                 _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
                               "mapping pattern checks duplicate key (%R)", key);
@@ -913,8 +913,8 @@ get_match_args(PyThreadState *tstate, PyObject *type)
         return match_args;
     }
     _PyErr_Format(tstate, PyExc_TypeError,
-                  "__match_args__ must be a list or tuple (got %s)",
-                  Py_TYPE(match_args)->tp_name);
+        "%s.__match_args__ must be a list or tuple (got %s)",
+        ((PyTypeObject *)type)->tp_name, Py_TYPE(match_args)->tp_name);
     Py_DECREF(match_args);
     return NULL;
 }
@@ -939,7 +939,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         _PyErr_Clear(tstate);
         _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
                       "type %s cannot be matched",
-                      Py_TYPE(type)->tp_name);
+                      ((PyTypeObject *)type)->tp_name);
         return NULL;
     }
     PyObject *proxy = PyObject_CallOneArg(method, target);
@@ -957,6 +957,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
     if (!match_args && _PyErr_Occurred(tstate)) {
         goto error;
     }
+    Py_ssize_t nmatch_args;
     if (!nargs) {
         args = PyTuple_New(0);
         if (!args) {
@@ -964,28 +965,30 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         }
     }
     else if (!match_args) {
-        if (PyType_HasFeature((PyTypeObject *)type, _Py_TPFLAGS_SIMPLE_MATCH)) {
-            if (nargs > 1) {
-                _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
-                    "too many positional matches in pattern (expected at most 1, got %d)",
-                    nargs);
-                goto error;
-            }
-        }
-        else {
+        if (!PyType_HasFeature((PyTypeObject *)type, _Py_TPFLAGS_SIMPLE_MATCH)) {
+            nmatch_args = 0;
+            // TODO: Combine with below (and reword for 0):
             _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
-                "too many positional matches in pattern (expected none, got %d)",
-                nargs);
+                "%s() takes at most %d positional sub-patterns (%d given)",
+                ((PyTypeObject *)type)->tp_name, nmatch_args, nargs);
+            goto error;
+        }
+        nmatch_args = 1;
+        if (nargs > 1) {
+            // TODO: Combine with above (and reword for 0):
+            _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
+                "%s() takes at most %d positional sub-patterns (%d given)",
+                ((PyTypeObject *)type)->tp_name, nmatch_args, nargs);
             goto error;
         }
     }
     else {
         Py_ssize_t nmatch_args = PySequence_Fast_GET_SIZE(match_args);
         if (nmatch_args < nargs) {
-            // TODO: Combine with above:
+            // TODO: Combine with above (and reword for 0):
             _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
-                "too many positional matches in pattern (expected at most %d, got %d)",
-                nmatch_args, nargs);
+                "%s() takes at most %d positional sub-patterns (%d given)",
+                ((PyTypeObject *)type)->tp_name, nmatch_args, nargs);
             return NULL;
         }
         args = PyList_CheckExact(match_args) ? PyList_GetSlice(match_args, 0, nargs) : PyTuple_GetSlice(match_args, 0, nargs);
@@ -1026,7 +1029,8 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         if (dupe || PySet_Add(seen, name)) {
             if (!_PyErr_Occurred(tstate)) {
                 _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
-                              "multiple patterns bound to attribute %R", name);
+                    "%s() got multiple sub-patterns for attribute %R",
+                    ((PyTypeObject *)type)->tp_name, name);
             }
             goto error;
         }
@@ -3496,7 +3500,7 @@ main_loop:
 #endif
         }
 
-        case TARGET(MATCH_CLS): {
+        case TARGET(MATCH_TYPE): {
             PyObject *names = POP();
             PyObject *type = TOP();
             PyObject *target = SECOND();
@@ -3512,7 +3516,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(MATCH_MAP): {
+        case TARGET(JUMP_IF_NOT_MAP): {
             PyInterpreterState *interp = PyInterpreterState_Get();
             if (!interp) {
                     goto error;
@@ -3538,7 +3542,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(MATCH_SEQ): {
+        case TARGET(JUMP_IF_NOT_SEQ): {
             PyObject *target = TOP();
             if (PyType_FastSubclass(Py_TYPE(target),
                     Py_TPFLAGS_UNICODE_SUBCLASS | Py_TPFLAGS_BYTES_SUBCLASS)
@@ -3573,7 +3577,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(MATCH_MAP_KEYS): {
+        case TARGET(MATCH_KEYS): {
             PyObject *keys = TOP();
             PyObject *target = SECOND();
             PyObject *copy = NULL;

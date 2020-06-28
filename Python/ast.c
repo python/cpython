@@ -402,7 +402,8 @@ validate_pattern(expr_ty p)
             }
             return 1;
         case List_kind:
-            values = p->v.List.elts;
+        case Tuple_kind:
+            values = p->kind == List_kind ? p->v.List.elts : p->v.Tuple.elts;
             size = asdl_seq_LEN(values);
             for (i = 0; i < size; i++) {
                 value = asdl_seq_GET(values, i);
@@ -431,6 +432,7 @@ validate_pattern(expr_ty p)
             return (validate_pattern(p->v.NamedExpr.value)
                     && validate_expr(p->v.NamedExpr.target, Store));
         case UnaryOp_kind:
+            // TODO
             return 1;
         default:
             PyErr_SetString(PyExc_ValueError, "invalid Match pattern");
