@@ -627,6 +627,27 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertNotEqual(pickle.load(f), id(sys.modules))
             self.assertNotEqual(pickle.load(f), id(builtins))
 
+    def test_subinterps_recent_language_features(self):
+        r, w = os.pipe()
+        code = """if 1:
+            import pickle
+            with open({:d}, "wb") as f:
+
+                @(lambda x:x)  # Py 3.9
+                def noop(x): return x
+
+                a = (b := f'1{{2}}3') + noop('x')  # Py 3.8 (:=) / 3.6 (f'')
+
+                async def foo(arg): return await arg  # Py 3.5
+
+                pickle.dump(dict(a=a, b=b), f)
+            """.format(w)
+
+        with open(r, "rb") as f:
+            ret = support.run_in_subinterp(code)
+            self.assertEqual(ret, 0)
+            self.assertEqual(pickle.load(f), {'a': '123x', 'b': '123'})
+
     def test_mutate_exception(self):
         """
         Exceptions saved in global module state get shared between
