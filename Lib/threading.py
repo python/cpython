@@ -884,8 +884,7 @@ class Thread:
 
         """
         try:
-            if self._target:
-                self._target(*self._args, **self._kwargs)
+            self._target(*self._args, **self._kwargs)
         finally:
             # Avoid a refcycle if the thread is running a function with
             # an argument that has a member that points to the thread.
