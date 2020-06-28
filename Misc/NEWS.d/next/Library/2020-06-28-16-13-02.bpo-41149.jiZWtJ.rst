@@ -1,0 +1,1 @@
+Fix a bug that can cause threads to fail to start.
