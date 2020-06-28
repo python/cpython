@@ -39,15 +39,16 @@ or on combining URL components into a URL string.
 
 .. function:: urlparse(url, scheme='', allow_fragments=True)
 
-   Parse a URL into six components, returning a 6-item :term:`named tuple`.  This
-   corresponds to the general structure of a URL:
+   Parse a URL into six components, returning a 6-item :term:`named tuple`.
+   This corresponds to the general structure of a URL:
    ``scheme://netloc/path;parameters?query#fragment``.
 
-   The delimiters as shown above are not part of the result, except for a leading slash in the path
-   component, which is retained if present.
+   The delimiters as shown above are not part of the result, except for a
+   leading slash in the path component, which is retained if present.
 
-   Additionally, the netloc property is broken down into these additional attributes added to
-   the returned object: username, password, hostname, and port.
+   Additionally, the netloc property is broken down into these additional
+   attributes added to the returned object: username, password, hostname, and
+   port.
 
    % escapes are not decoded.
 
