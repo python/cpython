@@ -177,6 +177,14 @@ struct compiler {
     PyArena *c_arena;            /* pointer to memory allocation arena */
 };
 
+typedef struct {
+    // Py_ssize_t map_len_ge;
+    // Py_ssize_t seq_len_ge;
+    // Py_ssize_t seq_len_eq;
+    // basicblock *success;
+    basicblock *failure;
+} pattern_context;
+
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
 static void compiler_free(struct compiler *);
 static basicblock *compiler_new_block(struct compiler *);
@@ -222,7 +230,7 @@ static int compiler_async_comprehension_generator(
                                       int depth,
                                       expr_ty elt, expr_ty val, int type);
 
-static int compiler_pattern(struct compiler *, expr_ty, basicblock *, PyObject *);
+static int compiler_pattern(struct compiler *, expr_ty, pattern_context *, PyObject *);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
 static PyObject *__doc__, *__annotations__;
@@ -2746,25 +2754,23 @@ compiler_if(struct compiler *c, stmt_ty s)
     return 1;
 }
 
-// TODO: Remove Store part of check if disallowing all usage of _:
 #define WILDCARD_CHECK(N) \
-    ((N)->kind == Name_kind && _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
+    ((N)->kind == Name_kind && (N)->v.Name.ctx == Store && _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
 
 static int
-compiler_pattern_load(struct compiler *c, expr_ty p, basicblock *fail)
+compiler_pattern_load(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Attribute_kind || p->kind == Constant_kind || p->kind == Name_kind);
     assert(p->kind != Attribute_kind || p->v.Attribute.ctx == Load);
     assert(p->kind != Name_kind || p->v.Name.ctx == Load);
-    // TODO: Guard against wildcards here?
     VISIT(c, expr, p);
     ADDOP_COMPARE(c, Eq);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, fail);
+    ADDOP_JABS(c, POP_JUMP_IF_FALSE, pc->failure);
     return 1;
 }
 
 static int
-compiler_pattern_call(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names) {
+compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc, PyObject* names) {
     asdl_seq *args = p->v.Call.args;
     asdl_seq *kwargs = p->v.Call.keywords;
     Py_ssize_t nargs = asdl_seq_LEN(args);
@@ -2789,6 +2795,8 @@ compiler_pattern_call(struct compiler *c, expr_ty p, basicblock *fail, PyObject*
     ADDOP_LOAD_CONST_NEW(c, kwnames);
     ADDOP_I(c, MATCH_TYPE, nargs + nkwargs);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+    pattern_context sub_pc = *pc;
+    sub_pc.failure = block;
     for (i = 0; i < nargs; i++) {
         expr_ty arg = asdl_seq_GET(args, i);
         if (WILDCARD_CHECK(arg)) {
@@ -2797,7 +2805,7 @@ compiler_pattern_call(struct compiler *c, expr_ty p, basicblock *fail, PyObject*
         ADDOP(c, DUP_TOP);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
         ADDOP(c, BINARY_SUBSCR);
-        CHECK(compiler_pattern(c, arg, block, names));
+        CHECK(compiler_pattern(c, arg, &sub_pc, names));
     }
     for (i = 0; i < nkwargs; i++) {
         keyword_ty kwarg = asdl_seq_GET(kwargs, i);
@@ -2807,13 +2815,13 @@ compiler_pattern_call(struct compiler *c, expr_ty p, basicblock *fail, PyObject*
         ADDOP(c, DUP_TOP);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(nargs + i));
         ADDOP(c, BINARY_SUBSCR);
-        CHECK(compiler_pattern(c, kwarg->value, block, names));
+        CHECK(compiler_pattern(c, kwarg->value, &sub_pc, names));
     }
     ADDOP(c, POP_TOP);
     ADDOP_JREL(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, block);
     ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, fail);
+    ADDOP_JREL(c, JUMP_FORWARD, pc->failure);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -2838,7 +2846,7 @@ compiler_pattern_store(struct compiler *c, expr_ty p, int wildcard_ok, PyObject*
 }
 
 static int
-compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names)
+compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc, PyObject* names)
 {
     basicblock *block, *block_star, *end;
     CHECK(block_star = compiler_new_block(c));
@@ -2869,6 +2877,8 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
     ADDOP_I(c, BUILD_TUPLE, size - star);
     ADDOP_I(c, MATCH_KEYS, star);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block_star)
+    pattern_context sub_pc = *pc;
+    sub_pc.failure = block_star;
     for (i = 0; i < size - star; i++) {
         expr_ty value = asdl_seq_GET(values, i);
         if (WILDCARD_CHECK(value)) {
@@ -2877,7 +2887,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
         ADDOP(c, DUP_TOP);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
         ADDOP(c, BINARY_SUBSCR);
-        CHECK(compiler_pattern(c, value, block_star, names));
+        CHECK(compiler_pattern(c, value, &sub_pc, names));
     }
     ADDOP(c, POP_TOP);
     if (star) {
@@ -2891,42 +2901,44 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, basicblock *fail, PyObje
     ADDOP(c, POP_TOP);
     compiler_use_next_block(c, block);
     ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, fail);
+    ADDOP_JREL(c, JUMP_FORWARD, pc->failure);
     compiler_use_next_block(c, end);
     return 1;
 }
 
 static int
-compiler_pattern_name(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names)
+compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context *pc, PyObject* names)
 {
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Load || p->v.Name.ctx == Store);
     if (p->v.Name.ctx == Load) {
-        return compiler_pattern_load(c, p, fail);
+        return compiler_pattern_load(c, p, pc);
     }
     return compiler_pattern_store(c, p, 1, names);
 }
 
 static int
-compiler_pattern_namedexpr(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names)
+compiler_pattern_namedexpr(struct compiler *c, expr_ty p, pattern_context *pc, PyObject* names)
 {
     assert(p->kind == NamedExpr_kind);
     basicblock *block, *end;
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
     ADDOP(c, DUP_TOP);
-    CHECK(compiler_pattern(c, p->v.NamedExpr.value, block, names));
+    pattern_context sub_pc = *pc;
+    sub_pc.failure = block;
+    CHECK(compiler_pattern(c, p->v.NamedExpr.value, &sub_pc, names));
     CHECK(compiler_pattern_store(c, p->v.NamedExpr.target, 0, names));
     ADDOP_JREL(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, block);
     ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, fail);
+    ADDOP_JREL(c, JUMP_FORWARD, pc->failure);
     compiler_use_next_block(c, end);
     return 1;
 }
 
 static int
-compiler_pattern_or(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names)
+compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc, PyObject* names)
 {
     assert(p->kind == BoolOp_kind);
     assert(p->v.BoolOp.op == Or);
@@ -2940,7 +2952,9 @@ compiler_pattern_or(struct compiler *c, expr_ty p, basicblock *fail, PyObject* n
         CHECK(names_copy  = PySet_New(names));
         CHECK(block = compiler_new_block(c));
         ADDOP(c, DUP_TOP);
-        CHECK(compiler_pattern(c, asdl_seq_GET(p->v.BoolOp.values, i), block, names_copy));
+        pattern_context sub_pc = *pc;
+        sub_pc.failure = block;
+        CHECK(compiler_pattern(c, asdl_seq_GET(p->v.BoolOp.values, i), &sub_pc, names_copy));
         ADDOP(c, POP_TOP);
         ADDOP_JREL(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, block);
@@ -2971,13 +2985,13 @@ compiler_pattern_or(struct compiler *c, expr_ty p, basicblock *fail, PyObject* n
     assert(control);
     Py_DECREF(control);
     ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, fail);
+    ADDOP_JREL(c, JUMP_FORWARD, pc->failure);
     compiler_use_next_block(c, end);
     return 1;
 }
 
 static int
-compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names)
+compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc, PyObject* names)
 {
     assert(p->kind == List_kind || p->kind == Tuple_kind);
     asdl_seq *values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
@@ -3011,6 +3025,8 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
         ADDOP_COMPARE(c, Eq);
         ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     }
+    pattern_context sub_pc = *pc;
+    sub_pc.failure = block;
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);
         if (WILDCARD_CHECK(value)) {
@@ -3051,46 +3067,46 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, basicblock *fail, PyObj
             ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(-(size - i)));
             ADDOP(c, BINARY_SUBSCR);
         }
-        CHECK(compiler_pattern(c, value, block, names));
+        CHECK(compiler_pattern(c, value, &sub_pc, names));
     }
     ADDOP(c, POP_TOP);
     ADDOP_JREL(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, block);
     ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, fail);
+    ADDOP_JREL(c, JUMP_FORWARD, pc->failure);
     compiler_use_next_block(c, end);
     return 1;
 }
 
 static int
-compiler_pattern(struct compiler *c, expr_ty p, basicblock *fail, PyObject* names)
+compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc, PyObject* names)
 {
     SET_LOC(c, p);
     switch (p->kind) {
         case Attribute_kind:
-            return compiler_pattern_load(c, p, fail);
+            return compiler_pattern_load(c, p, pc);
         case BinOp_kind:
             // Because we allow "2+2j", things like "2+2" make it this far:
             return compiler_error(c, "patterns cannot include operators");
         case BoolOp_kind:
-            return compiler_pattern_or(c, p, fail, names);
+            return compiler_pattern_or(c, p, pc, names);
         case Call_kind:
-            return compiler_pattern_call(c, p, fail, names);
+            return compiler_pattern_call(c, p, pc, names);
         case Constant_kind:
-            return compiler_pattern_load(c, p, fail);
+            return compiler_pattern_load(c, p, pc);
         case Dict_kind:
-            return compiler_pattern_mapping(c, p, fail, names);
+            return compiler_pattern_mapping(c, p, pc, names);
         case JoinedStr_kind:
             // Because we allow strings, f-strings make it this far:
             return compiler_error(c, "patterns cannot include f-strings");
         case List_kind:
-            return compiler_pattern_sequence(c, p, fail, names);
+            return compiler_pattern_sequence(c, p, pc, names);
         case Name_kind:
-            return compiler_pattern_name(c, p, fail, names);
+            return compiler_pattern_name(c, p, pc, names);
         case NamedExpr_kind:
-            return compiler_pattern_namedexpr(c, p, fail, names);
+            return compiler_pattern_namedexpr(c, p, pc, names);
         case Tuple_kind:
-            return compiler_pattern_sequence(c, p, fail, names);
+            return compiler_pattern_sequence(c, p, pc, names);
         default:
             Py_UNREACHABLE();
     }
@@ -3115,7 +3131,9 @@ compiler_match(struct compiler *c, stmt_ty s)
         if (!names) {
             return 0;
         }
-        int result = compiler_pattern(c, m->pattern, next, names);
+        pattern_context pc;
+        pc.failure = next;
+        int result = compiler_pattern(c, m->pattern, &pc, names);
         Py_DECREF(names);
         CHECK(result);
         if (m->guard) {
