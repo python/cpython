@@ -238,8 +238,7 @@ Functions and classes provided:
    You can capture that output in a string by redirecting the output to an
    :class:`io.StringIO` object::
 
-        f = io.StringIO()
-        with redirect_stdout(f):
+        with redirect_stdout(io.StringIO()) as f:
             help(pow)
         s = f.getvalue()
 
