@@ -497,20 +497,6 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
 }
 
 
-/* The max unicode value is always 0x10FFFF while using the PEP-393 API.
-   This function is kept for backward compatibility with the old API. */
-Py_UNICODE
-PyUnicode_GetMax(void)
-{
-#ifdef Py_UNICODE_WIDE
-    return 0x10FFFF;
-#else
-    /* This is actually an illegal character, so it should
-       not be passed to unichr. */
-    return 0xFFFF;
-#endif
-}
-
 int
 _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 {
