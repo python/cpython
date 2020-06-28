@@ -168,7 +168,7 @@ class TextTestRunner(object):
                     warnings.filterwarnings('module',
                             category=DeprecationWarning,
                             message=r'Please use assert\w+ instead.')
-            startTime = time.time()
+            startTime = time.perf_counter()
             startTestRun = getattr(result, 'startTestRun', None)
             if startTestRun is not None:
                 startTestRun()
@@ -178,7 +178,7 @@ class TextTestRunner(object):
                 stopTestRun = getattr(result, 'stopTestRun', None)
                 if stopTestRun is not None:
                     stopTestRun()
-            stopTime = time.time()
+            stopTime = time.perf_counter()
         timeTaken = stopTime - startTime
         result.printErrors()
         if hasattr(result, 'separator2'):

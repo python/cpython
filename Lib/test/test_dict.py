@@ -37,6 +37,38 @@ class DictTest(unittest.TestCase):
             dictliteral = '{' + ', '.join(formatted_items) + '}'
             self.assertEqual(eval(dictliteral), dict(items))
 
+    def test_merge_operator(self):
+
+        a = {0: 0, 1: 1, 2: 1}
+        b = {1: 1, 2: 2, 3: 3}
+
+        c = a.copy()
+        c |= b
+
+        self.assertEqual(a | b, {0: 0, 1: 1, 2: 2, 3: 3})
+        self.assertEqual(c, {0: 0, 1: 1, 2: 2, 3: 3})
+
+        c = b.copy()
+        c |= a
+
+        self.assertEqual(b | a, {1: 1, 2: 1, 3: 3, 0: 0})
+        self.assertEqual(c, {1: 1, 2: 1, 3: 3, 0: 0})
+
+        c = a.copy()
+        c |= [(1, 1), (2, 2), (3, 3)]
+
+        self.assertEqual(c, {0: 0, 1: 1, 2: 2, 3: 3})
+
+        self.assertIs(a.__or__(None), NotImplemented)
+        self.assertIs(a.__or__(()), NotImplemented)
+        self.assertIs(a.__or__("BAD"), NotImplemented)
+        self.assertIs(a.__or__(""), NotImplemented)
+
+        self.assertRaises(TypeError, a.__ior__, None)
+        self.assertEqual(a.__ior__(()), {0: 0, 1: 1, 2: 1})
+        self.assertRaises(ValueError, a.__ior__, "BAD")
+        self.assertEqual(a.__ior__(""), {0: 0, 1: 1, 2: 1})
+
     def test_bool(self):
         self.assertIs(not {}, True)
         self.assertTrue({1: 2})
@@ -72,6 +104,26 @@ class DictTest(unittest.TestCase):
         self.assertEqual(set(d.items()), {(1, 2)})
         self.assertRaises(TypeError, d.items, None)
         self.assertEqual(repr(dict(a=1).items()), "dict_items([('a', 1)])")
+
+    def test_views_mapping(self):
+        mappingproxy = type(type.__dict__)
+        class Dict(dict):
+            pass
+        for cls in [dict, Dict]:
+            d = cls()
+            m1 = d.keys().mapping
+            m2 = d.values().mapping
+            m3 = d.items().mapping
+
+            for m in [m1, m2, m3]:
+                self.assertIsInstance(m, mappingproxy)
+                self.assertEqual(m, d)
+
+            d["foo"] = "bar"
+
+            for m in [m1, m2, m3]:
+                self.assertIsInstance(m, mappingproxy)
+                self.assertEqual(m, d)
 
     def test_contains(self):
         d = {}
@@ -470,6 +522,33 @@ class DictTest(unittest.TestCase):
             for i in d:
                 d[i+1] = 1
 
+    def test_mutating_iteration_delete(self):
+        # change dict content during iteration
+        d = {}
+        d[0] = 0
+        with self.assertRaises(RuntimeError):
+            for i in d:
+                del d[0]
+                d[0] = 0
+
+    def test_mutating_iteration_delete_over_values(self):
+        # change dict content during iteration
+        d = {}
+        d[0] = 0
+        with self.assertRaises(RuntimeError):
+            for i in d.values():
+                del d[0]
+                d[0] = 0
+
+    def test_mutating_iteration_delete_over_items(self):
+        # change dict content during iteration
+        d = {}
+        d[0] = 0
+        with self.assertRaises(RuntimeError):
+            for i in d.items():
+                del d[0]
+                d[0] = 0
+
     def test_mutating_lookup(self):
         # changing dict during a lookup (issue #14417)
         class NastyKey:
@@ -637,6 +716,16 @@ class DictTest(unittest.TestCase):
         self.assertEqual(k1 | k2, {(1,1), (2,2), (3,3)})
         self.assertEqual(k1 ^ k2, {(3,3)})
         self.assertEqual(k1 ^ k3, {(1,1), (2,2), (4,4)})
+
+    def test_items_symmetric_difference(self):
+        rr = random.randrange
+        for _ in range(100):
+            left = {x:rr(3) for x in range(20) if rr(2)}
+            right = {x:rr(3) for x in range(20) if rr(2)}
+            with self.subTest(left=left, right=right):
+                expected = set(left.items()) ^ set(right.items())
+                actual = left.items() ^ right.items()
+                self.assertEqual(actual, expected)
 
     def test_dictview_mixed_set_operations(self):
         # Just a few for .keys()
@@ -1021,7 +1110,7 @@ class DictTest(unittest.TestCase):
             it = iter(data)
             d = pickle.dumps(it, proto)
             it = pickle.loads(d)
-            self.assertEqual(sorted(it), sorted(data))
+            self.assertEqual(list(it), list(data))
 
             it = pickle.loads(d)
             try:
@@ -1031,7 +1120,7 @@ class DictTest(unittest.TestCase):
             d = pickle.dumps(it, proto)
             it = pickle.loads(d)
             del data[drop]
-            self.assertEqual(sorted(it), sorted(data))
+            self.assertEqual(list(it), list(data))
 
     def test_itemiterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -1056,13 +1145,13 @@ class DictTest(unittest.TestCase):
             self.assertEqual(dict(it), data)
 
     def test_valuesiterator_pickling(self):
-        for proto in range(pickle.HIGHEST_PROTOCOL):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             data = {1:"a", 2:"b", 3:"c"}
             # data.values() isn't picklable, only its iterator
             it = iter(data.values())
             d = pickle.dumps(it, proto)
             it = pickle.loads(d)
-            self.assertEqual(sorted(list(it)), sorted(list(data.values())))
+            self.assertEqual(list(it), list(data.values()))
 
             it = pickle.loads(d)
             drop = next(it)
@@ -1070,6 +1159,62 @@ class DictTest(unittest.TestCase):
             it = pickle.loads(d)
             values = list(it) + [drop]
             self.assertEqual(sorted(values), sorted(list(data.values())))
+
+    def test_reverseiterator_pickling(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            data = {1:"a", 2:"b", 3:"c"}
+            it = reversed(data)
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            self.assertEqual(list(it), list(reversed(data)))
+
+            it = pickle.loads(d)
+            try:
+                drop = next(it)
+            except StopIteration:
+                continue
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            del data[drop]
+            self.assertEqual(list(it), list(reversed(data)))
+
+    def test_reverseitemiterator_pickling(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            data = {1:"a", 2:"b", 3:"c"}
+            # dictviews aren't picklable, only their iterators
+            itorg = reversed(data.items())
+            d = pickle.dumps(itorg, proto)
+            it = pickle.loads(d)
+            # note that the type of the unpickled iterator
+            # is not necessarily the same as the original.  It is
+            # merely an object supporting the iterator protocol, yielding
+            # the same objects as the original one.
+            # self.assertEqual(type(itorg), type(it))
+            self.assertIsInstance(it, collections.abc.Iterator)
+            self.assertEqual(dict(it), data)
+
+            it = pickle.loads(d)
+            drop = next(it)
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            del data[drop[0]]
+            self.assertEqual(dict(it), data)
+
+    def test_reversevaluesiterator_pickling(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            data = {1:"a", 2:"b", 3:"c"}
+            # data.values() isn't picklable, only its iterator
+            it = reversed(data.values())
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            self.assertEqual(list(it), list(reversed(data.values())))
+
+            it = pickle.loads(d)
+            drop = next(it)
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            values = list(it) + [drop]
+            self.assertEqual(sorted(values), sorted(data.values()))
 
     def test_instance_dict_getattr_str_subclass(self):
         class Foo:
@@ -1138,7 +1283,7 @@ class DictTest(unittest.TestCase):
         support.check_free_after_iterating(self, lambda d: iter(d.items()), dict)
 
     def test_equal_operator_modifying_operand(self):
-        # test fix for seg fault reported in issue 27945 part 3.
+        # test fix for seg fault reported in bpo-27945 part 3.
         class X():
             def __del__(self):
                 dict_b.clear()
@@ -1153,6 +1298,16 @@ class DictTest(unittest.TestCase):
         dict_a = {X(): 0}
         dict_b = {X(): X()}
         self.assertTrue(dict_a == dict_b)
+
+        # test fix for seg fault reported in bpo-38588 part 1.
+        class Y:
+            def __eq__(self, other):
+                dict_d.clear()
+                return True
+
+        dict_c = {0: Y()}
+        dict_d = {0: set()}
+        self.assertTrue(dict_c == dict_d)
 
     def test_fromkeys_operator_modifying_dict_operand(self):
         # test fix for seg fault reported in issue 27945 part 4a.
@@ -1199,6 +1354,19 @@ class DictTest(unittest.TestCase):
         d = {0: set()}
         (0, X()) in d.items()
 
+    def test_dict_contain_use_after_free(self):
+        # bpo-40489
+        class S(str):
+            def __eq__(self, other):
+                d.clear()
+                return NotImplemented
+
+            def __hash__(self):
+                return hash('test')
+
+        d = {S(): 'value'}
+        self.assertFalse('test' in d)
+
     def test_init_use_after_free(self):
         class X:
             def __hash__(self):
@@ -1221,6 +1389,68 @@ class DictTest(unittest.TestCase):
                     d[2] = None # free d[2] --> X(2).__del__ was called
 
         self.assertRaises(RuntimeError, iter_and_mutate)
+
+    def test_reversed(self):
+        d = {"a": 1, "b": 2, "foo": 0, "c": 3, "d": 4}
+        del d["foo"]
+        r = reversed(d)
+        self.assertEqual(list(r), list('dcba'))
+        self.assertRaises(StopIteration, next, r)
+
+    def test_reverse_iterator_for_empty_dict(self):
+        # bpo-38525: revered iterator should work properly
+
+        # empty dict is directly used for reference count test
+        self.assertEqual(list(reversed({})), [])
+        self.assertEqual(list(reversed({}.items())), [])
+        self.assertEqual(list(reversed({}.values())), [])
+        self.assertEqual(list(reversed({}.keys())), [])
+
+        # dict() and {} don't trigger the same code path
+        self.assertEqual(list(reversed(dict())), [])
+        self.assertEqual(list(reversed(dict().items())), [])
+        self.assertEqual(list(reversed(dict().values())), [])
+        self.assertEqual(list(reversed(dict().keys())), [])
+
+    def test_reverse_iterator_for_shared_shared_dicts(self):
+        class A:
+            def __init__(self, x, y):
+                if x: self.x = x
+                if y: self.y = y
+
+        self.assertEqual(list(reversed(A(1, 2).__dict__)), ['y', 'x'])
+        self.assertEqual(list(reversed(A(1, 0).__dict__)), ['x'])
+        self.assertEqual(list(reversed(A(0, 1).__dict__)), ['y'])
+
+    def test_dict_copy_order(self):
+        # bpo-34320
+        od = collections.OrderedDict([('a', 1), ('b', 2)])
+        od.move_to_end('a')
+        expected = list(od.items())
+
+        copy = dict(od)
+        self.assertEqual(list(copy.items()), expected)
+
+        # dict subclass doesn't override __iter__
+        class CustomDict(dict):
+            pass
+
+        pairs = [('a', 1), ('b', 2), ('c', 3)]
+
+        d = CustomDict(pairs)
+        self.assertEqual(pairs, list(dict(d).items()))
+
+        class CustomReversedDict(dict):
+            def keys(self):
+                return reversed(list(dict.keys(self)))
+
+            __iter__ = keys
+
+            def items(self):
+                return reversed(dict.items(self))
+
+        d = CustomReversedDict(pairs)
+        self.assertEqual(pairs[::-1], list(dict(d).items()))
 
 
 class CAPITest(unittest.TestCase):

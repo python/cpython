@@ -2,6 +2,7 @@ import io
 import types
 import textwrap
 import unittest
+import email.errors
 import email.policy
 import email.parser
 import email.generator
@@ -134,6 +135,18 @@ class PolicyAPITests(unittest.TestCase):
         for attr, value in expected.items():
             self.assertEqual(getattr(added, attr), value)
 
+    def test_fold_zero_max_line_length(self):
+        expected = 'Subject: =?utf-8?q?=C3=A1?=\n'
+
+        msg = email.message.EmailMessage()
+        msg['Subject'] = 'á'
+
+        p1 = email.policy.default.clone(max_line_length=0)
+        p2 = email.policy.default.clone(max_line_length=None)
+
+        self.assertEqual(p1.fold('Subject', msg['Subject']), expected)
+        self.assertEqual(p2.fold('Subject', msg['Subject']), expected)
+
     def test_register_defect(self):
         class Dummy:
             def __init__(self):
@@ -236,6 +249,33 @@ class PolicyAPITests(unittest.TestCase):
         self.assertEqual(newpolicy.header_factory,
                          email.policy.EmailPolicy.header_factory)
         self.assertEqual(newpolicy.__dict__, {'raise_on_defect': True})
+
+    def test_non_ascii_chars_do_not_cause_inf_loop(self):
+        policy = email.policy.default.clone(max_line_length=20)
+        actual = policy.fold('Subject', 'ą' * 12)
+        self.assertEqual(
+            actual,
+            'Subject: \n' +
+            12 * ' =?utf-8?q?=C4=85?=\n')
+
+    def test_short_maxlen_error(self):
+        # RFC 2047 chrome takes up 7 characters, plus the length of the charset
+        # name, so folding should fail if maxlen is lower than the minimum
+        # required length for a line.
+
+        # Note: This is only triggered when there is a single word longer than
+        # max_line_length, hence the 1234567890 at the end of this whimsical
+        # subject. This is because when we encounter a word longer than
+        # max_line_length, it is broken down into encoded words to fit
+        # max_line_length. If the max_line_length isn't large enough to even
+        # contain the RFC 2047 chrome (`?=<charset>?q??=`), we fail.
+        subject = "Melt away the pounds with this one simple trick! 1234567890"
+
+        for maxlen in [3, 7, 9]:
+            with self.subTest(maxlen=maxlen):
+                policy = email.policy.default.clone(max_line_length=maxlen)
+                with self.assertRaises(email.errors.HeaderParseError):
+                    policy.fold("Subject", subject)
 
     # XXX: Need subclassing tests.
     # For adding subclassed objects, make sure the usual rules apply (subclass

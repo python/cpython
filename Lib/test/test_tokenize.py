@@ -1429,6 +1429,7 @@ class TestTokenize(TestCase):
         self.assertExactTypeEqual('**=', token.DOUBLESTAREQUAL)
         self.assertExactTypeEqual('//', token.DOUBLESLASH)
         self.assertExactTypeEqual('//=', token.DOUBLESLASHEQUAL)
+        self.assertExactTypeEqual(':=', token.COLONEQUAL)
         self.assertExactTypeEqual('...', token.ELLIPSIS)
         self.assertExactTypeEqual('->', token.RARROW)
         self.assertExactTypeEqual('@', token.AT)
@@ -1604,7 +1605,7 @@ class TestRoundtrip(TestCase):
         import glob, random
         fn = support.findfile("tokenize_tests.txt")
         tempdir = os.path.dirname(fn) or os.curdir
-        testfiles = glob.glob(os.path.join(tempdir, "test*.py"))
+        testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
 
         # Tokenize is broken on test_pep3131.py because regular expressions are
         # broken on the obscure unicode identifiers in it. *sigh*
@@ -1619,6 +1620,8 @@ class TestRoundtrip(TestCase):
             testfiles = random.sample(testfiles, 10)
 
         for testfile in testfiles:
+            if support.verbose >= 2:
+                print('tokenize', testfile)
             with open(testfile, 'rb') as f:
                 with self.subTest(file=testfile):
                     self.check_roundtrip(f)

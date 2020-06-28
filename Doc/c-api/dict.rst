@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _dictobjects:
 
@@ -33,7 +33,7 @@ Dictionary Objects
 
 .. c:function:: PyObject* PyDict_New()
 
-   Return a new empty dictionary, or *NULL* on failure.
+   Return a new empty dictionary, or ``NULL`` on failure.
 
 
 .. c:function:: PyObject* PyDictProxy_New(PyObject *mapping)
@@ -62,19 +62,20 @@ Dictionary Objects
 
 .. c:function:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
 
-   Insert *value* into the dictionary *p* with a key of *key*.  *key* must be
+   Insert *val* into the dictionary *p* with a key of *key*.  *key* must be
    :term:`hashable`; if it isn't, :exc:`TypeError` will be raised. Return
-   ``0`` on success or ``-1`` on failure.
+   ``0`` on success or ``-1`` on failure.  This function *does not* steal a
+   reference to *val*.
 
 
 .. c:function:: int PyDict_SetItemString(PyObject *p, const char *key, PyObject *val)
 
    .. index:: single: PyUnicode_FromString()
 
-   Insert *value* into the dictionary *p* using *key* as a key. *key* should
+   Insert *val* into the dictionary *p* using *key* as a key. *key* should
    be a :c:type:`const char\*`.  The key object is created using
    ``PyUnicode_FromString(key)``.  Return ``0`` on success or ``-1`` on
-   failure.
+   failure.  This function *does not* steal a reference to *val*.
 
 
 .. c:function:: int PyDict_DelItem(PyObject *p, PyObject *key)
@@ -92,15 +93,23 @@ Dictionary Objects
 
 .. c:function:: PyObject* PyDict_GetItem(PyObject *p, PyObject *key)
 
-   Return the object from dictionary *p* which has a key *key*.  Return *NULL*
+   Return the object from dictionary *p* which has a key *key*.  Return ``NULL``
    if the key *key* is not present, but *without* setting an exception.
+
+   Note that exceptions which occur while calling :meth:`__hash__` and
+   :meth:`__eq__` methods will get suppressed.
+   To get error reporting use :c:func:`PyDict_GetItemWithError()` instead.
+
+   .. versionchanged:: 3.10
+      Calling this API without :term:`GIL` held had been allowed for historical
+      reason. It is no longer allowed.
 
 
 .. c:function:: PyObject* PyDict_GetItemWithError(PyObject *p, PyObject *key)
 
    Variant of :c:func:`PyDict_GetItem` that does not suppress
-   exceptions. Return *NULL* **with** an exception set if an exception
-   occurred.  Return *NULL* **without** an exception set if the key
+   exceptions. Return ``NULL`` **with** an exception set if an exception
+   occurred.  Return ``NULL`` **without** an exception set if the key
    wasn't present.
 
 
@@ -109,8 +118,13 @@ Dictionary Objects
    This is the same as :c:func:`PyDict_GetItem`, but *key* is specified as a
    :c:type:`const char\*`, rather than a :c:type:`PyObject\*`.
 
+   Note that exceptions which occur while calling :meth:`__hash__` and
+   :meth:`__eq__` methods and creating a temporary string object
+   will get suppressed.
+   To get error reporting use :c:func:`PyDict_GetItemWithError()` instead.
 
-.. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *default)
+
+.. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *defaultobj)
 
    This is the same as the Python-level :meth:`dict.setdefault`.  If present, it
    returns the value corresponding to *key* from the dictionary *p*.  If the key
@@ -152,7 +166,7 @@ Dictionary Objects
    function returns true for each pair in the dictionary, and false once all
    pairs have been reported.  The parameters *pkey* and *pvalue* should either
    point to :c:type:`PyObject\*` variables that will be filled in with each key
-   and value, respectively, or may be *NULL*.  Any references returned through
+   and value, respectively, or may be ``NULL``.  Any references returned through
    them are borrowed.  *ppos* should not be altered during iteration. Its
    value represents offsets within the internal dictionary structure, and
    since the structure is sparse, the offsets are not consecutive.
@@ -222,10 +236,3 @@ Dictionary Objects
           for key, value in seq2:
               if override or key not in a:
                   a[key] = value
-
-
-.. c:function:: int PyDict_ClearFreeList()
-
-   Clear the free list. Return the total number of freed items.
-
-   .. versionadded:: 3.3

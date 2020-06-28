@@ -162,9 +162,9 @@ def setup_testing_defaults(environ):
 
 
 _hoppish = {
-    'connection':1, 'keep-alive':1, 'proxy-authenticate':1,
-    'proxy-authorization':1, 'te':1, 'trailers':1, 'transfer-encoding':1,
-    'upgrade':1
+    'connection', 'keep-alive', 'proxy-authenticate',
+    'proxy-authorization', 'te', 'trailers', 'transfer-encoding',
+    'upgrade'
 }.__contains__
 
 def is_hop_by_hop(header_name):

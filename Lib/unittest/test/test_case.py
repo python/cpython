@@ -8,6 +8,7 @@ import logging
 import warnings
 import weakref
 import inspect
+import types
 
 from copy import deepcopy
 from test import support
@@ -425,6 +426,20 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         expected = ['a1', 'a2', 'b1']
         self.assertEqual(events, expected)
 
+    def test_subtests_debug(self):
+        # Test debug() with a test that uses subTest() (bpo-34900)
+        events = []
+
+        class Foo(unittest.TestCase):
+            def test_a(self):
+                events.append('test case')
+                with self.subTest():
+                    events.append('subtest 1')
+
+        Foo('test_a').debug()
+
+        self.assertEqual(events, ['test case', 'subtest 1'])
+
     # "This class attribute gives the exception raised by the test() method.
     # If a test framework needs to use a specialized exception, possibly to
     # carry additional information, it must subclass this exception in
@@ -596,6 +611,15 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                  'Tests shortDescription() for a method with a longer '
                  'docstring.')
 
+    def testShortDescriptionWhitespaceTrimming(self):
+        """
+            Tests shortDescription() whitespace is trimmed, so that the first
+            line of nonwhite-space text becomes the docstring.
+        """
+        self.assertEqual(
+            self.shortDescription(),
+            'Tests shortDescription() whitespace is trimmed, so that the first')
+
     def testAddTypeEqualityFunc(self):
         class SadSnake(object):
             """Dummy class for test_addTypeEqualityFunc."""
@@ -606,7 +630,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.addTypeEqualityFunc(SadSnake, AllSnakesCreatedEqual)
         self.assertEqual(s1, s2)
         # No this doesn't clean up and remove the SadSnake equality func
-        # from this TestCase instance but since its a local nothing else
+        # from this TestCase instance but since it's local nothing else
         # will ever notice that.
 
     def testAssertIs(self):
@@ -1326,6 +1350,20 @@ test case
         class MyWarn(Warning):
             pass
         self.assertRaises(TypeError, self.assertWarnsRegex, MyWarn, lambda: True)
+
+    def testAssertWarnsModifySysModules(self):
+        # bpo-29620: handle modified sys.modules during iteration
+        class Foo(types.ModuleType):
+            @property
+            def __warningregistry__(self):
+                sys.modules['@bar@'] = 'bar'
+
+        sys.modules['@foo@'] = Foo('foo')
+        try:
+            self.assertWarns(UserWarning, warnings.warn, 'expected')
+        finally:
+            del sys.modules['@foo@']
+            del sys.modules['@bar@']
 
     def testAssertRaisesRegexMismatch(self):
         def Stub():

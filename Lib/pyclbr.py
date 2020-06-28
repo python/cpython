@@ -50,7 +50,7 @@ _modules = {}  # Initialize cache of modules we've seen.
 
 
 class _Object:
-    "Informaton about Python class or function."
+    "Information about Python class or function."
     def __init__(self, module, name, file, lineno, parent):
         self.module = module
         self.name = name
@@ -160,17 +160,20 @@ def _readmodule(module, path, inpackage=None):
     else:
         search_path = path + sys.path
     spec = importlib.util._find_spec_from_path(fullmodule, search_path)
+    if spec is None:
+        raise ModuleNotFoundError(f"no module named {fullmodule!r}", name=fullmodule)
     _modules[fullmodule] = tree
     # Is module a package?
     if spec.submodule_search_locations is not None:
         tree['__path__'] = spec.submodule_search_locations
     try:
         source = spec.loader.get_source(fullmodule)
-        if source is None:
-            return tree
     except (AttributeError, ImportError):
         # If module is not Python source, we cannot do anything.
         return tree
+    else:
+        if source is None:
+            return tree
 
     fname = spec.loader.get_filename(fullmodule)
     return _create_tree(fullmodule, path, fname, source, tree, inpackage)

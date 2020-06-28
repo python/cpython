@@ -35,6 +35,10 @@ class Seq2(object):
     def __rmul__(self, other):
         return other * self.lst
 
+class BadIterable:
+    def __iter__(self):
+        raise ZeroDivisionError
+
 
 class OperatorTestCase:
     def test_lt(self):
@@ -142,6 +146,7 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.countOf)
         self.assertRaises(TypeError, operator.countOf, None, None)
+        self.assertRaises(ZeroDivisionError, operator.countOf, BadIterable(), 1)
         self.assertEqual(operator.countOf([1, 2, 1, 3, 1, 4], 3), 1)
         self.assertEqual(operator.countOf([1, 2, 1, 3, 1, 4], 5), 0)
 
@@ -176,6 +181,7 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.indexOf)
         self.assertRaises(TypeError, operator.indexOf, None, None)
+        self.assertRaises(ZeroDivisionError, operator.indexOf, BadIterable(), 1)
         self.assertEqual(operator.indexOf([4, 3, 2, 1], 3), 1)
         self.assertRaises(ValueError, operator.indexOf, [4, 3, 2, 1], 0)
 
@@ -258,6 +264,7 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.contains)
         self.assertRaises(TypeError, operator.contains, None, None)
+        self.assertRaises(ZeroDivisionError, operator.contains, BadIterable(), 1)
         self.assertTrue(operator.contains(range(4), 2))
         self.assertFalse(operator.contains(range(4), 5))
 
@@ -400,6 +407,19 @@ class OperatorTestCase:
         data = list(map(str, range(20)))
         self.assertEqual(operator.itemgetter(2,10,5)(data), ('2', '10', '5'))
         self.assertRaises(TypeError, operator.itemgetter(2, 'x', 5), data)
+
+        # interesting indices
+        t = tuple('abcde')
+        self.assertEqual(operator.itemgetter(-1)(t), 'e')
+        self.assertEqual(operator.itemgetter(slice(2, 4))(t), ('c', 'd'))
+
+        # interesting sequences
+        class T(tuple):
+            'Tuple subclass'
+            pass
+        self.assertEqual(operator.itemgetter(0)(T('abc')), 'a')
+        self.assertEqual(operator.itemgetter(0)(['a', 'b', 'c']), 'a')
+        self.assertEqual(operator.itemgetter(0)(range(100, 200)), 100)
 
     def test_methodcaller(self):
         operator = self.module

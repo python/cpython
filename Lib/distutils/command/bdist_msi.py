@@ -6,7 +6,9 @@
 Implements the bdist_msi command.
 """
 
-import sys, os
+import os
+import sys
+import warnings
 from distutils.core import Command
 from distutils.dir_util import remove_tree
 from distutils.sysconfig import get_python_version
@@ -98,14 +100,14 @@ class bdist_msi(Command):
                     ('no-target-compile', 'c',
                      "do not compile .py to .pyc on the target system"),
                     ('no-target-optimize', 'o',
-                     "do not compile .py to .pyo (optimized)"
+                     "do not compile .py to .pyo (optimized) "
                      "on the target system"),
                     ('dist-dir=', 'd',
                      "directory to put final built distributions in"),
                     ('skip-build', None,
                      "skip rebuilding everything (for testing/debugging)"),
                     ('install-script=', None,
-                     "basename of installation script to be run after"
+                     "basename of installation script to be run after "
                      "installation or before deinstallation"),
                     ('pre-install-script=', None,
                      "Fully qualified filename of a script to be run before "
@@ -121,6 +123,12 @@ class bdist_msi(Command):
                     '3.0', '3.1', '3.2', '3.3', '3.4',
                     '3.5', '3.6', '3.7', '3.8', '3.9']
     other_version = 'X'
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        warnings.warn("bdist_msi command is deprecated since Python 3.9, "
+                      "use bdist_wheel (wheel packages) instead",
+                      DeprecationWarning, 2)
 
     def initialize_options(self):
         self.bdist_dir = None
@@ -390,18 +398,18 @@ class bdist_msi(Command):
         #     entries for each version as the above code does
         if self.pre_install_script:
             scriptfn = os.path.join(self.bdist_dir, "preinstall.bat")
-            f = open(scriptfn, "w")
-            # The batch file will be executed with [PYTHON], so that %1
-            # is the path to the Python interpreter; %0 will be the path
-            # of the batch file.
-            # rem ="""
-            # %1 %0
-            # exit
-            # """
-            # <actual script>
-            f.write('rem ="""\n%1 %0\nexit\n"""\n')
-            f.write(open(self.pre_install_script).read())
-            f.close()
+            with open(scriptfn, "w") as f:
+                # The batch file will be executed with [PYTHON], so that %1
+                # is the path to the Python interpreter; %0 will be the path
+                # of the batch file.
+                # rem ="""
+                # %1 %0
+                # exit
+                # """
+                # <actual script>
+                f.write('rem ="""\n%1 %0\nexit\n"""\n')
+                with open(self.pre_install_script) as fin:
+                    f.write(fin.read())
             add_data(self.db, "Binary",
                 [("PreInstall", msilib.Binary(scriptfn))
                 ])

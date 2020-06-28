@@ -15,6 +15,10 @@ import re
 import io
 import contextlib
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
+from test.support import threading_helper
+from test.support import ALWAYS_EQ, LARGEST, SMALLEST
 
 try:
     import gzip
@@ -333,7 +337,7 @@ class XMLRPCTestCase(unittest.TestCase):
             server.handle_request()  # First request and attempt at second
             server.handle_request()  # Retried second request
 
-        server = http.server.HTTPServer((support.HOST, 0), RequestHandler)
+        server = http.server.HTTPServer((socket_helper.HOST, 0), RequestHandler)
         self.addCleanup(server.server_close)
         thread = threading.Thread(target=run_server)
         thread.start()
@@ -530,14 +534,10 @@ class DateTimeTestCase(unittest.TestCase):
         # some other types
         dbytes = dstr.encode('ascii')
         dtuple = now.timetuple()
-        with self.assertRaises(TypeError):
-            dtime == 1970
-        with self.assertRaises(TypeError):
-            dtime != dbytes
-        with self.assertRaises(TypeError):
-            dtime == bytearray(dbytes)
-        with self.assertRaises(TypeError):
-            dtime != dtuple
+        self.assertFalse(dtime == 1970)
+        self.assertTrue(dtime != dbytes)
+        self.assertFalse(dtime == bytearray(dbytes))
+        self.assertTrue(dtime != dtuple)
         with self.assertRaises(TypeError):
             dtime < float(1970)
         with self.assertRaises(TypeError):
@@ -546,6 +546,18 @@ class DateTimeTestCase(unittest.TestCase):
             dtime <= bytearray(dbytes)
         with self.assertRaises(TypeError):
             dtime >= dtuple
+
+        self.assertTrue(dtime == ALWAYS_EQ)
+        self.assertFalse(dtime != ALWAYS_EQ)
+        self.assertTrue(dtime < LARGEST)
+        self.assertFalse(dtime > LARGEST)
+        self.assertTrue(dtime <= LARGEST)
+        self.assertFalse(dtime >= LARGEST)
+        self.assertFalse(dtime < SMALLEST)
+        self.assertTrue(dtime > SMALLEST)
+        self.assertFalse(dtime <= SMALLEST)
+        self.assertTrue(dtime >= SMALLEST)
+
 
 class BinaryTestCase(unittest.TestCase):
 
@@ -818,14 +830,12 @@ class SimpleServerTestCase(BaseServerTestCase):
                 # protocol error; provide additional information in test output
                 self.fail("%s\n%s" % (e, getattr(e, "headers", "")))
 
-    # [ch] The test 404 is causing lots of false alarms.
-    def XXXtest_404(self):
+    def test_404(self):
         # send POST with http.client, it should return 404 header and
         # 'Not Found' message.
-        conn = httplib.client.HTTPConnection(ADDR, PORT)
-        conn.request('POST', '/this-is-not-valid')
-        response = conn.getresponse()
-        conn.close()
+        with contextlib.closing(http.client.HTTPConnection(ADDR, PORT)) as conn:
+            conn.request('POST', '/this-is-not-valid')
+            response = conn.getresponse()
 
         self.assertEqual(response.status, 404)
         self.assertEqual(response.reason, 'Not Found')
@@ -945,9 +955,13 @@ class SimpleServerTestCase(BaseServerTestCase):
 
     def test_partial_post(self):
         # Check that a partial POST doesn't make the server loop: issue #14001.
-        conn = http.client.HTTPConnection(ADDR, PORT)
-        conn.request('POST', '/RPC2 HTTP/1.0\r\nContent-Length: 100\r\n\r\nbye')
-        conn.close()
+        with contextlib.closing(socket.create_connection((ADDR, PORT))) as conn:
+            conn.send('POST /RPC2 HTTP/1.0\r\n'
+                      'Content-Length: 100\r\n\r\n'
+                      'bye HTTP/1.1\r\n'
+                      f'Host: {ADDR}:{PORT}\r\n'
+                      'Accept-Encoding: identity\r\n'
+                      'Content-Length: 0\r\n\r\n'.encode('ascii'))
 
     def test_context_manager(self):
         with xmlrpclib.ServerProxy(URL) as server:
@@ -1171,6 +1185,67 @@ class GzipUtilTestCase(unittest.TestCase):
         xmlrpclib.gzip_decode(encoded, max_decode=-1)
 
 
+class HeadersServerTestCase(BaseServerTestCase):
+    class RequestHandler(xmlrpc.server.SimpleXMLRPCRequestHandler):
+        test_headers = None
+
+        def do_POST(self):
+            self.__class__.test_headers = self.headers
+            return super().do_POST()
+    requestHandler = RequestHandler
+    standard_headers = [
+        'Host', 'Accept-Encoding', 'Content-Type', 'User-Agent',
+        'Content-Length']
+
+    def setUp(self):
+        self.RequestHandler.test_headers = None
+        return super().setUp()
+
+    def assertContainsAdditionalHeaders(self, headers, additional):
+        expected_keys = sorted(self.standard_headers + list(additional.keys()))
+        self.assertListEqual(sorted(headers.keys()), expected_keys)
+
+        for key, value in additional.items():
+            self.assertEqual(headers.get(key), value)
+
+    def test_header(self):
+        p = xmlrpclib.ServerProxy(URL, headers=[('X-Test', 'foo')])
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(headers, {'X-Test': 'foo'})
+
+    def test_header_many(self):
+        p = xmlrpclib.ServerProxy(
+            URL, headers=[('X-Test', 'foo'), ('X-Test-Second', 'bar')])
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(
+            headers, {'X-Test': 'foo', 'X-Test-Second': 'bar'})
+
+    def test_header_empty(self):
+        p = xmlrpclib.ServerProxy(URL, headers=[])
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(headers, {})
+
+    def test_header_tuple(self):
+        p = xmlrpclib.ServerProxy(URL, headers=(('X-Test', 'foo'),))
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(headers, {'X-Test': 'foo'})
+
+    def test_header_items(self):
+        p = xmlrpclib.ServerProxy(URL, headers={'X-Test': 'foo'}.items())
+        self.assertEqual(p.pow(6, 8), 6**8)
+
+        headers = self.RequestHandler.test_headers
+        self.assertContainsAdditionalHeaders(headers, {'X-Test': 'foo'})
+
+
 #Test special attributes of the ServerProxy object
 class ServerProxyTestCase(unittest.TestCase):
     def setUp(self):
@@ -1298,7 +1373,7 @@ class CGIHandlerTestCase(unittest.TestCase):
         self.cgi = None
 
     def test_cgi_get(self):
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env['REQUEST_METHOD'] = 'GET'
             # if the method is GET and no request_text is given, it runs handle_get
             # get sysout output
@@ -1330,7 +1405,7 @@ class CGIHandlerTestCase(unittest.TestCase):
         </methodCall>
         """
 
-        with support.EnvironmentVarGuard() as env, \
+        with os_helper.EnvironmentVarGuard() as env, \
              captured_stdout(encoding=self.cgi.encoding) as data_out, \
              support.captured_stdin() as data_in:
             data_in.write(data)
@@ -1391,13 +1466,13 @@ class UseBuiltinTypesTestCase(unittest.TestCase):
         self.assertTrue(server.use_builtin_types)
 
 
-@support.reap_threads
+@threading_helper.reap_threads
 def test_main():
     support.run_unittest(XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
             BinaryTestCase, FaultTestCase, UseBuiltinTypesTestCase,
             SimpleServerTestCase, SimpleServerEncodingTestCase,
             KeepaliveServerTestCase1, KeepaliveServerTestCase2,
-            GzipServerTestCase, GzipUtilTestCase,
+            GzipServerTestCase, GzipUtilTestCase, HeadersServerTestCase,
             MultiPathServerTestCase, ServerProxyTestCase, FailingServerTestCase,
             CGIHandlerTestCase, SimpleXMLRPCDispatcherTestCase)
 

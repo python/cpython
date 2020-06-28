@@ -38,7 +38,7 @@ associated messages through the :class:`http.HTTPStatus` enum:
       <HTTPStatus.OK: 200>
       >>> HTTPStatus.OK == 200
       True
-      >>> http.HTTPStatus.OK.value
+      >>> HTTPStatus.OK.value
       200
       >>> HTTPStatus.OK.phrase
       'OK'
@@ -62,6 +62,7 @@ Code    Enum Name                           Details
 ``100`` ``CONTINUE``                        HTTP/1.1 :rfc:`7231`, Section 6.2.1
 ``101`` ``SWITCHING_PROTOCOLS``             HTTP/1.1 :rfc:`7231`, Section 6.2.2
 ``102`` ``PROCESSING``                      WebDAV :rfc:`2518`, Section 10.1
+``103`` ``EARLY_HINTS``                     An HTTP Status Code for Indicating Hints :rfc:`8297`
 ``200`` ``OK``                              HTTP/1.1 :rfc:`7231`, Section 6.3.1
 ``201`` ``CREATED``                         HTTP/1.1 :rfc:`7231`, Section 6.3.2
 ``202`` ``ACCEPTED``                        HTTP/1.1 :rfc:`7231`, Section 6.3.3
@@ -96,16 +97,19 @@ Code    Enum Name                           Details
 ``413`` ``REQUEST_ENTITY_TOO_LARGE``        HTTP/1.1 :rfc:`7231`, Section 6.5.11
 ``414`` ``REQUEST_URI_TOO_LONG``            HTTP/1.1 :rfc:`7231`, Section 6.5.12
 ``415`` ``UNSUPPORTED_MEDIA_TYPE``          HTTP/1.1 :rfc:`7231`, Section 6.5.13
-``416`` ``REQUEST_RANGE_NOT_SATISFIABLE``   HTTP/1.1 Range Requests :rfc:`7233`, Section 4.4
+``416`` ``REQUESTED_RANGE_NOT_SATISFIABLE`` HTTP/1.1 Range Requests :rfc:`7233`, Section 4.4
 ``417`` ``EXPECTATION_FAILED``              HTTP/1.1 :rfc:`7231`, Section 6.5.14
+``418`` ``IM_A_TEAPOT``                     HTCPCP/1.0 :rfc:`2324`, Section 2.3.2
 ``421`` ``MISDIRECTED_REQUEST``             HTTP/2 :rfc:`7540`, Section 9.1.2
 ``422`` ``UNPROCESSABLE_ENTITY``            WebDAV :rfc:`4918`, Section 11.2
 ``423`` ``LOCKED``                          WebDAV :rfc:`4918`, Section 11.3
 ``424`` ``FAILED_DEPENDENCY``               WebDAV :rfc:`4918`, Section 11.4
+``425`` ``TOO_EARLY``                       Using Early Data in HTTP :rfc:`8470`
 ``426`` ``UPGRADE_REQUIRED``                HTTP/1.1 :rfc:`7231`, Section 6.5.15
 ``428`` ``PRECONDITION_REQUIRED``           Additional HTTP Status Codes :rfc:`6585`
 ``429`` ``TOO_MANY_REQUESTS``               Additional HTTP Status Codes :rfc:`6585`
 ``431`` ``REQUEST_HEADER_FIELDS_TOO_LARGE`` Additional HTTP Status Codes :rfc:`6585`
+``451`` ``UNAVAILABLE_FOR_LEGAL_REASONS``   An HTTP Status Code to Report Legal Obstacles :rfc:`7725`
 ``500`` ``INTERNAL_SERVER_ERROR``           HTTP/1.1 :rfc:`7231`, Section 6.6.1
 ``501`` ``NOT_IMPLEMENTED``                 HTTP/1.1 :rfc:`7231`, Section 6.6.2
 ``502`` ``BAD_GATEWAY``                     HTTP/1.1 :rfc:`7231`, Section 6.6.3
@@ -126,3 +130,9 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 
 .. versionchanged:: 3.7
    Added ``421 MISDIRECTED_REQUEST`` status code.
+
+.. versionadded:: 3.8
+   Added ``451 UNAVAILABLE_FOR_LEGAL_REASONS`` status code.
+
+.. versionadded:: 3.9
+   Added ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` status codes.

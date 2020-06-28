@@ -5,7 +5,7 @@ from enum import IntEnum as _IntEnum
 
 _globals = globals()
 
-_IntEnum._convert(
+_IntEnum._convert_(
         'Signals', __name__,
         lambda name:
             name.isupper()
@@ -13,7 +13,7 @@ _IntEnum._convert(
             or name.startswith('CTRL_'))
 
 if 'pthread_sigmask' in _globals:
-    _IntEnum._convert(
+    _IntEnum._convert_(
             'Sigmasks', __name__,
             lambda name: name in ('SIG_BLOCK', 'SIG_UNBLOCK', 'SIG_SETMASK'))
 

@@ -1,2 +1,0 @@
-Added the "socket" option in the `stat.filemode()` Python implementation to
-match the C implementation.

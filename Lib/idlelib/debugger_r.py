@@ -157,7 +157,7 @@ class IdbAdapter:
     #----------called by a DictProxy----------
 
     def dict_keys(self, did):
-        raise NotImplemented("dict_keys not public or pickleable")
+        raise NotImplementedError("dict_keys not public or pickleable")
 ##         dict = dicttable[did]
 ##         return dict.keys()
 
@@ -299,7 +299,7 @@ class IdbProxy:
         self.conn = conn
         self.shell = shell
 
-    def call(self, methodname, *args, **kwargs):
+    def call(self, methodname, /, *args, **kwargs):
         ##print("*** IdbProxy.call %s %s %s" % (methodname, args, kwargs))
         value = self.conn.remotecall(self.oid, methodname, args, kwargs)
         ##print("*** IdbProxy.call %s returns %r" % (methodname, value))

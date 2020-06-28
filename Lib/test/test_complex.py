@@ -100,8 +100,7 @@ class ComplexTest(unittest.TestCase):
                            complex(random(), random()))
 
         self.assertRaises(ZeroDivisionError, complex.__truediv__, 1+1j, 0+0j)
-        # FIXME: The following currently crashes on Alpha
-        # self.assertRaises(OverflowError, pow, 1e200+1j, 1e200+1j)
+        self.assertRaises(OverflowError, pow, 1e200+1j, 1e200+1j)
 
         self.assertAlmostEqual(complex.__truediv__(2+0j, 1+1j), 1-1j)
         self.assertRaises(ZeroDivisionError, complex.__truediv__, 1+1j, 0+0j)
@@ -368,6 +367,24 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex(real=float2(17.), imag=float2(23.)), 17+23j)
         self.assertRaises(TypeError, complex, float2(None))
 
+        class MyIndex:
+            def __init__(self, value):
+                self.value = value
+            def __index__(self):
+                return self.value
+
+        self.assertAlmostEqual(complex(MyIndex(42)), 42.0+0.0j)
+        self.assertAlmostEqual(complex(123, MyIndex(42)), 123.0+42.0j)
+        self.assertRaises(OverflowError, complex, MyIndex(2**2000))
+        self.assertRaises(OverflowError, complex, 123, MyIndex(2**2000))
+
+        class MyInt:
+            def __int__(self):
+                return 42
+
+        self.assertRaises(TypeError, complex, MyInt())
+        self.assertRaises(TypeError, complex, 123, MyInt())
+
         class complex0(complex):
             """Test usage of __complex__() when inheriting from 'complex'"""
             def __complex__(self):
@@ -482,22 +499,6 @@ class ComplexTest(unittest.TestCase):
 
     def test_neg(self):
         self.assertEqual(-(1+6j), -1-6j)
-
-    def test_file(self):
-        a = 3.33+4.43j
-        b = 5.1+2.3j
-
-        fo = None
-        try:
-            fo = open(support.TESTFN, "w")
-            print(a, b, file=fo)
-            fo.close()
-            fo = open(support.TESTFN, "r")
-            self.assertEqual(fo.read(), ("%s %s\n" % (a, b)))
-        finally:
-            if (fo is not None) and (not fo.closed):
-                fo.close()
-            support.unlink(support.TESTFN)
 
     def test_getnewargs(self):
         self.assertEqual((1+2j).__getnewargs__(), (1.0, 2.0))

@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _initialization:
@@ -6,6 +6,8 @@
 *****************************************
 Initialization, Finalization, and Threads
 *****************************************
+
+See also :ref:`Python Initialization Configuration <init-config>`.
 
 .. _pre-init-safe:
 
@@ -37,6 +39,7 @@ The following functions can be safely called before Python is initialized:
 
 * Informative functions:
 
+  * :c:func:`Py_IsInitialized`
   * :c:func:`PyMem_GetAllocator`
   * :c:func:`PyObject_GetArenaAllocator`
   * :c:func:`Py_GetBuildInfo`
@@ -156,7 +159,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    See :pep:`529` for more details.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
 .. c:var:: Py_LegacyWindowsStdioFlag
 
@@ -168,7 +171,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    See :pep:`528` for more details.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
 .. c:var:: Py_NoSiteFlag
 
@@ -298,8 +301,9 @@ Initializing and finalizing the interpreter
    than once; this can happen if an application calls :c:func:`Py_Initialize` and
    :c:func:`Py_FinalizeEx` more than once.
 
-   .. versionadded:: 3.6
+   .. audit-event:: cpython._PySys_ClearAuditHooks "" c.Py_FinalizeEx
 
+   .. versionadded:: 3.6
 
 .. c:function:: void Py_Finalize()
 
@@ -325,7 +329,7 @@ Process-wide parameters
    It overrides :envvar:`PYTHONIOENCODING` values, and allows embedding code
    to control IO encoding when the environment variable does not work.
 
-   ``encoding`` and/or ``errors`` may be NULL to use
+   *encoding* and/or *errors* may be ``NULL`` to use
    :envvar:`PYTHONIOENCODING` and/or default values (depending on other
    settings).
 
@@ -468,8 +472,8 @@ Process-wide parameters
    dependent delimiter character, which is ``':'`` on Unix and Mac OS X, ``';'``
    on Windows.
 
-   This also causes :data:`sys.executable` to be set only to the raw program
-   name (see :c:func:`Py_SetProgramName`) and for :data:`sys.prefix` and
+   This also causes :data:`sys.executable` to be set to the program
+   full path (see :c:func:`Py_GetProgramFullPath`) and for :data:`sys.prefix` and
    :data:`sys.exec_prefix` to be empty.  It is up to the caller to modify these
    if required after calling :c:func:`Py_Initialize`.
 
@@ -478,6 +482,10 @@ Process-wide parameters
 
    The path argument is copied internally, so the caller may free it after the
    call completes.
+
+   .. versionchanged:: 3.8
+      The program full path is now used for :data:`sys.executable`, instead
+      of the program name.
 
 
 .. c:function:: const char* Py_GetVersion()
@@ -761,9 +769,19 @@ supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but mixing multiple interpreters and the
 :c:func:`PyGILState_\*` API is unsupported.
 
+
+.. _fork-and-threads:
+
+Cautions about fork()
+---------------------
+
 Another important thing to note about threads is their behaviour in the face
 of the C :c:func:`fork` call. On most systems with :c:func:`fork`, after a
-process forks only the thread that issued the fork will exist. That also
+process forks only the thread that issued the fork will exist.  This has a
+concrete impact both on how locks must be handled and on all stored state
+in CPython's runtime.
+
+The fact that only the "current" thread remains
 means any locks held by other threads will never be released. Python solves
 this for :func:`os.fork` by acquiring the locks it uses internally before
 the fork, and releasing them afterwards. In addition, it resets any
@@ -777,6 +795,17 @@ into Python) may result in a deadlock by one of Python's internal locks
 being held by a thread that is defunct after the fork.
 :c:func:`PyOS_AfterFork_Child` tries to reset the necessary locks, but is not
 always able to.
+
+The fact that all other threads go away also means that CPython's
+runtime state there must be cleaned up properly, which :func:`os.fork`
+does.  This means finalizing all other :c:type:`PyThreadState` objects
+belonging to the current interpreter and all other
+:c:type:`PyInterpreterState` objects.  Due to this and the special
+nature of the :ref:`"main" interpreter <sub-interpreter-support>`,
+:c:func:`fork` should only be called in that interpreter's "main"
+thread, where the CPython global runtime was originally initialized.
+The only exception is if :c:func:`exec` will be called immediately
+after.
 
 
 High-level API
@@ -813,12 +842,12 @@ code, or when embedding the Python interpreter:
       single: PyEval_SaveThread()
       single: PyEval_RestoreThread()
 
-   Initialize and acquire the global interpreter lock.  It should be called in the
-   main thread before creating a second thread or engaging in any other thread
-   operations such as ``PyEval_ReleaseThread(tstate)``. It is not needed before
-   calling :c:func:`PyEval_SaveThread` or :c:func:`PyEval_RestoreThread`.
+   Deprecated function which does nothing.
 
-   This is a no-op when called for a second time.
+   In Python 3.6 and older, this function created the GIL if it didn't exist.
+
+   .. versionchanged:: 3.9
+      The function now does nothing.
 
    .. versionchanged:: 3.7
       This function is now called by :c:func:`Py_Initialize()`, so you don't
@@ -826,6 +855,8 @@ code, or when embedding the Python interpreter:
 
    .. versionchanged:: 3.2
       This function cannot be called before :c:func:`Py_Initialize()` anymore.
+
+   .. deprecated-removed:: 3.9 3.11
 
    .. index:: module: _thread
 
@@ -839,42 +870,43 @@ code, or when embedding the Python interpreter:
    .. versionchanged:: 3.7
       The :term:`GIL` is now initialized by :c:func:`Py_Initialize()`.
 
+   .. deprecated-removed:: 3.9 3.11
+
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
 
-   Release the global interpreter lock (if it has been created and thread
-   support is enabled) and reset the thread state to *NULL*, returning the
-   previous thread state (which is not *NULL*).  If the lock has been created,
-   the current thread must have acquired it.
+   Release the global interpreter lock (if it has been created) and reset the
+   thread state to ``NULL``, returning the previous thread state (which is not
+   ``NULL``).  If the lock has been created, the current thread must have
+   acquired it.
 
 
 .. c:function:: void PyEval_RestoreThread(PyThreadState *tstate)
 
-   Acquire the global interpreter lock (if it has been created and thread
-   support is enabled) and set the thread state to *tstate*, which must not be
-   *NULL*.  If the lock has been created, the current thread must not have
-   acquired it, otherwise deadlock ensues.
+   Acquire the global interpreter lock (if it has been created) and set the
+   thread state to *tstate*, which must not be ``NULL``.  If the lock has been
+   created, the current thread must not have acquired it, otherwise deadlock
+   ensues.
 
+   .. note::
+      Calling this function from a thread when the runtime is finalizing
+      will terminate the thread, even if the thread was not created by Python.
+      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      check if the interpreter is in process of being finalized before calling
+      this function to avoid unwanted termination.
 
 .. c:function:: PyThreadState* PyThreadState_Get()
 
    Return the current thread state.  The global interpreter lock must be held.
-   When the current thread state is *NULL*, this issues a fatal error (so that
-   the caller needn't check for *NULL*).
+   When the current thread state is ``NULL``, this issues a fatal error (so that
+   the caller needn't check for ``NULL``).
 
 
 .. c:function:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
 
    Swap the current thread state with the thread state given by the argument
-   *tstate*, which may be *NULL*.  The global interpreter lock must be held
+   *tstate*, which may be ``NULL``.  The global interpreter lock must be held
    and is not released.
-
-
-.. c:function:: void PyEval_ReInitThreads()
-
-   This function is called from :c:func:`PyOS_AfterFork_Child` to ensure
-   that newly created child processes don't hold locks referring to threads
-   which are not running in the child process.
 
 
 The following functions use thread-local storage, and are not compatible
@@ -902,6 +934,12 @@ with sub-interpreters:
    When the function returns, the current thread will hold the GIL and be able
    to call arbitrary Python code.  Failure is a fatal error.
 
+   .. note::
+      Calling this function from a thread when the runtime is finalizing
+      will terminate the thread, even if the thread was not created by Python.
+      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      check if the interpreter is in process of being finalized before calling
+      this function to avoid unwanted termination.
 
 .. c:function:: void PyGILState_Release(PyGILState_STATE)
 
@@ -984,11 +1022,15 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    be held, but may be held if it is necessary to serialize calls to this
    function.
 
+   .. audit-event:: cpython.PyInterpreterState_New "" c.PyInterpreterState_New
+
 
 .. c:function:: void PyInterpreterState_Clear(PyInterpreterState *interp)
 
    Reset all information in an interpreter state object.  The global interpreter
    lock must be held.
+
+   .. audit-event:: cpython.PyInterpreterState_Clear "" c.PyInterpreterState_Clear
 
 
 .. c:function:: void PyInterpreterState_Delete(PyInterpreterState *interp)
@@ -1010,6 +1052,10 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    Reset all information in a thread state object.  The global interpreter lock
    must be held.
 
+   .. versionchanged:: 3.9
+      This function now calls the :c:member:`PyThreadState.on_delete` callback.
+      Previously, that happened in :c:func:`PyThreadState_Delete`.
+
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
 
@@ -1018,12 +1064,104 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    :c:func:`PyThreadState_Clear`.
 
 
-.. c:function:: PY_INT64_T PyInterpreterState_GetID(PyInterpreterState *interp)
+.. c:function:: void PyThreadState_DeleteCurrent(void)
+
+   Destroy the current thread state and release the global interpreter lock.
+   Like :c:func:`PyThreadState_Delete`, the global interpreter lock need not
+   be held. The thread state must have been reset with a previous call
+   to :c:func:`PyThreadState_Clear`.
+
+
+.. c:function:: PyFrameObject* PyThreadState_GetFrame(PyThreadState *tstate)
+
+   Get the current frame of the Python thread state *tstate*.
+
+   Return a strong reference. Return ``NULL`` if no frame is currently
+   executing.
+
+   See also :c:func:`PyEval_GetFrame`.
+
+   *tstate* must not be ``NULL``.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: uint64_t PyThreadState_GetID(PyThreadState *tstate)
+
+   Get the unique thread state identifier of the Python thread state *tstate*.
+
+   *tstate* must not be ``NULL``.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: PyInterpreterState* PyThreadState_GetInterpreter(PyThreadState *tstate)
+
+   Get the interpreter of the Python thread state *tstate*.
+
+   *tstate* must not be ``NULL``.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
+
+   Get the current interpreter.
+
+   Issue a fatal error if there no current Python thread state or no current
+   interpreter. It cannot return NULL.
+
+   The caller must hold the GIL.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: int64_t PyInterpreterState_GetID(PyInterpreterState *interp)
 
    Return the interpreter's unique ID.  If there was any error in doing
    so then ``-1`` is returned and an error is set.
 
+   The caller must hold the GIL.
+
    .. versionadded:: 3.7
+
+
+.. c:function:: PyObject* PyInterpreterState_GetDict(PyInterpreterState *interp)
+
+   Return a dictionary in which interpreter-specific data may be stored.
+   If this function returns ``NULL`` then no exception has been raised and
+   the caller should assume no interpreter-specific dict is available.
+
+   This is not a replacement for :c:func:`PyModule_GetState()`, which
+   extensions should use to store interpreter-specific state information.
+
+   .. versionadded:: 3.8
+
+.. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *frame, int throwflag)
+
+   Type of a frame evaluation function.
+
+   The *throwflag* parameter is used by the ``throw()`` method of generators:
+   if non-zero, handle the current exception.
+
+   .. versionchanged:: 3.9
+      The function now takes a *tstate* parameter.
+
+.. c:function:: _PyFrameEvalFunction _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
+
+   Get the frame evaluation function.
+
+   See the :pep:`523` "Adding a frame evaluation API to CPython".
+
+   .. versionadded:: 3.9
+
+.. c:function:: void _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, _PyFrameEvalFunction eval_frame);
+
+   Set the frame evaluation function.
+
+   See the :pep:`523` "Adding a frame evaluation API to CPython".
+
+   .. versionadded:: 3.9
 
 
 .. c:function:: PyObject* PyThreadState_GetDict()
@@ -1031,7 +1169,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    Return a dictionary in which extensions can store thread-specific state
    information.  Each extension should use a unique key to use to store state in
    the dictionary.  It is okay to call this function when no current thread state
-   is available. If this function returns *NULL*, no exception has been raised and
+   is available. If this function returns ``NULL``, no exception has been raised and
    the caller should assume no current thread state is available.
 
 
@@ -1052,8 +1190,20 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 .. c:function:: void PyEval_AcquireThread(PyThreadState *tstate)
 
    Acquire the global interpreter lock and set the current thread state to
-   *tstate*, which should not be *NULL*.  The lock must have been created earlier.
+   *tstate*, which must not be ``NULL``.  The lock must have been created earlier.
    If this thread already has the lock, deadlock ensues.
+
+   .. note::
+      Calling this function from a thread when the runtime is finalizing
+      will terminate the thread, even if the thread was not created by Python.
+      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      check if the interpreter is in process of being finalized before calling
+      this function to avoid unwanted termination.
+
+   .. versionchanged:: 3.8
+      Updated to be consistent with :c:func:`PyEval_RestoreThread`,
+      :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`,
+      and terminate the current thread if called while the interpreter is finalizing.
 
    :c:func:`PyEval_RestoreThread` is a higher-level function which is always
    available (even when threads have not been initialized).
@@ -1061,9 +1211,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: void PyEval_ReleaseThread(PyThreadState *tstate)
 
-   Reset the current thread state to *NULL* and release the global interpreter
+   Reset the current thread state to ``NULL`` and release the global interpreter
    lock.  The lock must have been created earlier and must be held by the current
-   thread.  The *tstate* argument, which must not be *NULL*, is only used to check
+   thread.  The *tstate* argument, which must not be ``NULL``, is only used to check
    that it represents the current thread state --- if it isn't, a fatal error is
    reported.
 
@@ -1080,6 +1230,18 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
       This function does not update the current thread state.  Please use
       :c:func:`PyEval_RestoreThread` or :c:func:`PyEval_AcquireThread`
       instead.
+
+   .. note::
+      Calling this function from a thread when the runtime is finalizing
+      will terminate the thread, even if the thread was not created by Python.
+      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      check if the interpreter is in process of being finalized before calling
+      this function to avoid unwanted termination.
+
+   .. versionchanged:: 3.8
+      Updated to be consistent with :c:func:`PyEval_RestoreThread`,
+      :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`,
+      and terminate the current thread if called while the interpreter is finalizing.
 
 
 .. c:function:: void PyEval_ReleaseLock()
@@ -1099,10 +1261,18 @@ Sub-interpreter support
 
 While in most uses, you will only embed a single Python interpreter, there
 are cases where you need to create several independent interpreters in the
-same process and perhaps even in the same thread.  Sub-interpreters allow
-you to do that.  You can switch between sub-interpreters using the
-:c:func:`PyThreadState_Swap` function.  You can create and destroy them
-using the following functions:
+same process and perhaps even in the same thread. Sub-interpreters allow
+you to do that.
+
+The "main" interpreter is the first one created when the runtime initializes.
+It is usually the only Python interpreter in a process.  Unlike sub-interpreters,
+the main interpreter has unique process-global responsibilities like signal
+handling.  It is also responsible for execution during runtime initialization and
+is usually the active interpreter during runtime finalization.  The
+:c:func:`PyInterpreterState_Main` function returns a pointer to its state.
+
+You can switch between sub-interpreters using the :c:func:`PyThreadState_Swap`
+function. You can create and destroy them using the following functions:
 
 
 .. c:function:: PyThreadState* Py_NewInterpreter()
@@ -1128,7 +1298,7 @@ using the following functions:
    The return value points to the first thread state created in the new
    sub-interpreter.  This thread state is made in the current thread state.
    Note that no actual thread is created; see the discussion of thread states
-   below.  If creation of the new interpreter is unsuccessful, *NULL* is
+   below.  If creation of the new interpreter is unsuccessful, ``NULL`` is
    returned; no exception is set since the exception state is stored in the
    current thread state and there may not be a current thread state.  (Like all
    other Python/C API functions, the global interpreter lock must be held before
@@ -1140,15 +1310,31 @@ using the following functions:
       single: Py_FinalizeEx()
       single: Py_Initialize()
 
-   Extension modules are shared between (sub-)interpreters as follows: the first
-   time a particular extension is imported, it is initialized normally, and a
-   (shallow) copy of its module's dictionary is squirreled away.  When the same
-   extension is imported by another (sub-)interpreter, a new module is initialized
-   and filled with the contents of this copy; the extension's ``init`` function is
-   not called.  Note that this is different from what happens when an extension is
-   imported after the interpreter has been completely re-initialized by calling
-   :c:func:`Py_FinalizeEx` and :c:func:`Py_Initialize`; in that case, the extension's
-   ``initmodule`` function *is* called again.
+   Extension modules are shared between (sub-)interpreters as follows:
+
+   *  For modules using multi-phase initialization,
+      e.g. :c:func:`PyModule_FromDefAndSpec`, a separate module object is
+      created and initialized for each interpreter.
+      Only C-level static and global variables are shared between these
+      module objects.
+
+   *  For modules using single-phase initialization,
+      e.g. :c:func:`PyModule_Create`, the first time a particular extension
+      is imported, it is initialized normally, and a (shallow) copy of its
+      module's dictionary is squirreled away.
+      When the same extension is imported by another (sub-)interpreter, a new
+      module is initialized and filled with the contents of this copy; the
+      extension's ``init`` function is not called.
+      Objects in the module's dictionary thus end up shared across
+      (sub-)interpreters, which might cause unwanted behavior (see
+      `Bugs and caveats`_ below).
+
+      Note that this is different from what happens when an extension is
+      imported after the interpreter has been completely re-initialized by
+      calling :c:func:`Py_FinalizeEx` and :c:func:`Py_Initialize`; in that
+      case, the extension's ``initmodule`` function *is* called again.
+      As with multi-phase initialization, this means that only C-level static
+      and global variables are shared between these modules.
 
    .. index:: single: close() (in module os)
 
@@ -1159,7 +1345,7 @@ using the following functions:
 
    Destroy the (sub-)interpreter represented by the given thread state. The given
    thread state must be the current thread state.  See the discussion of thread
-   states below.  When the call returns, the current thread state is *NULL*.  All
+   states below.  When the call returns, the current thread state is ``NULL``.  All
    thread states associated with this interpreter are destroyed.  (The global
    interpreter lock must be held before calling this function and is still held
    when it returns.)  :c:func:`Py_FinalizeEx` will destroy all sub-interpreters that
@@ -1174,14 +1360,16 @@ process, the insulation between them isn't perfect --- for example, using
 low-level file operations like  :func:`os.close` they can
 (accidentally or maliciously) affect each other's open files.  Because of the
 way extensions are shared between (sub-)interpreters, some extensions may not
-work properly; this is especially likely when the extension makes use of
-(static) global variables, or when the extension manipulates its module's
-dictionary after its initialization.  It is possible to insert objects created
-in one sub-interpreter into a namespace of another sub-interpreter; this should
-be done with great care to avoid sharing user-defined functions, methods,
-instances or classes between sub-interpreters, since import operations executed
-by such objects may affect the wrong (sub-)interpreter's dictionary of loaded
-modules.
+work properly; this is especially likely when using single-phase initialization
+or (static) global variables.
+It is possible to insert objects created in one sub-interpreter into
+a namespace of another (sub-)interpreter; this should be avoided if possible.
+
+Special care should be taken to avoid sharing user-defined functions,
+methods, instances or classes between sub-interpreters, since import
+operations executed by such objects may affect the wrong (sub-)interpreter's
+dictionary of loaded modules. It is equally important to avoid sharing
+objects from which the above are reachable.
 
 Also note that combining this functionality with :c:func:`PyGILState_\*` APIs
 is delicate, because these APIs assume a bijection between Python thread states
@@ -1226,6 +1414,10 @@ pointer and a void pointer argument.
    This function doesn't need a current thread state to run, and it doesn't
    need the global interpreter lock.
 
+   To call this function in a subinterpreter, the caller must hold the GIL.
+   Otherwise, the function *func* can be scheduled to be called from the wrong
+   interpreter.
+
    .. warning::
       This is a low-level function, only useful for very special cases.
       There is no guarantee that *func* will be called as quick as
@@ -1233,6 +1425,12 @@ pointer and a void pointer argument.
       *func* won't be called before the system call returns.  This
       function is generally **not** suitable for calling Python code from
       arbitrary C threads.  Instead, use the :ref:`PyGILState API<gilstate>`.
+
+   .. versionchanged:: 3.9
+      If this function is called in a subinterpreter, the function *func* is
+      now scheduled to be called from the subinterpreter, rather than being
+      called from the main interpreter. Each subinterpreter now has its own
+      list of scheduled calls.
 
    .. versionadded:: 3.1
 
@@ -1266,27 +1464,27 @@ Python-level trace functions in previous versions.
    :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION`, :const:`PyTrace_C_RETURN`,
    or :const:`PyTrace_OPCODE`, and *arg* depends on the value of *what*:
 
-   +------------------------------+--------------------------------------+
-   | Value of *what*              | Meaning of *arg*                     |
-   +==============================+======================================+
-   | :const:`PyTrace_CALL`        | Always :c:data:`Py_None`.            |
-   +------------------------------+--------------------------------------+
-   | :const:`PyTrace_EXCEPTION`   | Exception information as returned by |
-   |                              | :func:`sys.exc_info`.                |
-   +------------------------------+--------------------------------------+
-   | :const:`PyTrace_LINE`        | Always :c:data:`Py_None`.            |
-   +------------------------------+--------------------------------------+
-   | :const:`PyTrace_RETURN`      | Value being returned to the caller,  |
-   |                              | or *NULL* if caused by an exception. |
-   +------------------------------+--------------------------------------+
-   | :const:`PyTrace_C_CALL`      | Function object being called.        |
-   +------------------------------+--------------------------------------+
-   | :const:`PyTrace_C_EXCEPTION` | Function object being called.        |
-   +------------------------------+--------------------------------------+
-   | :const:`PyTrace_C_RETURN`    | Function object being called.        |
-   +------------------------------+--------------------------------------+
-   | :const:`PyTrace_OPCODE`      | Always :c:data:`Py_None`.            |
-   +------------------------------+--------------------------------------+
+   +------------------------------+----------------------------------------+
+   | Value of *what*              | Meaning of *arg*                       |
+   +==============================+========================================+
+   | :const:`PyTrace_CALL`        | Always :c:data:`Py_None`.              |
+   +------------------------------+----------------------------------------+
+   | :const:`PyTrace_EXCEPTION`   | Exception information as returned by   |
+   |                              | :func:`sys.exc_info`.                  |
+   +------------------------------+----------------------------------------+
+   | :const:`PyTrace_LINE`        | Always :c:data:`Py_None`.              |
+   +------------------------------+----------------------------------------+
+   | :const:`PyTrace_RETURN`      | Value being returned to the caller,    |
+   |                              | or ``NULL`` if caused by an exception. |
+   +------------------------------+----------------------------------------+
+   | :const:`PyTrace_C_CALL`      | Function object being called.          |
+   +------------------------------+----------------------------------------+
+   | :const:`PyTrace_C_EXCEPTION` | Function object being called.          |
+   +------------------------------+----------------------------------------+
+   | :const:`PyTrace_C_RETURN`    | Function object being called.          |
+   +------------------------------+----------------------------------------+
+   | :const:`PyTrace_OPCODE`      | Always :c:data:`Py_None`.              |
+   +------------------------------+----------------------------------------+
 
 .. c:var:: int PyTrace_CALL
 
@@ -1350,11 +1548,13 @@ Python-level trace functions in previous versions.
 .. c:function:: void PyEval_SetProfile(Py_tracefunc func, PyObject *obj)
 
    Set the profiler function to *func*.  The *obj* parameter is passed to the
-   function as its first parameter, and may be any Python object, or *NULL*.  If
+   function as its first parameter, and may be any Python object, or ``NULL``.  If
    the profile function needs to maintain state, using a different value for *obj*
    for each thread provides a convenient and thread-safe place to store it.  The
    profile function is called for all monitored events except :const:`PyTrace_LINE`
    :const:`PyTrace_OPCODE` and :const:`PyTrace_EXCEPTION`.
+
+   The caller must hold the :term:`GIL`.
 
 
 .. c:function:: void PyEval_SetTrace(Py_tracefunc func, PyObject *obj)
@@ -1365,6 +1565,9 @@ Python-level trace functions in previous versions.
    objects being called.  Any trace function registered using :c:func:`PyEval_SetTrace`
    will not receive :const:`PyTrace_C_CALL`, :const:`PyTrace_C_EXCEPTION` or
    :const:`PyTrace_C_RETURN` as a value for the *what* parameter.
+
+   The caller must hold the :term:`GIL`.
+
 
 .. _advanced-debugging:
 
@@ -1380,6 +1583,11 @@ These functions are only intended to be used by advanced debugging tools.
 .. c:function:: PyInterpreterState* PyInterpreterState_Head()
 
    Return the interpreter state object at the head of the list of all such objects.
+
+
+.. c:function:: PyInterpreterState* PyInterpreterState_Main()
+
+   Return the main interpreter state object.
 
 
 .. c:function:: PyInterpreterState* PyInterpreterState_Next(PyInterpreterState *interp)
@@ -1468,7 +1676,7 @@ is not possible due to its implementation being opaque at build time.
 .. c:function:: Py_tss_t* PyThread_tss_alloc()
 
    Return a value which is the same state as a value initialized with
-   :c:macro:`Py_tss_NEEDS_INIT`, or *NULL* in the case of dynamic allocation
+   :c:macro:`Py_tss_NEEDS_INIT`, or ``NULL`` in the case of dynamic allocation
    failure.
 
 
@@ -1487,7 +1695,7 @@ is not possible due to its implementation being opaque at build time.
 Methods
 ~~~~~~~
 
-The parameter *key* of these functions must not be *NULL*.  Moreover, the
+The parameter *key* of these functions must not be ``NULL``.  Moreover, the
 behaviors of :c:func:`PyThread_tss_set` and :c:func:`PyThread_tss_get` are
 undefined if the given :c:type:`Py_tss_t` has not been initialized by
 :c:func:`PyThread_tss_create`.
@@ -1527,7 +1735,7 @@ undefined if the given :c:type:`Py_tss_t` has not been initialized by
 .. c:function:: void* PyThread_tss_get(Py_tss_t *key)
 
    Return the :c:type:`void\*` value associated with a TSS key in the current
-   thread.  This returns *NULL* if no value is associated with the key in the
+   thread.  This returns ``NULL`` if no value is associated with the key in the
    current thread.
 
 

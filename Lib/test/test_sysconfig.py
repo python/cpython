@@ -6,7 +6,8 @@ import shutil
 from copy import copy
 
 from test.support import (import_module, TESTFN, unlink, check_warnings,
-                          captured_stdout, skip_unless_symlink, change_cwd)
+                          captured_stdout, skip_unless_symlink, change_cwd,
+                          PythonSymlink)
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -232,26 +233,10 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(get_scheme_names(), wanted)
 
     @skip_unless_symlink
-    def test_symlink(self):
-        # On Windows, the EXE needs to know where pythonXY.dll is at so we have
-        # to add the directory to the path.
-        if sys.platform == "win32":
-            os.environ["PATH"] = "{};{}".format(
-                os.path.dirname(sys.executable), os.environ["PATH"])
-
-        # Issue 7880
-        def get(python):
-            cmd = [python, '-c',
-                   'import sysconfig; print(sysconfig.get_platform())']
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=os.environ)
-            return p.communicate()
-        real = os.path.realpath(sys.executable)
-        link = os.path.abspath(TESTFN)
-        os.symlink(real, link)
-        try:
-            self.assertEqual(get(real), get(link))
-        finally:
-            unlink(link)
+    def test_symlink(self): # Issue 7880
+        with PythonSymlink() as py:
+            cmd = "-c", "import sysconfig; print(sysconfig.get_platform())"
+            self.assertEqual(py.call_real(*cmd), py.call_link(*cmd))
 
     def test_user_similar(self):
         # Issue #8759: make sure the posix scheme for the users

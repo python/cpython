@@ -86,6 +86,11 @@ Bookkeeping functions
    .. versionchanged:: 3.2
       Moved to the version 2 scheme which uses all of the bits in a string seed.
 
+   .. deprecated:: 3.9
+      In the future, the *seed* must be one of the following types:
+      *NoneType*, :class:`int`, :class:`float`, :class:`str`,
+      :class:`bytes`, or :class:`bytearray`.
+
 .. function:: getstate()
 
    Return an object capturing the current internal state of the generator.  This
@@ -99,12 +104,17 @@ Bookkeeping functions
    the time :func:`getstate` was called.
 
 
-.. function:: getrandbits(k)
+Functions for bytes
+-------------------
 
-   Returns a Python integer with *k* random bits. This method is supplied with
-   the MersenneTwister generator and some other generators may also provide it
-   as an optional part of the API. When available, :meth:`getrandbits` enables
-   :meth:`randrange` to handle arbitrarily large ranges.
+.. function:: randbytes(n)
+
+   Generate *n* random bytes.
+
+   This method should not be used for generating security tokens.
+   Use :func:`secrets.token_bytes` instead.
+
+   .. versionadded:: 3.9
 
 
 Functions for integers
@@ -129,6 +139,16 @@ Functions for integers
 
    Return a random integer *N* such that ``a <= N <= b``.  Alias for
    ``randrange(a, b+1)``.
+
+.. function:: getrandbits(k)
+
+   Returns a Python integer with *k* random bits. This method is supplied with
+   the MersenneTwister generator and some other generators may also provide it
+   as an optional part of the API. When available, :meth:`getrandbits` enables
+   :meth:`randrange` to handle arbitrarily large ranges.
+
+   .. versionchanged:: 3.9
+      This method now accepts zero for *k*.
 
 
 Functions for sequences
@@ -160,9 +180,21 @@ Functions for sequences
 
    The *weights* or *cum_weights* can use any numeric type that interoperates
    with the :class:`float` values returned by :func:`random` (that includes
-   integers, floats, and fractions but excludes decimals).
+   integers, floats, and fractions but excludes decimals).  Behavior is
+   undefined if any weight is negative.  A :exc:`ValueError` is raised if all
+   weights are zero.
+
+   For a given seed, the :func:`choices` function with equal weighting
+   typically produces a different sequence than repeated calls to
+   :func:`choice`.  The algorithm used by :func:`choices` uses floating
+   point arithmetic for internal consistency and speed.  The algorithm used
+   by :func:`choice` defaults to integer arithmetic with repeated selections
+   to avoid small biases from round-off error.
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.9
+      Raises a :exc:`ValueError` if all weights are zero.
 
 
 .. function:: shuffle(x[, random])
@@ -181,8 +213,11 @@ Functions for sequences
    generated.  For example, a sequence of length 2080 is the largest that
    can fit within the period of the Mersenne Twister random number generator.
 
+   .. deprecated-removed:: 3.9 3.11
+      The optional parameter *random*.
 
-.. function:: sample(population, k)
+
+.. function:: sample(population, k, *, counts=None)
 
    Return a *k* length list of unique elements chosen from the population sequence
    or set. Used for random sampling without replacement.
@@ -196,12 +231,27 @@ Functions for sequences
    Members of the population need not be :term:`hashable` or unique.  If the population
    contains repeats, then each occurrence is a possible selection in the sample.
 
+   Repeated elements can be specified one at a time or with the optional
+   keyword-only *counts* parameter.  For example, ``sample(['red', 'blue'],
+   counts=[4, 2], k=5)`` is equivalent to ``sample(['red', 'red', 'red', 'red',
+   'blue', 'blue'], k=5)``.
+
    To choose a sample from a range of integers, use a :func:`range` object as an
    argument.  This is especially fast and space efficient for sampling from a large
    population:  ``sample(range(10000000), k=60)``.
 
    If the sample size is larger than the population size, a :exc:`ValueError`
    is raised.
+
+   .. versionchanged:: 3.9
+      Added the *counts* parameter.
+
+   .. deprecated:: 3.9
+      In the future, the *population* must be a sequence.  Instances of
+      :class:`set` are no longer supported.  The set must first be converted
+      to a :class:`list` or :class:`tuple`, preferably in a deterministic
+      order so that the sample is reproducible.
+
 
 Real-valued distributions
 -------------------------
@@ -303,6 +353,16 @@ be found in any statistics text.
 Alternative Generator
 ---------------------
 
+.. class:: Random([seed])
+
+   Class that implements the default pseudo-random number generator used by the
+   :mod:`random` module.
+
+   .. deprecated:: 3.9
+      In the future, the *seed* must be one of the following types:
+      :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
+      :class:`bytes`, or :class:`bytearray`.
+
 .. class:: SystemRandom([seed])
 
    Class that uses the :func:`os.urandom` function for generating random numbers
@@ -316,8 +376,8 @@ Alternative Generator
 Notes on Reproducibility
 ------------------------
 
-Sometimes it is useful to be able to reproduce the sequences given by a pseudo
-random number generator.  By re-using a seed value, the same sequence should be
+Sometimes it is useful to be able to reproduce the sequences given by a
+pseudo-random number generator.  By re-using a seed value, the same sequence should be
 reproducible from run to run as long as multiple threads are not running.
 
 Most of the random module's algorithms and seeding functions are subject to
@@ -368,38 +428,40 @@ Simulations::
    >>> choices(['red', 'black', 'green'], [18, 18, 2], k=6)
    ['red', 'green', 'black', 'black', 'red', 'black']
 
-   >>> # Deal 20 cards without replacement from a deck of 52 playing cards
-   >>> # and determine the proportion of cards with a ten-value
-   >>> # (a ten, jack, queen, or king).
-   >>> deck = collections.Counter(tens=16, low_cards=36)
-   >>> seen = sample(list(deck.elements()), k=20)
-   >>> seen.count('tens') / 20
+   >>> # Deal 20 cards without replacement from a deck
+   >>> # of 52 playing cards, and determine the proportion of cards
+   >>> # with a ten-value:  ten, jack, queen, or king.
+   >>> dealt = sample(['tens', 'low cards'], counts=[16, 36], k=20)
+   >>> dealt.count('tens') / 20
    0.15
 
    >>> # Estimate the probability of getting 5 or more heads from 7 spins
    >>> # of a biased coin that settles on heads 60% of the time.
-   >>> trial = lambda: choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
-   >>> sum(trial() for i in range(10000)) / 10000
+   >>> def trial():
+   ...     return choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
+   ...
+   >>> sum(trial() for i in range(10_000)) / 10_000
    0.4169
 
    >>> # Probability of the median of 5 samples being in middle two quartiles
-   >>> trial = lambda : 2500 <= sorted(choices(range(10000), k=5))[2]  < 7500
-   >>> sum(trial() for i in range(10000)) / 10000
+   >>> def trial():
+   ...     return 2_500 <= sorted(choices(range(10_000), k=5))[2] < 7_500
+   ...
+   >>> sum(trial() for i in range(10_000)) / 10_000
    0.7958
 
 Example of `statistical bootstrapping
 <https://en.wikipedia.org/wiki/Bootstrapping_(statistics)>`_ using resampling
-with replacement to estimate a confidence interval for the mean of a sample of
-size five::
+with replacement to estimate a confidence interval for the mean of a sample::
 
    # http://statistics.about.com/od/Applications/a/Example-Of-Bootstrapping.htm
-   from statistics import mean
+   from statistics import fmean as mean
    from random import choices
 
-   data = 1, 2, 4, 4, 10
-   means = sorted(mean(choices(data, k=5)) for i in range(20))
+   data = [41, 50, 29, 37, 81, 30, 73, 63, 20, 35, 68, 22, 60, 31, 95]
+   means = sorted(mean(choices(data, k=len(data))) for i in range(100))
    print(f'The sample mean of {mean(data):.1f} has a 90% confidence '
-         f'interval from {means[1]:.1f} to {means[-2]:.1f}')
+         f'interval from {means[5]:.1f} to {means[94]:.1f}')
 
 Example of a `resampling permutation test
 <https://en.wikipedia.org/wiki/Resampling_(statistics)#Permutation_tests>`_
@@ -408,14 +470,14 @@ to determine the statistical significance or `p-value
 between the effects of a drug versus a placebo::
 
     # Example from "Statistics is Easy" by Dennis Shasha and Manda Wilson
-    from statistics import mean
+    from statistics import fmean as mean
     from random import shuffle
 
     drug = [54, 73, 53, 70, 73, 68, 52, 65, 65]
     placebo = [54, 51, 58, 44, 55, 52, 42, 47, 58, 46]
     observed_diff = mean(drug) - mean(placebo)
 
-    n = 10000
+    n = 10_000
     count = 0
     combined = drug + placebo
     for i in range(n):
@@ -428,34 +490,31 @@ between the effects of a drug versus a placebo::
     print(f'The one-sided p-value of {count / n:.4f} leads us to reject the null')
     print(f'hypothesis that there is no difference between the drug and the placebo.')
 
-Simulation of arrival times and service deliveries in a single server queue::
+Simulation of arrival times and service deliveries for a multiserver queue::
 
+    from heapq import heappush, heappop
     from random import expovariate, gauss
-    from statistics import mean, median, stdev
+    from statistics import mean, quantiles
 
     average_arrival_interval = 5.6
-    average_service_time = 5.0
-    stdev_service_time = 0.5
+    average_service_time = 15.0
+    stdev_service_time = 3.5
+    num_servers = 3
 
-    num_waiting = 0
-    arrivals = []
-    starts = []
-    arrival = service_end = 0.0
-    for i in range(20000):
-        if arrival <= service_end:
-            num_waiting += 1
-            arrival += expovariate(1.0 / average_arrival_interval)
-            arrivals.append(arrival)
-        else:
-            num_waiting -= 1
-            service_start = service_end if num_waiting else arrival
-            service_time = gauss(average_service_time, stdev_service_time)
-            service_end = service_start + service_time
-            starts.append(service_start)
+    waits = []
+    arrival_time = 0.0
+    servers = [0.0] * num_servers  # time when each server becomes available
+    for i in range(100_000):
+        arrival_time += expovariate(1.0 / average_arrival_interval)
+        next_server_available = heappop(servers)
+        wait = max(0.0, next_server_available - arrival_time)
+        waits.append(wait)
+        service_duration = gauss(average_service_time, stdev_service_time)
+        service_completed = arrival_time + wait + service_duration
+        heappush(servers, service_completed)
 
-    waits = [start - arrival for arrival, start in zip(arrivals, starts)]
-    print(f'Mean wait: {mean(waits):.1f}.  Stdev wait: {stdev(waits):.1f}.')
-    print(f'Median wait: {median(waits):.1f}.  Max wait: {max(waits):.1f}.')
+    print(f'Mean wait: {mean(waits):.1f}   Max wait: {max(waits):.1f}')
+    print('Quartiles:', [round(q, 1) for q in quantiles(waits)])
 
 .. seealso::
 

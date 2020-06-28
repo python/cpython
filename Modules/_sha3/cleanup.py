@@ -8,7 +8,7 @@ import os
 import re
 
 CPP1 = re.compile("^//(.*)")
-CPP2 = re.compile("\ //(.*)")
+CPP2 = re.compile(r"\ //(.*)")
 
 STATICS = ("void ", "int ", "HashReturn ",
            "const UINT64 ", "UINT16 ", "    int prefix##")
