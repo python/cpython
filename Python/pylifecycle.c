@@ -583,6 +583,14 @@ pycore_init_types(PyThreadState *tstate)
         return status;
     }
 
+    // Create the empty tuple singleton. It must be created before the first
+    // PyType_Ready() call since PyType_Ready() creates tuples, for tp_bases
+    // for example.
+    status = _PyTuple_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     if (is_main_interp) {
         status = _PyTypes_Init();
         if (_PyStatus_EXCEPTION(status)) {
@@ -590,19 +598,21 @@ pycore_init_types(PyThreadState *tstate)
         }
     }
 
-
     if (!_PyLong_Init(tstate)) {
         return _PyStatus_ERR("can't init longs");
     }
 
-    if (is_main_interp) {
-        status = _PyUnicode_Init();
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
+    status = _PyUnicode_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
-    status = _PyExc_Init();
+    status = _PyBytes_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyExc_Init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1249,6 +1259,7 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyThreadState *tstate, int is_main_interp)
 {
+    _PyExc_Fini(tstate);
     _PyFrame_Fini(tstate);
     _PyAsyncGen_Fini(tstate);
     _PyContext_Fini(tstate);
@@ -1288,10 +1299,6 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     _PyWarnings_Fini(tstate->interp);
-
-    if (is_main_interp) {
-        _PyExc_Fini();
-    }
 
     finalize_interp_types(tstate, is_main_interp);
 }

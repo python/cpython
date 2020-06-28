@@ -456,13 +456,15 @@ class CommandLineTestsBase:
 
     def assertRunOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_ok(
-                         *self._get_run_args(args), **env_vars)
+                         *self._get_run_args(args), **env_vars,
+                         PYTHONIOENCODING='utf-8')
         self.assertEqual(b'', err)
         return out
 
     def assertRunNotOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_failure(
-                        *self._get_run_args(args), **env_vars)
+                        *self._get_run_args(args), **env_vars,
+                        PYTHONIOENCODING='utf-8')
         return rc, out, err
 
     def assertCompiled(self, fn):

@@ -66,11 +66,16 @@ struct _Py_unicode_fs_codec {
 };
 
 struct _Py_bytes_state {
+    PyObject *empty_string;
     PyBytesObject *characters[256];
-    PyBytesObject *empty_string;
 };
 
 struct _Py_unicode_state {
+    // The empty Unicode object is a singleton to improve performance.
+    PyObject *empty_string;
+    /* Single character Unicode strings in the Latin-1 range are being
+       shared as well. */
+    PyObject *latin1[256];
     struct _Py_unicode_fs_codec fs_codec;
 };
 
@@ -150,6 +155,13 @@ struct _Py_context_state {
     // List of free PyContext objects
     PyContext *freelist;
     int numfree;
+};
+
+struct _Py_exc_state {
+    // The dict mapping from errno codes to OSError subclasses
+    PyObject *errnomap;
+    PyBaseExceptionObject *memerrors_freelist;
+    int memerrors_numfree;
 };
 
 
@@ -251,6 +263,7 @@ struct _is {
     struct _Py_frame_state frame;
     struct _Py_async_gen_state async_gen;
     struct _Py_context_state context;
+    struct _Py_exc_state exc_state;
 };
 
 /* Used by _PyImport_Cleanup() */

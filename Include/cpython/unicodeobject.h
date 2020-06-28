@@ -1163,43 +1163,6 @@ PyAPI_FUNC(int) _PyUnicode_IsAlpha(
     Py_UCS4 ch       /* Unicode character */
     );
 
-Py_DEPRECATED(3.3) PyAPI_FUNC(size_t) Py_UNICODE_strlen(
-    const Py_UNICODE *u
-    );
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strcpy(
-    Py_UNICODE *s1,
-    const Py_UNICODE *s2);
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strcat(
-    Py_UNICODE *s1, const Py_UNICODE *s2);
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strncpy(
-    Py_UNICODE *s1,
-    const Py_UNICODE *s2,
-    size_t n);
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(int) Py_UNICODE_strcmp(
-    const Py_UNICODE *s1,
-    const Py_UNICODE *s2
-    );
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(int) Py_UNICODE_strncmp(
-    const Py_UNICODE *s1,
-    const Py_UNICODE *s2,
-    size_t n
-    );
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strchr(
-    const Py_UNICODE *s,
-    Py_UNICODE c
-    );
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strrchr(
-    const Py_UNICODE *s,
-    Py_UNICODE c
-    );
-
 PyAPI_FUNC(PyObject*) _PyUnicode_FormatLong(PyObject *, int, int, int);
 
 /* Create a copy of a unicode string ending with a nul character. Return NULL
