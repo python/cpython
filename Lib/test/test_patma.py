@@ -1,547 +1,5 @@
-import ast
 import collections
-import types
-import typing
 import unittest
-
-
-FILENAME = "<patma tests>"
-
-
-class MatchCase(typing.NamedTuple):
-    pattern: str
-    body: str
-    guard: typing.Optional[str] = None
-
-
-class TestAST(unittest.TestCase):
-    """Tests that predate parser support, and just execute ASTs instead.
-
-    No tests for name loads/stores, since these need a patma parser to
-    disambiguate.
-
-    Note that we use "or" for "|" here, since the parser gives us a BoolOp-Or,
-    not a BinOp-BitOr.
-    """
-
-    @staticmethod
-    def parse_stmts(stmts: str) -> typing.List[ast.stmt]:
-        return ast.parse(stmts, FILENAME, "exec").body
-
-    @staticmethod
-    def parse_expr(expr: str) -> ast.expr:
-        return ast.parse(expr, FILENAME, "eval").body
-
-    @classmethod
-    def parse_match_case(cls, match_case: MatchCase) -> ast.expr:
-        pattern = cls.parse_expr(match_case.pattern)
-        guard = None if match_case.guard is None else cls.parse_expr(match_case.guard)
-        body = cls.parse_stmts(match_case.body)
-        return ast.match_case(pattern=pattern, guard=guard, body=body)
-
-    @classmethod
-    def compile_match(
-        cls, pre: str, target: str, match_cases: typing.Iterable[MatchCase], post: str
-    ) -> types.CodeType:
-        cases = [cls.parse_match_case(case) for case in match_cases]
-        match = ast.Match(target=cls.parse_expr(target), cases=cases)
-        body = [*cls.parse_stmts(pre), match, *cls.parse_stmts(post)]
-        tree = ast.fix_missing_locations(ast.Module(body=body, type_ignores=[]))
-        return compile(tree, FILENAME, "exec")
-
-    @classmethod
-    def execute_match(
-        cls, pre: str, target: str, match_cases: typing.Iterable[MatchCase], post: str
-    ) -> typing.Dict[str, typing.Any]:
-        namespace = {}
-        exec(cls.compile_match(pre, target, match_cases, post), None, namespace)
-        return namespace
-
-    def test_patma_ast_00(self) -> None:
-        match_cases = [MatchCase("0", "y = 0")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_01(self) -> None:
-        match_cases = [MatchCase("False", "y = 0")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_02(self) -> None:
-        match_cases = [MatchCase("1", "y = 0")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_03(self) -> None:
-        match_cases = [MatchCase("None", "y = 0")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_04(self) -> None:
-        match_cases = [MatchCase("0", "y = 0"), MatchCase("0", "y = 1")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_05(self) -> None:
-        match_cases = [MatchCase("1", "y = 0"), MatchCase("1", "y = 1")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_06(self) -> None:
-        match_cases = [MatchCase("'x'", "y = 0"), MatchCase("'y'", "y = 1")]
-        namespace = self.execute_match("x = 'x'", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), "x")
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_07(self) -> None:
-        match_cases = [MatchCase("'y'", "y = 0"), MatchCase("'x'", "y = 1")]
-        namespace = self.execute_match("x = 'x'", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), "x")
-        self.assertEqual(namespace.get("y"), 1)
-
-    def test_patma_ast_08(self) -> None:
-        match_cases = [MatchCase("'x'", "y = 0"), MatchCase("'y'", "y = 1")]
-        namespace = self.execute_match("x = 'x'", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), "x")
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_09(self) -> None:
-        match_cases = [MatchCase("b'y'", "y = 0"), MatchCase("b'x'", "y = 1")]
-        namespace = self.execute_match("x = b'x'", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), b"x")
-        self.assertEqual(namespace.get("y"), 1)
-
-    def test_patma_ast_10(self) -> None:
-        match_cases = [MatchCase("0", "y = 0", "False"), MatchCase("0", "y = 1")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertEqual(namespace.get("y"), 1)
-
-    def test_patma_ast_11(self) -> None:
-        match_cases = [MatchCase("0", "y = 0", "0"), MatchCase("0", "y = 1", "0")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_12(self) -> None:
-        match_cases = [MatchCase("0", "y = 0", "True"), MatchCase("0", "y = 1", "True")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_13(self) -> None:
-        match_cases = [MatchCase("0", "y = 0", "True"), MatchCase("0", "y = 1", "True")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_14(self) -> None:
-        match_cases = [MatchCase("0", "y = 0", "True"), MatchCase("0", "y = 1", "True")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "y = 2")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertEqual(namespace.get("y"), 2)
-
-    def test_patma_ast_15(self) -> None:
-        match_cases = [MatchCase("0", "y = 0", "0"), MatchCase("0", "y = 1", "1")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "y = 2")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertEqual(namespace.get("y"), 2)
-
-    def test_patma_ast_16(self) -> None:
-        match_cases = [MatchCase("0", "y = 0", "not (x := 1)"), MatchCase("1", "y = 1")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 1)
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_17(self) -> None:
-        match_cases = [
-            MatchCase("0", "y = 0", "not (x := 1)"),
-            MatchCase("(z := 0)", "y = 1"),
-        ]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 1)
-        self.assertEqual(namespace.get("y"), 1)
-        self.assertEqual(namespace.get("z"), 0)
-
-    def test_patma_ast_18(self) -> None:
-        match_cases = [
-            MatchCase("(z := 1)", "y = 0", "not (x := 1)"),
-            MatchCase("0", "y = 1"),
-        ]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertEqual(namespace.get("y"), 1)
-        self.assertNotIn("z", namespace)
-
-    def test_patma_ast_19(self) -> None:
-        match_cases = [MatchCase("(z := 0)", "y = 0")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertEqual(namespace.get("y"), 0)
-        self.assertEqual(namespace.get("z"), 0)
-
-    def test_patma_ast_20(self) -> None:
-        match_cases = [MatchCase("(z := 1)", "y = 0")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertNotIn("y", namespace)
-        self.assertNotIn("z", namespace)
-
-    def test_patma_ast_21(self) -> None:
-        match_cases = [MatchCase("(z := 0)", "y = 0", "(w := 0)")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("w"), 0)
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertNotIn("y", namespace)
-        self.assertEqual(namespace.get("z"), 0)
-
-    def test_patma_ast_22(self) -> None:
-        match_cases = [MatchCase("(z := (w := 0))", "y = 0")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("w"), 0)
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertEqual(namespace.get("y"), 0)
-        self.assertEqual(namespace.get("z"), 0)
-
-    def test_patma_ast_23(self) -> None:
-        match_cases = [MatchCase("0 or 1 or 2", "y = 0")]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_24(self) -> None:
-        match_cases = [MatchCase("0 or 1 or 2", "y = 0")]
-        namespace = self.execute_match("x = 1", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 1)
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_25(self) -> None:
-        match_cases = [MatchCase("0 or 1 or 2", "y = 0")]
-        namespace = self.execute_match("x = 2", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 2)
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_26(self) -> None:
-        match_cases = [MatchCase("0 or 1 or 2", "y = 0")]
-        namespace = self.execute_match("x = 3", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 3)
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_27(self) -> None:
-        match_cases = [
-            MatchCase("(z := 0) or (z := 1) or (z := 2)", "y = 0", "z == x % 2")
-        ]
-        namespace = self.execute_match("x = 0", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 0)
-        self.assertEqual(namespace.get("y"), 0)
-        self.assertEqual(namespace.get("z"), 0)
-
-    def test_patma_ast_28(self) -> None:
-        match_cases = [
-            MatchCase("(z := 0) or (z := 1) or (z := 2)", "y = 0", "z == x % 2")
-        ]
-        namespace = self.execute_match("x = 1", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 1)
-        self.assertEqual(namespace.get("y"), 0)
-        self.assertEqual(namespace.get("z"), 1)
-
-    def test_patma_ast_29(self) -> None:
-        match_cases = [
-            MatchCase("(z := 0) or (z := 1) or (z := 2)", "y = 0", "z == x % 2")
-        ]
-        namespace = self.execute_match("x = 2", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 2)
-        self.assertNotIn("y", namespace)
-        self.assertEqual(namespace.get("z"), 2)
-
-    def test_patma_ast_30(self) -> None:
-        match_cases = [
-            MatchCase("(z := 0) or (z := 1) or (z := 2)", "y = 0", "z == x % 2")
-        ]
-        namespace = self.execute_match("x = 3", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), 3)
-        self.assertNotIn("y", namespace)
-        self.assertNotIn("z", namespace)
-
-    def test_patma_ast_31(self) -> None:
-        match_cases = [MatchCase("[]", "y = 0")]
-        namespace = self.execute_match("x = ()", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), ())
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_32(self) -> None:
-        match_cases = [MatchCase("[]", "y = 0")]
-        namespace = self.execute_match("x = ()", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), ())
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_33(self) -> None:
-        match_cases = [MatchCase("[0]", "y = 0")]
-        namespace = self.execute_match("x = (0,)", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), (0,))
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_34(self) -> None:
-        match_cases = [MatchCase("[[]]", "y = 0")]
-        namespace = self.execute_match("x = ((),)", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), ((),))
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_35(self) -> None:
-        match_cases = [MatchCase("[0, 1] or [1, 0]", "y = 0")]
-        namespace = self.execute_match("x = [0, 1]", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), [0, 1])
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_36(self) -> None:
-        match_cases = [MatchCase("[0, 1] or [1, 0]", "y = 0")]
-        namespace = self.execute_match("x = [1, 0]", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), [1, 0])
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_37(self) -> None:
-        match_cases = [MatchCase("[0, 1] or [1, 0]", "y = 0")]
-        namespace = self.execute_match("x = [0, 0]", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), [0, 0])
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_38(self) -> None:
-        match_cases = [
-            MatchCase("[w := 0,]", "y = 0"),
-            MatchCase("[z := 0] or [1, z := (0 or 1)] or [z := 0]", "y = 1"),
-        ]
-        namespace = self.execute_match("x = [1, 0]", "x", match_cases, "")
-        self.assertNotIn("w", namespace)
-        self.assertEqual(namespace.get("x"), [1, 0])
-        self.assertEqual(namespace.get("y"), 1)
-        self.assertEqual(namespace.get("z"), 0)
-
-    def test_patma_ast_39(self) -> None:
-        match_cases = [
-            MatchCase("[0,]", "y = 0"),
-            MatchCase("[1, 0]", "y = 1", "(x := x[:0])"),
-            MatchCase("[1, 0]", "y = 2"),
-        ]
-        namespace = self.execute_match("x = [1, 0]", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), [])
-        self.assertEqual(namespace.get("y"), 2)
-
-    def test_patma_ast_40(self) -> None:
-        match_cases = [MatchCase("[0]", "y = 0")]
-        namespace = self.execute_match("x = {0}", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), {0})
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_41(self) -> None:
-        match_cases = [MatchCase("[]", "y = 0")]
-        namespace = self.execute_match("x = set()", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), set())
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_42(self) -> None:
-        match_cases = [MatchCase("[]", "y = 0")]
-        namespace = self.execute_match("x = iter([1,2,3])", "x", match_cases, "")
-        self.assertEqual(list(namespace.get("x")), [1, 2, 3])
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_43(self) -> None:
-        match_cases = [MatchCase("[]", "y = 0")]
-        namespace = self.execute_match("x = {}", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), {})
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_44(self) -> None:
-        match_cases = [MatchCase("[0, 1]", "y = 0")]
-        namespace = self.execute_match("x = {0: False, 1: True}", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), {0: False, 1: True})
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_45(self) -> None:
-        match_cases = [MatchCase("['x']", "y = 0"), MatchCase("'x'", "y = 1")]
-        namespace = self.execute_match("x = 'x'", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), "x")
-        self.assertEqual(namespace.get("y"), 1)
-
-    def test_patma_ast_46(self) -> None:
-        match_cases = [
-            MatchCase("[b'x']", "y = 0"),
-            MatchCase("['x']", "y = 1"),
-            MatchCase("[120]", "y = 2"),
-            MatchCase("b'x'", "y = 4"),
-        ]
-        namespace = self.execute_match("x = b'x'", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), b"x")
-        self.assertEqual(namespace.get("y"), 4)
-
-    def test_patma_ast_47(self) -> None:
-        match_cases = [MatchCase("[120]", "y = 0"), MatchCase("120", "y = 1")]
-        namespace = self.execute_match("x = bytearray(b'x')", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), b"x")
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_48(self) -> None:
-        match_cases = [
-            MatchCase("[]", "y = 0"),
-            MatchCase("['']", "y = 1"),
-            MatchCase("''", "y = 2"),
-        ]
-        namespace = self.execute_match("x = ''", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), "")
-        self.assertEqual(namespace.get("y"), 2)
-
-    def test_patma_ast_49(self) -> None:
-        match_cases = [
-            MatchCase("['x', 'x', 'x']", "y = 0"),
-            MatchCase("['xxx']", "y = 1"),
-            MatchCase("'xxx'", "y = 2"),
-        ]
-        namespace = self.execute_match("x = 'xxx'", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), "xxx")
-        self.assertEqual(namespace.get("y"), 2)
-
-    def test_patma_ast_50(self) -> None:
-        match_cases = [
-            MatchCase("[120, 120, 120]", "y = 0"),
-            MatchCase("[b'xxx']", "y = 1"),
-            MatchCase("b'xxx'", "y = 2"),
-        ]
-        namespace = self.execute_match("x = b'xxx'", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), b"xxx")
-        self.assertEqual(namespace.get("y"), 2)
-
-    def test_patma_ast_51(self) -> None:
-        match_cases = [MatchCase("{}", "y = 0")]
-        namespace = self.execute_match("x = {}", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), {})
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_52(self) -> None:
-        match_cases = [MatchCase("{}", "y = 0")]
-        namespace = self.execute_match("x = {0: 0}", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), {0: 0})
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_53(self) -> None:
-        match_cases = [MatchCase("{0: 0}", "y = 0")]
-        namespace = self.execute_match("x = {}", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), {})
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_54(self) -> None:
-        match_cases = [MatchCase("{0: (z := (0 or 1 or 2))}", "y = 0")]
-        namespace = self.execute_match("x = {0: 0}", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), {0: 0})
-        self.assertEqual(namespace.get("y"), 0)
-        self.assertEqual(namespace.get("z"), 0)
-
-    def test_patma_ast_55(self) -> None:
-        match_cases = [MatchCase("{0: (z := (0 or 1 or 2))}", "y = 0")]
-        namespace = self.execute_match("x = {0: 1}", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), {0: 1})
-        self.assertEqual(namespace.get("y"), 0)
-        self.assertEqual(namespace.get("z"), 1)
-
-    def test_patma_ast_56(self) -> None:
-        match_cases = [MatchCase("{0: (z := (0 or 1 or 2))}", "y = 0")]
-        namespace = self.execute_match("x = {0: 2}", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), {0: 2})
-        self.assertEqual(namespace.get("y"), 0)
-        self.assertEqual(namespace.get("z"), 2)
-
-    def test_patma_ast_57(self) -> None:
-        match_cases = [MatchCase("{0: (z := (0 or 1 or 2))}", "y = 0")]
-        namespace = self.execute_match("x = {0: 3}", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), {0: 3})
-        self.assertNotIn("y", namespace)
-        self.assertNotIn("z", namespace)
-
-    def test_patma_ast_58(self) -> None:
-        match_cases = [
-            MatchCase("{0: [1, 2, {}]}", "y = 0"),
-            MatchCase("{0: [1, 2, {}], 1: [[]]}", "y = 1"),
-            MatchCase("[]", "y = 2"),
-        ]
-        namespace = self.execute_match("x = {}", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), {})
-        self.assertNotIn("y", namespace)
-
-    def test_patma_ast_59(self) -> None:
-        match_cases = [
-            MatchCase("{0: [1, 2, {}]}", "y = 0"),
-            MatchCase("{0: [1, 2, {}], 1: [[]]}", "y = 1"),
-            MatchCase("[]", "y = 2"),
-        ]
-        namespace = self.execute_match(
-            "x = {False: (True, 2.0, {})}", "x", match_cases, ""
-        )
-        self.assertEqual(namespace.get("x"), {False: (True, 2.0, {})})
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_60(self) -> None:
-        match_cases = [
-            MatchCase("{0: [1, 2, {}]}", "y = 0"),
-            MatchCase("{0: [1, 2, {}], 1: [[]]}", "y = 1"),
-            MatchCase("[]", "y = 2"),
-        ]
-        namespace = self.execute_match(
-            "x = {False: (True, 2.0, {}), 1: [[]], 2: 0}", "x", match_cases, ""
-        )
-        self.assertEqual(namespace.get("x"), {False: (True, 2.0, {}), 1: [[]], 2: 0})
-        self.assertEqual(namespace.get("y"), 0)
-
-    def test_patma_ast_61(self) -> None:
-        match_cases = [
-            MatchCase("{0: [1, 2]}", "y = 0"),
-            MatchCase("{0: [1, 2, {}], 1: [[]]}", "y = 1"),
-            MatchCase("[]", "y = 2"),
-        ]
-        namespace = self.execute_match(
-            "x = {False: (True, 2.0, {}), 1: [[]], 2: 0}", "x", match_cases, ""
-        )
-        self.assertEqual(namespace.get("x"), {False: (True, 2.0, {}), 1: [[]], 2: 0})
-        self.assertEqual(namespace.get("y"), 1)
-
-    def test_patma_ast_62(self) -> None:
-        match_cases = [
-            MatchCase("{0: [1, 2, {}]}", "y = 0"),
-            MatchCase("{0: [1, 2, {}], 1: [[]]}", "y = 1"),
-            MatchCase("[]", "y = 2"),
-        ]
-        namespace = self.execute_match("x = []", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), [])
-        self.assertEqual(namespace.get("y"), 2)
-
-    def test_patma_ast_63(self) -> None:
-        match_cases = [
-            MatchCase("{0: [1, 2, {}]}", "y = 0"),
-            MatchCase(
-                "{0: [1, 2, {}] or False} or {1: [[]]} or {0: [1, 2, {}]} or [] or 'X' or {}",
-                "y = 1",
-            ),
-            MatchCase("[]", "y = 2"),
-        ]
-        namespace = self.execute_match("x = {0: 0}", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), {0: 0})
-        self.assertEqual(namespace.get("y"), 1)
-
-    def test_patma_ast_64(self) -> None:
-        match_cases = [
-            MatchCase("{0: [1, 2, {}]}", "y = 0"),
-            MatchCase(
-                "{0: [1, 2, {}] or True} or {1: [[]]} or {0: [1, 2, {}]} or [] or 'X' or {}",
-                "y = 1",
-            ),
-            MatchCase("[]", "y = 2"),
-        ]
-        namespace = self.execute_match("x = {0: 0}", "x", match_cases, "")
-        self.assertEqual(namespace.get("x"), {0: 0})
-        self.assertEqual(namespace.get("y"), 1)
 
 
 class TestMatch(unittest.TestCase):
@@ -1826,15 +1284,123 @@ class TestMatch(unittest.TestCase):
         self.assertEqual(y, 1)
         self.assertEqual(z, {})
 
+    def test_patma_139(self) -> None:
+        x = False
+        match x:
+            case bool(z):
+                y = 0
+        self.assertIs(x, False)
+        self.assertEqual(y, 0)
+        self.assertIs(z, x)
+
+    def test_patma_140(self) -> None:
+        x = True
+        match x:
+            case bool(z):
+                y = 0
+        self.assertIs(x, True)
+        self.assertEqual(y, 0)
+        self.assertIs(z, x)
+
+    def test_patma_141(self) -> None:
+        x = bytearray()
+        match x:
+            case bytearray(z):
+                y = 0
+        self.assertEqual(x, bytearray())
+        self.assertEqual(y, 0)
+        self.assertIs(z, x)
+
+    def test_patma_142(self) -> None:
+        x = b""
+        match x:
+            case bytes(z):
+                y = 0
+        self.assertEqual(x, b"")
+        self.assertEqual(y, 0)
+        self.assertIs(z, x)
+
+    def test_patma_143(self) -> None:
+        x = {}
+        match x:
+            case dict(z):
+                y = 0
+        self.assertEqual(x, {})
+        self.assertEqual(y, 0)
+        self.assertIs(z, x)
+
+    def test_patma_144(self) -> None:
+        x = 0.0
+        match x:
+            case float(z):
+                y = 0
+        self.assertEqual(x, 0.0)
+        self.assertEqual(y, 0)
+        self.assertIs(z, x)
+
+    def test_patma_145(self) -> None:
+        x = frozenset()
+        match x:
+            case frozenset(z):
+                y = 0
+        self.assertEqual(x, frozenset())
+        self.assertEqual(y, 0)
+        self.assertIs(z, x)
+
+    def test_patma_146(self) -> None:
+        x = 0
+        match x:
+            case int(z):
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+        self.assertIs(z, x)
+
+    def test_patma_147(self) -> None:
+        x = []
+        match x:
+            case list(z):
+                y = 0
+        self.assertEqual(x, [])
+        self.assertEqual(y, 0)
+        self.assertIs(z, x)
+
+    def test_patma_148(self) -> None:
+        x = set()
+        match x:
+            case set(z):
+                y = 0
+        self.assertEqual(x, set())
+        self.assertEqual(y, 0)
+        self.assertIs(z, x)
+
+    def test_patma_149(self) -> None:
+        x = ""
+        match x:
+            case str(z):
+                y = 0
+        self.assertEqual(x, "")
+        self.assertEqual(y, 0)
+        self.assertIs(z, x)
+
+    def test_patma_150(self) -> None:
+        x = ()
+        match x:
+            case tuple(z):
+                y = 0
+        self.assertEqual(x, ())
+        self.assertEqual(y, 0)
+        self.assertIs(z, x)
+
     def run_perf(self):
         # ./python -m pyperf timeit -s 'from test.test_patma import TestMatch; t = TestMatch()' 't.run_perf()'
         attrs = vars(type(self)).items()
         tests = [attr for name, attr in attrs if name.startswith("test_")]
-        assert_equal = self.assertEqual
+        assert_equal, assert_is = self.assertEqual, self.assertIs
         try:
-            self.assertEqual = lambda *_: None
+            self.assertEqual = self.assertIs = lambda *_: None
             for _ in range(1 << 10):
                 for test in tests:
                     test(self)
         finally:
-            self.assertEqual = assert_equal
+            self.assertEqual, self.assertIs = assert_equal, assert_is
