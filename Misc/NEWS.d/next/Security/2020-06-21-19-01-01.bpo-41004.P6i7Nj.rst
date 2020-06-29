@@ -1,2 +1,0 @@
-The hash() methods of classes IPv4Interface and IPv6Interface (of the ipaddress library) had issue of generating constant hash values of 32 and 128 respectively causing hash collisions.
-The fix uses the hash() function to generate hash values for the objects instead of XOR operation
