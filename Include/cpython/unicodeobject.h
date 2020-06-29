@@ -593,9 +593,6 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicodeAndSize(
     Py_ssize_t *size            /* location where to save the length */
     );
 
-/* Get the maximum ordinal for a Unicode character. */
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE) PyUnicode_GetMax(void);
-
 
 /* --- _PyUnicodeWriter API ----------------------------------------------- */
 
