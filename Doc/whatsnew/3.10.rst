@@ -110,6 +110,13 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
+sys
+---
+
+Add :data:`sys.orig_argv` attribute: the list of the original command line
+arguments passed to the Python executable.
+(Contributed by Victor Stinner in :issue:`23427`.)
+
 
 Optimizations
 =============
@@ -150,10 +157,14 @@ C API Changes
 New Features
 ------------
 
-  The result of :c:func:`PyNumber_Index` now always has exact type :class:`int`.
+* The result of :c:func:`PyNumber_Index` now always has exact type :class:`int`.
   Previously, the result could have been an instance of a subclass of ``int``.
   (Contributed by Serhiy Storchaka in :issue:`40792`.)
 
+* Add a new :c:member:`~PyConfig.orig_argv` member to the :c:type:`PyConfig`
+  structure: the list of the original command line arguments passed to the
+  Python executable.
+  (Contributed by Victor Stinner in :issue:`23427`.)
 
 Porting to Python 3.10
 ----------------------
