@@ -102,7 +102,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    string is first encoded to a byte string using :c:func:`PyUnicode_EncodeDecimal`
    and then converted using :c:func:`PyLong_FromString`.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.10
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyLong_FromUnicodeObject`.
 
