@@ -2,15 +2,16 @@
 # We don't test many operations on files other than
 # that their names can be used with Unicode characters.
 import os, glob, time, shutil
+import sys
 import unicodedata
 
 import unittest
 from test.support import (run_unittest, rmtree, change_cwd,
-    TESTFN_ENCODING, TESTFN_UNICODE, TESTFN_UNENCODABLE, create_empty_file)
+    TESTFN_UNICODE, TESTFN_UNENCODABLE, create_empty_file)
 
 if not os.path.supports_unicode_filenames:
     try:
-        TESTFN_UNICODE.encode(TESTFN_ENCODING)
+        TESTFN_UNICODE.encode(sys.getfilesystemencoding())
     except (UnicodeError, TypeError):
         # Either the file system encoding is None, or the file name
         # cannot be encoded in the file system encoding.
@@ -40,7 +41,7 @@ class TestUnicodeFiles(unittest.TestCase):
         self._do_copyish(filename, filename)
         # Filename should appear in glob output
         self.assertTrue(
-            os.path.abspath(filename)==os.path.abspath(glob.glob(filename)[0]))
+            os.path.abspath(filename)==os.path.abspath(glob.glob(glob.escape(filename))[0]))
         # basename should appear in listdir.
         path, base = os.path.split(os.path.abspath(filename))
         file_list = os.listdir(path)

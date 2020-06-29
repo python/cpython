@@ -491,10 +491,10 @@ static PyTypeObject record_Type = {
         0,                      /*tp_itemsize*/
         /* methods */
         (destructor)msiobj_dealloc, /*tp_dealloc*/
-        0,                      /*tp_print*/
+        0,                      /*tp_vectorcall_offset*/
         0,                      /*tp_getattr*/
         0,                      /*tp_setattr*/
-        0,                      /*tp_reserved*/
+        0,                      /*tp_as_async*/
         0,                      /*tp_repr*/
         0,                      /*tp_as_number*/
         0,                      /*tp_as_sequence*/
@@ -531,7 +531,7 @@ static PyTypeObject record_Type = {
 static PyObject*
 record_new(MSIHANDLE h)
 {
-    msiobj *result = PyObject_NEW(struct msiobj, &record_Type);
+    msiobj *result = PyObject_New(struct msiobj, &record_Type);
 
     if (!result) {
         MsiCloseHandle(h);
@@ -570,6 +570,9 @@ summary_getproperty(msiobj* si, PyObject *args)
         }
         status = MsiSummaryInfoGetProperty(si->h, field, &type, &ival,
             &fval, sval, &ssize);
+    }
+    if (status != ERROR_SUCCESS) {
+        return msierror(status);
     }
 
     switch(type) {
@@ -677,10 +680,10 @@ static PyTypeObject summary_Type = {
         0,                      /*tp_itemsize*/
         /* methods */
         (destructor)msiobj_dealloc, /*tp_dealloc*/
-        0,                      /*tp_print*/
+        0,                      /*tp_vectorcall_offset*/
         0,                      /*tp_getattr*/
         0,                      /*tp_setattr*/
-        0,                      /*tp_reserved*/
+        0,                      /*tp_as_async*/
         0,                      /*tp_repr*/
         0,                      /*tp_as_number*/
         0,                      /*tp_as_sequence*/
@@ -826,10 +829,10 @@ static PyTypeObject msiview_Type = {
         0,                      /*tp_itemsize*/
         /* methods */
         (destructor)msiobj_dealloc, /*tp_dealloc*/
-        0,                      /*tp_print*/
+        0,                      /*tp_vectorcall_offset*/
         0,                      /*tp_getattr*/
         0,                      /*tp_setattr*/
-        0,                      /*tp_reserved*/
+        0,                      /*tp_as_async*/
         0,                      /*tp_repr*/
         0,                      /*tp_as_number*/
         0,                      /*tp_as_sequence*/
@@ -869,17 +872,17 @@ static PyObject*
 msidb_openview(msiobj *msidb, PyObject *args)
 {
     int status;
-    char *sql;
+    const wchar_t *sql;
     MSIHANDLE hView;
     msiobj *result;
 
-    if (!PyArg_ParseTuple(args, "s:OpenView", &sql))
+    if (!PyArg_ParseTuple(args, "u:OpenView", &sql))
         return NULL;
 
-    if ((status = MsiDatabaseOpenView(msidb->h, sql, &hView)) != ERROR_SUCCESS)
+    if ((status = MsiDatabaseOpenViewW(msidb->h, sql, &hView)) != ERROR_SUCCESS)
         return msierror(status);
 
-    result = PyObject_NEW(struct msiobj, &msiview_Type);
+    result = PyObject_New(struct msiobj, &msiview_Type);
     if (!result) {
         MsiCloseHandle(hView);
         return NULL;
@@ -915,8 +918,8 @@ msidb_getsummaryinformation(msiobj *db, PyObject *args)
     if (status != ERROR_SUCCESS)
         return msierror(status);
 
-    oresult = PyObject_NEW(struct msiobj, &summary_Type);
-    if (!result) {
+    oresult = PyObject_New(struct msiobj, &summary_Type);
+    if (!oresult) {
         MsiCloseHandle(result);
         return NULL;
     }
@@ -944,10 +947,10 @@ static PyTypeObject msidb_Type = {
         0,                      /*tp_itemsize*/
         /* methods */
         (destructor)msiobj_dealloc, /*tp_dealloc*/
-        0,                      /*tp_print*/
+        0,                      /*tp_vectorcall_offset*/
         0,                      /*tp_getattr*/
         0,                      /*tp_setattr*/
-        0,                      /*tp_reserved*/
+        0,                      /*tp_as_async*/
         0,                      /*tp_repr*/
         0,                      /*tp_as_number*/
         0,                      /*tp_as_sequence*/
@@ -995,22 +998,22 @@ static PyTypeObject msidb_Type = {
 static PyObject* msiopendb(PyObject *obj, PyObject *args)
 {
     int status;
-    char *path;
+    const wchar_t *path;
     int persist;
     MSIHANDLE h;
     msiobj *result;
-    if (!PyArg_ParseTuple(args, "si:MSIOpenDatabase", &path, &persist))
+    if (!PyArg_ParseTuple(args, "ui:MSIOpenDatabase", &path, &persist))
         return NULL;
     /* We need to validate that persist is a valid MSIDBOPEN_* value. Otherwise,
        MsiOpenDatabase may treat the value as a pointer, leading to unexpected
        behavior. */
     if (Py_INVALID_PERSIST(persist))
         return msierror(ERROR_INVALID_PARAMETER);
-    status = MsiOpenDatabase(path, (LPCSTR)(SIZE_T)persist, &h);
+    status = MsiOpenDatabaseW(path, (LPCWSTR)(SIZE_T)persist, &h);
     if (status != ERROR_SUCCESS)
         return msierror(status);
 
-    result = PyObject_NEW(struct msiobj, &msidb_Type);
+    result = PyObject_New(struct msiobj, &msidb_Type);
     if (!result) {
         MsiCloseHandle(h);
         return NULL;

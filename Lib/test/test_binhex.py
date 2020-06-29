@@ -3,17 +3,20 @@
    Uses the mechanism of the python binhex module
    Based on an original test by Roger E. Masse.
 """
-import binhex
 import unittest
 from test import support
+
+with support.check_warnings(('', DeprecationWarning)):
+    binhex = support.import_fresh_module('binhex')
 
 
 class BinHexTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.fname1 = support.TESTFN + "1"
-        self.fname2 = support.TESTFN + "2"
-        self.fname3 = support.TESTFN + "very_long_filename__very_long_filename__very_long_filename__very_long_filename__"
+        # binhex supports only file names encodable to Latin1
+        self.fname1 = support.TESTFN_ASCII + "1"
+        self.fname2 = support.TESTFN_ASCII + "2"
+        self.fname3 = support.TESTFN_ASCII + "very_long_filename__very_long_filename__very_long_filename__very_long_filename__"
 
     def tearDown(self):
         support.unlink(self.fname1)

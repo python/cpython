@@ -17,12 +17,13 @@ What is Python?
 
 Python is an interpreted, interactive, object-oriented programming language.  It
 incorporates modules, exceptions, dynamic typing, very high level dynamic data
-types, and classes.  Python combines remarkable power with very clear syntax.
-It has interfaces to many system calls and libraries, as well as to various
-window systems, and is extensible in C or C++.  It is also usable as an
-extension language for applications that need a programmable interface.
-Finally, Python is portable: it runs on many Unix variants, on the Mac, and on
-Windows 2000 and later.
+types, and classes.  It supports multiple programming paradigms beyond
+object-oriented programming, such as procedural and functional programming.
+Python combines remarkable power with very clear syntax. It has interfaces to
+many system calls and libraries, as well as to various window systems, and is
+extensible in C or C++.  It is also usable as an extension language for
+applications that need a programmable interface. Finally, Python is portable:
+it runs on many Unix variants including Linux and macOS, and on Windows.
 
 To find out more, start with :ref:`tutorial-index`.  The `Beginner's Guide to
 Python <https://wiki.python.org/moin/BeginnersGuide>`_ links to other
@@ -306,14 +307,10 @@ guaranteed that interfaces will remain the same throughout a series of bugfix
 releases.
 
 The latest stable releases can always be found on the `Python download page
-<https://www.python.org/downloads/>`_.  There are two production-ready version
-of Python: 2.x and 3.x, but the recommended one at this times is Python 3.x.
-Although Python 2.x is still widely used, `it will not be
-maintained after January 1, 2020 <https://www.python.org/dev/peps/pep-0373/>`_.
-Python 2.x was known for having more third-party libraries available, however,
-by the time of this writing, most of the widely used libraries support Python 3.x,
-and some are even dropping the Python 2.x support.
-
+<https://www.python.org/downloads/>`_.  There are two production-ready versions
+of Python: 2.x and 3.x. The recommended version is 3.x, which is supported by
+most widely used libraries.  Although 2.x is still widely used, `it will not
+be maintained after January 1, 2020 <https://www.python.org/dev/peps/pep-0373/>`_.
 
 How many people are using Python?
 ---------------------------------

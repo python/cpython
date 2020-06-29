@@ -9,6 +9,7 @@ from distutils.filelist import glob_to_re, translate_pattern, FileList
 from distutils import filelist
 
 import test.support
+from test.support import os_helper
 from test.support import captured_stdout, run_unittest
 from distutils.tests import support
 
@@ -295,7 +296,7 @@ class FileListTestCase(support.LoggingSilencer,
 
 
 class FindAllTestCase(unittest.TestCase):
-    @test.support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_missing_symlink(self):
         with test.support.temp_cwd():
             os.symlink('foo', 'bar')

@@ -47,7 +47,7 @@ EncodingType=
 
         <WriteLinesToFile File="$(_CatFileSourceTarget)" Lines="$(_CatFile)" Overwrite="true" />
         <Exec Command='$(_MakeCatCommand) "$(_CatFileSourceTarget)"' WorkingDirectory="$(MSBuildThisFileDirectory)" />
-        <Exec Command='$(_SignCommand) "$(_CatFileTarget)"' WorkingDirectory="$(MSBuildThisFileDirectory)"
+        <Exec Command='$(_SignCommand) "$(_CatFileTarget)" || $(_SignCommand) "$(_CatFileTarget)" || $(_SignCommand) "$(_CatFileTarget)"' WorkingDirectory="$(MSBuildThisFileDirectory)"
               Condition="Exists($(_CatFileTarget)) and '$(_SignCommand)' != ''" />
 
         <ItemGroup>
@@ -76,18 +76,18 @@ EncodingType=
 
     <Target Name="SignCabs">
         <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
-        <Exec Command="$(_SignCommand) @(SignCabs->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
+        <Exec Command="$(_SignCommand) @(SignCabs->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignCabs->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignCabs->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
     </Target>
     <Target Name="SignMsi">
         <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
-        <Exec Command="$(_SignCommand) @(SignMsi->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
+        <Exec Command="$(_SignCommand) @(SignMsi->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignMsi->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignMsi->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
     </Target>
     <Target Name="SignBundleEngine">
         <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
-        <Exec Command="$(_SignCommand) @(SignBundleEngine->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
+        <Exec Command="$(_SignCommand) @(SignBundleEngine->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignBundleEngine->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignBundleEngine->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
     </Target>
     <Target Name="SignBundle">
         <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
-        <Exec Command="$(_SignCommand) @(SignBundle->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
+        <Exec Command="$(_SignCommand) @(SignBundle->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignBundle->'&quot;%(FullPath)&quot;',' ') || $(_SignCommand) @(SignBundle->'&quot;%(FullPath)&quot;',' ')" ContinueOnError="false" />
     </Target>
 </Project>

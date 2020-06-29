@@ -2,9 +2,11 @@
 =====================================================
 
 .. module:: zipimport
-   :synopsis: support for importing Python modules from ZIP archives.
+   :synopsis: Support for importing Python modules from ZIP archives.
 
 .. moduleauthor:: Just van Rossum <just@letterror.com>
+
+**Source code:** :source:`Lib/zipimport.py`
 
 --------------
 

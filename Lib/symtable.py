@@ -82,10 +82,6 @@ class SymbolTable(object):
     def has_children(self):
         return bool(self._table.children)
 
-    def has_exec(self):
-        """Return true if the scope uses exec.  Deprecated method."""
-        return False
-
     def get_identifiers(self):
         return self._table.symbols.keys()
 
@@ -197,7 +193,7 @@ class Symbol(object):
         return bool(self.__scope == GLOBAL_EXPLICIT)
 
     def is_local(self):
-        return bool(self.__flags & DEF_BOUND)
+        return bool(self.__scope in (LOCAL, CELL))
 
     def is_annotated(self):
         return bool(self.__flags & DEF_ANNOT)

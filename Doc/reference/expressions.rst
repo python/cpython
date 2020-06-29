@@ -28,7 +28,7 @@ Arithmetic conversions
 .. index:: pair: arithmetic; conversion
 
 When a description of an arithmetic operator below uses the phrase "the numeric
-arguments are converted to a common type," this means that the operator
+arguments are converted to a common type", this means that the operator
 implementation for built-in types works as follows:
 
 * If either argument is a complex number, the other is converted to complex;
@@ -144,13 +144,12 @@ the single expression that makes up the expression list.
 .. index:: pair: empty; tuple
 
 An empty pair of parentheses yields an empty tuple object.  Since tuples are
-immutable, the rules for literals apply (i.e., two occurrences of the empty
+immutable, the same rules as for literals apply (i.e., two occurrences of the empty
 tuple may or may not yield the same object).
 
 .. index::
-   single: comma; tuple display
-   pair: tuple; display
-   single: , (comma); tuple display
+   single: comma
+   single: , (comma)
 
 Note that tuples are not formed by the parentheses, but rather by use of the
 comma operator.  The exception is the empty tuple, for which parentheses *are*
@@ -179,7 +178,7 @@ called "displays", each of them in two flavors:
 Common syntax elements for comprehensions are:
 
 .. productionlist::
-   comprehension: `expression` `comp_for`
+   comprehension: `assignment_expression` `comp_for`
    comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
    comp_if: "if" `expression_nocond` [`comp_iter`]
@@ -196,7 +195,7 @@ the comprehension is executed in a separate implicitly nested scope. This ensure
 that names assigned to in the target list don't "leak" into the enclosing scope.
 
 The iterable expression in the leftmost :keyword:`!for` clause is evaluated
-directly in the enclosing scope and then passed as an argument to the implictly
+directly in the enclosing scope and then passed as an argument to the implicitly
 nested scope. Subsequent :keyword:`!for` clauses and any filter condition in the
 leftmost :keyword:`!for` clause cannot be evaluated in the enclosing scope as
 they may depend on the values obtained from the leftmost iterable. For example:
@@ -342,6 +341,12 @@ all mutable objects.)  Clashes between duplicate keys are not detected; the last
 datum (textually rightmost in the display) stored for a given key value
 prevails.
 
+.. versionchanged:: 3.8
+   Prior to Python 3.8, in dict comprehensions, the evaluation order of key
+   and value was not well-defined.  In CPython, the value was evaluated before
+   the key.  Starting with 3.8, the key is evaluated before the value, as
+   proposed by :pep:`572`.
+
 
 .. _genexpr:
 
@@ -484,8 +489,8 @@ will raise :exc:`AttributeError` or :exc:`TypeError`, while
 When the underlying iterator is complete, the :attr:`~StopIteration.value`
 attribute of the raised :exc:`StopIteration` instance becomes the value of
 the yield expression. It can be either set explicitly when raising
-:exc:`StopIteration`, or automatically when the sub-iterator is a generator
-(by returning a value from the sub-generator).
+:exc:`StopIteration`, or automatically when the subiterator is a generator
+(by returning a value from the subgenerator).
 
    .. versionchanged:: 3.3
       Added ``yield from <expr>`` to delegate control flow to a subiterator.
@@ -504,7 +509,7 @@ on the right hand side of an assignment statement.
 
    :pep:`380` - Syntax for Delegating to a Subgenerator
       The proposal to introduce the :token:`yield_from` syntax, making delegation
-      to sub-generators easy.
+      to subgenerators easy.
 
    :pep:`525` - Asynchronous Generators
       The proposal that expanded on :pep:`492` by adding generator capabilities to
@@ -613,7 +618,7 @@ Asynchronous generator functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The presence of a yield expression in a function or method defined using
-:keyword:`async def` further defines the function as a
+:keyword:`async def` further defines the function as an
 :term:`asynchronous generator` function.
 
 When an asynchronous generator function is called, it returns an
@@ -678,13 +683,13 @@ which are used to control the execution of a generator function.
 
    Returns an awaitable which when run starts to execute the asynchronous
    generator or resumes it at the last executed yield expression.  When an
-   asynchronous generator function is resumed with a :meth:`~agen.__anext__`
+   asynchronous generator function is resumed with an :meth:`~agen.__anext__`
    method, the current yield expression always evaluates to :const:`None` in
    the returned awaitable, which when run will continue to the next yield
    expression. The value of the :token:`expression_list` of the yield
    expression is the value of the :exc:`StopIteration` exception raised by
    the completing coroutine.  If the asynchronous generator exits without
-   yielding another value, the awaitable instead raises an
+   yielding another value, the awaitable instead raises a
    :exc:`StopAsyncIteration` exception, signalling that the asynchronous
    iteration has completed.
 
@@ -712,7 +717,7 @@ which are used to control the execution of a generator function.
    where the asynchronous generator was paused, and returns the next value
    yielded by the generator function as the value of the raised
    :exc:`StopIteration` exception.  If the asynchronous generator exits
-   without yielding another value, an :exc:`StopAsyncIteration` exception is
+   without yielding another value, a :exc:`StopAsyncIteration` exception is
    raised by the awaitable.
    If the generator function does not catch the passed-in exception, or
    raises a different exception, then when the awaitable is run that exception
@@ -911,7 +916,8 @@ series of :term:`arguments <argument>`:
                 :   ["," `keywords_arguments`]
                 : | `starred_and_keywords` ["," `keywords_arguments`]
                 : | `keywords_arguments`
-   positional_arguments: ["*"] `expression` ("," ["*"] `expression`)*
+   positional_arguments: positional_item ("," positional_item)*
+   positional_item: `assignment_expression` | "*" `expression`
    starred_and_keywords: ("*" `expression` | `keyword_item`)
                 : ("," "*" `expression` | "," `keyword_item`)*
    keywords_arguments: (`keyword_item` | "**" `expression`)
@@ -1421,8 +1427,13 @@ built-in types.
   The not-a-number values ``float('NaN')`` and ``decimal.Decimal('NaN')`` are
   special.  Any ordered comparison of a number to a not-a-number value is false.
   A counter-intuitive implication is that not-a-number values are not equal to
-  themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3``, ``x
-  == x``, ``x != x`` are all false.  This behavior is compliant with IEEE 754.
+  themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3`` and
+  ``x == x`` are all false, while ``x != x`` is true.  This behavior is
+  compliant with IEEE 754.
+
+* ``None`` and ``NotImplemented`` are singletons.  :PEP:`8` advises that
+  comparisons for singletons should always be done with ``is`` or ``is not``,
+  never the equality operators.
 
 * Binary sequences (instances of :class:`bytes` or :class:`bytearray`) can be
   compared within and across their types.  They compare lexicographically using
@@ -1441,25 +1452,9 @@ built-in types.
   :exc:`TypeError`.
 
   Sequences compare lexicographically using comparison of corresponding
-  elements, whereby reflexivity of the elements is enforced.
-
-  In enforcing reflexivity of elements, the comparison of collections assumes
-  that for a collection element ``x``, ``x == x`` is always true.  Based on
-  that assumption, element identity is compared first, and element comparison
-  is performed only for distinct elements.  This approach yields the same
-  result as a strict element comparison would, if the compared elements are
-  reflexive.  For non-reflexive elements, the result is different than for
-  strict element comparison, and may be surprising:  The non-reflexive
-  not-a-number values for example result in the following comparison behavior
-  when used in a list::
-
-    >>> nan = float('NaN')
-    >>> nan is nan
-    True
-    >>> nan == nan
-    False                 <-- the defined non-reflexive behavior of NaN
-    >>> [nan] == [nan]
-    True                  <-- list enforces reflexivity and tests identity first
+  elements.  The built-in containers typically assume identical objects are
+  equal to themselves.  That lets them bypass equality tests for identical
+  objects to improve performance and to maintain their internal invariants.
 
   Lexicographical comparison between built-in collections works as follows:
 
@@ -1568,14 +1563,15 @@ y`` returns ``True`` if ``y.__contains__(x)`` returns a true value, and
 ``False`` otherwise.
 
 For user-defined classes which do not define :meth:`__contains__` but do define
-:meth:`__iter__`, ``x in y`` is ``True`` if some value ``z`` with ``x == z`` is
-produced while iterating over ``y``.  If an exception is raised during the
-iteration, it is as if :keyword:`in` raised that exception.
+:meth:`__iter__`, ``x in y`` is ``True`` if some value ``z``, for which the
+expression ``x is z or x == z`` is true, is produced while iterating over ``y``.
+If an exception is raised during the iteration, it is as if :keyword:`in` raised
+that exception.
 
 Lastly, the old-style iteration protocol is tried: if a class defines
 :meth:`__getitem__`, ``x in y`` is ``True`` if and only if there is a non-negative
-integer index *i* such that ``x == y[i]``, and all lower integer indices do not
-raise :exc:`IndexError` exception.  (If any other exception is raised, it is as
+integer index *i* such that ``x is y[i] or x == y[i]``, and no lower integer index
+raises the :exc:`IndexError` exception.  (If any other exception is raised, it is as
 if :keyword:`in` raised that exception).
 
 .. index::
@@ -1584,7 +1580,7 @@ if :keyword:`in` raised that exception).
    pair: membership; test
    object: sequence
 
-The operator :keyword:`not in` is defined to have the inverse true value of
+The operator :keyword:`not in` is defined to have the inverse truth value of
 :keyword:`in`.
 
 .. index::
@@ -1599,8 +1595,8 @@ The operator :keyword:`not in` is defined to have the inverse true value of
 Identity comparisons
 --------------------
 
-The operators :keyword:`is` and :keyword:`is not` test for object identity: ``x
-is y`` is true if and only if *x* and *y* are the same object.  Object identity
+The operators :keyword:`is` and :keyword:`is not` test for an object's identity: ``x
+is y`` is true if and only if *x* and *y* are the same object.  An Object's identity
 is determined using the :meth:`id` function.  ``x is not y`` yields the inverse
 truth value. [#]_
 
@@ -1651,6 +1647,17 @@ replaced by a default value if it is empty, the expression ``s or 'foo'`` yields
 the desired value.  Because :keyword:`not` has to create a new value, it
 returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
+
+
+Assignment expressions
+======================
+
+.. productionlist::
+   assignment_expression: [`identifier` ":="] `expression`
+
+.. TODO: BPO-39868
+
+See :pep:`572` for more details about assignment expressions.
 
 
 .. _if_expr:
@@ -1722,7 +1729,7 @@ Expression lists
    expression_list: `expression` ("," `expression`)* [","]
    starred_list: `starred_item` ("," `starred_item`)* [","]
    starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
-   starred_item: `expression` | "*" `or_expr`
+   starred_item: `assignment_expression` | "*" `or_expr`
 
 .. index:: object: tuple
 
@@ -1795,6 +1802,8 @@ precedence and have a left-to-right chaining feature as described in the
 +-----------------------------------------------+-------------------------------------+
 | Operator                                      | Description                         |
 +===============================================+=====================================+
+| ``:=``                                        | Assignment expression               |
++-----------------------------------------------+-------------------------------------+
 | :keyword:`lambda`                             | Lambda expression                   |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`if <if_expr>` -- :keyword:`!else`   | Conditional expression              |
@@ -1832,7 +1841,8 @@ precedence and have a left-to-right chaining feature as described in the
 | ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
 | ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
 +-----------------------------------------------+-------------------------------------+
-| ``(expressions...)``,                         | Binding or tuple display,           |
+| ``(expressions...)``,                         | Binding or parenthesized            |
+|                                               | expression,                         |
 | ``[expressions...]``,                         | list display,                       |
 | ``{key: value...}``,                          | dictionary display,                 |
 | ``{expressions...}``                          | set display                         |

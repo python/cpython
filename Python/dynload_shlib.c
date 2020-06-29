@@ -2,7 +2,8 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_interp.h"    // _PyInterpreterState.dlopenflags
+#include "pycore_pystate.h"   // _PyInterpreterState_GET()
 #include "importdl.h"
 
 #include <sys/types.h>
@@ -38,9 +39,10 @@ const char *_PyImport_DynLoadFiletab[] = {
     ".dll",
 #else  /* !__CYGWIN__ */
     "." SOABI ".so",
-#ifndef Py_DEBUG
+#ifdef ALT_SOABI
+    "." ALT_SOABI ".so",
+#endif
     ".abi" PYTHON_ABI_STRING ".so",
-#endif /* ! Py_DEBUG */
     ".so",
 #endif  /* __CYGWIN__ */
     NULL,
@@ -93,7 +95,7 @@ _PyImport_FindSharedFuncptr(const char *prefix,
         }
     }
 
-    dlopenflags = _PyInterpreterState_Get()->dlopenflags;
+    dlopenflags = _PyInterpreterState_GET()->dlopenflags;
 
     handle = dlopen(pathname, dlopenflags);
 

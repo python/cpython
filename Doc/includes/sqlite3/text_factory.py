@@ -25,3 +25,5 @@ con.text_factory = lambda x: x.decode("utf-8") + "foo"
 cur.execute("select ?", ("bar",))
 row = cur.fetchone()
 assert row[0] == "barfoo"
+
+con.close()

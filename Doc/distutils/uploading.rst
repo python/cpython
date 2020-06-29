@@ -4,4 +4,5 @@
 Uploading Packages to the Package Index
 ***************************************
 
-The contents of this page have moved to the section :ref:`package-index`.
+References to up to date PyPI documentation can be found at
+:ref:`publishing-python-packages`.

@@ -31,6 +31,10 @@ function Sign-File {
         $certfile = $env:SigningCertificateFile;
     }
 
+    if (-not ($certsha1 -or $certname -or $certfile)) {
+        throw "No signing certificate specified"
+    }
+
     foreach ($a in $files) {
         if ($certsha1) {
             SignTool sign /sha1 $certsha1 /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d $description $a
@@ -38,8 +42,6 @@ function Sign-File {
             SignTool sign /a /n $certname /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d $description $a
         } elseif ($certfile) {
             SignTool sign /f $certfile /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d $description $a
-        } else {
-            SignTool sign /a /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d $description $a
         }
     }
 }

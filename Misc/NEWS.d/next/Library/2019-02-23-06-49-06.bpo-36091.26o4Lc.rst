@@ -1,1 +1,0 @@
-Clean up reference to async generator in Lib/types. Patch by Henry Chen.

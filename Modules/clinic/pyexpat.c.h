@@ -31,11 +31,6 @@ pyexpat_xmlparser_Parse(xmlparseobject *self, PyObject *const *args, Py_ssize_t 
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     isfinal = _PyLong_AsInt(args[1]);
     if (isfinal == -1 && PyErr_Occurred()) {
         goto exit;
@@ -75,7 +70,7 @@ pyexpat_xmlparser_SetBase(xmlparseobject *self, PyObject *arg)
     const char *base;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("SetBase", 0, "str", arg);
+        _PyArg_BadArgument("SetBase", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t base_length;
@@ -133,7 +128,8 @@ pyexpat_xmlparser_GetInputContext(xmlparseobject *self, PyObject *Py_UNUSED(igno
 }
 
 PyDoc_STRVAR(pyexpat_xmlparser_ExternalEntityParserCreate__doc__,
-"ExternalEntityParserCreate($self, context, encoding=None, /)\n"
+"ExternalEntityParserCreate($self, context, encoding=<unrepresentable>,\n"
+"                           /)\n"
 "--\n"
 "\n"
 "Create a parser for parsing an external entity based on the information passed to the ExternalEntityRefHandler.");
@@ -171,14 +167,14 @@ pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyObject *con
         }
     }
     else {
-        _PyArg_BadArgument("ExternalEntityParserCreate", 1, "str or None", args[0]);
+        _PyArg_BadArgument("ExternalEntityParserCreate", "argument 1", "str or None", args[0]);
         goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("ExternalEntityParserCreate", 2, "str", args[1]);
+        _PyArg_BadArgument("ExternalEntityParserCreate", "argument 2", "str", args[1]);
         goto exit;
     }
     Py_ssize_t encoding_length;
@@ -220,11 +216,6 @@ pyexpat_xmlparser_SetParamEntityParsing(xmlparseobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flag = _PyLong_AsInt(arg);
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
@@ -280,7 +271,7 @@ exit:
 
 PyDoc_STRVAR(pyexpat_ParserCreate__doc__,
 "ParserCreate($module, /, encoding=None, namespace_separator=None,\n"
-"             intern=None)\n"
+"             intern=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Return a new XML parser object.");
@@ -297,15 +288,68 @@ pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"encoding", "namespace_separator", "intern", NULL};
-    static _PyArg_Parser _parser = {"|zzO:ParserCreate", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "ParserCreate", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *encoding = NULL;
     const char *namespace_separator = NULL;
     PyObject *intern = NULL;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &encoding, &namespace_separator, &intern)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        if (args[0] == Py_None) {
+            encoding = NULL;
+        }
+        else if (PyUnicode_Check(args[0])) {
+            Py_ssize_t encoding_length;
+            encoding = PyUnicode_AsUTF8AndSize(args[0], &encoding_length);
+            if (encoding == NULL) {
+                goto exit;
+            }
+            if (strlen(encoding) != (size_t)encoding_length) {
+                PyErr_SetString(PyExc_ValueError, "embedded null character");
+                goto exit;
+            }
+        }
+        else {
+            _PyArg_BadArgument("ParserCreate", "argument 'encoding'", "str or None", args[0]);
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[1]) {
+        if (args[1] == Py_None) {
+            namespace_separator = NULL;
+        }
+        else if (PyUnicode_Check(args[1])) {
+            Py_ssize_t namespace_separator_length;
+            namespace_separator = PyUnicode_AsUTF8AndSize(args[1], &namespace_separator_length);
+            if (namespace_separator == NULL) {
+                goto exit;
+            }
+            if (strlen(namespace_separator) != (size_t)namespace_separator_length) {
+                PyErr_SetString(PyExc_ValueError, "embedded null character");
+                goto exit;
+            }
+        }
+        else {
+            _PyArg_BadArgument("ParserCreate", "argument 'namespace_separator'", "str or None", args[1]);
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    intern = args[2];
+skip_optional_pos:
     return_value = pyexpat_ParserCreate_impl(module, encoding, namespace_separator, intern);
 
 exit:
@@ -330,11 +374,6 @@ pyexpat_ErrorString(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     long code;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     code = PyLong_AsLong(arg);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
@@ -348,4 +387,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=0f18b756d82b78a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=14e37efc4ec10be2 input=a9049054013a1b77]*/

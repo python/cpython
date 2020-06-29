@@ -39,7 +39,7 @@ class-based API instead.
    Bind the *domain* to the locale directory *localedir*.  More concretely,
    :mod:`gettext` will look for binary :file:`.mo` files for the given domain using
    the path (on Unix): :file:`{localedir}/{language}/LC_MESSAGES/{domain}.mo`, where
-   *languages* is searched for in the environment variables :envvar:`LANGUAGE`,
+   *language* is searched for in the environment variables :envvar:`LANGUAGE`,
    :envvar:`LC_ALL`, :envvar:`LC_MESSAGES`, and :envvar:`LANG` respectively.
 
    If *localedir* is omitted or ``None``, then the current binding for *domain* is
@@ -724,8 +724,8 @@ implementations, and valuable experience to the creation of this module:
 .. [#] The default locale directory is system dependent; for example, on RedHat Linux
    it is :file:`/usr/share/locale`, but on Solaris it is :file:`/usr/lib/locale`.
    The :mod:`gettext` module does not try to support these system dependent
-   defaults; instead its default is :file:`{sys.prefix}/share/locale` (see
-   :data:`sys.prefix`). For this reason, it is always best to call
+   defaults; instead its default is :file:`{sys.base_prefix}/share/locale` (see
+   :data:`sys.base_prefix`). For this reason, it is always best to call
    :func:`bindtextdomain` with an explicit absolute path at the start of your
    application.
 

@@ -15,10 +15,10 @@ Glossary
    ``...``
       Can refer to:
 
-      * The default Python prompt of the interactive shell when entering code for
-        an indented code block, when within a pair of matching left and right
-        delimiters (parentheses, square brackets, curly braces or triple quotes),
-        or after specifying a decorator.
+      * The default Python prompt of the interactive shell when entering the
+        code for an indented code block, when within a pair of matching left and
+        right delimiters (parentheses, square brackets, curly braces or triple
+        quotes), or after specifying a decorator.
 
       * The :const:`Ellipsis` built-in constant.
 
@@ -189,6 +189,10 @@ Glossary
       A list of bytecode instructions can be found in the documentation for
       :ref:`the dis module <bytecodes>`.
 
+   callback
+      A subroutine function which is passed as an argument to be executed at
+      some point in the future.
+
    class
       A template for creating user-defined objects. Class definitions
       normally contain method definitions which operate on instances of the
@@ -225,6 +229,15 @@ Glossary
       statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
       See :pep:`343`.
 
+   context variable
+      A variable which can have different values depending on its context.
+      This is similar to Thread-Local Storage in which each execution
+      thread may have a different value for a variable. However, with context
+      variables, there may be several contexts in one execution thread and the
+      main usage for context variables is to keep track of variables in
+      concurrent asynchronous tasks.
+      See :mod:`contextvars`.
+
    contiguous
       .. index:: C-contiguous, Fortran contiguous
 
@@ -238,7 +251,7 @@ Glossary
       Fortran contiguous arrays, the first index varies the fastest.
 
    coroutine
-      Coroutines is a more generalized form of subroutines. Subroutines are
+      Coroutines are a more generalized form of subroutines. Subroutines are
       entered at one point and exited at another point.  Coroutines can be
       entered, exited, and resumed at many different points.  They can be
       implemented with the :keyword:`async def` statement.  See also
@@ -503,8 +516,10 @@ Glossary
       Hashability makes an object usable as a dictionary key and a set member,
       because these data structures use the hash value internally.
 
-      All of Python's immutable built-in objects are hashable; mutable
-      containers (such as lists or dictionaries) are not.  Objects which are
+      Most of Python's immutable built-in objects are hashable; mutable
+      containers (such as lists or dictionaries) are not; immutable
+      containers (such as tuples and frozensets) are only hashable if
+      their elements are hashable.  Objects which are
       instances of user-defined classes are hashable by default.  They all
       compare unequal (except with themselves), and their hash value is derived
       from their :func:`id`.
@@ -663,6 +678,11 @@ Glossary
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
 
+   magic method
+      .. index:: pair: magic; method
+
+      An informal synonym for :term:`special method`.
+
    mapping
       A container object that supports arbitrary key lookups and implements the
       methods specified in the :class:`~collections.abc.Mapping` or
@@ -723,17 +743,28 @@ Glossary
       also :term:`immutable`.
 
    named tuple
-      Any tuple-like class whose indexable elements are also accessible using
-      named attributes (for example, :func:`time.localtime` returns a
-      tuple-like object where the *year* is accessible either with an
-      index such as ``t[0]`` or with a named attribute like ``t.tm_year``).
+      The term "named tuple" applies to any type or class that inherits from
+      tuple and whose indexable elements are also accessible using named
+      attributes.  The type or class may have other features as well.
 
-      A named tuple can be a built-in type such as :class:`time.struct_time`,
-      or it can be created with a regular class definition.  A full featured
-      named tuple can also be created with the factory function
-      :func:`collections.namedtuple`.  The latter approach automatically
-      provides extra features such as a self-documenting representation like
-      ``Employee(name='jones', title='programmer')``.
+      Several built-in types are named tuples, including the values returned
+      by :func:`time.localtime` and :func:`os.stat`.  Another example is
+      :data:`sys.float_info`::
+
+           >>> sys.float_info[1]                   # indexed access
+           1024
+           >>> sys.float_info.max_exp              # named field access
+           1024
+           >>> isinstance(sys.float_info, tuple)   # kind of tuple
+           True
+
+      Some named tuples are built-in types (such as the above examples).
+      Alternatively, a named tuple can be created from a regular class
+      definition that inherits from :class:`tuple` and that defines named
+      fields.  Such a class can be written by hand or it can be created with
+      the factory function :func:`collections.namedtuple`.  The latter
+      technique also adds some extra methods that may not be found in
+      hand-written or built-in named tuples.
 
    namespace
       The place where a variable is stored.  Namespaces are implemented as
@@ -797,9 +828,11 @@ Glossary
       .. _positional-only_parameter:
 
       * :dfn:`positional-only`: specifies an argument that can be supplied only
-        by position.  Python has no syntax for defining positional-only
-        parameters.  However, some built-in functions have positional-only
-        parameters (e.g. :func:`abs`).
+        by position. Positional-only parameters can be defined by including a
+        ``/`` character in the parameter list of the function definition after
+        them, for example *posonly1* and *posonly2* in the following::
+
+           def func(posonly1, posonly2, /, positional_or_keyword): ...
 
       .. _keyword-only_parameter:
 
@@ -1004,6 +1037,8 @@ Glossary
       (subscript) notation uses :class:`slice` objects internally.
 
    special method
+      .. index:: pair: special; method
+
       A method that is called implicitly by Python to execute a certain
       operation on a type, such as addition.  Such methods have names starting
       and ending with double underscores.  Special methods are documented in
@@ -1013,14 +1048,6 @@ Glossary
       A statement is part of a suite (a "block" of code).  A statement is either
       an :term:`expression` or one of several constructs with a keyword, such
       as :keyword:`if`, :keyword:`while` or :keyword:`for`.
-
-   struct sequence
-      A tuple with named elements. Struct sequences expose an interface similar
-      to :term:`named tuple` in that elements can be accessed either by
-      index or as an attribute. However, they do not have any of the named tuple
-      methods like :meth:`~collections.somenamedtuple._make` or
-      :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences
-      include :data:`sys.float_info` and the return value of :func:`os.stat`.
 
    text encoding
       A codec which encodes Unicode strings to bytes.
