@@ -35,8 +35,9 @@ import locale
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
                           requires_IEEE_754, requires_docstrings,
                           requires_legacy_unicode_capi)
-from test.support import (import_fresh_module, TestFailed,
-                          run_with_locale, cpython_only, get_attribute)
+from test.support import (TestFailed,
+                          run_with_locale, cpython_only)
+from test.support.import_helper import import_fresh_module
 import random
 import inspect
 import threading

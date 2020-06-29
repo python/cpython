@@ -1669,6 +1669,10 @@ exit:
 static volatile int x;
 
 #if USE_UNICODE_WCHAR_CACHE
+/* Ignore use of deprecated APIs */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 /* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
    of an error.
 */
@@ -1769,6 +1773,7 @@ test_Z_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_DECREF(tuple);
     Py_RETURN_NONE;
 }
+_Py_COMP_DIAG_POP
 #endif /* USE_UNICODE_WCHAR_CACHE */
 
 static PyObject *
@@ -1830,6 +1835,9 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
                               "PyUnicode_FromUnicode(L\"\\U00110000\", 1) didn't fail");
 
 #if USE_UNICODE_WCHAR_CACHE
+/* Ignore use of deprecated APIs */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     wide = PyUnicode_FromUnicode(NULL, 1);
     if (wide == NULL)
         return NULL;
@@ -1843,6 +1851,7 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
         return raiseTestError("test_widechar",
                               "PyUnicode_Ready() didn't fail");
     }
+_Py_COMP_DIAG_POP
 #endif /* USE_UNICODE_WCHAR_CACHE */
 #endif
 
@@ -2024,6 +2033,10 @@ unicode_copycharacters(PyObject *self, PyObject *args)
 }
 
 #if USE_UNICODE_WCHAR_CACHE
+/* Ignore use of deprecated APIs */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 static PyObject *
 unicode_encodedecimal(PyObject *self, PyObject *args)
 {
@@ -2091,6 +2104,7 @@ unicode_legacy_string(PyObject *self, PyObject *args)
 
     return u;
 }
+_Py_COMP_DIAG_POP
 #endif /* USE_UNICODE_WCHAR_CACHE */
 
 static PyObject *
@@ -3464,6 +3478,8 @@ run_in_subinterp(PyObject *self, PyObject *args)
     const char *code;
     int r;
     PyThreadState *substate, *mainstate;
+    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
+    PyCompilerFlags cflags = {0};
 
     if (!PyArg_ParseTuple(args, "s:run_in_subinterp",
                           &code))
@@ -3482,7 +3498,7 @@ run_in_subinterp(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
         return NULL;
     }
-    r = PyRun_SimpleString(code);
+    r = PyRun_SimpleStringFlags(code, &cflags);
     Py_EndInterpreter(substate);
 
     PyThreadState_Swap(mainstate);
@@ -4231,15 +4247,15 @@ static PyObject*
 pymarshal_write_long_to_file(PyObject* self, PyObject *args)
 {
     long value;
-    char *filename;
+    PyObject *filename;
     int version;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "lsi:pymarshal_write_long_to_file",
+    if (!PyArg_ParseTuple(args, "lOi:pymarshal_write_long_to_file",
                           &value, &filename, &version))
         return NULL;
 
-    fp = fopen(filename, "wb");
+    fp = _Py_fopen_obj(filename, "wb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -4257,15 +4273,15 @@ static PyObject*
 pymarshal_write_object_to_file(PyObject* self, PyObject *args)
 {
     PyObject *obj;
-    char *filename;
+    PyObject *filename;
     int version;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "Osi:pymarshal_write_object_to_file",
+    if (!PyArg_ParseTuple(args, "OOi:pymarshal_write_object_to_file",
                           &obj, &filename, &version))
         return NULL;
 
-    fp = fopen(filename, "wb");
+    fp = _Py_fopen_obj(filename, "wb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -4284,13 +4300,13 @@ pymarshal_read_short_from_file(PyObject* self, PyObject *args)
 {
     int value;
     long pos;
-    char *filename;
+    PyObject *filename;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "s:pymarshal_read_short_from_file", &filename))
+    if (!PyArg_ParseTuple(args, "O:pymarshal_read_short_from_file", &filename))
         return NULL;
 
-    fp = fopen(filename, "rb");
+    fp = _Py_fopen_obj(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -4309,13 +4325,13 @@ static PyObject*
 pymarshal_read_long_from_file(PyObject* self, PyObject *args)
 {
     long value, pos;
-    char *filename;
+    PyObject *filename;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "s:pymarshal_read_long_from_file", &filename))
+    if (!PyArg_ParseTuple(args, "O:pymarshal_read_long_from_file", &filename))
         return NULL;
 
-    fp = fopen(filename, "rb");
+    fp = _Py_fopen_obj(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -4335,13 +4351,13 @@ pymarshal_read_last_object_from_file(PyObject* self, PyObject *args)
 {
     PyObject *obj;
     long pos;
-    char *filename;
+    PyObject *filename;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "s:pymarshal_read_last_object_from_file", &filename))
+    if (!PyArg_ParseTuple(args, "O:pymarshal_read_last_object_from_file", &filename))
         return NULL;
 
-    fp = fopen(filename, "rb");
+    fp = _Py_fopen_obj(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -4359,13 +4375,13 @@ pymarshal_read_object_from_file(PyObject* self, PyObject *args)
 {
     PyObject *obj;
     long pos;
-    char *filename;
+    PyObject *filename;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "s:pymarshal_read_object_from_file", &filename))
+    if (!PyArg_ParseTuple(args, "O:pymarshal_read_object_from_file", &filename))
         return NULL;
 
-    fp = fopen(filename, "rb");
+    fp = _Py_fopen_obj(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -6868,29 +6884,36 @@ test_buildvalue_issue38913(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *res;
     const char str[] = "string";
     const Py_UNICODE unicode[] = L"unicode";
-    PyErr_SetNone(PyExc_ZeroDivisionError);
+    assert(!PyErr_Occurred());
 
     res = Py_BuildValue("(s#O)", str, 1, Py_None);
     assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
         return NULL;
     }
+    PyErr_Clear();
+
     res = Py_BuildValue("(z#O)", str, 1, Py_None);
     assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
         return NULL;
     }
+    PyErr_Clear();
+
     res = Py_BuildValue("(y#O)", str, 1, Py_None);
     assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
         return NULL;
     }
+    PyErr_Clear();
+
     res = Py_BuildValue("(u#O)", unicode, 1, Py_None);
     assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
         return NULL;
     }
-
     PyErr_Clear();
+
+
     Py_RETURN_NONE;
 }

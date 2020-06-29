@@ -41,8 +41,6 @@ PC/readme.txt text eol=crlf
 
 # Generated files
 # https://github.com/github/linguist#generated-code
-Include/graminit.h          linguist-generated=true
-Python/graminit.h           linguist-generated=true
 Modules/clinic/*.h          linguist-generated=true
 Objects/clinic/*.h          linguist-generated=true
 PC/clinic/*.h               linguist-generated=true

@@ -20,16 +20,13 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 
-#include "node.h"                 // node
 #include "token.h"                // INDENT
-#include "parsetok.h"             // perrdetail
 #include "errcode.h"              // E_EOF
 #include "code.h"                 // PyCodeObject
 #include "symtable.h"             // PySymtable_BuildObject()
-#include "ast.h"                  // PyAST_FromNodeObject()
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
 
-#include "pegen_interface.h"      // PyPegen_ASTFrom*
+#include "parser_interface.h"      // PyParser_ASTFrom*
 
 #ifdef MS_WINDOWS
 #  include "malloc.h"             // alloca()
@@ -208,8 +205,8 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         return -1;
     }
 
-    mod = PyPegen_ASTFromFileObject(fp, filename, Py_single_input,
-                                    enc, ps1, ps2, flags, &errcode, arena);
+    mod = PyParser_ASTFromFileObject(fp, filename, enc, Py_single_input,
+                                     ps1, ps2, flags, &errcode, arena);
 
     Py_XDECREF(v);
     Py_XDECREF(w);
@@ -1029,7 +1026,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     if (arena == NULL)
         return NULL;
 
-    mod = PyPegen_ASTFromStringObject(str, filename, start, flags, arena);
+    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
 
     if (mod != NULL)
         ret = run_mod(mod, filename, globals, locals, flags, arena);
@@ -1054,8 +1051,8 @@ PyRun_FileExFlags(FILE *fp, const char *filename_str, int start, PyObject *globa
     if (arena == NULL)
         goto exit;
 
-    mod = PyPegen_ASTFromFileObject(fp, filename, start, NULL, NULL, NULL,
-                                        flags, NULL, arena);
+    mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, NULL, NULL,
+                                     flags, NULL, arena);
 
     if (closeit)
         fclose(fp);
@@ -1203,7 +1200,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
     if (arena == NULL)
         return NULL;
 
-    mod = PyPegen_ASTFromStringObject(str, filename, start, flags, arena);
+    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;
@@ -1306,7 +1303,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename, int start, Py
     if (arena == NULL)
         return NULL;
 
-    mod = PyPegen_ASTFromStringObject(str, filename, start, flags, arena);
+    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;

@@ -9,6 +9,7 @@ from test.support import (TESTFN, skip_unless_symlink,
 
 
 class GlobTests(unittest.TestCase):
+    dir_fd = None
 
     def norm(self, *parts):
         return os.path.normpath(os.path.join(self.tempdir, *parts))
@@ -38,8 +39,14 @@ class GlobTests(unittest.TestCase):
             os.symlink(self.norm('broken'), self.norm('sym1'))
             os.symlink('broken', self.norm('sym2'))
             os.symlink(os.path.join('a', 'bcd'), self.norm('sym3'))
+        if {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd:
+            self.dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
+        else:
+            self.dir_fd = None
 
     def tearDown(self):
+        if self.dir_fd is not None:
+            os.close(self.dir_fd)
         shutil.rmtree(self.tempdir)
 
     def glob(self, *parts, **kwargs):
@@ -53,6 +60,41 @@ class GlobTests(unittest.TestCase):
         bres = [os.fsencode(x) for x in res]
         self.assertCountEqual(glob.glob(os.fsencode(p), **kwargs), bres)
         self.assertCountEqual(glob.iglob(os.fsencode(p), **kwargs), bres)
+
+        with change_cwd(self.tempdir):
+            res2 = glob.glob(pattern, **kwargs)
+            for x in res2:
+                self.assertFalse(os.path.isabs(x), x)
+            if pattern == '**' or pattern == '**' + os.sep:
+                expected = res[1:]
+            else:
+                expected = res
+            self.assertCountEqual([os.path.join(self.tempdir, x) for x in res2],
+                                  expected)
+            self.assertCountEqual(glob.iglob(pattern, **kwargs), res2)
+            bpattern = os.fsencode(pattern)
+            bres2 = [os.fsencode(x) for x in res2]
+            self.assertCountEqual(glob.glob(bpattern, **kwargs), bres2)
+            self.assertCountEqual(glob.iglob(bpattern, **kwargs), bres2)
+
+        self.assertCountEqual(glob.glob(pattern, root_dir=self.tempdir, **kwargs), res2)
+        self.assertCountEqual(glob.iglob(pattern, root_dir=self.tempdir, **kwargs), res2)
+        btempdir = os.fsencode(self.tempdir)
+        self.assertCountEqual(
+            glob.glob(bpattern, root_dir=btempdir, **kwargs), bres2)
+        self.assertCountEqual(
+            glob.iglob(bpattern, root_dir=btempdir, **kwargs), bres2)
+
+        if self.dir_fd is not None:
+            self.assertCountEqual(
+                glob.glob(pattern, dir_fd=self.dir_fd, **kwargs), res2)
+            self.assertCountEqual(
+                glob.iglob(pattern, dir_fd=self.dir_fd, **kwargs), res2)
+            self.assertCountEqual(
+                glob.glob(bpattern, dir_fd=self.dir_fd, **kwargs), bres2)
+            self.assertCountEqual(
+                glob.iglob(bpattern, dir_fd=self.dir_fd, **kwargs), bres2)
+
         return res
 
     def assertSequencesEqual_noorder(self, l1, l2):
@@ -77,6 +119,14 @@ class GlobTests(unittest.TestCase):
         self.assertEqual({type(r) for r in res}, {bytes})
         res = glob.glob(os.path.join(os.fsencode(os.curdir), b'*'))
         self.assertEqual({type(r) for r in res}, {bytes})
+
+    def test_glob_empty_pattern(self):
+        self.assertEqual(glob.glob(''), [])
+        self.assertEqual(glob.glob(b''), [])
+        self.assertEqual(glob.glob('', root_dir=self.tempdir), [])
+        self.assertEqual(glob.glob(b'', root_dir=os.fsencode(self.tempdir)), [])
+        self.assertEqual(glob.glob('', dir_fd=self.dir_fd), [])
+        self.assertEqual(glob.glob(b'', dir_fd=self.dir_fd), [])
 
     def test_glob_one_directory(self):
         eq = self.assertSequencesEqual_noorder

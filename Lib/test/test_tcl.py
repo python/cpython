@@ -5,9 +5,10 @@ import sys
 import os
 import warnings
 from test import support
+from test.support import import_helper
 
 # Skip this test if the _tkinter module wasn't built.
-_tkinter = support.import_module('_tkinter')
+_tkinter = import_helper.import_module('_tkinter')
 
 import tkinter
 from tkinter import Tcl

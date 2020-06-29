@@ -283,6 +283,13 @@ do_mktuple(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n, int
 static PyObject *
 do_mkvalue(const char **p_format, va_list *p_va, int flags)
 {
+#define ERROR_NEED_PY_SSIZE_T_CLEAN \
+    { \
+        PyErr_SetString(PyExc_SystemError, \
+                        "PY_SSIZE_T_CLEAN macro must be defined for '#' formats"); \
+        return NULL; \
+    }
+
     for (;;) {
         switch (*(*p_format)++) {
         case '(':
@@ -341,14 +348,12 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
             Py_ssize_t n;
             if (**p_format == '#') {
                 ++*p_format;
-                if (flags & FLAG_SIZE_T)
+                if (flags & FLAG_SIZE_T) {
                     n = va_arg(*p_va, Py_ssize_t);
+                }
                 else {
                     n = va_arg(*p_va, int);
-                    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                "PY_SSIZE_T_CLEAN will be required for '#' formats", 1)) {
-                        return NULL;
-                    }
+                    ERROR_NEED_PY_SSIZE_T_CLEAN;
                 }
             }
             else
@@ -394,14 +399,12 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
             Py_ssize_t n;
             if (**p_format == '#') {
                 ++*p_format;
-                if (flags & FLAG_SIZE_T)
+                if (flags & FLAG_SIZE_T) {
                     n = va_arg(*p_va, Py_ssize_t);
+                }
                 else {
                     n = va_arg(*p_va, int);
-                    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                "PY_SSIZE_T_CLEAN will be required for '#' formats", 1)) {
-                        return NULL;
-                    }
+                    ERROR_NEED_PY_SSIZE_T_CLEAN;
                 }
             }
             else
@@ -432,14 +435,12 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
             Py_ssize_t n;
             if (**p_format == '#') {
                 ++*p_format;
-                if (flags & FLAG_SIZE_T)
+                if (flags & FLAG_SIZE_T) {
                     n = va_arg(*p_va, Py_ssize_t);
+                }
                 else {
                     n = va_arg(*p_va, int);
-                    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                "PY_SSIZE_T_CLEAN will be required for '#' formats", 1)) {
-                        return NULL;
-                    }
+                    ERROR_NEED_PY_SSIZE_T_CLEAN;
                 }
             }
             else
@@ -507,6 +508,8 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 
         }
     }
+
+#undef ERROR_NEED_PY_SSIZE_T_CLEAN
 }
 
 
