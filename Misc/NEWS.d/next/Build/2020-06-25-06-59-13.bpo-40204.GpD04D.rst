@@ -1,1 +1,0 @@
-Pin Sphinx version to 2.3.1 in ``Doc/Makefile``.

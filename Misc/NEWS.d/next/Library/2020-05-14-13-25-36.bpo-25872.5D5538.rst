@@ -1,2 +1,0 @@
-:mod:`linecache` could crash with a :exc:`KeyError` when accessed from multiple threads.
-Fix by Michael Graczyk.
