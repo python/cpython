@@ -39,16 +39,6 @@ extern "C" {
     _Py_atomic_store_relaxed(&(gilstate)->tstate_current, \
                              (uintptr_t)(value))
 
-static void
-ensure_tstate_not_null(const char *func, PyThreadState *tstate)
-{
-    if (tstate == NULL) {
-        _Py_FatalErrorFunc(func,
-                           "current thread state is NULL (released GIL?)");
-    }
-}
-
-
 /* Forward declarations */
 static PyThreadState *_PyGILState_GetThisThreadState(struct _gilstate_runtime_state *gilstate);
 static void _PyThreadState_Delete(PyThreadState *tstate, int check_current);
@@ -134,10 +124,8 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 
 #ifdef HAVE_FORK
 /* This function is called from PyOS_AfterFork_Child to ensure that
- * newly created child processes do not share locks with the parent.
- */
-
-void
+   newly created child processes do not share locks with the parent. */
+PyStatus
 _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 {
     // This was initially set in _PyRuntimeState_Init().
@@ -148,23 +136,20 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    int interp_mutex = _PyThread_at_fork_reinit(&runtime->interpreters.mutex);
-    int main_interp_id_mutex = _PyThread_at_fork_reinit(&runtime->interpreters.main->id_mutex);
-    int xidregistry_mutex = _PyThread_at_fork_reinit(&runtime->xidregistry.mutex);
+    int reinit_interp = _PyThread_at_fork_reinit(&runtime->interpreters.mutex);
+    int reinit_main_id = _PyThread_at_fork_reinit(&runtime->interpreters.main->id_mutex);
+    int reinit_xidregistry = _PyThread_at_fork_reinit(&runtime->xidregistry.mutex);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    if (interp_mutex < 0) {
-        Py_FatalError("Can't initialize lock for runtime interpreters");
-    }
+    if (reinit_interp < 0
+        || reinit_main_id < 0
+        || reinit_xidregistry < 0)
+    {
+        return _PyStatus_ERR("Failed to reinitialize runtime locks");
 
-    if (main_interp_id_mutex < 0) {
-        Py_FatalError("Can't initialize ID lock for main interpreter");
     }
-
-    if (xidregistry_mutex < 0) {
-        Py_FatalError("Can't initialize lock for cross-interpreter data registry");
-    }
+    return _PyStatus_OK();
 }
 #endif
 
@@ -383,11 +368,12 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 }
 
 
+#ifdef HAVE_FORK
 /*
  * Delete all interpreter states except the main interpreter.  If there
  * is a current interpreter state, it *must* be the main interpreter.
  */
-void
+PyStatus
 _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 {
     struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
@@ -395,7 +381,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 
     PyThreadState *tstate = _PyThreadState_Swap(gilstate, NULL);
     if (tstate != NULL && tstate->interp != interpreters->main) {
-        Py_FatalError("not main interpreter");
+        return _PyStatus_ERR("not main interpreter");
     }
 
     HEAD_LOCK(runtime);
@@ -421,17 +407,19 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
     HEAD_UNLOCK(runtime);
 
     if (interpreters->head == NULL) {
-        Py_FatalError("missing main interpreter");
+        return _PyStatus_ERR("missing main interpreter");
     }
     _PyThreadState_Swap(gilstate, tstate);
+    return _PyStatus_OK();
 }
+#endif
 
 
 PyInterpreterState *
 PyInterpreterState_Get(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
         Py_FatalError("no current interpreter");
@@ -846,7 +834,7 @@ static void
 tstate_delete_common(PyThreadState *tstate,
                      struct _gilstate_runtime_state *gilstate)
 {
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
         Py_FatalError("NULL interpreter");
@@ -897,7 +885,7 @@ PyThreadState_Delete(PyThreadState *tstate)
 void
 _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 {
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
     struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
     tstate_delete_common(tstate, gilstate);
     _PyRuntimeGILState_SetThreadState(gilstate, NULL);
@@ -975,7 +963,7 @@ PyThreadState *
 PyThreadState_Get(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    ensure_tstate_not_null(__func__, tstate);
+    _Py_EnsureTstateNotNULL(tstate);
     return tstate;
 }
 
@@ -1269,11 +1257,12 @@ _PyGILState_Fini(PyThreadState *tstate)
     gilstate->autoInterpreterState = NULL;
 }
 
+#ifdef HAVE_FORK
 /* Reset the TSS key - called by PyOS_AfterFork_Child().
  * This should not be necessary, but some - buggy - pthread implementations
  * don't reset TSS upon fork(), see issue #10517.
  */
-void
+PyStatus
 _PyGILState_Reinit(_PyRuntimeState *runtime)
 {
     struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
@@ -1281,7 +1270,7 @@ _PyGILState_Reinit(_PyRuntimeState *runtime)
 
     PyThread_tss_delete(&gilstate->autoTSSkey);
     if (PyThread_tss_create(&gilstate->autoTSSkey) != 0) {
-        Py_FatalError("Could not allocate TSS entry");
+        return _PyStatus_NO_MEMORY();
     }
 
     /* If the thread had an associated auto thread state, reassociate it with
@@ -1289,9 +1278,11 @@ _PyGILState_Reinit(_PyRuntimeState *runtime)
     if (tstate &&
         PyThread_tss_set(&gilstate->autoTSSkey, (void *)tstate) != 0)
     {
-        Py_FatalError("Couldn't create autoTSSkey mapping");
+        return _PyStatus_ERR("failed to set autoTSSkey");
     }
+    return _PyStatus_OK();
 }
+#endif
 
 /* When a thread state is created for a thread by some mechanism other than
    PyGILState_Ensure, it's important that the GILState machinery knows about
@@ -1735,7 +1726,7 @@ _str_shared(PyObject *obj, _PyCrossInterpreterData *data)
     struct _shared_str_data *shared = PyMem_NEW(struct _shared_str_data, 1);
     shared->kind = PyUnicode_KIND(obj);
     shared->buffer = PyUnicode_DATA(obj);
-    shared->len = PyUnicode_GET_LENGTH(obj) - 1;
+    shared->len = PyUnicode_GET_LENGTH(obj);
     data->data = (void *)shared;
     Py_INCREF(obj);
     data->obj = obj;  // Will be "released" (decref'ed) when data released.

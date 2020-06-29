@@ -3,7 +3,6 @@
 #include "Python.h"
 
 #include "Python-ast.h"
-#include "node.h"
 #include "ast.h"
 #include "code.h"
 #include "symtable.h"

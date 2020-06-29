@@ -41,8 +41,9 @@ class TestCgitb(unittest.TestCase):
             rc, out, err = assert_python_failure(
                   '-c',
                   ('import cgitb; cgitb.enable(logdir=%s); '
-                   'raise ValueError("Hello World")') % repr(tracedir))
-        out = out.decode(sys.getfilesystemencoding())
+                   'raise ValueError("Hello World")') % repr(tracedir),
+                  PYTHONIOENCODING='utf-8')
+        out = out.decode()
         self.assertIn("ValueError", out)
         self.assertIn("Hello World", out)
         self.assertIn("<strong>&lt;module&gt;</strong>", out)
@@ -56,8 +57,9 @@ class TestCgitb(unittest.TestCase):
             rc, out, err = assert_python_failure(
                   '-c',
                   ('import cgitb; cgitb.enable(format="text", logdir=%s); '
-                   'raise ValueError("Hello World")') % repr(tracedir))
-        out = out.decode(sys.getfilesystemencoding())
+                   'raise ValueError("Hello World")') % repr(tracedir),
+                  PYTHONIOENCODING='utf-8')
+        out = out.decode()
         self.assertIn("ValueError", out)
         self.assertIn("Hello World", out)
         self.assertNotIn('<p>', out)

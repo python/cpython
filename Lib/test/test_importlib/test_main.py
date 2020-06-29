@@ -246,3 +246,24 @@ class TestEntryPoints(unittest.TestCase):
         """
         with self.assertRaises(Exception):
             json.dumps(self.ep)
+
+    def test_module(self):
+        assert self.ep.module == 'value'
+
+    def test_attr(self):
+        assert self.ep.attr is None
+
+
+class FileSystem(
+        fixtures.OnSysPath, fixtures.SiteDir, fixtures.FileBuilder,
+        unittest.TestCase):
+    def test_unicode_dir_on_sys_path(self):
+        """
+        Ensure a Unicode subdirectory of a directory on sys.path
+        does not crash.
+        """
+        fixtures.build_files(
+            {self.unicode_filename(): {}},
+            prefix=self.site_dir,
+            )
+        list(distributions())

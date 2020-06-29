@@ -1,8 +1,6 @@
 #include "Python.h"
 #include "Python-ast.h"
-#include "node.h"
 #include "token.h"
-#include "graminit.h"
 #include "code.h"
 #include "symtable.h"
 #include "ast.h"

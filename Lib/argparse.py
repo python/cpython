@@ -857,7 +857,6 @@ class BooleanOptionalAction(Action):
     def __init__(self,
                  option_strings,
                  dest,
-                 const=None,
                  default=None,
                  type=None,
                  choices=None,

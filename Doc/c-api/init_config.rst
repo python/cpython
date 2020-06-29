@@ -43,6 +43,7 @@ Functions:
 * :c:func:`Py_PreInitializeFromArgs`
 * :c:func:`Py_PreInitializeFromBytesArgs`
 * :c:func:`Py_RunMain`
+* :c:func:`Py_GetArgcArgv`
 
 The preconfiguration (``PyPreConfig`` type) is stored in
 ``_PyRuntime.preconfig`` and the configuration (``PyConfig`` type) is stored in
@@ -436,6 +437,14 @@ PyConfig
 
       :data:`sys.base_prefix`.
 
+   .. c:member:: wchar_t* platlibdir
+
+      :data:`sys.platlibdir`: platform library directory name, set at configure time
+      by ``--with-platlibdir``, overrideable by the ``PYTHONPLATLIBDIR``
+      environment variable.
+
+      .. versionadded:: 3.9
+
    .. c:member:: int buffered_stdio
 
       If equals to 0, enable unbuffered mode, making the stdout and stderr
@@ -686,16 +695,6 @@ PyConfig
 
       :data:`sys._xoptions`.
 
-   .. c:member:: int _use_peg_parser
-
-      Enable PEG parser? Default: 1.
-
-      Set to 0 by :option:`-X oldparser <-X>` and :envvar:`PYTHONOLDPARSER`.
-
-      See also :pep:`617`.
-
-      .. deprecated-removed:: 3.9 3.10
-
 If ``parse_argv`` is non-zero, ``argv`` arguments are parsed the same
 way the regular Python parses command line arguments, and Python
 arguments are stripped from ``argv``: see :ref:`Command Line Arguments
@@ -884,6 +883,7 @@ Path Configuration
 * Path configuration inputs:
 
   * :c:member:`PyConfig.home`
+  * :c:member:`PyConfig.platlibdir`
   * :c:member:`PyConfig.pathconfig_warnings`
   * :c:member:`PyConfig.program_name`
   * :c:member:`PyConfig.pythonpath_env`
@@ -973,6 +973,14 @@ Py_RunMain()
 See :ref:`Python Configuration <init-python-config>` for an example of
 customized Python always running in isolated mode using
 :c:func:`Py_RunMain`.
+
+
+Py_GetArgcArgv()
+----------------
+
+.. c:function:: void Py_GetArgcArgv(int *argc, wchar_t ***argv)
+
+   Get the original command line arguments, before Python modified them.
 
 
 Multi-Phase Initialization Private Provisional API

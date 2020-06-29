@@ -12,7 +12,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_byteswap.h"     // _Py_bswap32()
+#include "pycore_bitutils.h"     // _Py_bswap32()
 #include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
 #include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_gc.h"           // PyGC_Head
@@ -60,6 +60,84 @@ test_bswap(PyObject *self, PyObject *Py_UNUSED(args))
     }
 
     Py_RETURN_NONE;
+}
+
+
+static int
+check_popcount(uint32_t x, int expected)
+{
+    // Use volatile to prevent the compiler to optimize out the whole test
+    volatile uint32_t u = x;
+    int bits = _Py_popcount32(u);
+    if (bits != expected) {
+        PyErr_Format(PyExc_AssertionError,
+                     "_Py_popcount32(%lu) returns %i, expected %i",
+                     (unsigned long)x, bits, expected);
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject*
+test_popcount(PyObject *self, PyObject *Py_UNUSED(args))
+{
+#define CHECK(X, RESULT) \
+    do { \
+        if (check_popcount(X, RESULT) < 0) { \
+            return NULL; \
+        } \
+    } while (0)
+
+    CHECK(0, 0);
+    CHECK(1, 1);
+    CHECK(0x08080808, 4);
+    CHECK(0x10101010, 4);
+    CHECK(0x10204080, 4);
+    CHECK(0xDEADCAFE, 22);
+    CHECK(0xFFFFFFFF, 32);
+    Py_RETURN_NONE;
+
+#undef CHECK
+}
+
+
+static int
+check_bit_length(unsigned long x, int expected)
+{
+    // Use volatile to prevent the compiler to optimize out the whole test
+    volatile unsigned long u = x;
+    int len = _Py_bit_length(u);
+    if (len != expected) {
+        PyErr_Format(PyExc_AssertionError,
+                     "_Py_bit_length(%lu) returns %i, expected %i",
+                     x, len, expected);
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject*
+test_bit_length(PyObject *self, PyObject *Py_UNUSED(args))
+{
+#define CHECK(X, RESULT) \
+    do { \
+        if (check_bit_length(X, RESULT) < 0) { \
+            return NULL; \
+        } \
+    } while (0)
+
+    CHECK(0, 0);
+    CHECK(1, 1);
+    CHECK(0x1000, 13);
+    CHECK(0x1234, 13);
+    CHECK(0x54321, 19);
+    CHECK(0x7FFFFFFF, 31);
+    CHECK(0xFFFFFFFF, 32);
+    Py_RETURN_NONE;
+
+#undef CHECK
 }
 
 
@@ -119,8 +197,8 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
     for (key='a'; key <= 'z'; key++) {
         _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(table, TO_PTR(key));
         assert(entry != NULL);
-        assert(entry->key = TO_PTR(key));
-        assert(entry->value = TO_PTR(VALUE(key)));
+        assert(entry->key == TO_PTR(key));
+        assert(entry->value == TO_PTR(VALUE(key)));
     }
 
     // Test _Py_hashtable_get()
@@ -157,6 +235,8 @@ static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
+    {"test_popcount", test_popcount, METH_NOARGS},
+    {"test_bit_length", test_bit_length, METH_NOARGS},
     {"test_hashtable", test_hashtable, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };

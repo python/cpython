@@ -2,20 +2,12 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
 
 #ifdef Py_TRACE_REFS
 /* Py_TRACE_REFS is such major surgery that we call external routines. */
 PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
 #endif
-
-/* Update the Python traceback of an object. This function must be called
-   when a memory block is reused from a free list. */
-PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
 
 #ifdef Py_REF_DEBUG
 PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
@@ -548,7 +540,3 @@ PyAPI_FUNC(void) _PyTrash_end(struct _ts *tstate);
  * unconditionally */
 #define Py_TRASHCAN_SAFE_BEGIN(op) Py_TRASHCAN_BEGIN_CONDITION(op, 1)
 #define Py_TRASHCAN_SAFE_END(op) Py_TRASHCAN_END
-
-#ifdef __cplusplus
-}
-#endif

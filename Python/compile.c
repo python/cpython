@@ -67,8 +67,6 @@ typedef struct basicblock_ {
     /* If b_next is non-NULL, it is a pointer to the next
        block reached by normal control flow. */
     struct basicblock_ *b_next;
-    /* b_seen is used to perform a DFS of basicblocks. */
-    unsigned b_seen : 1;
     /* b_return is true if a RETURN_VALUE opcode is inserted. */
     unsigned b_return : 1;
     /* depth of stack upon entry of block, computed by stackdepth() */
@@ -388,21 +386,6 @@ PyAST_CompileEx(mod_ty mod, const char *filename_str, PyCompilerFlags *flags,
     Py_DECREF(filename);
     return co;
 
-}
-
-PyCodeObject *
-PyNode_Compile(struct _node *n, const char *filename)
-{
-    PyCodeObject *co = NULL;
-    mod_ty mod;
-    PyArena *arena = PyArena_New();
-    if (!arena)
-        return NULL;
-    mod = PyAST_FromNode(n, NULL, filename, arena);
-    if (mod)
-        co = PyAST_Compile(mod, filename, NULL, arena);
-    PyArena_Free(arena);
-    return co;
 }
 
 static void
@@ -4321,6 +4304,9 @@ ex_call:
                     if (!compiler_subkwargs(c, keywords, i - nseen, i)) {
                         return 0;
                     }
+                    if (have_dict) {
+                        ADDOP_I(c, DICT_MERGE, 1);
+                    }
                     have_dict = 1;
                     nseen = 0;
                 }
@@ -5425,7 +5411,7 @@ struct assembler {
     PyObject *a_bytecode;  /* string containing bytecode */
     int a_offset;              /* offset into bytecode */
     int a_nblocks;             /* number of reachable blocks */
-    basicblock **a_postorder; /* list of blocks in dfs postorder */
+    basicblock **a_reverse_postorder; /* list of blocks in dfs postorder */
     PyObject *a_lnotab;    /* string containing lnotab */
     int a_lnotab_off;      /* offset into lnotab */
     int a_lineno;              /* last lineno of emitted instruction */
@@ -5435,26 +5421,14 @@ struct assembler {
 static void
 dfs(struct compiler *c, basicblock *b, struct assembler *a, int end)
 {
-    int i, j;
 
-    /* Get rid of recursion for normal control flow.
-       Since the number of blocks is limited, unused space in a_postorder
-       (from a_nblocks to end) can be used as a stack for still not ordered
-       blocks. */
-    for (j = end; b && !b->b_seen; b = b->b_next) {
-        b->b_seen = 1;
-        assert(a->a_nblocks < j);
-        a->a_postorder[--j] = b;
-    }
-    while (j < end) {
-        b = a->a_postorder[j++];
-        for (i = 0; i < b->b_iused; i++) {
-            struct instr *instr = &b->b_instr[i];
-            if (instr->i_jrel || instr->i_jabs)
-                dfs(c, instr->i_target, a, j);
-        }
-        assert(a->a_nblocks < j);
-        a->a_postorder[a->a_nblocks++] = b;
+    /* There is no real depth-first-search to do here because all the
+     * blocks are emitted in topological order already, so we just need to
+     * follow the b_next pointers and place them in a->a_reverse_postorder in
+     * reverse order and make sure that the first one starts at 0. */
+
+    for (a->a_nblocks = 0; b != NULL; b = b->b_next) {
+        a->a_reverse_postorder[a->a_nblocks++] = b;
     }
 }
 
@@ -5555,9 +5529,9 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
         PyErr_NoMemory();
         return 0;
     }
-    a->a_postorder = (basicblock **)PyObject_Malloc(
+    a->a_reverse_postorder = (basicblock **)PyObject_Malloc(
                                         sizeof(basicblock *) * nblocks);
-    if (!a->a_postorder) {
+    if (!a->a_reverse_postorder) {
         PyErr_NoMemory();
         return 0;
     }
@@ -5569,8 +5543,8 @@ assemble_free(struct assembler *a)
 {
     Py_XDECREF(a->a_bytecode);
     Py_XDECREF(a->a_lnotab);
-    if (a->a_postorder)
-        PyObject_Free(a->a_postorder);
+    if (a->a_reverse_postorder)
+        PyObject_Free(a->a_reverse_postorder);
 }
 
 static int
@@ -5731,8 +5705,8 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
        Replace block pointer with position in bytecode. */
     do {
         totsize = 0;
-        for (i = a->a_nblocks - 1; i >= 0; i--) {
-            b = a->a_postorder[i];
+        for (i = 0; i < a->a_nblocks; i++) {
+            b = a->a_reverse_postorder[i];
             bsize = blocksize(b);
             b->b_offset = totsize;
             totsize += bsize;
@@ -5987,10 +5961,9 @@ dump_instr(const struct instr *i)
 static void
 dump_basicblock(const basicblock *b)
 {
-    const char *seen = b->b_seen ? "seen " : "";
     const char *b_return = b->b_return ? "return " : "";
-    fprintf(stderr, "used: %d, depth: %d, offset: %d %s%s\n",
-        b->b_iused, b->b_startdepth, b->b_offset, seen, b_return);
+    fprintf(stderr, "used: %d, depth: %d, offset: %d %s\n",
+        b->b_iused, b->b_startdepth, b->b_offset, b_return);
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
@@ -6042,8 +6015,8 @@ assemble(struct compiler *c, int addNone)
     assemble_jump_offsets(&a, c);
 
     /* Emit code in reverse postorder from dfs. */
-    for (i = a.a_nblocks - 1; i >= 0; i--) {
-        b = a.a_postorder[i];
+    for (i = 0; i < a.a_nblocks; i++) {
+        b = a.a_reverse_postorder[i];
         for (j = 0; j < b->b_iused; j++)
             if (!assemble_emit(&a, &b->b_instr[j]))
                 goto error;

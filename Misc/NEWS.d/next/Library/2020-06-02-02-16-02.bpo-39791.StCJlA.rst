@@ -1,0 +1,1 @@
+Built-in loaders (SourceFileLoader and ZipImporter) now supply ``TraversableResources`` implementations for ``ResourceReader``, and the fallback function has been removed.

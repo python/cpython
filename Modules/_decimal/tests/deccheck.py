@@ -29,9 +29,20 @@
 # Usage: python deccheck.py [--short|--medium|--long|--all]
 #
 
-import sys, random
+
+import sys
+import os
+import time
+import random
 from copy import copy
 from collections import defaultdict
+
+import argparse
+import subprocess
+from subprocess import PIPE, STDOUT
+from queue import Queue, Empty
+from threading import Thread, Event, Lock
+
 from test.support import import_fresh_module
 from randdec import randfloat, all_unary, all_binary, all_ternary
 from randdec import unary_optarg, binary_optarg, ternary_optarg
@@ -1124,17 +1135,34 @@ def check_untested(funcdict, c_cls, p_cls):
 
     funcdict['untested'] = tuple(sorted(intersect-tested))
 
-    #for key in ('untested', 'c_only', 'p_only'):
-    #    s = 'Context' if c_cls == C.Context else 'Decimal'
-    #    print("\n%s %s:\n%s" % (s, key, funcdict[key]))
+    # for key in ('untested', 'c_only', 'p_only'):
+    #     s = 'Context' if c_cls == C.Context else 'Decimal'
+    #     print("\n%s %s:\n%s" % (s, key, funcdict[key]))
 
 
 if __name__ == '__main__':
 
-    import time
+    parser = argparse.ArgumentParser(prog="deccheck.py")
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--short', dest='time', action="store_const", const='short', default='short', help="short test (default)")
+    group.add_argument('--medium', dest='time', action="store_const", const='medium', default='short', help="medium test (reasonable run time)")
+    group.add_argument('--long', dest='time', action="store_const", const='long', default='short', help="long test (long run time)")
+    group.add_argument('--all', dest='time', action="store_const", const='all', default='short', help="all tests (excessive run time)")
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--single', dest='single', nargs=1, default=False, metavar="TEST", help="run a single test")
+    group.add_argument('--multicore', dest='multicore', action="store_true", default=False, help="use all available cores")
+
+    args = parser.parse_args()
+    assert args.single is False or args.multicore is False
+    if args.single:
+        args.single = args.single[0]
+
 
     randseed = int(time.time())
     random.seed(randseed)
+
 
     # Set up the testspecs list. A testspec is simply a dictionary
     # that determines the amount of different contexts that 'test_method'
@@ -1168,17 +1196,17 @@ if __name__ == '__main__':
         {'prec': [34], 'expts': [(-6143, 6144)], 'clamp': 1, 'iter': None}
     ]
 
-    if '--medium' in sys.argv:
+    if args.time == 'medium':
         base['expts'].append(('rand', 'rand'))
         # 5 random precisions
         base['samples'] = 5
         testspecs = [small] + ieee + [base]
-    if '--long' in sys.argv:
+    elif args.time == 'long':
         base['expts'].append(('rand', 'rand'))
         # 10 random precisions
         base['samples'] = 10
         testspecs = [small] + ieee + [base]
-    elif '--all' in sys.argv:
+    elif args.time == 'all':
         base['expts'].append(('rand', 'rand'))
         # All precisions in [1, 100]
         base['samples'] = 100
@@ -1195,39 +1223,100 @@ if __name__ == '__main__':
         small['expts'] = [(-prec, prec)]
         testspecs = [small, rand_ieee, base]
 
+
     check_untested(Functions, C.Decimal, P.Decimal)
     check_untested(ContextFunctions, C.Context, P.Context)
 
 
-    log("\n\nRandom seed: %d\n\n", randseed)
+    if args.multicore:
+        q = Queue()
+    elif args.single:
+        log("Random seed: %d", randseed)
+    else:
+        log("\n\nRandom seed: %d\n\n", randseed)
+
+
+    FOUND_METHOD = False
+    def do_single(method, f):
+        global FOUND_METHOD
+        if args.multicore:
+            q.put(method)
+        elif not args.single or args.single == method:
+            FOUND_METHOD = True
+            f()
 
     # Decimal methods:
     for method in Functions['unary'] + Functions['unary_ctx'] + \
                   Functions['unary_rnd_ctx']:
-        test_method(method, testspecs, test_unary)
+        do_single(method, lambda: test_method(method, testspecs, test_unary))
 
     for method in Functions['binary'] + Functions['binary_ctx']:
-        test_method(method, testspecs, test_binary)
+        do_single(method, lambda: test_method(method, testspecs, test_binary))
 
     for method in Functions['ternary'] + Functions['ternary_ctx']:
-        test_method(method, testspecs, test_ternary)
+        name = '__powmod__' if method == '__pow__' else method
+        do_single(name, lambda: test_method(method, testspecs, test_ternary))
 
-    test_method('__format__', testspecs, test_format)
-    test_method('__round__', testspecs, test_round)
-    test_method('from_float', testspecs, test_from_float)
-    test_method('quantize', testspecs, test_quantize_api)
+    do_single('__format__', lambda: test_method('__format__', testspecs, test_format))
+    do_single('__round__', lambda: test_method('__round__', testspecs, test_round))
+    do_single('from_float', lambda: test_method('from_float', testspecs, test_from_float))
+    do_single('quantize_api', lambda: test_method('quantize', testspecs, test_quantize_api))
 
     # Context methods:
     for method in ContextFunctions['unary']:
-        test_method(method, testspecs, test_unary)
+        do_single(method, lambda: test_method(method, testspecs, test_unary))
 
     for method in ContextFunctions['binary']:
-        test_method(method, testspecs, test_binary)
+        do_single(method, lambda: test_method(method, testspecs, test_binary))
 
     for method in ContextFunctions['ternary']:
-        test_method(method, testspecs, test_ternary)
+        name = 'context.powmod' if method == 'context.power' else method
+        do_single(name, lambda: test_method(method, testspecs, test_ternary))
 
-    test_method('context.create_decimal_from_float', testspecs, test_from_float)
+    do_single('context.create_decimal_from_float',
+              lambda: test_method('context.create_decimal_from_float',
+                                   testspecs, test_from_float))
 
+    if args.multicore:
+        error = Event()
+        write_lock = Lock()
 
-    sys.exit(EXIT_STATUS)
+        def write_output(out, returncode):
+            if returncode != 0:
+                error.set()
+
+            with write_lock:
+                sys.stdout.buffer.write(out + b"\n")
+                sys.stdout.buffer.flush()
+
+        def tfunc():
+            while not error.is_set():
+                try:
+                    test = q.get(block=False, timeout=-1)
+                except Empty:
+                    return
+
+                cmd = [sys.executable, "deccheck.py", "--%s" % args.time, "--single", test]
+                p = subprocess.Popen(cmd, stdout=PIPE, stderr=STDOUT)
+                out, _ = p.communicate()
+                write_output(out, p.returncode)
+
+        N = os.cpu_count()
+        t = N * [None]
+
+        for i in range(N):
+            t[i] = Thread(target=tfunc)
+            t[i].start()
+
+        for i in range(N):
+            t[i].join()
+
+        sys.exit(1 if error.is_set() else 0)
+
+    elif args.single:
+        if not FOUND_METHOD:
+            log("\nerror: cannot find method \"%s\"" % args.single)
+            EXIT_STATUS = 1
+        sys.exit(EXIT_STATUS)
+    else:
+        sys.exit(EXIT_STATUS)

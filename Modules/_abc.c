@@ -46,6 +46,7 @@ typedef struct {
 static int
 abc_data_traverse(_abc_data *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->_abc_registry);
     Py_VISIT(self->_abc_cache);
     Py_VISIT(self->_abc_negative_cache);
