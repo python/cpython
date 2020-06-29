@@ -154,13 +154,6 @@ class Shelf(collections.abc.MutableMapping):
             except:
                 self.dict = None
 
-    def __del__(self):
-        if not hasattr(self, 'writeback'):
-            # __init__ didn't succeed, so don't bother closing
-            # see http://bugs.python.org/issue1339007 for details
-            return
-        self.close()
-
     def sync(self):
         if self.writeback and self.cache:
             self.writeback = False
