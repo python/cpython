@@ -14641,19 +14641,14 @@ mainformatlong(PyObject *v,
     if (!PyLong_Check(v)) {
         if (type == 'o' || type == 'x' || type == 'X') {
             iobj = _PyNumber_Index(v);
-            if (iobj == NULL) {
-                if (PyErr_ExceptionMatches(PyExc_TypeError))
-                    goto wrongtype;
-                return -1;
-            }
         }
         else {
             iobj = PyNumber_Long(v);
-            if (iobj == NULL ) {
-                if (PyErr_ExceptionMatches(PyExc_TypeError))
-                    goto wrongtype;
-                return -1;
-            }
+        }
+        if (iobj == NULL ) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError))
+                goto wrongtype;
+            return -1;
         }
         assert(PyLong_Check(iobj));
     }
@@ -14736,24 +14731,17 @@ formatchar(PyObject *v)
         goto onError;
     }
     else {
-        PyObject *iobj;
-        long x;
-        /* make sure number is a type of integer */
-        if (!PyLong_Check(v)) {
-            iobj = PyNumber_Index(v);
-            if (iobj == NULL) {
+        int overflow;
+        long x = PyLong_AsLongAndOverflow(v, &overflow);
+        if (x == -1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 goto onError;
             }
-            x = PyLong_AsLong(iobj);
-            Py_DECREF(iobj);
+            return (Py_UCS4) -1;
         }
-        else {
-            x = PyLong_AsLong(v);
-        }
-        if (x == -1 && PyErr_Occurred())
-            goto onError;
 
         if (x < 0 || x > MAX_UNICODE) {
+            /* this includes an overflow in converting to C long */
             PyErr_SetString(PyExc_OverflowError,
                             "%c arg not in range(0x110000)");
             return (Py_UCS4) -1;

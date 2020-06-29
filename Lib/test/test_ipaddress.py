@@ -2548,6 +2548,18 @@ class IpaddrUnitTest(unittest.TestCase):
                          sixtofouraddr.sixtofour)
         self.assertFalse(bad_addr.sixtofour)
 
+    # issue41004 Hash collisions in IPv4Interface and IPv6Interface
+    def testV4HashIsNotConstant(self):
+        ipv4_address1 = ipaddress.IPv4Interface("1.2.3.4")
+        ipv4_address2 = ipaddress.IPv4Interface("2.3.4.5")
+        self.assertNotEqual(ipv4_address1.__hash__(), ipv4_address2.__hash__())
+
+    # issue41004 Hash collisions in IPv4Interface and IPv6Interface
+    def testV6HashIsNotConstant(self):
+        ipv6_address1 = ipaddress.IPv6Interface("2001:658:22a:cafe:200:0:0:1")
+        ipv6_address2 = ipaddress.IPv6Interface("2001:658:22a:cafe:200:0:0:2")
+        self.assertNotEqual(ipv6_address1.__hash__(), ipv6_address2.__hash__())
+
 
 if __name__ == '__main__':
     unittest.main()
