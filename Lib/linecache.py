@@ -71,10 +71,10 @@ def checkcache(filename=None):
         try:
             stat = os.stat(fullname)
         except OSError:
-            del cache[filename]
+            cache.pop(filename, None)
             continue
         if size != stat.st_size or mtime != stat.st_mtime:
-            del cache[filename]
+            cache.pop(filename, None)
 
 
 def updatecache(filename, module_globals=None):
@@ -84,7 +84,7 @@ def updatecache(filename, module_globals=None):
 
     if filename in cache:
         if len(cache[filename]) != 1:
-            del cache[filename]
+            cache.pop(filename, None)
     if not filename or (filename.startswith('<') and filename.endswith('>')):
         return []
 

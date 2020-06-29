@@ -69,6 +69,14 @@ def get(using=None):
 # instead of "from webbrowser import *".
 
 def open(url, new=0, autoraise=True):
+    """Display url using the default browser.
+
+    If possible, open url in a location determined by new.
+    - 0: the same browser window (the default).
+    - 1: a new browser window.
+    - 2: a new browser page ("tab").
+    If possible, autoraise raises the window (the default) or not.
+    """
     if _tryorder is None:
         with _lock:
             if _tryorder is None:
@@ -80,9 +88,17 @@ def open(url, new=0, autoraise=True):
     return False
 
 def open_new(url):
+    """Open url in a new window of the default browser.
+
+    If not possible, then open url in the only browser window.
+    """
     return open(url, 1)
 
 def open_new_tab(url):
+    """Open url in a new page ("tab") of the default browser.
+
+    If not possible, then the behavior becomes equivalent to open_new().
+    """
     return open(url, 2)
 
 
@@ -397,7 +413,7 @@ class Grail(BaseBrowser):
         tempdir = os.path.join(tempfile.gettempdir(),
                                ".grail-unix")
         user = pwd.getpwuid(os.getuid())[0]
-        filename = os.path.join(tempdir, user + "-*")
+        filename = os.path.join(glob.escape(tempdir), glob.escape(user) + "-*")
         maybes = glob.glob(filename)
         if not maybes:
             return None
@@ -529,12 +545,12 @@ def register_standard_browsers():
                 register(browser, None, BackgroundBrowser(browser))
     else:
         # Prefer X browsers if present
-        if os.environ.get("DISPLAY"):
+        if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
             try:
                 cmd = "xdg-settings get default-web-browser".split()
                 raw_result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
                 result = raw_result.decode().strip()
-            except (FileNotFoundError, subprocess.CalledProcessError):
+            except (FileNotFoundError, subprocess.CalledProcessError, PermissionError) :
                 pass
             else:
                 global _os_preferred_browser

@@ -720,6 +720,13 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertFalse("©".isidentifier())
         self.assertFalse("0".isidentifier())
 
+    @support.cpython_only
+    def test_isidentifier_legacy(self):
+        import _testcapi
+        u = '𝖀𝖓𝖎𝖈𝖔𝖉𝖊'
+        self.assertTrue(u.isidentifier())
+        self.assertTrue(_testcapi.unicode_legacy_string(u).isidentifier())
+
     def test_isprintable(self):
         self.assertTrue("".isprintable())
         self.assertTrue(" ".isprintable())
@@ -1752,7 +1759,7 @@ class UnicodeTest(string_tests.CommonTest,
         # Issue #8271: during the decoding of an invalid UTF-8 byte sequence,
         # only the start byte and the continuation byte(s) are now considered
         # invalid, instead of the number of bytes specified by the start byte.
-        # See http://www.unicode.org/versions/Unicode5.2.0/ch03.pdf (page 95,
+        # See https://www.unicode.org/versions/Unicode5.2.0/ch03.pdf (page 95,
         # table 3-8, Row 2) for more information about the algorithm used.
         FFFD = '\ufffd'
         sequences = [
@@ -2207,22 +2214,6 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(("abc" "def"), "abcdef")
         self.assertEqual(("abc" "def" "ghi"), "abcdefghi")
         self.assertEqual(("abc" "def" "ghi"), "abcdefghi")
-
-    def test_printing(self):
-        class BitBucket:
-            def write(self, text):
-                pass
-
-        out = BitBucket()
-        print('abc', file=out)
-        print('abc', 'def', file=out)
-        print('abc', 'def', file=out)
-        print('abc', 'def', file=out)
-        print('abc\n', file=out)
-        print('abc\n', end=' ', file=out)
-        print('abc\n', end=' ', file=out)
-        print('def\n', file=out)
-        print('def\n', file=out)
 
     def test_ucs4(self):
         x = '\U00100000'

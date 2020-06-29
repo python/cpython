@@ -29,6 +29,7 @@ test_urlparse.py provides a good indicator of parsing behavior.
 
 import re
 import sys
+import types
 import collections
 import warnings
 
@@ -175,6 +176,8 @@ class _NetlocResultMixinBase(object):
             if not ( 0 <= port <= 65535):
                 raise ValueError("Port out of range 0-65535")
         return port
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class _NetlocResultMixinStr(_NetlocResultMixinBase, _ResultMixinStr):

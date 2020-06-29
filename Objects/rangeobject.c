@@ -1,8 +1,9 @@
 /* Range object implementation */
 
 #include "Python.h"
-#include "structmember.h"
-#include "pycore_tupleobject.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "structmember.h"         // PyMemberDef
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
 
@@ -146,8 +147,7 @@ range_vectorcall(PyTypeObject *type, PyObject *const *args,
                  size_t nargsf, PyObject *kwnames)
 {
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (kwnames && PyTuple_GET_SIZE(kwnames) != 0) {
-        PyErr_Format(PyExc_TypeError, "range() takes no keyword arguments");
+    if (!_PyArg_NoKwnames("range", kwnames)) {
         return NULL;
     }
     return range_from_array(type, args, nargs);
@@ -632,7 +632,7 @@ range_reduce(rangeobject *r, PyObject *args)
 static PyObject *
 range_subscript(rangeobject* self, PyObject* item)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         PyObject *i, *result;
         i = PyNumber_Index(item);
         if (!i)

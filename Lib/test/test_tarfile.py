@@ -11,7 +11,7 @@ import unittest.mock
 import tarfile
 
 from test import support
-from test.support import script_helper, requires_hashdigest
+from test.support import script_helper
 
 # Check for our compression modules.
 try:
@@ -57,21 +57,21 @@ class TarTest:
     def mode(self):
         return self.prefix + self.suffix
 
-@support.requires_gzip
+@support.requires_gzip()
 class GzipTest:
     tarname = gzipname
     suffix = 'gz'
     open = gzip.GzipFile if gzip else None
     taropen = tarfile.TarFile.gzopen
 
-@support.requires_bz2
+@support.requires_bz2()
 class Bz2Test:
     tarname = bz2name
     suffix = 'bz2'
     open = bz2.BZ2File if bz2 else None
     taropen = tarfile.TarFile.bz2open
 
-@support.requires_lzma
+@support.requires_lzma()
 class LzmaTest:
     tarname = xzname
     suffix = 'xz'
@@ -386,7 +386,7 @@ class CommonReadTest(ReadTest):
     def test_ignore_zeros(self):
         # Test TarFile's ignore_zeros option.
         # generate 512 pseudorandom bytes
-        data = Random(0).getrandbits(512*8).to_bytes(512, 'big')
+        data = Random(0).randbytes(512)
         for char in (b'\0', b'a'):
             # Test if EOFHeaderError ('\0') and InvalidHeaderError ('a')
             # are ignored correctly.
@@ -2305,7 +2305,8 @@ class CommandLineTest(unittest.TestCase):
     def test_test_command_verbose(self):
         for tar_name in testtarnames:
             for opt in '-v', '--verbose':
-                out = self.tarfilecmd(opt, '-t', tar_name)
+                out = self.tarfilecmd(opt, '-t', tar_name,
+                                      PYTHONIOENCODING='utf-8')
                 self.assertIn(b'is a tar archive.\n', out)
 
     def test_test_command_invalid_file(self):
@@ -2376,7 +2377,8 @@ class CommandLineTest(unittest.TestCase):
                                   'and-utf8-bom-sig-only.txt')]
         for opt in '-v', '--verbose':
             try:
-                out = self.tarfilecmd(opt, '-c', tmpname, *files)
+                out = self.tarfilecmd(opt, '-c', tmpname, *files,
+                                      PYTHONIOENCODING='utf-8')
                 self.assertIn(b' file created.', out)
                 with tarfile.open(tmpname) as tar:
                     tar.getmembers()
@@ -2434,7 +2436,8 @@ class CommandLineTest(unittest.TestCase):
         for opt in '-v', '--verbose':
             try:
                 with support.temp_cwd(tarextdir):
-                    out = self.tarfilecmd(opt, '-e', tmpname)
+                    out = self.tarfilecmd(opt, '-e', tmpname,
+                                          PYTHONIOENCODING='utf-8')
                 self.assertIn(b' file is extracted.', out)
             finally:
                 support.rmtree(tarextdir)

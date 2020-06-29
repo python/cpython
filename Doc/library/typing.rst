@@ -960,12 +960,13 @@ The module defines the following classes, functions and decorators:
       Added support for default values, methods, and docstrings.
 
    .. versionchanged:: 3.8
-      Deprecated the ``_field_types`` attribute in favor of the more
-      standard ``__annotations__`` attribute which has the same information.
-
-   .. versionchanged:: 3.8
       The ``_field_types`` and ``__annotations__`` attributes are
       now regular dictionaries instead of instances of ``OrderedDict``.
+
+   .. versionchanged:: 3.9
+      Removed the ``_field_types`` attribute in favor of the more
+      standard ``__annotations__`` attribute which has the same information.
+
 
 .. class:: TypedDict(dict)
 
@@ -1004,7 +1005,7 @@ The module defines the following classes, functions and decorators:
           x: int
           y: int
 
-   This means that a point2D TypedDict can have any of the keys omitted.A type
+   This means that a point2D TypedDict can have any of the keys omitted. A type
    checker is only expected to support a literal False or True as the value of
    the total argument. True is the default, and makes all items defined in the
    class body be required.
@@ -1020,9 +1021,9 @@ The module defines the following classes, functions and decorators:
    ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
-.. function:: NewType(typ)
+.. function:: NewType(name, tp)
 
-   A helper function to indicate a distinct types to a typechecker,
+   A helper function to indicate a distinct type to a typechecker,
    see :ref:`distinct`. At runtime it returns a function that returns
    its argument. Usage::
 

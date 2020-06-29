@@ -40,6 +40,7 @@ from itertools import cycle, count
 from test import support
 from test.support.script_helper import (
     assert_python_ok, assert_python_failure, run_python_until_end)
+from test.support import threading_helper
 from test.support import FakePath
 
 import codecs
@@ -1472,7 +1473,7 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
                         errors.append(e)
                         raise
                 threads = [threading.Thread(target=f) for x in range(20)]
-                with support.start_threads(threads):
+                with threading_helper.start_threads(threads):
                     time.sleep(0.02) # yield
                 self.assertFalse(errors,
                     "the following exceptions were caught: %r" % errors)
@@ -1585,6 +1586,22 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
         # Issue #17275
         with self.assertRaisesRegex(TypeError, "BufferedReader"):
             self.tp(io.BytesIO(), 1024, 1024, 1024)
+
+    def test_bad_readinto_value(self):
+        rawio = io.BufferedReader(io.BytesIO(b"12"))
+        rawio.readinto = lambda buf: -1
+        bufio = self.tp(rawio)
+        with self.assertRaises(OSError) as cm:
+            bufio.readline()
+        self.assertIsNone(cm.exception.__cause__)
+
+    def test_bad_readinto_type(self):
+        rawio = io.BufferedReader(io.BytesIO(b"12"))
+        rawio.readinto = lambda buf: b''
+        bufio = self.tp(rawio)
+        with self.assertRaises(OSError) as cm:
+            bufio.readline()
+        self.assertIsInstance(cm.exception.__cause__, TypeError)
 
 
 class PyBufferedReaderTest(BufferedReaderTest):
@@ -1836,7 +1853,7 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
                         errors.append(e)
                         raise
                 threads = [threading.Thread(target=f) for x in range(20)]
-                with support.start_threads(threads):
+                with threading_helper.start_threads(threads):
                     time.sleep(0.02) # yield
                 self.assertFalse(errors,
                     "the following exceptions were caught: %r" % errors)
@@ -3270,7 +3287,7 @@ class TextIOWrapperTest(unittest.TestCase):
                 f.write(text)
             threads = [threading.Thread(target=run, args=(x,))
                        for x in range(20)]
-            with support.start_threads(threads, event.set):
+            with threading_helper.start_threads(threads, event.set):
                 time.sleep(0.02)
         with self.open(support.TESTFN) as f:
             content = f.read()
@@ -3900,6 +3917,16 @@ class MiscIOTest(unittest.TestCase):
         self.assertEqual(f.mode, "wb")
         f.close()
 
+        with support.check_warnings(('', DeprecationWarning)):
+            f = self.open(support.TESTFN, "U")
+        self.assertEqual(f.name,            support.TESTFN)
+        self.assertEqual(f.buffer.name,     support.TESTFN)
+        self.assertEqual(f.buffer.raw.name, support.TESTFN)
+        self.assertEqual(f.mode,            "U")
+        self.assertEqual(f.buffer.mode,     "rb")
+        self.assertEqual(f.buffer.raw.mode, "rb")
+        f.close()
+
         f = self.open(support.TESTFN, "w+")
         self.assertEqual(f.mode,            "w+")
         self.assertEqual(f.buffer.mode,     "rb+") # Does it really matter?
@@ -3912,13 +3939,6 @@ class MiscIOTest(unittest.TestCase):
         self.assertEqual(g.raw.name, f.fileno())
         f.close()
         g.close()
-
-    def test_removed_u_mode(self):
-        # "U" mode has been removed in Python 3.9
-        for mode in ("U", "rU", "r+U"):
-            with self.assertRaises(ValueError) as cm:
-                self.open(support.TESTFN, mode)
-            self.assertIn('invalid mode', str(cm.exception))
 
     def test_open_pipe_with_append(self):
         # bpo-27805: Ignore ESPIPE from lseek() in open().
@@ -4244,7 +4264,8 @@ class CMiscIOTest(MiscIOTest):
         err = res.err.decode()
         if res.rc != 0:
             # Failure: should be a fatal error
-            pattern = (r"Fatal Python error: could not acquire lock "
+            pattern = (r"Fatal Python error: _enter_buffered_busy: "
+                       r"could not acquire lock "
                        r"for <(_io\.)?BufferedWriter name='<{stream_name}>'> "
                        r"at interpreter shutdown, possibly due to "
                        r"daemon threads".format_map(locals()))

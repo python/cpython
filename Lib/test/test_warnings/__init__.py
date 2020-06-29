@@ -940,8 +940,8 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
             """))
 
         def run(*args):
-            res = assert_python_ok(*args)
-            stderr = res.err.decode('ascii', 'replace')
+            res = assert_python_ok(*args, PYTHONIOENCODING='utf-8')
+            stderr = res.err.decode('utf-8', 'replace')
             stderr = '\n'.join(stderr.splitlines())
 
             # normalize newlines
@@ -1198,13 +1198,13 @@ class EnvironmentVariableTests(BaseTest):
     @unittest.skipUnless(sys.getfilesystemencoding() != 'ascii',
                          'requires non-ascii filesystemencoding')
     def test_nonascii(self):
+        PYTHONWARNINGS="ignore:DeprecationWarning" + support.FS_NONASCII
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
             PYTHONIOENCODING="utf-8",
-            PYTHONWARNINGS="ignore:DeprecaciónWarning",
+            PYTHONWARNINGS=PYTHONWARNINGS,
             PYTHONDEVMODE="")
-        self.assertEqual(stdout,
-            "['ignore:DeprecaciónWarning']".encode('utf-8'))
+        self.assertEqual(stdout, str([PYTHONWARNINGS]).encode())
 
 class CEnvironmentVariableTests(EnvironmentVariableTests, unittest.TestCase):
     module = c_warnings

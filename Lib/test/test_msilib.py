@@ -42,6 +42,16 @@ class MsiDatabaseTestCase(unittest.TestCase):
         )
         self.addCleanup(unlink, db_path)
 
+    def test_view_non_ascii(self):
+        db, db_path = init_database()
+        view = db.OpenView("SELECT 'ß-розпад' FROM Property")
+        view.Execute(None)
+        record = view.Fetch()
+        self.assertEqual(record.GetString(1), 'ß-розпад')
+        view.Close()
+        db.Close()
+        self.addCleanup(unlink, db_path)
+
     def test_summaryinfo_getproperty_issue1104(self):
         db, db_path = init_database()
         try:

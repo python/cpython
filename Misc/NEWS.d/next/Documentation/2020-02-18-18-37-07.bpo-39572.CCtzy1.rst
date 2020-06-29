@@ -1,1 +1,0 @@
-Updated documentation of ``total`` flag of TypeDict.

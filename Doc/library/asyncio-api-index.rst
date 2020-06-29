@@ -48,6 +48,9 @@ await on multiple things with timeouts.
     * - :class:`Task`
       - Task object.
 
+    * - :func:`to_thread`
+      - Asychronously run a function in a separate OS thread.
+
     * - :func:`run_coroutine_threadsafe`
       - Schedule a coroutine from another OS thread.
 

@@ -43,9 +43,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: abs(x)
 
    Return the absolute value of a number.  The argument may be an
-   integer or a floating point number.  If the argument is a complex number, its
-   magnitude is returned. If *x* defines :meth:`__abs__`,
-   ``abs(x)`` returns ``x.__abs__()``.
+   integer, a floating point number, or an object implementing :meth:`__abs__`.
+   If the argument is a complex number, its magnitude is returned.
 
 
 .. function:: all(iterable)
@@ -1090,6 +1089,12 @@ are always available.  They are listed here in alphabetical order.
    first decoded using a platform-dependent encoding or using the specified
    *encoding* if given.
 
+   There is an additional mode character permitted, ``'U'``, which no longer
+   has any effect, and is considered deprecated. It previously enabled
+   :term:`universal newlines` in text mode, which became the default behaviour
+   in Python 3.0. Refer to the documentation of the
+   :ref:`newline <open-newline-parameter>` parameter for further details.
+
    .. note::
 
       Python doesn't depend on the underlying operating system's notion of text
@@ -1246,6 +1251,10 @@ are always available.  They are listed here in alphabetical order.
 
          * The file is now non-inheritable.
 
+   .. deprecated-removed:: 3.4 3.10
+
+      The ``'U'`` mode.
+
    .. versionchanged::
       3.5
 
@@ -1260,10 +1269,6 @@ are always available.  They are listed here in alphabetical order.
          * Support added to accept objects implementing :class:`os.PathLike`.
          * On Windows, opening a console buffer may return a subclass of
            :class:`io.RawIOBase` other than :class:`io.FileIO`.
-
-   .. versionchanged:: 3.9
-      The ``'U'`` mode has been removed.
-
 
 .. function:: ord(c)
 
@@ -1305,7 +1310,7 @@ are always available.  They are listed here in alphabetical order.
       the second argument to be negative, permitting computation of modular
       inverses.
 
-   .. versionchanged:: 3.9
+   .. versionchanged:: 3.8
       Allow keyword arguments.  Formerly, only positional arguments were
       supported.
 
@@ -1715,50 +1720,90 @@ are always available.  They are listed here in alphabetical order.
    dictionary are ignored.
 
 
-.. function:: zip(*iterables)
+.. function:: zip(*iterables, strict=False)
 
-   Make an iterator that aggregates elements from each of the iterables.
+   Iterate over several iterables in parallel, producing tuples with an item
+   from each one.
 
-   Returns an iterator of tuples, where the *i*-th tuple contains
-   the *i*-th element from each of the argument sequences or iterables.  The
-   iterator stops when the shortest input iterable is exhausted. With a single
-   iterable argument, it returns an iterator of 1-tuples.  With no arguments,
-   it returns an empty iterator.  Equivalent to::
+   Example::
 
-        def zip(*iterables):
-            # zip('ABCD', 'xy') --> Ax By
-            sentinel = object()
-            iterators = [iter(it) for it in iterables]
-            while iterators:
-                result = []
-                for it in iterators:
-                    elem = next(it, sentinel)
-                    if elem is sentinel:
-                        return
-                    result.append(elem)
-                yield tuple(result)
+      >>> for item in zip([1, 2, 3], ['sugar', 'spice', 'everything nice']):
+      ...     print(item)
+      ...
+      (1, 'sugar')
+      (2, 'spice')
+      (3, 'everything nice')
 
-   The left-to-right evaluation order of the iterables is guaranteed. This
-   makes possible an idiom for clustering a data series into n-length groups
-   using ``zip(*[iter(s)]*n)``.  This repeats the *same* iterator ``n`` times
-   so that each output tuple has the result of ``n`` calls to the iterator.
-   This has the effect of dividing the input into n-length chunks.
+   More formally: :func:`zip` returns an iterator of tuples, where the *i*-th
+   tuple contains the *i*-th element from each of the argument iterables.
 
-   :func:`zip` should only be used with unequal length inputs when you don't
-   care about trailing, unmatched values from the longer iterables.  If those
-   values are important, use :func:`itertools.zip_longest` instead.
+   Another way to think of :func:`zip` is that it turns rows into columns, and
+   columns into rows.  This is similar to `transposing a matrix
+   <https://en.wikipedia.org/wiki/Transpose>`_.
 
-   :func:`zip` in conjunction with the ``*`` operator can be used to unzip a
-   list::
+   :func:`zip` is lazy: The elements won't be processed until the iterable is
+   iterated on, e.g. by a :keyword:`!for` loop or by wrapping in a
+   :class:`list`.
 
-      >>> x = [1, 2, 3]
-      >>> y = [4, 5, 6]
-      >>> zipped = zip(x, y)
-      >>> list(zipped)
-      [(1, 4), (2, 5), (3, 6)]
-      >>> x2, y2 = zip(*zip(x, y))
-      >>> x == list(x2) and y == list(y2)
-      True
+   One thing to consider is that the iterables passed to :func:`zip` could have
+   different lengths; sometimes by design, and sometimes because of a bug in
+   the code that prepared these iterables.  Python offers three different
+   approaches to dealing with this issue:
+
+   * By default, :func:`zip` stops when the shortest iterable is exhausted.
+     It will ignore the remaining items in the longer iterables, cutting off
+     the result to the length of the shortest iterable::
+
+        >>> list(zip(range(3), ['fee', 'fi', 'fo', 'fum']))
+        [(0, 'fee'), (1, 'fi'), (2, 'fo')]
+
+   * :func:`zip` is often used in cases where the iterables are assumed to be
+     of equal length.  In such cases, it's recommended to use the ``strict=True``
+     option. Its output is the same as regular :func:`zip`::
+
+        >>> list(zip(('a', 'b', 'c'), (1, 2, 3), strict=True))
+        [('a', 1), ('b', 2), ('c', 3)]
+
+     Unlike the default behavior, it checks that the lengths of iterables are
+     identical, raising a :exc:`ValueError` if they aren't:
+
+        >>> list(zip(range(3), ['fee', 'fi', 'fo', 'fum'], strict=True))
+        Traceback (most recent call last):
+          ...
+        ValueError: zip() argument 2 is longer than argument 1
+
+     Without the ``strict=True`` argument, any bug that results in iterables of
+     different lengths will be silenced, possibly manifesting as a hard-to-find
+     bug in another part of the program.
+
+   * Shorter iterables can be padded with a constant value to make all the
+     iterables have the same length.  This is done by
+     :func:`itertools.zip_longest`.
+
+   Edge cases: With a single iterable argument, :func:`zip` returns an
+   iterator of 1-tuples.  With no arguments, it returns an empty iterator.
+
+   Tips and tricks:
+
+   * The left-to-right evaluation order of the iterables is guaranteed. This
+     makes possible an idiom for clustering a data series into n-length groups
+     using ``zip(*[iter(s)]*n, strict=True)``.  This repeats the *same* iterator
+     ``n`` times so that each output tuple has the result of ``n`` calls to the
+     iterator. This has the effect of dividing the input into n-length chunks.
+
+   * :func:`zip` in conjunction with the ``*`` operator can be used to unzip a
+     list::
+
+        >>> x = [1, 2, 3]
+        >>> y = [4, 5, 6]
+        >>> list(zip(x, y))
+        [(1, 4), (2, 5), (3, 6)]
+        >>> x2, y2 = zip(*zip(x, y))
+        >>> x == list(x2) and y == list(y2)
+        True
+
+   .. versionchanged:: 3.10
+      Added the ``strict`` argument.
 
 
 .. function:: __import__(name, globals=None, locals=None, fromlist=(), level=0)
@@ -1829,6 +1874,9 @@ are always available.  They are listed here in alphabetical order.
       Negative values for *level* are no longer supported (which also changes
       the default value to 0).
 
+   .. versionchanged:: 3.9
+      When the command line options :option:`-E` or :option:`-I` are being used,
+      the environment variable :envvar:`PYTHONCASEOK` is now ignored.
 
 .. rubric:: Footnotes
 

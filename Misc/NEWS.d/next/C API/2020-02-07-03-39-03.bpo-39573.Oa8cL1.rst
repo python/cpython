@@ -1,1 +1,0 @@
-Add :c:func:`Py_SET_TYPE` function to set the type of an object.

@@ -1,1 +1,0 @@
-Fix sys.exit() and sys.exit(None) exit code propagation when used in multiprocessing.Process.

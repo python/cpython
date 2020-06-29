@@ -1,4 +1,3 @@
-import contextlib
 import errno
 import importlib
 import io
@@ -14,6 +13,7 @@ import time
 import unittest
 from test import support
 from test.support import script_helper
+from test.support import socket_helper
 
 TESTFN = support.TESTFN
 
@@ -91,17 +91,17 @@ class TestSupport(unittest.TestCase):
             support.rmtree('__pycache__')
 
     def test_HOST(self):
-        s = socket.create_server((support.HOST, 0))
+        s = socket.create_server((socket_helper.HOST, 0))
         s.close()
 
     def test_find_unused_port(self):
-        port = support.find_unused_port()
-        s = socket.create_server((support.HOST, port))
+        port = socket_helper.find_unused_port()
+        s = socket.create_server((socket_helper.HOST, port))
         s.close()
 
     def test_bind_port(self):
         s = socket.socket()
-        support.bind_port(s)
+        socket_helper.bind_port(s)
         s.listen()
         s.close()
 
@@ -176,13 +176,10 @@ class TestSupport(unittest.TestCase):
             with support.temp_cwd() as temp_path:
                 pid = os.fork()
                 if pid != 0:
-                    # parent process (child has pid == 0)
+                    # parent process
 
                     # wait for the child to terminate
-                    (pid, status) = os.waitpid(pid, 0)
-                    if status != 0:
-                        raise AssertionError(f"Child process failed with exit "
-                                             f"status indication 0x{status:x}.")
+                    support.wait_process(pid, exitcode=0)
 
                     # Make sure that temp_path is still present. When the child
                     # process leaves the 'temp_cwd'-context, the __exit__()-
@@ -433,8 +430,12 @@ class TestSupport(unittest.TestCase):
                 if time.monotonic() > deadline:
                     self.fail("timeout")
 
-                with contextlib.redirect_stderr(stderr):
+                old_stderr = sys.__stderr__
+                try:
+                    sys.__stderr__ = stderr
                     support.reap_children()
+                finally:
+                    sys.__stderr__ = old_stderr
 
                 # Use environment_altered to check if reap_children() found
                 # the child process
@@ -632,6 +633,24 @@ class TestSupport(unittest.TestCase):
             os.close(fd)
         self.assertEqual(more - start, 1)
 
+    def check_print_warning(self, msg, expected):
+        stderr = io.StringIO()
+
+        old_stderr = sys.__stderr__
+        try:
+            sys.__stderr__ = stderr
+            support.print_warning(msg)
+        finally:
+            sys.__stderr__ = old_stderr
+
+        self.assertEqual(stderr.getvalue(), expected)
+
+    def test_print_warning(self):
+        self.check_print_warning("msg",
+                                 "Warning -- msg\n")
+        self.check_print_warning("a\nb",
+                                 'Warning -- a\nWarning -- b\n')
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled
@@ -641,7 +660,6 @@ class TestSupport(unittest.TestCase):
     # findfile
     # check_warnings
     # EnvironmentVarGuard
-    # TransientResource
     # transient_internet
     # run_with_locale
     # set_memlimit

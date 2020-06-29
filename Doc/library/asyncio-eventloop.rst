@@ -191,8 +191,8 @@ Scheduling callbacks
 
 .. method:: loop.call_soon(callback, *args, context=None)
 
-   Schedule a *callback* to be called with *args* arguments at
-   the next iteration of the event loop.
+   Schedule the *callback* :term:`callback` to be called with
+   *args* arguments at the next iteration of the event loop.
 
    Callbacks are called in the order in which they are registered.
    Each callback will be called exactly once.
@@ -450,6 +450,17 @@ Opening network connections
    .. versionadded:: 3.8
 
       Added the *happy_eyeballs_delay* and *interleave* parameters.
+
+      Happy Eyeballs Algorithm: Success with Dual-Stack Hosts.
+      When a server's IPv4 path and protocol are working, but the server's
+      IPv6 path and protocol are not working, a dual-stack client
+      application experiences significant connection delay compared to an
+      IPv4-only client.  This is undesirable because it causes the dual-
+      stack client to have a worse user experience.  This document
+      specifies requirements for algorithms that reduce this user-visible
+      delay and provides an algorithm.
+
+      For more information: https://tools.ietf.org/html/rfc6555
 
    .. versionadded:: 3.7
 

@@ -20,7 +20,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Python</string>
 	<key>CFBundleGetInfoString</key>
-	<string>%version%, (c) 2001-2016 Python Software Foundation.</string>
+	<string>%version%, (c) 2001-2020 Python Software Foundation.</string>
 	<key>CFBundleHelpBookFolder</key>
 	<array>
 		<string>Documentation</string>
@@ -55,7 +55,7 @@
 	<key>NSAppleScriptEnabled</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>(c) 2001-2016 Python Software Foundation.</string>
+	<string>(c) 2001-2020 Python Software Foundation.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 </dict>

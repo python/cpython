@@ -134,8 +134,7 @@ class BaseCompressTestCase(object):
         # Generate 10 MiB worth of random, and expand it by repeating it.
         # The assumption is that zlib's memory is not big enough to exploit
         # such spread out redundancy.
-        data = b''.join([random.getrandbits(8 * _1M).to_bytes(_1M, 'little')
-                        for i in range(10)])
+        data = random.randbytes(_1M * 10)
         data = data * (size // len(data) + 1)
         try:
             compress_func(data)
@@ -488,7 +487,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
                 # others might simply have a single RNG
                 gen = random
         gen.seed(1)
-        data = genblock(1, 17 * 1024, generator=gen)
+        data = gen.randbytes(17 * 1024)
 
         # compress, sync-flush, and decompress
         first = co.compress(data)
@@ -825,27 +824,12 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         self.assertEqual(dco.decompress(gzip), HAMLET_SCENE)
 
 
-def genblock(seed, length, step=1024, generator=random):
-    """length-byte stream of random data from a seed (in step-byte blocks)."""
-    if seed is not None:
-        generator.seed(seed)
-    randint = generator.randint
-    if length < step or step < 2:
-        step = length
-    blocks = bytes()
-    for i in range(0, length, step):
-        blocks += bytes(randint(0, 255) for x in range(step))
-    return blocks
-
-
-
 def choose_lines(source, number, seed=None, generator=random):
     """Return a list of number lines randomly chosen from the source"""
     if seed is not None:
         generator.seed(seed)
     sources = source.split('\n')
     return [generator.choice(sources) for n in range(number)]
-
 
 
 HAMLET_SCENE = b"""

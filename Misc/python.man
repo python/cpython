@@ -413,6 +413,8 @@ inserted in the path in front of $PYTHONPATH.
 The search path can be manipulated from within a Python program as the
 variable
 .IR sys.path .
+.IP PYTHONPLATLIBDIR
+Override sys.platlibdir.
 .IP PYTHONSTARTUP
 If this is the name of a readable file, the Python commands in that
 file are executed before the first prompt is displayed in interactive

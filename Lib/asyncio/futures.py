@@ -51,6 +51,9 @@ class Future:
     _exception = None
     _loop = None
     _source_traceback = None
+    _cancel_message = None
+    # A saved CancelledError for later chaining as an exception context.
+    _cancelled_exc = None
 
     # This field is used for a dual purpose:
     # - Its presence is a marker to declare that a class implements
@@ -123,7 +126,22 @@ class Future:
             raise RuntimeError("Future object is not initialized.")
         return loop
 
-    def cancel(self):
+    def _make_cancelled_error(self):
+        """Create the CancelledError to raise if the Future is cancelled.
+
+        This should only be called once when handling a cancellation since
+        it erases the saved context exception value.
+        """
+        if self._cancel_message is None:
+            exc = exceptions.CancelledError()
+        else:
+            exc = exceptions.CancelledError(self._cancel_message)
+        exc.__context__ = self._cancelled_exc
+        # Remove the reference since we don't need this anymore.
+        self._cancelled_exc = None
+        return exc
+
+    def cancel(self, msg=None):
         """Cancel the future and schedule callbacks.
 
         If the future is already done or cancelled, return False.  Otherwise,
@@ -134,6 +152,7 @@ class Future:
         if self._state != _PENDING:
             return False
         self._state = _CANCELLED
+        self._cancel_message = msg
         self.__schedule_callbacks()
         return True
 
@@ -173,7 +192,8 @@ class Future:
         the future is done and has an exception set, this exception is raised.
         """
         if self._state == _CANCELLED:
-            raise exceptions.CancelledError
+            exc = self._make_cancelled_error()
+            raise exc
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Result is not ready.')
         self.__log_traceback = False
@@ -190,7 +210,8 @@ class Future:
         InvalidStateError.
         """
         if self._state == _CANCELLED:
-            raise exceptions.CancelledError
+            exc = self._make_cancelled_error()
+            raise exc
         if self._state != _FINISHED:
             raise exceptions.InvalidStateError('Exception is not set.')
         self.__log_traceback = False

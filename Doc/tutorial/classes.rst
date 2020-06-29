@@ -323,7 +323,7 @@ Instance Objects
 
 Now what can we do with instance objects?  The only operations understood by
 instance objects are attribute references.  There are two kinds of valid
-attribute names, data attributes and methods.
+attribute names: data attributes and methods.
 
 *data attributes* correspond to "instance variables" in Smalltalk, and to "data
 members" in C++.  Data attributes need not be declared; like local variables,

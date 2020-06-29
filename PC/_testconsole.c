@@ -55,10 +55,9 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
     const wchar_t *p = (const wchar_t *)PyBytes_AS_STRING(s);
     DWORD size = (DWORD)PyBytes_GET_SIZE(s) / sizeof(wchar_t);
 
-    rec = (INPUT_RECORD*)PyMem_Malloc(sizeof(INPUT_RECORD) * size);
+    rec = (INPUT_RECORD*)PyMem_Calloc(size, sizeof(INPUT_RECORD));
     if (!rec)
         goto error;
-    memset(rec, 0, sizeof(INPUT_RECORD) * size);
 
     INPUT_RECORD *prec = rec;
     for (DWORD i = 0; i < size; ++i, ++p, ++prec) {
