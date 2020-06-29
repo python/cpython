@@ -524,7 +524,8 @@ non-important content
                              # This looks like a nested format spec.
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: invalid syntax",
+        err_msg = "invalid syntax" if use_old_parser() else "f-string: invalid syntax"
+        self.assertAllRaise(SyntaxError, err_msg,
                             [# Invalid syntax inside a nested spec.
                              "f'{4:{/5}}'",
                              ])
@@ -598,7 +599,8 @@ non-important content
         #  are added around it. But we shouldn't go from an invalid
         #  expression to a valid one. The added parens are just
         #  supposed to allow whitespace (including newlines).
-        self.assertAllRaise(SyntaxError, 'f-string: invalid syntax',
+        err_msg = "invalid syntax" if use_old_parser() else "f-string: invalid syntax"
+        self.assertAllRaise(SyntaxError, err_msg,
                             ["f'{,}'",
                              "f'{,}'",  # this is (,), which is an error
                              ])
@@ -716,7 +718,8 @@ non-important content
 
         # lambda doesn't work without parens, because the colon
         #  makes the parser think it's a format_spec
-        self.assertAllRaise(SyntaxError, 'f-string: invalid syntax',
+        err_msg = "invalid syntax" if use_old_parser() else "f-string: invalid syntax"
+        self.assertAllRaise(SyntaxError, err_msg,
                             ["f'{lambda x:x}'",
                              ])
 
@@ -1201,7 +1204,8 @@ non-important content
         self.assertEqual(x, 10)
 
     def test_invalid_syntax_error_message(self):
-        with self.assertRaisesRegex(SyntaxError, "f-string: invalid syntax"):
+        err_msg = "invalid syntax" if use_old_parser() else "f-string: invalid syntax"
+        with self.assertRaisesRegex(SyntaxError, err_msg):
             compile("f'{a $ b}'", "?", "exec")
 
 
