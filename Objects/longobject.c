@@ -2504,17 +2504,6 @@ _PyLong_FromBytes(const char *s, Py_ssize_t len, int base)
 }
 
 PyObject *
-PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
-{
-    PyObject *v, *unicode = PyUnicode_FromWideChar(u, length);
-    if (unicode == NULL)
-        return NULL;
-    v = PyLong_FromUnicodeObject(unicode, base);
-    Py_DECREF(unicode);
-    return v;
-}
-
-PyObject *
 PyLong_FromUnicodeObject(PyObject *u, int base)
 {
     PyObject *result, *asciidig;
