@@ -223,3 +223,6 @@ Removed
    * ``Py_UNICODE_strncmp``: use :c:func:`PyUnicode_Tailmatch`
    * ``Py_UNICODE_strchr``, ``Py_UNICODE_strrchr``: use
      :c:func:`PyUnicode_FindChar`
+
+* Removed ``PyUnicode_GetMax()``. Please migrate to new (:pep:`393`) APIs.
+  (Contributed by Inada Naoki in :issue:`41103`.)
