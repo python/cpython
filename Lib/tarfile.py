@@ -2089,9 +2089,9 @@ class TarFile(object):
 
     def extractfile(self, member):
         """Extract a member from the archive as a file object. `member' may be
-           a filename or a TarInfo object. If member is a regular file or
+           a filename or a TarInfo object. If `member' is a regular file or
            a link, an io.BufferedReader object is returned. For all other
-           existing members, None is returned. If member does not appear
+           existing members, None is returned. If `member' does not appear
            in the archive, KeyError is raised.
         """
         self._check("r")
