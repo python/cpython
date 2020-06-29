@@ -445,10 +445,10 @@ be finalized; only the internally used file object will be closed. See the
 .. method:: TarFile.extractfile(member)
 
    Extract a member from the archive as a file object. *member* may be
-   a filename or a TarInfo object. If member is a regular file or
-   a link, an io.BufferedReader object is returned. For all other
-   existing members, None is returned. If member does not appear
-   in the archive, KeyError is raised.
+   a filename or a :class:`TarInfo` object. If *member* is a regular file or
+   a link, an :class:`io.BufferedReader` object is returned. For all other
+   existing members, :const:`None` is returned. If *member* does not appear
+   in the archive, :exc:`KeyError` is raised.
 
    .. versionchanged:: 3.3
       Return an :class:`io.BufferedReader` object.
