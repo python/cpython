@@ -424,6 +424,8 @@ PyConfig
       :c:member:`~PyConfig.argv` is empty, an empty string is added to ensure
       that :data:`sys.argv` always exists and is never empty.
 
+      See also the :c:member:`~PyConfig.orig_argv` member.
+
    .. c:member:: wchar_t* base_exec_prefix
 
       :data:`sys.base_exec_prefix`.
@@ -588,18 +590,20 @@ PyConfig
 
    .. c:member:: PyWideStringList orig_argv
 
-       Original command line arguments.
+      The list of the original command line arguments passed to the Python
+      executable.
 
-       If :c:member:`~PyConfig.orig_argv` list is empty and
-       :c:member:`~PyConfig.argv` is not a list only containing an empty
-       string, :c:func:`PyConfig_Read()` copies :c:member:`~PyConfig.argv` into
-       :c:member:`~PyConfig.orig_argv` before modifying
-       :c:member:`~PyConfig.argv` (if :c:member:`~PyConfig.parse_argv` is
-       non-zero).
+      If :c:member:`~PyConfig.orig_argv` list is empty and
+      :c:member:`~PyConfig.argv` is not a list only containing an empty
+      string, :c:func:`PyConfig_Read()` copies :c:member:`~PyConfig.argv` into
+      :c:member:`~PyConfig.orig_argv` before modifying
+      :c:member:`~PyConfig.argv` (if :c:member:`~PyConfig.parse_argv` is
+      non-zero).
 
-       See also :c:func:`Py_GetArgcArgv` function.
+      See also the :c:member:`~PyConfig.argv` member and the
+      :c:func:`Py_GetArgcArgv` function.
 
-       .. versionadded:: 3.10
+      .. versionadded:: 3.10
 
    .. c:member:: int parse_argv
 

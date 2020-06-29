@@ -408,12 +408,12 @@ typedef struct {
        Default: 0. */
     int _isolated_interpreter;
 
-    /* Original command line arguments.
+    /* The list of the original command line arguments passed to the Python
+       executable.
 
        If 'orig_argv' list is empty and 'argv' is not a list only containing an
        empty string, PyConfig_Read() copies 'argv' into 'orig_argv' before
        modifying 'argv' (if 'parse_argv is non-zero).
-
 
        _PyConfig_Write() initializes Py_GetArgcArgv() to this list. */
     PyWideStringList orig_argv;
