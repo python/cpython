@@ -3374,20 +3374,81 @@ class unicode_converter(CConverter):
                            displayname=displayname)
         return super().parse_arg(argname, displayname)
 
+@add_legacy_c_converter('u')
 @add_legacy_c_converter('u#', zeroes=True)
 @add_legacy_c_converter('Z', accept={str, NoneType})
 @add_legacy_c_converter('Z#', accept={str, NoneType}, zeroes=True)
 class Py_UNICODE_converter(CConverter):
     type = 'const Py_UNICODE *'
     default_type = (str, Null, NoneType)
-    format_unit = 'u'
 
     def converter_init(self, *, accept={str}, zeroes=False):
         format_unit = 'Z' if accept=={str, NoneType} else 'u'
         if zeroes:
             format_unit += '#'
             self.length = True
-        self.format_unit = format_unit
+            self.format_unit = format_unit
+        else:
+            self.accept = accept
+            if accept == {str}:
+                self.converter = '_PyUnicode_WideCharString_Converter'
+            elif accept == {str, NoneType}:
+                self.converter = '_PyUnicode_WideCharString_Opt_Converter'
+            else:
+                fail("Py_UNICODE_converter: illegal 'accept' argument " + repr(accept))
+
+    def cleanup(self):
+        if not self.length:
+            return """\
+#if !USE_UNICODE_WCHAR_CACHE
+PyMem_Free((void *){name});
+#endif /* USE_UNICODE_WCHAR_CACHE */
+""".format(name=self.name)
+
+    def parse_arg(self, argname, argnum):
+        if not self.length:
+            if self.accept == {str}:
+                return """
+                    if (!PyUnicode_Check({argname})) {{{{
+                        _PyArg_BadArgument("{{name}}", {argnum}, "str", {argname});
+                        goto exit;
+                    }}}}
+                    #if USE_UNICODE_WCHAR_CACHE
+                    _Py_COMP_DIAG_PUSH
+                    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+                    {paramname} = _PyUnicode_AsUnicode({argname});
+                    _Py_COMP_DIAG_POP
+                    #else /* USE_UNICODE_WCHAR_CACHE */
+                    {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
+                    #endif /* USE_UNICODE_WCHAR_CACHE */
+                    if ({paramname} == NULL) {{{{
+                        goto exit;
+                    }}}}
+                    """.format(argname=argname, paramname=self.name, argnum=argnum)
+            elif self.accept == {str, NoneType}:
+                return """
+                    if ({argname} == Py_None) {{{{
+                        {paramname} = NULL;
+                    }}}}
+                    else if (PyUnicode_Check({argname})) {{{{
+                        #if USE_UNICODE_WCHAR_CACHE
+                        _Py_COMP_DIAG_PUSH
+                        _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+                        {paramname} = _PyUnicode_AsUnicode({argname});
+                        _Py_COMP_DIAG_POP
+                        #else /* USE_UNICODE_WCHAR_CACHE */
+                        {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
+                        #endif /* USE_UNICODE_WCHAR_CACHE */
+                        if ({paramname} == NULL) {{{{
+                            goto exit;
+                        }}}}
+                    }}}}
+                    else {{{{
+                        _PyArg_BadArgument("{{name}}", {argnum}, "str or None", {argname});
+                        goto exit;
+                    }}}}
+                    """.format(argname=argname, paramname=self.name, argnum=argnum)
+        return super().parse_arg(argname, argnum)
 
 @add_legacy_c_converter('s*', accept={str, buffer})
 @add_legacy_c_converter('z*', accept={str, buffer, NoneType})
