@@ -226,3 +226,6 @@ Removed
 
 * Removed ``PyUnicode_GetMax()``. Please migrate to new (:pep:`393`) APIs.
   (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``PyLong_FromUnicode()``. Please migrate to :c:func:`PyLong_FromUnicodeObject`.
+  (Contributed by Inada Naoki in :issue:`41103`.)

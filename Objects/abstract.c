@@ -1429,7 +1429,7 @@ PyNumber_Long(PyObject *o)
         return NULL;
 
     if (PyUnicode_Check(o))
-        /* The below check is done in PyLong_FromUnicode(). */
+        /* The below check is done in PyLong_FromUnicodeObject(). */
         return PyLong_FromUnicodeObject(o, 10);
 
     if (PyBytes_Check(o))
