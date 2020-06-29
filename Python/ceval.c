@@ -867,10 +867,9 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, PyObject *
     }
     for (Py_ssize_t i = 0; i < nkeys; i++) {
         PyObject *key = PyTuple_GET_ITEM(keys, i);
-        int dupe = PySequence_Contains(seen, key);
-        if (dupe || PyList_Append(seen, key)) {
+        if (PySequence_Contains(seen, key) || PyList_Append(seen, key)) {
             if (!_PyErr_Occurred(tstate)) {
-                _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
+                _PyErr_Format(tstate, PyExc_ValueError,
                               "mapping pattern checks duplicate key (%R)", key);
             }
             goto fail;
@@ -937,7 +936,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
     if (!method || method == Py_None) {
         Py_XDECREF(method);
         _PyErr_Clear(tstate);
-        _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
+        _PyErr_Format(tstate, PyExc_TypeError,
                       "type %s cannot be matched",
                       ((PyTypeObject *)type)->tp_name);
         return NULL;
@@ -959,49 +958,38 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
     }
     Py_ssize_t nmatch_args;
     if (!nargs) {
+        nmatch_args = 0;
         args = PyTuple_New(0);
         if (!args) {
             goto error;
         }
     }
     else if (!match_args) {
-        if (!PyType_HasFeature((PyTypeObject *)type, _Py_TPFLAGS_SIMPLE_MATCH)) {
-            nmatch_args = 0;
-            // TODO: Combine with below (and reword for 0):
-            _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
-                "%s() takes at most %d positional sub-patterns (%d given)",
-                ((PyTypeObject *)type)->tp_name, nmatch_args, nargs);
-            goto error;
-        }
-        nmatch_args = 1;
-        if (nargs > 1) {
-            // TODO: Combine with above (and reword for 0):
-            _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
-                "%s() takes at most %d positional sub-patterns (%d given)",
-                ((PyTypeObject *)type)->tp_name, nmatch_args, nargs);
-            goto error;
-        }
+        nmatch_args = PyType_HasFeature((PyTypeObject *)type,
+                                        _Py_TPFLAGS_SIMPLE_MATCH);
+        args = NULL;
     }
     else {
-        Py_ssize_t nmatch_args = PySequence_Fast_GET_SIZE(match_args);
-        if (nmatch_args < nargs) {
-            // TODO: Combine with above (and reword for 0):
-            _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
-                "%s() takes at most %d positional sub-patterns (%d given)",
-                ((PyTypeObject *)type)->tp_name, nmatch_args, nargs);
-            return NULL;
-        }
-        args = PyList_CheckExact(match_args) ? PyList_GetSlice(match_args, 0, nargs) : PyTuple_GetSlice(match_args, 0, nargs);
+        nmatch_args = PySequence_Fast_GET_SIZE(match_args);
+        args = PyList_CheckExact(match_args)
+               ? PyList_GetSlice(match_args, 0, nargs)
+               : PyTuple_GetSlice(match_args, 0, nargs);
         if (!args) {
             goto error;
         }
+    }
+    if (nmatch_args < nargs) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "%s() accepts %d positional sub-patterns (%d given)",
+                      ((PyTypeObject *)type)->tp_name, nmatch_args, nargs);
+        goto error;
     }
     assert(!args || PyList_CheckExact(args) || PyTuple_CheckExact(args));
     attrs = PyTuple_New(count);
     if (!attrs) {
         goto error;
     }
-    seen = PySet_New(NULL);
+    seen = PyList_New(0);
     if (!seen) {
         goto error;
     }
@@ -1025,10 +1013,9 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         else {
             name = PyTuple_GET_ITEM(kwargs, i - nargs);
         }
-        int dupe = PySet_Contains(seen, name);
-        if (dupe || PySet_Add(seen, name)) {
+        if (PySequence_Contains(seen, name) || PyList_Append(seen, name)) {
             if (!_PyErr_Occurred(tstate)) {
-                _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
+                _PyErr_Format(tstate, PyExc_TypeError,
                     "%s() got multiple sub-patterns for attribute %R",
                     ((PyTypeObject *)type)->tp_name, name);
             }
@@ -1036,17 +1023,12 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         }
         PyObject *attr = PyObject_GetAttr(proxy, name);
         if (!attr) {
-            // TODO: Only clear AttributeError?
-            _PyErr_Clear(tstate);
-            // TODO: iterate manually (and check for strings)
-            if (match_args && !PySequence_Contains(match_args, name)) {
-                _PyErr_Format(tstate, PyExc_ImpossibleMatchError,
-                              "match proxy %R has no attribute %R",
-                              proxy, name);
-                goto error;
+            if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+                _PyErr_Clear(tstate);
+                Py_SETREF(attrs, Py_None);
+                break;
             }
-            Py_SETREF(attrs, Py_None);
-            break;
+            goto error;
         }
         PyTuple_SET_ITEM(attrs, i, attr);
     }
@@ -3545,7 +3527,7 @@ main_loop:
         case TARGET(JUMP_IF_NOT_SEQ): {
             PyObject *target = TOP();
             if (PyType_FastSubclass(Py_TYPE(target),
-                    Py_TPFLAGS_UNICODE_SUBCLASS | Py_TPFLAGS_BYTES_SUBCLASS)
+                    Py_TPFLAGS_BYTES_SUBCLASS | Py_TPFLAGS_UNICODE_SUBCLASS)
                 || PyIter_Check(target)
                 || PyByteArray_Check(target))
             {

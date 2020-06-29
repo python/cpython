@@ -796,7 +796,6 @@ the variables:
    single: PyExc_FloatingPointError
    single: PyExc_GeneratorExit
    single: PyExc_ImportError
-   single: PyExc_ImpossibleMatchError
    single: PyExc_IndentationError
    single: PyExc_IndexError
    single: PyExc_InterruptedError
@@ -872,8 +871,6 @@ the variables:
 | :c:data:`PyExc_GeneratorExit`           | :exc:`GeneratorExit`            |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ImportError`             | :exc:`ImportError`              |          |
-+-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_ImpossibleMatchError`    | :exc:`ImpossibleMatchError`     |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_IndentationError`        | :exc:`IndentationError`         |          |
 +-----------------------------------------+---------------------------------+----------+

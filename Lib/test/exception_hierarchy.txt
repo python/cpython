@@ -46,7 +46,6 @@ BaseException
       |         +-- TabError
       +-- SystemError
       +-- TypeError
-      |    +-- ImpossibleMatchError
       +-- ValueError
       |    +-- UnicodeError
       |         +-- UnicodeDecodeError

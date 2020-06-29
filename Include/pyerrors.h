@@ -107,7 +107,6 @@ PyAPI_DATA(PyObject *) PyExc_ReferenceError;
 PyAPI_DATA(PyObject *) PyExc_SystemError;
 PyAPI_DATA(PyObject *) PyExc_SystemExit;
 PyAPI_DATA(PyObject *) PyExc_TypeError;
-PyAPI_DATA(PyObject *) PyExc_ImpossibleMatchError;
 PyAPI_DATA(PyObject *) PyExc_UnboundLocalError;
 PyAPI_DATA(PyObject *) PyExc_UnicodeError;
 PyAPI_DATA(PyObject *) PyExc_UnicodeEncodeError;

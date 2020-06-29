@@ -180,13 +180,6 @@ The following exceptions are the exceptions that are usually raised.
       Added the :attr:`name` and :attr:`path` attributes.
 
 
-.. exception:: ImpossibleMatchError
-
-   TODO
-
-   .. versionadded:: 3.10
-
-
 .. exception:: ModuleNotFoundError
 
    A subclass of :exc:`ImportError` which is raised by :keyword:`import`
