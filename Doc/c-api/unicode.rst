@@ -724,20 +724,6 @@ Extension modules can continue using them, as they will not be removed in Python
    .. versionadded:: 3.3
 
 
-.. c:function:: Py_UNICODE* PyUnicode_AsUnicodeCopy(PyObject *unicode)
-
-   Create a copy of a Unicode string ending with a null code point. Return ``NULL``
-   and raise a :exc:`MemoryError` exception on memory allocation failure,
-   otherwise return a new allocated buffer (use :c:func:`PyMem_Free` to free
-   the buffer). Note that the resulting :c:type:`Py_UNICODE*` string may
-   contain embedded null code points, which would cause the string to be
-   truncated when used in most C functions.
-
-   .. versionadded:: 3.2
-
-   Please migrate to using :c:func:`PyUnicode_AsUCS4Copy` or similar new APIs.
-
-
 .. c:function:: Py_ssize_t PyUnicode_GetSize(PyObject *unicode)
 
    Return the size of the deprecated :c:type:`Py_UNICODE` representation, in
