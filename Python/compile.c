@@ -4589,8 +4589,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     PyObject *qualname = NULL;
     int scope_type = c->u->u_scope_type;
     int is_async_generator = 0;
+    int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
 
-    if (IS_TOP_LEVEL_AWAIT(c)) {
+    if (is_top_level_await) {
         c->u->u_ste->ste_coroutine = 1;
     }
 
@@ -4605,7 +4606,8 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     if (is_async_generator && type != COMP_GENEXP &&
         scope_type != COMPILER_SCOPE_ASYNC_FUNCTION &&
-        scope_type != COMPILER_SCOPE_COMPREHENSION)
+        scope_type != COMPILER_SCOPE_COMPREHENSION &&
+        !is_top_level_await)
     {
         compiler_error(c, "asynchronous comprehension outside of "
                           "an asynchronous function");
