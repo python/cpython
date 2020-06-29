@@ -66,6 +66,8 @@ always available.
    To loop over the standard input, or the list of files given on the
    command line, see the :mod:`fileinput` module.
 
+   See also :data:`sys.orig_argv`.
+
    .. note::
       On Unix, command line arguments are passed by bytes from OS.  Python decodes
       them with filesystem encoding and "surrogateescape" error handler.
@@ -1035,6 +1037,16 @@ always available.
    loaded.  This can be manipulated to force reloading of modules and other tricks.
    However, replacing the dictionary will not necessarily work as expected and
    deleting essential items from the dictionary may cause Python to fail.
+
+
+.. data:: orig_argv
+
+   The list of the original command line arguments passed to the Python
+   executable.
+
+   See also :data:`sys.argv`.
+
+   .. versionadded:: 3.10
 
 
 .. data:: path
