@@ -213,6 +213,11 @@ Porting to Python 3.10
   for historical reason. It is no longer allowed.
   (Contributed by Victor Stinner in :issue:`40839`.)
 
+* ``PyUnicode_FromUnicode(NULL, size)`` and ``PyUnicode_FromStringAndSize(NULL, size)``
+  raise ``DeprecationWarning`` now.  Use :c:func:`PyUnicode_New` to allocate
+  Unicode object without initial data.
+  (Contributed by Inada Naoki in :issue:`36346`.)
+
 Removed
 -------
 
