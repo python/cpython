@@ -491,6 +491,8 @@ def get_platform_osx(_config_vars, osname, release, machine):
                 machine = 'fat64'
             elif archs == ('i386', 'ppc', 'ppc64', 'x86_64'):
                 machine = 'universal'
+            elif archs == ('arm64', 'x86_64'):
+                machine = 'universal2'
             else:
                 raise ValueError(
                    "Don't know machine value for archs=%r" % (archs,))
