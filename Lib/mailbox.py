@@ -440,8 +440,7 @@ class Maildir(Mailbox):
         """Return a list of folder names."""
         result = []
         for entry in self._path.iterdir():
-            if len(entry.name) > 1 and entry.name[0] == '.' and \
-                    (self._path / entry).is_dir():
+            if len(entry.name) > 1 and entry.name[0] == '.' and entry.is_dir():
                 result.append(entry.name[1:])
         return result
 
@@ -484,9 +483,9 @@ class Maildir(Mailbox):
         """Delete old files in "tmp"."""
         now = time.time()
         for entry in (self._path / 'tmp').iterdir():
-            path = self._path / 'tmp' / entry
-            if now - os.path.getatime(path.resolve()) > 129600:  # 60 * 60 * 36
-                path.unlink()
+            # 129600 = 60 * 60 * 36
+            if now - os.path.getatime(entry.resolve()) > 129600:
+                entry.unlink()
 
     _count = 1  # This is used to generate unique file names.
 
