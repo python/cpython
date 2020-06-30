@@ -86,6 +86,10 @@
 #define DONT_USE_SEH
 #endif
 
+#if defined(__APPLE__) && __arm64__
+#define HAVE_FFI_PREP_CIF_VAR 1
+#endif
+
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
 
 static void pymem_destructor(PyObject *ptr)
@@ -812,7 +816,8 @@ static int _call_function_pointer(int flags,
                                   ffi_type **atypes,
                                   ffi_type *restype,
                                   void *resmem,
-                                  int argcount)
+                                  int argcount,
+                                  int argtypecount)
 {
     PyThreadState *_save = NULL; /* For Py_BLOCK_THREADS and Py_UNBLOCK_THREADS */
     PyObject *error_object = NULL;
@@ -835,15 +840,39 @@ static int _call_function_pointer(int flags,
     if ((flags & FUNCFLAG_CDECL) == 0)
         cc = FFI_STDCALL;
 #endif
-    if (FFI_OK != ffi_prep_cif(&cif,
-                               cc,
-                               argcount,
-                               restype,
-                               atypes)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "ffi_prep_cif failed");
-        return -1;
+
+#if HAVE_FFI_PREP_CIF_VAR
+    /* Everyone SHOULD set f.variadic=True on variadic function pointers, but
+     * lots of existing code will not.  If there's at least one arg and more
+     * args are passed than are defined in the prototype, then it must be a
+     * variadic function. */
+    if ((flags & FUNCFLAG_VARIADIC) ||
+        (argtypecount != 0 && argcount > argtypecount))
+    {
+        if (FFI_OK != ffi_prep_cif_var(&cif,
+                                       cc,
+                                       argtypecount,
+                                       argcount,
+                                       restype,
+                                       atypes)) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "ffi_prep_cif_var failed");
+            return -1;
+        }
+    } else {
+#endif
+        if (FFI_OK != ffi_prep_cif(&cif,
+                                   cc,
+                                   argcount,
+                                   restype,
+                                   atypes)) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "ffi_prep_cif failed");
+            return -1;
+        }
+#if HAVE_FFI_PREP_CIF_VAR
     }
+#endif
 
     if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
         error_object = _ctypes_get_errobj(&space);
@@ -1212,9 +1241,8 @@ PyObject *_ctypes_callproc(PPROC pProc,
 
     if (-1 == _call_function_pointer(flags, pProc, avalues, atypes,
                                      rtype, resbuf,
-                                     Py_SAFE_DOWNCAST(argcount,
-                                                      Py_ssize_t,
-                                                      int)))
+                                     Py_SAFE_DOWNCAST(argcount, Py_ssize_t, int),
+                                     Py_SAFE_DOWNCAST(argtype_count, Py_ssize_t, int)))
         goto cleanup;
 
 #ifdef WORDS_BIGENDIAN
