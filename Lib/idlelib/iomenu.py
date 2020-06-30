@@ -1,4 +1,3 @@
-import codecs
 import os
 import shlex
 import sys
