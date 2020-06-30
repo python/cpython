@@ -243,13 +243,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-
-PyDoc_STRVAR(object___match____doc__,
-"__match__($type, target, /)\n"
-"--\n"
-"\n"
-"Match all instances of this type, returning them for further destructuring.");
-
-#define OBJECT___MATCH___METHODDEF    \
-    {"__match__", (PyCFunction)object___match__, METH_O|METH_CLASS, object___match____doc__},
-/*[clinic end generated code: output=9fc91a27a50d735d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b4fb62939b08baf9 input=a9049054013a1b77]*/

@@ -773,11 +773,9 @@ class PydocDocTest(unittest.TestCase):
         del expected['__doc__']
         del expected['__class__']
         # inspect resolves descriptors on type into methods, but vars doesn't,
-        # so we need to update __subclasshook__, __init_subclass__, and
-        # __match__.
+        # so we need to update __subclasshook__ and __init_subclass__.
         expected['__subclasshook__'] = TestClass.__subclasshook__
         expected['__init_subclass__'] = TestClass.__init_subclass__
-        expected['__match__'] = TestClass.__match__
 
         methods = pydoc.allmethods(TestClass)
         self.assertDictEqual(methods, expected)

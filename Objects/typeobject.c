@@ -4906,31 +4906,6 @@ error:
     return result;
 }
 
-/*[clinic input]
-@classmethod
-object.__match__
-
-    target: object
-    /
-
-Match all instances of this type, returning them for further destructuring.
-[clinic start generated code]*/
-
-static PyObject *
-object___match__(PyTypeObject *type, PyObject *target)
-/*[clinic end generated code: output=bcea50777819dfeb input=493f4963453b0072]*/
-{
-    int match = PyObject_IsInstance(target, (PyObject *)type);
-    if (match < 0) {
-        return NULL;
-    }
-    if (match) {
-        Py_INCREF(target);
-        return target;
-    }
-    Py_RETURN_NONE;
-}
-
 static PyMethodDef object_methods[] = {
     OBJECT___REDUCE_EX___METHODDEF
     OBJECT___REDUCE___METHODDEF
@@ -4941,7 +4916,6 @@ static PyMethodDef object_methods[] = {
     OBJECT___FORMAT___METHODDEF
     OBJECT___SIZEOF___METHODDEF
     OBJECT___DIR___METHODDEF
-    OBJECT___MATCH___METHODDEF
     {0}
 };
 

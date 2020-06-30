@@ -188,7 +188,6 @@ You can get the information from the list type:
      '__le__',
      '__len__',
      '__lt__',
-     '__match__',
      '__mul__',
      '__ne__',
      '__new__',

@@ -908,8 +908,13 @@ get_match_args(PyThreadState *tstate, PyObject *type)
         }
         return NULL;
     }
-    if (PyList_CheckExact(match_args) || PyTuple_CheckExact(match_args)) {
+    if (PyTuple_CheckExact(match_args)) {
         return match_args;
+    }
+    if (PyList_CheckExact(match_args)) {
+        PyObject *tuple = PyList_AsTuple(match_args);
+        Py_DECREF(match_args);
+        return tuple;
     }
     _PyErr_Format(tstate, PyExc_TypeError,
         "%s.__match_args__ must be a list or tuple (got %s)",
@@ -932,27 +937,13 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
                       "called match pattern must be a type");
         return NULL;
     }
-    PyObject *method = PyObject_GetAttrString(type, "__match__");
-    if (!method || method == Py_None) {
-        Py_XDECREF(method);
-        _PyErr_Clear(tstate);
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "type %s cannot be matched",
-                      ((PyTypeObject *)type)->tp_name);
+    if (PyObject_IsInstance(target, type) <= 0) {
         return NULL;
-    }
-    PyObject *proxy = PyObject_CallOneArg(method, target);
-    Py_DECREF(method);
-    if (!proxy) {
-        return NULL;
-    }
-    if (proxy == Py_None) {
-        return proxy;
     }
     Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwargs);
     Py_ssize_t nargs = count - nkwargs;
     match_args = get_match_args(tstate, type);
-    assert(!match_args || PyList_CheckExact(match_args) || PyTuple_CheckExact(match_args));
+    assert(!match_args || PyTuple_CheckExact(match_args));
     if (!match_args && _PyErr_Occurred(tstate)) {
         goto error;
     }
@@ -970,10 +961,8 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         args = NULL;
     }
     else {
-        nmatch_args = PySequence_Fast_GET_SIZE(match_args);
-        args = PyList_CheckExact(match_args)
-               ? PyList_GetSlice(match_args, 0, nargs)
-               : PyTuple_GetSlice(match_args, 0, nargs);
+        nmatch_args = PyTuple_GET_SIZE(match_args);
+        args = PyTuple_GetSlice(match_args, 0, nargs);
         if (!args) {
             goto error;
         }
@@ -984,7 +973,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
                       ((PyTypeObject *)type)->tp_name, nmatch_args, nargs);
         goto error;
     }
-    assert(!args || PyList_CheckExact(args) || PyTuple_CheckExact(args));
+    assert(!args || PyTuple_CheckExact(args));
     attrs = PyTuple_New(count);
     if (!attrs) {
         goto error;
@@ -998,8 +987,8 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         if (i < nargs) {
             if (!args) {
                 assert(!i);
-                Py_INCREF(proxy);
-                PyTuple_SET_ITEM(attrs, 0, proxy);
+                Py_INCREF(target);
+                PyTuple_SET_ITEM(attrs, 0, target);
                 continue;
             }
             name = PyTuple_GET_ITEM(args, i);
@@ -1021,7 +1010,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
             }
             goto error;
         }
-        PyObject *attr = PyObject_GetAttr(proxy, name);
+        PyObject *attr = PyObject_GetAttr(target, name);
         if (!attr) {
             if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
                 _PyErr_Clear(tstate);
@@ -1032,13 +1021,11 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         }
         PyTuple_SET_ITEM(attrs, i, attr);
     }
-    Py_DECREF(proxy);
     Py_XDECREF(match_args);
     Py_XDECREF(args);
     Py_DECREF(seen);
     return attrs;
 error:
-    Py_DECREF(proxy);
     Py_XDECREF(match_args);
     Py_XDECREF(args);
     Py_XDECREF(seen);
@@ -3488,13 +3475,15 @@ main_loop:
             PyObject *target = SECOND();
             PyObject *attrs = do_match(tstate, oparg, names, type, target);
             Py_DECREF(names);
-            if (!attrs) {
+            if (attrs) {
+                Py_DECREF(target);
+                SET_SECOND(attrs);
+            }
+            else if (_PyErr_Occurred(tstate)) {
                 goto error;
             }
+            SET_TOP(PyBool_FromLong(!!attrs));
             Py_DECREF(type);
-            Py_DECREF(target);
-            SET_SECOND(attrs);
-            SET_TOP(PyBool_FromLong(attrs != Py_None));
             DISPATCH();
         }
 
