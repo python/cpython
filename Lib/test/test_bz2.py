@@ -12,14 +12,15 @@ import random
 import shutil
 import subprocess
 import threading
+from test.support import import_helper
 from test.support import threading_helper
-from test.support import unlink
+from test.support.os_helper import unlink
 import _compression
 import sys
 
 
 # Skip tests if the bz2 module doesn't exist.
-bz2 = support.import_module('bz2')
+bz2 = import_helper.import_module('bz2')
 from bz2 import BZ2File, BZ2Compressor, BZ2Decompressor
 
 has_cmdline_bunzip2 = None
