@@ -13,52 +13,12 @@ from tkinter.simpledialog import askstring
 import idlelib
 from idlelib.config import idleConf
 
-if idlelib.testing:  # Set True by test.test_idle to avoid setlocale.
-    encoding = 'utf-8'
-    errors = 'surrogateescape'
+encoding = 'utf-8'
+if sys.platform == 'win32':
+    errors = 'surrogatepass'
 else:
-    # Try setting the locale, so that we can find out
-    # what encoding to use
-    try:
-        import locale
-        locale.setlocale(locale.LC_CTYPE, "")
-    except (ImportError, locale.Error):
-        pass
+    errors = 'surrogateescape'
 
-    if sys.platform == 'win32':
-        encoding = 'utf-8'
-        errors = 'surrogateescape'
-    else:
-        try:
-            # Different things can fail here: the locale module may not be
-            # loaded, it may not offer nl_langinfo, or CODESET, or the
-            # resulting codeset may be unknown to Python. We ignore all
-            # these problems, falling back to ASCII
-            locale_encoding = locale.nl_langinfo(locale.CODESET)
-            if locale_encoding:
-                codecs.lookup(locale_encoding)
-        except (NameError, AttributeError, LookupError):
-            # Try getdefaultlocale: it parses environment variables,
-            # which may give a clue. Unfortunately, getdefaultlocale has
-            # bugs that can cause ValueError.
-            try:
-                locale_encoding = locale.getdefaultlocale()[1]
-                if locale_encoding:
-                    codecs.lookup(locale_encoding)
-            except (ValueError, LookupError):
-                pass
-
-        if locale_encoding:
-            encoding = locale_encoding.lower()
-            errors = 'strict'
-        else:
-            # POSIX locale or macOS
-            encoding = 'ascii'
-            errors = 'surrogateescape'
-        # Encoding is used in multiple files; locale_encoding nowhere.
-        # The only use of 'encoding' below is in _decode as initial value
-        # of deprecated block asking user for encoding.
-        # Perhaps use elsewhere should be reviewed.
 
 coding_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(r'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
