@@ -700,6 +700,8 @@ Extension modules can continue using them, as they will not be removed in Python
    :c:func:`PyUnicode_AsWideChar`, :c:func:`PyUnicode_ReadChar` or similar new
    APIs.
 
+   .. deprecated-removed:: 3.3 3.10
+
 
 .. c:function:: PyObject* PyUnicode_TransformDecimalToASCII(Py_UNICODE *s, Py_ssize_t size)
 
