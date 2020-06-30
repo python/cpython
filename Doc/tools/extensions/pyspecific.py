@@ -125,6 +125,24 @@ class Availability(Directive):
 
 # Support for documenting audit event
 
+def audit_events_merge(app, env, docnames, other):
+    """In Sphinx parallel builds, this merges env.all_audit_events from
+    subprocesses.
+
+    all_audit_events is a dict of names, with values like:
+    {'source': [...], 'args': args}
+    """
+    if not hasattr(other, 'all_audit_events'):
+        return
+    if not hasattr(env, 'all_audit_events'):
+        env.all_audit_events = {}
+    for name, value in other.all_audit_events.items():
+        if name in env.all_audit_events:
+            env.all_audit_events[name]["source"].extend(value["source"])
+        else:
+            env.all_audit_events[name] = value
+
+
 class AuditEvent(Directive):
 
     has_content = True
@@ -589,4 +607,5 @@ def setup(app):
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
     app.connect('doctree-resolved', process_audit_events)
+    app.connect('env-merge-info', audit_events_merge)
     return {'version': '1.0', 'parallel_read_safe': True}
