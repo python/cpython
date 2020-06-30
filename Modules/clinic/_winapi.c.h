@@ -244,7 +244,10 @@ _winapi_CreateJunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     src_path = _PyUnicode_AsUnicode(args[0]);
+    _Py_COMP_DIAG_POP
     #else /* USE_UNICODE_WCHAR_CACHE */
     src_path = PyUnicode_AsWideCharString(args[0], NULL);
     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -256,7 +259,10 @@ _winapi_CreateJunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     dst_path = _PyUnicode_AsUnicode(args[1]);
+    _Py_COMP_DIAG_POP
     #else /* USE_UNICODE_WCHAR_CACHE */
     dst_path = PyUnicode_AsWideCharString(args[1], NULL);
     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -1148,4 +1154,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1f10e03f64ff9777 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2e9720ebc428b5d0 input=a9049054013a1b77]*/

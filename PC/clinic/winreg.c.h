@@ -160,7 +160,10 @@ winreg_ConnectRegistry(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     }
     else if (PyUnicode_Check(args[0])) {
         #if USE_UNICODE_WCHAR_CACHE
+        _Py_COMP_DIAG_PUSH
+        _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         computer_name = _PyUnicode_AsUnicode(args[0]);
+        _Py_COMP_DIAG_POP
         #else /* USE_UNICODE_WCHAR_CACHE */
         computer_name = PyUnicode_AsWideCharString(args[0], NULL);
         #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -234,7 +237,10 @@ winreg_CreateKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     else if (PyUnicode_Check(args[1])) {
         #if USE_UNICODE_WCHAR_CACHE
+        _Py_COMP_DIAG_PUSH
+        _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         sub_key = _PyUnicode_AsUnicode(args[1]);
+        _Py_COMP_DIAG_POP
         #else /* USE_UNICODE_WCHAR_CACHE */
         sub_key = PyUnicode_AsWideCharString(args[1], NULL);
         #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -367,7 +373,10 @@ winreg_DeleteKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     sub_key = _PyUnicode_AsUnicode(args[1]);
+    _Py_COMP_DIAG_POP
     #else /* USE_UNICODE_WCHAR_CACHE */
     sub_key = PyUnicode_AsWideCharString(args[1], NULL);
     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -479,7 +488,10 @@ winreg_DeleteValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     else if (PyUnicode_Check(args[1])) {
         #if USE_UNICODE_WCHAR_CACHE
+        _Py_COMP_DIAG_PUSH
+        _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         value = _PyUnicode_AsUnicode(args[1]);
+        _Py_COMP_DIAG_POP
         #else /* USE_UNICODE_WCHAR_CACHE */
         value = PyUnicode_AsWideCharString(args[1], NULL);
         #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -623,7 +635,10 @@ winreg_ExpandEnvironmentStrings(PyObject *module, PyObject *arg)
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     string = _PyUnicode_AsUnicode(arg);
+    _Py_COMP_DIAG_POP
     #else /* USE_UNICODE_WCHAR_CACHE */
     string = PyUnicode_AsWideCharString(arg, NULL);
     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -735,7 +750,10 @@ winreg_LoadKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     sub_key = _PyUnicode_AsUnicode(args[1]);
+    _Py_COMP_DIAG_POP
     #else /* USE_UNICODE_WCHAR_CACHE */
     sub_key = PyUnicode_AsWideCharString(args[1], NULL);
     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -747,7 +765,10 @@ winreg_LoadKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     file_name = _PyUnicode_AsUnicode(args[2]);
+    _Py_COMP_DIAG_POP
     #else /* USE_UNICODE_WCHAR_CACHE */
     file_name = PyUnicode_AsWideCharString(args[2], NULL);
     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -963,7 +984,10 @@ winreg_QueryValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     else if (PyUnicode_Check(args[1])) {
         #if USE_UNICODE_WCHAR_CACHE
+        _Py_COMP_DIAG_PUSH
+        _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         sub_key = _PyUnicode_AsUnicode(args[1]);
+        _Py_COMP_DIAG_POP
         #else /* USE_UNICODE_WCHAR_CACHE */
         sub_key = PyUnicode_AsWideCharString(args[1], NULL);
         #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -1026,7 +1050,10 @@ winreg_QueryValueEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     else if (PyUnicode_Check(args[1])) {
         #if USE_UNICODE_WCHAR_CACHE
+        _Py_COMP_DIAG_PUSH
+        _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         name = _PyUnicode_AsUnicode(args[1]);
+        _Py_COMP_DIAG_POP
         #else /* USE_UNICODE_WCHAR_CACHE */
         name = PyUnicode_AsWideCharString(args[1], NULL);
         #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -1094,7 +1121,10 @@ winreg_SaveKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     file_name = _PyUnicode_AsUnicode(args[1]);
+    _Py_COMP_DIAG_POP
     #else /* USE_UNICODE_WCHAR_CACHE */
     file_name = PyUnicode_AsWideCharString(args[1], NULL);
     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -1346,4 +1376,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=497a2e804821d5c9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=95bb2d60291ee6f7 input=a9049054013a1b77]*/

@@ -2931,6 +2931,7 @@ _PySys_InitMain(PyThreadState *tstate)
     }
 
     COPY_LIST("argv", config->argv);
+    COPY_LIST("orig_argv", config->orig_argv);
     COPY_LIST("warnoptions", config->warnoptions);
 
     PyObject *xoptions = sys_create_xoptions_dict(config);

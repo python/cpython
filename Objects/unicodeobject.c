@@ -3338,11 +3338,14 @@ _PyUnicode_WideCharString_Converter(PyObject *obj, void *ptr)
     }
     if (PyUnicode_Check(obj)) {
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         *p = (wchar_t *)_PyUnicode_AsUnicode(obj);
         if (*p == NULL) {
             return 0;
         }
         return 1;
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
         *p = PyUnicode_AsWideCharString(obj, NULL);
         if (*p == NULL) {
@@ -3374,11 +3377,14 @@ _PyUnicode_WideCharString_Opt_Converter(PyObject *obj, void *ptr)
     }
     if (PyUnicode_Check(obj)) {
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         *p = (wchar_t *)_PyUnicode_AsUnicode(obj);
         if (*p == NULL) {
             return 0;
         }
         return 1;
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
         *p = PyUnicode_AsWideCharString(obj, NULL);
         if (*p == NULL) {
