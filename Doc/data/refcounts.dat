@@ -2419,9 +2419,6 @@ PyUnicode_AsUnicodeAndSize:Py_UNICODE*:::
 PyUnicode_AsUnicodeAndSize:PyObject*:unicode:0:
 PyUnicode_AsUnicodeAndSize:Py_ssize_t*:size::
 
-PyUnicode_AsUnicodeCopy:Py_UNICODE*:::
-PyUnicode_AsUnicodeCopy:PyObject*:unicode:0:
-
 PyUnicode_GetSize:Py_ssize_t:::
 PyUnicode_GetSize:PyObject*:unicode:0:
 
