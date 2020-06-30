@@ -680,7 +680,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
 
     def _check_basics(self, factory=None):
         # (Used by test_open_new() and test_open_existing().)
-        self.assertEqual(self._box._path, self._path.resolve())
+        self.assertEqual(self._box._path.resolve(), self._path.resolve())
         self.assertEqual(self._box._factory, factory)
         for subdir in '', 'tmp', 'new', 'cur':
             path = self._path / subdir
@@ -757,7 +757,8 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         for x in range(repetitions):
             tmp_file = self._box._create_tmp()
             head, tail = os.path.split(tmp_file.name)
-            self.assertEqual(head, os.fspath((self._path / "tmp").resolve()),
+            self.assertEqual(Path(head).resolve(),
+                             (self._path / "tmp").resolve(),
                              "File in wrong location: '%s'" % head)
             match = pattern.match(tail)
             self.assertIsNotNone(match, "Invalid file name: '%s'" % tail)

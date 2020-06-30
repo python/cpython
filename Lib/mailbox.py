@@ -485,7 +485,7 @@ class Maildir(Mailbox):
         now = time.time()
         for entry in (self._path / 'tmp').iterdir():
             path = self._path / 'tmp' / entry
-            if now - os.path.getatime(path) > 129600:   # 60 * 60 * 36
+            if now - os.path.getatime(path.resolve()) > 129600:  # 60 * 60 * 36
                 path.unlink()
 
     _count = 1  # This is used to generate unique file names.
