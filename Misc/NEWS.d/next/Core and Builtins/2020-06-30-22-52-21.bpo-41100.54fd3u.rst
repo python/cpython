@@ -1,0 +1,1 @@
+Mac OS 11: add support for "universal2" ie arm64,x86_64 universal build
