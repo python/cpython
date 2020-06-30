@@ -329,6 +329,10 @@ class ConvertingDict(dict, ConvertingMixin):
         value = dict.get(self, key, default)
         return self.convert_with_key(key, value)
 
+    def items(self):
+        for key in self:
+            yield (key, self.__getitem__(key))
+
     def pop(self, key, default=None):
         value = dict.pop(self, key, default)
         return self.convert_with_key(key, value, replace=False)
@@ -338,6 +342,10 @@ class ConvertingList(list, ConvertingMixin):
     def __getitem__(self, key):
         value = list.__getitem__(self, key)
         return self.convert_with_key(key, value)
+
+    def __iter__(self):
+        for key in range(len(self)):
+            yield self.__getitem__(key)
 
     def pop(self, idx=-1):
         value = list.pop(self, idx)
@@ -349,6 +357,10 @@ class ConvertingTuple(tuple, ConvertingMixin):
         value = tuple.__getitem__(self, key)
         # Can't replace a tuple entry.
         return self.convert_with_key(key, value, replace=False)
+
+    def __iter__(self):
+        for key in range(len(self)):
+            yield self.__getitem__(key)
 
 class BaseConfigurator(object):
     """
