@@ -11,6 +11,8 @@
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 
+#define USE_UNICODE_WCHAR_CACHE 1
+
 /* Since splitting on whitespace is an important use case, and
    whitespace in most situations is solely ASCII whitespace, we
    optimize for the common case by using a quick look-up table
@@ -1168,5 +1170,8 @@ PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
 /* Fast equality check when the inputs are known to be exact unicode types
    and where the hash values are equal (i.e. a very probable match) */
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
+
+PyAPI_FUNC(int) _PyUnicode_WideCharString_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);
 
 PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);

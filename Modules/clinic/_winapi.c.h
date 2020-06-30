@@ -367,13 +367,22 @@ _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const Py_UNICODE *current_directory;
     PyObject *startup_info;
 
-    if (!_PyArg_ParseStack(args, nargs, "ZOOOikOZO:CreateProcess",
-        &application_name, &command_line, &proc_attrs, &thread_attrs, &inherit_handles, &creation_flags, &env_mapping, &current_directory, &startup_info)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&OOOikOO&O:CreateProcess",
+        _PyUnicode_WideCharString_Opt_Converter, &application_name, &command_line, &proc_attrs, &thread_attrs, &inherit_handles, &creation_flags, &env_mapping, _PyUnicode_WideCharString_Opt_Converter, &current_directory, &startup_info)) {
         goto exit;
     }
     return_value = _winapi_CreateProcess_impl(module, application_name, command_line, proc_attrs, thread_attrs, inherit_handles, creation_flags, env_mapping, current_directory, startup_info);
 
 exit:
+    /* Cleanup for application_name */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)application_name);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    /* Cleanup for current_directory */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)current_directory);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
     return return_value;
 }
 
@@ -1097,4 +1106,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f3897898ea1da99d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=db87076a32fa7abe input=a9049054013a1b77]*/

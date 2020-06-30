@@ -3273,6 +3273,80 @@ PyUnicode_AsWideCharString(PyObject *unicode,
 
 #endif /* HAVE_WCHAR_H */
 
+int
+_PyUnicode_WideCharString_Converter(PyObject *obj, void *ptr)
+{
+    wchar_t **p = (wchar_t **)ptr;
+    if (obj == NULL) {
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(*p);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+        *p = NULL;
+        return 1;
+    }
+    if (PyUnicode_Check(obj)) {
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+        *p = (wchar_t *)_PyUnicode_AsUnicode(obj);
+        if (*p == NULL) {
+            return 0;
+        }
+        return 1;
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+        *p = PyUnicode_AsWideCharString(obj, NULL);
+        if (*p == NULL) {
+            return 0;
+        }
+        return Py_CLEANUP_SUPPORTED;
+#endif /* USE_UNICODE_WCHAR_CACHE */
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "argument must be str, not %.50s",
+                 obj->ob_type->tp_name);
+    return 0;
+}
+
+int
+_PyUnicode_WideCharString_Opt_Converter(PyObject *obj, void *ptr)
+{
+    wchar_t **p = (wchar_t **)ptr;
+    if (obj == NULL) {
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(*p);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+        *p = NULL;
+        return 1;
+    }
+    if (obj == Py_None) {
+        *p = NULL;
+        return 1;
+    }
+    if (PyUnicode_Check(obj)) {
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+        *p = (wchar_t *)_PyUnicode_AsUnicode(obj);
+        if (*p == NULL) {
+            return 0;
+        }
+        return 1;
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+        *p = PyUnicode_AsWideCharString(obj, NULL);
+        if (*p == NULL) {
+            return 0;
+        }
+        return Py_CLEANUP_SUPPORTED;
+#endif /* USE_UNICODE_WCHAR_CACHE */
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "argument must be str or None, not %.50s",
+                 obj->ob_type->tp_name);
+    return 0;
+}
+
 PyObject *
 PyUnicode_FromOrdinal(int ordinal)
 {
