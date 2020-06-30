@@ -171,7 +171,7 @@ The following functions and structs are used to create
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
-   Equivalent to ``PyMetaType_FromModuleAndSpec(NULL, meta_type, spec, bases)``.
+   Equivalent to ``PyMetaType_FromModuleAndSpec(NULL, &PyType_Type, spec, bases)``.
 
    .. versionadded:: 3.3
 
