@@ -1,0 +1,1 @@
+Added new "FromSpec" methods prefixed with "PyMetaType" to specify the metaclass for the created heap type at type creation.
