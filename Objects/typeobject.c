@@ -2880,14 +2880,19 @@ static const short slotoffsets[] = {
 };
 
 PyObject *
-PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
+PyMetaType_FromSpecWithBases(PyTypeObject *meta_type, PyType_Spec *spec, PyObject *bases)
 {
-    return PyType_FromModuleAndSpec(NULL, spec, bases);
+    return PyMetaType_FromModuleAndSpec(NULL, meta_type, spec, bases);
 }
 
 PyObject *
-PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
+PyMetaType_FromModuleAndSpec(PyObject *module, PyTypeObject *meta_type, PyType_Spec *spec, PyObject *bases)
 {
+    if (meta_type == NULL) {
+        PyErr_BadArgument();
+        return NULL;
+    }
+
     PyHeapTypeObject *res;
     PyObject *modname;
     PyTypeObject *type, *base;
@@ -2924,7 +2929,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         }
     }
 
-    res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, nmembers);
+    res = (PyHeapTypeObject*)PyType_GenericAlloc(meta_type, nmembers);
     if (res == NULL)
         return NULL;
     res_start = (char*)res;
@@ -3099,9 +3104,9 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 }
 
 PyObject *
-PyType_FromSpec(PyType_Spec *spec)
+PyMetaType_FromSpec(PyTypeObject *meta_type, PyType_Spec *spec)
 {
-    return PyType_FromSpecWithBases(spec, NULL);
+    return PyMetaType_FromSpecWithBases(meta_type, spec, NULL);
 }
 
 void *
