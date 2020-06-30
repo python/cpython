@@ -132,7 +132,7 @@ def audit_events_purge(app, env, docname):
     if not hasattr(env, 'all_audit_events'):
         return
     fresh_all_audit_events = {}
-    for name, event in env.all_audit_events:
+    for name, event in env.all_audit_events.items():
         event["source"] = [(d, t) for d, t in event["source"] if d != docname]
         if event["source"]:
             # Only keep audit_events that have at least one source.
