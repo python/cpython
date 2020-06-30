@@ -721,6 +721,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertFalse("0".isidentifier())
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
     def test_isidentifier_legacy(self):
         import _testcapi
         u = '𝖀𝖓𝖎𝖈𝖔𝖉𝖊'
@@ -2346,6 +2347,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(len(args), 1)
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
     def test_resize(self):
         from _testcapi import getargs_u
         for length in range(1, 100, 7):

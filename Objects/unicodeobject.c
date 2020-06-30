@@ -12549,11 +12549,14 @@ _PyUnicode_ScanIdentifier(PyObject *self)
 int
 PyUnicode_IsIdentifier(PyObject *self)
 {
+#if HAVE_UNICODE_WCHAR_CACHE
     if (PyUnicode_IS_READY(self)) {
+#endif /* HAVE_UNICODE_WCHAR_CACHE */
         Py_ssize_t i = _PyUnicode_ScanIdentifier(self);
         Py_ssize_t len = PyUnicode_GET_LENGTH(self);
         /* an empty string is not a valid identifier */
         return len && i == len;
+#if HAVE_UNICODE_WCHAR_CACHE
     }
     else {
 _Py_COMP_DIAG_PUSH
@@ -12597,6 +12600,7 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         return 1;
 _Py_COMP_DIAG_POP
     }
+#endif /* HAVE_UNICODE_WCHAR_CACHE */
 }
 
 /*[clinic input]
