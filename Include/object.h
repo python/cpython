@@ -228,8 +228,7 @@ typedef struct{
 #define PyType_FromSpec(spec) PyMetaType_FromSpec(&PyType_Type, spec)
 PyAPI_FUNC(PyObject*) PyMetaType_FromSpec(PyTypeObject*, PyType_Spec*);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
-#define PyType_FromSpecWithBases(spec, bases) PyMetaType_FromSpecWithBases(&PyType_Type, spec, bases)
-PyAPI_FUNC(PyObject*) PyMetaType_FromSpecWithBases(PyTypeObject*, PyType_Spec*, PyObject*);
+#define PyType_FromSpecWithBases(spec, bases) PyMetaType_FromModuleAndSpec(NULL, &PyType_Type, spec, bases)
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03040000
 PyAPI_FUNC(void*) PyType_GetSlot(PyTypeObject*, int);
