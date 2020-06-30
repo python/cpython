@@ -229,6 +229,13 @@ def macosx_sdk_specified():
     macosx_sdk_root()
     return MACOS_SDK_SPECIFIED
 
+def is_macosx_at_least(vers):
+    if MACOS:
+        dep_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+        if dep_target:
+            return tuple(map(int, dep_target.split('.'))) >= vers
+    return False
+
 
 def is_macosx_sdk_path(path):
     """
@@ -2136,7 +2143,12 @@ class PyBuildExt(build_ext):
 
     def detect_ctypes(self):
         # Thomas Heller's _ctypes module
-        self.use_system_libffi = False
+
+        if not sysconfig.get_config_var("LIBFFI_INCLUDEDIR") and is_macosx_at_least((10,15)):
+            self.use_system_libffi = True
+        else:
+            self.use_system_libffi = '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS")
+
         include_dirs = []
         extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
         extra_link_args = []
@@ -2183,15 +2195,23 @@ class PyBuildExt(build_ext):
                                sources=['_ctypes/_ctypes_test.c'],
                                libraries=['m']))
 
+        ffi_inc = [sysconfig.get_config_var("LIBFFI_INCLUDEDIR")]
+        ffi_lib = None
+
         ffi_inc_dirs = self.inc_dirs.copy()
         if MACOS:
-            if '--with-system-ffi' not in sysconfig.get_config_var("CONFIG_ARGS"):
+            if not self.use_system_libffi:
                 return
-            # OS X 10.5 comes with libffi.dylib; the include files are
-            # in /usr/include/ffi
-            ffi_inc_dirs.append('/usr/include/ffi')
+            ffi_in_sdk = os.path.join(macosx_sdk_root(), "usr/include/ffi")
+            if os.path.exists(ffi_in_sdk):
+                ffi_inc = [ffi_in_sdk]
+                ffi_lib = 'ffi'
+                sources.remove('_ctypes/malloc_closure.c')
+            else:
+                # OS X 10.5 comes with libffi.dylib; the include files are
+                # in /usr/include/ffi
+                ffi_inc_dirs.append('/usr/include/ffi')
 
-        ffi_inc = [sysconfig.get_config_var("LIBFFI_INCLUDEDIR")]
         if not ffi_inc or ffi_inc[0] == '':
             ffi_inc = find_file('ffi.h', [], ffi_inc_dirs)
         if ffi_inc is not None:
@@ -2199,8 +2219,7 @@ class PyBuildExt(build_ext):
             if not os.path.exists(ffi_h):
                 ffi_inc = None
                 print('Header file {} does not exist'.format(ffi_h))
-        ffi_lib = None
-        if ffi_inc is not None:
+        if ffi_lib is None and ffi_inc is not None:
             for lib_name in ('ffi', 'ffi_pic'):
                 if (self.compiler.find_library_file(self.lib_dirs, lib_name)):
                     ffi_lib = lib_name
