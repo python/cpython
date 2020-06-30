@@ -112,6 +112,16 @@ class MsiDatabaseTestCase(unittest.TestCase):
         with self.assertRaises(msilib.MSIError):
             si.GetProperty(-1)
 
+    def test_FCICreate(self):
+        filepath = TESTFN + '.txt'
+        cabpath = TESTFN + '.cab'
+        self.addCleanup(unlink, filepath)
+        with open(filepath, 'wb'):
+            pass
+        self.addCleanup(unlink, cabpath)
+        msilib.FCICreate(cabpath, [(filepath, 'test.txt')])
+        self.assertTrue(os.path.isfile(cabpath))
+
 
 class Test_make_id(unittest.TestCase):
     #http://msdn.microsoft.com/en-us/library/aa369212(v=vs.85).aspx
