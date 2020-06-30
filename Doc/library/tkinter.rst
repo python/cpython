@@ -714,12 +714,22 @@ Event Data
 
 .. data:: Event.data
 
-   The data that has been dropped. Under some platforms the data will be
+   The raw data that has been dropped. Under some platforms the data will be
    available before the drop has occurred. The format of the data is the
-   current type of the drop operation.
+   current type of the drop operation. This attribute should be used for
+   text-based drops, whereas file drops should use the ``data_split``
+   attribute.
 
-   .. note:: This is always a list/tuple, even for text where there will only
-    be one item in the list/tuple.
+.. data:: Event.data_split
+
+   The dropped data split into a tuple. This should not be used for text-based
+   drops as the data is split on each word and is instead intended for file
+   drops where there can be multiple files in a single drop (and handles paths
+   with spaces correctly).
+
+.. data:: Event.data_raw
+
+   Same as ``data``.
 
 .. data:: Event.event_name
 

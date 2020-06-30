@@ -1669,17 +1669,17 @@ class Misc:
                 return s
 
         def getlist_event(s):
-            if s.startswith('{') and s.endswith('}'):
+            if " " in s:
                 s = s[1:-1]
             else:
-                return s,
+                return s.replace(r"\{", "{"),
             s = s.translate((None, '\x00'))
             if not s:
                 return '',
             try:
-                return self.tk.splitlist(s)
+                return tuple(map(lambda i: i.replace(r"\{", "{"), self.tk.splitlist(s)))
             except ValueError:
-                return s,
+                return s.replace(r"\{", "{"),
 
         nsign, a, b, c, ed, f, h, k, m, s, t, w, x, y, \
             A, C, CST, CTT, D, E, K, L, N, ST, T, TT, W, X, Y = args
@@ -1723,7 +1723,12 @@ class Misc:
         e.code = getint_event(C)
         e.common_source_types = getlist_event(CST)
         e.common_target_types = getlist_event(CTT)
-        e.data = getlist_event(D)
+        if " " in D:
+            rd = D[1:-1]
+        else:
+            rd = D
+        e.data = e.data_raw = rd.replace(r"\{", "{")
+        e.data_split = getlist_event(D)
         try: e.send_event = getboolean(E)
         except TclError: pass
         e.keysym = K
