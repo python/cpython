@@ -1081,7 +1081,10 @@ path_converter(PyObject *o, void *p)
     if (is_unicode) {
 #ifdef MS_WINDOWS
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         wide = PyUnicode_AsUnicodeAndSize(o, &length);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
         wide = PyUnicode_AsWideCharString(o, &length);
 #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -1179,7 +1182,10 @@ path_converter(PyObject *o, void *p)
     }
 
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     wide = PyUnicode_AsUnicodeAndSize(wo, &length);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
     wide = PyUnicode_AsWideCharString(wo, &length);
     Py_DECREF(wo);
@@ -12850,7 +12856,10 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
     if (!PyUnicode_FSDecoder(self->path, &ub))
         return NULL;
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     const wchar_t *path = PyUnicode_AsUnicode(ub);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *path = PyUnicode_AsWideCharString(ub, NULL);
     Py_DECREF(ub);
@@ -13076,9 +13085,12 @@ os_DirEntry_inode_impl(DirEntry *self)
         if (!PyUnicode_FSDecoder(self->path, &unicode))
             return NULL;
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         const wchar_t *path = PyUnicode_AsUnicode(unicode);
         result = LSTAT(path, &stat);
         Py_DECREF(unicode);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
         wchar_t *path = PyUnicode_AsWideCharString(unicode, NULL);
         Py_DECREF(unicode);

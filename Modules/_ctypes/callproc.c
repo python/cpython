@@ -1309,7 +1309,10 @@ static PyObject *load_library(PyObject *self, PyObject *args)
         return NULL;
 
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     const WCHAR *name = _PyUnicode_AsUnicode(nameobj);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
     WCHAR *name = PyUnicode_AsWideCharString(nameobj, NULL);
 #endif /* USE_UNICODE_WCHAR_CACHE */

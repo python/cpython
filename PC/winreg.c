@@ -646,10 +646,13 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                     if (!PyUnicode_Check(t))
                         return FALSE;
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
                     len = PyUnicode_GetSize(t);
                     if (len < 0)
                         return FALSE;
                     len++;
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
                     len = PyUnicode_AsWideChar(t, NULL, 0);
                     if (len < 0)
@@ -1707,7 +1710,10 @@ winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
     }
 
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     const wchar_t *value = PyUnicode_AsUnicodeAndSize(value_obj, &value_length);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *value = PyUnicode_AsWideCharString(value_obj, &value_length);
 #endif /* USE_UNICODE_WCHAR_CACHE */

@@ -4468,9 +4468,12 @@ unicode_decode_call_errorhandler_wchar(
     }
 
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     repwlen = PyUnicode_GetSize(repunicode);
     if (repwlen < 0)
         goto onError;
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
     repwlen = PyUnicode_AsWideChar(repunicode, NULL, 0);
     if (repwlen < 0)
@@ -7811,11 +7814,14 @@ encode_code_page_strict(UINT code_page, PyObject **outbytes,
     if (substring == NULL)
         return -1;
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     p = PyUnicode_AsUnicodeAndSize(substring, &size);
     if (p == NULL) {
         Py_DECREF(substring);
         return -1;
     }
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
     p = PyUnicode_AsWideCharString(substring, &size);
     Py_CLEAR(substring);

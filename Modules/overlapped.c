@@ -386,7 +386,10 @@ overlapped_CreateEvent(PyObject *self, PyObject *args)
     }
     else if (PyUnicode_Check(Name_obj)) {
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         Name = (wchar_t *)_PyUnicode_AsUnicode(Name_obj);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
         Name = PyUnicode_AsWideCharString(Name_obj, NULL);
 #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -395,7 +398,7 @@ overlapped_CreateEvent(PyObject *self, PyObject *args)
         }
     }
     else {
-        _PyArg_BadArgument("CreateEvent", 4, "str or None", Name_obj);
+        _PyArg_BadArgument("CreateEvent", "argument 4", "str or None", Name_obj);
         return NULL;
     }
 
@@ -1256,7 +1259,10 @@ parse_address(PyObject *obj, SOCKADDR *Address, int Length)
             return -1;
         }
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         Host = (wchar_t *)_PyUnicode_AsUnicode(Host_obj);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
         Host = PyUnicode_AsWideCharString(Host_obj, NULL);
 #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -1284,7 +1290,10 @@ parse_address(PyObject *obj, SOCKADDR *Address, int Length)
             return -1;
         }
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         Host = (wchar_t *)_PyUnicode_AsUnicode(Host_obj);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
         Host = PyUnicode_AsWideCharString(Host_obj, NULL);
 #endif /* USE_UNICODE_WCHAR_CACHE */

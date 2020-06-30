@@ -428,7 +428,10 @@ record_setstring(msiobj* record, PyObject *args)
         return NULL;
 
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     data = (wchar_t *)_PyUnicode_AsUnicode(data_obj);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
     data = PyUnicode_AsWideCharString(data_obj, NULL);
 #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -636,7 +639,10 @@ summary_setproperty(msiobj* si, PyObject *args)
 
     if (PyUnicode_Check(data)) {
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         const WCHAR *value = _PyUnicode_AsUnicode(data);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
         WCHAR *value = PyUnicode_AsWideCharString(data, NULL);
 #endif /* USE_UNICODE_WCHAR_CACHE */

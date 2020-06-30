@@ -271,7 +271,10 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             return -1;
         }
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         widename = PyUnicode_AsUnicode(stringobj);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
         widename = PyUnicode_AsWideCharString(stringobj, NULL);
 #endif /* USE_UNICODE_WCHAR_CACHE */

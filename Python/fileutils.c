@@ -1010,7 +1010,10 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     struct _stat wstatbuf;
 
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     const wchar_t *wpath = _PyUnicode_AsUnicode(path);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
 #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -1454,7 +1457,10 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         return NULL;
     }
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     const wchar_t *wpath = _PyUnicode_AsUnicode(path);
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
 #endif /* USE_UNICODE_WCHAR_CACHE */
