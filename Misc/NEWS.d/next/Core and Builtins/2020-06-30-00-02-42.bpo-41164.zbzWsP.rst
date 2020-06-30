@@ -1,0 +1,1 @@
+Allow python to build for macosx-11.0-arm64
