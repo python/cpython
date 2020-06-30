@@ -3835,7 +3835,7 @@ static PyObject*
 unicode_decode_locale(const char *str, Py_ssize_t len,
                       _Py_error_handler errors, int current_locale)
 {
-    if (str[len] != '\0' || (size_t)len != strlen(str))  {
+    if ((size_t)len != strnlen(str, len+1))  {
         PyErr_SetString(PyExc_ValueError, "embedded null byte");
         return NULL;
     }
