@@ -10,10 +10,11 @@ import time
 import unittest
 
 from test import support
+from test.support import import_helper
 from test.support import script_helper
 
 
-interpreters = support.import_module('_xxsubinterpreters')
+interpreters = import_helper.import_module('_xxsubinterpreters')
 
 
 ##################################
@@ -473,6 +474,7 @@ class IsRunningTests(TestBase):
         main = interpreters.get_main()
         self.assertTrue(interpreters.is_running(main))
 
+    @unittest.skip('Fails on FreeBSD')
     def test_subinterpreter(self):
         interp = interpreters.create()
         self.assertFalse(interpreters.is_running(interp))

@@ -79,6 +79,9 @@ New Features
   :class:`types.MappingProxyType` object wrapping the original
   dictionary. (Contributed by Dennis Sweeney in :issue:`40890`.)
 
+* :pep:`618`: The :func:`zip` function now has an optional ``strict`` flag, used
+  to require that all the iterables have an equal length.
+
 
 Other Language Changes
 ======================
@@ -106,6 +109,13 @@ glob
 Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
+
+sys
+---
+
+Add :data:`sys.orig_argv` attribute: the list of the original command line
+arguments passed to the Python executable.
+(Contributed by Victor Stinner in :issue:`23427`.)
 
 
 Optimizations
@@ -147,13 +157,24 @@ C API Changes
 New Features
 ------------
 
-  The result of :c:func:`PyNumber_Index` now always has exact type :class:`int`.
+* The result of :c:func:`PyNumber_Index` now always has exact type :class:`int`.
   Previously, the result could have been an instance of a subclass of ``int``.
   (Contributed by Serhiy Storchaka in :issue:`40792`.)
 
+* Add a new :c:member:`~PyConfig.orig_argv` member to the :c:type:`PyConfig`
+  structure: the list of the original command line arguments passed to the
+  Python executable.
+  (Contributed by Victor Stinner in :issue:`23427`.)
 
 Porting to Python 3.10
 ----------------------
+
+* The ``PY_SSIZE_T_CLEAN`` macro must now be defined to use
+  :c:func:`PyArg_ParseTuple` and :c:func:`Py_BuildValue` formats which use
+  ``#``: ``es#``, ``et#``, ``s#``, ``u#``, ``y#``, ``z#``, ``U#`` and ``Z#``.
+  See :ref:`Parsing arguments and building values
+  <arg-parsing>` and the :pep:`353`.
+  (Contributed by Victor Stinner in :issue:`40943`.)
 
 * Since :c:func:`Py_TYPE()` is changed to the inline static function,
   ``Py_TYPE(obj) = new_type`` must be replaced with ``Py_SET_TYPE(obj, new_type)``:
@@ -192,5 +213,39 @@ Porting to Python 3.10
   for historical reason. It is no longer allowed.
   (Contributed by Victor Stinner in :issue:`40839`.)
 
+* ``PyUnicode_FromUnicode(NULL, size)`` and ``PyUnicode_FromStringAndSize(NULL, size)``
+  raise ``DeprecationWarning`` now.  Use :c:func:`PyUnicode_New` to allocate
+  Unicode object without initial data.
+  (Contributed by Inada Naoki in :issue:`36346`.)
+
 Removed
 -------
+
+* ``PyObject_AsCharBuffer()``, ``PyObject_AsReadBuffer()``, ``PyObject_CheckReadBuffer()``,
+  and ``PyObject_AsWriteBuffer()`` are removed. Please migrate to new buffer protocol;
+  :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release`.
+  (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``Py_UNICODE_str*`` functions manipulating ``Py_UNICODE*`` strings.
+  (Contributed by Inada Naoki in :issue:`41123`.)
+
+   * ``Py_UNICODE_strlen``: use :c:func:`PyUnicode_GetLength` or
+     :c:macro:`PyUnicode_GET_LENGTH`
+   * ``Py_UNICODE_strcat``: use :c:func:`PyUnicode_CopyCharacters` or
+     :c:func:`PyUnicode_FromFormat`
+   * ``Py_UNICODE_strcpy``, ``Py_UNICODE_strncpy``: use
+     :c:func:`PyUnicode_CopyCharacters` or :c:func:`PyUnicode_Substring`
+   * ``Py_UNICODE_strcmp``: use :c:func:`PyUnicode_Compare`
+   * ``Py_UNICODE_strncmp``: use :c:func:`PyUnicode_Tailmatch`
+   * ``Py_UNICODE_strchr``, ``Py_UNICODE_strrchr``: use
+     :c:func:`PyUnicode_FindChar`
+
+* Removed ``PyUnicode_GetMax()``. Please migrate to new (:pep:`393`) APIs.
+  (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``PyLong_FromUnicode()``. Please migrate to :c:func:`PyLong_FromUnicodeObject`.
+  (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``PyUnicode_AsUnicodeCopy()``. Please use :c:func:`PyUnicode_AsUCS4Copy` or
+  :c:func:`PyUnicode_AsWideCharString`
+  (Contributed by Inada Naoki in :issue:`41103`.)

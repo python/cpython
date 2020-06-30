@@ -180,7 +180,7 @@ _symtable symtablemodule.c
 #_datetime _datetimemodule.c	# datetime accelerator
 #_zoneinfo _zoneinfo.c	# zoneinfo accelerator
 #_bisect _bisectmodule.c	# Bisection algorithms
-#_heapq _heapqmodule.c	# Heap queue algorithm
+#_heapq _heapqmodule.c -DPy_BUILD_CORE_MODULE	# Heap queue algorithm
 #_asyncio _asynciomodule.c  # Fast asyncio Future
 #_json -I$(srcdir)/Include/internal -DPy_BUILD_CORE_BUILTIN _json.c	# _json speedups
 #_statistics _statisticsmodule.c # statistics accelerator

@@ -38,7 +38,7 @@ def listicons(icondir=ICONDIR):
     """Utility to display the available icons."""
     root = Tk()
     import glob
-    list = glob.glob(os.path.join(icondir, "*.gif"))
+    list = glob.glob(os.path.join(glob.escape(icondir), "*.gif"))
     list.sort()
     images = []
     row = column = 0

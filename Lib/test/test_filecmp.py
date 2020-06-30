@@ -5,13 +5,14 @@ import tempfile
 import unittest
 
 from test import support
+from test.support import os_helper
 
 
 class FileCompareTestCase(unittest.TestCase):
     def setUp(self):
-        self.name = support.TESTFN
-        self.name_same = support.TESTFN + '-same'
-        self.name_diff = support.TESTFN + '-diff'
+        self.name = os_helper.TESTFN
+        self.name_same = os_helper.TESTFN + '-same'
+        self.name_diff = os_helper.TESTFN + '-diff'
         data = 'Contents of file go here.\n'
         for name in [self.name, self.name_same, self.name_diff]:
             with open(name, 'w') as output:
