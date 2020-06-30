@@ -1,0 +1,2 @@
+Raises DeprecationWarning for ``PyUnicode_FromUnicode(NULL, size)`` and
+``PyUnicode_FromStringAndSize(NULL, size)`` with ``size > 0``.
