@@ -179,7 +179,6 @@ The following exceptions are the exceptions that are usually raised.
    .. versionchanged:: 3.3
       Added the :attr:`name` and :attr:`path` attributes.
 
-
 .. exception:: ModuleNotFoundError
 
    A subclass of :exc:`ImportError` which is raised by :keyword:`import`
