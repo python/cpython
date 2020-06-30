@@ -29,6 +29,7 @@ from concurrent.futures._base import (
 from concurrent.futures.process import BrokenProcessPool
 from multiprocessing import get_context
 
+import multiprocessing.context
 import multiprocessing.process
 import multiprocessing.util
 
@@ -909,6 +910,9 @@ class ProcessPoolExecutorTest(ExecutorTest):
         p.terminate()
         for fut in futures:
             self.assertRaises(BrokenProcessPool, fut.result)
+            assert isinstance(
+                fut.exception().__cause__, multiprocessing.context.ProcessError
+            )
         # Submitting other jobs fails as well.
         self.assertRaises(BrokenProcessPool, self.executor.submit, pow, 2, 8)
 
