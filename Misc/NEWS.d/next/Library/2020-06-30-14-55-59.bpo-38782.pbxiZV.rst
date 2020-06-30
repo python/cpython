@@ -1,0 +1,1 @@
+Use :class:`typing.Protocol` in the :mod:`importlib.abc` module.

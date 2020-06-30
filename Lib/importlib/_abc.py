@@ -1,9 +1,10 @@
 """Subset of importlib.abc used to reduce importlib.util imports."""
 from . import _bootstrap
-import abc
+from typing import Protocol, runtime_checkable
 
 
-class Loader(metaclass=abc.ABCMeta):
+@runtime_checkable
+class Loader(Protocol):
 
     """Abstract base class for import loaders."""
 

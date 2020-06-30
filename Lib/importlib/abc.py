@@ -29,7 +29,8 @@ def _register(abstract_cls, *classes):
             abstract_cls.register(frozen_cls)
 
 
-class Finder(metaclass=abc.ABCMeta):
+@runtime_checkable
+class Finder(Protocol):
 
     """Legacy abstract base class for import finders.
 
@@ -297,7 +298,8 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
 _register(SourceLoader, machinery.SourceFileLoader)
 
 
-class ResourceReader(metaclass=abc.ABCMeta):
+@runtime_checkable
+class ResourceReader(Protocol):
 
     """Abstract base class to provide resource-reading support.
 
