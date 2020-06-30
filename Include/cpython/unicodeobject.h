@@ -1162,14 +1162,6 @@ PyAPI_FUNC(int) _PyUnicode_IsAlpha(
 
 PyAPI_FUNC(PyObject*) _PyUnicode_FormatLong(PyObject *, int, int, int);
 
-/* Create a copy of a unicode string ending with a nul character. Return NULL
-   and raise a MemoryError exception on memory allocation failure, otherwise
-   return a new allocated buffer (use PyMem_Free() to free the buffer). */
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) PyUnicode_AsUnicodeCopy(
-    PyObject *unicode
-    );
-
 /* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
 PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
 
