@@ -1553,7 +1553,12 @@ and classes for traversing abstract syntax trees:
 
    .. warning::
       The produced code string will not necessarily be equal to the original
-      code that generated the :class:`ast.AST` object.
+      code that generated the :class:`ast.AST` object (without any compiler
+      optimizations, such as constant tuples/frozensets).
+
+   .. warning::
+      Trying to unparse a highly complex expression would result with
+      :exc:`RecursionError`.
 
    .. versionadded:: 3.9
 

@@ -497,20 +497,6 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
 }
 
 
-/* The max unicode value is always 0x10FFFF while using the PEP-393 API.
-   This function is kept for backward compatibility with the old API. */
-Py_UNICODE
-PyUnicode_GetMax(void)
-{
-#ifdef Py_UNICODE_WIDE
-    return 0x10FFFF;
-#else
-    /* This is actually an illegal character, so it should
-       not be passed to unichr. */
-    return 0xFFFF;
-#endif
-}
-
 int
 _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 {
@@ -2193,8 +2179,16 @@ unicode_char(Py_UCS4 ch)
 PyObject *
 PyUnicode_FromUnicode(const Py_UNICODE *u, Py_ssize_t size)
 {
-    if (u == NULL)
+    if (u == NULL) {
+        if (size > 0) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                    "PyUnicode_FromUnicode(NULL, size) is deprecated; "
+                    "use PyUnicode_New() instead", 1) < 0) {
+                return NULL;
+            }
+        }
         return (PyObject*)_PyUnicode_New(size);
+    }
 
     if (size < 0) {
         PyErr_BadInternalCall();
@@ -2280,10 +2274,19 @@ PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
                         "Negative size passed to PyUnicode_FromStringAndSize");
         return NULL;
     }
-    if (u != NULL)
+    if (u != NULL) {
         return PyUnicode_DecodeUTF8Stateful(u, size, NULL, NULL);
-    else
+    }
+    else {
+        if (size > 0) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                    "PyUnicode_FromStringAndSize(NULL, size) is deprecated; "
+                    "use PyUnicode_New() instead", 1) < 0) {
+                return NULL;
+            }
+        }
         return (PyObject *)_PyUnicode_New(size);
+    }
 }
 
 PyObject *
@@ -3286,6 +3289,80 @@ PyUnicode_AsWideCharString(PyObject *unicode,
 }
 
 #endif /* HAVE_WCHAR_H */
+
+int
+_PyUnicode_WideCharString_Converter(PyObject *obj, void *ptr)
+{
+    wchar_t **p = (wchar_t **)ptr;
+    if (obj == NULL) {
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(*p);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+        *p = NULL;
+        return 1;
+    }
+    if (PyUnicode_Check(obj)) {
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+        *p = (wchar_t *)_PyUnicode_AsUnicode(obj);
+        if (*p == NULL) {
+            return 0;
+        }
+        return 1;
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+        *p = PyUnicode_AsWideCharString(obj, NULL);
+        if (*p == NULL) {
+            return 0;
+        }
+        return Py_CLEANUP_SUPPORTED;
+#endif /* USE_UNICODE_WCHAR_CACHE */
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "argument must be str, not %.50s",
+                 obj->ob_type->tp_name);
+    return 0;
+}
+
+int
+_PyUnicode_WideCharString_Opt_Converter(PyObject *obj, void *ptr)
+{
+    wchar_t **p = (wchar_t **)ptr;
+    if (obj == NULL) {
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(*p);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+        *p = NULL;
+        return 1;
+    }
+    if (obj == Py_None) {
+        *p = NULL;
+        return 1;
+    }
+    if (PyUnicode_Check(obj)) {
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+        *p = (wchar_t *)_PyUnicode_AsUnicode(obj);
+        if (*p == NULL) {
+            return 0;
+        }
+        return 1;
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+        *p = PyUnicode_AsWideCharString(obj, NULL);
+        if (*p == NULL) {
+            return 0;
+        }
+        return Py_CLEANUP_SUPPORTED;
+#endif /* USE_UNICODE_WCHAR_CACHE */
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "argument must be str or None, not %.50s",
+                 obj->ob_type->tp_name);
+    return 0;
+}
 
 PyObject *
 PyUnicode_FromOrdinal(int ordinal)
@@ -14655,19 +14732,14 @@ mainformatlong(PyObject *v,
     if (!PyLong_Check(v)) {
         if (type == 'o' || type == 'x' || type == 'X') {
             iobj = _PyNumber_Index(v);
-            if (iobj == NULL) {
-                if (PyErr_ExceptionMatches(PyExc_TypeError))
-                    goto wrongtype;
-                return -1;
-            }
         }
         else {
             iobj = PyNumber_Long(v);
-            if (iobj == NULL ) {
-                if (PyErr_ExceptionMatches(PyExc_TypeError))
-                    goto wrongtype;
-                return -1;
-            }
+        }
+        if (iobj == NULL ) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError))
+                goto wrongtype;
+            return -1;
         }
         assert(PyLong_Check(iobj));
     }
@@ -14750,24 +14822,17 @@ formatchar(PyObject *v)
         goto onError;
     }
     else {
-        PyObject *iobj;
-        long x;
-        /* make sure number is a type of integer */
-        if (!PyLong_Check(v)) {
-            iobj = PyNumber_Index(v);
-            if (iobj == NULL) {
+        int overflow;
+        long x = PyLong_AsLongAndOverflow(v, &overflow);
+        if (x == -1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
                 goto onError;
             }
-            x = PyLong_AsLong(iobj);
-            Py_DECREF(iobj);
+            return (Py_UCS4) -1;
         }
-        else {
-            x = PyLong_AsLong(v);
-        }
-        if (x == -1 && PyErr_Occurred())
-            goto onError;
 
         if (x < 0 || x > MAX_UNICODE) {
+            /* this includes an overflow in converting to C long */
             PyErr_SetString(PyExc_OverflowError,
                             "%c arg not in range(0x110000)");
             return (Py_UCS4) -1;
@@ -15887,127 +15952,6 @@ unicode_iter(PyObject *seq)
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
-
-
-size_t
-Py_UNICODE_strlen(const Py_UNICODE *u)
-{
-    return wcslen(u);
-}
-
-Py_UNICODE*
-Py_UNICODE_strcpy(Py_UNICODE *s1, const Py_UNICODE *s2)
-{
-    Py_UNICODE *u = s1;
-    while ((*u++ = *s2++));
-    return s1;
-}
-
-Py_UNICODE*
-Py_UNICODE_strncpy(Py_UNICODE *s1, const Py_UNICODE *s2, size_t n)
-{
-    Py_UNICODE *u = s1;
-    while ((*u++ = *s2++))
-        if (n-- == 0)
-            break;
-    return s1;
-}
-
-Py_UNICODE*
-Py_UNICODE_strcat(Py_UNICODE *s1, const Py_UNICODE *s2)
-{
-    Py_UNICODE *u1 = s1;
-    u1 += wcslen(u1);
-    while ((*u1++ = *s2++));
-    return s1;
-}
-
-int
-Py_UNICODE_strcmp(const Py_UNICODE *s1, const Py_UNICODE *s2)
-{
-    while (*s1 && *s2 && *s1 == *s2)
-        s1++, s2++;
-    if (*s1 && *s2)
-        return (*s1 < *s2) ? -1 : +1;
-    if (*s1)
-        return 1;
-    if (*s2)
-        return -1;
-    return 0;
-}
-
-int
-Py_UNICODE_strncmp(const Py_UNICODE *s1, const Py_UNICODE *s2, size_t n)
-{
-    Py_UNICODE u1, u2;
-    for (; n != 0; n--) {
-        u1 = *s1;
-        u2 = *s2;
-        if (u1 != u2)
-            return (u1 < u2) ? -1 : +1;
-        if (u1 == '\0')
-            return 0;
-        s1++;
-        s2++;
-    }
-    return 0;
-}
-
-Py_UNICODE*
-Py_UNICODE_strchr(const Py_UNICODE *s, Py_UNICODE c)
-{
-    const Py_UNICODE *p;
-    for (p = s; *p; p++)
-        if (*p == c)
-            return (Py_UNICODE*)p;
-    return NULL;
-}
-
-Py_UNICODE*
-Py_UNICODE_strrchr(const Py_UNICODE *s, Py_UNICODE c)
-{
-    const Py_UNICODE *p;
-    p = s + wcslen(s);
-    while (p != s) {
-        p--;
-        if (*p == c)
-            return (Py_UNICODE*)p;
-    }
-    return NULL;
-}
-
-Py_UNICODE*
-PyUnicode_AsUnicodeCopy(PyObject *unicode)
-{
-    Py_UNICODE *u, *copy;
-    Py_ssize_t len, size;
-
-    if (!PyUnicode_Check(unicode)) {
-        PyErr_BadArgument();
-        return NULL;
-    }
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    u = PyUnicode_AsUnicodeAndSize(unicode, &len);
-_Py_COMP_DIAG_POP
-    if (u == NULL)
-        return NULL;
-    /* Ensure we won't overflow the size. */
-    if (len > ((PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(Py_UNICODE)) - 1)) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    size = len + 1; /* copy the null character */
-    size *= sizeof(Py_UNICODE);
-    copy = PyMem_Malloc(size);
-    if (copy == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    memcpy(copy, u, size);
-    return copy;
-}
-
 
 static int
 encode_wstr_utf8(wchar_t *wstr, char **str, const char *name)

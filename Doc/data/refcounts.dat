@@ -1205,11 +1205,6 @@ PyLong_FromString:const char*:str::
 PyLong_FromString:char**:pend::
 PyLong_FromString:int:base::
 
-PyLong_FromUnicode:PyObject*::+1:
-PyLong_FromUnicode:Py_UNICODE*:u::
-PyLong_FromUnicode:Py_ssize_t:length::
-PyLong_FromUnicode:int:base::
-
 PyLong_FromUnicodeObject:PyObject*::+1:
 PyLong_FromUnicodeObject:PyObject*:u:0:
 PyLong_FromUnicodeObject:int:base::
@@ -2423,9 +2418,6 @@ PyUnicode_TransformDecimalToASCII:Py_ssize_t:size::
 PyUnicode_AsUnicodeAndSize:Py_UNICODE*:::
 PyUnicode_AsUnicodeAndSize:PyObject*:unicode:0:
 PyUnicode_AsUnicodeAndSize:Py_ssize_t*:size::
-
-PyUnicode_AsUnicodeCopy:Py_UNICODE*:::
-PyUnicode_AsUnicodeCopy:PyObject*:unicode:0:
 
 PyUnicode_GetSize:Py_ssize_t:::
 PyUnicode_GetSize:PyObject*:unicode:0:

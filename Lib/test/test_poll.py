@@ -7,8 +7,10 @@ import select
 import threading
 import time
 import unittest
-from test.support import TESTFN, run_unittest, cpython_only
+from test.support import run_unittest, cpython_only
 from test.support import threading_helper
+from test.support.os_helper import TESTFN
+
 
 try:
     select.poll
