@@ -1827,6 +1827,10 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
         return raiseTestError("test_widechar",
                               "PyUnicode_FromWideChar(L\"\\U00110000\", 1) didn't fail");
 
+#if USE_UNICODE_WCHAR_CACHE
+/* Ignore use of deprecated APIs */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     wide = PyUnicode_FromUnicode(invalid, 1);
     if (wide == NULL)
         PyErr_Clear();
@@ -1834,10 +1838,6 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
         return raiseTestError("test_widechar",
                               "PyUnicode_FromUnicode(L\"\\U00110000\", 1) didn't fail");
 
-#if USE_UNICODE_WCHAR_CACHE
-/* Ignore use of deprecated APIs */
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     wide = PyUnicode_FromUnicode(NULL, 1);
     if (wide == NULL)
         return NULL;
