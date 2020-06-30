@@ -1692,10 +1692,13 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *arg)
     }
 
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     len = PyUnicode_GetSize(arg);
     if (len < 0) {
         return NULL;
     }
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
     len = PyUnicode_AsWideChar(arg, NULL, 0);
     if (len < 0) {
@@ -2695,6 +2698,8 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             else if (initial != NULL && PyUnicode_Check(initial))  {
                 Py_ssize_t n;
 #if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
                 Py_UNICODE *ustr;
 
                 ustr = PyUnicode_AsUnicode(initial);
@@ -2719,6 +2724,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     memcpy(item, ustr, n);
                     self->allocated = Py_SIZE(self);
                 }
+_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
                 n = PyUnicode_AsWideChar(initial, NULL, 0);
                 if (n < 0) {
