@@ -142,11 +142,11 @@ The following functions and structs are used to create
 
 .. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 
-   Equivalent to ``PyMetaType_FromModuleAndSpec(module, &PyType_Type, spec, bases)``.
+   Equivalent to ``PyMetaType_FromSpec(module, &PyType_Type, spec, bases)``.
 
    .. versionadded:: 3.9
 
-.. c:function:: PyObject* PyMetaType_FromModuleAndSpec(PyObject *module, PyTypeObject *meta_type, PyType_Spec *spec, PyObject *bases)
+.. c:function:: PyObject* PyMetaType_FromSpec(PyObject *module, PyTypeObject *meta_type, PyType_Spec *spec, PyObject *bases)
 
    Creates and returns a heap type object from the *spec* whose's metaclass is *meta_type*
    (:const:`Py_TPFLAGS_HEAPTYPE`).
@@ -171,19 +171,13 @@ The following functions and structs are used to create
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
-   Equivalent to ``PyMetaType_FromModuleAndSpec(NULL, &PyType_Type, spec, bases)``.
+   Equivalent to ``PyMetaType_FromSpec(NULL, &PyType_Type, spec, bases)``.
 
    .. versionadded:: 3.3
 
 .. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
 
-   Equivalent to ``PyMetaType_FromSpec(&PyType_Type, spec)``.
-
-.. c:function:: PyObject* PyMetaType_FromSpec(PyTypeObject *meta_type, PyType_Spec *spec)
-
-   Equivalent to ``PyMetaType_FromModuleAndSpec(NULL, meta_type, spec, NULL)``
-
-   .. versionadded:: 3.10
+   Equivalent to ``PyMetaType_FromSpec(NULL, &PyType_Type, spec, NULL)``.
 
 .. c:type:: PyType_Spec
 

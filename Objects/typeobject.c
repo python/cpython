@@ -2880,7 +2880,7 @@ static const short slotoffsets[] = {
 };
 
 PyObject *
-PyMetaType_FromModuleAndSpec(PyObject *module, PyTypeObject *meta_type, PyType_Spec *spec, PyObject *bases)
+PyMetaType_FromSpec(PyObject *module, PyTypeObject *meta_type, PyType_Spec *spec, PyObject *bases)
 {
     if (meta_type == NULL) {
         PyErr_BadArgument();
@@ -3095,12 +3095,6 @@ PyMetaType_FromModuleAndSpec(PyObject *module, PyTypeObject *meta_type, PyType_S
  fail:
     Py_DECREF(res);
     return NULL;
-}
-
-PyObject *
-PyMetaType_FromSpec(PyTypeObject *meta_type, PyType_Spec *spec)
-{
-    return PyMetaType_FromModuleAndSpec(NULL, meta_type, spec, NULL);
 }
 
 void *

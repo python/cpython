@@ -225,17 +225,16 @@ typedef struct{
     PyType_Slot *slots; /* terminated by slot==0. */
 } PyType_Spec;
 
-#define PyType_FromSpec(spec) PyMetaType_FromSpec(&PyType_Type, spec)
-PyAPI_FUNC(PyObject*) PyMetaType_FromSpec(PyTypeObject*, PyType_Spec*);
+#define PyType_FromSpec(spec) PyMetaType_FromSpec(NULL, &PyType_Type, spec, NULL)
+PyAPI_FUNC(PyObject*) PyMetaType_FromSpec(PyObject*, PyTypeObject*, PyType_Spec*, PyObject*);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
-#define PyType_FromSpecWithBases(spec, bases) PyMetaType_FromModuleAndSpec(NULL, &PyType_Type, spec, bases)
+#define PyType_FromSpecWithBases(spec, bases) PyMetaType_FromSpec(NULL, &PyType_Type, spec, bases)
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03040000
 PyAPI_FUNC(void*) PyType_GetSlot(PyTypeObject*, int);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
-#define PyType_FromModuleAndSpec(module, spec, bases) PyMetaType_FromModuleAndSpec(module, &PyType_Type, spec, bases)
-PyAPI_FUNC(PyObject*) PyMetaType_FromModuleAndSpec(PyObject*, PyTypeObject*, PyType_Spec*, PyObject*);
+#define PyType_FromModuleAndSpec(module, spec, bases) PyMetaType_FromSpec(module, &PyType_Type, spec, bases)
 PyAPI_FUNC(PyObject *) PyType_GetModule(struct _typeobject *);
 PyAPI_FUNC(void *) PyType_GetModuleState(struct _typeobject *);
 #endif
