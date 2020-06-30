@@ -22,22 +22,15 @@ char _PyByteArray_empty_string[] = "";
 static int
 _getbytevalue(PyObject* arg, int *value)
 {
-    long face_value;
+    int overflow;
+    long face_value = PyLong_AsLongAndOverflow(arg, &overflow);
 
-    if (PyLong_Check(arg)) {
-        face_value = PyLong_AsLong(arg);
-    } else {
-        PyObject *index = PyNumber_Index(arg);
-        if (index == NULL) {
-            *value = -1;
-            return 0;
-        }
-        face_value = PyLong_AsLong(index);
-        Py_DECREF(index);
+    if (face_value == -1 && PyErr_Occurred()) {
+        *value = -1;
+        return 0;
     }
-
     if (face_value < 0 || face_value >= 256) {
-        /* this includes the OverflowError in case the long is too large */
+        /* this includes an overflow in converting to C long */
         PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
         *value = -1;
         return 0;

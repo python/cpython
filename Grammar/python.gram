@@ -748,11 +748,15 @@ invalid_named_expression:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
 invalid_assignment:
-    | a=list ':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not list) can be annotated") }
-    | a=tuple ':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not tuple) can be annotated") }
-    | a=star_named_expression ',' star_named_expressions* ':' {
+    | a=invalid_ann_assign_target ':' expression {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a,
+            "only single target (not %s) can be annotated",
+            _PyPegen_get_expr_name(a)
+        )}
+    | a=star_named_expression ',' star_named_expressions* ':' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not tuple) can be annotated") }
-    | a=expression ':' expression ['=' annotated_rhs] {
+    | a=expression ':' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "illegal target for annotation") }
     | (star_targets '=')* a=star_expressions '=' {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
@@ -763,6 +767,10 @@ invalid_assignment:
             "'%s' is an illegal expression for augmented assignment",
             _PyPegen_get_expr_name(a)
         )}
+invalid_ann_assign_target[expr_ty]:
+    | list
+    | tuple
+    | '(' a=invalid_ann_assign_target ')' { a }
 invalid_del_stmt:
     | 'del' a=star_expressions {
         RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }

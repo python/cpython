@@ -158,13 +158,6 @@ class ContainerTestCase(unittest.TestCase, HelperMixin):
         for constructor in (set, frozenset):
             self.helper(constructor(self.d.keys()))
 
-    @support.cpython_only
-    def test_empty_frozenset_singleton(self):
-        # marshal.loads() must reuse the empty frozenset singleton
-        obj = frozenset()
-        obj2 = marshal.loads(marshal.dumps(obj))
-        self.assertIs(obj2, obj)
-
 
 class BufferTestCase(unittest.TestCase, HelperMixin):
 
