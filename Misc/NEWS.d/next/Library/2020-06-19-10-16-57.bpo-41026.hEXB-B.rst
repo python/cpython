@@ -1,2 +1,2 @@
-:mod:`mailbox` now supports a :term:`path-like object`.  Patch by Laurence
-Alexander Hurst.
+:mod:`mailbox` now uses pathlib internally and supports mailbox paths using a
+:term:`path-like object`.  Patch by Laurence Alexander Hurst.

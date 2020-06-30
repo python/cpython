@@ -66,8 +66,8 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    removed.
 
    .. versionchanged:: 3.10
-      Constructor accepts a :term:`path-like object` for *path* (*dirname* in
-      Maildir).
+      :class:`Mailbox` (and subclasses) supports a :term:`path-like object` for
+      the mailbox/maildir.
 
    .. warning::
 
