@@ -1,1 +1,0 @@
-Add :class:`zipfile.Path` to ``__all__`` in the :mod:`zipfile` module.
