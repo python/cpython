@@ -147,6 +147,8 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_vectorcall`        | :c:type:`vectorcallfunc`          |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | :c:member:`~PyTypeObject.tp_obj_offset`        | const Py_ssize_t                  |                   |   | X | ~ |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
 .. [#slots]
    A slot name in parentheses indicates it is (effectively) deprecated.
@@ -1014,6 +1016,12 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    the ``|`` operator to form the value of the :c:member:`~PyTypeObject.tp_flags` field.  The macro
    :c:func:`PyType_HasFeature` takes a type and a flags value, *tp* and *f*, and
    checks whether ``tp->tp_flags & f`` is non-zero.
+
+   .. data:: Py_TPFLAGS_USES_OPAQUE_OBJECT
+
+      This bit is set when the type object's :c:member:`PyTypeObject.tp_basicsize` is configured
+      for an opaque :c:type:`PyObject` structure. The value of :c:member:`PyTypeObject.tp_basicsize` is the size of the type's
+      internal object structure EXCLUDING the base type's structure size.
 
    .. data:: Py_TPFLAGS_HEAPTYPE
 

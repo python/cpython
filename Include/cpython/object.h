@@ -263,6 +263,8 @@ struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
+    /* INTERNAL USE ONLY! MODIFYING THIS CAN CRASH PYTHON! */
+    const Py_ssize_t tp_obj_offset;
 };
 
 /* The *real* layout of a type object when allocated on the heap */

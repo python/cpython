@@ -317,6 +317,9 @@ Code can use PyType_HasFeature(type_ob, flag_value) to test whether the
 given type object has a specified feature.
 */
 
+/* Set if the type object's tp_basicsize is set for opague object */
+#define Py_TPFLAGS_OPAQUE_OBJECT (1UL << 8)
+
 /* Set if the type object is dynamically allocated */
 #define Py_TPFLAGS_HEAPTYPE (1UL << 9)
 
