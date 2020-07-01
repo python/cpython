@@ -1259,14 +1259,14 @@ finalize_interp_types(PyThreadState *tstate, int is_main_interp)
     _PyAsyncGen_Fini(tstate);
     _PyContext_Fini(tstate);
 
-    _PyDict_Fini(tstate);
     _PyList_Fini(tstate);
+    _PyUnicode_Fini(tstate);
+    _PyDict_Fini(tstate);
     _PyTuple_Fini(tstate);
 
     _PySlice_Fini(tstate);
 
     _PyBytes_Fini(tstate);
-    _PyUnicode_Fini(tstate);
     _PyFloat_Fini(tstate);
     _PyLong_Fini(tstate);
 }
