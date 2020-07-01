@@ -1,4 +1,5 @@
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -70,15 +71,22 @@ if os.name == "nt":
 elif os.name == "posix" and sys.platform == "darwin":
     from ctypes.macholib.dyld import dyld_find as _dyld_find
     def find_library(name):
-        possible = ['lib%s.dylib' % name,
-                    '%s.dylib' % name,
-                    '%s.framework/%s' % (name, name)]
-        for name in possible:
-            try:
-                return _dyld_find(name)
-            except ValueError:
-                continue
-        return None
+        macos_version = platform.mac_ver()[0]
+        if macos_version == '10.16' or macos_version == '11.0':
+            # see https://bugs.python.org/issue41179
+            # macOS Big Sur no longer copies dynamic libraries
+            # TODO (@sumanthratna): maybe look in /System/Library/Frameworks/
+            pass
+        else:
+            possible = ['lib%s.dylib' % name,
+                        '%s.dylib' % name,
+                        '%s.framework/%s' % (name, name)]
+            for name in possible:
+                try:
+                    return _dyld_find(name)
+                except ValueError:
+                    continue
+            return None
 
 elif sys.platform.startswith("aix"):
     # AIX has two styles of storing shared libraries
