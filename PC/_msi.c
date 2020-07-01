@@ -41,21 +41,50 @@ uuidcreate(PyObject* obj, PyObject*args)
 
 }
 
+/* Helper for converting file names from UTF-8 to wchat_t*.  */
+static wchar_t *
+utf8_to_wchar(const char *s, int *err)
+{
+    PyObject *obj = PyUnicode_FromString(s);
+    if (obj == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+            *err = ENOMEM;
+        }
+        else {
+            *err = EINVAL;
+        }
+        PyErr_Clear();
+        return NULL;
+    }
+    wchar_t *ws = PyUnicode_AsWideCharString(obj, NULL);
+    if (ws == NULL) {
+        *err = ENOMEM;
+        PyErr_Clear();
+    }
+    Py_DECREF(obj);
+    return ws;
+}
+
 /* FCI callback functions */
 
 static FNFCIALLOC(cb_alloc)
 {
-    return malloc(cb);
+    return PyMem_RawMalloc(cb);
 }
 
 static FNFCIFREE(cb_free)
 {
-    free(memory);
+    PyMem_RawFree(memory);
 }
 
 static FNFCIOPEN(cb_open)
 {
-    int result = _open(pszFile, oflag | O_NOINHERIT, pmode);
+    wchar_t *ws = utf8_to_wchar(pszFile, err);
+    if (ws == NULL) {
+        return -1;
+    }
+    int result = _wopen(ws, oflag | O_NOINHERIT, pmode);
+    PyMem_Free(ws);
     if (result == -1)
         *err = errno;
     return result;
@@ -95,7 +124,12 @@ static FNFCISEEK(cb_seek)
 
 static FNFCIDELETE(cb_delete)
 {
-    int result = remove(pszFile);
+    wchar_t *ws = utf8_to_wchar(pszFile, err);
+    if (ws == NULL) {
+        return -1;
+    }
+    int result = _wremove(ws);
+    PyMem_Free(ws);
     if (result != 0)
         *err = errno;
     return result;
@@ -159,15 +193,22 @@ static FNFCIGETOPENINFO(cb_getopeninfo)
     FILETIME filetime;
     HANDLE handle;
 
-    /* Need Win32 handle to get time stamps */
-    handle = CreateFile(pszName, GENERIC_READ, FILE_SHARE_READ, NULL,
-        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (handle == INVALID_HANDLE_VALUE)
+    wchar_t *ws = utf8_to_wchar(pszName, err);
+    if (ws == NULL) {
         return -1;
+    }
 
-    if (GetFileInformationByHandle(handle, &bhfi) == FALSE)
-    {
+    /* Need Win32 handle to get time stamps */
+    handle = CreateFileW(ws, GENERIC_READ, FILE_SHARE_READ, NULL,
+        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (handle == INVALID_HANDLE_VALUE) {
+        PyMem_Free(ws);
+        return -1;
+    }
+
+    if (GetFileInformationByHandle(handle, &bhfi) == FALSE) {
         CloseHandle(handle);
+        PyMem_Free(ws);
         return -1;
     }
 
@@ -179,7 +220,9 @@ static FNFCIGETOPENINFO(cb_getopeninfo)
 
     CloseHandle(handle);
 
-    return _open(pszName, _O_RDONLY | _O_BINARY | O_NOINHERIT);
+    int result = _wopen(ws, _O_RDONLY | _O_BINARY | O_NOINHERIT);
+    PyMem_Free(ws);
+    return result;
 }
 
 static PyObject* fcicreate(PyObject* obj, PyObject* args)
@@ -212,7 +255,7 @@ static PyObject* fcicreate(PyObject* obj, PyObject* args)
     ccab.setID = 0;
     ccab.szDisk[0] = '\0';
 
-    for (i = 0, p = cabname; *p; p = CharNext(p))
+    for (i = 0, p = cabname; *p; p++)
         if (*p == '\\' || *p == '/')
             i = p - cabname + 1;
 
