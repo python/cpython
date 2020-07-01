@@ -425,12 +425,12 @@ _msi_SummaryInformation_Persist(msiobj *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_msi_View_Execute__doc__,
-"Execute($self, record, /)\n"
+"Execute($self, params, /)\n"
 "--\n"
 "\n"
 "Execute the SQL query of the view.\n"
 "\n"
-"  record\n"
+"  params\n"
 "    a record describing actual values of the parameter tokens\n"
 "    in the query or None");
 
@@ -725,4 +725,4 @@ _msi_CreateRecord(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=478f4fd09e4fd2d4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=39807788326ad0e9 input=a9049054013a1b77]*/

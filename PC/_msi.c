@@ -866,7 +866,7 @@ static PyTypeObject summary_Type = {
 
 /*[clinic input]
 _msi.View.Execute
-    record: object
+    params as oparams: object
         a record describing actual values of the parameter tokens
         in the query or None
     /
@@ -875,18 +875,18 @@ Execute the SQL query of the view.
 [clinic start generated code]*/
 
 static PyObject *
-_msi_View_Execute(msiobj *self, PyObject *record)
-/*[clinic end generated code: output=625547a0ca89aaec input=cfd4d84c0c654b9c]*/
+_msi_View_Execute(msiobj *self, PyObject *oparams)
+/*[clinic end generated code: output=f0f65fd2900bcb4e input=cb163a15d453348e]*/
 {
     int status;
     MSIHANDLE params = 0;
 
-    if (record != Py_None) {
-        if (record->ob_type != &record_Type) {
+    if (oparams != Py_None) {
+        if (oparams->ob_type != &record_Type) {
             PyErr_SetString(PyExc_TypeError, "Execute argument must be a record");
             return NULL;
         }
-        params = ((msiobj*)record)->h;
+        params = ((msiobj*)oparams)->h;
     }
 
     status = MsiViewExecute(self->h, params);
