@@ -1,5 +1,4 @@
 import os
-import platform
 import shutil
 import subprocess
 import sys
@@ -71,7 +70,8 @@ if os.name == "nt":
 elif os.name == "posix" and sys.platform == "darwin":
     from ctypes.macholib.dyld import dyld_find as _dyld_find
     def find_library(name):
-        macos_version = platform.mac_ver()[0]
+        from platform import mac_ver
+        macos_version = mac_ver()[0]
         if macos_version == '10.16' or macos_version == '11.0':
             # see https://bugs.python.org/issue41179
             # macOS Big Sur no longer copies dynamic libraries
