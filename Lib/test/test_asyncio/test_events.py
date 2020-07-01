@@ -77,8 +77,8 @@ ONLYCERT = data_file('ssl_cert.pem')
 ONLYKEY = data_file('ssl_key.pem')
 SIGNED_CERTFILE = data_file('keycert3.pem')
 SIGNING_CA = data_file('pycacert.pem')
-PEERCERT = {'serialNumber': 'B09264B1F2DA21D1',
-            'version': 1,
+PEERCERT = {'serialNumber': 'CB2D80995A69525C',
+            'version': 3,
             'subject': ((('countryName', 'XY'),),
                     (('localityName', 'Castle Anthrax'),),
                     (('organizationName', 'Python Software Foundation'),),
@@ -86,8 +86,16 @@ PEERCERT = {'serialNumber': 'B09264B1F2DA21D1',
             'issuer': ((('countryName', 'XY'),),
                     (('organizationName', 'Python Software Foundation CA'),),
                     (('commonName', 'our-ca-server'),)),
-            'notAfter': 'Nov 13 19:47:07 2022 GMT',
-            'notBefore': 'Jan  4 19:47:07 2013 GMT'}
+            'notAfter': 'Jul  7 14:23:16 2028 GMT',
+            'notBefore': 'Aug 29 14:23:16 2018 GMT',
+            'subjectAltName': (('DNS', 'localhost'),),
+            'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
+            'caIssuers': (
+                'http://testca.pythontest.net/testca/pycacert.cer',
+                ),
+            'crlDistributionPoints': (
+                'http://testca.pythontest.net/testca/revocation.crl',
+            )}
 
 
 class MyBaseProto(asyncio.Protocol):
@@ -1241,6 +1249,8 @@ class EventLoopTestsMixin:
         client.close()
         server.close()
         self.loop.run_until_complete(proto.done)
+
+    maxDiff = None
 
     def test_legacy_create_server_ssl_verified(self):
         with test_utils.force_legacy_ssl_support():
