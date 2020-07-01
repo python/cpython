@@ -1263,6 +1263,7 @@ finalize_interp_types(PyThreadState *tstate)
     _PyFrame_Fini(tstate);
     _PyAsyncGen_Fini(tstate);
     _PyContext_Fini(tstate);
+    _PyUnicode_ClearInterned(tstate);
 
     _PyDict_Fini(tstate);
     _PyList_Fini(tstate);
