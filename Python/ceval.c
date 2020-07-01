@@ -904,6 +904,7 @@ get_match_args(PyThreadState *tstate, PyObject *type)
     if (!match_args) {
         if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
             _PyErr_Clear(tstate);
+            return PyTuple_New(0);
         }
         return NULL;
     }
@@ -923,10 +924,9 @@ get_match_args(PyThreadState *tstate, PyObject *type)
 }
 
 static PyObject *
-do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *type, PyObject *target)
+do_match(PyThreadState *tstate, Py_ssize_t nargs, PyObject *kwargs, PyObject *type, PyObject *target)
 {
     // TODO: Break this up!
-    PyObject *match_args = NULL;
     PyObject *args = NULL;
     PyObject *attrs = NULL;
     PyObject *seen = NULL;
@@ -940,13 +940,9 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
         return NULL;
     }
     Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwargs);
-    Py_ssize_t nargs = count - nkwargs;
-    match_args = get_match_args(tstate, type);
-    assert(!match_args || PyTuple_CheckExact(match_args));
-    if (!match_args && _PyErr_Occurred(tstate)) {
-        goto error;
-    }
+    Py_ssize_t count = nargs + nkwargs;
     Py_ssize_t nmatch_args;
+    // TODO: Just build attrs in two passes (nargs and nkwargs)
     if (!nargs) {
         nmatch_args = 0;
         args = PyTuple_New(0);
@@ -954,16 +950,25 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
             goto error;
         }
     }
-    else if (!match_args) {
-        nmatch_args = PyType_HasFeature((PyTypeObject *)type,
-                                        _Py_TPFLAGS_SIMPLE_MATCH);
-        args = NULL;
-    }
     else {
-        nmatch_args = PyTuple_GET_SIZE(match_args);
-        args = PyTuple_GetSlice(match_args, 0, nargs);
-        if (!args) {
+        PyObject *match_args = get_match_args(tstate, type);
+        if (!match_args) {
             goto error;
+        }
+        assert(PyTuple_CheckExact(match_args));
+        nmatch_args = PyTuple_GET_SIZE(match_args);
+        if (!nmatch_args) {
+            Py_DECREF(match_args);
+            nmatch_args = PyType_HasFeature((PyTypeObject *)type,
+                                            _Py_TPFLAGS_SIMPLE_MATCH);
+            args = NULL;
+        }
+        else {
+            args = PyTuple_GetSlice(match_args, 0, nargs);
+            Py_DECREF(match_args);
+            if (!args) {
+                goto error;
+            }
         }
     }
     if (nmatch_args < nargs) {
@@ -981,7 +986,7 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
     if (!seen) {
         goto error;
     }
-    PyObject *name;
+    PyObject *name, *attr;
     for (Py_ssize_t i = 0; i < count; i++) {
         if (i < nargs) {
             if (!args) {
@@ -1009,23 +1014,21 @@ do_match(PyThreadState *tstate, Py_ssize_t count, PyObject *kwargs, PyObject *ty
             }
             goto error;
         }
-        PyObject *attr = PyObject_GetAttr(target, name);
+        attr = PyObject_GetAttr(target, name);
         if (!attr) {
             if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
                 _PyErr_Clear(tstate);
-                Py_SETREF(attrs, Py_None);
+                Py_CLEAR(attrs);
                 break;
             }
             goto error;
         }
         PyTuple_SET_ITEM(attrs, i, attr);
     }
-    Py_XDECREF(match_args);
     Py_XDECREF(args);
     Py_DECREF(seen);
     return attrs;
 error:
-    Py_XDECREF(match_args);
     Py_XDECREF(args);
     Py_XDECREF(seen);
     Py_XDECREF(attrs);
@@ -3489,7 +3492,7 @@ main_loop:
         case TARGET(JUMP_IF_NOT_MAP): {
             PyInterpreterState *interp = PyInterpreterState_Get();
             if (!interp) {
-                    goto error;
+                goto error;
             }
             if (!interp->map_abc) {
                 PyObject *abc = PyImport_ImportModule("_collections_abc");

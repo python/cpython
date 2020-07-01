@@ -2792,7 +2792,7 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
         PyTuple_SET_ITEM(kwnames, i, name);
     }
     ADDOP_LOAD_CONST_NEW(c, kwnames);
-    ADDOP_I(c, MATCH_TYPE, nargs + nkwargs);
+    ADDOP_I(c, MATCH_TYPE, nargs);
     ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     pattern_context sub_pc = *pc;
     sub_pc.failure = block;
