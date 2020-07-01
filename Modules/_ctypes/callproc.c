@@ -86,10 +86,6 @@
 #define DONT_USE_SEH
 #endif
 
-#if defined(__APPLE__) && __arm64__
-#define HAVE_FFI_PREP_CIF_VAR 1
-#endif
-
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
 
 static void pymem_destructor(PyObject *ptr)

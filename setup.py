@@ -246,6 +246,13 @@ def is_macosx_sdk_path(path):
                 or path.startswith('/Library/') )
 
 
+def grep_headers_for(function, headers):
+    for header in headers:
+        with open(header, 'r') as f:
+            if function in f.read():
+                return True
+    return False
+
 def find_file(filename, std_dirs, paths):
     """Searches for the directory where a given file is located,
     and returns a possibly-empty list of additional directories, or None
@@ -2195,7 +2202,7 @@ class PyBuildExt(build_ext):
                                sources=['_ctypes/_ctypes_test.c'],
                                libraries=['m']))
 
-        ffi_inc = [sysconfig.get_config_var("LIBFFI_INCLUDEDIR")]
+        ffi_inc = sysconfig.get_config_var("LIBFFI_INCLUDEDIR")
         ffi_lib = None
 
         ffi_inc_dirs = self.inc_dirs.copy()
@@ -2204,29 +2211,38 @@ class PyBuildExt(build_ext):
                 return
             ffi_in_sdk = os.path.join(macosx_sdk_root(), "usr/include/ffi")
             if os.path.exists(ffi_in_sdk):
-                ffi_inc = [ffi_in_sdk]
+                ffi_inc = ffi_in_sdk
                 ffi_lib = 'ffi'
-                sources.remove('_ctypes/malloc_closure.c')
             else:
                 # OS X 10.5 comes with libffi.dylib; the include files are
                 # in /usr/include/ffi
                 ffi_inc_dirs.append('/usr/include/ffi')
 
-        if not ffi_inc or ffi_inc[0] == '':
-            ffi_inc = find_file('ffi.h', [], ffi_inc_dirs)
-        if ffi_inc is not None:
-            ffi_h = ffi_inc[0] + '/ffi.h'
+        if not ffi_inc:
+            found = find_file('ffi.h', [], ffi_inc_dirs)
+            if found:
+                ffi_inc = found[0]
+        if ffi_inc:
+            ffi_h = ffi_inc + '/ffi.h'
             if not os.path.exists(ffi_h):
                 ffi_inc = None
                 print('Header file {} does not exist'.format(ffi_h))
-        if ffi_lib is None and ffi_inc is not None:
+        if ffi_lib is None and ffi_inc:
             for lib_name in ('ffi', 'ffi_pic'):
                 if (self.compiler.find_library_file(self.lib_dirs, lib_name)):
                     ffi_lib = lib_name
                     break
 
         if ffi_inc and ffi_lib:
-            ext.include_dirs.extend(ffi_inc)
+            ffi_headers = glob(os.path.join(ffi_inc, '*.h'))
+            if grep_headers_for('ffi_closure_alloc', ffi_headers):
+                try:
+                    sources.remove('_ctypes/malloc_closure.c')
+                except ValueError:
+                    pass
+            if grep_headers_for('ffi_prep_cif_var', ffi_headers):
+                ext.extra_compile_args.append("-DHAVE_FFI_PREP_CIF_VAR=1")
+            ext.include_dirs.append(ffi_inc)
             ext.libraries.append(ffi_lib)
             self.use_system_libffi = True
 
