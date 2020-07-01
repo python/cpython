@@ -1214,11 +1214,11 @@ class TestMatch(unittest.TestCase):
             case {1: 0}:
                 y = 0
             case {0: 0}:
-                y = 0
-            case {}:
                 y = 1
+            case {}:
+                y = 2
         self.assertEqual(x, {0: 1})
-        self.assertEqual(y, 1)
+        self.assertEqual(y, 2)
 
     def test_patma_134(self) -> None:
         x = collections.defaultdict(int, {0: 1})
@@ -1226,11 +1226,11 @@ class TestMatch(unittest.TestCase):
             case {1: 0}:
                 y = 0
             case {0: 0}:
-                y = 0
-            case {**z}:
                 y = 1
+            case {**z}:
+                y = 2
         self.assertEqual(x, {0: 1})
-        self.assertEqual(y, 1)
+        self.assertEqual(y, 2)
         self.assertEqual(z, {0: 1})
 
     def test_patma_135(self) -> None:
@@ -1239,11 +1239,11 @@ class TestMatch(unittest.TestCase):
             case {1: 0}:
                 y = 0
             case {0: 0}:
-                y = 0
-            case {0: _, **z}:
                 y = 1
+            case {0: _, **z}:
+                y = 2
         self.assertEqual(x, {0: 1})
-        self.assertEqual(y, 1)
+        self.assertEqual(y, 2)
         self.assertEqual(z, {})
 
     def test_patma_136(self) -> None:

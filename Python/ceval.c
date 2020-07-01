@@ -881,7 +881,6 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, PyObject *
         if (!value) {
             goto fail;
         }
-        Py_INCREF(value);
         PyTuple_SET_ITEM(values, i, value);
         if (copy && PyDict_DelItem(copy, key)) {
             if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
