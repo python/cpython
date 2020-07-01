@@ -294,6 +294,18 @@ class closing(AbstractContextManager):
         finally:
             f.close()
 
+    In asynchronous case, code like this:
+
+        async with closing(<module>.open(<arguments>)) as f:
+            <block>
+
+    is equivalent to this:
+
+        f = <module>.open(<arguments>)
+        try:
+            <block>
+        finally:
+            await f.close()
     """
     def __init__(self, thing):
         self.thing = thing
@@ -301,6 +313,10 @@ class closing(AbstractContextManager):
         return self.thing
     def __exit__(self, *exc_info):
         self.thing.close()
+    async def __aenter__(self):
+        return self.thing
+    async def __aexit__(self, *exc_info):
+        await self.thing.close()
 
 
 class _RedirectStream(AbstractContextManager):
