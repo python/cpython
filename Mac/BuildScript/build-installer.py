@@ -1122,6 +1122,7 @@ def buildPython():
 
     print("Running configure...")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
+               "--with-lto --enable-optimizations "
                "--with-universal-archs=%s "
                "%s "
                "%s "

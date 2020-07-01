@@ -1,0 +1,2 @@
+The script to build the macOS installer now configures Python with Link Time
+Optimization (LTO) and Profile-Guided Optimizatio (PGO).
