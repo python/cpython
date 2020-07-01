@@ -187,9 +187,11 @@ typedef int Py_ssize_clean_t;
    /* ignore warnings if the compiler decides not to inline a function */
 #  pragma warning(disable: 4710)
    /* fastest possible local call under MSVC */
+#  define Py_SLIB_LOCAL(type) type __fastcall
 #  define Py_LOCAL(type) static type __fastcall
 #  define Py_LOCAL_INLINE(type) static __inline type __fastcall
 #else
+#  define Py_SLIB_LOCAL(type) type
 #  define Py_LOCAL(type) static type
 #  define Py_LOCAL_INLINE(type) static inline type
 #endif

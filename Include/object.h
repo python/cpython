@@ -121,7 +121,35 @@ typedef struct {
 #define _PyVarObject_CAST(op) ((PyVarObject*)(op))
 #define _PyVarObject_CAST_CONST(op) ((const PyVarObject*)(op))
 
+Py_SLIB_LOCAL(Py_ssize_t) PyObject_GetRefCount(const PyObject *ob);
+Py_SLIB_LOCAL(PyTypeObject *) PyObject_GetType(const PyObject *ob);
 
+Py_SLIB_LOCAL(void) PyObject_SetRefCount(PyObject *ob, const Py_ssize_t refcnt);
+Py_SLIB_LOCAL(void) PyObject_SetType(PyObject *ob, const PyTypeObject *type);
+
+
+Py_SLIB_LOCAL(Py_ssize_t) PyVarObject_GetSize(const PyVarObject *ob);
+
+Py_SLIB_LOCAL(void) PyVarObject_SetSize(PyVarObject *ob, const Py_ssize_t size);
+
+
+Py_SLIB_LOCAL(int) PyObject_IsType(const PyObject *ob, const PyTypeObject *type);
+
+
+#ifdef Py_USE_SLIB
+#define Py_REFCNT(ob) PyObject_GetRefCount(_PyObject_CAST_CONST(ob))
+#define Py_TYPE(ob) PyObject_GetType(_PyObject_CAST_CONST(ob))
+
+#define Py_SET_REFCNT(ob, refcnt) PyObject_SetRefCount(_PyObject_CAST(ob), refcnt)
+#define Py_SET_TYPE(ob, type) PyObject_SetType(_PyObject_CAST(ob), type)
+
+
+#define Py_SIZE(ob) PyVarObject_GetSize(_PyVarObject_CAST_CONST(ob))
+
+#define Py_SET_SIZE(ob, size) PyVarObject_SetSize(_PyVarObject_CAST(ob), size)
+
+#define Py_IS_TYPE(ob, type) PyObject_IsType(_PyObject_CAST_CONST(ob), type)
+#else
 static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
     return ob->ob_refcnt;
 }
@@ -162,7 +190,7 @@ static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
     ob->ob_size = size;
 }
 #define Py_SET_SIZE(ob, size) _Py_SET_SIZE(_PyVarObject_CAST(ob), size)
-
+#endif
 
 /*
 Type objects contain a string containing the type name (to help somewhat
@@ -318,7 +346,7 @@ given type object has a specified feature.
 */
 
 /* Set if the type object's tp_basicsize is set for opague object */
-#define Py_TPFLAGS_OPAQUE_OBJECT (1UL << 8)
+#define Py_TPFLAGS_OMIT_PYOBJECT_SIZE (1UL << 8)
 
 /* Set if the type object is dynamically allocated */
 #define Py_TPFLAGS_HEAPTYPE (1UL << 9)
@@ -422,6 +450,23 @@ PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
+Py_SLIB_LOCAL(void) PyObject_IncRef(PyObject *op);
+
+Py_SLIB_LOCAL(void) PyObject_DecRef(
+#ifdef Py_REF_DEBUG
+    const char *filename, int lineno,
+#endif
+    PyObject *op);
+
+#ifdef Py_USE_SLIB
+# define Py_INCREF(op) PyObject_IncRef(_PyObject_CAST(op))
+
+# ifdef Py_REF_DEBUG
+#  define Py_DECREF(op) PyObject_DecRef(__FILE__, __LINE__, _PyObject_CAST(op))
+# else
+#  define Py_DECREF(op) PyObject_DecRef(_PyObject_CAST(op))
+# endif
+#else
 static inline void _Py_INCREF(PyObject *op)
 {
 #ifdef Py_REF_DEBUG
@@ -429,7 +474,6 @@ static inline void _Py_INCREF(PyObject *op)
 #endif
     op->ob_refcnt++;
 }
-
 #define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
 
 static inline void _Py_DECREF(
@@ -452,13 +496,12 @@ static inline void _Py_DECREF(
         _Py_Dealloc(op);
     }
 }
-
 #ifdef Py_REF_DEBUG
 #  define Py_DECREF(op) _Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 #else
 #  define Py_DECREF(op) _Py_DECREF(_PyObject_CAST(op))
 #endif
-
+#endif
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
  * and tp_dealloc implementations.

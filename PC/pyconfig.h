@@ -260,6 +260,10 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /*  All windows compilers that use this header support __declspec */
 #define HAVE_DECLSPEC_DLL
 
+#if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
+# define Py_USE_SLIB
+#endif
+
 /* For an MSVC DLL, we can nominate the .lib files used by extensions */
 #ifdef MS_COREDLL
 #       if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
@@ -269,10 +273,13 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
                         file in their Makefile (other compilers are
                         generally taken care of by distutils.) */
 #                       if defined(_DEBUG)
+#                               pragma comment(lib, "slib_python310_d.lib")
 #                               pragma comment(lib,"python310_d.lib")
 #                       elif defined(Py_LIMITED_API)
+#                               pragma comment(lib, "slib_python3.lib")
 #                               pragma comment(lib,"python3.lib")
 #                       else
+#                               pragma comment(lib, "slib_python310.lib")
 #                               pragma comment(lib,"python310.lib")
 #                       endif /* _DEBUG */
 #               endif /* _MSC_VER */
