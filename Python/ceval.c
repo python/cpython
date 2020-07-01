@@ -848,14 +848,24 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 // Need these for pattern matching:
 
 static PyObject*
-match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, PyObject *copy)
+match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
 {
     assert(PyTuple_CheckExact(keys));
     Py_ssize_t nkeys = PyTuple_GET_SIZE(keys);
-    PyObject *seen = NULL;
-    PyObject *values = NULL;
-    if (PyMapping_Length(map) < nkeys) {
-        goto fail;
+    if (!nkeys) {
+        return PyTuple_New(0);
+    }
+    PyObject *get = NULL, *dummy = NULL, *seen = NULL, *values = NULL;
+    if (!PyDict_CheckExact(map)) {
+        _Py_IDENTIFIER(get);
+        get = _PyObject_GetAttrId(map, &PyId_get);
+        if (!get) {
+            return NULL;
+        }
+        dummy = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+        if (!dummy) {
+            goto fail;
+        }
     }
     seen = PyList_New(0);
     if (!seen) {
@@ -865,8 +875,9 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, PyObject *
     if (!values) {
         goto fail;
     }
+    PyObject *key, *value;
     for (Py_ssize_t i = 0; i < nkeys; i++) {
-        PyObject *key = PyTuple_GET_ITEM(keys, i);
+        key = PyTuple_GET_ITEM(keys, i);
         if (PySequence_Contains(seen, key) || PyList_Append(seen, key)) {
             if (!_PyErr_Occurred(tstate)) {
                 _PyErr_Format(tstate, PyExc_ValueError,
@@ -874,27 +885,65 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys, PyObject *
             }
             goto fail;
         }
-        if (!PySequence_Contains(map, key)) {
-            goto fail;
-        }
-        PyObject *value = PyObject_GetItem(map, key);
-        if (!value) {
-            goto fail;
-        }
-        PyTuple_SET_ITEM(values, i, value);
-        if (copy && PyDict_DelItem(copy, key)) {
-            if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+        if (!get) {
+            assert(PyDict_CheckExact(map));
+            value = PyDict_GetItemWithError(map, key);
+            if (!value) {
                 goto fail;
             }
-            _PyErr_Clear(tstate);
+            Py_INCREF(value);
         }
+        else {
+            assert(dummy);
+            value = PyObject_CallFunctionObjArgs(get, key, dummy, NULL);
+            if (!value || value == dummy) {
+                Py_XDECREF(value);
+                goto fail;
+            }
+        }
+        PyTuple_SET_ITEM(values, i, value);
     }
+    Py_XDECREF(get);
+    Py_XDECREF(dummy);
     Py_DECREF(seen);
     return values;
 fail:
+    Py_XDECREF(get);
+    Py_XDECREF(dummy);
     Py_XDECREF(seen);
     Py_XDECREF(values);
     return NULL;
+}
+
+static PyObject *
+match_map_copy(PyThreadState *tstate, PyObject *map, PyObject *keys)
+{
+    PyObject *copy;
+    if (PyDict_CheckExact(map)) {
+        copy = PyDict_Copy(map);
+        if (!copy) {
+            return NULL;
+        }
+    }
+    else {
+        copy = PyDict_New();
+        if (!copy || PyDict_Update(copy, map)) {
+            Py_XDECREF(copy);
+            return NULL;
+        }
+    }
+    Py_ssize_t nkeys = PyTuple_GET_SIZE(keys);
+    for (Py_ssize_t i = 0; i < nkeys; i++) {
+        if (PyDict_DelItem(copy, PyTuple_GET_ITEM(keys, i))) {
+            if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                _PyErr_Clear(tstate);
+                continue;
+            }
+            Py_DECREF(copy);
+            return NULL;
+        }
+    }
+    return copy;
 }
 
 static PyObject *
@@ -927,18 +976,18 @@ static PyObject *
 do_match(PyThreadState *tstate, Py_ssize_t nargs, PyObject *kwargs, PyObject *type, PyObject *target)
 {
     // TODO: Break this up!
-    PyObject *args = NULL;
-    PyObject *attrs = NULL;
-    PyObject *seen = NULL;
-    assert(PyTuple_CheckExact(kwargs));
     if (!PyType_Check(type)) {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "called match pattern must be a type");
+                     "called match pattern must be a type");
         return NULL;
     }
+    assert(PyTuple_CheckExact(kwargs));
     if (PyObject_IsInstance(target, type) <= 0) {
         return NULL;
     }
+    PyObject *args = NULL;
+    PyObject *attrs = NULL;
+    PyObject *seen = NULL;
     Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwargs);
     Py_ssize_t count = nargs + nkwargs;
     Py_ssize_t nmatch_args;
@@ -3491,9 +3540,6 @@ main_loop:
 
         case TARGET(JUMP_IF_NOT_MAP): {
             PyInterpreterState *interp = PyInterpreterState_Get();
-            if (!interp) {
-                goto error;
-            }
             if (!interp->map_abc) {
                 PyObject *abc = PyImport_ImportModule("_collections_abc");
                 if (!abc) {
@@ -3526,9 +3572,6 @@ main_loop:
                 DISPATCH();
             }
             PyInterpreterState *interp = PyInterpreterState_Get();
-            if (!interp) {
-                goto error;
-            }
             if (!interp->seq_abc) {
                 PyObject *abc = PyImport_ImportModule("_collections_abc");
                 if (!abc) {
@@ -3553,28 +3596,11 @@ main_loop:
         case TARGET(MATCH_KEYS): {
             PyObject *keys = TOP();
             PyObject *target = SECOND();
-            PyObject *copy = NULL;
-            if (oparg) {
-                if (PyDict_CheckExact(target)) {
-                    copy = PyDict_Copy(target);
-                    if (!copy) {
-                        return NULL;
-                    }
-                }
-                else {
-                    copy = PyDict_New();
-                    if (!copy || PyDict_Update(copy, target)) {
-                        Py_XDECREF(copy);
-                        return NULL;
-                    }
-                }
-            }
-            PyObject *values = match_map_items(tstate, target, keys, copy);
+            PyObject *values = match_map_items(tstate, target, keys);
             if (!values) {
                 if (_PyErr_Occurred(tstate)) {
                     goto error;
                 }
-                Py_XDECREF(copy);
                 Py_INCREF(Py_None);
                 SET_TOP(Py_None);
                 Py_DECREF(keys);
@@ -3582,12 +3608,16 @@ main_loop:
                 PUSH(Py_False);
                 DISPATCH();
             }
-            SET_TOP(values);
-            Py_DECREF(keys);
             if (oparg) {
-                SET_SECOND(copy);
+                PyObject *rest = match_map_copy(tstate, target, keys);
+                if (!rest) {
+                    goto error;
+                }
+                SET_SECOND(rest);
                 Py_DECREF(target);
             }
+            SET_TOP(values);
+            Py_DECREF(keys);
             Py_INCREF(Py_True);
             PUSH(Py_True);
             DISPATCH();
