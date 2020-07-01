@@ -110,6 +110,13 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
+sys
+---
+
+Add :data:`sys.orig_argv` attribute: the list of the original command line
+arguments passed to the Python executable.
+(Contributed by Victor Stinner in :issue:`23427`.)
+
 
 Optimizations
 =============
@@ -150,10 +157,14 @@ C API Changes
 New Features
 ------------
 
-  The result of :c:func:`PyNumber_Index` now always has exact type :class:`int`.
+* The result of :c:func:`PyNumber_Index` now always has exact type :class:`int`.
   Previously, the result could have been an instance of a subclass of ``int``.
   (Contributed by Serhiy Storchaka in :issue:`40792`.)
 
+* Add a new :c:member:`~PyConfig.orig_argv` member to the :c:type:`PyConfig`
+  structure: the list of the original command line arguments passed to the
+  Python executable.
+  (Contributed by Victor Stinner in :issue:`23427`.)
 
 Porting to Python 3.10
 ----------------------
@@ -202,6 +213,11 @@ Porting to Python 3.10
   for historical reason. It is no longer allowed.
   (Contributed by Victor Stinner in :issue:`40839`.)
 
+* ``PyUnicode_FromUnicode(NULL, size)`` and ``PyUnicode_FromStringAndSize(NULL, size)``
+  raise ``DeprecationWarning`` now.  Use :c:func:`PyUnicode_New` to allocate
+  Unicode object without initial data.
+  (Contributed by Inada Naoki in :issue:`36346`.)
+
 Removed
 -------
 
@@ -223,3 +239,13 @@ Removed
    * ``Py_UNICODE_strncmp``: use :c:func:`PyUnicode_Tailmatch`
    * ``Py_UNICODE_strchr``, ``Py_UNICODE_strrchr``: use
      :c:func:`PyUnicode_FindChar`
+
+* Removed ``PyUnicode_GetMax()``. Please migrate to new (:pep:`393`) APIs.
+  (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``PyLong_FromUnicode()``. Please migrate to :c:func:`PyLong_FromUnicodeObject`.
+  (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``PyUnicode_AsUnicodeCopy()``. Please use :c:func:`PyUnicode_AsUCS4Copy` or
+  :c:func:`PyUnicode_AsWideCharString`
+  (Contributed by Inada Naoki in :issue:`41103`.)
