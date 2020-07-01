@@ -1,0 +1,1 @@
+setup.py: probe libffi for ffi_closure_alloc and ffi_prep_cif_var
