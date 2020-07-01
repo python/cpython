@@ -1,0 +1,2 @@
+Add iterator to logging.config.ConvertingList and logging.config.ConvertingTuple
+Add items() to logging.config.ConvertingDict
