@@ -75,7 +75,9 @@ elif os.name == "posix" and sys.platform == "darwin":
         if macos_version == '10.16' or macos_version == '11.0':
             # see https://bugs.python.org/issue41179
             # macOS Big Sur no longer copies dynamic libraries
-            # TODO (@sumanthratna): maybe look in /System/Library/Frameworks/
+            # TODO (@sumanthratna): we shouldn't change this logic
+            # https://github.com/python/cpython/blob/0a2ee77547c0e25f081cfb6507a1ab8fecbd683a/Lib/ctypes/macholib/dyld.py#L15-L29
+            # this probably requires a change to ctypes.macholib.dyld.dyld_find
             pass
         else:
             possible = ['lib%s.dylib' % name,
