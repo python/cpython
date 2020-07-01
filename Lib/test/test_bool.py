@@ -2,6 +2,7 @@
 
 import unittest
 from test import support
+from test.support import os_helper
 
 import os
 
@@ -234,11 +235,11 @@ class BoolTest(unittest.TestCase):
 
     def test_fileclosed(self):
         try:
-            with open(support.TESTFN, "w") as f:
+            with open(os_helper.TESTFN, "w") as f:
                 self.assertIs(f.closed, False)
             self.assertIs(f.closed, True)
         finally:
-            os.remove(support.TESTFN)
+            os.remove(os_helper.TESTFN)
 
     def test_types(self):
         # types are always true.
