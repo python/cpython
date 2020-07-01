@@ -332,13 +332,6 @@ Add :func:`curses.get_escdelay`, :func:`curses.set_escdelay`,
 :func:`curses.get_tabsize`, and :func:`curses.set_tabsize` functions.
 (Contributed by Anthony Sottile in :issue:`38312`.)
 
-The extended color functions added in ncurses 6.1 will be used transparently
-by :func:`curses.color_content`, :func:`curses.init_color`,
-:func:`curses.init_pair`, and :func:`curses.pair_content`. A new function,
-:func:`curses.has_extended_color_support`, indicates whether extended color
-support is provided by the underlying ncurses library.
-(Contributed by Jeffrey Kintscher in :issue:`36982`.)
-
 datetime
 --------
 The :meth:`~datetime.date.isocalendar()` of :class:`datetime.date`
