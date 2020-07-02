@@ -278,7 +278,7 @@ def asynccontextmanager(func):
     return helper
 
 
-class closing(AbstractContextManager):
+class closing(AbstractContextManager, AbstractAsyncContextManager):
     """Context to automatically close something at the end of a block.
 
     Code like this:
