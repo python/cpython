@@ -176,10 +176,6 @@ struct compiler {
 };
 
 typedef struct {
-    // Py_ssize_t map_len_ge;
-    // Py_ssize_t seq_len_ge;
-    // Py_ssize_t seq_len_eq;
-    // basicblock *success;
     basicblock *failure;
     PyObject* stores;
 } pattern_context;
@@ -2754,7 +2750,8 @@ compiler_if(struct compiler *c, stmt_ty s)
 }
 
 #define WILDCARD_CHECK(N) \
-    ((N)->kind == Name_kind && (N)->v.Name.ctx == Store && _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
+    ((N)->kind == Name_kind && (N)->v.Name.ctx == Store && \
+     _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
 
 static int
 compiler_pattern_load(struct compiler *c, expr_ty p, pattern_context *pc)
@@ -2831,7 +2828,8 @@ compiler_pattern_store(struct compiler *c, expr_ty p, pattern_context *pc, int w
     assert(p->v.Name.ctx == Store);
     if (WILDCARD_CHECK(p)) {
         if (!wildcard_ok) {
-            return compiler_error(c, "can't assign to '_' here; consider removing or renaming?");
+            return compiler_error(c,
+                "can't assign to '_' here; consider removing or renaming?");
         }
         ADDOP(c, POP_TOP);
         return 1;
@@ -3084,6 +3082,7 @@ compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
     SET_LOC(c, p);
     switch (p->kind) {
         case Attribute_kind:
+        case Constant_kind:
             return compiler_pattern_load(c, p, pc);
         case BinOp_kind:
             // Because we allow "2+2j", things like "2+2" make it this far:
@@ -3092,21 +3091,18 @@ compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
             return compiler_pattern_or(c, p, pc);
         case Call_kind:
             return compiler_pattern_call(c, p, pc);
-        case Constant_kind:
-            return compiler_pattern_load(c, p, pc);
         case Dict_kind:
             return compiler_pattern_mapping(c, p, pc);
         case JoinedStr_kind:
             // Because we allow strings, f-strings make it this far:
             return compiler_error(c, "patterns cannot include f-strings");
         case List_kind:
+        case Tuple_kind:
             return compiler_pattern_sequence(c, p, pc);
         case Name_kind:
             return compiler_pattern_name(c, p, pc);
         case NamedExpr_kind:
             return compiler_pattern_namedexpr(c, p, pc);
-        case Tuple_kind:
-            return compiler_pattern_sequence(c, p, pc);
         default:
             Py_UNREACHABLE();
     }
@@ -3116,29 +3112,33 @@ static int
 compiler_match(struct compiler *c, stmt_ty s)
 {
     VISIT(c, expr, s->v.Match.target);
-    basicblock *next, *end;
+    basicblock *end;
     CHECK(end = compiler_new_block(c));
+    int warned = 0;
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases);
+    pattern_context pc;
+    CHECK(pc.stores = PySet_New(NULL));
     for (Py_ssize_t i = 0; i < cases; i++) {
         match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
-        CHECK(next = compiler_new_block(c));
+        CHECK(pc.failure = compiler_new_block(c));
         if (i != cases - 1) {
             ADDOP(c, DUP_TOP);
         }
-        PyObject* names = PySet_New(NULL);
-        if (!names) {
-            return 0;
+        if (!warned && i != cases - 1 && !m->guard
+            && m->pattern->kind == Name_kind && m->pattern->v.Name.ctx == Store)
+        {
+            warned = 1;
+            CHECK(compiler_warn(c, "unguarded name capture pattern makes "
+                                   "remaining cases unreachable; did you "
+                                   "forget a leading dot?"));
         }
-        pattern_context pc;
-        pc.failure = next;
-        pc.stores = names;
         int result = compiler_pattern(c, m->pattern, &pc);
-        Py_DECREF(names);
+        PySet_Clear(pc.stores);
         CHECK(result);
         if (m->guard) {
-            CHECK(compiler_jump_if(c, m->guard, next, 0));
+            CHECK(compiler_jump_if(c, m->guard, pc.failure, 0));
         }
         if (i != cases - 1) {
             ADDOP(c, POP_TOP);
@@ -3147,8 +3147,9 @@ compiler_match(struct compiler *c, stmt_ty s)
         if (i != cases - 1) {
             ADDOP_JREL(c, JUMP_FORWARD, end);
         }
-        compiler_use_next_block(c, next);
+        compiler_use_next_block(c, pc.failure);
     }
+    Py_DECREF(pc.stores);
     compiler_use_next_block(c, end);
     return 1;
 }
