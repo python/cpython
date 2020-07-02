@@ -6563,9 +6563,9 @@ heapctypesetattr_setattro(HeapCTypeSetattrObject *self, PyObject *attr, PyObject
         return -1;
     int eq = PyObject_RichCompareBool(svalue, attr, Py_EQ);
     Py_DECREF(svalue);
+    if (eq < 0)
+        return -1;
     if (!eq) {
-        if (eq < 0)
-            return -1;
         return PyObject_GenericSetAttr((PyObject*) self, attr, value);
     }
     if (value == NULL) {
