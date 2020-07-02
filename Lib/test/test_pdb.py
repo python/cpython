@@ -1642,18 +1642,20 @@ def bœr():
                     f.write(script)
 
                 cmd = [sys.executable, 'main.py']
+                env = {'PYTHONIOENCODING': 'ascii'}
+                if sys.platform == 'win32':
+                    env['PYTHONLEGACYWINDOWSSTDIO'] = 'non-empty-string'
                 proc = subprocess.Popen(
                     cmd,
                     stdout=subprocess.PIPE,
                     stdin=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    env={**os.environ, 'PYTHONIOENCODING': 'ascii'}
+                    env={**os.environ, **env}
                 )
                 with proc:
                     stdout, stderr = proc.communicate(b'c\n')
                     self.assertIn(b"UnicodeEncodeError: \'ascii\' codec can\'t encode character "
-                                  b"\'\\xe7\' in position 21: ordinal not in range(128)",
-                                  stderr)
+                                  b"\'\\xe7\' in position 21: ordinal not in range(128)", stderr)
 
         finally:
             if save_home is not None:
