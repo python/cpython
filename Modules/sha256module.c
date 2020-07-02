@@ -693,9 +693,15 @@ static int sha256_exec(PyObject *module)
     }
 
     Py_INCREF((PyObject *)&SHA224type);
-    PyModule_AddObject(module, "SHA224Type", (PyObject *)&SHA224type);
+    if (PyModule_AddObject(module, "SHA224Type", (PyObject *)&SHA224type) < 0) {
+        Py_DECREF(PyObject *)&SHA224type);
+        return -1;
+    }
     Py_INCREF((PyObject *)&SHA256type);
-    PyModule_AddObject(module, "SHA256Type", (PyObject *)&SHA256type);
+    if (PyModule_AddObject(module, "SHA256Type", (PyObject *)&SHA256type) < 0) {
+        Py_DECREF(PyObject *)&SHA256type);
+        return -1;
+    }
     return 0;
 }
 
@@ -706,14 +712,14 @@ static PyModuleDef_Slot _sha256_slots[] = {
 
 static struct PyModuleDef _sha256module = {
     PyModuleDef_HEAD_INIT,
-    "_sha256",
-    NULL,
-    0,
-    SHA_functions,
-    _sha256_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_sha256",
+    .m_doc = NULL,
+    .m_size = 0,
+    .m_methods = SHA_functions,
+    .m_slots = _sha256_slots,
+    .m_traverse = NULL,
+    .m_clear = NULL,
+    .m_free = NULL
 };
 
 /* Initialize this module. */
