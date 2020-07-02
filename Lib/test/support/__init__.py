@@ -2625,7 +2625,7 @@ class PythonSymlink:
                 dll,
                 os.path.join(dest_dir, os.path.basename(dll))
             ))
-            for runtime in glob.glob(os.path.join(src_dir, "vcruntime*.dll")):
+            for runtime in glob.glob(os.path.join(glob.escape(src_dir), "vcruntime*.dll")):
                 self._also_link.append((
                     runtime,
                     os.path.join(dest_dir, os.path.basename(runtime))
