@@ -12,7 +12,7 @@ jobs:
     steps:
     - uses: actions/stale@v3.0.7
       with:
-        repo-token: ${{ secrets.BEDEVERE_GH_TOKEN }}
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-pr-message: 'This PR is stale because it has been open for 30 days with no activity. Remove stale label or comment or this will be closed in 5 days'
         stale-pr-label: 'stale-pr'
         days-before-stale: 30
