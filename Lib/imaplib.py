@@ -618,7 +618,7 @@ class IMAP4:
             raise self.error(dat[-1])
         self.state = 'AUTH'
 
-        ok, dat = self.capability()
+        typ, dat = self.capability()
         if typ != 'OK':
             raise self.error(dat[-1])
         capas = dat[0].decode()
