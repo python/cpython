@@ -276,7 +276,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #                               pragma comment(lib, "slib_python310_d.lib")
 #                               pragma comment(lib,"python310_d.lib")
 #                       elif defined(Py_LIMITED_API)
-#                               pragma comment(lib, "slib_python3.lib")
+#                               pragma comment(lib, "slib_python310.lib")
 #                               pragma comment(lib,"python3.lib")
 #                       else
 #                               pragma comment(lib, "slib_python310.lib")

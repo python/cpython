@@ -2086,13 +2086,19 @@ best_base(PyObject *bases)
     return base;
 }
 
-#define GET_TYPE_TOTALSIZE(type) (_PyType_HasFeature(type, Py_TPFLAGS_OMIT_PYOBJECT_SIZE) ? type->tp_obj_size : type->tp_basicsize)
+static inline const Py_ssize_t get_type_totalsize(PyTypeObject *type)
+{
+    if (type->tp_obj_size < sizeof(PyObject)) // PyType_Type->tp_new manages to trigger this.
+        return type->tp_basicsize;
+
+    return type->tp_obj_size;
+}
 
 static int
 extra_ivars(PyTypeObject *type, PyTypeObject *base)
 {
-    size_t t_size = GET_TYPE_TOTALSIZE(type);
-    size_t b_size = GET_TYPE_TOTALSIZE(base);
+    size_t t_size = get_type_totalsize(type);
+    size_t b_size = get_type_totalsize(base);
 
     assert(t_size >= b_size); /* Else type smaller than base! */
     if (type->tp_itemsize || base->tp_itemsize) {
@@ -4848,7 +4854,7 @@ object___sizeof___impl(PyObject *self)
     isize = Py_TYPE(self)->tp_itemsize;
     if (isize > 0)
         res = Py_SIZE(self) * isize;
-    res += GET_TYPE_TOTALSIZE(Py_TYPE(self));
+    res += get_type_totalsize(Py_TYPE(self));
 
     return PyLong_FromSsize_t(res);
 }
@@ -4947,7 +4953,8 @@ PyTypeObject PyBaseObject_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |  /* tp_flags */
+    Py_TPFLAGS_OMIT_PYOBJECT_SIZE,
     object_doc,                                 /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
@@ -5366,7 +5373,29 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 
 static int add_operators(PyTypeObject *);
 
-#define SET_SPECIAL_TYPEVAR(var, value) *((Py_ssize_t *)&type->var) = value
+void set_type_memory_data(PyTypeObject *type, PyTypeObject *base)
+{
+    // Obtain the true size of the base type.
+    Py_ssize_t base_size = 0, base_offset = 0;
+    if (base != NULL) { // Only possible if we're not dealing with PyBaseObject_Type
+        if (_PyType_HasFeature(base, Py_TPFLAGS_OMIT_PYOBJECT_SIZE)) {
+            base_size = base->tp_obj_size;
+            base_offset = base->tp_obj_offset;
+        } else {
+            base_size = base->tp_basicsize;
+            base_offset = 0; // PyObject ALWAYS occupies the start of the memory block.
+        }
+    }
+
+    Py_ssize_t *size_ptr = (Py_ssize_t *)&type->tp_obj_size, *offset_ptr = (Py_ssize_t *)&type->tp_obj_offset;
+    if (_PyType_HasFeature(type, Py_TPFLAGS_OMIT_PYOBJECT_SIZE)) {
+        *size_ptr = base_size + type->tp_basicsize;
+        *offset_ptr = base_offset + base_size; // The type's internal structure occupies the next block of memory.
+    } else {
+        *size_ptr = type->tp_basicsize; // tp_basicsize already includes base_size.
+        *offset_ptr = 0; // The type's internal structure already includes "PyObject".
+    }
+}
 
 int
 PyType_Ready(PyTypeObject *type)
@@ -5430,16 +5459,7 @@ PyType_Ready(PyTypeObject *type)
             goto error;
     }
 
-    if (type->tp_flags & Py_TPFLAGS_OMIT_PYOBJECT_SIZE) {
-        // tp_basicsize doesn't include the size of it's base type.
-        Py_ssize_t base_size = GET_TYPE_TOTALSIZE(base);
-
-        SET_SPECIAL_TYPEVAR(tp_obj_offset, (base->tp_obj_offset + base_size));
-        SET_SPECIAL_TYPEVAR(tp_obj_size, (base_size + type->tp_basicsize));
-    } else { // Type uses the size of PyObject, so the special variables are not used.
-        SET_SPECIAL_TYPEVAR(tp_obj_offset, 0);
-        SET_SPECIAL_TYPEVAR(tp_obj_size, 0);
-    }
+    set_type_memory_data(type, base);
 
     /* Initialize ob_type if NULL.      This means extensions that want to be
        compilable separately on Windows can call PyType_Ready() instead of
