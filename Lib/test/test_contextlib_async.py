@@ -1,5 +1,5 @@
 import asyncio
-from contextlib import asynccontextmanager, AbstractAsyncContextManager, AsyncExitStack
+from contextlib import asynccontextmanager, closing, AbstractAsyncContextManager, AsyncExitStack
 import functools
 from test import support
 import unittest
@@ -277,6 +277,22 @@ class AsyncContextManagerTestCase(unittest.TestCase):
             yield (self, func, args, kwds)
         async with woohoo(self=11, func=22, args=33, kwds=44) as target:
             self.assertEqual(target, (11, 22, 33, 44))
+
+
+class TestAsyncClosing(unittest.TestCase):
+
+    @_async_test
+    async def test_async_closing(self):
+        state = []
+        class C:
+            async def close(self):
+                await asyncio.sleep(0.)
+                state.append(1)
+        x = C()
+        self.assertEqual(state, [])
+        async with closing(x) as y:
+            self.assertEqual(x, y)
+        self.assertEqual(state, [1])
 
 
 class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
