@@ -694,12 +694,12 @@ static int sha256_exec(PyObject *module)
 
     Py_INCREF((PyObject *)&SHA224type);
     if (PyModule_AddObject(module, "SHA224Type", (PyObject *)&SHA224type) < 0) {
-        Py_DECREF(PyObject *)&SHA224type);
+        Py_DECREF((PyObject *)&SHA224type);
         return -1;
     }
     Py_INCREF((PyObject *)&SHA256type);
     if (PyModule_AddObject(module, "SHA256Type", (PyObject *)&SHA256type) < 0) {
-        Py_DECREF(PyObject *)&SHA256type);
+        Py_DECREF((PyObject *)&SHA256type);
         return -1;
     }
     return 0;
