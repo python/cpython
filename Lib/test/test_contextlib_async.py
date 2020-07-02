@@ -294,6 +294,21 @@ class TestAsyncClosing(unittest.TestCase):
             self.assertEqual(x, y)
         self.assertEqual(state, [1])
 
+    @_async_test
+    async def test_async_error(self):
+        state = []
+        class C:
+            async def close(self):
+                await asyncio.sleep(0.)
+                state.append(1)
+        x = C()
+        self.assertEqual(state, [])
+        with self.assertRaises(ZeroDivisionError):
+            async with closing(x) as y:
+                self.assertEqual(x, y)
+                1 / 0
+        self.assertEqual(state, [1])
+
 
 class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
     class SyncAsyncExitStack(AsyncExitStack):
