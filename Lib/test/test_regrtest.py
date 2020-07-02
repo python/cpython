@@ -556,7 +556,7 @@ class CheckActualTests(BaseTestCase):
         args = ['-Wd', '-E', '-bb', '-m', 'test.regrtest', '--list-tests']
         output = self.run_python(args)
         rough_number_of_tests_found = len(output.splitlines())
-        actual_testsuite_glob = os.path.join(os.path.dirname(__file__),
+        actual_testsuite_glob = os.path.join(glob.escape(os.path.dirname(__file__)),
                                              'test*.py')
         rough_counted_test_py_files = len(glob.glob(actual_testsuite_glob))
         # We're not trying to duplicate test finding logic in here,

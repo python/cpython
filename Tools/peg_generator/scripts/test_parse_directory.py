@@ -7,8 +7,12 @@ import sys
 import time
 import traceback
 import tokenize
+<<<<<<< HEAD
 import _peg_parser
 from glob import glob
+=======
+from glob import glob, escape
+>>>>>>> 9355868458... bpo-41043: Escape literal part of the path for glob(). (GH-20994)
 from pathlib import PurePath
 
 from typing import List, Optional, Any, Tuple
@@ -183,7 +187,7 @@ def parse_directory(
     trees = {}  # Trees to compare (after everything else is done)
     total_seconds = 0
 
-    for file in sorted(glob(f"{directory}/**/*.py", recursive=True)):
+    for file in sorted(glob(os.path.join(escape(directory), f"**/*.py"), recursive=True)):
         # Only attempt to parse Python files and files that are not excluded
         if any(PurePath(file).match(pattern) for pattern in excluded_files):
             continue
