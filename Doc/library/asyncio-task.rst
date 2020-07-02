@@ -962,31 +962,6 @@ Task Object
 
       .. versionadded:: 3.8
 
-   .. classmethod:: all_tasks(loop=None)
-
-      Return a set of all tasks for an event loop.
-
-      By default all tasks for the current event loop are returned.
-      If *loop* is ``None``, the :func:`get_event_loop` function
-      is used to get the current loop.
-
-      .. deprecated-removed:: 3.7 3.9
-
-         Do not call this as a task method. Use the :func:`asyncio.all_tasks`
-         function instead.
-
-   .. classmethod:: current_task(loop=None)
-
-      Return the currently running task or ``None``.
-
-      If *loop* is ``None``, the :func:`get_event_loop` function
-      is used to get the current loop.
-
-      .. deprecated-removed:: 3.7 3.9
-
-         Do not call this as a task method.  Use the
-         :func:`asyncio.current_task` function instead.
-
 
 .. _asyncio_generator_based_coro:
 
