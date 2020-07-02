@@ -1,0 +1,1 @@
+Improved permission handling in the site module' while writing into .python_history file
