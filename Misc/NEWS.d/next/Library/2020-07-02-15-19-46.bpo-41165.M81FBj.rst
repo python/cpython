@@ -1,0 +1,1 @@
+Remove deprecated aliases of assertion methods in ``unittest.TestCase``.

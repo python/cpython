@@ -1598,15 +1598,15 @@ Test cases
 
 .. _deprecated-aliases:
 
-Deprecated aliases
+Removed aliases
 ##################
 
 For historical reasons, some of the :class:`TestCase` methods had one or more
-aliases that are now deprecated.  The following table lists the correct names
+aliases that are now removed.  The following table lists the correct names
 along with their deprecated aliases:
 
    ==============================  ====================== =======================
-    Method Name                     Deprecated alias       Deprecated alias
+    Method Name                     Removed alias          Removed alias
    ==============================  ====================== =======================
     :meth:`.assertEqual`            failUnlessEqual        assertEquals
     :meth:`.assertNotEqual`         failIfEqual            assertNotEquals
@@ -1620,15 +1620,9 @@ along with their deprecated aliases:
     :meth:`.assertRaisesRegex`                             assertRaisesRegexp
    ==============================  ====================== =======================
 
-   .. deprecated:: 3.1
-         The fail* aliases listed in the second column have been deprecated.
-   .. deprecated:: 3.2
-         The assert* aliases listed in the third column have been deprecated.
-   .. deprecated:: 3.2
-         ``assertRegexpMatches`` and ``assertRaisesRegexp`` have been renamed to
-         :meth:`.assertRegex` and :meth:`.assertRaisesRegex`.
-   .. deprecated:: 3.5
-         The ``assertNotRegexpMatches`` name is deprecated in favor of :meth:`.assertNotRegex`.
+   .. versionchanged:: 3.10
+      Many deprecated aliases are removed.
+
 
 .. _testsuite-objects:
 

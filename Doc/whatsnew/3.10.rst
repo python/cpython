@@ -134,6 +134,9 @@ Deprecated
 Removed
 =======
 
+* Many assertion method aliases in :class:`unittest.TestCase` are removed.
+  (Contributed by Inada Naoki in :issue:`41165`.)
+
 
 Porting to Python 3.10
 ======================
