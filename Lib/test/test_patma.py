@@ -1392,6 +1392,38 @@ class TestMatch(unittest.TestCase):
         self.assertEqual(y, 0)
         self.assertIs(z, x)
 
+    def test_patma_151(self) -> None:
+        x = 0
+        match x,:
+            case y,:
+                z = 0
+        self.assertEqual(x, 0)
+        self.assertIs(y, x)
+        self.assertIs(z, 0)
+
+    def test_patma_152(self) -> None:
+        w = 0
+        x = 0
+        match w, x:
+            case y, z:
+                v = 0
+        self.assertEqual(w, 0)
+        self.assertEqual(x, 0)
+        self.assertIs(y, w)
+        self.assertIs(z, x)
+        self.assertEqual(v, 0)
+
+    def test_patma_152(self) -> None:
+        x = 0
+        match w := x,:
+            case v := y,:
+                z = 0
+        self.assertEqual(x, 0)
+        self.assertIs(y, x)
+        self.assertEqual(z, 0)
+        self.assertIs(w, x)
+        self.assertIs(v, y)
+
     def run_perf(self):
         # ./python -m pyperf timeit -s "from test.test_patma import TestMatch; t = TestMatch()" "t.run_perf()"
         attrs = vars(type(self)).items()
