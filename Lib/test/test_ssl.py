@@ -72,7 +72,7 @@ NOKIACERT = data_file("nokia.pem")
 NULLBYTECERT = data_file("nullbytecert.pem")
 TALOS_INVALID_CRLDP = data_file("talos-2019-0758.pem")
 
-DHFILE = data_file("dh1024.pem")
+DHFILE = data_file("ffdh3072.pem")
 BYTES_DHFILE = os.fsencode(DHFILE)
 
 
