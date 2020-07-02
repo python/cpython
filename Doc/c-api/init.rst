@@ -1221,39 +1221,6 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    available (even when threads have not been initialized).
 
 
-.. c:function:: void PyEval_AcquireLock()
-
-   Acquire the global interpreter lock.  The lock must have been created earlier.
-   If this thread already has the lock, a deadlock ensues.
-
-   .. deprecated:: 3.2
-      This function does not update the current thread state.  Please use
-      :c:func:`PyEval_RestoreThread` or :c:func:`PyEval_AcquireThread`
-      instead.
-
-   .. note::
-      Calling this function from a thread when the runtime is finalizing
-      will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
-      check if the interpreter is in process of being finalized before calling
-      this function to avoid unwanted termination.
-
-   .. versionchanged:: 3.8
-      Updated to be consistent with :c:func:`PyEval_RestoreThread`,
-      :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`,
-      and terminate the current thread if called while the interpreter is finalizing.
-
-
-.. c:function:: void PyEval_ReleaseLock()
-
-   Release the global interpreter lock.  The lock must have been created earlier.
-
-   .. deprecated:: 3.2
-      This function does not update the current thread state.  Please use
-      :c:func:`PyEval_SaveThread` or :c:func:`PyEval_ReleaseThread`
-      instead.
-
-
 .. _sub-interpreter-support:
 
 Sub-interpreter support

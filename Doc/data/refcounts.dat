@@ -761,8 +761,6 @@ PyErr_WarnFormat::...::
 PyErr_WriteUnraisable:void:::
 PyErr_WriteUnraisable:PyObject*:obj:0:
 
-PyEval_AcquireLock:void:::
-
 PyEval_AcquireThread:void:::
 PyEval_AcquireThread:PyThreadState*:tstate::
 

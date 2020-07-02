@@ -368,7 +368,8 @@ _PyEval_Fini(void)
 #endif
 }
 
-void
+/* This function is a part of stable ABI. We can not remove this until 4.0 */
+Py_DEPRECATED(3.2) PyAPI_FUNC(void)
 PyEval_AcquireLock(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
@@ -378,7 +379,8 @@ PyEval_AcquireLock(void)
     take_gil(tstate);
 }
 
-void
+/* This function is a part of stable ABI. We can not remove this until 4.0 */
+Py_DEPRECATED(3.2) PyAPI_FUNC(void)
 PyEval_ReleaseLock(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;

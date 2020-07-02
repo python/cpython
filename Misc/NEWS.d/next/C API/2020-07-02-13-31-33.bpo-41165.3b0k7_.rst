@@ -1,0 +1,2 @@
+Remove ``PyEval_AcquireLock`` and ``PyEval_ReleaseLock`` from header file.
+Since they are part of stable ABI, they are still exported.

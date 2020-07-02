@@ -249,3 +249,7 @@ Removed
 * Removed ``PyUnicode_AsUnicodeCopy()``. Please use :c:func:`PyUnicode_AsUCS4Copy` or
   :c:func:`PyUnicode_AsWideCharString`
   (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``PyEval_AcquireLock()`` and ``PyEval_ReleaseLock()`` from header file.
+  They are still exported by library since they are part of stable ABI.
+  (Contributed by Inada Naoki in :issue:`41165`.)
