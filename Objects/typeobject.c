@@ -5366,7 +5366,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 
 static int add_operators(PyTypeObject *);
 
-#define SET_SPECIAL_TYPEVAR(var, value) *((Py_ssize_t *)&type->##var) = value
+#define SET_SPECIAL_TYPEVAR(var, value) *((Py_ssize_t *)&type->var) = value
 
 int
 PyType_Ready(PyTypeObject *type)
