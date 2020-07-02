@@ -2032,6 +2032,15 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.7
 
+.. attribute:: SSLContext.security_level
+
+   The current security level for the context. This attribute is read-only.
+
+   .. note::
+      Only available with OpenSSL >= 1.1.0
+
+   .. versionadded:: 3.10
+
 .. attribute:: SSLContext.verify_flags
 
    The flags for certificate verification operations. You can set flags like
