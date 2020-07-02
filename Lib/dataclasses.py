@@ -1005,7 +1005,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     match_args = cls.__dict__.get('__match_args__', MISSING)
     if match_args is MISSING:
         # Create a __match_args__ attribute.
-        _set_new_attribute(cls, '__match_args__', [f.name for f in flds if f.init])
+        _set_new_attribute(cls, '__match_args__', tuple(f.name for f in flds if f.init))
 
     return cls
 

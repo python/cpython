@@ -3339,7 +3339,7 @@ class TestMatchArgs(unittest.TestCase):
             x: int
 
         o = B(4)
-        self.assertEqual(o.__match_args__, ['x'])
+        self.assertEqual(o.__match_args__, ('x',))
 
     def test_explicit_match_args(self):
         @dataclass
