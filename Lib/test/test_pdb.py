@@ -1635,10 +1635,10 @@ def bœr():
         save_home = os.environ.pop('HOME', None)
         try:
             with support.temp_cwd():
-                with open('.pdbrc', 'w') as f:
-                    f.write("Fran\u00E7ais\n")
+                with open('.pdbrc', 'w', encoding='utf-8') as f:
+                    f.write("Fran\u00E7ais")
 
-                with open('main.py', 'w') as f:
+                with open('main.py', 'w', encoding='utf-8') as f:
                     f.write(script)
 
                 cmd = [sys.executable, 'main.py']
