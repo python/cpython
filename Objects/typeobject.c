@@ -2086,11 +2086,13 @@ best_base(PyObject *bases)
     return base;
 }
 
+#define GET_TYPE_TOTALSIZE(type) (_PyType_HasFeature(type, Py_TPFLAGS_OMIT_PYOBJECT_SIZE) ? type->tp_obj_size : type->tp_basicsize)
+
 static int
 extra_ivars(PyTypeObject *type, PyTypeObject *base)
 {
-    size_t t_size = type->tp_basicsize;
-    size_t b_size = base->tp_basicsize;
+    size_t t_size = GET_TYPE_TOTALSIZE(type);
+    size_t b_size = GET_TYPE_TOTALSIZE(base);
 
     assert(t_size >= b_size); /* Else type smaller than base! */
     if (type->tp_itemsize || base->tp_itemsize) {
@@ -4846,7 +4848,7 @@ object___sizeof___impl(PyObject *self)
     isize = Py_TYPE(self)->tp_itemsize;
     if (isize > 0)
         res = Py_SIZE(self) * isize;
-    res += Py_TYPE(self)->tp_basicsize;
+    res += GET_TYPE_TOTALSIZE(Py_TYPE(self));
 
     return PyLong_FromSsize_t(res);
 }
@@ -5364,6 +5366,8 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 
 static int add_operators(PyTypeObject *);
 
+#define SET_SPECIAL_TYPEVAR(var, value) *((Py_ssize_t *)&type->##var) = value
+
 int
 PyType_Ready(PyTypeObject *type)
 {
@@ -5424,6 +5428,17 @@ PyType_Ready(PyTypeObject *type)
     if (base != NULL && base->tp_dict == NULL) {
         if (PyType_Ready(base) < 0)
             goto error;
+    }
+
+    if (type->tp_flags & Py_TPFLAGS_OMIT_PYOBJECT_SIZE) {
+        // tp_basicsize doesn't include the size of it's base type.
+        Py_ssize_t base_size = GET_TYPE_TOTALSIZE(base);
+
+        SET_SPECIAL_TYPEVAR(tp_obj_offset, (base->tp_obj_offset + base_size));
+        SET_SPECIAL_TYPEVAR(tp_obj_size, (base_size + type->tp_basicsize));
+    } else { // Type uses the size of PyObject, so the special variables are not used.
+        SET_SPECIAL_TYPEVAR(tp_obj_offset, 0);
+        SET_SPECIAL_TYPEVAR(tp_obj_size, 0);
     }
 
     /* Initialize ob_type if NULL.      This means extensions that want to be

@@ -18,10 +18,11 @@
 #   error "_PyObject_VAR_SIZE requires SIZEOF_VOID_P be a power of 2"
 #endif
 
-#define _PyObject_VAR_SIZE(typeobj, nitems)     \
-    _Py_SIZE_ROUND_UP((typeobj)->tp_basicsize + \
-        (nitems)*(typeobj)->tp_itemsize,        \
-        SIZEOF_VOID_P)
+static inline Py_ssize_t _PyObject_VAR_SIZE(PyTypeObject *typeobj, Py_ssize_t nitems)
+{
+    Py_ssize_t size = (PyType_HasFeature(typeobj, Py_TPFLAGS_OMIT_PYOBJECT_SIZE) ? typeobj->tp_obj_size : typeobj->tp_basicsize);
+    return _Py_SIZE_ROUND_UP((size + (nitems * (typeobj->tp_itemsize))), SIZEOF_VOID_P);
+}
 
 
 /* This example code implements an object constructor with a custom

@@ -104,6 +104,11 @@
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="slib_pythoncore.vcxproj">
+      <Project>{983bba6b-a34b-40f8-927c-a57c714f1887}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

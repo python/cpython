@@ -102,20 +102,25 @@ typedef struct _typeobject PyTypeObject;
  * by hand.  Similarly every pointer to a variable-size Python object can,
  * in addition, be cast to PyVarObject*.
  */
-typedef struct _object {
+
+typedef struct _object      PyObject;
+typedef struct _varobject   PyVarObject;
+
+// TODO: Send "_object" and "_varobject" to CPython internal only.
+struct _object {
     _PyObject_HEAD_EXTRA
     Py_ssize_t ob_refcnt;
     PyTypeObject *ob_type;
-} PyObject;
+};
+
+struct _varobject {
+    PyObject ob_base;
+    Py_ssize_t ob_size; /* Number of items in variable part */
+};
 
 /* Cast argument to PyObject* type. */
 #define _PyObject_CAST(op) ((PyObject*)(op))
 #define _PyObject_CAST_CONST(op) ((const PyObject*)(op))
-
-typedef struct {
-    PyObject ob_base;
-    Py_ssize_t ob_size; /* Number of items in variable part */
-} PyVarObject;
 
 /* Cast argument to PyVarObject* type. */
 #define _PyVarObject_CAST(op) ((PyVarObject*)(op))
@@ -135,6 +140,9 @@ Py_SLIB_LOCAL(void) PyVarObject_SetSize(PyVarObject *ob, const Py_ssize_t size);
 
 Py_SLIB_LOCAL(int) PyObject_IsType(const PyObject *ob, const PyTypeObject *type);
 
+
+Py_SLIB_LOCAL(void *) PyObject_GetStructure(const PyObject *ob, const PyTypeObject *type);
+#define Py_GET_STRUCTURE(ob, type) PyObject_GetStructure(_PyObject_CAST_CONST(ob), (const PyTypeObject *)type)
 
 #ifdef Py_USE_SLIB
 #define Py_REFCNT(ob) PyObject_GetRefCount(_PyObject_CAST_CONST(ob))

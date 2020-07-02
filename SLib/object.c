@@ -31,6 +31,16 @@ Py_SLIB_LOCAL(int) PyObject_IsType(const PyObject *ob, const PyTypeObject *type)
 }
 
 
+Py_SLIB_LOCAL(void *) PyObject_GetStructure(const PyObject *ob, const PyTypeObject *type)
+{
+	if (!PyType_HasFeature((PyTypeObject *)type, Py_TPFLAGS_OMIT_PYOBJECT_SIZE) ||
+		type->tp_obj_offset == type->tp_obj_size) // This checks to see if tp_basicsize was 0 (IE: It has no internal structure)
+		return (void *)ob;
+
+	return (void *)(((unsigned char *)ob) + type->tp_obj_offset);
+}
+
+
 Py_SLIB_LOCAL(void) PyObject_IncRef(PyObject *ob)
 {
 #ifdef Py_REF_DEBUG
