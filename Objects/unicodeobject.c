@@ -1943,13 +1943,20 @@ unicode_dealloc(PyObject *unicode)
         break;
 
     case SSTATE_INTERNED_MORTAL:
-        /* revive dead object temporarily for DelItem */
-        Py_SET_REFCNT(unicode, 3);
 #ifdef INTERNED_STRINGS
+        /* Revive the dead object temporarily. PyDict_DelItem() removes two
+           references (key and value) which were ignored by
+           PyUnicode_InternInPlace(). Use refcnt=3 rather than refcnt=2
+           to prevent calling unicode_dealloc() again. Adjust refcnt after
+           PyDict_DelItem(). */
+        assert(Py_REFCNT(unicode) == 0);
+        Py_SET_REFCNT(unicode, 3);
         if (PyDict_DelItem(interned, unicode) != 0) {
             _PyErr_WriteUnraisableMsg("deletion of interned string failed",
                                       NULL);
         }
+        assert(Py_REFCNT(unicode) == 1);
+        Py_SET_REFCNT(unicode, 0);
 #endif
         break;
 
@@ -15710,8 +15717,9 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-    /* The two references in interned are not counted by refcnt.
-       The deallocator will take care of this */
+    /* The two references in interned dict (key and value) are not counted by
+       refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
+       this. */
     Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
 #endif
@@ -15780,6 +15788,8 @@ _PyUnicode_ClearInterned(PyThreadState *tstate)
 #endif
             break;
         case SSTATE_INTERNED_MORTAL:
+            // Restore the two references (key and value) ignored
+            // by PyUnicode_InternInPlace().
             Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
 #ifdef INTERNED_STATS
             mortal_size += PyUnicode_GET_LENGTH(s);
