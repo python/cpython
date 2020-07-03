@@ -1209,7 +1209,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'base_executable': executable,
                 'executable': executable,
                 'module_search_paths': module_search_paths,
-                'python3_dll': self.EXPECTED_CONFIG['config']['python3_dll'] + "FOO",
             }
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
