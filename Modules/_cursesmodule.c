@@ -416,13 +416,13 @@ color_converter(PyObject *arg, void *ptr)
         return 0;
 
     if (color_number < _NCURSES_COLOR_VAL_MIN) {
-        PyErr_SetString(PyExc_OverflowError,
+        PyErr_SetString(PyExc_ValueError,
                         "Signed " _NCURSES_COLOR_VAL_TYPE_STR
                         " color number is less than minimum.");
         return 0;
     }
     else if (color_number > _NCURSES_COLOR_VAL_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
+        PyErr_SetString(PyExc_ValueError,
                         "Signed " _NCURSES_COLOR_VAL_TYPE_STR
                         " color number is greater than maximum.");
         return 0;
@@ -450,13 +450,13 @@ pair_converter(PyObject *arg, void *ptr)
         return 0;
 
     if (pair_number < _NCURSES_COLOR_VAL_MIN) {
-        PyErr_SetString(PyExc_OverflowError,
+        PyErr_SetString(PyExc_ValueError,
                         "Signed " _NCURSES_COLOR_VAL_TYPE_STR
                         " color pair is less than minimum.");
         return 0;
     }
     else if (pair_number > _NCURSES_COLOR_VAL_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
+        PyErr_SetString(PyExc_ValueError,
                         "Signed " _NCURSES_COLOR_VAL_TYPE_STR
                         " color pair is greater than maximum.");
         return 0;
@@ -484,12 +484,12 @@ component_converter(PyObject *arg, void *ptr)
         return 0;
 
     if (component < 0) {
-        PyErr_SetString(PyExc_OverflowError,
+        PyErr_SetString(PyExc_ValueError,
                         "Color component is less than 0");
         return 0;
     }
     else if (component > 1000) {
-        PyErr_SetString(PyExc_OverflowError,
+        PyErr_SetString(PyExc_ValueError,
                         "Color component is greater than 1000");
         return 0;
     }
