@@ -605,7 +605,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         pre_config = dict(configs['pre_config'])
         for key, value in list(expected.items()):
             if value is self.IGNORE_CONFIG:
-                del pre_config[key]
+                pre_config.pop(key, None)
                 del expected[key]
         self.assertEqual(pre_config, expected)
 
@@ -613,7 +613,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = dict(configs['config'])
         for key, value in list(expected.items()):
             if value is self.IGNORE_CONFIG:
-                del config[key]
+                config.pop(key, None)
                 del expected[key]
         self.assertEqual(config, expected)
 
