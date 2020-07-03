@@ -37,6 +37,7 @@ set TEMP_ARGS=--temp %REMOTE_PYTHON_DIR%temp
 
 set rt_args=%rt_opts% %dashU% -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args% %TEMP_ARGS%
 ssh %SSH_SERVER% "set TEMP=%REMOTE_PYTHON_DIR%temp& %REMOTE_PYTHON_DIR%PCbuild\rt.bat" %rt_args%
+scp %SSH_SERVER%:"%REMOTE_PYTHON_DIR%test-results.xml" "%PYTHON_SOURCE%\test-results.xml"
 exit /b %ERRORLEVEL%
 
 :Arm32SshHelp
