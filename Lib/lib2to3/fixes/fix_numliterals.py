@@ -14,15 +14,24 @@ class FixNumliterals(fixer_base.BaseFix):
 
     _accept_type = token.NUMBER
 
+    def is_long(self, node):
+        return node.value[-1] in 'Ll'
+
+    def is_octal(self, node):
+        return (
+            node.value.startswith("0")
+            and node.value.isdigit()
+            and len(set(node.value)) > 1
+        )
+
     def match(self, node):
         # Override
-        return (node.value.startswith("0") or node.value[-1] in "Ll")
+        return self.is_long(node) or self.is_octal(node)
 
     def transform(self, node, results):
-        val = node.value
-        if val[-1] in 'Ll':
-            val = val[:-1]
-        elif val.startswith('0') and val.isdigit() and len(set(val)) > 1:
-            val = "0o" + val[1:]
+        if self.is_long(node):
+            return Number(node.value[:-1], prefix=node.prefix)
+        elif self.is_octal(node):
+            return Number("0o" + node.value[1:], prefix=node.prefix)
 
-        return Number(val, prefix=node.prefix)
+        return None

@@ -48,7 +48,8 @@ class FixerTestCase(support.TestCase):
         self.warns(before, before, message, unchanged=True)
 
     def unchanged(self, before, ignore_warnings=False):
-        self._check(before, before)
+        tree = self._check(before, before)
+        self.assertFalse(tree.was_changed)
         if not ignore_warnings:
             self.assertEqual(self.fixer_log, [])
 
@@ -954,6 +955,10 @@ class Test_raise(FixerTestCase):
         b = """raise (E1, (E2, E3), E4), V"""
         a = """raise E1(V)"""
         self.check(b, a)
+
+    def test_unchanged(self):
+        a = """raise E1(V)"""
+        self.unchanged(a)
 
     # These should produce a warning
 
@@ -2776,6 +2781,10 @@ class Test_numliterals(FixerTestCase):
     def test_unchanged_float(self):
         s = """5.0"""
         self.unchanged(s)
+        s = """0.1"""
+        self.unchanged(s)
+        s = """000"""
+        self.unchanged(s)
 
     def test_unchanged_octal(self):
         s = """0o755"""
@@ -2895,18 +2904,15 @@ class Test_unicode(FixerTestCase):
         a = r"""'\\\\u20ac\\U0001d121\\u20ac'"""
         self.check(b, a)
 
-        b = r"""r'\\\u20ac\U0001d121\\u20ac'"""
         a = r"""r'\\\u20ac\U0001d121\\u20ac'"""
-        self.check(b, a)
+        self.unchanged(a)
 
     def test_bytes_literal_escape_u(self):
-        b = r"""b'\\\u20ac\U0001d121\\u20ac'"""
         a = r"""b'\\\u20ac\U0001d121\\u20ac'"""
-        self.check(b, a)
+        self.unchanged(a)
 
-        b = r"""br'\\\u20ac\U0001d121\\u20ac'"""
         a = r"""br'\\\u20ac\U0001d121\\u20ac'"""
-        self.check(b, a)
+        self.unchanged(a)
 
     def test_unicode_literal_escape_u(self):
         b = r"""u'\\\u20ac\U0001d121\\u20ac'"""
@@ -2919,13 +2925,15 @@ class Test_unicode(FixerTestCase):
 
     def test_native_unicode_literal_escape_u(self):
         f = 'from __future__ import unicode_literals\n'
-        b = f + r"""'\\\u20ac\U0001d121\\u20ac'"""
         a = f + r"""'\\\u20ac\U0001d121\\u20ac'"""
-        self.check(b, a)
+        self.unchanged(a)
 
-        b = f + r"""r'\\\u20ac\U0001d121\\u20ac'"""
         a = f + r"""r'\\\u20ac\U0001d121\\u20ac'"""
-        self.check(b, a)
+        self.unchanged(a)
+
+    def test_unchanged(self):
+        a = """'h'"""
+        self.unchanged(a)
 
 
 class Test_filter(FixerTestCase):

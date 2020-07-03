@@ -65,6 +65,8 @@ class FixDict(fixer_base.BaseFix):
         head = [n.clone() for n in head]
         tail = [n.clone() for n in tail]
         special = not tail and self.in_special_context(node, isiter)
+        if special and not (isiter or isview):
+            return None
         args = head + [pytree.Node(syms.trailer,
                                    [Dot(),
                                     Name(method_name,

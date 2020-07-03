@@ -24,16 +24,19 @@ class FixWsComma(fixer_base.BaseFix):
     def transform(self, node, results):
         new = node.clone()
         comma = False
+        changed = False
         for child in new.children:
             if child in self.SEPS:
                 prefix = child.prefix
                 if prefix.isspace() and "\n" not in prefix:
                     child.prefix = ""
+                    changed = True
                 comma = True
             else:
                 if comma:
                     prefix = child.prefix
                     if not prefix:
                         child.prefix = " "
+                        changed = True
                 comma = False
-        return new
+        return new if changed else None
