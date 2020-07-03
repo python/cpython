@@ -471,6 +471,31 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ('Py_LegacyWindowsStdioFlag', 'legacy_windows_stdio'),
         ))
 
+    # path config
+    if MS_WINDOWS:
+        PATH_CONFIG = {
+            'isolated': -1,
+            'site_import': -1,
+            'python3_dll': GET_DEFAULT_CONFIG,
+        }
+    else:
+        PATH_CONFIG = {}
+    # other keys are copied by COPY_PATH_CONFIG
+
+    COPY_PATH_CONFIG = [
+        # Copy core config to global config for expected values
+        'prefix',
+        'exec_prefix',
+        'program_name',
+        'home',
+        # program_full_path and module_search_path are copied indirectly from
+        # the core configuration in check_path_config().
+    ]
+    if MS_WINDOWS:
+        COPY_PATH_CONFIG.extend((
+            'base_executable',
+        ))
+
     EXPECTED_CONFIG = None
 
     @classmethod
@@ -535,7 +560,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             configs[config_key] = config
         return configs
 
-    def get_expected_config(self, expected_preconfig, expected, env, api,
+    def get_expected_config(self, expected_preconfig, expected,
+                            expected_pathconfig, env, api,
                             modify_path_cb=None):
         cls = self.__class__
         configs = self._get_expected_config()
@@ -544,6 +570,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         for key, value in expected_preconfig.items():
             if value is self.GET_DEFAULT_CONFIG:
                 expected_preconfig[key] = pre_config[key]
+
+        path_config = configs['path_config']
+        for key, value in expected_pathconfig.items():
+            if value is self.GET_DEFAULT_CONFIG:
+                expected_pathconfig[key] = path_config[key]
 
         if not expected_preconfig['configure_locale'] or api == API_COMPAT:
             # there is no easy way to get the locale encoding before
@@ -637,8 +668,19 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         self.assertEqual(configs['global_config'], expected)
 
+    def check_path_config(self, configs, expected):
+        config = configs['config']
+
+        for key in self.COPY_PATH_CONFIG:
+            expected[key] = config[key]
+        expected['module_search_path'] = os.path.pathsep.join(config['module_search_paths'])
+        expected['program_full_path'] = config['executable']
+
+        self.assertEqual(configs['path_config'], expected)
+
     def check_all_configs(self, testname, expected_config=None,
-                          expected_preconfig=None, modify_path_cb=None,
+                          expected_preconfig=None, expected_pathconfig=None,
+                          modify_path_cb=None,
                           stderr=None, *, api, preconfig_api=None,
                           env=None, ignore_stderr=False, cwd=None):
         new_env = remove_python_envvars()
@@ -657,8 +699,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         if expected_preconfig is None:
             expected_preconfig = {}
         expected_preconfig = dict(default_preconfig, **expected_preconfig)
+
         if expected_config is None:
             expected_config = {}
+
+        if expected_pathconfig is None:
+            expected_pathconfig = {}
+        expected_pathconfig = dict(self.PATH_CONFIG, **expected_pathconfig)
 
         if api == API_PYTHON:
             default_config = self.CONFIG_PYTHON
@@ -669,7 +716,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         expected_config = dict(default_config, **expected_config)
 
         self.get_expected_config(expected_preconfig,
-                                 expected_config, env,
+                                 expected_config,
+                                 expected_pathconfig,
+                                 env,
                                  api, modify_path_cb)
 
         out, err = self.run_embedded_interpreter(testname,
@@ -686,6 +735,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_pre_config(configs, expected_preconfig)
         self.check_config(configs, expected_config)
         self.check_global_config(configs)
+        self.check_path_config(configs, expected_pathconfig)
         return configs
 
     def test_init_default_config(self):
@@ -1258,22 +1308,24 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'executable': executable,
                 'module_search_paths': paths,
             }
+            path_config = {}
             if MS_WINDOWS:
                 config['base_prefix'] = pyvenv_home
                 config['prefix'] = pyvenv_home
-            env = self.copy_paths_by_env(config)
-            actual = self.check_all_configs("test_init_compat_config", config,
-                                            api=API_COMPAT, env=env,
-                                            ignore_stderr=True, cwd=tmpdir)
-            if MS_WINDOWS:
-                self.assertEqual(
-                    actual['windows']['python3_dll'],
-                    os.path.join(
-                        tmpdir,
-                        os.path.basename(self.EXPECTED_CONFIG['windows']['python3_dll'])
-                    )
-                )
 
+                ver = sys.version_info
+                dll = f'python{ver.major}'
+                if debug_build(executable):
+                    dll += '_d'
+                dll += '.DLL'
+                dll = os.path.join(os.path.dirname(executable), dll)
+                path_config['python3_dll'] = dll
+
+            env = self.copy_paths_by_env(config)
+            self.check_all_configs("test_init_compat_config", config,
+                                   expected_pathconfig=path_config,
+                                   api=API_COMPAT, env=env,
+                                   ignore_stderr=True, cwd=tmpdir)
 
     def test_global_pathconfig(self):
         # Test C API functions getting the path configuration:
