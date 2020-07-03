@@ -591,7 +591,7 @@ class BooleanVar(Variable):
 
 
 def mainloop(n=0):
-    """Run the main loop of Tcl."""
+    """Run the main loop of tkinter."""
     _default_root.tk.mainloop(n)
 
 
@@ -1423,7 +1423,7 @@ class Misc:
         self.tk.call('bind', className , sequence, '')
 
     def mainloop(self, n=0):
-        """Call the mainloop of Tk."""
+        """Call the main loop of tkinter."""
         self.tk.mainloop(n)
 
     def dispatching(self):
