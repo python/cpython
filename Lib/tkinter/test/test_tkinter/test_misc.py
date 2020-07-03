@@ -109,7 +109,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         idle1 = root.after_idle(callback)
         self.assertIn(idle1, root.tk.call('after', 'info'))
         (script, _) = root.tk.splitlist(root.tk.call('after', 'info', idle1))
-        root.update_idletasks()  # Process all pending events.
+        root.update()  # Process all pending events.
         self.assertEqual(count, 1)
         with self.assertRaises(tkinter.TclError):
             root.tk.call(script)
@@ -117,7 +117,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         # Set up with callback with args.
         count = 0
         idle1 = root.after_idle(callback, 42, 11)
-        root.update_idletasks()  # Process all pending events.
+        root.update()  # Process all pending events.
         self.assertEqual(count, 53)
 
         # Cancel before called.

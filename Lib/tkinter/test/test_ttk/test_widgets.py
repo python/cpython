@@ -64,7 +64,7 @@ class WidgetTest(AbstractTkTest, unittest.TestCase):
 
 
     def test_identify(self):
-        self.widget.update_idletasks()
+        self.widget.update()
         self.assertEqual(self.widget.identify(
             int(self.widget.winfo_width() / 2),
             int(self.widget.winfo_height() / 2)
@@ -327,7 +327,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
     def test_identify(self):
         self.entry.pack()
         self.entry.wait_visibility()
-        self.entry.update_idletasks()
+        self.entry.update()
 
         # bpo-27313: macOS Cocoa widget differs from X, allow either
         if sys.platform == 'darwin':
@@ -439,7 +439,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         width = self.combo.winfo_width()
         self.combo.event_generate('<ButtonPress-1>', x=width - 5, y=5)
         self.combo.event_generate('<ButtonRelease-1>', x=width - 5, y=5)
-        self.combo.update_idletasks()
+        self.combo.update()
 
 
     def test_virtual_event(self):
@@ -1134,7 +1134,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         y = height//2 - 5
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
-        self.spin.update_idletasks()
+        self.spin.update()
 
     def _click_decrement_arrow(self):
         width = self.spin.winfo_width()
@@ -1143,7 +1143,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         y = height//2 + 4
         self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
         self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
-        self.spin.update_idletasks()
+        self.spin.update()
 
     def test_command(self):
         success = []
@@ -1159,7 +1159,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
 
         # testing postcommand removal
         self.spin['command'] = ''
-        self.spin.update_idletasks()
+        self.spin.update()
         self._click_increment_arrow()
         self._click_decrement_arrow()
         self.spin.update()

@@ -1308,13 +1308,13 @@ class Misc:
             self.tk.call('winfo', 'y', self._w))
 
     def update(self):
-        """Enter event loop until all pending events have been processed by Tcl."""
+        """Process all events, including idle tasks, in the Tcl queue."""
         self.tk.call('update')
 
     def update_idletasks(self):
-        """Enter event loop until all idle callbacks have been called. This
-        will update the display of windows but not process events caused by
-        the user."""
+        """Process all idle callbacks in the Tcl queue.
+        This will update the display of windows but not process events
+        caused by the user."""
         self.tk.call('update', 'idletasks')
 
     def bindtags(self, tagList=None):

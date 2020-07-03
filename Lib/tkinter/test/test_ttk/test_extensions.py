@@ -10,7 +10,7 @@ requires('gui')
 class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
 
     def tearDown(self):
-        self.root.update_idletasks()
+        self.root.update()
         super().tearDown()
 
     def test_widget_destroy(self):
@@ -219,7 +219,7 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         var = tkinter.StringVar(self.root)
         optmenu = ttk.OptionMenu(self.root, var)
         name = var._name
-        optmenu.update_idletasks()
+        optmenu.update()
         optmenu.destroy()
         self.assertEqual(optmenu.tk.globalgetvar(name), var.get())
         del var
