@@ -1322,7 +1322,7 @@ PyExec_faulthandler(PyObject *module) {
     return 0;
 }
 
-static PyType_Slot faulthandler_slots[] = {
+static PyModuleDef_Slot faulthandler_slots[] = {
     {Py_mod_exec, PyExec_faulthandler},
     {0, NULL}
 };
@@ -1331,7 +1331,6 @@ static struct PyModuleDef module_def = {
     PyModuleDef_HEAD_INIT,
     .m_name = "faulthandler",
     .m_doc = module_doc,
-    .m_size = 0, /* non-negative size to be able to unload the module */
     .m_methods = module_methods,
     .m_traverse = faulthandler_traverse,
     .m_slots = faulthandler_slots
