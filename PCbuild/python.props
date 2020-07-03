@@ -203,6 +203,8 @@
     
     <!-- The name of the resulting pythonXY.dll (without the extension) -->
     <PyDllName>python$(MajorVersionNumber)$(MinorVersionNumber)$(PyDebugExt)</PyDllName>
+    <!-- The name of the resulting pythonX.dll (without the extension) -->
+    <Py3DllName>python3$(PyDebugExt)</Py3DllName>
 
     <!-- The version and platform tag to include in .pyd filenames -->
     <PydTag Condition="$(ArchName) == 'win32'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win32</PydTag>

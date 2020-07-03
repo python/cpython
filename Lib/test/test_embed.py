@@ -32,7 +32,7 @@ API_ISOLATED = 3
 def debug_build(program):
     program = os.path.basename(program)
     name = os.path.splitext(program)[0]
-    return name.endswith("_d")
+    return name.casefold().endswith("_d".casefold())
 
 
 def remove_python_envvars():
@@ -381,6 +381,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'base_exec_prefix': GET_DEFAULT_CONFIG,
         'module_search_paths': GET_DEFAULT_CONFIG,
         'platlibdir': sys.platlibdir,
+        'python3_dll': IGNORE_CONFIG,
 
         'site_import': 1,
         'bytes_warning': 0,
@@ -412,6 +413,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
+            'python3_dll': GET_DEFAULT_CONFIG,
         })
 
     CONFIG_PYTHON = dict(CONFIG_COMPAT,
@@ -568,7 +570,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if expected['stdio_errors'] is self.GET_DEFAULT_CONFIG:
                 expected['stdio_errors'] = 'surrogateescape'
 
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             default_executable = self.test_exe
         elif expected['program_name'] is not self.GET_DEFAULT_CONFIG:
             default_executable = os.path.abspath(expected['program_name'])
@@ -1064,6 +1066,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.default_program_name(config)
         env = {'TESTPATH': os.path.pathsep.join(paths)}
+
         self.check_all_configs("test_init_setpath", config,
                                api=API_COMPAT, env=env,
                                ignore_stderr=True)
