@@ -161,27 +161,37 @@ reduce(wchar_t *dir)
 static int
 change_ext(wchar_t *dest, const wchar_t *src, const wchar_t *ext)
 {
-    size_t src_len = wcsnlen_s(src, MAXPATHLEN+1);
-    size_t i = src_len;
-    if (i >= MAXPATHLEN+1) {
-        Py_FatalError("buffer overflow in getpathp.c's reduce()");
+    if (src && src != dest) {
+        size_t src_len = wcsnlen_s(src, MAXPATHLEN+1);
+        size_t i = src_len;
+        if (i >= MAXPATHLEN+1) {
+            Py_FatalError("buffer overflow in getpathp.c's reduce()");
+        }
+
+        while (i > 0 && src[i] != '.' && !is_sep(src[i]))
+            --i;
+
+        if (i == 0) {
+            dest[0] = '\0';
+            return -1;
+        }
+
+        if (is_sep(src[i])) {
+            i = src_len;
+        }
+
+        if (wcsncpy_s(dest, MAXPATHLEN+1, src, i)) {
+            dest[0] = '\0';
+            return -1;
+        }
+    } else {
+        wchar_t *s = wcsrchr(dest, L'.');
+        if (s) {
+            s[0] = '\0';
+        }
     }
 
-    while (i > 0 && src[i] != '.' && !is_sep(src[i]))
-        --i;
-
-    if (i == 0) {
-        dest[0] = '\0';
-        return -1;
-    }
-
-    if (is_sep(src[i])) {
-        i = src_len;
-    }
-
-    if (wcsncpy_s(dest, MAXPATHLEN+1, src, i) ||
-        wcscat_s(dest, MAXPATHLEN+1, ext))
-    {
+    if (wcscat_s(dest, MAXPATHLEN+1, ext)) {
         dest[0] = '\0';
         return -1;
     }
@@ -334,6 +344,19 @@ search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path, const wchar_t *lan
         reduce(prefix);
     } while (prefix[0]);
     return 0;
+}
+
+
+static int
+get_dllpath(wchar_t *dllpath)
+{
+#ifdef Py_ENABLE_SHARED
+    extern HANDLE PyWin_DLLhModule;
+    if (PyWin_DLLhModule && GetModuleFileNameW(PyWin_DLLhModule, dllpath, MAXPATHLEN)) {
+        return 0;
+    }
+#endif
+    return -1;
 }
 
 
@@ -510,31 +533,6 @@ done:
 
 
 static _PyInitError
-get_dll_path(PyCalculatePath *calculate, _PyPathConfig *config)
-{
-    wchar_t dll_path[MAXPATHLEN+1];
-    memset(dll_path, 0, sizeof(dll_path));
-
-#ifdef Py_ENABLE_SHARED
-    extern HANDLE PyWin_DLLhModule;
-    if (PyWin_DLLhModule) {
-        if (!GetModuleFileNameW(PyWin_DLLhModule, dll_path, MAXPATHLEN)) {
-            dll_path[0] = 0;
-        }
-    }
-#else
-    dll_path[0] = 0;
-#endif
-
-    config->dll_path = _PyMem_RawWcsdup(dll_path);
-    if (config->dll_path == NULL) {
-        return _Py_INIT_NO_MEMORY();
-    }
-    return _Py_INIT_OK();
-}
-
-
-static _PyInitError
 get_program_full_path(const _PyCoreConfig *core_config,
                       PyCalculatePath *calculate, _PyPathConfig *config)
 {
@@ -675,12 +673,11 @@ calculate_init(PyCalculatePath *calculate,
 static int
 get_pth_filename(wchar_t *spbuffer, _PyPathConfig *config)
 {
-    if (config->dll_path[0]) {
-        if (!change_ext(spbuffer, config->dll_path, L"._pth") &&
-            exists(spbuffer))
-        {
-            return 1;
-        }
+    if (get_dllpath(spbuffer) &&
+        !change_ext(spbuffer, spbuffer, L"._pth") &&
+        exists(spbuffer))
+    {
+        return 1;
     }
     if (config->program_full_path[0]) {
         if (!change_ext(spbuffer, config->program_full_path, L"._pth") &&
@@ -967,11 +964,6 @@ calculate_path_impl(const _PyCoreConfig *core_config,
 {
     _PyInitError err;
 
-    err = get_dll_path(calculate, config);
-    if (_Py_INIT_FAILED(err)) {
-        return err;
-    }
-
     err = get_program_full_path(core_config, calculate, config);
     if (_Py_INIT_FAILED(err)) {
         return err;
@@ -992,9 +984,13 @@ calculate_path_impl(const _PyCoreConfig *core_config,
     calculate_pyvenv_file(calculate);
 
     /* Calculate zip archive path from DLL or exe path */
-    change_ext(calculate->zip_path,
-               config->dll_path[0] ? config->dll_path : config->program_full_path,
-               L".zip");
+    if (get_dllpath(calculate->zip_path) ||
+        change_ext(calculate->zip_path, calculate->zip_path, L".zip"))
+    {
+        if (change_ext(calculate->zip_path, config->program_full_path, L".zip")) {
+            calculate->zip_path[0] = L'\0';
+        }
+    }
 
     calculate_home_prefix(calculate, prefix);
 
@@ -1054,28 +1050,39 @@ int
 _Py_CheckPython3(void)
 {
     wchar_t py3path[MAXPATHLEN+1];
-    wchar_t *s;
     if (python3_checked) {
         return hPython3 != NULL;
     }
     python3_checked = 1;
 
     /* If there is a python3.dll next to the python3y.dll,
-       assume this is a build tree; use that DLL */
-    wcscpy(py3path, _Py_path_config.dll_path);
-    s = wcsrchr(py3path, L'\\');
-    if (!s) {
-        s = py3path;
-    }
-    wcscpy(s, L"\\python3.dll");
-    hPython3 = LoadLibraryExW(py3path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-    if (hPython3 != NULL) {
-        return 1;
+       use that DLL */
+    if (!get_dllpath(py3path)) {
+        reduce(py3path);
+        join(py3path, PY3_DLLNAME);
+        hPython3 = LoadLibraryExW(py3path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+        if (hPython3 != NULL) {
+            return 1;
+        }
     }
 
-    /* Check sys.prefix\DLLs\python3.dll */
+    /* If we can locate python3.dll in our application dir,
+       use that DLL */
     wcscpy(py3path, Py_GetPrefix());
-    wcscat(py3path, L"\\DLLs\\python3.dll");
-    hPython3 = LoadLibraryExW(py3path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    if (py3path[0]) {
+        join(py3path, PY3_DLLNAME);
+        hPython3 = LoadLibraryExW(py3path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+        if (hPython3 != NULL) {
+            return 1;
+        }
+    }
+
+    /* For back-compat, also search {sys.prefix}\DLLs, though
+       that has not been a normal install layout for a while */
+    wcscpy(py3path, Py_GetPrefix());
+    if (py3path[0]) {
+        join(py3path, L"DLLs\\" PY3_DLLNAME);
+        hPython3 = LoadLibraryExW(py3path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    }
     return hPython3 != NULL;
 }
