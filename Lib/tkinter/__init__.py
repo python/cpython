@@ -595,6 +595,11 @@ def mainloop(n=0):
     _default_root.tk.mainloop(n)
 
 
+def dispatching():
+    """Determine if the tkinter main loop is running"""
+    return _default_root.tk.dispatching()
+
+
 getint = int
 
 getdouble = float
@@ -1420,6 +1425,10 @@ class Misc:
     def mainloop(self, n=0):
         """Call the mainloop of Tk."""
         self.tk.mainloop(n)
+
+    def dispatching(self):
+        """Determine if the tkinter main loop is running."""
+        return self.tk.dispatching()
 
     def quit(self):
         """Quit the Tcl interpreter. All widgets will be destroyed."""

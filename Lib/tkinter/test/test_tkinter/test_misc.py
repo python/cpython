@@ -192,6 +192,17 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaises(tkinter.TclError):
             root.clipboard_get()
 
+    def test_mainloop_dispatching(self):
+        # reconstruct default root destroyed by AbstractTkTest
+        root = tkinter._default_root = self.root
+        for thing in (root.tk, root, tkinter):
+            #mainloop, dispatching, willdispatch
+            self.assertFalse(thing.dispatching())
+            root.after(0, lambda:self.assertTrue(thing.dispatching()))
+            root.after(0, root.quit)
+            root.mainloop()
+            self.assertFalse(thing.dispatching())
+
 
 tests_gui = (MiscTest, )
 

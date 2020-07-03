@@ -645,6 +645,26 @@ _tkinter_tkapp_willdispatch(TkappObject *self, PyObject *Py_UNUSED(ignored))
     return _tkinter_tkapp_willdispatch_impl(self);
 }
 
+PyDoc_STRVAR(_tkinter_tkapp_dispatching__doc__,
+    "dispatching($self, /)\n"
+    "--\n"
+    "\n"
+    "Returns the internal dispatching state.\n"
+    "Returns 1 if the mainloop is running, or 0 if the mainloop is not running.\n"
+    "\n");
+
+#define _TKINTER_TKAPP_DISPATCHING_METHODDEF    \
+    {"dispatching", (PyCFunction)_tkinter_tkapp_dispatching, METH_NOARGS, _tkinter_tkapp_dispatching__doc__},
+
+static PyObject*
+_tkinter_tkapp_dispatching_impl(TkappObject* self);
+
+static PyObject*
+_tkinter_tkapp_dispatching(TkappObject* self, PyObject* Py_UNUSED(ignored))
+{
+    return _tkinter_tkapp_dispatching_impl(self);
+}
+
 PyDoc_STRVAR(_tkinter__flatten__doc__,
 "_flatten($module, item, /)\n"
 "--\n"

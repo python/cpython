@@ -3033,6 +3033,18 @@ _tkinter_tkapp_willdispatch_impl(TkappObject *self)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_tkinter.tkapp.dispatching
+
+[clinic start generated code]*/
+
+static PyObject*
+_tkinter_tkapp_dispatching_impl(TkappObject* self)
+/*[clinic end generated code: output=0e3f46d244642155 input=d88f5970843d6dab]*/
+{
+    return PyLong_FromLong(self->dispatching);
+}
+
 
 /**** Tkapp Type Methods ****/
 
@@ -3252,6 +3264,7 @@ static PyType_Spec Tktt_Type_spec = {
 static PyMethodDef Tkapp_methods[] =
 {
     _TKINTER_TKAPP_WILLDISPATCH_METHODDEF
+    _TKINTER_TKAPP_DISPATCHING_METHODDEF
     {"wantobjects",            Tkapp_WantObjects, METH_VARARGS},
     {"call",                   Tkapp_Call, METH_VARARGS},
     _TKINTER_TKAPP_EVAL_METHODDEF
