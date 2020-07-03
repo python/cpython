@@ -415,16 +415,15 @@ color_converter(PyObject *arg, void *ptr)
     if (PyErr_Occurred())
         return 0;
 
-    if (color_number < _NCURSES_COLOR_VAL_MIN) {
+    if (color_number < 0) {
         PyErr_SetString(PyExc_ValueError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color number is less than minimum.");
+                        "Color number is less than 0.");
         return 0;
     }
-    else if (color_number > _NCURSES_COLOR_VAL_MAX) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color number is greater than maximum.");
+    else if (color_number > COLORS) {
+        PyErr_Format(PyExc_ValueError,
+                     "Color number is greater than COLORS (%d).",
+                     COLORS);
         return 0;
     }
 
@@ -449,16 +448,15 @@ pair_converter(PyObject *arg, void *ptr)
     if (PyErr_Occurred())
         return 0;
 
-    if (pair_number < _NCURSES_COLOR_VAL_MIN) {
+    if (pair_number < 1) {
         PyErr_SetString(PyExc_ValueError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color pair is less than minimum.");
+                        "Color pair is less than 1.");
         return 0;
     }
-    else if (pair_number > _NCURSES_COLOR_VAL_MAX) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color pair is greater than maximum.");
+    else if (pair_number > COLOR_PAIRS - 1) {
+        PyErr_Format(PyExc_ValueError,
+                     "Color pair is greater than COLOR_PAIRS-1 (%d).",
+                     COLOR_PAIRS - 1);
         return 0;
     }
 
