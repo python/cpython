@@ -236,7 +236,8 @@ Functions and classes provided:
 
    For example, the output of :func:`help` normally is sent to *sys.stdout*.
    You can capture that output in a string by redirecting the output to an
-   :class:`io.StringIO` object::
+   :class:`io.StringIO` object. For convenience, the new stream is available
+   as the context variable::
 
         with redirect_stdout(io.StringIO()) as f:
             help(pow)
