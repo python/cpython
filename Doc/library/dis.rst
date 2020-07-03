@@ -753,7 +753,24 @@ iterations of the loop.
 
 .. opcode:: GET_LEN
 
-   Pushes ``len(TOS)`` onto the stack.
+   Push ``len(TOS)`` onto the stack.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_MAPPING
+
+   If TOS is an instance of :class:`collections.abc.Mapping`, push ``True`` onto
+   the stack.  Otherwise, push ``False``.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_SEQUENCE
+
+   If TOS is an instance of :class:`collections.abc.Sequence`, is not an
+   instance of :class:`string`/:class:`bytes`/:class:`bytearray`, and is not an
+   :term:`iterator`, push ``True`` onto the stack.  Otherwise, push ``False``.
 
    .. versionadded:: 3.10
 
@@ -1196,26 +1213,9 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.6
 
 
-.. opcode:: MATCH_TYPE (count)
+.. opcode:: MATCH_CLASS (count)
 
    TODO
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: JUMP_IF_NOT_MAP (delta)
-
-   If TOS is not an instance of :class:`collections.abc.Mapping`, increment the
-   bytecode counter by *delta*.
-
-   .. versionadded:: 3.10
-
-
-.. opcode:: JUMP_IF_NOT_SEQ (delta)
-
-   If TOS is an instance of :class:`string`/:class:`bytes`/:class:`bytearray`,
-   is an :term:`iterator`, or is not an instance of
-   :class:`collections.abc.Sequence`, increment the bytecode counter by *delta*.
 
    .. versionadded:: 3.10
 

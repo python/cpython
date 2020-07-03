@@ -3520,7 +3520,21 @@ main_loop:
 #endif
         }
 
-        case TARGET(MATCH_TYPE): {
+        case TARGET(GET_LEN): {
+            PyObject *target = TOP();
+            Py_ssize_t l = PyObject_Length(target);
+            if (l < 0) {
+                goto error;
+            }
+            PyObject *len = PyLong_FromSsize_t(l);
+            if (!len) {
+                goto error;
+            }
+            PUSH(len);
+            DISPATCH();
+        }
+
+        case TARGET(MATCH_CLASS): {
             PyObject *names = POP();
             PyObject *type = TOP();
             PyObject *target = SECOND();
@@ -3538,7 +3552,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(JUMP_IF_NOT_MAP): {
+        case TARGET(MATCH_MAPPING): {
             PyInterpreterState *interp = PyInterpreterState_Get();
             if (!interp->map_abc) {
                 PyObject *abc = PyImport_ImportModule("_collections_abc");
@@ -3555,20 +3569,19 @@ main_loop:
             if (match < 0) {
                 goto error;
             }
-            if (!match) {
-                JUMPBY(oparg);
-            }
+            PUSH(PyBool_FromLong(match));
             DISPATCH();
         }
 
-        case TARGET(JUMP_IF_NOT_SEQ): {
+        case TARGET(MATCH_SEQUENCE): {
             PyObject *target = TOP();
             if (PyType_FastSubclass(Py_TYPE(target),
                     Py_TPFLAGS_BYTES_SUBCLASS | Py_TPFLAGS_UNICODE_SUBCLASS)
                 || PyIter_Check(target)
                 || PyByteArray_Check(target))
             {
-                JUMPBY(oparg);
+                Py_INCREF(Py_False);
+                PUSH(Py_False);
                 DISPATCH();
             }
             PyInterpreterState *interp = PyInterpreterState_Get();
@@ -3587,9 +3600,7 @@ main_loop:
             if (match < 0) {
                 goto error;
             }
-            if (!match) {
-                JUMPBY(oparg);
-            }
+            PUSH(PyBool_FromLong(match));
             DISPATCH();
         }
 
@@ -3620,20 +3631,6 @@ main_loop:
             Py_DECREF(keys);
             Py_INCREF(Py_True);
             PUSH(Py_True);
-            DISPATCH();
-        }
-
-        case TARGET(GET_LEN): {
-            PyObject *target = TOP();
-            Py_ssize_t l = PyObject_Length(target);
-            if (l < 0) {
-                goto error;
-            }
-            PyObject *len = PyLong_FromSsize_t(l);
-            if (!len) {
-                goto error;
-            }
-            PUSH(len);
             DISPATCH();
         }
 
