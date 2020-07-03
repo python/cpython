@@ -203,6 +203,40 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             root.mainloop()
             self.assertFalse(thing.dispatching())
 
+    def test_thread_must_wait_for_mainloop(self):
+        import threading, time
+        def target():
+            self.assertFalse(root.dispatching())
+            with self.assertRaises(RuntimeError):
+                root.after(0)  # Null op
+
+            ready_for_mainloop.set()
+
+            # self.assertTrue(root.dispatching()) but patient
+            t = time.monotonic()
+            while not root.dispatching():
+                time.sleep(.001)
+                self.assertTrue(time.monotonic() < (t + 10))
+
+            root.quit()
+
+        root = self.root
+
+        # remove on eventual WaitForMainloop behavior change
+        root.tk.setmainloopwaitattempts(0)
+
+        ready_for_mainloop = threading.Event()
+        thread = threading.Thread(target=target)
+        self.assertFalse(root.dispatching())
+        thread.start()
+        ready_for_mainloop.wait()
+        root.mainloop()
+        self.assertFalse(root.dispatching())
+        thread.join()
+
+        with self.assertWarns(DeprecationWarning):
+            root.tk.setmainloopwaitattempts(10)
+
 
 tests_gui = (MiscTest, )
 

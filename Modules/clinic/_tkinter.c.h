@@ -629,18 +629,22 @@ _tkinter_tkapp_loadtk(TkappObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_tkinter_tkapp_willdispatch__doc__,
-"willdispatch($self, /)\n"
-"--\n"
-"\n");
+    "willdispatch($self, /)\n"
+    "--\n"
+    "\n"
+    "DEPRECATED\n"
+    "Sets the internal dispatching flag regardless of mainloop dispatch state\n"
+    "Skips mainloop waiting time\n"
+    "\n");
 
 #define _TKINTER_TKAPP_WILLDISPATCH_METHODDEF    \
     {"willdispatch", (PyCFunction)_tkinter_tkapp_willdispatch, METH_NOARGS, _tkinter_tkapp_willdispatch__doc__},
 
-static PyObject *
-_tkinter_tkapp_willdispatch_impl(TkappObject *self);
+static PyObject*
+_tkinter_tkapp_willdispatch_impl(TkappObject* self);
 
-static PyObject *
-_tkinter_tkapp_willdispatch(TkappObject *self, PyObject *Py_UNUSED(ignored))
+static PyObject*
+_tkinter_tkapp_willdispatch(TkappObject* self, PyObject* Py_UNUSED(ignored))
 {
     return _tkinter_tkapp_willdispatch_impl(self);
 }
@@ -663,6 +667,39 @@ static PyObject*
 _tkinter_tkapp_dispatching(TkappObject* self, PyObject* Py_UNUSED(ignored))
 {
     return _tkinter_tkapp_dispatching_impl(self);
+}
+
+PyDoc_STRVAR(_tkinter_tkapp_setmainloopwaitattempts__doc__,
+    "setmainloopwaitattempts($self, new_val, /)\n"
+    "--\n"
+    "\n"
+    "Set number of 100 ms mainloop wait attempts that call(), var_invoke(), and createcommand() will use.\n"
+    "\n"
+    "Current default is 10 for a 1 second wait, but future behavior will default to 0.\n"
+    "\n"
+    "Setting anything other than 0 will trigger a DeprecationWarning.\n"
+    "\n");
+
+#define _TKINTER_TKAPP_SETMAINLOOPWAITATTEMPTS_METHODDEF    \
+    {"setmainloopwaitattempts", (PyCFunction)_tkinter_tkapp_setmainloopwaitattempts, METH_O, _tkinter_tkapp_setmainloopwaitattempts__doc__},
+
+static PyObject*
+_tkinter_tkapp_setmainloopwaitattempts_impl(PyObject* self, int new_val);
+
+static PyObject*
+_tkinter_tkapp_setmainloopwaitattempts(PyObject* self, PyObject* arg)
+{
+    PyObject* return_value = NULL;
+    int new_val;
+
+    new_val = _PyLong_AsInt(arg);
+    if (new_val == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _tkinter_tkapp_setmainloopwaitattempts_impl(self, new_val);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_tkinter__flatten__doc__,

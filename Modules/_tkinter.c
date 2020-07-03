@@ -360,21 +360,36 @@ Sleep(int milli)
 }
 #endif /* MS_WINDOWS */
 
-/* Wait up to 1s for the mainloop to come up. */
+/* Wait for the mainloop to come up. */
+static int mainloopwaitattempts = 10; // 1 second
 
 static int
 WaitForMainloop(TkappObject* self)
 {
     int i;
-    for (i = 0; i < 10; i++) {
-        if (self->dispatching)
-            return 1;
+    if (self->dispatching)
+    {
+        return 1;
+    }
+    for (i = 0; i < mainloopwaitattempts; i++) {
         Py_BEGIN_ALLOW_THREADS
         Sleep(100);
         Py_END_ALLOW_THREADS
+        if (self->dispatching) 
+        {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "It seems you are implicitly waiting for "
+                "the mainloop to come up.\n"
+                "This behavior is deprecated; consider polling "
+                "dispatching() instead.\n", 1))
+            {
+                /* return something nonzero, an error will be
+                raised elsewhere soon */
+                return -1;
+            }
+            return 1;
+        }
     }
-    if (self->dispatching)
-        return 1;
     PyErr_SetString(PyExc_RuntimeError, "main thread is not in main loop");
     return 0;
 }
@@ -1500,7 +1515,10 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
            marshal the parameters to the interpreter thread. */
         Tkapp_CallEvent *ev;
         Tcl_Condition cond = NULL;
-        PyObject *exc_type, *exc_value, *exc_tb;
+        PyObject *exc_type, *exc_value, *exc_tb;  
+        /* After WaitForMainloop deprecation: 
+        if (!self->dispatching)
+            return NULL; */
         if (!WaitForMainloop(self))
             return NULL;
         ev = (Tkapp_CallEvent*)attemptckalloc(sizeof(Tkapp_CallEvent));
@@ -1777,6 +1795,10 @@ var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
         /* The current thread is not the interpreter thread.  Marshal
            the call to the interpreter thread, then wait for
            completion. */
+
+        /* After WaitForMainloop deprecation: 
+        if (!self->dispatching)
+            return NULL; */
         if (!WaitForMainloop(self))
             return NULL;
 
@@ -2477,6 +2499,10 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
         return NULL;
     }
 
+    /*After WaitForMainloop deprecation:
+    if (self->threaded && self->thread_id != Tcl_GetCurrentThread() &&
+        !self->dispatching)
+        return NULL; */
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread() &&
         !WaitForMainloop(self))
         return NULL;
@@ -3024,10 +3050,15 @@ _tkinter.tkapp.willdispatch
 
 [clinic start generated code]*/
 
-static PyObject *
-_tkinter_tkapp_willdispatch_impl(TkappObject *self)
+static PyObject*
+_tkinter_tkapp_willdispatch_impl(TkappObject* self)
 /*[clinic end generated code: output=0e3f46d244642155 input=d88f5970843d6dab]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "willdispatch() is deprecated; consider polling dispatch() instead.", 1))
+    {
+        return NULL;
+    }
     self->dispatching = 1;
 
     Py_RETURN_NONE;
@@ -3043,6 +3074,44 @@ _tkinter_tkapp_dispatching_impl(TkappObject* self)
 /*[clinic end generated code: output=0e3f46d244642155 input=d88f5970843d6dab]*/
 {
     return PyLong_FromLong(self->dispatching);
+}
+
+/*[clinic input]
+_tkinter.setmainloopwaitattempts
+
+    new_val: int
+    /
+
+Set number of 100 millisecond mainloop wait attempts that call(), var_invoke(),
+and createcommand() will use.
+
+Current default is 10 for a 1 second wait, but future behavior will be equivalent 0.
+
+Setting anything other than 0 will trigger a DeprecationWarning.
+
+[clinic start generated code]*/
+
+static PyObject*
+_tkinter_tkapp_setmainloopwaitattempts_impl(PyObject* self, int new_val)
+/*[clinic end generated code: output=42bf7757dc2d0ab6 input=deca1d6f9e6dae47]*/
+{
+    if (new_val < 0) 
+    {
+        PyErr_SetString(PyExc_ValueError,
+            "mainloopwaitattempts must be >= 0");
+        return NULL;
+    }
+    if (new_val) 
+    {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "It seems you want to wait for the mainloop to come up.\n"
+            "This behavior is deprecated; consider polling dispatch() instead.", 1))
+        {
+            return NULL;
+        }
+    }
+    mainloopwaitattempts = new_val;
+    Py_RETURN_NONE;
 }
 
 
@@ -3265,6 +3334,7 @@ static PyMethodDef Tkapp_methods[] =
 {
     _TKINTER_TKAPP_WILLDISPATCH_METHODDEF
     _TKINTER_TKAPP_DISPATCHING_METHODDEF
+    _TKINTER_TKAPP_SETMAINLOOPWAITATTEMPTS_METHODDEF
     {"wantobjects",            Tkapp_WantObjects, METH_VARARGS},
     {"call",                   Tkapp_Call, METH_VARARGS},
     _TKINTER_TKAPP_EVAL_METHODDEF
