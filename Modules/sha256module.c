@@ -713,13 +713,8 @@ static PyModuleDef_Slot _sha256_slots[] = {
 static struct PyModuleDef _sha256module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_sha256",
-    .m_doc = NULL,
-    .m_size = 0,
     .m_methods = SHA_functions,
     .m_slots = _sha256_slots,
-    .m_traverse = NULL,
-    .m_clear = NULL,
-    .m_free = NULL
 };
 
 /* Initialize this module. */
