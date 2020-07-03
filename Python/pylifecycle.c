@@ -1291,8 +1291,8 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     /* Clear all loghooks */
-    /* Both _PySys_ClearAuditHooks function and users still need PyObject,
-       such as tuple. */
+    /* Both _PySys_Audit function and users still need PyObject, such as tuple.
+       Call _PySys_ClearAuditHooks when PyObject available. */
     if (is_main_interp) {
         _PySys_ClearAuditHooks(tstate);
     }
