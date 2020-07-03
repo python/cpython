@@ -959,27 +959,6 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(_isolated_interpreter);
     SET_ITEM_WSTRLIST(orig_argv);
 
-#ifdef MS_WINDOWS
-    do {
-        HMODULE hPython3 = GetModuleHandleW(PY3_DLLNAME);
-        wchar_t py3path[MAX_PATH];
-        PyObject *obj;
-        if (hPython3 && GetModuleFileNameW(hPython3, py3path, MAX_PATH)) {
-            obj = PyUnicode_FromWideChar(py3path, -1);
-            if (!obj) {
-                goto fail;
-            }
-        } else {
-            obj = Py_None;
-            Py_INCREF(obj);
-        }
-        int res = PyDict_SetItemString(dict, "python3_dll", obj);
-        Py_DECREF(obj);
-        if (res < 0) {
-            goto fail;
-        }
-    } while (0);
-#endif
     return dict;
 
 fail:

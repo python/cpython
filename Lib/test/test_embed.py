@@ -381,7 +381,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'base_exec_prefix': GET_DEFAULT_CONFIG,
         'module_search_paths': GET_DEFAULT_CONFIG,
         'platlibdir': sys.platlibdir,
-        'python3_dll': IGNORE_CONFIG,
 
         'site_import': 1,
         'bytes_warning': 0,
@@ -413,7 +412,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
-            'python3_dll': GET_DEFAULT_CONFIG,
         })
 
     CONFIG_PYTHON = dict(CONFIG_COMPAT,
@@ -688,6 +686,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_pre_config(configs, expected_preconfig)
         self.check_config(configs, expected_config)
         self.check_global_config(configs)
+        return configs
 
     def test_init_default_config(self):
         self.check_all_configs("test_init_initialize_config", api=API_COMPAT)
@@ -1262,14 +1261,19 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if MS_WINDOWS:
                 config['base_prefix'] = pyvenv_home
                 config['prefix'] = pyvenv_home
-                config['python3_dll'] = os.path.join(
-                    tmpdir,
-                    os.path.basename(self.EXPECTED_CONFIG['config']['python3_dll'])
-                )
             env = self.copy_paths_by_env(config)
-            self.check_all_configs("test_init_compat_config", config,
-                                   api=API_COMPAT, env=env,
-                                   ignore_stderr=True, cwd=tmpdir)
+            actual = self.check_all_configs("test_init_compat_config", config,
+                                            api=API_COMPAT, env=env,
+                                            ignore_stderr=True, cwd=tmpdir)
+            if MS_WINDOWS:
+                self.assertEqual(
+                    actual['windows']['python3_dll'],
+                    os.path.join(
+                        tmpdir,
+                        os.path.basename(self.EXPECTED_CONFIG['windows']['python3_dll'])
+                    )
+                )
+
 
     def test_global_pathconfig(self):
         # Test C API functions getting the path configuration:
