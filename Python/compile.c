@@ -2781,7 +2781,6 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
     VISIT(c, expr, func);
     PyObject *kwnames;
     CHECK(kwnames = PyTuple_New(nkwargs));
-    // TODO: Catch colliding keywords.
     Py_ssize_t i;
     for (i = 0; i < nkwargs; i++) {
         PyObject *name = ((keyword_ty) asdl_seq_GET(kwargs, i))->arg;
@@ -2823,16 +2822,12 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
 }
 
 static int
-compiler_pattern_store(struct compiler *c, expr_ty p, pattern_context *pc, int wildcard_ok) {
+compiler_pattern_store(struct compiler *c, expr_ty p, pattern_context *pc) {
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
     if (WILDCARD_CHECK(p)) {
-        if (!wildcard_ok) {
-            return compiler_error(c,
-                "can't assign to '_' here; consider removing or renaming?");
-        }
-        ADDOP(c, POP_TOP);
-        return 1;
+        return compiler_error(c, "can't assign to '_' here; "
+                                 "consider removing or renaming?");
     }
     if (PySet_Contains(pc->stores, p->v.Name.id)) {
         // TODO: Format this error message with the name.
@@ -2888,7 +2883,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     ADDOP(c, POP_TOP);
     if (star) {
-        CHECK(compiler_pattern_store(c, asdl_seq_GET(values, size - 1), pc, 0));
+        CHECK(compiler_pattern_store(c, asdl_seq_GET(values, size - 1), pc));
     }
     else {
         ADDOP(c, POP_TOP);
@@ -2911,7 +2906,11 @@ compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context *pc)
     if (p->v.Name.ctx == Load) {
         return compiler_pattern_load(c, p, pc);
     }
-    return compiler_pattern_store(c, p, pc, 1);
+    if (WILDCARD_CHECK(p)) {
+        ADDOP(c, POP_TOP);
+        return 1;
+    }
+    return compiler_pattern_store(c, p, pc);
 }
 
 static int
@@ -2925,7 +2924,7 @@ compiler_pattern_namedexpr(struct compiler *c, expr_ty p, pattern_context *pc)
     pattern_context sub_pc = *pc;
     sub_pc.failure = block;
     CHECK(compiler_pattern(c, p->v.NamedExpr.value, &sub_pc));
-    CHECK(compiler_pattern_store(c, p->v.NamedExpr.target, pc, 0));
+    CHECK(compiler_pattern_store(c, p->v.NamedExpr.target, pc));
     ADDOP_JREL(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, block);
     ADDOP(c, POP_TOP);
@@ -3119,20 +3118,23 @@ compiler_match(struct compiler *c, stmt_ty s)
     assert(cases);
     pattern_context pc;
     CHECK(pc.stores = PySet_New(NULL));
+    int last = 0;
     for (Py_ssize_t i = 0; i < cases; i++) {
+        if (i == cases - 1) {
+            last = 1;
+        }
         match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
         CHECK(pc.failure = compiler_new_block(c));
-        if (i != cases - 1) {
+        if (!last) {
             ADDOP(c, DUP_TOP);
         }
-        if (!warned && i != cases - 1 && !m->guard
+        if (!warned && !last && !m->guard
             && m->pattern->kind == Name_kind && m->pattern->v.Name.ctx == Store)
         {
             warned = 1;
             CHECK(compiler_warn(c, "unguarded name capture pattern makes "
-                                   "remaining cases unreachable; did you "
-                                   "forget a leading dot?"));
+                                   "remaining cases unreachable"));
         }
         int result = compiler_pattern(c, m->pattern, &pc);
         PySet_Clear(pc.stores);
@@ -3140,11 +3142,11 @@ compiler_match(struct compiler *c, stmt_ty s)
         if (m->guard) {
             CHECK(compiler_jump_if(c, m->guard, pc.failure, 0));
         }
-        if (i != cases - 1) {
+        if (!last) {
             ADDOP(c, POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
-        if (i != cases - 1) {
+        if (!last) {
             ADDOP_JREL(c, JUMP_FORWARD, end);
         }
         compiler_use_next_block(c, pc.failure);
