@@ -405,6 +405,74 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
     return 0;
 }
 
+static int
+color_converter(PyObject *arg, void *ptr)
+{
+    long color_number;
+    int overflow;
+
+    color_number = PyLong_AsLongAndOverflow(arg, &overflow);
+    if (PyErr_Occurred())
+        return 0;
+
+    if (color_number < _NCURSES_COLOR_VAL_MIN) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
+                        " color number is less than minimum.");
+        return 0;
+    }
+    else if (color_number > _NCURSES_COLOR_VAL_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
+                        " color number is greater than maximum.");
+        return 0;
+    }
+
+    *(int *)ptr = (int)color_number;
+    return 1;
+}
+
+/*[python input]
+class color_converter(CConverter):
+    type = 'int'
+    converter = 'color_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=4260d2b6e66b3709]*/
+
+static int
+pair_converter(PyObject *arg, void *ptr)
+{
+    long pair_number;
+    int overflow;
+
+    pair_number = PyLong_AsLongAndOverflow(arg, &overflow);
+    if (PyErr_Occurred())
+        return 0;
+
+    if (pair_number < _NCURSES_COLOR_VAL_MIN) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
+                        " color pair is less than minimum.");
+        return 0;
+    }
+    else if (pair_number > _NCURSES_COLOR_VAL_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
+                        " color pair is greater than maximum.");
+        return 0;
+    }
+
+    *(int *)ptr = (int)pair_number;
+    return 1;
+}
+
+/*[python input]
+class pair_converter(CConverter):
+    type = 'int'
+    converter = 'pair_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=1a918ae6a1b32af7]*/
+
 /* Function versions of the 3 functions for testing whether curses has been
    initialised or not. */
 
@@ -2613,7 +2681,7 @@ NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
 /*[clinic input]
 _curses.color_content
 
-    color_number: int
+    color_number: color
         The number of the color (0 - COLORS).
     /
 
@@ -2625,26 +2693,13 @@ which will be between 0 (no component) and 1000 (maximum amount of component).
 
 static PyObject *
 _curses_color_content_impl(PyObject *module, int color_number)
-/*[clinic end generated code: output=17b466df7054e0de input=badb7d68ffbb0e93]*/
+/*[clinic end generated code: output=17b466df7054e0de input=c10ef58f694b13ee]*/
 {
     PyObject *return_value = NULL;
     _NCURSES_COLOR_VAL_TYPE r,g,b;
 
     PyCursesInitialised;
     PyCursesInitialisedColor;
-
-    if (color_number < _NCURSES_COLOR_VAL_MIN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color number is less than minimum.");
-        return NULL;
-    }
-    else if (color_number > _NCURSES_COLOR_VAL_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color number is greater than maximum.");
-        return NULL;
-    }
 
     if (_COLOR_CONTENT_FUNC(color_number, &r, &g, &b) != ERR)
         return_value = Py_BuildValue("(iii)", r, g, b);
@@ -2660,7 +2715,7 @@ _curses_color_content_impl(PyObject *module, int color_number)
 /*[clinic input]
 _curses.color_pair
 
-    color_number: int
+    color_number: color
         The number of the color (0 - COLORS).
     /
 
@@ -2672,23 +2727,10 @@ other A_* attributes.  pair_number() is the counterpart to this function.
 
 static PyObject *
 _curses_color_pair_impl(PyObject *module, int color_number)
-/*[clinic end generated code: output=3fd752e8e24c93fb input=d4ed7238735f1647]*/
+/*[clinic end generated code: output=3fd752e8e24c93fb input=b049033819ab4ef5]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
-
-    if (color_number < _NCURSES_COLOR_VAL_MIN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color number is less than minimum");
-        return NULL;
-    }
-    else if (color_number > _NCURSES_COLOR_VAL_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color number is greater than maximum");
-        return NULL;
-    }
 
     return PyLong_FromLong((long) (color_number << 8));
 }
@@ -3092,7 +3134,7 @@ _curses_has_key_impl(PyObject *module, int key)
 /*[clinic input]
 _curses.init_color
 
-    color_number: int
+    color_number: color
         The number of the color to be changed (0 - COLORS).
     r: short
         Red component (0 - 1000).
@@ -3112,23 +3154,10 @@ most terminals; it is active only if can_change_color() returns 1.
 static PyObject *
 _curses_init_color_impl(PyObject *module, int color_number, short r, short g,
                         short b)
-/*[clinic end generated code: output=d7ed71b2d818cdf2 input=c6359369570b9219]*/
+/*[clinic end generated code: output=d7ed71b2d818cdf2 input=62bbafc22a9a3c25]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
-
-    if (color_number < _NCURSES_COLOR_VAL_MIN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color number is less than minimum");
-        return NULL;
-    }
-    else if (color_number > _NCURSES_COLOR_VAL_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color number is greater than maximum");
-        return NULL;
-    }
 
     if (r < 0) {
         PyErr_SetString(PyExc_OverflowError,
@@ -3180,11 +3209,11 @@ _curses_init_color_impl(PyObject *module, int color_number, short r, short g,
 /*[clinic input]
 _curses.init_pair
 
-    pair_number: int
+    pair_number: pair
         The number of the color-pair to be changed (1 - (COLOR_PAIRS-1)).
-    fg: int
+    fg: color
         Foreground color number (0 - COLORS).
-    bg: int
+    bg: color
         Background color number (0 - COLORS).
     /
 
@@ -3196,49 +3225,10 @@ all occurrences of that color-pair are changed to the new definition.
 
 static PyObject *
 _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
-/*[clinic end generated code: output=a0bba03d2bbc3ee6 input=defd89de917781dc]*/
+/*[clinic end generated code: output=a0bba03d2bbc3ee6 input=b865583a18061c1f]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
-
-    if (pair_number < _NCURSES_COLOR_VAL_MIN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color pair is less than minimum");
-        return NULL;
-    }
-    else if (pair_number > _NCURSES_COLOR_VAL_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color pair is greater than maximum");
-        return NULL;
-    }
-
-    if (fg < _NCURSES_COLOR_VAL_MIN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed  " _NCURSES_COLOR_VAL_TYPE_STR
-                        " foreground color is less than minimum");
-        return NULL;
-    }
-    else if (fg > _NCURSES_COLOR_VAL_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed  " _NCURSES_COLOR_VAL_TYPE_STR
-                        " foreground color is greater than maximum");
-        return NULL;
-    }
-
-    if (bg < _NCURSES_COLOR_VAL_MIN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed  " _NCURSES_COLOR_VAL_TYPE_STR
-                        " background color is less than minimum");
-        return NULL;
-    }
-    else if (bg > _NCURSES_COLOR_VAL_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed  " _NCURSES_COLOR_VAL_TYPE_STR
-                        " background color is greater than maximum");
-        return NULL;
-    }
 
     return PyCursesCheckERR(_CURSES_INIT_PAIR_FUNC(pair_number, fg, bg), _CURSES_INIT_PAIR_FUNC_NAME);
 }
@@ -3866,7 +3856,7 @@ NoArgNoReturnFunctionBody(noraw)
 /*[clinic input]
 _curses.pair_content
 
-    pair_number: int
+    pair_number: pair
         The number of the color pair (1 - (COLOR_PAIRS-1)).
     /
 
@@ -3875,25 +3865,12 @@ Return a tuple (fg, bg) containing the colors for the requested color pair.
 
 static PyObject *
 _curses_pair_content_impl(PyObject *module, int pair_number)
-/*[clinic end generated code: output=4a726dd0e6885f3f input=8adcfdbe1687095d]*/
+/*[clinic end generated code: output=4a726dd0e6885f3f input=b42eacf8a4103852]*/
 {
     _NCURSES_COLOR_VAL_TYPE f, b;
 
     PyCursesInitialised;
     PyCursesInitialisedColor;
-
-    if (pair_number < _NCURSES_COLOR_VAL_MIN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color pair is less than minimum.");
-        return NULL;
-    }
-    else if (pair_number > _NCURSES_COLOR_VAL_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Signed " _NCURSES_COLOR_VAL_TYPE_STR
-                        " color pair is greater than maximum.");
-        return NULL;
-    }
 
     if (_CURSES_PAIR_NUMBER_FUNC(pair_number, &f, &b)==ERR) {
         PyErr_SetString(PyCursesError,
