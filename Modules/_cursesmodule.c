@@ -141,15 +141,9 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #endif  /* defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS)  */
 
 #if _NCURSES_EXTENDED_COLOR_FUNCS
-#define _NCURSES_COLOR_VAL_MAX         INT_MAX
-#define _NCURSES_COLOR_VAL_MIN         INT_MIN
 #define _NCURSES_COLOR_VAL_TYPE        int
-#define _NCURSES_COLOR_VAL_TYPE_STR    "integer"
 #else
-#define _NCURSES_COLOR_VAL_MAX         SHRT_MAX
-#define _NCURSES_COLOR_VAL_MIN         SHRT_MIN
 #define _NCURSES_COLOR_VAL_TYPE        short
-#define _NCURSES_COLOR_VAL_TYPE_STR    "short integer"
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 /*[clinic input]
