@@ -1124,12 +1124,18 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 # Copy pythonXY.dll (or pythonXY_d.dll)
                 ver = sys.version_info
                 dll = f'python{ver.major}{ver.minor}'
+                dll3 = f'python{ver.major}'
                 if debug_build(sys.executable):
                     dll += '_d'
+                    dll3 += '_d'
                 dll += '.dll'
+                dll3 += '.dll'
                 dll = os.path.join(os.path.dirname(self.test_exe), dll)
+                dll3 = os.path.join(os.path.dirname(self.test_exe), dll3)
                 dll_copy = os.path.join(tmpdir, os.path.basename(dll))
+                dll3_copy = os.path.join(tmpdir, os.path.basename(dll3))
                 shutil.copyfile(dll, dll_copy)
+                shutil.copyfile(dll3, dll3_copy)
 
             # Copy Python program
             exec_copy = os.path.join(tmpdir, os.path.basename(self.test_exe))
@@ -1203,6 +1209,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'base_executable': executable,
                 'executable': executable,
                 'module_search_paths': module_search_paths,
+                'python3_dll': self.EXPECTED_CONFIG['config']['python3_dll'] + "FOO",
             }
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
@@ -1256,6 +1263,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if MS_WINDOWS:
                 config['base_prefix'] = pyvenv_home
                 config['prefix'] = pyvenv_home
+                config['python3_dll'] = os.path.join(
+                    tmpdir,
+                    os.path.basename(self.EXPECTED_CONFIG['config']['python3_dll'])
+                )
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
                                    api=API_COMPAT, env=env,
