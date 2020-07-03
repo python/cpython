@@ -5,7 +5,7 @@ from . import events
 from . import tasks
 
 
-def run(main, *, debug=False):
+def run(main, *, debug=False, exception_handler=None):
     """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
@@ -16,6 +16,8 @@ def run(main, *, debug=False):
     running in the same thread.
 
     If debug is True, the event loop will be run in debug mode.
+
+    You can provide custom event loop exception handler with exception_handler.
 
     This function always creates a new event loop and closes it at the end.
     It should be used as a main entry point for asyncio programs, and should
@@ -40,6 +42,8 @@ def run(main, *, debug=False):
     try:
         events.set_event_loop(loop)
         loop.set_debug(debug)
+        if exception_handler:
+            loop.set_exception_handler(exception_handler)
         return loop.run_until_complete(main)
     finally:
         try:
