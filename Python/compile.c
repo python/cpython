@@ -2761,7 +2761,6 @@ compiler_pattern_load(struct compiler *c, expr_ty p, pattern_context *pc)
     assert(p->kind != Name_kind || p->v.Name.ctx == Load);
     VISIT(c, expr, p);
     ADDOP_COMPARE(c, Eq);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, pc->failure);
     return 1;
 }
 
@@ -2789,7 +2788,7 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
     }
     ADDOP_LOAD_CONST_NEW(c, kwnames);
     ADDOP_I(c, MATCH_TYPE, nargs);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+    ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
     pattern_context sub_pc = *pc;
     sub_pc.failure = block;
     for (i = 0; i < nargs; i++) {
@@ -2801,6 +2800,7 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
         ADDOP(c, BINARY_SUBSCR);
         CHECK(compiler_pattern(c, arg, &sub_pc));
+        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
     }
     for (i = 0; i < nkwargs; i++) {
         keyword_ty kwarg = asdl_seq_GET(kwargs, i);
@@ -2811,13 +2811,12 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(nargs + i));
         ADDOP(c, BINARY_SUBSCR);
         CHECK(compiler_pattern(c, kwarg->value, &sub_pc));
+        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
     }
-    ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, block);
-    ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, pc->failure);
+    ADDOP_LOAD_CONST(c, Py_True);
     compiler_use_next_block(c, end);
+    ADDOP(c, ROT_TWO);
+    ADDOP(c, POP_TOP);
     return 1;
 }
 
@@ -2833,13 +2832,16 @@ compiler_pattern_store(struct compiler *c, expr_ty p, pattern_context *pc) {
         // TODO: Format this error message with the name.
         return compiler_error(c, "multiple assignments to name in pattern");
     }
+    CHECK(!PySet_Add(pc->stores, p->v.Name.id));
     VISIT(c, expr, p);
-    return !PySet_Add(pc->stores, p->v.Name.id);
+    ADDOP_LOAD_CONST(c, Py_True);
+    return 1;
 }
 
 static int
 compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
 {
+    // TODO: We shouldn't need 3 cleanup blocks. Make things more uniform
     basicblock *block, *block_star, *end;
     CHECK(block_star = compiler_new_block(c));
     CHECK(block = compiler_new_block(c));
@@ -2848,7 +2850,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     asdl_seq *values = p->v.Dict.values;
     Py_ssize_t size = asdl_seq_LEN(values);
     int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
-    ADDOP_JREL(c, JUMP_IF_NOT_MAP, block);
+    ADDOP_JREL(c, JUMP_IF_NOT_MAP, block);  // TODO: Refactor to ditch block.
     if (size - star) {
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star));
@@ -2868,7 +2870,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     ADDOP_I(c, BUILD_TUPLE, size - star);
     ADDOP_I(c, MATCH_KEYS, star);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, block_star)
+    ADDOP_JABS(c, POP_JUMP_IF_FALSE, block_star);
     pattern_context sub_pc = *pc;
     sub_pc.failure = block_star;
     for (i = 0; i < size - star; i++) {
@@ -2880,6 +2882,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
         ADDOP(c, BINARY_SUBSCR);
         CHECK(compiler_pattern(c, value, &sub_pc));
+        ADDOP_JABS(c, POP_JUMP_IF_FALSE, block_star);
     }
     ADDOP(c, POP_TOP);
     if (star) {
@@ -2887,13 +2890,15 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     else {
         ADDOP(c, POP_TOP);
+        ADDOP_LOAD_CONST(c, Py_True);
     }
     ADDOP_JREL(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, block_star);
     ADDOP(c, POP_TOP);
     compiler_use_next_block(c, block);
+    ADDOP_LOAD_CONST(c, Py_False);
+    ADDOP(c, ROT_TWO);
     ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, pc->failure);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -2908,6 +2913,7 @@ compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     if (WILDCARD_CHECK(p)) {
         ADDOP(c, POP_TOP);
+        ADDOP_LOAD_CONST(c, Py_True);
         return 1;
     }
     return compiler_pattern_store(c, p, pc);
@@ -2920,15 +2926,16 @@ compiler_pattern_namedexpr(struct compiler *c, expr_ty p, pattern_context *pc)
     basicblock *block, *end;
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
-    ADDOP(c, DUP_TOP);
     pattern_context sub_pc = *pc;
     sub_pc.failure = block;
+    ADDOP(c, DUP_TOP);
     CHECK(compiler_pattern(c, p->v.NamedExpr.value, &sub_pc));
+    ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
     CHECK(compiler_pattern_store(c, p->v.NamedExpr.target, pc));
     ADDOP_JREL(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, block);
+    ADDOP(c, ROT_TWO);
     ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, pc->failure);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -2938,7 +2945,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == BoolOp_kind);
     assert(p->v.BoolOp.op == Or);
-    basicblock *block, *end;
+    basicblock *end;
     PyObject *control = NULL;
     CHECK(end = compiler_new_block(c));
     Py_ssize_t size = asdl_seq_LEN(p->v.BoolOp.values);
@@ -2946,15 +2953,11 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     PyObject *names_copy;
     for (Py_ssize_t i = 0; i < size; i++) {
         CHECK(names_copy  = PySet_New(pc->stores));
-        CHECK(block = compiler_new_block(c));
         ADDOP(c, DUP_TOP);
         pattern_context sub_pc = *pc;
-        sub_pc.failure = block;
         sub_pc.stores = names_copy;
         CHECK(compiler_pattern(c, asdl_seq_GET(p->v.BoolOp.values, i), &sub_pc));
-        ADDOP(c, POP_TOP);
-        ADDOP_JREL(c, JUMP_FORWARD, end);
-        compiler_use_next_block(c, block);
+        ADDOP_JABS(c, JUMP_IF_TRUE_OR_POP, end);
         // TODO: Reuse names_copy without actually building a new copy each loop?
         if (!i) {
             control = names_copy;
@@ -2981,9 +2984,10 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     assert(control);
     Py_DECREF(control);
-    ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, pc->failure);
+    ADDOP_LOAD_CONST(c, Py_False);
     compiler_use_next_block(c, end);
+    ADDOP(c, ROT_TWO);
+    ADDOP(c, POP_TOP);
     return 1;
 }
 
@@ -3007,20 +3011,20 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
     basicblock *block, *end;
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
-    ADDOP_JREL(c, JUMP_IF_NOT_SEQ, block);
+    ADDOP_JREL(c, JUMP_IF_NOT_SEQ, block);  // TODO: Refactor to ditch block.
     if (star >= 0) {
         if (size) {
             ADDOP(c, GET_LEN);
             ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - 1));
             ADDOP_COMPARE(c, GtE);
-            ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+            ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
         }
     }
     else {
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
         ADDOP_COMPARE(c, Eq);
-        ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
     }
     pattern_context sub_pc = *pc;
     sub_pc.failure = block;
@@ -3065,13 +3069,15 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
             ADDOP(c, BINARY_SUBSCR);
         }
         CHECK(compiler_pattern(c, value, &sub_pc));
+        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
     }
-    ADDOP(c, POP_TOP);
+    ADDOP_LOAD_CONST(c, Py_True);
     ADDOP_JREL(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, block);
-    ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, pc->failure);
+    ADDOP_LOAD_CONST(c, Py_False);
     compiler_use_next_block(c, end);
+    ADDOP(c, ROT_TWO);
+    ADDOP(c, POP_TOP);
     return 1;
 }
 
@@ -3119,11 +3125,12 @@ compiler_match(struct compiler *c, stmt_ty s)
     pattern_context pc;
     CHECK(pc.stores = PySet_New(NULL));
     int last = 0;
+    match_case_ty m;
     for (Py_ssize_t i = 0; i < cases; i++) {
         if (i == cases - 1) {
             last = 1;
         }
-        match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
+        m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
         CHECK(pc.failure = compiler_new_block(c));
         if (!last) {
@@ -3139,6 +3146,7 @@ compiler_match(struct compiler *c, stmt_ty s)
         int result = compiler_pattern(c, m->pattern, &pc);
         PySet_Clear(pc.stores);
         CHECK(result);
+        ADDOP_JABS(c, POP_JUMP_IF_FALSE, pc.failure);
         if (m->guard) {
             CHECK(compiler_jump_if(c, m->guard, pc.failure, 0));
         }
