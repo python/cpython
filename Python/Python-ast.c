@@ -224,13 +224,12 @@ typedef struct {
 } astmodulestate;
 
 
+static astmodulestate global_ast_state;
+
 static astmodulestate *
-get_ast_state(PyObject *module)
+get_ast_state(PyObject *Py_UNUSED(module))
 {
-    assert(module != NULL);
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (astmodulestate *)state;
+    return &global_ast_state;
 }
 
 static int astmodule_clear(PyObject *module)
@@ -679,17 +678,14 @@ static void astmodule_free(void* module) {
 
 static struct PyModuleDef _astmodule = {
     PyModuleDef_HEAD_INIT,
-    "_ast",
-    NULL,
-    sizeof(astmodulestate),
-    NULL,
-    NULL,
-    astmodule_traverse,
-    astmodule_clear,
-    astmodule_free,
+    .m_name = "_ast",
+    .m_size = -1,
+    .m_traverse = astmodule_traverse,
+    .m_clear = astmodule_clear,
+    .m_free = astmodule_free,
 };
 
-#define astmodulestate_global get_ast_state(PyState_FindModule(&_astmodule))
+#define get_global_ast_state() (&global_ast_state)
 
 static int init_identifiers(astmodulestate *state)
 {
@@ -1135,7 +1131,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
-    astmodulestate *state = astmodulestate_global;
+    astmodulestate *state = get_global_ast_state();
     if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
         goto cleanup;
     }
@@ -1204,7 +1200,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 static PyObject *
 ast_type_reduce(PyObject *self, PyObject *unused)
 {
-    astmodulestate *state = astmodulestate_global;
+    astmodulestate *state = get_global_ast_state();
     PyObject *dict;
     if (_PyObject_LookupAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
@@ -1414,18 +1410,7 @@ static int add_ast_fields(astmodulestate *state)
 
 static int init_types(void)
 {
-    PyObject *module = PyState_FindModule(&_astmodule);
-    if (module == NULL) {
-        module = PyModule_Create(&_astmodule);
-        if (!module) {
-            return 0;
-        }
-        if (PyState_AddModule(module, &_astmodule) < 0) {
-            return 0;
-        }
-    }
-
-    astmodulestate *state = get_ast_state(module);
+    astmodulestate *state = get_global_ast_state();
     if (state->initialized) return 1;
     if (init_identifiers(state) < 0) return 0;
     state->AST_type = PyType_FromSpec(&AST_type_spec);
@@ -9857,12 +9842,15 @@ obj2ast_type_ignore(astmodulestate *state, PyObject* obj, type_ignore_ty* out,
 PyMODINIT_FUNC
 PyInit__ast(void)
 {
-    PyObject *m;
-    if (!init_types()) return NULL;
-    m = PyState_FindModule(&_astmodule);
-    if (!m) return NULL;
+    PyObject *m = PyModule_Create(&_astmodule);
+    if (!m) {
+        return NULL;
+    }
     astmodulestate *state = get_ast_state(m);
 
+    if (!init_types()) {
+        goto error;
+    }
     if (PyModule_AddObject(m, "AST", state->AST_type) < 0) {
         goto error;
     }
@@ -10303,6 +10291,7 @@ PyInit__ast(void)
     }
     Py_INCREF(state->TypeIgnore_type);
     return m;
+
 error:
     Py_DECREF(m);
     return NULL;
@@ -10311,9 +10300,11 @@ error:
 
 PyObject* PyAST_mod2obj(mod_ty t)
 {
-    if (!init_types())
+    if (!init_types()) {
         return NULL;
-    astmodulestate *state = astmodulestate_global;
+    }
+
+    astmodulestate *state = get_global_ast_state();
     return ast2obj_mod(state, t);
 }
 
@@ -10327,7 +10318,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
         return NULL;
     }
 
-    astmodulestate *state = astmodulestate_global;
+    astmodulestate *state = get_global_ast_state();
     PyObject *req_type[3];
     req_type[0] = state->Module_type;
     req_type[1] = state->Expression_type;
@@ -10335,8 +10326,9 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 
     assert(0 <= mode && mode <= 2);
 
-    if (!init_types())
+    if (!init_types()) {
         return NULL;
+    }
 
     isinstance = PyObject_IsInstance(ast, req_type[mode]);
     if (isinstance == -1)
@@ -10356,9 +10348,11 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 
 int PyAST_Check(PyObject* obj)
 {
-    if (!init_types())
+    if (!init_types()) {
         return -1;
-    astmodulestate *state = astmodulestate_global;
+    }
+
+    astmodulestate *state = get_global_ast_state();
     return PyObject_IsInstance(obj, state->AST_type);
 }
 
