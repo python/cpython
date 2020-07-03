@@ -1229,13 +1229,6 @@ Py_FinalizeEx(void)
         /* nothing */;
 #endif
 
-    /* Clear all loghooks */
-    /* We want minimal exposure of this function, so define the extern
-     * here. The linker should discover the correct function without
-     * exporting a symbol. */
-    extern void _PySys_ClearAuditHooks(void);
-    _PySys_ClearAuditHooks();
-
     /* Destroy all modules */
     PyImport_Cleanup();
 
@@ -1305,6 +1298,13 @@ Py_FinalizeEx(void)
 
     /* Clear interpreter state and all thread states. */
     PyInterpreterState_Clear(interp);
+
+    /* Clear all loghooks */
+    /* We want minimal exposure of this function, so define the extern
+     * here. The linker should discover the correct function without
+     * exporting a symbol. */
+    extern void _PySys_ClearAuditHooks(void);
+    _PySys_ClearAuditHooks();
 
     /* Now we decref the exception classes.  After this point nothing
        can raise an exception.  That's okay, because each Fini() method
