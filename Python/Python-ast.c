@@ -224,12 +224,35 @@ typedef struct {
 } astmodulestate;
 
 
-static astmodulestate global_ast_state;
-
-static astmodulestate *
-get_ast_state(PyObject *Py_UNUSED(module))
+static astmodulestate*
+get_ast_state(PyObject *module)
 {
-    return &global_ast_state;
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (astmodulestate*)state;
+}
+
+static astmodulestate*
+get_global_ast_state(void)
+{
+    _Py_IDENTIFIER(_ast);
+    PyObject *name = _PyUnicode_FromId(&PyId__ast);  // borrowed reference
+    if (name == NULL) {
+        return NULL;
+    }
+    PyObject *module = PyImport_GetModule(name);
+    if (module == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        module = PyImport_Import(name);
+        if (module == NULL) {
+            return NULL;
+        }
+    }
+    astmodulestate *state = get_ast_state(module);
+    Py_DECREF(module);
+    return state;
 }
 
 static int astmodule_clear(PyObject *module)
@@ -676,17 +699,6 @@ static void astmodule_free(void* module) {
     astmodule_clear((PyObject*)module);
 }
 
-static struct PyModuleDef _astmodule = {
-    PyModuleDef_HEAD_INIT,
-    .m_name = "_ast",
-    .m_size = -1,
-    .m_traverse = astmodule_traverse,
-    .m_clear = astmodule_clear,
-    .m_free = astmodule_free,
-};
-
-#define get_global_ast_state() (&global_ast_state)
-
 static int init_identifiers(astmodulestate *state)
 {
     if ((state->__dict__ = PyUnicode_InternFromString("__dict__")) == NULL) return 0;
@@ -1132,6 +1144,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     int res = -1;
     PyObject *key, *value, *fields;
     astmodulestate *state = get_global_ast_state();
+    if (state == NULL) {
+        goto cleanup;
+    }
     if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
         goto cleanup;
     }
@@ -1201,6 +1216,10 @@ static PyObject *
 ast_type_reduce(PyObject *self, PyObject *unused)
 {
     astmodulestate *state = get_global_ast_state();
+    if (state == NULL) {
+        return NULL;
+    }
+
     PyObject *dict;
     if (_PyObject_LookupAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
@@ -1408,9 +1427,8 @@ static int add_ast_fields(astmodulestate *state)
 }
 
 
-static int init_types(void)
+static int init_types(astmodulestate *state)
 {
-    astmodulestate *state = get_global_ast_state();
     if (state->initialized) return 1;
     if (init_identifiers(state) < 0) return 0;
     state->AST_type = PyType_FromSpec(&AST_type_spec);
@@ -9839,472 +9857,484 @@ obj2ast_type_ignore(astmodulestate *state, PyObject* obj, type_ignore_ty* out,
 }
 
 
-PyMODINIT_FUNC
-PyInit__ast(void)
+static int
+astmodule_exec(PyObject *m)
 {
-    PyObject *m = PyModule_Create(&_astmodule);
-    if (!m) {
-        return NULL;
-    }
     astmodulestate *state = get_ast_state(m);
 
-    if (!init_types()) {
-        goto error;
+    if (!init_types(state)) {
+        return -1;
     }
     if (PyModule_AddObject(m, "AST", state->AST_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->AST_type);
     if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0) {
-        goto error;
+        return -1;
     }
     if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0) {
-        goto error;
+        return -1;
     }
     if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {
-        goto error;
+        return -1;
     }
     if (PyModule_AddObject(m, "mod", state->mod_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->mod_type);
     if (PyModule_AddObject(m, "Module", state->Module_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Module_type);
     if (PyModule_AddObject(m, "Interactive", state->Interactive_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Interactive_type);
     if (PyModule_AddObject(m, "Expression", state->Expression_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Expression_type);
     if (PyModule_AddObject(m, "FunctionType", state->FunctionType_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->FunctionType_type);
     if (PyModule_AddObject(m, "stmt", state->stmt_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->stmt_type);
     if (PyModule_AddObject(m, "FunctionDef", state->FunctionDef_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->FunctionDef_type);
     if (PyModule_AddObject(m, "AsyncFunctionDef", state->AsyncFunctionDef_type)
         < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->AsyncFunctionDef_type);
     if (PyModule_AddObject(m, "ClassDef", state->ClassDef_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->ClassDef_type);
     if (PyModule_AddObject(m, "Return", state->Return_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Return_type);
     if (PyModule_AddObject(m, "Delete", state->Delete_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Delete_type);
     if (PyModule_AddObject(m, "Assign", state->Assign_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Assign_type);
     if (PyModule_AddObject(m, "AugAssign", state->AugAssign_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->AugAssign_type);
     if (PyModule_AddObject(m, "AnnAssign", state->AnnAssign_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->AnnAssign_type);
     if (PyModule_AddObject(m, "For", state->For_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->For_type);
     if (PyModule_AddObject(m, "AsyncFor", state->AsyncFor_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->AsyncFor_type);
     if (PyModule_AddObject(m, "While", state->While_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->While_type);
     if (PyModule_AddObject(m, "If", state->If_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->If_type);
     if (PyModule_AddObject(m, "With", state->With_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->With_type);
     if (PyModule_AddObject(m, "AsyncWith", state->AsyncWith_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->AsyncWith_type);
     if (PyModule_AddObject(m, "Raise", state->Raise_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Raise_type);
     if (PyModule_AddObject(m, "Try", state->Try_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Try_type);
     if (PyModule_AddObject(m, "Assert", state->Assert_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Assert_type);
     if (PyModule_AddObject(m, "Import", state->Import_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Import_type);
     if (PyModule_AddObject(m, "ImportFrom", state->ImportFrom_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->ImportFrom_type);
     if (PyModule_AddObject(m, "Global", state->Global_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Global_type);
     if (PyModule_AddObject(m, "Nonlocal", state->Nonlocal_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Nonlocal_type);
     if (PyModule_AddObject(m, "Expr", state->Expr_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Expr_type);
     if (PyModule_AddObject(m, "Pass", state->Pass_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Pass_type);
     if (PyModule_AddObject(m, "Break", state->Break_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Break_type);
     if (PyModule_AddObject(m, "Continue", state->Continue_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Continue_type);
     if (PyModule_AddObject(m, "expr", state->expr_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->expr_type);
     if (PyModule_AddObject(m, "BoolOp", state->BoolOp_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->BoolOp_type);
     if (PyModule_AddObject(m, "NamedExpr", state->NamedExpr_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->NamedExpr_type);
     if (PyModule_AddObject(m, "BinOp", state->BinOp_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->BinOp_type);
     if (PyModule_AddObject(m, "UnaryOp", state->UnaryOp_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->UnaryOp_type);
     if (PyModule_AddObject(m, "Lambda", state->Lambda_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Lambda_type);
     if (PyModule_AddObject(m, "IfExp", state->IfExp_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->IfExp_type);
     if (PyModule_AddObject(m, "Dict", state->Dict_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Dict_type);
     if (PyModule_AddObject(m, "Set", state->Set_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Set_type);
     if (PyModule_AddObject(m, "ListComp", state->ListComp_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->ListComp_type);
     if (PyModule_AddObject(m, "SetComp", state->SetComp_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->SetComp_type);
     if (PyModule_AddObject(m, "DictComp", state->DictComp_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->DictComp_type);
     if (PyModule_AddObject(m, "GeneratorExp", state->GeneratorExp_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->GeneratorExp_type);
     if (PyModule_AddObject(m, "Await", state->Await_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Await_type);
     if (PyModule_AddObject(m, "Yield", state->Yield_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Yield_type);
     if (PyModule_AddObject(m, "YieldFrom", state->YieldFrom_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->YieldFrom_type);
     if (PyModule_AddObject(m, "Compare", state->Compare_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Compare_type);
     if (PyModule_AddObject(m, "Call", state->Call_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Call_type);
     if (PyModule_AddObject(m, "FormattedValue", state->FormattedValue_type) <
         0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->FormattedValue_type);
     if (PyModule_AddObject(m, "JoinedStr", state->JoinedStr_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->JoinedStr_type);
     if (PyModule_AddObject(m, "Constant", state->Constant_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Constant_type);
     if (PyModule_AddObject(m, "Attribute", state->Attribute_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Attribute_type);
     if (PyModule_AddObject(m, "Subscript", state->Subscript_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Subscript_type);
     if (PyModule_AddObject(m, "Starred", state->Starred_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Starred_type);
     if (PyModule_AddObject(m, "Name", state->Name_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Name_type);
     if (PyModule_AddObject(m, "List", state->List_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->List_type);
     if (PyModule_AddObject(m, "Tuple", state->Tuple_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Tuple_type);
     if (PyModule_AddObject(m, "Slice", state->Slice_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Slice_type);
     if (PyModule_AddObject(m, "expr_context", state->expr_context_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->expr_context_type);
     if (PyModule_AddObject(m, "Load", state->Load_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Load_type);
     if (PyModule_AddObject(m, "Store", state->Store_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Store_type);
     if (PyModule_AddObject(m, "Del", state->Del_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Del_type);
     if (PyModule_AddObject(m, "boolop", state->boolop_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->boolop_type);
     if (PyModule_AddObject(m, "And", state->And_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->And_type);
     if (PyModule_AddObject(m, "Or", state->Or_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Or_type);
     if (PyModule_AddObject(m, "operator", state->operator_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->operator_type);
     if (PyModule_AddObject(m, "Add", state->Add_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Add_type);
     if (PyModule_AddObject(m, "Sub", state->Sub_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Sub_type);
     if (PyModule_AddObject(m, "Mult", state->Mult_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Mult_type);
     if (PyModule_AddObject(m, "MatMult", state->MatMult_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->MatMult_type);
     if (PyModule_AddObject(m, "Div", state->Div_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Div_type);
     if (PyModule_AddObject(m, "Mod", state->Mod_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Mod_type);
     if (PyModule_AddObject(m, "Pow", state->Pow_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Pow_type);
     if (PyModule_AddObject(m, "LShift", state->LShift_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->LShift_type);
     if (PyModule_AddObject(m, "RShift", state->RShift_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->RShift_type);
     if (PyModule_AddObject(m, "BitOr", state->BitOr_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->BitOr_type);
     if (PyModule_AddObject(m, "BitXor", state->BitXor_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->BitXor_type);
     if (PyModule_AddObject(m, "BitAnd", state->BitAnd_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->BitAnd_type);
     if (PyModule_AddObject(m, "FloorDiv", state->FloorDiv_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->FloorDiv_type);
     if (PyModule_AddObject(m, "unaryop", state->unaryop_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->unaryop_type);
     if (PyModule_AddObject(m, "Invert", state->Invert_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Invert_type);
     if (PyModule_AddObject(m, "Not", state->Not_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Not_type);
     if (PyModule_AddObject(m, "UAdd", state->UAdd_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->UAdd_type);
     if (PyModule_AddObject(m, "USub", state->USub_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->USub_type);
     if (PyModule_AddObject(m, "cmpop", state->cmpop_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->cmpop_type);
     if (PyModule_AddObject(m, "Eq", state->Eq_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Eq_type);
     if (PyModule_AddObject(m, "NotEq", state->NotEq_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->NotEq_type);
     if (PyModule_AddObject(m, "Lt", state->Lt_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Lt_type);
     if (PyModule_AddObject(m, "LtE", state->LtE_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->LtE_type);
     if (PyModule_AddObject(m, "Gt", state->Gt_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Gt_type);
     if (PyModule_AddObject(m, "GtE", state->GtE_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->GtE_type);
     if (PyModule_AddObject(m, "Is", state->Is_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->Is_type);
     if (PyModule_AddObject(m, "IsNot", state->IsNot_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->IsNot_type);
     if (PyModule_AddObject(m, "In", state->In_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->In_type);
     if (PyModule_AddObject(m, "NotIn", state->NotIn_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->NotIn_type);
     if (PyModule_AddObject(m, "comprehension", state->comprehension_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->comprehension_type);
     if (PyModule_AddObject(m, "excepthandler", state->excepthandler_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->excepthandler_type);
     if (PyModule_AddObject(m, "ExceptHandler", state->ExceptHandler_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->ExceptHandler_type);
     if (PyModule_AddObject(m, "arguments", state->arguments_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->arguments_type);
     if (PyModule_AddObject(m, "arg", state->arg_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->arg_type);
     if (PyModule_AddObject(m, "keyword", state->keyword_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->keyword_type);
     if (PyModule_AddObject(m, "alias", state->alias_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->alias_type);
     if (PyModule_AddObject(m, "withitem", state->withitem_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->withitem_type);
     if (PyModule_AddObject(m, "type_ignore", state->type_ignore_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->type_ignore_type);
     if (PyModule_AddObject(m, "TypeIgnore", state->TypeIgnore_type) < 0) {
-        goto error;
+        return -1;
     }
     Py_INCREF(state->TypeIgnore_type);
-    return m;
+    return 0;
+}
 
-error:
-    Py_DECREF(m);
-    return NULL;
+static PyModuleDef_Slot astmodule_slots[] = {
+    {Py_mod_exec, astmodule_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef _astmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_ast",
+    .m_size = sizeof(astmodulestate),
+    .m_slots = astmodule_slots,
+    .m_traverse = astmodule_traverse,
+    .m_clear = astmodule_clear,
+    .m_free = astmodule_free,
+};
+
+PyMODINIT_FUNC
+PyInit__ast(void)
+{
+    return PyModuleDef_Init(&_astmodule);
 }
 
 
 PyObject* PyAST_mod2obj(mod_ty t)
 {
-    if (!init_types()) {
+    astmodulestate *state = get_global_ast_state();
+    if (state == NULL) {
         return NULL;
     }
-
-    astmodulestate *state = get_global_ast_state();
     return ast2obj_mod(state, t);
 }
 
@@ -10326,10 +10356,6 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 
     assert(0 <= mode && mode <= 2);
 
-    if (!init_types()) {
-        return NULL;
-    }
-
     isinstance = PyObject_IsInstance(ast, req_type[mode]);
     if (isinstance == -1)
         return NULL;
@@ -10348,11 +10374,10 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 
 int PyAST_Check(PyObject* obj)
 {
-    if (!init_types()) {
+    astmodulestate *state = get_global_ast_state();
+    if (state == NULL) {
         return -1;
     }
-
-    astmodulestate *state = get_global_ast_state();
     return PyObject_IsInstance(obj, state->AST_type);
 }
 
