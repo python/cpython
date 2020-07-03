@@ -1,0 +1,1 @@
+Allow to provide custom exception handler to `asyncio.run()`
