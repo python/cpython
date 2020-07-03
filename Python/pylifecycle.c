@@ -1301,14 +1301,14 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyGC_CollectNoFail();
     }
 
-    finalize_interp_types(tstate, is_main_interp);
-
     /* Clear all loghooks */
     /* Both _PySys_Audit function and users still need PyObject, such as tuple.
        Call _PySys_ClearAuditHooks when PyObject available. */
     if (is_main_interp) {
         _PySys_ClearAuditHooks(tstate);
     }
+
+    finalize_interp_types(tstate, is_main_interp);
 
     if (is_main_interp) {
         /* XXX Still allocated:
