@@ -473,6 +473,38 @@ class pair_converter(CConverter):
 [python start generated code]*/
 /*[python end generated code: output=da39a3ee5e6b4b0d input=1a918ae6a1b32af7]*/
 
+static int
+component_converter(PyObject *arg, void *ptr)
+{
+    long component;
+    int overflow;
+
+    component = PyLong_AsLongAndOverflow(arg, &overflow);
+    if (PyErr_Occurred())
+        return 0;
+
+    if (component < 0) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Color component is less than 0");
+        return 0;
+    }
+    else if (component > 1000) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Color component is greater than 1000");
+        return 0;
+    }
+
+    *(short *)ptr = (short)component;
+    return 1;
+}
+
+/*[python input]
+class component_converter(CConverter):
+    type = 'short'
+    converter = 'component_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=38e9be01d33927fb]*/
+
 /* Function versions of the 3 functions for testing whether curses has been
    initialised or not. */
 
@@ -3136,11 +3168,11 @@ _curses.init_color
 
     color_number: color
         The number of the color to be changed (0 - COLORS).
-    r: short
+    r: component
         Red component (0 - 1000).
-    g: short
+    g: component
         Green component (0 - 1000).
-    b: short
+    b: component
         Blue component (0 - 1000).
     /
 
@@ -3154,43 +3186,10 @@ most terminals; it is active only if can_change_color() returns 1.
 static PyObject *
 _curses_init_color_impl(PyObject *module, int color_number, short r, short g,
                         short b)
-/*[clinic end generated code: output=d7ed71b2d818cdf2 input=62bbafc22a9a3c25]*/
+/*[clinic end generated code: output=d7ed71b2d818cdf2 input=8a2fe94ca9204aa5]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
-
-    if (r < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Red value is less than minimum");
-        return NULL;
-    }
-    else if (r > 1000) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Red value is greater than maximum");
-        return NULL;
-    }
-
-    if (g < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Green value is less than minimum");
-        return NULL;
-    }
-    else if (g > 1000) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Green value is greater than maximum");
-        return NULL;
-    }
-
-    if (b < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Blue value is less than minimum");
-        return NULL;
-    }
-    else if (b > 1000) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Blue value is greater than maximum");
-        return NULL;
-    }
 
     return PyCursesCheckERR(_CURSES_INIT_COLOR_FUNC(color_number, r, g, b), _CURSES_INIT_COLOR_FUNC_NAME);
 }

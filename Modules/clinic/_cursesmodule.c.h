@@ -2576,62 +2576,14 @@ _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!color_converter(args[0], &color_number)) {
         goto exit;
     }
-    {
-        long ival = PyLong_AsLong(args[1]);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            goto exit;
-        }
-        else if (ival > SHRT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
-            goto exit;
-        }
-        else {
-            r = (short) ival;
-        }
+    if (!component_converter(args[1], &r)) {
+        goto exit;
     }
-    {
-        long ival = PyLong_AsLong(args[2]);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            goto exit;
-        }
-        else if (ival > SHRT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
-            goto exit;
-        }
-        else {
-            g = (short) ival;
-        }
+    if (!component_converter(args[2], &g)) {
+        goto exit;
     }
-    {
-        long ival = PyLong_AsLong(args[3]);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            goto exit;
-        }
-        else if (ival > SHRT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
-            goto exit;
-        }
-        else {
-            b = (short) ival;
-        }
+    if (!component_converter(args[3], &b)) {
+        goto exit;
     }
     return_value = _curses_init_color_impl(module, color_number, r, g, b);
 
@@ -4336,4 +4288,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=956ae257b047d8eb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=38b2531d17f119e1 input=a9049054013a1b77]*/
