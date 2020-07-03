@@ -142,6 +142,74 @@ static int fuzz_struct_unpack(const char* data, size_t size) {
 }
 
 
+PyObject* pickle_loads_method = NULL;
+PyObject* pickle_error = NULL;
+PyObject* pickling_error = NULL;
+PyObject* unpickling_error = NULL;
+/* Called by LLVMFuzzerTestOneInput for initialization */
+static int init_pickle_loads() {
+    /* Import pickle.loads */
+    PyObject* pickle_module = PyImport_ImportModule("pickle");
+    if (pickle_module == NULL) {
+        return 0;
+    }
+    pickle_error = PyObject_GetAttrString(pickle_module, "PickleError");
+    if (pickle_error == NULL) {
+        return 0;
+    }
+    pickling_error = PyObject_GetAttrString(pickle_module, "PicklingError");
+    if (pickling_error == NULL) {
+        return 0;
+    }
+    unpickling_error = PyObject_GetAttrString(pickle_module, "UnpicklingError");
+    if (unpickling_error == NULL) {
+        return 0;
+    }
+    pickle_loads_method = PyObject_GetAttrString(pickle_module, "loads");
+    return pickle_loads_method != NULL;
+}
+
+#define MAX_PICKLE_TEST_SIZE 0x10000
+/* Fuzz pickle.loads(x) */
+static int fuzz_pickle_loads(const char* data, size_t size) {
+    if (size > MAX_PICKLE_TEST_SIZE) {
+        return 0;
+    }
+    PyObject* input_bytes = PyBytes_FromStringAndSize(data, size);
+    if (input_bytes == NULL) {
+        return 0;
+    }
+    PyObject* parsed = PyObject_CallOneArg(pickle_loads_method, input_bytes);
+    if (parsed == NULL &&
+            (PyErr_ExceptionMatches(PyExc_ValueError) ||
+            PyErr_ExceptionMatches(PyExc_AttributeError) ||
+            PyErr_ExceptionMatches(PyExc_KeyError) ||
+            PyErr_ExceptionMatches(PyExc_TypeError) ||
+            PyErr_ExceptionMatches(PyExc_OverflowError) ||
+            PyErr_ExceptionMatches(PyExc_EOFError) ||
+            PyErr_ExceptionMatches(PyExc_MemoryError) ||
+            PyErr_ExceptionMatches(PyExc_ModuleNotFoundError) ||
+            PyErr_ExceptionMatches(PyExc_IndexError) ||
+            PyErr_ExceptionMatches(PyExc_RecursionError) ||
+            PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))) 
+    {
+        PyErr_Clear();
+    }
+
+    if (parsed == NULL && (
+           PyErr_ExceptionMatches(pickle_error) ||
+           PyErr_ExceptionMatches(pickling_error) ||
+           PyErr_ExceptionMatches(unpickling_error)
+    ))
+    {
+        PyErr_Clear();
+    }
+    Py_DECREF(input_bytes);
+    Py_XDECREF(parsed);
+    return 0;
+}
+
+
 #define MAX_JSON_TEST_SIZE 0x10000
 
 PyObject* json_loads_method = NULL;
@@ -452,6 +520,19 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     }
     rv |= _run_fuzz(data, size, fuzz_struct_unpack);
 #endif
+
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_pickle_loads)
+    static int PICKLE_LOADS_INITIALIZED = 0;
+    if (!PICKLE_LOADS_INITIALIZED && !init_pickle_loads()) {
+        PyErr_Print();
+        abort();
+    } else {
+        PICKLE_LOADS_INITIALIZED = 1;
+    }
+
+    rv |= _run_fuzz(data, size, fuzz_pickle_loads);
+#endif
+
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_json_loads)
     static int JSON_LOADS_INITIALIZED = 0;
     if (!JSON_LOADS_INITIALIZED && !init_json_loads()) {
