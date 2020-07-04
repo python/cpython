@@ -375,7 +375,7 @@ PEP 278: Universal Newline Support
 ==================================
 
 The three major operating systems used today are Microsoft Windows, Apple's
-Macintosh OS, and the various Unix derivatives.  A minor irritation of
+Mac OS, and the various Unix derivatives.  A minor irritation of
 cross-platform work  is that these three platforms all use different characters to
 mark the ends of lines in text files.  Unix uses the linefeed (ASCII character
 10), MacOS uses the carriage return (ASCII character 13), and Windows uses a

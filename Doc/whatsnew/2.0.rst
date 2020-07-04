@@ -773,7 +773,7 @@ the 'patches' and 'python-dev' lists at python.org.
 
 Recent versions of the GUSI development environment for MacOS support POSIX
 threads.  Therefore, Python's POSIX threading support now works on the
-Macintosh.  Threading support using the user-space GNU ``pth`` library was also
+Mac.  Threading support using the user-space GNU ``pth`` library was also
 contributed.
 
 Threading support on Windows was enhanced, too.  Windows supports thread locks
