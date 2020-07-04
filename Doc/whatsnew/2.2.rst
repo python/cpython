@@ -1137,7 +1137,7 @@ bugs.  These figures are likely to be underestimates.
 Some of the more notable changes are:
 
 * The code for the MacOS port for Python, maintained by Jack Jansen, is now kept
-  in the main Python CVS tree, and many changes have been made to support MacmacOS.
+  in the main Python CVS tree, and many changes have been made to support macOS.
 
   The most significant change is the ability to build Python as a framework,
   enabled by supplying the :option:`!--enable-framework` option to the configure

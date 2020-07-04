@@ -54,6 +54,6 @@ Notes
 There is an alternative, more powerful interface to the coder and decoder, see
 the source for details.
 
-If you code or decode textfiles on non-Mac platforms they will still use
-the old Mac newline convention (carriage-return as end of line).
+If you code or decode textfiles on non-Macintosh platforms they will still use
+the old Macintosh newline convention (carriage-return as end of line).
 

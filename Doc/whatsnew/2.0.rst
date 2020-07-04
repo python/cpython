@@ -574,7 +574,7 @@ mostly by Trent Mick of ActiveState.  (Confusingly, ``sys.platform`` is still
 treats code as 32 bit on Itanium.) PythonWin also supports Windows CE; see the
 Python CE page at http://pythonce.sourceforge.net/ for more information.
 
-Another new platform is Darwin/MacmacOS; initial support for it is in Python 2.0.
+Another new platform is Darwin/macOS; initial support for it is in Python 2.0.
 Dynamic loading works, if you specify "configure --with-dyld --with-suffix=.x".
 Consult the README in the Python source distribution for more instructions.
 
@@ -773,7 +773,7 @@ the 'patches' and 'python-dev' lists at python.org.
 
 Recent versions of the GUSI development environment for MacOS support POSIX
 threads.  Therefore, Python's POSIX threading support now works on the
-Mac.  Threading support using the user-space GNU ``pth`` library was also
+Macintosh.  Threading support using the user-space GNU ``pth`` library was also
 contributed.
 
 Threading support on Windows was enhanced, too.  Windows supports thread locks
