@@ -1140,13 +1140,14 @@ ast_clear(AST_object *self)
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
+    astmodulestate *state = get_global_ast_state();
+    if (state == NULL) {
+        return -1;
+    }
+
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
-    astmodulestate *state = get_global_ast_state();
-    if (state == NULL) {
-        goto cleanup;
-    }
     if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
         goto cleanup;
     }
