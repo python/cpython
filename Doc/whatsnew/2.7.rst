@@ -2359,7 +2359,7 @@ Port-Specific Changes: Windows
 
 .. ======================================================================
 
-Port-Specific Changes: Mac OS X
+Port-Specific Changes: macOS
 -----------------------------------
 
 * The path ``/Library/Python/2.7/site-packages`` is now appended to
@@ -2669,7 +2669,7 @@ the ``make install`` and ``make altinstall`` commands do not bootstrap ``pip``
 by default.  This behaviour can be controlled through configure options, and
 overridden through Makefile options.
 
-On Windows and Mac OS X, the CPython installers now default to installing
+On Windows and macOS, the CPython installers now default to installing
 ``pip`` along with CPython itself (users may opt out of installing it
 during the installation process). Window users will need to opt in to the
 automatic ``PATH`` modifications to have ``pip`` available from the command

@@ -208,7 +208,7 @@ the ``make install`` and ``make altinstall`` commands bootstrap ``pip`` by
 default.  This behaviour can be controlled through configure options, and
 overridden through Makefile options.
 
-On Windows and Mac OS X, the CPython installers now default to installing
+On Windows and macOS, the CPython installers now default to installing
 ``pip`` along with CPython itself (users may opt out of installing it
 during the installation process). Window users will need to opt in to the
 automatic ``PATH`` modifications to have ``pip`` available from the command
@@ -1399,7 +1399,7 @@ The ``socket.AF_*`` and ``socket.SOCK_*`` constants are now enumeration values
 using the new :mod:`enum` module.  This allows meaningful names to be printed
 during debugging, instead of integer "magic numbers".
 
-The :data:`~socket.AF_LINK` constant is now available on BSD and OSX.
+The :data:`~socket.AF_LINK` constant is now available on BSD and macOS.
 
 :func:`~socket.inet_pton` and :func:`~socket.inet_ntop` are now supported
 on Windows.  (Contributed by Atsuo Ishimoto in :issue:`7171`.)
@@ -2229,7 +2229,7 @@ Code Cleanups
 * The private and effectively unused ``_gestalt`` module has been removed,
   along with the private :mod:`platform` functions ``_mac_ver_lookup``,
   ``_mac_ver_gstalt``, and ``_bcd2str``, which would only have ever been called
-  on badly broken OSX systems (see :issue:`18393`).
+  on badly broken macOS systems (see :issue:`18393`).
 
 * The hardcoded copies of certain :mod:`stat` constants that were included in
   the :mod:`tarfile` module namespace have been removed.
