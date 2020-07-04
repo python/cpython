@@ -51,7 +51,7 @@ static PyThread_type_lock tables_lock;
 #define DEFAULT_DOMAIN 0
 
 /* Pack the frame_t structure to reduce the memory footprint on 64-bit
-architectures: 12 bytes instead of 16. */
+   architectures: 12 bytes instead of 16. */
 #if defined(_MSC_VER)
 #pragma pack(push, 4)
 #endif
