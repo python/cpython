@@ -23,7 +23,6 @@
 
 #include "Python.h"
 
-#include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
 #include "Python-ast.h"
 #include "ast.h"
 #include "code.h"
@@ -68,8 +67,6 @@ typedef struct basicblock_ {
     /* If b_next is non-NULL, it is a pointer to the next
        block reached by normal control flow. */
     struct basicblock_ *b_next;
-    /* b_seen is used to perform a DFS of basicblocks. */
-    unsigned b_seen : 1;
     /* b_return is true if a RETURN_VALUE opcode is inserted. */
     unsigned b_return : 1;
     /* depth of stack upon entry of block, computed by stackdepth() */
@@ -323,7 +320,6 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     PyCodeObject *co = NULL;
     PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
     int merged;
-    PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
 
     if (!__doc__) {
         __doc__ = PyUnicode_InternFromString("__doc__");
@@ -350,7 +346,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_future->ff_features = merged;
     flags->cf_flags = merged;
     c.c_flags = flags;
-    c.c_optimize = (optimize == -1) ? config->optimization_level : optimize;
+    c.c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c.c_nestlevel = 0;
     c.c_do_not_emit_bytecode = 0;
 
@@ -390,21 +386,6 @@ PyAST_CompileEx(mod_ty mod, const char *filename_str, PyCompilerFlags *flags,
     Py_DECREF(filename);
     return co;
 
-}
-
-PyCodeObject *
-PyNode_Compile(struct _node *n, const char *filename)
-{
-    PyCodeObject *co = NULL;
-    mod_ty mod;
-    PyArena *arena = PyArena_New();
-    if (!arena)
-        return NULL;
-    mod = PyAST_FromNode(n, NULL, filename, arena);
-    if (mod)
-        co = PyAST_Compile(mod, filename, NULL, arena);
-    PyArena_Free(arena);
-    return co;
 }
 
 static void
@@ -2155,6 +2136,55 @@ compiler_default_arguments(struct compiler *c, arguments_ty args)
 }
 
 static int
+forbidden_name(struct compiler *c, identifier name, expr_context_ty ctx)
+{
+
+    if (ctx == Store && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
+        compiler_error(c, "cannot assign to __debug__");
+        return 1;
+    }
+    return 0;
+}
+
+static int
+compiler_check_debug_one_arg(struct compiler *c, arg_ty arg)
+{
+    if (arg != NULL) {
+        if (forbidden_name(c, arg->arg, Store))
+            return 0;
+    }
+    return 1;
+}
+
+static int
+compiler_check_debug_args_seq(struct compiler *c, asdl_seq *args)
+{
+    if (args != NULL) {
+        for (Py_ssize_t i = 0, n = asdl_seq_LEN(args); i < n; i++) {
+            if (!compiler_check_debug_one_arg(c, asdl_seq_GET(args, i)))
+                return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+compiler_check_debug_args(struct compiler *c, arguments_ty args)
+{
+    if (!compiler_check_debug_args_seq(c, args->posonlyargs))
+        return 0;
+    if (!compiler_check_debug_args_seq(c, args->args))
+        return 0;
+    if (!compiler_check_debug_one_arg(c, args->vararg))
+        return 0;
+    if (!compiler_check_debug_args_seq(c, args->kwonlyargs))
+        return 0;
+    if (!compiler_check_debug_one_arg(c, args->kwarg))
+        return 0;
+    return 1;
+}
+
+static int
 compiler_function(struct compiler *c, stmt_ty s, int is_async)
 {
     PyCodeObject *co;
@@ -2190,6 +2220,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
         scope_type = COMPILER_SCOPE_FUNCTION;
     }
+
+    if (!compiler_check_debug_args(c, args))
+        return 0;
 
     if (!compiler_decorators(c, decos))
         return 0;
@@ -2597,6 +2630,9 @@ compiler_lambda(struct compiler *c, expr_ty e)
     Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
+
+    if (!compiler_check_debug_args(c, args))
+        return 0;
 
     if (!name) {
         name = PyUnicode_InternFromString("<lambda>");
@@ -3507,6 +3543,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
            !_PyUnicode_EqualToASCIIString(name, "True") &&
            !_PyUnicode_EqualToASCIIString(name, "False"));
 
+    if (forbidden_name(c, name, ctx))
+        return 0;
+
     mangled = _Py_Mangle(c->u->u_private, name);
     if (!mangled)
         return 0;
@@ -4058,6 +4097,9 @@ validate_keywords(struct compiler *c, asdl_seq *keywords)
         if (key->arg == NULL) {
             continue;
         }
+        if (forbidden_name(c, key->arg, Store)) {
+            return -1;
+        }
         for (Py_ssize_t j = i + 1; j < nkeywords; j++) {
             keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
             if (other->arg && !PyUnicode_Compare(key->arg, other->arg)) {
@@ -4261,6 +4303,9 @@ ex_call:
                 if (nseen) {
                     if (!compiler_subkwargs(c, keywords, i - nseen, i)) {
                         return 0;
+                    }
+                    if (have_dict) {
+                        ADDOP_I(c, DICT_MERGE, 1);
                     }
                     have_dict = 1;
                     nseen = 0;
@@ -5015,6 +5060,8 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
             break;
         case Store:
+            if (forbidden_name(c, e->v.Attribute.attr, e->v.Attribute.ctx))
+                return 0;
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
             break;
         case Del:
@@ -5185,6 +5232,8 @@ compiler_annassign(struct compiler *c, stmt_ty s)
     }
     switch (targ->kind) {
     case Name_kind:
+        if (forbidden_name(c, targ->v.Name.id, Store))
+            return 0;
         /* If we have a simple name in a module or class, store annotation. */
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
@@ -5202,6 +5251,8 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         }
         break;
     case Attribute_kind:
+        if (forbidden_name(c, targ->v.Attribute.attr, Store))
+            return 0;
         if (!s->v.AnnAssign.value &&
             !check_ann_expr(c, targ->v.Attribute.value)) {
             return 0;
@@ -5360,7 +5411,7 @@ struct assembler {
     PyObject *a_bytecode;  /* string containing bytecode */
     int a_offset;              /* offset into bytecode */
     int a_nblocks;             /* number of reachable blocks */
-    basicblock **a_postorder; /* list of blocks in dfs postorder */
+    basicblock **a_reverse_postorder; /* list of blocks in dfs postorder */
     PyObject *a_lnotab;    /* string containing lnotab */
     int a_lnotab_off;      /* offset into lnotab */
     int a_lineno;              /* last lineno of emitted instruction */
@@ -5370,26 +5421,14 @@ struct assembler {
 static void
 dfs(struct compiler *c, basicblock *b, struct assembler *a, int end)
 {
-    int i, j;
 
-    /* Get rid of recursion for normal control flow.
-       Since the number of blocks is limited, unused space in a_postorder
-       (from a_nblocks to end) can be used as a stack for still not ordered
-       blocks. */
-    for (j = end; b && !b->b_seen; b = b->b_next) {
-        b->b_seen = 1;
-        assert(a->a_nblocks < j);
-        a->a_postorder[--j] = b;
-    }
-    while (j < end) {
-        b = a->a_postorder[j++];
-        for (i = 0; i < b->b_iused; i++) {
-            struct instr *instr = &b->b_instr[i];
-            if (instr->i_jrel || instr->i_jabs)
-                dfs(c, instr->i_target, a, j);
-        }
-        assert(a->a_nblocks < j);
-        a->a_postorder[a->a_nblocks++] = b;
+    /* There is no real depth-first-search to do here because all the
+     * blocks are emitted in topological order already, so we just need to
+     * follow the b_next pointers and place them in a->a_reverse_postorder in
+     * reverse order and make sure that the first one starts at 0. */
+
+    for (a->a_nblocks = 0; b != NULL; b = b->b_next) {
+        a->a_reverse_postorder[a->a_nblocks++] = b;
     }
 }
 
@@ -5490,9 +5529,9 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
         PyErr_NoMemory();
         return 0;
     }
-    a->a_postorder = (basicblock **)PyObject_Malloc(
+    a->a_reverse_postorder = (basicblock **)PyObject_Malloc(
                                         sizeof(basicblock *) * nblocks);
-    if (!a->a_postorder) {
+    if (!a->a_reverse_postorder) {
         PyErr_NoMemory();
         return 0;
     }
@@ -5504,8 +5543,8 @@ assemble_free(struct assembler *a)
 {
     Py_XDECREF(a->a_bytecode);
     Py_XDECREF(a->a_lnotab);
-    if (a->a_postorder)
-        PyObject_Free(a->a_postorder);
+    if (a->a_reverse_postorder)
+        PyObject_Free(a->a_reverse_postorder);
 }
 
 static int
@@ -5666,8 +5705,8 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
        Replace block pointer with position in bytecode. */
     do {
         totsize = 0;
-        for (i = a->a_nblocks - 1; i >= 0; i--) {
-            b = a->a_postorder[i];
+        for (i = 0; i < a->a_nblocks; i++) {
+            b = a->a_reverse_postorder[i];
             bsize = blocksize(b);
             b->b_offset = totsize;
             totsize += bsize;
@@ -5922,10 +5961,9 @@ dump_instr(const struct instr *i)
 static void
 dump_basicblock(const basicblock *b)
 {
-    const char *seen = b->b_seen ? "seen " : "";
     const char *b_return = b->b_return ? "return " : "";
-    fprintf(stderr, "used: %d, depth: %d, offset: %d %s%s\n",
-        b->b_iused, b->b_startdepth, b->b_offset, seen, b_return);
+    fprintf(stderr, "used: %d, depth: %d, offset: %d %s\n",
+        b->b_iused, b->b_startdepth, b->b_offset, b_return);
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
@@ -5977,8 +6015,8 @@ assemble(struct compiler *c, int addNone)
     assemble_jump_offsets(&a, c);
 
     /* Emit code in reverse postorder from dfs. */
-    for (i = a.a_nblocks - 1; i >= 0; i--) {
-        b = a.a_postorder[i];
+    for (i = 0; i < a.a_nblocks; i++) {
+        b = a.a_reverse_postorder[i];
         for (j = 0; j < b->b_iused; j++)
             if (!assemble_emit(&a, &b->b_instr[j]))
                 goto error;

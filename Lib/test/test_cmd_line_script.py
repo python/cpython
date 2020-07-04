@@ -632,14 +632,14 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(
                 stderr.splitlines()[-3:],
                 [
-                    b'    foo = f"""{}',
+                    b'    foo"""',
                     b'          ^',
                     b'SyntaxError: f-string: empty expression not allowed',
                 ],
             )
 
     def test_syntaxerror_invalid_escape_sequence_multi_line(self):
-        script = 'foo = """\\q\n"""\n'
+        script = 'foo = """\\q"""\n'
         with support.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(
@@ -647,10 +647,9 @@ class CmdLineTest(unittest.TestCase):
             )
             self.assertEqual(
                 stderr.splitlines()[-3:],
-                [
-                    b'    foo = """\\q',
+                [   b'    foo = """\\q"""',
                     b'          ^',
-                    b'SyntaxError: invalid escape sequence \\q',
+                    b'SyntaxError: invalid escape sequence \\q'
                 ],
             )
 

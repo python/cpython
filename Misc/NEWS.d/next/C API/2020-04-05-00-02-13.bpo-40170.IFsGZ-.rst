@@ -1,3 +1,0 @@
-Convert :c:func:`PyObject_CheckBuffer` macro to a function to hide
-implementation details: the macro accessed directly the
-:c:member:`PyTypeObject.tp_as_buffer` member.

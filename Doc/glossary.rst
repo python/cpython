@@ -189,6 +189,10 @@ Glossary
       A list of bytecode instructions can be found in the documentation for
       :ref:`the dis module <bytecodes>`.
 
+   callback
+      A subroutine function which is passed as an argument to be executed at
+      some point in the future.
+
    class
       A template for creating user-defined objects. Class definitions
       normally contain method definitions which operate on instances of the

@@ -7,11 +7,13 @@ executing have not been removed.
 import unittest
 import test.support
 from test import support
+from test.support import socket_helper
 from test.support import (captured_stderr, TESTFN, EnvironmentVarGuard,
                           change_cwd)
 import builtins
 import encodings
 import glob
+import io
 import os
 import re
 import shutil
@@ -319,6 +321,14 @@ class HelperFunctionsTests(unittest.TestCase):
             mock_addsitedir.assert_not_called()
             self.assertFalse(known_paths)
 
+    def test_trace(self):
+        message = "bla-bla-bla"
+        for verbose, out in (True, message + "\n"), (False, ""):
+            with mock.patch('sys.flags', mock.Mock(verbose=verbose)), \
+                    mock.patch('sys.stderr', io.StringIO()):
+                site._trace(message)
+                self.assertEqual(sys.stderr.getvalue(), out)
+
 
 class PthFile(object):
     """Helper class for handling testing of .pth files"""
@@ -509,7 +519,7 @@ class ImportSideEffectTests(unittest.TestCase):
         url = license._Printer__data.split()[1]
         req = urllib.request.Request(url, method='HEAD')
         try:
-            with test.support.transient_internet(url):
+            with socket_helper.transient_internet(url):
                 with urllib.request.urlopen(req) as data:
                     code = data.getcode()
         except urllib.error.HTTPError as e:
@@ -533,7 +543,7 @@ class StartupImportTests(unittest.TestCase):
         # found in sys.path (see site.addpackage()). Skip the test if at least
         # one .pth file is found.
         for path in isolated_paths:
-            pth_files = glob.glob(os.path.join(path, "*.pth"))
+            pth_files = glob.glob(os.path.join(glob.escape(path), "*.pth"))
             if pth_files:
                 self.skipTest(f"found {len(pth_files)} .pth files in: {path}")
 

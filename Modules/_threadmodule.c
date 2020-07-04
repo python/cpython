@@ -4,17 +4,9 @@
 
 #include "Python.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"
-#include "structmember.h" /* offsetof */
-#include "pythread.h"
-
-#include "clinic/_threadmodule.c.h"
-
-/*[clinic input]
-module _thread
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=be8dbe5cc4b16df7]*/
-
+#include "pycore_interp.h"        // _PyInterpreterState.num_threads
+#include "pycore_pystate.h"       // _PyThreadState_Init()
+#include <stddef.h>               // offsetof()
 
 static PyObject *ThreadError;
 static PyObject *str_dict;
@@ -595,8 +587,6 @@ newlockobject(void)
 
 /* Thread-local objects */
 
-#include "structmember.h"
-
 /* Quick overview:
 
    We need to be able to reclaim reference cycles as soon as possible
@@ -1095,10 +1085,18 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
                         "optional 3rd arg must be a dictionary");
         return NULL;
     }
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->config._isolated_interpreter) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "thread is not supported for isolated subinterpreters");
+        return NULL;
+    }
+
     boot = PyMem_NEW(struct bootstate, 1);
     if (boot == NULL)
         return PyErr_NoMemory();
-    boot->interp = _PyInterpreterState_GET_UNSAFE();
+    boot->interp = _PyInterpreterState_GET();
     boot->func = func;
     boot->args = args;
     boot->keyw = keyw;
@@ -1220,7 +1218,7 @@ particular thread within a system.");
 static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     return PyLong_FromLong(interp->num_threads);
 }
 
@@ -1493,21 +1491,6 @@ PyDoc_STRVAR(excepthook_doc,
 \n\
 Handle uncaught Thread.run() exception.");
 
-/*[clinic input]
-_thread._is_main_interpreter
-
-Return True if the current interpreter is the main Python interpreter.
-[clinic start generated code]*/
-
-static PyObject *
-_thread__is_main_interpreter_impl(PyObject *module)
-/*[clinic end generated code: output=7dd82e1728339adc input=cc1eb00fd4598915]*/
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    int is_main = _Py_IsMainInterpreter(tstate);
-    return PyBool_FromLong(is_main);
-}
-
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
@@ -1537,7 +1520,6 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, _set_sentinel_doc},
     {"_excepthook",              thread_excepthook,
      METH_O, excepthook_doc},
-    _THREAD__IS_MAIN_INTERPRETER_METHODDEF
     {NULL,                      NULL}           /* sentinel */
 };
 
@@ -1579,7 +1561,7 @@ PyInit__thread(void)
     PyObject *m, *d, *v;
     double time_max;
     double timeout_max;
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     /* Initialize types: */
     if (PyType_Ready(&localdummytype) < 0)

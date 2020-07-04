@@ -1,10 +1,10 @@
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
 #else
-#include <sys/types.h>          /* For size_t */
+#include <sys/types.h>            // size_t
 #endif
 
 /*[clinic input]
@@ -117,23 +117,9 @@ static PyTypeObject deque_type;
 #define CHECK_NOT_END(link)
 #endif
 
-/* A simple freelisting scheme is used to minimize calls to the memory
-   allocator.  It accommodates common use cases where new blocks are being
-   added at about the same rate as old blocks are being freed.
- */
-
-#define MAXFREEBLOCKS 16
-static Py_ssize_t numfreeblocks = 0;
-static block *freeblocks[MAXFREEBLOCKS];
-
 static block *
 newblock(void) {
-    block *b;
-    if (numfreeblocks) {
-        numfreeblocks--;
-        return freeblocks[numfreeblocks];
-    }
-    b = PyMem_Malloc(sizeof(block));
+    block *b = PyMem_Malloc(sizeof(block));
     if (b != NULL) {
         return b;
     }
@@ -144,12 +130,7 @@ newblock(void) {
 static void
 freeblock(block *b)
 {
-    if (numfreeblocks < MAXFREEBLOCKS) {
-        freeblocks[numfreeblocks] = b;
-        numfreeblocks++;
-    } else {
-        PyMem_Free(b);
-    }
+    PyMem_Free(b);
 }
 
 static PyObject *
@@ -2493,6 +2474,14 @@ tuplegetter_reduce(_tuplegetterobject *self, PyObject *Py_UNUSED(ignored))
     return Py_BuildValue("(O(nO))", (PyObject*) Py_TYPE(self), self->index, self->doc);
 }
 
+static PyObject*
+tuplegetter_repr(_tuplegetterobject *self)
+{
+    return PyUnicode_FromFormat("%s(%zd, %R)",
+                                _PyType_Name(Py_TYPE(self)),
+                                self->index, self->doc);
+}
+
 
 static PyMemberDef tuplegetter_members[] = {
     {"__doc__",  T_OBJECT, offsetof(_tuplegetterobject, doc), 0},
@@ -2515,7 +2504,7 @@ static PyTypeObject tuplegetter_type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
+    (reprfunc)tuplegetter_repr,                 /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */

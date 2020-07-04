@@ -3,6 +3,7 @@ Tests for the threading module.
 """
 
 import test.support
+from test.support import threading_helper
 from test.support import verbose, import_module, cpython_only
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
@@ -75,10 +76,10 @@ class TestThread(threading.Thread):
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self._threads = test.support.threading_setup()
+        self._threads = threading_helper.threading_setup()
 
     def tearDown(self):
-        test.support.threading_cleanup(*self._threads)
+        threading_helper.threading_cleanup(*self._threads)
         test.support.reap_children()
 
 
@@ -130,7 +131,7 @@ class ThreadTests(BaseTestCase):
             done.set()
         done = threading.Event()
         ident = []
-        with support.wait_threads_exit():
+        with threading_helper.wait_threads_exit():
             tid = _thread.start_new_thread(f, ())
             done.wait()
             self.assertEqual(ident[0], tid)
@@ -171,7 +172,7 @@ class ThreadTests(BaseTestCase):
 
         mutex = threading.Lock()
         mutex.acquire()
-        with support.wait_threads_exit():
+        with threading_helper.wait_threads_exit():
             tid = _thread.start_new_thread(f, (mutex,))
             # Wait for the thread to finish.
             mutex.acquire()
@@ -1022,32 +1023,28 @@ class SubinterpThreadingTests(BaseTestCase):
         # The thread was joined properly.
         self.assertEqual(os.read(r, 1), b"x")
 
-    def test_daemon_thread(self):
-        r, w = self.pipe()
-        code = textwrap.dedent(f"""
+    @cpython_only
+    def test_daemon_threads_fatal_error(self):
+        subinterp_code = f"""if 1:
+            import os
             import threading
-            import sys
+            import time
 
-            channel = open({w}, "w", closefd=False)
+            def f():
+                # Make sure the daemon thread is still running when
+                # Py_EndInterpreter is called.
+                time.sleep({test.support.SHORT_TIMEOUT})
+            threading.Thread(target=f, daemon=True).start()
+            """
+        script = r"""if 1:
+            import _testcapi
 
-            def func():
-                pass
-
-            thread = threading.Thread(target=func, daemon=True)
-            try:
-                thread.start()
-            except RuntimeError as exc:
-                print("ok: %s" % exc, file=channel, flush=True)
-            else:
-                thread.join()
-                print("fail: RuntimeError not raised", file=channel, flush=True)
-        """)
-        ret = test.support.run_in_subinterp(code)
-        self.assertEqual(ret, 0)
-
-        msg = os.read(r, 100).decode().rstrip()
-        self.assertEqual("ok: daemon thread are not supported "
-                         "in subinterpreters", msg)
+            _testcapi.run_in_subinterp(%r)
+            """ % (subinterp_code,)
+        with test.support.SuppressCrashReport():
+            rc, out, err = assert_python_failure("-c", script)
+        self.assertIn("Fatal Python error: Py_EndInterpreter: "
+                      "not the last thread", err.decode())
 
 
 class ThreadingExceptionTests(BaseTestCase):

@@ -234,7 +234,7 @@ static PyObject *
 write_history_file(PyObject *self, PyObject *args)
 {
     PyObject *filename_obj = Py_None, *filename_bytes;
-    char *filename;
+    const char *filename;
     int err;
     if (!PyArg_ParseTuple(args, "|O:write_history_file", &filename_obj))
         return NULL;
@@ -270,7 +270,7 @@ append_history_file(PyObject *self, PyObject *args)
 {
     int nelements;
     PyObject *filename_obj = Py_None, *filename_bytes;
-    char *filename;
+    const char *filename;
     int err;
     if (!PyArg_ParseTuple(args, "i|O:append_history_file", &nelements, &filename_obj))
         return NULL;

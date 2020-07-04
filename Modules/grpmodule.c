@@ -111,30 +111,14 @@ static PyObject *
 grp_getgrgid_impl(PyObject *module, PyObject *id)
 /*[clinic end generated code: output=30797c289504a1ba input=15fa0e2ccf5cda25]*/
 {
-    PyObject *py_int_id, *retval = NULL;
+    PyObject *retval = NULL;
     int nomem = 0;
     char *buf = NULL, *buf2 = NULL;
     gid_t gid;
     struct group *p;
 
     if (!_Py_Gid_Converter(id, &gid)) {
-        if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
-            return NULL;
-        }
-        PyErr_Clear();
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                             "group id must be int, not %.200",
-                             Py_TYPE(id)->tp_name) < 0) {
-            return NULL;
-        }
-        py_int_id = PyNumber_Long(id);
-        if (!py_int_id)
-            return NULL;
-        if (!_Py_Gid_Converter(py_int_id, &gid)) {
-            Py_DECREF(py_int_id);
-            return NULL;
-        }
-        Py_DECREF(py_int_id);
+        return NULL;
     }
 #ifdef HAVE_GETGRGID_R
     int status;

@@ -114,6 +114,8 @@
 #include "classobject.h"
 #include "fileobject.h"
 #include "pycapsule.h"
+#include "code.h"
+#include "pyframe.h"
 #include "traceback.h"
 #include "sliceobject.h"
 #include "cellobject.h"
@@ -131,6 +133,7 @@
 #include "pyerrors.h"
 
 #include "cpython/initconfig.h"
+#include "pythread.h"
 #include "pystate.h"
 #include "context.h"
 
@@ -138,6 +141,7 @@
 #include "modsupport.h"
 #include "compile.h"
 #include "pythonrun.h"
+#include "parser_interface.h"
 #include "pylifecycle.h"
 #include "ceval.h"
 #include "sysmodule.h"

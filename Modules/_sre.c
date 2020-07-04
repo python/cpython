@@ -41,7 +41,7 @@ static const char copyright[] =
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h" /* offsetof */
+#include "structmember.h"         // PyMemberDef
 
 #include "sre.h"
 
@@ -211,7 +211,7 @@ data_stack_grow(SRE_STATE* state, Py_ssize_t size)
     if (cursize < minsize) {
         void* stack;
         cursize = minsize+minsize/4+1024;
-        TRACE(("allocate/grow stack %" PY_FORMAT_SIZE_T "d\n", cursize));
+        TRACE(("allocate/grow stack %zd\n", cursize));
         stack = PyMem_REALLOC(state->data_stack, cursize);
         if (!stack) {
             data_stack_dealloc(state);
@@ -351,7 +351,7 @@ state_reset(SRE_STATE* state)
     data_stack_dealloc(state);
 }
 
-static void*
+static const void*
 getstring(PyObject* string, Py_ssize_t* p_length,
           int* p_isbytes, int* p_charsize,
           Py_buffer *view)
@@ -398,11 +398,11 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     Py_ssize_t length;
     int isbytes, charsize;
-    void* ptr;
+    const void* ptr;
 
     memset(state, 0, sizeof(SRE_STATE));
 
-    state->mark = PyMem_New(void *, pattern->groups * 2);
+    state->mark = PyMem_New(const void *, pattern->groups * 2);
     if (!state->mark) {
         PyErr_NoMemory();
         goto err;
@@ -454,7 +454,10 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 
     return string;
   err:
-    PyMem_Del(state->mark);
+    /* We add an explicit cast here because MSVC has a bug when
+       compiling C code where it believes that `const void**` cannot be
+       safely casted to `void*`, see bpo-39943 for details. */
+    PyMem_Del((void*) state->mark);
     state->mark = NULL;
     if (state->buffer.buf)
         PyBuffer_Release(&state->buffer);
@@ -468,7 +471,8 @@ state_fini(SRE_STATE* state)
         PyBuffer_Release(&state->buffer);
     Py_XDECREF(state->string);
     data_stack_dealloc(state);
-    PyMem_Del(state->mark);
+    /* See above PyMem_Del for why we explicitly cast here. */
+    PyMem_Del((void*) state->mark);
     state->mark = NULL;
 }
 
@@ -891,7 +895,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
     Py_ssize_t status;
     Py_ssize_t n;
     Py_ssize_t i;
-    void* last;
+    const void* last;
 
     assert(self->codesize != 0);
 
@@ -984,7 +988,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
     PyObject* item;
     PyObject* filter;
     PyObject* match;
-    void* ptr;
+    const void* ptr;
     Py_ssize_t status;
     Py_ssize_t n;
     Py_ssize_t i, b, e;
@@ -1895,7 +1899,7 @@ match_getslice_by_index(MatchObject* self, Py_ssize_t index, PyObject* def)
     int isbytes, charsize;
     Py_buffer view;
     PyObject *result;
-    void* ptr;
+    const void* ptr;
     Py_ssize_t i, j;
 
     assert(0 <= index && index < self->groups);

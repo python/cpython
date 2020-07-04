@@ -44,28 +44,6 @@ class TestHook:
             raise self.exc_type("saw event " + event)
 
 
-class TestFinalizeHook:
-    """Used in the test_finalize_hooks function to ensure that hooks
-    are correctly cleaned up, that they are notified about the cleanup,
-    and are unable to prevent it.
-    """
-
-    def __init__(self):
-        print("Created", id(self), file=sys.stdout, flush=True)
-
-    def __call__(self, event, args):
-        # Avoid recursion when we call id() below
-        if event == "builtins.id":
-            return
-
-        print(event, id(self), file=sys.stdout, flush=True)
-
-        if event == "cpython._PySys_ClearAuditHooks":
-            raise RuntimeError("Should be ignored")
-        elif event == "cpython.PyInterpreterState_Clear":
-            raise RuntimeError("Should be ignored")
-
-
 # Simple helpers, since we are not in unittest here
 def assertEqual(x, y):
     if x != y:
@@ -126,10 +104,6 @@ def test_block_add_hook_baseexception():
             # Adding this next hook should raise BaseException
             with TestHook() as hook2:
                 pass
-
-
-def test_finalize_hooks():
-    sys.addaudithook(TestFinalizeHook())
 
 
 def test_pickle():
@@ -350,9 +324,9 @@ def test_socket():
 
 
 if __name__ == "__main__":
-    from test.libregrtest.setup import suppress_msvcrt_asserts
+    from test.support import suppress_msvcrt_asserts
 
-    suppress_msvcrt_asserts(False)
+    suppress_msvcrt_asserts()
 
     test = sys.argv[1]
     globals()[test]()

@@ -39,6 +39,7 @@ _curses_panel_clear(PyObject *m)
 static int
 _curses_panel_traverse(PyObject *m, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(m));
     Py_VISIT(get_curses_panelstate(m)->PyCursesError);
     return 0;
 }

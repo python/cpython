@@ -65,7 +65,6 @@ class SymtableTest(unittest.TestCase):
 
     def test_optimized(self):
         self.assertFalse(self.top.is_optimized())
-        self.assertFalse(self.top.has_exec())
 
         self.assertTrue(self.spam.is_optimized())
 

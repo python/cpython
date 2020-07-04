@@ -1016,6 +1016,17 @@ class LongTest(unittest.TestCase):
             self.assertEqual((a+1).bit_length(), i+1)
             self.assertEqual((-a-1).bit_length(), i+1)
 
+    def test_bit_count(self):
+        for a in range(-1000, 1000):
+            self.assertEqual(a.bit_count(), bin(a).count("1"))
+
+        for exp in [10, 17, 63, 64, 65, 1009, 70234, 1234567]:
+            a = 2**exp
+            self.assertEqual(a.bit_count(), 1)
+            self.assertEqual((a - 1).bit_count(), exp)
+            self.assertEqual((a ^ 63).bit_count(), 7)
+            self.assertEqual(((a - 1) ^ 510).bit_count(), exp - 8)
+
     def test_round(self):
         # check round-half-even algorithm. For round to nearest ten;
         # rounding map is invariant under adding multiples of 20

@@ -11,7 +11,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_object.h"
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 #include "_iomodule.h"
 
 /*[clinic input]
@@ -287,8 +287,7 @@ iobase_finalize(PyObject *self)
            shutdown issues). */
         if (res == NULL) {
 #ifndef Py_DEBUG
-            const PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
-            if (config->dev_mode) {
+            if (_Py_GetConfig()->dev_mode) {
                 PyErr_WriteUnraisable(self);
             }
             else {

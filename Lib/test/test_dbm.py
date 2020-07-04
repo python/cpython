@@ -33,7 +33,7 @@ def dbm_iterator():
 def delete_files():
     # we don't know the precise name the underlying database uses
     # so we use glob to locate all names
-    for f in glob.glob(_fname + "*"):
+    for f in glob.glob(glob.escape(_fname) + "*"):
         test.support.unlink(f)
 
 

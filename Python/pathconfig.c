@@ -1,13 +1,15 @@
 /* Path configuration like module_search_path (sys.path) */
 
 #include "Python.h"
-#include "osdefs.h"
+#include "osdefs.h"               // DELIM
 #include "pycore_initconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_pathconfig.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include <wchar.h>
+#ifdef MS_WINDOWS
+#  include <windows.h>            // GetFullPathNameW(), MAX_PATH
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -684,6 +686,7 @@ _PyPathConfig_ComputeSysPath0(const PyWideStringList *argv, PyObject **path0_p)
 #ifdef HAVE_READLINK
     wchar_t link[MAXPATHLEN + 1];
     int nr = 0;
+    wchar_t path0copy[2 * MAXPATHLEN + 1];
 
     if (have_script_arg) {
         nr = _Py_wreadlink(path0, link, Py_ARRAY_LENGTH(link));
@@ -706,7 +709,6 @@ _PyPathConfig_ComputeSysPath0(const PyWideStringList *argv, PyObject **path0_p)
             }
             else {
                 /* Must make a copy, path0copy has room for 2 * MAXPATHLEN */
-                wchar_t path0copy[2 * MAXPATHLEN + 1];
                 wcsncpy(path0copy, path0, MAXPATHLEN);
                 q = wcsrchr(path0copy, SEP);
                 wcsncpy(q+1, link, MAXPATHLEN);

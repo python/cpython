@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import socket_helper
 from test import test_urllib
 
 import os
@@ -1776,7 +1777,7 @@ class MiscTests(unittest.TestCase):
     @unittest.skipUnless(support.is_resource_enabled('network'),
                          'test requires network access')
     def test_issue16464(self):
-        with support.transient_internet("http://www.example.com/"):
+        with socket_helper.transient_internet("http://www.example.com/"):
             opener = urllib.request.build_opener()
             request = urllib.request.Request("http://www.example.com/")
             self.assertEqual(None, request.data)

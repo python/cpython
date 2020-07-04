@@ -672,7 +672,7 @@ The module defines the following classes, functions and decorators:
    A generic version of :class:`collections.abc.ByteString`.
 
    This type represents the types :class:`bytes`, :class:`bytearray`,
-   and :class:`memoryview`.
+   and :class:`memoryview` of byte sequences.
 
    As a shorthand for this type, :class:`bytes` can be used to
    annotate arguments of any of the types mentioned above.
@@ -1021,9 +1021,9 @@ The module defines the following classes, functions and decorators:
    ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
-.. function:: NewType(typ)
+.. function:: NewType(name, tp)
 
-   A helper function to indicate a distinct types to a typechecker,
+   A helper function to indicate a distinct type to a typechecker,
    see :ref:`distinct`. At runtime it returns a function that returns
    its argument. Usage::
 
