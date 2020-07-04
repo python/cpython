@@ -672,7 +672,7 @@ The module defines the following classes, functions and decorators:
    A generic version of :class:`collections.abc.ByteString`.
 
    This type represents the types :class:`bytes`, :class:`bytearray`,
-   and :class:`memoryview`.
+   and :class:`memoryview` of byte sequences.
 
    As a shorthand for this type, :class:`bytes` can be used to
    annotate arguments of any of the types mentioned above.
