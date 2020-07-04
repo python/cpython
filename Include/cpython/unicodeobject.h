@@ -11,6 +11,8 @@
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 
+#define USE_UNICODE_WCHAR_CACHE 1
+
 /* Since splitting on whitespace is an important use case, and
    whitespace in most situations is solely ASCII whitespace, we
    optimize for the common case by using a quick look-up table
@@ -1162,19 +1164,14 @@ PyAPI_FUNC(int) _PyUnicode_IsAlpha(
 
 PyAPI_FUNC(PyObject*) _PyUnicode_FormatLong(PyObject *, int, int, int);
 
-/* Create a copy of a unicode string ending with a nul character. Return NULL
-   and raise a MemoryError exception on memory allocation failure, otherwise
-   return a new allocated buffer (use PyMem_Free() to free the buffer). */
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) PyUnicode_AsUnicodeCopy(
-    PyObject *unicode
-    );
-
 /* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
 PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
 
 /* Fast equality check when the inputs are known to be exact unicode types
    and where the hash values are equal (i.e. a very probable match) */
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
+
+PyAPI_FUNC(int) _PyUnicode_WideCharString_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);
 
 PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);

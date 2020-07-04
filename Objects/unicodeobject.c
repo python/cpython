@@ -55,8 +55,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
-/* Uncomment to display statistics on interned strings at exit when
-   using Valgrind or Insecure++. */
+/* Uncomment to display statistics on interned strings at exit
+   in _PyUnicode_ClearInterned(). */
 /* #define INTERNED_STATS 1 */
 
 
@@ -1943,13 +1943,20 @@ unicode_dealloc(PyObject *unicode)
         break;
 
     case SSTATE_INTERNED_MORTAL:
-        /* revive dead object temporarily for DelItem */
-        Py_SET_REFCNT(unicode, 3);
 #ifdef INTERNED_STRINGS
+        /* Revive the dead object temporarily. PyDict_DelItem() removes two
+           references (key and value) which were ignored by
+           PyUnicode_InternInPlace(). Use refcnt=3 rather than refcnt=2
+           to prevent calling unicode_dealloc() again. Adjust refcnt after
+           PyDict_DelItem(). */
+        assert(Py_REFCNT(unicode) == 0);
+        Py_SET_REFCNT(unicode, 3);
         if (PyDict_DelItem(interned, unicode) != 0) {
             _PyErr_WriteUnraisableMsg("deletion of interned string failed",
                                       NULL);
         }
+        assert(Py_REFCNT(unicode) == 1);
+        Py_SET_REFCNT(unicode, 0);
 #endif
         break;
 
@@ -2179,8 +2186,16 @@ unicode_char(Py_UCS4 ch)
 PyObject *
 PyUnicode_FromUnicode(const Py_UNICODE *u, Py_ssize_t size)
 {
-    if (u == NULL)
+    if (u == NULL) {
+        if (size > 0) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                    "PyUnicode_FromUnicode(NULL, size) is deprecated; "
+                    "use PyUnicode_New() instead", 1) < 0) {
+                return NULL;
+            }
+        }
         return (PyObject*)_PyUnicode_New(size);
+    }
 
     if (size < 0) {
         PyErr_BadInternalCall();
@@ -2266,10 +2281,19 @@ PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
                         "Negative size passed to PyUnicode_FromStringAndSize");
         return NULL;
     }
-    if (u != NULL)
+    if (u != NULL) {
         return PyUnicode_DecodeUTF8Stateful(u, size, NULL, NULL);
-    else
+    }
+    else {
+        if (size > 0) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                    "PyUnicode_FromStringAndSize(NULL, size) is deprecated; "
+                    "use PyUnicode_New() instead", 1) < 0) {
+                return NULL;
+            }
+        }
         return (PyObject *)_PyUnicode_New(size);
+    }
 }
 
 PyObject *
@@ -3272,6 +3296,80 @@ PyUnicode_AsWideCharString(PyObject *unicode,
 }
 
 #endif /* HAVE_WCHAR_H */
+
+int
+_PyUnicode_WideCharString_Converter(PyObject *obj, void *ptr)
+{
+    wchar_t **p = (wchar_t **)ptr;
+    if (obj == NULL) {
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(*p);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+        *p = NULL;
+        return 1;
+    }
+    if (PyUnicode_Check(obj)) {
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+        *p = (wchar_t *)_PyUnicode_AsUnicode(obj);
+        if (*p == NULL) {
+            return 0;
+        }
+        return 1;
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+        *p = PyUnicode_AsWideCharString(obj, NULL);
+        if (*p == NULL) {
+            return 0;
+        }
+        return Py_CLEANUP_SUPPORTED;
+#endif /* USE_UNICODE_WCHAR_CACHE */
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "argument must be str, not %.50s",
+                 obj->ob_type->tp_name);
+    return 0;
+}
+
+int
+_PyUnicode_WideCharString_Opt_Converter(PyObject *obj, void *ptr)
+{
+    wchar_t **p = (wchar_t **)ptr;
+    if (obj == NULL) {
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(*p);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+        *p = NULL;
+        return 1;
+    }
+    if (obj == Py_None) {
+        *p = NULL;
+        return 1;
+    }
+    if (PyUnicode_Check(obj)) {
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+        *p = (wchar_t *)_PyUnicode_AsUnicode(obj);
+        if (*p == NULL) {
+            return 0;
+        }
+        return 1;
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+        *p = PyUnicode_AsWideCharString(obj, NULL);
+        if (*p == NULL) {
+            return 0;
+        }
+        return Py_CLEANUP_SUPPORTED;
+#endif /* USE_UNICODE_WCHAR_CACHE */
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "argument must be str or None, not %.50s",
+                 obj->ob_type->tp_name);
+    return 0;
+}
 
 PyObject *
 PyUnicode_FromOrdinal(int ordinal)
@@ -15591,6 +15689,11 @@ PyUnicode_InternInPlace(PyObject **p)
     }
 
 #ifdef INTERNED_STRINGS
+    if (PyUnicode_READY(s) == -1) {
+        PyErr_Clear();
+        return;
+    }
+
     if (interned == NULL) {
         interned = PyDict_New();
         if (interned == NULL) {
@@ -15615,8 +15718,9 @@ PyUnicode_InternInPlace(PyObject **p)
         return;
     }
 
-    /* The two references in interned are not counted by refcnt.
-       The deallocator will take care of this */
+    /* The two references in interned dict (key and value) are not counted by
+       refcnt. unicode_dealloc() and _PyUnicode_ClearInterned() take care of
+       this. */
     Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
 #endif
@@ -15643,23 +15747,29 @@ PyUnicode_InternFromString(const char *cp)
 }
 
 
-#if defined(WITH_VALGRIND) || defined(__INSURE__)
-static void
-unicode_release_interned(void)
+void
+_PyUnicode_ClearInterned(PyThreadState *tstate)
 {
-    if (interned == NULL || !PyDict_Check(interned)) {
-        return;
-    }
-    PyObject *keys = PyDict_Keys(interned);
-    if (keys == NULL || !PyList_Check(keys)) {
-        PyErr_Clear();
+    if (!_Py_IsMainInterpreter(tstate)) {
+        // interned dict is shared by all interpreters
         return;
     }
 
-    /* Since unicode_release_interned() is intended to help a leak
-       detector, interned unicode strings are not forcibly deallocated;
-       rather, we give them their stolen references back, and then clear
-       and DECREF the interned dict. */
+    if (interned == NULL) {
+        return;
+    }
+    assert(PyDict_CheckExact(interned));
+
+    PyObject *keys = PyDict_Keys(interned);
+    if (keys == NULL) {
+        PyErr_Clear();
+        return;
+    }
+    assert(PyList_CheckExact(keys));
+
+    /* Interned unicode strings are not forcibly deallocated; rather, we give
+       them their stolen references back, and then clear and DECREF the
+       interned dict. */
 
     Py_ssize_t n = PyList_GET_SIZE(keys);
 #ifdef INTERNED_STATS
@@ -15669,9 +15779,8 @@ unicode_release_interned(void)
 #endif
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *s = PyList_GET_ITEM(keys, i);
-        if (PyUnicode_READY(s) == -1) {
-            Py_UNREACHABLE();
-        }
+        assert(PyUnicode_IS_READY(s));
+
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_INTERNED_IMMORTAL:
             Py_SET_REFCNT(s, Py_REFCNT(s) + 1);
@@ -15680,6 +15789,8 @@ unicode_release_interned(void)
 #endif
             break;
         case SSTATE_INTERNED_MORTAL:
+            // Restore the two references (key and value) ignored
+            // by PyUnicode_InternInPlace().
             Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
 #ifdef INTERNED_STATS
             mortal_size += PyUnicode_GET_LENGTH(s);
@@ -15698,10 +15809,10 @@ unicode_release_interned(void)
             mortal_size, immortal_size);
 #endif
     Py_DECREF(keys);
+
     PyDict_Clear(interned);
     Py_CLEAR(interned);
 }
-#endif
 
 
 /********************* Unicode Iterator **************************/
@@ -15862,39 +15973,6 @@ unicode_iter(PyObject *seq)
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
-
-Py_UNICODE*
-PyUnicode_AsUnicodeCopy(PyObject *unicode)
-{
-    Py_UNICODE *u, *copy;
-    Py_ssize_t len, size;
-
-    if (!PyUnicode_Check(unicode)) {
-        PyErr_BadArgument();
-        return NULL;
-    }
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    u = PyUnicode_AsUnicodeAndSize(unicode, &len);
-_Py_COMP_DIAG_POP
-    if (u == NULL)
-        return NULL;
-    /* Ensure we won't overflow the size. */
-    if (len > ((PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(Py_UNICODE)) - 1)) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    size = len + 1; /* copy the null character */
-    size *= sizeof(Py_UNICODE);
-    copy = PyMem_Malloc(size);
-    if (copy == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    memcpy(copy, u, size);
-    return copy;
-}
-
 
 static int
 encode_wstr_utf8(wchar_t *wstr, char **str, const char *name)
@@ -16103,23 +16181,9 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 void
 _PyUnicode_Fini(PyThreadState *tstate)
 {
-    struct _Py_unicode_state *state = &tstate->interp->unicode;
+    // _PyUnicode_ClearInterned() must be called before
 
-    int is_main_interp = _Py_IsMainInterpreter(tstate);
-    if (is_main_interp) {
-#if defined(WITH_VALGRIND) || defined(__INSURE__)
-        /* Insure++ is a memory analysis tool that aids in discovering
-         * memory leaks and other memory problems.  On Python exit, the
-         * interned string dictionaries are flagged as being in use at exit
-         * (which it is).  Under normal circumstances, this is fine because
-         * the memory will be automatically reclaimed by the system.  Under
-         * memory debugging, it's a huge source of useless noise, so we
-         * trade off slower shutdown for less distraction in the memory
-         * reports.  -baw
-         */
-        unicode_release_interned();
-#endif /* __INSURE__ */
-    }
+    struct _Py_unicode_state *state = &tstate->interp->unicode;
 
     Py_CLEAR(state->empty_string);
 
@@ -16127,7 +16191,7 @@ _PyUnicode_Fini(PyThreadState *tstate)
         Py_CLEAR(state->latin1[i]);
     }
 
-    if (is_main_interp) {
+    if (_Py_IsMainInterpreter(tstate)) {
         unicode_clear_static_strings();
     }
 
