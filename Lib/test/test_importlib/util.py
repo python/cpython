@@ -12,6 +12,7 @@ import os
 import os.path
 from pathlib import Path, PurePath
 from test import support
+from test.support import import_helper
 import unittest
 import sys
 import tempfile
@@ -55,8 +56,8 @@ _extension_details()
 def import_importlib(module_name):
     """Import a module from importlib both w/ and w/o _frozen_importlib."""
     fresh = ('importlib',) if '.' in module_name else ()
-    frozen = support.import_fresh_module(module_name)
-    source = support.import_fresh_module(module_name, fresh=fresh,
+    frozen = import_helper.import_fresh_module(module_name)
+    source = import_helper.import_fresh_module(module_name, fresh=fresh,
                                          blocked=('_frozen_importlib', '_frozen_importlib_external'))
     return {'Frozen': frozen, 'Source': source}
 
