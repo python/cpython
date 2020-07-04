@@ -1561,7 +1561,7 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
       For certain sensitive attribute assignments, raises an
       :ref:`auditing event <auditing>` ``object.__setattr__`` with arguments
-      ``obj``, ``name``, ```value`.
+      ``obj``, ``name``, ``value``.
 
 
 .. method:: object.__delattr__(self, name)
