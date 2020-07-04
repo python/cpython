@@ -14,6 +14,7 @@ from test.support import (verbose,
                           run_with_tz, run_with_locale, cpython_only)
 from test.support import hashlib_helper
 from test.support import threading_helper
+from test.support import warnings_helper
 import unittest
 from unittest import mock
 from datetime import datetime, timezone, timedelta
@@ -575,7 +576,7 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
     # to CPython stdlib
     @cpython_only
     def test_certfile_arg_warn(self):
-        with support.check_warnings(('', DeprecationWarning)):
+        with warnings_helper.check_warnings(('', DeprecationWarning)):
             with mock.patch.object(self.imap_class, 'open'):
                 with mock.patch.object(self.imap_class, '_connect'):
                     self.imap_class('localhost', 143, certfile=CERTFILE)

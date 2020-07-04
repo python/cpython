@@ -9,13 +9,14 @@ import tempfile
 import unittest
 
 from test import support
+from test.support import os_helper
 
 
 def without_source_date_epoch(fxn):
     """Runs function with SOURCE_DATE_EPOCH unset."""
     @functools.wraps(fxn)
     def wrapper(*args, **kwargs):
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env.unset('SOURCE_DATE_EPOCH')
             return fxn(*args, **kwargs)
     return wrapper
@@ -25,7 +26,7 @@ def with_source_date_epoch(fxn):
     """Runs function with SOURCE_DATE_EPOCH set."""
     @functools.wraps(fxn)
     def wrapper(*args, **kwargs):
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env['SOURCE_DATE_EPOCH'] = '123456789'
             return fxn(*args, **kwargs)
     return wrapper
@@ -101,7 +102,7 @@ class PyCompileTestsBase:
         self.assertTrue(os.path.exists(self.cache_path))
 
     def test_cwd(self):
-        with support.change_cwd(self.directory):
+        with os_helper.change_cwd(self.directory):
             py_compile.compile(os.path.basename(self.source_path),
                                os.path.basename(self.pyc_path))
         self.assertTrue(os.path.exists(self.pyc_path))
