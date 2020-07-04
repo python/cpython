@@ -30,6 +30,7 @@ from io import BytesIO
 
 import unittest
 from test import support
+from test.support import os_helper
 from test.support import threading_helper
 
 
@@ -391,13 +392,13 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                      'undecodable name cannot always be decoded on macOS')
     @unittest.skipIf(sys.platform == 'win32',
                      'undecodable name cannot be decoded on win32')
-    @unittest.skipUnless(support.TESTFN_UNDECODABLE,
-                         'need support.TESTFN_UNDECODABLE')
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'need os_helper.TESTFN_UNDECODABLE')
     def test_undecodable_filename(self):
         enc = sys.getfilesystemencoding()
-        filename = os.fsdecode(support.TESTFN_UNDECODABLE) + '.txt'
+        filename = os.fsdecode(os_helper.TESTFN_UNDECODABLE) + '.txt'
         with open(os.path.join(self.tempdir, filename), 'wb') as f:
-            f.write(support.TESTFN_UNDECODABLE)
+            f.write(os_helper.TESTFN_UNDECODABLE)
         response = self.request(self.base_url + '/')
         if sys.platform == 'darwin':
             # On Mac OS the HFS+ filesystem replaces bytes that aren't valid
@@ -414,7 +415,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                       .encode(enc, 'surrogateescape'), body)
         response = self.request(self.base_url + '/' + quotedname)
         self.check_status_and_reason(response, HTTPStatus.OK,
-                                     data=support.TESTFN_UNDECODABLE)
+                                     data=os_helper.TESTFN_UNDECODABLE)
 
     def test_get(self):
         #constructs the path relative to the root directory of the HTTPServer
