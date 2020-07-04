@@ -109,6 +109,11 @@ Standard names are defined for the following types:
    The type of user-defined functions and functions created by
    :keyword:`lambda`  expressions.
 
+   .. audit-event:: function.__new__ code FunctionType
+
+   The audit event only occurs for direct instantiation of function objects,
+   and is not raised for normal compilation.
+
 
 .. data:: GeneratorType
 
@@ -141,7 +146,8 @@ Standard names are defined for the following types:
    .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags CodeType
 
    Note that the audited arguments may not match the names or positions
-   required by the initializer.
+   required by the initializer.  The audit event only occurs for direct
+   instantiation of code objects, and is not raised for normal compilation.
 
    .. method:: CodeType.replace(**kwargs)
 
