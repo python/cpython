@@ -11,7 +11,7 @@
 --------------
 
 This module encodes and decodes files in binhex4 format, a format allowing
-representation of Mac files in ASCII. Only the data fork is handled.
+representation of Macintosh files in ASCII. Only the data fork is handled.
 
 The :mod:`binhex` module defines the following functions:
 
