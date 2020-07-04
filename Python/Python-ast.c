@@ -134,6 +134,7 @@ typedef struct {
     PyObject *Yield_type;
     PyObject *__dict__;
     PyObject *__doc__;
+    PyObject *__match_args__;
     PyObject *__module__;
     PyObject *_attributes;
     PyObject *_fields;
@@ -389,6 +390,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(state->Yield_type);
     Py_CLEAR(state->__dict__);
     Py_CLEAR(state->__doc__);
+    Py_CLEAR(state->__match_args__);
     Py_CLEAR(state->__module__);
     Py_CLEAR(state->_attributes);
     Py_CLEAR(state->_fields);
@@ -614,6 +616,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(state->Yield_type);
     Py_VISIT(state->__dict__);
     Py_VISIT(state->__doc__);
+    Py_VISIT(state->__match_args__);
     Py_VISIT(state->__module__);
     Py_VISIT(state->_attributes);
     Py_VISIT(state->_fields);
@@ -718,6 +721,7 @@ static int init_identifiers(astmodulestate *state)
 {
     if ((state->__dict__ = PyUnicode_InternFromString("__dict__")) == NULL) return 0;
     if ((state->__doc__ = PyUnicode_InternFromString("__doc__")) == NULL) return 0;
+    if ((state->__match_args__ = PyUnicode_InternFromString("__match_args__")) == NULL) return 0;
     if ((state->__module__ = PyUnicode_InternFromString("__module__")) == NULL) return 0;
     if ((state->_attributes = PyUnicode_InternFromString("_attributes")) == NULL) return 0;
     if ((state->_fields = PyUnicode_InternFromString("_fields")) == NULL) return 0;
@@ -1313,9 +1317,10 @@ make_type(astmodulestate *state, const char *type, PyObject* base,
         }
         PyTuple_SET_ITEM(fnames, i, field);
     }
-    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOs}",
+    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOOOs}",
                     type, base,
                     state->_fields, fnames,
+                    state->__match_args__, fnames,
                     state->__module__,
                     state->ast,
                     state->__doc__, doc);
@@ -1446,6 +1451,7 @@ static int add_ast_fields(astmodulestate *state)
     empty_tuple = PyTuple_New(0);
     if (!empty_tuple ||
         PyObject_SetAttrString(state->AST_type, "_fields", empty_tuple) < 0 ||
+        PyObject_SetAttrString(state->AST_type, "__match_args__", empty_tuple) < 0 ||
         PyObject_SetAttrString(state->AST_type, "_attributes", empty_tuple) < 0) {
         Py_XDECREF(empty_tuple);
         return -1;
