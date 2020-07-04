@@ -101,7 +101,7 @@ by invoking the ``pip`` module at the command line::
 
 .. note::
 
-   For POSIX users (including Mac OS X and Linux users), these instructions
+   For POSIX users (including macOS and Linux users), these instructions
    assume the use of a :term:`virtual environment`.
 
    For Windows users, these instructions assume that the option to

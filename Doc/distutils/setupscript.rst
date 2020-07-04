@@ -675,7 +675,7 @@ information is sometimes used to indicate sub-releases.  These are
               'Intended Audience :: Developers',
               'Intended Audience :: System Administrators',
               'License :: OSI Approved :: Python Software Foundation License',
-              'Operating System :: MacOS :: MacOS X',
+              'Operating System :: MacOS :: MacmacOS',
               'Operating System :: Microsoft :: Windows',
               'Operating System :: POSIX',
               'Programming Language :: Python',
