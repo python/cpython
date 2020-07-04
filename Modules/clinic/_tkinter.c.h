@@ -629,67 +629,72 @@ _tkinter_tkapp_loadtk(TkappObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_tkinter_tkapp_willdispatch__doc__,
-    "willdispatch($self, /)\n"
-    "--\n"
-    "\n"
-    "DEPRECATED\n"
-    "Sets the internal dispatching flag regardless of mainloop dispatch state\n"
-    "Skips mainloop waiting time\n"
-    "\n");
+"willdispatch($self, /)\n"
+"--\n"
+"\n"
+"Skips main loop wait polling until next call of mainloop finishes\n"
+"\n"
+"DEPRECATED\n"
+"\n"
+"call(), var_invoke(), and createcommand() will wait indefinitely for main loop\n"
+"Sets the internal dispatching flag regardless of mainloop dispatch state\n"
+"May lead to unexpected hangs or inconsistencies in dispatching");
 
 #define _TKINTER_TKAPP_WILLDISPATCH_METHODDEF    \
     {"willdispatch", (PyCFunction)_tkinter_tkapp_willdispatch, METH_NOARGS, _tkinter_tkapp_willdispatch__doc__},
 
-static PyObject*
-_tkinter_tkapp_willdispatch_impl(TkappObject* self);
+static PyObject *
+_tkinter_tkapp_willdispatch_impl(TkappObject *self);
 
-static PyObject*
-_tkinter_tkapp_willdispatch(TkappObject* self, PyObject* Py_UNUSED(ignored))
+static PyObject *
+_tkinter_tkapp_willdispatch(TkappObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _tkinter_tkapp_willdispatch_impl(self);
 }
 
 PyDoc_STRVAR(_tkinter_tkapp_dispatching__doc__,
-    "dispatching($self, /)\n"
-    "--\n"
-    "\n"
-    "Returns the internal dispatching state.\n"
-    "Returns 1 if the mainloop is running, or 0 if the mainloop is not running.\n"
-    "\n");
+"dispatching($self, /)\n"
+"--\n"
+"\n"
+"Returns the internal dispatching state\n"
+"\n"
+"Returns 1 if the mainloop is running, or 0 if the mainloop is not running.");
 
 #define _TKINTER_TKAPP_DISPATCHING_METHODDEF    \
     {"dispatching", (PyCFunction)_tkinter_tkapp_dispatching, METH_NOARGS, _tkinter_tkapp_dispatching__doc__},
 
-static PyObject*
-_tkinter_tkapp_dispatching_impl(TkappObject* self);
+static PyObject *
+_tkinter_tkapp_dispatching_impl(TkappObject *self);
 
-static PyObject*
-_tkinter_tkapp_dispatching(TkappObject* self, PyObject* Py_UNUSED(ignored))
+static PyObject *
+_tkinter_tkapp_dispatching(TkappObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _tkinter_tkapp_dispatching_impl(self);
 }
 
 PyDoc_STRVAR(_tkinter_tkapp_setmainloopwaitattempts__doc__,
-    "setmainloopwaitattempts($self, new_val, /)\n"
-    "--\n"
-    "\n"
-    "Set number of 100 ms mainloop wait attempts that call(), var_invoke(), and createcommand() will use.\n"
-    "\n"
-    "Current default is 10 for a 1 second wait, but future behavior will default to 0.\n"
-    "\n"
-    "Setting anything other than 0 will trigger a DeprecationWarning.\n"
-    "\n");
+"setmainloopwaitattempts($self, new_val, /)\n"
+"--\n"
+"\n"
+"Set number of 100 millisecond mainloop wait attempts.\n"
+"\n"
+"These are used for that call(), var_invoke(), and createcommand().\n"
+"\n"
+"Current default is 10 for a 1 second wait, but future behavior\n"
+"will be equivalent 0.\n"
+"\n"
+"Setting anything other than 0 will trigger a DeprecationWarning.");
 
 #define _TKINTER_TKAPP_SETMAINLOOPWAITATTEMPTS_METHODDEF    \
     {"setmainloopwaitattempts", (PyCFunction)_tkinter_tkapp_setmainloopwaitattempts, METH_O, _tkinter_tkapp_setmainloopwaitattempts__doc__},
 
-static PyObject*
-_tkinter_tkapp_setmainloopwaitattempts_impl(PyObject* self, int new_val);
+static PyObject *
+_tkinter_tkapp_setmainloopwaitattempts_impl(TkappObject *self, int new_val);
 
-static PyObject*
-_tkinter_tkapp_setmainloopwaitattempts(PyObject* self, PyObject* arg)
+static PyObject *
+_tkinter_tkapp_setmainloopwaitattempts(TkappObject *self, PyObject *arg)
 {
-    PyObject* return_value = NULL;
+    PyObject *return_value = NULL;
     int new_val;
 
     new_val = _PyLong_AsInt(arg);
@@ -924,4 +929,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=ab311480dd044fe4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=df5afd93be3a2bb7 input=a9049054013a1b77]*/

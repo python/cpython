@@ -3048,11 +3048,19 @@ Tkapp_WantObjects(PyObject *self, PyObject *args)
 /*[clinic input]
 _tkinter.tkapp.willdispatch
 
+Skips main loop wait polling until next call of mainloop finishes
+
+DEPRECATED
+
+call(), var_invoke(), and createcommand() will wait indefinitely for main loop
+Sets the internal dispatching flag regardless of mainloop dispatch state
+May lead to unexpected hangs or inconsistencies in dispatching
+
 [clinic start generated code]*/
 
-static PyObject*
-_tkinter_tkapp_willdispatch_impl(TkappObject* self)
-/*[clinic end generated code: output=0e3f46d244642155 input=d88f5970843d6dab]*/
+static PyObject *
+_tkinter_tkapp_willdispatch_impl(TkappObject *self)
+/*[clinic end generated code: output=0e3f46d244642155 input=7b46376275304a4a]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
         "willdispatch() is deprecated; consider polling dispatch() instead.", 1))
@@ -3067,33 +3075,39 @@ _tkinter_tkapp_willdispatch_impl(TkappObject* self)
 /*[clinic input]
 _tkinter.tkapp.dispatching
 
+Returns the internal dispatching state
+
+Returns 1 if the mainloop is running, or 0 if the mainloop is not running.
+
 [clinic start generated code]*/
 
-static PyObject*
-_tkinter_tkapp_dispatching_impl(TkappObject* self)
-/*[clinic end generated code: output=0e3f46d244642155 input=d88f5970843d6dab]*/
+static PyObject *
+_tkinter_tkapp_dispatching_impl(TkappObject *self)
+/*[clinic end generated code: output=1b0192766b008005 input=fca22ac098f764ff]*/
 {
     return PyLong_FromLong(self->dispatching);
 }
 
 /*[clinic input]
-_tkinter.setmainloopwaitattempts
+_tkinter.tkapp.setmainloopwaitattempts
 
     new_val: int
     /
 
-Set number of 100 millisecond mainloop wait attempts that call(), var_invoke(),
-and createcommand() will use.
+Set number of 100 millisecond mainloop wait attempts.
 
-Current default is 10 for a 1 second wait, but future behavior will be equivalent 0.
+These are used for that call(), var_invoke(), and createcommand().
+
+Current default is 10 for a 1 second wait, but future behavior
+will be equivalent 0.
 
 Setting anything other than 0 will trigger a DeprecationWarning.
 
 [clinic start generated code]*/
 
-static PyObject*
-_tkinter_tkapp_setmainloopwaitattempts_impl(PyObject* self, int new_val)
-/*[clinic end generated code: output=42bf7757dc2d0ab6 input=deca1d6f9e6dae47]*/
+static PyObject *
+_tkinter_tkapp_setmainloopwaitattempts_impl(TkappObject *self, int new_val)
+/*[clinic end generated code: output=a0867fb187c8946e input=e5a1636576621896]*/
 {
     if (new_val < 0) 
     {
