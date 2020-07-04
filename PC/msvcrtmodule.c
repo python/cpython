@@ -210,7 +210,7 @@ msvcrt_get_osfhandle_impl(PyObject *module, int fd)
     intptr_t handle = -1;
 
     if (PySys_Audit("msvcrt.get_osfhandle", "(i)", fd) < 0) {
-        return NULL;
+        return -1;
     }
 
     _Py_BEGIN_SUPPRESS_IPH
