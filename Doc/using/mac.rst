@@ -2,13 +2,13 @@
 .. _using-on-mac:
 
 ***************************
-Using Python on a Macintosh
+Using Python on a Mac
 ***************************
 
 :Author: Bob Savage <bobsavage@mac.com>
 
 
-Python on a Macintosh running macOS is in principle very similar to Python on
+Python on a Mac running macOS is in principle very similar to Python on
 any other Unix platform, but there are a number of additional features such as
 the IDE and the Package Manager that are worth pointing out.
 

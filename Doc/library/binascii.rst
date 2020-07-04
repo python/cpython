@@ -211,7 +211,7 @@ The :mod:`binascii` module defines the following functions:
       and 85.
 
    Module :mod:`binhex`
-      Support for the binhex format used on the Macintosh.
+      Support for the binhex format used on the Mac.
 
    Module :mod:`uu`
       Support for UU encoding used on Unix.

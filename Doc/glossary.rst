@@ -1118,7 +1118,7 @@ Glossary
    universal newlines
       A manner of interpreting text streams in which all of the following are
       recognized as ending a line: the Unix end-of-line convention ``'\n'``,
-      the Windows convention ``'\r\n'``, and the old Macintosh convention
+      the Windows convention ``'\r\n'``, and the old Mac convention
       ``'\r'``.  See :pep:`278` and :pep:`3116`, as well as
       :func:`bytes.splitlines` for an additional use.
 
