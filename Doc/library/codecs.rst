@@ -1201,7 +1201,7 @@ particular, the following variants typically exist:
 | mac_latin2      | maclatin2, maccentraleurope,   | Central and Eastern Europe     |
 |                 | mac_centeuro                   |                                |
 +-----------------+--------------------------------+--------------------------------+
-| mac_roman       | macroman, Mac            | Western Europe                 |
+| mac_roman       | macroman, Mac                  | Western Europe                 |
 +-----------------+--------------------------------+--------------------------------+
 | mac_turkish     | macturkish                     | Turkish                        |
 +-----------------+--------------------------------+--------------------------------+
