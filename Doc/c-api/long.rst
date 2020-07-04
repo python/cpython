@@ -94,17 +94,6 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    are no digits, :exc:`ValueError` will be raised.
 
 
-.. c:function:: PyObject* PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
-
-   Convert a sequence of Unicode digits to a Python integer value.  The Unicode
-   string is first encoded to a byte string using :c:func:`PyUnicode_EncodeDecimal`
-   and then converted using :c:func:`PyLong_FromString`.
-
-   .. deprecated-removed:: 3.3 4.0
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyLong_FromUnicodeObject`.
-
-
 .. c:function:: PyObject* PyLong_FromUnicodeObject(PyObject *u, int base)
 
    Convert a sequence of Unicode digits in the string *u* to a Python integer

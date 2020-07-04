@@ -140,21 +140,18 @@ _create_dummy_identifier(Parser *p)
 }
 
 static inline Py_ssize_t
-byte_offset_to_character_offset(PyObject *line, int col_offset)
+byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
 {
     const char *str = PyUnicode_AsUTF8(line);
     if (!str) {
         return 0;
     }
+    assert(col_offset >= 0 && (unsigned long)col_offset <= strlen(str));
     PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
     if (!text) {
         return 0;
     }
     Py_ssize_t size = PyUnicode_GET_LENGTH(text);
-    str = PyUnicode_AsUTF8(text);
-    if (str != NULL && (int)strlen(str) == col_offset) {
-        size = strlen(str);
-    }
     Py_DECREF(text);
     return size;
 }
@@ -366,7 +363,7 @@ void *
 _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 {
     Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
-    int col_offset;
+    Py_ssize_t col_offset;
     if (t->col_offset == -1) {
         col_offset = Py_SAFE_DOWNCAST(p->tok->cur - p->tok->buf,
                                       intptr_t, int);
@@ -383,10 +380,9 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
     return NULL;
 }
 
-
 void *
 _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
-                                    int lineno, int col_offset,
+                                    Py_ssize_t lineno, Py_ssize_t col_offset,
                                     const char *errmsg, va_list va)
 {
     PyObject *value = NULL;
@@ -395,27 +391,46 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     PyObject *tmp = NULL;
     p->error_indicator = 1;
 
+    if (p->start_rule == Py_fstring_input) {
+        const char *fstring_msg = "f-string: ";
+        Py_ssize_t len = strlen(fstring_msg) + strlen(errmsg);
+
+        char *new_errmsg = PyMem_Malloc(len + 1); // Lengths of both strings plus NULL character
+        if (!new_errmsg) {
+            return (void *) PyErr_NoMemory();
+        }
+
+        // Copy both strings into new buffer
+        memcpy(new_errmsg, fstring_msg, strlen(fstring_msg));
+        memcpy(new_errmsg + strlen(fstring_msg), errmsg, strlen(errmsg));
+        new_errmsg[len] = 0;
+        errmsg = new_errmsg;
+    }
     errstr = PyUnicode_FromFormatV(errmsg, va);
     if (!errstr) {
         goto error;
     }
 
     if (p->start_rule == Py_file_input) {
-        error_line = PyErr_ProgramTextObject(p->tok->filename, lineno);
+        error_line = PyErr_ProgramTextObject(p->tok->filename, (int) lineno);
     }
 
     if (!error_line) {
         Py_ssize_t size = p->tok->inp - p->tok->buf;
-        if (size && p->tok->buf[size-1] == '\n') {
-            size--;
-        }
         error_line = PyUnicode_DecodeUTF8(p->tok->buf, size, "replace");
         if (!error_line) {
             goto error;
         }
     }
 
-    Py_ssize_t col_number = byte_offset_to_character_offset(error_line, col_offset);
+    if (p->start_rule == Py_fstring_input) {
+        col_offset -= p->starting_col_offset;
+    }
+    Py_ssize_t col_number = col_offset;
+
+    if (p->tok->encoding != NULL) {
+        col_number = byte_offset_to_character_offset(error_line, col_offset);
+    }
 
     tmp = Py_BuildValue("(OiiN)", p->tok->filename, lineno, col_number, error_line);
     if (!tmp) {
@@ -430,11 +445,17 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 
     Py_DECREF(errstr);
     Py_DECREF(value);
+    if (p->start_rule == Py_fstring_input) {
+        PyMem_Free((void *)errmsg);
+    }
     return NULL;
 
 error:
     Py_XDECREF(errstr);
     Py_XDECREF(error_line);
+    if (p->start_rule == Py_fstring_input) {
+        PyMem_Free((void *)errmsg);
+    }
     return NULL;
 }
 
@@ -1021,7 +1042,7 @@ compute_parser_flags(PyCompilerFlags *flags)
     if (flags->cf_flags & PyCF_TYPE_COMMENTS) {
         parser_flags |= PyPARSE_TYPE_COMMENTS;
     }
-    if (flags->cf_feature_version < 7) {
+    if ((flags->cf_flags & PyCF_ONLY_AST) && flags->cf_feature_version < 7) {
         parser_flags |= PyPARSE_ASYNC_HACKS;
     }
     return parser_flags;
@@ -1194,7 +1215,8 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     mod_ty result = NULL;
 
     int parser_flags = compute_parser_flags(flags);
-    int feature_version = flags ? flags->cf_feature_version : PY_MINOR_VERSION;
+    int feature_version = flags && (flags->cf_flags & PyCF_ONLY_AST) ?
+        flags->cf_feature_version : PY_MINOR_VERSION;
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, feature_version,
                                     NULL, arena);
     if (p == NULL) {
@@ -2088,7 +2110,7 @@ _PyPegen_make_module(Parser *p, asdl_seq *a) {
 // Error reporting helpers
 
 expr_ty
-_PyPegen_get_invalid_target(expr_ty e)
+_PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type)
 {
     if (e == NULL) {
         return NULL;
@@ -2098,7 +2120,7 @@ _PyPegen_get_invalid_target(expr_ty e)
         Py_ssize_t len = asdl_seq_LEN(CONTAINER->v.TYPE.elts);\
         for (Py_ssize_t i = 0; i < len; i++) {\
             expr_ty other = asdl_seq_GET(CONTAINER->v.TYPE.elts, i);\
-            expr_ty child = _PyPegen_get_invalid_target(other);\
+            expr_ty child = _PyPegen_get_invalid_target(other, targets_type);\
             if (child != NULL) {\
                 return child;\
             }\
@@ -2112,16 +2134,29 @@ _PyPegen_get_invalid_target(expr_ty e)
     // we don't need to visit it recursively.
 
     switch (e->kind) {
-        case List_kind: {
+        case List_kind:
             VISIT_CONTAINER(e, List);
             return NULL;
-        }
-        case Tuple_kind: {
+        case Tuple_kind:
             VISIT_CONTAINER(e, Tuple);
             return NULL;
-        }
         case Starred_kind:
-            return _PyPegen_get_invalid_target(e->v.Starred.value);
+            if (targets_type == DEL_TARGETS) {
+                return e;
+            }
+            return _PyPegen_get_invalid_target(e->v.Starred.value, targets_type);
+        case Compare_kind:
+            // This is needed, because the `a in b` in `for a in b` gets parsed
+            // as a comparison, and so we need to search the left side of the comparison
+            // for invalid targets.
+            if (targets_type == FOR_TARGETS) {
+                cmpop_ty cmpop = (cmpop_ty) asdl_seq_GET(e->v.Compare.ops, 0);
+                if (cmpop == In) {
+                    return _PyPegen_get_invalid_target(e->v.Compare.left, targets_type);
+                }
+                return NULL;
+            }
+            return e;
         case Name_kind:
         case Subscript_kind:
         case Attribute_kind:

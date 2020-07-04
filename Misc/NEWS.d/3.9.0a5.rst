@@ -176,7 +176,7 @@ convention. Patch by Dong-hee Na.
 .. section: Core and Builtins
 
 Chaged list overallocation strategy. It no longer overallocates if the new
-size is closer to overalocated size than to the old size and adds padding.
+size is closer to overallocated size than to the old size and adds padding.
 
 ..
 

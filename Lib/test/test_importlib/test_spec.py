@@ -650,8 +650,8 @@ class FactoryTests:
         # Need to use a circuitous route to get at importlib.machinery to make
         # sure the same class object is used in the isinstance() check as
         # would have been used to create the loader.
-        self.assertIsInstance(spec.loader,
-                              self.util.abc.machinery.SourceFileLoader)
+        SourceFileLoader = self.util.spec_from_file_location.__globals__['SourceFileLoader']
+        self.assertIsInstance(spec.loader, SourceFileLoader)
         self.assertEqual(spec.loader.name, self.name)
         self.assertEqual(spec.loader.path, self.path)
         self.assertEqual(spec.origin, self.path)
