@@ -63,13 +63,14 @@ class TestMatch(unittest.TestCase):
 
     def test_patma_008(self) -> None:
         x = 0
-        y = 1
+        class A:
+            y = 1
         z = None
         match x:
-            case z := .y:
+            case z := A.y:
                 pass
         self.assertEqual(x, 0)
-        self.assertEqual(y, 1)
+        self.assertEqual(A.y, 1)
         self.assertEqual(z, None)
 
     def test_patma_009(self) -> None:
@@ -78,7 +79,7 @@ class TestMatch(unittest.TestCase):
         match 0:
             case x if x:
                 z = 0
-            case y := .x if y:
+            case y := _ if y == x and y:
                 z = 1
             case A.B:
                 z = 2
@@ -1020,7 +1021,7 @@ class TestMatch(unittest.TestCase):
             B = 0
         x = 0
         match x:
-            case .A.B:
+            case A.B:
                 y = 0
         self.assertEqual(A.B, 0)
         self.assertEqual(x, 0)
@@ -1044,7 +1045,7 @@ class TestMatch(unittest.TestCase):
                 C = 0
         x = 0
         match x:
-            case .A.B.C:
+            case A.B.C:
                 y = 0
         self.assertEqual(A.B.C, 0)
         self.assertEqual(x, 0)
@@ -1057,7 +1058,7 @@ class TestMatch(unittest.TestCase):
                     D = 0
         x = 0
         match x:
-            case .A.B.C.D:
+            case A.B.C.D:
                 y = 0
         self.assertEqual(A.B.C.D, 0)
         self.assertEqual(x, 0)
@@ -1070,7 +1071,7 @@ class TestMatch(unittest.TestCase):
                     D = 0
         x = 0
         match x:
-            case .A.B.C.D:
+            case A.B.C.D:
                 y = 0
         self.assertEqual(A.B.C.D, 0)
         self.assertEqual(x, 0)

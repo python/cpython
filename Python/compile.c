@@ -2749,15 +2749,14 @@ compiler_if(struct compiler *c, stmt_ty s)
 }
 
 #define WILDCARD_CHECK(N) \
-    ((N)->kind == Name_kind && (N)->v.Name.ctx == Store && \
-     _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
+    ((N)->kind == Name_kind &&  \
+    _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
 
 static int
 compiler_pattern_load(struct compiler *c, expr_ty p, pattern_context pc)
 {
-    assert(p->kind == Attribute_kind || p->kind == Constant_kind || p->kind == Name_kind);
+    assert(p->kind == Attribute_kind || p->kind == Constant_kind);
     assert(p->kind != Attribute_kind || p->v.Attribute.ctx == Load);
-    assert(p->kind != Name_kind || p->v.Name.ctx == Load);
     VISIT(c, expr, p);
     ADDOP_COMPARE(c, Eq);
     return 1;
@@ -2899,9 +2898,6 @@ static int
 compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context pc)
 {
     assert(p->kind == Name_kind);
-    if (p->v.Name.ctx == Load) {
-        return compiler_pattern_load(c, p, pc);
-    }
     assert(p->v.Name.ctx == Store);
     if (WILDCARD_CHECK(p)) {
         ADDOP(c, POP_TOP);

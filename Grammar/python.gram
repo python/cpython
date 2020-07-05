@@ -244,8 +244,7 @@ literal_pattern[expr_ty]:
     | 'True' { _Py_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _Py_Constant(Py_False, NULL, EXTRA) }
 constant_pattern[expr_ty]:
-    | '.' name=NAME !('.' | '(' | '=') { name }
-    | '.'? attr=attr !('.' | '(' | '=') { attr }
+    | attr=attr !('.' | '(' | '=') { attr }
 group_pattern[expr_ty]:
     | '(' pattern=patterns ')' { pattern }
 sequence_pattern[expr_ty]:
