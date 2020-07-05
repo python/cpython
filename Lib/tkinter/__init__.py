@@ -597,7 +597,7 @@ def mainloop(n=0):
 
 def dispatching():
     """Determine if the tkinter main loop is running.
-        
+
     Returns True if the mainloop is running.
     Returns False if the mainloop is not running."""
     return _default_root.tk.dispatching()
@@ -1431,7 +1431,7 @@ class Misc:
 
     def dispatching(self):
         """Determine if the tkinter main loop is running.
-        
+
         Returns True if the mainloop is running.
         Returns False if the mainloop is not running."""
         return self.tk.dispatching()
