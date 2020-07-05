@@ -950,6 +950,9 @@ Test cases
    | :meth:`assertLogs(logger, level)                        | The ``with`` block logs on *logger*  | 3.4        |
    | <TestCase.assertLogs>`                                  | with minimum *level*                 |            |
    +---------------------------------------------------------+--------------------------------------+------------+
+   | :meth:`assertNoLogs(logger, level)                      | The ``with`` block does not log on   | 3.10       |
+   | <TestCase.assertNoLogs>`                                |  *logger* with minimum *level*       |            |
+   +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
                assertRaises(exception, *, msg=None)
@@ -1121,6 +1124,24 @@ Test cases
 
       .. versionadded:: 3.4
 
+   .. method:: assertNoLogs(logger=None, level=None)
+
+      A context manager to test that no messages are logged on
+      the *logger* or one of its children, with at least the given
+      *level*.
+
+      If given, *logger* should be a :class:`logging.Logger` object or a
+      :class:`str` giving the name of a logger.  The default is the root
+      logger, which will catch all messages.
+
+      If given, *level* should be either a numeric logging level or
+      its string equivalent (for example either ``"ERROR"`` or
+      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+
+      Unlike :meth:`assertLogs`, nothing will be returned by the context
+      manager.
+
+      .. versionadded:: 3.10
 
    There are also other methods used to perform more specific checks, such as:
 
