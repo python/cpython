@@ -581,7 +581,7 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicode(
 
 /* Similar to PyUnicode_AsUnicode(), but raises a ValueError if the string
    contains null characters. */
-Py_DEPRECATED(3.3) PyAPI_FUNC(const Py_UNICODE *) _PyUnicode_AsUnicode(
+PyAPI_FUNC(const Py_UNICODE *) _PyUnicode_AsUnicode(
     PyObject *unicode           /* Unicode object */
     );
 
