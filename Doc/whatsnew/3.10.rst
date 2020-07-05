@@ -149,7 +149,7 @@ Deprecated
 The :mod:`tkinter` module has deprected the undocumented behavior where a
 thread will implicitly wait up to one second for the main thread to enter
 the main loop and then fail.
-The undocumented :data:`_tkinter.tkapp.willdispatch` method which sidesteps
+The undocumented :meth:`_tkinter.tkapp.willdispatch` method which sidesteps
 this behavior has also been deprecated.
 (See also tkinter in the Improved Modules section)
 (Contributed by Richard Sheridan in :issue:`41176`.)
