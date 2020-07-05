@@ -2,6 +2,7 @@
    Roger E. Masse
 """
 
+import collections.abc
 import unittest
 from test import support
 from test.support import os_helper
@@ -28,6 +29,10 @@ class ArraySubclassWithKwargs(array.array):
 typecodes = 'ubBhHiIlLfdqQ'
 
 class MiscTest(unittest.TestCase):
+
+    def test_array_is_sequence(self):
+        self.assertIsInstance(array.array("B"), collections.abc.MutableSequence)
+        self.assertIsInstance(array.array("B"), collections.abc.Reversible)
 
     def test_bad_constructor(self):
         self.assertRaises(TypeError, array.array)
@@ -330,6 +335,67 @@ class BaseTest:
         self.assertEqual(list(exhit), [])
         self.assertEqual(list(empit), [self.outside])
         self.assertEqual(list(a), list(self.example) + [self.outside])
+
+    def test_reverse_iterator(self):
+        a = array.array(self.typecode, self.example)
+        self.assertEqual(list(a), list(self.example))
+        self.assertEqual(list(reversed(a)), list(iter(a))[::-1])
+
+    def test_reverse_iterator_picking(self):
+        orig = array.array(self.typecode, self.example)
+        data = list(orig)
+        data2 = [self.outside] + data
+        rev_data = data[len(data)-2::-1] + [self.outside]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            # initial iterator
+            itorig = reversed(orig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), rev_data)
+            self.assertEqual(list(a), data2)
+
+            # running iterator
+            next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), rev_data[1:])
+            self.assertEqual(list(a), data2)
+
+            # empty iterator
+            for i in range(1, len(data)):
+                next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), [])
+            self.assertEqual(list(a), data2)
+
+            # exhausted iterator
+            self.assertRaises(StopIteration, next, itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(list(it), [])
+            self.assertEqual(list(a), data2)
+
+    def test_exhausted_reverse_iterator(self):
+        a = array.array(self.typecode, self.example)
+        self.assertEqual(list(a), list(self.example))
+        exhit = reversed(a)
+        empit = reversed(a)
+        for x in exhit:  # exhaust the iterator
+            next(empit)  # Pointing past the 0th position.
+        a.insert(0, self.outside)
+        self.assertEqual(list(exhit), [])
+        # The iterator index points past the 0th position so inserting
+        # an element in the beggining does not make it appear.
+        self.assertEqual(list(empit), [])
+        self.assertEqual(list(a), [self.outside] + list(self.example))
 
     def test_insert(self):
         a = array.array(self.typecode, self.example)
