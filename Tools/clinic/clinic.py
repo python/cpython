@@ -3414,10 +3414,7 @@ PyMem_Free((void *){name});
                         goto exit;
                     }}}}
                     #if USE_UNICODE_WCHAR_CACHE
-                    _Py_COMP_DIAG_PUSH
-                    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
                     {paramname} = _PyUnicode_AsUnicode({argname});
-                    _Py_COMP_DIAG_POP
                     #else /* USE_UNICODE_WCHAR_CACHE */
                     {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
                     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -3432,10 +3429,7 @@ PyMem_Free((void *){name});
                     }}}}
                     else if (PyUnicode_Check({argname})) {{{{
                         #if USE_UNICODE_WCHAR_CACHE
-                        _Py_COMP_DIAG_PUSH
-                        _Py_COMP_DIAG_IGNORE_DEPR_DECLS
                         {paramname} = _PyUnicode_AsUnicode({argname});
-                        _Py_COMP_DIAG_POP
                         #else /* USE_UNICODE_WCHAR_CACHE */
                         {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
                         #endif /* USE_UNICODE_WCHAR_CACHE */
