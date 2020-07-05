@@ -172,10 +172,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
 #endif
 
 #if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     const wchar_t *wpathname = _PyUnicode_AsUnicode(pathname);
-_Py_COMP_DIAG_POP
 #else /* USE_UNICODE_WCHAR_CACHE */
     wchar_t *wpathname = PyUnicode_AsWideCharString(pathname, NULL);
 #endif /* USE_UNICODE_WCHAR_CACHE */
