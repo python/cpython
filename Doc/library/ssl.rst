@@ -2034,7 +2034,9 @@ to speed up repeated connections from the same clients.
 
 .. attribute:: SSLContext.security_level
 
-   The current security level for the context. This attribute is read-only.
+   An integer representing the `security level
+   <https://www.openssl.org/docs/manmaster/man3/SSL_CTX_get_security_level.html>`_
+   for the context. This attribute is read-only.
 
    .. availability:: OpenSSL 1.1.0 or newer
 
