@@ -371,26 +371,7 @@ WaitForMainloop(TkappObject* self)
     {
         return 1;
     }
-    for (i = 0; i < mainloopwaitattempts; i++) {
-        Py_BEGIN_ALLOW_THREADS
-        Sleep(100);
-        Py_END_ALLOW_THREADS
-        if (self->dispatching) 
-        {
-            if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "It seems you are implicitly waiting for "
-                "the mainloop to come up.\n"
-                "This behavior is deprecated; consider polling "
-                "dispatching() instead.\n", 1))
-            {
-                /* return something nonzero, an error will be
-                raised elsewhere soon */
-                return -1;
-            }
-            return 1;
-        }
-    }
-    if (i > 0)
+    if (mainloopwaitattempts)
     {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
             "It seems you are implicitly waiting for "
@@ -403,6 +384,15 @@ WaitForMainloop(TkappObject* self)
             return -1;
         }
 
+    }
+    for (i = 0; i < mainloopwaitattempts; i++) {
+        Py_BEGIN_ALLOW_THREADS
+        Sleep(100);
+        Py_END_ALLOW_THREADS
+        if (self->dispatching) 
+        {
+            return 1;
+        }
     }
     PyErr_SetString(PyExc_RuntimeError, "main thread is not in main loop");
     return 0;
