@@ -390,6 +390,20 @@ WaitForMainloop(TkappObject* self)
             return 1;
         }
     }
+    if (i > 0)
+    {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "It seems you are implicitly waiting for "
+            "the mainloop to come up.\n"
+            "This behavior is deprecated; consider polling "
+            "dispatching() instead.\n", 1))
+        {
+            /* return something nonzero, an error will be
+            raised elsewhere soon */
+            return -1;
+        }
+
+    }
     PyErr_SetString(PyExc_RuntimeError, "main thread is not in main loop");
     return 0;
 }
@@ -3085,7 +3099,7 @@ static PyObject *
 _tkinter_tkapp_dispatching_impl(TkappObject *self)
 /*[clinic end generated code: output=1b0192766b008005 input=fca22ac098f764ff]*/
 {
-    return PyLong_FromLong(self->dispatching);
+    return PyBool_FromLong(self->dispatching);
 }
 
 /*[clinic input]

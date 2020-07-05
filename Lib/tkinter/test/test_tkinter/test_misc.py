@@ -1,5 +1,7 @@
 import unittest
 import tkinter
+import threading, time
+import time
 from test import support
 from tkinter.test.support import AbstractTkTest
 
@@ -196,27 +198,50 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         # reconstruct default root destroyed by AbstractTkTest
         root = tkinter._default_root = self.root
         for obj in (root.tk, root, tkinter):
-            #mainloop, dispatching, willdispatch
             self.assertFalse(obj.dispatching())
             root.after(0, lambda:self.assertTrue(obj.dispatching()))
+
+            # guarantees mainloop end after first call to Tcl_DoOneEvent
             root.after(0, root.quit)
+
             root.mainloop()
             self.assertFalse(obj.dispatching())
 
+    def test_willdispatch(self):
+        root = self.root
+        with self.assertWarns(DeprecationWarning):
+            root.tk.willdispatch()
+        self.assertTrue(root.dispatching())
+
     def test_thread_must_wait_for_mainloop(self):
-        import threading, time
+        sentinel = object()
+        thread_properly_raises = sentinel
+        thread_not_dispatching_early = sentinel
+        thread_dispatching_eventually = sentinel
+
         def target():
-            self.assertFalse(root.dispatching())
-            with self.assertRaises(RuntimeError):
+            nonlocal thread_not_dispatching_early
+            nonlocal thread_properly_raises
+            nonlocal thread_dispatching_eventually
+            thread_not_dispatching_early = not root.dispatching()
+
+            try:
                 root.after(0)  # Null op
+            except RuntimeError:
+                thread_properly_raises=True
+            else:
+                thread_properly_raises=False
 
             ready_for_mainloop.set()
 
             # self.assertTrue(root.dispatching()) but patient
-            t = time.monotonic()
-            while not root.dispatching():
-                time.sleep(.001)
-                self.assertTrue(time.monotonic() < (t + 10))
+            for i in range (1000):
+                if root.dispatching():
+                    thread_dispatching_eventually = True
+                    break
+                time.sleep(0.01)
+            else:  # if not break
+                thread_dispatching_eventually = False
 
             root.quit()
 
@@ -225,17 +250,28 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         # remove on eventual WaitForMainloop behavior change
         root.tk.setmainloopwaitattempts(0)
 
-        ready_for_mainloop = threading.Event()
-        thread = threading.Thread(target=target)
-        self.assertFalse(root.dispatching())
-        thread.start()
-        ready_for_mainloop.wait()
-        root.mainloop()
-        self.assertFalse(root.dispatching())
-        thread.join()
+        try:
+            ready_for_mainloop = threading.Event()
+            thread = threading.Thread(target=target)
+            self.assertFalse(root.dispatching())
+            thread.start()
+            ready_for_mainloop.wait()
+            root.mainloop()
+            self.assertFalse(root.dispatching())
+            thread.join()
+        finally:
+            # this global *must* be reset
+            with self.assertWarns(DeprecationWarning):
+                root.tk.setmainloopwaitattempts(10)
 
-        with self.assertWarns(DeprecationWarning):
-            root.tk.setmainloopwaitattempts(10)
+        for flag in (
+            thread_properly_raises,
+            thread_not_dispatching_early,
+            thread_dispatching_eventually,
+        ):
+            self.assertFalse(flag is sentinel)
+            self.assertTrue(flag)
+
 
 
 tests_gui = (MiscTest, )
