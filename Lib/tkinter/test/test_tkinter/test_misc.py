@@ -264,13 +264,12 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             with self.assertWarns(DeprecationWarning):
                 root.tk.setmainloopwaitattempts(10)
 
-        for flag in (
-            thread_properly_raises,
-            thread_not_dispatching_early,
-            thread_dispatching_eventually,
-        ):
-            self.assertFalse(flag is sentinel)
-            self.assertTrue(flag)
+        self.assertFalse(thread_properly_raises is sentinel)
+        self.assertTrue(thread_properly_raises)
+        self.assertFalse(thread_not_dispatching_early is sentinel)
+        self.assertTrue(thread_not_dispatching_early)
+        self.assertFalse(thread_dispatching_eventually is sentinel)
+        self.assertTrue(thread_dispatching_eventually)
 
 
 
