@@ -2036,8 +2036,7 @@ to speed up repeated connections from the same clients.
 
    The current security level for the context. This attribute is read-only.
 
-   .. note::
-      Only available with OpenSSL >= 1.1.0
+   .. availability:: OpenSSL 1.1.0 or newer
 
    .. versionadded:: 3.10
 
