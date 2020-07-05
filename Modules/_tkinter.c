@@ -3087,13 +3087,14 @@ _tkinter.tkapp.dispatching
 
 Returns the internal dispatching state
 
-Returns 1 if the mainloop is running, or 0 if the mainloop is not running.
+Returns True if the mainloop is running.
+Returns False if the mainloop is not running.
 
 [clinic start generated code]*/
 
 static PyObject *
 _tkinter_tkapp_dispatching_impl(TkappObject *self)
-/*[clinic end generated code: output=1b0192766b008005 input=fca22ac098f764ff]*/
+/*[clinic end generated code: output=1b0192766b008005 input=31efce56f25f6c52]*/
 {
     return PyBool_FromLong(self->dispatching);
 }
