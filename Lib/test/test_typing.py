@@ -1418,8 +1418,6 @@ class GenericTests(BaseTestCase):
         T = TypeVar('T')
         S = TypeVar('S')
         with self.assertRaises(TypeError):
-            Generic[T]()
-        with self.assertRaises(TypeError):
             Generic[T][T]
         with self.assertRaises(TypeError):
             Generic[T][S]
