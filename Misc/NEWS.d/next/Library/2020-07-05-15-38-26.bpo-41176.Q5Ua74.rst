@@ -1,0 +1,6 @@
+Added :meth:`tkinter.dispatching`, :meth:`tkinter.Misc.dispatching`, and :meth:`_tkinter.tkapp.dispatching`.
+These methods may be used to query if the :mod:`tkinter` mainloop is running
+Added :meth:`_tkinter.tkapp.setmainloopwaitattempts`.
+Deprecated :meth:`_tkinter.tkapp.willdispatch`.
+Deprecated undocumented :mod:`tkinter` thread mainloop waiting behavior.
+Patch by Richard Sheridan
