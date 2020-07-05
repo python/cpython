@@ -2024,6 +2024,10 @@ unicode_copycharacters(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", to_copy, copied);
 }
 
+/* Ignore use of deprecated APIs */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 static PyObject *
 unicode_encodedecimal(PyObject *self, PyObject *args)
 {
@@ -2068,10 +2072,6 @@ unicode_transformdecimaltoascii(PyObject *self, PyObject *args)
         return NULL;
     return PyUnicode_TransformDecimalToASCII(unicode, length);
 }
-
-/* Ignore use of deprecated APIs */
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
 static PyObject *
 unicode_legacy_string(PyObject *self, PyObject *args)
