@@ -145,8 +145,8 @@ Cross Platform
 
 .. function:: system()
 
-   Returns the system/OS name, e.g. ``'Linux'``, ``'Windows'``, or ``'Java'``. An
-   empty string is returned if the value cannot be determined.
+   Returns the system/OS name, such as ``'Linux'``, ``'Darwin'``, ``'Java'``,
+   ``'Windows'``. An empty string is returned if the value cannot be determined.
 
 
 .. function:: system_alias(system, release, version)
@@ -260,4 +260,3 @@ Unix Platforms
    using :program:`gcc`.
 
    The file is read and scanned in chunks of *chunksize* bytes.
-

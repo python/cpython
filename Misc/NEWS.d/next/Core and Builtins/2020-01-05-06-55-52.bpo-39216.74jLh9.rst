@@ -1,2 +1,0 @@
-Fix constant folding optimization for positional only arguments - by Anthony
-Sottile.

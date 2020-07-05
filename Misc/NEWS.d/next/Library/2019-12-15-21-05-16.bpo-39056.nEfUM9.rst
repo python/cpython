@@ -1,2 +1,0 @@
-Fixed handling invalid warning category in the -W option.  No longer import
-the re module if it is not needed.

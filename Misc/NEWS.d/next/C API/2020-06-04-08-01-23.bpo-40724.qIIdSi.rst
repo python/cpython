@@ -1,0 +1,1 @@
+Allow defining buffer slots in type specs.

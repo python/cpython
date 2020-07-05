@@ -24,8 +24,11 @@ from io import BytesIO, StringIO
 from fileinput import FileInput, hook_encoded
 from pathlib import Path
 
-from test.support import verbose, TESTFN, check_warnings
-from test.support import unlink as safe_unlink
+from test.support import verbose
+from test.support.os_helper import TESTFN
+from test.support.os_helper import unlink as safe_unlink
+from test.support import os_helper
+from test.support import warnings_helper
 from test import support
 from unittest import mock
 
@@ -39,7 +42,7 @@ class BaseTests:
     # temp file's name.
     def writeTmp(self, content, *, mode='w'):  # opening in text mode is the default
         fd, name = tempfile.mkstemp()
-        self.addCleanup(support.unlink, name)
+        self.addCleanup(os_helper.unlink, name)
         with open(fd, mode) as f:
             f.write(content)
         return name
@@ -226,11 +229,19 @@ class FileInputTests(BaseTests, unittest.TestCase):
         self.assertEqual(fi.fileno(), -1)
 
     def test_opening_mode(self):
-        # invalid modes
-        for mode in ('w', 'rU', 'U'):
-            with self.subTest(mode=mode):
-                with self.assertRaises(ValueError):
-                    FileInput(mode=mode)
+        try:
+            # invalid mode, should raise ValueError
+            fi = FileInput(mode="w")
+            self.fail("FileInput should reject invalid mode argument")
+        except ValueError:
+            pass
+        # try opening in universal newline mode
+        t1 = self.writeTmp(b"A\nB\r\nC\rD", mode="wb")
+        with warnings_helper.check_warnings(('', DeprecationWarning)):
+            fi = FileInput(files=t1, mode="U")
+        with warnings_helper.check_warnings(('', DeprecationWarning)):
+            lines = list(fi)
+        self.assertEqual(lines, ["A\n", "B\n", "C\n", "D"])
 
     def test_stdin_binary_mode(self):
         with mock.patch('sys.stdin') as m_stdin:
@@ -345,7 +356,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         with FileInput(files=[]) as fi:
             self.assertEqual(fi._files, ('-',))
 
-    @support.ignore_warnings(category=DeprecationWarning)
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test__getitem__(self):
         """Tests invoking FileInput.__getitem__() with the current
            line number"""
@@ -363,7 +374,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
             with FileInput(files=[t]) as fi:
                 self.assertEqual(fi[0], "line1\n")
 
-    @support.ignore_warnings(category=DeprecationWarning)
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test__getitem__invalid_key(self):
         """Tests invoking FileInput.__getitem__() with an index unequal to
            the line number"""
@@ -373,7 +384,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
                 fi[1]
         self.assertEqual(cm.exception.args, ("accessing lines out of order",))
 
-    @support.ignore_warnings(category=DeprecationWarning)
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test__getitem__eof(self):
         """Tests invoking FileInput.__getitem__() with the line number but at
            end-of-input"""
@@ -392,7 +403,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         os_unlink_replacement = UnconditionallyRaise(OSError)
         try:
             t = self.writeTmp("\n")
-            self.addCleanup(support.unlink, t + '.bak')
+            self.addCleanup(safe_unlink, t + '.bak')
             with FileInput(files=[t], inplace=True) as fi:
                 next(fi) # make sure the file is opened
                 os.unlink = os_unlink_replacement
@@ -977,6 +988,10 @@ class Test_hook_encoded(unittest.TestCase):
             self.assertEqual(lines, expected_lines)
 
         check('r', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
+        with self.assertWarns(DeprecationWarning):
+            check('rU', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
+        with self.assertWarns(DeprecationWarning):
+            check('U', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
         with self.assertRaises(ValueError):
             check('rb', ['A\n', 'B\r\n', 'C\r', 'D\u20ac'])
 

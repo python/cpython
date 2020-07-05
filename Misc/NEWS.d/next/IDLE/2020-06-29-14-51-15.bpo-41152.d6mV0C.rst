@@ -1,0 +1,2 @@
+The encoding of ``stdin``, ``stdout`` and ``stderr`` in IDLE is now always
+UTF-8.

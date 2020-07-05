@@ -66,6 +66,10 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
     char buf[1024];
     int async_err = 0;
 
+    if (PySys_Audit("fcntl.fcntl", "iiO", fd, code, arg ? arg : Py_None) < 0) {
+        return NULL;
+    }
+
     if (arg != NULL) {
         int parse_result;
 
@@ -170,6 +174,11 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
     char *str;
     Py_ssize_t len;
     char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
+
+    if (PySys_Audit("fcntl.ioctl", "iIO", fd, code,
+                    ob_arg ? ob_arg : Py_None) < 0) {
+        return NULL;
+    }
 
     if (ob_arg != NULL) {
         if (PyArg_Parse(ob_arg, "w*:ioctl", &pstr)) {
@@ -288,6 +297,10 @@ fcntl_flock_impl(PyObject *module, int fd, int code)
     int ret;
     int async_err = 0;
 
+    if (PySys_Audit("fcntl.flock", "ii", fd, code) < 0) {
+        return NULL;
+    }
+
 #ifdef HAVE_FLOCK
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -371,6 +384,11 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
 {
     int ret;
     int async_err = 0;
+
+    if (PySys_Audit("fcntl.lockf", "iiOOi", fd, code, lenobj ? lenobj : Py_None,
+                    startobj ? startobj : Py_None, whence) < 0) {
+        return NULL;
+    }
 
 #ifndef LOCK_SH
 #define LOCK_SH         1       /* shared lock */
@@ -644,34 +662,31 @@ all_ins(PyObject* m)
     return 0;
 }
 
+static int
+fcntl_exec(PyObject *module)
+{
+    if (all_ins(module) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot fcntl_slots[] = {
+    {Py_mod_exec, fcntl_exec},
+    {0, NULL}
+};
 
 static struct PyModuleDef fcntlmodule = {
     PyModuleDef_HEAD_INIT,
-    "fcntl",
-    module_doc,
-    -1,
-    fcntl_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "fcntl",
+    .m_doc = module_doc,
+    .m_size = 0,
+    .m_methods = fcntl_methods,
+    .m_slots = fcntl_slots,
 };
 
 PyMODINIT_FUNC
 PyInit_fcntl(void)
 {
-    PyObject *m;
-
-    /* Create the module and add the functions and documentation */
-    m = PyModule_Create(&fcntlmodule);
-    if (m == NULL)
-        return NULL;
-
-    /* Add some symbolic constants to the module */
-    if (all_ins(m) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    return m;
+    return PyModuleDef_Init(&fcntlmodule);
 }

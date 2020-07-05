@@ -586,8 +586,8 @@ Here is an example session that shows how to ``POST`` requests::
 Client side ``HTTP PUT`` requests are very similar to ``POST`` requests. The
 difference lies only the server side where HTTP server will allow resources to
 be created via ``PUT`` request. It should be noted that custom HTTP methods
-+are also handled in :class:`urllib.request.Request` by sending the appropriate
-+method attribute.Here is an example session that shows how to do ``PUT``
+are also handled in :class:`urllib.request.Request` by setting the appropriate
+method attribute. Here is an example session that shows how to send a ``PUT``
 request using http.client::
 
     >>> # This creates an HTTP message

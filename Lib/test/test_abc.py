@@ -326,7 +326,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             token_old = abc_get_cache_token()
             A.register(B)
             token_new = abc_get_cache_token()
-            self.assertNotEqual(token_old, token_new)
+            self.assertGreater(token_new, token_old)
             self.assertTrue(isinstance(b, A))
             self.assertTrue(isinstance(b, (A,)))
 

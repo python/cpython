@@ -198,7 +198,7 @@ Pack up a directory into an archive, and run it.
 The same can be done using the :func:`create_archive` function::
 
    >>> import zipapp
-   >>> zipapp.create_archive('myapp.pyz', 'myapp')
+   >>> zipapp.create_archive('myapp', 'myapp.pyz')
 
 To make the application directly executable on POSIX, specify an interpreter
 to use.

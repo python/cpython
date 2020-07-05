@@ -37,7 +37,9 @@ IGNORED_VARS = {
 def find_capi_vars(root):
     capi_vars = {}
     for dirname in SOURCE_DIRS:
-        for filename in glob.glob(os.path.join(ROOT_DIR, dirname, '**/*.[hc]'),
+        for filename in glob.glob(os.path.join(
+                                  glob.escape(os.path.join(ROOT_DIR, dirname)),
+                                  '**/*.[hc]'),
                                   recursive=True):
             with open(filename) as file:
                 for name in _find_capi_vars(file):
