@@ -209,10 +209,7 @@ _msi_Record_SetString(msiobj *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     value = _PyUnicode_AsUnicode(args[1]);
-    _Py_COMP_DIAG_POP
     #else /* USE_UNICODE_WCHAR_CACHE */
     value = PyUnicode_AsWideCharString(args[1], NULL);
     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -261,10 +258,7 @@ _msi_Record_SetStream(msiobj *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     value = _PyUnicode_AsUnicode(args[1]);
-    _Py_COMP_DIAG_POP
     #else /* USE_UNICODE_WCHAR_CACHE */
     value = PyUnicode_AsWideCharString(args[1], NULL);
     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -568,10 +562,7 @@ _msi_Database_OpenView(msiobj *self, PyObject *arg)
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     sql = _PyUnicode_AsUnicode(arg);
-    _Py_COMP_DIAG_POP
     #else /* USE_UNICODE_WCHAR_CACHE */
     sql = PyUnicode_AsWideCharString(arg, NULL);
     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -670,10 +661,7 @@ _msi_OpenDatabase(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     path = _PyUnicode_AsUnicode(args[0]);
-    _Py_COMP_DIAG_POP
     #else /* USE_UNICODE_WCHAR_CACHE */
     path = PyUnicode_AsWideCharString(args[0], NULL);
     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -725,4 +713,4 @@ _msi_CreateRecord(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=39807788326ad0e9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=49debf733ee5cab2 input=a9049054013a1b77]*/
