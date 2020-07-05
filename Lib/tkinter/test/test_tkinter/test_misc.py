@@ -209,6 +209,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
     def test_willdispatch(self):
         root = self.root
+        self.assertFalse(root.dispatching())
         with self.assertWarns(DeprecationWarning):
             root.tk.willdispatch()
         self.assertTrue(root.dispatching())
