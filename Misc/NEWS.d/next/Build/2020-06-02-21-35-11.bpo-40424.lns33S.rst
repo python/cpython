@@ -1,2 +1,6 @@
-AIX Build: fix a race condition with `makexp_aix` when calling make with -jNN.
-Patch by M. Felt
+Fix inter-mixed output when run in a multi-job build caused by the first
+job overwriting the file with the first echo and all subsequent echos appending
+to the end. This causes the symbol list to be defined twice leading to errant
+"ld: 0711-224 WARNING: Duplicate symbol" messages from the linker.
+
+Patch by M. Felt and Kevin (kadler).
