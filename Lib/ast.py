@@ -1106,8 +1106,6 @@ class _Unparser(NodeVisitor):
         write("}")
 
     def visit_Name(self, node):
-        if self.in_pattern() and isinstance(node.ctx, Load):
-            self.write(".")
         self.write(node.id)
 
     def _write_docstring(self, node):
@@ -1367,14 +1365,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Call(self, node):
         self.set_precedence(_Precedence.ATOM, node.func)
-        # We need to surround self.traverse(node.func) like this because
-        # ".xxx()" isn't legal in patterns (but visit_Name will try to include
-        # the leading dot if we're in a pattern). Temporary, as it's likely the
-        # pattern name load/store syntax will change...
-        _pattern = self.in_pattern()
-        self._pattern = False
         self.traverse(node.func)
-        self._pattern = _pattern
         with self.delimit("(", ")"):
             comma = False
             for e in node.args:
