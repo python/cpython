@@ -2795,9 +2795,8 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context pc) {
         if (WILDCARD_CHECK(arg)) {
             continue;
         }
-        ADDOP(c, DUP_TOP);
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
-        ADDOP(c, BINARY_SUBSCR);
+        // TODO: Validate arg;
+        ADDOP_I(c, MATCH_ITEM, i);
         CHECK(compiler_pattern(c, arg, pc));
         ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
     }
@@ -2806,9 +2805,8 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context pc) {
         if (WILDCARD_CHECK(kwarg->value)) {
             continue;
         }
-        ADDOP(c, DUP_TOP);
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(nargs + i));
-        ADDOP(c, BINARY_SUBSCR);
+        // TODO: Validate arg;
+        ADDOP_I(c, MATCH_ITEM, nargs + i);
         CHECK(compiler_pattern(c, kwarg->value, pc));
         ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
     }
@@ -2874,9 +2872,8 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context pc)
         if (WILDCARD_CHECK(value)) {
             continue;
         }
-        ADDOP(c, DUP_TOP);
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
-        ADDOP(c, BINARY_SUBSCR);
+        // TODO: Validate arg;
+        ADDOP_I(c, MATCH_ITEM, i);
         CHECK(compiler_pattern(c, value, pc));
         ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     }
@@ -3016,6 +3013,7 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context pc)
         ADDOP_COMPARE(c, GtE);
         ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
     }
+    ADDOP(c, ROT_TWO);
     for (Py_ssize_t i = 0; i < size; i++) {
         // TODO: Raise for invalid sizes to MATCH_ITEM* opcodes.
         expr_ty value = asdl_seq_GET(values, i);

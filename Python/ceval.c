@@ -3635,7 +3635,7 @@ main_loop:
         }
 
         case TARGET(MATCH_ITEM): {
-            PyObject *item = PySequence_GetItem(SECOND(), oparg);
+            PyObject *item = PySequence_GetItem(TOP(), oparg);
             if (!item) {
                 goto error;
             }
@@ -3644,12 +3644,12 @@ main_loop:
         }
 
         case TARGET(MATCH_ITEM_END): {
-            Py_ssize_t len = PyLong_AsSsize_t(TOP());
+            Py_ssize_t len = PyLong_AsSsize_t(SECOND());
             if (len < 0) {
                 goto error;
             }
             assert(len - 1 - oparg >= 0);
-            PyObject *item = PySequence_GetItem(SECOND(), len - 1 - oparg);
+            PyObject *item = PySequence_GetItem(TOP(), len - 1 - oparg);
             if (!item) {
                 goto error;
             }
@@ -3658,7 +3658,7 @@ main_loop:
         }
 
         case TARGET(MATCH_ITEM_SLICE): {
-            Py_ssize_t len = PyLong_AsSsize_t(TOP());
+            Py_ssize_t len = PyLong_AsSsize_t(SECOND());
             if (len < 0) {
                 goto error;
             }
@@ -3669,7 +3669,7 @@ main_loop:
             if (!items) {
                 goto error;
             }
-            PyObject *target = SECOND();
+            PyObject *target = TOP();
             PyObject *item;
             for (Py_ssize_t i = start; i < stop; i++) {
                 item = PySequence_GetItem(target, i);
