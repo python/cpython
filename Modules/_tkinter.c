@@ -3103,7 +3103,7 @@ Set number of 100 millisecond mainloop wait attempts.
 These are used for that call(), var_invoke(), and createcommand().
 
 Current default is 10 for a 1 second wait, but future behavior
-will be equivalent 0.
+will be equivalent to 0.
 
 Setting anything other than 0 will trigger a DeprecationWarning.
 
@@ -3111,7 +3111,7 @@ Setting anything other than 0 will trigger a DeprecationWarning.
 
 static PyObject *
 _tkinter_tkapp_setmainloopwaitattempts_impl(TkappObject *self, int new_val)
-/*[clinic end generated code: output=a0867fb187c8946e input=e5a1636576621896]*/
+/*[clinic end generated code: output=a0867fb187c8946e input=c9e2fc3f41fb6f47]*/
 {
     if (new_val < 0) 
     {

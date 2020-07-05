@@ -681,7 +681,7 @@ PyDoc_STRVAR(_tkinter_tkapp_setmainloopwaitattempts__doc__,
 "These are used for that call(), var_invoke(), and createcommand().\n"
 "\n"
 "Current default is 10 for a 1 second wait, but future behavior\n"
-"will be equivalent 0.\n"
+"will be equivalent to 0.\n"
 "\n"
 "Setting anything other than 0 will trigger a DeprecationWarning.");
 
@@ -929,4 +929,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=df5afd93be3a2bb7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=97dfc564114a5e65 input=a9049054013a1b77]*/
