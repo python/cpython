@@ -1109,6 +1109,9 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case MATCH_CLASS:
             return -1;
+        case MATCH_ITEM:
+        case MATCH_ITEM_END:
+        case MATCH_ITEM_SLICE:
         case MATCH_KEYS:
         case MATCH_MAPPING:
         case MATCH_SEQUENCE:
@@ -2995,31 +2998,32 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context pc)
         }
         star = i;
     }
-    basicblock *end;
+    basicblock *block, *end;
+    CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
     ADDOP(c, MATCH_SEQUENCE);
     ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
+    ADDOP(c, GET_LEN);
     if (star < 0) {
-        ADDOP(c, GET_LEN);
+        ADDOP(c, DUP_TOP);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
         ADDOP_COMPARE(c, Eq);
-        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
+        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
     }
     else if (size) {
-        ADDOP(c, GET_LEN);
+        ADDOP(c, DUP_TOP);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - 1));
         ADDOP_COMPARE(c, GtE);
-        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
+        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
     }
     for (Py_ssize_t i = 0; i < size; i++) {
+        // TODO: Raise for invalid sizes to MATCH_ITEM* opcodes.
         expr_ty value = asdl_seq_GET(values, i);
         if (WILDCARD_CHECK(value)) {
             continue;
         }
         if (star < 0 || i < star) {
-            ADDOP(c, DUP_TOP);
-            ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
-            ADDOP(c, BINARY_SUBSCR);
+            ADDOP_I(c, MATCH_ITEM, i);
         }
         else if (i == star) {
             assert(value->kind == Starred_kind);
@@ -3027,34 +3031,18 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context pc)
             if (WILDCARD_CHECK(value)) {
                 continue;
             }
-            ADDOP(c, DUP_TOP);
-            ADDOP_I(c, BUILD_LIST, 0);
-            ADDOP(c, ROT_TWO);
-            if (i) {
-                ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
-            }
-            else {
-                ADDOP_LOAD_CONST(c, Py_None);
-            }
-            if (i != size - 1) {
-                ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(-(size - 1 - i)));
-            }
-            else {
-                ADDOP_LOAD_CONST(c, Py_None);
-            }
-            ADDOP_I(c, BUILD_SLICE, 2);
-            ADDOP(c, BINARY_SUBSCR);
-            ADDOP_I(c, LIST_EXTEND, 1);
+            ADDOP_I(c, MATCH_ITEM_SLICE, (i << 16) + (size - 1 - i));
         }
         else {
-            ADDOP(c, DUP_TOP);
-            ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(-(size - i)));
-            ADDOP(c, BINARY_SUBSCR);
+            ADDOP_I(c, MATCH_ITEM_END, size - 1 - i);
         }
         CHECK(compiler_pattern(c, value, pc));
-        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
+        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
     }
     ADDOP_LOAD_CONST(c, Py_True);
+    compiler_use_next_block(c, block);
+    ADDOP(c, ROT_TWO);
+    ADDOP(c, POP_TOP);
     compiler_use_next_block(c, end);
     ADDOP(c, ROT_TWO);
     ADDOP(c, POP_TOP);

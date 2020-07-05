@@ -3634,6 +3634,55 @@ main_loop:
             DISPATCH();
         }
 
+        case TARGET(MATCH_ITEM): {
+            PyObject *item = PySequence_GetItem(SECOND(), oparg);
+            if (!item) {
+                goto error;
+            }
+            PUSH(item);
+            DISPATCH();
+        }
+
+        case TARGET(MATCH_ITEM_END): {
+            Py_ssize_t len = PyLong_AsSsize_t(TOP());
+            if (len < 0) {
+                goto error;
+            }
+            assert(len - 1 - oparg >= 0);
+            PyObject *item = PySequence_GetItem(SECOND(), len - 1 - oparg);
+            if (!item) {
+                goto error;
+            }
+            PUSH(item);
+            DISPATCH();
+        }
+
+        case TARGET(MATCH_ITEM_SLICE): {
+            Py_ssize_t len = PyLong_AsSsize_t(TOP());
+            if (len < 0) {
+                goto error;
+            }
+            Py_ssize_t start = oparg >> 16;
+            Py_ssize_t stop = len - (oparg & 0xFFFF);
+            assert(start <= stop);
+            PyObject *items = PyList_New(stop - start);
+            if (!items) {
+                goto error;
+            }
+            PyObject *target = SECOND();
+            PyObject *item;
+            for (Py_ssize_t i = start; i < stop; i++) {
+                item = PySequence_GetItem(target, i);
+                if (!item) {
+                    Py_DECREF(items);
+                    goto error;
+                }
+                PyList_SET_ITEM(items, i - start, item);
+            }
+            PUSH(items);
+            DISPATCH();
+        }
+
         case TARGET(GET_ITER): {
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();

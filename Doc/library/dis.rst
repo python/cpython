@@ -1227,6 +1227,27 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.10
 
 
+.. opcode:: MATCH_ITEM (i)
+
+   TODO
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_ITEM_END (i)
+
+   TODO
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_ITEM_SLICE (ij)
+
+   TODO
+
+   .. versionadded:: 3.10
+
+
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
