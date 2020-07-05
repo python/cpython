@@ -1688,10 +1688,7 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     command = _PyUnicode_AsUnicode(args[0]);
-    _Py_COMP_DIAG_POP
     #else /* USE_UNICODE_WCHAR_CACHE */
     command = PyUnicode_AsWideCharString(args[0], NULL);
     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -7040,10 +7037,7 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         goto exit;
     }
     #if USE_UNICODE_WCHAR_CACHE
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     operation = _PyUnicode_AsUnicode(args[1]);
-    _Py_COMP_DIAG_POP
     #else /* USE_UNICODE_WCHAR_CACHE */
     operation = PyUnicode_AsWideCharString(args[1], NULL);
     #endif /* USE_UNICODE_WCHAR_CACHE */
@@ -8925,4 +8919,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=ba3d4b35fda2c208 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a0fbdea47249ee0c input=a9049054013a1b77]*/
