@@ -303,7 +303,7 @@ local symbol table is created for that call.
 A function definition associates the function name with the function object in
 the current symbol table.  The interpreter recognizes the object pointed to by
 that name as a user-defined function.  Other names can also point to that same
-function object and can be used to access the function::
+function object and can also be used to access the function::
 
    >>> fib
    <function fib at 10042ed0>
