@@ -3029,7 +3029,7 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context pc)
             if (WILDCARD_CHECK(value)) {
                 continue;
             }
-            ADDOP_I(c, MATCH_ITEM_SLICE, (i << 16) + (size - 1 - i));
+            ADDOP_I(c, MATCH_ITEM_SLICE, ((size - 1 - i) << 8) + i);
         }
         else {
             ADDOP_I(c, MATCH_ITEM_END, size - 1 - i);

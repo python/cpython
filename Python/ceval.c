@@ -3662,8 +3662,8 @@ main_loop:
             if (len < 0) {
                 goto error;
             }
-            Py_ssize_t start = oparg >> 16;
-            Py_ssize_t stop = len - (oparg & 0xFFFF);
+            Py_ssize_t start = oparg & 0xFF;
+            Py_ssize_t stop = len - (oparg >> 8);
             assert(start <= stop);
             PyObject *items = PyList_New(stop - start);
             if (!items) {
