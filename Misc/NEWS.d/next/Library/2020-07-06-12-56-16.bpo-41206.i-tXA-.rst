@@ -1,0 +1,2 @@
+Fix :exc:`ValueError` caused due to empty content passed to
+:meth:`EmailMessage.set_content`.
