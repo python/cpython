@@ -549,12 +549,12 @@ desired effect in a number of ways.
 
       args = {'a': 'old-value', 'b': 99}
       func3(args)
-      print(args['a'], args['b'])
+      print(args['a'], args['b'])     # output: new-value 100
 
 5) Or bundle up values in a class instance::
 
       class callByRef:
-          def __init__(self, /, **args):
+          def __init__(self, **args):
               for key, value in args.items():
                   setattr(self, key, value)
 
@@ -564,7 +564,7 @@ desired effect in a number of ways.
 
       args = callByRef(a='old-value', b=99)
       func4(args)
-      print(args.a, args.b)
+      print(args.a, args.b)           # output: new-value 100
 
 
    There's almost never a good reason to get this complicated.
