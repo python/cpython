@@ -24,7 +24,12 @@ import weakref
 from functools import partial
 from itertools import product, islice
 from test import support
-from test.support import TESTFN, findfile, import_fresh_module, gc_collect, swap_attr
+from test.support import os_helper
+from test.support import warnings_helper
+from test.support import findfile, gc_collect, swap_attr
+from test.support.import_helper import import_fresh_module
+from test.support.os_helper import TESTFN
+
 
 # pyET is the pure-Python implementation.
 #
@@ -601,7 +606,7 @@ class ElementTreeTest(unittest.TestCase):
             self.assertFalse(f.closed)
         self.assertEqual(str(cm.exception), "unknown event 'bogus'")
 
-        with support.check_no_resource_warning(self):
+        with warnings_helper.check_no_resource_warning(self):
             with self.assertRaises(ValueError) as cm:
                 iterparse(SIMPLE_XMLFILE, events)
             self.assertEqual(str(cm.exception), "unknown event 'bogus'")
@@ -627,13 +632,13 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                 'junk after document element: line 1, column 12')
 
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(os_helper.unlink, TESTFN)
         with open(TESTFN, "wb") as f:
             f.write(b"<document />junk")
         it = iterparse(TESTFN)
         action, elem = next(it)
         self.assertEqual((action, elem.tag), ('end', 'document'))
-        with support.check_no_resource_warning(self):
+        with warnings_helper.check_no_resource_warning(self):
             with self.assertRaises(ET.ParseError) as cm:
                 next(it)
             self.assertEqual(str(cm.exception),
@@ -3641,14 +3646,14 @@ class IOTest(unittest.TestCase):
                      "<tag key=\"åöö&lt;&gt;\" />" % enc).encode(enc))
 
     def test_write_to_filename(self):
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(os_helper.unlink, TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
         tree.write(TESTFN)
         with open(TESTFN, 'rb') as f:
             self.assertEqual(f.read(), b'''<site />''')
 
     def test_write_to_text_file(self):
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(os_helper.unlink, TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
         with open(TESTFN, 'w', encoding='utf-8') as f:
             tree.write(f, encoding='unicode')
@@ -3657,7 +3662,7 @@ class IOTest(unittest.TestCase):
             self.assertEqual(f.read(), b'''<site />''')
 
     def test_write_to_binary_file(self):
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(os_helper.unlink, TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
         with open(TESTFN, 'wb') as f:
             tree.write(f)
@@ -3666,7 +3671,7 @@ class IOTest(unittest.TestCase):
             self.assertEqual(f.read(), b'''<site />''')
 
     def test_write_to_binary_file_with_bom(self):
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(os_helper.unlink, TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
         # test BOM writing to buffered file
         with open(TESTFN, 'wb') as f:

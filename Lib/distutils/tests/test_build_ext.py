@@ -15,6 +15,7 @@ from distutils.errors import (
 
 import unittest
 from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 
 # http://bugs.python.org/issue4373
@@ -38,7 +39,7 @@ class BuildExtTestCase(TempdirManager,
         # bpo-30132: On Windows, a .pdb file may be created in the current
         # working directory. Create a temporary working directory to cleanup
         # everything at the end of the test.
-        change_cwd = support.change_cwd(self.tmp_dir)
+        change_cwd = os_helper.change_cwd(self.tmp_dir)
         change_cwd.__enter__()
         self.addCleanup(change_cwd.__exit__, None, None, None)
 
