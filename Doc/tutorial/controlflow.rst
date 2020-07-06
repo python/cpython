@@ -300,11 +300,10 @@ passed using *call by value* (where the *value* is always an object *reference*,
 not the value of the object). [#]_ When a function calls another function, a new
 local symbol table is created for that call.
 
-A function definition introduces the function name in the current symbol table.
-The value of the function name has a type that is recognized by the interpreter
-as a user-defined function.  This value can be assigned to another name which
-can then also be used as a function.  This serves as a general renaming
-mechanism::
+A function definition associates the function name with the function object in
+the current symbol table.  The interpreter recognizes the object pointed to by
+that name as a user-defined function.  Other names can also point to that same
+function object and can also be used to access the function::
 
    >>> fib
    <function fib at 10042ed0>
