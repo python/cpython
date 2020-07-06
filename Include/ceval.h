@@ -128,8 +128,12 @@ PyAPI_FUNC(void) PyEval_RestoreThread(PyThreadState *);
 
 Py_DEPRECATED(3.9) PyAPI_FUNC(int) PyEval_ThreadsInitialized(void);
 Py_DEPRECATED(3.9) PyAPI_FUNC(void) PyEval_InitThreads(void);
+/* PyEval_AcquireLock() and PyEval_ReleaseLock() are part of stable ABI.
+ * They will be removed from this header file in the future version.
+ * But they will be remained in ABI until Python 4.0.
+ */
 Py_DEPRECATED(3.2) PyAPI_FUNC(void) PyEval_AcquireLock(void);
-/* Py_DEPRECATED(3.2) */ PyAPI_FUNC(void) PyEval_ReleaseLock(void);
+Py_DEPRECATED(3.2) PyAPI_FUNC(void) PyEval_ReleaseLock(void);
 PyAPI_FUNC(void) PyEval_AcquireThread(PyThreadState *tstate);
 PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
 
