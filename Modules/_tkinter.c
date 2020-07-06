@@ -2900,7 +2900,6 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
     PyThreadState *tstate = PyThreadState_Get();
 
     CHECK_TCL_APPARTMENT;
-    int previous_dispatching = self->dispatching;
     self->dispatching = 1;
 
     quitMainLoop = 0;
@@ -2929,13 +2928,13 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
         }
 
         if (PyErr_CheckSignals() != 0) {
-            self->dispatching = previous_dispatching;
+            self->dispatching = 0;
             return NULL;
         }
         if (result < 0)
             break;
     }
-    self->dispatching = previous_dispatching;
+    self->dispatching = 0;
     quitMainLoop = 0;
 
     if (errorInCmd) {
