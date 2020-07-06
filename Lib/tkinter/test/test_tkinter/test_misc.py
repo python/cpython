@@ -217,34 +217,45 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_thread_must_wait_for_mainloop(self):
         sentinel = object()
         thread_properly_raises = sentinel
-        thread_not_dispatching_early = sentinel
+        thread_dispatching_early = sentinel
         thread_dispatching_eventually = sentinel
 
         def target():
-            nonlocal thread_not_dispatching_early
+            nonlocal thread_dispatching_early
             nonlocal thread_properly_raises
             nonlocal thread_dispatching_eventually
-            thread_not_dispatching_early = not root.dispatching()
 
             try:
+                thread_dispatching_early = root.dispatching()
                 root.after(0)  # Null op
-            except RuntimeError:
-                thread_properly_raises=True
+            except RuntimeError as e:
+                if str(e) == "main thread is not in main loop":
+                    thread_properly_raises=True
+                else:
+                    thread_properly_raises=False
+                    raise
             else:
                 thread_properly_raises=False
+                return
+            finally:
+                # must guarantee that any reason not to run mainloop
+                # is flagged in the above try/except/else and will
+                # keep the main thread from calling root.mainloop()
+                ready_for_mainloop.set()
 
-            ready_for_mainloop.set()
-
-            # self.assertTrue(root.dispatching()) but patient
-            for i in range (1000):
-                if root.dispatching():
-                    thread_dispatching_eventually = True
-                    break
-                time.sleep(0.01)
-            else:  # if not break
-                thread_dispatching_eventually = False
-
-            root.quit()
+            # Everything after the event set must go in this try
+            # to guarantee that root.quit() is called in finally
+            try:
+                # self.assertTrue(root.dispatching()) but patient
+                for i in range (1000):
+                    if root.dispatching():
+                        thread_dispatching_eventually = True
+                        break
+                    time.sleep(0.01)
+                else:  # if not break
+                    thread_dispatching_eventually = False
+            finally:
+                root.quit()
 
         root = self.root
 
@@ -253,10 +264,17 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
         try:
             ready_for_mainloop = threading.Event()
-            thread = threading.Thread(target=target)
+            thread = threading.Thread(target=target, daemon=True)
             self.assertFalse(root.dispatching())
             thread.start()
             ready_for_mainloop.wait()
+
+            # if these fail we don't want to risk starting mainloop
+            self.assertFalse(thread_dispatching_early is sentinel)
+            self.assertFalse(thread_dispatching_early)
+            self.assertFalse(thread_properly_raises is sentinel)
+            self.assertTrue(thread_properly_raises)
+
             root.mainloop()
             self.assertFalse(root.dispatching())
             thread.join()
@@ -265,10 +283,6 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             with self.assertWarns(DeprecationWarning):
                 root.tk.setmainloopwaitattempts(10)
 
-        self.assertFalse(thread_properly_raises is sentinel)
-        self.assertTrue(thread_properly_raises)
-        self.assertFalse(thread_not_dispatching_early is sentinel)
-        self.assertTrue(thread_not_dispatching_early)
         self.assertFalse(thread_dispatching_eventually is sentinel)
         self.assertTrue(thread_dispatching_eventually)
 
