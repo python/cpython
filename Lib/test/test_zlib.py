@@ -8,6 +8,7 @@ import random
 import sys
 from test.support import bigmemtest, _1G, _4G
 
+
 zlib = import_helper.import_module('zlib')
 
 requires_Compress_copy = unittest.skipUnless(

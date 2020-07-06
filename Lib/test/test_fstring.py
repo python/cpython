@@ -12,7 +12,7 @@ import os
 import types
 import decimal
 import unittest
-from test.support import temp_cwd
+from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure
 
 a_global = 'global variable'
