@@ -24,6 +24,10 @@
 #  endif
 #endif
 
+#ifndef PLATLIBDIR
+#  error "PLATLIBDIR macro must be defined"
+#endif
+
 
 /* --- Command line options --------------------------------------- */
 
@@ -68,7 +72,6 @@ static const char usage_3[] = "\
 -X opt : set implementation-specific option. The following options are available:\n\
 \n\
          -X faulthandler: enable faulthandler\n\
-         -X oldparser: enable the traditional LL(1) parser; also PYTHONOLDPARSER\n\
          -X showrefcount: output the total reference count and number of used\n\
              memory blocks when the program finishes or after each statement in the\n\
              interactive interpreter. This only works on debug builds\n\
@@ -110,6 +113,7 @@ PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n\
 static const char usage_5[] =
 "PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "               The default module search path uses %s.\n"
+"PYTHONPLATLIBDIR : override sys.platlibdir.\n"
 "PYTHONCASEOK : ignore case in 'import' statements (Windows).\n"
 "PYTHONUTF8: if set to 1, enable the UTF-8 mode.\n"
 "PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
@@ -543,8 +547,6 @@ _Py_SetArgcArgv(Py_ssize_t argc, wchar_t * const *argv)
 }
 
 
-/* Make the *original* argc/argv available to other modules.
-   This is rare, but it is needed by the secureware extension. */
 void
 Py_GetArgcArgv(int *argc, wchar_t ***argv)
 {
@@ -588,6 +590,7 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->base_prefix);
     CLEAR(config->exec_prefix);
     CLEAR(config->base_exec_prefix);
+    CLEAR(config->platlibdir);
 
     CLEAR(config->filesystem_encoding);
     CLEAR(config->filesystem_errors);
@@ -597,6 +600,8 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->run_module);
     CLEAR(config->run_filename);
     CLEAR(config->check_hash_pycs_mode);
+
+    _PyWideStringList_Clear(&config->orig_argv);
 #undef CLEAR
 }
 
@@ -636,7 +641,6 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
-    config->_use_peg_parser = 1;
 }
 
 
@@ -794,7 +798,6 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(dev_mode);
-    COPY_ATTR(_use_peg_parser);
     COPY_ATTR(install_signal_handlers);
     COPY_ATTR(use_hash_seed);
     COPY_ATTR(hash_seed);
@@ -824,6 +827,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTR_ATTR(base_prefix);
     COPY_WSTR_ATTR(exec_prefix);
     COPY_WSTR_ATTR(base_exec_prefix);
+    COPY_WSTR_ATTR(platlibdir);
 
     COPY_ATTR(site_import);
     COPY_ATTR(bytes_warning);
@@ -852,6 +856,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(pathconfig_warnings);
     COPY_ATTR(_init_main);
     COPY_ATTR(_isolated_interpreter);
+    COPY_WSTRLIST(orig_argv);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -899,7 +904,6 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
     SET_ITEM_INT(dev_mode);
-    SET_ITEM_INT(_use_peg_parser);
     SET_ITEM_INT(install_signal_handlers);
     SET_ITEM_INT(use_hash_seed);
     SET_ITEM_UINT(hash_seed);
@@ -926,6 +930,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_WSTR(base_prefix);
     SET_ITEM_WSTR(exec_prefix);
     SET_ITEM_WSTR(base_exec_prefix);
+    SET_ITEM_WSTR(platlibdir);
     SET_ITEM_INT(site_import);
     SET_ITEM_INT(bytes_warning);
     SET_ITEM_INT(inspect);
@@ -952,6 +957,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(pathconfig_warnings);
     SET_ITEM_INT(_init_main);
     SET_ITEM_INT(_isolated_interpreter);
+    SET_ITEM_WSTRLIST(orig_argv);
 
     return dict;
 
@@ -1336,6 +1342,14 @@ config_read_env_vars(PyConfig *config)
         }
     }
 
+    if(config->platlibdir == NULL) {
+        status = CONFIG_GET_ENV_DUP(config, &config->platlibdir,
+                                    L"PYTHONPLATLIBDIR", "PYTHONPLATLIBDIR");
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
     if (config->use_hash_seed < 0) {
         status = config_init_hash_seed(config);
         if (_PyStatus_EXCEPTION(status)) {
@@ -1433,11 +1447,6 @@ config_read_complex_options(PyConfig *config)
     if (config_get_env(config, "PYTHONPROFILEIMPORTTIME")
        || config_get_xoption(config, L"importtime")) {
         config->import_time = 1;
-    }
-
-    if (config_get_env(config, "PYTHONOLDPARSER")
-       || config_get_xoption(config, L"oldparser")) {
-        config->_use_peg_parser = 0;
     }
 
     PyStatus status;
@@ -1731,6 +1740,14 @@ config_read(PyConfig *config)
         }
     }
 
+    if(config->platlibdir == NULL) {
+        status = CONFIG_SET_BYTES_STR(config, &config->platlibdir, PLATLIBDIR,
+                                      "PLATLIBDIR macro");
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
     if (config->_install_importlib) {
         status = _PyConfig_InitPathConfig(config);
         if (_PyStatus_EXCEPTION(status)) {
@@ -1832,7 +1849,7 @@ config_init_stdio(const PyConfig *config)
 
    - set Py_xxx global configuration variables
    - initialize C standard streams (stdin, stdout, stderr) */
-void
+PyStatus
 _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
 {
     config_set_global_vars(config);
@@ -1846,6 +1863,13 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
     preconfig->isolated = config->isolated;
     preconfig->use_environment = config->use_environment;
     preconfig->dev_mode = config->dev_mode;
+
+    if (_Py_SetArgcArgv(config->orig_argv.length,
+                        config->orig_argv.items) < 0)
+    {
+        return _PyStatus_NO_MEMORY();
+    }
+    return _PyStatus_OK();
 }
 
 
@@ -2469,7 +2493,6 @@ PyStatus
 PyConfig_Read(PyConfig *config)
 {
     PyStatus status;
-    PyWideStringList orig_argv = _PyWideStringList_INIT;
 
     status = _Py_PreInitializeFromConfig(config, NULL);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2478,8 +2501,13 @@ PyConfig_Read(PyConfig *config)
 
     config_get_global_vars(config);
 
-    if (_PyWideStringList_Copy(&orig_argv, &config->argv) < 0) {
-        return _PyStatus_NO_MEMORY();
+    if (config->orig_argv.length == 0
+        && !(config->argv.length == 1
+             && wcscmp(config->argv.items[0], L"") == 0))
+    {
+        if (_PyWideStringList_Copy(&config->orig_argv, &config->argv) < 0) {
+            return _PyStatus_NO_MEMORY();
+        }
     }
 
     _PyPreCmdline precmdline = _PyPreCmdline_INIT;
@@ -2510,16 +2538,10 @@ PyConfig_Read(PyConfig *config)
         goto done;
     }
 
-    if (_Py_SetArgcArgv(orig_argv.length, orig_argv.items) < 0) {
-        status = _PyStatus_NO_MEMORY();
-        goto done;
-    }
-
     /* Check config consistency */
     assert(config->isolated >= 0);
     assert(config->use_environment >= 0);
     assert(config->dev_mode >= 0);
-    assert(config->_use_peg_parser >= 0);
     assert(config->install_signal_handlers >= 0);
     assert(config->use_hash_seed >= 0);
     assert(config->faulthandler >= 0);
@@ -2554,6 +2576,7 @@ PyConfig_Read(PyConfig *config)
         assert(config->exec_prefix != NULL);
         assert(config->base_exec_prefix != NULL);
     }
+    assert(config->platlibdir != NULL);
     assert(config->filesystem_encoding != NULL);
     assert(config->filesystem_errors != NULL);
     assert(config->stdio_encoding != NULL);
@@ -2566,11 +2589,11 @@ PyConfig_Read(PyConfig *config)
     assert(config->check_hash_pycs_mode != NULL);
     assert(config->_install_importlib >= 0);
     assert(config->pathconfig_warnings >= 0);
+    assert(_PyWideStringList_CheckConsistency(&config->orig_argv));
 
     status = _PyStatus_OK();
 
 done:
-    _PyWideStringList_Clear(&orig_argv);
     _PyPreCmdline_Clear(&precmdline);
     return status;
 }
@@ -2704,6 +2727,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     DUMP_SYS(_base_executable);
     DUMP_SYS(base_prefix);
     DUMP_SYS(base_exec_prefix);
+    DUMP_SYS(platlibdir);
     DUMP_SYS(executable);
     DUMP_SYS(prefix);
     DUMP_SYS(exec_prefix);

@@ -1674,12 +1674,25 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"command", NULL};
-    static _PyArg_Parser _parser = {"u:system", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "system", 0};
+    PyObject *argsbuf[1];
     const Py_UNICODE *command;
     long _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &command)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("system", "argument 'command'", "str", args[0]);
+        goto exit;
+    }
+    #if USE_UNICODE_WCHAR_CACHE
+    command = _PyUnicode_AsUnicode(args[0]);
+    #else /* USE_UNICODE_WCHAR_CACHE */
+    command = PyUnicode_AsWideCharString(args[0], NULL);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    if (command == NULL) {
         goto exit;
     }
     _return_value = os_system_impl(module, command);
@@ -1689,6 +1702,11 @@ os_system(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     return_value = PyLong_FromLong(_return_value);
 
 exit:
+    /* Cleanup for command */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)command);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
     return return_value;
 }
 
@@ -4743,7 +4761,7 @@ os_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -4843,7 +4861,7 @@ os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -5112,7 +5130,7 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[3]);
+        PyObject *iobj = _PyNumber_Index(args[3]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -5192,7 +5210,7 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     offobj = args[2];
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[3]);
+        PyObject *iobj = _PyNumber_Index(args[3]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -5517,6 +5535,7 @@ PyDoc_STRVAR(os_pwritev__doc__,
 "\n"
 "- RWF_DSYNC\n"
 "- RWF_SYNC\n"
+"- RWF_APPEND\n"
 "\n"
 "Using non-zero flags requires Linux 4.7 or newer.");
 
@@ -5626,7 +5645,7 @@ os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[2]);
+        PyObject *iobj = _PyNumber_Index(args[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -6802,8 +6821,7 @@ os_fpathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("fpathconf", nargs, 2, 2)) {
         goto exit;
     }
-    fd = _PyLong_AsInt(args[0]);
-    if (fd == -1 && PyErr_Occurred()) {
+    if (!fildes_converter(args[0], &fd)) {
         goto exit;
     }
     if (!conv_path_confname(args[1], &name)) {
@@ -6998,19 +7016,44 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"filepath", "operation", NULL};
-    static _PyArg_Parser _parser = {"O&|u:startfile", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "startfile", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t filepath = PATH_T_INITIALIZE("startfile", "filepath", 0, 0);
     const Py_UNICODE *operation = NULL;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        path_converter, &filepath, &operation)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!path_converter(args[0], &filepath)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("startfile", "argument 'operation'", "str", args[1]);
+        goto exit;
+    }
+    #if USE_UNICODE_WCHAR_CACHE
+    operation = _PyUnicode_AsUnicode(args[1]);
+    #else /* USE_UNICODE_WCHAR_CACHE */
+    operation = PyUnicode_AsWideCharString(args[1], NULL);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    if (operation == NULL) {
+        goto exit;
+    }
+skip_optional_pos:
     return_value = os_startfile_impl(module, &filepath, operation);
 
 exit:
     /* Cleanup for filepath */
     path_cleanup(&filepath);
+    /* Cleanup for operation */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)operation);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
 
     return return_value;
 }
@@ -7511,7 +7554,7 @@ os_urandom(PyObject *module, PyObject *arg)
 
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(arg);
+        PyObject *iobj = _PyNumber_Index(arg);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -8159,7 +8202,7 @@ os_getrandom(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -8876,4 +8919,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=b97bbc8cb5078540 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a0fbdea47249ee0c input=a9049054013a1b77]*/

@@ -432,7 +432,7 @@ _elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize
     }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -915,4 +915,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c98b210c525a9338 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1385b5e5688f3614 input=a9049054013a1b77]*/

@@ -1,9 +1,9 @@
 import unittest
-from test import support
 import base64
 import binascii
 import os
 from array import array
+from test.support import os_helper
 from test.support import script_helper
 
 
@@ -647,8 +647,8 @@ class BaseXYTestCase(unittest.TestCase):
 
 class TestMain(unittest.TestCase):
     def tearDown(self):
-        if os.path.exists(support.TESTFN):
-            os.unlink(support.TESTFN)
+        if os.path.exists(os_helper.TESTFN):
+            os.unlink(os_helper.TESTFN)
 
     def get_output(self, *args):
         return script_helper.assert_python_ok('-m', 'base64', *args).out
@@ -662,9 +662,9 @@ class TestMain(unittest.TestCase):
         ))
 
     def test_encode_file(self):
-        with open(support.TESTFN, 'wb') as fp:
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(b'a\xffb\n')
-        output = self.get_output('-e', support.TESTFN)
+        output = self.get_output('-e', os_helper.TESTFN)
         self.assertEqual(output.rstrip(), b'Yf9iCg==')
 
     def test_encode_from_stdin(self):
@@ -674,9 +674,9 @@ class TestMain(unittest.TestCase):
         self.assertIsNone(err)
 
     def test_decode(self):
-        with open(support.TESTFN, 'wb') as fp:
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(b'Yf9iCg==')
-        output = self.get_output('-d', support.TESTFN)
+        output = self.get_output('-d', os_helper.TESTFN)
         self.assertEqual(output.rstrip(), b'a\xffb')
 
 if __name__ == '__main__':

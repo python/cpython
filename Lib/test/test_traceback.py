@@ -7,7 +7,8 @@ import sys
 import unittest
 import re
 from test import support
-from test.support import TESTFN, Error, captured_output, unlink, cpython_only, ALWAYS_EQ
+from test.support import Error, captured_output, cpython_only, ALWAYS_EQ
+from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
 import textwrap
 
@@ -655,7 +656,6 @@ class BaseExceptionReportingTests:
         self.assertIn('inner_raise() # Marker', blocks[2])
         self.check_zero_div(blocks[2])
 
-    @unittest.skipIf(support.use_old_parser(), "Pegen is arguably better here, so no need to fix this")
     def test_syntax_error_offset_at_eol(self):
         # See #10186.
         def e():

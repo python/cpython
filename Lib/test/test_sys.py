@@ -1,5 +1,3 @@
-from test import support
-from test.support.script_helper import assert_python_ok, assert_python_failure
 import builtins
 import codecs
 import gc
@@ -11,6 +9,9 @@ import subprocess
 import sys
 import sysconfig
 import test.support
+from test import support
+from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support import threading_helper
 import textwrap
 import unittest
 import warnings
@@ -365,7 +366,7 @@ class SysModuleTest(unittest.TestCase):
         )
 
     # sys._current_frames() is a CPython-only gimmick.
-    @test.support.reap_threads
+    @threading_helper.reap_threads
     def test_current_frames(self):
         import threading
         import traceback
@@ -433,6 +434,11 @@ class SysModuleTest(unittest.TestCase):
     def test_attributes(self):
         self.assertIsInstance(sys.api_version, int)
         self.assertIsInstance(sys.argv, list)
+        for arg in sys.argv:
+            self.assertIsInstance(arg, str)
+        self.assertIsInstance(sys.orig_argv, list)
+        for arg in sys.orig_argv:
+            self.assertIsInstance(arg, str)
         self.assertIn(sys.byteorder, ("little", "big"))
         self.assertIsInstance(sys.builtin_module_names, tuple)
         self.assertIsInstance(sys.copyright, str)
@@ -486,6 +492,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.platform, str)
         self.assertIsInstance(sys.prefix, str)
         self.assertIsInstance(sys.base_prefix, str)
+        self.assertIsInstance(sys.platlibdir, str)
         self.assertIsInstance(sys.version, str)
         vi = sys.version_info
         self.assertIsInstance(vi[:], tuple)
@@ -927,6 +934,21 @@ class SysModuleTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', '; '.join(code))
         out = out.decode('ascii', 'replace').rstrip()
         self.assertEqual(out, 'mbcs replace')
+
+    def test_orig_argv(self):
+        code = textwrap.dedent('''
+            import sys
+            print(sys.argv)
+            print(sys.orig_argv)
+        ''')
+        args = [sys.executable, '-I', '-X', 'utf8', '-c', code, 'arg']
+        proc = subprocess.run(args, check=True, capture_output=True, text=True)
+        expected = [
+            repr(['-c', 'arg']),  # sys.argv
+            repr(args),  # sys.orig_argv
+        ]
+        self.assertEqual(proc.stdout.rstrip().splitlines(), expected,
+                         proc)
 
 
 @test.support.cpython_only

@@ -458,7 +458,7 @@ select.poll.register
 
     fd: fildes
       either an integer, or an object with a fileno() method returning an int
-    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
+    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = select.POLLIN | select.POLLPRI | select.POLLOUT
       an optional bitmask describing the type of events to check for
     /
 
@@ -467,7 +467,7 @@ Register a file descriptor with the polling object.
 
 static PyObject *
 select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask)
-/*[clinic end generated code: output=0dc7173c800a4a65 input=f18711d9bb021e25]*/
+/*[clinic end generated code: output=0dc7173c800a4a65 input=34e16cfb28d3c900]*/
 {
     PyObject *key, *value;
     int err;
@@ -845,7 +845,7 @@ select.devpoll.register
     fd: fildes
         either an integer, or an object with a fileno() method returning
         an int
-    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
+    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = select.POLLIN | select.POLLPRI | select.POLLOUT
         an optional bitmask describing the type of events to check for
     /
 
@@ -855,7 +855,7 @@ Register a file descriptor with the polling object.
 static PyObject *
 select_devpoll_register_impl(devpollObject *self, int fd,
                              unsigned short eventmask)
-/*[clinic end generated code: output=6e07fe8b74abba0c input=5bd7cacc47a8ee46]*/
+/*[clinic end generated code: output=6e07fe8b74abba0c input=22006fabe9567522]*/
 {
     return internal_devpoll_register(self, fd, eventmask, 0);
 }
@@ -866,7 +866,7 @@ select.devpoll.modify
     fd: fildes
         either an integer, or an object with a fileno() method returning
         an int
-    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
+    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = select.POLLIN | select.POLLPRI | select.POLLOUT
         an optional bitmask describing the type of events to check for
     /
 
@@ -876,7 +876,7 @@ Modify a possible already registered file descriptor.
 static PyObject *
 select_devpoll_modify_impl(devpollObject *self, int fd,
                            unsigned short eventmask)
-/*[clinic end generated code: output=bc2e6d23aaff98b4 input=48a820fc5967165d]*/
+/*[clinic end generated code: output=bc2e6d23aaff98b4 input=09fa335db7cdc09e]*/
 {
     return internal_devpoll_register(self, fd, eventmask, 1);
 }
@@ -1475,7 +1475,7 @@ select.epoll.register
 
     fd: fildes
       the target file descriptor of the operation
-    eventmask: unsigned_int(c_default="EPOLLIN | EPOLLPRI | EPOLLOUT", bitwise=True) = EPOLLIN | EPOLLPRI | EPOLLOUT
+    eventmask: unsigned_int(c_default="EPOLLIN | EPOLLPRI | EPOLLOUT", bitwise=True) = select.EPOLLIN | select.EPOLLPRI | select.EPOLLOUT
       a bit set composed of the various EPOLL constants
 
 Registers a new fd or raises an OSError if the fd is already registered.
@@ -1486,7 +1486,7 @@ The epoll interface supports all file descriptors that support poll.
 static PyObject *
 select_epoll_register_impl(pyEpoll_Object *self, int fd,
                            unsigned int eventmask)
-/*[clinic end generated code: output=318e5e6386520599 input=6cf699c152dd8ca9]*/
+/*[clinic end generated code: output=318e5e6386520599 input=a5071b71edfe3578]*/
 {
     return pyepoll_internal_ctl(self->epfd, EPOLL_CTL_ADD, fd, eventmask);
 }
@@ -2482,7 +2482,6 @@ PyInit_select(void)
         if (poll_Type == NULL)
             return NULL;
         get_select_state(m)->poll_Type = (PyTypeObject *)poll_Type;
-        Py_INCREF(poll_Type);
 
         PyModule_AddIntMacro(m, POLLIN);
         PyModule_AddIntMacro(m, POLLPRI);
@@ -2518,7 +2517,6 @@ PyInit_select(void)
     if (devpoll_Type == NULL)
         return NULL;
     get_select_state(m)->devpoll_Type = (PyTypeObject *)devpoll_Type;
-    Py_INCREF(devpoll_Type);
 #endif
 
 #ifdef HAVE_EPOLL

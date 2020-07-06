@@ -4,10 +4,10 @@
 #include <ctype.h>
 #include "ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
-#include "pycore_object.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pystate.h"      // _PyThreadState_GET()
-#include "pycore_tupleobject.h"
+#include "pycore_object.h"        // _Py_AddToAllObjects()
+#include "pycore_pyerrors.h"      // _PyErr_NoMemory()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 _Py_IDENTIFIER(__builtins__);
 _Py_IDENTIFIER(__dict__);
@@ -2494,17 +2494,17 @@ issubclass as builtin_issubclass
     class_or_tuple: object
     /
 
-Return whether 'cls' is a derived from another class or is the same class.
+Return whether 'cls' is derived from another class or is the same class.
 
 A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the target to
 check against. This is equivalent to ``issubclass(x, A) or issubclass(x, B)
-or ...`` etc.
+or ...``.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_issubclass_impl(PyObject *module, PyObject *cls,
                         PyObject *class_or_tuple)
-/*[clinic end generated code: output=358412410cd7a250 input=af5f35e9ceaddaf6]*/
+/*[clinic end generated code: output=358412410cd7a250 input=a24b9f3d58c370d6]*/
 {
     int retval;
 
@@ -2517,9 +2517,10 @@ builtin_issubclass_impl(PyObject *module, PyObject *cls,
 
 typedef struct {
     PyObject_HEAD
-    Py_ssize_t          tuplesize;
-    PyObject *ittuple;                  /* tuple of iterators */
+    Py_ssize_t tuplesize;
+    PyObject *ittuple;     /* tuple of iterators */
     PyObject *result;
+    int strict;
 } zipobject;
 
 static PyObject *
@@ -2530,9 +2531,21 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *ittuple;  /* tuple of iterators */
     PyObject *result;
     Py_ssize_t tuplesize;
+    int strict = 0;
 
-    if (type == &PyZip_Type && !_PyArg_NoKeywords("zip", kwds))
-        return NULL;
+    if (kwds) {
+        PyObject *empty = PyTuple_New(0);
+        if (empty == NULL) {
+            return NULL;
+        }
+        static char *kwlist[] = {"strict", NULL};
+        int parsed = PyArg_ParseTupleAndKeywords(
+                empty, kwds, "|$p:zip", kwlist, &strict);
+        Py_DECREF(empty);
+        if (!parsed) {
+            return NULL;
+        }
+    }
 
     /* args must be a tuple */
     assert(PyTuple_Check(args));
@@ -2573,6 +2586,7 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     lz->ittuple = ittuple;
     lz->tuplesize = tuplesize;
     lz->result = result;
+    lz->strict = strict;
 
     return (PyObject *)lz;
 }
@@ -2613,6 +2627,9 @@ zip_next(zipobject *lz)
             item = (*Py_TYPE(it)->tp_iternext)(it);
             if (item == NULL) {
                 Py_DECREF(result);
+                if (lz->strict) {
+                    goto check;
+                }
                 return NULL;
             }
             olditem = PyTuple_GET_ITEM(result, i);
@@ -2628,28 +2645,85 @@ zip_next(zipobject *lz)
             item = (*Py_TYPE(it)->tp_iternext)(it);
             if (item == NULL) {
                 Py_DECREF(result);
+                if (lz->strict) {
+                    goto check;
+                }
                 return NULL;
             }
             PyTuple_SET_ITEM(result, i, item);
         }
     }
     return result;
+check:
+    if (PyErr_Occurred()) {
+        if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+            // next() on argument i raised an exception (not StopIteration)
+            return NULL;
+        }
+        PyErr_Clear();
+    }
+    if (i) {
+        // ValueError: zip() argument 2 is shorter than argument 1
+        // ValueError: zip() argument 3 is shorter than arguments 1-2
+        const char* plural = i == 1 ? " " : "s 1-";
+        return PyErr_Format(PyExc_ValueError,
+                            "zip() argument %d is shorter than argument%s%d",
+                            i + 1, plural, i);
+    }
+    for (i = 1; i < tuplesize; i++) {
+        it = PyTuple_GET_ITEM(lz->ittuple, i);
+        item = (*Py_TYPE(it)->tp_iternext)(it);
+        if (item) {
+            Py_DECREF(item);
+            const char* plural = i == 1 ? " " : "s 1-";
+            return PyErr_Format(PyExc_ValueError,
+                                "zip() argument %d is longer than argument%s%d",
+                                i + 1, plural, i);
+        }
+        if (PyErr_Occurred()) {
+            if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+                // next() on argument i raised an exception (not StopIteration)
+                return NULL;
+            }
+            PyErr_Clear();
+        }
+        // Argument i is exhausted. So far so good...
+    }
+    // All arguments are exhausted. Success!
+    return NULL;
 }
 
 static PyObject *
 zip_reduce(zipobject *lz, PyObject *Py_UNUSED(ignored))
 {
     /* Just recreate the zip with the internal iterator tuple */
-    return Py_BuildValue("OO", Py_TYPE(lz), lz->ittuple);
+    if (lz->strict) {
+        return PyTuple_Pack(3, Py_TYPE(lz), lz->ittuple, Py_True);
+    }
+    return PyTuple_Pack(2, Py_TYPE(lz), lz->ittuple);
+}
+
+PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
+
+static PyObject *
+zip_setstate(zipobject *lz, PyObject *state)
+{
+    int strict = PyObject_IsTrue(state);
+    if (strict < 0) {
+        return NULL;
+    }
+    lz->strict = strict;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef zip_methods[] = {
     {"__reduce__",   (PyCFunction)zip_reduce,   METH_NOARGS, reduce_doc},
-    {NULL,           NULL}           /* sentinel */
+    {"__setstate__", (PyCFunction)zip_setstate, METH_O,      setstate_doc},
+    {NULL}  /* sentinel */
 };
 
 PyDoc_STRVAR(zip_doc,
-"zip(*iterables) --> A zip object yielding tuples until an input is exhausted.\n\
+"zip(*iterables, strict=False) --> Yield tuples until an input is exhausted.\n\
 \n\
    >>> list(zip('abcdefg', range(3), range(4)))\n\
    [('a', 0, 0), ('b', 1, 1), ('c', 2, 2)]\n\
@@ -2657,7 +2731,10 @@ PyDoc_STRVAR(zip_doc,
 The zip object yields n-length tuples, where n is the number of iterables\n\
 passed as positional arguments to zip().  The i-th element in every tuple\n\
 comes from the i-th iterable argument to zip().  This continues until the\n\
-shortest argument is exhausted.");
+shortest argument is exhausted.\n\
+\n\
+If strict is true and one of the arguments is exhausted before the others,\n\
+raise a ValueError.");
 
 PyTypeObject PyZip_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

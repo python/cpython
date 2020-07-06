@@ -1,5 +1,5 @@
 import unittest
-from test.support import import_module
+from test.support.import_helper import import_module
 
 # Skip test_idle if _tkinter wasn't built, if tkinter is missing,
 # if tcl/tk is not the 8.5+ needed for ttk widgets,

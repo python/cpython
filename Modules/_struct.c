@@ -121,7 +121,7 @@ get_pylong(PyObject *v)
     if (!PyLong_Check(v)) {
         /* Not an integer;  try to use __index__ to convert. */
         if (PyIndex_Check(v)) {
-            v = PyNumber_Index(v);
+            v = _PyNumber_Index(v);
             if (v == NULL)
                 return NULL;
         }
@@ -1646,6 +1646,7 @@ unpackiter_dealloc(unpackiterobject *self)
 static int
 unpackiter_traverse(unpackiterobject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->so);
     Py_VISIT(self->buf.obj);
     return 0;

@@ -58,7 +58,8 @@ class NodeTypes(Enum):
     STRING_TOKEN = 2
     GENERIC_TOKEN = 3
     KEYWORD = 4
-    CUT_OPERATOR = 5
+    SOFT_KEYWORD = 5
+    CUT_OPERATOR = 6
 
 
 BASE_NODETYPES = {
@@ -104,6 +105,7 @@ class CCallMakerVisitor(GrammarVisitor):
         self.non_exact_tokens = non_exact_tokens
         self.cache: Dict[Any, FunctionCall] = {}
         self.keyword_cache: Dict[str, int] = {}
+        self.soft_keywords: Set[str] = set()
 
     def keyword_helper(self, keyword: str) -> FunctionCall:
         if keyword not in self.keyword_cache:
@@ -118,12 +120,13 @@ class CCallMakerVisitor(GrammarVisitor):
         )
 
     def soft_keyword_helper(self, value: str) -> FunctionCall:
+        self.soft_keywords.add(value.replace('"', ""))
         return FunctionCall(
             assigned_variable="_keyword",
             function="_PyPegen_expect_soft_keyword",
             arguments=["p", value],
             return_type="expr_ty",
-            nodetype=NodeTypes.NAME_TOKEN,
+            nodetype=NodeTypes.SOFT_KEYWORD,
             comment=f"soft_keyword='{value}'",
         )
 
@@ -214,6 +217,12 @@ class CCallMakerVisitor(GrammarVisitor):
         if call.nodetype == NodeTypes.NAME_TOKEN:
             return FunctionCall(
                 function=f"_PyPegen_lookahead_with_name",
+                arguments=[positive, call.function, *call.arguments],
+                return_type="int",
+            )
+        elif call.nodetype == NodeTypes.SOFT_KEYWORD:
+            return FunctionCall(
+                function=f"_PyPegen_lookahead_with_string",
                 arguments=[positive, call.function, *call.arguments],
                 return_type="int",
             )
@@ -431,7 +440,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             num_groups = max(groups) + 1 if groups else 1
             for keywords_length in range(num_groups):
                 if keywords_length not in groups.keys():
-                    self.print("NULL,")
+                    self.print("(KeywordToken[]) {{NULL, -1}},")
                 else:
                     self.print("(KeywordToken[]) {")
                     with self.indent():

@@ -163,14 +163,6 @@ Extension types can easily be made to support weak references; see
    application without adding attributes to those objects.  This can be especially
    useful with objects that override attribute accesses.
 
-   .. note::
-
-      Caution: Because a :class:`WeakKeyDictionary` is built on top of a Python
-      dictionary, it must not change size when iterating over it.  This can be
-      difficult to ensure for a :class:`WeakKeyDictionary` because actions
-      performed by the program during iteration may cause items in the
-      dictionary to vanish "by magic" (as a side effect of garbage collection).
-
    .. versionchanged:: 3.9
       Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
 
@@ -191,14 +183,6 @@ than needed.
 
    Mapping class that references values weakly.  Entries in the dictionary will be
    discarded when no strong reference to the value exists any more.
-
-   .. note::
-
-      Caution:  Because a :class:`WeakValueDictionary` is built on top of a Python
-      dictionary, it must not change size when iterating over it.  This can be
-      difficult to ensure for a :class:`WeakValueDictionary` because actions performed
-      by the program during iteration may cause items in the dictionary to vanish "by
-      magic" (as a side effect of garbage collection).
 
    .. versionchanged:: 3.9
       Added support for ``|`` and ``|=`` operators, as specified in :pep:`584`.

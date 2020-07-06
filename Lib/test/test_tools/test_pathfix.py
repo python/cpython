@@ -30,16 +30,18 @@ class TestPathfixFunctional(unittest.TestCase):
         with open(filename, 'w', encoding='utf8') as f:
             f.write(f'{shebang}\n' + 'print("Hello world")\n')
 
+        encoding = sys.getfilesystemencoding()
         proc = subprocess.run(
             [sys.executable, self.script,
              *pathfix_flags, '-n', pathfix_arg],
-            capture_output=True, text=1)
+            env={**os.environ, 'PYTHONIOENCODING': encoding},
+            capture_output=True)
 
         if stdout == '' and proc.returncode == 0:
             stdout = f'{filename}: updating\n'
         self.assertEqual(proc.returncode, exitcode, proc)
-        self.assertEqual(proc.stdout, stdout, proc)
-        self.assertEqual(proc.stderr, stderr, proc)
+        self.assertEqual(proc.stdout.decode(encoding), stdout.replace('\n', os.linesep), proc)
+        self.assertEqual(proc.stderr.decode(encoding), stderr.replace('\n', os.linesep), proc)
 
         with open(filename, 'r', encoding='utf8') as f:
             output = f.read()

@@ -1,5 +1,5 @@
 """Utility code for constructing importers, etc."""
-from . import abc
+from ._abc import Loader
 from ._bootstrap import module_from_spec
 from ._bootstrap import _resolve_name
 from ._bootstrap import spec_from_loader
@@ -263,7 +263,7 @@ class _LazyModule(types.ModuleType):
         delattr(self, attr)
 
 
-class LazyLoader(abc.Loader):
+class LazyLoader(Loader):
 
     """A loader that creates a module which defers loading until attribute access."""
 
