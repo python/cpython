@@ -1,2 +1,2 @@
-Split strings prior to parsing in :func:`sysconfig._parse_makefile` so it
-doesn't expand variables formatted as ``$${variable}``.
+Split strings prior to parsing in `sysconfig._parse_makefile` so it doesn't
+expand variables formatted as ``$${variable}``.

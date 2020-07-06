@@ -302,7 +302,8 @@ def _parse_makefile(filename, vars=None):
 
                 if found:
                     after = value[offset + m.end():]
-                    value = value[:offset + m.start()] + item.replace('$', '$$') + after
+                    value = value[:offset + m.start()] + \
+                            item.replace('$', '$$') + after
                     if "$" in after.replace('$$', ''):
                         notdone[name] = value
                     else:
