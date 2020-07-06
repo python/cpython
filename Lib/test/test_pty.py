@@ -1,4 +1,5 @@
-from test.support import verbose, import_module, reap_children
+from test.support import verbose, reap_children
+from test.support.import_helper import import_module
 
 # Skip these tests if termios is not available
 import_module('termios')
