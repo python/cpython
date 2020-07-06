@@ -114,7 +114,7 @@ accessible.  "Directly accessible" here means that an unqualified reference to a
 name attempts to find the name in the namespace.
 
 Although scopes are determined statically, they are used dynamically. At any
-time during execution, At any time during execution, there are various nested
+time during execution, At any time during execution, there are 3 or 4 nested
 scopes whose namespaces are directly accessible:
 
 * the innermost scope, which is searched first, contains the local names
