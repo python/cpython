@@ -519,7 +519,7 @@ def lru_cache(maxsize=128, typed=False, make_key=None):
         raise TypeError(
             'Expected first argument to be an integer, a callable, or None')
     
-    if not make_key and not callable(make_key):
+    if make_key and not callable(make_key):
         raise TypeError("Expected make_key argument to be a callable, or None")
     
     if make_key and typed:
@@ -547,9 +547,6 @@ def _lru_cache_wrapper(user_function, maxsize, typed, make_key, _CacheInfo):
     root = []                # root of the circular doubly linked list
     root[:] = [root, root, None, None]     # initialize by pointing to self
 
-    if not make_key:
-        make_key = _make_key
-
     if maxsize == 0:
 
         def wrapper(*args, **kwds):
@@ -564,7 +561,10 @@ def _lru_cache_wrapper(user_function, maxsize, typed, make_key, _CacheInfo):
         def wrapper(*args, **kwds):
             # Simple caching without ordering or size limit
             nonlocal hits, misses
-            key = make_key(args, kwds, typed)
+            if make_key:
+                key = make_key(*args, **kwds)
+            else:
+                key = _make_key(args, kwds, typed)
             result = cache_get(key, sentinel)
             if result is not sentinel:
                 hits += 1
@@ -579,7 +579,10 @@ def _lru_cache_wrapper(user_function, maxsize, typed, make_key, _CacheInfo):
         def wrapper(*args, **kwds):
             # Size limited caching that tracks accesses by recency
             nonlocal root, hits, misses, full
-            key = make_key(args, kwds, typed)
+            if make_key:
+                key = make_key(*args, **kwds)
+            else:
+                key = _make_key(args, kwds, typed)
             with lock:
                 link = cache_get(key)
                 if link is not None:
