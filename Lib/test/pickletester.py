@@ -22,10 +22,13 @@ except ImportError:
     _testbuffer = None
 
 from test import support
+from test.support import os_helper
 from test.support import (
-    TestFailed, TESTFN, run_with_locale, no_tracing,
-    _2G, _4G, bigmemtest, forget,
+    TestFailed, run_with_locale, no_tracing,
+    _2G, _4G, bigmemtest
     )
+from test.support.import_helper import forget
+from test.support.os_helper import TESTFN
 from test.support import threading_helper
 from test.support.warnings_helper import save_restore_warnings_filters
 
@@ -3100,7 +3103,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
     def test_load_closed_file(self):
         f = open(TESTFN, "wb")
@@ -3108,7 +3111,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
     def test_load_from_and_dump_to_file(self):
         stream = io.BytesIO()
@@ -3139,7 +3142,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
                 self.assertRaises(TypeError, self.dump, 123, f, proto)
         finally:
             f.close()
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
     def test_incomplete_input(self):
         s = io.BytesIO(b"X''.")

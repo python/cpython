@@ -17,6 +17,7 @@ import importlib.machinery
 import importlib.util
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
+from test.support import import_helper
 from test.support import threading_helper
 from test.support.script_helper import assert_python_failure, assert_python_ok
 try:
@@ -25,7 +26,7 @@ except ImportError:
     _posixsubprocess = None
 
 # Skip this test if the _testcapi module isn't available.
-_testcapi = support.import_module('_testcapi')
+_testcapi = import_helper.import_module('_testcapi')
 
 import _testinternalcapi
 
