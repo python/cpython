@@ -4588,10 +4588,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     comprehension_ty outermost;
     PyObject *qualname = NULL;
     int is_async_generator = 0;
+    int top_level_await = IS_TOP_LEVEL_AWAIT(c);
 
-    if (IS_TOP_LEVEL_AWAIT(c)) {
-        c->u->u_ste->ste_coroutine = 1;
-    }
+
     int is_async_function = c->u->u_ste->ste_coroutine;
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
@@ -4603,7 +4602,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     is_async_generator = c->u->u_ste->ste_coroutine;
 
-    if (is_async_generator && !is_async_function && type != COMP_GENEXP) {
+    if (is_async_generator && !is_async_function && type != COMP_GENEXP  && !top_level_await) {
         compiler_error(c, "asynchronous comprehension outside of "
                           "an asynchronous function");
         goto error_in_scope;
@@ -4642,6 +4641,9 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     qualname = c->u->u_qualname;
     Py_INCREF(qualname);
     compiler_exit_scope(c);
+    if (top_level_await && is_async_generator){
+        c->u->u_ste->ste_coroutine = 1;
+    }
     if (co == NULL)
         goto error;
 
