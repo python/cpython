@@ -658,8 +658,8 @@ PyDoc_STRVAR(_tkinter_tkapp_dispatching__doc__,
 "\n"
 "Returns the internal dispatching state\n"
 "\n"
-"Returns True if the mainloop is running.\n"
-"Returns False if the mainloop is not running.");
+"Returns 0 if the mainloop is running.\n"
+"Returns 1 if the mainloop is not running.");
 
 #define _TKINTER_TKAPP_DISPATCHING_METHODDEF    \
     {"dispatching", (PyCFunction)_tkinter_tkapp_dispatching, METH_NOARGS, _tkinter_tkapp_dispatching__doc__},
@@ -930,4 +930,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=7900bc7b8d8f91b9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=111b16d638d0424b input=a9049054013a1b77]*/

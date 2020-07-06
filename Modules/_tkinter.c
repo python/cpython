@@ -2900,6 +2900,7 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
     PyThreadState *tstate = PyThreadState_Get();
 
     CHECK_TCL_APPARTMENT;
+    int previous_dispatching = self->dispatching;
     self->dispatching = 1;
 
     quitMainLoop = 0;
@@ -2928,13 +2929,13 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
         }
 
         if (PyErr_CheckSignals() != 0) {
-            self->dispatching = 0;
+            self->dispatching = previous_dispatching;
             return NULL;
         }
         if (result < 0)
             break;
     }
-    self->dispatching = 0;
+    self->dispatching = previous_dispatching;
     quitMainLoop = 0;
 
     if (errorInCmd) {
@@ -3087,16 +3088,16 @@ _tkinter.tkapp.dispatching
 
 Returns the internal dispatching state
 
-Returns True if the mainloop is running.
-Returns False if the mainloop is not running.
+Returns 0 if the mainloop is running.
+Returns 1 if the mainloop is not running.
 
 [clinic start generated code]*/
 
 static PyObject *
 _tkinter_tkapp_dispatching_impl(TkappObject *self)
-/*[clinic end generated code: output=1b0192766b008005 input=31efce56f25f6c52]*/
+/*[clinic end generated code: output=1b0192766b008005 input=25c6787f7a5f03f5]*/
 {
-    return PyBool_FromLong(self->dispatching);
+    return PyLong_FromLong(self->dispatching);
 }
 
 /*[clinic input]
