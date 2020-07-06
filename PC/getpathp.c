@@ -118,7 +118,6 @@
 
 static wchar_t prefix[MAXPATHLEN+1];
 static wchar_t progpath[MAXPATHLEN+1];
-static wchar_t dllpath[MAXPATHLEN+1];
 static wchar_t *module_search_path = NULL;
 
 
@@ -494,15 +493,6 @@ get_progpath(void)
     wchar_t *path = _wgetenv(L"PATH");
     wchar_t *prog = Py_GetProgramName();
 
-#ifdef Py_ENABLE_SHARED
-    extern HANDLE PyWin_DLLhModule;
-    /* static init of progpath ensures final char remains \0 */
-    if (PyWin_DLLhModule)
-        if (!GetModuleFileNameW(PyWin_DLLhModule, dllpath, MAXPATHLEN))
-            dllpath[0] = 0;
-#else
-    dllpath[0] = 0;
-#endif
     if (GetModuleFileNameW(NULL, modulepath, MAXPATHLEN)) {
         canonicalize(progpath, modulepath);
         return;
@@ -764,7 +754,11 @@ calculate_path(void)
     }
 
     /* Calculate zip archive path from DLL or exe path */
-    change_ext(zip_path, dllpath[0] ? dllpath : progpath, L".zip");
+    if (!get_dllpath(zip_path)) {
+        change_ext(zip_path, zip_path, L".zip");
+    } else {
+        change_ext(zip_path, progpath, L".zip");
+    }
 
     if (pythonhome == NULL || *pythonhome == '\0') {
         if (zip_path[0] && exists(zip_path)) {
