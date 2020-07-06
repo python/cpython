@@ -525,7 +525,7 @@ _PyPegen_dummy_name(Parser *p, ...)
 static int
 _get_keyword_or_name_type(Parser *p, const char *name, int name_len)
 {
-    assert(name_len != 0);
+    assert(name_len > 0);
     if (name_len >= p->n_keyword_lists ||
         p->keywords[name_len] == NULL ||
         p->keywords[name_len]->type == -1) {
