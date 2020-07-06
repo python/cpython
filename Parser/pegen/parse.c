@@ -9,8 +9,8 @@ extern int Py_DebugFlag;
 #endif
 static const int n_keyword_lists = 15;
 static KeywordToken *reserved_keywords[] = {
-    NULL,
-    NULL,
+    (KeywordToken[]) {{NULL, -1}},
+    (KeywordToken[]) {{NULL, -1}},
     (KeywordToken[]) {
         {"if", 510},
         {"in", 518},
@@ -65,11 +65,11 @@ static KeywordToken *reserved_keywords[] = {
         {"nonlocal", 509},
         {NULL, -1},
     },
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    (KeywordToken[]) {{NULL, -1}},
+    (KeywordToken[]) {{NULL, -1}},
+    (KeywordToken[]) {{NULL, -1}},
+    (KeywordToken[]) {{NULL, -1}},
+    (KeywordToken[]) {{NULL, -1}},
     (KeywordToken[]) {
         {"__peg_parser__", 531},
         {NULL, -1},
