@@ -778,6 +778,7 @@ typedef struct lru_cache_object {
     PyObject *cache;
     Py_ssize_t hits;
     PyObject *func;
+    PyObject *make_key;
     Py_ssize_t maxsize;
     Py_ssize_t misses;
     PyObject *cache_info_type;
@@ -872,7 +873,12 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
 {
     PyObject *result;
     Py_hash_t hash;
-    PyObject *key = lru_cache_make_key(args, kwds, self->typed);
+    PyObject *key;
+    if (self->make_key != Py_None)
+        key = PyObject_Call(self->make_key, args, kwds);
+    else 
+        key = lru_cache_make_key(args, kwds, self->typed);
+
     if (!key)
         return NULL;
     hash = PyObject_Hash(key);
@@ -972,8 +978,11 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     lru_list_elem *link;
     PyObject *key, *result, *testresult;
     Py_hash_t hash;
-
-    key = lru_cache_make_key(args, kwds, self->typed);
+    if (self->make_key != Py_None)
+        key = PyObject_Call(self->make_key, args, kwds);
+    else 
+        key = lru_cache_make_key(args, kwds, self->typed);
+    
     if (!key)
         return NULL;
     hash = PyObject_Hash(key);
@@ -1134,16 +1143,16 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
 static PyObject *
 lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-    PyObject *func, *maxsize_O, *cache_info_type, *cachedict;
+    PyObject *func, *maxsize_O, *cache_info_type, *cachedict, *make_key;
     int typed;
     lru_cache_object *obj;
     Py_ssize_t maxsize;
     PyObject *(*wrapper)(lru_cache_object *, PyObject *, PyObject *);
-    static char *keywords[] = {"user_function", "maxsize", "typed",
+    static char *keywords[] = {"user_function", "maxsize", "typed", "make_key",
                                "cache_info_type", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "OOpO:lru_cache", keywords,
-                                     &func, &maxsize_O, &typed,
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "OOpOO:lru_cache", keywords,
+                                     &func, &maxsize_O, &typed, &make_key,
                                      &cache_info_type)) {
         return NULL;
     }
@@ -1175,6 +1184,11 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    if (make_key != Py_None && !PyCallable_Check(make_key)) {
+        PyErr_SetString(PyExc_TypeError, "the make_key argument must be callable");
+        return NULL; 
+    }
+
     if (!(cachedict = PyDict_New()))
         return NULL;
 
@@ -1188,6 +1202,7 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj->root.next = &obj->root;
     obj->wrapper = wrapper;
     obj->typed = typed;
+    obj->make_key = make_key;
     obj->cache = cachedict;
     Py_INCREF(func);
     obj->func = func;
