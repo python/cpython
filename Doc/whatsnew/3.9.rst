@@ -685,6 +685,10 @@ in nanoseconds.  The benchmarks were measured on an
 running the macOS 64-bit builds found at
 `python.org <https://www.python.org/downloads/mac-osx/>`_.
 
+* A number of Python builtins (:class:`range`, :class:`tuple`, :class:`set`, :class:`frozenset`, :class:`list`, :class:`dict`)
+  are now sped up by using :pep:`590` vectorcall protocol.
+  (Contributed by Dong-hee Na, Mark Shannon, Jeroen Demeyer and Petr Viktorin in :issue:`37207`.)
+
 
 Deprecated
 ==========

@@ -894,16 +894,6 @@ class Generic:
     __slots__ = ()
     _is_protocol = False
 
-    def __new__(cls, *args, **kwds):
-        if cls in (Generic, Protocol):
-            raise TypeError(f"Type {cls.__name__} cannot be instantiated; "
-                            "it can be used only as a base class")
-        if super().__new__ is object.__new__ and cls.__init__ is not object.__init__:
-            obj = super().__new__(cls)
-        else:
-            obj = super().__new__(cls, *args, **kwds)
-        return obj
-
     @_tp_cache
     def __class_getitem__(cls, params):
         if not isinstance(params, tuple):
