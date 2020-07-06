@@ -1521,10 +1521,10 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
         Tcl_Condition cond = NULL;
         PyObject *exc_type, *exc_value, *exc_tb;  
         /* After WaitForMainloop deprecation: 
-        if (!self->dispatching)
+        if (!self->dispatching) {
             PyErr_SetString(PyExc_RuntimeError,
                 "main thread is not in main loop");
-            return NULL; */
+            return NULL; } */
         if (!WaitForMainloop(self))
             return NULL;
         ev = (Tkapp_CallEvent*)attemptckalloc(sizeof(Tkapp_CallEvent));
@@ -1803,10 +1803,10 @@ var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
            completion. */
 
         /* After WaitForMainloop deprecation: 
-        if (!self->dispatching)
+        if (!self->dispatching) {
             PyErr_SetString(PyExc_RuntimeError,
                 "main thread is not in main loop");
-            return NULL; */
+            return NULL; } */
         if (!WaitForMainloop(self))
             return NULL;
 
@@ -2509,10 +2509,10 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
 
     /*After WaitForMainloop deprecation:
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread() &&
-        !self->dispatching)
+        !self->dispatching) {
         PyErr_SetString(PyExc_RuntimeError,
             "main thread is not in main loop");
-        return NULL; */
+        return NULL; } */
     if (self->threaded && self->thread_id != Tcl_GetCurrentThread() &&
         !WaitForMainloop(self))
         return NULL;
