@@ -485,6 +485,7 @@ def _default_mime_types():
         '.snd'    : 'audio/basic',
         '.mp3'    : 'audio/mpeg',
         '.mp2'    : 'audio/mpeg',
+        '.weba'   : 'audio/webm',
         '.aif'    : 'audio/x-aiff',
         '.aifc'   : 'audio/x-aiff',
         '.aiff'   : 'audio/x-aiff',

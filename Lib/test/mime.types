@@ -1401,6 +1401,7 @@ application/x-xpinstall				xpi
 application/x-xspf+xml				xspf
 application/x-xz				xz
 audio/midi					mid midi kar
+audio/webm					weba
 audio/x-aiff					aif aiff aifc
 audio/x-annodex					axa
 audio/x-flac					flac
