@@ -9,13 +9,14 @@ import tempfile
 import unittest
 
 from test import support
+from test.support import os_helper
 
 
 def without_source_date_epoch(fxn):
     """Runs function with SOURCE_DATE_EPOCH unset."""
     @functools.wraps(fxn)
     def wrapper(*args, **kwargs):
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env.unset('SOURCE_DATE_EPOCH')
             return fxn(*args, **kwargs)
     return wrapper
@@ -25,7 +26,7 @@ def with_source_date_epoch(fxn):
     """Runs function with SOURCE_DATE_EPOCH set."""
     @functools.wraps(fxn)
     def wrapper(*args, **kwargs):
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env['SOURCE_DATE_EPOCH'] = '123456789'
             return fxn(*args, **kwargs)
     return wrapper
