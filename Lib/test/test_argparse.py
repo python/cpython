@@ -2022,7 +2022,7 @@ class TestAddSubparsers(TestCase):
             self.parser.parse_known_args(['0.5', '--opt="with space"']),
             (NS(foo=False, bar=0.5), ['--opt="with space"']),
         )
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             ArgumentParserError,
             "invalid choice: '--opt with space'",
             self.parser.parse_known_args,
