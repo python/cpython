@@ -1248,7 +1248,7 @@ class ThreadExecutionTests (unittest.TestCase):
         thread = threading.Thread (target = target)
         thread.start ()
         thread.join ()
-        
+
         if callable:
             self.assertTrue (target.ran)
         else:
