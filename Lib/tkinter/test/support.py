@@ -19,7 +19,6 @@ class AbstractTkTest:
             cls.root.wm_attributes('-zoomed', False)
         except tkinter.TclError:
             pass
-        cls.root.focus_force()
 
     @classmethod
     def tearDownClass(cls):

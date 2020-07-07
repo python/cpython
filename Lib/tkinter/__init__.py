@@ -1437,7 +1437,12 @@ class Misc:
         return self.tk.dispatching()
 
     def quit(self):
-        """Quit the Tcl interpreter. All widgets will be destroyed."""
+        """Signal the Tkinter mainloop to stop dispatching.
+
+        The mainloop will exit AFTER THE NEXT Tcl event handler is called.
+        If no events are forthcoming, mainloop will hang even if quit
+        has been called. In this case, call after(0, quit).
+        """
         self.tk.quit()
 
     def _getints(self, string):

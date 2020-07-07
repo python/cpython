@@ -255,7 +255,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
                 else:  # if not break
                     thread_dispatching_eventually = False
             finally:
-                root.quit()
+                root.after(0, root.quit)
 
         root = self.root
 
