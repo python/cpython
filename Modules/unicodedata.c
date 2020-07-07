@@ -26,6 +26,18 @@ _Py_IDENTIFIER(NFD);
 _Py_IDENTIFIER(NFKC);
 _Py_IDENTIFIER(NFKD);
 
+typedef struct {
+    PyTypeObject *ucd_type;
+} UnicodeDataState;
+
+static inline UnicodeDataState*
+unicodedata_get_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (UnicodeDataState *)state;
+}
+
 /*[clinic input]
 module unicodedata
 class unicodedata.UCD 'PreviousDBVersion *' '&UCD_Type'
@@ -90,22 +102,28 @@ static PyMemberDef DB_members[] = {
         {NULL}
 };
 
-/* forward declaration */
-static PyTypeObject UCD_Type;
-#define UCD_Check(o) Py_IS_TYPE(o, &UCD_Type)
+inline int UCD_Check(PyObject *o)
+{
+    UnicodeDataState *state;
+    state = PyType_GetModuleState(Py_TYPE(o));
+    return Py_IS_TYPE(o, state->ucd_type);
+}
 
 static PyObject*
-new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4),
+new_previous_version(PyObject *module, const char*name, const change_record* (*getrecord)(Py_UCS4),
                      Py_UCS4 (*normalization)(Py_UCS4))
 {
-        PreviousDBVersion *self;
-        self = PyObject_New(PreviousDBVersion, &UCD_Type);
-        if (self == NULL)
-                return NULL;
-        self->name = name;
-        self->getrecord = getrecord;
-        self->normalization = normalization;
-        return (PyObject*)self;
+    UnicodeDataState* st;
+    PreviousDBVersion *self;
+
+    st = unicodedata_get_state(module);
+    self = PyObject_New(PreviousDBVersion, st->ucd_type);
+    if (self == NULL)
+        return NULL;
+    self->name = name;
+    self->getrecord = getrecord;
+    self->normalization = normalization;
+    return (PyObject*)self;
 }
 
 
@@ -1384,50 +1402,19 @@ static PyMethodDef unicodedata_functions[] = {
     {NULL, NULL}                /* sentinel */
 };
 
-static PyTypeObject UCD_Type = {
-        /* The ob_type field must be initialized in the module init function
-         * to be portable to Windows without using C++. */
-        PyVarObject_HEAD_INIT(NULL, 0)
-        "unicodedata.UCD",              /*tp_name*/
-        sizeof(PreviousDBVersion),      /*tp_basicsize*/
-        0,                      /*tp_itemsize*/
-        /* methods */
-        (destructor)PyObject_Del, /*tp_dealloc*/
-        0,                      /*tp_vectorcall_offset*/
-        0,                      /*tp_getattr*/
-        0,                      /*tp_setattr*/
-        0,                      /*tp_as_async*/
-        0,                      /*tp_repr*/
-        0,                      /*tp_as_number*/
-        0,                      /*tp_as_sequence*/
-        0,                      /*tp_as_mapping*/
-        0,                      /*tp_hash*/
-        0,                      /*tp_call*/
-        0,                      /*tp_str*/
-        PyObject_GenericGetAttr,/*tp_getattro*/
-        0,                      /*tp_setattro*/
-        0,                      /*tp_as_buffer*/
-        Py_TPFLAGS_DEFAULT,     /*tp_flags*/
-        0,                      /*tp_doc*/
-        0,                      /*tp_traverse*/
-        0,                      /*tp_clear*/
-        0,                      /*tp_richcompare*/
-        0,                      /*tp_weaklistoffset*/
-        0,                      /*tp_iter*/
-        0,                      /*tp_iternext*/
-        unicodedata_functions,  /*tp_methods*/
-        DB_members,             /*tp_members*/
-        0,                      /*tp_getset*/
-        0,                      /*tp_base*/
-        0,                      /*tp_dict*/
-        0,                      /*tp_descr_get*/
-        0,                      /*tp_descr_set*/
-        0,                      /*tp_dictoffset*/
-        0,                      /*tp_init*/
-        0,                      /*tp_alloc*/
-        0,                      /*tp_new*/
-        0,                      /*tp_free*/
-        0,                      /*tp_is_gc*/
+static PyType_Slot unicodedata_ucd_type_slots[] = {
+    {Py_tp_dealloc, PyObject_Del},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_methods, unicodedata_functions},
+    {Py_tp_members, DB_members},
+    {0,0}
+};
+
+static PyType_Spec unicodedata_ucd_type_spec = {
+    .name = "unicodedata.UCD",
+    .basicsize = sizeof(PreviousDBVersion),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = unicodedata_ucd_type_slots
 };
 
 PyDoc_STRVAR(unicodedata_docstring,
@@ -1439,35 +1426,28 @@ this database is based on the UnicodeData.txt file version\n\
 The module uses the same names and symbols as defined by the\n\
 UnicodeData File Format " UNIDATA_VERSION ".");
 
-static struct PyModuleDef unicodedatamodule = {
-        PyModuleDef_HEAD_INIT,
-        "unicodedata",
-        unicodedata_docstring,
-        -1,
-        unicodedata_functions,
-        NULL,
-        NULL,
-        NULL,
-        NULL
-};
-
-PyMODINIT_FUNC
-PyInit_unicodedata(void)
+static int unicodedata_exec(PyObject *m)
 {
-    PyObject *m, *v;
+    PyObject *v;
+    UnicodeDataState* st;
 
-    Py_SET_TYPE(&UCD_Type, &PyType_Type);
+    st = unicodedata_get_state(m);
 
-    m = PyModule_Create(&unicodedatamodule);
-    if (!m)
-        return NULL;
+    st->ucd_type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &unicodedata_ucd_type_spec, NULL);
+    if (st->ucd_type == NULL) {
+        return -1;
+    }
 
     PyModule_AddStringConstant(m, "unidata_version", UNIDATA_VERSION);
-    Py_INCREF(&UCD_Type);
-    PyModule_AddObject(m, "UCD", (PyObject*)&UCD_Type);
+    
+    Py_INCREF(st->ucd_type);
+    if (PyModule_AddObject(m, "UCD", (PyObject*)st->ucd_type) < 0) {
+        Py_DECREF(st->ucd_type);
+        return -1;
+    }
 
     /* Previous versions */
-    v = new_previous_version("3.2.0", get_change_3_2_0, normalization_3_2_0);
+    v = new_previous_version(m, "3.2.0", get_change_3_2_0, normalization_3_2_0);
     if (v != NULL)
         PyModule_AddObject(m, "ucd_3_2_0", v);
 
@@ -1475,7 +1455,26 @@ PyInit_unicodedata(void)
     v = PyCapsule_New((void *)&hashAPI, PyUnicodeData_CAPSULE_NAME, NULL);
     if (v != NULL)
         PyModule_AddObject(m, "ucnhash_CAPI", v);
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot unicodedata_slots[] = {
+    {Py_mod_exec, unicodedata_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef unicodedata_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "unicodedata",
+    .m_size = sizeof(UnicodeDataState),
+    .m_methods = unicodedata_functions,
+    .m_slots = unicodedata_slots,
+};
+
+PyMODINIT_FUNC
+PyInit_unicodedata(void)
+{
+    return PyModuleDef_Init(&unicodedata_module);
 }
 
 /*
