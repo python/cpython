@@ -186,6 +186,80 @@ done:
     return status;
 }
 
+PyObject *
+_PyPathConfig_AsDict(void)
+{
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+#define SET_ITEM(KEY, EXPR) \
+        do { \
+            PyObject *obj = (EXPR); \
+            if (obj == NULL) { \
+                goto fail; \
+            } \
+            int res = PyDict_SetItemString(dict, KEY, obj); \
+            Py_DECREF(obj); \
+            if (res < 0) { \
+                goto fail; \
+            } \
+        } while (0)
+#define SET_ITEM_STR(KEY) \
+        SET_ITEM(#KEY, \
+            (_Py_path_config.KEY \
+             ? PyUnicode_FromWideChar(_Py_path_config.KEY, -1) \
+             : (Py_INCREF(Py_None), Py_None)))
+#define SET_ITEM_INT(KEY) \
+        SET_ITEM(#KEY, PyLong_FromLong(_Py_path_config.KEY))
+
+    SET_ITEM_STR(program_full_path);
+    SET_ITEM_STR(prefix);
+    SET_ITEM_STR(exec_prefix);
+    SET_ITEM_STR(module_search_path);
+    SET_ITEM_STR(program_name);
+    SET_ITEM_STR(home);
+#ifdef MS_WINDOWS
+    SET_ITEM_INT(isolated);
+    SET_ITEM_INT(site_import);
+    SET_ITEM_STR(base_executable);
+
+    {
+        wchar_t py3path[MAX_PATH];
+        HMODULE hPython3 = GetModuleHandleW(PY3_DLLNAME);
+        PyObject *obj;
+        if (hPython3
+            && GetModuleFileNameW(hPython3, py3path, Py_ARRAY_LENGTH(py3path)))
+        {
+            obj = PyUnicode_FromWideChar(py3path, -1);
+            if (obj == NULL) {
+                goto fail;
+            }
+        }
+        else {
+            obj = Py_None;
+            Py_INCREF(obj);
+        }
+        if (PyDict_SetItemString(dict, "python3_dll", obj) < 0) {
+            Py_DECREF(obj);
+            goto fail;
+        }
+        Py_DECREF(obj);
+    }
+#endif
+
+#undef SET_ITEM
+#undef SET_ITEM_STR
+#undef SET_ITEM_INT
+
+    return dict;
+
+fail:
+    Py_DECREF(dict);
+    return NULL;
+}
+
 
 PyStatus
 _PyConfig_WritePathConfig(const PyConfig *config)

@@ -868,9 +868,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
 static PyObject *
 config_as_dict(const PyConfig *config)
 {
-    PyObject *dict;
-
-    dict = PyDict_New();
+    PyObject *dict = PyDict_New();
     if (dict == NULL) {
         return NULL;
     }
@@ -2639,6 +2637,16 @@ _Py_GetConfigsAsDict(void)
         goto error;
     }
     if (PyDict_SetItemString(result, "config", dict) < 0) {
+        goto error;
+    }
+    Py_CLEAR(dict);
+
+    /* path config */
+    dict = _PyPathConfig_AsDict();
+    if (dict == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(result, "path_config", dict) < 0) {
         goto error;
     }
     Py_CLEAR(dict);
