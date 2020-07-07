@@ -242,7 +242,10 @@ class AutoCompleteTest(unittest.TestCase):
             self.assertEqual(s, ['a', 'b'])
             self.assertIn('__name__', b)  # From __main__.__dict__.
             self.assertIn('sum', b)       # From __main__.__builtins__.__dict__.
-            self.assertIn('and', b)       # From keyword.kwlist.
+            self.assertNotIn('pass', b)   # Exclude keywords <= 4.
+            self.assertIn('async', b)     # Include keywords >= 5.
+            pos = b.index('False')        # Test False not included twice.
+            self.assertNotEqual(b[pos+1], 'False')
 
         # Test attributes with name entity.
         mock = Mock()

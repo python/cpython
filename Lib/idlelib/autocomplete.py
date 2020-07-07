@@ -172,11 +172,13 @@ class AutoComplete:
                                      (what, mode), {})
         else:
             if mode == ATTRS:
-                if what == "":
+                if what == "":  # Main module names.
                     namespace = {**__main__.__builtins__.__dict__,
                                  **__main__.__dict__}
                     bigl = eval("dir()", namespace)
-                    bigl.extend(keyword.kwlist)
+                    key5 = (s for s in keyword.kwlist
+                            if len(s) >= 5 and s != 'False')
+                    bigl.extend(key5)
                     bigl.sort()
                     if "__all__" in bigl:
                         smalll = sorted(eval("__all__", namespace))
