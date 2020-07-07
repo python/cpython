@@ -102,7 +102,9 @@ static PyMemberDef DB_members[] = {
         {NULL}
 };
 
-#define UCD_Check(o) PyModule_Check(o) ? 0 : 1
+static inline int UCD_Check(PyObject *o) {
+    return PyModule_Check(o) ? 0 : 1;
+}
 
 static PyObject*
 new_previous_version(PyObject *module, const char*name, const change_record* (*getrecord)(Py_UCS4),
