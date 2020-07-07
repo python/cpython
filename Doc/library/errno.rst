@@ -29,15 +29,24 @@ defined by the module.  The specific list of defined symbols is available as
 
    Operation not permitted
 
+   .. seealso::
+      This error is mapped to the exception :exc:`PermissionError`.
+
 
 .. data:: ENOENT
 
    No such file or directory
 
+   .. seealso::
+      This error is mapped to the exception :exc:`FileNotFoundError`.
+
 
 .. data:: ESRCH
 
    No such process
+
+   .. seealso::
+      This error is mapped to the exception :exc:`ProcessLookupError`.
 
 
 .. data:: EINTR
@@ -77,10 +86,16 @@ defined by the module.  The specific list of defined symbols is available as
 
    No child processes
 
+   .. seealso::
+      This error is mapped to the exception :exc:`ChildProcessError`.
+
 
 .. data:: EAGAIN
 
    Try again
+
+   .. seealso::
+      This error is mapped to the exception :exc:`BlockingIOError`.
 
 
 .. data:: ENOMEM
@@ -91,6 +106,9 @@ defined by the module.  The specific list of defined symbols is available as
 .. data:: EACCES
 
    Permission denied
+
+   .. seealso::
+      This error is mapped to the exception :exc:`PermissionError`.
 
 
 .. data:: EFAULT
@@ -112,6 +130,9 @@ defined by the module.  The specific list of defined symbols is available as
 
    File exists
 
+   .. seealso::
+      This error is mapped to the exception :exc:`FileExistsError`.
+
 
 .. data:: EXDEV
 
@@ -127,10 +148,16 @@ defined by the module.  The specific list of defined symbols is available as
 
    Not a directory
 
+   .. seealso::
+      This error is mapped to the exception :exc:`NotADirectoryError`.
+
 
 .. data:: EISDIR
 
    Is a directory
+
+   .. seealso::
+      This error is mapped to the exception :exc:`IsADirectoryError`.
 
 
 .. data:: EINVAL
@@ -187,6 +214,9 @@ defined by the module.  The specific list of defined symbols is available as
 
    Broken pipe
 
+   .. seealso::
+      This error is mapped to the exception :exc:`BrokenPipeError`.
+
 
 .. data:: EDOM
 
@@ -231,6 +261,9 @@ defined by the module.  The specific list of defined symbols is available as
 .. data:: EWOULDBLOCK
 
    Operation would block
+
+   .. seealso::
+      This error is mapped to the exception :exc:`BlockingIOError`.
 
 
 .. data:: ENOMSG
@@ -542,10 +575,16 @@ defined by the module.  The specific list of defined symbols is available as
 
    Software caused connection abort
 
+   .. seealso::
+      This error is mapped to the exception :exc:`ConnectionAbortedError`.
+
 
 .. data:: ECONNRESET
 
    Connection reset by peer
+
+   .. seealso::
+      This error is mapped to the exception :exc:`ConnectionResetError`.
 
 
 .. data:: ENOBUFS
@@ -567,6 +606,9 @@ defined by the module.  The specific list of defined symbols is available as
 
    Cannot send after transport endpoint shutdown
 
+   .. seealso::
+      This error is mapped to the exception :exc:`BrokenPipeError`.
+
 
 .. data:: ETOOMANYREFS
 
@@ -577,10 +619,16 @@ defined by the module.  The specific list of defined symbols is available as
 
    Connection timed out
 
+   .. seealso::
+      This error is mapped to the exception :exc:`TimeoutError`.
+
 
 .. data:: ECONNREFUSED
 
    Connection refused
+
+   .. seealso::
+      This error is mapped to the exception :exc:`ConnectionRefusedError`.
 
 
 .. data:: EHOSTDOWN
@@ -597,10 +645,16 @@ defined by the module.  The specific list of defined symbols is available as
 
    Operation already in progress
 
+   .. seealso::
+      This error is mapped to the exception :exc:`BlockingIOError`.
+
 
 .. data:: EINPROGRESS
 
    Operation now in progress
+
+   .. seealso::
+      This error is mapped to the exception :exc:`BlockingIOError`.
 
 
 .. data:: ESTALE
