@@ -338,12 +338,11 @@ new_overlapped(PyObject *module, HANDLE handle)
 {
     OverlappedObject *self;
 
-    WinApiState *st;
-    st = winapi_get_state(module);
-
+    WinApiState *st = winapi_get_state(module);
     self = PyObject_New(OverlappedObject, st->overlapped_type);
     if (!self)
         return NULL;
+
     self->handle = handle;
     self->read_buffer = NULL;
     self->pending = 0;
@@ -1912,23 +1911,23 @@ static PyMethodDef winapi_functions[] = {
 };
 
 #define WINAPI_CONSTANT(fmt, con) \
-    PyDict_SetItemString(d, #con, Py_BuildValue(fmt, con))
+    if (PyDict_SetItemString(d, #con, Py_BuildValue(fmt, con)) < 0) return -1
 
 static int winapi_exec(PyObject *m)
 {
-    PyObject *d;
-    WinApiState *st;
-
-    st = winapi_get_state(m);
+    WinApiState *st = winapi_get_state(m);
 
     st->overlapped_type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &winapi_overlapped_type_spec, NULL);
     if (st->overlapped_type == NULL) {
         return -1;
     }
 
-    d = PyModule_GetDict(m);
+    if (PyModule_AddObject(m, "Overlapped", (PyObject *)st->overlapped_type) < 0) {
+        Py_DECREF(st->overlapped_type);
+        return -1;
+    }
 
-    PyDict_SetItemString(d, "Overlapped", (PyObject *) st->overlapped_type);
+    PyObject *d = PyModule_GetDict(m);
 
     /* constants */
     WINAPI_CONSTANT(F_DWORD, CREATE_NEW_CONSOLE);
