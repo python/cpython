@@ -1231,14 +1231,14 @@ class ThreadExecutionTests (unittest.TestCase):
     def setUp (self):
         self.save = threading.excepthook
         threading.excepthook = self.excepthook
-    
+
     def tearDown (self):
         threading.excepthook = self.save
-    
+
     def excepthook (self, args):
         self.exception_happened = True
         self.save (args)
-    
+
     def run_target (self, boolean, callable):
         self.exception_happened = False
         if callable:
@@ -1253,20 +1253,20 @@ class ThreadExecutionTests (unittest.TestCase):
             self.assertTrue (target.ran)
         else:
             self.assertTrue (self.exception_happened)
-    
+
     def test_targets (self):
         self.run_target (False, False)
         self.run_target (False, True)
         self.run_target (True, False)
         self.run_target (True, True)
-    
+
     def test_none (self):
         self.exception_happened = False
         thread = threading.Thread (target = None)
         thread.start ()
         thread.join ()
         self.assertFalse (self.exception_happened)
-        
+
 
 
 class ThreadRunFail(threading.Thread):
