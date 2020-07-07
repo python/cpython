@@ -3,6 +3,8 @@ Released on 2020-10-05?
 ======================================
 
 
+bpo-37765: Add longer keywords (len >= 5) to tab completion list.
+
 bpo-41152: The encoding of ``stdin``, ``stdout`` and ``stderr`` in IDLE
 is now always UTF-8.
 
