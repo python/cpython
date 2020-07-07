@@ -249,3 +249,6 @@ Removed
 * Removed ``PyUnicode_AsUnicodeCopy()``. Please use :c:func:`PyUnicode_AsUCS4Copy` or
   :c:func:`PyUnicode_AsWideCharString`
   (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed docs for the deprecated and removed ``symbol.sym_name``.
+  (Contributed by Joannah Nanjekye in :issue:`41103`.)
