@@ -1,1 +1,0 @@
-A minor typo fix in the description of calendar.monthcalendar()
