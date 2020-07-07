@@ -127,7 +127,7 @@ class SpawnTestCase(support.TempdirManager,
     def test_spawn_missing_exe(self):
         with self.assertRaises(DistutilsExecError) as ctx:
             spawn(['does-not-exist'])
-            assert 'command does-no-exist failed' in str(ctx)
+        self.assertIn("command 'does-not-exist' failed", str(ctx.exception))
 
 
 def test_suite():
