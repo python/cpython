@@ -431,10 +431,8 @@ get_progpath(void)
     wchar_t *path = _wgetenv(L"PATH");
     wchar_t *prog = Py_GetProgramName();
 
-    if (GetModuleFileNameW(NULL, modulepath, MAXPATHLEN)) {
-        canonicalize(progpath, modulepath);
+    if (GetModuleFileNameW(NULL, progpath, MAXPATHLEN))
         return;
-    }
     if (prog == NULL || *prog == '\0')
         prog = L"python";
 
