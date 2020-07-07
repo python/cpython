@@ -102,12 +102,7 @@ static PyMemberDef DB_members[] = {
         {NULL}
 };
 
-inline int UCD_Check(PyObject *o)
-{
-    UnicodeDataState *state;
-    state = PyType_GetModuleState(Py_TYPE(o));
-    return Py_IS_TYPE(o, state->ucd_type);
-}
+#define UCD_Check(o) PyModule_Check(o) ? 0 : 1
 
 static PyObject*
 new_previous_version(PyObject *module, const char*name, const change_record* (*getrecord)(Py_UCS4),
@@ -1439,7 +1434,7 @@ static int unicodedata_exec(PyObject *m)
     }
 
     PyModule_AddStringConstant(m, "unidata_version", UNIDATA_VERSION);
-    
+
     Py_INCREF(st->ucd_type);
     if (PyModule_AddObject(m, "UCD", (PyObject*)st->ucd_type) < 0) {
         Py_DECREF(st->ucd_type);
