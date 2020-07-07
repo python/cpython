@@ -251,4 +251,4 @@ Removed
   (Contributed by Inada Naoki in :issue:`41103`.)
 
 * Removed docs for the deprecated and removed ``symbol.sym_name``.
-  (Contributed by Joannah Nanjekye in :issue:`41103`.)
+  (Contributed by Joannah Nanjekye in :issue:`41234`.)
