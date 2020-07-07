@@ -76,17 +76,12 @@ main(int argc, char *argv[])
     }
     text[text_size] = '\0';
 
-    PyStatus status;
     PyConfig config;
-
-    status = PyConfig_InitIsolatedConfig(&config);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitIsolatedConfig(&config);
 
     config.site_import = 0;
 
+    PyStatus status;
     status = PyConfig_SetString(&config, &config.program_name,
                                 L"./_freeze_importlib");
     if (PyStatus_Exception(status)) {

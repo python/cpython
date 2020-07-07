@@ -1,0 +1,2 @@
+Fix invalid memory read in the new parser when checking newlines in string
+literals. Patch by Pablo Galindo.

@@ -979,7 +979,7 @@ class _TestMboxMMDF(_TestSingleFile):
         super().tearDown()
         self._box.close()
         self._delete_recursively(self._path)
-        for lock_remnant in glob.glob(self._path + '.*'):
+        for lock_remnant in glob.glob(glob.escape(self._path) + '.*'):
             support.unlink(lock_remnant)
 
     def assertMailboxEmpty(self):
@@ -1092,7 +1092,7 @@ class _TestMboxMMDF(_TestSingleFile):
             # Signal the child it can now release the lock and exit.
             p.send(b'p')
             # Wait for child to exit.  Locking should now succeed.
-            exited_pid, status = os.waitpid(pid, 0)
+            support.wait_process(pid, exitcode=0)
 
         self._box.lock()
         self._box.unlock()
@@ -1311,7 +1311,7 @@ class TestBabyl(_TestSingleFile, unittest.TestCase):
         super().tearDown()
         self._box.close()
         self._delete_recursively(self._path)
-        for lock_remnant in glob.glob(self._path + '.*'):
+        for lock_remnant in glob.glob(glob.escape(self._path) + '.*'):
             support.unlink(lock_remnant)
 
     def test_labels(self):

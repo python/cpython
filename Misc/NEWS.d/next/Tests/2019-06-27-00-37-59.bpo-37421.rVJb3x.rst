@@ -1,1 +1,0 @@
-Fix test_shutil to no longer leak temporary files.

@@ -1,7 +1,9 @@
 /* Range object implementation */
 
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "structmember.h"         // PyMemberDef
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
 
@@ -17,6 +19,8 @@ typedef struct {
     PyObject *step;
     PyObject *length;
 } rangeobject;
+
+_Py_IDENTIFIER(iter);
 
 /* Helper function for validating step.  Always returns a new reference or
    NULL on error.
@@ -69,56 +73,84 @@ make_range_object(PyTypeObject *type, PyObject *start,
    range(0, 5, -1)
 */
 static PyObject *
-range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+range_from_array(PyTypeObject *type, PyObject *const *args, Py_ssize_t num_args)
 {
     rangeobject *obj;
     PyObject *start = NULL, *stop = NULL, *step = NULL;
 
-    if (!_PyArg_NoKeywords("range", kw))
-        return NULL;
-
-    if (PyTuple_Size(args) <= 1) {
-        if (!PyArg_UnpackTuple(args, "range", 1, 1, &stop))
+    switch (num_args) {
+        case 3:
+            step = args[2];
+            /* fallthrough */
+        case 2:
+            /* Convert borrowed refs to owned refs */
+            start = PyNumber_Index(args[0]);
+            if (!start) {
+                return NULL;
+            }
+            stop = PyNumber_Index(args[1]);
+            if (!stop) {
+                Py_DECREF(start);
+                return NULL;
+            }
+            step = validate_step(step);  /* Caution, this can clear exceptions */
+            if (!step) {
+                Py_DECREF(start);
+                Py_DECREF(stop);
+                return NULL;
+            }
+            break;
+        case 1:
+            stop = PyNumber_Index(args[0]);
+            if (!stop) {
+                return NULL;
+            }
+            Py_INCREF(_PyLong_Zero);
+            start = _PyLong_Zero;
+            Py_INCREF(_PyLong_One);
+            step = _PyLong_One;
+            break;
+        case 0:
+            PyErr_SetString(PyExc_TypeError,
+                            "range expected at least 1 argument, got 0");
             return NULL;
-        stop = PyNumber_Index(stop);
-        if (!stop)
+        default:
+            PyErr_Format(PyExc_TypeError,
+                         "range expected at most 3 arguments, got %zd",
+                         num_args);
             return NULL;
-        Py_INCREF(_PyLong_Zero);
-        start = _PyLong_Zero;
-        Py_INCREF(_PyLong_One);
-        step = _PyLong_One;
     }
-    else {
-        if (!PyArg_UnpackTuple(args, "range", 2, 3,
-                               &start, &stop, &step))
-            return NULL;
-
-        /* Convert borrowed refs to owned refs */
-        start = PyNumber_Index(start);
-        if (!start)
-            return NULL;
-        stop = PyNumber_Index(stop);
-        if (!stop) {
-            Py_DECREF(start);
-            return NULL;
-        }
-        step = validate_step(step);    /* Caution, this can clear exceptions */
-        if (!step) {
-            Py_DECREF(start);
-            Py_DECREF(stop);
-            return NULL;
-        }
-    }
-
     obj = make_range_object(type, start, stop, step);
-    if (obj != NULL)
+    if (obj != NULL) {
         return (PyObject *) obj;
+    }
 
     /* Failed to create object, release attributes */
     Py_DECREF(start);
     Py_DECREF(stop);
     Py_DECREF(step);
     return NULL;
+}
+
+static PyObject *
+range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+{
+    if (!_PyArg_NoKeywords("range", kw))
+        return NULL;
+
+    return range_from_array(type, _PyTuple_ITEMS(args), PyTuple_GET_SIZE(args));
+}
+
+
+static PyObject *
+range_vectorcall(PyTypeObject *type, PyObject *const *args,
+                 size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_NoKwnames("range", kwnames)) {
+        return NULL;
+    }
+    return range_from_array(type, args, nargs);
 }
 
 PyDoc_STRVAR(range_doc,
@@ -600,7 +632,7 @@ range_reduce(rangeobject *r, PyObject *args)
 static PyObject *
 range_subscript(rangeobject* self, PyObject* item)
 {
-    if (PyIndex_Check(item)) {
+    if (_PyIndex_Check(item)) {
         PyObject *i, *result;
         i = PyNumber_Index(item);
         if (!i)
@@ -614,7 +646,7 @@ range_subscript(rangeobject* self, PyObject* item)
     }
     PyErr_Format(PyExc_TypeError,
                  "range indices must be integers or slices, not %.200s",
-                 item->ob_type->tp_name);
+                 Py_TYPE(item)->tp_name);
     return NULL;
 }
 
@@ -702,6 +734,7 @@ PyTypeObject PyRange_Type = {
         0,                      /* tp_init */
         0,                      /* tp_alloc */
         range_new,              /* tp_new */
+        .tp_vectorcall = (vectorcallfunc)range_vectorcall
 };
 
 /*********************** range Iterator **************************/
@@ -742,7 +775,6 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     PyObject *start=NULL, *stop=NULL, *step=NULL;
     PyObject *range;
 
@@ -900,7 +932,6 @@ longrangeiter_len(longrangeiterobject *r, PyObject *no_args)
 static PyObject *
 longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     PyObject *product, *stop=NULL;
     PyObject *range;
 

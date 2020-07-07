@@ -1,1 +1,0 @@
-:func:`threading.get_native_id` now also supports NetBSD.

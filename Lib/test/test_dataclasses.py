@@ -10,6 +10,7 @@ import builtins
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
+from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple
 from functools import total_ordering
 
@@ -43,6 +44,25 @@ class TestCase(unittest.TestCase):
 
         o = C(42)
         self.assertEqual(o.x, 42)
+
+    def test_field_default_default_factory_error(self):
+        msg = "cannot specify both default and default_factory"
+        with self.assertRaisesRegex(ValueError, msg):
+            @dataclass
+            class C:
+                x: int = field(default=1, default_factory=int)
+
+    def test_field_repr(self):
+        int_field = field(default=1, init=True, repr=False)
+        int_field.name = "id"
+        repr_output = repr(int_field)
+        expected_output = "Field(name='id',type=None," \
+                           f"default=1,default_factory={MISSING!r}," \
+                           "init=True,repr=False,hash=None," \
+                           "compare=True,metadata=mappingproxy({})," \
+                           "_field_type=None)"
+
+        self.assertEqual(repr_output, expected_output)
 
     def test_named_init_params(self):
         @dataclass
@@ -1102,6 +1122,8 @@ class TestCase(unittest.TestCase):
 
         # Make sure the repr is correct.
         self.assertEqual(repr(InitVar[int]), 'dataclasses.InitVar[int]')
+        self.assertEqual(repr(InitVar[List[int]]),
+                         'dataclasses.InitVar[typing.List[int]]')
 
     def test_init_var_inheritance(self):
         # Note that this deliberately tests that a dataclass need not
@@ -1299,6 +1321,32 @@ class TestCase(unittest.TestCase):
         self.assertFalse(is_dataclass(c.x))
         self.assertTrue(is_dataclass(d.d))
         self.assertFalse(is_dataclass(d.e))
+
+    def test_is_dataclass_when_getattr_always_returns(self):
+        # See bpo-37868.
+        class A:
+            def __getattr__(self, key):
+                return 0
+        self.assertFalse(is_dataclass(A))
+        a = A()
+
+        # Also test for an instance attribute.
+        class B:
+            pass
+        b = B()
+        b.__dataclass_fields__ = []
+
+        for obj in a, b:
+            with self.subTest(obj=obj):
+                self.assertFalse(is_dataclass(obj))
+
+                # Indirect tests for _is_dataclass_instance().
+                with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+                    asdict(obj)
+                with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+                    astuple(obj)
+                with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+                    replace(obj, x=0)
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,
@@ -1980,7 +2028,7 @@ class TestDocString(unittest.TestCase):
         class C:
             x: Union[int, type(None)] = None
 
-        self.assertDocStrEqual(C.__doc__, "C(x:Union[int, NoneType]=None)")
+        self.assertDocStrEqual(C.__doc__, "C(x:Optional[int]=None)")
 
     def test_docstring_list_field(self):
         @dataclass
@@ -2897,6 +2945,17 @@ class TestStringAnnotations(unittest.TestCase):
                     # iv4 is interpreted as an InitVar, so it
                     # won't exist on the instance.
                     self.assertNotIn('not_iv4', c.__dict__)
+
+    def test_text_annotations(self):
+        from test import dataclass_textanno
+
+        self.assertEqual(
+            get_type_hints(dataclass_textanno.Bar),
+            {'foo': dataclass_textanno.Foo})
+        self.assertEqual(
+            get_type_hints(dataclass_textanno.Bar.__init__),
+            {'foo': dataclass_textanno.Foo,
+             'return': type(None)})
 
 
 class TestMakeDataclass(unittest.TestCase):

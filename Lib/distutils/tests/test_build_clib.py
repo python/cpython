@@ -8,7 +8,6 @@ from test.support import run_unittest, missing_compiler_executable
 from distutils.command.build_clib import build_clib
 from distutils.errors import DistutilsSetupError
 from distutils.tests import support
-from distutils.spawn import find_executable
 
 class BuildCLibTestCase(support.TempdirManager,
                         support.LoggingSilencer,

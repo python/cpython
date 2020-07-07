@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 
+#ifndef Py_LIMITED_API
 #include "asdl.h"
 
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
@@ -16,10 +17,7 @@ typedef struct _stmt *stmt_ty;
 
 typedef struct _expr *expr_ty;
 
-typedef enum _expr_context { Load=1, Store=2, Del=3, AugLoad=4, AugStore=5,
-                             Param=6 } expr_context_ty;
-
-typedef struct _slice *slice_ty;
+typedef enum _expr_context { Load=1, Store=2, Del=3 } expr_context_ty;
 
 typedef enum _boolop { And=1, Or=2 } boolop_ty;
 
@@ -50,7 +48,7 @@ typedef struct _type_ignore *type_ignore_ty;
 
 
 enum _mod_kind {Module_kind=1, Interactive_kind=2, Expression_kind=3,
-                 FunctionType_kind=4, Suite_kind=5};
+                 FunctionType_kind=4};
 struct _mod {
     enum _mod_kind kind;
     union {
@@ -71,10 +69,6 @@ struct _mod {
             asdl_seq *argtypes;
             expr_ty returns;
         } FunctionType;
-
-        struct {
-            asdl_seq *body;
-        } Suite;
 
     } v;
 };
@@ -236,7 +230,7 @@ enum _expr_kind {BoolOp_kind=1, NamedExpr_kind=2, BinOp_kind=3, UnaryOp_kind=4,
                   YieldFrom_kind=15, Compare_kind=16, Call_kind=17,
                   FormattedValue_kind=18, JoinedStr_kind=19, Constant_kind=20,
                   Attribute_kind=21, Subscript_kind=22, Starred_kind=23,
-                  Name_kind=24, List_kind=25, Tuple_kind=26};
+                  Name_kind=24, List_kind=25, Tuple_kind=26, Slice_kind=27};
 struct _expr {
     enum _expr_kind kind;
     union {
@@ -349,7 +343,7 @@ struct _expr {
 
         struct {
             expr_ty value;
-            slice_ty slice;
+            expr_ty slice;
             expr_context_ty ctx;
         } Subscript;
 
@@ -373,32 +367,17 @@ struct _expr {
             expr_context_ty ctx;
         } Tuple;
 
-    } v;
-    int lineno;
-    int col_offset;
-    int end_lineno;
-    int end_col_offset;
-};
-
-enum _slice_kind {Slice_kind=1, ExtSlice_kind=2, Index_kind=3};
-struct _slice {
-    enum _slice_kind kind;
-    union {
         struct {
             expr_ty lower;
             expr_ty upper;
             expr_ty step;
         } Slice;
 
-        struct {
-            asdl_seq *dims;
-        } ExtSlice;
-
-        struct {
-            expr_ty value;
-        } Index;
-
     } v;
+    int lineno;
+    int col_offset;
+    int end_lineno;
+    int end_col_offset;
 };
 
 struct _comprehension {
@@ -448,6 +427,10 @@ struct _arg {
 struct _keyword {
     identifier arg;
     expr_ty value;
+    int lineno;
+    int col_offset;
+    int end_lineno;
+    int end_col_offset;
 };
 
 struct _alias {
@@ -482,8 +465,6 @@ mod_ty _Py_Interactive(asdl_seq * body, PyArena *arena);
 mod_ty _Py_Expression(expr_ty body, PyArena *arena);
 #define FunctionType(a0, a1, a2) _Py_FunctionType(a0, a1, a2)
 mod_ty _Py_FunctionType(asdl_seq * argtypes, expr_ty returns, PyArena *arena);
-#define Suite(a0, a1) _Py_Suite(a0, a1)
-mod_ty _Py_Suite(asdl_seq * body, PyArena *arena);
 #define FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) _Py_FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 stmt_ty _Py_FunctionDef(identifier name, arguments_ty args, asdl_seq * body,
                         asdl_seq * decorator_list, expr_ty returns, string
@@ -653,7 +634,7 @@ expr_ty _Py_Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int
                       lineno, int col_offset, int end_lineno, int
                       end_col_offset, PyArena *arena);
 #define Subscript(a0, a1, a2, a3, a4, a5, a6, a7) _Py_Subscript(a0, a1, a2, a3, a4, a5, a6, a7)
-expr_ty _Py_Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int
+expr_ty _Py_Subscript(expr_ty value, expr_ty slice, expr_context_ty ctx, int
                       lineno, int col_offset, int end_lineno, int
                       end_col_offset, PyArena *arena);
 #define Starred(a0, a1, a2, a3, a4, a5, a6) _Py_Starred(a0, a1, a2, a3, a4, a5, a6)
@@ -672,12 +653,10 @@ expr_ty _Py_List(asdl_seq * elts, expr_context_ty ctx, int lineno, int
 expr_ty _Py_Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int
                   col_offset, int end_lineno, int end_col_offset, PyArena
                   *arena);
-#define Slice(a0, a1, a2, a3) _Py_Slice(a0, a1, a2, a3)
-slice_ty _Py_Slice(expr_ty lower, expr_ty upper, expr_ty step, PyArena *arena);
-#define ExtSlice(a0, a1) _Py_ExtSlice(a0, a1)
-slice_ty _Py_ExtSlice(asdl_seq * dims, PyArena *arena);
-#define Index(a0, a1) _Py_Index(a0, a1)
-slice_ty _Py_Index(expr_ty value, PyArena *arena);
+#define Slice(a0, a1, a2, a3, a4, a5, a6, a7) _Py_Slice(a0, a1, a2, a3, a4, a5, a6, a7)
+expr_ty _Py_Slice(expr_ty lower, expr_ty upper, expr_ty step, int lineno, int
+                  col_offset, int end_lineno, int end_col_offset, PyArena
+                  *arena);
 #define comprehension(a0, a1, a2, a3, a4) _Py_comprehension(a0, a1, a2, a3, a4)
 comprehension_ty _Py_comprehension(expr_ty target, expr_ty iter, asdl_seq *
                                    ifs, int is_async, PyArena *arena);
@@ -695,8 +674,10 @@ arguments_ty _Py_arguments(asdl_seq * posonlyargs, asdl_seq * args, arg_ty
 arg_ty _Py_arg(identifier arg, expr_ty annotation, string type_comment, int
                lineno, int col_offset, int end_lineno, int end_col_offset,
                PyArena *arena);
-#define keyword(a0, a1, a2) _Py_keyword(a0, a1, a2)
-keyword_ty _Py_keyword(identifier arg, expr_ty value, PyArena *arena);
+#define keyword(a0, a1, a2, a3, a4, a5, a6) _Py_keyword(a0, a1, a2, a3, a4, a5, a6)
+keyword_ty _Py_keyword(identifier arg, expr_ty value, int lineno, int
+                       col_offset, int end_lineno, int end_col_offset, PyArena
+                       *arena);
 #define alias(a0, a1, a2) _Py_alias(a0, a1, a2)
 alias_ty _Py_alias(identifier name, identifier asname, PyArena *arena);
 #define withitem(a0, a1, a2) _Py_withitem(a0, a1, a2)
@@ -708,6 +689,7 @@ type_ignore_ty _Py_TypeIgnore(int lineno, string tag, PyArena *arena);
 PyObject* PyAST_mod2obj(mod_ty t);
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
 int PyAST_Check(PyObject* obj);
+#endif /* !Py_LIMITED_API */
 
 #ifdef __cplusplus
 }

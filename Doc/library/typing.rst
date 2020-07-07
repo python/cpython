@@ -10,10 +10,9 @@
 
 .. note::
 
-   The typing module has been included in the standard library on a
-   :term:`provisional basis <provisional api>`. New features might
-   be added and API may change even between minor releases if deemed
-   necessary by the core developers.
+   The Python runtime does not enforce function and variable type annotations.
+   They can be used by third party tools such as type checkers, IDEs, linters,
+   etc.
 
 --------------
 
@@ -232,8 +231,8 @@ A user-defined class can be defined as a generic class.
 single type parameter ``T`` . This also makes ``T`` valid as a type within the
 class body.
 
-The :class:`Generic` base class uses a metaclass that defines
-:meth:`__getitem__` so that ``LoggedVar[t]`` is valid as a type::
+The :class:`Generic` base class defines :meth:`__class_getitem__` so that
+``LoggedVar[t]`` is valid as a type::
 
    from typing import Iterable
 
@@ -308,9 +307,10 @@ User defined generic type aliases are also supported. Examples::
    def inproduct(v: Vec[T]) -> T: # Same as Iterable[Tuple[T, T]]
        return sum(x*y for x, y in v)
 
-The metaclass used by :class:`Generic` is a subclass of :class:`abc.ABCMeta`.
-A generic class can be an ABC by including abstract methods or properties,
-and generic classes can also have ABCs as base classes without a metaclass
+.. versionchanged:: 3.7
+    :class:`Generic` no longer has a custom metaclass.
+
+A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
 generics is cached, and most types in the typing module are hashable and
 comparable for equality.
@@ -672,7 +672,7 @@ The module defines the following classes, functions and decorators:
    A generic version of :class:`collections.abc.ByteString`.
 
    This type represents the types :class:`bytes`, :class:`bytearray`,
-   and :class:`memoryview`.
+   and :class:`memoryview` of byte sequences.
 
    As a shorthand for this type, :class:`bytes` can be used to
    annotate arguments of any of the types mentioned above.
@@ -960,12 +960,13 @@ The module defines the following classes, functions and decorators:
       Added support for default values, methods, and docstrings.
 
    .. versionchanged:: 3.8
-      Deprecated the ``_field_types`` attribute in favor of the more
-      standard ``__annotations__`` attribute which has the same information.
-
-   .. versionchanged:: 3.8
       The ``_field_types`` and ``__annotations__`` attributes are
       now regular dictionaries instead of instances of ``OrderedDict``.
+
+   .. versionchanged:: 3.9
+      Removed the ``_field_types`` attribute in favor of the more
+      standard ``__annotations__`` attribute which has the same information.
+
 
 .. class:: TypedDict(dict)
 
@@ -996,8 +997,20 @@ The module defines the following classes, functions and decorators:
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
 
-   See :pep:`589` for more examples and detailed rules of using ``TypedDict``
-   with type checkers.
+   By default, all keys must be present in a TypedDict. It is possible
+   to override this by specifying totality.
+   Usage::
+
+      class point2D(TypedDict, total=False):
+          x: int
+          y: int
+
+   This means that a point2D TypedDict can have any of the keys omitted. A type
+   checker is only expected to support a literal False or True as the value of
+   the total argument. True is the default, and makes all items defined in the
+   class body be required.
+
+   See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
    .. versionadded:: 3.8
 
@@ -1008,9 +1021,9 @@ The module defines the following classes, functions and decorators:
    ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
-.. function:: NewType(typ)
+.. function:: NewType(name, tp)
 
-   A helper function to indicate a distinct types to a typechecker,
+   A helper function to indicate a distinct type to a typechecker,
    see :ref:`distinct`. At runtime it returns a function that returns
    its argument. Usage::
 
@@ -1028,7 +1041,7 @@ The module defines the following classes, functions and decorators:
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
 
-.. function:: get_type_hints(obj[, globals[, locals]])
+.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
 
    Return a dictionary containing type hints for a function, method, module
    or class object.
@@ -1041,8 +1054,24 @@ The module defines the following classes, functions and decorators:
    a dictionary constructed by merging all the ``__annotations__`` along
    ``C.__mro__`` in reverse order.
 
-.. function:: get_origin(typ)
-.. function:: get_args(typ)
+   The function recursively replaces all ``Annotated[T, ...]`` with ``T``,
+   unless ``include_extras`` is set to ``True`` (see :class:`Annotated` for
+   more information). For example::
+
+       class Student(NamedTuple):
+           name: Annotated[str, 'some marker']
+
+       get_type_hints(Student) == {'name': str}
+       get_type_hints(Student, include_extras=False) == {'name': str}
+       get_type_hints(Student, include_extras=True) == {
+           'name': Annotated[str, 'some marker']
+       }
+
+   .. versionchanged:: 3.9
+      Added ``include_extras`` parameter as part of :pep:`593`.
+
+.. function:: get_origin(tp)
+.. function:: get_args(tp)
 
    Provide basic introspection for generic types and special typing forms.
 
@@ -1245,7 +1274,8 @@ The module defines the following classes, functions and decorators:
 .. data:: Tuple
 
    Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
-   with the first item of type X and the second of type Y.
+   with the first item of type X and the second of type Y. The type of
+   the empty tuple can be written as ``Tuple[()]``.
 
    Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
    to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
@@ -1371,3 +1401,87 @@ The module defines the following classes, functions and decorators:
    evaluated, so the second annotation does not need to be enclosed in quotes.
 
    .. versionadded:: 3.5.2
+
+.. data:: Annotated
+
+   A type, introduced in :pep:`593` (``Flexible function and variable
+   annotations``), to decorate existing types with context-specific metadata
+   (possibly multiple pieces of it, as ``Annotated`` is variadic).
+   Specifically, a type ``T`` can be annotated with metadata ``x`` via the
+   typehint ``Annotated[T, x]``. This metadata can be used for either static
+   analysis or at runtime. If a library (or tool) encounters a typehint
+   ``Annotated[T, x]`` and has no special logic for metadata ``x``, it
+   should ignore it and simply treat the type as ``T``. Unlike the
+   ``no_type_check`` functionality that currently exists in the ``typing``
+   module which completely disables typechecking annotations on a function
+   or a class, the ``Annotated`` type allows for both static typechecking
+   of ``T`` (e.g., via mypy or Pyre, which can safely ignore ``x``)
+   together with runtime access to ``x`` within a specific application.
+
+   Ultimately, the responsibility of how to interpret the annotations (if
+   at all) is the responsibility of the tool or library encountering the
+   ``Annotated`` type. A tool or library encountering an ``Annotated`` type
+   can scan through the annotations to determine if they are of interest
+   (e.g., using ``isinstance()``).
+
+   When a tool or a library does not support annotations or encounters an
+   unknown annotation it should just ignore it and treat annotated type as
+   the underlying type.
+
+   It's up to the tool consuming the annotations to decide whether the
+   client is allowed to have several annotations on one type and how to
+   merge those annotations.
+
+   Since the ``Annotated`` type allows you to put several annotations of
+   the same (or different) type(s) on any node, the tools or libraries
+   consuming those annotations are in charge of dealing with potential
+   duplicates. For example, if you are doing value range analysis you might
+   allow this::
+
+       T1 = Annotated[int, ValueRange(-10, 5)]
+       T2 = Annotated[T1, ValueRange(-20, 3)]
+
+   Passing ``include_extras=True`` to :func:`get_type_hints` lets one
+   access the extra annotations at runtime.
+
+   The details of the syntax:
+
+   * The first argument to ``Annotated`` must be a valid type
+
+   * Multiple type annotations are supported (``Annotated`` supports variadic
+     arguments)::
+
+       Annotated[int, ValueRange(3, 10), ctype("char")]
+
+   * ``Annotated`` must be called with at least two arguments (
+     ``Annotated[int]`` is not valid)
+
+   * The order of the annotations is preserved and matters for equality
+     checks::
+
+       Annotated[int, ValueRange(3, 10), ctype("char")] != Annotated[
+           int, ctype("char"), ValueRange(3, 10)
+       ]
+
+   * Nested ``Annotated`` types are flattened, with metadata ordered
+     starting with the innermost annotation::
+
+       Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
+           int, ValueRange(3, 10), ctype("char")
+       ]
+
+   * Duplicated annotations are not removed::
+
+       Annotated[int, ValueRange(3, 10)] != Annotated[
+           int, ValueRange(3, 10), ValueRange(3, 10)
+       ]
+
+   * ``Annotated`` can be used with nested and generic aliases::
+
+       T = TypeVar('T')
+       Vec = Annotated[List[Tuple[T, T]], MaxLen(10)]
+       V = Vec[int]
+
+       V == Annotated[List[Tuple[int, int]], MaxLen(10)]
+
+   .. versionadded:: 3.9

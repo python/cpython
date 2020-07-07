@@ -6,10 +6,9 @@
 #undef NDEBUG
 
 #include <Python.h>
-#include "pycore_initconfig.h"   /* _PyConfig_InitCompatConfig() */
-#include "pycore_pystate.h"      /* _PyRuntime */
+#include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
+#include "pycore_runtime.h"       // _PyRuntime
 #include <Python.h>
-#include "pythread.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <wchar.h>
@@ -20,11 +19,12 @@
  * Executed via 'EmbeddingTests' in Lib/test/test_capi.py
  *********************************************************/
 
+/* Use path starting with "./" avoids a search along the PATH */
+#define PROGRAM_NAME L"./_testembed"
+
 static void _testembed_Py_Initialize(void)
 {
-    /* HACK: the "./" at front avoids a search along the PATH in
-       Modules/getpath.c */
-    Py_SetProgramName(L"./_testembed");
+    Py_SetProgramName(PROGRAM_NAME);
     Py_Initialize();
 }
 
@@ -61,7 +61,6 @@ static int test_repeated_init_and_subinterpreters(void)
         _testembed_Py_Initialize();
         mainstate = PyThreadState_Get();
 
-        PyEval_InitThreads();
         PyEval_ReleaseThread(mainstate);
 
         gilstate = PyGILState_Ensure();
@@ -251,9 +250,8 @@ static int test_bpo20891(void)
     /* the test doesn't support custom memory allocators */
     putenv("PYTHONMALLOC=");
 
-    /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
-       calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
-       call PyEval_InitThreads() for us in this case. */
+    /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread must not
+       crash. */
     PyThread_type_lock lock = PyThread_allocate_lock();
     if (!lock) {
         fprintf(stderr, "PyThread_allocate_lock failed!");
@@ -363,8 +361,7 @@ config_set_wide_string_list(PyConfig *config, PyWideStringList *list,
 
 static void config_set_program_name(PyConfig *config)
 {
-    /* Use path starting with "./" avoids a search along the PATH */
-    const wchar_t *program_name = L"./_testembed";
+    const wchar_t *program_name = PROGRAM_NAME;
     config_set_string(config, &config->program_name, program_name);
 }
 
@@ -395,6 +392,7 @@ static int check_init_compat_config(int preinit)
 
     PyConfig config;
     _PyConfig_InitCompatConfig(&config);
+
     config_set_program_name(&config);
     init_from_config_clear(&config);
 
@@ -467,8 +465,6 @@ static int test_init_global_config(void)
 
 static int test_init_from_config(void)
 {
-    PyStatus status;
-
     PyPreConfig preconfig;
     _PyPreConfig_InitCompatConfig(&preconfig);
 
@@ -479,13 +475,14 @@ static int test_init_from_config(void)
     Py_UTF8Mode = 0;
     preconfig.utf8_mode = 1;
 
-    status = Py_PreInitialize(&preconfig);
+    PyStatus status = Py_PreInitialize(&preconfig);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 
     PyConfig config;
     _PyConfig_InitCompatConfig(&config);
+
     config.install_signal_handlers = 0;
 
     /* FIXME: test use_environment */
@@ -506,7 +503,6 @@ static int test_init_from_config(void)
     config.import_time = 1;
 
     config.show_ref_count = 1;
-    config.show_alloc_count = 1;
     /* FIXME: test dump_refs: bpo-34223 */
 
     putenv("PYTHONMALLOCSTATS=0");
@@ -548,6 +544,13 @@ static int test_init_from_config(void)
     /* FIXME: test pythonpath_env */
     /* FIXME: test home */
     /* FIXME: test path config: module_search_path .. dll_path */
+
+    putenv("PYTHONPLATLIBDIR=env_platlibdir");
+    status = PyConfig_SetBytesString(&config, &config.platlibdir, "my_platlibdir");
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
 
     putenv("PYTHONVERBOSE=0");
     Py_VerboseFlag = 0;
@@ -604,6 +607,8 @@ static int test_init_from_config(void)
     Py_FrozenFlag = 0;
     config.pathconfig_warnings = 0;
 
+    config._isolated_interpreter = 1;
+
     init_from_config_clear(&config);
 
     dump_config();
@@ -614,13 +619,8 @@ static int test_init_from_config(void)
 
 static int check_init_parse_argv(int parse_argv)
 {
-    PyStatus status;
-
     PyConfig config;
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
 
     config.parse_argv = parse_argv;
 
@@ -671,6 +671,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONNOUSERSITE=1");
     putenv("PYTHONFAULTHANDLER=1");
     putenv("PYTHONIOENCODING=iso8859-1:replace");
+    putenv("PYTHONPLATLIBDIR=env_platlibdir");
 }
 
 
@@ -697,15 +698,10 @@ static int test_init_compat_env(void)
 
 static int test_init_python_env(void)
 {
-    PyStatus status;
-
     set_all_env_vars();
 
     PyConfig config;
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
 
     config_set_program_name(&config);
     init_from_config_clear(&config);
@@ -751,14 +747,9 @@ static int test_init_env_dev_mode_alloc(void)
 
 static int test_init_isolated_flag(void)
 {
-    PyStatus status;
-
     /* Test PyConfig.isolated=1 */
     PyConfig config;
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
 
     Py_IsolatedFlag = 0;
     config.isolated = 1;
@@ -776,19 +767,19 @@ static int test_init_isolated_flag(void)
 /* PyPreConfig.isolated=1, PyConfig.isolated=0 */
 static int test_preinit_isolated1(void)
 {
-    PyStatus status;
-
     PyPreConfig preconfig;
     _PyPreConfig_InitCompatConfig(&preconfig);
+
     preconfig.isolated = 1;
 
-    status = Py_PreInitialize(&preconfig);
+    PyStatus status = Py_PreInitialize(&preconfig);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 
     PyConfig config;
     _PyConfig_InitCompatConfig(&config);
+
     config_set_program_name(&config);
     set_all_env_vars();
     init_from_config_clear(&config);
@@ -802,13 +793,12 @@ static int test_preinit_isolated1(void)
 /* PyPreConfig.isolated=0, PyConfig.isolated=1 */
 static int test_preinit_isolated2(void)
 {
-    PyStatus status;
-
     PyPreConfig preconfig;
     _PyPreConfig_InitCompatConfig(&preconfig);
+
     preconfig.isolated = 0;
 
-    status = Py_PreInitialize(&preconfig);
+    PyStatus status = Py_PreInitialize(&preconfig);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
@@ -832,8 +822,6 @@ static int test_preinit_isolated2(void)
 
 static int test_preinit_dont_parse_argv(void)
 {
-    PyStatus status;
-
     PyPreConfig preconfig;
     PyPreConfig_InitIsolatedConfig(&preconfig);
 
@@ -846,18 +834,14 @@ static int test_preinit_dont_parse_argv(void)
                        L"-X", L"dev",
                        L"-X", L"utf8",
                        L"script.py"};
-    status = Py_PreInitializeFromArgs(&preconfig, Py_ARRAY_LENGTH(argv), argv);
+    PyStatus status = Py_PreInitializeFromArgs(&preconfig,
+                                               Py_ARRAY_LENGTH(argv), argv);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 
     PyConfig config;
-
-    status = PyConfig_InitIsolatedConfig(&config);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitIsolatedConfig(&config);
 
     config.isolated = 0;
 
@@ -875,14 +859,8 @@ static int test_preinit_dont_parse_argv(void)
 
 static int test_preinit_parse_argv(void)
 {
-    PyStatus status;
     PyConfig config;
-
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
 
     /* Pre-initialize implicitly using argv: make sure that -X dev
        is used to configure the allocation in preinitialization */
@@ -947,11 +925,8 @@ static int check_preinit_isolated_config(int preinit)
     }
 
     PyConfig config;
-    status = PyConfig_InitIsolatedConfig(&config);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitIsolatedConfig(&config);
+
     config_set_program_name(&config);
     init_from_config_clear(&config);
 
@@ -979,8 +954,6 @@ static int test_init_isolated_config(void)
 
 static int check_init_python_config(int preinit)
 {
-    PyStatus status;
-
     /* global configuration variables must be ignored */
     set_all_global_config_variables();
     Py_IsolatedFlag = 1;
@@ -998,17 +971,15 @@ static int check_init_python_config(int preinit)
         PyPreConfig preconfig;
         PyPreConfig_InitPythonConfig(&preconfig);
 
-        status = Py_PreInitialize(&preconfig);
+        PyStatus status = Py_PreInitialize(&preconfig);
         if (PyStatus_Exception(status)) {
             Py_ExitStatusException(status);
         }
     }
 
     PyConfig config;
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
+
     config_set_program_name(&config);
     init_from_config_clear(&config);
 
@@ -1032,24 +1003,21 @@ static int test_init_python_config(void)
 
 static int test_init_dont_configure_locale(void)
 {
-    PyStatus status;
-
     PyPreConfig preconfig;
     PyPreConfig_InitPythonConfig(&preconfig);
+
     preconfig.configure_locale = 0;
     preconfig.coerce_c_locale = 1;
     preconfig.coerce_c_locale_warn = 1;
 
-    status = Py_PreInitialize(&preconfig);
+    PyStatus status = Py_PreInitialize(&preconfig);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 
     PyConfig config;
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
+
     config_set_program_name(&config);
     init_from_config_clear(&config);
 
@@ -1061,12 +1029,9 @@ static int test_init_dont_configure_locale(void)
 
 static int test_init_dev_mode(void)
 {
-    PyStatus status;
     PyConfig config;
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
+
     putenv("PYTHONFAULTHANDLER=");
     putenv("PYTHONMALLOC=");
     config.dev_mode = 1;
@@ -1147,8 +1112,11 @@ static int test_open_code_hook(void)
     return result;
 }
 
+static int _audit_hook_clear_count = 0;
+
 static int _audit_hook(const char *event, PyObject *args, void *userdata)
 {
+    assert(args && PyTuple_CheckExact(args));
     if (strcmp(event, "_testembed.raise") == 0) {
         PyErr_SetString(PyExc_RuntimeError, "Intentional error");
         return -1;
@@ -1157,6 +1125,8 @@ static int _audit_hook(const char *event, PyObject *args, void *userdata)
             return -1;
         }
         return 0;
+    } else if (strcmp(event, "cpython._PySys_ClearAuditHooks") == 0) {
+        _audit_hook_clear_count += 1;
     }
     return 0;
 }
@@ -1202,6 +1172,9 @@ static int test_audit(void)
 {
     int result = _test_audit(42);
     Py_Finalize();
+    if (_audit_hook_clear_count != 1) {
+        return 0x1000 | _audit_hook_clear_count;
+    }
     return result;
 }
 
@@ -1263,7 +1236,7 @@ static int _audit_hook_run(const char *eventName, PyObject *args, void *userData
 static int test_audit_run_command(void)
 {
     AuditRunCommandTest test = {"cpython.run_command"};
-    wchar_t *argv[] = {L"./_testembed", L"-c", L"pass"};
+    wchar_t *argv[] = {PROGRAM_NAME, L"-c", L"pass"};
 
     Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
@@ -1274,7 +1247,7 @@ static int test_audit_run_command(void)
 static int test_audit_run_file(void)
 {
     AuditRunCommandTest test = {"cpython.run_file"};
-    wchar_t *argv[] = {L"./_testembed", L"filename.py"};
+    wchar_t *argv[] = {PROGRAM_NAME, L"filename.py"};
 
     Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
@@ -1284,12 +1257,9 @@ static int test_audit_run_file(void)
 
 static int run_audit_run_test(int argc, wchar_t **argv, void *test)
 {
-    PyStatus status;
     PyConfig config;
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
+
     config.argv.length = argc;
     config.argv.items = argv;
     config.parse_argv = 1;
@@ -1301,7 +1271,7 @@ static int run_audit_run_test(int argc, wchar_t **argv, void *test)
 
     PySys_AddAuditHook(_audit_hook_run, test);
 
-    status = Py_InitializeFromConfig(&config);
+    PyStatus status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
@@ -1312,21 +1282,21 @@ static int run_audit_run_test(int argc, wchar_t **argv, void *test)
 static int test_audit_run_interactivehook(void)
 {
     AuditRunCommandTest test = {"cpython.run_interactivehook", 10};
-    wchar_t *argv[] = {L"./_testembed"};
+    wchar_t *argv[] = {PROGRAM_NAME};
     return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
 static int test_audit_run_startup(void)
 {
     AuditRunCommandTest test = {"cpython.run_startup", 10};
-    wchar_t *argv[] = {L"./_testembed"};
+    wchar_t *argv[] = {PROGRAM_NAME};
     return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
 static int test_audit_run_stdin(void)
 {
     AuditRunCommandTest test = {"cpython.run_stdin"};
-    wchar_t *argv[] = {L"./_testembed"};
+    wchar_t *argv[] = {PROGRAM_NAME};
     return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
@@ -1334,10 +1304,7 @@ static int test_init_read_set(void)
 {
     PyStatus status;
     PyConfig config;
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
 
     status = PyConfig_SetBytesString(&config, &config.program_name,
                                      "./init_read_set");
@@ -1350,8 +1317,14 @@ static int test_init_read_set(void)
         goto fail;
     }
 
+    status = PyWideStringList_Insert(&config.module_search_paths,
+                                     1, L"test_path_insert1");
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
     status = PyWideStringList_Append(&config.module_search_paths,
-                                     L"init_read_set_path");
+                                     L"test_path_append");
     if (PyStatus_Exception(status)) {
         goto fail;
     }
@@ -1365,7 +1338,191 @@ static int test_init_read_set(void)
     return 0;
 
 fail:
+    PyConfig_Clear(&config);
     Py_ExitStatusException(status);
+}
+
+
+static int test_init_sys_add(void)
+{
+    PySys_AddXOption(L"sysadd_xoption");
+    PySys_AddXOption(L"faulthandler");
+    PySys_AddWarnOption(L"ignore:::sysadd_warnoption");
+
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    wchar_t* argv[] = {
+        L"python3",
+        L"-W",
+        L"ignore:::cmdline_warnoption",
+        L"-X",
+        L"cmdline_xoption",
+    };
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config.parse_argv = 1;
+
+    PyStatus status;
+    status = PyWideStringList_Append(&config.xoptions,
+                                     L"config_xoption");
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
+    status = PyWideStringList_Append(&config.warnoptions,
+                                     L"ignore:::config_warnoption");
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+
+fail:
+    PyConfig_Clear(&config);
+    Py_ExitStatusException(status);
+}
+
+
+static int test_init_setpath(void)
+{
+    char *env = getenv("TESTPATH");
+    if (!env) {
+        fprintf(stderr, "missing TESTPATH env var\n");
+        return 1;
+    }
+    wchar_t *path = Py_DecodeLocale(env, NULL);
+    if (path == NULL) {
+        fprintf(stderr, "failed to decode TESTPATH\n");
+        return 1;
+    }
+    Py_SetPath(path);
+    PyMem_RawFree(path);
+    putenv("TESTPATH=");
+
+    Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_setpath_config(void)
+{
+    PyPreConfig preconfig;
+    PyPreConfig_InitPythonConfig(&preconfig);
+
+    /* Explicitly preinitializes with Python preconfiguration to avoid
+      Py_SetPath() implicit preinitialization with compat preconfiguration. */
+    PyStatus status = Py_PreInitialize(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    char *env = getenv("TESTPATH");
+    if (!env) {
+        fprintf(stderr, "missing TESTPATH env var\n");
+        return 1;
+    }
+    wchar_t *path = Py_DecodeLocale(env, NULL);
+    if (path == NULL) {
+        fprintf(stderr, "failed to decode TESTPATH\n");
+        return 1;
+    }
+    Py_SetPath(path);
+    PyMem_RawFree(path);
+    putenv("TESTPATH=");
+
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    config_set_string(&config, &config.program_name, L"conf_program_name");
+    config_set_string(&config, &config.executable, L"conf_executable");
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_setpythonhome(void)
+{
+    char *env = getenv("TESTHOME");
+    if (!env) {
+        fprintf(stderr, "missing TESTHOME env var\n");
+        return 1;
+    }
+    wchar_t *home = Py_DecodeLocale(env, NULL);
+    if (home == NULL) {
+        fprintf(stderr, "failed to decode TESTHOME\n");
+        return 1;
+    }
+    Py_SetPythonHome(home);
+    PyMem_RawFree(home);
+    putenv("TESTHOME=");
+
+    Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_warnoptions(void)
+{
+    putenv("PYTHONWARNINGS=ignore:::env1,ignore:::env2");
+
+    PySys_AddWarnOption(L"ignore:::PySys_AddWarnOption1");
+    PySys_AddWarnOption(L"ignore:::PySys_AddWarnOption2");
+
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    config.dev_mode = 1;
+    config.bytes_warning = 1;
+
+    config_set_program_name(&config);
+
+    PyStatus status;
+    status = PyWideStringList_Append(&config.warnoptions,
+                                     L"ignore:::PyConfig_BeforeRead");
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    wchar_t* argv[] = {
+        L"python3",
+        L"-Wignore:::cmdline1",
+        L"-Wignore:::cmdline2"};
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config.parse_argv = 1;
+
+    status = PyConfig_Read(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    status = PyWideStringList_Append(&config.warnoptions,
+                                     L"ignore:::PyConfig_AfterRead");
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    status = PyWideStringList_Insert(&config.warnoptions,
+                                     0, L"ignore:::PyConfig_Insert0");
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    init_from_config_clear(&config);
+    dump_config();
+    Py_Finalize();
+    return 0;
 }
 
 
@@ -1386,12 +1543,9 @@ static void configure_init_main(PyConfig *config)
 
 static int test_init_run_main(void)
 {
-    PyStatus status;
     PyConfig config;
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
+
     configure_init_main(&config);
     init_from_config_clear(&config);
 
@@ -1401,13 +1555,9 @@ static int test_init_run_main(void)
 
 static int test_init_main(void)
 {
-    PyStatus status;
     PyConfig config;
+    PyConfig_InitPythonConfig(&config);
 
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
     configure_init_main(&config);
     config._init_main = 0;
     init_from_config_clear(&config);
@@ -1421,7 +1571,7 @@ static int test_init_main(void)
         exit(1);
     }
 
-    status = _Py_InitializeMain();
+    PyStatus status = _Py_InitializeMain();
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
@@ -1432,14 +1582,8 @@ static int test_init_main(void)
 
 static int test_run_main(void)
 {
-    PyStatus status;
     PyConfig config;
-
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
 
     wchar_t *argv[] = {L"python3", L"-c",
                        (L"import sys; "
@@ -1450,6 +1594,46 @@ static int test_run_main(void)
     init_from_config_clear(&config);
 
     return Py_RunMain();
+}
+
+
+static int test_get_argc_argv(void)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    wchar_t *argv[] = {L"python3", L"-c",
+                       (L"import sys; "
+                        L"print(f'Py_RunMain(): sys.argv={sys.argv}')"),
+                       L"arg2"};
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config_set_string(&config, &config.program_name, L"./python3");
+
+    // Calling PyConfig_Read() twice must not change Py_GetArgcArgv() result.
+    // The second call is done by Py_InitializeFromConfig().
+    PyStatus status = PyConfig_Read(&config);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
+
+    init_from_config_clear(&config);
+
+    int get_argc;
+    wchar_t **get_argv;
+    Py_GetArgcArgv(&get_argc, &get_argv);
+    printf("argc: %i\n", get_argc);
+    assert(get_argc == Py_ARRAY_LENGTH(argv));
+    for (int i=0; i < get_argc; i++) {
+        printf("argv[%i]: %ls\n", i, get_argv[i]);
+        assert(wcscmp(get_argv[i], argv[i]) == 0);
+    }
+
+    Py_Finalize();
+
+    printf("\n");
+    printf("test ok\n");
+    return 0;
 }
 
 
@@ -1504,7 +1688,14 @@ static struct TestCase TestCases[] = {
     {"test_init_read_set", test_init_read_set},
     {"test_init_run_main", test_init_run_main},
     {"test_init_main", test_init_main},
+    {"test_init_sys_add", test_init_sys_add},
+    {"test_init_setpath", test_init_setpath},
+    {"test_init_setpath_config", test_init_setpath_config},
+    {"test_init_setpythonhome", test_init_setpythonhome},
+    {"test_init_warnoptions", test_init_warnoptions},
     {"test_run_main", test_run_main},
+    {"test_get_argc_argv", test_get_argc_argv},
+
     {"test_open_code_hook", test_open_code_hook},
     {"test_audit", test_audit},
     {"test_audit_subinterpreter", test_audit_subinterpreter},

@@ -16,6 +16,7 @@ import textwrap
 import unittest
 
 import test.support
+from test.support import import_helper
 import test.string_tests
 import test.list_tests
 from test.support import bigaddrspacetest, MAX_Py_ssize_t
@@ -547,9 +548,13 @@ class BaseBytesTest:
         self.assertEqual(dot_join([bytearray(b"ab"), b"cd"]), b"ab.:cd")
         self.assertEqual(dot_join([b"ab", bytearray(b"cd")]), b"ab.:cd")
         # Stress it with many items
-        seq = [b"abc"] * 1000
-        expected = b"abc" + b".:abc" * 999
+        seq = [b"abc"] * 100000
+        expected = b"abc" + b".:abc" * 99999
         self.assertEqual(dot_join(seq), expected)
+        # Stress test with empty separator
+        seq = [b"abc"] * 100000
+        expected = b"abc" * 100000
+        self.assertEqual(self.type2test(b"").join(seq), expected)
         self.assertRaises(TypeError, self.type2test(b" ").join, None)
         # Error handling and cleanup when some item in the middle of the
         # sequence has the wrong type.
@@ -962,6 +967,15 @@ class BaseBytesTest:
         c = b.translate(None, delete=b'e')
         self.assertEqual(c, b'hllo')
 
+    def test_sq_item(self):
+        _testcapi = import_helper.import_module('_testcapi')
+        obj = self.type2test((42,))
+        with self.assertRaises(IndexError):
+            _testcapi.sequence_getitem(obj, -2)
+        with self.assertRaises(IndexError):
+            _testcapi.sequence_getitem(obj, 1)
+        self.assertEqual(_testcapi.sequence_getitem(obj, 0), 42)
+
 
 class BytesTest(BaseBytesTest, unittest.TestCase):
     type2test = bytes
@@ -1011,8 +1025,8 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
 
     # Test PyBytes_FromFormat()
     def test_from_format(self):
-        ctypes = test.support.import_module('ctypes')
-        _testcapi = test.support.import_module('_testcapi')
+        ctypes = import_helper.import_module('ctypes')
+        _testcapi = import_helper.import_module('_testcapi')
         from ctypes import pythonapi, py_object
         from ctypes import (
             c_int, c_uint,

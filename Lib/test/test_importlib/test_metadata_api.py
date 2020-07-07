@@ -1,7 +1,6 @@
 import re
 import textwrap
 import unittest
-import itertools
 
 from collections.abc import Iterator
 
@@ -61,9 +60,7 @@ class APITests(
         assert 'Topic :: Software Development :: Libraries' in classifiers
 
     @staticmethod
-    def _test_files(files_iter):
-        assert isinstance(files_iter, Iterator), files_iter
-        files = list(files_iter)
+    def _test_files(files):
         root = files[0].root
         for file in files:
             assert file.root == root
@@ -99,16 +96,20 @@ class APITests(
         requirements = requires('egginfo-file')
         self.assertIsNone(requirements)
 
-    def test_requires(self):
+    def test_requires_egg_info(self):
         deps = requires('egginfo-pkg')
+        assert len(deps) == 2
         assert any(
             dep == 'wheel >= 1.0; python_version >= "2.7"'
             for dep in deps
             )
 
     def test_requires_dist_info(self):
-        deps = list(requires('distinfo-pkg'))
-        assert deps and all(deps)
+        deps = requires('distinfo-pkg')
+        assert len(deps) == 2
+        assert all(deps)
+        assert 'wheel >= 1.0' in deps
+        assert "pytest; extra == 'test'" in deps
 
     def test_more_complex_deps_requires_text(self):
         requires = textwrap.dedent("""
@@ -141,11 +142,20 @@ class APITests(
 
 class OffSysPathTests(fixtures.DistInfoPkgOffPath, unittest.TestCase):
     def test_find_distributions_specified_path(self):
-        dists = itertools.chain.from_iterable(
-            resolver(path=[str(self.site_dir)])
-            for resolver in Distribution._discover_resolvers()
-            )
+        dists = Distribution.discover(path=[str(self.site_dir)])
         assert any(
             dist.metadata['Name'] == 'distinfo-pkg'
             for dist in dists
             )
+
+    def test_distribution_at_pathlib(self):
+        """Demonstrate how to load metadata direct from a directory.
+        """
+        dist_info_path = self.site_dir / 'distinfo_pkg-1.0.0.dist-info'
+        dist = Distribution.at(dist_info_path)
+        assert dist.version == '1.0.0'
+
+    def test_distribution_at_str(self):
+        dist_info_path = self.site_dir / 'distinfo_pkg-1.0.0.dist-info'
+        dist = Distribution.at(str(dist_info_path))
+        assert dist.version == '1.0.0'

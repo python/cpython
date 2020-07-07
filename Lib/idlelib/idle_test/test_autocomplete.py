@@ -227,7 +227,7 @@ class AutoCompleteTest(unittest.TestCase):
         acp = self.autocomplete
         small, large = acp.fetch_completions(
                 '', ac.ATTRS)
-        if __main__.__file__ != ac.__file__:
+        if hasattr(__main__, '__file__') and __main__.__file__ != ac.__file__:
             self.assertNotIn('AutoComplete', small)  # See issue 36405.
 
         # Test attributes
