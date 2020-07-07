@@ -1,0 +1,1 @@
+Links the errnos referenced in `Doc/library/exceptions.rst` to their respective section in `Doc/library/errno.rst`, and creates a "see also" box in these errnos sections in `Doc/library/errno.rst` linking them to their mapped exceptions in `Doc/library/exceptions.rst`
