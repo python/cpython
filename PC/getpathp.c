@@ -93,7 +93,6 @@
 
 static wchar_t prefix[MAXPATHLEN+1];
 static wchar_t progpath[MAXPATHLEN+1];
-static wchar_t dllpath[MAXPATHLEN+1];
 static wchar_t *module_search_path = NULL;
 
 
@@ -122,6 +121,46 @@ reduce(wchar_t *dir)
     dir[i] = '\0';
 }
 
+static int
+change_ext(wchar_t *dest, const wchar_t *src, const wchar_t *ext)
+{
+    if (src && src != dest) {
+        size_t src_len = wcsnlen_s(src, MAXPATHLEN+1);
+        size_t i = src_len;
+        if (i >= MAXPATHLEN+1) {
+            Py_FatalError("buffer overflow in getpathp.c's reduce()");
+        }
+
+        while (i > 0 && src[i] != '.' && !is_sep(src[i]))
+            --i;
+
+        if (i == 0) {
+            dest[0] = '\0';
+            return -1;
+        }
+
+        if (is_sep(src[i])) {
+            i = src_len;
+        }
+
+        if (wcsncpy_s(dest, MAXPATHLEN+1, src, i)) {
+            dest[0] = '\0';
+            return -1;
+        }
+    } else {
+        wchar_t *s = wcsrchr(dest, L'.');
+        if (s) {
+            s[0] = '\0';
+        }
+    }
+
+    if (wcscat_s(dest, MAXPATHLEN+1, ext)) {
+        dest[0] = '\0';
+        return -1;
+    }
+
+    return 0;
+}
 
 static int
 exists(wchar_t *filename)
@@ -213,6 +252,20 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *landmark)
     } while (prefix[0]);
     return 0;
 }
+
+
+static int
+get_dllpath(wchar_t *dllpath)
+{
+#ifdef Py_ENABLE_SHARED
+    extern HANDLE PyWin_DLLhModule;
+    if (PyWin_DLLhModule && GetModuleFileNameW(PyWin_DLLhModule, dllpath, MAXPATHLEN)) {
+        return 0;
+    }
+#endif
+    return -1;
+}
+
 
 #ifdef MS_WINDOWS
 #ifdef Py_ENABLE_SHARED
@@ -378,19 +431,10 @@ get_progpath(void)
     wchar_t *path = _wgetenv(L"PATH");
     wchar_t *prog = Py_GetProgramName();
 
-#ifdef MS_WINDOWS
-#ifdef Py_ENABLE_SHARED
-    extern HANDLE PyWin_DLLhModule;
-    /* static init of progpath ensures final char remains \0 */
-    if (PyWin_DLLhModule)
-        if (!GetModuleFileNameW(PyWin_DLLhModule, dllpath, MAXPATHLEN))
-            dllpath[0] = 0;
-#else
-    dllpath[0] = 0;
-#endif
-    if (GetModuleFileNameW(NULL, progpath, MAXPATHLEN))
+    if (GetModuleFileNameW(NULL, modulepath, MAXPATHLEN)) {
+        canonicalize(progpath, modulepath);
         return;
-#endif
+    }
     if (prog == NULL || *prog == '\0')
         prog = L"python";
 
@@ -578,14 +622,10 @@ calculate_path(void)
 
 #ifdef MS_WINDOWS
     /* Calculate zip archive path from DLL or exe path */
-    if (wcscpy_s(zip_path, MAXPATHLEN+1, dllpath[0] ? dllpath : progpath))
-        /* exceeded buffer length - ignore zip_path */
-        zip_path[0] = '\0';
-    else {
-        wchar_t *dot = wcsrchr(zip_path, '.');
-        if (!dot || wcscpy_s(dot, MAXPATHLEN+1 - (dot - zip_path), L".zip"))
-            /* exceeded buffer length - ignore zip_path */
-            zip_path[0] = L'\0';
+    if (!get_dllpath(zip_path)) {
+        change_ext(zip_path, zip_path, L".zip");
+    } else {
+        change_ext(zip_path, progpath, L".zip");
     }
 
     skiphome = pythonhome==NULL ? 0 : 1;
@@ -768,8 +808,6 @@ calculate_path(void)
 }
 
 
-/* External interface */
-
 void
 Py_SetPath(const wchar_t *path)
 {
@@ -830,25 +868,39 @@ int
 _Py_CheckPython3()
 {
     wchar_t py3path[MAXPATHLEN+1];
-    wchar_t *s;
-    if (python3_checked)
+    if (python3_checked) {
         return hPython3 != NULL;
+    }
     python3_checked = 1;
 
     /* If there is a python3.dll next to the python3y.dll,
-       assume this is a build tree; use that DLL */
-    wcscpy(py3path, dllpath);
-    s = wcsrchr(py3path, L'\\');
-    if (!s)
-        s = py3path;
-    wcscpy(s, L"\\python3.dll");
-    hPython3 = LoadLibraryExW(py3path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-    if (hPython3 != NULL)
-        return 1;
+       use that DLL */
+    if (!get_dllpath(py3path)) {
+        reduce(py3path);
+        join(py3path, PY3_DLLNAME);
+        hPython3 = LoadLibraryExW(py3path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+        if (hPython3 != NULL) {
+            return 1;
+        }
+    }
 
-    /* Check sys.prefix\DLLs\python3.dll */
+    /* If we can locate python3.dll in our application dir,
+       use that DLL */
     wcscpy(py3path, Py_GetPrefix());
-    wcscat(py3path, L"\\DLLs\\python3.dll");
-    hPython3 = LoadLibraryExW(py3path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    if (py3path[0]) {
+        join(py3path, PY3_DLLNAME);
+        hPython3 = LoadLibraryExW(py3path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+        if (hPython3 != NULL) {
+            return 1;
+        }
+    }
+
+    /* For back-compat, also search {sys.prefix}\DLLs, though
+       that has not been a normal install layout for a while */
+    wcscpy(py3path, Py_GetPrefix());
+    if (py3path[0]) {
+        join(py3path, L"DLLs\\" PY3_DLLNAME);
+        hPython3 = LoadLibraryExW(py3path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    }
     return hPython3 != NULL;
 }
