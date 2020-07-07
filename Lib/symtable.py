@@ -226,7 +226,8 @@ class Symbol(object):
         return "<symbol {0!r}>".format(self.__name)
 
     def get_name(self):
-        """Return a name of a symbol."""
+        """Return a name of a symbol.
+        """
         return self.__name
 
     def is_referenced(self):
