@@ -80,15 +80,16 @@ class Queue:
         return cls
 
     def _format(self):
-        result = f'maxsize={self._maxsize!r}'
+        result = [f'maxsize={self._maxsize!r}']
         if getattr(self, '_queue', None):
-            result += f' _queue={list(self._queue)!r}'
+            result.append(f'_queue={list(self._queue)!r}')
         if self._getters:
-            result += f' _getters[{len(self._getters)}]'
+            result.append(f'_getters[{len(self._getters)}]')
         if self._putters:
-            result += f' _putters[{len(self._putters)}]'
+            result.append(f'_putters[{len(self._putters)}]')
         if self._unfinished_tasks:
-            result += f' tasks={self._unfinished_tasks}'
+            result.append(f'tasks={self._unfinished_tasks}')
+        result = ' '.join(result)
         return result
 
     def qsize(self):
