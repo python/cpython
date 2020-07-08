@@ -108,7 +108,7 @@ Type Objects
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.10
-   :c:func:`PyType_GetSlot` could accept static types.
+      :c:func:`PyType_GetSlot` could accept static types.
 
 .. c:function:: PyObject* PyType_GetModule(PyTypeObject *type)
 
