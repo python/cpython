@@ -1191,7 +1191,7 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             PyErr_SetString(PyExc_TypeError, "the key argument must be callable");
             return NULL; 
         }
-        if (key && typed){
+        if (typed){
             PyErr_SetString(PyExc_ValueError, 
                 "Using typed with key is ambiguous. key should be aware of type");
             return NULL;
@@ -1260,8 +1260,7 @@ lru_cache_dealloc(lru_cache_object *obj)
     list = lru_cache_unlink_list(obj);
     Py_XDECREF(obj->cache);
     Py_XDECREF(obj->func);
-    if (obj->key != NULL)
-        Py_XDECREF(obj->key);
+    Py_XDECREF(obj->key);
     Py_XDECREF(obj->cache_info_type);
     Py_XDECREF(obj->dict);
     lru_cache_clear_list(list);
@@ -1341,8 +1340,7 @@ lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
     Py_VISIT(self->cache);
     Py_VISIT(self->cache_info_type);
     Py_VISIT(self->dict);
-    //if (self->key != NULL)
-    //   Py_VISIT(self->key);
+    Py_VISIT(self->key);
     return 0;
 }
 
@@ -1354,8 +1352,7 @@ lru_cache_tp_clear(lru_cache_object *self)
     Py_CLEAR(self->cache);
     Py_CLEAR(self->cache_info_type);
     Py_CLEAR(self->dict);
-   if (self->key != NULL)
-       Py_CLEAR(self->key);
+    Py_CLEAR(self->key);
     lru_cache_clear_list(list);
     return 0;
 }
