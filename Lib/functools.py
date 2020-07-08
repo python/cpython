@@ -476,7 +476,7 @@ def _make_key(args, kwds, typed,
         return key[0]
     return _HashedSeq(key)
 
-def lru_cache(maxsize=128, typed=False, make_key=None):
+def lru_cache(maxsize=128, typed=False, key=None):
     """Least-recently-used cache decorator.
 
     If *maxsize* is set to None, the LRU features are disabled and the cache
@@ -486,8 +486,8 @@ def lru_cache(maxsize=128, typed=False, make_key=None):
     For example, f(3.0) and f(3) will be treated as distinct calls with
     distinct results.
 
-    If *make_key* is a callable, it will be called with the given arguments of 
-    function. It is expected to return a hashable object. If *make_key* is 
+    If *key* is a callable, it will be called with the given arguments of 
+    function. It is expected to return a hashable object. If *key* is 
     provided, arguments of the function doesn't have to be hashable.
 
     Arguments to the cached function must be hashable.
@@ -512,28 +512,28 @@ def lru_cache(maxsize=128, typed=False, make_key=None):
     elif callable(maxsize) and isinstance(typed, bool):
         # The user_function was passed in directly via the maxsize argument
         user_function, maxsize = maxsize, 128
-        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, make_key, _CacheInfo)
+        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, key, _CacheInfo)
         wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
         return update_wrapper(wrapper, user_function)
     elif maxsize is not None:
         raise TypeError(
             'Expected first argument to be an integer, a callable, or None')
     
-    if make_key and not callable(make_key):
-        raise TypeError("Expected make_key argument to be a callable, or None")
+    if key and not callable(key):
+        raise TypeError("Expected key argument to be a callable, or None")
     
-    if make_key and typed:
+    if key and typed:
         raise ValueError(
-            "Using typed with make_key is ambiguous. make_key should be aware of type")
+            "Using typed with key is ambiguous. key should be aware of type")
 
     def decorating_function(user_function):
-        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, make_key, _CacheInfo)
+        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, key, _CacheInfo)
         wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
         return update_wrapper(wrapper, user_function)
 
     return decorating_function
 
-def _lru_cache_wrapper(user_function, maxsize, typed, make_key, _CacheInfo):
+def _lru_cache_wrapper(user_function, maxsize, typed, key, _CacheInfo):
     # Constants shared by all lru cache instances:
     sentinel = object()          # unique object used to signal cache misses
     PREV, NEXT, KEY, RESULT = 0, 1, 2, 3   # names for the link fields
@@ -546,7 +546,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, make_key, _CacheInfo):
     lock = RLock()           # because linkedlist updates aren't threadsafe
     root = []                # root of the circular doubly linked list
     root[:] = [root, root, None, None]     # initialize by pointing to self
-
+    make_key = key           # a user defined function of to make key from args.
     if maxsize == 0:
 
         def wrapper(*args, **kwds):

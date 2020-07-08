@@ -778,7 +778,7 @@ typedef struct lru_cache_object {
     PyObject *cache;
     Py_ssize_t hits;
     PyObject *func;
-    PyObject *make_key;
+    PyObject *key;
     Py_ssize_t maxsize;
     Py_ssize_t misses;
     PyObject *cache_info_type;
@@ -874,8 +874,8 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
     PyObject *result;
     Py_hash_t hash;
     PyObject *key;
-    if (self->make_key != Py_None)
-        key = PyObject_Call(self->make_key, args, kwds);
+    if (self->key != NULL)
+        key = PyObject_Call(self->key, args, kwds);
     else 
         key = lru_cache_make_key(args, kwds, self->typed);
 
@@ -978,8 +978,8 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     lru_list_elem *link;
     PyObject *key, *result, *testresult;
     Py_hash_t hash;
-    if (self->make_key != Py_None)
-        key = PyObject_Call(self->make_key, args, kwds);
+    if (self->key != NULL)
+        key = PyObject_Call(self->key, args, kwds);
     else 
         key = lru_cache_make_key(args, kwds, self->typed);
     
@@ -1143,16 +1143,16 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
 static PyObject *
 lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-    PyObject *func, *maxsize_O, *cache_info_type, *cachedict, *make_key;
+    PyObject *func, *maxsize_O, *cache_info_type, *cachedict, *key;
     int typed;
     lru_cache_object *obj;
     Py_ssize_t maxsize;
     PyObject *(*wrapper)(lru_cache_object *, PyObject *, PyObject *);
-    static char *keywords[] = {"user_function", "maxsize", "typed", "make_key",
+    static char *keywords[] = {"user_function", "maxsize", "typed", "key",
                                "cache_info_type", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kw, "OOpOO:lru_cache", keywords,
-                                     &func, &maxsize_O, &typed, &make_key,
+                                     &func, &maxsize_O, &typed, &key,
                                      &cache_info_type)) {
         return NULL;
     }
@@ -1183,10 +1183,19 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         PyErr_SetString(PyExc_TypeError, "maxsize should be integer or None");
         return NULL;
     }
-
-    if (make_key != Py_None && !PyCallable_Check(make_key)) {
-        PyErr_SetString(PyExc_TypeError, "the make_key argument must be callable");
-        return NULL; 
+    if (key == Py_None){
+        key = NULL;
+    }
+    else {
+        if (!PyCallable_Check(key)) {
+            PyErr_SetString(PyExc_TypeError, "the key argument must be callable");
+            return NULL; 
+        }
+        if (key && typed){
+            PyErr_SetString(PyExc_ValueError, 
+                "Using typed with key is ambiguous. key should be aware of type");
+            return NULL;
+        }
     }
 
     if (!(cachedict = PyDict_New()))
@@ -1202,7 +1211,9 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj->root.next = &obj->root;
     obj->wrapper = wrapper;
     obj->typed = typed;
-    obj->make_key = make_key;
+    if (key != NULL)
+        Py_INCREF(key);
+    obj->key = key;
     obj->cache = cachedict;
     Py_INCREF(func);
     obj->func = func;
@@ -1249,6 +1260,8 @@ lru_cache_dealloc(lru_cache_object *obj)
     list = lru_cache_unlink_list(obj);
     Py_XDECREF(obj->cache);
     Py_XDECREF(obj->func);
+    if (obj->key != NULL)
+        Py_XDECREF(obj->key);
     Py_XDECREF(obj->cache_info_type);
     Py_XDECREF(obj->dict);
     lru_cache_clear_list(list);
@@ -1328,6 +1341,8 @@ lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
     Py_VISIT(self->cache);
     Py_VISIT(self->cache_info_type);
     Py_VISIT(self->dict);
+    //if (self->key != NULL)
+    //   Py_VISIT(self->key);
     return 0;
 }
 
@@ -1339,6 +1354,8 @@ lru_cache_tp_clear(lru_cache_object *self)
     Py_CLEAR(self->cache);
     Py_CLEAR(self->cache_info_type);
     Py_CLEAR(self->dict);
+   if (self->key != NULL)
+       Py_CLEAR(self->key);
     lru_cache_clear_list(list);
     return 0;
 }
@@ -1355,6 +1372,9 @@ maxsize:  0         for no caching\n\
 \n\
 typed:    False     cache f(3) and f(3.0) as identical calls\n\
           True      cache f(3) and f(3.0) as distinct calls\n\
+\n\
+key:      Callable  function that accepts the argument and return key\n\
+          None      for using the default key method\n\
 \n\
 cache_info_type:    namedtuple class with the fields:\n\
                         hits misses currsize maxsize\n"
