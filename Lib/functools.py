@@ -486,8 +486,8 @@ def lru_cache(maxsize=128, typed=False, key=None):
     For example, f(3.0) and f(3) will be treated as distinct calls with
     distinct results.
 
-    If *key* is a callable, it will be called with the given arguments of 
-    function. It is expected to return a hashable object. If *key* is 
+    If *key* is a callable, it will be called with the given arguments of
+    function. It is expected to return a hashable object. If *key* is
     provided, arguments of the function doesn't have to be hashable.
 
     Arguments to the cached function must be hashable.
@@ -518,10 +518,10 @@ def lru_cache(maxsize=128, typed=False, key=None):
     elif maxsize is not None:
         raise TypeError(
             'Expected first argument to be an integer, a callable, or None')
-    
+
     if key and not callable(key):
         raise TypeError("Expected key argument to be a callable, or None")
-    
+
     if key and typed:
         raise ValueError(
             "Using typed with key is ambiguous. key should be aware of type")
