@@ -1,0 +1,1 @@
+Add an optional key argument to lru_cache, to support user defined funcion that can create a custom key for "lru_cache" cache table.
