@@ -1426,9 +1426,8 @@ UnicodeData File Format " UNIDATA_VERSION ".");
 static int unicodedata_exec(PyObject *m)
 {
     PyObject *v;
-    UnicodeDataState* st;
 
-    st = unicodedata_get_state(m);
+    UnicodeDataState *st = unicodedata_get_state(m);
 
     st->ucd_type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &unicodedata_ucd_type_spec, NULL);
     if (st->ucd_type == NULL) {
@@ -1445,13 +1444,25 @@ static int unicodedata_exec(PyObject *m)
 
     /* Previous versions */
     v = new_previous_version(m, "3.2.0", get_change_3_2_0, normalization_3_2_0);
-    if (v != NULL)
-        PyModule_AddObject(m, "ucd_3_2_0", v);
+    if (v == NULL)
+        return -1;
+    
+     if (PyModule_AddObject(m, "ucd_3_2_0", v) < 0) {
+         Py_DECREF(v);
+         return -1;
+     }
 
     /* Export C API */
     v = PyCapsule_New((void *)&hashAPI, PyUnicodeData_CAPSULE_NAME, NULL);
-    if (v != NULL)
-        PyModule_AddObject(m, "ucnhash_CAPI", v);
+    if (v == NULL)
+        return -1;
+
+    if (PyModule_AddObject(m, "ucnhash_CAPI", v) < 0)
+    {
+        Py_DECREF(v);
+        return -1;
+    }
+
     return 0;
 }
 
@@ -1463,6 +1474,7 @@ static PyModuleDef_Slot unicodedata_slots[] = {
 static struct PyModuleDef unicodedata_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "unicodedata",
+    .m_doc = unicodedata_docstring,
     .m_size = sizeof(UnicodeDataState),
     .m_methods = unicodedata_functions,
     .m_slots = unicodedata_slots,
