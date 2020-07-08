@@ -1360,7 +1360,6 @@ In addition to the three supplied contexts, new contexts can be created with the
       ``Decimal('NaN')``.
 
 
-
       .. versionchanged:: 3.3
          The C module computes :meth:`power` in terms of the correctly-rounded
          :meth:`exp` and :meth:`ln` functions. The result is well-defined but
