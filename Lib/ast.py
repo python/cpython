@@ -117,6 +117,14 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
     integer or string, then the tree will be pretty-printed with that indent
     level. None (the default) selects the single line representation.
     """
+    def _qualifier_to_default(qualifier):
+        if qualifier == 1:
+            return []
+        elif qualifier == 2:
+            return None
+        else:
+            return ...
+
     def _format(node, level=0):
         if indent is not None:
             level += 1
@@ -130,13 +138,14 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
             args = []
             allsimple = True
             keywords = annotate_fields
-            for name in node._fields:
+            for name, qualifier in zip(node._fields, node._field_qualifiers):
+                default_value = _qualifier_to_default(qualifier)
                 try:
                     value = getattr(node, name)
                 except AttributeError:
                     keywords = True
                     continue
-                if value is None and getattr(cls, name, ...) is None:
+                if value is None and default_value is None:
                     keywords = True
                     continue
                 value, simple = _format(value, level)

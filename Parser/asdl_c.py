@@ -130,7 +130,10 @@ class TypeDefVisitor(EmitVisitor):
     def visitModule(self, mod):
         for dfn in mod.dfns:
             self.visit(dfn)
-
+        self.emit(
+            "typedef enum _field_qualifier {SEQUENCE = 1, OPTIONAL = 2} "
+            "field_qualifier;", 0
+        )
     def visitType(self, type, depth=0):
         self.visit(type.value, type.name, depth)
 
@@ -665,6 +668,7 @@ class PyTypesDeclareVisitor(PickleVisitor):
             for f in prod.fields:
                 self.emit('"%s",' % f.name, 1)
             self.emit("};", 0)
+            self._emit_field_qualifiers(name, prod.fields, 0)
 
     def visitSum(self, sum, name):
         self.emit_type("%s_type" % name)
@@ -692,6 +696,19 @@ class PyTypesDeclareVisitor(PickleVisitor):
             for t in cons.fields:
                 self.emit('"%s",' % t.name, 1)
             self.emit("};",0)
+            self._emit_field_qualifiers(cons.name, cons.fields, 0)
+
+    def _emit_field_qualifiers(self, name, fields, depth):
+        self.emit("static const field_qualifier %s_field_qualifiers[]={" % name, depth)
+        for field in fields:
+            if field.seq:
+                qualifier = "SEQUENCE"
+            elif field.opt:
+                qualifier = "OPTIONAL"
+            else:
+                qualifier = "0"
+            self.emit("%s, // %s" % (qualifier, field.name), depth+1)
+        self.emit("};", depth)
 
 
 class PyTypesVisitor(PickleVisitor):
@@ -742,7 +759,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 
     Py_ssize_t i, numfields = 0;
     int res = -1;
-    PyObject *key, *value, *fields;
+    PyObject *key, *value, *fields, *field_qualifiers = NULL;
     if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
         goto cleanup;
     }
@@ -802,8 +819,52 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             }
         }
     }
+    if (_PyObject_LookupAttr(self, state->_field_qualifiers, &field_qualifiers) < 0) {
+        goto cleanup;
+    }
+
+    PyObject *field, *field_qualifier, *field_default = NULL;
+    for (i = 0; i < numfields; i++) {
+        field = PySequence_GetItem(fields, i);
+        field_qualifier = PySequence_GetItem(field_qualifiers, i);
+        if (!field_qualifier || !field) {
+            res = -1;
+            goto next_iteration;
+        }
+
+        if (PyObject_HasAttr(self, field)) {
+            goto next_iteration;
+        }
+
+        switch (PyLong_AsLong(field_qualifier)) {
+            case -1:
+                res = -1;
+                goto next_iteration;
+            case 0:
+                goto next_iteration;
+            case SEQUENCE:
+                field_default = PyList_New(0);
+                break;
+            case OPTIONAL:
+                field_default = Py_None;
+                Py_INCREF(field_default);
+                break;
+        }
+        assert(field_default != NULL);
+        res = PyObject_SetAttr(self, field, field_default);
+        Py_DECREF(field_default);
+        next_iteration:
+            Py_XDECREF(field);
+            Py_XDECREF(field_qualifier);
+            if (res < 0) {
+                goto cleanup;
+            }
+            continue;
+    }
+
   cleanup:
     Py_XDECREF(fields);
+    Py_XDECREF(field_qualifiers);
     return res;
 }
 
@@ -866,29 +927,45 @@ static PyType_Spec AST_type_spec = {
 };
 
 static PyObject *
-make_type(astmodulestate *state, const char *type, PyObject* base,
-          const char* const* fields, int num_fields, const char *doc)
+make_type(
+    astmodulestate *state,
+    const char *type,
+    PyObject* base,
+    const char* const* fields,
+    const field_qualifier* field_qualifiers,
+    Py_ssize_t num_fields,
+    const char *doc
+)
 {
-    PyObject *fnames, *result;
-    int i;
-    fnames = PyTuple_New(num_fields);
-    if (!fnames) return NULL;
+    Py_ssize_t i;
+    PyObject *result = NULL;
+    PyObject *fnames = PyTuple_New(num_fields);
+    PyObject *fqualifiers = PyTuple_New(num_fields);
+
+    if (!fnames || !fqualifiers) {
+        goto exit;
+    }
+
     for (i = 0; i < num_fields; i++) {
         PyObject *field = PyUnicode_InternFromString(fields[i]);
-        if (!field) {
-            Py_DECREF(fnames);
-            return NULL;
+        PyObject *qualifier = PyLong_FromLong((long)field_qualifiers[i]);
+        if (!field || !qualifier) {
+            goto exit;
         }
         PyTuple_SET_ITEM(fnames, i, field);
+        PyTuple_SET_ITEM(fqualifiers, i, qualifier);
     }
-    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOs}",
+    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOOOs}",
                     type, base,
                     state->_fields, fnames,
+                    state->_field_qualifiers, fqualifiers,
                     state->__module__,
                     state->ast,
                     state->__doc__, doc);
-    Py_DECREF(fnames);
-    return result;
+    exit:
+        Py_XDECREF(fnames);
+        Py_XDECREF(fqualifiers);
+        return result;
 }
 
 static int
@@ -1012,8 +1089,10 @@ static int add_ast_fields(astmodulestate *state)
 {
     PyObject *empty_tuple;
     empty_tuple = PyTuple_New(0);
+    Py_XINCREF(empty_tuple); // for _field_qualifiers
     if (!empty_tuple ||
         PyObject_SetAttrString(state->AST_type, "_fields", empty_tuple) < 0 ||
+        PyObject_SetAttrString(state->AST_type, "_field_qualifiers", empty_tuple) < 0 ||
         PyObject_SetAttrString(state->AST_type, "_attributes", empty_tuple) < 0) {
         Py_XDECREF(empty_tuple);
         return -1;
@@ -1040,10 +1119,11 @@ static int add_ast_fields(astmodulestate *state)
     def visitProduct(self, prod, name):
         if prod.fields:
             fields = name+"_fields"
+            field_qualifiers = name+"_field_qualifiers"
         else:
-            fields = "NULL"
-        self.emit('state->%s_type = make_type(state, "%s", state->AST_type, %s, %d,' %
-                        (name, name, fields, len(prod.fields)), 1)
+            fields = field_defaults = "NULL"
+        self.emit('state->%s_type = make_type(state, "%s", state->AST_type, %s, %s, %d,' %
+                        (name, name, fields, field_qualifiers, len(prod.fields)), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(name, prod), 2), 2, reflow=False)
         self.emit("if (!state->%s_type) return 0;" % name, 1)
         self.emit_type("AST_type")
@@ -1053,11 +1133,9 @@ static int add_ast_fields(astmodulestate *state)
                             (name, name, len(prod.attributes)), 1)
         else:
             self.emit("if (!add_attributes(state, state->%s_type, NULL, 0)) return 0;" % name, 1)
-        self.emit_defaults(name, prod.fields, 1)
-        self.emit_defaults(name, prod.attributes, 1)
 
     def visitSum(self, sum, name):
-        self.emit('state->%s_type = make_type(state, "%s", state->AST_type, NULL, 0,' %
+        self.emit('state->%s_type = make_type(state, "%s", state->AST_type, NULL, NULL, 0,' %
                   (name, name), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(name, sum), 2), 2, reflow=False)
         self.emit_type("%s_type" % name)
@@ -1067,7 +1145,12 @@ static int add_ast_fields(astmodulestate *state)
                             (name, name, len(sum.attributes)), 1)
         else:
             self.emit("if (!add_attributes(state, state->%s_type, NULL, 0)) return 0;" % name, 1)
-        self.emit_defaults(name, sum.attributes, 1)
+        for attribute in sum.attributes:
+            if attribute.opt:
+                self.emit('if (PyObject_SetAttr(state->%s_type, state->%s, Py_None) == -1) {' %
+                            (name, attribute.name), 1)
+                self.emit("return 0;", 2)
+                self.emit("}", 1)
         simple = is_simple(sum)
         for t in sum.types:
             self.visitConstructor(t, name, simple)
@@ -1075,26 +1158,19 @@ static int add_ast_fields(astmodulestate *state)
     def visitConstructor(self, cons, name, simple):
         if cons.fields:
             fields = cons.name+"_fields"
+            field_qualifiers = cons.name+"_field_qualifiers"
         else:
-            fields = "NULL"
-        self.emit('state->%s_type = make_type(state, "%s", state->%s_type, %s, %d,' %
-                            (cons.name, cons.name, name, fields, len(cons.fields)), 1)
+            fields = field_qualifiers = "NULL"
+        self.emit('state->%s_type = make_type(state, "%s", state->%s_type, %s, %s, %d,' %
+                            (cons.name, cons.name, name, fields, field_qualifiers, len(cons.fields)), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(cons.name, cons), 2), 2, reflow=False)
         self.emit("if (!state->%s_type) return 0;" % cons.name, 1)
         self.emit_type("%s_type" % cons.name)
-        self.emit_defaults(cons.name, cons.fields, 1)
         if simple:
             self.emit("state->%s_singleton = PyType_GenericNew((PyTypeObject *)"
                       "state->%s_type, NULL, NULL);" %
                              (cons.name, cons.name), 1)
             self.emit("if (!state->%s_singleton) return 0;" % cons.name, 1)
-
-    def emit_defaults(self, name, fields, depth):
-        for field in fields:
-            if field.opt:
-                self.emit('if (PyObject_SetAttr(state->%s_type, state->%s, Py_None) == -1)' %
-                            (name, field.name), depth)
-                self.emit("return 0;", depth+1)
 
 
 class ASTModuleVisitor(PickleVisitor):
@@ -1397,6 +1473,7 @@ def generate_module_def(f, mod):
     state_strings = {
         "ast",
         "_fields",
+        "_field_qualifiers",
         "__doc__",
         "__dict__",
         "__module__",
