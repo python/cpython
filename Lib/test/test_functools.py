@@ -1723,17 +1723,17 @@ class TestLRU:
         for ref in refs:
             self.assertIsNone(ref())
 
-    def test_lru_make_key(self):
-        lst = [1,2,3]
-        def last_item_key(lst):
-            return lst[-1]
+    def test_lru_key_func(self):
 
-        @self.module.lru_cache(maxsize=2, make_key=last_item_key)
-        def func(lst):
-            return sum(lst)
+        def key_maker(item):
+            return tuple(item.keys())
 
-        self.assertEqual(func([1,2,3]), 6)
-        self.assertEqual(func([3,3,3]), 6)
+        @self.module.lru_cache(maxsize=2, key=key_maker)
+        def func(item):
+            return min(item.values())
+
+        self.assertEqual(func({"a": 1, "b": 2}), 1)
+        self.assertEqual(func({"a": 3, "b": 2}), 1)
 
 
 @py_functools.lru_cache()
