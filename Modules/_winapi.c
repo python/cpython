@@ -1910,8 +1910,20 @@ static PyMethodDef winapi_functions[] = {
     {NULL, NULL}
 };
 
+static int 
+SetWinAPIConstant(PyObject* d, const char* fmt, const char* constantString, int constant) {
+    PyObject *value = Py_BuildValue(fmt, constant);
+    if (PyDict_SetItemString(d, constantString, value) < 0) {
+        Py_DECREF(value);
+        return -1;
+    }
+
+    Py_DECREF(value);
+    return 0;
+}
+
 #define WINAPI_CONSTANT(fmt, con) \
-    if (PyDict_SetItemString(d, #con, Py_BuildValue(fmt, con)) < 0) return -1
+    if (SetWinAPIConstant(d, fmt, #con, con) < 0) return -1
 
 static int winapi_exec(PyObject *m)
 {
