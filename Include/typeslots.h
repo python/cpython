@@ -88,3 +88,24 @@
 /* New in 3.5 */
 #define Py_tp_finalize 80
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x031000a1
+/* New in 3.10 */
+#define Py_tp_as_async 81
+#define Py_tp_as_buffer 82
+#define Py_tp_as_mapping 83
+#define Py_tp_as_number 84
+#define Py_tp_as_sequence 85
+#define Py_tp_basicsize 86
+#define Py_tp_cache 87
+#define Py_tp_dict 88
+#define Py_tp_dictoffset 89
+#define Py_tp_flags 90
+#define Py_tp_itemsize 91
+#define Py_tp_mro 92
+#define Py_tp_name 93
+#define Py_tp_subclasses 94
+#define Py_tp_vectorcall_offset 95
+#define Py_tp_version_tag 96
+#define Py_tp_weaklist 97
+#define Py_tp_weaklistoffset 98
+#endif

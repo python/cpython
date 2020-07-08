@@ -3110,7 +3110,7 @@ PyType_FromSpec(PyType_Spec *spec)
 void *
 PyType_GetSlot(PyTypeObject *type, int slot)
 {
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE) || slot < 0) {
+    if (slot < 0) {
         PyErr_BadInternalCall();
         return NULL;
     }
