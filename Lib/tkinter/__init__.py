@@ -1426,22 +1426,25 @@ class Misc:
         self.tk.call('bind', className , sequence, '')
 
     def mainloop(self, n=0):
-        """Call the main loop of tkinter."""
+        """Call the main loop of Tkinter."""
         self.tk.mainloop(n)
 
     def dispatching(self):
-        """Determine if the tkinter main loop is running.
+        """Determine if the Tkinter main loop is running.
 
-        Returns True if the mainloop is running.
-        Returns False if the mainloop is not running."""
+        Returns True if the main loop is running.
+        Returns False if the main loop is not running."""
         return self.tk.dispatching()
 
     def quit(self):
-        """Signal the Tkinter mainloop to stop dispatching.
+        """Signal the Tkinter main loop to stop dispatching.
 
-        The mainloop will exit AFTER THE NEXT Tcl event handler is called.
-        If no events are forthcoming, mainloop will hang even if quit
-        has been called. In this case, call after(0, quit).
+        The main loop will exit AFTER the current Tcl event handler is
+        finished calling. If quit is called outside the context of a Tcl
+        event, for example from a thread, the main loop will not exit
+        until after the NEXT event is dispatched. If no more events are
+        forthcoming, main loop will keep blocking even if quit has been
+        called. In that case, call after(0, quit) instead.
         """
         self.tk.quit()
 
