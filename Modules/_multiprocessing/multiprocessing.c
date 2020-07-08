@@ -139,7 +139,7 @@ static PyMethodDef module_methods[] = {
  * Initialize
  */
 
-int multiprocessing_exec(PyObject *module)
+static int multiprocessing_exec(PyObject *module)
 {
     PyObject *value = NULL;
 
@@ -175,9 +175,9 @@ int multiprocessing_exec(PyObject *module)
 
 #define ADD_FLAG(name)                                            \
     value = Py_BuildValue("i", name);                             \
-    if (value == NULL) { Py_DECREF(temp); return NULL; }          \
+    if (value == NULL) { Py_DECREF(temp); return -1; }            \
     if (PyDict_SetItemString(temp, #name, value) < 0) {           \
-        Py_DECREF(temp); Py_DECREF(value); return NULL; }         \
+        Py_DECREF(temp); Py_DECREF(value); return -1; }           \
     Py_DECREF(value)
 
 #if defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED)
