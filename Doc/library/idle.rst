@@ -476,7 +476,7 @@ Completions
 
 When available, completions are supplied for filenames and for
 attributes of modules, classes, and functions.  This is usually done
-by displaying a completion box listing existing names.  The name
+by displaying a completion box that lists existing names.  The name
 being completed and the item highlighted in the box can be changed by
 adding and deleting characters, with Up, Down, Page Up, Page Down, Home
 and End keys, and by a single click within the box.  Keys <Escape>,
