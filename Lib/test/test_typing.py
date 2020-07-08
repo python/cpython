@@ -2914,6 +2914,33 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(gth(ForRefExample.func), expects)
         self.assertEqual(gth(ForRefExample.nested), expects)
 
+    def test_get_type_hints_wrapped_decoratored_func_only_with_return_type(self):
+        expects = {'arg1': str, 'return': bool}
+
+        @ann_module.dec_with_return_type
+        def func(arg1: str) -> int:
+            return 0
+
+        self.assertEqual(gth(func), expects)
+
+    def test_get_type_hints_wrapped_decoratored_func_only_with_arg_types(self):
+        expects = {'custom_arg': int, 'return': int}
+
+        @ann_module.dec_with_arg_types
+        def func(arg1: str) -> int:
+            return 0
+
+        self.assertEqual(gth(func), expects)
+
+    def test_get_type_hints_wrapped_decoratored_func_with_args_and_return_type(self):
+        expects = {'custom_arg': int, 'return': bool}
+
+        @ann_module.dec_with_args_and_return_types
+        def func(arg1: str) -> int:
+            return 0
+
+        self.assertEqual(gth(func), expects)
+
     def test_get_type_hints_annotated(self):
         def foobar(x: List['X']): ...
         X = Annotated[int, (1, 10)]

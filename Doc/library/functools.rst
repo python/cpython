@@ -572,6 +572,11 @@ The :mod:`functools` module defines the following functions:
    on the wrapper function). :exc:`AttributeError` is still raised if the
    wrapper function itself is missing any attributes named in *updated*.
 
+   If the wrapper function defined any type annotations, they will always be
+   preserved. But if not, they will be extracted from the wrapped function
+   ``__annotations__`` if available and ``__annotations__`` is in the *updated*
+   list.
+
    .. versionadded:: 3.2
       Automatic addition of the ``__wrapped__`` attribute.
 

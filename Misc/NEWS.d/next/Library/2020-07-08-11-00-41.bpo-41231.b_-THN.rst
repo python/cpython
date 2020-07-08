@@ -1,0 +1,3 @@
+``update_wrapper``: Don't override the ``__annotations__`` of the wrapper
+function if it has any as it might have a different signature than the
+wrapped one, and using the wrapped might mask the actual types.

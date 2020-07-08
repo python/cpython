@@ -53,7 +53,32 @@ def update_wrapper(wrapper,
         except AttributeError:
             pass
         else:
+            if attr == '__annotations__':
+                continue
             setattr(wrapper, attr, value)
+
+    if '__annotations__' in assigned:
+        try:
+            # Issue #41231: copy the annotations only if there's none defined
+            # in the wrapper
+            if not wrapper.__annotations__:
+                wrapper.__annotations__ = wrapped.__annotations__
+            # if only the return wrapped has annotations, assume that the
+            # parameters stay the same
+            elif ('return' in wrapper.__annotations__
+                  and len(wrapper.__annotations__) == 1):
+                wrapper.__annotations__ = {
+                    **wrapped.__annotations__,
+                    **wrapper.__annotations__,
+                }
+            # if only the parameters have annotations, assume that the return
+            # type stays the same
+            elif ('return' not in wrapper.__annotations__
+                  and 'return' in wrapped.__annotations__):
+                wrapper.__annotations__['return'] = wrapped.__annotations__['return']
+        except AttributeError as error:
+            pass
+
     for attr in updated:
         getattr(wrapper, attr).update(getattr(wrapped, attr, {}))
     # Issue #17482: set __wrapped__ last so we don't inadvertently copy it

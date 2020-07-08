@@ -2814,8 +2814,9 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(self.signature(Foo.bar, follow_wrapped=False),
                          ((('args', ..., ..., "var_positional"),
                            ('kwargs', ..., ..., "var_keyword")),
-                          ...)) # functools.wraps will copy __annotations__
-                                # from "func" to "wrapper", hence no
+                          int)) # functools.wraps will copy __annotations__
+                                # from "func" to "wrapper" only if wrapper does
+                                # not have some already, hence the
                                 # return_annotation
 
         # Test that we handle method wrappers correctly

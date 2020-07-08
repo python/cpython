@@ -58,3 +58,22 @@ def dec(func):
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
     return wrapper
+
+def dec_with_return_type(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs) -> bool:
+        return bool(func(*args, **kwargs))
+    return wrapper
+
+def dec_with_arg_types(func):
+    @wraps(func)
+    def wrapper(self, custom_arg: int, *args, **kwargs):
+        return func(self, custom_arg, *args, **kwargs)
+    return wrapper
+
+def dec_with_args_and_return_types(func):
+    @wraps(func)
+    def wrapper(self, custom_arg: int, *args, **kwargs) -> bool:
+        return bool(func(self, custom_arg, *args, **kwargs))
+
+    return wrapper

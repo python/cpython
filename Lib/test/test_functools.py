@@ -600,10 +600,17 @@ class TestUpdateWrapper(unittest.TestCase):
 
     def check_wrapper(self, wrapper, wrapped,
                       assigned=functools.WRAPPER_ASSIGNMENTS,
-                      updated=functools.WRAPPER_UPDATES):
+                      updated=functools.WRAPPER_UPDATES,
+                      expected_annotations=None,
+                      ):
         # Check attributes were assigned
         for name in assigned:
-            self.assertIs(getattr(wrapper, name), getattr(wrapped, name))
+            if expected_annotations is not None and name == '__annotations__':
+                self.assertEqual(expected_annotations, wrapper.__annotations__)
+            elif name == '__annotations__':
+                self.assertEqual(getattr(wrapper, name), getattr(wrapped, name))
+            else:
+                self.assertIs(getattr(wrapper, name), getattr(wrapped, name))
         # Check attributes were updated
         for name in updated:
             wrapper_attr = getattr(wrapper, name)
@@ -630,13 +637,14 @@ class TestUpdateWrapper(unittest.TestCase):
 
     def test_default_update(self):
         wrapper, f = self._default_update()
-        self.check_wrapper(wrapper, f)
+        self.check_wrapper(wrapper, f,
+                           expected_annotations={'b': 'This is the prior annotation'})
         self.assertIs(wrapper.__wrapped__, f)
         self.assertEqual(wrapper.__name__, 'f')
         self.assertEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.attr, 'This is also a test')
-        self.assertEqual(wrapper.__annotations__['a'], 'This is a new annotation')
-        self.assertNotIn('b', wrapper.__annotations__)
+        self.assertEqual(wrapper.__annotations__['b'], 'This is the prior annotation')
+        self.assertNotIn('a', wrapper.__annotations__)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -1506,7 +1514,10 @@ class TestLRU:
             return 42
         g = self.module.lru_cache()(f)
         for attr in self.module.WRAPPER_ASSIGNMENTS:
-            self.assertEqual(getattr(g, attr), getattr(f, attr))
+            try:
+                self.assertEqual(getattr(g, attr), getattr(f, attr))
+            except AttributeError:
+                pass
 
     def test_lru_cache_threaded(self):
         n, m = 5, 11
