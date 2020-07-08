@@ -1211,8 +1211,7 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj->root.next = &obj->root;
     obj->wrapper = wrapper;
     obj->typed = typed;
-    if (key != NULL)
-        Py_INCREF(key);
+    Py_XINCREF(key);
     obj->key = key;
     obj->cache = cachedict;
     Py_INCREF(func);
