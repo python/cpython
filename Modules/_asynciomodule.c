@@ -289,9 +289,6 @@ error:
 static int
 set_running_loop(PyObject *loop)
 {
-    cached_running_holder = NULL;
-    cached_running_holder_tsid = 0;
-
     PyObject *ts_dict = PyThreadState_GetDict();  // borrowed
     if (ts_dict == NULL) {
         PyErr_SetString(
@@ -311,6 +308,12 @@ set_running_loop(PyObject *loop)
         return -1;
     }
     Py_DECREF(rl);
+
+    cached_running_holder = (PyObject *)rl;
+
+    /* safe to assume state is not NULL as the call to PyThreadState_GetDict()
+       above already checks if state is NULL */
+    cached_running_holder_tsid = PyThreadState_Get()->id;
 
     return 0;
 }
