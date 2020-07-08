@@ -4447,6 +4447,11 @@ class TestPostHandshakeAuth(unittest.TestCase):
                             'tlsv13 alert certificate required'):
                         s.recv(1024)
 
+            # If there was an exception, manually close the socket to avoid a
+            # ResourceWarning
+            if cm.exc_type == ssl.SSLError:
+                cm.thread.sslconn.close()
+
     def test_pha_optional(self):
         if support.verbose:
             sys.stdout.write("\n")
