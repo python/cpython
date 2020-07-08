@@ -823,16 +823,15 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._default_executor = executor
 
     def _getaddrinfo_debug(self, host, port, family, type, proto, flags):
-        msg = [f"{host}:{port!r}"]
+        msg = f"{host}:{port!r}"
         if family:
-            msg.append(f'family={family!r}')
+            msg += f", family={family!r}"
         if type:
-            msg.append(f'type={type!r}')
+            msg += f", type={type!r}"
         if proto:
-            msg.append(f'proto={proto!r}')
+            msg += f", proto={proto!r}"
         if flags:
-            msg.append(f'flags={flags!r}')
-        msg = ', '.join(msg)
+            msg += f", flags={flags!r}"
         logger.debug('Get address info %s', msg)
 
         t0 = self.time()
