@@ -925,6 +925,7 @@ class BlockFinder:
         self.passline = False
         self.indecorator = False
         self.decoratorhasargs = False
+        self.nestedparens = 0
         self.last = 1
 
     def tokeneater(self, type, token, srowcol, erowcol, line):
@@ -941,10 +942,15 @@ class BlockFinder:
         elif token == "(":
             if self.indecorator:
                 self.decoratorhasargs = True
+                self.nestedparens += 1
         elif token == ")":
             if self.indecorator:
-                self.indecorator = False
-                self.decoratorhasargs = False
+                self.nestedparens -= 1
+                if self.nestedparens == 0:
+                    self.indecorator = False
+                    self.decoratorhasargs = False
+                else:
+                    assert self.nestedparens > 0, self.nestedparens
         elif type == tokenize.NEWLINE:
             self.passline = False   # stop skipping when a NEWLINE is seen
             self.last = srowcol[0]
