@@ -92,7 +92,6 @@ static PyMemberDef DB_members[] = {
 
 /* forward declaration */
 static PyTypeObject UCD_Type;
-#define UCD_Check(o) Py_IS_TYPE(o, &UCD_Type)
 
 static PyObject*
 new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4),
@@ -135,7 +134,7 @@ unicodedata_UCD_decimal_impl(PyObject *self, int chr,
     long rc;
     Py_UCS4 c = (Py_UCS4)chr;
 
-    if (self && UCD_Check(self)) {
+    if (self && !PyModule_Check(self)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0) {
             /* unassigned */
@@ -223,7 +222,7 @@ unicodedata_UCD_numeric_impl(PyObject *self, int chr,
     double rc;
     Py_UCS4 c = (Py_UCS4)chr;
 
-    if (self && UCD_Check(self)) {
+    if (self && !PyModule_Check(self)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0) {
             /* unassigned */
@@ -268,7 +267,7 @@ unicodedata_UCD_category_impl(PyObject *self, int chr)
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->category;
-    if (self && UCD_Check(self)) {
+    if (self && !PyModule_Check(self)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed != 0xFF)
             index = old->category_changed;
@@ -295,7 +294,7 @@ unicodedata_UCD_bidirectional_impl(PyObject *self, int chr)
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->bidirectional;
-    if (self && UCD_Check(self)) {
+    if (self && !PyModule_Check(self)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
@@ -324,7 +323,7 @@ unicodedata_UCD_combining_impl(PyObject *self, int chr)
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->combining;
-    if (self && UCD_Check(self)) {
+    if (self && !PyModule_Check(self)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
@@ -352,7 +351,7 @@ unicodedata_UCD_mirrored_impl(PyObject *self, int chr)
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->mirrored;
-    if (self && UCD_Check(self)) {
+    if (self && !PyModule_Check(self)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
@@ -379,7 +378,7 @@ unicodedata_UCD_east_asian_width_impl(PyObject *self, int chr)
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->east_asian_width;
-    if (self && UCD_Check(self)) {
+    if (self && !PyModule_Check(self)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
@@ -413,7 +412,7 @@ unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
 
     code = (int)c;
 
-    if (self && UCD_Check(self)) {
+    if (self && !PyModule_Check(self)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             return PyUnicode_FromString(""); /* unassigned */
@@ -460,7 +459,7 @@ get_decomp_record(PyObject *self, Py_UCS4 code, int *index, int *prefix, int *co
 {
     if (code >= 0x110000) {
         *index = 0;
-    } else if (self && UCD_Check(self) &&
+    } else if (self && !PyModule_Check(self) &&
                get_old_record(self, code)->category_changed==0) {
         /* unassigned in old version */
         *index = 0;
@@ -558,7 +557,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
                 continue;
             }
             /* normalization changes */
-            if (self && UCD_Check(self)) {
+            if (self && !PyModule_Check(self)) {
                 Py_UCS4 value = ((PreviousDBVersion*)self)->normalization(code);
                 if (value != 0) {
                     stack[stackptr++] = value;
@@ -799,7 +798,7 @@ is_normalized_quickcheck(PyObject *self, PyObject *input,
 {
     /* An older version of the database is requested, quickchecks must be
        disabled. */
-    if (self && UCD_Check(self))
+    if (self && !PyModule_Check(self))
         return NO;
 
     Py_ssize_t i, len;
@@ -1066,7 +1065,7 @@ _getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
     if (!with_alias_and_seq && (IS_ALIAS(code) || IS_NAMED_SEQ(code)))
         return 0;
 
-    if (self && UCD_Check(self)) {
+    if (self && !PyModule_Check(self)) {
         /* in 3.2.0 there are no aliases and named sequences */
         const change_record *old;
         if (IS_ALIAS(code) || IS_NAMED_SEQ(code))
