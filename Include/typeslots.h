@@ -88,7 +88,6 @@
 /* New in 3.5 */
 #define Py_tp_finalize 80
 #endif
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x031000a1
 /* New in 3.10 */
 #define Py_tp_as_async 81
 #define Py_tp_as_buffer 82
@@ -108,4 +107,3 @@
 #define Py_tp_version_tag 96
 #define Py_tp_weaklist 97
 #define Py_tp_weaklistoffset 98
-#endif
