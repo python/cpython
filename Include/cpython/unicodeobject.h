@@ -11,8 +11,13 @@
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 
-#define HAVE_UNICODE_WCHAR_CACHE 1
-#define USE_UNICODE_WCHAR_CACHE 1
+#ifndef HAVE_UNICODE_WCHAR_CACHE
+#  define HAVE_UNICODE_WCHAR_CACHE 1
+#endif /* HAVE_UNICODE_WCHAR_CACHE */
+
+#ifndef USE_UNICODE_WCHAR_CACHE
+#  define USE_UNICODE_WCHAR_CACHE HAVE_UNICODE_WCHAR_CACHE
+#endif /* USE_UNICODE_WCHAR_CACHE */
 
 /* Since splitting on whitespace is an important use case, and
    whitespace in most situations is solely ASCII whitespace, we
