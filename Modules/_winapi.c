@@ -1929,7 +1929,7 @@ static int winapi_exec(PyObject *m)
     }
 
     Py_INCREF(st->overlapped_type);
-    if (PyModule_AddObject(m, "Overlapped", (PyObject *)st->overlapped_type) < 0) {
+    if (PyModule_AddType(m, st->overlapped_type) < 0) {
         Py_DECREF(st->overlapped_type);
         return -1;
     }
