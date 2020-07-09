@@ -488,7 +488,7 @@ def lru_cache(maxsize=128, typed=False, key=None):
 
     If *key* is a callable, it will be called with the given arguments of
     function. It is expected to return a hashable object. If *key* is
-    provided, arguments of the function doesn't have to be hashable.
+    provided, arguments of the function don't need to be hashable.
 
     Arguments to the cached function must be hashable.
 
@@ -546,7 +546,14 @@ def _lru_cache_wrapper(user_function, maxsize, typed, key, _CacheInfo):
     lock = RLock()           # because linkedlist updates aren't threadsafe
     root = []                # root of the circular doubly linked list
     root[:] = [root, root, None, None]     # initialize by pointing to self
-    make_key = key           # a user defined function of to make key from args.
+
+    # a user defined function of to make key from args.
+    if key:
+        def make_key(args, kwargs, typed):
+            return key(*args, **kwargs)
+    else:
+        make_key = _make_key
+
     if maxsize == 0:
 
         def wrapper(*args, **kwds):
@@ -561,10 +568,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, key, _CacheInfo):
         def wrapper(*args, **kwds):
             # Simple caching without ordering or size limit
             nonlocal hits, misses
-            if make_key:
-                key = make_key(*args, **kwds)
-            else:
-                key = _make_key(args, kwds, typed)
+            key = make_key(args, kwds, typed)
             result = cache_get(key, sentinel)
             if result is not sentinel:
                 hits += 1
@@ -579,10 +583,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, key, _CacheInfo):
         def wrapper(*args, **kwds):
             # Size limited caching that tracks accesses by recency
             nonlocal root, hits, misses, full
-            if make_key:
-                key = make_key(*args, **kwds)
-            else:
-                key = _make_key(args, kwds, typed)
+            key = make_key(args, kwds, typed)
             with lock:
                 link = cache_get(key)
                 if link is not None:
