@@ -153,7 +153,7 @@ overlapped_dealloc(OverlappedObject *self)
     if (self->write_buffer.obj)
         PyBuffer_Release(&self->write_buffer);
     Py_CLEAR(self->read_buffer);
-    PyTypeObject *tp = PY_TYPE(self);
+    PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
