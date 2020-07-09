@@ -70,10 +70,7 @@ Tkinter Modules
 
 Most of the time, :mod:`tkinter` is all you really need, but a number of
 additional modules are available as well.  The Tk interface is located in a
-binary module named :mod:`_tkinter`. This module contains the low-level
-interface to Tk, and should never be used directly by application programmers.
-It is usually a shared library (or DLL), but might in some cases be statically
-linked with the Python interpreter.
+binary module named :mod:`_tkinter`. 
 
 In addition to the Tk interface module, :mod:`tkinter` includes a number of
 Python modules, :mod:`tkinter.constants` being one of the most important.
@@ -81,10 +78,6 @@ Importing :mod:`tkinter` will automatically import :mod:`tkinter.constants`,
 so, usually, to use Tkinter all you need is a simple import statement::
 
    import tkinter
-
-Or, more often::
-
-   from tkinter import *
 
 
 .. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=1)
@@ -95,6 +88,29 @@ Or, more often::
 
    .. FIXME: The following keyword arguments are currently recognized:
 
+.. method:: Tk.mainloop(threshold)
+
+   Enters the main loop of Tkinter. This repeatedly dispatches Tcl events until either
+   :meth:`Tk.quit` is called, the number of open windows drops below `threshold`, or
+   an error occurs while executing events. Usually the default threshold of 0 is
+   appropriate.
+
+.. method:: Tk.quit()
+
+   Signals the Tkinter main loop to stop dispatching.
+   The main loop will exit AFTER the current Tcl event handler is
+   finished calling. If quit is called outside the context of a Tcl
+   event, for example from a thread, the main loop will not exit
+   until after the NEXT event is dispatched. If no more events are
+   forthcoming, main loop will keep blocking even if quit has been
+   called. In that case, call `Tk.after(0, Tk.quit)` instead.
+
+.. method:: Tk.dispatching()
+
+   Determines if the Tkinter main loop is running. Returns True if the main loop is running, or
+   returns False if the main loop is not running. It is possible for some entity other than
+   the main loop to be dispatching events. Some examples are: calling the `update` command,
+   :meth:`_tkinter.tkapp.doonevent`, and the python command line `EventHook`.
 
 .. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=0)
 
@@ -106,6 +122,46 @@ Or, more often::
    created by the :func:`Tcl` object can have a Toplevel window created (and the Tk
    subsystem initialized) by calling its :meth:`loadtk` method.
 
+.. TODO: Not a class, a module. how do I inline another module into this RST file?
+
+.. class:: _tkinter
+
+   This module contains the low-level interface to Tk, and should rarely be
+   used directly by application programmers. It is usually a shared library
+   (or DLL), but might in some cases be statically linked with the Python
+   interpreter. 
+
+.. method:: _tkinter.create(screenName=None, baseName="", className="Tk", interactive=False, wantobjects=False, wantTk=True, sync=False, use=None)
+
+   This method is not for general use, but it is responsible for creating the
+   :class:`_tkinter.tkapp` object that can be found as the attribute
+   :attr:`Tk.tk`.
+
+.. class:: _tkinter.tkapp
+
+   This object contains most of the low-level interface to Tk, and should
+   rarely be used directly by application programmers.
+
+.. method:: _tkinter.tkapp.call(*args)
+
+   This method is the core entry point to Tcl/Tk. All Tkinter methods that
+   correspond to Tcl commands flow through here. This function is thread-safe,
+   meaning it can be used to issue commands to the Tcl interpreter in the main
+   thread from any other thread. If called from a thread, it will wait up to
+   one second for :meth:`Tk.mainloop` to be called, and then throw an error.
+
+.. method:: _tkinter.tkapp.willdispatch()
+
+   This method circumvents the thread waiting behavior of :meth:`_tkinter.tkapp.call`
+   until after the next call to :meth:`Tk.mainloop` returns. Instead of throwing
+   an error after one second, :meth:`_tkinter.tkapp.call` will wait indefinitely
+   for :meth:`Tk.mainloop` to come up, or for some other entity to dispatch the
+   call. This method is essentially a promise to the thread that you "will dispatch" soon.
+
+.. method:: _tkinter.tkapp.setmainloopwaitattempts(num=10)
+
+   This method sets the number of 100 ms wait attempts of :meth:`_tkinter.tkapp.call`.
+   You can trigger an error immediately by setting `num` to 0.
 
 Other modules that provide Tk support include:
 

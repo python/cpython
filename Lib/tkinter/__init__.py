@@ -590,16 +590,16 @@ class BooleanVar(Variable):
             raise ValueError("invalid literal for getboolean()")
 
 
-def mainloop(n=0):
-    """Run the main loop of tkinter."""
-    _default_root.tk.mainloop(n)
+def mainloop(threshold=0):
+    """Call the main loop of Tkinter."""
+    _default_root.tk.mainloop(threshold)
 
 
 def dispatching():
-    """Determine if the tkinter main loop is running.
+    """Determine if the Tkinter main loop is running.
 
-    Returns True if the mainloop is running.
-    Returns False if the mainloop is not running."""
+    Returns True if the main loop is running.
+    Returns False if the main loop is not running."""
     return _default_root.tk.dispatching()
 
 
@@ -1425,9 +1425,9 @@ class Misc:
         all functions."""
         self.tk.call('bind', className , sequence, '')
 
-    def mainloop(self, n=0):
+    def mainloop(self, threshold=0):
         """Call the main loop of Tkinter."""
-        self.tk.mainloop(n)
+        self.tk.mainloop(threshold)
 
     def dispatching(self):
         """Determine if the Tkinter main loop is running.
