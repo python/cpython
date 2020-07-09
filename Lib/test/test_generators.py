@@ -415,6 +415,55 @@ class GeneratorThrowTest(unittest.TestCase):
             gen.throw(ValueError)
 
 
+class GeneratorStackTraceTest(unittest.TestCase):
+
+    def check_stack_names(self, frame, expected):
+        names = []
+        while frame:
+            name = frame.f_code.co_name
+            # Stop checking frames when we get to our test helper.
+            if name.startswith('check_') or name.startswith('call_'):
+                break
+
+            names.append(name)
+            frame = frame.f_back
+
+        self.assertEqual(names, expected)
+
+    def check_yield_from_example(self, call_method):
+        def f():
+            self.check_stack_names(sys._getframe(), ['f', 'g'])
+            try:
+                yield
+            except Exception:
+                pass
+            self.check_stack_names(sys._getframe(), ['f', 'g'])
+
+        def g():
+            self.check_stack_names(sys._getframe(), ['g'])
+            yield from f()
+            self.check_stack_names(sys._getframe(), ['g'])
+
+        gen = g()
+        gen.send(None)
+        try:
+            call_method(gen)
+        except StopIteration:
+            pass
+
+    def test_send_with_yield_from(self):
+        def call_send(gen):
+            gen.send(None)
+
+        self.check_yield_from_example(call_send)
+
+    def test_throw_with_yield_from(self):
+        def call_throw(gen):
+            gen.throw(RuntimeError)
+
+        self.check_yield_from_example(call_throw)
+
+
 class YieldFromTests(unittest.TestCase):
     def test_generator_gi_yieldfrom(self):
         def a():
