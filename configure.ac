@@ -1480,8 +1480,8 @@ case $CC in
         fi
         ;;
       *)
-        PGO_PROF_GEN_FLAG="-fprofile-generate"
-        PGO_PROF_USE_FLAG="-fprofile-use -fprofile-correction"
+        PGO_PROF_GEN_FLAG="-fprofile-generate=$(pwd)"
+        PGO_PROF_USE_FLAG="-fprofile-use=$(pwd) -fprofile-correction"
         LLVM_PROF_MERGER="true"
         LLVM_PROF_FILE=""
         ;;
