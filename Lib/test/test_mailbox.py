@@ -9,6 +9,7 @@ import re
 import io
 import tempfile
 from test import support
+from test.support import os_helper
 import unittest
 import textwrap
 import mailbox
@@ -38,9 +39,9 @@ class TestBase:
     def _delete_recursively(self, target):
         # Delete a file or delete a directory recursively
         if os.path.isdir(target):
-            support.rmtree(target)
+            os_helper.rmtree(target)
         elif os.path.exists(target):
-            support.unlink(target)
+            os_helper.unlink(target)
 
 
 class TestMailbox(TestBase):
@@ -51,7 +52,7 @@ class TestMailbox(TestBase):
     _template = 'From: foo\n\n%s\n'
 
     def setUp(self):
-        self._path = support.TESTFN
+        self._path = os_helper.TESTFN
         self._delete_recursively(self._path)
         self._box = self._factory(self._path)
 
@@ -926,7 +927,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         # the mtime and should cause a re-read. Note that "sleep
         # emulation" is still in effect, as skewfactor is -3.
         filename = os.path.join(self._path, 'cur', 'stray-file')
-        support.create_empty_file(filename)
+        os_helper.create_empty_file(filename)
         os.unlink(filename)
         self._box._refresh()
         self.assertTrue(refreshed())
@@ -980,7 +981,7 @@ class _TestMboxMMDF(_TestSingleFile):
         self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(glob.escape(self._path) + '.*'):
-            support.unlink(lock_remnant)
+            os_helper.unlink(lock_remnant)
 
     def assertMailboxEmpty(self):
         with open(self._path) as f:
@@ -1312,7 +1313,7 @@ class TestBabyl(_TestSingleFile, unittest.TestCase):
         self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(glob.escape(self._path) + '.*'):
-            support.unlink(lock_remnant)
+            os_helper.unlink(lock_remnant)
 
     def test_labels(self):
         # Get labels from the mailbox
@@ -1369,7 +1370,7 @@ class TestMessage(TestBase, unittest.TestCase):
     _factory = mailbox.Message      # Overridden by subclasses to reuse tests
 
     def setUp(self):
-        self._path = support.TESTFN
+        self._path = os_helper.TESTFN
 
     def tearDown(self):
         self._delete_recursively(self._path)
@@ -2019,7 +2020,7 @@ class TestProxyFileBase(TestBase):
 class TestProxyFile(TestProxyFileBase, unittest.TestCase):
 
     def setUp(self):
-        self._path = support.TESTFN
+        self._path = os_helper.TESTFN
         self._file = open(self._path, 'wb+')
 
     def tearDown(self):
@@ -2068,7 +2069,7 @@ class TestProxyFile(TestProxyFileBase, unittest.TestCase):
 class TestPartialFile(TestProxyFileBase, unittest.TestCase):
 
     def setUp(self):
-        self._path = support.TESTFN
+        self._path = os_helper.TESTFN
         self._file = open(self._path, 'wb+')
 
     def tearDown(self):
@@ -2131,11 +2132,11 @@ class MaildirTestCase(unittest.TestCase):
 
     def setUp(self):
         # create a new maildir mailbox to work with:
-        self._dir = support.TESTFN
+        self._dir = os_helper.TESTFN
         if os.path.isdir(self._dir):
-            support.rmtree(self._dir)
+            os_helper.rmtree(self._dir)
         elif os.path.isfile(self._dir):
-            support.unlink(self._dir)
+            os_helper.unlink(self._dir)
         os.mkdir(self._dir)
         os.mkdir(os.path.join(self._dir, "cur"))
         os.mkdir(os.path.join(self._dir, "tmp"))
@@ -2145,10 +2146,10 @@ class MaildirTestCase(unittest.TestCase):
 
     def tearDown(self):
         list(map(os.unlink, self._msgfiles))
-        support.rmdir(os.path.join(self._dir, "cur"))
-        support.rmdir(os.path.join(self._dir, "tmp"))
-        support.rmdir(os.path.join(self._dir, "new"))
-        support.rmdir(self._dir)
+        os_helper.rmdir(os.path.join(self._dir, "cur"))
+        os_helper.rmdir(os.path.join(self._dir, "tmp"))
+        os_helper.rmdir(os.path.join(self._dir, "new"))
+        os_helper.rmdir(self._dir)
 
     def createMessage(self, dir, mbox=False):
         t = int(time.time() % 1000000)
@@ -2174,7 +2175,7 @@ class MaildirTestCase(unittest.TestCase):
         """Test an empty maildir mailbox"""
         # Test for regression on bug #117490:
         # Make sure the boxes attribute actually gets set.
-        self.mbox = mailbox.Maildir(support.TESTFN)
+        self.mbox = mailbox.Maildir(os_helper.TESTFN)
         #self.assertTrue(hasattr(self.mbox, "boxes"))
         #self.assertEqual(len(self.mbox.boxes), 0)
         self.assertIsNone(self.mbox.next())
@@ -2182,7 +2183,7 @@ class MaildirTestCase(unittest.TestCase):
 
     def test_nonempty_maildir_cur(self):
         self.createMessage("cur")
-        self.mbox = mailbox.Maildir(support.TESTFN)
+        self.mbox = mailbox.Maildir(os_helper.TESTFN)
         #self.assertEqual(len(self.mbox.boxes), 1)
         self.assertIsNotNone(self.mbox.next())
         self.assertIsNone(self.mbox.next())
@@ -2190,7 +2191,7 @@ class MaildirTestCase(unittest.TestCase):
 
     def test_nonempty_maildir_new(self):
         self.createMessage("new")
-        self.mbox = mailbox.Maildir(support.TESTFN)
+        self.mbox = mailbox.Maildir(os_helper.TESTFN)
         #self.assertEqual(len(self.mbox.boxes), 1)
         self.assertIsNotNone(self.mbox.next())
         self.assertIsNone(self.mbox.next())
@@ -2199,7 +2200,7 @@ class MaildirTestCase(unittest.TestCase):
     def test_nonempty_maildir_both(self):
         self.createMessage("cur")
         self.createMessage("new")
-        self.mbox = mailbox.Maildir(support.TESTFN)
+        self.mbox = mailbox.Maildir(os_helper.TESTFN)
         #self.assertEqual(len(self.mbox.boxes), 2)
         self.assertIsNotNone(self.mbox.next())
         self.assertIsNotNone(self.mbox.next())
