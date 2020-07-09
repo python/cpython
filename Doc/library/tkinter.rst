@@ -70,7 +70,7 @@ Tkinter Modules
 
 Most of the time, :mod:`tkinter` is all you really need, but a number of
 additional modules are available as well.  The Tk interface is located in a
-binary module named :mod:`_tkinter`. 
+binary module named :mod:`_tkinter`.
 
 In addition to the Tk interface module, :mod:`tkinter` includes a number of
 Python modules, :mod:`tkinter.constants` being one of the most important.
@@ -109,8 +109,8 @@ so, usually, to use Tkinter all you need is a simple import statement::
 
    Determines if the Tkinter main loop is running. Returns True if the main loop is running, or
    returns False if the main loop is not running. It is possible for some entity other than
-   the main loop to be dispatching events. Some examples are: calling the `update` command,
-   :meth:`_tkinter.tkapp.doonevent`, and the python command line `EventHook`.
+   the main loop to be dispatching events. Some examples are: calling the :meth:`Tk.update` command,
+   :meth:`_tkinter.tkapp.doonevent`, and the python command line EventHook.
 
 .. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=0)
 
@@ -129,7 +129,7 @@ so, usually, to use Tkinter all you need is a simple import statement::
    This module contains the low-level interface to Tk, and should rarely be
    used directly by application programmers. It is usually a shared library
    (or DLL), but might in some cases be statically linked with the Python
-   interpreter. 
+   interpreter.
 
 .. method:: _tkinter.create(screenName=None, baseName="", className="Tk", interactive=False, wantobjects=False, wantTk=True, sync=False, use=None)
 
@@ -161,7 +161,7 @@ so, usually, to use Tkinter all you need is a simple import statement::
 .. method:: _tkinter.tkapp.setmainloopwaitattempts(num=10)
 
    This method sets the number of 100 ms wait attempts of :meth:`_tkinter.tkapp.call`.
-   You can trigger an error immediately by setting `num` to 0.
+   You can trigger an error immediately by setting num to 0.
 
 Other modules that provide Tk support include:
 
