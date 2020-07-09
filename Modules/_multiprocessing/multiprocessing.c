@@ -182,18 +182,19 @@ multiprocessing_exec(PyObject *module)
         return -1;
     }
 
-#define ADD_FLAG(name)                                      \
-    do {                                                    \
-    PyObject *value = PyLong_FromLong(name);                \
-    if (value == NULL) {                                    \
-        Py_DECREF(flags);                                   \
-        return -1; }                                        \
-    }                                                       \
-    if (PyDict_SetItemString(flags, #name, value) < 0) {    \
-        Py_DECREF(flags);                                   \
-        Py_DECREF(value);                                   \
-        return -1; }                                        \
-    Py_DECREF(value)                                        \
+#define ADD_FLAG(name)                                          \
+    do {                                                        \
+        PyObject *value = PyLong_FromLong(name);                \
+        if (value == NULL) {                                    \
+            Py_DECREF(flags);                                   \
+            return -1;                                          \
+        }                                                       \
+        if (PyDict_SetItemString(flags, #name, value) < 0) {    \
+            Py_DECREF(flags);                                   \
+            Py_DECREF(value);                                   \
+            return -1;                                          \
+        }                                                       \
+        Py_DECREF(value);                                       \
     } while (0)
 
 #if defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED)
