@@ -1,5 +1,6 @@
 from test import support
-support.import_module("dbm.ndbm") #skip if not supported
+from test.support import import_helper
+import_helper.import_module("dbm.ndbm") #skip if not supported
 import os
 import unittest
 import dbm.ndbm

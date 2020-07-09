@@ -3,8 +3,9 @@ import math
 import string
 import sys
 from test import support
+from test.support import import_helper
 # Skip this test if the _testcapi module isn't available.
-_testcapi = support.import_module('_testcapi')
+_testcapi = import_helper.import_module('_testcapi')
 from _testcapi import getargs_keywords, getargs_keyword_only
 
 # > How about the following counterproposal. This also changes some of
