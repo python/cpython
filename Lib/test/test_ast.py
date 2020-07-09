@@ -383,7 +383,7 @@ class AST_Tests(unittest.TestCase):
 
         func3 = ast.FunctionDef(body=[1])
         self.assertEqual(func3.body, [1])
-        self.assertFalse(hasattr(func3, "body")
+        self.assertFalse(hasattr(func3, "name"))
         self.assertTrue(hasattr(func3, "returns"))
 
     def test_field_attr_writable(self):
