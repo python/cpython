@@ -145,6 +145,11 @@ multiprocessing_exec(PyObject *module)
 #if defined(MS_WINDOWS) ||                                              \
   (defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED))
 
+    /* Add _PyMp_SemLock type to module */
+    if (PyModule_AddType(module, &_PyMp_SemLockType) < 0) {
+        return -1;
+    }
+
     {
         PyObject *py_sem_value_max;
         /* Some systems define SEM_VALUE_MAX as an unsigned value that
@@ -161,15 +166,12 @@ multiprocessing_exec(PyObject *module)
             Py_DECREF(py_sem_value_max);
             return -1;
         }
-        PyDict_SetItemString(_PyMp_SemLockType.tp_dict, "SEM_VALUE_MAX",
-                             py_sem_value_max);
-    }
-
-    /* Add _PyMp_SemLock type to module */
-    Py_INCREF(&_PyMp_SemLockType);
-    if (PyModule_AddType(module, &_PyMp_SemLockType) < 0) {
-        Py_DECREF(&_PyMp_SemLockType);
-        return -1;
+        if (PyDict_SetItemString(_PyMp_SemLockType.tp_dict, "SEM_VALUE_MAX",
+                             py_sem_value_max) < 0) {
+            Py_DECREF(_PyMp_SemLockType.tp_dict);
+            Py_DECREF(py_sem_value_max);
+            return -1;
+        }
     }
 
 #endif
@@ -180,7 +182,8 @@ multiprocessing_exec(PyObject *module)
         return -1;
     }
 
-#define ADD_FLAG(name) {                                    \
+#define ADD_FLAG(name)                                      \
+    do {                                                    \
     PyObject *value = PyLong_FromLong(name);                \
     if (value == NULL) {                                    \
         Py_DECREF(flags);                                   \
@@ -191,7 +194,7 @@ multiprocessing_exec(PyObject *module)
         Py_DECREF(value);                                   \
         return -1; }                                        \
     Py_DECREF(value)                                        \
-    }
+    } while (0)
 
 #if defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED)
     ADD_FLAG(HAVE_SEM_OPEN);
@@ -207,6 +210,7 @@ multiprocessing_exec(PyObject *module)
 #endif
 
     if (PyModule_AddObject(module, "flags", flags) < 0) {
+        Py_DECREF(flags);
         return -1;
     }
 
