@@ -1,4 +1,4 @@
-from test.support import run_unittest, unload, check_warnings, CleanImport
+from test.support import forget, run_unittest, unload, check_warnings, CleanImport
 import unittest
 import sys
 import importlib
@@ -175,6 +175,41 @@ class PkgutilTests(unittest.TestCase):
             if pkg.endswith('mod'):
                 continue
             del sys.modules[pkg]
+
+    def test_walk_packages_with_same_package_name_in_pythonpath(self):
+        pkg1 = 'test_walk_packages_with_same_package_name_in_pythonpath'
+        pkg1_dir = os.path.join(self.dirname, pkg1)
+        os.mkdir(pkg1_dir)
+        f = open(os.path.join(pkg1_dir, '__init__.py'), "wb")
+        f.close()
+        os.mkdir(os.path.join(pkg1_dir, 'same_name'))
+        f = open(os.path.join(pkg1_dir, 'same_name', '__init__.py'), "wb")
+        f.close()
+        f = open(os.path.join(pkg1_dir, 'same_name', 'mod.py'), "wb")
+        f.close()
+
+        # Add another package in the path, with the same name as the one inside pkg1
+        pkg2 = 'same_name'
+        pkg2_dir = os.path.join(self.dirname, pkg2)
+        os.mkdir(pkg2_dir)
+        f = open(os.path.join(pkg2_dir, '__init__.py'), "wb")
+        f.close()
+        os.mkdir(os.path.join(pkg2_dir, 'test_same_name'))
+        f = open(os.path.join(pkg2_dir, 'test_same_name', '__init__.py'), "wb")
+        f.close()
+        f = open(os.path.join(pkg2_dir, 'test_same_name', 'another_mod.py'), "wb")
+        f.close()
+
+        expected = [
+            'same_name',
+            'same_name.mod'
+        ]
+
+        for pkg in expected:
+            self.addCleanup(forget, pkg)
+
+        actual = [e[1] for e in pkgutil.walk_packages([os.path.join(self.dirname, pkg1)])]
+        self.assertEqual(actual, expected)
 
     def test_walk_packages_raises_on_string_or_bytes_input(self):
 
