@@ -465,35 +465,44 @@ are restricted to four spaces due to Tcl/Tk limitations.</p>
 </div>
 <div class="section" id="completions">
 <span id="id3"></span><h3>Completions<a class="headerlink" href="#completions" title="Permalink to this headline">¶</a></h3>
-<p>When available, completions are supplied for filenames and for
-attributes of modules, classes, and functions.  This is usually done
-by displaying a completion box listing existing names.  The name
-being completed and the item highlighted in the box can be changed by
-adding and deleting characters, with Up, Down, Page Up, Page Down, Home
-and End keys, and by a single click within the box.  Keys &lt;Escape&gt;,
-&lt;Enter&gt;, and double &lt;Tab&gt; and clicks outside the box close the box.
+<p>Completions are supplied, when requested and available, for module
+names, attributes of classes or functions, or filenames.  Each request
+method displays a completion box with existing names.  (See tab
+completions below for an exception.) For any box, change the name
+being completed and the item highlighted in the box by
+typing and deleting characters; by hitting <kbd class="kbd docutils literal notranslate">Up</kbd>, <kbd class="kbd docutils literal notranslate">Down</kbd>,
+<kbd class="kbd docutils literal notranslate">PageUp</kbd>, <kbd class="kbd docutils literal notranslate">PageDown</kbd>, <kbd class="kbd docutils literal notranslate">Home</kbd>, and <kbd class="kbd docutils literal notranslate">End</kbd> keys;
+and by a single click within the box.  Close the box with <kbd class="kbd docutils literal notranslate">Escape</kbd>,
+<kbd class="kbd docutils literal notranslate">Enter</kbd>, and double <kbd class="kbd docutils literal notranslate">Tab</kbd> keys or clicks outside the box.
 A double click within the box selects and closes.</p>
-<p>An attribute completion box will automatically open, if any completions
-are available, if one types ‘.’ and waits for a predefined
-delay. The delay defaults to 2 seconds and can be set in the settings
-dialog.  If one types os.sep or os.altsep in a string and waits,
-a completion box opens with filenames in the current directory.
-Typing a separator after a directory name changes the list to that
-directory.  To prevent auto popups, set the delay to a large number of
-milliseconds, such as 100000000.</p>
-<p>One can try to directly open a completion box with Show Completions on
-the Edit menu.  The default hot key is <kbd class="kbd docutils literal notranslate">C-space</kbd>.  If one types a
-prefix for the desired name before opening the box, the
-first match is displayed.  This is the same as if one enters a prefix
-after the box is displayed.  The same is usually true if one hits
-&lt;Tab&gt;.  However, if there is only one match to an existing prefix,
-it is immediately added to the editor text without opening a box.</p>
-<p>‘Show Completions’ outside of a string and without a preceding ‘.’
-opens a box with keywords at least 5 letters long, all builtin names,
-and available module-level names.  When editing code in an editor
-(as oppose to Shell), the latter can be updated by running your code
+<p>One way to open a box is to type a key character and wait for a
+predefined interval.  This defaults to 2 seconds; customize it
+in the settings dialog.  (To prevent auto popups, set the delay to a
+large number of milliseconds, such as 100000000.) For imported module
+names or class or function attributes, type ‘.’.
+For filenames in the root directory, type <a class="reference internal" href="os.html#os.sep" title="os.sep"><code class="xref py py-data docutils literal notranslate"><span class="pre">os.sep</span></code></a> or
+data:<cite>os.altsep</cite> immediately after an opening quote.  (On Windows,
+one can specify a drive first.)  Move into subdirectories by typing a
+directory name and a separator.</p>
+<p>Instead of waiting, or after a box is closed. open a completion box
+immediately with Show Completions on the Edit menu.  The default hot
+key is <kbd class="kbd docutils literal notranslate">C-space</kbd>.  If one types a prefix for the desired name
+before opening the box, the first match is displayed.
+The result is the same as if one enters a prefix
+after the box is displayed.  Show Completions after a quote completes
+filenames in the current directory instead of a root directory.</p>
+<p>Hitting <kbd class="kbd docutils literal notranslate">Tab</kbd> after a prefix usually has the same effect as Show
+Completions.  (With no prefix, it indents.)  However, if there is only
+one match to the prefix, that match is immediately added to the editor
+text without opening a box.</p>
+<p>Invoking ‘Show Completions’, or hitting <kbd class="kbd docutils literal notranslate">Tab</kbd> after a prefix,
+outside of a string and without a preceding ‘.’ opens a box with
+keywords, builtin names, and available module-level names.</p>
+<p>When editing code in an editor (as oppose to Shell), increase the
+available module-level names by running your code
 and not restarting the Shell thereafter.  This is especially useful
-after adding imports at the top of a file.</p>
+after adding imports at the top of a file.  This also increases
+possible attribute completions.</p>
 <p>Completion boxes intially exclude names beginning with ‘_’ or, for
 modules, not included in ‘__all__’.  The hidden names can be accessed
 by typing ‘_’ after ‘.’, either before or after the box is opened.</p>
@@ -966,7 +975,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Jul 07, 2020.
+    Last updated on Jul 08, 2020.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 

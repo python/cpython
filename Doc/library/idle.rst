@@ -474,38 +474,49 @@ See also the indent/dedent region commands on the
 Completions
 ^^^^^^^^^^^
 
-When available, completions are supplied for filenames and for
-attributes of modules, classes, and functions.  This is usually done
-by displaying a completion box that lists existing names.  The name
-being completed and the item highlighted in the box can be changed by
-adding and deleting characters, with Up, Down, Page Up, Page Down, Home
-and End keys, and by a single click within the box.  Keys <Escape>,
-<Enter>, and double <Tab> and clicks outside the box close the box.
+Completions are supplied, when requested and available, for module
+names, attributes of classes or functions, or filenames.  Each request
+method displays a completion box with existing names.  (See tab
+completions below for an exception.) For any box, change the name
+being completed and the item highlighted in the box by
+typing and deleting characters; by hitting :kbd:`Up`, :kbd:`Down`,
+:kbd:`PageUp`, :kbd:`PageDown`, :kbd:`Home`, and :kbd:`End` keys;
+and by a single click within the box.  Close the box with :kbd:`Escape`,
+:kbd:`Enter`, and double :kbd:`Tab` keys or clicks outside the box.
 A double click within the box selects and closes.
 
-An attribute completion box will automatically open, if any completions
-are available, if one types '.' and waits for a predefined
-delay. The delay defaults to 2 seconds and can be set in the settings
-dialog.  If one types an :data:`os.sep` or :data:`os.altsep` in a string and waits,
-a completion box opens with filenames in the current directory.
-Typing a separator after a directory name changes the list to that
-directory.  To prevent auto popups, set the delay to a large number of
-milliseconds, such as 100000000.
+One way to open a box is to type a key character and wait for a
+predefined interval.  This defaults to 2 seconds; customize it
+in the settings dialog.  (To prevent auto popups, set the delay to a
+large number of milliseconds, such as 100000000.) For imported module
+names or class or function attributes, type '.'.
+For filenames in the root directory, type :data:`os.sep` or
+data:`os.altsep` immediately after an opening quote.  (On Windows,
+one can specify a drive first.)  Move into subdirectories by typing a
+directory name and a separator.
 
-One can try to directly open a completion box with Show Completions on
-the Edit menu.  The default hot key is :kbd:`C-space`.  If one types a
-prefix for the desired name before opening the box, the
-first match is displayed.  This is the same as if one enters a prefix
-after the box is displayed.  The same is usually true if one hits
-<Tab>.  However, if there is only one match to an existing prefix,
-it is immediately added to the editor text without opening a box.
+Instead of waiting, or after a box is closed. open a completion box
+immediately with Show Completions on the Edit menu.  The default hot
+key is :kbd:`C-space`.  If one types a prefix for the desired name
+before opening the box, the first match is displayed.
+The result is the same as if one enters a prefix
+after the box is displayed.  Show Completions after a quote completes
+filenames in the current directory instead of a root directory.
 
-'Show Completions' outside of a string and without a preceding '.'
-opens a box with keywords at least 5 letters long, all builtin names,
-and available module-level names.  When editing code in an editor
-(as oppose to Shell), the latter can be updated by running your code
+Hitting :kbd:`Tab` after a prefix usually has the same effect as Show
+Completions.  (With no prefix, it indents.)  However, if there is only
+one match to the prefix, that match is immediately added to the editor
+text without opening a box.
+
+Invoking 'Show Completions', or hitting :kbd:`Tab` after a prefix,
+outside of a string and without a preceding '.' opens a box with
+keywords, builtin names, and available module-level names.
+
+When editing code in an editor (as oppose to Shell), increase the
+available module-level names by running your code
 and not restarting the Shell thereafter.  This is especially useful
-after adding imports at the top of a file.
+after adding imports at the top of a file.  This also increases
+possible attribute completions.
 
 Completion boxes intially exclude names beginning with '_' or, for
 modules, not included in '__all__'.  The hidden names can be accessed
