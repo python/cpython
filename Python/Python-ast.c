@@ -570,14 +570,14 @@ static const char * const Module_fields[]={
     "type_ignores",
 };
 static const field_qualifier Module_field_qualifiers[]={
-    SEQUENCE, // body
-    SEQUENCE, // type_ignores
+    Q_SEQUENCE, // body
+    Q_SEQUENCE, // type_ignores
 };
 static const char * const Interactive_fields[]={
     "body",
 };
 static const field_qualifier Interactive_field_qualifiers[]={
-    SEQUENCE, // body
+    Q_SEQUENCE, // body
 };
 static const char * const Expression_fields[]={
     "body",
@@ -590,7 +590,7 @@ static const char * const FunctionType_fields[]={
     "returns",
 };
 static const field_qualifier FunctionType_field_qualifiers[]={
-    SEQUENCE, // argtypes
+    Q_SEQUENCE, // argtypes
     0, // returns
 };
 static const char * const stmt_attributes[] = {
@@ -611,10 +611,10 @@ static const char * const FunctionDef_fields[]={
 static const field_qualifier FunctionDef_field_qualifiers[]={
     0, // name
     0, // args
-    SEQUENCE, // body
-    SEQUENCE, // decorator_list
-    OPTIONAL, // returns
-    OPTIONAL, // type_comment
+    Q_SEQUENCE, // body
+    Q_SEQUENCE, // decorator_list
+    Q_OPTIONAL, // returns
+    Q_OPTIONAL, // type_comment
 };
 static const char * const AsyncFunctionDef_fields[]={
     "name",
@@ -627,10 +627,10 @@ static const char * const AsyncFunctionDef_fields[]={
 static const field_qualifier AsyncFunctionDef_field_qualifiers[]={
     0, // name
     0, // args
-    SEQUENCE, // body
-    SEQUENCE, // decorator_list
-    OPTIONAL, // returns
-    OPTIONAL, // type_comment
+    Q_SEQUENCE, // body
+    Q_SEQUENCE, // decorator_list
+    Q_OPTIONAL, // returns
+    Q_OPTIONAL, // type_comment
 };
 static const char * const ClassDef_fields[]={
     "name",
@@ -641,22 +641,22 @@ static const char * const ClassDef_fields[]={
 };
 static const field_qualifier ClassDef_field_qualifiers[]={
     0, // name
-    SEQUENCE, // bases
-    SEQUENCE, // keywords
-    SEQUENCE, // body
-    SEQUENCE, // decorator_list
+    Q_SEQUENCE, // bases
+    Q_SEQUENCE, // keywords
+    Q_SEQUENCE, // body
+    Q_SEQUENCE, // decorator_list
 };
 static const char * const Return_fields[]={
     "value",
 };
 static const field_qualifier Return_field_qualifiers[]={
-    OPTIONAL, // value
+    Q_OPTIONAL, // value
 };
 static const char * const Delete_fields[]={
     "targets",
 };
 static const field_qualifier Delete_field_qualifiers[]={
-    SEQUENCE, // targets
+    Q_SEQUENCE, // targets
 };
 static const char * const Assign_fields[]={
     "targets",
@@ -664,9 +664,9 @@ static const char * const Assign_fields[]={
     "type_comment",
 };
 static const field_qualifier Assign_field_qualifiers[]={
-    SEQUENCE, // targets
+    Q_SEQUENCE, // targets
     0, // value
-    OPTIONAL, // type_comment
+    Q_OPTIONAL, // type_comment
 };
 static const char * const AugAssign_fields[]={
     "target",
@@ -687,7 +687,7 @@ static const char * const AnnAssign_fields[]={
 static const field_qualifier AnnAssign_field_qualifiers[]={
     0, // target
     0, // annotation
-    OPTIONAL, // value
+    Q_OPTIONAL, // value
     0, // simple
 };
 static const char * const For_fields[]={
@@ -700,9 +700,9 @@ static const char * const For_fields[]={
 static const field_qualifier For_field_qualifiers[]={
     0, // target
     0, // iter
-    SEQUENCE, // body
-    SEQUENCE, // orelse
-    OPTIONAL, // type_comment
+    Q_SEQUENCE, // body
+    Q_SEQUENCE, // orelse
+    Q_OPTIONAL, // type_comment
 };
 static const char * const AsyncFor_fields[]={
     "target",
@@ -714,9 +714,9 @@ static const char * const AsyncFor_fields[]={
 static const field_qualifier AsyncFor_field_qualifiers[]={
     0, // target
     0, // iter
-    SEQUENCE, // body
-    SEQUENCE, // orelse
-    OPTIONAL, // type_comment
+    Q_SEQUENCE, // body
+    Q_SEQUENCE, // orelse
+    Q_OPTIONAL, // type_comment
 };
 static const char * const While_fields[]={
     "test",
@@ -725,8 +725,8 @@ static const char * const While_fields[]={
 };
 static const field_qualifier While_field_qualifiers[]={
     0, // test
-    SEQUENCE, // body
-    SEQUENCE, // orelse
+    Q_SEQUENCE, // body
+    Q_SEQUENCE, // orelse
 };
 static const char * const If_fields[]={
     "test",
@@ -735,8 +735,8 @@ static const char * const If_fields[]={
 };
 static const field_qualifier If_field_qualifiers[]={
     0, // test
-    SEQUENCE, // body
-    SEQUENCE, // orelse
+    Q_SEQUENCE, // body
+    Q_SEQUENCE, // orelse
 };
 static const char * const With_fields[]={
     "items",
@@ -744,9 +744,9 @@ static const char * const With_fields[]={
     "type_comment",
 };
 static const field_qualifier With_field_qualifiers[]={
-    SEQUENCE, // items
-    SEQUENCE, // body
-    OPTIONAL, // type_comment
+    Q_SEQUENCE, // items
+    Q_SEQUENCE, // body
+    Q_OPTIONAL, // type_comment
 };
 static const char * const AsyncWith_fields[]={
     "items",
@@ -754,17 +754,17 @@ static const char * const AsyncWith_fields[]={
     "type_comment",
 };
 static const field_qualifier AsyncWith_field_qualifiers[]={
-    SEQUENCE, // items
-    SEQUENCE, // body
-    OPTIONAL, // type_comment
+    Q_SEQUENCE, // items
+    Q_SEQUENCE, // body
+    Q_OPTIONAL, // type_comment
 };
 static const char * const Raise_fields[]={
     "exc",
     "cause",
 };
 static const field_qualifier Raise_field_qualifiers[]={
-    OPTIONAL, // exc
-    OPTIONAL, // cause
+    Q_OPTIONAL, // exc
+    Q_OPTIONAL, // cause
 };
 static const char * const Try_fields[]={
     "body",
@@ -773,10 +773,10 @@ static const char * const Try_fields[]={
     "finalbody",
 };
 static const field_qualifier Try_field_qualifiers[]={
-    SEQUENCE, // body
-    SEQUENCE, // handlers
-    SEQUENCE, // orelse
-    SEQUENCE, // finalbody
+    Q_SEQUENCE, // body
+    Q_SEQUENCE, // handlers
+    Q_SEQUENCE, // orelse
+    Q_SEQUENCE, // finalbody
 };
 static const char * const Assert_fields[]={
     "test",
@@ -784,13 +784,13 @@ static const char * const Assert_fields[]={
 };
 static const field_qualifier Assert_field_qualifiers[]={
     0, // test
-    OPTIONAL, // msg
+    Q_OPTIONAL, // msg
 };
 static const char * const Import_fields[]={
     "names",
 };
 static const field_qualifier Import_field_qualifiers[]={
-    SEQUENCE, // names
+    Q_SEQUENCE, // names
 };
 static const char * const ImportFrom_fields[]={
     "module",
@@ -798,21 +798,21 @@ static const char * const ImportFrom_fields[]={
     "level",
 };
 static const field_qualifier ImportFrom_field_qualifiers[]={
-    OPTIONAL, // module
-    SEQUENCE, // names
-    OPTIONAL, // level
+    Q_OPTIONAL, // module
+    Q_SEQUENCE, // names
+    Q_OPTIONAL, // level
 };
 static const char * const Global_fields[]={
     "names",
 };
 static const field_qualifier Global_field_qualifiers[]={
-    SEQUENCE, // names
+    Q_SEQUENCE, // names
 };
 static const char * const Nonlocal_fields[]={
     "names",
 };
 static const field_qualifier Nonlocal_field_qualifiers[]={
-    SEQUENCE, // names
+    Q_SEQUENCE, // names
 };
 static const char * const Expr_fields[]={
     "value",
@@ -833,7 +833,7 @@ static const char * const BoolOp_fields[]={
 };
 static const field_qualifier BoolOp_field_qualifiers[]={
     0, // op
-    SEQUENCE, // values
+    Q_SEQUENCE, // values
 };
 static const char * const NamedExpr_fields[]={
     "target",
@@ -884,14 +884,14 @@ static const char * const Dict_fields[]={
     "values",
 };
 static const field_qualifier Dict_field_qualifiers[]={
-    SEQUENCE, // keys
-    SEQUENCE, // values
+    Q_SEQUENCE, // keys
+    Q_SEQUENCE, // values
 };
 static const char * const Set_fields[]={
     "elts",
 };
 static const field_qualifier Set_field_qualifiers[]={
-    SEQUENCE, // elts
+    Q_SEQUENCE, // elts
 };
 static const char * const ListComp_fields[]={
     "elt",
@@ -899,7 +899,7 @@ static const char * const ListComp_fields[]={
 };
 static const field_qualifier ListComp_field_qualifiers[]={
     0, // elt
-    SEQUENCE, // generators
+    Q_SEQUENCE, // generators
 };
 static const char * const SetComp_fields[]={
     "elt",
@@ -907,7 +907,7 @@ static const char * const SetComp_fields[]={
 };
 static const field_qualifier SetComp_field_qualifiers[]={
     0, // elt
-    SEQUENCE, // generators
+    Q_SEQUENCE, // generators
 };
 static const char * const DictComp_fields[]={
     "key",
@@ -917,7 +917,7 @@ static const char * const DictComp_fields[]={
 static const field_qualifier DictComp_field_qualifiers[]={
     0, // key
     0, // value
-    SEQUENCE, // generators
+    Q_SEQUENCE, // generators
 };
 static const char * const GeneratorExp_fields[]={
     "elt",
@@ -925,7 +925,7 @@ static const char * const GeneratorExp_fields[]={
 };
 static const field_qualifier GeneratorExp_field_qualifiers[]={
     0, // elt
-    SEQUENCE, // generators
+    Q_SEQUENCE, // generators
 };
 static const char * const Await_fields[]={
     "value",
@@ -937,7 +937,7 @@ static const char * const Yield_fields[]={
     "value",
 };
 static const field_qualifier Yield_field_qualifiers[]={
-    OPTIONAL, // value
+    Q_OPTIONAL, // value
 };
 static const char * const YieldFrom_fields[]={
     "value",
@@ -952,8 +952,8 @@ static const char * const Compare_fields[]={
 };
 static const field_qualifier Compare_field_qualifiers[]={
     0, // left
-    SEQUENCE, // ops
-    SEQUENCE, // comparators
+    Q_SEQUENCE, // ops
+    Q_SEQUENCE, // comparators
 };
 static const char * const Call_fields[]={
     "func",
@@ -962,8 +962,8 @@ static const char * const Call_fields[]={
 };
 static const field_qualifier Call_field_qualifiers[]={
     0, // func
-    SEQUENCE, // args
-    SEQUENCE, // keywords
+    Q_SEQUENCE, // args
+    Q_SEQUENCE, // keywords
 };
 static const char * const FormattedValue_fields[]={
     "value",
@@ -972,14 +972,14 @@ static const char * const FormattedValue_fields[]={
 };
 static const field_qualifier FormattedValue_field_qualifiers[]={
     0, // value
-    OPTIONAL, // conversion
-    OPTIONAL, // format_spec
+    Q_OPTIONAL, // conversion
+    Q_OPTIONAL, // format_spec
 };
 static const char * const JoinedStr_fields[]={
     "values",
 };
 static const field_qualifier JoinedStr_field_qualifiers[]={
-    SEQUENCE, // values
+    Q_SEQUENCE, // values
 };
 static const char * const Constant_fields[]={
     "value",
@@ -987,7 +987,7 @@ static const char * const Constant_fields[]={
 };
 static const field_qualifier Constant_field_qualifiers[]={
     0, // value
-    OPTIONAL, // kind
+    Q_OPTIONAL, // kind
 };
 static const char * const Attribute_fields[]={
     "value",
@@ -1030,7 +1030,7 @@ static const char * const List_fields[]={
     "ctx",
 };
 static const field_qualifier List_field_qualifiers[]={
-    SEQUENCE, // elts
+    Q_SEQUENCE, // elts
     0, // ctx
 };
 static const char * const Tuple_fields[]={
@@ -1038,7 +1038,7 @@ static const char * const Tuple_fields[]={
     "ctx",
 };
 static const field_qualifier Tuple_field_qualifiers[]={
-    SEQUENCE, // elts
+    Q_SEQUENCE, // elts
     0, // ctx
 };
 static const char * const Slice_fields[]={
@@ -1047,9 +1047,9 @@ static const char * const Slice_fields[]={
     "step",
 };
 static const field_qualifier Slice_field_qualifiers[]={
-    OPTIONAL, // lower
-    OPTIONAL, // upper
-    OPTIONAL, // step
+    Q_OPTIONAL, // lower
+    Q_OPTIONAL, // upper
+    Q_OPTIONAL, // step
 };
 static PyObject* ast2obj_expr_context(astmodulestate *state, expr_context_ty);
 static PyObject* ast2obj_boolop(astmodulestate *state, boolop_ty);
@@ -1066,7 +1066,7 @@ static const char * const comprehension_fields[]={
 static const field_qualifier comprehension_field_qualifiers[]={
     0, // target
     0, // iter
-    SEQUENCE, // ifs
+    Q_SEQUENCE, // ifs
     0, // is_async
 };
 static const char * const excepthandler_attributes[] = {
@@ -1082,9 +1082,9 @@ static const char * const ExceptHandler_fields[]={
     "body",
 };
 static const field_qualifier ExceptHandler_field_qualifiers[]={
-    OPTIONAL, // type
-    OPTIONAL, // name
-    SEQUENCE, // body
+    Q_OPTIONAL, // type
+    Q_OPTIONAL, // name
+    Q_SEQUENCE, // body
 };
 static PyObject* ast2obj_arguments(astmodulestate *state, void*);
 static const char * const arguments_fields[]={
@@ -1097,13 +1097,13 @@ static const char * const arguments_fields[]={
     "defaults",
 };
 static const field_qualifier arguments_field_qualifiers[]={
-    SEQUENCE, // posonlyargs
-    SEQUENCE, // args
-    OPTIONAL, // vararg
-    SEQUENCE, // kwonlyargs
-    SEQUENCE, // kw_defaults
-    OPTIONAL, // kwarg
-    SEQUENCE, // defaults
+    Q_SEQUENCE, // posonlyargs
+    Q_SEQUENCE, // args
+    Q_OPTIONAL, // vararg
+    Q_SEQUENCE, // kwonlyargs
+    Q_SEQUENCE, // kw_defaults
+    Q_OPTIONAL, // kwarg
+    Q_SEQUENCE, // defaults
 };
 static PyObject* ast2obj_arg(astmodulestate *state, void*);
 static const char * const arg_attributes[] = {
@@ -1119,8 +1119,8 @@ static const char * const arg_fields[]={
 };
 static const field_qualifier arg_field_qualifiers[]={
     0, // arg
-    OPTIONAL, // annotation
-    OPTIONAL, // type_comment
+    Q_OPTIONAL, // annotation
+    Q_OPTIONAL, // type_comment
 };
 static PyObject* ast2obj_keyword(astmodulestate *state, void*);
 static const char * const keyword_attributes[] = {
@@ -1134,7 +1134,7 @@ static const char * const keyword_fields[]={
     "value",
 };
 static const field_qualifier keyword_field_qualifiers[]={
-    OPTIONAL, // arg
+    Q_OPTIONAL, // arg
     0, // value
 };
 static PyObject* ast2obj_alias(astmodulestate *state, void*);
@@ -1144,7 +1144,7 @@ static const char * const alias_fields[]={
 };
 static const field_qualifier alias_field_qualifiers[]={
     0, // name
-    OPTIONAL, // asname
+    Q_OPTIONAL, // asname
 };
 static PyObject* ast2obj_withitem(astmodulestate *state, void*);
 static const char * const withitem_fields[]={
@@ -1153,7 +1153,7 @@ static const char * const withitem_fields[]={
 };
 static const field_qualifier withitem_field_qualifiers[]={
     0, // context_expr
-    OPTIONAL, // optional_vars
+    Q_OPTIONAL, // optional_vars
 };
 static PyObject* ast2obj_type_ignore(astmodulestate *state, void*);
 static const char * const TypeIgnore_fields[]={
@@ -1271,10 +1271,15 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         }
     }
     if (_PyObject_LookupAttr(self, state->_field_qualifiers, &field_qualifiers) < 0) {
+        res = -1;
         goto cleanup;
     }
 
-    PyObject *field, *field_qualifier, *field_default = NULL;
+    if (!PyTuple_CheckExact(field_qualifiers) || PyTuple_Size(field_qualifiers) != numfields) {
+        goto cleanup;
+    }
+
+    PyObject *field, *field_qualifier;
     for (i = 0; i < numfields; i++) {
         field = PySequence_GetItem(fields, i);
         field_qualifier = PySequence_GetItem(field_qualifiers, i);
@@ -1287,19 +1292,29 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             goto next_iteration;
         }
 
+        PyObject *field_default = NULL;
         switch (PyLong_AsLong(field_qualifier)) {
             case -1:
                 res = -1;
                 goto next_iteration;
             case 0:
                 goto next_iteration;
-            case SEQUENCE:
+            case Q_SEQUENCE:
                 field_default = PyList_New(0);
+                if (field_default == NULL) {
+                    res = -1;
+                    goto next_iteration;
+                }
                 break;
-            case OPTIONAL:
+            case Q_OPTIONAL:
                 field_default = Py_None;
                 Py_INCREF(field_default);
                 break;
+            default:
+                PyErr_Format(PyExc_ValueError,
+                             "Unknown field qualifier: \"%R\"", field_qualifier);
+                res = -1;
+                goto next_iteration;
         }
         assert(field_default != NULL);
         res = PyObject_SetAttr(self, field, field_default);

@@ -390,8 +390,20 @@ class AST_Tests(unittest.TestCase):
         x = ast.Num()
         # We can assign to _fields
         x._fields = 666
-        x._field_defaults = 999
+        x._field_qualifiers = 999
         self.assertEqual(x._fields, 666)
+        self.assertEqual(x._field_qualifiers, 999)
+
+        functiondef_qualifiers = ast.FunctionDef._field_qualifiers
+        del ast.FunctionDef._field_qualifiers
+        fnctdef = ast.FunctionDef("foo")
+        self.assertEqual(fnctdef.name, "foo")
+        with self.assertRaises(AttributeError):
+            fnctdef.body
+        ast.FunctionDef._field_qualifiers = (5,) * len(functiondef_qualifiers)
+        with self.assertRaises(ValueError):
+            ast.FunctionDef() # 5 as a field qualifier is an invalid value
+        ast.FunctionDef._field_qualifiers = functiondef_qualifiers
 
     def test_classattrs(self):
         x = ast.Num()

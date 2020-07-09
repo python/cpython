@@ -46,7 +46,7 @@ typedef struct _withitem *withitem_ty;
 
 typedef struct _type_ignore *type_ignore_ty;
 
-typedef enum _field_qualifier {SEQUENCE = 1, OPTIONAL = 2} field_qualifier;
+typedef enum _field_qualifier {Q_SEQUENCE=1, Q_OPTIONAL=2} field_qualifier;
 
 typedef struct {
     _ASDL_SEQ_HEAD

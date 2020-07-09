@@ -131,7 +131,7 @@ class TypeDefVisitor(EmitVisitor):
         for dfn in mod.dfns:
             self.visit(dfn)
         self.emit(
-            "typedef enum _field_qualifier {SEQUENCE = 1, OPTIONAL = 2} "
+            "typedef enum _field_qualifier {Q_SEQUENCE=1, Q_OPTIONAL=2} "
             "field_qualifier;", 0
         )
     def visitType(self, type, depth=0):
@@ -702,9 +702,9 @@ class PyTypesDeclareVisitor(PickleVisitor):
         self.emit("static const field_qualifier %s_field_qualifiers[]={" % name, depth)
         for field in fields:
             if field.seq:
-                qualifier = "SEQUENCE"
+                qualifier = "Q_SEQUENCE"
             elif field.opt:
-                qualifier = "OPTIONAL"
+                qualifier = "Q_OPTIONAL"
             else:
                 qualifier = "0"
             self.emit("%s, // %s" % (qualifier, field.name), depth+1)
@@ -820,10 +820,15 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         }
     }
     if (_PyObject_LookupAttr(self, state->_field_qualifiers, &field_qualifiers) < 0) {
+        res = -1;
         goto cleanup;
     }
 
-    PyObject *field, *field_qualifier, *field_default = NULL;
+    if (!PyTuple_CheckExact(field_qualifiers) || PyTuple_Size(field_qualifiers) != numfields) {
+        goto cleanup;
+    }
+
+    PyObject *field, *field_qualifier;
     for (i = 0; i < numfields; i++) {
         field = PySequence_GetItem(fields, i);
         field_qualifier = PySequence_GetItem(field_qualifiers, i);
@@ -836,19 +841,29 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             goto next_iteration;
         }
 
+        PyObject *field_default = NULL;
         switch (PyLong_AsLong(field_qualifier)) {
             case -1:
                 res = -1;
                 goto next_iteration;
             case 0:
                 goto next_iteration;
-            case SEQUENCE:
+            case Q_SEQUENCE:
                 field_default = PyList_New(0);
+                if (field_default == NULL) {
+                    res = -1;
+                    goto next_iteration;
+                }
                 break;
-            case OPTIONAL:
+            case Q_OPTIONAL:
                 field_default = Py_None;
                 Py_INCREF(field_default);
                 break;
+            default:
+                PyErr_Format(PyExc_ValueError,
+                             "Unknown field qualifier: \\"%R\\"", field_qualifier);
+                res = -1;
+                goto next_iteration;
         }
         assert(field_default != NULL);
         res = PyObject_SetAttr(self, field, field_default);
