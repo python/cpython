@@ -486,7 +486,7 @@ A double click within the box selects and closes.
 An attribute completion box will automatically open, if any completions
 are available, if one types '.' and waits for a predefined
 delay. The delay defaults to 2 seconds and can be set in the settings
-dialog.  If one types os.sep or os.altsep in a string and waits,
+dialog.  If one types an :data:`os.sep` or :data:`os.altsep` in a string and waits,
 a completion box opens with filenames in the current directory.
 Typing a separator after a directory name changes the list to that
 directory.  To prevent auto popups, set the delay to a large number of
