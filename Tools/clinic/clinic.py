@@ -2652,7 +2652,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         self.name = ensure_legal_c_identifier(name)
         self.py_name = py_name
 
-        if default is not unspecified:
+        if default is not unspecified and (default is not NULL or c_default == 'NULL'):
             if self.default_type and not isinstance(default, (self.default_type, Unknown)):
                 if isinstance(self.default_type, type):
                     types_str = self.default_type.__name__
