@@ -153,7 +153,9 @@ overlapped_dealloc(OverlappedObject *self)
     if (self->write_buffer.obj)
         PyBuffer_Release(&self->write_buffer);
     Py_CLEAR(self->read_buffer);
-    PyObject_Del(self);
+    PyTypeObject *tp = PY_TYPE(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 /*[clinic input]
@@ -336,10 +338,8 @@ static PyType_Spec winapi_overlapped_type_spec = {
 static OverlappedObject *
 new_overlapped(PyObject *module, HANDLE handle)
 {
-    OverlappedObject *self;
-
     WinApiState *st = winapi_get_state(module);
-    self = PyObject_New(OverlappedObject, st->overlapped_type);
+    OverlappedObject *self = PyObject_New(OverlappedObject, st->overlapped_type);
     if (!self)
         return NULL;
 
@@ -1910,14 +1910,15 @@ static PyMethodDef winapi_functions[] = {
     {NULL, NULL}
 };
 
-#define WINAPI_CONSTANT(fmt, con) { \
-    PyObject *value = Py_BuildValue(fmt, con); \
-    if (PyDict_SetItemString(d, #con, value) < 0) { \
+#define WINAPI_CONSTANT(fmt, con) \
+    do { \
+        PyObject *value = Py_BuildValue(fmt, con); \
+        if (PyDict_SetItemString(d, #con, value) < 0) { \
+            Py_DECREF(value); \
+            return -1; \
+        } \
         Py_DECREF(value); \
-        return -1; \
-    } \
-    Py_DECREF(value); \
-}
+    } while (0)
 
 static int winapi_exec(PyObject *m)
 {
@@ -1928,9 +1929,7 @@ static int winapi_exec(PyObject *m)
         return -1;
     }
 
-    Py_INCREF(st->overlapped_type);
     if (PyModule_AddType(m, st->overlapped_type) < 0) {
-        Py_DECREF(st->overlapped_type);
         return -1;
     }
 
