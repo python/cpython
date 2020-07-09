@@ -139,16 +139,12 @@ static PyMethodDef module_methods[] = {
  * Initialize
  */
 
-static int multiprocessing_exec(PyObject *module)
+static int
+multiprocessing_exec(PyObject *module)
 {
-    PyObject *value = NULL;
-
 #if defined(MS_WINDOWS) ||                                              \
   (defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED))
-    /* Add _PyMp_SemLock type to module */
-    if (PyType_Ready(&_PyMp_SemLockType) < 0)
-        return -1;
-    Py_INCREF(&_PyMp_SemLockType);
+
     {
         PyObject *py_sem_value_max;
         /* Some systems define SEM_VALUE_MAX as an unsigned value that
@@ -160,25 +156,42 @@ static int multiprocessing_exec(PyObject *module)
             py_sem_value_max = PyLong_FromLong(INT_MAX);
         else
             py_sem_value_max = PyLong_FromLong(SEM_VALUE_MAX);
-        if (py_sem_value_max == NULL)
+
+        if (py_sem_value_max == NULL) {
+            Py_DECREF(py_sem_value_max);
             return -1;
+        }
         PyDict_SetItemString(_PyMp_SemLockType.tp_dict, "SEM_VALUE_MAX",
                              py_sem_value_max);
     }
-    PyModule_AddObject(module, "SemLock", (PyObject*)&_PyMp_SemLockType);
+
+    /* Add _PyMp_SemLock type to module */
+    Py_INCREF(&_PyMp_SemLockType);
+    if (PyModule_AddType(module, &_PyMp_SemLockType) < 0) {
+        Py_DECREF(&_PyMp_SemLockType);
+        return -1;
+    }
+
 #endif
 
     /* Add configuration macros */
-    PyObject *temp = PyDict_New();
-    if (!temp)
+    PyObject *flags = PyDict_New();
+    if (!flags) {
         return -1;
+    }
 
-#define ADD_FLAG(name)                                            \
-    value = Py_BuildValue("i", name);                             \
-    if (value == NULL) { Py_DECREF(temp); return -1; }            \
-    if (PyDict_SetItemString(temp, #name, value) < 0) {           \
-        Py_DECREF(temp); Py_DECREF(value); return -1; }           \
-    Py_DECREF(value)
+#define ADD_FLAG(name) {                                    \
+    PyObject *value = PyLong_FromLong(name);                \
+    if (value == NULL) {                                    \
+        Py_DECREF(flags);                                   \
+        return -1; }                                        \
+    }                                                       \
+    if (PyDict_SetItemString(flags, #name, value) < 0) {    \
+        Py_DECREF(flags);                                   \
+        Py_DECREF(value);                                   \
+        return -1; }                                        \
+    Py_DECREF(value)                                        \
+    }
 
 #if defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED)
     ADD_FLAG(HAVE_SEM_OPEN);
@@ -193,8 +206,9 @@ static int multiprocessing_exec(PyObject *module)
     ADD_FLAG(HAVE_BROKEN_SEM_UNLINK);
 #endif
 
-    if (PyModule_AddObject(module, "flags", temp) < 0)
+    if (PyModule_AddObject(module, "flags", flags) < 0) {
         return -1;
+    }
 
     return 0;
 }
