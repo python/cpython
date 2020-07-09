@@ -495,10 +495,10 @@ data:`os.altsep` immediately after an opening quote.  (On Windows,
 one can specify a drive first.)  Move into subdirectories by typing a
 directory name and a separator.
 
-Instead of waiting, or after a box is closed. open a completion box
+Instead of waiting, or after a box is closed, open a completion box
 immediately with Show Completions on the Edit menu.  The default hot
 key is :kbd:`C-space`.  If one types a prefix for the desired name
-before opening the box, the first match is displayed.
+before opening the box, the first match or near miss is made visible.
 The result is the same as if one enters a prefix
 after the box is displayed.  Show Completions after a quote completes
 filenames in the current directory instead of a root directory.
