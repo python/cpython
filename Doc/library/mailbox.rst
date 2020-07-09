@@ -65,6 +65,10 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    :exc:`KeyError` exception if the corresponding message is subsequently
    removed.
 
+   .. versionchanged:: 3.10
+      :class:`Mailbox` (and subclasses) supports a :term:`path-like object` for
+      the mailbox/maildir.
+
    .. warning::
 
       Be very cautious when modifying mailboxes that might be simultaneously

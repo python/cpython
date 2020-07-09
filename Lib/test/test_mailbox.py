@@ -13,6 +13,7 @@ import unittest
 import textwrap
 import mailbox
 import glob
+from pathlib import Path
 
 
 class TestBase:
@@ -37,9 +38,9 @@ class TestBase:
 
     def _delete_recursively(self, target):
         # Delete a file or delete a directory recursively
-        if os.path.isdir(target):
+        if Path(target).is_dir():
             support.rmtree(target)
-        elif os.path.exists(target):
+        elif Path(target).exists():
             support.unlink(target)
 
 
@@ -51,13 +52,18 @@ class TestMailbox(TestBase):
     _template = 'From: foo\n\n%s\n'
 
     def setUp(self):
-        self._path = support.TESTFN
+        self._path = Path(support.TESTFN)
         self._delete_recursively(self._path)
         self._box = self._factory(self._path)
 
     def tearDown(self):
         self._box.close()
         self._delete_recursively(self._path)
+
+    def test_string_path(self):
+        """Test construction with a string instead of path-like."""
+        tmp_box = self._factory(os.fspath(self._path))
+        self.assertEqual(self._path.resolve(), tmp_box._path.resolve())
 
     def test_add(self):
         # Add copies of a sample message
@@ -506,11 +512,11 @@ class TestMailbox(TestBase):
 
     def test_lock_unlock(self):
         # Lock and unlock the mailbox
-        self.assertFalse(os.path.exists(self._get_lock_path()))
+        self.assertFalse(self._get_lock_path().exists())
         self._box.lock()
-        self.assertTrue(os.path.exists(self._get_lock_path()))
+        self.assertTrue(self._get_lock_path().exists())
         self._box.unlock()
-        self.assertFalse(os.path.exists(self._get_lock_path()))
+        self.assertFalse(self._get_lock_path().exists())
 
     def test_close(self):
         # Close mailbox and flush changes to disk
@@ -546,7 +552,7 @@ class TestMailbox(TestBase):
 
     def _get_lock_path(self):
         # Return the path of the dot lock file. May be overridden.
-        return self._path + '.lock'
+        return Path(os.fspath(self._path) + '.lock')
 
 
 class TestMailboxSuperclass(TestBase, unittest.TestCase):
@@ -595,7 +601,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
             self._box.colon = '!'
 
     def assertMailboxEmpty(self):
-        self.assertEqual(os.listdir(os.path.join(self._path, 'tmp')), [])
+        self.assertEqual(list((self._path / 'tmp').iterdir()), [])
 
     def test_add_MM(self):
         # Add a MaildirMessage instance
@@ -603,8 +609,8 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         msg.set_subdir('cur')
         msg.set_info('foo')
         key = self._box.add(msg)
-        self.assertTrue(os.path.exists(os.path.join(self._path, 'cur', '%s%sfoo' %
-                                                 (key, self._box.colon))))
+        self.assertTrue((self._path / 'cur' / ('%s%sfoo' %
+                        (key, self._box.colon))).exists())
 
     def test_get_MM(self):
         # Get a MaildirMessage instance
@@ -668,17 +674,17 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         # Initialize an existing mailbox
         self.tearDown()
         for subdir in '', 'tmp', 'new', 'cur':
-            os.mkdir(os.path.normpath(os.path.join(self._path, subdir)))
+            Path(os.path.normpath(self._path / subdir)).mkdir()
         self._box = mailbox.Maildir(self._path)
         self._check_basics()
 
     def _check_basics(self, factory=None):
         # (Used by test_open_new() and test_open_existing().)
-        self.assertEqual(self._box._path, os.path.abspath(self._path))
+        self.assertEqual(self._box._path.resolve(), self._path.resolve())
         self.assertEqual(self._box._factory, factory)
         for subdir in '', 'tmp', 'new', 'cur':
-            path = os.path.join(self._path, subdir)
-            mode = os.stat(path)[stat.ST_MODE]
+            path = self._path / subdir
+            mode = path.stat()[stat.ST_MODE]
             self.assertTrue(stat.S_ISDIR(mode), "Not a directory: '%s'" % path)
 
     def test_list_folders(self):
@@ -695,7 +701,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         self._box.add_folder('foo.bar')
         folder0 = self._box.get_folder('foo.bar')
         folder0.add(self._template % 'bar')
-        self.assertTrue(os.path.isdir(os.path.join(self._path, '.foo.bar')))
+        self.assertTrue((self._path / '.foo.bar').is_dir())
         folder1 = self._box.get_folder('foo.bar')
         self.assertEqual(folder1.get_string(folder1.keys()[0]),
                          self._template % 'bar')
@@ -721,21 +727,21 @@ class TestMaildir(TestMailbox, unittest.TestCase):
 
     def test_clean(self):
         # Remove old files from 'tmp'
-        foo_path = os.path.join(self._path, 'tmp', 'foo')
-        bar_path = os.path.join(self._path, 'tmp', 'bar')
+        foo_path = self._path / 'tmp' / 'foo'
+        bar_path = self._path / 'tmp' / 'bar'
         with open(foo_path, 'w') as f:
             f.write("@")
         with open(bar_path, 'w') as f:
             f.write("@")
         self._box.clean()
-        self.assertTrue(os.path.exists(foo_path))
-        self.assertTrue(os.path.exists(bar_path))
-        foo_stat = os.stat(foo_path)
+        self.assertTrue(foo_path.exists())
+        self.assertTrue(bar_path.exists())
+        foo_stat = foo_path.stat()
         os.utime(foo_path, (time.time() - 129600 - 2,
                             foo_stat.st_mtime))
         self._box.clean()
-        self.assertFalse(os.path.exists(foo_path))
-        self.assertTrue(os.path.exists(bar_path))
+        self.assertFalse(foo_path.exists())
+        self.assertTrue(bar_path.exists())
 
     def test_create_tmp(self, repetitions=10):
         # Create files in tmp directory
@@ -751,8 +757,8 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         for x in range(repetitions):
             tmp_file = self._box._create_tmp()
             head, tail = os.path.split(tmp_file.name)
-            self.assertEqual(head, os.path.abspath(os.path.join(self._path,
-                                                                "tmp")),
+            self.assertEqual(Path(head).resolve(),
+                             (self._path / "tmp").resolve(),
                              "File in wrong location: '%s'" % head)
             match = pattern.match(tail)
             self.assertIsNotNone(match, "Invalid file name: '%s'" % tail)
@@ -779,7 +785,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
             tmp_file.seek(0)
             self.assertEqual(tmp_file.read(), _bytes_sample_message)
             tmp_file.close()
-        file_count = len(os.listdir(os.path.join(self._path, "tmp")))
+        file_count = len(list((self._path / "tmp").iterdir()))
         self.assertEqual(file_count, repetitions,
                      "Wrong file count: '%s' should be '%s'" %
                      (file_count, repetitions))
@@ -857,7 +863,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
             self._box.add(mailbox.Message(_sample_message))
 
         # Create a stray directory
-        os.mkdir(os.path.join(self._path, 'cur', 'stray-dir'))
+        (self._path / 'cur' / 'stray-dir').mkdir()
 
         # Check that looping still works with the directory present.
         for msg in self._box:
@@ -872,8 +878,8 @@ class TestMaildir(TestMailbox, unittest.TestCase):
             key = self._box.add(msg)
         finally:
             os.umask(orig_umask)
-        path = os.path.join(self._path, self._box._lookup(key))
-        mode = os.stat(path).st_mode
+        path = self._path / self._box._lookup(key)
+        mode = path.stat().st_mode
         self.assertFalse(mode & 0o111)
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
@@ -886,8 +892,8 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         finally:
             os.umask(orig_umask)
 
-        path = os.path.join(subfolder._path, 'maildirfolder')
-        st = os.stat(path)
+        path = subfolder._path / 'maildirfolder'
+        st = path.stat()
         perms = st.st_mode
         self.assertFalse((perms & 0o111)) # Execute bits should all be off.
 
@@ -898,8 +904,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         # Put the last modified times more than two seconds into the past
         # (because mtime may have a two second granularity)
         for subdir in ('cur', 'new'):
-            os.utime(os.path.join(self._box._path, subdir),
-                     (time.time()-5,)*2)
+            os.utime(self._box._path / subdir, (time.time()-5,)*2)
 
         # Because mtime has a two second granularity in worst case (FAT), a
         # refresh is done unconditionally if called for within
@@ -925,9 +930,9 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         # Now, write something into cur and remove it.  This changes
         # the mtime and should cause a re-read. Note that "sleep
         # emulation" is still in effect, as skewfactor is -3.
-        filename = os.path.join(self._path, 'cur', 'stray-file')
+        filename = self._path / 'cur' / 'stray-file'
         support.create_empty_file(filename)
-        os.unlink(filename)
+        filename.unlink()
         self._box._refresh()
         self.assertTrue(refreshed())
 
@@ -942,12 +947,12 @@ class _TestSingleFile(TestMailbox):
         # Inode number changes if the contents are written to another
         # file which is then renamed over the original file. So we
         # must check that the inode number doesn't change.
-        inode_before = os.stat(self._path).st_ino
+        inode_before = self._path.stat().st_ino
 
         self._box.add(self._template % 0)
         self._box.flush()
 
-        inode_after = os.stat(self._path).st_ino
+        inode_after = self._path.stat().st_ino
         self.assertEqual(inode_before, inode_after)
 
         # Make sure the message was really added
@@ -961,8 +966,8 @@ class _TestSingleFile(TestMailbox):
         # Make the mailbox world writable. It's unlikely that the new
         # mailbox file would have these permissions after flush(),
         # because umask usually prevents it.
-        mode = os.stat(self._path).st_mode | 0o666
-        os.chmod(self._path, mode)
+        mode = self._path.stat().st_mode | 0o666
+        self._path.chmod(mode)
 
         self._box.add(self._template % 0)
         i = self._box.add(self._template % 1)
@@ -970,7 +975,7 @@ class _TestSingleFile(TestMailbox):
         self._box.remove(i)
         self._box.flush()
 
-        self.assertEqual(os.stat(self._path).st_mode, mode)
+        self.assertEqual(self._path.stat().st_mode, mode)
 
 
 class _TestMboxMMDF(_TestSingleFile):
@@ -1125,14 +1130,14 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
         try:
             old_umask = os.umask(0o077)
             self._box.close()
-            os.unlink(self._path)
+            self._path.unlink()
             self._box = mailbox.mbox(self._path, create=True)
             self._box.add('')
             self._box.close()
         finally:
             os.umask(old_umask)
 
-        st = os.stat(self._path)
+        st = self._path.stat()
         perms = st.st_mode
         self.assertFalse((perms & 0o111)) # Execute bits should all be off.
 
@@ -1169,7 +1174,7 @@ class TestMH(TestMailbox, unittest.TestCase):
     _factory = lambda self, path, factory=None: mailbox.MH(path, factory)
 
     def assertMailboxEmpty(self):
-        self.assertEqual(os.listdir(self._path), ['.mh_sequences'])
+        self.assertEqual([entry.name for entry in self._path.iterdir()], ['.mh_sequences'])
 
     def test_list_folders(self):
         # List folders
@@ -1189,7 +1194,7 @@ class TestMH(TestMailbox, unittest.TestCase):
         new_folder = self._box.add_folder('foo.bar')
         folder0 = self._box.get_folder('foo.bar')
         folder0.add(self._template % 'bar')
-        self.assertTrue(os.path.isdir(os.path.join(self._path, 'foo.bar')))
+        self.assertTrue((self._path / 'foo.bar').is_dir())
         folder1 = self._box.get_folder('foo.bar')
         self.assertEqual(folder1.get_string(folder1.keys()[0]),
                          self._template % 'bar')
@@ -1296,7 +1301,7 @@ class TestMH(TestMailbox, unittest.TestCase):
                       'unseen':[1], 'bar':[3], 'replied':[3]})
 
     def _get_lock_path(self):
-        return os.path.join(self._path, '.mh_sequences.lock')
+        return (self._path / '.mh_sequences.lock')
 
 
 class TestBabyl(_TestSingleFile, unittest.TestCase):
@@ -2131,23 +2136,24 @@ class MaildirTestCase(unittest.TestCase):
 
     def setUp(self):
         # create a new maildir mailbox to work with:
-        self._dir = support.TESTFN
-        if os.path.isdir(self._dir):
+        self._dir = Path(support.TESTFN)
+        if self._dir.is_dir():
             support.rmtree(self._dir)
-        elif os.path.isfile(self._dir):
+        elif self._dir.is_file():
             support.unlink(self._dir)
-        os.mkdir(self._dir)
-        os.mkdir(os.path.join(self._dir, "cur"))
-        os.mkdir(os.path.join(self._dir, "tmp"))
-        os.mkdir(os.path.join(self._dir, "new"))
+        self._dir.mkdir()
+        (self._dir / "cur").mkdir()
+        (self._dir / "tmp").mkdir()
+        (self._dir / "new").mkdir()
         self._counter = 1
         self._msgfiles = []
 
     def tearDown(self):
-        list(map(os.unlink, self._msgfiles))
-        support.rmdir(os.path.join(self._dir, "cur"))
-        support.rmdir(os.path.join(self._dir, "tmp"))
-        support.rmdir(os.path.join(self._dir, "new"))
+        for msgfile in self._msgfiles:
+            msgfile.unlink()
+        support.rmdir(self._dir / "cur")
+        support.rmdir(self._dir / "tmp")
+        support.rmdir(self._dir / "new")
         support.rmdir(self._dir)
 
     def createMessage(self, dir, mbox=False):
@@ -2155,15 +2161,15 @@ class MaildirTestCase(unittest.TestCase):
         pid = self._counter
         self._counter += 1
         filename = ".".join((str(t), str(pid), "myhostname", "mydomain"))
-        tmpname = os.path.join(self._dir, "tmp", filename)
-        newname = os.path.join(self._dir, dir, filename)
+        tmpname = self._dir / "tmp" / filename
+        newname = self._dir / dir / filename
         with open(tmpname, "w") as fp:
             self._msgfiles.append(tmpname)
             if mbox:
                 fp.write(FROM_)
             fp.write(DUMMY_MESSAGE)
         try:
-            os.link(tmpname, newname)
+            tmpname.link_to(newname)
         except (AttributeError, PermissionError):
             with open(newname, "w") as fp:
                 fp.write(DUMMY_MESSAGE)
@@ -2301,10 +2307,10 @@ class MiscTestCase(unittest.TestCase):
 
 def test_main():
     tests = (TestMailboxSuperclass, TestMaildir, TestMbox, TestMMDF, TestMH,
-             TestBabyl, TestMessage, TestMaildirMessage, TestMboxMessage,
-             TestMHMessage, TestBabylMessage, TestMMDFMessage,
-             TestMessageConversion, TestProxyFile, TestPartialFile,
-             MaildirTestCase, TestFakeMailBox, MiscTestCase)
+            TestBabyl, TestMessage, TestMaildirMessage, TestMboxMessage,
+            TestMHMessage, TestBabylMessage, TestMMDFMessage,
+            TestMessageConversion, TestProxyFile, TestPartialFile,
+            MaildirTestCase, TestFakeMailBox, MiscTestCase)
     support.run_unittest(*tests)
     support.reap_children()
 
