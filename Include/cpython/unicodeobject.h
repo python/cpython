@@ -12,7 +12,7 @@
 /* --- Internal Unicode Operations ---------------------------------------- */
 
 #ifndef HAVE_UNICODE_WCHAR_CACHE
-#  define HAVE_UNICODE_WCHAR_CACHE 1
+#  define HAVE_UNICODE_WCHAR_CACHE 0
 #endif /* HAVE_UNICODE_WCHAR_CACHE */
 
 #ifndef USE_UNICODE_WCHAR_CACHE
