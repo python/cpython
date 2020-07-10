@@ -1308,17 +1308,13 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "U|i:LoadLibrary", &nameobj, &load_flags))
         return NULL;
 
-#if USE_UNICODE_WCHAR_CACHE
-    const WCHAR *name = _PyUnicode_AsUnicode(nameobj);
-#else /* USE_UNICODE_WCHAR_CACHE */
-    WCHAR *name = PyUnicode_AsWideCharString(nameobj, NULL);
-#endif /* USE_UNICODE_WCHAR_CACHE */
-    if (!name)
-        return NULL;
-
     if (PySys_Audit("ctypes.dlopen", "O", nameobj) < 0) {
         return NULL;
     }
+
+    WCHAR *name = PyUnicode_AsWideCharString(nameobj, NULL);
+    if (!name)
+        return NULL;
 
     Py_BEGIN_ALLOW_THREADS
     /* bpo-36085: Limit DLL search directories to avoid pre-loading
@@ -1328,9 +1324,7 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     err = hMod ? 0 : GetLastError();
     Py_END_ALLOW_THREADS
 
-#if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free(name);
-#endif /* USE_UNICODE_WCHAR_CACHE */
     if (err == ERROR_MOD_NOT_FOUND) {
         PyErr_Format(PyExc_FileNotFoundError,
                      ("Could not find module '%.500S' (or one of its "
