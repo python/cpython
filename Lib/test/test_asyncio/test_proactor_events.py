@@ -40,7 +40,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         self.loop._proactor = self.proactor
         self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.sock = mock.Mock(socket.socket)
-        self.buffer_size = 32768
+        self.buffer_size = 65536
 
     def socket_transport(self, waiter=None):
         transport = _ProactorSocketTransport(self.loop, self.sock,

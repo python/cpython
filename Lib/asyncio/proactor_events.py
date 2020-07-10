@@ -179,7 +179,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
     """Transport for read pipes."""
 
     def __init__(self, loop, sock, protocol, waiter=None,
-                 extra=None, server=None, buffer_size=32768):
+                 extra=None, server=None, buffer_size=65536):
         self._pending_data_length = -1
         self._paused = True
         super().__init__(loop, sock, protocol, waiter, extra, server)
