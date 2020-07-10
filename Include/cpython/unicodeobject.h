@@ -11,12 +11,8 @@
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 
-#ifndef HAVE_UNICODE_WCHAR_CACHE
-#  define HAVE_UNICODE_WCHAR_CACHE 0
-#endif /* HAVE_UNICODE_WCHAR_CACHE */
-
 #ifndef USE_UNICODE_WCHAR_CACHE
-#  define USE_UNICODE_WCHAR_CACHE HAVE_UNICODE_WCHAR_CACHE
+#  define USE_UNICODE_WCHAR_CACHE 1
 #endif /* USE_UNICODE_WCHAR_CACHE */
 
 /* Since splitting on whitespace is an important use case, and
@@ -219,9 +215,7 @@ typedef struct {
            4 bytes (see issue #19537 on m68k). */
         unsigned int :24;
     } state;
-#if HAVE_UNICODE_WCHAR_CACHE
     wchar_t *wstr;              /* wchar_t representation (null-terminated) */
-#endif /* HAVE_UNICODE_WCHAR_CACHE */
 } PyASCIIObject;
 
 /* Non-ASCII strings allocated through PyUnicode_New use the
@@ -232,10 +226,8 @@ typedef struct {
     Py_ssize_t utf8_length;     /* Number of bytes in utf8, excluding the
                                  * terminating \0. */
     char *utf8;                 /* UTF-8 representation (null-terminated) */
-#if HAVE_UNICODE_WCHAR_CACHE
     Py_ssize_t wstr_length;     /* Number of code points in wstr, possible
                                  * surrogates count as two code points. */
-#endif /* HAVE_UNICODE_WCHAR_CACHE */
 } PyCompactUnicodeObject;
 
 /* Strings allocated through PyUnicode_FromUnicode(NULL, len) use the
@@ -256,7 +248,6 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
     int check_content);
 
 /* Fast access macros */
-#if HAVE_UNICODE_WCHAR_CACHE
 
 /* Returns the deprecated Py_UNICODE representation's size in code units
    (this includes surrogate pairs as 2 units).
@@ -291,7 +282,6 @@ PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
 #define PyUnicode_AS_DATA(op) \
     ((const char *)(PyUnicode_AS_UNICODE(op)))
 
-#endif /* HAVE_UNICODE_WCHAR_CACHE */
 
 /* --- Flexible String Representation Helper Macros (PEP 393) -------------- */
 
@@ -452,7 +442,6 @@ enum PyUnicode_Kind {
         (0xffffU) :                                                     \
         (0x10ffffU)))))
 
-#if HAVE_UNICODE_WCHAR_CACHE
 Py_DEPRECATED(3.3)
 static inline Py_ssize_t _PyUnicode_get_wstr_length(PyObject *op) {
     return PyUnicode_IS_COMPACT_ASCII(op) ?
@@ -460,7 +449,6 @@ static inline Py_ssize_t _PyUnicode_get_wstr_length(PyObject *op) {
             ((PyCompactUnicodeObject*)op)->wstr_length;
 }
 #define PyUnicode_WSTR_LENGTH(op) _PyUnicode_get_wstr_length((PyObject*)op)
-#endif /* HAVE_UNICODE_WCHAR_CACHE */
 
 /* === Public API ========================================================= */
 

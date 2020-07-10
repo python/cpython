@@ -1014,7 +1014,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'u': /* raw unicode buffer (Py_UNICODE *) */
     case 'Z': /* raw unicode buffer or None */
     {
-#if HAVE_UNICODE_WCHAR_CACHE
         // TODO: Raise DeprecationWarning
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
@@ -1057,14 +1056,8 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
                 return converterr(c == 'Z' ? "str or None" : "str",
                                   arg, msgbuf, bufsize);
         }
-_Py_COMP_DIAG_POP
-#else /* HAVE_UNICODE_WCHAR_CACHE */
-        PyErr_Format(PyExc_SystemError,
-                     "unsupported PyArg_Parse format: \"%s\"",
-                     format-1);
-        RETURN_ERR_OCCURRED;
-#endif /* HAVE_UNICODE_WCHAR_CACHE */
         break;
+_Py_COMP_DIAG_POP
     }
 
     case 'e': {/* encoded string */

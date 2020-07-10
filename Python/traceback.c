@@ -684,9 +684,7 @@ _Py_DumpASCII(int fd, PyObject *text)
     int truncated;
     int kind;
     void *data = NULL;
-#if HAVE_UNICODE_WCHAR_CACHE
     wchar_t *wstr = NULL;
-#endif /* HAVE_UNICODE_WCHAR_CACHE */
     Py_UCS4 ch;
 
     if (!PyUnicode_Check(text))
@@ -694,16 +692,13 @@ _Py_DumpASCII(int fd, PyObject *text)
 
     size = ascii->length;
     kind = ascii->state.kind;
-#if HAVE_UNICODE_WCHAR_CACHE
     if (kind == PyUnicode_WCHAR_KIND) {
         wstr = ((PyASCIIObject *)text)->wstr;
         if (wstr == NULL)
             return;
         size = ((PyCompactUnicodeObject *)text)->wstr_length;
     }
-    else
-#endif /* HAVE_UNICODE_WCHAR_CACHE */
-    if (ascii->state.compact) {
+    else if (ascii->state.compact) {
         if (ascii->state.ascii)
             data = ((PyASCIIObject*)text) + 1;
         else
@@ -724,12 +719,10 @@ _Py_DumpASCII(int fd, PyObject *text)
     }
 
     for (i=0; i < size; i++) {
-#if HAVE_UNICODE_WCHAR_CACHE
-        if (kind == PyUnicode_WCHAR_KIND)
-            ch = wstr[i];
-        else
-#endif /* HAVE_UNICODE_WCHAR_CACHE */
+        if (kind != PyUnicode_WCHAR_KIND)
             ch = PyUnicode_READ(kind, data, i);
+        else
+            ch = wstr[i];
         if (' ' <= ch && ch <= 126) {
             /* printable ASCII character */
             char c = (char)ch;
