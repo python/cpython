@@ -1694,13 +1694,13 @@ class XMLParser:
             self._doctype.append(text)
             n = len(self._doctype)
             if n > 2:
-                type = self._doctype[1]
-                if type == "PUBLIC" and n == 4:
-                    name, type, pubid, system = self._doctype
+                doctype = self._doctype[1]
+                if doctype == "PUBLIC" and n == 4:
+                    name, doctype, pubid, system = self._doctype
                     if pubid:
                         pubid = pubid[1:-1]
-                elif type == "SYSTEM" and n == 3:
-                    name, type, system = self._doctype
+                elif doctype == "SYSTEM" and n == 3:
+                    name, doctype, system = self._doctype
                     pubid = None
                 else:
                     return
