@@ -40,7 +40,9 @@ PyDoc_STRVAR(_overlapped_GetQueuedCompletionStatus__doc__,
 "GetQueuedCompletionStatus($module, port, msecs, /)\n"
 "--\n"
 "\n"
-"Get a message from completion port.  Wait for up to msecs milliseconds.");
+"Get a message from completion port.\n"
+"\n"
+"Wait for up to msecs milliseconds.");
 
 #define _OVERLAPPED_GETQUEUEDCOMPLETIONSTATUS_METHODDEF    \
     {"GetQueuedCompletionStatus", (PyCFunction)(void(*)(void))_overlapped_GetQueuedCompletionStatus, METH_FASTCALL, _overlapped_GetQueuedCompletionStatus__doc__},
@@ -199,7 +201,9 @@ PyDoc_STRVAR(_overlapped_CreateEvent__doc__,
 "            /)\n"
 "--\n"
 "\n"
-"Create an event.  EventAttributes must be None.");
+"Create an event.\n"
+"\n"
+"EventAttributes must be None.");
 
 #define _OVERLAPPED_CREATEEVENT_METHODDEF    \
     {"CreateEvent", (PyCFunction)(void(*)(void))_overlapped_CreateEvent, METH_FASTCALL, _overlapped_CreateEvent__doc__},
@@ -349,7 +353,7 @@ PyDoc_STRVAR(_overlapped_Overlapped__doc__,
 "Overlapped(event=_overlapped.INVALID_HANDLE_VALUE)\n"
 "--\n"
 "\n"
-"OVERLAPPED structure wrapper");
+"OVERLAPPED structure wrapper.");
 
 static PyObject *
 _overlapped_Overlapped_impl(PyTypeObject *type, HANDLE event);
@@ -376,7 +380,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_cancel__doc__,
 "cancel($self, /)\n"
 "--\n"
 "\n"
-"Cancel overlapped operation");
+"Cancel overlapped operation.");
 
 #define _OVERLAPPED_OVERLAPPED_CANCEL_METHODDEF    \
     {"cancel", (PyCFunction)_overlapped_Overlapped_cancel, METH_NOARGS, _overlapped_Overlapped_cancel__doc__},
@@ -425,7 +429,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_ReadFile__doc__,
 "ReadFile($self, handle, size, /)\n"
 "--\n"
 "\n"
-"Start overlapped read");
+"Start overlapped read.");
 
 #define _OVERLAPPED_OVERLAPPED_READFILE_METHODDEF    \
     {"ReadFile", (PyCFunction)(void(*)(void))_overlapped_Overlapped_ReadFile, METH_FASTCALL, _overlapped_Overlapped_ReadFile__doc__},
@@ -455,7 +459,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_ReadFileInto__doc__,
 "ReadFileInto($self, handle, buf, /)\n"
 "--\n"
 "\n"
-"Start overlapped receive");
+"Start overlapped receive.");
 
 #define _OVERLAPPED_OVERLAPPED_READFILEINTO_METHODDEF    \
     {"ReadFileInto", (PyCFunction)(void(*)(void))_overlapped_Overlapped_ReadFileInto, METH_FASTCALL, _overlapped_Overlapped_ReadFileInto__doc__},
@@ -485,7 +489,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_WSARecv__doc__,
 "WSARecv($self, handle, size, flags=0, /)\n"
 "--\n"
 "\n"
-"Start overlapped receive");
+"Start overlapped receive.");
 
 #define _OVERLAPPED_OVERLAPPED_WSARECV_METHODDEF    \
     {"WSARecv", (PyCFunction)(void(*)(void))_overlapped_Overlapped_WSARecv, METH_FASTCALL, _overlapped_Overlapped_WSARecv__doc__},
@@ -516,7 +520,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_WSARecvInto__doc__,
 "WSARecvInto($self, handle, buf, flags, /)\n"
 "--\n"
 "\n"
-"Start overlapped receive");
+"Start overlapped receive.");
 
 #define _OVERLAPPED_OVERLAPPED_WSARECVINTO_METHODDEF    \
     {"WSARecvInto", (PyCFunction)(void(*)(void))_overlapped_Overlapped_WSARecvInto, METH_FASTCALL, _overlapped_Overlapped_WSARecvInto__doc__},
@@ -548,7 +552,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_WriteFile__doc__,
 "WriteFile($self, handle, buf, /)\n"
 "--\n"
 "\n"
-"Start overlapped write");
+"Start overlapped write.");
 
 #define _OVERLAPPED_OVERLAPPED_WRITEFILE_METHODDEF    \
     {"WriteFile", (PyCFunction)(void(*)(void))_overlapped_Overlapped_WriteFile, METH_FASTCALL, _overlapped_Overlapped_WriteFile__doc__},
@@ -578,7 +582,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_WSASend__doc__,
 "WSASend($self, handle, buf, flags, /)\n"
 "--\n"
 "\n"
-"Start overlapped send");
+"Start overlapped send.");
 
 #define _OVERLAPPED_OVERLAPPED_WSASEND_METHODDEF    \
     {"WSASend", (PyCFunction)(void(*)(void))_overlapped_Overlapped_WSASend, METH_FASTCALL, _overlapped_Overlapped_WSASend__doc__},
@@ -609,7 +613,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_AcceptEx__doc__,
 "AcceptEx($self, listen_handle, accept_handle, /)\n"
 "--\n"
 "\n"
-"Start overlapped wait for client to connect");
+"Start overlapped wait for client to connect.");
 
 #define _OVERLAPPED_OVERLAPPED_ACCEPTEX_METHODDEF    \
     {"AcceptEx", (PyCFunction)(void(*)(void))_overlapped_Overlapped_AcceptEx, METH_FASTCALL, _overlapped_Overlapped_AcceptEx__doc__},
@@ -640,7 +644,9 @@ PyDoc_STRVAR(_overlapped_Overlapped_ConnectEx__doc__,
 "ConnectEx($self, client_handle, address_as_bytes, /)\n"
 "--\n"
 "\n"
-"Start overlapped connect.  client_handle should be unbound.");
+"Start overlapped connect.\n"
+"\n"
+"client_handle should be unbound.");
 
 #define _OVERLAPPED_OVERLAPPED_CONNECTEX_METHODDEF    \
     {"ConnectEx", (PyCFunction)(void(*)(void))_overlapped_Overlapped_ConnectEx, METH_FASTCALL, _overlapped_Overlapped_ConnectEx__doc__},
@@ -809,7 +815,7 @@ PyDoc_STRVAR(_overlapped_WSAConnect__doc__,
 "WSAConnect($module, client_handle, address_as_bytes, /)\n"
 "--\n"
 "\n"
-"Bind a remote address to a connectionless (UDP) socket");
+"Bind a remote address to a connectionless (UDP) socket.");
 
 #define _OVERLAPPED_WSACONNECT_METHODDEF    \
     {"WSAConnect", (PyCFunction)(void(*)(void))_overlapped_WSAConnect, METH_FASTCALL, _overlapped_WSAConnect__doc__},
@@ -839,7 +845,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_WSASendTo__doc__,
 "WSASendTo($self, handle, buf, flags, address_as_bytes, /)\n"
 "--\n"
 "\n"
-"Start overlapped sendto over a connectionless (UDP) socket");
+"Start overlapped sendto over a connectionless (UDP) socket.");
 
 #define _OVERLAPPED_OVERLAPPED_WSASENDTO_METHODDEF    \
     {"WSASendTo", (PyCFunction)(void(*)(void))_overlapped_Overlapped_WSASendTo, METH_FASTCALL, _overlapped_Overlapped_WSASendTo__doc__},
@@ -872,7 +878,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_WSARecvFrom__doc__,
 "WSARecvFrom($self, handle, size, flags=0, /)\n"
 "--\n"
 "\n"
-"Start overlapped receive");
+"Start overlapped receive.");
 
 #define _OVERLAPPED_OVERLAPPED_WSARECVFROM_METHODDEF    \
     {"WSARecvFrom", (PyCFunction)(void(*)(void))_overlapped_Overlapped_WSARecvFrom, METH_FASTCALL, _overlapped_Overlapped_WSARecvFrom__doc__},
@@ -899,4 +905,4 @@ _overlapped_Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cfac610518dc5564 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee2ec2f93c8d334b input=a9049054013a1b77]*/
