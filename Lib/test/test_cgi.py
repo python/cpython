@@ -1,4 +1,3 @@
-from test.support import check_warnings
 import cgi
 import os
 import sys
@@ -127,6 +126,20 @@ class CgiTests(unittest.TestCase):
         result = cgi.parse_multipart(fp, env)
         expected = {'submit': [' Add '], 'id': ['1234'],
                     'file': [b'Testing 123.\n'], 'title': ['']}
+        self.assertEqual(result, expected)
+
+    def test_parse_multipart_without_content_length(self):
+        POSTDATA = '''--JfISa01
+Content-Disposition: form-data; name="submit-name"
+
+just a string
+
+--JfISa01--
+'''
+        fp = BytesIO(POSTDATA.encode('latin1'))
+        env = {'boundary': 'JfISa01'.encode('latin1')}
+        result = cgi.parse_multipart(fp, env)
+        expected = {'submit-name': ['just a string\n']}
         self.assertEqual(result, expected)
 
     def test_parse_multipart_invalid_encoding(self):
@@ -352,6 +365,23 @@ Larry
         self.assertEqual(len(fs.list), 1)
         self.assertEqual(fs.list[0].name, 'submit-name')
         self.assertEqual(fs.list[0].value, 'Larry')
+
+    def test_field_storage_multipart_no_content_length(self):
+        fp = BytesIO(b"""--MyBoundary
+Content-Disposition: form-data; name="my-arg"; filename="foo"
+
+Test
+
+--MyBoundary--
+""")
+        env = {
+            "REQUEST_METHOD": "POST",
+            "CONTENT_TYPE": "multipart/form-data; boundary=MyBoundary",
+            "wsgi.input": fp,
+        }
+        fields = cgi.FieldStorage(fp, environ=env)
+
+        self.assertEqual(len(fields["my-arg"].file.read()), 5)
 
     def test_fieldstorage_as_context_manager(self):
         fp = BytesIO(b'x' * 10)

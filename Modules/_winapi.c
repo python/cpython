@@ -35,7 +35,7 @@
 /* See http://www.python.org/2.4/license for licensing details. */
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #define WINDOWS_LEAN_AND_MEAN
 #include "windows.h"
@@ -603,11 +603,10 @@ _winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
         sizeof(rdb->MountPointReparseBuffer.PathBuffer) +
         /* Two +1's for NUL terminators. */
         (prefix_len + print_len + 1 + print_len + 1) * sizeof(WCHAR);
-    rdb = (_Py_PREPARSE_DATA_BUFFER)PyMem_RawMalloc(rdb_size);
+    rdb = (_Py_PREPARSE_DATA_BUFFER)PyMem_RawCalloc(1, rdb_size);
     if (rdb == NULL)
         goto cleanup;
 
-    memset(rdb, 0, rdb_size);
     rdb->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
     rdb->ReparseDataLength = rdb_size - _Py_REPARSE_DATA_BUFFER_HEADER_SIZE;
     rdb->MountPointReparseBuffer.SubstituteNameOffset = 0;
@@ -1081,6 +1080,14 @@ _winapi_CreateProcess_impl(PyObject *module,
         return NULL;
     }
 
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    if (config->_isolated_interpreter) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "subprocess not supported for isolated subinterpreters");
+        return NULL;
+    }
+
     ZeroMemory(&si, sizeof(si));
     si.StartupInfo.cb = sizeof(si);
 
@@ -1111,8 +1118,8 @@ _winapi_CreateProcess_impl(PyObject *module,
         }
     }
     else if (command_line != Py_None) {
-        PyErr_Format(PyExc_TypeError, 
-                     "CreateProcess() argument 2 must be str or None, not %s", 
+        PyErr_Format(PyExc_TypeError,
+                     "CreateProcess() argument 2 must be str or None, not %s",
                      Py_TYPE(command_line)->tp_name);
         goto cleanup;
     }

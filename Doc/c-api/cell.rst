@@ -27,13 +27,13 @@ Cell objects are not likely to be useful elsewhere.
 
 .. c:function:: int PyCell_Check(ob)
 
-   Return true if *ob* is a cell object; *ob* must not be *NULL*.
+   Return true if *ob* is a cell object; *ob* must not be ``NULL``.
 
 
 .. c:function:: PyObject* PyCell_New(PyObject *ob)
 
    Create and return a new cell object containing the value *ob*. The parameter may
-   be *NULL*.
+   be ``NULL``.
 
 
 .. c:function:: PyObject* PyCell_Get(PyObject *cell)
@@ -44,19 +44,19 @@ Cell objects are not likely to be useful elsewhere.
 .. c:function:: PyObject* PyCell_GET(PyObject *cell)
 
    Return the contents of the cell *cell*, but without checking that *cell* is
-   non-*NULL* and a cell object.
+   non-``NULL`` and a cell object.
 
 
 .. c:function:: int PyCell_Set(PyObject *cell, PyObject *value)
 
    Set the contents of the cell object *cell* to *value*.  This releases the
-   reference to any current content of the cell. *value* may be *NULL*.  *cell*
-   must be non-*NULL*; if it is not a cell object, ``-1`` will be returned.  On
+   reference to any current content of the cell. *value* may be ``NULL``.  *cell*
+   must be non-``NULL``; if it is not a cell object, ``-1`` will be returned.  On
    success, ``0`` will be returned.
 
 
 .. c:function:: void PyCell_SET(PyObject *cell, PyObject *value)
 
    Sets the value of the cell object *cell* to *value*.  No reference counts are
-   adjusted, and no checks are made for safety; *cell* must be non-*NULL* and must
+   adjusted, and no checks are made for safety; *cell* must be non-``NULL`` and must
    be a cell object.

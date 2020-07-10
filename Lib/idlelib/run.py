@@ -4,10 +4,12 @@ Simplified, pyshell.ModifiedInterpreter spawns a subprocess with
 f'''{sys.executable} -c "__import__('idlelib.run').run.main()"'''
 '.run' is needed because __import__ returns idlelib, not idlelib.run.
 """
+import functools
 import io
 import linecache
 import queue
 import sys
+import textwrap
 import time
 import traceback
 import _thread as thread
@@ -305,6 +307,67 @@ def fix_scaling(root):
                 font['size'] = round(-0.75*size)
 
 
+def fixdoc(fun, text):
+    tem = (fun.__doc__ + '\n\n') if fun.__doc__ is not None else ''
+    fun.__doc__ = tem + textwrap.fill(textwrap.dedent(text))
+
+RECURSIONLIMIT_DELTA = 30
+
+def install_recursionlimit_wrappers():
+    """Install wrappers to always add 30 to the recursion limit."""
+    # see: bpo-26806
+
+    @functools.wraps(sys.setrecursionlimit)
+    def setrecursionlimit(*args, **kwargs):
+        # mimic the original sys.setrecursionlimit()'s input handling
+        if kwargs:
+            raise TypeError(
+                "setrecursionlimit() takes no keyword arguments")
+        try:
+            limit, = args
+        except ValueError:
+            raise TypeError(f"setrecursionlimit() takes exactly one "
+                            f"argument ({len(args)} given)")
+        if not limit > 0:
+            raise ValueError(
+                "recursion limit must be greater or equal than 1")
+
+        return setrecursionlimit.__wrapped__(limit + RECURSIONLIMIT_DELTA)
+
+    fixdoc(setrecursionlimit, f"""\
+            This IDLE wrapper adds {RECURSIONLIMIT_DELTA} to prevent possible
+            uninterruptible loops.""")
+
+    @functools.wraps(sys.getrecursionlimit)
+    def getrecursionlimit():
+        return getrecursionlimit.__wrapped__() - RECURSIONLIMIT_DELTA
+
+    fixdoc(getrecursionlimit, f"""\
+            This IDLE wrapper subtracts {RECURSIONLIMIT_DELTA} to compensate
+            for the {RECURSIONLIMIT_DELTA} IDLE adds when setting the limit.""")
+
+    # add the delta to the default recursion limit, to compensate
+    sys.setrecursionlimit(sys.getrecursionlimit() + RECURSIONLIMIT_DELTA)
+
+    sys.setrecursionlimit = setrecursionlimit
+    sys.getrecursionlimit = getrecursionlimit
+
+
+def uninstall_recursionlimit_wrappers():
+    """Uninstall the recursion limit wrappers from the sys module.
+
+    IDLE only uses this for tests. Users can import run and call
+    this to remove the wrapping.
+    """
+    if (
+            getattr(sys.setrecursionlimit, '__wrapped__', None) and
+            getattr(sys.getrecursionlimit, '__wrapped__', None)
+    ):
+        sys.setrecursionlimit = sys.setrecursionlimit.__wrapped__
+        sys.getrecursionlimit = sys.getrecursionlimit.__wrapped__
+        sys.setrecursionlimit(sys.getrecursionlimit() - RECURSIONLIMIT_DELTA)
+
+
 class MyRPCServer(rpc.RPCServer):
 
     def handle_error(self, request, client_address):
@@ -338,16 +401,21 @@ class MyRPCServer(rpc.RPCServer):
 
 # Pseudofiles for shell-remote communication (also used in pyshell)
 
-class PseudoFile(io.TextIOBase):
+class StdioFile(io.TextIOBase):
 
-    def __init__(self, shell, tags, encoding=None):
+    def __init__(self, shell, tags, encoding='utf-8', errors='strict'):
         self.shell = shell
         self.tags = tags
         self._encoding = encoding
+        self._errors = errors
 
     @property
     def encoding(self):
         return self._encoding
+
+    @property
+    def errors(self):
+        return self._errors
 
     @property
     def name(self):
@@ -357,7 +425,7 @@ class PseudoFile(io.TextIOBase):
         return True
 
 
-class PseudoOutputFile(PseudoFile):
+class StdOutputFile(StdioFile):
 
     def writable(self):
         return True
@@ -365,19 +433,12 @@ class PseudoOutputFile(PseudoFile):
     def write(self, s):
         if self.closed:
             raise ValueError("write to closed file")
-        if type(s) is not str:
-            if not isinstance(s, str):
-                raise TypeError('must be str, not ' + type(s).__name__)
-            # See issue #19481
-            s = str.__str__(s)
+        s = str.encode(s, self.encoding, self.errors).decode(self.encoding, self.errors)
         return self.shell.write(s, self.tags)
 
 
-class PseudoInputFile(PseudoFile):
-
-    def __init__(self, shell, tags, encoding=None):
-        PseudoFile.__init__(self, shell, tags, encoding)
-        self._line_buffer = ''
+class StdInputFile(StdioFile):
+    _line_buffer = ''
 
     def readable(self):
         return True
@@ -432,12 +493,12 @@ class MyHandler(rpc.RPCHandler):
         executive = Executive(self)
         self.register("exec", executive)
         self.console = self.get_remote_proxy("console")
-        sys.stdin = PseudoInputFile(self.console, "stdin",
-                iomenu.encoding)
-        sys.stdout = PseudoOutputFile(self.console, "stdout",
-                iomenu.encoding)
-        sys.stderr = PseudoOutputFile(self.console, "stderr",
-                iomenu.encoding)
+        sys.stdin = StdInputFile(self.console, "stdin",
+                                 iomenu.encoding, iomenu.errors)
+        sys.stdout = StdOutputFile(self.console, "stdout",
+                                   iomenu.encoding, iomenu.errors)
+        sys.stderr = StdOutputFile(self.console, "stderr",
+                                   iomenu.encoding, "backslashreplace")
 
         sys.displayhook = rpc.displayhook
         # page help() text to shell.
@@ -447,6 +508,8 @@ class MyHandler(rpc.RPCHandler):
         # Keep a reference to stdin so that it won't try to exit IDLE if
         # sys.stdin gets changed from within IDLE's shell. See issue17838.
         self._keep_stdin = sys.stdin
+
+        install_recursionlimit_wrappers()
 
         self.interp = self.get_remote_proxy("interp")
         rpc.RPCHandler.getresponse(self, myseq=None, wait=0.05)

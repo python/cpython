@@ -118,7 +118,6 @@
     <ClInclude Include="..\Modules\_decimal\libmpdec\typearith.h" />
     <ClInclude Include="..\Modules\_decimal\libmpdec\umodarith.h" />
     <ClInclude Include="..\Modules\_decimal\libmpdec\vccompat.h" />
-    <ClInclude Include="..\Modules\_decimal\libmpdec\vcstdint.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_decimal\_decimal.c" />
@@ -131,7 +130,7 @@
     <ClCompile Include="..\Modules\_decimal\libmpdec\fnt.c" />
     <ClCompile Include="..\Modules\_decimal\libmpdec\fourstep.c" />
     <ClCompile Include="..\Modules\_decimal\libmpdec\io.c" />
-    <ClCompile Include="..\Modules\_decimal\libmpdec\memory.c" />
+    <ClCompile Include="..\Modules\_decimal\libmpdec\mpalloc.c" />
     <ClCompile Include="..\Modules\_decimal\libmpdec\mpdecimal.c" />
     <ClCompile Include="..\Modules\_decimal\libmpdec\numbertheory.c" />
     <ClCompile Include="..\Modules\_decimal\libmpdec\sixstep.c" />

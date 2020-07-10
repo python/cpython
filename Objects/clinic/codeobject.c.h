@@ -2,6 +2,142 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(code_new__doc__,
+"code(argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,\n"
+"     flags, codestring, constants, names, varnames, filename, name,\n"
+"     firstlineno, lnotab, freevars=(), cellvars=(), /)\n"
+"--\n"
+"\n"
+"Create a code object.  Not for the faint of heart.");
+
+static PyObject *
+code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
+              int kwonlyargcount, int nlocals, int stacksize, int flags,
+              PyObject *code, PyObject *consts, PyObject *names,
+              PyObject *varnames, PyObject *filename, PyObject *name,
+              int firstlineno, PyObject *lnotab, PyObject *freevars,
+              PyObject *cellvars);
+
+static PyObject *
+code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    int argcount;
+    int posonlyargcount;
+    int kwonlyargcount;
+    int nlocals;
+    int stacksize;
+    int flags;
+    PyObject *code;
+    PyObject *consts;
+    PyObject *names;
+    PyObject *varnames;
+    PyObject *filename;
+    PyObject *name;
+    int firstlineno;
+    PyObject *lnotab;
+    PyObject *freevars = NULL;
+    PyObject *cellvars = NULL;
+
+    if ((type == &PyCode_Type) &&
+        !_PyArg_NoKeywords("code", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("code", PyTuple_GET_SIZE(args), 14, 16)) {
+        goto exit;
+    }
+    argcount = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    if (argcount == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    posonlyargcount = _PyLong_AsInt(PyTuple_GET_ITEM(args, 1));
+    if (posonlyargcount == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    kwonlyargcount = _PyLong_AsInt(PyTuple_GET_ITEM(args, 2));
+    if (kwonlyargcount == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    nlocals = _PyLong_AsInt(PyTuple_GET_ITEM(args, 3));
+    if (nlocals == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    stacksize = _PyLong_AsInt(PyTuple_GET_ITEM(args, 4));
+    if (stacksize == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    flags = _PyLong_AsInt(PyTuple_GET_ITEM(args, 5));
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!PyBytes_Check(PyTuple_GET_ITEM(args, 6))) {
+        _PyArg_BadArgument("code", "argument 7", "bytes", PyTuple_GET_ITEM(args, 6));
+        goto exit;
+    }
+    code = PyTuple_GET_ITEM(args, 6);
+    if (!PyTuple_Check(PyTuple_GET_ITEM(args, 7))) {
+        _PyArg_BadArgument("code", "argument 8", "tuple", PyTuple_GET_ITEM(args, 7));
+        goto exit;
+    }
+    consts = PyTuple_GET_ITEM(args, 7);
+    if (!PyTuple_Check(PyTuple_GET_ITEM(args, 8))) {
+        _PyArg_BadArgument("code", "argument 9", "tuple", PyTuple_GET_ITEM(args, 8));
+        goto exit;
+    }
+    names = PyTuple_GET_ITEM(args, 8);
+    if (!PyTuple_Check(PyTuple_GET_ITEM(args, 9))) {
+        _PyArg_BadArgument("code", "argument 10", "tuple", PyTuple_GET_ITEM(args, 9));
+        goto exit;
+    }
+    varnames = PyTuple_GET_ITEM(args, 9);
+    if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 10))) {
+        _PyArg_BadArgument("code", "argument 11", "str", PyTuple_GET_ITEM(args, 10));
+        goto exit;
+    }
+    if (PyUnicode_READY(PyTuple_GET_ITEM(args, 10)) == -1) {
+        goto exit;
+    }
+    filename = PyTuple_GET_ITEM(args, 10);
+    if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 11))) {
+        _PyArg_BadArgument("code", "argument 12", "str", PyTuple_GET_ITEM(args, 11));
+        goto exit;
+    }
+    if (PyUnicode_READY(PyTuple_GET_ITEM(args, 11)) == -1) {
+        goto exit;
+    }
+    name = PyTuple_GET_ITEM(args, 11);
+    firstlineno = _PyLong_AsInt(PyTuple_GET_ITEM(args, 12));
+    if (firstlineno == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!PyBytes_Check(PyTuple_GET_ITEM(args, 13))) {
+        _PyArg_BadArgument("code", "argument 14", "bytes", PyTuple_GET_ITEM(args, 13));
+        goto exit;
+    }
+    lnotab = PyTuple_GET_ITEM(args, 13);
+    if (PyTuple_GET_SIZE(args) < 15) {
+        goto skip_optional;
+    }
+    if (!PyTuple_Check(PyTuple_GET_ITEM(args, 14))) {
+        _PyArg_BadArgument("code", "argument 15", "tuple", PyTuple_GET_ITEM(args, 14));
+        goto exit;
+    }
+    freevars = PyTuple_GET_ITEM(args, 14);
+    if (PyTuple_GET_SIZE(args) < 16) {
+        goto skip_optional;
+    }
+    if (!PyTuple_Check(PyTuple_GET_ITEM(args, 15))) {
+        _PyArg_BadArgument("code", "argument 16", "tuple", PyTuple_GET_ITEM(args, 15));
+        goto exit;
+    }
+    cellvars = PyTuple_GET_ITEM(args, 15);
+skip_optional:
+    return_value = code_new_impl(type, argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize, flags, code, consts, names, varnames, filename, name, firstlineno, lnotab, freevars, cellvars);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(code_replace__doc__,
 "replace($self, /, *, co_argcount=-1, co_posonlyargcount=-1,\n"
 "        co_kwonlyargcount=-1, co_nlocals=-1, co_stacksize=-1,\n"
@@ -11,7 +147,7 @@ PyDoc_STRVAR(code_replace__doc__,
 "        co_lnotab=None)\n"
 "--\n"
 "\n"
-"Return a new code object with new specified fields.");
+"Return a copy of the code object with new values for the specified fields.");
 
 #define CODE_REPLACE_METHODDEF    \
     {"replace", (PyCFunction)(void(*)(void))code_replace, METH_FASTCALL|METH_KEYWORDS, code_replace__doc__},
@@ -59,11 +195,6 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         goto skip_optional_kwonly;
     }
     if (args[0]) {
-        if (PyFloat_Check(args[0])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         co_argcount = _PyLong_AsInt(args[0]);
         if (co_argcount == -1 && PyErr_Occurred()) {
             goto exit;
@@ -73,11 +204,6 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (args[1]) {
-        if (PyFloat_Check(args[1])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         co_posonlyargcount = _PyLong_AsInt(args[1]);
         if (co_posonlyargcount == -1 && PyErr_Occurred()) {
             goto exit;
@@ -87,11 +213,6 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         co_kwonlyargcount = _PyLong_AsInt(args[2]);
         if (co_kwonlyargcount == -1 && PyErr_Occurred()) {
             goto exit;
@@ -101,11 +222,6 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (args[3]) {
-        if (PyFloat_Check(args[3])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         co_nlocals = _PyLong_AsInt(args[3]);
         if (co_nlocals == -1 && PyErr_Occurred()) {
             goto exit;
@@ -115,11 +231,6 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (args[4]) {
-        if (PyFloat_Check(args[4])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         co_stacksize = _PyLong_AsInt(args[4]);
         if (co_stacksize == -1 && PyErr_Occurred()) {
             goto exit;
@@ -129,11 +240,6 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (args[5]) {
-        if (PyFloat_Check(args[5])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         co_flags = _PyLong_AsInt(args[5]);
         if (co_flags == -1 && PyErr_Occurred()) {
             goto exit;
@@ -143,11 +249,6 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (args[6]) {
-        if (PyFloat_Check(args[6])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         co_firstlineno = _PyLong_AsInt(args[6]);
         if (co_firstlineno == -1 && PyErr_Occurred()) {
             goto exit;
@@ -158,7 +259,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[7]) {
         if (!PyBytes_Check(args[7])) {
-            _PyArg_BadArgument("replace", 8, "bytes", args[7]);
+            _PyArg_BadArgument("replace", "argument 'co_code'", "bytes", args[7]);
             goto exit;
         }
         co_code = (PyBytesObject *)args[7];
@@ -168,7 +269,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[8]) {
         if (!PyTuple_Check(args[8])) {
-            _PyArg_BadArgument("replace", 9, "tuple", args[8]);
+            _PyArg_BadArgument("replace", "argument 'co_consts'", "tuple", args[8]);
             goto exit;
         }
         co_consts = args[8];
@@ -178,7 +279,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[9]) {
         if (!PyTuple_Check(args[9])) {
-            _PyArg_BadArgument("replace", 10, "tuple", args[9]);
+            _PyArg_BadArgument("replace", "argument 'co_names'", "tuple", args[9]);
             goto exit;
         }
         co_names = args[9];
@@ -188,7 +289,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[10]) {
         if (!PyTuple_Check(args[10])) {
-            _PyArg_BadArgument("replace", 11, "tuple", args[10]);
+            _PyArg_BadArgument("replace", "argument 'co_varnames'", "tuple", args[10]);
             goto exit;
         }
         co_varnames = args[10];
@@ -198,7 +299,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[11]) {
         if (!PyTuple_Check(args[11])) {
-            _PyArg_BadArgument("replace", 12, "tuple", args[11]);
+            _PyArg_BadArgument("replace", "argument 'co_freevars'", "tuple", args[11]);
             goto exit;
         }
         co_freevars = args[11];
@@ -208,7 +309,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[12]) {
         if (!PyTuple_Check(args[12])) {
-            _PyArg_BadArgument("replace", 13, "tuple", args[12]);
+            _PyArg_BadArgument("replace", "argument 'co_cellvars'", "tuple", args[12]);
             goto exit;
         }
         co_cellvars = args[12];
@@ -218,7 +319,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[13]) {
         if (!PyUnicode_Check(args[13])) {
-            _PyArg_BadArgument("replace", 14, "str", args[13]);
+            _PyArg_BadArgument("replace", "argument 'co_filename'", "str", args[13]);
             goto exit;
         }
         if (PyUnicode_READY(args[13]) == -1) {
@@ -231,7 +332,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
     if (args[14]) {
         if (!PyUnicode_Check(args[14])) {
-            _PyArg_BadArgument("replace", 15, "str", args[14]);
+            _PyArg_BadArgument("replace", "argument 'co_name'", "str", args[14]);
             goto exit;
         }
         if (PyUnicode_READY(args[14]) == -1) {
@@ -243,7 +344,7 @@ code_replace(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         }
     }
     if (!PyBytes_Check(args[15])) {
-        _PyArg_BadArgument("replace", 16, "bytes", args[15]);
+        _PyArg_BadArgument("replace", "argument 'co_lnotab'", "bytes", args[15]);
         goto exit;
     }
     co_lnotab = (PyBytesObject *)args[15];
@@ -253,4 +354,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=624ab6f2ea8f0ea4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=18c31941ec09e9ca input=a9049054013a1b77]*/

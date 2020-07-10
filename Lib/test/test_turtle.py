@@ -1,8 +1,10 @@
 import pickle
 import unittest
 from test import support
+from test.support import import_helper
 
-turtle = support.import_module('turtle')
+
+turtle = import_helper.import_module('turtle')
 Vec2D = turtle.Vec2D
 
 test_config = """\
@@ -85,7 +87,7 @@ class TurtleConfigTest(unittest.TestCase):
 
         self.assertEqual(parsed_cfg, expected)
 
-    def test_partial_config_dict_with_commments(self):
+    def test_partial_config_dict_with_comments(self):
 
         cfg_name = self.get_cfg_file(test_config_two)
         parsed_cfg = turtle.config_dict(cfg_name)

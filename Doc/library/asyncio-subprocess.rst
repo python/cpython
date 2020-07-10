@@ -6,6 +6,11 @@
 Subprocesses
 ============
 
+**Source code:** :source:`Lib/asyncio/subprocess.py`,
+:source:`Lib/asyncio/base_subprocess.py`
+
+----------------------------------------
+
 This section describes high-level async/await asyncio APIs to
 create and manage subprocesses.
 
@@ -71,6 +76,10 @@ Creating Subprocesses
    See the documentation of :meth:`loop.subprocess_exec` for other
    parameters.
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The *loop* parameter.
+
 .. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
                           stdout=None, stderr=None, loop=None, \
                           limit=None, \*\*kwds)
@@ -86,14 +95,18 @@ Creating Subprocesses
    See the documentation of :meth:`loop.subprocess_shell` for other
    parameters.
 
-.. important::
+   .. important::
 
-   It is the application's responsibility to ensure that all whitespace and
-   special characters are quoted appropriately to avoid `shell injection
-   <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
-   vulnerabilities. The :func:`shlex.quote` function can be used to properly
-   escape whitespace and special shell characters in strings that are going
-   to be used to construct shell commands.
+      It is the application's responsibility to ensure that all whitespace and
+      special characters are quoted appropriately to avoid `shell injection
+      <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
+      vulnerabilities. The :func:`shlex.quote` function can be used to properly
+      escape whitespace and special shell characters in strings that are going
+      to be used to construct shell commands.
+
+   .. deprecated-removed:: 3.8 3.10
+
+      The *loop* parameter.
 
 .. note::
 
@@ -293,18 +306,26 @@ their completion.
 Subprocess and Threads
 ----------------------
 
-Standard asyncio event loop supports running subprocesses from
-different threads, but there are limitations:
+Standard asyncio event loop supports running subprocesses from different threads by
+default.
 
-* An event loop must run in the main thread.
+On Windows subprocesses are provided by :class:`ProactorEventLoop` only (default),
+:class:`SelectorEventLoop` has no subprocess support.
 
-* The child watcher must be instantiated in the main thread
-  before executing subprocesses from other threads. Call the
-  :func:`get_child_watcher` function in the main thread to instantiate
-  the child watcher.
+On UNIX *child watchers* are used for subprocess finish waiting, see
+:ref:`asyncio-watchers` for more info.
 
-Note that alternative event loop implementations might not share
-the above limitations; please refer to their documentation.
+
+.. versionchanged:: 3.8
+
+   UNIX switched to use :class:`ThreadedChildWatcher` for spawning subprocesses from
+   different threads without any limitation.
+
+   Spawning a subprocess with *inactive* current child watcher raises
+   :exc:`RuntimeError`.
+
+Note that alternative event loop implementations might have own limitations;
+please refer to their documentation.
 
 .. seealso::
 

@@ -1,7 +1,6 @@
 import os
 import posixpath
 import unittest
-import warnings
 from posixpath import realpath, abspath, dirname, basename
 from test import support, test_genericpath
 from test.support import FakePath
@@ -11,6 +10,7 @@ try:
     import posix
 except ImportError:
     posix = None
+
 
 # An absolute path to a temporary filename for testing. We can't rely on TESTFN
 # being an absolute path, so we need this.
@@ -627,7 +627,7 @@ class PathLikeTests(unittest.TestCase):
     path = posixpath
 
     def setUp(self):
-        self.file_name = support.TESTFN.lower()
+        self.file_name = support.TESTFN
         self.file_path = FakePath(support.TESTFN)
         self.addCleanup(support.unlink, self.file_name)
         with open(self.file_name, 'xb', 0) as file:

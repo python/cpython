@@ -10,6 +10,7 @@ import weakref
 
 import unittest
 from test import support
+from test.support import import_helper
 
 from test.pickletester import AbstractHookTests
 from test.pickletester import AbstractUnpickleTests
@@ -499,7 +500,7 @@ class CompatPickleTests(unittest.TestCase):
                                      ('builtins', name))
 
     def test_multiprocessing_exceptions(self):
-        module = support.import_module('multiprocessing.context')
+        module = import_helper.import_module('multiprocessing.context')
         for name, exc in get_exceptions(module):
             with self.subTest(name):
                 self.assertEqual(reverse_mapping('multiprocessing.context', name),

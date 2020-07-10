@@ -1,4 +1,5 @@
 from test import support
+from test.support import warnings_helper
 import decimal
 import enum
 import locale
@@ -14,6 +15,7 @@ try:
 except ImportError:
     _testcapi = None
 
+from test.support import skip_if_buggy_ucrt_strfptime
 
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
@@ -246,10 +248,11 @@ class TimeTestCase(unittest.TestCase):
         # not change output based on its value and no test for year
         # because systems vary in their support for year 0.
         expected = "2000 01 01 00 00 00 1 001"
-        with support.check_warnings():
+        with warnings_helper.check_warnings():
             result = time.strftime("%Y %m %d %H %M %S %w %j", (2000,)+(0,)*8)
         self.assertEqual(expected, result)
 
+    @skip_if_buggy_ucrt_strfptime
     def test_strptime(self):
         # Should be able to go round-trip from strftime to strptime without
         # raising an exception.
@@ -672,6 +675,7 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
 
 
 class TestPytime(unittest.TestCase):
+    @skip_if_buggy_ucrt_strfptime
     @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_localtime_timezone(self):
 
@@ -822,7 +826,7 @@ class CPyTimeTestCase:
                     try:
                         result = pytime_converter(value, time_rnd)
                         expected = expected_func(value)
-                    except Exception as exc:
+                    except Exception:
                         self.fail("Error on timestamp conversion: %s" % debug_info)
                     self.assertEqual(result,
                                      expected,

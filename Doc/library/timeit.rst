@@ -251,7 +251,8 @@ quotes and using leading spaces.  Multiple :option:`-s` options are treated
 similarly.
 
 If :option:`-n` is not given, a suitable number of loops is calculated by trying
-successive powers of 10 until the total time is at least 0.2 seconds.
+increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the total
+time is at least 0.2 seconds.
 
 :func:`default_timer` measurements can be affected by other programs running on
 the same machine, so the best thing to do when accurate timing is necessary is

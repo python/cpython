@@ -407,9 +407,9 @@ class OrderedDictTests:
         self.assertEqual(list(od), list('abcde'))
         od.move_to_end('c')
         self.assertEqual(list(od), list('abdec'))
-        od.move_to_end('c', 0)
+        od.move_to_end('c', False)
         self.assertEqual(list(od), list('cabde'))
-        od.move_to_end('c', 0)
+        od.move_to_end('c', False)
         self.assertEqual(list(od), list('cabde'))
         od.move_to_end('e')
         self.assertEqual(list(od), list('cabde'))
@@ -418,7 +418,7 @@ class OrderedDictTests:
         with self.assertRaises(KeyError):
             od.move_to_end('x')
         with self.assertRaises(KeyError):
-            od.move_to_end('x', 0)
+            od.move_to_end('x', False)
 
     def test_move_to_end_issue25406(self):
         OrderedDict = self.OrderedDict
@@ -654,6 +654,49 @@ class OrderedDictTests:
         support.check_free_after_iterating(self, lambda d: iter(d.values()), self.OrderedDict)
         support.check_free_after_iterating(self, lambda d: iter(d.items()), self.OrderedDict)
 
+    def test_merge_operator(self):
+        OrderedDict = self.OrderedDict
+
+        a = OrderedDict({0: 0, 1: 1, 2: 1})
+        b = OrderedDict({1: 1, 2: 2, 3: 3})
+
+        c = a.copy()
+        d = a.copy()
+        c |= b
+        d |= list(b.items())
+        expected = OrderedDict({0: 0, 1: 1, 2: 2, 3: 3})
+        self.assertEqual(a | dict(b), expected)
+        self.assertEqual(a | b, expected)
+        self.assertEqual(c, expected)
+        self.assertEqual(d, expected)
+
+        c = b.copy()
+        c |= a
+        expected = OrderedDict({1: 1, 2: 1, 3: 3, 0: 0})
+        self.assertEqual(dict(b) | a, expected)
+        self.assertEqual(b | a, expected)
+        self.assertEqual(c, expected)
+
+        self.assertIs(type(a | b), OrderedDict)
+        self.assertIs(type(dict(a) | b), OrderedDict)
+        self.assertIs(type(a | dict(b)), OrderedDict)
+
+        expected = a.copy()
+        a |= ()
+        a |= ""
+        self.assertEqual(a, expected)
+
+        with self.assertRaises(TypeError):
+            a | None
+        with self.assertRaises(TypeError):
+            a | ()
+        with self.assertRaises(TypeError):
+            a | "BAD"
+        with self.assertRaises(TypeError):
+            a | ""
+        with self.assertRaises(ValueError):
+            a |= "BAD"
+
 
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
@@ -752,6 +795,26 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
                     unpickled = pickle.loads(p)
                     self.assertEqual(list(unpickled), expected)
                     self.assertEqual(list(it), expected)
+
+    @support.cpython_only
+    def test_weakref_list_is_not_traversed(self):
+        # Check that the weakref list is not traversed when collecting
+        # OrderedDict objects. See bpo-39778 for more information.
+
+        gc.collect()
+
+        x = self.OrderedDict()
+        x.cycle = x
+
+        cycle = []
+        cycle.append(cycle)
+
+        x_ref = weakref.ref(x)
+        cycle.append(x_ref)
+
+        del x, cycle, x_ref
+
+        gc.collect()
 
 
 class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):

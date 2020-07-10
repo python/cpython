@@ -153,6 +153,9 @@ def get_layout(ns):
                 yield "libs/" + n + ".lib", lib
 
     if ns.include_appxmanifest:
+        yield from in_build("python_uwp.exe", new_name="python{}".format(VER_DOT))
+        yield from in_build("pythonw_uwp.exe", new_name="pythonw{}".format(VER_DOT))
+        # For backwards compatibility, but we don't reference these ourselves.
         yield from in_build("python_uwp.exe", new_name="python")
         yield from in_build("pythonw_uwp.exe", new_name="pythonw")
     else:
@@ -163,15 +166,19 @@ def get_layout(ns):
 
     if ns.include_launchers and ns.include_appxmanifest:
         if ns.include_pip:
-            yield from in_build("python_uwp.exe", new_name="pip")
+            yield from in_build("python_uwp.exe", new_name="pip{}".format(VER_DOT))
         if ns.include_idle:
-            yield from in_build("pythonw_uwp.exe", new_name="idle")
+            yield from in_build("pythonw_uwp.exe", new_name="idle{}".format(VER_DOT))
 
     if ns.include_stable:
         yield from in_build(PYTHON_STABLE_DLL_NAME)
 
+    found_any = False
     for dest, src in rglob(ns.build, "vcruntime*.dll"):
+        found_any = True
         yield dest, src
+    if not found_any:
+        log_error("Failed to locate vcruntime DLL in the build.")
 
     yield "LICENSE.txt", ns.build / "LICENSE.txt"
 
@@ -213,12 +220,7 @@ def get_layout(ns):
 
     if ns.include_dev:
 
-        def _c(d):
-            if d.is_dir():
-                return d.name != "internal"
-            return True
-
-        for dest, src in rglob(ns.source / "Include", "**/*.h", _c):
+        for dest, src in rglob(ns.source / "Include", "**/*.h"):
             yield "include/{}".format(dest), src
         src = ns.source / "PC" / "pyconfig.h"
         yield "include/pyconfig.h", src
@@ -228,7 +230,7 @@ def get_layout(ns):
 
     if ns.include_pip:
         for dest, src in get_pip_layout(ns):
-            if isinstance(src, tuple) or not (
+            if not isinstance(src, tuple) and (
                 src in EXCLUDE_FROM_LIB or src in EXCLUDE_FROM_PACKAGED_LIB
             ):
                 continue
@@ -288,18 +290,16 @@ def _compile_one_py(src, dest, name, optimize, checked=True):
         return None
 
 
-def _py_temp_compile(src, ns, dest_dir=None, checked=True):
+# name argument added to address bpo-37641
+def _py_temp_compile(src, name, ns, dest_dir=None, checked=True):
     if not ns.precompile or src not in PY_FILES or src.parent in DATA_DIRS:
         return None
-
-    dest = (dest_dir or ns.temp) / (src.stem + ".py")
-    return _compile_one_py(
-        src, dest.with_suffix(".pyc"), dest, optimize=2, checked=checked
-    )
+    dest = (dest_dir or ns.temp) / (src.stem + ".pyc")
+    return _compile_one_py(src, dest, name, optimize=2, checked=checked)
 
 
 def _write_to_zip(zf, dest, src, ns, checked=True):
-    pyc = _py_temp_compile(src, ns, checked=checked)
+    pyc = _py_temp_compile(src, dest, ns, checked=checked)
     if pyc:
         try:
             zf.write(str(pyc), dest.with_suffix(".pyc"))
@@ -500,6 +500,13 @@ def main():
         "-b", "--build", metavar="dir", help="Specify the build directory", type=Path
     )
     parser.add_argument(
+        "--arch",
+        metavar="architecture",
+        help="Specify the target architecture",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
         "--doc-build",
         metavar="dir",
         help="Specify the docs build directory",
@@ -590,6 +597,8 @@ def main():
         ns.doc_build = (Path.cwd() / ns.doc_build).resolve()
     if ns.include_cat and not ns.include_cat.is_absolute():
         ns.include_cat = (Path.cwd() / ns.include_cat).resolve()
+    if not ns.arch:
+        ns.arch = "amd64" if sys.maxsize > 2 ** 32 else "win32"
 
     if ns.copy and not ns.copy.is_absolute():
         ns.copy = (Path.cwd() / ns.copy).resolve()
@@ -605,12 +614,22 @@ def main():
 Source: {ns.source}
 Build:  {ns.build}
 Temp:   {ns.temp}
+Arch:   {ns.arch}
 
 Copy to: {ns.copy}
 Zip to:  {ns.zip}
 Catalog: {ns.catalog}""",
         ns=ns,
     )
+
+    if ns.arch not in ("win32", "amd64", "arm32", "arm64"):
+        log_error("--arch is not a valid value (win32, amd64, arm32, arm64)")
+        return 4
+    if ns.arch in ("arm32", "arm64"):
+        for n in ("include_idle", "include_tcltk"):
+            if getattr(ns, n):
+                log_warning(f"Disabling --{n.replace('_', '-')} on unsupported platform")
+                setattr(ns, n, False)
 
     if ns.include_idle and not ns.include_tcltk:
         log_warning("Assuming --include-tcltk to support --include-idle")

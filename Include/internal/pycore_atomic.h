@@ -8,8 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "dynamic_annotations.h"
-
+#include "dynamic_annotations.h"   /* _Py_ANNOTATE_MEMORY_ORDER */
 #include "pyconfig.h"
 
 #if defined(HAVE_STD_ATOMIC)

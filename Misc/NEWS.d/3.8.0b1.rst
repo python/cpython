@@ -808,7 +808,7 @@ detect classes that can be passed to `hex()`, `oct()` and `bin()`.
 .. nonce: LoeUNh
 .. section: Library
 
-Implement ``unittest.AsyncTestCase`` to help testing asyncio-based code.
+Implement ``unittest.IsolatedAsyncioTestCase`` to help testing asyncio-based code.
 
 ..
 
@@ -1262,7 +1262,7 @@ Reinitialize logging.Handler locks in forked child processes instead of
 attempting to acquire them all in the parent before forking only to be
 released in the child process.  The acquire/release pattern was leading to
 deadlocks in code that has implemented any form of chained logging handlers
-that depend upon one another as the lock acquision order cannot be
+that depend upon one another as the lock acquisition order cannot be
 guaranteed.
 
 ..
@@ -1612,8 +1612,8 @@ versions.
 .. nonce: Zot4sx
 .. section: Documentation
 
-Improve documentation of the stdin, stdout, and stderr arguments of of the
-``asyncio.subprocess_exec`` function to specficy which values are supported.
+Improve documentation of the stdin, stdout, and stderr arguments of the
+``asyncio.subprocess_exec`` function to specify which values are supported.
 Also mention that decoding as text is not supported.
 
 Add a few tests to verify that the various values passed to the std*
@@ -1951,7 +1951,7 @@ sys.exit().
 
 ..
 
-.. bpo: 13102
+.. bpo: 36807
 .. date: 2019-05-05-16-27-53
 .. nonce: AGNWYJ
 .. section: IDLE

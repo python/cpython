@@ -2,10 +2,10 @@ import os
 import base64
 import contextlib
 import gettext
-import locale
 import unittest
 
 from test import support
+from test.support import os_helper
 
 
 # TODO:
@@ -130,14 +130,14 @@ class GettextBaseTest(unittest.TestCase):
             fp.write(base64.decodebytes(UMO_DATA))
         with open(MMOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(MMO_DATA))
-        self.env = support.EnvironmentVarGuard()
+        self.env = os_helper.EnvironmentVarGuard()
         self.env['LANGUAGE'] = 'xx'
         gettext._translations.clear()
 
     def tearDown(self):
         self.env.__exit__()
         del self.env
-        support.rmtree(os.path.split(LOCALEDIR)[0])
+        os_helper.rmtree(os.path.split(LOCALEDIR)[0])
 
 GNU_MO_DATA_ISSUE_17898 = b'''\
 3hIElQAAAAABAAAAHAAAACQAAAAAAAAAAAAAAAAAAAAsAAAAggAAAC0AAAAAUGx1cmFsLUZvcm1z

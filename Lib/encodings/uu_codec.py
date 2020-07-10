@@ -20,6 +20,10 @@ def uu_encode(input, errors='strict', filename='<data>', mode=0o666):
     read = infile.read
     write = outfile.write
 
+    # Remove newline chars from filename
+    filename = filename.replace('\n','\\n')
+    filename = filename.replace('\r','\\r')
+
     # Encode
     write(('begin %o %s\n' % (mode & 0o777, filename)).encode('ascii'))
     chunk = read(45)

@@ -33,6 +33,9 @@ __all__ = ["ref", "proxy", "getweakrefcount", "getweakrefs",
            "WeakSet", "WeakMethod", "finalize"]
 
 
+_collections_abc.Set.register(WeakSet)
+_collections_abc.MutableSet.register(WeakSet)
+
 class WeakMethod(ref):
     """
     A custom `weakref.ref` subclass which simulates a weak reference to
@@ -75,14 +78,14 @@ class WeakMethod(ref):
             if not self._alive or not other._alive:
                 return self is other
             return ref.__eq__(self, other) and self._func_ref == other._func_ref
-        return False
+        return NotImplemented
 
     def __ne__(self, other):
         if isinstance(other, WeakMethod):
             if not self._alive or not other._alive:
                 return self is not other
             return ref.__ne__(self, other) or self._func_ref != other._func_ref
-        return True
+        return NotImplemented
 
     __hash__ = ref.__hash__
 
@@ -108,12 +111,12 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
                 else:
                     # Atomic removal is necessary since this function
                     # can be called asynchronously by the GC
-                    _atomic_removal(d, wr.key)
+                    _atomic_removal(self.data, wr.key)
         self._remove = remove
         # A list of keys to be removed
         self._pending_removals = []
         self._iterating = set()
-        self.data = d = {}
+        self.data = {}
         self.update(other, **kw)
 
     def _commit_removals(self):
@@ -307,6 +310,25 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
             self._commit_removals()
         return list(self.data.values())
 
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+    def __or__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.copy()
+            c.update(other)
+            return c
+        return NotImplemented
+
+    def __ror__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.__class__()
+            c.update(other)
+            c.update(self)
+            return c
+        return NotImplemented
+
 
 class KeyedRef(ref):
     """Specialized reference that includes a key corresponding to the value.
@@ -484,6 +506,25 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
                 d[ref(key, self._remove)] = value
         if len(kwargs):
             self.update(kwargs)
+
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+    def __or__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.copy()
+            c.update(other)
+            return c
+        return NotImplemented
+
+    def __ror__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            c = self.__class__()
+            c.update(other)
+            c.update(self)
+            return c
+        return NotImplemented
 
 
 class finalize:

@@ -7,6 +7,10 @@
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 .. sectionauthor:: Georg Brandl <georg@python.org>
 
+.. testsetup::
+
+    import ast
+
 **Source code:** :source:`Lib/ast.py`
 
 --------------
@@ -21,6 +25,17 @@ a flag to the :func:`compile` built-in function, or using the :func:`parse`
 helper provided in this module.  The result will be a tree of objects whose
 classes all inherit from :class:`ast.AST`.  An abstract syntax tree can be
 compiled into a Python code object using the built-in :func:`compile` function.
+
+
+.. _abstract-grammar:
+
+Abstract Grammar
+----------------
+
+The abstract grammar is currently defined as follows:
+
+.. literalinclude:: ../../Parser/Python.asdl
+   :language: asdl
 
 
 Node classes
@@ -101,23 +116,1392 @@ Node classes
       node = ast.UnaryOp(ast.USub(), ast.Constant(5, lineno=0, col_offset=0),
                          lineno=0, col_offset=0)
 
+.. versionchanged:: 3.8
+
+   Class :class:`ast.Constant` is now used for all constants.
+
+.. versionchanged:: 3.9
+
+   Simple indices are represented by their value, extended slices are
+   represented as tuples.
+
 .. deprecated:: 3.8
 
-   Class :class:`ast.Constant` is now used for all constants. Old classes
-   :class:`ast.Num`, :class:`ast.Str`, :class:`ast.Bytes`,
+   Old classes :class:`ast.Num`, :class:`ast.Str`, :class:`ast.Bytes`,
    :class:`ast.NameConstant` and :class:`ast.Ellipsis` are still available,
-   but they will be removed in future Python releases.
+   but they will be removed in future Python releases.  In the meantime,
+   instantiating them will return an instance of a different class.
+
+.. deprecated:: 3.9
+
+   Old classes :class:`ast.Index` and :class:`ast.ExtSlice` are still
+   available, but they will be removed in future Python releases.
+   In the meantime, instantiating them will return an instance of
+   a different class.
 
 
-.. _abstract-grammar:
+Literals
+^^^^^^^^
 
-Abstract Grammar
-----------------
+.. class:: Constant(value)
 
-The abstract grammar is currently defined as follows:
+   A constant value. The ``value`` attribute of the ``Constant`` literal contains the
+   Python object it represents. The values represented can be simple types
+   such as a number, string or ``None``, but also immutable container types
+   (tuples and frozensets) if all of their elements are constant.
 
-.. literalinclude:: ../../Parser/Python.asdl
-   :language: none
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('123', mode='eval'), indent=4))
+        Expression(
+            body=Constant(value=123))
+
+
+.. class:: FormattedValue(value, conversion, format_spec)
+
+   Node representing a single formatting field in an f-string. If the string
+   contains a single formatting field and nothing else the node can be
+   isolated otherwise it appears in :class:`JoinedStr`.
+
+   * ``value`` is any expression node (such as a literal, a variable, or a
+     function call).
+   * ``conversion`` is an integer:
+
+     * -1: no formatting
+     * 115: ``!s`` string formatting
+     * 114: ``!r`` repr formatting
+     * 97: ``!a`` ascii formatting
+
+   * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
+     of the value, or ``None`` if no format was specified. Both
+     ``conversion`` and ``format_spec`` can be set at the same time.
+
+
+.. class:: JoinedStr(values)
+
+   An f-string, comprising a series of :class:`FormattedValue` and :class:`Constant`
+   nodes.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('f"sin({a}) is {sin(a):.3}"', mode='eval'), indent=4))
+        Expression(
+            body=JoinedStr(
+                values=[
+                    Constant(value='sin('),
+                    FormattedValue(
+                        value=Name(id='a', ctx=Load()),
+                        conversion=-1),
+                    Constant(value=') is '),
+                    FormattedValue(
+                        value=Call(
+                            func=Name(id='sin', ctx=Load()),
+                            args=[
+                                Name(id='a', ctx=Load())],
+                            keywords=[]),
+                        conversion=-1,
+                        format_spec=JoinedStr(
+                            values=[
+                                Constant(value='.3')]))]))
+
+
+.. class:: List(elts, ctx)
+           Tuple(elts, ctx)
+
+   A list or tuple. ``elts`` holds a list of nodes representing the elements.
+   ``ctx`` is :class:`Store` if the container is an assignment target (i.e.
+   ``(x,y)=something``), and :class:`Load` otherwise.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('[1, 2, 3]', mode='eval'), indent=4))
+        Expression(
+            body=List(
+                elts=[
+                    Constant(value=1),
+                    Constant(value=2),
+                    Constant(value=3)],
+                ctx=Load()))
+        >>> print(ast.dump(ast.parse('(1, 2, 3)', mode='eval'), indent=4))
+        Expression(
+            body=Tuple(
+                elts=[
+                    Constant(value=1),
+                    Constant(value=2),
+                    Constant(value=3)],
+                ctx=Load()))
+
+
+.. class:: Set(elts)
+
+   A set. ``elts`` holds a list of nodes representing the set's elements.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('{1, 2, 3}', mode='eval'), indent=4))
+        Expression(
+            body=Set(
+                elts=[
+                    Constant(value=1),
+                    Constant(value=2),
+                    Constant(value=3)]))
+
+
+.. class:: Dict(keys, values)
+
+   A dictionary. ``keys`` and ``values`` hold lists of nodes representing the
+   keys and the values respectively, in matching order (what would be returned
+   when calling :code:`dictionary.keys()` and :code:`dictionary.values()`).
+
+   When doing dictionary unpacking using dictionary literals the expression to be
+   expanded goes in the ``values`` list, with a ``None`` at the corresponding
+   position in ``keys``.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('{"a":1, **d}', mode='eval'), indent=4))
+        Expression(
+            body=Dict(
+                keys=[
+                    Constant(value='a'),
+                    None],
+                values=[
+                    Constant(value=1),
+                    Name(id='d', ctx=Load())]))
+
+
+Variables
+^^^^^^^^^
+
+.. class:: Name(id, ctx)
+
+   A variable name. ``id`` holds the name as a string, and ``ctx`` is one of
+   the following types.
+
+
+.. class:: Load()
+           Store()
+           Del()
+
+   Variable references can be used to load the value of a variable, to assign
+   a new value to it, or to delete it. Variable references are given a context
+   to distinguish these cases.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('a'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Name(id='a', ctx=Load()))],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse('a = 1'), indent=4))
+        Module(
+            body=[
+                Assign(
+                    targets=[
+                        Name(id='a', ctx=Store())],
+                    value=Constant(value=1))],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse('del a'), indent=4))
+        Module(
+            body=[
+                Delete(
+                    targets=[
+                        Name(id='a', ctx=Del())])],
+            type_ignores=[])
+
+
+.. class:: Starred(value, ctx)
+
+   A ``*var`` variable reference. ``value`` holds the variable, typically a
+   :class:`Name` node. This type must be used when building a :class:`Call`
+   node with ``*args``.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('a, *b = it'), indent=4))
+        Module(
+            body=[
+                Assign(
+                    targets=[
+                        Tuple(
+                            elts=[
+                                Name(id='a', ctx=Store()),
+                                Starred(
+                                    value=Name(id='b', ctx=Store()),
+                                    ctx=Store())],
+                            ctx=Store())],
+                    value=Name(id='it', ctx=Load()))],
+            type_ignores=[])
+
+
+Expressions
+^^^^^^^^^^^
+
+.. class:: Expr(value)
+
+   When an expression, such as a function call, appears as a statement by itself
+   with its return value not used or stored, it is wrapped in this container.
+   ``value`` holds one of the other nodes in this section, a :class:`Constant`, a
+   :class:`Name`, a :class:`Lambda`, a :class:`Yield` or :class:`YieldFrom` node.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('-a'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=UnaryOp(
+                        op=USub(),
+                        operand=Name(id='a', ctx=Load())))],
+            type_ignores=[])
+
+
+.. class:: UnaryOp(op, operand)
+
+   A unary operation. ``op`` is the operator, and ``operand`` any expression
+   node.
+
+
+.. class:: UAdd
+           USub
+           Not
+           Invert
+
+   Unary operator tokens. :class:`Not` is the ``not`` keyword, :class:`Invert`
+   is the ``~`` operator.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('not x', mode='eval'), indent=4))
+        Expression(
+            body=UnaryOp(
+                op=Not(),
+                operand=Name(id='x', ctx=Load())))
+
+
+.. class:: BinOp(left, op, right)
+
+   A binary operation (like addition or division). ``op`` is the operator, and
+   ``left`` and ``right`` are any expression nodes.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('x + y', mode='eval'), indent=4))
+        Expression(
+            body=BinOp(
+                left=Name(id='x', ctx=Load()),
+                op=Add(),
+                right=Name(id='y', ctx=Load())))
+
+
+.. class:: Add
+           Sub
+           Mult
+           Div
+           FloorDiv
+           Mod
+           Pow
+           LShift
+           RShift
+           BitOr
+           BitXor
+           BitAnd
+           MatMult
+
+   Binary operator tokens.
+
+
+.. class:: BoolOp(op, values)
+
+   A boolean operation, 'or' or 'and'. ``op`` is :class:`Or` or :class:`And`.
+   ``values`` are the values involved. Consecutive operations with the same
+   operator, such as ``a or b or c``, are collapsed into one node with several
+   values.
+
+   This doesn't include ``not``, which is a :class:`UnaryOp`.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('x or y', mode='eval'), indent=4))
+        Expression(
+            body=BoolOp(
+                op=Or(),
+                values=[
+                    Name(id='x', ctx=Load()),
+                    Name(id='y', ctx=Load())]))
+
+
+.. class:: And
+           Or
+
+   Boolean operator tokens.
+
+
+.. class:: Compare(left, ops, comparators)
+
+   A comparison of two or more values. ``left`` is the first value in the
+   comparison, ``ops`` the list of operators, and ``comparators`` the list
+   of values after the first element in the comparison.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('1 <= a < 10', mode='eval'), indent=4))
+        Expression(
+            body=Compare(
+                left=Constant(value=1),
+                ops=[
+                    LtE(),
+                    Lt()],
+                comparators=[
+                    Name(id='a', ctx=Load()),
+                    Constant(value=10)]))
+
+
+.. class:: Eq
+           NotEq
+           Lt
+           LtE
+           Gt
+           GtE
+           Is
+           IsNot
+           In
+           NotIn
+
+   Comparison operator tokens.
+
+
+.. class:: Call(func, args, keywords, starargs, kwargs)
+
+   A function call. ``func`` is the function, which will often be a
+   :class:`Name` or :class:`Attribute` object. Of the arguments:
+
+   * ``args`` holds a list of the arguments passed by position.
+   * ``keywords`` holds a list of :class:`keyword` objects representing
+     arguments passed by keyword.
+
+   When creating a ``Call`` node, ``args`` and ``keywords`` are required, but
+   they can be empty lists. ``starargs`` and ``kwargs`` are optional.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('func(a, b=c, *d, **e)', mode='eval'), indent=4))
+        Expression(
+            body=Call(
+                func=Name(id='func', ctx=Load()),
+                args=[
+                    Name(id='a', ctx=Load()),
+                    Starred(
+                        value=Name(id='d', ctx=Load()),
+                        ctx=Load())],
+                keywords=[
+                    keyword(
+                        arg='b',
+                        value=Name(id='c', ctx=Load())),
+                    keyword(
+                        value=Name(id='e', ctx=Load()))]))
+
+
+.. class:: keyword(arg, value)
+
+   A keyword argument to a function call or class definition. ``arg`` is a raw
+   string of the parameter name, ``value`` is a node to pass in.
+
+
+.. class:: IfExp(test, body, orelse)
+
+   An expression such as ``a if b else c``. Each field holds a single node, so
+   in the following example, all three are :class:`Name` nodes.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('a if b else c', mode='eval'), indent=4))
+        Expression(
+            body=IfExp(
+                test=Name(id='b', ctx=Load()),
+                body=Name(id='a', ctx=Load()),
+                orelse=Name(id='c', ctx=Load())))
+
+
+.. class:: Attribute(value, attr, ctx)
+
+   Attribute access, e.g. ``d.keys``. ``value`` is a node, typically a
+   :class:`Name`. ``attr`` is a bare string giving the name of the attribute,
+   and ``ctx`` is :class:`Load`, :class:`Store` or :class:`Del` according to how
+   the attribute is acted on.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('snake.colour', mode='eval'), indent=4))
+        Expression(
+            body=Attribute(
+                value=Name(id='snake', ctx=Load()),
+                attr='colour',
+                ctx=Load()))
+
+
+.. class:: NamedExpr(target, value)
+
+    A named expression. This AST node is produced by the assignment expressions
+    operator (also known as the walrus operator). As opposed to the :class:`Assign`
+    node in which the first argument can be multiple nodes, in this case both
+    ``target`` and ``value`` must be single nodes.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('(x := 4)', mode='eval'), indent=4))
+        Expression(
+            body=NamedExpr(
+                target=Name(id='x', ctx=Store()),
+                value=Constant(value=4)))
+
+
+Subscripting
+~~~~~~~~~~~~
+
+.. class:: Subscript(value, slice, ctx)
+
+   A subscript, such as ``l[1]``. ``value`` is the subscripted object
+   (usually sequence or mapping). ``slice`` is an index, slice or key.
+   It can be a :class:`Tuple` and contain a :class:`Slice`.
+   ``ctx`` is :class:`Load`, :class:`Store` or :class:`Del`
+   according to the action performed with the subscript.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('l[1:2, 3]', mode='eval'), indent=4))
+        Expression(
+            body=Subscript(
+                value=Name(id='l', ctx=Load()),
+                slice=Tuple(
+                    elts=[
+                        Slice(
+                            lower=Constant(value=1),
+                            upper=Constant(value=2)),
+                        Constant(value=3)],
+                    ctx=Load()),
+                ctx=Load()))
+
+
+.. class:: Slice(lower, upper, step)
+
+   Regular slicing (on the form ``lower:upper`` or ``lower:upper:step``).
+   Can occur only inside the *slice* field of :class:`Subscript`, either
+   directly or as an element of :class:`Tuple`.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('l[1:2]', mode='eval'), indent=4))
+        Expression(
+            body=Subscript(
+                value=Name(id='l', ctx=Load()),
+                slice=Slice(
+                    lower=Constant(value=1),
+                    upper=Constant(value=2)),
+                ctx=Load()))
+
+
+Comprehensions
+~~~~~~~~~~~~~~
+
+.. class:: ListComp(elt, generators)
+           SetComp(elt, generators)
+           GeneratorExp(elt, generators)
+           DictComp(key, value, generators)
+
+   List and set comprehensions, generator expressions, and dictionary
+   comprehensions. ``elt`` (or ``key`` and ``value``) is a single node
+   representing the part that will be evaluated for each item.
+
+   ``generators`` is a list of :class:`comprehension` nodes.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('[x for x in numbers]', mode='eval'), indent=4))
+        Expression(
+            body=ListComp(
+                elt=Name(id='x', ctx=Load()),
+                generators=[
+                    comprehension(
+                        target=Name(id='x', ctx=Store()),
+                        iter=Name(id='numbers', ctx=Load()),
+                        ifs=[],
+                        is_async=0)]))
+        >>> print(ast.dump(ast.parse('{x: x**2 for x in numbers}', mode='eval'), indent=4))
+        Expression(
+            body=DictComp(
+                key=Name(id='x', ctx=Load()),
+                value=BinOp(
+                    left=Name(id='x', ctx=Load()),
+                    op=Pow(),
+                    right=Constant(value=2)),
+                generators=[
+                    comprehension(
+                        target=Name(id='x', ctx=Store()),
+                        iter=Name(id='numbers', ctx=Load()),
+                        ifs=[],
+                        is_async=0)]))
+        >>> print(ast.dump(ast.parse('{x for x in numbers}', mode='eval'), indent=4))
+        Expression(
+            body=SetComp(
+                elt=Name(id='x', ctx=Load()),
+                generators=[
+                    comprehension(
+                        target=Name(id='x', ctx=Store()),
+                        iter=Name(id='numbers', ctx=Load()),
+                        ifs=[],
+                        is_async=0)]))
+
+
+.. class:: comprehension(target, iter, ifs, is_async)
+
+   One ``for`` clause in a comprehension. ``target`` is the reference to use for
+   each element - typically a :class:`Name` or :class:`Tuple` node. ``iter``
+   is the object to iterate over. ``ifs`` is a list of test expressions: each
+   ``for`` clause can have multiple ``ifs``.
+
+   ``is_async`` indicates a comprehension is asynchronous (using an
+   ``async for`` instead of ``for``). The value is an integer (0 or 1).
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('[ord(c) for line in file for c in line]', mode='eval'),
+        ...                indent=4)) # Multiple comprehensions in one.
+        Expression(
+            body=ListComp(
+                elt=Call(
+                    func=Name(id='ord', ctx=Load()),
+                    args=[
+                        Name(id='c', ctx=Load())],
+                    keywords=[]),
+                generators=[
+                    comprehension(
+                        target=Name(id='line', ctx=Store()),
+                        iter=Name(id='file', ctx=Load()),
+                        ifs=[],
+                        is_async=0),
+                    comprehension(
+                        target=Name(id='c', ctx=Store()),
+                        iter=Name(id='line', ctx=Load()),
+                        ifs=[],
+                        is_async=0)]))
+
+        >>> print(ast.dump(ast.parse('(n**2 for n in it if n>5 if n<10)', mode='eval'),
+        ...                indent=4)) # generator comprehension
+        Expression(
+            body=GeneratorExp(
+                elt=BinOp(
+                    left=Name(id='n', ctx=Load()),
+                    op=Pow(),
+                    right=Constant(value=2)),
+                generators=[
+                    comprehension(
+                        target=Name(id='n', ctx=Store()),
+                        iter=Name(id='it', ctx=Load()),
+                        ifs=[
+                            Compare(
+                                left=Name(id='n', ctx=Load()),
+                                ops=[
+                                    Gt()],
+                                comparators=[
+                                    Constant(value=5)]),
+                            Compare(
+                                left=Name(id='n', ctx=Load()),
+                                ops=[
+                                    Lt()],
+                                comparators=[
+                                    Constant(value=10)])],
+                        is_async=0)]))
+
+        >>> print(ast.dump(ast.parse('[i async for i in soc]', mode='eval'),
+        ...                indent=4)) # Async comprehension
+        Expression(
+            body=ListComp(
+                elt=Name(id='i', ctx=Load()),
+                generators=[
+                    comprehension(
+                        target=Name(id='i', ctx=Store()),
+                        iter=Name(id='soc', ctx=Load()),
+                        ifs=[],
+                        is_async=1)]))
+
+Statements
+^^^^^^^^^^
+
+.. class:: Assign(targets, value, type_comment)
+
+   An assignment. ``targets`` is a list of nodes, and ``value`` is a single node.
+
+   Multiple nodes in ``targets`` represents assigning the same value to each.
+   Unpacking is represented by putting a :class:`Tuple` or :class:`List`
+   within ``targets``.
+
+   .. attribute:: type_comment
+
+       ``type_comment`` is an optional string with the type annotation as a comment.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('a = b = 1'), indent=4)) # Multiple assignment
+        Module(
+            body=[
+                Assign(
+                    targets=[
+                        Name(id='a', ctx=Store()),
+                        Name(id='b', ctx=Store())],
+                    value=Constant(value=1))],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse('a,b = c'), indent=4)) # Unpacking
+        Module(
+            body=[
+                Assign(
+                    targets=[
+                        Tuple(
+                            elts=[
+                                Name(id='a', ctx=Store()),
+                                Name(id='b', ctx=Store())],
+                            ctx=Store())],
+                    value=Name(id='c', ctx=Load()))],
+            type_ignores=[])
+
+
+.. class:: AnnAssign(target, annotation, value, simple)
+
+   An assignment with a type annotation. ``target`` is a single node and can
+   be a :class:`Name`, a :class:`Attribute` or a :class:`Subscript`.
+   ``annotation`` is the annotation, such as a :class:`Constant` or :class:`Name`
+   node. ``value`` is a single optional node. ``simple`` is a boolean integer
+   set to True for a :class:`Name` node in ``target`` that do not appear in
+   between parenthesis and are hence pure names and not expressions.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('c: int'), indent=4))
+        Module(
+            body=[
+                AnnAssign(
+                    target=Name(id='c', ctx=Store()),
+                    annotation=Name(id='int', ctx=Load()),
+                    simple=1)],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse('(a): int = 1'), indent=4)) # Annotation with parenthesis
+        Module(
+            body=[
+                AnnAssign(
+                    target=Name(id='a', ctx=Store()),
+                    annotation=Name(id='int', ctx=Load()),
+                    value=Constant(value=1),
+                    simple=0)],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse('a.b: int'), indent=4)) # Attribute annotation
+        Module(
+            body=[
+                AnnAssign(
+                    target=Attribute(
+                        value=Name(id='a', ctx=Load()),
+                        attr='b',
+                        ctx=Store()),
+                    annotation=Name(id='int', ctx=Load()),
+                    simple=0)],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse('a[1]: int'), indent=4)) # Subscript annotation
+        Module(
+            body=[
+                AnnAssign(
+                    target=Subscript(
+                        value=Name(id='a', ctx=Load()),
+                        slice=Constant(value=1),
+                        ctx=Store()),
+                    annotation=Name(id='int', ctx=Load()),
+                    simple=0)],
+            type_ignores=[])
+
+
+.. class:: AugAssign(target, op, value)
+
+   Augmented assignment, such as ``a += 1``. In the following example,
+   ``target`` is a :class:`Name` node for ``x`` (with the :class:`Store`
+   context), ``op`` is :class:`Add`, and ``value`` is a :class:`Constant` with
+   value for 1.
+
+   The ``target`` attribute connot be of class :class:`Tuple` or :class:`List`,
+   unlike the targets of :class:`Assign`.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('x += 2'), indent=4))
+        Module(
+            body=[
+                AugAssign(
+                    target=Name(id='x', ctx=Store()),
+                    op=Add(),
+                    value=Constant(value=2))],
+            type_ignores=[])
+
+
+.. class:: Raise(exc, cause)
+
+   A ``raise`` statement. ``exc`` is the exception object to be raised, normally a
+   :class:`Call` or :class:`Name`, or ``None`` for a standalone ``raise``.
+   ``cause`` is the optional part for ``y`` in ``raise x from y``.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('raise x from y'), indent=4))
+        Module(
+            body=[
+                Raise(
+                    exc=Name(id='x', ctx=Load()),
+                    cause=Name(id='y', ctx=Load()))],
+            type_ignores=[])
+
+
+.. class:: Assert(test, msg)
+
+   An assertion. ``test`` holds the condition, such as a :class:`Compare` node.
+   ``msg`` holds the failure message.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('assert x,y'), indent=4))
+        Module(
+            body=[
+                Assert(
+                    test=Name(id='x', ctx=Load()),
+                    msg=Name(id='y', ctx=Load()))],
+            type_ignores=[])
+
+
+.. class:: Delete(targets)
+
+   Represents a ``del`` statement. ``targets`` is a list of nodes, such as
+   :class:`Name`, :class:`Attribute` or :class:`Subscript` nodes.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('del x,y,z'), indent=4))
+        Module(
+            body=[
+                Delete(
+                    targets=[
+                        Name(id='x', ctx=Del()),
+                        Name(id='y', ctx=Del()),
+                        Name(id='z', ctx=Del())])],
+            type_ignores=[])
+
+
+.. class:: Pass()
+
+   A ``pass`` statement.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('pass'), indent=4))
+        Module(
+            body=[
+                Pass()],
+            type_ignores=[])
+
+
+Other statements which are only applicable inside functions or loops are
+described in other sections.
+
+Imports
+~~~~~~~
+
+.. class:: Import(names)
+
+   An import statement. ``names`` is a list of :class:`alias` nodes.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('import x,y,z'), indent=4))
+        Module(
+            body=[
+                Import(
+                    names=[
+                        alias(name='x'),
+                        alias(name='y'),
+                        alias(name='z')])],
+            type_ignores=[])
+
+
+.. class:: ImportFrom(module, names, level)
+
+   Represents ``from x import y``. ``module`` is a raw string of the 'from' name,
+   without any leading dots, or ``None`` for statements such as ``from . import foo``.
+   ``level`` is an integer holding the level of the relative import (0 means
+   absolute import).
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('from y import x,y,z'), indent=4))
+        Module(
+            body=[
+                ImportFrom(
+                    module='y',
+                    names=[
+                        alias(name='x'),
+                        alias(name='y'),
+                        alias(name='z')],
+                    level=0)],
+            type_ignores=[])
+
+
+.. class:: alias(name, asname)
+
+   Both parameters are raw strings of the names. ``asname`` can be ``None`` if
+   the regular name is to be used.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('from ..foo.bar import a as b, c'), indent=4))
+        Module(
+            body=[
+                ImportFrom(
+                    module='foo.bar',
+                    names=[
+                        alias(name='a', asname='b'),
+                        alias(name='c')],
+                    level=2)],
+            type_ignores=[])
+
+Control flow
+^^^^^^^^^^^^
+
+.. note::
+   Optional clauses such as ``else`` are stored as an empty list if they're
+   not present.
+
+.. class:: If(test, body, orelse)
+
+   An ``if`` statement. ``test`` holds a single node, such as a :class:`Compare`
+   node. ``body`` and ``orelse`` each hold a list of nodes.
+
+   ``elif`` clauses don't have a special representation in the AST, but rather
+   appear as extra :class:`If` nodes within the ``orelse`` section of the
+   previous one.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... if x:
+        ...    ...
+        ... elif y:
+        ...    ...
+        ... else:
+        ...    ...
+        ... """), indent=4))
+        Module(
+            body=[
+                If(
+                    test=Name(id='x', ctx=Load()),
+                    body=[
+                        Expr(
+                            value=Constant(value=Ellipsis))],
+                    orelse=[
+                        If(
+                            test=Name(id='y', ctx=Load()),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))],
+                            orelse=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+
+.. class:: For(target, iter, body, orelse, type_comment)
+
+   A ``for`` loop. ``target`` holds the variable(s) the loop assigns to, as a
+   single :class:`Name`, :class:`Tuple` or :class:`List` node. ``iter`` holds
+   the item to be looped over, again as a single node. ``body`` and ``orelse``
+   contain lists of nodes to execute. Those in ``orelse`` are executed if the
+   loop finishes normally, rather than via a ``break`` statement.
+
+   .. attribute:: type_comment
+
+       ``type_comment`` is an optional string with the type annotation as a comment.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... for x in y:
+        ...     ...
+        ... else:
+        ...     ...
+        ... """), indent=4))
+        Module(
+            body=[
+                For(
+                    target=Name(id='x', ctx=Store()),
+                    iter=Name(id='y', ctx=Load()),
+                    body=[
+                        Expr(
+                            value=Constant(value=Ellipsis))],
+                    orelse=[
+                        Expr(
+                            value=Constant(value=Ellipsis))])],
+            type_ignores=[])
+
+
+.. class:: While(test, body, orelse)
+
+   A ``while`` loop. ``test`` holds the condition, such as a :class:`Compare`
+   node.
+
+   .. doctest::
+
+        >> print(ast.dump(ast.parse("""
+        ... while x:
+        ...    ...
+        ... else:
+        ...    ...
+        ... """), indent=4))
+        Module(
+            body=[
+                While(
+                    test=Name(id='x', ctx=Load()),
+                    body=[
+                        Expr(
+                            value=Constant(value=Ellipsis))],
+                    orelse=[
+                        Expr(
+                            value=Constant(value=Ellipsis))])],
+            type_ignores=[])
+
+
+.. class:: Break
+           Continue
+
+   The ``break`` and ``continue`` statements.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""\
+        ... for a in b:
+        ...     if a > 5:
+        ...         break
+        ...     else:
+        ...         continue
+        ...
+        ... """), indent=4))
+        Module(
+            body=[
+                For(
+                    target=Name(id='a', ctx=Store()),
+                    iter=Name(id='b', ctx=Load()),
+                    body=[
+                        If(
+                            test=Compare(
+                                left=Name(id='a', ctx=Load()),
+                                ops=[
+                                    Gt()],
+                                comparators=[
+                                    Constant(value=5)]),
+                            body=[
+                                Break()],
+                            orelse=[
+                                Continue()])],
+                    orelse=[])],
+            type_ignores=[])
+
+
+.. class:: Try(body, handlers, orelse, finalbody)
+
+   ``try`` blocks. All attributes are list of nodes to execute, except for
+   ``handlers``, which is a list of :class:`ExceptHandler` nodes.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... try:
+        ...    ...
+        ... except Exception:
+        ...    ...
+        ... except OtherException as e:
+        ...    ...
+        ... else:
+        ...    ...
+        ... finally:
+        ...    ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Try(
+                    body=[
+                        Expr(
+                            value=Constant(value=Ellipsis))],
+                    handlers=[
+                        ExceptHandler(
+                            type=Name(id='Exception', ctx=Load()),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))]),
+                        ExceptHandler(
+                            type=Name(id='OtherException', ctx=Load()),
+                            name='e',
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])],
+                    orelse=[
+                        Expr(
+                            value=Constant(value=Ellipsis))],
+                    finalbody=[
+                        Expr(
+                            value=Constant(value=Ellipsis))])],
+            type_ignores=[])
+
+
+.. class:: ExceptHandler(type, name, body)
+
+   A single ``except`` clause. ``type`` is the exception type it will match,
+   typically a :class:`Name` node (or ``None`` for a catch-all ``except:`` clause).
+   ``name`` is a raw string for the name to hold the exception, or ``None`` if
+   the clause doesn't have ``as foo``. ``body`` is a list of nodes.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""\
+        ... try:
+        ...     a + 1
+        ... except TypeError:
+        ...     pass
+        ... """), indent=4))
+        Module(
+            body=[
+                Try(
+                    body=[
+                        Expr(
+                            value=BinOp(
+                                left=Name(id='a', ctx=Load()),
+                                op=Add(),
+                                right=Constant(value=1)))],
+                    handlers=[
+                        ExceptHandler(
+                            type=Name(id='TypeError', ctx=Load()),
+                            body=[
+                                Pass()])],
+                    orelse=[],
+                    finalbody=[])],
+            type_ignores=[])
+
+
+.. class:: With(items, body, type_comment)
+
+   A ``with`` block. ``items`` is a list of :class:`withitem` nodes representing
+   the context managers, and ``body`` is the indented block inside the context.
+
+   .. attribute:: type_comment
+
+       ``type_comment`` is an optional string with the type annotation as a comment.
+
+
+.. class:: withitem(context_expr, optional_vars)
+
+   A single context manager in a ``with`` block. ``context_expr`` is the context
+   manager, often a :class:`Call` node. ``optional_vars`` is a :class:`Name`,
+   :class:`Tuple` or :class:`List` for the ``as foo`` part, or ``None`` if that
+   isn't used.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""\
+        ... with a as b, c as d:
+        ...    something(b, d)
+        ... """), indent=4))
+        Module(
+            body=[
+                With(
+                    items=[
+                        withitem(
+                            context_expr=Name(id='a', ctx=Load()),
+                            optional_vars=Name(id='b', ctx=Store())),
+                        withitem(
+                            context_expr=Name(id='c', ctx=Load()),
+                            optional_vars=Name(id='d', ctx=Store()))],
+                    body=[
+                        Expr(
+                            value=Call(
+                                func=Name(id='something', ctx=Load()),
+                                args=[
+                                    Name(id='b', ctx=Load()),
+                                    Name(id='d', ctx=Load())],
+                                keywords=[]))])],
+            type_ignores=[])
+
+
+Function and class definitions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. class:: FunctionDef(name, args, body, decorator_list, returns, type_comment)
+
+   A function definition.
+
+   * ``name`` is a raw string of the function name.
+   * ``args`` is a :class:`arguments` node.
+   * ``body`` is the list of nodes inside the function.
+   * ``decorator_list`` is the list of decorators to be applied, stored outermost
+     first (i.e. the first in the list will be applied last).
+   * ``returns`` is the return annotation.
+
+   .. attribute:: type_comment
+
+       ``type_comment`` is an optional string with the type annotation as a comment.
+
+
+.. class:: Lambda(args, body)
+
+   ``lambda`` is a minimal function definition that can be used inside an
+   expression. Unlike :class:`FunctionDef`, ``body`` holds a single node.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('lambda x,y: ...'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Lambda(
+                        args=arguments(
+                            posonlyargs=[],
+                            args=[
+                                arg(arg='x'),
+                                arg(arg='y')],
+                            kwonlyargs=[],
+                            kw_defaults=[],
+                            defaults=[]),
+                        body=Constant(value=Ellipsis)))],
+            type_ignores=[])
+
+
+.. class:: arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults, kwarg, defaults)
+
+   The arguments for a function.
+
+   * ``posonlyargs``, ``args`` and ``kwonlyargs`` are lists of :class:`arg` nodes.
+   * ``vararg`` and ``kwarg`` are single :class:`arg` nodes, referring to the
+     ``*args, **kwargs`` parameters.
+   * ``kw_defaults`` is a list of default values for keyword-only arguments. If
+     one is ``None``, the corresponding argument is required.
+   * ``defaults`` is a list of default values for arguments that can be passed
+     positionally. If there are fewer defaults, they correspond to the last n
+     arguments.
+
+
+.. class:: arg(arg, annotation, type_comment)
+
+   A single argument in a list. ``arg`` is a raw string of the argument
+   name, ``annotation`` is its annotation, such as a :class:`Str` or
+   :class:`Name` node.
+
+   .. attribute:: type_comment
+
+       ``type_comment`` is an optional string with the type annotation as a comment
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""\
+        ... @decorator1
+        ... @decorator2
+        ... def f(a: 'annotation', b=1, c=2, *d, e, f=3, **g) -> 'return annotation':
+        ...     pass
+        ... """), indent=4))
+        Module(
+            body=[
+                FunctionDef(
+                    name='f',
+                    args=arguments(
+                        posonlyargs=[],
+                        args=[
+                            arg(
+                                arg='a',
+                                annotation=Constant(value='annotation')),
+                            arg(arg='b'),
+                            arg(arg='c')],
+                        vararg=arg(arg='d'),
+                        kwonlyargs=[
+                            arg(arg='e'),
+                            arg(arg='f')],
+                        kw_defaults=[
+                            None,
+                            Constant(value=3)],
+                        kwarg=arg(arg='g'),
+                        defaults=[
+                            Constant(value=1),
+                            Constant(value=2)]),
+                    body=[
+                        Pass()],
+                    decorator_list=[
+                        Name(id='decorator1', ctx=Load()),
+                        Name(id='decorator2', ctx=Load())],
+                    returns=Constant(value='return annotation'))],
+            type_ignores=[])
+
+
+.. class:: Return(value)
+
+   A ``return`` statement.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('return 4'), indent=4))
+        Module(
+            body=[
+                Return(
+                    value=Constant(value=4))],
+            type_ignores=[])
+
+
+.. class:: Yield(value)
+           YieldFrom(value)
+
+   A ``yield`` or ``yield from`` expression. Because these are expressions, they
+   must be wrapped in a :class:`Expr` node if the value sent back is not used.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('yield x'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Yield(
+                        value=Name(id='x', ctx=Load())))],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse('yield from x'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=YieldFrom(
+                        value=Name(id='x', ctx=Load())))],
+            type_ignores=[])
+
+
+.. class:: Global(names)
+           Nonlocal(names)
+
+   ``global`` and ``nonlocal`` statements. ``names`` is a list of raw strings.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('global x,y,z'), indent=4))
+        Module(
+            body=[
+                Global(
+                    names=[
+                        'x',
+                        'y',
+                        'z'])],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse('nonlocal x,y,z'), indent=4))
+        Module(
+            body=[
+                Nonlocal(
+                    names=[
+                        'x',
+                        'y',
+                        'z'])],
+            type_ignores=[])
+
+
+.. class:: ClassDef(name, bases, keywords, starargs, kwargs, body, decorator_list)
+
+   A class definition.
+
+   * ``name`` is a raw string for the class name
+   * ``bases`` is a list of nodes for explicitly specified base classes.
+   * ``keywords`` is a list of :class:`keyword` nodes, principally for 'metaclass'.
+     Other keywords will be passed to the metaclass, as per `PEP-3115
+     <http://www.python.org/dev/peps/pep-3115/>`_.
+   * ``starargs`` and ``kwargs`` are each a single node, as in a function call.
+     starargs will be expanded to join the list of base classes, and kwargs will
+     be passed to the metaclass.
+   * ``body`` is a list of nodes representing the code within the class
+     definition.
+   * ``decorator_list`` is a list of nodes, as in :class:`FunctionDef`.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""\
+        ... @decorator1
+        ... @decorator2
+        ... class Foo(base1, base2, metaclass=meta):
+        ...     pass
+        ... """), indent=4))
+        Module(
+            body=[
+                ClassDef(
+                    name='Foo',
+                    bases=[
+                        Name(id='base1', ctx=Load()),
+                        Name(id='base2', ctx=Load())],
+                    keywords=[
+                        keyword(
+                            arg='metaclass',
+                            value=Name(id='meta', ctx=Load()))],
+                    body=[
+                        Pass()],
+                    decorator_list=[
+                        Name(id='decorator1', ctx=Load()),
+                        Name(id='decorator2', ctx=Load())])],
+            type_ignores=[])
+
+Async and await
+^^^^^^^^^^^^^^^
+
+.. class:: AsyncFunctionDef(name, args, body, decorator_list, returns, type_comment)
+
+   An ``async def`` function definition. Has the same fields as
+   :class:`FunctionDef`.
+
+
+.. class:: Await(value)
+
+   An ``await`` expression. ``value`` is what it waits for.
+   Only valid in the body of an :class:`AsyncFunctionDef`.
+
+.. doctest::
+
+    >>> print(ast.dump(ast.parse("""\
+    ... async def f():
+    ...     await other_func()
+    ... """), indent=4))
+    Module(
+        body=[
+            AsyncFunctionDef(
+                name='f',
+                args=arguments(
+                    posonlyargs=[],
+                    args=[],
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[]),
+                body=[
+                    Expr(
+                        value=Await(
+                            value=Call(
+                                func=Name(id='other_func', ctx=Load()),
+                                args=[],
+                                keywords=[])))],
+                decorator_list=[])],
+        type_ignores=[])
+
+
+.. class:: AsyncFor(target, iter, body, orelse, type_comment)
+           AsyncWith(items, body, type_comment)
+
+   ``async for`` loops and ``async with`` context managers. They have the same
+   fields as :class:`For` and :class:`With`, respectively. Only valid in the
+   body of an :class:`AsyncFunctionDef`.
 
 
 :mod:`ast` Helpers
@@ -161,6 +1545,24 @@ and classes for traversing abstract syntax trees:
       Added ``type_comments``, ``mode='func_type'`` and ``feature_version``.
 
 
+.. function:: unparse(ast_obj)
+
+   Unparse an :class:`ast.AST` object and generate a string with code
+   that would produce an equivalent :class:`ast.AST` object if parsed
+   back with :func:`ast.parse`.
+
+   .. warning::
+      The produced code string will not necessarily be equal to the original
+      code that generated the :class:`ast.AST` object (without any compiler
+      optimizations, such as constant tuples/frozensets).
+
+   .. warning::
+      Trying to unparse a highly complex expression would result with
+      :exc:`RecursionError`.
+
+   .. versionadded:: 3.9
+
+
 .. function:: literal_eval(node_or_string)
 
    Safely evaluate an expression node or a string containing a Python literal or
@@ -180,6 +1582,9 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.2
       Now allows bytes and set literals.
+
+   .. versionchanged:: 3.9
+      Now supports creating empty sets with ``'set()'``.
 
 
 .. function:: get_docstring(node, clean=True)
@@ -275,6 +1680,13 @@ and classes for traversing abstract syntax trees:
    during traversal.  For this a special visitor exists
    (:class:`NodeTransformer`) that allows modifications.
 
+   .. deprecated:: 3.8
+
+      Methods :meth:`visit_Num`, :meth:`visit_Str`, :meth:`visit_Bytes`,
+      :meth:`visit_NameConstant` and :meth:`visit_Ellipsis` are deprecated
+      now and will not be called in future Python versions.  Add the
+      :meth:`visit_Constant` method to handle all constant nodes.
+
 
 .. class:: NodeTransformer()
 
@@ -293,11 +1705,11 @@ and classes for traversing abstract syntax trees:
       class RewriteName(NodeTransformer):
 
           def visit_Name(self, node):
-              return copy_location(Subscript(
+              return Subscript(
                   value=Name(id='data', ctx=Load()),
-                  slice=Index(value=Constant(value=node.id)),
+                  slice=Constant(value=node.id),
                   ctx=node.ctx
-              ), node)
+              )
 
    Keep in mind that if the node you're operating on has child nodes you must
    either transform the child nodes yourself or call the :meth:`generic_visit`
@@ -307,19 +1719,84 @@ and classes for traversing abstract syntax trees:
    statement nodes), the visitor may also return a list of nodes rather than
    just a single node.
 
+   If :class:`NodeTransformer` introduces new nodes (that weren't part of
+   original tree) without giving them location information (such as
+   :attr:`lineno`), :func:`fix_missing_locations` should be called with
+   the new sub-tree to recalculate the location information::
+
+      tree = ast.parse('foo', mode='eval')
+      new_tree = fix_missing_locations(RewriteName().visit(tree))
+
    Usually you use the transformer like this::
 
       node = YourTransformer().visit(node)
 
 
-.. function:: dump(node, annotate_fields=True, include_attributes=False)
+.. function:: dump(node, annotate_fields=True, include_attributes=False, *, indent=None)
 
    Return a formatted dump of the tree in *node*.  This is mainly useful for
-   debugging purposes.  The returned string will show the names and the values
-   for fields.  This makes the code impossible to evaluate, so if evaluation is
-   wanted *annotate_fields* must be set to ``False``.  Attributes such as line
+   debugging purposes.  If *annotate_fields* is true (by default),
+   the returned string will show the names and the values for fields.
+   If *annotate_fields* is false, the result string will be more compact by
+   omitting unambiguous field names.  Attributes such as line
    numbers and column offsets are not dumped by default.  If this is wanted,
-   *include_attributes* can be set to ``True``.
+   *include_attributes* can be set to true.
+
+   If *indent* is a non-negative integer or string, then the tree will be
+   pretty-printed with that indent level.  An indent level
+   of 0, negative, or ``""`` will only insert newlines.  ``None`` (the default)
+   selects the single line representation. Using a positive integer indent
+   indents that many spaces per level.  If *indent* is a string (such as ``"\t"``),
+   that string is used to indent each level.
+
+   .. versionchanged:: 3.9
+      Added the *indent* option.
+
+
+.. _ast-cli:
+
+Command-Line Usage
+------------------
+
+.. versionadded:: 3.9
+
+The :mod:`ast` module can be executed as a script from the command line.
+It is as simple as:
+
+.. code-block:: sh
+
+   python -m ast [-m <mode>] [-a] [infile]
+
+The following options are accepted:
+
+.. program:: ast
+
+.. cmdoption:: -h, --help
+
+   Show the help message and exit.
+
+.. cmdoption:: -m <mode>
+               --mode <mode>
+
+   Specify what kind of code must be compiled, like the *mode* argument
+   in :func:`parse`.
+
+.. cmdoption:: --no-type-comments
+
+   Don't parse type comments.
+
+.. cmdoption:: -a, --include-attributes
+
+   Include attributes such as line numbers and column offsets.
+
+.. cmdoption:: -i <indent>
+               --indent <indent>
+
+   Indentation of nodes in AST (number of spaces).
+
+If :file:`infile` is specified its contents are parsed to AST and dumped
+to stdout.  Otherwise, the content is read from stdin.
+
 
 .. seealso::
 
