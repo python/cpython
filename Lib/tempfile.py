@@ -501,7 +501,7 @@ class _TemporaryFileWrapper:
         self._closer.close()
 
     def __next__(self):
-      return next(self.file)
+        return next(self.file)
 
     # iter() doesn't use __getattr__ to find the __iter__ method
     def __iter__(self):
