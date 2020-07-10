@@ -1731,6 +1731,9 @@ _Py_COMP_DIAG_POP
     if (PySys_Audit("winreg.SetValue", "nunu#",
                     (Py_ssize_t)key, sub_key, (Py_ssize_t)type,
                     value, value_length) < 0) {
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(value);
+#endif /* USE_UNICODE_WCHAR_CACHE */
         return NULL;
     }
 

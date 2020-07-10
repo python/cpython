@@ -1465,6 +1465,9 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                                 wmode, Py_ARRAY_LENGTH(wmode));
     if (usize == 0) {
         PyErr_SetFromWindowsErr(0);
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(wpath);
+#endif /* USE_UNICODE_WCHAR_CACHE */
         return NULL;
     }
 
