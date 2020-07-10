@@ -429,6 +429,7 @@ OBJECT_OBJS=	\
 		Objects/typeobject.o \
 		Objects/unicodeobject.o \
 		Objects/unicodectype.o \
+		Objects/unionobject.o \
 		Objects/weakrefobject.o
 
 ##########################################################################

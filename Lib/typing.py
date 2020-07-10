@@ -578,6 +578,13 @@ class TypeVar(_Final, _Immutable, _root=True):
         if def_mod != 'typing':
             self.__module__ = def_mod
 
+    def __or__(self,right):
+        return Union[self,right]
+    def __ror__(self,right):
+        return Union[self,right]
+    def __invert__(self):
+        return Union[self,None]
+
     def __repr__(self):
         if self.__covariant__:
             prefix = '+'
@@ -684,6 +691,13 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
 
     def __hash__(self):
         return hash((self.__origin__, self.__args__))
+
+    def __or__(self,right):
+        return Union[self,right]
+    def __ror__(self,right):
+        return Union[self,right]
+    def __invert__(self):
+        return Union[self,None]
 
     @_tp_cache
     def __getitem__(self, params):

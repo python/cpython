@@ -412,6 +412,7 @@
     <ClCompile Include="..\Objects\typeobject.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
+    <ClCompile Include="..\Objects\unionobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
     <ClCompile Include="..\Parser\myreadline.c" />
     <ClCompile Include="..\Parser\tokenizer.c" />
