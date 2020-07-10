@@ -886,6 +886,22 @@ class TestNamedTemporaryFile(BaseTestCase):
             self.assertEqual(l, lines[i])
         self.assertEqual(i, len(lines) - 1)
 
+    def test_next(self):
+        lines = [b'spam\n', b'eggs\n', b'beans\n']
+        def make_file():
+            f = tempfile.NamedTemporaryFile(mode='w+b')
+            f.write(b''.join(lines))
+            f.seek(0)
+            return f
+
+        with make_file() as fd:
+            for i, l in enumerate(lines):
+                self.assertEqual(l, next(fd))
+            self.assertEqual(i, len(lines) - 1)
+
+            with self.assertRaises(StopIteration) as context:
+                next(fd)
+
     def test_creates_named(self):
         # NamedTemporaryFile creates files with names
         f = tempfile.NamedTemporaryFile()
