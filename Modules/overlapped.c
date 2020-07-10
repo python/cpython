@@ -1512,7 +1512,7 @@ _overlapped_Overlapped_ConnectNamedPipe_impl(OverlappedObject *self,
 /*[clinic input]
 _overlapped.Overlapped.ConnectPipe
 
-    addr as AddressObj: unicode
+    addr as Address: Py_UNICODE
     /
 
 Connect to the pipe for asynchronous I/O (overlapped).
@@ -1520,15 +1520,10 @@ Connect to the pipe for asynchronous I/O (overlapped).
 
 static PyObject *
 _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
-                                        PyObject *AddressObj)
-/*[clinic end generated code: output=6e55c72c60f5aac5 input=4ef48d46f20ddcea]*/
+                                        const Py_UNICODE *Address)
+/*[clinic end generated code: output=3cc9661667d459d4 input=167c06a274efcefc]*/
 {
-    wchar_t *Address;
     HANDLE PipeHandle;
-
-    Address = PyUnicode_AsWideCharString(AddressObj, NULL);
-    if (Address == NULL)
-        return NULL;
 
     Py_BEGIN_ALLOW_THREADS
     PipeHandle = CreateFileW(Address,
@@ -1537,7 +1532,6 @@ _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
                              FILE_FLAG_OVERLAPPED, NULL);
     Py_END_ALLOW_THREADS
 
-    PyMem_Free(Address);
     if (PipeHandle == INVALID_HANDLE_VALUE)
         return SetFromWindowsErr(0);
     return Py_BuildValue(F_HANDLE, PipeHandle);

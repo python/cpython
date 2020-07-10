@@ -774,25 +774,34 @@ PyDoc_STRVAR(_overlapped_Overlapped_ConnectPipe__doc__,
 
 static PyObject *
 _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
-                                        PyObject *AddressObj);
+                                        const Py_UNICODE *Address);
 
 static PyObject *
 _overlapped_Overlapped_ConnectPipe(OverlappedObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *AddressObj;
+    const Py_UNICODE *Address;
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("ConnectPipe", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
+    #if USE_UNICODE_WCHAR_CACHE
+    Address = _PyUnicode_AsUnicode(arg);
+    #else /* USE_UNICODE_WCHAR_CACHE */
+    Address = PyUnicode_AsWideCharString(arg, NULL);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    if (Address == NULL) {
         goto exit;
     }
-    AddressObj = arg;
-    return_value = _overlapped_Overlapped_ConnectPipe_impl(self, AddressObj);
+    return_value = _overlapped_Overlapped_ConnectPipe_impl(self, Address);
 
 exit:
+    /* Cleanup for Address */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)Address);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
     return return_value;
 }
 
@@ -890,4 +899,4 @@ _overlapped_Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=742e782947c4753c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cfac610518dc5564 input=a9049054013a1b77]*/
