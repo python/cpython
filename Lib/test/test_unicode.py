@@ -723,6 +723,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertFalse("0".isidentifier())
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
     def test_isidentifier_legacy(self):
         import _testcapi
         u = '𝖀𝖓𝖎𝖈𝖔𝖉𝖊'
@@ -2350,6 +2351,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(len(args), 1)
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
     def test_resize(self):
         from _testcapi import getargs_u
         for length in range(1, 100, 7):
@@ -2920,6 +2922,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, b'', 0, 0)
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
     def test_encode_decimal(self):
         from _testcapi import unicode_encodedecimal
         self.assertEqual(unicode_encodedecimal('123'),
@@ -2936,6 +2939,7 @@ class CAPITest(unittest.TestCase):
             unicode_encodedecimal, "123\u20ac", "replace")
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
     def test_transform_decimal(self):
         from _testcapi import unicode_transformdecimaltoascii as transform_decimal
         self.assertEqual(transform_decimal('123'),
