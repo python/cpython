@@ -631,6 +631,7 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 }
 
 
+#if HAVE_UNICODE_WCHAR_CACHE
 static PyObject*
 unicode_result_wchar(PyObject *unicode)
 {
@@ -664,6 +665,7 @@ unicode_result_wchar(PyObject *unicode)
 #endif
     return unicode;
 }
+#endif /* HAVE_UNICODE_WCHAR_CACHE */
 
 static PyObject*
 unicode_result_ready(PyObject *unicode)
@@ -714,10 +716,11 @@ static PyObject*
 unicode_result(PyObject *unicode)
 {
     assert(_PyUnicode_CHECK(unicode));
-    if (PyUnicode_IS_READY(unicode))
-        return unicode_result_ready(unicode);
-    else
+#if HAVE_UNICODE_WCHAR_CACHE
+    if (!PyUnicode_IS_READY(unicode))
         return unicode_result_wchar(unicode);
+#endif /* HAVE_UNICODE_WCHAR_CACHE */
+    return unicode_result_ready(unicode);
 }
 
 static PyObject*
