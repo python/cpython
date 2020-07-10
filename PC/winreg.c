@@ -112,7 +112,7 @@ typedef struct {
     HKEY hkey;
 } PyHKEYObject;
 
-#define PyHKEY_Check(op) ((op)->ob_type == &PyHKEY_Type)
+#define PyHKEY_Check(op) Py_IS_TYPE(op, &PyHKEY_Type)
 
 static char *failMsg = "bad operand type";
 
@@ -703,7 +703,7 @@ _Py_COMP_DIAG_POP
                     PyErr_Format(PyExc_TypeError,
                         "Objects of type '%s' can not "
                         "be used as binary registry values",
-                        value->ob_type->tp_name);
+                        Py_TYPE(value)->tp_name);
                     return FALSE;
                 }
 
