@@ -1,0 +1,1 @@
+Made NamedTemporaryFile its own iterator to mimic file objects.
