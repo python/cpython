@@ -241,39 +241,28 @@ u_getitem(arrayobject *ap, Py_ssize_t i)
 static int
 u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 {
-#if USE_UNICODE_WCHAR_CACHE
-    Py_UNICODE *p;
-    Py_ssize_t len;
-
-    if (!PyArg_Parse(v, "u#;array item must be unicode character", &p, &len))
+    PyObject *u;
+    if (!PyArg_Parse(v, "U;array item must be unicode character", &u)) {
         return -1;
-    if (len != 1) {
+    }
+
+    Py_ssize_t len = PyUnicode_AsWideChar(u, NULL, 0);
+    if (len != 2) {
         PyErr_SetString(PyExc_TypeError,
                         "array item must be unicode character");
         return -1;
     }
-    if (i >= 0)
-        ((Py_UNICODE *)ap->ob_item)[i] = p[0];
-    return 0;
-#else
-    PyObject *u;
-    Py_ssize_t len;
 
-    if (!PyArg_Parse(v, "U;array item must be unicode character", &u))
-        return -1;
-    len = PyUnicode_AsWideChar(u, NULL, 0);
-    if (len != 2) {
-        if (len >= 0) {
-            PyErr_SetString(PyExc_TypeError,
-                            "array item must be unicode character");
-        }
-        return -1;
+    wchar_t w;
+    len = PyUnicode_AsWideChar(u, &w, 1);
+    assert(len == 1);
+
+    if (i >= 0) {
+        ((wchar_t *)ap->ob_item)[i] = w;
     }
-    if (i >= 0)
-        PyUnicode_AsWideChar(u, &((wchar_t *)ap->ob_item)[i], 1);
     return 0;
-#endif /* USE_UNICODE_WCHAR_CACHE */
 }
+
 
 static PyObject *
 h_getitem(arrayobject *ap, Py_ssize_t i)
@@ -1667,7 +1656,7 @@ array_array_tobytes_impl(arrayobject *self)
 /*[clinic input]
 array.array.fromunicode
 
-    arg: unicode
+    ustr: unicode
     /
 
 Extends this array with data from the unicode string ustr.
@@ -1678,41 +1667,28 @@ some other type.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_fromunicode_impl(arrayobject *self, PyObject *arg)
-/*[clinic end generated code: output=b691324745f39114 input=bc9c8ea0d901b328]*/
+array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
+/*[clinic end generated code: output=24359f5e001a7f2b input=025db1fdade7a4ce]*/
 {
-    Py_ssize_t len;
-
-    char typecode = self->ob_descr->typecode;
-    if (typecode != 'u') {
+    if (self->ob_descr->typecode != 'u') {
         PyErr_SetString(PyExc_ValueError,
             "fromunicode() may only be called on "
             "unicode type arrays");
         return NULL;
     }
 
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-    len = PyUnicode_GetSize(arg);
-    if (len < 0) {
-        return NULL;
-    }
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
-    len = PyUnicode_AsWideChar(arg, NULL, 0);
-    if (len < 0) {
-        return NULL;
-    }
-    assert(len > 0);
-    len--;
-#endif /* USE_UNICODE_WCHAR_CACHE */
-
-    if (len > 0) {
+    Py_ssize_t ustr_length = PyUnicode_AsWideChar(ustr, NULL, 0);
+    assert(ustr_length > 0);
+    if (ustr_length > 1) {
+        ustr_length--; /* trim trailing NUL character */
         Py_ssize_t old_size = Py_SIZE(self);
-        if (array_resize(self, old_size + len) == -1)
+        if (array_resize(self, old_size + ustr_length) == -1) {
             return NULL;
-        PyUnicode_AsWideChar(arg, (wchar_t *)self->ob_item + old_size, len);
+        }
+
+        // must not fail
+        PyUnicode_AsWideChar(
+            ustr, ((wchar_t *)self->ob_item) + old_size, ustr_length);
     }
 
     Py_RETURN_NONE;
@@ -2697,58 +2673,20 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             }
             else if (initial != NULL && PyUnicode_Check(initial))  {
                 Py_ssize_t n;
-#if USE_UNICODE_WCHAR_CACHE
-_Py_COMP_DIAG_PUSH
-_Py_COMP_DIAG_IGNORE_DEPR_DECLS
-                Py_UNICODE *ustr;
-
-                ustr = PyUnicode_AsUnicode(initial);
+                wchar_t *ustr = PyUnicode_AsWideCharString(initial, &n);
                 if (ustr == NULL) {
-                    PyErr_NoMemory();
                     Py_DECREF(a);
                     return NULL;
                 }
 
-                n = PyUnicode_GET_DATA_SIZE(initial);
                 if (n > 0) {
                     arrayobject *self = (arrayobject *)a;
-                    char *item = self->ob_item;
-                    item = (char *)PyMem_Realloc(item, n);
-                    if (item == NULL) {
-                        PyErr_NoMemory();
-                        Py_DECREF(a);
-                        return NULL;
-                    }
-                    self->ob_item = item;
-                    Py_SET_SIZE(self, n / sizeof(Py_UNICODE));
-                    memcpy(item, ustr, n);
-                    self->allocated = Py_SIZE(self);
-                }
-_Py_COMP_DIAG_POP
-#else /* USE_UNICODE_WCHAR_CACHE */
-                n = PyUnicode_AsWideChar(initial, NULL, 0);
-                if (n < 0) {
-                    PyErr_NoMemory();
-                    Py_DECREF(a);
-                    return NULL;
-                }
-                assert(n > 0);
-                n--;
-                if (n > 0) {
-                    arrayobject *self = (arrayobject *)a;
-                    char *item = self->ob_item;
-                    item = (char *)PyMem_Realloc(item, n * sizeof(wchar_t));
-                    if (item == NULL) {
-                        PyErr_NoMemory();
-                        Py_DECREF(a);
-                        return NULL;
-                    }
-                    self->ob_item = item;
+                    // self->ob_item may be NULL but it is safe.
+                    PyMem_Free(self->ob_item);
+                    self->ob_item = (char *)ustr;
                     Py_SET_SIZE(self, n);
-                    PyUnicode_AsWideChar(initial, (wchar_t*)item, n);
-                    self->allocated = Py_SIZE(self);
+                    self->allocated = n;
                 }
-#endif /* USE_UNICODE_WCHAR_CACHE */
             }
             else if (initial != NULL && array_Check(initial) && len > 0) {
                 arrayobject *self = (arrayobject *)a;

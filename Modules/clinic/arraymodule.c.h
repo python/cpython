@@ -352,7 +352,7 @@ array_array_tobytes(arrayobject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(array_array_fromunicode__doc__,
-"fromunicode($self, arg, /)\n"
+"fromunicode($self, ustr, /)\n"
 "--\n"
 "\n"
 "Extends this array with data from the unicode string ustr.\n"
@@ -365,23 +365,23 @@ PyDoc_STRVAR(array_array_fromunicode__doc__,
     {"fromunicode", (PyCFunction)array_array_fromunicode, METH_O, array_array_fromunicode__doc__},
 
 static PyObject *
-array_array_fromunicode_impl(arrayobject *self, PyObject *arg);
+array_array_fromunicode_impl(arrayobject *self, PyObject *ustr);
 
 static PyObject *
-array_array_fromunicode(arrayobject *self, PyObject *arg_)
+array_array_fromunicode(arrayobject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *arg;
+    PyObject *ustr;
 
-    if (!PyUnicode_Check(arg_)) {
-        _PyArg_BadArgument("fromunicode", "argument", "str", arg_);
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("fromunicode", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg_) == -1) {
+    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
-    arg = arg_;
-    return_value = array_array_fromunicode_impl(self, arg);
+    ustr = arg;
+    return_value = array_array_fromunicode_impl(self, ustr);
 
 exit:
     return return_value;
@@ -514,4 +514,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=c5fbfe7c7b4ff2a8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=91c1cded65a1285f input=a9049054013a1b77]*/
