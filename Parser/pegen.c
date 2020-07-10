@@ -525,10 +525,13 @@ _PyPegen_dummy_name(Parser *p, ...)
 static int
 _get_keyword_or_name_type(Parser *p, const char *name, int name_len)
 {
-    if (name_len >= p->n_keyword_lists || p->keywords[name_len] == NULL) {
+    assert(name_len > 0);
+    if (name_len >= p->n_keyword_lists ||
+        p->keywords[name_len] == NULL ||
+        p->keywords[name_len]->type == -1) {
         return NAME;
     }
-    for (KeywordToken *k = p->keywords[name_len]; k->type != -1; k++) {
+    for (KeywordToken *k = p->keywords[name_len]; k != NULL && k->type != -1; k++) {
         if (strncmp(k->str, name, name_len) == 0) {
             return k->type;
         }
