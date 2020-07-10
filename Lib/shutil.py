@@ -1374,6 +1374,23 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     path.
 
     """
+    use_bytes = isinstance(cmd, bytes)
+
+    files = [cmd]
+    if _WINDOWS:
+        # Also look for the name plus each PATHEXT extension.
+        default_pathext = '.COM;.EXE;.BAT;.CMD;.VBS;.JS;.WS;.MSC'
+        pathext = os.getenv('PATHEXT')
+        if pathext is None:
+            if use_bytes:
+                pathext = [b'.COM', b'.EXE', b'.BAT', b'.CMD', b'.VBS', b'.JS', b'.WS', b'.MSC']
+        if use_bytes:
+            pathext = os.fsencode(pathext).split(b';')
+        else:
+            pathext = pathext.split(';')
+        for ext in pathext:
+            files.append(cmd + ext)
+
     # If we're given a path with a directory part, look it up directly rather
     # than referring to PATH directories. This includes checking relative to the
     # current directory, e.g. ./script
@@ -1381,8 +1398,6 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         if _access_check(cmd, mode):
             return cmd
         return None
-
-    use_bytes = isinstance(cmd, bytes)
 
     if path is None:
         path = os.environ.get("PATH", None)
