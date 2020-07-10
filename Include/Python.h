@@ -123,6 +123,7 @@
 #include "genobject.h"
 #include "descrobject.h"
 #include "genericaliasobject.h"
+#include "unionobject.h"
 #include "warnings.h"
 #include "weakrefobject.h"
 #include "structseq.h"
