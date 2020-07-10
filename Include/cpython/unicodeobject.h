@@ -80,7 +80,6 @@ Py_UNICODE_FILL(Py_UNICODE *target, Py_UNICODE value, Py_ssize_t length) {
 /* low surrogate = bottom 10 bits added to DC00 */
 #define Py_UNICODE_LOW_SURROGATE(ch) (0xDC00 + ((ch) & 0x3FF))
 
-#if HAVE_UNICODE_WCHAR_CACHE
 /* --- Unicode Type ------------------------------------------------------- */
 
 /* ASCII-only strings created through PyUnicode_New use the PyASCIIObject
