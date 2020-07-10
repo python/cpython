@@ -1291,6 +1291,7 @@ _overlapped_Overlapped_AcceptEx_impl(OverlappedObject *self,
 static int
 parse_address(PyObject *obj, SOCKADDR *Address, int Length)
 {
+    PyObject *Host_obj;
     Py_UNICODE *Host;
     unsigned short Port;
     unsigned long FlowInfo;
@@ -1298,33 +1299,66 @@ parse_address(PyObject *obj, SOCKADDR *Address, int Length)
 
     memset(Address, 0, Length);
 
-    if (PyArg_ParseTuple(obj, "uH", &Host, &Port))
-    {
+    switch (PyTuple_GET_SIZE(obj)) {
+    case 2: {
+        if (!PyArg_ParseTuple(obj, "UH", &Host_obj, &Port)) {
+            return -1;
+        }
+#if USE_UNICODE_WCHAR_CACHE
+        Host = (wchar_t *)_PyUnicode_AsUnicode(Host_obj);
+#else /* USE_UNICODE_WCHAR_CACHE */
+        Host = PyUnicode_AsWideCharString(Host_obj, NULL);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+        if (Host == NULL) {
+            return -1;
+        }
         Address->sa_family = AF_INET;
         if (WSAStringToAddressW(Host, AF_INET, NULL, Address, &Length) < 0) {
             SetFromWindowsErr(WSAGetLastError());
-            return -1;
+            Length = -1;
         }
-        ((SOCKADDR_IN*)Address)->sin_port = htons(Port);
+        else {
+            ((SOCKADDR_IN*)Address)->sin_port = htons(Port);
+        }
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(Host);
+#endif /* USE_UNICODE_WCHAR_CACHE */
         return Length;
     }
-    else if (PyArg_ParseTuple(obj,
-                              "uHkk;ConnectEx(): illegal address_as_bytes "
-                              "argument", &Host, &Port, &FlowInfo, &ScopeId))
-    {
-        PyErr_Clear();
+    case 4: {
+        if (!PyArg_ParseTuple(obj,
+                "UHkk;ConnectEx(): illegal address_as_bytes argument",
+                &Host_obj, &Port, &FlowInfo, &ScopeId))
+        {
+            return -1;
+        }
+#if USE_UNICODE_WCHAR_CACHE
+        Host = (wchar_t *)_PyUnicode_AsUnicode(Host_obj);
+#else /* USE_UNICODE_WCHAR_CACHE */
+        Host = PyUnicode_AsWideCharString(Host_obj, NULL);
+#endif /* USE_UNICODE_WCHAR_CACHE */
+        if (Host == NULL) {
+            return -1;
+        }
         Address->sa_family = AF_INET6;
         if (WSAStringToAddressW(Host, AF_INET6, NULL, Address, &Length) < 0) {
             SetFromWindowsErr(WSAGetLastError());
-            return -1;
+            Length = -1;
         }
-        ((SOCKADDR_IN6*)Address)->sin6_port = htons(Port);
-        ((SOCKADDR_IN6*)Address)->sin6_flowinfo = FlowInfo;
-        ((SOCKADDR_IN6*)Address)->sin6_scope_id = ScopeId;
+        else {
+            ((SOCKADDR_IN6*)Address)->sin6_port = htons(Port);
+            ((SOCKADDR_IN6*)Address)->sin6_flowinfo = FlowInfo;
+            ((SOCKADDR_IN6*)Address)->sin6_scope_id = ScopeId;
+        }
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(Host);
+#endif /* USE_UNICODE_WCHAR_CACHE */
         return Length;
     }
-
-    return -1;
+    default:
+        PyErr_SetString(PyExc_ValueError, "illegal address_as_bytes argument");
+        return -1;
+    }
 }
 
 /*[clinic input]
