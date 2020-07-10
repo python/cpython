@@ -3325,7 +3325,7 @@ _PyUnicode_WideCharString_Converter(PyObject *obj, void *ptr)
     }
     PyErr_Format(PyExc_TypeError,
                  "argument must be str, not %.50s",
-                 obj->ob_type->tp_name);
+                 Py_TYPE(obj)->tp_name);
     return 0;
 }
 
@@ -3361,7 +3361,7 @@ _PyUnicode_WideCharString_Opt_Converter(PyObject *obj, void *ptr)
     }
     PyErr_Format(PyExc_TypeError,
                  "argument must be str or None, not %.50s",
-                 obj->ob_type->tp_name);
+                 Py_TYPE(obj)->tp_name);
     return 0;
 }
 

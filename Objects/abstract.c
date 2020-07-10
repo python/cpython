@@ -1382,7 +1382,7 @@ PyNumber_Long(PyObject *o)
         if (!PyLong_Check(result)) {
             PyErr_Format(PyExc_TypeError,
                          "__int__ returned non-int (type %.200s)",
-                         result->ob_type->tp_name);
+                         Py_TYPE(result)->tp_name);
             Py_DECREF(result);
             return NULL;
         }
@@ -1391,7 +1391,7 @@ PyNumber_Long(PyObject *o)
                 "__int__ returned non-int (type %.200s).  "
                 "The ability to return an instance of a strict subclass of int "
                 "is deprecated, and may be removed in a future version of Python.",
-                result->ob_type->tp_name)) {
+                Py_TYPE(result)->tp_name)) {
             Py_DECREF(result);
             return NULL;
         }
