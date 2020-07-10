@@ -249,36 +249,23 @@ explain_incompatible_block_stack(int64_t to_stack)
 static int *
 marklines(PyCodeObject *code, int len)
 {
+    PyAddrLineOffsets bounds;
+    _PyCode_InitBounds(code, &bounds);
+    assert (bounds.lo_end == 0);
+
     int *linestarts = PyMem_New(int, len);
     if (linestarts == NULL) {
         return NULL;
     }
-    Py_ssize_t size = PyBytes_GET_SIZE(code->co_lnotab) / 2;
-    unsigned char *p = (unsigned char*)PyBytes_AS_STRING(code->co_lnotab);
-    int line = code->co_firstlineno;
-    int addr = 0;
-    int index = 0;
-    while (--size >= 0) {
-        addr += *p++;
-        if (index*2 < addr) {
-            linestarts[index++] = line;
-        }
-        while (index*2 < addr) {
-            linestarts[index++] = -1;
-            if (index >= len) {
-                break;
-            }
-        }
-        line += (signed char)*p;
-        p++;
+    for (int i = 0; i < len; i++) {
+        linestarts[i] = -1;
     }
-    if (index < len) {
-        linestarts[index++] = line;
+
+    while (bounds.lo_end < len*2) {
+        int line = _PyCode_CheckLineNumber(bounds.lo_end, &bounds);
+        assert(bounds.lo_start/2 < len);
+        linestarts[bounds.lo_start/2] = line;
     }
-    while (index < len) {
-        linestarts[index++] = -1;
-    }
-    assert(index == len);
     return linestarts;
 }
 

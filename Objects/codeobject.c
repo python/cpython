@@ -119,7 +119,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
                           PyObject *code, PyObject *consts, PyObject *names,
                           PyObject *varnames, PyObject *freevars, PyObject *cellvars,
                           PyObject *filename, PyObject *name, int firstlineno,
-                          PyObject *lnotab)
+                          PyObject *linetable)
 {
     PyCodeObject *co;
     Py_ssize_t *cell2arg = NULL;
@@ -137,7 +137,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         cellvars == NULL || !PyTuple_Check(cellvars) ||
         name == NULL || !PyUnicode_Check(name) ||
         filename == NULL || !PyUnicode_Check(filename) ||
-        lnotab == NULL || !PyBytes_Check(lnotab)) {
+        linetable == NULL || !PyBytes_Check(linetable)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -258,8 +258,8 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     Py_INCREF(name);
     co->co_name = name;
     co->co_firstlineno = firstlineno;
-    Py_INCREF(lnotab);
-    co->co_lnotab = lnotab;
+    Py_INCREF(linetable);
+    co->co_linetable = linetable;
     co->co_zombieframe = NULL;
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
@@ -277,12 +277,12 @@ PyCode_New(int argcount, int kwonlyargcount,
            PyObject *code, PyObject *consts, PyObject *names,
            PyObject *varnames, PyObject *freevars, PyObject *cellvars,
            PyObject *filename, PyObject *name, int firstlineno,
-           PyObject *lnotab)
+           PyObject *linetable)
 {
     return PyCode_NewWithPosOnlyArgs(argcount, 0, kwonlyargcount, nlocals,
                                      stacksize, flags, code, consts, names,
                                      varnames, freevars, cellvars, filename,
-                                     name, firstlineno, lnotab);
+                                     name, firstlineno, linetable);
 }
 
 int
@@ -369,7 +369,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
                 filename_ob,                    /* filename */
                 funcname_ob,                    /* name */
                 firstlineno,                    /* firstlineno */
-                emptystring                     /* lnotab */
+                emptystring                     /* linetable */
                 );
 
 failed:
@@ -395,10 +395,26 @@ static PyMemberDef code_memberlist[] = {
     {"co_cellvars",     T_OBJECT,       OFF(co_cellvars),        READONLY},
     {"co_filename",     T_OBJECT,       OFF(co_filename),        READONLY},
     {"co_name",         T_OBJECT,       OFF(co_name),            READONLY},
-    {"co_firstlineno", T_INT,           OFF(co_firstlineno),     READONLY},
-    {"co_lnotab",       T_OBJECT,       OFF(co_lnotab),          READONLY},
+    {"co_firstlineno",  T_INT,          OFF(co_firstlineno),     READONLY},
+    {"co_linetable",    T_OBJECT,       OFF(co_linetable),       READONLY},
     {NULL}      /* Sentinel */
 };
+
+
+static PyObject *
+code_getlnotab(PyCodeObject *code, void *closure)
+{
+     PyErr_Format(PyExc_NotImplementedError,
+                 "co_lnotab not implemented yet.";
+    return NULL;
+}
+
+
+static PyGetSetDef code_getsetlist[] = {
+    {"co_lnotab",    (getter)code_getlnotab, NULL, NULL},
+    {0}
+};
+
 
 /* Helper for code_new: return a shallow copy of a tuple that is
    guaranteed to contain exact strings, by converting string subclasses
@@ -459,7 +475,7 @@ code.__new__ as code_new
     filename: unicode
     name: unicode
     firstlineno: int
-    lnotab: object(subclass_of="&PyBytes_Type")
+    linetable: object(subclass_of="&PyBytes_Type")
     freevars: object(subclass_of="&PyTuple_Type", c_default="NULL") = ()
     cellvars: object(subclass_of="&PyTuple_Type", c_default="NULL") = ()
     /
@@ -472,9 +488,9 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
               int kwonlyargcount, int nlocals, int stacksize, int flags,
               PyObject *code, PyObject *consts, PyObject *names,
               PyObject *varnames, PyObject *filename, PyObject *name,
-              int firstlineno, PyObject *lnotab, PyObject *freevars,
+              int firstlineno, PyObject *linetable, PyObject *freevars,
               PyObject *cellvars)
-/*[clinic end generated code: output=612aac5395830184 input=85e678ea4178f234]*/
+/*[clinic end generated code: output=42c1839b082ba293 input=0ec80da632b99f57]*/
 {
     PyObject *co = NULL;
     PyObject *ournames = NULL;
@@ -540,7 +556,7 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
                                                code, consts, ournames,
                                                ourvarnames, ourfreevars,
                                                ourcellvars, filename,
-                                               name, firstlineno, lnotab);
+                                               name, firstlineno, linetable);
   cleanup:
     Py_XDECREF(ournames);
     Py_XDECREF(ourvarnames);
@@ -584,7 +600,7 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_cellvars);
     Py_XDECREF(co->co_filename);
     Py_XDECREF(co->co_name);
-    Py_XDECREF(co->co_lnotab);
+    Py_XDECREF(co->co_linetable);
     if (co->co_cell2arg != NULL)
         PyMem_FREE(co->co_cell2arg);
     if (co->co_zombieframe != NULL)
@@ -636,7 +652,7 @@ code.replace
     co_cellvars: object(subclass_of="&PyTuple_Type", c_default="self->co_cellvars") = None
     co_filename: unicode(c_default="self->co_filename") = None
     co_name: unicode(c_default="self->co_name") = None
-    co_lnotab: PyBytesObject(c_default="(PyBytesObject *)self->co_lnotab") = None
+    co_linetable: PyBytesObject(c_default="(PyBytesObject *)self->co_linetable") = None
 
 Return a copy of the code object with new values for the specified fields.
 [clinic start generated code]*/
@@ -649,8 +665,8 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_consts, PyObject *co_names,
                   PyObject *co_varnames, PyObject *co_freevars,
                   PyObject *co_cellvars, PyObject *co_filename,
-                  PyObject *co_name, PyBytesObject *co_lnotab)
-/*[clinic end generated code: output=25c8e303913bcace input=d9051bc8f24e6b28]*/
+                  PyObject *co_name, PyBytesObject *co_linetable)
+/*[clinic end generated code: output=50d77e668d3b449b input=a5f997b173d7f636]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
@@ -680,7 +696,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
         co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
         co_varnames, co_freevars, co_cellvars, co_filename, co_name,
-        co_firstlineno, (PyObject*)co_lnotab);
+        co_firstlineno, (PyObject*)co_linetable);
 }
 
 static PyObject *
@@ -971,7 +987,7 @@ PyTypeObject PyCode_Type = {
     0,                                  /* tp_iternext */
     code_methods,                       /* tp_methods */
     code_memberlist,                    /* tp_members */
-    0,                                  /* tp_getset */
+    code_getsetlist,                    /* tp_getset */
     0,                                  /* tp_base */
     0,                                  /* tp_dict */
     0,                                  /* tp_descr_get */
@@ -982,78 +998,77 @@ PyTypeObject PyCode_Type = {
     code_new,                           /* tp_new */
 };
 
-/* Use co_lnotab to compute the line number from a bytecode index, addrq.  See
+/* Use co_linetable to compute the line number from a bytecode index, addrq.  See
    lnotab_notes.txt for the details of the lnotab representation.
 */
 
 int
 PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
-    Py_ssize_t size = PyBytes_Size(co->co_lnotab) / 2;
-    unsigned char *p = (unsigned char*)PyBytes_AsString(co->co_lnotab);
-    int line = co->co_firstlineno;
-    int addr = 0;
-    while (--size >= 0) {
-        addr += *p++;
-        if (addr > addrq)
-            break;
-        line += (signed char)*p;
-        p++;
+    if (addrq == -1) {
+        return co->co_firstlineno;
     }
-    return line;
+    assert(addrq >= 0 && addrq < PyBytes_GET_SIZE(co->co_code));
+    PyAddrLineOffsets bounds;
+    _PyCode_InitBounds(co, &bounds);
+    return _PyCode_CheckLineNumber(addrq, &bounds);
+}
+
+int
+_PyCode_InitBounds(PyCodeObject* co, PyAddrLineOffsets *bounds)
+{
+    bounds->lo_entry = PyBytes_AS_STRING(co->co_linetable)-2;
+    bounds->lo_start = -1;
+    bounds->lo_end = 0;
+    bounds->lo_line = co->co_firstlineno;
+    bounds->lo_artificial = 1;
+    return bounds->lo_line;
+}
+
+static void
+retreat(PyAddrLineOffsets *bounds)
+{
+    int ldelta = ((signed char *)bounds->lo_entry)[1];
+    if (ldelta == -128) {
+        ldelta = 0;
+    }
+    bounds->lo_line -= ldelta;
+    bounds->lo_entry -= 2;
+    bounds->lo_end = bounds->lo_start;
+    bounds->lo_start -= ((unsigned char *)bounds->lo_entry)[0];
+    ldelta = ((signed char *)bounds->lo_entry)[1];
+    bounds->lo_artificial = (ldelta == -128);
+}
+
+static void
+advance(PyAddrLineOffsets *bounds)
+{
+    bounds->lo_entry += 2;
+    bounds->lo_start = bounds->lo_end;
+    bounds->lo_end += ((unsigned char *)bounds->lo_entry)[0];
+    int ldelta = ((signed char *)bounds->lo_entry)[1];
+    if (ldelta == -128) {
+        bounds->lo_artificial = 1;
+    }
+    else {
+        bounds->lo_artificial = 0;
+        bounds->lo_line += ldelta;
+    }
 }
 
 /* Update *bounds to describe the first and one-past-the-last instructions in
    the same line as lasti.  Return the number of that line. */
 int
-_PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
+_PyCode_CheckLineNumber(int lasti, PyAddrLineOffsets *bounds)
 {
-    Py_ssize_t size;
-    int addr, line;
-    unsigned char* p;
 
-    p = (unsigned char*)PyBytes_AS_STRING(co->co_lnotab);
-    size = PyBytes_GET_SIZE(co->co_lnotab) / 2;
-
-    addr = 0;
-    line = co->co_firstlineno;
-    assert(line > 0);
-
-    /* possible optimization: if f->f_lasti == instr_ub
-       (likely to be a common case) then we already know
-       instr_lb -- if we stored the matching value of p
-       somewhere we could skip the first while loop. */
-
-    /* See lnotab_notes.txt for the description of
-       co_lnotab.  A point to remember: increments to p
-       come in (addr, line) pairs. */
-
-    bounds->ap_lower = 0;
-    while (size > 0) {
-        if (addr + *p > lasti)
-            break;
-        addr += *p++;
-        if ((signed char)*p)
-            bounds->ap_lower = addr;
-        line += (signed char)*p;
-        p++;
-        --size;
+    while (bounds->lo_end <= lasti) {
+        advance(bounds);
     }
-
-    if (size > 0) {
-        while (--size >= 0) {
-            addr += *p++;
-            if ((signed char)*p)
-                break;
-            p++;
-        }
-        bounds->ap_upper = addr;
+    while (bounds->lo_start > lasti) {
+        retreat(bounds);
     }
-    else {
-        bounds->ap_upper = INT_MAX;
-    }
-
-    return line;
+    return bounds->lo_line;
 }
 
 

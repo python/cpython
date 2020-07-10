@@ -38,7 +38,7 @@ struct PyCodeObject {
     Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
-    PyObject *co_lnotab;        /* string (encoding addr<->lineno mapping) See
+    PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
                                    Objects/lnotab_notes.txt for details. */
     void *co_zombieframe;       /* for optimization only (see frameobject.c) */
     PyObject *co_weakreflist;   /* to support weakrefs to code objects */
@@ -135,16 +135,22 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno);
 PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 /* for internal use only */
-typedef struct _addr_pair {
-        int ap_lower;
-        int ap_upper;
-} PyAddrPair;
+typedef struct _line_offsets {
+    int lo_start;
+    int lo_end;
+    int lo_line;
+    char *lo_entry;
+    char lo_artificial;
+} PyAddrLineOffsets;
+
+
+int
+_PyCode_InitBounds(PyCodeObject* co, PyAddrLineOffsets *bounds);
 
 /* Update *bounds to describe the first and one-past-the-last instructions in the
    same line as lasti.  Return the number of that line.
 */
-PyAPI_FUNC(int) _PyCode_CheckLineNumber(PyCodeObject* co,
-                                        int lasti, PyAddrPair *bounds);
+PyAPI_FUNC(int) _PyCode_CheckLineNumber(int lasti, PyAddrLineOffsets *bounds);
 
 /* Create a comparable key used to compare constants taking in account the
  * object type. It is used to make sure types are not coerced (e.g., float and

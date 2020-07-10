@@ -5429,8 +5429,9 @@ struct assembler {
     basicblock **a_reverse_postorder; /* list of blocks in dfs postorder */
     PyObject *a_lnotab;    /* string containing lnotab */
     int a_lnotab_off;      /* offset into lnotab */
-    int a_lineno;              /* last lineno of emitted instruction */
-    int a_lineno_off;      /* bytecode offset of last lineno */
+    int a_lineno;          /* lineno of last emitted instruction */
+    int a_lineno_actual;   /* is current computed line number*/
+    int a_lineno_start;    /* bytecode start offset of current lineno */
 };
 
 static void
@@ -5550,6 +5551,8 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
         PyErr_NoMemory();
         return 0;
     }
+    a->a_lineno_actual = a->a_lineno = firstlineno;
+    a->a_lineno_start = 0;
     return 1;
 }
 
@@ -5584,12 +5587,22 @@ assemble_lnotab(struct assembler *a, struct instr *i)
     Py_ssize_t len;
     unsigned char *lnotab;
 
-    d_lineno = i->i_lineno - a->a_lineno;
-    if (d_lineno == 0) {
+    if (i->i_lineno == a->a_lineno) {
+        return 1;
+    }
+    if (a->a_offset == 0) {
+        assert(a->a_lineno_start == 0);
+        if (i->i_lineno < 0) {
+            a->a_lineno = -1;
+        }
+        else {
+            a->a_lineno = a->a_lineno_actual = i->i_lineno;
+        }
         return 1;
     }
 
-    d_bytecode = (a->a_offset - a->a_lineno_off) * sizeof(_Py_CODEUNIT);
+    d_bytecode = (a->a_offset - a->a_lineno_start) * sizeof(_Py_CODEUNIT);
+    a->a_lineno_start = a->a_offset;
     assert(d_bytecode >= 0);
 
     if (d_bytecode > 255) {
@@ -5619,43 +5632,48 @@ assemble_lnotab(struct assembler *a, struct instr *i)
     }
     assert(0 <= d_bytecode && d_bytecode <= 255);
 
-    if (d_lineno < -128 || 127 < d_lineno) {
-        int j, nbytes, ncodes, k;
-        if (d_lineno < 0) {
-            k = -128;
-            /* use division on positive numbers */
-            ncodes = (-d_lineno) / 128;
-        }
-        else {
-            k = 127;
-            ncodes = d_lineno / 127;
-        }
-        d_lineno -= ncodes * k;
-        assert(ncodes >= 1);
-        nbytes = a->a_lnotab_off + 2 * ncodes;
-        len = PyBytes_GET_SIZE(a->a_lnotab);
-        if (nbytes >= len) {
-            if ((len <= INT_MAX / 2) && len * 2 < nbytes)
-                len = nbytes;
-            else if (len <= INT_MAX / 2)
-                len *= 2;
-            else {
-                PyErr_NoMemory();
-                return 0;
+    if (i->i_lineno == -1) {
+        d_lineno = -128;
+    }
+    else {
+        d_lineno = i->i_lineno - a->a_lineno_actual;
+        if (d_lineno < -127 || 127 < d_lineno) {
+            int j, nbytes, ncodes, k;
+            if (d_lineno < 0) {
+                k = -128;
+                /* use division on positive numbers */
+                ncodes = (-d_lineno) / 128;
             }
-            if (_PyBytes_Resize(&a->a_lnotab, len) < 0)
-                return 0;
-        }
-        lnotab = (unsigned char *)
-                   PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-        *lnotab++ = d_bytecode;
-        *lnotab++ = k;
-        d_bytecode = 0;
-        for (j = 1; j < ncodes; j++) {
+            else {
+                k = 127;
+                ncodes = d_lineno / 127;
+            }
+            d_lineno -= ncodes * k;
+            assert(ncodes >= 1);
+            nbytes = a->a_lnotab_off + 2 * ncodes;
+            len = PyBytes_GET_SIZE(a->a_lnotab);
+            if (nbytes >= len) {
+                if ((len <= INT_MAX / 2) && len * 2 < nbytes)
+                    len = nbytes;
+                else if (len <= INT_MAX / 2)
+                    len *= 2;
+                else {
+                    PyErr_NoMemory();
+                    return 0;
+                }
+                if (_PyBytes_Resize(&a->a_lnotab, len) < 0)
+                    return 0;
+            }
+            lnotab = (unsigned char *)
+                    PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
             *lnotab++ = 0;
             *lnotab++ = k;
+            for (j = 1; j < ncodes; j++) {
+                *lnotab++ = 0;
+                *lnotab++ = k;
+            }
+            a->a_lnotab_off += ncodes * 2;
         }
-        a->a_lnotab_off += ncodes * 2;
     }
     assert(-128 <= d_lineno && d_lineno <= 127);
 
@@ -5668,16 +5686,16 @@ assemble_lnotab(struct assembler *a, struct instr *i)
                     PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
 
     a->a_lnotab_off += 2;
-    if (d_bytecode) {
-        *lnotab++ = d_bytecode;
-        *lnotab++ = d_lineno;
+    assert (d_bytecode > 0);
+    *lnotab++ = d_bytecode;
+    *lnotab++ = d_lineno;
+    if (i->i_lineno == -1) {
+        a->a_lineno_actual = a->a_lineno;
+        a->a_lineno = -1;
     }
-    else {      /* First line of a block; def stmt, etc. */
-        *lnotab++ = 0;
-        *lnotab++ = d_lineno;
+    else {
+        a->a_lineno_actual = a->a_lineno = i->i_lineno;
     }
-    a->a_lineno = i->i_lineno;
-    a->a_lineno_off = a->a_offset;
     return 1;
 }
 
