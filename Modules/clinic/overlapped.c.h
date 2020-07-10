@@ -218,13 +218,18 @@ _overlapped_CreateEvent(PyObject *module, PyObject *const *args, Py_ssize_t narg
     BOOL InitialState;
     const Py_UNICODE *Name;
 
-    if (!_PyArg_ParseStack(args, nargs, "OiiZ:CreateEvent",
-        &EventAttributes, &ManualReset, &InitialState, &Name)) {
+    if (!_PyArg_ParseStack(args, nargs, "OiiO&:CreateEvent",
+        &EventAttributes, &ManualReset, &InitialState, _PyUnicode_WideCharString_Opt_Converter, &Name)) {
         goto exit;
     }
     return_value = _overlapped_CreateEvent_impl(module, EventAttributes, ManualReset, InitialState, Name);
 
 exit:
+    /* Cleanup for Name */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)Name);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
     return return_value;
 }
 
@@ -778,7 +783,7 @@ _overlapped_Overlapped_ConnectPipe(OverlappedObject *self, PyObject *arg)
     PyObject *AddressObj;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("ConnectPipe", 0, "str", arg);
+        _PyArg_BadArgument("ConnectPipe", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -885,4 +890,4 @@ _overlapped_Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=05d389b07f6bfe3e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=742e782947c4753c input=a9049054013a1b77]*/
