@@ -21,6 +21,7 @@
 
   var all_languages = {
       'en': 'English',
+      'es': 'Spanish',
       'fr': 'French',
       'ja': 'Japanese',
       'ko': 'Korean',
