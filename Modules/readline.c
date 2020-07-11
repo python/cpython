@@ -332,10 +332,9 @@ readline.set_history_length
     length: int
     /
 
-set the maximal number of lines which will be written to the history file.
+Set the maximal number of lines which will be written to the history file.
 
-A negative length is used to inhibit
-history truncation.
+A negative length is used to inhibit history truncation.
 [clinic start generated code]*/
 
 static PyObject *
@@ -351,7 +350,7 @@ readline_set_history_length_impl(PyObject *module, int length)
 /*[clinic input]
 readline.get_history_length
 
-return the maximum number of lines that will be written to the history file.
+Return the maximum number of lines that will be written to the history file.
 [clinic start generated code]*/
 
 static PyObject *
@@ -485,7 +484,7 @@ readline_get_completion_type_impl(PyObject *module)
 /*[clinic input]
 readline.get_begidx
 
-get the beginning index of the completion scope
+Get the beginning index of the completion scope.
 [clinic start generated code]*/
 
 static PyObject *
