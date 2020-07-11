@@ -20,6 +20,7 @@ from . import coroutines
 from . import events
 from . import exceptions
 from . import futures
+from . import protocols
 from . import selector_events
 from . import tasks
 from . import transports
@@ -480,9 +481,13 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         os.set_blocking(self._fileno, False)
 
         self._loop.call_soon(self._protocol.connection_made, self)
+
         # only start reading when connection_made() has been called
-        self._loop.call_soon(self._loop._add_reader,
-                             self._fileno, self._read_ready)
+        if isinstance(protocol, protocols.BufferedProtocol):
+            self._read_ready = self._readinto_buffer_ready
+        else:
+            self._read_ready = self._read_buffer_ready
+        self._loop.call_soon(self._loop._add_reader, self._fileno, self._read_ready)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(futures._set_result_unless_cancelled,
@@ -509,7 +514,37 @@ class _UnixReadPipeTransport(transports.ReadTransport):
             info.append('closed')
         return '<{}>'.format(' '.join(info))
 
-    def _read_ready(self):
+    def _readinto_buffer_ready(self):
+        try:
+            buf = self._protocol.get_buffer(-1)
+            if not len(buf):
+                raise RuntimeError('get_buffer() returned an empty buffer')
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
+            self._fatal_error(
+                exc, 'Fatal error: protocol.get_buffer() call failed.')
+            return
+
+        nbytes = 0
+        try:
+            nbytes = self._pipe.readinto(buf)
+        except (BlockingIOError, InterruptedError):
+            pass
+        except OSError as exc:
+            self._fatal_error(exc, 'Fatal read error on pipe transport')
+        else:
+            if nbytes:
+                self._protocol.buffer_updated(nbytes)
+            else:
+                if self._loop.get_debug():
+                    logger.info("%r was closed by peer", self)
+                self._closing = True
+                self._loop._remove_reader(self._fileno)
+                self._loop.call_soon(self._protocol.eof_received)
+                self._loop.call_soon(self._call_connection_lost, None)
+
+    def _read_buffer_ready(self):
         try:
             data = os.read(self._fileno, self.max_size)
         except (BlockingIOError, InterruptedError):
