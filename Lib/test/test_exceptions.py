@@ -9,7 +9,7 @@ import weakref
 import errno
 
 from test.support import (TESTFN, captured_stderr, check_impl_detail,
-                          check_warnings, cpython_only, gc_collect, run_unittest,
+                          check_warnings, cpython_only, gc_collect,
                           no_tracing, unlink, import_module, script_helper,
                           SuppressCrashReport)
 from test import support
@@ -33,16 +33,17 @@ class BrokenStrException(Exception):
 class ExceptionTests(unittest.TestCase):
 
     def raise_catch(self, exc, excname):
-        try:
-            raise exc("spam")
-        except exc as err:
-            buf1 = str(err)
-        try:
-            raise exc("spam")
-        except exc as err:
-            buf2 = str(err)
-        self.assertEqual(buf1, buf2)
-        self.assertEqual(exc.__name__, excname)
+        with self.subTest(exc=exc, excname=excname):
+            try:
+                raise exc("spam")
+            except exc as err:
+                buf1 = str(err)
+            try:
+                raise exc("spam")
+            except exc as err:
+                buf2 = str(err)
+            self.assertEqual(buf1, buf2)
+            self.assertEqual(exc.__name__, excname)
 
     def testRaising(self):
         self.raise_catch(AttributeError, "AttributeError")
@@ -133,13 +134,14 @@ class ExceptionTests(unittest.TestCase):
         # these code fragments
 
         def ckmsg(src, msg):
-            try:
-                compile(src, '<fragment>', 'exec')
-            except SyntaxError as e:
-                if e.msg != msg:
-                    self.fail("expected %s, got %s" % (msg, e.msg))
-            else:
-                self.fail("failed to get expected SyntaxError")
+            with self.subTest(src=src, msg=msg):
+                try:
+                    compile(src, '<fragment>', 'exec')
+                except SyntaxError as e:
+                    if e.msg != msg:
+                        self.fail("expected %s, got %s" % (msg, e.msg))
+                else:
+                    self.fail("failed to get expected SyntaxError")
 
         s = '''if 1:
         try:
@@ -178,18 +180,28 @@ class ExceptionTests(unittest.TestCase):
         s = '''if True:\n        print()\n\texec "mixed tabs and spaces"'''
         ckmsg(s, "inconsistent use of tabs and spaces in indentation", TabError)
 
-    def testSyntaxErrorOffset(self):
-        def check(src, lineno, offset):
+    def check(self, src, lineno, offset, encoding='utf-8'):
+        with self.subTest(source=src, lineno=lineno, offset=offset):
             with self.assertRaises(SyntaxError) as cm:
                 compile(src, '<fragment>', 'exec')
             self.assertEqual(cm.exception.lineno, lineno)
             self.assertEqual(cm.exception.offset, offset)
+            if cm.exception.text is not None:
+                if not isinstance(src, str):
+                    src = src.decode(encoding, 'replace')
+                line = src.split('\n')[lineno-1]
+                self.assertIn(line, cm.exception.text)
 
+    def testSyntaxErrorOffset(self):
+        check = self.check
         check('def fact(x):\n\treturn x!\n', 2, 10)
         check('1 +\n', 1, 4)
         check('def spam():\n  print(1)\n print(2)', 3, 10)
         check('Python = "Python" +', 1, 20)
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
+        check(b'# -*- coding: cp1251 -*-\nPython = "\xcf\xb3\xf2\xee\xed" +',
+              2, 19, encoding='cp1251')
+        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
         check('x = "a', 1, 7)
         check('lambda x: x = 2', 1, 1)
 
@@ -205,6 +217,22 @@ class ExceptionTests(unittest.TestCase):
         check('0010 + 2', 1, 4)
         check('x = 32e-+4', 1, 8)
         check('x = 0o9', 1, 6)
+        check('\u03b1 = 0xI', 1, 6)
+        check(b'\xce\xb1 = 0xI', 1, 6)
+        check(b'# -*- coding: iso8859-7 -*-\n\xe1 = 0xI', 2, 6,
+              encoding='iso8859-7')
+        check(b"""if 1:
+            def foo():
+                '''
+
+            def bar():
+                pass
+
+            def baz():
+                '''quux'''
+            """, 9, 20)
+        check("pass\npass\npass\n(1+)\npass\npass\npass", 4, 4)
+        check("(1+)", 1, 4)
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 5)
@@ -215,20 +243,17 @@ class ExceptionTests(unittest.TestCase):
         check('nonlocal x', 1, 1)
         check('def f():\n  global x\n  nonlocal x', 2, 3)
 
-        # Errors thrown by ast.c
-        check('for 1 in []: pass', 1, 5)
-        check('def f(*):\n  pass', 1, 7)
-        check('[*x for x in xs]', 1, 2)
-        check('def f():\n  x, y: int', 2, 3)
-        check('(yield i) = 2', 1, 1)
-        check('foo(x for x in range(10), 100)', 1, 5)
-        check('foo(1=2)', 1, 5)
-
         # Errors thrown by future.c
         check('from __future__ import doesnt_exist', 1, 1)
         check('from __future__ import braces', 1, 1)
         check('x=1\nfrom __future__ import division', 2, 1)
-
+        check('foo(1=2)', 1, 5)
+        check('def f():\n  x, y: int', 2, 3)
+        check('[*x for x in xs]', 1, 2)
+        check('foo(x for x in range(10), 100)', 1, 5)
+        check('for 1 in []: pass', 1, 5)
+        check('(yield i) = 2', 1, 2)
+        check('def f(*):\n  pass', 1, 8)
 
     @cpython_only
     def testSettingException(self):
@@ -982,7 +1007,7 @@ class ExceptionTests(unittest.TestCase):
         # finalization of these locals.
         code = """if 1:
             import sys
-            from _testcapi import get_recursion_depth
+            from _testinternalcapi import get_recursion_depth
 
             class MyException(Exception): pass
 
@@ -1066,8 +1091,9 @@ class ExceptionTests(unittest.TestCase):
         """
         with SuppressCrashReport():
             rc, out, err = script_helper.assert_python_failure("-c", code)
-            self.assertIn(b'Fatal Python error: Cannot recover from '
-                          b'MemoryErrors while normalizing exceptions.', err)
+            self.assertIn(b'Fatal Python error: _PyErr_NormalizeException: '
+                          b'Cannot recover from MemoryErrors while '
+                          b'normalizing exceptions.', err)
 
     @cpython_only
     def test_MemoryError(self):
@@ -1284,6 +1310,22 @@ class ExceptionTests(unittest.TestCase):
             except:
                 next(i)
                 next(i)
+
+    @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
+    def test_assert_shadowing(self):
+        # Shadowing AssertionError would cause the assert statement to
+        # misbehave.
+        global AssertionError
+        AssertionError = TypeError
+        try:
+            assert False, 'hello'
+        except BaseException as e:
+            del AssertionError
+            self.assertIsInstance(e, AssertionError)
+            self.assertEqual(str(e), 'hello')
+        else:
+            del AssertionError
+            self.fail('Expected exception')
 
 
 class ImportErrorTests(unittest.TestCase):

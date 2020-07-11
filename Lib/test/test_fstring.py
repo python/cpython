@@ -8,9 +8,12 @@
 # Unicode identifiers in tests is allowed by PEP 3131.
 
 import ast
+import os
 import types
 import decimal
 import unittest
+from test.support.os_helper import temp_cwd
+from test.support.script_helper import assert_python_failure
 
 a_global = 'global variable'
 
@@ -521,7 +524,7 @@ non-important content
                              # This looks like a nested format spec.
                              ])
 
-        self.assertAllRaise(SyntaxError, "invalid syntax",
+        self.assertAllRaise(SyntaxError, "f-string: invalid syntax",
                             [# Invalid syntax inside a nested spec.
                              "f'{4:{/5}}'",
                              ])
@@ -583,7 +586,7 @@ non-important content
                              ])
 
         # Different error message is raised for other whitespace characters.
-        self.assertAllRaise(SyntaxError, 'invalid character in identifier',
+        self.assertAllRaise(SyntaxError, r"invalid non-printable character U\+00A0",
                             ["f'''{\xa0}'''",
                              "\xa0",
                              ])
@@ -595,7 +598,7 @@ non-important content
         #  are added around it. But we shouldn't go from an invalid
         #  expression to a valid one. The added parens are just
         #  supposed to allow whitespace (including newlines).
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
+        self.assertAllRaise(SyntaxError, 'f-string: invalid syntax',
                             ["f'{,}'",
                              "f'{,}'",  # this is (,), which is an error
                              ])
@@ -649,7 +652,7 @@ non-important content
         self.assertEqual(f'2\x203', '2 3')
         self.assertEqual(f'\x203', ' 3')
 
-        with self.assertWarns(SyntaxWarning):  # invalid escape sequence
+        with self.assertWarns(DeprecationWarning):  # invalid escape sequence
             value = eval(r"f'\{6*7}'")
         self.assertEqual(value, '\\42')
         self.assertEqual(f'\\{6*7}', '\\42')
@@ -713,7 +716,7 @@ non-important content
 
         # lambda doesn't work without parens, because the colon
         #  makes the parser think it's a format_spec
-        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
+        self.assertAllRaise(SyntaxError, 'f-string: invalid syntax',
                             ["f'{lambda x:x}'",
                              ])
 
@@ -722,9 +725,11 @@ non-important content
         #  a function into a generator
         def fn(y):
             f'y:{yield y*2}'
+            f'{yield}'
 
         g = fn(4)
         self.assertEqual(next(g), 8)
+        self.assertEqual(next(g), None)
 
     def test_yield_send(self):
         def fn(x):
@@ -841,8 +846,7 @@ non-important content
         self.assertEqual(f'{f"{y}"*3}', '555')
 
     def test_invalid_string_prefixes(self):
-        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
-                            ["fu''",
+        single_quote_cases = ["fu''",
                              "uf''",
                              "Fu''",
                              "fU''",
@@ -863,8 +867,10 @@ non-important content
                              "bf''",
                              "bF''",
                              "Bf''",
-                             "BF''",
-                             ])
+                             "BF''",]
+        double_quote_cases = [case.replace("'", '"') for case in single_quote_cases]
+        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
+                            single_quote_cases + double_quote_cases)
 
     def test_leading_trailing_spaces(self):
         self.assertEqual(f'{ 3}', '3')
@@ -1043,6 +1049,16 @@ non-important content
                              r"f'{1000:j}'",
                             ])
 
+    def test_filename_in_syntaxerror(self):
+        # see issue 38964
+        with temp_cwd() as cwd:
+            file_path = os.path.join(cwd, 't.py')
+            with open(file_path, 'w') as f:
+                f.write('f"{a b}"') # This generates a SyntaxError
+            _, _, stderr = assert_python_failure(file_path,
+                                                 PYTHONIOENCODING='ascii')
+        self.assertIn(file_path.encode('ascii', 'backslashreplace'), stderr)
+
     def test_loop(self):
         for i in range(1000):
             self.assertEqual(f'i:{i}', 'i:' + str(i))
@@ -1161,7 +1177,7 @@ non-important content
 
         # These next lines contains tabs.  Backslash escapes don't
         # work in f-strings.
-        # patchcheck doens't like these tabs.  So the only way to test
+        # patchcheck doesn't like these tabs.  So the only way to test
         # this will be to dynamically created and exec the f-strings.  But
         # that's such a hassle I'll save it for another day.  For now, convert
         # the tabs to spaces just to shut up patchcheck.
@@ -1177,6 +1193,10 @@ non-important content
         # This is an assignment expression, which requires parens.
         self.assertEqual(f'{(x:=10)}', '10')
         self.assertEqual(x, 10)
+
+    def test_invalid_syntax_error_message(self):
+        with self.assertRaisesRegex(SyntaxError, "f-string: invalid syntax"):
+            compile("f'{a $ b}'", "?", "exec")
 
 
 if __name__ == '__main__':

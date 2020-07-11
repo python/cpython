@@ -11,7 +11,7 @@ module instead.
 #define MODULE_VERSION "1.0"
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include <stdbool.h>
 
 
@@ -21,21 +21,27 @@ typedef struct {
     long field_limit;   /* max parsed field size */
 } _csvstate;
 
-#define _csvstate(o) ((_csvstate *)PyModule_GetState(o))
+static inline _csvstate*
+get_csv_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_csvstate *)state;
+}
 
 static int
 _csv_clear(PyObject *m)
 {
-    Py_CLEAR(_csvstate(m)->error_obj);
-    Py_CLEAR(_csvstate(m)->dialects);
+    Py_CLEAR(get_csv_state(m)->error_obj);
+    Py_CLEAR(get_csv_state(m)->dialects);
     return 0;
 }
 
 static int
 _csv_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    Py_VISIT(_csvstate(m)->error_obj);
-    Py_VISIT(_csvstate(m)->dialects);
+    Py_VISIT(get_csv_state(m)->error_obj);
+    Py_VISIT(get_csv_state(m)->dialects);
     return 0;
 }
 
@@ -106,8 +112,6 @@ typedef struct {
 
 static PyTypeObject Reader_Type;
 
-#define ReaderObject_Check(v)   (Py_TYPE(v) == &Reader_Type)
-
 typedef struct {
     PyObject_HEAD
 
@@ -143,13 +147,6 @@ get_dialect_from_registry(PyObject * name_obj)
 }
 
 static PyObject *
-get_string(PyObject *str)
-{
-    Py_XINCREF(str);
-    return str;
-}
-
-static PyObject *
 get_nullchar_as_None(Py_UCS4 c)
 {
     if (c == '\0') {
@@ -162,7 +159,8 @@ get_nullchar_as_None(Py_UCS4 c)
 static PyObject *
 Dialect_get_lineterminator(DialectObj *self, void *Py_UNUSED(ignored))
 {
-    return get_string(self->lineterminator);
+    Py_XINCREF(self->lineterminator);
+    return self->lineterminator;
 }
 
 static PyObject *
@@ -236,7 +234,7 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
             if (!PyUnicode_Check(src)) {
                 PyErr_Format(PyExc_TypeError,
                     "\"%s\" must be string, not %.200s", name,
-                    src->ob_type->tp_name);
+                    Py_TYPE(src)->tp_name);
                 return -1;
             }
             len = PyUnicode_GetLength(src);
@@ -514,10 +512,10 @@ _call_dialect(PyObject *dialect_inst, PyObject *kwargs)
 {
     PyObject *type = (PyObject *)&Dialect_Type;
     if (dialect_inst) {
-        return _PyObject_FastCallDict(type, &dialect_inst, 1, kwargs);
+        return PyObject_VectorcallDict(type, &dialect_inst, 1, kwargs);
     }
     else {
-        return _PyObject_FastCallDict(type, NULL, 0, kwargs);
+        return PyObject_VectorcallDict(type, NULL, 0, kwargs);
     }
 }
 
@@ -783,7 +781,7 @@ Reader_iternext(ReaderObj *self)
     Py_UCS4 c;
     Py_ssize_t pos, linelen;
     unsigned int kind;
-    void *data;
+    const void *data;
     PyObject *lineobj;
 
     if (parse_reset(self) < 0)
@@ -806,8 +804,8 @@ Reader_iternext(ReaderObj *self)
             PyErr_Format(_csvstate_global->error_obj,
                          "iterator should return strings, "
                          "not %.200s "
-                         "(did you open the file in text mode?)",
-                         lineobj->ob_type->tp_name
+                         "(the file should be opened in text mode)",
+                         Py_TYPE(lineobj)->tp_name
                 );
             Py_DECREF(lineobj);
             return NULL;
@@ -958,8 +956,6 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
     }
     self->input_iter = PyObject_GetIter(iterator);
     if (self->input_iter == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "argument 1 must be an iterator");
         Py_DECREF(self);
         return NULL;
     }
@@ -990,7 +986,7 @@ join_reset(WriterObj *self)
  * record length.
  */
 static Py_ssize_t
-join_append_data(WriterObj *self, unsigned int field_kind, void *field_data,
+join_append_data(WriterObj *self, unsigned int field_kind, const void *field_data,
                  Py_ssize_t field_len, int *quoted,
                  int copy_phase)
 {
@@ -1101,7 +1097,7 @@ static int
 join_append(WriterObj *self, PyObject *field, int quoted)
 {
     unsigned int field_kind = -1;
-    void *field_data = NULL;
+    const void *field_data = NULL;
     Py_ssize_t field_len = 0;
     Py_ssize_t rec_len;
 
@@ -1133,7 +1129,7 @@ join_append_lineterminator(WriterObj *self)
 {
     Py_ssize_t terminator_len, i;
     unsigned int term_kind;
-    void *term_data;
+    const void *term_data;
 
     terminator_len = PyUnicode_GET_LENGTH(self->dialect->lineterminator);
     if (terminator_len == -1)
@@ -1165,10 +1161,14 @@ csv_writerow(WriterObj *self, PyObject *seq)
     PyObject *iter, *field, *line, *result;
 
     iter = PyObject_GetIter(seq);
-    if (iter == NULL)
-        return PyErr_Format(_csvstate_global->error_obj,
-                            "iterable expected, not %.200s",
-                            seq->ob_type->tp_name);
+    if (iter == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Format(_csvstate_global->error_obj,
+                         "iterable expected, not %.200s",
+                         Py_TYPE(seq)->tp_name);
+        }
+        return NULL;
+    }
 
     /* Join all fields in internal buffer.
      */
@@ -1240,7 +1240,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
     if (line == NULL) {
         return NULL;
     }
-    result = PyObject_CallFunctionObjArgs(self->write, line, NULL);
+    result = PyObject_CallOneArg(self->write, line);
     Py_DECREF(line);
     return result;
 }
@@ -1258,8 +1258,6 @@ csv_writerows(WriterObj *self, PyObject *seqseq)
 
     row_iter = PyObject_GetIter(seqseq);
     if (row_iter == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "writerows() argument must be iterable");
         return NULL;
     }
     while ((row_obj = PyIter_Next(row_iter))) {
@@ -1382,7 +1380,10 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    self->write = _PyObject_GetAttrId(output_file, &PyId_write);
+    if (_PyObject_LookupAttrId(output_file, &PyId_write, &self->write) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
     if (self->write == NULL || !PyCallable_Check(self->write)) {
         PyErr_SetString(PyExc_TypeError,
                         "argument 1 must have a \"write\" method");
@@ -1624,9 +1625,6 @@ PyInit__csv(void)
     PyObject *module;
     const StyleDesc *style;
 
-    if (PyType_Ready(&Dialect_Type) < 0)
-        return NULL;
-
     if (PyType_Ready(&Reader_Type) < 0)
         return NULL;
 
@@ -1644,15 +1642,15 @@ PyInit__csv(void)
         return NULL;
 
     /* Set the field limit */
-    _csvstate(module)->field_limit = 128 * 1024;
+    get_csv_state(module)->field_limit = 128 * 1024;
     /* Do I still need to add this var to the Module Dict? */
 
     /* Add _dialects dictionary */
-    _csvstate(module)->dialects = PyDict_New();
-    if (_csvstate(module)->dialects == NULL)
+    get_csv_state(module)->dialects = PyDict_New();
+    if (get_csv_state(module)->dialects == NULL)
         return NULL;
-    Py_INCREF(_csvstate(module)->dialects);
-    if (PyModule_AddObject(module, "_dialects", _csvstate(module)->dialects))
+    Py_INCREF(get_csv_state(module)->dialects);
+    if (PyModule_AddObject(module, "_dialects", get_csv_state(module)->dialects))
         return NULL;
 
     /* Add quote styles into dictionary */
@@ -1662,16 +1660,15 @@ PyInit__csv(void)
             return NULL;
     }
 
-    /* Add the Dialect type */
-    Py_INCREF(&Dialect_Type);
-    if (PyModule_AddObject(module, "Dialect", (PyObject *)&Dialect_Type))
+    if (PyModule_AddType(module, &Dialect_Type)) {
         return NULL;
+    }
 
     /* Add the CSV exception object to the module. */
-    _csvstate(module)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
-    if (_csvstate(module)->error_obj == NULL)
+    get_csv_state(module)->error_obj = PyErr_NewException("_csv.Error", NULL, NULL);
+    if (get_csv_state(module)->error_obj == NULL)
         return NULL;
-    Py_INCREF(_csvstate(module)->error_obj);
-    PyModule_AddObject(module, "Error", _csvstate(module)->error_obj);
+    Py_INCREF(get_csv_state(module)->error_obj);
+    PyModule_AddObject(module, "Error", get_csv_state(module)->error_obj);
     return module;
 }

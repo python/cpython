@@ -1,80 +1,103 @@
-import unittest, test.support
-from test.support.script_helper import assert_python_ok, assert_python_failure
-import sys, io, os
-import struct
-import subprocess
-import textwrap
-import warnings
-import operator
+import builtins
 import codecs
 import gc
-import sysconfig
 import locale
+import operator
+import os
+import struct
+import subprocess
+import sys
+import sysconfig
+import test.support
+from test import support
+from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support import threading_helper
+import textwrap
+import unittest
+import warnings
+
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
-numruns = 0
+INTERN_NUMRUNS = 0
 
 
-class SysModuleTest(unittest.TestCase):
-
-    def setUp(self):
-        self.orig_stdout = sys.stdout
-        self.orig_stderr = sys.stderr
-        self.orig_displayhook = sys.displayhook
-
-    def tearDown(self):
-        sys.stdout = self.orig_stdout
-        sys.stderr = self.orig_stderr
-        sys.displayhook = self.orig_displayhook
-        test.support.reap_children()
+class DisplayHookTest(unittest.TestCase):
 
     def test_original_displayhook(self):
-        import builtins
-        out = io.StringIO()
-        sys.stdout = out
-
         dh = sys.__displayhook__
 
-        self.assertRaises(TypeError, dh)
-        if hasattr(builtins, "_"):
-            del builtins._
+        with support.captured_stdout() as out:
+            dh(42)
 
-        dh(None)
-        self.assertEqual(out.getvalue(), "")
-        self.assertTrue(not hasattr(builtins, "_"))
-        dh(42)
         self.assertEqual(out.getvalue(), "42\n")
         self.assertEqual(builtins._, 42)
 
-        del sys.stdout
-        self.assertRaises(RuntimeError, dh, 42)
+        del builtins._
+
+        with support.captured_stdout() as out:
+            dh(None)
+
+        self.assertEqual(out.getvalue(), "")
+        self.assertTrue(not hasattr(builtins, "_"))
+
+        # sys.displayhook() requires arguments
+        self.assertRaises(TypeError, dh)
+
+        stdout = sys.stdout
+        try:
+            del sys.stdout
+            self.assertRaises(RuntimeError, dh, 42)
+        finally:
+            sys.stdout = stdout
 
     def test_lost_displayhook(self):
-        del sys.displayhook
-        code = compile("42", "<string>", "single")
-        self.assertRaises(RuntimeError, eval, code)
+        displayhook = sys.displayhook
+        try:
+            del sys.displayhook
+            code = compile("42", "<string>", "single")
+            self.assertRaises(RuntimeError, eval, code)
+        finally:
+            sys.displayhook = displayhook
 
     def test_custom_displayhook(self):
         def baddisplayhook(obj):
             raise ValueError
-        sys.displayhook = baddisplayhook
-        code = compile("42", "<string>", "single")
-        self.assertRaises(ValueError, eval, code)
+
+        with support.swap_attr(sys, 'displayhook', baddisplayhook):
+            code = compile("42", "<string>", "single")
+            self.assertRaises(ValueError, eval, code)
+
+
+class ExceptHookTest(unittest.TestCase):
 
     def test_original_excepthook(self):
-        err = io.StringIO()
-        sys.stderr = err
-
-        eh = sys.__excepthook__
-
-        self.assertRaises(TypeError, eh)
         try:
             raise ValueError(42)
         except ValueError as exc:
-            eh(*sys.exc_info())
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
 
         self.assertTrue(err.getvalue().endswith("ValueError: 42\n"))
+
+        self.assertRaises(TypeError, sys.__excepthook__)
+
+    def test_excepthook_bytes_filename(self):
+        # bpo-37467: sys.excepthook() must not crash if a filename
+        # is a bytes string
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', BytesWarning)
+
+            try:
+                raise SyntaxError("msg", (b"bytes_filename", 123, 0, "text"))
+            except SyntaxError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+
+        err = err.getvalue()
+        self.assertIn("""  File "b'bytes_filename'", line 123\n""", err)
+        self.assertIn("""    text\n""", err)
+        self.assertTrue(err.endswith("SyntaxError: msg\n"))
 
     def test_excepthook(self):
         with test.support.captured_output("stderr") as stderr:
@@ -84,6 +107,12 @@ class SysModuleTest(unittest.TestCase):
 
     # FIXME: testing the code for a lost or replaced excepthook in
     # Python/pythonrun.c::PyErr_PrintEx() is tricky.
+
+
+class SysModuleTest(unittest.TestCase):
+
+    def tearDown(self):
+        test.support.reap_children()
 
     def test_exit(self):
         # call with two arguments
@@ -159,15 +188,6 @@ class SysModuleTest(unittest.TestCase):
     # testing sys.settrace() is done in test_sys_settrace.py
     # testing sys.setprofile() is done in test_sys_setprofile.py
 
-    def test_setcheckinterval(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            self.assertRaises(TypeError, sys.setcheckinterval)
-            orig = sys.getcheckinterval()
-            for n in 0, 100, 120, orig: # orig last to restore starting state
-                sys.setcheckinterval(n)
-                self.assertEqual(sys.getcheckinterval(), n)
-
     def test_switchinterval(self):
         self.assertRaises(TypeError, sys.setswitchinterval)
         self.assertRaises(TypeError, sys.setswitchinterval, "a")
@@ -222,7 +242,7 @@ class SysModuleTest(unittest.TestCase):
         # mark". Otherwise, it may not be possible anymore to
         # reset the overflowed flag to 0.
 
-        from _testcapi import get_recursion_depth
+        from _testinternalcapi import get_recursion_depth
 
         def set_recursion_limit_at_depth(depth, limit):
             recursion_depth = get_recursion_depth()
@@ -250,6 +270,8 @@ class SysModuleTest(unittest.TestCase):
         finally:
             sys.setrecursionlimit(oldlimit)
 
+    # The error message is specific to CPython
+    @test.support.cpython_only
     def test_recursionlimit_fatalerror(self):
         # A fatal error occurs if a second recursion limit is hit when recovering
         # from a first one.
@@ -271,7 +293,8 @@ class SysModuleTest(unittest.TestCase):
                 err = sub.communicate()[1]
                 self.assertTrue(sub.returncode, sub.returncode)
                 self.assertIn(
-                    b"Fatal Python error: Cannot recover from stack overflow",
+                    b"Fatal Python error: _Py_CheckRecursiveCall: "
+                    b"Cannot recover from stack overflow",
                     err)
 
     def test_getwindowsversion(self):
@@ -343,7 +366,7 @@ class SysModuleTest(unittest.TestCase):
         )
 
     # sys._current_frames() is a CPython-only gimmick.
-    @test.support.reap_threads
+    @threading_helper.reap_threads
     def test_current_frames(self):
         import threading
         import traceback
@@ -411,6 +434,11 @@ class SysModuleTest(unittest.TestCase):
     def test_attributes(self):
         self.assertIsInstance(sys.api_version, int)
         self.assertIsInstance(sys.argv, list)
+        for arg in sys.argv:
+            self.assertIsInstance(arg, str)
+        self.assertIsInstance(sys.orig_argv, list)
+        for arg in sys.orig_argv:
+            self.assertIsInstance(arg, str)
         self.assertIn(sys.byteorder, ("little", "big"))
         self.assertIsInstance(sys.builtin_module_names, tuple)
         self.assertIsInstance(sys.copyright, str)
@@ -464,6 +492,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.platform, str)
         self.assertIsInstance(sys.prefix, str)
         self.assertIsInstance(sys.base_prefix, str)
+        self.assertIsInstance(sys.platlibdir, str)
         self.assertIsInstance(sys.version, str)
         vi = sys.version_info
         self.assertIsInstance(vi[:], tuple)
@@ -501,10 +530,10 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
-        global numruns
-        numruns += 1
+        global INTERN_NUMRUNS
+        INTERN_NUMRUNS += 1
         self.assertRaises(TypeError, sys.intern)
-        s = "never interned before" + str(numruns)
+        s = "never interned before" + str(INTERN_NUMRUNS)
         self.assertTrue(sys.intern(s) is s)
         s2 = s.swapcase().swapcase()
         self.assertTrue(sys.intern(s2) is s)
@@ -523,10 +552,10 @@ class SysModuleTest(unittest.TestCase):
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
         attrs = ("debug",
-                 "inspect", "interactive", "optimize", "dont_write_bytecode",
-                 "no_user_site", "no_site", "ignore_environment", "verbose",
-                 "bytes_warning", "quiet", "hash_randomization", "isolated",
-                 "dev_mode", "utf8_mode")
+                 "inspect", "interactive", "optimize",
+                 "dont_write_bytecode", "no_user_site", "no_site",
+                 "ignore_environment", "verbose", "bytes_warning", "quiet",
+                 "hash_randomization", "isolated", "dev_mode", "utf8_mode")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
             attr_type = bool if attr == "dev_mode" else int
@@ -800,7 +829,6 @@ class SysModuleTest(unittest.TestCase):
         c = sys.getallocatedblocks()
         self.assertIn(c, range(b - 50, b + 50))
 
-    @test.support.requires_type_collecting
     def test_is_finalizing(self):
         self.assertIs(sys.is_finalizing(), False)
         # Don't use the atexit module because _Py_Finalizing is only set
@@ -822,7 +850,6 @@ class SysModuleTest(unittest.TestCase):
         rc, stdout, stderr = assert_python_ok('-c', code)
         self.assertEqual(stdout.rstrip(), b'True')
 
-    @test.support.requires_type_collecting
     def test_issue20602(self):
         # sys.flags and sys.float_info were wiped during shutdown.
         code = """if 1:
@@ -837,6 +864,23 @@ class SysModuleTest(unittest.TestCase):
         out = out.splitlines()
         self.assertIn(b'sys.flags', out[0])
         self.assertIn(b'sys.float_info', out[1])
+
+    def test_sys_ignores_cleaning_up_user_data(self):
+        code = """if 1:
+            import struct, sys
+
+            class C:
+                def __init__(self):
+                    self.pack = struct.pack
+                def __del__(self):
+                    self.pack('I', -42)
+
+            sys.x = C()
+            """
+        rc, stdout, stderr = assert_python_ok('-c', code)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout.rstrip(), b"")
+        self.assertEqual(stderr.rstrip(), b"")
 
     @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
                          'need sys.getandroidapilevel()')
@@ -890,6 +934,21 @@ class SysModuleTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', '; '.join(code))
         out = out.decode('ascii', 'replace').rstrip()
         self.assertEqual(out, 'mbcs replace')
+
+    def test_orig_argv(self):
+        code = textwrap.dedent('''
+            import sys
+            print(sys.argv)
+            print(sys.orig_argv)
+        ''')
+        args = [sys.executable, '-I', '-X', 'utf8', '-c', code, 'arg']
+        proc = subprocess.run(args, check=True, capture_output=True, text=True)
+        expected = [
+            repr(['-c', 'arg']),  # sys.argv
+            repr(args),  # sys.orig_argv
+        ]
+        self.assertEqual(proc.stdout.rstrip().splitlines(), expected,
+                         proc)
 
 
 @test.support.cpython_only
@@ -1019,8 +1078,8 @@ class SizeofTest(unittest.TestCase):
     def setUp(self):
         self.P = struct.calcsize('P')
         self.longdigit = sys.int_info.sizeof_digit
-        import _testcapi
-        self.gc_headsize = _testcapi.SIZEOF_PYGC_HEAD
+        import _testinternalcapi
+        self.gc_headsize = _testinternalcapi.SIZEOF_PYGC_HEAD
 
     check_sizeof = test.support.check_sizeof
 
@@ -1203,7 +1262,7 @@ class SizeofTest(unittest.TestCase):
         # list
         samples = [[], [1,2,3], ['1', '2', '3']]
         for sample in samples:
-            check(sample, vsize('Pn') + len(sample)*self.P)
+            check(list(sample), vsize('Pn') + len(sample)*self.P)
         # sortwrapper (list)
         # XXX
         # cmpwrapper (list)
@@ -1276,8 +1335,6 @@ class SizeofTest(unittest.TestCase):
         # type
         # static type: PyTypeObject
         fmt = 'P2nPI13Pl4Pn9Pn11PIPP'
-        if hasattr(sys, 'getcounts'):
-            fmt += '3n2P'
         s = vsize(fmt)
         check(int, s)
         # class
@@ -1287,7 +1344,7 @@ class SizeofTest(unittest.TestCase):
                   '3P'                  # PyMappingMethods
                   '10P'                 # PySequenceMethods
                   '2P'                  # PyBufferProcs
-                  '4P')
+                  '5P')
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
         check(newstyleclass, s + calcsize("2nP2n0P") + 8 + 5*calcsize("n2P"))

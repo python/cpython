@@ -189,13 +189,6 @@ static inline int blake2b_init0( blake2b_state *S )
 
 
 
-#define blake2b_init BLAKE2_IMPL_NAME(blake2b_init)
-#define blake2b_init_param BLAKE2_IMPL_NAME(blake2b_init_param)
-#define blake2b_init_key BLAKE2_IMPL_NAME(blake2b_init_key)
-#define blake2b_update BLAKE2_IMPL_NAME(blake2b_update)
-#define blake2b_final BLAKE2_IMPL_NAME(blake2b_final)
-#define blake2b BLAKE2_IMPL_NAME(blake2b)
-
 #if defined(__cplusplus)
 extern "C" {
 #endif

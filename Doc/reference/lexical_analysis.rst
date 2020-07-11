@@ -316,7 +316,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <http://www.unicode.org/Public/12.1.0/ucd/PropList.txt>`_ to support backwards
+  <https://www.unicode.org/Public/13.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -325,7 +325,7 @@ of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
 4.1 can be found at
-https://www.dcl.hpi.uni-potsdam.de/home/loewis/table-3131.html.
+https://www.unicode.org/Public/13.0.0/ucd/DerivedCoreProperties.txt
 
 
 .. _keywords:
@@ -376,11 +376,11 @@ characters:
       information on this convention.
 
 ``__*__``
-   System-defined names. These names are defined by the interpreter and its
-   implementation (including the standard library).  Current system names are
-   discussed in the :ref:`specialnames` section and elsewhere.  More will likely
-   be defined in future versions of Python.  *Any* use of ``__*__`` names, in
-   any context, that does not follow explicitly documented use, is subject to
+   System-defined names, informally known as "dunder" names. These names are
+   defined by the interpreter and its implementation (including the standard library).
+   Current system names are discussed in the :ref:`specialnames` section and elsewhere.
+   More will likely be defined in future versions of Python.  *Any* use of ``__*__`` names,
+   in any context, that does not follow explicitly documented use, is subject to
    breakage without warning.
 
 ``__*``
@@ -594,11 +594,9 @@ escape sequences only recognized in string literals fall into the category of
 unrecognized escapes for bytes literals.
 
    .. versionchanged:: 3.6
-      Unrecognized escape sequences produce a :exc:`DeprecationWarning`.
-
-   .. versionchanged:: 3.8
-      Unrecognized escape sequences produce a :exc:`SyntaxWarning`.  In
-      some future version of Python they will be a :exc:`SyntaxError`.
+      Unrecognized escape sequences produce a :exc:`DeprecationWarning`.  In
+      a future Python version they will be a :exc:`SyntaxWarning` and
+      eventually a :exc:`SyntaxError`.
 
 Even in a raw literal, quotes can be escaped with a backslash, but the
 backslash remains in the result; for example, ``r"\""`` is a valid string
@@ -687,6 +685,11 @@ strings), but they cannot contain comments.  Each expression is evaluated
 in the context where the formatted string literal appears, in order from
 left to right.
 
+.. versionchanged:: 3.7
+   Prior to Python 3.7, an :keyword:`await` expression and comprehensions
+   containing an :keyword:`async for` clause were illegal in the expressions
+   in formatted string literals due to a problem with the implementation.
+
 If a conversion is specified, the result of evaluating the expression
 is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
 the result, ``'!r'`` calls :func:`repr`, and ``'!a'`` calls :func:`ascii`.
@@ -701,7 +704,7 @@ Top-level format specifiers may include nested replacement fields. These nested
 fields may include their own conversion fields and :ref:`format specifiers
 <formatspec>`, but may not include more deeply-nested replacement fields. The
 :ref:`format specifier mini-language <formatspec>` is the same as that used by
-the string .format() method.
+the :meth:`str.format` method.
 
 Formatted string literals may be concatenated, but replacement fields
 cannot be split across literals.
@@ -889,7 +892,7 @@ The following tokens are operators:
 
 
    +       -       *       **      /       //      %      @
-   <<      >>      &       |       ^       ~
+   <<      >>      &       |       ^       ~       :=
    <       >       <=      >=      ==      !=
 
 
@@ -931,4 +934,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] http://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt
+.. [#] https://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt

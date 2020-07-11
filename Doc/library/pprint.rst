@@ -25,6 +25,9 @@ width constraint.
 
 Dictionaries are sorted by key before the display is computed.
 
+.. versionchanged:: 3.9
+   Added support for pretty-printing :class:`types.SimpleNamespace`.
+
 The :mod:`pprint` module defines one class:
 
 .. First the implementation class:
@@ -144,7 +147,7 @@ The :mod:`pprint` module also provides several shortcut functions:
 
    .. index:: builtin: eval
 
-   Determine if the formatted representation of *object* is "readable," or can be
+   Determine if the formatted representation of *object* is "readable", or can be
    used to reconstruct the value using :func:`eval`.  This always returns ``False``
    for recursive objects.
 

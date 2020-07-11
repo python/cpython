@@ -659,7 +659,7 @@ How can my code discover the name of an object?
 -----------------------------------------------
 
 Generally speaking, it can't, because objects don't really have names.
-Essentially, assignment always binds a name to a value; The same is true of
+Essentially, assignment always binds a name to a value; the same is true of
 ``def`` and ``class`` statements, but in that case the value is a
 callable. Consider the following code::
 
@@ -779,30 +779,23 @@ A slash in the argument list of a function denotes that the parameters prior to
 it are positional-only.  Positional-only parameters are the ones without an
 externally-usable name.  Upon calling a function that accepts positional-only
 parameters, arguments are mapped to parameters based solely on their position.
-For example, :func:`pow` is a function that accepts positional-only parameters.
-Its documentation looks like this::
+For example, :func:`divmod` is a function that accepts positional-only
+parameters. Its documentation looks like this::
 
-   >>> help(pow)
-   Help on built-in function pow in module builtins:
+   >>> help(divmod)
+   Help on built-in function divmod in module builtins:
 
-   pow(x, y, z=None, /)
-      Equivalent to x**y (with two arguments) or x**y % z (with three arguments)
+   divmod(x, y, /)
+       Return the tuple (x//y, x%y).  Invariant: div*y + mod == x.
 
-      Some types, such as ints, are able to use a more efficient algorithm when
-      invoked using the three argument form.
+The slash at the end of the parameter list means that both parameters are
+positional-only. Thus, calling :func:`divmod` with keyword arguments would lead
+to an error::
 
-The slash at the end of the parameter list means that all three parameters are
-positional-only. Thus, calling :func:`pow` with keyword arguments would lead to
-an error::
-
-   >>> pow(x=3, y=4)
+   >>> divmod(x=3, y=4)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: pow() takes no keyword arguments
-
-Note that as of this writing this is only documentational and no valid syntax
-in Python, although there is :pep:`570`, which proposes a syntax for
-position-only parameters in Python.
+   TypeError: divmod() takes no keyword arguments
 
 
 Numbers and strings
@@ -858,10 +851,11 @@ For integers, use the built-in :func:`int` type constructor, e.g. ``int('144')
 e.g. ``float('144') == 144.0``.
 
 By default, these interpret the number as decimal, so that ``int('0144') ==
-144`` and ``int('0x144')`` raises :exc:`ValueError`. ``int(string, base)`` takes
-the base to convert from as a second optional argument, so ``int('0x144', 16) ==
-324``.  If the base is specified as 0, the number is interpreted using Python's
-rules: a leading '0o' indicates octal, and '0x' indicates a hex number.
+144`` holds true, and ``int('0x144')`` raises :exc:`ValueError`. ``int(string,
+base)`` takes the base to convert from as a second optional argument, so ``int(
+'0x144', 16) == 324``.  If the base is specified as 0, the number is interpreted
+using Python's rules: a leading '0o' indicates octal, and '0x' indicates a hex
+number.
 
 Do not use the built-in function :func:`eval` if all you need is to convert
 strings to numbers.  :func:`eval` will be significantly slower and it presents a
@@ -1026,7 +1020,7 @@ That's a tough one, in general.  First, here are a list of things to
 remember before diving further:
 
 * Performance characteristics vary across Python implementations.  This FAQ
-  focusses on :term:`CPython`.
+  focuses on :term:`CPython`.
 * Behaviour can vary across operating systems, especially when talking about
   I/O or multi-threading.
 * You should always find the hot spots in your program *before* attempting to
@@ -1501,8 +1495,8 @@ to uppercase::
 
 Here the ``UpperOut`` class redefines the ``write()`` method to convert the
 argument string to uppercase before calling the underlying
-``self.__outfile.write()`` method.  All other methods are delegated to the
-underlying ``self.__outfile`` object.  The delegation is accomplished via the
+``self._outfile.write()`` method.  All other methods are delegated to the
+underlying ``self._outfile`` object.  The delegation is accomplished via the
 ``__getattr__`` method; consult :ref:`the language reference <attribute-access>`
 for more information about controlling attribute access.
 

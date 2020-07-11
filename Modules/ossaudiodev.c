@@ -14,14 +14,12 @@
  * (c) 2002 Gregory P. Ward.  All Rights Reserved.
  * (c) 2002 Python Software Foundation.  All Rights Reserved.
  *
- * XXX need a license statement
- *
  * $Id$
  */
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -242,7 +240,7 @@ static int _is_fd_valid(int fd)
      arg = dsp.xxx(arg)
 */
 static PyObject *
-_do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
+_do_ioctl_1(int fd, PyObject *args, char *fname, unsigned long cmd)
 {
     char argfmt[33] = "i:";
     int arg;
@@ -267,7 +265,7 @@ _do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
    way.
 */
 static PyObject *
-_do_ioctl_1_internal(int fd, PyObject *args, char *fname, int cmd)
+_do_ioctl_1_internal(int fd, PyObject *args, char *fname, unsigned long cmd)
 {
     char argfmt[32] = ":";
     int arg = 0;
@@ -287,7 +285,7 @@ _do_ioctl_1_internal(int fd, PyObject *args, char *fname, int cmd)
 /* _do_ioctl_0() is a private helper for the no-argument ioctls:
    SNDCTL_DSP_{SYNC,RESET,POST}. */
 static PyObject *
-_do_ioctl_0(int fd, PyObject *args, char *fname, int cmd)
+_do_ioctl_0(int fd, PyObject *args, char *fname, unsigned long cmd)
 {
     char argfmt[32] = ":";
     int rv;
@@ -539,7 +537,7 @@ oss_exit(PyObject *self, PyObject *unused)
 {
     _Py_IDENTIFIER(close);
 
-    PyObject *ret = _PyObject_CallMethodId(self, &PyId_close, NULL);
+    PyObject *ret = _PyObject_CallMethodIdNoArgs(self, &PyId_close);
     if (!ret)
         return NULL;
     Py_DECREF(ret);

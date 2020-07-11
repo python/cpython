@@ -2,7 +2,7 @@
 # Copyright 2012-2013 by Larry Hastings.
 # Licensed to the PSF under a contributor agreement.
 
-from test import support
+from test import support, test_tools
 from unittest import TestCase
 import collections
 import inspect
@@ -10,17 +10,10 @@ import os.path
 import sys
 import unittest
 
-
-clinic_path = os.path.join(os.path.dirname(__file__), '..', '..', 'Tools', 'clinic')
-clinic_path = os.path.normpath(clinic_path)
-if not os.path.exists(clinic_path):
-    raise unittest.SkipTest(f'{clinic_path!r} path does not exist')
-sys.path.append(clinic_path)
-try:
+test_tools.skip_if_missing('clinic')
+with test_tools.imports_under_tool('clinic'):
     import clinic
     from clinic import DSLParser
-finally:
-    del sys.path[-1]
 
 
 class FakeConverter:

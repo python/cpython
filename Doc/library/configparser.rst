@@ -313,6 +313,8 @@ from ``get()`` calls.
       my_dir: %(home_dir)s/lumberjack
       my_pictures: %(my_dir)s/Pictures
 
+      [Escape]
+      gain: 80%%  # use a %% to escape the % sign (% is the only character that needs to be escaped)
 
    In the example above, :class:`ConfigParser` with *interpolation* set to
    ``BasicInterpolation()`` would resolve ``%(home_dir)s`` to the value of
@@ -345,6 +347,9 @@ from ``get()`` calls.
       home_dir: /Users
       my_dir: ${home_dir}/lumberjack
       my_pictures: ${my_dir}/Pictures
+
+      [Escape]
+      cost: $$80  # use a $$ to escape the $ sign ($ is the only character that needs to be escaped)
 
    Values from other sections can be fetched as well:
 

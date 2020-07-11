@@ -126,14 +126,19 @@ Number-theoretic and representation functions
    <https://code.activestate.com/recipes/393090/>`_\.
 
 
-.. function:: gcd(a, b)
+.. function:: gcd(*integers)
 
-   Return the greatest common divisor of the integers *a* and *b*.  If either
-   *a* or *b* is nonzero, then the value of ``gcd(a, b)`` is the largest
-   positive integer that divides both *a* and *b*.  ``gcd(0, 0)`` returns
-   ``0``.
+   Return the greatest common divisor of the specified integer arguments.
+   If any of the arguments is nonzero, then the returned value is the largest
+   positive integer that is a divisor af all arguments.  If all arguments
+   are zero, then the returned value is ``0``.  ``gcd()`` without arguments
+   returns ``0``.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.9
+      Added support for an arbitrary number of arguments. Formerly, only two
+      arguments were supported.
 
 
 .. function:: isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)
@@ -201,6 +206,17 @@ Number-theoretic and representation functions
    .. versionadded:: 3.8
 
 
+.. function:: lcm(*integers)
+
+   Return the least common multiple of the specified integer arguments.
+   If all arguments are nonzero, then the returned value is the smallest
+   positive integer that is a multiple of all arguments.  If any of the arguments
+   is zero, then the returned value is ``0``.  ``lcm()`` without arguments
+   returns ``1``.
+
+   .. versionadded:: 3.9
+
+
 .. function:: ldexp(x, i)
 
    Return ``x * (2**i)``.  This is essentially the inverse of function
@@ -212,6 +228,23 @@ Number-theoretic and representation functions
    Return the fractional and integer parts of *x*.  Both results carry the sign
    of *x* and are floats.
 
+
+.. function:: nextafter(x, y)
+
+   Return the next floating-point value after *x* towards *y*.
+
+   If *x* is equal to *y*, return *y*.
+
+   Examples:
+
+   * ``math.nextafter(x, math.inf)`` goes up: towards positive infinity.
+   * ``math.nextafter(x, -math.inf)`` goes down: towards minus infinity.
+   * ``math.nextafter(x, 0.0)`` goes towards zero.
+   * ``math.nextafter(x, math.copysign(math.inf, x))`` goes away from zero.
+
+   See also :func:`math.ulp`.
+
+   .. versionadded:: 3.9
 
 .. function:: perm(n, k=None)
 
@@ -268,6 +301,30 @@ Number-theoretic and representation functions
    Return the :class:`~numbers.Real` value *x* truncated to an
    :class:`~numbers.Integral` (usually an integer). Delegates to
    :meth:`x.__trunc__() <object.__trunc__>`.
+
+.. function:: ulp(x)
+
+   Return the value of the least significant bit of the float *x*:
+
+   * If *x* is a NaN (not a number), return *x*.
+   * If *x* is negative, return ``ulp(-x)``.
+   * If *x* is a positive infinity, return *x*.
+   * If *x* is equal to zero, return the smallest positive
+     *denormalized* representable float (smaller than the minimum positive
+     *normalized* float, :data:`sys.float_info.min <sys.float_info>`).
+   * If *x* is equal to the largest positive representable float,
+     return the value of the least significant bit of *x*, such that the first
+     float smaller than *x* is ``x - ulp(x)``.
+   * Otherwise (*x* is a positive finite number), return the value of the least
+     significant bit of *x*, such that the first float bigger than *x*
+     is ``x + ulp(x)``.
+
+   ULP stands for "Unit in the Last Place".
+
+   See also :func:`math.nextafter` and :data:`sys.float_info.epsilon
+   <sys.float_info>`.
+
+   .. versionadded:: 3.9
 
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern
@@ -366,17 +423,20 @@ Trigonometric functions
 
 .. function:: acos(x)
 
-   Return the arc cosine of *x*, in radians.
+   Return the arc cosine of *x*, in radians. The result is between ``0`` and
+   ``pi``.
 
 
 .. function:: asin(x)
 
-   Return the arc sine of *x*, in radians.
+   Return the arc sine of *x*, in radians. The result is between ``-pi/2`` and
+   ``pi/2``.
 
 
 .. function:: atan(x)
 
-   Return the arc tangent of *x*, in radians.
+   Return the arc tangent of *x*, in radians. The result is between ``-pi/2`` and
+   ``pi/2``.
 
 
 .. function:: atan2(y, x)
@@ -397,7 +457,8 @@ Trigonometric functions
 .. function:: dist(p, q)
 
    Return the Euclidean distance between two points *p* and *q*, each
-   given as a tuple of coordinates.  The two tuples must be the same size.
+   given as a sequence (or iterable) of coordinates.  The two points
+   must have the same dimension.
 
    Roughly equivalent to::
 

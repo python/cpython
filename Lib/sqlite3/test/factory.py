@@ -98,16 +98,14 @@ class RowFactoryTests(unittest.TestCase):
 
     def CheckSqliteRowIndex(self):
         self.con.row_factory = sqlite.Row
-        row = self.con.execute("select 1 as a, 2 as b").fetchone()
+        row = self.con.execute("select 1 as a_1, 2 as b").fetchone()
         self.assertIsInstance(row, sqlite.Row)
 
-        col1, col2 = row["a"], row["b"]
-        self.assertEqual(col1, 1, "by name: wrong result for column 'a'")
-        self.assertEqual(col2, 2, "by name: wrong result for column 'a'")
+        self.assertEqual(row["a_1"], 1, "by name: wrong result for column 'a_1'")
+        self.assertEqual(row["b"], 2, "by name: wrong result for column 'b'")
 
-        col1, col2 = row["A"], row["B"]
-        self.assertEqual(col1, 1, "by name: wrong result for column 'A'")
-        self.assertEqual(col2, 2, "by name: wrong result for column 'B'")
+        self.assertEqual(row["A_1"], 1, "by name: wrong result for column 'A_1'")
+        self.assertEqual(row["B"], 2, "by name: wrong result for column 'B'")
 
         self.assertEqual(row[0], 1, "by index: wrong result for column 0")
         self.assertEqual(row[1], 2, "by index: wrong result for column 1")
@@ -117,11 +115,24 @@ class RowFactoryTests(unittest.TestCase):
         with self.assertRaises(IndexError):
             row['c']
         with self.assertRaises(IndexError):
+            row['a_\x11']
+        with self.assertRaises(IndexError):
+            row['a\x7f1']
+        with self.assertRaises(IndexError):
             row[2]
         with self.assertRaises(IndexError):
             row[-3]
         with self.assertRaises(IndexError):
             row[2**1000]
+
+    def CheckSqliteRowIndexUnicode(self):
+        self.con.row_factory = sqlite.Row
+        row = self.con.execute("select 1 as \xff").fetchone()
+        self.assertEqual(row["\xff"], 1)
+        with self.assertRaises(IndexError):
+            row['\u0178']
+        with self.assertRaises(IndexError):
+            row['\xdf']
 
     def CheckSqliteRowSlice(self):
         # A sqlite.Row can be sliced like a list.
@@ -169,19 +180,33 @@ class RowFactoryTests(unittest.TestCase):
         row_1 = self.con.execute("select 1 as a, 2 as b").fetchone()
         row_2 = self.con.execute("select 1 as a, 2 as b").fetchone()
         row_3 = self.con.execute("select 1 as a, 3 as b").fetchone()
+        row_4 = self.con.execute("select 1 as b, 2 as a").fetchone()
+        row_5 = self.con.execute("select 2 as b, 1 as a").fetchone()
 
-        self.assertEqual(row_1, row_1)
-        self.assertEqual(row_1, row_2)
-        self.assertTrue(row_2 != row_3)
+        self.assertTrue(row_1 == row_1)
+        self.assertTrue(row_1 == row_2)
+        self.assertFalse(row_1 == row_3)
+        self.assertFalse(row_1 == row_4)
+        self.assertFalse(row_1 == row_5)
+        self.assertFalse(row_1 == object())
 
         self.assertFalse(row_1 != row_1)
         self.assertFalse(row_1 != row_2)
-        self.assertFalse(row_2 == row_3)
+        self.assertTrue(row_1 != row_3)
+        self.assertTrue(row_1 != row_4)
+        self.assertTrue(row_1 != row_5)
+        self.assertTrue(row_1 != object())
 
-        self.assertEqual(row_1, row_2)
+        with self.assertRaises(TypeError):
+            row_1 > row_2
+        with self.assertRaises(TypeError):
+            row_1 < row_2
+        with self.assertRaises(TypeError):
+            row_1 >= row_2
+        with self.assertRaises(TypeError):
+            row_1 <= row_2
+
         self.assertEqual(hash(row_1), hash(row_2))
-        self.assertNotEqual(row_1, row_3)
-        self.assertNotEqual(hash(row_1), hash(row_3))
 
     def CheckSqliteRowAsSequence(self):
         """ Checks if the row object can act like a sequence """

@@ -4,8 +4,8 @@
 More Control Flow Tools
 ***********************
 
-Besides the :keyword:`while` statement just introduced, Python knows the usual
-control flow statements known from other languages, with some twists.
+Besides the :keyword:`while` statement just introduced, Python uses the usual
+flow control statements known from other languages, with some twists.
 
 
 .. _tut-if:
@@ -66,20 +66,23 @@ they appear in the sequence.  For example (no pun intended):
    window 6
    defenestrate 12
 
-If you need to modify the sequence you are iterating over while inside the loop
-(for example to duplicate selected items), it is recommended that you first
-make a copy.  Iterating over a sequence does not implicitly make a copy.  The
-slice notation makes this especially convenient::
+Code that modifies a collection while iterating over that same collection can
+be tricky to get right.  Instead, it is usually more straight-forward to loop
+over a copy of the collection or to create a new collection::
 
-   >>> for w in words[:]:  # Loop over a slice copy of the entire list.
-   ...     if len(w) > 6:
-   ...         words.insert(0, w)
-   ...
-   >>> words
-   ['defenestrate', 'cat', 'window', 'defenestrate']
+    # Create a sample collection
+    users = {'Hans': 'active', 'Éléonore': 'inactive', '景太郎': 'active'}
 
-With ``for w in words:``, the example would attempt to create an infinite list,
-inserting ``defenestrate`` over and over again.
+    # Strategy:  Iterate over a copy
+    for user, status in users.copy().items():
+        if status == 'inactive':
+            del users[user]
+
+    # Strategy:  Create a new collection
+    active_users = {}
+    for user, status in users.items():
+        if status == 'active':
+            active_users[user] = status
 
 
 .. _tut-range:
@@ -142,7 +145,7 @@ the list, thus saving space.
 We say such an object is :term:`iterable`, that is, suitable as a target for
 functions and constructs that expect something from which they can
 obtain successive items until the supply is exhausted.  We have seen that
-the :keyword:`for` statement is such a construct, while an example of function
+the :keyword:`for` statement is such a construct, while an example of a function
 that takes an iterable is :func:`sum`::
 
     >>> sum(range(4))  # 0 + 1 + 2 + 3
@@ -297,11 +300,10 @@ passed using *call by value* (where the *value* is always an object *reference*,
 not the value of the object). [#]_ When a function calls another function, a new
 local symbol table is created for that call.
 
-A function definition introduces the function name in the current symbol table.
-The value of the function name has a type that is recognized by the interpreter
-as a user-defined function.  This value can be assigned to another name which
-can then also be used as a function.  This serves as a general renaming
-mechanism::
+A function definition associates the function name with the function object in
+the current symbol table.  The interpreter recognizes the object pointed to by
+that name as a user-defined function.  Other names can also point to that same
+function object and can also be used to access the function::
 
    >>> fib
    <function fib at 10042ed0>
@@ -695,7 +697,7 @@ As guidance:
 * Use keyword-only when names have meaning and the function definition is
   more understandable by being explicit with names or you want to prevent
   users relying on the position of the argument being passed.
-* For an API, use positional-only to prevent prevent breaking API changes
+* For an API, use positional-only to prevent breaking API changes
   if the parameter's name is modified in the future.
 
 .. _tut-arbitraryargs:
@@ -920,7 +922,7 @@ extracted for you:
   bracketing constructs: ``a = f(1, 2) + g(3, 4)``.
 
 * Name your classes and functions consistently; the convention is to use
-  ``CamelCase`` for classes and ``lower_case_with_underscores`` for functions
+  ``UpperCamelCase`` for classes and ``lowercase_with_underscores`` for functions
   and methods.  Always use ``self`` as the name for the first method argument
   (see :ref:`tut-firstclasses` for more on classes and methods).
 

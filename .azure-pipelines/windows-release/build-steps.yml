@@ -43,7 +43,7 @@ steps:
 
 - powershell: |
     $env:SigningCertificate = $null
-    .\python.bat PC\layout -vv -t "$(Build.BinariesDirectory)\catalog" --catalog "${env:CAT}.cdf" --preset-default
+    $(_HostPython) PC\layout -vv -b "$(Build.BinariesDirectory)\bin" -t "$(Build.BinariesDirectory)\catalog" --catalog "${env:CAT}.cdf" --preset-default --arch $(Arch)
     makecat "${env:CAT}.cdf"
     del "${env:CAT}.cdf"
     if (-not (Test-Path "${env:CAT}.cat")) {
@@ -52,6 +52,7 @@ steps:
   displayName: 'Generate catalog'
   env:
     CAT: $(Build.BinariesDirectory)\bin\$(Arch)\python
+    PYTHON_HEXVERSION: $(VersionHex)
 
 - task: PublishPipelineArtifact@0
   displayName: 'Publish binaries'

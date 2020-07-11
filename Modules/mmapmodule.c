@@ -20,7 +20,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "structmember.h"
+#include <stddef.h>               // offsetof()
 
 #ifndef MS_WINDOWS
 #define UNIX
@@ -97,7 +97,7 @@ typedef struct {
 #else
     off_t       offset;
 #endif
-    int     exports;
+    Py_ssize_t  exports;
 
 #ifdef MS_WINDOWS
     HANDLE      map_handle;
@@ -692,7 +692,52 @@ mmap__exit__method(PyObject *self, PyObject *args)
 {
     _Py_IDENTIFIER(close);
 
-    return _PyObject_CallMethodId(self, &PyId_close, NULL);
+    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
+}
+
+static PyObject *
+mmap__repr__method(PyObject *self)
+{
+    mmap_object *mobj = (mmap_object *)self;
+
+#ifdef MS_WINDOWS
+#define _Py_FORMAT_OFFSET "lld"
+    if (mobj->map_handle == NULL)
+#elif defined(UNIX)
+# ifdef HAVE_LARGEFILE_SUPPORT
+# define _Py_FORMAT_OFFSET "lld"
+# else
+# define _Py_FORMAT_OFFSET "ld"
+# endif
+    if (mobj->data == NULL)
+#endif
+    {
+        return PyUnicode_FromFormat("<%s closed=True>", Py_TYPE(self)->tp_name);
+    } else {
+        const char *access_str;
+
+        switch (mobj->access) {
+            case ACCESS_DEFAULT:
+                access_str = "ACCESS_DEFAULT";
+                break;
+            case ACCESS_READ:
+                access_str = "ACCESS_READ";
+                break;
+            case ACCESS_WRITE:
+                access_str = "ACCESS_WRITE";
+                break;
+            case ACCESS_COPY:
+                access_str = "ACCESS_COPY";
+                break;
+            default:
+                Py_UNREACHABLE();
+        }
+
+        return PyUnicode_FromFormat("<%s closed=False, access=%s, length=%zd, "
+                                    "pos=%zd, offset=%" _Py_FORMAT_OFFSET ">",
+                                    Py_TYPE(self)->tp_name, access_str,
+                                    mobj->size, mobj->pos, mobj->offset);
+    }
 }
 
 #ifdef MS_WINDOWS
@@ -1044,23 +1089,23 @@ static PyTypeObject mmap_object_type = {
     sizeof(mmap_object),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor) mmap_object_dealloc,           /* tp_dealloc */
+    (destructor)mmap_object_dealloc,            /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
+    (reprfunc)mmap__repr__method,               /* tp_repr */
     0,                                          /* tp_as_number */
-    &mmap_as_sequence,                          /*tp_as_sequence*/
-    &mmap_as_mapping,                           /*tp_as_mapping*/
-    0,                                          /*tp_hash*/
-    0,                                          /*tp_call*/
-    0,                                          /*tp_str*/
-    PyObject_GenericGetAttr,                    /*tp_getattro*/
-    0,                                          /*tp_setattro*/
-    &mmap_as_buffer,                            /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /*tp_flags*/
-    mmap_doc,                                   /*tp_doc*/
+    &mmap_as_sequence,                          /* tp_as_sequence */
+    &mmap_as_mapping,                           /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    &mmap_as_buffer,                            /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    mmap_doc,                                   /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -1464,153 +1509,163 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 }
 #endif /* MS_WINDOWS */
 
-static void
-setint(PyObject *d, const char *name, long value)
+static int
+mmap_exec(PyObject *module)
 {
-    PyObject *o = PyLong_FromLong(value);
-    if (o && PyDict_SetItemString(d, name, o) == 0) {
-        Py_DECREF(o);
+    if (PyType_Ready(&mmap_object_type) < 0) {
+        return -1;
     }
+
+    Py_INCREF(PyExc_OSError);
+    if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
+        Py_DECREF(PyExc_OSError);
+        return -1;
+    }
+    if (PyModule_AddType(module, &mmap_object_type) < 0) {
+        return -1;
+    }
+
+#define ADD_INT_MACRO(module, constant)                                     \
+    do {                                                                    \
+        if (PyModule_AddIntConstant(module, #constant, constant) < 0) {     \
+            return -1;                                                      \
+        }                                                                   \
+    } while (0)
+
+#ifdef PROT_EXEC
+    ADD_INT_MACRO(module, PROT_EXEC);
+#endif
+#ifdef PROT_READ
+    ADD_INT_MACRO(module, PROT_READ);
+#endif
+#ifdef PROT_WRITE
+    ADD_INT_MACRO(module, PROT_WRITE);
+#endif
+
+#ifdef MAP_SHARED
+    ADD_INT_MACRO(module, MAP_SHARED);
+#endif
+#ifdef MAP_PRIVATE
+    ADD_INT_MACRO(module, MAP_PRIVATE);
+#endif
+#ifdef MAP_DENYWRITE
+    ADD_INT_MACRO(module, MAP_DENYWRITE);
+#endif
+#ifdef MAP_EXECUTABLE
+    ADD_INT_MACRO(module, MAP_EXECUTABLE);
+#endif
+#ifdef MAP_ANONYMOUS
+    if (PyModule_AddIntConstant(module, "MAP_ANON", MAP_ANONYMOUS) < 0 ) {
+        return -1;
+    }
+    ADD_INT_MACRO(module, MAP_ANONYMOUS);
+#endif
+#ifdef MAP_POPULATE
+    ADD_INT_MACRO(module, MAP_POPULATE);
+#endif
+    if (PyModule_AddIntConstant(module, "PAGESIZE", (long)my_getpagesize()) < 0 ) {
+        return -1;
+    }
+
+    if (PyModule_AddIntConstant(module, "ALLOCATIONGRANULARITY", (long)my_getallocationgranularity()) < 0 ) {
+        return -1;
+    }
+
+    ADD_INT_MACRO(module, ACCESS_DEFAULT);
+    ADD_INT_MACRO(module, ACCESS_READ);
+    ADD_INT_MACRO(module, ACCESS_WRITE);
+    ADD_INT_MACRO(module, ACCESS_COPY);
+
+#ifdef HAVE_MADVISE
+    // Conventional advice values
+#ifdef MADV_NORMAL
+    ADD_INT_MACRO(module, MADV_NORMAL);
+#endif
+#ifdef MADV_RANDOM
+    ADD_INT_MACRO(module, MADV_RANDOM);
+#endif
+#ifdef MADV_SEQUENTIAL
+    ADD_INT_MACRO(module, MADV_SEQUENTIAL);
+#endif
+#ifdef MADV_WILLNEED
+    ADD_INT_MACRO(module, MADV_WILLNEED);
+#endif
+#ifdef MADV_DONTNEED
+    ADD_INT_MACRO(module, MADV_DONTNEED);
+#endif
+
+    // Linux-specific advice values
+#ifdef MADV_REMOVE
+    ADD_INT_MACRO(module, MADV_REMOVE);
+#endif
+#ifdef MADV_DONTFORK
+    ADD_INT_MACRO(module, MADV_DONTFORK);
+#endif
+#ifdef MADV_DOFORK
+    ADD_INT_MACRO(module, MADV_DOFORK);
+#endif
+#ifdef MADV_HWPOISON
+    ADD_INT_MACRO(module, MADV_HWPOISON);
+#endif
+#ifdef MADV_MERGEABLE
+    ADD_INT_MACRO(module, MADV_MERGEABLE);
+#endif
+#ifdef MADV_UNMERGEABLE
+    ADD_INT_MACRO(module, MADV_UNMERGEABLE);
+#endif
+#ifdef MADV_SOFT_OFFLINE
+    ADD_INT_MACRO(module, MADV_SOFT_OFFLINE);
+#endif
+#ifdef MADV_HUGEPAGE
+    ADD_INT_MACRO(module, MADV_HUGEPAGE);
+#endif
+#ifdef MADV_NOHUGEPAGE
+    ADD_INT_MACRO(module, MADV_NOHUGEPAGE);
+#endif
+#ifdef MADV_DONTDUMP
+    ADD_INT_MACRO(module, MADV_DONTDUMP);
+#endif
+#ifdef MADV_DODUMP
+    ADD_INT_MACRO(module, MADV_DODUMP);
+#endif
+#ifdef MADV_FREE // (Also present on FreeBSD and macOS.)
+    ADD_INT_MACRO(module, MADV_FREE);
+#endif
+
+    // FreeBSD-specific
+#ifdef MADV_NOSYNC
+    ADD_INT_MACRO(module, MADV_NOSYNC);
+#endif
+#ifdef MADV_AUTOSYNC
+    ADD_INT_MACRO(module, MADV_AUTOSYNC);
+#endif
+#ifdef MADV_NOCORE
+    ADD_INT_MACRO(module, MADV_NOCORE);
+#endif
+#ifdef MADV_CORE
+    ADD_INT_MACRO(module, MADV_CORE);
+#endif
+#ifdef MADV_PROTECT
+    ADD_INT_MACRO(module, MADV_PROTECT);
+#endif
+#endif // HAVE_MADVISE
+    return 0;
 }
 
+static PyModuleDef_Slot mmap_slots[] = {
+    {Py_mod_exec, mmap_exec},
+    {0, NULL}
+};
 
 static struct PyModuleDef mmapmodule = {
     PyModuleDef_HEAD_INIT,
-    "mmap",
-    NULL,
-    -1,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "mmap",
+    .m_size = 0,
+    .m_slots = mmap_slots,
 };
 
 PyMODINIT_FUNC
 PyInit_mmap(void)
 {
-    PyObject *dict, *module;
-
-    if (PyType_Ready(&mmap_object_type) < 0)
-        return NULL;
-
-    module = PyModule_Create(&mmapmodule);
-    if (module == NULL)
-        return NULL;
-    dict = PyModule_GetDict(module);
-    if (!dict)
-        return NULL;
-    PyDict_SetItemString(dict, "error", PyExc_OSError);
-    PyDict_SetItemString(dict, "mmap", (PyObject*) &mmap_object_type);
-#ifdef PROT_EXEC
-    setint(dict, "PROT_EXEC", PROT_EXEC);
-#endif
-#ifdef PROT_READ
-    setint(dict, "PROT_READ", PROT_READ);
-#endif
-#ifdef PROT_WRITE
-    setint(dict, "PROT_WRITE", PROT_WRITE);
-#endif
-
-#ifdef MAP_SHARED
-    setint(dict, "MAP_SHARED", MAP_SHARED);
-#endif
-#ifdef MAP_PRIVATE
-    setint(dict, "MAP_PRIVATE", MAP_PRIVATE);
-#endif
-#ifdef MAP_DENYWRITE
-    setint(dict, "MAP_DENYWRITE", MAP_DENYWRITE);
-#endif
-#ifdef MAP_EXECUTABLE
-    setint(dict, "MAP_EXECUTABLE", MAP_EXECUTABLE);
-#endif
-#ifdef MAP_ANONYMOUS
-    setint(dict, "MAP_ANON", MAP_ANONYMOUS);
-    setint(dict, "MAP_ANONYMOUS", MAP_ANONYMOUS);
-#endif
-
-    setint(dict, "PAGESIZE", (long)my_getpagesize());
-
-    setint(dict, "ALLOCATIONGRANULARITY", (long)my_getallocationgranularity());
-
-    setint(dict, "ACCESS_DEFAULT", ACCESS_DEFAULT);
-    setint(dict, "ACCESS_READ", ACCESS_READ);
-    setint(dict, "ACCESS_WRITE", ACCESS_WRITE);
-    setint(dict, "ACCESS_COPY", ACCESS_COPY);
-
-#ifdef HAVE_MADVISE
-    // Conventional advice values
-#ifdef MADV_NORMAL
-    setint(dict, "MADV_NORMAL", MADV_NORMAL);
-#endif
-#ifdef MADV_RANDOM
-    setint(dict, "MADV_RANDOM", MADV_RANDOM);
-#endif
-#ifdef MADV_SEQUENTIAL
-    setint(dict, "MADV_SEQUENTIAL", MADV_SEQUENTIAL);
-#endif
-#ifdef MADV_WILLNEED
-    setint(dict, "MADV_WILLNEED", MADV_WILLNEED);
-#endif
-#ifdef MADV_DONTNEED
-    setint(dict, "MADV_DONTNEED", MADV_DONTNEED);
-#endif
-
-    // Linux-specific advice values
-#ifdef MADV_REMOVE
-    setint(dict, "MADV_REMOVE", MADV_REMOVE);
-#endif
-#ifdef MADV_DONTFORK
-    setint(dict, "MADV_DONTFORK", MADV_DONTFORK);
-#endif
-#ifdef MADV_DOFORK
-    setint(dict, "MADV_DOFORK", MADV_DOFORK);
-#endif
-#ifdef MADV_HWPOISON
-    setint(dict, "MADV_HWPOISON", MADV_HWPOISON);
-#endif
-#ifdef MADV_MERGEABLE
-    setint(dict, "MADV_MERGEABLE", MADV_MERGEABLE);
-#endif
-#ifdef MADV_UNMERGEABLE
-    setint(dict, "MADV_UNMERGEABLE", MADV_UNMERGEABLE);
-#endif
-#ifdef MADV_SOFT_OFFLINE
-    setint(dict, "MADV_SOFT_OFFLINE", MADV_SOFT_OFFLINE);
-#endif
-#ifdef MADV_HUGEPAGE
-    setint(dict, "MADV_HUGEPAGE", MADV_HUGEPAGE);
-#endif
-#ifdef MADV_NOHUGEPAGE
-    setint(dict, "MADV_NOHUGEPAGE", MADV_NOHUGEPAGE);
-#endif
-#ifdef MADV_DONTDUMP
-    setint(dict, "MADV_DONTDUMP", MADV_DONTDUMP);
-#endif
-#ifdef MADV_DODUMP
-    setint(dict, "MADV_DODUMP", MADV_DODUMP);
-#endif
-#ifdef MADV_FREE // (Also present on FreeBSD and macOS.)
-    setint(dict, "MADV_FREE", MADV_FREE);
-#endif
-
-    // FreeBSD-specific
-#ifdef MADV_NOSYNC
-    setint(dict, "MADV_NOSYNC", MADV_NOSYNC);
-#endif
-#ifdef MADV_AUTOSYNC
-    setint(dict, "MADV_AUTOSYNC", MADV_AUTOSYNC);
-#endif
-#ifdef MADV_NOCORE
-    setint(dict, "MADV_NOCORE", MADV_NOCORE);
-#endif
-#ifdef MADV_CORE
-    setint(dict, "MADV_CORE", MADV_CORE);
-#endif
-#ifdef MADV_PROTECT
-    setint(dict, "MADV_PROTECT", MADV_PROTECT);
-#endif
-#endif // HAVE_MADVISE
-
-    return module;
+    return PyModuleDef_Init(&mmapmodule);
 }

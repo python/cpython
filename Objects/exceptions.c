@@ -8,10 +8,8 @@
 #include <Python.h>
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
-#include "osdefs.h"
+#include "structmember.h"         // PyMemberDef
+#include "osdefs.h"               // SEP
 
 
 /* Compatibility aliases */
@@ -21,8 +19,13 @@ PyObject *PyExc_IOError = NULL;
 PyObject *PyExc_WindowsError = NULL;
 #endif
 
-/* The dict map from errno codes to OSError subclasses */
-static PyObject *errnomap = NULL;
+
+static struct _Py_exc_state*
+get_exc_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->exc_state;
+}
 
 
 /* NOTE: If the exception class hierarchy changes, don't forget to update
@@ -306,22 +309,33 @@ static PyGetSetDef BaseException_getset[] = {
 };
 
 
+static inline PyBaseExceptionObject*
+_PyBaseExceptionObject_cast(PyObject *exc)
+{
+    assert(PyExceptionInstance_Check(exc));
+    return (PyBaseExceptionObject *)exc;
+}
+
+
 PyObject *
-PyException_GetTraceback(PyObject *self) {
-    PyBaseExceptionObject *base_self = (PyBaseExceptionObject *)self;
+PyException_GetTraceback(PyObject *self)
+{
+    PyBaseExceptionObject *base_self = _PyBaseExceptionObject_cast(self);
     Py_XINCREF(base_self->traceback);
     return base_self->traceback;
 }
 
 
 int
-PyException_SetTraceback(PyObject *self, PyObject *tb) {
-    return BaseException_set_tb((PyBaseExceptionObject *)self, tb, NULL);
+PyException_SetTraceback(PyObject *self, PyObject *tb)
+{
+    return BaseException_set_tb(_PyBaseExceptionObject_cast(self), tb, NULL);
 }
 
 PyObject *
-PyException_GetCause(PyObject *self) {
-    PyObject *cause = ((PyBaseExceptionObject *)self)->cause;
+PyException_GetCause(PyObject *self)
+{
+    PyObject *cause = _PyBaseExceptionObject_cast(self)->cause;
     Py_XINCREF(cause);
     return cause;
 }
@@ -330,13 +344,15 @@ PyException_GetCause(PyObject *self) {
 void
 PyException_SetCause(PyObject *self, PyObject *cause)
 {
-    ((PyBaseExceptionObject *)self)->suppress_context = 1;
-    Py_XSETREF(((PyBaseExceptionObject *)self)->cause, cause);
+    PyBaseExceptionObject *base_self = _PyBaseExceptionObject_cast(self);
+    base_self->suppress_context = 1;
+    Py_XSETREF(base_self->cause, cause);
 }
 
 PyObject *
-PyException_GetContext(PyObject *self) {
-    PyObject *context = ((PyBaseExceptionObject *)self)->context;
+PyException_GetContext(PyObject *self)
+{
+    PyObject *context = _PyBaseExceptionObject_cast(self)->context;
     Py_XINCREF(context);
     return context;
 }
@@ -345,7 +361,7 @@ PyException_GetContext(PyObject *self) {
 void
 PyException_SetContext(PyObject *self, PyObject *context)
 {
-    Py_XSETREF(((PyBaseExceptionObject *)self)->context, context);
+    Py_XSETREF(_PyBaseExceptionObject_cast(self)->context, context);
 }
 
 #undef PyExceptionClass_Name
@@ -353,6 +369,7 @@ PyException_SetContext(PyObject *self, PyObject *context)
 const char *
 PyExceptionClass_Name(PyObject *ob)
 {
+    assert(PyExceptionClass_Check(ob));
     return ((PyTypeObject*)ob)->tp_name;
 }
 
@@ -405,7 +422,7 @@ static PyTypeObject _PyExc_BaseException = {
     BaseException_new,          /* tp_new */
 };
 /* the CPython API expects exceptions to be (PyObject *) - both a hold-over
-from the previous implmentation and also allowing Python objects to be used
+from the previous implementation and also allowing Python objects to be used
 in the API */
 PyObject *PyExc_BaseException = (PyObject *)&_PyExc_BaseException;
 
@@ -875,7 +892,7 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
 
     /* self->filename will remain Py_None otherwise */
     if (filename && filename != Py_None) {
-        if (Py_TYPE(self) == (PyTypeObject *) PyExc_BlockingIOError &&
+        if (Py_IS_TYPE(self, (PyTypeObject *) PyExc_BlockingIOError) &&
             PyNumber_Check(filename)) {
             /* BlockingIOError's 3rd argument can be the number of
              * characters written.
@@ -973,10 +990,11 @@ OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             ))
             goto error;
 
+        struct _Py_exc_state *state = get_exc_state();
         if (myerrno && PyLong_Check(myerrno) &&
-            errnomap && (PyObject *) type == PyExc_OSError) {
+            state->errnomap && (PyObject *) type == PyExc_OSError) {
             PyObject *newtype;
-            newtype = PyDict_GetItemWithError(errnomap, myerrno);
+            newtype = PyDict_GetItemWithError(state->errnomap, myerrno);
             if (newtype) {
                 assert(PyType_Check(newtype));
                 type = (PyTypeObject *) newtype;
@@ -1379,7 +1397,7 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
          * Only applies to SyntaxError instances, not to subclasses such
          * as TabError or IndentationError (see issue #31161)
          */
-        if ((PyObject*)Py_TYPE(self) == PyExc_SyntaxError &&
+        if (Py_IS_TYPE(self, (PyTypeObject *)PyExc_SyntaxError) &&
                 self->text && PyUnicode_Check(self->text) &&
                 _report_missing_parentheses(self) < 0) {
             return -1;
@@ -1428,7 +1446,7 @@ my_basename(PyObject *name)
 {
     Py_ssize_t i, size, offset;
     int kind;
-    void *data;
+    const void *data;
 
     if (PyUnicode_READY(name))
         return NULL;
@@ -1437,11 +1455,13 @@ my_basename(PyObject *name)
     size = PyUnicode_GET_LENGTH(name);
     offset = 0;
     for(i=0; i < size; i++) {
-        if (PyUnicode_READ(kind, data, i) == SEP)
+        if (PyUnicode_READ(kind, data, i) == SEP) {
             offset = i + 1;
+        }
     }
-    if (offset != 0)
+    if (offset != 0) {
         return PyUnicode_Substring(name, offset, size);
+    }
     else {
         Py_INCREF(name);
         return name;
@@ -1519,13 +1539,6 @@ ComplexExtendsException(PyExc_Exception, SyntaxError, SyntaxError,
  */
 MiddlingExtendsException(PyExc_SyntaxError, IndentationError, SyntaxError,
                          "Improper indentation.");
-
-
-/*
- *    TargetScopeError extends SyntaxError
- */
-MiddlingExtendsException(PyExc_SyntaxError, TargetScopeError, SyntaxError,
-                         "Improper scope target.");
 
 
 /*
@@ -2267,8 +2280,6 @@ SimpleExtendsException(PyExc_Exception, ReferenceError,
  */
 
 #define MEMERRORS_SAVE 16
-static PyBaseExceptionObject *memerrors_freelist = NULL;
-static int memerrors_numfree = 0;
 
 static PyObject *
 MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -2277,16 +2288,22 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (type != (PyTypeObject *) PyExc_MemoryError)
         return BaseException_new(type, args, kwds);
-    if (memerrors_freelist == NULL)
+
+    struct _Py_exc_state *state = get_exc_state();
+    if (state->memerrors_freelist == NULL) {
         return BaseException_new(type, args, kwds);
+    }
+
     /* Fetch object from freelist and revive it */
-    self = memerrors_freelist;
+    self = state->memerrors_freelist;
     self->args = PyTuple_New(0);
     /* This shouldn't happen since the empty tuple is persistent */
-    if (self->args == NULL)
+    if (self->args == NULL) {
         return NULL;
-    memerrors_freelist = (PyBaseExceptionObject *) self->dict;
-    memerrors_numfree--;
+    }
+
+    state->memerrors_freelist = (PyBaseExceptionObject *) self->dict;
+    state->memerrors_numfree--;
     self->dict = NULL;
     _Py_NewReference((PyObject *)self);
     _PyObject_GC_TRACK(self);
@@ -2298,12 +2315,15 @@ MemoryError_dealloc(PyBaseExceptionObject *self)
 {
     _PyObject_GC_UNTRACK(self);
     BaseException_clear(self);
-    if (memerrors_numfree >= MEMERRORS_SAVE)
+
+    struct _Py_exc_state *state = get_exc_state();
+    if (state->memerrors_numfree >= MEMERRORS_SAVE) {
         Py_TYPE(self)->tp_free((PyObject *)self);
+    }
     else {
-        self->dict = (PyObject *) memerrors_freelist;
-        memerrors_freelist = self;
-        memerrors_numfree++;
+        self->dict = (PyObject *) state->memerrors_freelist;
+        state->memerrors_freelist = self;
+        state->memerrors_numfree++;
     }
 }
 
@@ -2328,11 +2348,11 @@ preallocate_memerrors(void)
 }
 
 static void
-free_preallocated_memerrors(void)
+free_preallocated_memerrors(struct _Py_exc_state *state)
 {
-    while (memerrors_freelist != NULL) {
-        PyObject *self = (PyObject *) memerrors_freelist;
-        memerrors_freelist = (PyBaseExceptionObject *) memerrors_freelist->dict;
+    while (state->memerrors_freelist != NULL) {
+        PyObject *self = (PyObject *) state->memerrors_freelist;
+        state->memerrors_freelist = (PyBaseExceptionObject *)state->memerrors_freelist->dict;
         Py_TYPE(self)->tp_free((PyObject *)self);
     }
 }
@@ -2500,8 +2520,10 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #endif /* MS_WINDOWS */
 
 PyStatus
-_PyExc_Init(void)
+_PyExc_Init(PyThreadState *tstate)
 {
+    struct _Py_exc_state *state = &tstate->interp->exc_state;
+
 #define PRE_INIT(TYPE) \
     if (!(_PyExc_ ## TYPE.tp_flags & Py_TPFLAGS_READY)) { \
         if (PyType_Ready(&_PyExc_ ## TYPE) < 0) { \
@@ -2514,7 +2536,7 @@ _PyExc_Init(void)
     do { \
         PyObject *_code = PyLong_FromLong(CODE); \
         assert(_PyObject_RealIsSubclass(PyExc_ ## TYPE, PyExc_OSError)); \
-        if (!_code || PyDict_SetItem(errnomap, _code, PyExc_ ## TYPE)) \
+        if (!_code || PyDict_SetItem(state->errnomap, _code, PyExc_ ## TYPE)) \
             return _PyStatus_ERR("errmap insertion problem."); \
         Py_DECREF(_code); \
     } while (0)
@@ -2539,7 +2561,6 @@ _PyExc_Init(void)
     PRE_INIT(AttributeError);
     PRE_INIT(SyntaxError);
     PRE_INIT(IndentationError);
-    PRE_INIT(TargetScopeError);
     PRE_INIT(TabError);
     PRE_INIT(LookupError);
     PRE_INIT(IndexError);
@@ -2589,15 +2610,14 @@ _PyExc_Init(void)
     PRE_INIT(TimeoutError);
 
     if (preallocate_memerrors() < 0) {
-        return _PyStatus_ERR("Could not preallocate MemoryError object");
+        return _PyStatus_NO_MEMORY();
     }
 
     /* Add exceptions to errnomap */
-    if (!errnomap) {
-        errnomap = PyDict_New();
-        if (!errnomap) {
-            return _PyStatus_ERR("Cannot allocate map from errnos to OSError subclasses");
-        }
+    assert(state->errnomap == NULL);
+    state->errnomap = PyDict_New();
+    if (!state->errnomap) {
+        return _PyStatus_NO_MEMORY();
     }
 
     ADD_ERRNO(BlockingIOError, EAGAIN);
@@ -2680,7 +2700,6 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     POST_INIT(AttributeError);
     POST_INIT(SyntaxError);
     POST_INIT(IndentationError);
-    POST_INIT(TargetScopeError);
     POST_INIT(TabError);
     POST_INIT(LookupError);
     POST_INIT(IndexError);
@@ -2736,10 +2755,11 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
 }
 
 void
-_PyExc_Fini(void)
+_PyExc_Fini(PyThreadState *tstate)
 {
-    free_preallocated_memerrors();
-    Py_CLEAR(errnomap);
+    struct _Py_exc_state *state = &tstate->interp->exc_state;
+    free_preallocated_memerrors(state);
+    Py_CLEAR(state->errnomap);
 }
 
 /* Helper to do the equivalent of "raise X from Y" in C, but always using
@@ -2962,7 +2982,7 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     static PyObject *exec_prefix = NULL;
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text), match;
     int kind = PyUnicode_KIND(self->text);
-    void *data = PyUnicode_DATA(self->text);
+    const void *data = PyUnicode_DATA(self->text);
 
     /* Ignore leading whitespace */
     while (start < text_len) {

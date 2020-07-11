@@ -27,7 +27,7 @@ See :pep:`405` for more information about Python virtual environments.
 .. seealso::
 
    `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/installing/#creating-virtual-environments>`__
+   <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`__
 
 
 Creating virtual environments
@@ -47,7 +47,7 @@ Creating virtual environments
    A virtual environment is a directory tree which contains Python executable
    files and other files which indicate that it is a virtual environment.
 
-   Common installation tools such as ``Setuptools`` and ``pip`` work as
+   Common installation tools such as setuptools_ and pip_ work as
    expected with virtual environments. In other words, when a virtual
    environment is active, they install Python packages into the virtual
    environment without needing to be told to do so explicitly.
@@ -64,24 +64,25 @@ Creating virtual environments
    Python installation).
 
    When a virtual environment is active, any options that change the
-   installation path will be ignored from all distutils configuration files to
-   prevent projects being inadvertently installed outside of the virtual
-   environment.
+   installation path will be ignored from all :mod:`distutils` configuration
+   files to prevent projects being inadvertently installed outside of the
+   virtual environment.
 
    When working in a command shell, users can make a virtual environment active
    by running an ``activate`` script in the virtual environment's executables
-   directory (the precise filename is shell-dependent), which prepends the
-   virtual environment's directory for executables to the ``PATH`` environment
-   variable for the running shell. There should be no need in other
-   circumstances to activate a virtual environment—scripts installed into
-   virtual environments have a "shebang" line which points to the virtual
-   environment's Python interpreter. This means that the script will run with
-   that interpreter regardless of the value of ``PATH``. On Windows, "shebang"
-   line processing is supported if you have the Python Launcher for Windows
-   installed (this was added to Python in 3.3 - see :pep:`397` for more
-   details). Thus, double-clicking an installed script in a Windows Explorer
-   window should run the script with the correct interpreter without there
-   needing to be any reference to its virtual environment in ``PATH``.
+   directory (the precise filename and command to use the file is
+   shell-dependent), which prepends the virtual environment's directory for
+   executables to the ``PATH`` environment variable for the running shell. There
+   should be no need in other circumstances to activate a virtual
+   environment; scripts installed into virtual environments have a "shebang"
+   line which points to the virtual environment's Python interpreter. This means
+   that the script will run with that interpreter regardless of the value of
+   ``PATH``. On Windows, "shebang" line processing is supported if you have the
+   Python Launcher for Windows installed (this was added to Python in 3.3 - see
+   :pep:`397` for more details). Thus, double-clicking an installed script in a
+   Windows Explorer window should run the script with the correct interpreter
+   without there needing to be any reference to its virtual environment in
+   ``PATH``.
 
 
 .. _venv-api:
@@ -121,7 +122,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     * ``prompt`` -- a String to be used after virtual environment is activated
       (defaults to ``None`` which means directory name of the environment would
-      be used).
+      be used). If the special string ``"."`` is provided, the basename of the
+      current directory is used as the prompt.
 
     * ``upgrade_deps`` -- Update the base venv modules to the latest on PyPI
 
@@ -131,24 +133,24 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. versionadded:: 3.6
        Added the ``prompt`` parameter
 
-    .. versionadded:: 3.8
+    .. versionadded:: 3.9
        Added the ``upgrade_deps`` parameter
 
     Creators of third-party virtual environment tools will be free to use the
-    provided ``EnvBuilder`` class as a base class.
+    provided :class:`EnvBuilder` class as a base class.
 
     The returned env-builder is an object which has a method, ``create``:
 
     .. method:: create(env_dir)
 
-        This method takes as required argument the path (absolute or relative to
-        the current directory) of the target directory which is to contain the
+        Create a virtual environment by specifying the target directory
+        (absolute or relative to the current directory) which is to contain the
         virtual environment.  The ``create`` method will either create the
         environment in the specified directory, or raise an appropriate
         exception.
 
-        The ``create`` method of the ``EnvBuilder`` class illustrates the hooks
-        available for subclass customization::
+        The ``create`` method of the :class:`EnvBuilder` class illustrates the
+        hooks available for subclass customization::
 
             def create(self, env_dir):
                 """
@@ -189,6 +191,14 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
         Installs activation scripts appropriate to the platform into the virtual
         environment.
+
+    .. method:: upgrade_dependencies(context)
+
+       Upgrades the core venv dependency packages (currently ``pip`` and
+       ``setuptools``) in the environment. This is done by shelling out to the
+       ``pip`` executable in the environment.
+
+       .. versionadded:: 3.9
 
     .. method:: post_setup(context)
 
@@ -239,7 +249,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
 There is also a module-level convenience function:
 
 .. function:: create(env_dir, system_site_packages=False, clear=False, \
-                     symlinks=False, with_pip=False, prompt=None)
+                     symlinks=False, with_pip=False, prompt=None, \
+                     upgrade_deps=False)
 
     Create an :class:`EnvBuilder` with the given keyword arguments, and call its
     :meth:`~EnvBuilder.create` method with the *env_dir* argument.
@@ -251,6 +262,9 @@ There is also a module-level convenience function:
 
     .. versionchanged:: 3.6
        Added the ``prompt`` parameter
+
+    .. versionchanged:: 3.9
+       Added the ``upgrade_deps`` parameter
 
 An example of extending ``EnvBuilder``
 --------------------------------------
@@ -272,9 +286,9 @@ subclass which installs setuptools and pip into a created virtual environment::
         This builder installs setuptools and pip so that you can pip or
         easy_install other packages into the created virtual environment.
 
-        :param nodist: If True, setuptools and pip are not installed into the
+        :param nodist: If true, setuptools and pip are not installed into the
                        created virtual environment.
-        :param nopip: If True, pip is not installed into the created
+        :param nopip: If true, pip is not installed into the created
                       virtual environment.
         :param progress: If setuptools or pip are installed, the progress of the
                          installation can be monitored by passing a progress
@@ -476,3 +490,7 @@ subclass which installs setuptools and pip into a created virtual environment::
 
 This script is also available for download `online
 <https://gist.github.com/vsajip/4673395>`_.
+
+
+.. _setuptools: https://pypi.org/project/setuptools/
+.. _pip: https://pypi.org/project/pip/

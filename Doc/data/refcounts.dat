@@ -234,9 +234,26 @@ PyCode_Check:PyObject*:co:0:
 PyCode_GetNumFree:int:::
 PyCode_GetNumFree:PyCodeObject*:co:0:
 
+PyCode_NewWithPosOnlyArgs:PyCodeObject*::+1:
+PyCode_NewWithPosOnlyArgs:int:argcount::
+PyCode_NewWithPosOnlyArgs:int:posonlyargcount::
+PyCode_NewWithPosOnlyArgs:int:kwonlyargcount::
+PyCode_NewWithPosOnlyArgs:int:nlocals::
+PyCode_NewWithPosOnlyArgs:int:stacksize::
+PyCode_NewWithPosOnlyArgs:int:flags::
+PyCode_NewWithPosOnlyArgs:PyObject*:code:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:consts:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:names:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:varnames:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:freevars:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:cellvars:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:filename:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:name:0:
+PyCode_NewWithPosOnlyArgs:int:firstlineno::
+PyCode_NewWithPosOnlyArgs:PyObject*:lnotab:0:
+
 PyCode_New:PyCodeObject*::+1:
 PyCode_New:int:argcount::
-PyCode_New:int:posonlyargcount::
 PyCode_New:int:kwonlyargcount::
 PyCode_New:int:nlocals::
 PyCode_New:int:stacksize::
@@ -1188,11 +1205,6 @@ PyLong_FromString:const char*:str::
 PyLong_FromString:char**:pend::
 PyLong_FromString:int:base::
 
-PyLong_FromUnicode:PyObject*::+1:
-PyLong_FromUnicode:Py_UNICODE*:u::
-PyLong_FromUnicode:Py_ssize_t:length::
-PyLong_FromUnicode:int:base::
-
 PyLong_FromUnicodeObject:PyObject*::+1:
 PyLong_FromUnicodeObject:PyObject*:u:0:
 PyLong_FromUnicodeObject:int:base::
@@ -1551,21 +1563,6 @@ PyOS_FSPath:PyObject*:path:0:
 PyObject_ASCII:PyObject*::+1:
 PyObject_ASCII:PyObject*:o:0:
 
-PyObject_AsCharBuffer:int:::
-PyObject_AsCharBuffer:PyObject*:obj:0:
-PyObject_AsCharBuffer:const char**:buffer::
-PyObject_AsCharBuffer:Py_ssize_t*:buffer_len::
-
-PyObject_AsReadBuffer:int:::
-PyObject_AsReadBuffer:PyObject*:obj:0:
-PyObject_AsReadBuffer:const void**:buffer::
-PyObject_AsReadBuffer:Py_ssize_t*:buffer_len::
-
-PyObject_AsWriteBuffer:int:::
-PyObject_AsWriteBuffer:PyObject*:obj:0:
-PyObject_AsWriteBuffer:void**:buffer::
-PyObject_AsWriteBuffer:Py_ssize_t*:buffer_len::
-
 PyObject_Bytes:PyObject*::+1:
 PyObject_Bytes:PyObject*:o:0:
 
@@ -1600,9 +1597,6 @@ PyObject_CallObject:PyObject*:args:0:
 
 PyObject_CheckBuffer:int:::
 PyObject_CheckBuffer:PyObject*:obj:0:
-
-PyObject_CheckReadBuffer:int:::
-PyObject_CheckReadBuffer:PyObject*:o:0:
 
 PyObject_DelAttr:int:::
 PyObject_DelAttr:PyObject*:o:0:
@@ -1656,7 +1650,8 @@ PyObject_GenericSetAttr:PyObject*:name:0:
 PyObject_GenericSetAttr:PyObject*:value:+1:
 
 PyObject_GenericSetDict:int:::
-PyObject_GenericSetDict:PyObject*:o:+1:
+PyObject_GenericSetDict:PyObject*:o:0:
+PyObject_GenericSetDict:PyObject*:value:+1:
 PyObject_GenericSetDict:void*:context::
 
 PyObject_GetAttr:PyObject*::+1:
@@ -2424,9 +2419,6 @@ PyUnicode_AsUnicodeAndSize:Py_UNICODE*:::
 PyUnicode_AsUnicodeAndSize:PyObject*:unicode:0:
 PyUnicode_AsUnicodeAndSize:Py_ssize_t*:size::
 
-PyUnicode_AsUnicodeCopy:Py_UNICODE*:::
-PyUnicode_AsUnicodeCopy:PyObject*:unicode:0:
-
 PyUnicode_GetSize:Py_ssize_t:::
 PyUnicode_GetSize:PyObject*:unicode:0:
 
@@ -2445,7 +2437,7 @@ PyUnicode_FromWideChar:Py_ssize_t:size::
 PyUnicode_AsWideChar:Py_ssize_t:::
 PyUnicode_AsWideChar:PyObject*:*unicode:0:
 PyUnicode_AsWideChar:wchar_t*:w::
-PyUnicode_AsWideChar:Pyssize_t:size::
+PyUnicode_AsWideChar:Py_ssize_t:size::
 
 PyUnicode_AsWideCharString:wchar_t*:::
 PyUnicode_AsWideCharString:PyObject*:unicode:0:
@@ -3027,8 +3019,6 @@ Py_XINCREF:void:::
 Py_XINCREF:PyObject*:o:+1:if o is not NULL
 
 _PyImport_Fini:void:::
-
-_PyImport_Init:void:::
 
 _PyObject_New:PyObject*::+1:
 _PyObject_New:PyTypeObject*:type:0:

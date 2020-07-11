@@ -165,9 +165,10 @@ Module functions and constants
    that 'mytype' is the type of the column. It will try to find an entry of
    'mytype' in the converters dictionary and then use the converter function found
    there to return the value. The column name found in :attr:`Cursor.description`
-   is only the first word of the column name, i.  e. if you use something like
-   ``'as "x [datetime]"'`` in your SQL, then we will parse out everything until the
-   first blank for the column name: the column name would simply be "x".
+   does not include the type, i. e. if you use something like
+   ``'as "Expiration date [datetime]"'`` in your SQL, then we will parse out
+   everything until the first ``'['`` for the column name and strip
+   the preceeding space: the column name would simply be "Expiration date".
 
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
@@ -223,6 +224,8 @@ Module functions and constants
 
    More information about this feature, including a list of recognized options, can
    be found in the `SQLite URI documentation <https://www.sqlite.org/uri.html>`_.
+
+   .. audit-event:: sqlite3.connect database sqlite3.connect
 
    .. versionchanged:: 3.4
       Added the *uri* parameter.
@@ -925,7 +928,7 @@ a class like this::
            self.x, self.y = x, y
 
 Now you want to store the point in a single SQLite column.  First you'll have to
-choose one of the supported types first to be used for representing the point.
+choose one of the supported types to be used for representing the point.
 Let's just use str and separate the coordinates using a semicolon. Then you need
 to give your class a method ``__conform__(self, protocol)`` which must return
 the converted value. The parameter *protocol* will be :class:`PrepareProtocol`.

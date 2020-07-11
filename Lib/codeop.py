@@ -57,6 +57,7 @@ Compile():
 """
 
 import __future__
+import warnings
 
 _features = [getattr(__future__, fname)
              for fname in __future__.all_feature_names]
@@ -80,23 +81,29 @@ def _maybe_compile(compiler, source, filename, symbol):
 
     try:
         code = compiler(source, filename, symbol)
-    except SyntaxError as err:
+    except SyntaxError:
         pass
 
-    try:
-        code1 = compiler(source + "\n", filename, symbol)
-    except SyntaxError as e:
-        err1 = e
+    # Suppress warnings after the first compile to avoid duplication.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        try:
+            code1 = compiler(source + "\n", filename, symbol)
+        except SyntaxError as e:
+            err1 = e
+
+        try:
+            code2 = compiler(source + "\n\n", filename, symbol)
+        except SyntaxError as e:
+            err2 = e
 
     try:
-        code2 = compiler(source + "\n\n", filename, symbol)
-    except SyntaxError as e:
-        err2 = e
-
-    if code:
-        return code
-    if not code1 and repr(err1) == repr(err2):
-        raise err1
+        if code:
+            return code
+        if not code1 and repr(err1) == repr(err2):
+            raise err1
+    finally:
+        err1 = err2 = None
 
 def _compile(source, filename, symbol):
     return compile(source, filename, symbol, PyCF_DONT_IMPLY_DEDENT)
@@ -109,7 +116,8 @@ def compile_command(source, filename="<input>", symbol="single"):
     source -- the source string; may contain \n characters
     filename -- optional filename from which source was read; default
                 "<input>"
-    symbol -- optional grammar start symbol; "single" (default) or "eval"
+    symbol -- optional grammar start symbol; "single" (default), "exec"
+              or "eval"
 
     Return value / exceptions raised:
 
@@ -130,7 +138,7 @@ class Compile:
         self.flags = PyCF_DONT_IMPLY_DEDENT
 
     def __call__(self, source, filename, symbol):
-        codeob = compile(source, filename, symbol, self.flags, 1)
+        codeob = compile(source, filename, symbol, self.flags, True)
         for feature in _features:
             if codeob.co_flags & feature.compiler_flag:
                 self.flags |= feature.compiler_flag
