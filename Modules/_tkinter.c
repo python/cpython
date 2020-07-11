@@ -366,12 +366,13 @@ static int mainloopwaitattempts = 10; // 1 second
 static int
 WaitForMainloop(TkappObject* self)
 {
-    int i;
+    int i = 0;
+    int max_attempts = mainloopwaitattempts;
     if (self->dispatching)
     {
         return 1;
     }
-    if (mainloopwaitattempts)
+    if (max_attempts)
     {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
             "It seems you are implicitly waiting for "
@@ -385,7 +386,7 @@ WaitForMainloop(TkappObject* self)
         }
 
     }
-    for (i = 0; i < mainloopwaitattempts; i++) {
+    for (i = 0; i < max_attempts; i++) {
         Py_BEGIN_ALLOW_THREADS
         Sleep(100);
         Py_END_ALLOW_THREADS
