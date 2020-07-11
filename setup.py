@@ -975,6 +975,9 @@ class PyBuildExt(build_ext):
                            ['_xxtestfuzz/_xxtestfuzz.c',
                             '_xxtestfuzz/fuzzer.c']))
 
+        # Test gettypeslots in extension modules
+        self.add(Extension('_testgettypeslots', ['_testgettypeslots.c']))
+
     def detect_readline_curses(self):
         # readline
         do_readline = self.compiler.find_library_file(self.lib_dirs, 'readline')
