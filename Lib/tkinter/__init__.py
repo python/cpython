@@ -599,7 +599,10 @@ def dispatching():
     """Determine if the Tkinter main loop is running.
 
     Returns True if the main loop is running.
-    Returns False if the main loop is not running."""
+    Returns False if the main loop is not running.
+
+    NOTE: Using update will dispatch events without the main
+          loop. Dispatching will return False in these cases."""
     return _default_root.tk.dispatching()
 
 
@@ -1433,7 +1436,10 @@ class Misc:
         """Determine if the Tkinter main loop is running.
 
         Returns True if the main loop is running.
-        Returns False if the main loop is not running."""
+        Returns False if the main loop is not running.
+
+        NOTE: Using update will dispatch events without the main
+              loop. Dispatching will return False in these cases."""
         return self.tk.dispatching()
 
     def quit(self):
@@ -1444,7 +1450,7 @@ class Misc:
         event, for example from a thread, the main loop will not exit
         until after the NEXT event is dispatched. If no more events are
         forthcoming, main loop will keep blocking even if quit has been
-        called. In that case, call after(0, quit) instead.
+        called. In that case, have the thread call after(0, quit) instead.
         """
         self.tk.quit()
 

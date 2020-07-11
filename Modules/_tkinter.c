@@ -3088,14 +3088,17 @@ _tkinter.tkapp.dispatching
 
 Returns the internal dispatching state
 
-Returns 0 if the mainloop is running.
-Returns 1 if the mainloop is not running.
+Returns True if the main loop is running.
+Returns False if the main loop is not running.
+
+NOTE: Using update or dooneevent will dispatch events without the main
+      loop. Dispatching will return False in these cases.
 
 [clinic start generated code]*/
 
 static PyObject *
 _tkinter_tkapp_dispatching_impl(TkappObject *self)
-/*[clinic end generated code: output=1b0192766b008005 input=25c6787f7a5f03f5]*/
+/*[clinic end generated code: output=1b0192766b008005 input=ff427bd1ca93bac4]*/
 {
     return PyBool_FromLong(self->dispatching);
 }
@@ -3111,16 +3114,23 @@ Set number of 100 millisecond mainloop wait attempts.
 These are used for that call(), var_invoke(), and createcommand().
 
 Current default is 10 for a 1 second wait, but future behavior
-will be equivalent to 0.
+will be equivalent to an unlimited number.
 
-Setting anything other than 0 will trigger a DeprecationWarning.
+Setting this will trigger a DeprecationWarning.
 
 [clinic start generated code]*/
 
 static PyObject *
 _tkinter_tkapp_setmainloopwaitattempts_impl(TkappObject *self, int new_val)
-/*[clinic end generated code: output=a0867fb187c8946e input=c9e2fc3f41fb6f47]*/
+/*[clinic end generated code: output=a0867fb187c8946e input=9965550e84594ac4]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "In future behavior, threads will wait indefinitely\n"
+        "for the main thread to dispatch. Consider polling dispatch()\n"
+        "before issuing commands from a thread instead.", 1))
+    {
+        return NULL;
+    }
     if (new_val < 0) 
     {
         PyErr_SetString(PyExc_ValueError,
@@ -3131,7 +3141,7 @@ _tkinter_tkapp_setmainloopwaitattempts_impl(TkappObject *self, int new_val)
     {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
             "It seems you want to wait for the mainloop to come up.\n"
-            "This behavior is deprecated; consider polling dispatch() instead.", 1))
+            "This behavior is deprecated; consider polling dispatching() instead.", 1))
         {
             return NULL;
         }

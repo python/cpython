@@ -658,8 +658,11 @@ PyDoc_STRVAR(_tkinter_tkapp_dispatching__doc__,
 "\n"
 "Returns the internal dispatching state\n"
 "\n"
-"Returns 0 if the mainloop is running.\n"
-"Returns 1 if the mainloop is not running.");
+"Returns True if the main loop is running.\n"
+"Returns False if the main loop is not running.\n"
+"\n"
+"NOTE: Using update or dooneevent will dispatch events without the main\n"
+"      loop. Dispatching will return False in these cases.");
 
 #define _TKINTER_TKAPP_DISPATCHING_METHODDEF    \
     {"dispatching", (PyCFunction)_tkinter_tkapp_dispatching, METH_NOARGS, _tkinter_tkapp_dispatching__doc__},
@@ -682,9 +685,9 @@ PyDoc_STRVAR(_tkinter_tkapp_setmainloopwaitattempts__doc__,
 "These are used for that call(), var_invoke(), and createcommand().\n"
 "\n"
 "Current default is 10 for a 1 second wait, but future behavior\n"
-"will be equivalent to 0.\n"
+"will be equivalent to an unlimited number.\n"
 "\n"
-"Setting anything other than 0 will trigger a DeprecationWarning.");
+"Setting this will trigger a DeprecationWarning.");
 
 #define _TKINTER_TKAPP_SETMAINLOOPWAITATTEMPTS_METHODDEF    \
     {"setmainloopwaitattempts", (PyCFunction)_tkinter_tkapp_setmainloopwaitattempts, METH_O, _tkinter_tkapp_setmainloopwaitattempts__doc__},
@@ -930,4 +933,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=111b16d638d0424b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=050579715b59903d input=a9049054013a1b77]*/
