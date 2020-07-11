@@ -3097,7 +3097,7 @@ static PyObject *
 _tkinter_tkapp_dispatching_impl(TkappObject *self)
 /*[clinic end generated code: output=1b0192766b008005 input=25c6787f7a5f03f5]*/
 {
-    return PyLong_FromLong(self->dispatching);
+    return PyBool_FromLong(self->dispatching);
 }
 
 /*[clinic input]
