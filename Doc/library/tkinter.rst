@@ -157,11 +157,20 @@ so, usually, to use Tkinter all you need is a simple import statement::
    an error after one second, :meth:`_tkinter.tkapp.call` will wait indefinitely
    for :meth:`Tk.mainloop` to come up, or for some other entity to dispatch the
    call. This method is essentially a promise to the thread that you "will dispatch" soon.
+   This method is deprecated and future behavior will be equivialent to calling this
+   function on load and after each invocation of :meth:`Tk.mainloop`.
 
 .. method:: _tkinter.tkapp.setmainloopwaitattempts(num=10)
 
    This method sets the number of 100 ms wait attempts of :meth:`_tkinter.tkapp.call`.
-   You can trigger an error immediately by setting num to 0.
+   You can trigger an error immediately by setting num to 0. This method is deprecated
+   and future behavior will be equivalent to setting an infinite number of attempts.
+
+.. method:: _tkinter.tkapp.dooneevent(flags=0)
+
+   Dispatches exactly one event from the Tcl event queue. Must be called from the same
+   thread as the Tcl interpreter. See Tcl documentation for Tcl_DoOneEvent() for information
+   on using the flags argument.
 
 Other modules that provide Tk support include:
 
