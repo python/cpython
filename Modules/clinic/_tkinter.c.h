@@ -682,7 +682,7 @@ PyDoc_STRVAR(_tkinter_tkapp_setmainloopwaitattempts__doc__,
 "\n"
 "Set number of 100 millisecond mainloop wait attempts.\n"
 "\n"
-"These are used for that call(), var_invoke(), and createcommand().\n"
+"These are used for threads that call(), var_invoke(), and createcommand().\n"
 "\n"
 "Current default is 10 for a 1 second wait, but future behavior\n"
 "will be equivalent to an unlimited number.\n"
@@ -933,4 +933,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=050579715b59903d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8a843a5f7728537c input=a9049054013a1b77]*/

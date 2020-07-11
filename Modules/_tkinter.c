@@ -372,20 +372,6 @@ WaitForMainloop(TkappObject* self)
     {
         return 1;
     }
-    if (max_attempts)
-    {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "It seems you are implicitly waiting for "
-            "the mainloop to come up.\n"
-            "This behavior is deprecated; consider polling "
-            "dispatching() instead.\n", 1))
-        {
-            /* return something nonzero, an error will be
-            raised elsewhere soon */
-            return -1;
-        }
-
-    }
     for (i = 0; i < max_attempts; i++) {
         Py_BEGIN_ALLOW_THREADS
         Sleep(100);
@@ -395,6 +381,14 @@ WaitForMainloop(TkappObject* self)
             return 1;
         }
     }
+    PyErr_WarnEx(PyExc_DeprecationWarning,
+        "It seems you are waiting for Tcl events "
+        "to be dispatched.\n"
+        "Future behavior will wait indefinitely. Adjust the wait time "
+        "limit with setmainloopwaitattempts().\n"
+        "If you want to avoid this wait consider polling "
+        "dispatching() before issuing commands from a thread.\n", 1
+    );
     PyErr_SetString(PyExc_RuntimeError, "main thread is not in main loop");
     return 0;
 }
@@ -3061,7 +3055,7 @@ _tkinter_tkapp_willdispatch_impl(TkappObject *self)
 /*[clinic end generated code: output=0e3f46d244642155 input=7b46376275304a4a]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-        "willdispatch() is deprecated; consider polling dispatch() instead.", 1))
+        "willdispatch() is deprecated; in the future it will have no effect.", 1))
     {
         return NULL;
     }
@@ -3098,7 +3092,7 @@ _tkinter.tkapp.setmainloopwaitattempts
 
 Set number of 100 millisecond mainloop wait attempts.
 
-These are used for that call(), var_invoke(), and createcommand().
+These are used for threads that call(), var_invoke(), and createcommand().
 
 Current default is 10 for a 1 second wait, but future behavior
 will be equivalent to an unlimited number.
@@ -3109,11 +3103,12 @@ Setting this will trigger a DeprecationWarning.
 
 static PyObject *
 _tkinter_tkapp_setmainloopwaitattempts_impl(TkappObject *self, int new_val)
-/*[clinic end generated code: output=a0867fb187c8946e input=9965550e84594ac4]*/
+/*[clinic end generated code: output=a0867fb187c8946e input=2b60ed355c8d7fac]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-        "In future behavior, threads will wait indefinitely\n"
-        "for the main thread to dispatch. Consider polling dispatch()\n"
+        "In future behavior, threads will wait indefinitely "
+        "for the main thread to dispatch.\n"
+        "If you want to avoid delays, consider polling dispatching()"
         "before issuing commands from a thread instead.", 1))
     {
         return NULL;

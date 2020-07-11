@@ -149,6 +149,9 @@ so, usually, to use Tkinter all you need is a simple import statement::
    meaning it can be used to issue commands to the Tcl interpreter in the main
    thread from any other thread. If called from a thread, it will wait up to
    one second for :meth:`Tk.mainloop` to be called, and then throw an error.
+   This error after one second is deprecated behavior, in the future it will
+   wait indefinitely for :meth:`Tk.mainloop`, :meth:`Tk.update`, or
+   :meth:`_tkinter.tkapp.dooneevent` to dispatch the event.
 
 .. method:: _tkinter.tkapp.willdispatch()
 
