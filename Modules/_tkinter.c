@@ -3137,15 +3137,6 @@ _tkinter_tkapp_setmainloopwaitattempts_impl(TkappObject *self, int new_val)
             "mainloopwaitattempts must be >= 0");
         return NULL;
     }
-    if (new_val) 
-    {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "It seems you want to wait for the mainloop to come up.\n"
-            "This behavior is deprecated; consider polling dispatching() instead.", 1))
-        {
-            return NULL;
-        }
-    }
     mainloopwaitattempts = new_val;
     Py_RETURN_NONE;
 }
