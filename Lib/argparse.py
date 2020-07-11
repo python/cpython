@@ -1681,6 +1681,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         - allow_abbrev -- Allow long options to be abbreviated unambiguously
         - exit_on_error -- Determines whether or not ArgumentParser exits with
             error info when an error occurs
+        - fromfile_encoding -- The encoding to use when reading files
+            specified by fromfile_prefix_chars
     """
 
     def __init__(self,
@@ -1696,7 +1698,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  conflict_handler='error',
                  add_help=True,
                  allow_abbrev=True,
-                 exit_on_error=True):
+                 exit_on_error=True,
+                 fromfile_encoding=None):
 
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
@@ -1716,6 +1719,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.add_help = add_help
         self.allow_abbrev = allow_abbrev
         self.exit_on_error = exit_on_error
+        self.fromfile_encoding = fromfile_encoding
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
@@ -2118,7 +2122,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             # replace arguments referencing files with the file content
             else:
                 try:
-                    with open(arg_string[1:]) as args_file:
+                    with open(arg_string[1:], encoding=self.fromfile_encoding) \
+                            as args_file:
                         arg_strings = []
                         for arg_line in args_file.read().splitlines():
                             for arg in self.convert_arg_line_to_args(arg_line):

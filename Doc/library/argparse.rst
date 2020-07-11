@@ -142,7 +142,8 @@ ArgumentParser objects
                           formatter_class=argparse.HelpFormatter, \
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
-                          add_help=True, allow_abbrev=True, exit_on_error=True)
+                          add_help=True, allow_abbrev=True, \
+                          exit_on_error=True, fromfile_encoding=None)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
    as keyword arguments. Each parameter has its own more detailed description
@@ -182,6 +183,9 @@ ArgumentParser objects
    * exit_on_error_ - Determines whether or not ArgumentParser exits with
      error info when an error occurs. (default: ``True``)
 
+   * fromfile_encoding_ - The encoding to use when reading files specified by
+     fromfile_prefix_chars_. (default: the system's default encoding)
+
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
 
@@ -191,6 +195,9 @@ ArgumentParser objects
 
    .. versionchanged:: 3.9
       *exit_on_error* parameter was added.
+
+   .. versionchanged:: 3.10
+      *fromfile_encoding* parameter was added.
 
 The following sections describe how each of these are used.
 
@@ -673,6 +680,16 @@ If the user would like catch errors manually, the feature can be enable by setti
    Catching an argumentError
 
 .. versionadded:: 3.9
+
+
+fromfile_encoding
+^^^^^^^^^^^^^^^^^
+
+The ``fromfile_encoding=`` argument specifies the encoding to use when
+reading files designated by fromfile_prefix_chars_.  By default,
+:class:`ArgumentParser` objects use the system's default encoding.
+
+.. versionadded:: 3.10
 
 
 The add_argument() method

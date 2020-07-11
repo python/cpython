@@ -1,0 +1,2 @@
+Add a ``fromfile_encoding`` parameter to :class:`argparse.ArgumentParser` to
+specify the file encoding when using the ``fromfile_prefix_chars`` option.

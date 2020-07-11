@@ -1488,6 +1488,21 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
     ]
 
 
+class TestArgumentsFromFileEncoding(TempDirMixin, ParserTestCase):
+    """Test reading arguments from a file with fromfile_encoding"""
+
+    def setUp(self):
+        super().setUp()
+        with open('hello', 'w', encoding='utf-8') as f:
+            f.write('spœm\n')
+
+    parser_signature = Sig(fromfile_encoding='utf-8',
+                           fromfile_prefix_chars='@')
+    argument_signatures = [Sig('y')]
+    failures = []
+    successes = [('@hello', NS(y='spœm'))]
+
+
 class TestArgumentsFromFileConverter(TempDirMixin, ParserTestCase):
     """Test reading arguments from a file"""
 
