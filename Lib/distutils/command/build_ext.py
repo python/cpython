@@ -689,7 +689,15 @@ class build_ext(Command):
         provided, "PyInit_" + module_name.  Only relevant on Windows, where
         the .pyd file (DLL) must export the module "PyInit_" function.
         """
-        initfunc_name = "PyInit_" + ext.name.split('.')[-1]
+        suffix = '_' + ext.name.split('.')[-1]
+        try:
+            # Unicode module name support as defined in PEP-489
+            # https://www.python.org/dev/peps/pep-0489/#export-hook-name
+            suffix.encode('ascii')
+        except UnicodeEncodeError:
+            suffix = 'U' + suffix.encode('punycode').replace(b'-', b'_').decode('ascii')
+
+        initfunc_name = "PyInit" + suffix
         if initfunc_name not in ext.export_symbols:
             ext.export_symbols.append(initfunc_name)
         return ext.export_symbols

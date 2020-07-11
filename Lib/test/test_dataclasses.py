@@ -45,6 +45,25 @@ class TestCase(unittest.TestCase):
         o = C(42)
         self.assertEqual(o.x, 42)
 
+    def test_field_default_default_factory_error(self):
+        msg = "cannot specify both default and default_factory"
+        with self.assertRaisesRegex(ValueError, msg):
+            @dataclass
+            class C:
+                x: int = field(default=1, default_factory=int)
+
+    def test_field_repr(self):
+        int_field = field(default=1, init=True, repr=False)
+        int_field.name = "id"
+        repr_output = repr(int_field)
+        expected_output = "Field(name='id',type=None," \
+                           f"default=1,default_factory={MISSING!r}," \
+                           "init=True,repr=False,hash=None," \
+                           "compare=True,metadata=mappingproxy({})," \
+                           "_field_type=None)"
+
+        self.assertEqual(repr_output, expected_output)
+
     def test_named_init_params(self):
         @dataclass
         class C:
@@ -2009,7 +2028,7 @@ class TestDocString(unittest.TestCase):
         class C:
             x: Union[int, type(None)] = None
 
-        self.assertDocStrEqual(C.__doc__, "C(x:Union[int, NoneType]=None)")
+        self.assertDocStrEqual(C.__doc__, "C(x:Optional[int]=None)")
 
     def test_docstring_list_field(self):
         @dataclass

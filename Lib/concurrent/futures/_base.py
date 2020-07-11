@@ -7,6 +7,7 @@ import collections
 import logging
 import threading
 import time
+import types
 
 FIRST_COMPLETED = 'FIRST_COMPLETED'
 FIRST_EXCEPTION = 'FIRST_EXCEPTION'
@@ -543,6 +544,8 @@ class Future(object):
                 waiter.add_exception(self)
             self._condition.notify_all()
         self._invoke_callbacks()
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 class Executor(object):
     """This is an abstract base class for concrete asynchronous executors."""

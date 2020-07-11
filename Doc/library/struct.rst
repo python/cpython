@@ -259,7 +259,7 @@ Notes:
    called to convert the argument to an integer before packing.
 
    .. versionchanged:: 3.2
-      Use of the :meth:`__index__` method for non-integers is new in 3.2.
+      Added use of the :meth:`__index__` method for non-integers.
 
 (3)
    The ``'n'`` and ``'N'`` conversion codes are only available for the native
@@ -312,7 +312,7 @@ When packing a value ``x`` using one of the integer formats (``'b'``,
 then :exc:`struct.error` is raised.
 
 .. versionchanged:: 3.1
-   In 3.0, some of the integer formats wrapped out-of-range values and
+   Previously, some of the integer formats wrapped out-of-range values and
    raised :exc:`DeprecationWarning` instead of :exc:`struct.error`.
 
 The ``'p'`` format character encodes a "Pascal string", meaning a short

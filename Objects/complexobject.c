@@ -6,7 +6,9 @@
 /* Submitted by Jim Hugunin */
 
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_object.h"        // _PyObject_Init()
+#include "structmember.h"         // PyMemberDef
+
 
 /*[clinic input]
 class complex "PyComplexObject *" "&PyComplex_Type"
@@ -229,13 +231,12 @@ complex_subtype_from_c_complex(PyTypeObject *type, Py_complex cval)
 PyObject *
 PyComplex_FromCComplex(Py_complex cval)
 {
-    PyComplexObject *op;
-
     /* Inline PyObject_New */
-    op = (PyComplexObject *) PyObject_MALLOC(sizeof(PyComplexObject));
-    if (op == NULL)
+    PyComplexObject *op = PyObject_MALLOC(sizeof(PyComplexObject));
+    if (op == NULL) {
         return PyErr_NoMemory();
-    (void)PyObject_INIT(op, &PyComplex_Type);
+    }
+    _PyObject_Init((PyObject*)op, &PyComplex_Type);
     op->cval = cval;
     return (PyObject *) op;
 }
@@ -296,7 +297,7 @@ try_complex_special_method(PyObject *op)
         if (!PyComplex_Check(res)) {
             PyErr_Format(PyExc_TypeError,
                 "__complex__ returned non-complex (type %.200s)",
-                res->ob_type->tp_name);
+                Py_TYPE(res)->tp_name);
             Py_DECREF(res);
             return NULL;
         }
@@ -305,7 +306,7 @@ try_complex_special_method(PyObject *op)
                 "__complex__ returned non-complex (type %.200s).  "
                 "The ability to return an instance of a strict subclass of complex "
                 "is deprecated, and may be removed in a future version of Python.",
-                res->ob_type->tp_name)) {
+                Py_TYPE(res)->tp_name)) {
             Py_DECREF(res);
             return NULL;
         }
@@ -731,29 +732,9 @@ complex__format__(PyObject* self, PyObject* args)
     return _PyUnicodeWriter_Finish(&writer);
 }
 
-#if 0
-static PyObject *
-complex_is_finite(PyObject *self)
-{
-    Py_complex c;
-    c = ((PyComplexObject *)self)->cval;
-    return PyBool_FromLong((long)(Py_IS_FINITE(c.real) &&
-                                  Py_IS_FINITE(c.imag)));
-}
-
-PyDoc_STRVAR(complex_is_finite_doc,
-"complex.is_finite() -> bool\n"
-"\n"
-"Returns True if the real and the imaginary part is finite.");
-#endif
-
 static PyMethodDef complex_methods[] = {
     {"conjugate",       (PyCFunction)complex_conjugate, METH_NOARGS,
      complex_conjugate_doc},
-#if 0
-    {"is_finite",       (PyCFunction)complex_is_finite, METH_NOARGS,
-     complex_is_finite_doc},
-#endif
     {"__getnewargs__",          (PyCFunction)complex_getnewargs,        METH_NOARGS},
     {"__format__",          (PyCFunction)complex__format__,
                                        METH_VARARGS, complex__format__doc},
@@ -978,7 +959,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         return NULL;
     }
 
-    nbr = r->ob_type->tp_as_number;
+    nbr = Py_TYPE(r)->tp_as_number;
     if (nbr == NULL || (nbr->nb_float == NULL && nbr->nb_index == NULL)) {
         PyErr_Format(PyExc_TypeError,
                      "complex() first argument must be a string or a number, "
@@ -990,7 +971,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         return NULL;
     }
     if (i != NULL) {
-        nbi = i->ob_type->tp_as_number;
+        nbi = Py_TYPE(i)->tp_as_number;
         if (nbi == NULL || (nbi->nb_float == NULL && nbi->nb_index == NULL)) {
             PyErr_Format(PyExc_TypeError,
                          "complex() second argument must be a number, "

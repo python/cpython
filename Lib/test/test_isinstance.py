@@ -251,6 +251,27 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         # blown
         self.assertRaises(RecursionError, blowstack, isinstance, '', str)
 
+    def test_issubclass_refcount_handling(self):
+        # bpo-39382: abstract_issubclass() didn't hold item reference while
+        # peeking in the bases tuple, in the single inheritance case.
+        class A:
+            @property
+            def __bases__(self):
+                return (int, )
+
+        class B:
+            def __init__(self):
+                # setting this here increases the chances of exhibiting the bug,
+                # probably due to memory layout changes.
+                self.x = 1
+
+            @property
+            def __bases__(self):
+                return (A(), )
+
+        self.assertEqual(True, issubclass(B(), int))
+
+
 def blowstack(fxn, arg, compare_to):
     # Make sure that calling isinstance with a deeply nested tuple for its
     # argument will raise RecursionError eventually.

@@ -1,0 +1,5 @@
+The ``PY_SSIZE_T_CLEAN`` macro must now be defined to use
+:c:func:`PyArg_ParseTuple` and :c:func:`Py_BuildValue` formats which use ``#``:
+``es#``, ``et#``, ``s#``, ``u#``, ``y#``, ``z#``, ``U#`` and ``Z#``.
+See :ref:`Parsing arguments and building values <arg-parsing>` and the
+:pep:`353`.

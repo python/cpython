@@ -62,19 +62,20 @@ Dictionary Objects
 
 .. c:function:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
 
-   Insert *value* into the dictionary *p* with a key of *key*.  *key* must be
+   Insert *val* into the dictionary *p* with a key of *key*.  *key* must be
    :term:`hashable`; if it isn't, :exc:`TypeError` will be raised. Return
-   ``0`` on success or ``-1`` on failure.
+   ``0`` on success or ``-1`` on failure.  This function *does not* steal a
+   reference to *val*.
 
 
 .. c:function:: int PyDict_SetItemString(PyObject *p, const char *key, PyObject *val)
 
    .. index:: single: PyUnicode_FromString()
 
-   Insert *value* into the dictionary *p* using *key* as a key. *key* should
+   Insert *val* into the dictionary *p* using *key* as a key. *key* should
    be a :c:type:`const char\*`.  The key object is created using
    ``PyUnicode_FromString(key)``.  Return ``0`` on success or ``-1`` on
-   failure.
+   failure.  This function *does not* steal a reference to *val*.
 
 
 .. c:function:: int PyDict_DelItem(PyObject *p, PyObject *key)
@@ -98,6 +99,10 @@ Dictionary Objects
    Note that exceptions which occur while calling :meth:`__hash__` and
    :meth:`__eq__` methods will get suppressed.
    To get error reporting use :c:func:`PyDict_GetItemWithError()` instead.
+
+   .. versionchanged:: 3.10
+      Calling this API without :term:`GIL` held had been allowed for historical
+      reason. It is no longer allowed.
 
 
 .. c:function:: PyObject* PyDict_GetItemWithError(PyObject *p, PyObject *key)
@@ -231,10 +236,3 @@ Dictionary Objects
           for key, value in seq2:
               if override or key not in a:
                   a[key] = value
-
-
-.. c:function:: int PyDict_ClearFreeList()
-
-   Clear the free list. Return the total number of freed items.
-
-   .. versionadded:: 3.3

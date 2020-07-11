@@ -1,0 +1,1 @@
+Fix a ``_PyEval_EvalCode()`` crash if *qualname* argument is NULL.

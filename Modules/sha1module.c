@@ -529,9 +529,6 @@ static struct PyMethodDef SHA1_functions[] = {
 
 /* Initialize this module. */
 
-#define insint(n,v) { PyModule_AddIntConstant(m,n,v); }
-
-
 static struct PyModuleDef _sha1module = {
         PyModuleDef_HEAD_INIT,
         "_sha1",
@@ -549,13 +546,15 @@ PyInit__sha1(void)
 {
     PyObject *m;
 
-    Py_TYPE(&SHA1type) = &PyType_Type;
-    if (PyType_Ready(&SHA1type) < 0)
+    Py_SET_TYPE(&SHA1type, &PyType_Type);
+    if (PyType_Ready(&SHA1type) < 0) {
         return NULL;
+    }
 
     m = PyModule_Create(&_sha1module);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
+    }
 
     Py_INCREF((PyObject *)&SHA1type);
     PyModule_AddObject(m, "SHA1Type", (PyObject *)&SHA1type);

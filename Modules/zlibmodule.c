@@ -6,11 +6,10 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include "zlib.h"
 
 
-#include "pythread.h"
 #define ENTER_ZLIB(obj) \
     Py_BEGIN_ALLOW_THREADS; \
     PyThread_acquire_lock((obj)->lock, 1); \
@@ -40,7 +39,14 @@ typedef struct {
     PyObject *ZlibError;
 } _zlibstate;
 
-#define _zlibstate(o) ((_zlibstate *)PyModule_GetState(o))
+static inline _zlibstate*
+get_zlib_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_zlibstate *)state;
+}
+
 #define _zlibstate_global ((_zlibstate *)PyModule_GetState(PyState_FindModule(&zlibmodule)))
 
 typedef struct
@@ -281,37 +287,6 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
     return NULL;
 }
 
-/*[python input]
-
-class ssize_t_converter(CConverter):
-    type = 'Py_ssize_t'
-    converter = 'ssize_t_converter'
-    c_ignored_default = "0"
-
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=5f34ba1b394cb8e7]*/
-
-static int
-ssize_t_converter(PyObject *obj, void *ptr)
-{
-    PyObject *long_obj;
-    Py_ssize_t val;
-
-    /* XXX Should be replaced with PyNumber_AsSsize_t after the end of the
-       deprecation period. */
-    long_obj = _PyLong_FromNbIndexOrNbInt(obj);
-    if (long_obj == NULL) {
-        return 0;
-    }
-    val = PyLong_AsSsize_t(long_obj);
-    Py_DECREF(long_obj);
-    if (val == -1 && PyErr_Occurred()) {
-        return 0;
-    }
-    *(Py_ssize_t *)ptr = val;
-    return 1;
-}
-
 /*[clinic input]
 zlib.decompress
 
@@ -320,7 +295,7 @@ zlib.decompress
     /
     wbits: int(c_default="MAX_WBITS") = MAX_WBITS
         The window buffer size and container format.
-    bufsize: ssize_t(c_default="DEF_BUF_SIZE") = DEF_BUF_SIZE
+    bufsize: Py_ssize_t(c_default="DEF_BUF_SIZE") = DEF_BUF_SIZE
         The initial output buffer size.
 
 Returns a bytes object containing the uncompressed data.
@@ -329,7 +304,7 @@ Returns a bytes object containing the uncompressed data.
 static PyObject *
 zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                      Py_ssize_t bufsize)
-/*[clinic end generated code: output=77c7e35111dc8c42 input=21960936208e9a5b]*/
+/*[clinic end generated code: output=77c7e35111dc8c42 input=a9ac17beff1f893f]*/
 {
     PyObject *RetVal = NULL;
     Byte *ibuf;
@@ -750,7 +725,7 @@ zlib.Decompress.decompress
     data: Py_buffer
         The binary data to decompress.
     /
-    max_length: ssize_t = 0
+    max_length: Py_ssize_t = 0
         The maximum allowable length of the decompressed data.
         Unconsumed input data will be stored in
         the unconsumed_tail attribute.
@@ -765,7 +740,7 @@ Call the flush() method to clear these buffers.
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
                                 Py_ssize_t max_length)
-/*[clinic end generated code: output=6e5173c74e710352 input=b85a212a012b770a]*/
+/*[clinic end generated code: output=6e5173c74e710352 input=0a95d05a3bceaeaa]*/
 {
     int err = Z_OK;
     Py_ssize_t ibuflen, obuflen = DEF_BUF_SIZE, hard_limit;
@@ -1107,7 +1082,7 @@ zlib_Decompress___deepcopy__(compobject *self, PyObject *memo)
 /*[clinic input]
 zlib.Decompress.flush
 
-    length: ssize_t(c_default="DEF_BUF_SIZE") = zlib.DEF_BUF_SIZE
+    length: Py_ssize_t(c_default="DEF_BUF_SIZE") = zlib.DEF_BUF_SIZE
         the initial size of the output buffer.
     /
 
@@ -1116,7 +1091,7 @@ Return a bytes object containing any remaining decompressed data.
 
 static PyObject *
 zlib_Decompress_flush_impl(compobject *self, Py_ssize_t length)
-/*[clinic end generated code: output=68c75ea127cbe654 input=aa4ec37f3aef4da0]*/
+/*[clinic end generated code: output=68c75ea127cbe654 input=427f2a05a8c2113a]*/
 {
     int err, flush;
     Py_buffer data;
@@ -1364,7 +1339,7 @@ PyDoc_STRVAR(zlib_module_documentation,
 static int
 zlib_clear(PyObject *m)
 {
-    _zlibstate *state = _zlibstate(m);
+    _zlibstate *state = get_zlib_state(m);
     Py_CLEAR(state->Comptype);
     Py_CLEAR(state->Decomptype);
     Py_CLEAR(state->ZlibError);
@@ -1374,7 +1349,7 @@ zlib_clear(PyObject *m)
 static int
 zlib_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    _zlibstate *state = _zlibstate(m);
+    _zlibstate *state = get_zlib_state(m);
     Py_VISIT(state->Comptype);
     Py_VISIT(state->Decomptype);
     Py_VISIT(state->ZlibError);
@@ -1415,18 +1390,18 @@ PyInit_zlib(void)
     PyTypeObject *Comptype = (PyTypeObject *)PyType_FromSpec(&Comptype_spec);
     if (Comptype == NULL)
         return NULL;
-    _zlibstate(m)->Comptype = Comptype;
+    get_zlib_state(m)->Comptype = Comptype;
 
     PyTypeObject *Decomptype = (PyTypeObject *)PyType_FromSpec(&Decomptype_spec);
     if (Decomptype == NULL)
         return NULL;
-    _zlibstate(m)->Decomptype = Decomptype;
+    get_zlib_state(m)->Decomptype = Decomptype;
 
     PyObject *ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
     if (ZlibError != NULL) {
         Py_INCREF(ZlibError);
         PyModule_AddObject(m, "error", ZlibError);
-        _zlibstate(m)->ZlibError = ZlibError;
+        get_zlib_state(m)->ZlibError = ZlibError;
     }
     PyModule_AddIntMacro(m, MAX_WBITS);
     PyModule_AddIntMacro(m, DEFLATED);

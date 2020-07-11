@@ -87,7 +87,7 @@ the :mod:`tokenize` module.
    now tokenized as :data:`NAME` tokens.
 
 .. versionchanged:: 3.8
-   Added :data:`TYPE_COMMENT`.
+   Added :data:`TYPE_COMMENT`, :data:`TYPE_IGNORE`, :data:`COLONEQUAL`.
    Added :data:`AWAIT` and :data:`ASYNC` tokens back (they're needed
    to support parsing older Python versions for :func:`ast.parse` with
    ``feature_version`` set to 6 or lower).

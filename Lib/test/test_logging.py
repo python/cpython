@@ -36,13 +36,17 @@ import os
 import queue
 import random
 import re
-import signal
 import socket
 import struct
 import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
+from test.support import threading_helper
+from test.support import warnings_helper
+from test.support.logging_helper import TestHandler
 import textwrap
 import threading
 import time
@@ -78,7 +82,7 @@ class BaseTest(unittest.TestCase):
     def setUp(self):
         """Setup the default logging stream to an internal StringIO instance,
         so that we can examine log output as we want."""
-        self._threading_key = support.threading_setup()
+        self._threading_key = threading_helper.threading_setup()
 
         logger_dict = logging.getLogger().manager.loggerDict
         logging._acquireLock()
@@ -149,7 +153,7 @@ class BaseTest(unittest.TestCase):
             logging._releaseLock()
 
         self.doCleanups()
-        support.threading_cleanup(*self._threading_key)
+        threading_helper.threading_cleanup(*self._threading_key)
 
     def assert_log_lines(self, expected_values, stream=None, pat=None):
         """Match the collected log lines against the regular expression
@@ -727,30 +731,19 @@ class HandlerTest(BaseTest):
 
         locks_held__ready_to_fork.wait()
         pid = os.fork()
-        if pid == 0:  # Child.
+        if pid == 0:
+            # Child process
             try:
                 test_logger.info(r'Child process did not deadlock. \o/')
             finally:
                 os._exit(0)
-        else:  # Parent.
+        else:
+            # Parent process
             test_logger.info(r'Parent process returned from fork. \o/')
             fork_happened__release_locks_and_end_thread.set()
             lock_holder_thread.join()
-            start_time = time.monotonic()
-            while True:
-                test_logger.debug('Waiting for child process.')
-                waited_pid, status = os.waitpid(pid, os.WNOHANG)
-                if waited_pid == pid:
-                    break  # child process exited.
-                if time.monotonic() - start_time > 7:
-                    break  # so long? implies child deadlock.
-                time.sleep(0.05)
-            test_logger.debug('Done waiting.')
-            if waited_pid != pid:
-                os.kill(pid, signal.SIGKILL)
-                waited_pid, status = os.waitpid(pid, 0)
-                self.fail("child process deadlocked.")
-            self.assertEqual(status, 0, msg="child process error")
+
+            support.wait_process(pid, exitcode=0)
 
 
 class BadStream(object):
@@ -875,7 +868,7 @@ class TestSMTPServer(smtpd.SMTPServer):
         Wait for the server thread to terminate.
         """
         self.close()
-        support.join_thread(self._thread)
+        threading_helper.join_thread(self._thread)
         self._thread = None
         asyncore.close_all(map=self._map, ignore_all=True)
 
@@ -925,7 +918,7 @@ class ControlMixin(object):
         """
         self.shutdown()
         if self._thread is not None:
-            support.join_thread(self._thread)
+            threading_helper.join_thread(self._thread)
             self._thread = None
         self.server_close()
         self.ready.clear()
@@ -1064,10 +1057,10 @@ class SMTPHandlerTest(BaseTest):
 
     def test_basic(self):
         sockmap = {}
-        server = TestSMTPServer((support.HOST, 0), self.process_message, 0.001,
+        server = TestSMTPServer((socket_helper.HOST, 0), self.process_message, 0.001,
                                 sockmap)
         server.start()
-        addr = (support.HOST, server.port)
+        addr = (socket_helper.HOST, server.port)
         h = logging.handlers.SMTPHandler(addr, 'me', 'you', 'Log',
                                          timeout=self.TIMEOUT)
         self.assertEqual(h.toaddrs, ['you'])
@@ -1178,7 +1171,7 @@ class ConfigFileTest(BaseTest):
 
     """Reading logging config from a .ini-style config file."""
 
-    check_no_resource_warning = support.check_no_resource_warning
+    check_no_resource_warning = warnings_helper.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -1765,7 +1758,7 @@ class UnixSocketHandlerTest(SocketHandlerTest):
 
     def tearDown(self):
         SocketHandlerTest.tearDown(self)
-        support.unlink(self.address)
+        os_helper.unlink(self.address)
 
 class DatagramHandlerTest(BaseTest):
 
@@ -1846,7 +1839,7 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
 
     def tearDown(self):
         DatagramHandlerTest.tearDown(self)
-        support.unlink(self.address)
+        os_helper.unlink(self.address)
 
 class SysLogHandlerTest(BaseTest):
 
@@ -1930,9 +1923,9 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
 
     def tearDown(self):
         SysLogHandlerTest.tearDown(self)
-        support.unlink(self.address)
+        os_helper.unlink(self.address)
 
-@unittest.skipUnless(support.IPV6_ENABLED,
+@unittest.skipUnless(socket_helper.IPV6_ENABLED,
                      'IPv6 support required for this test.')
 class IPv6SysLogHandlerTest(SysLogHandlerTest):
 
@@ -2184,7 +2177,7 @@ class ConfigDictTest(BaseTest):
 
     """Reading logging config from a dictionary."""
 
-    check_no_resource_warning = support.check_no_resource_warning
+    check_no_resource_warning = warnings_helper.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -3222,7 +3215,7 @@ class ConfigDictTest(BaseTest):
         finally:
             t.ready.wait(2.0)
             logging.config.stopListening()
-            support.join_thread(t)
+            threading_helper.join_thread(t)
 
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
@@ -3379,6 +3372,37 @@ class ConfigDictTest(BaseTest):
         self.assertRaises(ValueError, bc.convert, 'cfg://!')
         self.assertRaises(KeyError, bc.convert, 'cfg://adict[2]')
 
+    def test_namedtuple(self):
+        # see bpo-39142
+        from collections import namedtuple
+
+        class MyHandler(logging.StreamHandler):
+            def __init__(self, resource, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.resource: namedtuple = resource
+
+            def emit(self, record):
+                record.msg += f' {self.resource.type}'
+                return super().emit(record)
+
+        Resource = namedtuple('Resource', ['type', 'labels'])
+        resource = Resource(type='my_type', labels=['a'])
+
+        config = {
+            'version': 1,
+            'handlers': {
+                'myhandler': {
+                    '()': MyHandler,
+                    'resource': resource
+                }
+            },
+            'root':  {'level': 'INFO', 'handlers': ['myhandler']},
+        }
+        with support.captured_stderr() as stderr:
+            self.apply_config(config)
+            logging.info('some log')
+        self.assertEqual(stderr.getvalue(), 'some log my_type\n')
+
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
         logged = []
@@ -3503,7 +3527,7 @@ class QueueHandlerTest(BaseTest):
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
     def test_queue_listener(self):
-        handler = support.TestHandler(support.Matcher())
+        handler = TestHandler(support.Matcher())
         listener = logging.handlers.QueueListener(self.queue, handler)
         listener.start()
         try:
@@ -3519,7 +3543,7 @@ class QueueHandlerTest(BaseTest):
 
         # Now test with respect_handler_level set
 
-        handler = support.TestHandler(support.Matcher())
+        handler = TestHandler(support.Matcher())
         handler.setLevel(logging.CRITICAL)
         listener = logging.handlers.QueueListener(self.queue, handler,
                                                   respect_handler_level=True)
@@ -3608,9 +3632,9 @@ if hasattr(logging.handlers, 'QueueListener'):
 
         @patch.object(logging.handlers.QueueListener, 'handle')
         def test_handle_called_with_mp_queue(self, mock_handle):
-            # Issue 28668: The multiprocessing (mp) module is not functional
+            # bpo-28668: The multiprocessing (mp) module is not functional
             # when the mp.synchronize module cannot be imported.
-            support.import_module('multiprocessing.synchronize')
+            support.skip_if_broken_multiprocessing_synchronize()
             for i in range(self.repeat):
                 log_queue = multiprocessing.Queue()
                 self.setup_and_log(log_queue, '%s_%s' % (self.id(), i))
@@ -3634,9 +3658,9 @@ if hasattr(logging.handlers, 'QueueListener'):
             indicates that messages were not registered on the queue until
             _after_ the QueueListener stopped.
             """
-            # Issue 28668: The multiprocessing (mp) module is not functional
+            # bpo-28668: The multiprocessing (mp) module is not functional
             # when the mp.synchronize module cannot be imported.
-            support.import_module('multiprocessing.synchronize')
+            support.skip_if_broken_multiprocessing_synchronize()
             for i in range(self.repeat):
                 queue = multiprocessing.Queue()
                 self.setup_and_log(queue, '%s_%s' %(self.id(), i))
@@ -3688,6 +3712,9 @@ class FormatterTest(unittest.TestCase):
             'args': (2, 'placeholders'),
         }
         self.variants = {
+            'custom': {
+                'custom': 1234
+            }
         }
 
     def get_record(self, name=None):
@@ -3904,6 +3931,26 @@ class FormatterTest(unittest.TestCase):
         )
         self.assertRaises(ValueError, logging.Formatter, '${asctime', style='$')
 
+    def test_defaults_parameter(self):
+        fmts = ['%(custom)s %(message)s', '{custom} {message}', '$custom $message']
+        styles = ['%', '{', '$']
+        for fmt, style in zip(fmts, styles):
+            f = logging.Formatter(fmt, style=style, defaults={'custom': 'Default'})
+            r = self.get_record()
+            self.assertEqual(f.format(r), 'Default Message with 2 placeholders')
+            r = self.get_record("custom")
+            self.assertEqual(f.format(r), '1234 Message with 2 placeholders')
+
+            # Without default
+            f = logging.Formatter(fmt, style=style)
+            r = self.get_record()
+            self.assertRaises(ValueError, f.format, r)
+
+            # Non-existing default is ignored
+            f = logging.Formatter(fmt, style=style, defaults={'Non-existing': 'Default'})
+            r = self.get_record("custom")
+            self.assertEqual(f.format(r), '1234 Message with 2 placeholders')
+
     def test_invalid_style(self):
         self.assertRaises(ValueError, logging.Formatter, None, None, 'x')
 
@@ -3920,6 +3967,19 @@ class FormatterTest(unittest.TestCase):
         self.assertEqual(f.formatTime(r, '%Y:%d'), '1993:21')
         f.format(r)
         self.assertEqual(r.asctime, '1993-04-21 08:03:00,123')
+
+    def test_default_msec_format_none(self):
+        class NoMsecFormatter(logging.Formatter):
+            default_msec_format = None
+            default_time_format = '%d/%m/%Y %H:%M:%S'
+
+        r = self.get_record()
+        dt = datetime.datetime(1993, 4, 21, 8, 3, 0, 123, utc)
+        r.created = time.mktime(dt.astimezone(None).timetuple())
+        f = NoMsecFormatter()
+        f.converter = time.gmtime
+        self.assertEqual(f.formatTime(r), '21/04/1993 08:03:00')
+
 
 class TestBufferingFormatter(logging.BufferingFormatter):
     def formatHeader(self, records):
@@ -4221,7 +4281,6 @@ class ModuleLevelMiscTest(BaseTest):
             h.close()
             logging.setLoggerClass(logging.Logger)
 
-    @support.requires_type_collecting
     def test_logging_at_shutdown(self):
         # Issue #20037
         code = """if 1:
@@ -5043,7 +5102,7 @@ class RotatingFileHandlerTest(BaseFileTest):
         self.assertFalse(os.path.exists(rh.namer(self.fn + ".1")))
         rh.close()
 
-    @support.requires_zlib
+    @support.requires_zlib()
     def test_rotator(self):
         def namer(name):
             return name + ".gz"

@@ -23,8 +23,6 @@ __all__ = (
 )
 
 
-__version__ = '1.0'
-
 import asyncio
 import contextlib
 import io
@@ -32,6 +30,7 @@ import inspect
 import pprint
 import sys
 import builtins
+from asyncio import iscoroutinefunction
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
@@ -48,12 +47,14 @@ _safe_super = super
 def _is_async_obj(obj):
     if _is_instance_mock(obj) and not isinstance(obj, AsyncMock):
         return False
-    return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
+    if hasattr(obj, '__func__'):
+        obj = getattr(obj, '__func__')
+    return iscoroutinefunction(obj) or inspect.isawaitable(obj)
 
 
 def _is_async_func(func):
     if getattr(func, '__code__', None):
-        return asyncio.iscoroutinefunction(func)
+        return iscoroutinefunction(func)
     else:
         return False
 
@@ -488,7 +489,7 @@ class NonCallableMock(Base):
         _spec_asyncs = []
 
         for attr in dir(spec):
-            if asyncio.iscoroutinefunction(getattr(spec, attr, None)):
+            if iscoroutinefunction(getattr(spec, attr, None)):
                 _spec_asyncs.append(attr)
 
         if spec is not None and not _is_list(spec):
@@ -592,7 +593,7 @@ class NonCallableMock(Base):
         for child in self._mock_children.values():
             if isinstance(child, _SpecState) or child is _deleted:
                 continue
-            child.reset_mock(visited)
+            child.reset_mock(visited, return_value=return_value, side_effect=side_effect)
 
         ret = self._mock_return_value
         if _is_instance_mock(ret) and ret is not self:
@@ -819,6 +820,10 @@ class NonCallableMock(Base):
             if child is None or isinstance(child, _SpecState):
                 break
             else:
+                # If an autospecced object is attached using attach_mock the
+                # child would be a function with mock object as attribute from
+                # which signature has to be derived.
+                child = _extract_mock(child)
                 children = child._mock_children
                 sig = child._spec_signature
 
@@ -1037,8 +1042,7 @@ class _AnyComparer(list):
     the left."""
     def __contains__(self, item):
         for _call in self:
-            if len(item) != len(_call):
-                continue
+            assert len(item) == len(_call)
             if all([
                 expected == actual
                 for expected, actual in zip(item, _call)
@@ -1237,11 +1241,6 @@ def _importer(target):
     return thing
 
 
-def _is_started(patcher):
-    # XXXX horrible
-    return hasattr(patcher, 'is_local')
-
-
 class _patch(object):
 
     attribute_name = None
@@ -1312,14 +1311,9 @@ class _patch(object):
     @contextlib.contextmanager
     def decoration_helper(self, patched, args, keywargs):
         extra_args = []
-        entered_patchers = []
-        patching = None
-
-        exc_info = tuple()
-        try:
+        with contextlib.ExitStack() as exit_stack:
             for patching in patched.patchings:
-                arg = patching.__enter__()
-                entered_patchers.append(patching)
+                arg = exit_stack.enter_context(patching)
                 if patching.attribute_name is not None:
                     keywargs.update(arg)
                 elif patching.new is DEFAULT:
@@ -1327,19 +1321,6 @@ class _patch(object):
 
             args += tuple(extra_args)
             yield (args, keywargs)
-        except:
-            if (patching not in entered_patchers and
-                _is_started(patching)):
-                # the patcher may have been started, but an exception
-                # raised whilst entering one of its additional_patchers
-                entered_patchers.append(patching)
-            # Pass the exception to __exit__
-            exc_info = sys.exc_info()
-            # re-raise the exception
-            raise
-        finally:
-            for patching in reversed(entered_patchers):
-                patching.__exit__(*exc_info)
 
 
     def decorate_callable(self, func):
@@ -1516,25 +1497,26 @@ class _patch(object):
 
         self.temp_original = original
         self.is_local = local
-        setattr(self.target, self.attribute, new_attr)
-        if self.attribute_name is not None:
-            extra_args = {}
-            if self.new is DEFAULT:
-                extra_args[self.attribute_name] =  new
-            for patching in self.additional_patchers:
-                arg = patching.__enter__()
-                if patching.new is DEFAULT:
-                    extra_args.update(arg)
-            return extra_args
+        self._exit_stack = contextlib.ExitStack()
+        try:
+            setattr(self.target, self.attribute, new_attr)
+            if self.attribute_name is not None:
+                extra_args = {}
+                if self.new is DEFAULT:
+                    extra_args[self.attribute_name] =  new
+                for patching in self.additional_patchers:
+                    arg = self._exit_stack.enter_context(patching)
+                    if patching.new is DEFAULT:
+                        extra_args.update(arg)
+                return extra_args
 
-        return new
-
+            return new
+        except:
+            if not self.__exit__(*sys.exc_info()):
+                raise
 
     def __exit__(self, *exc_info):
         """Undo the patch."""
-        if not _is_started(self):
-            return
-
         if self.is_local and self.temp_original is not DEFAULT:
             setattr(self.target, self.attribute, self.temp_original)
         else:
@@ -1549,9 +1531,9 @@ class _patch(object):
         del self.temp_original
         del self.is_local
         del self.target
-        for patcher in reversed(self.additional_patchers):
-            if _is_started(patcher):
-                patcher.__exit__(*exc_info)
+        exit_stack = self._exit_stack
+        del self._exit_stack
+        return exit_stack.__exit__(*exc_info)
 
 
     def start(self):
@@ -1567,9 +1549,9 @@ class _patch(object):
             self._active_patches.remove(self)
         except ValueError:
             # If the patch hasn't been started this will fail
-            pass
+            return None
 
-        return self.__exit__()
+        return self.__exit__(None, None, None)
 
 
 
@@ -1726,7 +1708,8 @@ def patch(
     "as"; very useful if `patch` is creating a mock object for you.
 
     `patch` takes arbitrary keyword arguments. These will be passed to
-    the `Mock` (or `new_callable`) on construction.
+    `AsyncMock` if the patched object is asynchronous, to `MagicMock`
+    otherwise or to `new_callable` if specified.
 
     `patch.dict(...)`, `patch.multiple(...)` and `patch.object(...)` are
     available for alternate use-cases.
@@ -1850,11 +1833,27 @@ class _patch_dict(object):
 
     def __exit__(self, *args):
         """Unpatch the dict."""
-        self._unpatch_dict()
+        if self._original is not None:
+            self._unpatch_dict()
         return False
 
-    start = __enter__
-    stop = __exit__
+
+    def start(self):
+        """Activate a patch, returning any created mock."""
+        result = self.__enter__()
+        _patch._active_patches.append(self)
+        return result
+
+
+    def stop(self):
+        """Stop an active patch."""
+        try:
+            _patch._active_patches.remove(self)
+        except ValueError:
+            # If the patch hasn't been started this will fail
+            return None
+
+        return self.__exit__(None, None, None)
 
 
 def _clear_dict(in_dict):
@@ -2126,7 +2125,7 @@ class AsyncMockMixin(Base):
 
     def __init__(self, /, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # asyncio.iscoroutinefunction() checks _is_coroutine property to say if an
+        # iscoroutinefunction() checks _is_coroutine property to say if an
         # object is a coroutine. Without this check it looks to see if it is a
         # function/method, which in this case it is not (since it is an
         # AsyncMock).
@@ -2141,10 +2140,10 @@ class AsyncMockMixin(Base):
         self.__dict__['__code__'] = code_mock
 
     async def _execute_mock_call(self, /, *args, **kwargs):
-        # This is nearly just like super(), except for sepcial handling
+        # This is nearly just like super(), except for special handling
         # of coroutines
 
-        _call = self.call_args
+        _call = _Call((args, kwargs), two=True)
         self.await_count += 1
         self.await_args = _call
         self.await_args_list.append(_call)
@@ -2162,7 +2161,7 @@ class AsyncMockMixin(Base):
                     raise StopAsyncIteration
                 if _is_exception(result):
                     raise result
-            elif asyncio.iscoroutinefunction(effect):
+            elif iscoroutinefunction(effect):
                 result = await effect(*args, **kwargs)
             else:
                 result = effect(*args, **kwargs)
@@ -2174,7 +2173,7 @@ class AsyncMockMixin(Base):
             return self.return_value
 
         if self._mock_wraps is not None:
-            if asyncio.iscoroutinefunction(self._mock_wraps):
+            if iscoroutinefunction(self._mock_wraps):
                 return await self._mock_wraps(*args, **kwargs)
             return self._mock_wraps(*args, **kwargs)
 
@@ -2311,7 +2310,7 @@ class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
     recognized as an async function, and the result of a call is an awaitable:
 
     >>> mock = AsyncMock()
-    >>> asyncio.iscoroutinefunction(mock)
+    >>> iscoroutinefunction(mock)
     True
     >>> inspect.isawaitable(mock())
     True
@@ -2514,12 +2513,6 @@ class _Call(tuple):
         return tuple.__getattribute__(self, attr)
 
 
-    def count(self, /, *args, **kwargs):
-        return self.__getattr__('count')(*args, **kwargs)
-
-    def index(self, /, *args, **kwargs):
-        return self.__getattr__('index')(*args, **kwargs)
-
     def _get_call_arguments(self):
         if len(self) == 2:
             args, kwargs = self
@@ -2684,7 +2677,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
 
             skipfirst = _must_skip(spec, entry, is_type)
             kwargs['_eat_self'] = skipfirst
-            if asyncio.iscoroutinefunction(original):
+            if iscoroutinefunction(original):
                 child_klass = AsyncMock
             else:
                 child_klass = MagicMock
@@ -2721,7 +2714,7 @@ def _must_skip(spec, entry, is_type):
             continue
         if isinstance(result, (staticmethod, classmethod)):
             return False
-        elif isinstance(getattr(result, '__get__', None), MethodWrapperTypes):
+        elif isinstance(result, FunctionTypes):
             # Normal method => skip if looked up on type
             # (if looked up on instance, self is already skipped)
             return is_type
@@ -2749,10 +2742,6 @@ FunctionTypes = (
     type(create_autospec),
     # instance method
     type(ANY.__eq__),
-)
-
-MethodWrapperTypes = (
-    type(ANY.__eq__.__get__),
 )
 
 
@@ -2893,9 +2882,6 @@ class _AsyncIterator:
         code_mock = NonCallableMock(spec_set=CodeType)
         code_mock.co_flags = inspect.CO_ITERABLE_COROUTINE
         self.__dict__['__code__'] = code_mock
-
-    def __aiter__(self):
-        return self
 
     async def __anext__(self):
         try:

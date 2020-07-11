@@ -9,9 +9,9 @@
 
 For applications that require data compression, the functions in this module
 allow compression and decompression, using the zlib library. The zlib library
-has its own home page at http://www.zlib.net.   There are known
+has its own home page at https://www.zlib.net.   There are known
 incompatibilities between the Python module and versions of the zlib library
-earlier than 1.1.3; 1.1.3 has a security vulnerability, so we recommend using
+earlier than 1.1.3; 1.1.3 has a `security vulnerability <https://zlib.net/zlib_faq.html#faq33>`_, so we recommend using
 1.1.4 or later.
 
 zlib's functions have many options and often need to be used in a particular
@@ -337,4 +337,3 @@ the following constants:
    http://www.zlib.net/manual.html
       The zlib manual explains  the semantics and usage of the library's many
       functions.
-

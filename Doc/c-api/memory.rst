@@ -533,7 +533,7 @@ tracemalloc C API
 
 .. versionadded:: 3.7
 
-.. c:function: int PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr, size_t size)
+.. c:function:: int PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr, size_t size)
 
    Track an allocated memory block in the :mod:`tracemalloc` module.
 
@@ -542,7 +542,7 @@ tracemalloc C API
 
    If memory block is already tracked, update the existing trace.
 
-.. c:function: int PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
+.. c:function:: int PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
 
    Untrack an allocated memory block in the :mod:`tracemalloc` module.
    Do nothing if the block was not tracked.
