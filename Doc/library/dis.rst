@@ -1229,21 +1229,24 @@ All of the following opcodes use their arguments.
 
 .. opcode:: MATCH_ITEM (i)
 
-   TODO
+   TOS is a sequence.  Push ``TOS[i]`` onto the stack.
 
    .. versionadded:: 3.10
 
 
 .. opcode:: MATCH_ITEM_END (i)
 
-   TODO
+   TOS is a sequence, and TOS1 is its length.  Push ``TOS[TOS1 - 1 - i]`` onto
+   the stack.
 
    .. versionadded:: 3.10
 
 
-.. opcode:: MATCH_ITEM_SLICE (ij)
+.. opcode:: MATCH_ITEM_SLICE (i)
 
-   TODO
+   TOS is a sequence, and TOS1 is its length.  Push a list formed from
+   ``TOS[x:TOS1 - 1 - y]`` onto the stack, where *x* is the low byte of *i* and
+   *y* is the high bytes of *i*.
 
    .. versionadded:: 3.10
 

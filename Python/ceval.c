@@ -3521,8 +3521,7 @@ main_loop:
         }
 
         case TARGET(GET_LEN): {
-            PyObject *target = TOP();
-            Py_ssize_t l = PyObject_Length(target);
+            Py_ssize_t l = PyObject_Length(TOP());
             if (l < 0) {
                 goto error;
             }
