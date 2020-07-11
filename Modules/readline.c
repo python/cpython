@@ -343,7 +343,7 @@ A negative length is used to inhibit history truncation.
 
 static PyObject *
 readline_set_history_length_impl(PyObject *module, int length)
-/*[clinic end generated code: output=e161a53e45987dc7 input=52c7b9672cf3c9ac]*/
+/*[clinic end generated code: output=e161a53e45987dc7 input=b8901bf16488b760]*/
 {
     _history_length = length;
     Py_RETURN_NONE;
@@ -359,7 +359,7 @@ Return the maximum number of lines that will be written to the history file.
 
 static PyObject *
 readline_get_history_length_impl(PyObject *module)
-/*[clinic end generated code: output=83a2eeae35b6d2b9 input=d84785889db06a55]*/
+/*[clinic end generated code: output=83a2eeae35b6d2b9 input=5dce2eeba4327817]*/
 {
     return PyLong_FromLong(_history_length);
 }
@@ -493,7 +493,7 @@ Get the beginning index of the completion scope.
 
 static PyObject *
 readline_get_begidx_impl(PyObject *module)
-/*[clinic end generated code: output=362616ee8ed1b2b1 input=45f93049a7e94e32]*/
+/*[clinic end generated code: output=362616ee8ed1b2b1 input=e083b81c8eb4bac3]*/
 {
     Py_INCREF(readlinestate_global->begidx);
     return readlinestate_global->begidx;

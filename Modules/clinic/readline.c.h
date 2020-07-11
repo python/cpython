@@ -140,11 +140,6 @@ readline_append_history_file(PyObject *module, PyObject *const *args, Py_ssize_t
     if (!_PyArg_CheckPositional("append_history_file", nargs, 1, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     nelements = _PyLong_AsInt(args[0]);
     if (nelements == -1 && PyErr_Occurred()) {
         goto exit;
@@ -166,10 +161,9 @@ PyDoc_STRVAR(readline_set_history_length__doc__,
 "set_history_length($module, length, /)\n"
 "--\n"
 "\n"
-"set the maximal number of lines which will be written to the history file.\n"
+"Set the maximal number of lines which will be written to the history file.\n"
 "\n"
-"A negative length is used to inhibit\n"
-"history truncation.");
+"A negative length is used to inhibit history truncation.");
 
 #define READLINE_SET_HISTORY_LENGTH_METHODDEF    \
     {"set_history_length", (PyCFunction)readline_set_history_length, METH_O, readline_set_history_length__doc__},
@@ -183,11 +177,6 @@ readline_set_history_length(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int length;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     length = _PyLong_AsInt(arg);
     if (length == -1 && PyErr_Occurred()) {
         goto exit;
@@ -202,7 +191,7 @@ PyDoc_STRVAR(readline_get_history_length__doc__,
 "get_history_length($module, /)\n"
 "--\n"
 "\n"
-"return the maximum number of lines that will be written to the history file.");
+"Return the maximum number of lines that will be written to the history file.");
 
 #define READLINE_GET_HISTORY_LENGTH_METHODDEF    \
     {"get_history_length", (PyCFunction)readline_get_history_length, METH_NOARGS, readline_get_history_length__doc__},
@@ -350,7 +339,7 @@ PyDoc_STRVAR(readline_get_begidx__doc__,
 "get_begidx($module, /)\n"
 "--\n"
 "\n"
-"get the beginning index of the completion scope");
+"Get the beginning index of the completion scope.");
 
 #define READLINE_GET_BEGIDX_METHODDEF    \
     {"get_begidx", (PyCFunction)readline_get_begidx, METH_NOARGS, readline_get_begidx__doc__},
@@ -409,11 +398,6 @@ readline_remove_history_item(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int entry_number;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     entry_number = _PyLong_AsInt(arg);
     if (entry_number == -1 && PyErr_Occurred()) {
         goto exit;
@@ -447,17 +431,12 @@ readline_replace_history_item(PyObject *module, PyObject *const *args, Py_ssize_
     if (!_PyArg_CheckPositional("replace_history_item", nargs, 2, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     entry_number = _PyLong_AsInt(args[0]);
     if (entry_number == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("replace_history_item", 2, "str", args[1]);
+        _PyArg_BadArgument("replace_history_item", "argument 2", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -598,11 +577,6 @@ readline_get_history_item(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int idx;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     idx = _PyLong_AsInt(arg);
     if (idx == -1 && PyErr_Occurred()) {
         goto exit;
@@ -709,4 +683,4 @@ readline_redisplay(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef READLINE_CLEAR_HISTORY_METHODDEF
     #define READLINE_CLEAR_HISTORY_METHODDEF
 #endif /* !defined(READLINE_CLEAR_HISTORY_METHODDEF) */
-/*[clinic end generated code: output=2d18e91bb9c206e5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e82756fe693e40aa input=a9049054013a1b77]*/
