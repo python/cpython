@@ -8,6 +8,8 @@ import encodings
 from unittest import mock
 
 from test import support
+from test.support import os_helper
+from test.support import warnings_helper
 
 try:
     import _testcapi
@@ -709,11 +711,11 @@ class UTF16Test(ReadTest, unittest.TestCase):
         s1 = 'Hello\r\nworld\r\n'
 
         s = s1.encode(self.encoding)
-        self.addCleanup(support.unlink, support.TESTFN)
-        with open(support.TESTFN, 'wb') as fp:
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(s)
-        with support.check_warnings(('', DeprecationWarning)):
-            reader = codecs.open(support.TESTFN, 'U', encoding=self.encoding)
+        with warnings_helper.check_warnings(('', DeprecationWarning)):
+            reader = codecs.open(os_helper.TESTFN, 'U', encoding=self.encoding)
         with reader:
             self.assertEqual(reader.read(), s1)
 
@@ -1697,10 +1699,10 @@ class CodecsModuleTest(unittest.TestCase):
             getattr(codecs, api)
 
     def test_open(self):
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         for mode in ('w', 'r', 'r+', 'w+', 'a', 'a+'):
             with self.subTest(mode), \
-                    codecs.open(support.TESTFN, mode, 'ascii') as file:
+                    codecs.open(os_helper.TESTFN, mode, 'ascii') as file:
                 self.assertIsInstance(file, codecs.StreamReaderWriter)
 
     def test_undefined(self):
@@ -1718,7 +1720,7 @@ class CodecsModuleTest(unittest.TestCase):
         mock_open = mock.mock_open()
         with mock.patch('builtins.open', mock_open) as file:
             with self.assertRaises(LookupError):
-                codecs.open(support.TESTFN, 'wt', 'invalid-encoding')
+                codecs.open(os_helper.TESTFN, 'wt', 'invalid-encoding')
 
             file().close.assert_called()
 
@@ -2516,10 +2518,10 @@ class BomTest(unittest.TestCase):
                  "utf-32",
                  "utf-32-le",
                  "utf-32-be")
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         for encoding in tests:
             # Check if the BOM is written only once
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data)
                 f.write(data)
                 f.seek(0)
@@ -2528,7 +2530,7 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data * 2)
 
             # Check that the BOM is written after a seek(0)
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data[0])
                 self.assertNotEqual(f.tell(), 0)
                 f.seek(0)
@@ -2537,7 +2539,7 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data)
 
             # (StreamWriter) Check that the BOM is written after a seek(0)
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.writer.write(data[0])
                 self.assertNotEqual(f.writer.tell(), 0)
                 f.writer.seek(0)
@@ -2547,7 +2549,7 @@ class BomTest(unittest.TestCase):
 
             # Check that the BOM is not written after a seek() at a position
             # different than the start
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data)
                 f.seek(f.tell())
                 f.write(data)
@@ -2556,7 +2558,7 @@ class BomTest(unittest.TestCase):
 
             # (StreamWriter) Check that the BOM is not written after a seek()
             # at a position different than the start
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.writer.write(data)
                 f.writer.seek(f.writer.tell())
                 f.writer.write(data)

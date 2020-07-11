@@ -3,6 +3,7 @@ Test script for doctest.
 """
 
 from test import support
+from test.support import os_helper
 import doctest
 import functools
 import os
@@ -2758,7 +2759,7 @@ whitespace if doctest does not correctly do the newline conversion.
     >>> dn = tempfile.mkdtemp()
     >>> pkg = os.path.join(dn, "doctest_testpkg")
     >>> os.mkdir(pkg)
-    >>> support.create_empty_file(os.path.join(pkg, "__init__.py"))
+    >>> os_helper.create_empty_file(os.path.join(pkg, "__init__.py"))
     >>> fn = os.path.join(pkg, "doctest_testfile.txt")
     >>> with open(fn, 'wb') as f:
     ...     f.write(
@@ -2840,7 +2841,8 @@ With those preliminaries out of the way, we'll start with a file with two
 simple tests and no errors.  We'll run both the unadorned doctest command, and
 the verbose version, and then check the output:
 
-    >>> from test.support import script_helper, temp_dir
+    >>> from test.support import script_helper
+    >>> from test.support.os_helper import temp_dir
     >>> with temp_dir() as tmpdir:
     ...     fn = os.path.join(tmpdir, 'myfile.doc')
     ...     with open(fn, 'w') as f:
@@ -2891,7 +2893,8 @@ ability to process more than one file on the command line and, since the second
 file ends in '.py', its handling of python module files (as opposed to straight
 text files).
 
-    >>> from test.support import script_helper, temp_dir
+    >>> from test.support import script_helper
+    >>> from test.support.os_helper import temp_dir
     >>> with temp_dir() as tmpdir:
     ...     fn = os.path.join(tmpdir, 'myfile.doc')
     ...     with open(fn, 'w') as f:

@@ -1,8 +1,9 @@
 import os
 import unittest
-from test import support
+from test.support import import_helper
 
-spwd = support.import_module('spwd')
+
+spwd = import_helper.import_module('spwd')
 
 
 @unittest.skipUnless(hasattr(os, 'geteuid') and os.geteuid() == 0,

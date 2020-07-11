@@ -3,9 +3,13 @@ import pickle
 import sys
 
 from test import support
+from test.support import import_helper
 
-py_operator = support.import_fresh_module('operator', blocked=['_operator'])
-c_operator = support.import_fresh_module('operator', fresh=['_operator'])
+
+py_operator = import_helper.import_fresh_module('operator',
+                                                blocked=['_operator'])
+c_operator = import_helper.import_fresh_module('operator',
+                                               fresh=['_operator'])
 
 class Seq1:
     def __init__(self, lst):

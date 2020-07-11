@@ -3,6 +3,7 @@
 # Licensed to the PSF under a contributor agreement.
 
 from test import support, test_tools
+from test.support import os_helper
 from unittest import TestCase
 import collections
 import inspect
@@ -797,7 +798,7 @@ class ClinicExternalTest(TestCase):
         source = support.findfile('clinic.test')
         with open(source, 'r', encoding='utf-8') as f:
             original = f.read()
-        with support.temp_dir() as testdir:
+        with os_helper.temp_dir() as testdir:
             testfile = os.path.join(testdir, 'clinic.test.c')
             with open(testfile, 'w', encoding='utf-8') as f:
                 f.write(original)
