@@ -215,6 +215,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertTrue(root.dispatching())
 
     def test_thread_must_wait_for_mainloop(self):
+        # remove test on eventual WaitForMainloop removal
         sentinel = object()
         thread_properly_raises = sentinel
         thread_dispatching_early = sentinel
@@ -259,8 +260,8 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
         root = self.root
 
-        # remove on eventual WaitForMainloop behavior change
-        root.tk.setmainloopwaitattempts(0)
+        with self.assertWarns(DeprecationWarning):
+            root.tk.setmainloopwaitattempts(0)
 
         try:
             ready_for_mainloop = threading.Event()
