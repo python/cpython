@@ -213,6 +213,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             root.tk.willdispatch()
         self.assertTrue(root.dispatching())
+        # reset dispatching flag
+        root.after(0,root.quit)
+        root.mainloop()
+        self.assertFalse(root.dispatching())
 
     def test_thread_must_wait_for_mainloop(self):
         # remove test on eventual WaitForMainloop removal
