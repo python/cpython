@@ -200,7 +200,7 @@ dates or times.
    * An hour is converted to ``3600`` seconds.
    * A week is converted to ``7`` days.
 
-   and days, seconds and microseconds are then normalized so that the
+   and *days*, *seconds* and *microseconds* are then normalized so that the
    representation is unique, with
 
    * ``0 <= microseconds < 1000000``
@@ -319,8 +319,8 @@ Supported operations:
 +--------------------------------+-----------------------------------------------+
 | ``q, r = divmod(t1, t2)``      | Computes the quotient and the remainder:      |
 |                                | ``q = t1 // t2`` (3) and ``r = t1 % t2``.     |
-|                                | q is an integer and r is a :class:`timedelta` |
-|                                | object.                                       |
+|                                | *q* is an integer and *r* is a                |
+|                                | :class:`timedelta` object.                    |
 +--------------------------------+-----------------------------------------------+
 | ``+t1``                        | Returns a :class:`timedelta` object with the  |
 |                                | same value. (2)                               |
@@ -333,8 +333,8 @@ Supported operations:
 |                                | and to -*t* when ``t.days < 0``. (2)          |
 +--------------------------------+-----------------------------------------------+
 | ``str(t)``                     | Returns a string in the form                  |
-|                                | ``[D day[s], ][H]H:MM:SS[.UUUUUU]``, where D  |
-|                                | is negative for negative ``t``. (5)           |
+|                                | ``[D day[s], ][H]H:MM:SS[.UUUUUU]``, where *D*|
+|                                | is negative for negative *t*. (5)             |
 +--------------------------------+-----------------------------------------------+
 | ``repr(t)``                    | Returns a string representation of the        |
 |                                | :class:`timedelta` object as a constructor    |
@@ -368,7 +368,7 @@ Notes:
 
 (6)
    The expression ``t2 - t3`` will always be equal to the expression ``t2 + (-t3)`` except
-   when t3 is equal to ``timedelta.max``; in that case the former will produce a result
+   when *t3* is equal to ``timedelta.max``; in that case the former will produce a result
    while the latter will overflow.
 
 In addition to the operations listed above, :class:`timedelta` objects support
@@ -490,7 +490,7 @@ Other constructors, all class methods:
    Return the local date corresponding to the POSIX timestamp, such as is
    returned by :func:`time.time`.
 
-   This may raise :exc:`OverflowError`, if the timestamp is out
+   This may raise :exc:`OverflowError`, if the *timestamp* is out
    of the range of values supported by the platform C :c:func:`localtime`
    function, and :exc:`OSError` on :c:func:`localtime` failure.
    It's common for this to be restricted to years from 1970 through 2038. Note
@@ -498,7 +498,7 @@ Other constructors, all class methods:
    timestamp, leap seconds are ignored by :meth:`fromtimestamp`.
 
    .. versionchanged:: 3.3
-      Raise :exc:`OverflowError` instead of :exc:`ValueError` if the timestamp
+      Raise :exc:`OverflowError` instead of :exc:`ValueError` if the *timestamp*
       is out of the range of values supported by the platform C
       :c:func:`localtime` function. Raise :exc:`OSError` instead of
       :exc:`ValueError` on :c:func:`localtime` failure.
@@ -532,7 +532,7 @@ Other constructors, all class methods:
 .. classmethod:: date.fromisocalendar(year, week, day)
 
    Return a :class:`date` corresponding to the ISO calendar date specified by
-   year, week and day. This is the inverse of the function :meth:`date.isocalendar`.
+   *year*, *week* and *day*. This is the inverse of the function :meth:`date.isocalendar`.
 
    .. versionadded:: 3.8
 
@@ -726,7 +726,7 @@ Instance methods:
 
 .. method:: date.strftime(format)
 
-   Return a string representing the date, controlled by an explicit format string.
+   Return a string representing the date, controlled by an explicit *format* string.
    Format codes referring to hours, minutes or seconds will see ``0`` values. For a
    complete list of formatting directives, see
    :ref:`strftime-strptime-behavior`.
@@ -734,7 +734,7 @@ Instance methods:
 
 .. method:: date.__format__(format)
 
-   Same as :meth:`.date.strftime`. This makes it possible to specify a format
+   Same as :meth:`.date.strftime`. This makes it possible to specify a *format*
    string for a :class:`.date` object in :ref:`formatted string
    literals <f-strings>` and when using :meth:`str.format`. For a
    complete list of formatting directives, see
@@ -839,7 +839,7 @@ Constructor:
    If an argument outside those ranges is given, :exc:`ValueError` is raised.
 
    .. versionadded:: 3.6
-      Added the ``fold`` argument.
+      Added the *fold* argument.
 
 Other constructors, all class methods:
 
@@ -854,7 +854,7 @@ Other constructors, all class methods:
    See also :meth:`now`, :meth:`fromtimestamp`.
 
    This method is functionally equivalent to :meth:`now`, but without a
-   ``tz`` parameter.
+   *tz* parameter.
 
 .. classmethod:: datetime.now(tz=None)
 
@@ -890,15 +890,15 @@ Other constructors, all class methods:
 
 .. classmethod:: datetime.fromtimestamp(timestamp, tz=None)
 
-   Return the local date and time corresponding to the POSIX timestamp, such as is
+   Return the local date and time corresponding to the POSIX *timestamp*, such as is
    returned by :func:`time.time`. If optional argument *tz* is ``None`` or not
-   specified, the timestamp is converted to the platform's local date and time, and
+   specified, the *timestamp* is converted to the platform's local date and time, and
    the returned :class:`.datetime` object is naive.
 
    If *tz* is not ``None``, it must be an instance of a :class:`tzinfo` subclass, and the
-   timestamp is converted to *tz*’s time zone.
+   *timestamp* is converted to *tz*’s time zone.
 
-   :meth:`fromtimestamp` may raise :exc:`OverflowError`, if the timestamp is out of
+   :meth:`fromtimestamp` may raise :exc:`OverflowError`, if the *timestamp* is out of
    the range of values supported by the platform C :c:func:`localtime` or
    :c:func:`gmtime` functions, and :exc:`OSError` on :c:func:`localtime` or
    :c:func:`gmtime` failure.
@@ -910,7 +910,7 @@ Other constructors, all class methods:
    :meth:`utcfromtimestamp`.
 
    .. versionchanged:: 3.3
-      Raise :exc:`OverflowError` instead of :exc:`ValueError` if the timestamp
+      Raise :exc:`OverflowError` instead of :exc:`ValueError` if the *timestamp*
       is out of the range of values supported by the platform C
       :c:func:`localtime` or :c:func:`gmtime` functions. Raise :exc:`OSError`
       instead of :exc:`ValueError` on :c:func:`localtime` or :c:func:`gmtime`
@@ -921,10 +921,10 @@ Other constructors, all class methods:
 
 .. classmethod:: datetime.utcfromtimestamp(timestamp)
 
-   Return the UTC :class:`.datetime` corresponding to the POSIX timestamp, with
+   Return the UTC :class:`.datetime` corresponding to the POSIX *timestamp*, with
    :attr:`.tzinfo` ``None``.  (The resulting object is naive.)
 
-   This may raise :exc:`OverflowError`, if the timestamp is
+   This may raise :exc:`OverflowError`, if the *timestamp* is
    out of the range of values supported by the platform C :c:func:`gmtime` function,
    and :exc:`OSError` on :c:func:`gmtime` failure.
    It's common for this to be restricted to years in 1970 through 2038.
@@ -950,7 +950,7 @@ Other constructors, all class methods:
       ``datetime.fromtimestamp(timestamp, tz=timezone.utc)``.
 
    .. versionchanged:: 3.3
-      Raise :exc:`OverflowError` instead of :exc:`ValueError` if the timestamp
+      Raise :exc:`OverflowError` instead of :exc:`ValueError` if the *timestamp*
       is out of the range of values supported by the platform C
       :c:func:`gmtime` function. Raise :exc:`OSError` instead of
       :exc:`ValueError` on :c:func:`gmtime` failure.
@@ -958,7 +958,7 @@ Other constructors, all class methods:
 
 .. classmethod:: datetime.fromordinal(ordinal)
 
-   Return the :class:`.datetime` corresponding to the proleptic Gregorian ordinal,
+   Return the :class:`.datetime` corresponding to the proleptic Gregorian *ordinal*,
    where January 1 of year 1 has ordinal ``1``. :exc:`ValueError` is raised
    unless ``1 <= ordinal <= datetime.max.toordinal()``. The hour, minute, second and
    microsecond of the result are all ``0``, and :attr:`.tzinfo` is ``None``.
@@ -1022,7 +1022,7 @@ Other constructors, all class methods:
 .. classmethod:: datetime.fromisocalendar(year, week, day)
 
    Return a :class:`.datetime` corresponding to the ISO calendar date specified
-   by year, week and day. The non-date components of the datetime are populated
+   by *year*, *week* and *day*. The non-date components of the datetime are populated
    with their normal default values. This is the inverse of the function
    :meth:`datetime.isocalendar`.
 
@@ -1037,7 +1037,7 @@ Other constructors, all class methods:
 
      datetime(*(time.strptime(date_string, format)[0:6]))
 
-   :exc:`ValueError` is raised if the date_string and format
+   :exc:`ValueError` is raised if the *date_string* and *format*
    can't be parsed by :func:`time.strptime` or if it returns a value which isn't a
    time tuple. For a complete list of formatting directives, see
    :ref:`strftime-strptime-behavior`.
@@ -1133,7 +1133,7 @@ Supported operations:
 +---------------------------------------+--------------------------------+
 
 (1)
-   datetime2 is a duration of timedelta removed from datetime1, moving forward in
+   *datetime2* is a duration of *timedelta* removed from *datetime1*, moving forward in
    time if ``timedelta.days > 0``, or backward if ``timedelta.days < 0``. The
    result has the same :attr:`~.datetime.tzinfo` attribute as the input datetime, and
    ``datetime2 - datetime1 == timedelta`` after. :exc:`OverflowError` is raised if
@@ -1142,7 +1142,7 @@ Supported operations:
    input is an aware object.
 
 (2)
-   Computes the datetime2 such that ``datetime2 + timedelta == datetime1``. As for
+   Computes the *datetime2* such that ``datetime2 + timedelta == datetime1``. As for
    addition, the result has the same :attr:`~.datetime.tzinfo` attribute as the input
    datetime, and no time zone adjustments are done even if the input is aware.
 
@@ -1226,7 +1226,7 @@ Instance methods:
    datetime with no conversion of date and time data.
 
    .. versionadded:: 3.6
-      Added the ``fold`` argument.
+      Added the *fold* argument.
 
 
 .. method:: datetime.astimezone(tz=None)
@@ -1790,7 +1790,7 @@ Instance methods:
    aware :class:`.time`, without conversion of the time data.
 
    .. versionadded:: 3.6
-      Added the ``fold`` argument.
+      Added the *fold* argument.
 
 
 .. method:: time.isoformat(timespec='auto')
