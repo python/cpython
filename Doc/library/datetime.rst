@@ -2428,7 +2428,7 @@ with the year and week number directives above. Calling :meth:`strptime` with
 incomplete or ambiguous ISO 8601 directives will raise a :exc:`ValueError`.
 
 The full set of format codes supported varies across platforms, because Python
-calls the platform C library's :func:`strftime` function, and platform
+calls the platform C library's :c:func:`strftime` function, and platform
 variations are common. To see the full set of format codes supported on your
 platform, consult the :manpage:`strftime(3)` documentation.
 
