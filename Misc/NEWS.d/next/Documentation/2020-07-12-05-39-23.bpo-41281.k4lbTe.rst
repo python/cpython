@@ -1,0 +1,1 @@
+Add missing backquotes for inline code syntax; add missing asterisks for local variables and methods' arguments. fix typos; fix ambiguity in role texts.
