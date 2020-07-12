@@ -357,3 +357,13 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
     if parse_constant is not None:
         kw['parse_constant'] = parse_constant
     return cls(**kw).decode(s)
+
+
+def load(filepath, *, cls=None, object_hook=None, parse_float=None,
+        parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
+    with open(filepath, 'r') as f:
+        data = loads(filepath,
+            cls=cls, object_hook=object_hook,
+            parse_float=parse_float, parse_int=parse_int,
+            parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+    return data
