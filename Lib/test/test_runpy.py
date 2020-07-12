@@ -9,9 +9,9 @@ import importlib, importlib.machinery, importlib.util
 import py_compile
 import warnings
 import pathlib
-from test.support import (
-    forget, make_legacy_pyc, unload, verbose, no_tracing,
-    create_empty_file, temp_dir)
+from test.support import verbose, no_tracing
+from test.support.import_helper import forget, make_legacy_pyc, unload
+from test.support.os_helper import create_empty_file, temp_dir
 from test.support.script_helper import make_script, make_zip_script
 
 

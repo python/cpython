@@ -11,10 +11,12 @@ import sys
 import unittest
 from subprocess import PIPE, Popen
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 from test.support import _4G, bigmemtest
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
-gzip = support.import_module('gzip')
+gzip = import_helper.import_module('gzip')
 
 data1 = b"""  int length=DEFAULTALLOC, err = Z_OK;
   PyObject *RetVal;
@@ -29,7 +31,7 @@ data2 = b"""/* zlibmodule.c -- gzip-compatible data compression */
 """
 
 
-TEMPDIR = os.path.abspath(support.TESTFN) + '-gzdir'
+TEMPDIR = os.path.abspath(os_helper.TESTFN) + '-gzdir'
 
 
 class UnseekableIO(io.BytesIO):
@@ -44,13 +46,13 @@ class UnseekableIO(io.BytesIO):
 
 
 class BaseTest(unittest.TestCase):
-    filename = support.TESTFN
+    filename = os_helper.TESTFN
 
     def setUp(self):
-        support.unlink(self.filename)
+        os_helper.unlink(self.filename)
 
     def tearDown(self):
-        support.unlink(self.filename)
+        os_helper.unlink(self.filename)
 
 
 class TestGzip(BaseTest):
@@ -286,7 +288,7 @@ class TestGzip(BaseTest):
         self.test_write()
         with gzip.GzipFile(self.filename, 'r') as f:
             self.assertEqual(f.myfileobj.mode, 'rb')
-        support.unlink(self.filename)
+        os_helper.unlink(self.filename)
         with gzip.GzipFile(self.filename, 'x') as f:
             self.assertEqual(f.myfileobj.mode, 'xb')
 
@@ -365,7 +367,7 @@ class TestGzip(BaseTest):
             self.assertEqual(isizeBytes, struct.pack('<i', len(data1)))
 
     def test_metadata_ascii_name(self):
-        self.filename = support.TESTFN_ASCII
+        self.filename = os_helper.TESTFN_ASCII
         self.test_metadata()
 
     def test_compresslevel_metadata(self):
@@ -497,7 +499,7 @@ class TestGzip(BaseTest):
                     self.assertEqual(g.mode, gzip.READ)
         for mode in "wb", "ab", "xb":
             if "x" in mode:
-                support.unlink(self.filename)
+                os_helper.unlink(self.filename)
             with open(self.filename, mode) as f:
                 with self.assertWarns(FutureWarning):
                     g = gzip.GzipFile(fileobj=f)
@@ -611,7 +613,7 @@ class TestOpen(BaseTest):
 
         with self.assertRaises(FileExistsError):
             gzip.open(self.filename, "xb")
-        support.unlink(self.filename)
+        os_helper.unlink(self.filename)
         with gzip.open(self.filename, "xb") as f:
             f.write(uncompressed)
         with open(self.filename, "rb") as f:
@@ -648,7 +650,7 @@ class TestOpen(BaseTest):
 
         with self.assertRaises(FileExistsError):
             gzip.open(self.filename, "x")
-        support.unlink(self.filename)
+        os_helper.unlink(self.filename)
         with gzip.open(self.filename, "x") as f:
             f.write(uncompressed)
         with open(self.filename, "rb") as f:
@@ -734,7 +736,7 @@ def create_and_remove_directory(directory):
             try:
                 return function(*args, **kwargs)
             finally:
-                support.rmtree(directory)
+                os_helper.rmtree(directory)
         return wrapper
     return decorator
 
