@@ -25,7 +25,7 @@ typedef struct {
 
 static PyObject *Xxo_Type;
 
-#define XxoObject_Check(v)      (Py_TYPE(v) == Xxo_Type)
+#define XxoObject_Check(v)      Py_IS_TYPE(v, Xxo_Type)
 
 static XxoObject *
 newXxoObject(PyObject *arg)
@@ -43,6 +43,7 @@ newXxoObject(PyObject *arg)
 static int
 Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->x_attr);
     return 0;
 }

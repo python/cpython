@@ -3,15 +3,13 @@
    Nick Mathewson
 '''
 
-import os
 import sys
 from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase, main as unittest_main
-from test import support
 from test.test_importlib import util as test_importlib_util
-from functools import partial
+
 
 StaticMethodType = type(staticmethod(lambda: None))
 ClassMethodType = type(classmethod(lambda c: None))
@@ -249,7 +247,7 @@ class ReadmoduleTests(TestCase):
         # not a package.
         #
         # Issue #14798.
-        self.assertRaises(ImportError, pyclbr.readmodule_ex, 'asyncore.foo')
+        self.assertRaises(ImportError, pyclbr.readmodule_ex, 'asyncio.foo')
 
     def test_module_has_no_spec(self):
         module_name = "doesnotexist"

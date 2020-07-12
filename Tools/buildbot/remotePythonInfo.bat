@@ -2,6 +2,7 @@
 rem Used by the buildbot "remotedeploy" step.
 setlocal
 
+set PATH=%PATH%;%SystemRoot%\SysNative\OpenSSH;%SystemRoot%\System32\OpenSSH
 set here=%~dp0
 set arm32_ssh=
 set suffix=_d
@@ -18,10 +19,10 @@ if "%arm32_ssh%"=="true" goto :Arm32Ssh
 
 :Arm32Ssh
 if "%SSH_SERVER%"=="" goto :Arm32SshHelp
-if "%SSH%"=="" if EXIST %WINDIR%\System32\OpenSSH\ssh.exe (set SSH=%WINDIR%\System32\OpenSSH\ssh.exe)
+
 set PYTHON_EXE=%prefix%\python%suffix%.exe
 echo on
-%SSH% %SSH_SERVER% %PYTHON_EXE% -m test.pythoninfo
+ssh %SSH_SERVER% %PYTHON_EXE% -m test.pythoninfo
 exit /b %ERRORLEVEL%
 
 :Arm32SshHelp

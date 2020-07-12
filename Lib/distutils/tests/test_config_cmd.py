@@ -39,7 +39,6 @@ class ConfigTestCase(support.LoggingSilencer,
 
     @unittest.skipIf(sys.platform == 'win32', "can't test on Windows")
     def test_search_cpp(self):
-        import shutil
         cmd = missing_compiler_executable(['preprocessor'])
         if cmd is not None:
             self.skipTest('The %r command is not found' % cmd)
@@ -47,8 +46,7 @@ class ConfigTestCase(support.LoggingSilencer,
         cmd = config(dist)
         cmd._check_compiler()
         compiler = cmd.compiler
-        is_xlc = shutil.which(compiler.preprocessor[0]).startswith("/usr/vac")
-        if is_xlc:
+        if sys.platform[:3] == "aix" and "xlc" in compiler.preprocessor[0].lower():
             self.skipTest('xlc: The -E option overrides the -P, -o, and -qsyntaxonly options')
 
         # simple pattern searches

@@ -146,7 +146,7 @@ implementation as the built-in :meth:`~str.format` method.
       keyword arguments.
 
       For compound field names, these functions are only called for the first
-      component of the field name; Subsequent components are handled through
+      component of the field name; subsequent components are handled through
       normal attribute and indexing operations.
 
       So for example, the field expression '0.name' would cause
@@ -302,9 +302,9 @@ specification is to be interpreted.
 Most built-in types implement the following options for format specifications,
 although some of the formatting options are only supported by the numeric types.
 
-A general convention is that an empty format string (``""``) produces
+A general convention is that an empty format specification produces
 the same result as if you had called :func:`str` on the value. A
-non-empty format string typically modifies the result.
+non-empty format specification typically modifies the result.
 
 The general form of a *standard format specifier* is:
 
@@ -415,8 +415,9 @@ error.
 .. versionchanged:: 3.6
    Added the ``'_'`` option (see also :pep:`515`).
 
-*width* is a decimal integer defining the minimum field width.  If not
-specified, then the field width will be determined by the content.
+*width* is a decimal integer defining the minimum total field width,
+including any prefixes, separators, and other formatting characters.
+If not specified, then the field width will be determined by the content.
 
 When no explicit alignment is given, preceding the *width* field by a zero
 (``'0'``) character enables
@@ -500,14 +501,16 @@ The available presentation types for floating point and decimal values are:
    |         |                                                          |
    |         | The precise rules are as follows: suppose that the       |
    |         | result formatted with presentation type ``'e'`` and      |
-   |         | precision ``p-1`` would have exponent ``exp``.  Then     |
-   |         | if ``-4 <= exp < p``, the number is formatted            |
-   |         | with presentation type ``'f'`` and precision             |
+   |         | precision ``p-1`` would have exponent ``exp``.  Then,    |
+   |         | if ``m <= exp < p``, where ``m`` is -4 for floats and -6 |
+   |         | for :class:`Decimals <decimal.Decimal>`, the number is   |
+   |         | formatted with presentation type ``'f'`` and precision   |
    |         | ``p-1-exp``.  Otherwise, the number is formatted         |
    |         | with presentation type ``'e'`` and precision ``p-1``.    |
    |         | In both cases insignificant trailing zeros are removed   |
    |         | from the significand, and the decimal point is also      |
-   |         | removed if there are no remaining digits following it.   |
+   |         | removed if there are no remaining digits following it,   |
+   |         | unless the ``'#'`` option is used.                       |
    |         |                                                          |
    |         | Positive and negative infinity, positive and negative    |
    |         | zero, and nans, are formatted as ``inf``, ``-inf``,      |

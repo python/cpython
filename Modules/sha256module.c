@@ -17,7 +17,8 @@
 /* SHA objects */
 
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_bitutils.h"      // _Py_bswap32()
+#include "structmember.h"         // PyMemberDef
 #include "hashlib.h"
 #include "pystrhex.h"
 
@@ -30,12 +31,7 @@ class SHA256Type "SHAobject *" "&PyType_Type"
 /* Some useful types */
 
 typedef unsigned char SHA_BYTE;
-
-#if SIZEOF_INT == 4
-typedef unsigned int SHA_INT32; /* 32-bit integer */
-#else
-/* not defined. compilation will die. */
-#endif
+typedef uint32_t SHA_INT32;  /* 32-bit integer */
 
 /* The SHA block size and message digest sizes, in bytes */
 
@@ -61,14 +57,9 @@ typedef struct {
 #if PY_LITTLE_ENDIAN
 static void longReverse(SHA_INT32 *buffer, int byteCount)
 {
-    SHA_INT32 value;
-
     byteCount /= sizeof(*buffer);
-    while (byteCount--) {
-        value = *buffer;
-        value = ( ( value & 0xFF00FF00L ) >> 8  ) | \
-                ( ( value & 0x00FF00FFL ) << 8 );
-        *buffer++ = ( value << 16 ) | ( value >> 16 );
+    for (; byteCount--; buffer++) {
+        *buffer = _Py_bswap32(*buffer);
     }
 }
 #endif
@@ -413,7 +404,7 @@ SHA256Type_copy_impl(SHAobject *self)
 {
     SHAobject *newobj;
 
-    if (Py_TYPE(self) == &SHA256type) {
+    if (Py_IS_TYPE(self, &SHA256type)) {
         if ( (newobj = newSHA256object())==NULL)
             return NULL;
     } else {
@@ -601,13 +592,15 @@ static PyTypeObject SHA256type = {
 _sha256.sha256
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA-256 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha256_sha256_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=fa644436dcea5c31 input=09cce3fb855056b2]*/
+_sha256_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=a1de327e8e1185cf input=9be86301aeb14ea5]*/
 {
     SHAobject *new;
     Py_buffer buf;
@@ -641,13 +634,15 @@ _sha256_sha256_impl(PyObject *module, PyObject *string)
 _sha256.sha224
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA-224 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha256_sha224_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=21e3ba22c3404f93 input=27a04ba24c353a73]*/
+_sha256_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=08be6b36569bc69c input=9fcfb46e460860ac]*/
 {
     SHAobject *new;
     Py_buffer buf;
@@ -686,44 +681,45 @@ static struct PyMethodDef SHA_functions[] = {
     {NULL,      NULL}            /* Sentinel */
 };
 
+static int sha256_exec(PyObject *module)
+{
+    Py_SET_TYPE(&SHA224type, &PyType_Type);
+    if (PyType_Ready(&SHA224type) < 0) {
+        return -1;
+    }
+    Py_SET_TYPE(&SHA256type, &PyType_Type);
+    if (PyType_Ready(&SHA256type) < 0) {
+        return -1;
+    }
 
-/* Initialize this module. */
+    Py_INCREF((PyObject *)&SHA224type);
+    if (PyModule_AddObject(module, "SHA224Type", (PyObject *)&SHA224type) < 0) {
+        Py_DECREF((PyObject *)&SHA224type);
+        return -1;
+    }
+    Py_INCREF((PyObject *)&SHA256type);
+    if (PyModule_AddObject(module, "SHA256Type", (PyObject *)&SHA256type) < 0) {
+        Py_DECREF((PyObject *)&SHA256type);
+        return -1;
+    }
+    return 0;
+}
 
-#define insint(n,v) { PyModule_AddIntConstant(m,n,v); }
-
-
-static struct PyModuleDef _sha256module = {
-        PyModuleDef_HEAD_INIT,
-        "_sha256",
-        NULL,
-        -1,
-        SHA_functions,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+static PyModuleDef_Slot _sha256_slots[] = {
+    {Py_mod_exec, sha256_exec},
+    {0, NULL}
 };
 
+static struct PyModuleDef _sha256module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_sha256",
+    .m_methods = SHA_functions,
+    .m_slots = _sha256_slots,
+};
+
+/* Initialize this module. */
 PyMODINIT_FUNC
 PyInit__sha256(void)
 {
-    PyObject *m;
-
-    Py_TYPE(&SHA224type) = &PyType_Type;
-    if (PyType_Ready(&SHA224type) < 0)
-        return NULL;
-    Py_TYPE(&SHA256type) = &PyType_Type;
-    if (PyType_Ready(&SHA256type) < 0)
-        return NULL;
-
-    m = PyModule_Create(&_sha256module);
-    if (m == NULL)
-        return NULL;
-
-    Py_INCREF((PyObject *)&SHA224type);
-    PyModule_AddObject(m, "SHA224Type", (PyObject *)&SHA224type);
-    Py_INCREF((PyObject *)&SHA256type);
-    PyModule_AddObject(m, "SHA256Type", (PyObject *)&SHA256type);
-    return m;
-
+    return PyModuleDef_Init(&_sha256module);
 }

@@ -305,29 +305,30 @@ _multiprocessing_SemLock_acquire_impl(SemLockObject *self, int blocking,
 /*[clinic end generated code: output=f9998f0b6b0b0872 input=15e1f80c5a8f6f5a]*/
 {
     int res, err = 0;
-    double timeout;
     struct timespec deadline = {0};
-    struct timeval now;
-    long sec, nsec;
 
     if (self->kind == RECURSIVE_MUTEX && ISMINE(self)) {
         ++self->count;
         Py_RETURN_TRUE;
     }
 
-    if (timeout_obj != Py_None) {
-        timeout = PyFloat_AsDouble(timeout_obj);
-        if (PyErr_Occurred())
+    int use_deadline = (timeout_obj != Py_None);
+    if (use_deadline) {
+        double timeout = PyFloat_AsDouble(timeout_obj);
+        if (PyErr_Occurred()) {
             return NULL;
-        if (timeout < 0.0)
+        }
+        if (timeout < 0.0) {
             timeout = 0.0;
+        }
 
+        struct timeval now;
         if (gettimeofday(&now, NULL) < 0) {
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
         }
-        sec = (long) timeout;
-        nsec = (long) (1e9 * (timeout - sec) + 0.5);
+        long sec = (long) timeout;
+        long nsec = (long) (1e9 * (timeout - sec) + 0.5);
         deadline.tv_sec = now.tv_sec + sec;
         deadline.tv_nsec = now.tv_usec * 1000 + nsec;
         deadline.tv_sec += (deadline.tv_nsec / 1000000000);
@@ -345,7 +346,7 @@ _multiprocessing_SemLock_acquire_impl(SemLockObject *self, int blocking,
         /* Couldn't acquire immediately, need to block */
         do {
             Py_BEGIN_ALLOW_THREADS
-            if (timeout_obj == Py_None) {
+            if (!use_deadline) {
                 res = sem_wait(self->handle);
             }
             else {

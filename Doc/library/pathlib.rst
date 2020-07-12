@@ -273,7 +273,7 @@ Methods and properties
 
 .. testsetup::
 
-   from pathlib import PurePosixPath, PureWindowsPath
+   from pathlib import PurePath, PurePosixPath, PureWindowsPath
 
 Pure paths provide the following methods and properties:
 
@@ -462,6 +462,19 @@ Pure paths provide the following methods and properties:
       True
 
 
+.. method:: PurePath.is_relative_to(*other)
+
+   Return whether or not this path is relative to the *other* path.
+
+      >>> p = PurePath('/etc/passwd')
+      >>> p.is_relative_to('/etc')
+      True
+      >>> p.is_relative_to('/usr')
+      False
+
+   .. versionadded:: 3.9
+
+
 .. method:: PurePath.is_reserved()
 
    With :class:`PureWindowsPath`, return ``True`` if the path is considered
@@ -515,8 +528,10 @@ Pure paths provide the following methods and properties:
       >>> PurePath('a/b.py').match('/*.py')
       False
 
-   As with other methods, case-sensitivity is observed::
+   As with other methods, case-sensitivity follows platform defaults::
 
+      >>> PurePosixPath('b.py').match('*.PY')
+      False
       >>> PureWindowsPath('b.py').match('*.PY')
       True
 
@@ -536,7 +551,9 @@ Pure paths provide the following methods and properties:
         File "<stdin>", line 1, in <module>
         File "pathlib.py", line 694, in relative_to
           .format(str(self), str(formatted)))
-      ValueError: '/etc/passwd' does not start with '/usr'
+      ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other absolute.
+
+   NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
 
 
 .. method:: PurePath.with_name(name)
@@ -554,6 +571,30 @@ Pure paths provide the following methods and properties:
         File "/home/antoine/cpython/default/Lib/pathlib.py", line 751, in with_name
           raise ValueError("%r has an empty name" % (self,))
       ValueError: PureWindowsPath('c:/') has an empty name
+
+
+.. method:: PurePath.with_stem(stem)
+
+   Return a new path with the :attr:`stem` changed.  If the original path
+   doesn't have a name, ValueError is raised::
+
+      >>> p = PureWindowsPath('c:/Downloads/draft.txt')
+      >>> p.with_stem('final')
+      PureWindowsPath('c:/Downloads/final.txt')
+      >>> p = PureWindowsPath('c:/Downloads/pathlib.tar.gz')
+      >>> p.with_stem('lib')
+      PureWindowsPath('c:/Downloads/lib.gz')
+      >>> p = PureWindowsPath('c:/')
+      >>> p.with_stem('')
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        File "/home/antoine/cpython/default/Lib/pathlib.py", line 861, in with_stem
+          return self.with_name(stem + self.suffix)
+        File "/home/antoine/cpython/default/Lib/pathlib.py", line 851, in with_name
+          raise ValueError("%r has an empty name" % (self,))
+      ValueError: PureWindowsPath('c:/') has an empty name
+
+   .. versionadded:: 3.9
 
 
 .. method:: PurePath.with_suffix(suffix)
@@ -672,7 +713,7 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.stat()
 
-   Return information about this path (similarly to :func:`os.stat`).
+   Return a :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
    The result is looked up at each call to this method.
 
    ::
@@ -749,6 +790,8 @@ call fails (for example because the path doesn't exist).
    .. note::
       Using the "``**``" pattern in large directory trees may consume
       an inordinate amount of time.
+
+   .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
 
 .. method:: Path.group()
@@ -931,25 +974,47 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
+.. method:: Path.readlink()
+
+   Return the path to which the symbolic link points (as returned by
+   :func:`os.readlink`)::
+
+      >>> p = Path('mylink')
+      >>> p.symlink_to('setup.py')
+      >>> p.readlink()
+      PosixPath('setup.py')
+
+   .. versionadded:: 3.9
+
+
 .. method:: Path.rename(target)
 
-   Rename this file or directory to the given *target*.  On Unix, if
-   *target* exists and is a file, it will be replaced silently if the user
-   has permission.  *target* can be either a string or another path object::
+   Rename this file or directory to the given *target*, and return a new Path
+   instance pointing to *target*.  On Unix, if *target* exists and is a file,
+   it will be replaced silently if the user has permission.  *target* can be
+   either a string or another path object::
 
       >>> p = Path('foo')
       >>> p.open('w').write('some text')
       9
       >>> target = Path('bar')
       >>> p.rename(target)
+      PosixPath('bar')
       >>> target.open().read()
       'some text'
+
+   .. versionchanged:: 3.8
+      Added return value, return the new Path instance.
 
 
 .. method:: Path.replace(target)
 
-   Rename this file or directory to the given *target*.  If *target* points
-   to an existing file or directory, it will be unconditionally replaced.
+   Rename this file or directory to the given *target*, and return a new Path
+   instance pointing to *target*.  If *target* points to an existing file or
+   directory, it will be unconditionally replaced.
+
+   .. versionchanged:: 3.8
+      Added return value, return the new Path instance.
 
 
 .. method:: Path.resolve(strict=False)
@@ -989,6 +1054,8 @@ call fails (for example because the path doesn't exist).
        PosixPath('pathlib.py'),
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
+
+   .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
 
 .. method:: Path.rmdir()
@@ -1097,6 +1164,9 @@ call fails (for example because the path doesn't exist).
       >>> p.read_text()
       'Text file contents'
 
+   An existing file of the same name is overwritten. The optional parameters
+   have the same meaning as in :func:`open`.
+
    .. versionadded:: 3.5
 
 Correspondence to tools in the :mod:`os` module
@@ -1117,6 +1187,7 @@ os and os.path                         pathlib
 :func:`os.path.abspath`                :meth:`Path.resolve`
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
+:func:`os.makedirs`                    :meth:`Path.mkdir`
 :func:`os.rename`                      :meth:`Path.rename`
 :func:`os.replace`                     :meth:`Path.replace`
 :func:`os.rmdir`                       :meth:`Path.rmdir`
@@ -1128,6 +1199,7 @@ os and os.path                         pathlib
 :func:`os.path.isdir`                  :meth:`Path.is_dir`
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`
+:func:`os.readlink`                    :meth:`Path.readlink`
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,
                                        :meth:`Path.group`

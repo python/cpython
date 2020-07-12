@@ -1,9 +1,16 @@
 # coding: utf-8
 
 import re
+import json
+import pickle
 import textwrap
 import unittest
 import importlib.metadata
+
+try:
+    import pyfakefs.fake_filesystem_unittest as ffs
+except ImportError:
+    from .stubs import fake_filesystem_unittest as ffs
 
 from . import fixtures
 from importlib.metadata import (
@@ -32,7 +39,7 @@ class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
 class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
     def test_import_nonexistent_module(self):
         # Ensure that the MetadataPathFinder does not crash an import of a
-        # non-existant module.
+        # non-existent module.
         with self.assertRaises(ImportError):
             importlib.import_module('does_not_exist')
 
@@ -40,6 +47,11 @@ class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
         entries = dict(entry_points()['entries'])
         ep = entries['main']
         self.assertEqual(ep.load().__name__, "main")
+
+    def test_entrypoint_with_colon_in_name(self):
+        entries = dict(entry_points()['entries'])
+        ep = entries['ns:sub']
+        self.assertEqual(ep.value, 'mod:main')
 
     def test_resolve_without_attr(self):
         ep = EntryPoint(
@@ -157,10 +169,101 @@ class DiscoveryTests(fixtures.EggInfoPkg,
             for dist in dists
             )
 
+    def test_invalid_usage(self):
+        with self.assertRaises(ValueError):
+            list(distributions(context='something', name='else'))
+
 
 class DirectoryTest(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
-    def test(self):
+    def test_egg_info(self):
         # make an `EGG-INFO` directory that's unrelated
         self.site_dir.joinpath('EGG-INFO').mkdir()
         # used to crash with `IsADirectoryError`
-        self.assertIsNone(version('unknown-package'))
+        with self.assertRaises(PackageNotFoundError):
+            version('unknown-package')
+
+    def test_egg(self):
+        egg = self.site_dir.joinpath('foo-3.6.egg')
+        egg.mkdir()
+        with self.add_sys_path(egg):
+            with self.assertRaises(PackageNotFoundError):
+                version('foo')
+
+
+class MissingSysPath(fixtures.OnSysPath, unittest.TestCase):
+    site_dir = '/does-not-exist'
+
+    def test_discovery(self):
+        """
+        Discovering distributions should succeed even if
+        there is an invalid path on sys.path.
+        """
+        importlib.metadata.distributions()
+
+
+class InaccessibleSysPath(fixtures.OnSysPath, ffs.TestCase):
+    site_dir = '/access-denied'
+
+    def setUp(self):
+        super(InaccessibleSysPath, self).setUp()
+        self.setUpPyfakefs()
+        self.fs.create_dir(self.site_dir, perm_bits=000)
+
+    def test_discovery(self):
+        """
+        Discovering distributions should succeed even if
+        there is an invalid path on sys.path.
+        """
+        list(importlib.metadata.distributions())
+
+
+class TestEntryPoints(unittest.TestCase):
+    def __init__(self, *args):
+        super(TestEntryPoints, self).__init__(*args)
+        self.ep = importlib.metadata.EntryPoint('name', 'value', 'group')
+
+    def test_entry_point_pickleable(self):
+        revived = pickle.loads(pickle.dumps(self.ep))
+        assert revived == self.ep
+
+    def test_immutable(self):
+        """EntryPoints should be immutable"""
+        with self.assertRaises(AttributeError):
+            self.ep.name = 'badactor'
+
+    def test_repr(self):
+        assert 'EntryPoint' in repr(self.ep)
+        assert 'name=' in repr(self.ep)
+        assert "'name'" in repr(self.ep)
+
+    def test_hashable(self):
+        """EntryPoints should be hashable"""
+        hash(self.ep)
+
+    def test_json_dump(self):
+        """
+        json should not expect to be able to dump an EntryPoint
+        """
+        with self.assertRaises(Exception):
+            json.dumps(self.ep)
+
+    def test_module(self):
+        assert self.ep.module == 'value'
+
+    def test_attr(self):
+        assert self.ep.attr is None
+
+
+class FileSystem(
+        fixtures.OnSysPath, fixtures.SiteDir, fixtures.FileBuilder,
+        unittest.TestCase):
+    def test_unicode_dir_on_sys_path(self):
+        """
+        Ensure a Unicode subdirectory of a directory on sys.path
+        does not crash.
+        """
+        fixtures.build_files(
+            {self.unicode_filename(): {}},
+            prefix=self.site_dir,
+            )
+        list(distributions())

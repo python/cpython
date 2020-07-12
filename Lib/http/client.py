@@ -448,18 +448,25 @@ class HTTPResponse(io.BufferedIOBase):
             self._close_conn()
             return b""
 
+        if self.chunked:
+            return self._read_chunked(amt)
+
         if amt is not None:
-            # Amount is given, implement using readinto
-            b = bytearray(amt)
-            n = self.readinto(b)
-            return memoryview(b)[:n].tobytes()
+            if self.length is not None and amt > self.length:
+                # clip the read to the "end of response"
+                amt = self.length
+            s = self.fp.read(amt)
+            if not s and amt:
+                # Ideally, we would raise IncompleteRead if the content-length
+                # wasn't satisfied, but it might break compatibility.
+                self._close_conn()
+            elif self.length is not None:
+                self.length -= len(s)
+                if not self.length:
+                    self._close_conn()
+            return s
         else:
             # Amount is not given (unbounded read) so we must check self.length
-            # and self.chunked
-
-            if self.chunked:
-                return self._readall_chunked()
-
             if self.length is None:
                 s = self.fp.read()
             else:
@@ -560,7 +567,7 @@ class HTTPResponse(io.BufferedIOBase):
             self.chunk_left = chunk_left
         return chunk_left
 
-    def _readall_chunked(self):
+    def _read_chunked(self, amt=None):
         assert self.chunked != _UNKNOWN
         value = []
         try:
@@ -568,7 +575,15 @@ class HTTPResponse(io.BufferedIOBase):
                 chunk_left = self._get_chunk_left()
                 if chunk_left is None:
                     break
+
+                if amt is not None and amt <= chunk_left:
+                    value.append(self._safe_read(amt))
+                    self.chunk_left = chunk_left - amt
+                    break
+
                 value.append(self._safe_read(chunk_left))
+                if amt is not None:
+                    amt -= chunk_left
                 self.chunk_left = 0
             return b''.join(value)
         except IncompleteRead:
@@ -828,6 +843,8 @@ class HTTPConnection:
 
         (self.host, self.port) = self._get_hostport(host, port)
 
+        self._validate_host(self.host)
+
         # This is stored as an instance variable to allow unit
         # tests to replace it with a suitable mockup
         self._create_connection = socket.create_connection
@@ -1085,18 +1102,15 @@ class HTTPConnection:
         else:
             raise CannotSendRequest(self.__state)
 
-        # Save the method we use, we need it later in the response phase
+        # Save the method for use later in the response phase
         self._method = method
-        if not url:
-            url = '/'
-        # Prevent CVE-2019-9740.
-        if match := _contains_disallowed_url_pchar_re.search(url):
-            raise InvalidURL(f"URL can't contain control characters. {url!r} "
-                             f"(found at least {match.group()!r})")
+
+        url = url or '/'
+        self._validate_path(url)
+
         request = '%s %s %s' % (method, url, self._http_vsn_str)
 
-        # Non-ASCII characters should have been eliminated earlier
-        self._output(request.encode('ascii'))
+        self._output(self._encode_request(request))
 
         if self._http_vsn == 11:
             # Issue some standard headers for better HTTP/1.1 compliance
@@ -1173,6 +1187,26 @@ class HTTPConnection:
         else:
             # For HTTP/1.0, the server will assume "not chunked"
             pass
+
+    def _encode_request(self, request):
+        # ASCII also helps prevent CVE-2019-9740.
+        return request.encode('ascii')
+
+    def _validate_path(self, url):
+        """Validate a url for putrequest."""
+        # Prevent CVE-2019-9740.
+        match = _contains_disallowed_url_pchar_re.search(url)
+        if match:
+            raise InvalidURL(f"URL can't contain control characters. {url!r} "
+                             f"(found at least {match.group()!r})")
+
+    def _validate_host(self, host):
+        """Validate a host so it doesn't contain control characters."""
+        # Prevent CVE-2019-18348.
+        match = _contains_disallowed_url_pchar_re.search(host)
+        if match:
+            raise InvalidURL(f"URL can't contain control characters. {host!r} "
+                             f"(found at least {match.group()!r})")
 
     def putheader(self, header, *values):
         """Send a request header line to the server.
@@ -1358,6 +1392,9 @@ else:
             self.cert_file = cert_file
             if context is None:
                 context = ssl._create_default_https_context()
+                # enable PHA for TLS 1.3 connections if available
+                if context.post_handshake_auth is not None:
+                    context.post_handshake_auth = True
             will_verify = context.verify_mode != ssl.CERT_NONE
             if check_hostname is None:
                 check_hostname = context.check_hostname
@@ -1366,6 +1403,10 @@ else:
                                  "either CERT_OPTIONAL or CERT_REQUIRED")
             if key_file or cert_file:
                 context.load_cert_chain(cert_file, key_file)
+                # cert and key file means the user wants to authenticate.
+                # enable TLS 1.3 PHA implicitly even for custom contexts.
+                if context.post_handshake_auth is not None:
+                    context.post_handshake_auth = True
             self._context = context
             if check_hostname is not None:
                 self._context.check_hostname = check_hostname

@@ -1,9 +1,6 @@
 #ifndef Py_PYCORECONFIG_H
 #define Py_PYCORECONFIG_H
 #ifndef Py_LIMITED_API
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* --- PyStatus ----------------------------------------------- */
 
@@ -37,13 +34,14 @@ typedef struct {
 
 PyAPI_FUNC(PyStatus) PyWideStringList_Append(PyWideStringList *list,
     const wchar_t *item);
+PyAPI_FUNC(PyStatus) PyWideStringList_Insert(PyWideStringList *list,
+    Py_ssize_t index,
+    const wchar_t *item);
 
 
 /* --- PyPreConfig ----------------------------------------------- */
 
 typedef struct {
-    int _config_version;  /* Internal configuration version,
-                             used for ABI compatibility */
     int _config_init;     /* _PyConfigInitEnum value */
 
     /* Parse Py_PreInitializeFromBytesArgs() arguments?
@@ -112,7 +110,11 @@ typedef struct {
        "POSIX", otherwise it is set to 0. Inherit Py_UTF8Mode value value. */
     int utf8_mode;
 
-    int dev_mode;           /* Development mode. PYTHONDEVMODE, -X dev */
+    /* If non-zero, enable the Python Development Mode.
+
+       Set to 1 by the -X dev command line option. Set by the PYTHONDEVMODE
+       environment variable. */
+    int dev_mode;
 
     /* Memory allocator: PYTHONMALLOC env var.
        See PyMemAllocatorName for valid values. */
@@ -126,13 +128,11 @@ PyAPI_FUNC(void) PyPreConfig_InitIsolatedConfig(PyPreConfig *config);
 /* --- PyConfig ---------------------------------------------- */
 
 typedef struct {
-    int _config_version;  /* Internal configuration version,
-                             used for ABI compatibility */
     int _config_init;     /* _PyConfigInitEnum value */
 
     int isolated;         /* Isolated mode? see PyPreConfig.isolated */
     int use_environment;  /* Use environment variables? see PyPreConfig.use_environment */
-    int dev_mode;         /* Development mode? See PyPreConfig.dev_mode */
+    int dev_mode;         /* Python Development Mode? See PyPreConfig.dev_mode */
 
     /* Install signal handlers? Yes by default. */
     int install_signal_handlers;
@@ -150,7 +150,6 @@ typedef struct {
 
     int import_time;        /* PYTHONPROFILEIMPORTTIME, -X importtime */
     int show_ref_count;     /* -X showrefcount */
-    int show_alloc_count;   /* -X showalloccount */
     int dump_refs;          /* PYTHONDUMPREFS */
     int malloc_stats;       /* PYTHONMALLOCSTATS */
 
@@ -213,7 +212,10 @@ typedef struct {
     wchar_t *program_name;
 
     PyWideStringList xoptions;     /* Command line -X options */
-    PyWideStringList warnoptions;  /* Warnings options */
+
+    /* Warnings options: lowest to highest priority. warnings.filters
+       is built in the reverse order (highest to lowest priority). */
+    PyWideStringList warnoptions;
 
     /* If equal to zero, disable the import of the module site and the
        site-dependent manipulations of sys.path that it entails. Also disable
@@ -373,11 +375,13 @@ typedef struct {
                                        module_search_paths_set is equal
                                        to zero. */
 
-    wchar_t *executable;    /* sys.executable */
-    wchar_t *prefix;        /* sys.prefix */
-    wchar_t *base_prefix;   /* sys.base_prefix */
-    wchar_t *exec_prefix;   /* sys.exec_prefix */
+    wchar_t *executable;        /* sys.executable */
+    wchar_t *base_executable;   /* sys._base_executable */
+    wchar_t *prefix;            /* sys.prefix */
+    wchar_t *base_prefix;       /* sys.base_prefix */
+    wchar_t *exec_prefix;       /* sys.exec_prefix */
     wchar_t *base_exec_prefix;  /* sys.base_exec_prefix */
+    wchar_t *platlibdir;        /* sys.platlibdir */
 
     /* --- Parameter only used by Py_Main() ---------- */
 
@@ -400,10 +404,23 @@ typedef struct {
     /* If equal to 0, stop Python initialization before the "main" phase */
     int _init_main;
 
+    /* If non-zero, disallow threads, subprocesses, and fork.
+       Default: 0. */
+    int _isolated_interpreter;
+
+    /* The list of the original command line arguments passed to the Python
+       executable.
+
+       If 'orig_argv' list is empty and 'argv' is not a list only containing an
+       empty string, PyConfig_Read() copies 'argv' into 'orig_argv' before
+       modifying 'argv' (if 'parse_argv is non-zero).
+
+       _PyConfig_Write() initializes Py_GetArgcArgv() to this list. */
+    PyWideStringList orig_argv;
 } PyConfig;
 
-PyAPI_FUNC(PyStatus) PyConfig_InitPythonConfig(PyConfig *config);
-PyAPI_FUNC(PyStatus) PyConfig_InitIsolatedConfig(PyConfig *config);
+PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
+PyAPI_FUNC(void) PyConfig_InitIsolatedConfig(PyConfig *config);
 PyAPI_FUNC(void) PyConfig_Clear(PyConfig *);
 PyAPI_FUNC(PyStatus) PyConfig_SetString(
     PyConfig *config,
@@ -421,9 +438,17 @@ PyAPI_FUNC(PyStatus) PyConfig_SetBytesArgv(
 PyAPI_FUNC(PyStatus) PyConfig_SetArgv(PyConfig *config,
     Py_ssize_t argc,
     wchar_t * const *argv);
+PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
+    PyWideStringList *list,
+    Py_ssize_t length, wchar_t **items);
 
-#ifdef __cplusplus
-}
-#endif
+
+/* --- Helper functions --------------------------------------- */
+
+/* Get the original command line arguments, before Python modified them.
+
+   See also PyConfig.orig_argv. */
+PyAPI_FUNC(void) Py_GetArgcArgv(int *argc, wchar_t ***argv);
+
 #endif /* !Py_LIMITED_API */
 #endif /* !Py_PYCORECONFIG_H */

@@ -123,20 +123,14 @@ class IdleUserConfParser(IdleConfParser):
         self.RemoveEmptySections()
         return not self.sections()
 
-    def RemoveFile(self):
-        "Remove user config file self.file from disk if it exists."
-        if os.path.exists(self.file):
-            os.remove(self.file)
-
     def Save(self):
         """Update user configuration file.
 
         If self not empty after removing empty sections, write the file
         to disk. Otherwise, remove the file from disk if it exists.
-
         """
         fname = self.file
-        if fname:
+        if fname and fname[0] != '#':
             if not self.IsEmpty():
                 try:
                     cfgFile = open(fname, 'w')
@@ -145,8 +139,8 @@ class IdleUserConfParser(IdleConfParser):
                     cfgFile = open(fname, 'w')
                 with cfgFile:
                     self.write(cfgFile)
-            else:
-                self.RemoveFile()
+            elif os.path.exists(self.file):
+                os.remove(self.file)
 
 class IdleConf:
     """Hold config parsers for all idle config files in singleton instance.
@@ -164,6 +158,8 @@ class IdleConf:
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
+        # self.blink_off_time = <first editor text>['insertofftime']
+        # See https:/bugs.python.org/issue4630, msg356516.
 
         if not _utest:
             self.CreateConfigHandlers()
@@ -171,24 +167,13 @@ class IdleConf:
 
     def CreateConfigHandlers(self):
         "Populate default and user config parser dictionaries."
-        #build idle install path
-        if __name__ != '__main__': # we were imported
-            idleDir = os.path.dirname(__file__)
-        else: # we were exec'ed (for testing only)
-            idleDir = os.path.abspath(sys.path[0])
-        self.userdir = userDir = self.GetUserCfgDir()
-
-        defCfgFiles = {}
-        usrCfgFiles = {}
-        # TODO eliminate these temporaries by combining loops
-        for cfgType in self.config_types: #build config file names
-            defCfgFiles[cfgType] = os.path.join(
-                    idleDir, 'config-' + cfgType + '.def')
-            usrCfgFiles[cfgType] = os.path.join(
-                    userDir, 'config-' + cfgType + '.cfg')
-        for cfgType in self.config_types: #create config parsers
-            self.defaultCfg[cfgType] = IdleConfParser(defCfgFiles[cfgType])
-            self.userCfg[cfgType] = IdleUserConfParser(usrCfgFiles[cfgType])
+        idledir = os.path.dirname(__file__)
+        self.userdir = userdir = '' if idlelib.testing else self.GetUserCfgDir()
+        for cfg_type in self.config_types:
+            self.defaultCfg[cfg_type] = IdleConfParser(
+                os.path.join(idledir, f'config-{cfg_type}.def'))
+            self.userCfg[cfg_type] = IdleUserConfParser(
+                os.path.join(userdir or '#', f'config-{cfg_type}.cfg'))
 
     def GetUserCfgDir(self):
         """Return a filesystem directory for storing user config files.
@@ -199,12 +184,13 @@ class IdleConf:
         userDir = os.path.expanduser('~')
         if userDir != '~': # expanduser() found user home dir
             if not os.path.exists(userDir):
-                warn = ('\n Warning: os.path.expanduser("~") points to\n ' +
-                        userDir + ',\n but the path does not exist.')
-                try:
-                    print(warn, file=sys.stderr)
-                except OSError:
-                    pass
+                if not idlelib.testing:
+                    warn = ('\n Warning: os.path.expanduser("~") points to\n ' +
+                            userDir + ',\n but the path does not exist.')
+                    try:
+                        print(warn, file=sys.stderr)
+                    except OSError:
+                        pass
                 userDir = '~'
         if userDir == "~": # still no path to home!
             # traditionally IDLE has defaulted to os.getcwd(), is this adequate?
@@ -214,10 +200,13 @@ class IdleConf:
             try:
                 os.mkdir(userDir)
             except OSError:
-                warn = ('\n Warning: unable to create user config directory\n' +
-                        userDir + '\n Check path and permissions.\n Exiting!\n')
                 if not idlelib.testing:
-                    print(warn, file=sys.stderr)
+                    warn = ('\n Warning: unable to create user config directory\n' +
+                            userDir + '\n Check path and permissions.\n Exiting!\n')
+                    try:
+                        print(warn, file=sys.stderr)
+                    except OSError:
+                        pass
                 raise SystemExit
         # TODO continue without userDIr instead of exit
         return userDir
@@ -336,6 +325,10 @@ class IdleConf:
                 'hit-background':'#000000',
                 'error-foreground':'#ffffff',
                 'error-background':'#000000',
+                'context-foreground':'#000000',
+                'context-background':'#ffffff',
+                'linenumber-foreground':'#000000',
+                'linenumber-background':'#ffffff',
                 #cursor (only foreground can be set)
                 'cursor-foreground':'#000000',
                 #shell window
@@ -345,11 +338,11 @@ class IdleConf:
                 'stderr-background':'#ffffff',
                 'console-foreground':'#000000',
                 'console-background':'#ffffff',
-                'context-foreground':'#000000',
-                'context-background':'#ffffff',
                 }
         for element in theme:
-            if not cfgParser.has_option(themeName, element):
+            if not (cfgParser.has_option(themeName, element) or
+                    # Skip warning for new elements.
+                    element.startswith(('context-', 'linenumber-'))):
                 # Print warning that will return a default color
                 warning = ('\n Warning: config.IdleConf.GetThemeDict'
                            ' -\n problem retrieving theme element %r'

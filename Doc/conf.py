@@ -14,7 +14,8 @@ sys.path.append(os.path.abspath('includes'))
 # ---------------------
 
 extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
-              'pyspecific', 'c_annotations', 'escape4chm']
+              'pyspecific', 'c_annotations', 'escape4chm',
+              'asdl_highlight']
 
 
 doctest_global_setup = '''
@@ -48,8 +49,10 @@ highlight_language = 'python3'
 needs_sphinx = '1.8'
 
 # Ignore any .rst files in the venv/ directory.
-venvdir = os.getenv('VENVDIR', 'venv')
-exclude_patterns = [venvdir+'/*', 'README.rst']
+exclude_patterns = ['venv/*', 'README.rst']
+venvdir = os.getenv('VENVDIR')
+if venvdir is not None:
+    exclude_patterns.append(venvdir + '/*')
 
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {
@@ -125,6 +128,7 @@ latex_elements['preamble'] = r'''
 }
 \let\Verbatim=\OriginalVerbatim
 \let\endVerbatim=\endOriginalVerbatim
+\setcounter{tocdepth}{2}
 '''
 
 # The paper size ('letter' or 'a4').

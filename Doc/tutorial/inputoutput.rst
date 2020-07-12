@@ -172,7 +172,7 @@ Positional and keyword arguments can be arbitrarily combined::
 If you have a really long format string that you don't want to split up, it
 would be nice if you could reference the variables to be formatted by name
 instead of by position.  This can be done by simply passing the dict and using
-square brackets ``'[]'`` to access the keys ::
+square brackets ``'[]'`` to access the keys. ::
 
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
    >>> print('Jack: {0[Jack]:d}; Sjoerd: {0[Sjoerd]:d}; '
@@ -257,10 +257,10 @@ left with zeros.  It understands about plus and minus signs::
 Old string formatting
 ---------------------
 
-The ``%`` operator can also be used for string formatting. It interprets the
-left argument much like a :c:func:`sprintf`\ -style format string to be applied
-to the right argument, and returns the string resulting from this formatting
-operation. For example::
+The % operator (modulo) can also be used for string formatting. Given ``'string'
+% values``, instances of ``%`` in ``string`` are replaced with zero or more
+elements of ``values``. This operation is commonly known as string
+interpolation. For example::
 
    >>> import math
    >>> print('The value of pi is approximately %5.3f.' % math.pi)
@@ -358,8 +358,8 @@ To read a file's contents, call ``f.read(size)``, which reads some quantity of
 data and returns it as a string (in text mode) or bytes object (in binary mode).
 *size* is an optional numeric argument.  When *size* is omitted or negative, the
 entire contents of the file will be read and returned; it's your problem if the
-file is twice as large as your machine's memory. Otherwise, at most *size* bytes
-are read and returned.
+file is twice as large as your machine's memory. Otherwise, at most *size*
+characters (in text mode) or *size* bytes (in binary mode) are read and returned.
 If the end of the file has been reached, ``f.read()`` will return an empty
 string (``''``).  ::
 
@@ -412,11 +412,11 @@ or a bytes object (in binary mode) -- before writing them::
 represented as number of bytes from the beginning of the file when in binary mode and
 an opaque number when in text mode.
 
-To change the file object's position, use ``f.seek(offset, from_what)``.  The position is computed
+To change the file object's position, use ``f.seek(offset, whence)``.  The position is computed
 from adding *offset* to a reference point; the reference point is selected by
-the *from_what* argument.  A *from_what* value of 0 measures from the beginning
+the *whence* argument.  A *whence* value of 0 measures from the beginning
 of the file, 1 uses the current file position, and 2 uses the end of the file as
-the reference point.  *from_what* can be omitted and defaults to 0, using the
+the reference point.  *whence* can be omitted and defaults to 0, using the
 beginning of the file as the reference point. ::
 
    >>> f = open('workfile', 'rb+')

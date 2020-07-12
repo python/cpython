@@ -21,13 +21,13 @@ import urllib.parse
 import xml.etree
 import xml.etree.ElementTree
 import textwrap
-import threading
 from io import StringIO
 from collections import namedtuple
 from test.support.script_helper import assert_python_ok
+from test.support import threading_helper
 from test.support import (
     TESTFN, rmtree,
-    reap_children, reap_threads, captured_output, captured_stdout,
+    reap_children, captured_output, captured_stdout,
     captured_stderr, unlink, requires_docstrings
 )
 from test import pydoc_mod
@@ -477,6 +477,7 @@ class PydocDocTest(unittest.TestCase):
     def test_non_str_name(self):
         # issue14638
         # Treat illegal (non-str) name like no name
+
         class A:
             __name__ = 42
         class B:
@@ -1255,7 +1256,9 @@ cm(x) method of builtins.type instance
 
         X.attr.__doc__ = 'Custom descriptor'
         self.assertEqual(self._get_summary_lines(X.attr), """\
-<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>""")
+<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>
+    Custom descriptor
+""")
 
         X.attr.__name__ = 'foo'
         self.assertEqual(self._get_summary_lines(X.attr), """\
@@ -1312,6 +1315,17 @@ foo
             'async <a name="-an_async_generator"><strong>an_async_generator',
             html)
 
+    def test_html_for_https_links(self):
+        def a_fn_with_https_link():
+            """a link https://localhost/"""
+            pass
+
+        html = pydoc.HTMLDoc().document(a_fn_with_https_link)
+        self.assertIn(
+            '<a href="https://localhost/">https://localhost/</a>',
+            html
+        )
+
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
 
@@ -1326,7 +1340,7 @@ class PydocServerTest(unittest.TestCase):
         self.assertIn('0.0.0.0', serverthread.docserver.address)
 
         starttime = time.monotonic()
-        timeout = 1  #seconds
+        timeout = test.support.SHORT_TIMEOUT
 
         while serverthread.serving:
             time.sleep(.01)
@@ -1562,7 +1576,7 @@ class TestInternalUtilities(unittest.TestCase):
                 self.assertIsNone(self._get_revised_path(trailing_argv0dir))
 
 
-@reap_threads
+@threading_helper.reap_threads
 def test_main():
     try:
         test.support.run_unittest(PydocDocTest,

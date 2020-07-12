@@ -1,7 +1,150 @@
-What's New in IDLE 3.8.0 (since 3.7.0)
-Released on 2019-10-20?
+What's New in IDLE 3.9.0 (since 3.8.0)
+Released on 2020-10-05?
 ======================================
 
+
+bpo-37765: Add keywords to module name completion list.  Rewrite
+Completions section of IDLE doc.
+
+bpo-41152: The encoding of ``stdin``, ``stdout`` and ``stderr`` in IDLE
+is now always UTF-8.
+
+bpo-41144: Make Open Module open a special module such as os.path.
+
+bpo-40723: Make test_idle pass when run after import.
+Patch by Florian Dahlitz.
+
+bpo-38689: IDLE will no longer freeze when inspect.signature fails
+when fetching a calltip.
+
+bpo-27115: For 'Go to Line', use a Query entry box subclass with
+IDLE standard behavior and improved error checking.
+
+bpo-39885: When a context menu is invoked by right-clicking outside
+of a selection, clear the selection and move the cursor.  Cut and
+Copy require that the click be within the selection.
+
+bpo-39852: Edit "Go to line" now clears any selection, preventing
+accidental deletion.  It also updates Ln and Col on the status bar.
+
+bpo-39781: Selecting code context lines no longer causes a jump.
+
+bpo-39663: Add tests for pyparse find_good_parse_start().
+
+bpo-39600: Remove duplicate font names from configuration list.
+
+bpo-38792: Close a shell calltip if a :exc:`KeyboardInterrupt`
+or shell restart occurs.  Patch by Zackery Spytz.
+
+bpo-30780: Add remaining configdialog tests for buttons and
+highlights and keys tabs.
+
+bpo-39388: Settings dialog Cancel button cancels pending changes.
+
+bpo-39050: Settings dialog Help button again displays help text.
+
+bpo-32989: Add tests for editor newline_and_indent_event method.
+Remove unneeded arguments and dead code from pyparse
+find_good_parse_start method.
+
+bpo-38943: Fix autocomplete windows not always appearing on some
+systems.  Patch by Johnny Najera.
+
+bpo-38944: Escape key now closes IDLE completion windows.  Patch by
+Johnny Najera.
+
+bpo-38862: 'Strip Trailing Whitespace' on the Format menu removes extra
+newlines at the end of non-shell files.
+
+bpo-38636: Fix IDLE Format menu tab toggle and file indent width. These
+functions (default shortcuts Alt-T and Alt-U) were mistakenly disabled
+in 3.7.5 and 3.8.0.
+
+bpo-4360: Add an option to toggle IDLE's cursor blink for shell,
+editor, and output windows.  See Settings, General, Window Preferences,
+Cursor Blink.  Patch by Zachary Spytz.
+
+bpo-26353: Stop adding newline when saving an IDLE shell window.
+
+bpo-38598: Do not try to compile IDLE shell or output windows.
+
+
+What's New in IDLE 3.8.0 (since 3.7.0)
+Released on 2019-10-14
+======================================
+
+bpo-36698: IDLE no longer fails when writing non-encodable characters
+to stderr.  It now escapes them with a backslash, like the regular
+Python interpreter.  Add an errors field to the standard streams.
+
+bpo-13153: Improve tkinter's handing of non-BMP (astral) unicode
+characters, such as 'rocket \U0001f680'.  Whether a proper glyph or
+replacement char is displayed depends on the OS and font.  For IDLE,
+astral chars in code interfere with editing.
+
+bpo-35379: When exiting IDLE, catch any AttributeError.  One happens
+when EditorWindow.close is called twice.  Printing a traceback, when
+IDLE is run from a terminal, is useless and annoying.
+
+bpo-38183: To avoid test issues, test_idle ignores the user config
+directory.  It no longer tries to create or access .idlerc or any files
+within.  Users must run IDLE to discover problems with saving settings.
+
+bpo-38077: IDLE no longer adds 'argv' to the user namespace when
+initializing it.  This bug only affected 3.7.4 and 3.8.0b2 to 3.8.0b4.
+
+bpo-38401: Shell restart lines now fill the window width, always start
+with '=', and avoid wrapping unnecessarily. The line will still wrap
+if the included file name is long relative to the width.
+
+bpo-37092: Add mousewheel scrolling for IDLE module, path, and stack
+browsers.  Patch by George Zhang.
+
+bpo-35771: To avoid occasional spurious test_idle failures on slower
+machines, increase the ``hover_delay`` in test_tooltip.
+
+bpo-37824: Properly handle user input warnings in IDLE shell.
+Cease turning SyntaxWarnings into SyntaxErrors.
+
+bpo-37929: IDLE Settings dialog now closes properly when there is no
+shell window.
+
+bpo-37849: Fix completions list appearing too high or low when shown
+above the current line.
+
+bpo-36419: Refactor autocompete and improve testing.
+
+bpo-37748: Reorder the Run menu.  Put the most common choice,
+Run Module, at the top.
+
+bpo-37692: Improve highlight config sample with example shell
+interaction and better labels for shell elements.
+
+bpo-37628: Settings dialog no longer expands with font size.
+The font and highlight sample boxes gain scrollbars instead.
+
+bpo-17535: Add optional line numbers for IDLE editor windows.
+
+bpo-37627: Initialize the Customize Run dialog with the command line
+arguments most recently entered before.  The user can optionally edit
+before submitting them.
+
+bpo-33610: Code context always shows the correct context when toggled on.
+
+bpo-36390: Gather Format menu functions into format.py.  Combine
+paragraph.py, rstrip.py, and format methods from editor.py.
+
+bpo-37530: Optimize code context to reduce unneeded background activity.
+Font and highlight changes now occur along with text changes instead
+of after a random delay.
+
+bpo-27452: Cleanup config.py by inlining RemoveFile and simplifying
+the handling of __file__ in CreateConfigHandlers/
+
+bpo-26806: To compensate for stack frames added by IDLE and avoid
+possible problems with low recursion limits, add 30 to limits in the
+user code execution process.  Subtract 30 when reporting recursion
+limits to make this addition mostly transparent.
 
 bpo-37325: Fix tab focus traversal order for help source and custom
 run dialogs.
@@ -9,13 +152,21 @@ run dialogs.
 bpo-37321: Both subprocess connection error messages now refer to
 the 'Startup failure' section of the IDLE doc.
 
-bpo-37039: Adjust "Zoom Height" to individual screens by momemtarily
+bpo-37177: Properly attach search dialogs to their main window so
+that they behave like other dialogs and do not get hidden behind
+their main window.
+
+bpo-37039: Adjust "Zoom Height" to individual screens by momentarily
 maximizing the window on first use with a particular screen.  Changing
 screen settings may invalidate the saved height.  While a window is
 maximized, "Zoom Height" has no effect.
 
 bpo-35763: Make calltip reminder about '/' meaning positional-only less
 obtrusive by only adding it when there is room on the first line.
+
+bpo-5680: Add 'Run Customized' to the Run menu to run a module with
+customized settings. Any command line arguments entered are added
+to sys.argv. One can suppress the normal Shell main module restart.
 
 bpo-35610: Replace now redundant editor.context_use_ps1 with
 .prompt_last_line.  This finishes change started in bpo-31858.
@@ -55,6 +206,9 @@ corresponding argument of .close().  In IDLE, both have always been
 None or False since 2007.
 
 bpo-36096: Make colorizer state variables instance-only.
+
+bpo-32129: Avoid blurry IDLE application icon on macOS with Tk 8.6.
+Patch by Kevin Walzer.
 
 bpo-24310: Document settings dialog font tab sample.
 
