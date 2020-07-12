@@ -88,35 +88,36 @@ so, usually, to use Tkinter all you need is a simple import statement::
 
    .. FIXME: The following keyword arguments are currently recognized:
 
-Below are a few of the methods provided by the :class:`Tk` class.
+   Below are a few of the methods provided by the :class:`Tk` class.
 
-.. sectionauthor:: Richard Sheridan
+   .. sectionauthor:: Richard Sheridan
 
-.. method:: Tk.mainloop(threshold)
+   .. method:: mainloop(threshold)
 
-   Enters the main loop of Tkinter. This repeatedly dispatches Tcl events until either
-   :meth:`Tk.quit` is called, the number of open windows drops below `threshold`, or
-   an error occurs while executing events. Usually the default threshold of 0 is
-   appropriate.
+      Enters the main loop of Tkinter. This repeatedly dispatches Tcl events
+      until either :meth:`Tk.quit` is called, the number of open windows drops
+      below ``threshold``, or an error occurs while executing events. Usually
+      the default threshold of 0 is appropriate.
 
-.. method:: Tk.quit()
+   .. method:: quit()
 
-   Signals the Tkinter main loop to stop dispatching.
-   The main loop will exit AFTER the current Tcl event handler is
-   finished calling. If quit is called outside the context of a Tcl
-   event, for example from a thread, the main loop will not exit
-   until after the NEXT event is dispatched. If no more events are
-   forthcoming, main loop will keep blocking even if quit has been
-   called. In that case, call `Tk.after(0, Tk.quit)` instead.
+      Signals the Tkinter main loop to stop dispatching.
+      The main loop will exit AFTER the current Tcl event handler is
+      finished calling. If quit is called outside the context of a Tcl
+      event, for example from a thread, the main loop will not exit
+      until after the NEXT event is dispatched. If no more events are
+      forthcoming, main loop will keep blocking even if quit has been
+      called. In that case, call ``after(0, quit)`` instead.
 
-.. method:: Tk.dispatching()
+   .. method:: dispatching()
 
-   Determines if the Tkinter main loop is running. Returns True if the main loop is running, or
-   returns False if the main loop is not running. It is possible for some entity other than
-   the main loop to be dispatching events. Some examples are: calling the :meth:`Tk.update` command,
-   :meth:`_tkinter.tkapp.doonevent`, and the python command line EventHook.
+      Determines if the Tkinter main loop is running. Returns True if the main
+      loop is running, or returns False if the main loop is not running. It is
+      possible for some entity other than the main loop to be dispatching
+      events. Some examples are: calling the :meth:`Tk.update` command,
+      :meth:`_tkinter.tkapp.doonevent`, and the python command line EventHook.
 
-   .. versionadded:: 3.10
+      .. versionadded:: 3.10
 
 .. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=0)
 
