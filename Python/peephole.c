@@ -304,9 +304,9 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         cumlc = 0;
 
         switch (opcode) {
-                // Fold LOAD_CONST followed by conditional jumping/popping:
+            // Simplify LOAD_CONST followed by conditional jumping/popping:
             case LOAD_CONST:
-                cumlc = lastlc + 1;
+                cumlc = lastlc + 1;  // TODO?
                 if (!(JUMPS_ON_FALSE(nextop) || JUMPS_ON_TRUE(nextop)) ||
                     !ISBASICBLOCK(blocks, op_start, i + 1)) {
                     break;
@@ -321,6 +321,13 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 fill_nops(codestr, pop ? op_start : i + 1, (jump ? i : nexti) + 1);
                 if (jump) {
                     codestr[nexti] = PACKOPARG(JUMP_ABSOLUTE, _Py_OPARG(codestr[nexti]));
+                }
+                break;
+
+            // Remove DUP_TOP + POP_TOP:
+            case DUP_TOP:
+                if (nextop == POP_TOP) {
+                    fill_nops(codestr, op_start, nexti + 1);
                 }
                 break;
 

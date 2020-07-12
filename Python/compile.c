@@ -5447,7 +5447,7 @@ compiler_slice(struct compiler *c, expr_ty s)
 
 
 #define WILDCARD_CHECK(N) \
-    ((N)->kind == Name_kind &&  \
+    ((N)->kind == Name_kind && \
     _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
 
 
@@ -5607,7 +5607,7 @@ static int
 compiler_pattern_constant(struct compiler *c, expr_ty p, pattern_context pc)
 {
     assert(p->kind == Constant_kind);
-    ADDOP_LOAD_CONST(c, p->v.Constant.value);
+    CHECK(pattern_load(c, p, pc));
     ADDOP_COMPARE(c, Eq);
     return 1;
 }
@@ -5820,12 +5820,11 @@ compiler_match(struct compiler *c, stmt_ty s)
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases);
     pattern_context pc;
-    int last = 0, result;
-    match_case_ty m;
-    for (Py_ssize_t i = 0; i < cases; i++) {
-        if (i == cases - 1) {
-            last = 1;
-        }
+    int last, result;
+    match_case_ty m = asdl_seq_GET(s->v.Match.cases, cases - 1);
+    int has_default = WILDCARD_CHECK(m->pattern);
+    for (Py_ssize_t i = 0; i < cases - has_default; i++) {
+        last = i == cases - 1 - has_default;
         m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
         CHECK(next = compiler_new_block(c));
@@ -5845,17 +5844,24 @@ compiler_match(struct compiler *c, stmt_ty s)
             ADDOP(c, POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
-        if (!last) {
-            ADDOP_JREL(c, JUMP_FORWARD, end);
-        }
+        ADDOP_JREL(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, next);
-        if (m->pattern->kind == Name_kind && m->pattern->v.Name.ctx == Store
-            && !m->guard && !last)
+        if (!m->guard && m->pattern->kind == Name_kind &&
+            m->pattern->v.Name.ctx == Store && i != cases - 1)
         {
             CHECK(compiler_warn(c, "unguarded name capture pattern makes "
                                    "remaining cases unreachable"));
-            break;
         }
+    }
+    if (has_default) {
+        if (cases == 1) {
+            ADDOP(c, POP_TOP);
+        }
+        m = asdl_seq_GET(s->v.Match.cases, cases - 1);
+        if (m->guard) {
+            CHECK(compiler_jump_if(c, m->guard, end, 0));
+        }
+        VISIT_SEQ(c, stmt, m->body);
     }
     compiler_use_next_block(c, end);
     return 1;
