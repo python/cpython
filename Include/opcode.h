@@ -120,11 +120,11 @@ extern "C" {
 #define SET_ADD                 146
 #define MAP_ADD                 147
 #define LOAD_CLASSDEREF         148
-#define MATCH_CLASS             149
-#define MATCH_KEYS              150
-#define MATCH_ITEM              151
-#define MATCH_ITEM_END          152
-#define MATCH_ITEM_SLICE        153
+#define GET_INDEX               149
+#define GET_INDEX_END           150
+#define GET_INDEX_SLICE         151
+#define MATCH_CLASS             152
+#define MATCH_KEYS              153
 #define SETUP_ASYNC_WITH        154
 #define FORMAT_VALUE            155
 #define BUILD_CONST_KEY_MAP     156

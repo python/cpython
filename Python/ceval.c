@@ -3633,7 +3633,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(MATCH_ITEM): {
+        case TARGET(GET_INDEX): {
             PyObject *item = PySequence_GetItem(TOP(), oparg);
             if (!item) {
                 goto error;
@@ -3642,7 +3642,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(MATCH_ITEM_END): {
+        case TARGET(GET_INDEX_END): {
             Py_ssize_t len = PyLong_AsSsize_t(SECOND());
             if (len < 0) {
                 goto error;
@@ -3656,7 +3656,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(MATCH_ITEM_SLICE): {
+        case TARGET(GET_INDEX_SLICE): {
             Py_ssize_t len = PyLong_AsSsize_t(SECOND());
             if (len < 0) {
                 goto error;

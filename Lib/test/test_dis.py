@@ -145,24 +145,22 @@ def bug1333982(x=[]):
     pass
 
 dis_bug1333982 = """\
-%3d           0 LOAD_CONST               1 (0)
-              2 POP_JUMP_IF_TRUE        26
-              4 LOAD_ASSERTION_ERROR
-              6 LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
-              8 LOAD_CONST               3 ('bug1333982.<locals>.<listcomp>')
-             10 MAKE_FUNCTION            0
-             12 LOAD_FAST                0 (x)
-             14 GET_ITER
-             16 CALL_FUNCTION            1
+%3d           0 LOAD_ASSERTION_ERROR
+              2 LOAD_CONST               2 (<code object <listcomp> at 0x..., file "%s", line %d>)
+              4 LOAD_CONST               3 ('bug1333982.<locals>.<listcomp>')
+              6 MAKE_FUNCTION            0
+              8 LOAD_FAST                0 (x)
+             10 GET_ITER
+             12 CALL_FUNCTION            1
 
-%3d          18 LOAD_CONST               4 (1)
+%3d          14 LOAD_CONST               4 (1)
 
-%3d          20 BINARY_ADD
-             22 CALL_FUNCTION            1
-             24 RAISE_VARARGS            1
+%3d          16 BINARY_ADD
+             18 CALL_FUNCTION            1
+             20 RAISE_VARARGS            1
 
-%3d     >>   26 LOAD_CONST               0 (None)
-             28 RETURN_VALUE
+%3d          22 LOAD_CONST               0 (None)
+             24 RETURN_VALUE
 """ % (bug1333982.__code__.co_firstlineno + 1,
        __file__,
        bug1333982.__code__.co_firstlineno + 1,

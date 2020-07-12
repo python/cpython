@@ -1110,9 +1110,9 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case MATCH_CLASS:
             return -1;
-        case MATCH_ITEM:
-        case MATCH_ITEM_END:
-        case MATCH_ITEM_SLICE:
+        case GET_INDEX:
+        case GET_INDEX_END:
+        case GET_INDEX_SLICE:
         case MATCH_KEYS:
         case MATCH_MAPPING:
         case MATCH_SEQUENCE:
@@ -5441,9 +5441,9 @@ compiler_slice(struct compiler *c, expr_ty s)
 
 // For now, we eschew a full decision tree in favor of a simpler pass that just
 // tracks the most-recently-checked subclass and length info for the current
-// subject in the pattern_context struct. More complicated strategies are
-// possible, but early experimentation suggests that the current approach keeps
-// most of the runtime benefits while dramatically reducing compiler complexity.
+// subject in the pattern_context struct. Experimentation suggests that the
+// current approach keeps most of the runtime benefits while dramatically
+// reducing compiler complexity.
 
 
 #define WILDCARD_CHECK(N) \
@@ -5511,6 +5511,7 @@ compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context pc)
     Py_ssize_t size = asdl_seq_LEN(p->v.BoolOp.values);
     assert(size > 1);
     PyObject *names_copy;
+    // TODO: Leaks sets.
     for (Py_ssize_t i = 0; i < size; i++) {
         CHECK(names_copy  = PySet_New(pc.stores));
         ADDOP(c, DUP_TOP);
@@ -5560,6 +5561,9 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context pc) {
     asdl_seq *kwargs = p->v.Call.keywords;
     Py_ssize_t nargs = asdl_seq_LEN(args);
     Py_ssize_t nkwargs = asdl_seq_LEN(kwargs);
+    if (nargs + nkwargs > INT_MAX) {
+        return compiler_error(c, "too many sub-patterns in class pattern");
+    }
     basicblock *block, *end;
     CHECK(!validate_keywords(c, kwargs));
     CHECK(block = compiler_new_block(c));
@@ -5587,8 +5591,7 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context pc) {
         if (WILDCARD_CHECK(arg)) {
             continue;
         }
-        // TODO: Validate arg:
-        ADDOP_I(c, MATCH_ITEM, i);
+        ADDOP_I(c, GET_INDEX, i);
         CHECK(compiler_pattern(c, arg, pc));
         ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
     }
@@ -5620,6 +5623,7 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context pc)
     asdl_seq *values = p->v.Dict.values;
     Py_ssize_t size = asdl_seq_LEN(values);
     int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
+    // TODO :(i >= (1 << 8)) || (n-i-1 >= (INT_MAX >> 8))
     ADDOP(c, MATCH_MAPPING);
     ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
     if (size - star) {
@@ -5644,8 +5648,7 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context pc)
         if (WILDCARD_CHECK(value)) {
             continue;
         }
-        // TODO: Validate arg;
-        ADDOP_I(c, MATCH_ITEM, i);
+        ADDOP_I(c, GET_INDEX, i);
         CHECK(compiler_pattern(c, value, pc));
         ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     }
@@ -5704,13 +5707,13 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context pc)
     }
     ADDOP(c, ROT_TWO);
     for (Py_ssize_t i = 0; i < size; i++) {
-        // TODO: Raise for invalid sizes to MATCH_ITEM* opcodes.
+        // TODO :(i >= (1 << 8)) || (n-i-1 >= (INT_MAX >> 8))
         expr_ty value = asdl_seq_GET(values, i);
         if (WILDCARD_CHECK(value)) {
             continue;
         }
         if (star < 0 || i < star) {
-            ADDOP_I(c, MATCH_ITEM, i);
+            ADDOP_I(c, GET_INDEX, i);
         }
         else if (i == star) {
             assert(value->kind == Starred_kind);
@@ -5718,10 +5721,10 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context pc)
             if (WILDCARD_CHECK(value)) {
                 continue;
             }
-            ADDOP_I(c, MATCH_ITEM_SLICE, ((size - 1 - i) << 8) + i);
+            ADDOP_I(c, GET_INDEX_SLICE, ((size - 1 - i) << 8) + i);
         }
         else {
-            ADDOP_I(c, MATCH_ITEM_END, size - 1 - i);
+            ADDOP_I(c, GET_INDEX_END, size - 1 - i);
         }
         CHECK(compiler_pattern(c, value, pc));
         ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
