@@ -4,8 +4,7 @@
 #
 
 from test import support
-from test.support import os_helper
-from test.support.os_helper import TESTFN
+from test.support import TESTFN
 import unittest, io, codecs, sys
 import _multibytecodec
 
@@ -58,7 +57,7 @@ class Test_MultibyteCodec(unittest.TestCase):
                 code = '# coding: {}\n'.format(enc)
                 exec(code)
         finally:
-            os_helper.unlink(TESTFN)
+            support.unlink(TESTFN)
 
     def test_init_segfault(self):
         # bug #3305: this used to segfault
@@ -297,7 +296,7 @@ class Test_StreamReader(unittest.TestCase):
             finally:
                 f.close()
         finally:
-            os_helper.unlink(TESTFN)
+            support.unlink(TESTFN)
 
 class Test_StreamWriter(unittest.TestCase):
     def test_gb18030(self):

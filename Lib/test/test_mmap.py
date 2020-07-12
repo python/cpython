@@ -1,6 +1,5 @@
-from test.support import requires, _2G, _4G, gc_collect, cpython_only
-from test.support.import_helper import import_module
-from test.support.os_helper import TESTFN, unlink
+from test.support import (TESTFN, import_module, unlink,
+                          requires, _2G, _4G, gc_collect, cpython_only)
 import unittest
 import os
 import re
