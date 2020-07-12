@@ -119,7 +119,7 @@ _multiprocessing_sem_unlink(PyObject *module, PyObject *arg)
     const char *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("sem_unlink", 0, "str", arg);
+        _PyArg_BadArgument("sem_unlink", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t name_length;
@@ -148,4 +148,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=0e7388750e2d4920 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=418191c446cd5751 input=a9049054013a1b77]*/

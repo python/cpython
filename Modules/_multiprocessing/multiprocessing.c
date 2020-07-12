@@ -140,7 +140,6 @@ _multiprocessing_send_impl(PyObject *module, HANDLE handle, Py_buffer *buf)
     ret = send((SOCKET) handle, buf->buf, length, 0);
     Py_END_ALLOW_THREADS
 
-    PyBuffer_Release(buf);
     if (ret < 0)
         return PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
     return PyLong_FromLong(ret);

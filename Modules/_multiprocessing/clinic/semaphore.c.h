@@ -5,10 +5,10 @@ preserve
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_multiprocessing_SemLock_acquire__doc__,
-"acquire($self, /, block=1, timeout=None)\n"
+"acquire($self, /, block=True, timeout=None)\n"
 "--\n"
 "\n"
-"acquire the semaphore/lock");
+"Acquire the semaphore/lock.");
 
 #define _MULTIPROCESSING_SEMLOCK_ACQUIRE_METHODDEF    \
     {"acquire", (PyCFunction)(void(*)(void))_multiprocessing_SemLock_acquire, METH_FASTCALL|METH_KEYWORDS, _multiprocessing_SemLock_acquire__doc__},
@@ -36,11 +36,6 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
         goto skip_optional_pos;
     }
     if (args[0]) {
-        if (PyFloat_Check(args[0])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         blocking = _PyLong_AsInt(args[0]);
         if (blocking == -1 && PyErr_Occurred()) {
             goto exit;
@@ -65,7 +60,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock_release__doc__,
 "release($self, /)\n"
 "--\n"
 "\n"
-"release the semaphore/lock");
+"Release the semaphore/lock.");
 
 #define _MULTIPROCESSING_SEMLOCK_RELEASE_METHODDEF    \
     {"release", (PyCFunction)_multiprocessing_SemLock_release, METH_NOARGS, _multiprocessing_SemLock_release__doc__},
@@ -84,10 +79,10 @@ _multiprocessing_SemLock_release(SemLockObject *self, PyObject *Py_UNUSED(ignore
 #if !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_multiprocessing_SemLock_acquire__doc__,
-"acquire($self, /, block=1, timeout=None)\n"
+"acquire($self, /, block=True, timeout=None)\n"
 "--\n"
 "\n"
-"acquire the semaphore/lock");
+"Acquire the semaphore/lock.");
 
 #define _MULTIPROCESSING_SEMLOCK_ACQUIRE_METHODDEF    \
     {"acquire", (PyCFunction)(void(*)(void))_multiprocessing_SemLock_acquire, METH_FASTCALL|METH_KEYWORDS, _multiprocessing_SemLock_acquire__doc__},
@@ -115,11 +110,6 @@ _multiprocessing_SemLock_acquire(SemLockObject *self, PyObject *const *args, Py_
         goto skip_optional_pos;
     }
     if (args[0]) {
-        if (PyFloat_Check(args[0])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         blocking = _PyLong_AsInt(args[0]);
         if (blocking == -1 && PyErr_Occurred()) {
             goto exit;
@@ -144,7 +134,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock_release__doc__,
 "release($self, /)\n"
 "--\n"
 "\n"
-"release the semaphore/lock");
+"Release the semaphore/lock.");
 
 #define _MULTIPROCESSING_SEMLOCK_RELEASE_METHODDEF    \
     {"release", (PyCFunction)_multiprocessing_SemLock_release, METH_NOARGS, _multiprocessing_SemLock_release__doc__},
@@ -183,27 +173,12 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    if (PyFloat_Check(fastargs[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     kind = _PyLong_AsInt(fastargs[0]);
     if (kind == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (PyFloat_Check(fastargs[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     value = _PyLong_AsInt(fastargs[1]);
     if (value == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(fastargs[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     maxvalue = _PyLong_AsInt(fastargs[2]);
@@ -211,7 +186,7 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!PyUnicode_Check(fastargs[3])) {
-        _PyArg_BadArgument("SemLock", 4, "str", fastargs[3]);
+        _PyArg_BadArgument("SemLock", "argument 'name'", "str", fastargs[3]);
         goto exit;
     }
     Py_ssize_t name_length;
@@ -221,11 +196,6 @@ _multiprocessing_SemLock(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     if (strlen(name) != (size_t)name_length) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
-    if (PyFloat_Check(fastargs[4])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     unlink = _PyLong_AsInt(fastargs[4]);
@@ -274,7 +244,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock__count__doc__,
 "_count($self, /)\n"
 "--\n"
 "\n"
-"num of `acquire()`s minus num of `release()`s for this process");
+"Num of `acquire()`s minus num of `release()`s for this process.");
 
 #define _MULTIPROCESSING_SEMLOCK__COUNT_METHODDEF    \
     {"_count", (PyCFunction)_multiprocessing_SemLock__count, METH_NOARGS, _multiprocessing_SemLock__count__doc__},
@@ -292,7 +262,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock__is_mine__doc__,
 "_is_mine($self, /)\n"
 "--\n"
 "\n"
-"whether the lock is owned by this thread");
+"Whether the lock is owned by this thread.");
 
 #define _MULTIPROCESSING_SEMLOCK__IS_MINE_METHODDEF    \
     {"_is_mine", (PyCFunction)_multiprocessing_SemLock__is_mine, METH_NOARGS, _multiprocessing_SemLock__is_mine__doc__},
@@ -310,7 +280,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock__get_value__doc__,
 "_get_value($self, /)\n"
 "--\n"
 "\n"
-"get the value of the semaphore");
+"Get the value of the semaphore.");
 
 #define _MULTIPROCESSING_SEMLOCK__GET_VALUE_METHODDEF    \
     {"_get_value", (PyCFunction)_multiprocessing_SemLock__get_value, METH_NOARGS, _multiprocessing_SemLock__get_value__doc__},
@@ -328,7 +298,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock__is_zero__doc__,
 "_is_zero($self, /)\n"
 "--\n"
 "\n"
-"returns whether semaphore has value zero");
+"Return whether semaphore has value zero.");
 
 #define _MULTIPROCESSING_SEMLOCK__IS_ZERO_METHODDEF    \
     {"_is_zero", (PyCFunction)_multiprocessing_SemLock__is_zero, METH_NOARGS, _multiprocessing_SemLock__is_zero__doc__},
@@ -346,7 +316,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock__after_fork__doc__,
 "_after_fork($self, /)\n"
 "--\n"
 "\n"
-"rezero the net acquisition count after fork()");
+"Rezero the net acquisition count after fork().");
 
 #define _MULTIPROCESSING_SEMLOCK__AFTER_FORK_METHODDEF    \
     {"_after_fork", (PyCFunction)_multiprocessing_SemLock__after_fork, METH_NOARGS, _multiprocessing_SemLock__after_fork__doc__},
@@ -364,7 +334,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock___enter____doc__,
 "__enter__($self, /)\n"
 "--\n"
 "\n"
-"enter the semaphore/lock");
+"Enter the semaphore/lock.");
 
 #define _MULTIPROCESSING_SEMLOCK___ENTER___METHODDEF    \
     {"__enter__", (PyCFunction)_multiprocessing_SemLock___enter__, METH_NOARGS, _multiprocessing_SemLock___enter____doc__},
@@ -382,7 +352,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock___exit____doc__,
 "__exit__($self, exc_type=None, exc_value=None, exc_tb=None, /)\n"
 "--\n"
 "\n"
-"exit the semaphore/lock");
+"Exit the semaphore/lock.");
 
 #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF    \
     {"__exit__", (PyCFunction)(void(*)(void))_multiprocessing_SemLock___exit__, METH_FASTCALL, _multiprocessing_SemLock___exit____doc__},
@@ -429,4 +399,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK_RELEASE_METHODDEF
     #define _MULTIPROCESSING_SEMLOCK_RELEASE_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK_RELEASE_METHODDEF) */
-/*[clinic end generated code: output=23e54ef808b77beb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e7fd938150601fe5 input=a9049054013a1b77]*/
