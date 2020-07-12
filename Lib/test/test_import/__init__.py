@@ -27,6 +27,10 @@ from test.support.os_helper import (
     TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE, temp_dir)
 from test.support import script_helper
 from test.support import threading_helper
+from test.support.import_helper import (forget, make_legacy_pyc, unlink,
+                                        unload, DirsOnSysPath)
+from test.support.os_helper import (TESTFN, rmtree, temp_umask,
+                                    TESTFN_UNENCODABLE, temp_dir)
 from test.test_importlib.util import uncache
 from types import ModuleType
 
