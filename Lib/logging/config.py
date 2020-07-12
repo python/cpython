@@ -113,9 +113,7 @@ def _create_formatters(cp):
         dfs = cp.get(sectname, "datefmt", raw=True, fallback=None)
         stl = cp.get(sectname, "style", raw=True, fallback='%')
         vldstr = cp.get(sectname, "validate", raw=True, fallback="True")
-        vld = True
-        if vldstr == "False":
-            vld = False
+        vld = (vldstr != "False")
         c = logging.Formatter
         class_name = cp[sectname].get("class")
         if class_name:
