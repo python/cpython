@@ -979,7 +979,7 @@ Other constructors, all class methods:
    is used.
 
    For any :class:`.datetime` object *d*,
-   ``d == datetime.combine(d.date(), d.time(), d.tzinfo)``. If date is a
+   ``d == datetime.combine(d.date(), d.time(), d.tzinfo)``. If *date* is a
    :class:`.datetime` object, its time components and :attr:`.tzinfo` attributes
    are ignored.
 
