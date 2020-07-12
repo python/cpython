@@ -250,9 +250,9 @@ class Test_Csv(unittest.TestCase):
             self.assertRaises(OSError, writer.writerows, BadIterable())
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
     def test_writerows_legacy_strings(self):
         import _testcapi
-
         c = _testcapi.unicode_legacy_string('a')
         with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj)
