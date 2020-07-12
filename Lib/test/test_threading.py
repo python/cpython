@@ -4,7 +4,8 @@ Tests for the threading module.
 
 import test.support
 from test.support import threading_helper
-from test.support import verbose, import_module, cpython_only
+from test.support import verbose, cpython_only
+from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 import random

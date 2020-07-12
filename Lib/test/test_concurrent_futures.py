@@ -1,8 +1,9 @@
 from test import support
+from test.support import import_helper
 from test.support import threading_helper
 
 # Skip tests if _multiprocessing wasn't built.
-support.import_module('_multiprocessing')
+import_helper.import_module('_multiprocessing')
 # Skip tests if sem_open implementation is broken.
 support.skip_if_broken_multiprocessing_synchronize()
 

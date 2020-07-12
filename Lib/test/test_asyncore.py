@@ -10,8 +10,10 @@ import struct
 import threading
 
 from test import support
+from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
+from test.support import warnings_helper
 from io import BytesIO
 
 if support.PGO:
@@ -92,7 +94,7 @@ def bind_af_aware(sock, addr):
     """Helper function to bind a socket according to its family."""
     if HAS_UNIX_SOCKETS and sock.family == socket.AF_UNIX:
         # Make sure the path doesn't exist.
-        support.unlink(addr)
+        os_helper.unlink(addr)
         socket_helper.bind_unix_socket(sock, addr)
     else:
         sock.bind(addr)
@@ -369,14 +371,14 @@ class DispatcherWithSendTests(unittest.TestCase):
 class FileWrapperTest(unittest.TestCase):
     def setUp(self):
         self.d = b"It's not dead, it's sleeping!"
-        with open(support.TESTFN, 'wb') as file:
+        with open(os_helper.TESTFN, 'wb') as file:
             file.write(self.d)
 
     def tearDown(self):
-        support.unlink(support.TESTFN)
+        os_helper.unlink(os_helper.TESTFN)
 
     def test_recv(self):
-        fd = os.open(support.TESTFN, os.O_RDONLY)
+        fd = os.open(os_helper.TESTFN, os.O_RDONLY)
         w = asyncore.file_wrapper(fd)
         os.close(fd)
 
@@ -390,20 +392,20 @@ class FileWrapperTest(unittest.TestCase):
     def test_send(self):
         d1 = b"Come again?"
         d2 = b"I want to buy some cheese."
-        fd = os.open(support.TESTFN, os.O_WRONLY | os.O_APPEND)
+        fd = os.open(os_helper.TESTFN, os.O_WRONLY | os.O_APPEND)
         w = asyncore.file_wrapper(fd)
         os.close(fd)
 
         w.write(d1)
         w.send(d2)
         w.close()
-        with open(support.TESTFN, 'rb') as file:
+        with open(os_helper.TESTFN, 'rb') as file:
             self.assertEqual(file.read(), self.d + d1 + d2)
 
     @unittest.skipUnless(hasattr(asyncore, 'file_dispatcher'),
                          'asyncore.file_dispatcher required')
     def test_dispatcher(self):
-        fd = os.open(support.TESTFN, os.O_RDONLY)
+        fd = os.open(os_helper.TESTFN, os.O_RDONLY)
         data = []
         class FileDispatcher(asyncore.file_dispatcher):
             def handle_read(self):
@@ -415,16 +417,16 @@ class FileWrapperTest(unittest.TestCase):
 
     def test_resource_warning(self):
         # Issue #11453
-        fd = os.open(support.TESTFN, os.O_RDONLY)
+        fd = os.open(os_helper.TESTFN, os.O_RDONLY)
         f = asyncore.file_wrapper(fd)
 
         os.close(fd)
-        with support.check_warnings(('', ResourceWarning)):
+        with warnings_helper.check_warnings(('', ResourceWarning)):
             f = None
             support.gc_collect()
 
     def test_close_twice(self):
-        fd = os.open(support.TESTFN, os.O_RDONLY)
+        fd = os.open(os_helper.TESTFN, os.O_RDONLY)
         f = asyncore.file_wrapper(fd)
         os.close(fd)
 
@@ -804,10 +806,10 @@ class TestAPI_UseIPv6Sockets(BaseTestAPI):
 class TestAPI_UseUnixSockets(BaseTestAPI):
     if HAS_UNIX_SOCKETS:
         family = socket.AF_UNIX
-    addr = support.TESTFN
+    addr = os_helper.TESTFN
 
     def tearDown(self):
-        support.unlink(self.addr)
+        os_helper.unlink(self.addr)
         BaseTestAPI.tearDown(self)
 
 class TestAPI_UseIPv4Select(TestAPI_UseIPv4Sockets, unittest.TestCase):
