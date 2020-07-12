@@ -267,15 +267,20 @@ Note that, because of normalization, ``timedelta.max > -timedelta.min`` is true.
 
 Instance attributes (read-only):
 
-+------------------+----------------------------------------------------+
-| Attribute        | Value                                              |
-+==================+====================================================+
-| ``days``         | Between ``-999999999`` and ``999999999`` inclusive |
-+------------------+--------------------------------------------+-------+
-| ``seconds``      | Between ``0`` and ``86399`` inclusive              |
-+------------------+--------------------------------------------+-------+
-| ``microseconds`` | Between ``0`` and ``999999`` inclusive             |
-+------------------+--------------------------------------------+-------+
+.. attribute:: timedelta.days
+
+   Between ``-999999999`` and ``999999999`` inclusive.
+
+
+.. attribute:: timedelta.seconds
+
+   Between ``0`` and ``86399`` inclusive.
+
+
+.. attribute:: timedelta.microseconds
+
+   Between ``0`` and ``999999`` inclusive.
+
 
 Supported operations:
 
