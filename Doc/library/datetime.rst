@@ -1991,9 +1991,9 @@ Examples of working with a :class:`.time` object::
    DST changes when crossing time zones.
 
    An instance *tz* of a :class:`tzinfo` subclass that models both standard and
-   daylight times must be consistent in this sense:
+   daylight times must be consistent in this sense::
 
-   ``tz.utcoffset(dt) - tz.dst(dt)``
+      tz.utcoffset(dt) - tz.dst(dt)
 
    must return the same result for every :class:`.datetime` *dt* with ``dt.tzinfo ==
    tz``. For same :class:`tzinfo` subclasses, this expression yields the time
