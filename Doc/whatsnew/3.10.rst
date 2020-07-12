@@ -111,14 +111,14 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
 sys
-----
+---
 
 Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
 
 tkinter
-----
+-------
 
 XXX Added :meth:`tkinter.dispatching`, :meth:`tkinter.Misc.dispatching`, and
 :meth:`_tkinter.tkapp.dispatching`.
