@@ -12,7 +12,7 @@ import textwrap
 
 from contextlib import ExitStack
 from io import StringIO
-from test import support
+from test.support import os_helper
 # This little helper class is essential for testing pdb under doctest.
 from test.test_doctest import _FakeInput
 from unittest.mock import patch
@@ -1188,10 +1188,10 @@ def test_pdb_issue_20766():
 
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
-        support.unlink(support.TESTFN)
+        os_helper.unlink(os_helper.TESTFN)
 
     def _run_pdb(self, pdb_args, commands):
-        self.addCleanup(support.rmtree, '__pycache__')
+        self.addCleanup(os_helper.rmtree, '__pycache__')
         cmd = [sys.executable, '-m', 'pdb'] + pdb_args
         with subprocess.Popen(
                 cmd,
@@ -1210,13 +1210,13 @@ class PdbTestCase(unittest.TestCase):
         filename = 'main.py'
         with open(filename, 'w') as f:
             f.write(textwrap.dedent(script))
-        self.addCleanup(support.unlink, filename)
+        self.addCleanup(os_helper.unlink, filename)
         return self._run_pdb([filename], commands)
 
     def run_pdb_module(self, script, commands):
         """Runs the script code as part of a module"""
         self.module_name = 't_main'
-        support.rmtree(self.module_name)
+        os_helper.rmtree(self.module_name)
         main_file = self.module_name + '/__main__.py'
         init_file = self.module_name + '/__init__.py'
         os.mkdir(self.module_name)
@@ -1224,17 +1224,17 @@ class PdbTestCase(unittest.TestCase):
             pass
         with open(main_file, 'w') as f:
             f.write(textwrap.dedent(script))
-        self.addCleanup(support.rmtree, self.module_name)
+        self.addCleanup(os_helper.rmtree, self.module_name)
         return self._run_pdb(['-m', self.module_name], commands)
 
     def _assert_find_function(self, file_content, func_name, expected):
-        with open(support.TESTFN, 'wb') as f:
+        with open(os_helper.TESTFN, 'wb') as f:
             f.write(file_content)
 
         expected = None if not expected else (
-            expected[0], support.TESTFN, expected[1])
+            expected[0], os_helper.TESTFN, expected[1])
         self.assertEqual(
-            expected, pdb.find_function(func_name, support.TESTFN))
+            expected, pdb.find_function(func_name, os_helper.TESTFN))
 
     def test_find_function_empty_file(self):
         self._assert_find_function(b'', 'foo', None)
@@ -1284,9 +1284,9 @@ def bœr():
 
     def test_issue7964(self):
         # open the file as binary so we can force \r\n newline
-        with open(support.TESTFN, 'wb') as f:
+        with open(os_helper.TESTFN, 'wb') as f:
             f.write(b'print("testing my pdb")\r\n')
-        cmd = [sys.executable, '-m', 'pdb', support.TESTFN]
+        cmd = [sys.executable, '-m', 'pdb', os_helper.TESTFN]
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
@@ -1327,7 +1327,7 @@ def bœr():
         """
         with open('bar.py', 'w') as f:
             f.write(textwrap.dedent(bar))
-        self.addCleanup(support.unlink, 'bar.py')
+        self.addCleanup(os_helper.unlink, 'bar.py')
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertTrue(
             any('main.py(5)foo()->None' in l for l in stdout.splitlines()),
@@ -1337,7 +1337,7 @@ def bœr():
         # Invoking "continue" on a non-main thread triggered an exception
         # inside signal.signal.
 
-        with open(support.TESTFN, 'wb') as f:
+        with open(os_helper.TESTFN, 'wb') as f:
             f.write(textwrap.dedent("""
                 import threading
                 import pdb
@@ -1349,7 +1349,7 @@ def bœr():
 
                 t = threading.Thread(target=start_pdb)
                 t.start()""").encode('ascii'))
-        cmd = [sys.executable, '-u', support.TESTFN]
+        cmd = [sys.executable, '-u', os_helper.TESTFN]
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
@@ -1363,7 +1363,7 @@ def bœr():
 
     def test_issue36250(self):
 
-        with open(support.TESTFN, 'wb') as f:
+        with open(os_helper.TESTFN, 'wb') as f:
             f.write(textwrap.dedent("""
                 import threading
                 import pdb
@@ -1379,7 +1379,7 @@ def bœr():
                 pdb.Pdb(readrc=False).set_trace()
                 evt.set()
                 t.join()""").encode('ascii'))
-        cmd = [sys.executable, '-u', support.TESTFN]
+        cmd = [sys.executable, '-u', os_helper.TESTFN]
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
@@ -1412,7 +1412,7 @@ def bœr():
 
         save_home = os.environ.pop('HOME', None)
         try:
-            with support.temp_cwd():
+            with os_helper.temp_cwd():
                 with open('.pdbrc', 'w') as f:
                     f.write("invalid\n")
 
@@ -1437,7 +1437,7 @@ def bœr():
 
     def test_readrc_homedir(self):
         save_home = os.environ.pop("HOME", None)
-        with support.temp_dir() as temp_dir, patch("os.path.expanduser"):
+        with os_helper.temp_dir() as temp_dir, patch("os.path.expanduser"):
             rc_path = os.path.join(temp_dir, ".pdbrc")
             os.path.expanduser.return_value = rc_path
             try:
@@ -1506,12 +1506,12 @@ def bœr():
 
     def test_module_without_a_main(self):
         module_name = 't_main'
-        support.rmtree(module_name)
+        os_helper.rmtree(module_name)
         init_file = module_name + '/__init__.py'
         os.mkdir(module_name)
         with open(init_file, 'w') as f:
             pass
-        self.addCleanup(support.rmtree, module_name)
+        self.addCleanup(os_helper.rmtree, module_name)
         stdout, stderr = self._run_pdb(['-m', module_name], "")
         self.assertIn("ImportError: No module named t_main.__main__",
                       stdout.splitlines())
@@ -1531,11 +1531,11 @@ def bœr():
 
     def test_relative_imports(self):
         self.module_name = 't_main'
-        support.rmtree(self.module_name)
+        os_helper.rmtree(self.module_name)
         main_file = self.module_name + '/__main__.py'
         init_file = self.module_name + '/__init__.py'
         module_file = self.module_name + '/module.py'
-        self.addCleanup(support.rmtree, self.module_name)
+        self.addCleanup(os_helper.rmtree, self.module_name)
         os.mkdir(self.module_name)
         with open(init_file, 'w') as f:
             f.write(textwrap.dedent("""
@@ -1569,11 +1569,11 @@ def bœr():
     def test_relative_imports_on_plain_module(self):
         # Validates running a plain module. See bpo32691
         self.module_name = 't_main'
-        support.rmtree(self.module_name)
+        os_helper.rmtree(self.module_name)
         main_file = self.module_name + '/runme.py'
         init_file = self.module_name + '/__init__.py'
         module_file = self.module_name + '/module.py'
-        self.addCleanup(support.rmtree, self.module_name)
+        self.addCleanup(os_helper.rmtree, self.module_name)
         os.mkdir(self.module_name)
         with open(init_file, 'w') as f:
             f.write(textwrap.dedent("""
