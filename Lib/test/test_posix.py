@@ -462,10 +462,14 @@ class PosixTester(unittest.TestCase):
     def test_utime_nofollow_symlinks(self):
         now = time.time()
         posix.utime(os_helper.TESTFN, None, follow_symlinks=False)
-        self.assertRaises(TypeError, posix.utime, os_helper.TESTFN, (None, None), follow_symlinks=False)
-        self.assertRaises(TypeError, posix.utime, os_helper.TESTFN, (now, None), follow_symlinks=False)
-        self.assertRaises(TypeError, posix.utime, os_helper.TESTFN, (None, now), follow_symlinks=False)
-        posix.utime(os_helper.TESTFN, (int(now), int(now)), follow_symlinks=False)
+        self.assertRaises(TypeError, posix.utime, os_helper.TESTFN,
+                          (None, None), follow_symlinks=False)
+        self.assertRaises(TypeError, posix.utime, os_helper.TESTFN,
+                          (now, None), follow_symlinks=False)
+        self.assertRaises(TypeError, posix.utime, os_helper.TESTFN,
+                          (None, now), follow_symlinks=False)
+        posix.utime(os_helper.TESTFN, (int(now), int(now)),
+                    follow_symlinks=False)
         posix.utime(os_helper.TESTFN, (now, now), follow_symlinks=False)
         posix.utime(os_helper.TESTFN, follow_symlinks=False)
 
@@ -891,9 +895,12 @@ class PosixTester(unittest.TestCase):
     def test_utime(self):
         now = time.time()
         posix.utime(os_helper.TESTFN, None)
-        self.assertRaises(TypeError, posix.utime, os_helper.TESTFN, (None, None))
-        self.assertRaises(TypeError, posix.utime, os_helper.TESTFN, (now, None))
-        self.assertRaises(TypeError, posix.utime, os_helper.TESTFN, (None, now))
+        self.assertRaises(TypeError, posix.utime,
+                          os_helper.TESTFN, (None, None))
+        self.assertRaises(TypeError, posix.utime,
+                          os_helper.TESTFN, (now, None))
+        self.assertRaises(TypeError, posix.utime,
+                          os_helper.TESTFN, (None, now))
         posix.utime(os_helper.TESTFN, (int(now), int(now)))
         posix.utime(os_helper.TESTFN, (now, now))
 
@@ -928,7 +935,8 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(posix, 'lchflags'), 'test needs os.lchflags()')
     def test_lchflags_regular_file(self):
         self._test_chflags_regular_file(posix.lchflags, os_helper.TESTFN)
-        self._test_chflags_regular_file(posix.chflags, os_helper.TESTFN, follow_symlinks=False)
+        self._test_chflags_regular_file(posix.chflags, os_helper.TESTFN,
+                                        follow_symlinks=False)
 
     @unittest.skipUnless(hasattr(posix, 'lchflags'), 'test needs os.lchflags()')
     def test_lchflags_symlink(self):
@@ -1121,11 +1129,16 @@ class PosixTester(unittest.TestCase):
             now = time.time()
             posix.utime(os_helper.TESTFN, None, dir_fd=f)
             posix.utime(os_helper.TESTFN, dir_fd=f)
-            self.assertRaises(TypeError, posix.utime, os_helper.TESTFN, now, dir_fd=f)
-            self.assertRaises(TypeError, posix.utime, os_helper.TESTFN, (None, None), dir_fd=f)
-            self.assertRaises(TypeError, posix.utime, os_helper.TESTFN, (now, None), dir_fd=f)
-            self.assertRaises(TypeError, posix.utime, os_helper.TESTFN, (None, now), dir_fd=f)
-            self.assertRaises(TypeError, posix.utime, os_helper.TESTFN, (now, "x"), dir_fd=f)
+            self.assertRaises(TypeError, posix.utime, os_helper.TESTFN,
+                              now, dir_fd=f)
+            self.assertRaises(TypeError, posix.utime, os_helper.TESTFN,
+                              (None, None), dir_fd=f)
+            self.assertRaises(TypeError, posix.utime, os_helper.TESTFN,
+                              (now, None), dir_fd=f)
+            self.assertRaises(TypeError, posix.utime, os_helper.TESTFN,
+                              (None, now), dir_fd=f)
+            self.assertRaises(TypeError, posix.utime, os_helper.TESTFN,
+                              (now, "x"), dir_fd=f)
             posix.utime(os_helper.TESTFN, (int(now), int(now)), dir_fd=f)
             posix.utime(os_helper.TESTFN, (now, now), dir_fd=f)
             posix.utime(os_helper.TESTFN,
@@ -1136,7 +1149,8 @@ class PosixTester(unittest.TestCase):
             # try dir_fd and follow_symlinks together
             if os.utime in os.supports_follow_symlinks:
                 try:
-                    posix.utime(os_helper.TESTFN, follow_symlinks=False, dir_fd=f)
+                    posix.utime(os_helper.TESTFN, follow_symlinks=False,
+                                dir_fd=f)
                 except ValueError:
                     # whoops!  using both together not supported on this platform.
                     pass
@@ -1148,7 +1162,8 @@ class PosixTester(unittest.TestCase):
     def test_link_dir_fd(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
         try:
-            posix.link(os_helper.TESTFN, os_helper.TESTFN + 'link', src_dir_fd=f, dst_dir_fd=f)
+            posix.link(os_helper.TESTFN, os_helper.TESTFN + 'link',
+                       src_dir_fd=f, dst_dir_fd=f)
         except PermissionError as e:
             self.skipTest('posix.link(): %s' % e)
         else:
@@ -1242,8 +1257,10 @@ class PosixTester(unittest.TestCase):
     def test_symlink_dir_fd(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
         try:
-            posix.symlink(os_helper.TESTFN, os_helper.TESTFN + 'link', dir_fd=f)
-            self.assertEqual(posix.readlink(os_helper.TESTFN + 'link'), os_helper.TESTFN)
+            posix.symlink(os_helper.TESTFN, os_helper.TESTFN + 'link',
+                          dir_fd=f)
+            self.assertEqual(posix.readlink(os_helper.TESTFN + 'link'),
+                             os_helper.TESTFN)
         finally:
             posix.close(f)
             os_helper.unlink(os_helper.TESTFN + 'link')
