@@ -1,6 +1,6 @@
 import unittest
 import tkinter
-import threading, time
+import threading
 import time
 from test import support
 from tkinter.test.support import AbstractTkTest
@@ -244,19 +244,15 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
                 # keep the main thread from calling root.mainloop()
                 ready_for_mainloop.set()
 
-            # Everything after the event set must go in this try
-            # to guarantee that root.quit() is called in finally
-            try:
-                # self.assertTrue(root.dispatching()) but patient
-                for i in range (1000):
-                    if root.dispatching():
-                        thread_dispatching_eventually = True
-                        break
-                    time.sleep(0.01)
-                else:  # if not break
-                    thread_dispatching_eventually = False
-            finally:
-                root.after(0, root.quit)
+            # self.assertTrue(root.dispatching()) but patient
+            for i in range(1000):
+                if root.dispatching():
+                    thread_dispatching_eventually = True
+                    break
+                time.sleep(0.01)
+            else:  # if not break
+                thread_dispatching_eventually = False
+            root.after(0, root.quit)
 
         root = self.root
 
@@ -265,7 +261,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
         try:
             ready_for_mainloop = threading.Event()
-            thread = threading.Thread(target=target, daemon=True)
+            thread = threading.Thread(target=target)
             self.assertFalse(root.dispatching())
             thread.start()
             ready_for_mainloop.wait()

@@ -366,7 +366,7 @@ static int mainloopwaitattempts = 10; // 1 second
 static int
 WaitForMainloop(TkappObject* self)
 {
-    int i = 0;
+    int i;
     int max_attempts = mainloopwaitattempts;
     if (self->dispatching)
     {

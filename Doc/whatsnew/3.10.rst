@@ -111,16 +111,16 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
 sys
----
+----
 
 Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
 
 tkinter
----
+----
 
-Added :meth:`tkinter.dispatching`, :meth:`tkinter.Misc.dispatching`, and
+XXX Added :meth:`tkinter.dispatching`, :meth:`tkinter.Misc.dispatching`, and
 :meth:`_tkinter.tkapp.dispatching`.
 You can reliably call these to determine if the tkinter mainloop is running.
 
@@ -130,7 +130,7 @@ correctness of the new dispatching methods.
 Added another new method :meth:`_tkinter.tkapp.setmainloopwaitattempts` which
 can be used to obtain future thread waiting behavior.
 
-(see also Deprications section)
+(see also Deprecated section)
 (Contributed by Richard Sheridan in :issue:`41176`.)
 
 
@@ -146,7 +146,7 @@ Optimizations
 Deprecated
 ==========
 
-The :mod:`tkinter` module has deprected the undocumented behavior where a
+XXX The :mod:`tkinter` module has deprected the undocumented behavior where a
 thread will implicitly wait up to one second for the main thread to enter
 the main loop and then fail.
 The undocumented :meth:`_tkinter.tkapp.willdispatch` method which sidesteps

@@ -88,6 +88,10 @@ so, usually, to use Tkinter all you need is a simple import statement::
 
    .. FIXME: The following keyword arguments are currently recognized:
 
+Below are a few of the methods provided by the :class:`Tk` class.
+
+.. sectionauthor:: Richard Sheridan
+
 .. method:: Tk.mainloop(threshold)
 
    Enters the main loop of Tkinter. This repeatedly dispatches Tcl events until either
@@ -112,6 +116,8 @@ so, usually, to use Tkinter all you need is a simple import statement::
    the main loop to be dispatching events. Some examples are: calling the :meth:`Tk.update` command,
    :meth:`_tkinter.tkapp.doonevent`, and the python command line EventHook.
 
+   .. versionadded:: 3.10
+
 .. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=0)
 
    The :func:`Tcl` function is a factory function which creates an object much like
@@ -121,59 +127,6 @@ so, usually, to use Tkinter all you need is a simple import statement::
    where one cannot (such as Unix/Linux systems without an X server).  An object
    created by the :func:`Tcl` object can have a Toplevel window created (and the Tk
    subsystem initialized) by calling its :meth:`loadtk` method.
-
-.. TODO: Not a class, a module. how do I inline another module into this RST file?
-
-.. class:: _tkinter
-
-   This module contains the low-level interface to Tk, and should rarely be
-   used directly by application programmers. It is usually a shared library
-   (or DLL), but might in some cases be statically linked with the Python
-   interpreter.
-
-.. method:: _tkinter.create(screenName=None, baseName="", className="Tk", interactive=False, wantobjects=False, wantTk=True, sync=False, use=None)
-
-   This method is not for general use, but it is responsible for creating the
-   :class:`_tkinter.tkapp` object that can be found as the attribute
-   :attr:`Tk.tk`.
-
-.. class:: _tkinter.tkapp
-
-   This object contains most of the low-level interface to Tk, and should
-   rarely be used directly by application programmers.
-
-.. method:: _tkinter.tkapp.call(*args)
-
-   This method is the core entry point to Tcl/Tk. All Tkinter methods that
-   correspond to Tcl commands flow through here. This function is thread-safe,
-   meaning it can be used to issue commands to the Tcl interpreter in the main
-   thread from any other thread. If called from a thread, it will wait up to
-   one second for :meth:`Tk.mainloop` to be called, and then throw an error.
-   This error after one second is deprecated behavior, in the future it will
-   wait indefinitely for :meth:`Tk.mainloop`, :meth:`Tk.update`, or
-   :meth:`_tkinter.tkapp.dooneevent` to dispatch the event.
-
-.. method:: _tkinter.tkapp.willdispatch()
-
-   This method circumvents the thread waiting behavior of :meth:`_tkinter.tkapp.call`
-   until after the next call to :meth:`Tk.mainloop` returns. Instead of throwing
-   an error after one second, :meth:`_tkinter.tkapp.call` will wait indefinitely
-   for :meth:`Tk.mainloop` to come up, or for some other entity to dispatch the
-   call. This method is essentially a promise to the thread that you "will dispatch" soon.
-   This method is deprecated and future behavior will be equivialent to calling this
-   function on load and after each invocation of :meth:`Tk.mainloop`.
-
-.. method:: _tkinter.tkapp.setmainloopwaitattempts(num=10)
-
-   This method sets the number of 100 ms wait attempts of :meth:`_tkinter.tkapp.call`.
-   You can trigger an error immediately by setting num to 0. This method is deprecated
-   and future behavior will be equivalent to setting an infinite number of attempts.
-
-.. method:: _tkinter.tkapp.dooneevent(flags=0)
-
-   Dispatches exactly one event from the Tcl event queue. Must be called from the same
-   thread as the Tcl interpreter. See Tcl documentation for Tcl_DoOneEvent() for information
-   on using the flags argument.
 
 Other modules that provide Tk support include:
 
