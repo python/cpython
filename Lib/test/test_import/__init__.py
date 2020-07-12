@@ -19,13 +19,14 @@ import unittest
 from unittest import mock
 
 import test.support
-from test.support import (
-    TESTFN, forget, is_jython,
-    make_legacy_pyc, rmtree, swap_attr, swap_item, temp_umask,
-    unlink, unload, cpython_only, TESTFN_UNENCODABLE,
-    temp_dir, DirsOnSysPath)
+from test.support import (is_jython, swap_attr, swap_item, cpython_only)
+from test.support import os_helper
 from test.support import script_helper
 from test.support import threading_helper
+from test.support.import_helper import (forget, make_legacy_pyc, unlink,
+                                        unload, DirsOnSysPath)
+from test.support.os_helper import (TESTFN, rmtree, temp_umask,
+                                    TESTFN_UNENCODABLE, temp_dir)
 from test.test_importlib.util import uncache
 from types import ModuleType
 
@@ -1027,7 +1028,7 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
         not hasattr(sys, 'getwindowsversion')
         or sys.getwindowsversion() >= (6, 0),
         "Windows Vista or later required")
-    @test.support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_symlinked_dir_importable(self):
         # make sure sample can only be imported from the current directory.
         sys.path[:] = ['.']

@@ -213,11 +213,11 @@ def build_files(file_defs, prefix=pathlib.Path()):
 class FileBuilder:
     def unicode_filename(self):
         try:
-            import test.support
+            from test.support import os_helper
         except ImportError:
             # outside CPython, hard-code a unicode snowman
             return '☃'
-        return test.support.FS_NONASCII or \
+        return os_helper.FS_NONASCII or \
             self.skip("File system does not support non-ascii.")
 
 
