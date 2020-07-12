@@ -725,7 +725,7 @@ class PathLikeTests(NtpathTestCase):
     path = ntpath
 
     def setUp(self):
-        self.file_name = support.TESTFN.lower()
+        self.file_name = support.TESTFN
         self.file_path = FakePath(support.TESTFN)
         self.addCleanup(support.unlink, self.file_name)
         with open(self.file_name, 'xb', 0) as file:

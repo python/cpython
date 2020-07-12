@@ -9,6 +9,7 @@ import tempfile
 import textwrap
 import unittest
 from test import support
+from test.support import os_helper
 from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
     interpreter_requires_environment
@@ -141,11 +142,11 @@ class CmdLineTest(unittest.TestCase):
         # All good if execution is successful
         assert_python_ok('-c', 'pass')
 
-    @unittest.skipUnless(support.FS_NONASCII, 'need support.FS_NONASCII')
+    @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
     def test_non_ascii(self):
         # Test handling of non-ascii data
         command = ("assert(ord(%r) == %s)"
-                   % (support.FS_NONASCII, ord(support.FS_NONASCII)))
+                   % (os_helper.FS_NONASCII, ord(os_helper.FS_NONASCII)))
         assert_python_ok('-c', command)
 
     # On Windows, pass bytes to subprocess doesn't test how Python decodes the
@@ -463,8 +464,8 @@ class CmdLineTest(unittest.TestCase):
         # Issue #15001: PyRun_SimpleFileExFlags() did crash because it kept a
         # borrowed reference to the dict of __main__ module and later modify
         # the dict whereas the module was destroyed
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
         with open(filename, "w") as script:
             print("import sys", file=script)
             print("del sys.modules['__main__']", file=script)
@@ -499,7 +500,7 @@ class CmdLineTest(unittest.TestCase):
             # dummyvar to prevent extraneous -E
             dummyvar="")
         self.assertEqual(out.strip(), b'1 1 1')
-        with support.temp_cwd() as tmpdir:
+        with os_helper.temp_cwd() as tmpdir:
             fake = os.path.join(tmpdir, "uuid.py")
             main = os.path.join(tmpdir, "main.py")
             with open(fake, "w") as f:
@@ -561,7 +562,7 @@ class CmdLineTest(unittest.TestCase):
             elif opt is not None:
                 args[:0] = ['-X', f'pycache_prefix={opt}']
             with self.subTest(envval=envval, opt=opt):
-                with support.temp_cwd():
+                with os_helper.temp_cwd():
                     assert_python_ok(*args, **env)
 
     def run_xdev(self, *args, check_exitcode=True, xdev=True):
@@ -644,7 +645,8 @@ class CmdLineTest(unittest.TestCase):
 
     def check_warnings_filters(self, cmdline_option, envvar, use_pywarning=False):
         if use_pywarning:
-            code = ("import sys; from test.support import import_fresh_module; "
+            code = ("import sys; from test.support.import_helper import "
+                    "import_fresh_module; "
                     "warnings = import_fresh_module('warnings', blocked=['_warnings']); ")
         else:
             code = "import sys, warnings; "

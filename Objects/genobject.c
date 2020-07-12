@@ -415,11 +415,21 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         }
         if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
             /* `yf` is a generator or a coroutine. */
+            PyThreadState *tstate = _PyThreadState_GET();
+            PyFrameObject *f = tstate->frame;
+
             gen->gi_running = 1;
+            /* Since we are fast-tracking things by skipping the eval loop,
+               we need to update the current frame so the stack trace
+               will be reported correctly to the user. */
+            /* XXX We should probably be updating the current frame
+               somewhere in ceval.c. */
+            tstate->frame = gen->gi_frame;
             /* Close the generator that we are currently iterating with
                'yield from' or awaiting on with 'await'. */
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
+            tstate->frame = f;
             gen->gi_running = 0;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
@@ -1389,6 +1399,14 @@ PyTypeObject PyAsyncGen_Type = {
 };
 
 
+static struct _Py_async_gen_state *
+get_async_gen_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->async_gen;
+}
+
+
 PyObject *
 PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 {
@@ -1477,8 +1495,7 @@ async_gen_asend_dealloc(PyAsyncGenASend *o)
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->ags_gen);
     Py_CLEAR(o->ags_sendval);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_async_gen_state *state = &interp->async_gen;
+    struct _Py_async_gen_state *state = get_async_gen_state();
 #ifdef Py_DEBUG
     // async_gen_asend_dealloc() must not be called after _PyAsyncGen_Fini()
     assert(state->asend_numfree != -1);
@@ -1639,8 +1656,7 @@ static PyObject *
 async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
 {
     PyAsyncGenASend *o;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_async_gen_state *state = &interp->async_gen;
+    struct _Py_async_gen_state *state = get_async_gen_state();
 #ifdef Py_DEBUG
     // async_gen_asend_new() must not be called after _PyAsyncGen_Fini()
     assert(state->asend_numfree != -1);
@@ -1678,8 +1694,7 @@ async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
 {
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->agw_val);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_async_gen_state *state = &interp->async_gen;
+    struct _Py_async_gen_state *state = get_async_gen_state();
 #ifdef Py_DEBUG
     // async_gen_wrapped_val_dealloc() must not be called after _PyAsyncGen_Fini()
     assert(state->value_numfree != -1);
@@ -1752,8 +1767,7 @@ _PyAsyncGenValueWrapperNew(PyObject *val)
     _PyAsyncGenWrappedValue *o;
     assert(val);
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_async_gen_state *state = &interp->async_gen;
+    struct _Py_async_gen_state *state = get_async_gen_state();
 #ifdef Py_DEBUG
     // _PyAsyncGenValueWrapperNew() must not be called after _PyAsyncGen_Fini()
     assert(state->value_numfree != -1);

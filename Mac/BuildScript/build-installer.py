@@ -2,6 +2,20 @@
 """
 This script is used to build "official" universal installers on macOS.
 
+NEW for 3.9.0 and backports:
+- 2.7 end-of-life issues:
+    - Python 3 installs now update the Current version link
+      in /Library/Frameworks/Python.framework/Versions
+- fully support running under Python 3 as well as 2.7
+- support building on newer macOS systems with SIP
+- fully support building on macOS 10.9+
+- support 10.6+ on best effort
+- support bypassing docs build by supplying a prebuilt
+    docs html tarball in the third-party source library,
+    in the format and filename conventional of those
+    downloadable from python.org:
+        python-3.x.y-docs-html.tar.bz2
+
 NEW for 3.7.0:
 - support Intel 64-bit-only () and 32-bit-only installer builds
 - build and use internal Tcl/Tk 8.6 for 10.6+ builds
@@ -14,28 +28,7 @@ NEW for 3.7.0:
 - use generic "gcc" as compiler (CC env var) rather than "gcc-4.2"
 
 TODO:
-- support SDKROOT and DEVELOPER_DIR xcrun env variables
-- test with 10.5 and 10.4 and determine support status
-
-Please ensure that this script keeps working with Python 2.5, to avoid
-bootstrap issues (/usr/bin/python is Python 2.5 on OSX 10.5).  Doc builds
-use current versions of Sphinx and require a reasonably current python3.
-Sphinx and dependencies are installed into a venv using the python3's pip
-so will fetch them from PyPI if necessary.  Since python3 is now used for
-Sphinx, build-installer.py should also be converted to use python3!
-
-For 3.7.0, when building for a 10.6 or higher deployment target,
-build-installer builds and links with its own copy of Tcl/Tk 8.6.
-Otherwise, it requires an installed third-party version of
-Tcl/Tk 8.4 (for OS X 10.4 and 10.5 deployment targets), Tcl/TK 8.5
-(for 10.6 or later), or Tcl/TK 8.6 (for 10.9 or later)
-installed in /Library/Frameworks.  When installed,
-the Python built by this script will attempt to dynamically link first to
-Tcl and Tk frameworks in /Library/Frameworks if available otherwise fall
-back to the ones in /System/Library/Framework.  For the build, we recommend
-installing the most recent ActiveTcl 8.6. 8.5, or 8.4 version, depending
-on the deployment target.  The actual version linked to depends on the
-path of /Library/Frameworks/{Tcl,Tk}.framework/Versions/Current.
+- test building with SDKROOT and DEVELOPER_DIR xcrun env variables
 
 Usage: see USAGE variable in the script.
 """
@@ -56,14 +49,15 @@ STAT_0o775 = ( stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
 INCLUDE_TIMESTAMP = 1
 VERBOSE = 1
 
-from plistlib import Plist
+RUNNING_ON_PYTHON2 = sys.version_info.major == 2
 
-try:
+if RUNNING_ON_PYTHON2:
     from plistlib import writePlist
-except ImportError:
-    # We're run using python2.3
-    def writePlist(plist, path):
-        plist.write(path)
+else:
+    from plistlib import dump
+    def writePlist(path, plist):
+        with open(plist, 'wb') as fp:
+            dump(path, fp)
 
 def shellQuote(value):
     """
@@ -313,9 +307,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.31.1",
-              url="https://sqlite.org/2020/sqlite-autoconf-3310100.tar.gz",
-              checksum='2d0a553534c521504e3ac3ad3b90f125',
+              name="SQLite 3.32.2",
+              url="https://sqlite.org/2020/sqlite-autoconf-3320200.tar.gz",
+              checksum='eb498918a33159cdf8104997aad29e83',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -1066,14 +1060,40 @@ def buildPythonDocs():
     curDir = os.getcwd()
     os.chdir(buildDir)
     runCommand('make clean')
-    # Create virtual environment for docs builds with blurb and sphinx
-    runCommand('make venv')
-    runCommand('venv/bin/python3 -m pip install -U Sphinx==2.2.0')
-    runCommand('make html PYTHON=venv/bin/python')
+
+    # Search third-party source directory for a pre-built version of the docs.
+    #   Use the naming convention of the docs.python.org html downloads:
+    #       python-3.9.0b1-docs-html.tar.bz2
+    doctarfiles = [ f for f in os.listdir(DEPSRC)
+        if f.startswith('python-'+getFullVersion())
+        if f.endswith('-docs-html.tar.bz2') ]
+    if doctarfiles:
+        doctarfile = doctarfiles[0]
+        if not os.path.exists('build'):
+            os.mkdir('build')
+        # if build directory existed, it was emptied by make clean, above
+        os.chdir('build')
+        # Extract the first archive found for this version into build
+        runCommand('tar xjf %s'%shellQuote(os.path.join(DEPSRC, doctarfile)))
+        # see if tar extracted a directory ending in -docs-html
+        archivefiles = [ f for f in os.listdir('.')
+            if f.endswith('-docs-html')
+            if os.path.isdir(f) ]
+        if archivefiles:
+            archivefile = archivefiles[0]
+            # make it our 'Docs/build/html' directory
+            print(' -- using pre-built python documentation from %s'%archivefile)
+            os.rename(archivefile, 'html')
+        os.chdir(buildDir)
+
+    htmlDir = os.path.join('build', 'html')
+    if not os.path.exists(htmlDir):
+        # Create virtual environment for docs builds with blurb and sphinx
+        runCommand('make venv')
+        runCommand('venv/bin/python3 -m pip install -U Sphinx==2.3.1')
+        runCommand('make html PYTHON=venv/bin/python')
+    os.rename(htmlDir, docdir)
     os.chdir(curDir)
-    if not os.path.exists(docdir):
-        os.mkdir(docdir)
-    os.rename(os.path.join(buildDir, 'build', 'html'), docdir)
 
 
 def buildPython():
@@ -1099,11 +1119,11 @@ def buildPython():
     # Since the extra libs are not in their installed framework location
     # during the build, augment the library path so that the interpreter
     # will find them during its extension import sanity checks.
-    os.environ['DYLD_LIBRARY_PATH'] = os.path.join(WORKDIR,
-                                        'libraries', 'usr', 'local', 'lib')
+
     print("Running configure...")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
                "--with-universal-archs=%s "
+               "%s "
                "%s "
                "%s "
                "%s "
@@ -1114,12 +1134,32 @@ def buildPython():
         UNIVERSALARCHS,
         (' ', '--with-computed-gotos ')[PYTHON_3],
         (' ', '--without-ensurepip ')[PYTHON_3],
+        (' ', "--with-openssl='%s/libraries/usr/local'"%(
+                            shellQuote(WORKDIR)[1:-1],))[PYTHON_3],
         (' ', "--with-tcltk-includes='-I%s/libraries/usr/local/include'"%(
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
         (' ', "--with-tcltk-libs='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
+
+    # As of macOS 10.11 with SYSTEM INTEGRITY PROTECTION, DYLD_*
+    # environment variables are no longer automatically inherited
+    # by child processes from their parents. We used to just set
+    # DYLD_LIBRARY_PATH, pointing to the third-party libs,
+    # in build-installer.py's process environment and it was
+    # passed through the make utility into the environment of
+    # setup.py. Instead, we now append DYLD_LIBRARY_PATH to
+    # the existing RUNSHARED configuration value when we call
+    # make for extension module builds.
+
+    runshared_for_make = "".join([
+            " RUNSHARED=",
+            "'",
+            grepValue("Makefile", "RUNSHARED"),
+            ' DYLD_LIBRARY_PATH=',
+            os.path.join(WORKDIR, 'libraries', 'usr', 'local', 'lib'),
+            "'" ])
 
     # Look for environment value BUILDINSTALLER_BUILDPYTHON_MAKE_EXTRAS
     # and, if defined, append its value to the make command.  This allows
@@ -1135,21 +1175,24 @@ def buildPython():
 
     make_extras = os.getenv("BUILDINSTALLER_BUILDPYTHON_MAKE_EXTRAS")
     if make_extras:
-        make_cmd = "make " + make_extras
+        make_cmd = "make " + make_extras + runshared_for_make
     else:
-        make_cmd = "make"
+        make_cmd = "make" + runshared_for_make
     print("Running " + make_cmd)
     runCommand(make_cmd)
 
-    print("Running make install")
-    runCommand("make install DESTDIR=%s"%(
-        shellQuote(rootDir)))
+    make_cmd = "make install DESTDIR=%s %s"%(
+        shellQuote(rootDir),
+        runshared_for_make)
+    print("Running " + make_cmd)
+    runCommand(make_cmd)
 
-    print("Running make frameworkinstallextras")
-    runCommand("make frameworkinstallextras DESTDIR=%s"%(
-        shellQuote(rootDir)))
+    make_cmd = "make frameworkinstallextras DESTDIR=%s %s"%(
+        shellQuote(rootDir),
+        runshared_for_make)
+    print("Running " + make_cmd)
+    runCommand(make_cmd)
 
-    del os.environ['DYLD_LIBRARY_PATH']
     print("Copying required shared libraries")
     if os.path.exists(os.path.join(WORKDIR, 'libraries', 'Library')):
         build_lib_dir = os.path.join(
@@ -1278,7 +1321,13 @@ def buildPython():
     data = fp.read()
     fp.close()
     # create build_time_vars dict
-    exec(data)
+    if RUNNING_ON_PYTHON2:
+        exec(data)
+    else:
+        g_dict = {}
+        l_dict = {}
+        exec(data, g_dict, l_dict)
+        build_time_vars = l_dict['build_time_vars']
     vars = {}
     for k, v in build_time_vars.items():
         if type(v) == type(''):
@@ -1395,7 +1444,7 @@ def packageFromRecipe(targetDir, recipe):
 
         vers = getFullVersion()
         major, minor = getVersionMajorMinor()
-        pl = Plist(
+        pl = dict(
                 CFBundleGetInfoString="Python.%s %s"%(pkgname, vers,),
                 CFBundleIdentifier='org.python.Python.%s'%(pkgname,),
                 CFBundleName='Python.%s'%(pkgname,),
@@ -1417,7 +1466,7 @@ def packageFromRecipe(targetDir, recipe):
             )
         writePlist(pl, os.path.join(packageContents, 'Info.plist'))
 
-        pl = Plist(
+        pl = dict(
                     IFPkgDescriptionDescription=readme,
                     IFPkgDescriptionTitle=recipe.get('long_name', "Python.%s"%(pkgname,)),
                     IFPkgDescriptionVersion=vers,
@@ -1433,7 +1482,7 @@ def makeMpkgPlist(path):
     vers = getFullVersion()
     major, minor = getVersionMajorMinor()
 
-    pl = Plist(
+    pl = dict(
             CFBundleGetInfoString="Python %s"%(vers,),
             CFBundleIdentifier='org.python.Python',
             CFBundleName='Python',
@@ -1486,7 +1535,7 @@ def buildInstaller():
     os.mkdir(rsrcDir)
 
     makeMpkgPlist(os.path.join(pkgroot, 'Info.plist'))
-    pl = Plist(
+    pl = dict(
                 IFPkgDescriptionTitle="Python",
                 IFPkgDescriptionVersion=getVersion(),
             )

@@ -13,10 +13,8 @@ module _asyncio
 _Py_IDENTIFIER(__asyncio_running_event_loop__);
 _Py_IDENTIFIER(_asyncio_future_blocking);
 _Py_IDENTIFIER(add_done_callback);
-_Py_IDENTIFIER(_all_tasks_compat);
 _Py_IDENTIFIER(call_soon);
 _Py_IDENTIFIER(cancel);
-_Py_IDENTIFIER(current_task);
 _Py_IDENTIFIER(get_event_loop);
 _Py_IDENTIFIER(send);
 _Py_IDENTIFIER(throw);
@@ -293,10 +291,13 @@ error:
 static int
 set_running_loop(PyObject *loop)
 {
-    cached_running_holder = NULL;
-    cached_running_holder_tsid = 0;
+    PyObject *ts_dict = NULL;
 
-    PyObject *ts_dict = PyThreadState_GetDict();  // borrowed
+    PyThreadState *tstate = PyThreadState_Get();
+    if (tstate != NULL) {
+        ts_dict = _PyThreadState_GetDict(tstate);  // borrowed
+    }
+
     if (ts_dict == NULL) {
         PyErr_SetString(
             PyExc_RuntimeError, "thread-local storage is not available");
@@ -315,6 +316,9 @@ set_running_loop(PyObject *loop)
         return -1;
     }
     Py_DECREF(rl);
+
+    cached_running_holder = (PyObject *)rl;
+    cached_running_holder_tsid = PyThreadState_GetID(tstate);
 
     return 0;
 }
@@ -2183,91 +2187,6 @@ TaskObj_get_fut_waiter(TaskObj *task, void *Py_UNUSED(ignored))
 }
 
 /*[clinic input]
-@classmethod
-_asyncio.Task.current_task
-
-    loop: object = None
-
-Return the currently running task in an event loop or None.
-
-By default the current task for the current event loop is returned.
-
-None is returned when called not in the context of a Task.
-[clinic start generated code]*/
-
-static PyObject *
-_asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop)
-/*[clinic end generated code: output=99fbe7332c516e03 input=cd14770c5b79c7eb]*/
-{
-    PyObject *ret;
-    PyObject *current_task_func;
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Task.current_task() is deprecated, " \
-                     "use asyncio.current_task() instead",
-                     1) < 0) {
-        return NULL;
-    }
-
-    current_task_func = _PyObject_GetAttrId(asyncio_mod, &PyId_current_task);
-    if (current_task_func == NULL) {
-        return NULL;
-    }
-
-    if (loop == Py_None) {
-        loop = get_event_loop();
-        if (loop == NULL) {
-            Py_DECREF(current_task_func);
-            return NULL;
-        }
-        ret = PyObject_CallOneArg(current_task_func, loop);
-        Py_DECREF(current_task_func);
-        Py_DECREF(loop);
-        return ret;
-    }
-    else {
-        ret = PyObject_CallOneArg(current_task_func, loop);
-        Py_DECREF(current_task_func);
-        return ret;
-    }
-}
-
-/*[clinic input]
-@classmethod
-_asyncio.Task.all_tasks
-
-    loop: object = None
-
-Return a set of all tasks for an event loop.
-
-By default all tasks for the current event loop are returned.
-[clinic start generated code]*/
-
-static PyObject *
-_asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
-/*[clinic end generated code: output=11f9b20749ccca5d input=497f80bc9ce726b5]*/
-{
-    PyObject *res;
-    PyObject *all_tasks_func;
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Task.all_tasks() is deprecated, " \
-                     "use asyncio.all_tasks() instead",
-                     1) < 0) {
-        return NULL;
-    }
-
-    all_tasks_func = _PyObject_GetAttrId(asyncio_mod, &PyId__all_tasks_compat);
-    if (all_tasks_func == NULL) {
-        return NULL;
-    }
-
-    res = PyObject_CallOneArg(all_tasks_func, loop);
-    Py_DECREF(all_tasks_func);
-    return res;
-}
-
-/*[clinic input]
 _asyncio.Task._make_cancelled_error
 
 Create the CancelledError to raise if the Task is cancelled.
@@ -2587,8 +2506,6 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_FUTURE_DONE_METHODDEF
     _ASYNCIO_TASK_SET_RESULT_METHODDEF
     _ASYNCIO_TASK_SET_EXCEPTION_METHODDEF
-    _ASYNCIO_TASK_CURRENT_TASK_METHODDEF
-    _ASYNCIO_TASK_ALL_TASKS_METHODDEF
     _ASYNCIO_TASK_CANCEL_METHODDEF
     _ASYNCIO_TASK_GET_STACK_METHODDEF
     _ASYNCIO_TASK_PRINT_STACK_METHODDEF

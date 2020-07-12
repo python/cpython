@@ -65,45 +65,21 @@ _bz2_BZ2Compressor_flush(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
     return _bz2_BZ2Compressor_flush_impl(self);
 }
 
-PyDoc_STRVAR(_bz2_BZ2Compressor___init____doc__,
-"BZ2Compressor(compresslevel=9, /)\n"
+PyDoc_STRVAR(_bz2_BZ2Compressor___reduce____doc__,
+"__reduce__($self, /)\n"
 "--\n"
-"\n"
-"Create a compressor object for compressing data incrementally.\n"
-"\n"
-"  compresslevel\n"
-"    Compression level, as a number between 1 and 9.\n"
-"\n"
-"For one-shot compression, use the compress() function instead.");
+"\n");
 
-static int
-_bz2_BZ2Compressor___init___impl(BZ2Compressor *self, int compresslevel);
+#define _BZ2_BZ2COMPRESSOR___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)_bz2_BZ2Compressor___reduce__, METH_NOARGS, _bz2_BZ2Compressor___reduce____doc__},
 
-static int
-_bz2_BZ2Compressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+_bz2_BZ2Compressor___reduce___impl(BZ2Compressor *self);
+
+static PyObject *
+_bz2_BZ2Compressor___reduce__(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
 {
-    int return_value = -1;
-    int compresslevel = 9;
-
-    if (Py_IS_TYPE(self, &BZ2Compressor_Type) &&
-        !_PyArg_NoKeywords("BZ2Compressor", kwargs)) {
-        goto exit;
-    }
-    if (!_PyArg_CheckPositional("BZ2Compressor", PyTuple_GET_SIZE(args), 0, 1)) {
-        goto exit;
-    }
-    if (PyTuple_GET_SIZE(args) < 1) {
-        goto skip_optional;
-    }
-    compresslevel = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
-    if (compresslevel == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-skip_optional:
-    return_value = _bz2_BZ2Compressor___init___impl((BZ2Compressor *)self, compresslevel);
-
-exit:
-    return return_value;
+    return _bz2_BZ2Compressor___reduce___impl(self);
 }
 
 PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
@@ -181,33 +157,20 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_bz2_BZ2Decompressor___init____doc__,
-"BZ2Decompressor()\n"
+PyDoc_STRVAR(_bz2_BZ2Decompressor___reduce____doc__,
+"__reduce__($self, /)\n"
 "--\n"
-"\n"
-"Create a decompressor object for decompressing data incrementally.\n"
-"\n"
-"For one-shot decompression, use the decompress() function instead.");
+"\n");
 
-static int
-_bz2_BZ2Decompressor___init___impl(BZ2Decompressor *self);
+#define _BZ2_BZ2DECOMPRESSOR___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)_bz2_BZ2Decompressor___reduce__, METH_NOARGS, _bz2_BZ2Decompressor___reduce____doc__},
 
-static int
-_bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+_bz2_BZ2Decompressor___reduce___impl(BZ2Decompressor *self);
+
+static PyObject *
+_bz2_BZ2Decompressor___reduce__(BZ2Decompressor *self, PyObject *Py_UNUSED(ignored))
 {
-    int return_value = -1;
-
-    if (Py_IS_TYPE(self, &BZ2Decompressor_Type) &&
-        !_PyArg_NoPositional("BZ2Decompressor", args)) {
-        goto exit;
-    }
-    if (Py_IS_TYPE(self, &BZ2Decompressor_Type) &&
-        !_PyArg_NoKeywords("BZ2Decompressor", kwargs)) {
-        goto exit;
-    }
-    return_value = _bz2_BZ2Decompressor___init___impl((BZ2Decompressor *)self);
-
-exit:
-    return return_value;
+    return _bz2_BZ2Decompressor___reduce___impl(self);
 }
-/*[clinic end generated code: output=b49102ee26928a28 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=001f31fdacb4cb01 input=a9049054013a1b77]*/

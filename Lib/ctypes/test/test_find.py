@@ -2,6 +2,7 @@ import unittest
 import os.path
 import sys
 import test.support
+from test.support import os_helper
 from ctypes import *
 from ctypes.util import find_library
 
@@ -65,8 +66,8 @@ class Test_OpenGL_libs(unittest.TestCase):
         self.gle.gleGetJoinStyle
 
     def test_shell_injection(self):
-        result = find_library('; echo Hello shell > ' + test.support.TESTFN)
-        self.assertFalse(os.path.lexists(test.support.TESTFN))
+        result = find_library('; echo Hello shell > ' + os_helper.TESTFN)
+        self.assertFalse(os.path.lexists(os_helper.TESTFN))
         self.assertIsNone(result)
 
 
@@ -100,7 +101,7 @@ class LibPathFindTest(unittest.TestCase):
             # LD_LIBRARY_PATH)
             self.assertIsNone(find_library(libname))
             # now add the location to LD_LIBRARY_PATH
-            with test.support.EnvironmentVarGuard() as env:
+            with os_helper.EnvironmentVarGuard() as env:
                 KEY = 'LD_LIBRARY_PATH'
                 if KEY not in env:
                     v = d

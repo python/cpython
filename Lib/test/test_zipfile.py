@@ -19,9 +19,10 @@ from tempfile import TemporaryFile
 from random import randint, random, randbytes
 
 from test.support import script_helper
-from test.support import (TESTFN, findfile, unlink, rmtree, temp_dir, temp_cwd,
-                          requires_zlib, requires_bz2, requires_lzma,
-                          captured_stdout)
+from test.support import (findfile, requires_zlib, requires_bz2,
+                          requires_lzma, captured_stdout)
+from test.support.os_helper import TESTFN, unlink, rmtree, temp_dir, temp_cwd
+
 
 TESTFN2 = TESTFN + "2"
 TESTFNDIR = TESTFN + "d"
@@ -1599,6 +1600,11 @@ class OtherTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, "r") as zf:
             self.assertEqual(zf.filelist[0].filename, "foo.txt")
             self.assertEqual(zf.filelist[1].filename, "\xf6.txt")
+
+    def test_read_after_write_unicode_filenames(self):
+        with zipfile.ZipFile(TESTFN2, 'w') as zipfp:
+            zipfp.writestr('приклад', b'sample')
+            self.assertEqual(zipfp.read('приклад'), b'sample')
 
     def test_exclusive_create_zip_file(self):
         """Test exclusive creating a new zipfile."""

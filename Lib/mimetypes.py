@@ -375,7 +375,7 @@ def init(files=None):
 
 def read_mime_types(file):
     try:
-        f = open(file)
+        f = open(file, encoding='utf-8')
     except OSError:
         return None
     with f:
@@ -447,6 +447,7 @@ _types_map_default = {
     '.dvi'    : 'application/x-dvi',
     '.gtar'   : 'application/x-gtar',
     '.hdf'    : 'application/x-hdf',
+    '.h5'     : 'application/x-hdf5',
     '.latex'  : 'application/x-latex',
     '.mif'    : 'application/x-mif',
     '.cdf'    : 'application/x-netcdf',
