@@ -15,7 +15,12 @@
 #define ABSOLUTE_JUMP(op) (op==JUMP_ABSOLUTE \
     || op==POP_JUMP_IF_FALSE || op==POP_JUMP_IF_TRUE \
     || op==JUMP_IF_FALSE_OR_POP || op==JUMP_IF_TRUE_OR_POP || op==JUMP_IF_NOT_EXC_MATCH)
+#define JUMPS_ON_FALSE(op) (op==POP_JUMP_IF_FALSE || op==JUMP_IF_FALSE_OR_POP)
 #define JUMPS_ON_TRUE(op) (op==POP_JUMP_IF_TRUE || op==JUMP_IF_TRUE_OR_POP)
+#define POPS_ON_FALSE(op) (op==POP_JUMP_IF_TRUE || op==POP_JUMP_IF_FALSE \
+    || op==JUMP_IF_TRUE_OR_POP)
+#define POPS_ON_TRUE(op) (op==POP_JUMP_IF_TRUE || op==POP_JUMP_IF_FALSE \
+    || op==JUMP_IF_FALSE_OR_POP)
 #define GETJUMPTGT(arr, i) (get_arg(arr, i) / sizeof(_Py_CODEUNIT) + \
         (ABSOLUTE_JUMP(_Py_OPCODE(arr[i])) ? 0 : i+1))
 #define ISBASICBLOCK(blocks, start, end) \
@@ -299,12 +304,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         cumlc = 0;
 
         switch (opcode) {
-                /* Skip over LOAD_CONST trueconst
-                   POP_JUMP_IF_FALSE xx.  This improves
-                   "while 1" performance.  */
+                // Fold LOAD_CONST followed by conditional jumping/popping:
             case LOAD_CONST:
                 cumlc = lastlc + 1;
-                if (nextop != POP_JUMP_IF_FALSE  ||
+                if (!(JUMPS_ON_FALSE(nextop) || JUMPS_ON_TRUE(nextop)) ||
                     !ISBASICBLOCK(blocks, op_start, i + 1)) {
                     break;
                 }
@@ -313,9 +316,11 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 if (is_true == -1) {
                     goto exitError;
                 }
-                if (is_true == 1) {
-                    fill_nops(codestr, op_start, nexti + 1);
-                    cumlc = 0;
+                int jump = JUMPS_ON_TRUE(nextop) == is_true;
+                int pop = is_true ? POPS_ON_TRUE(nextop) : POPS_ON_FALSE(nextop);
+                fill_nops(codestr, pop ? op_start : i + 1, (jump ? i : nexti) + 1);
+                if (jump) {
+                    codestr[nexti] = PACKOPARG(JUMP_ABSOLUTE, _Py_OPARG(codestr[nexti]));
                 }
                 break;
 
