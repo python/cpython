@@ -1350,11 +1350,8 @@ class _Unparser(NodeVisitor):
             self.interleave(lambda: self.write(s), increasing_level_traverse, node.values)
 
     def visit_Attribute(self, node):
-        if self.in_pattern() and isinstance(node.value, Name):
-            self.write(node.value.id)
-        else:
-            self.set_precedence(_Precedence.ATOM, node.value)
-            self.traverse(node.value)
+        self.set_precedence(_Precedence.ATOM, node.value)
+        self.traverse(node.value)
         # Special case: 3.__abs__() is a syntax error, so if node.value
         # is an integer literal then we need to either parenthesize
         # it or add an extra space to get 3 .__abs__().
