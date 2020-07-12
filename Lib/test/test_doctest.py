@@ -3,6 +3,7 @@ Test script for doctest.
 """
 
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 import doctest
 import functools
@@ -442,7 +443,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from ...:25 (1 example)>]
+    [<DocTest sample_func from ...:27 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -706,7 +707,7 @@ class TestDocTestFinder(unittest.TestCase):
             try:
                 mod = importlib.import_module(pkg_name)
             finally:
-                support.forget(pkg_name)
+                import_helper.forget(pkg_name)
                 sys.path.pop()
 
             include_empty_finder = doctest.DocTestFinder(exclude_empty=False)
@@ -3112,7 +3113,7 @@ def test_main():
 
 
 def test_coverage(coverdir):
-    trace = support.import_module('trace')
+    trace = import_helper.import_module('trace')
     tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,],
                          trace=0, count=1)
     tracer.run('test_main()')
