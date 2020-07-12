@@ -1330,7 +1330,7 @@ Instance methods:
    If *d* is aware, *d* is normalized to UTC time, by subtracting
    ``d.utcoffset()``, and a :class:`time.struct_time` for the
    normalized time is returned. :attr:`tm_isdst` is forced to ``0``. Note
-   that an :exc:`OverflowError` may be raised if *d*.year was
+   that an :exc:`OverflowError` may be raised if ``d.year`` was
    ``MINYEAR`` or ``MAXYEAR`` and UTC adjustment spills over a year
    boundary.
 
