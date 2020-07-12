@@ -504,12 +504,12 @@ readline_get_begidx_impl(PyObject *module)
 /*[clinic input]
 readline.get_endidx
 
-get the ending index of the completion scope
+Get the ending index of the completion scope.
 [clinic start generated code]*/
 
 static PyObject *
 readline_get_endidx_impl(PyObject *module)
-/*[clinic end generated code: output=7f763350b12d7517 input=ca0cb4def8595156]*/
+/*[clinic end generated code: output=7f763350b12d7517 input=d4c7e34a625fd770]*/
 {
     Py_INCREF(readlinestate_global->endidx);
     return readlinestate_global->endidx;
@@ -523,12 +523,12 @@ readline.set_completer_delims
     string: object
     /
 
-set the word delimiters for completion
+Set the word delimiters for completion.
 [clinic start generated code]*/
 
 static PyObject *
 readline_set_completer_delims(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=4305b266106c4f1f input=47a3c234941ef191]*/
+/*[clinic end generated code: output=4305b266106c4f1f input=ae945337ebd01e20]*/
 {
     char *break_chars;
     PyObject *encoded = encode(string);
@@ -588,12 +588,12 @@ readline.remove_history_item
     pos as entry_number: int
     /
 
-remove history item given by its position
+Remove history item given by its position.
 [clinic start generated code]*/
 
 static PyObject *
 readline_remove_history_item_impl(PyObject *module, int entry_number)
-/*[clinic end generated code: output=ab114f029208c7e8 input=68e74a10d80439c7]*/
+/*[clinic end generated code: output=ab114f029208c7e8 input=c8520ac3da50224e]*/
 {
     HIST_ENTRY *entry;
 
@@ -621,13 +621,13 @@ readline.replace_history_item
     line: unicode
     /
 
-replaces history item given by its position with contents of line
+Replaces history item given by its position with contents of line.
 [clinic start generated code]*/
 
 static PyObject *
 readline_replace_history_item_impl(PyObject *module, int entry_number,
                                    PyObject *line)
-/*[clinic end generated code: output=f8cec2770ca125eb input=4ff02e93795bab08]*/
+/*[clinic end generated code: output=f8cec2770ca125eb input=b7ccef0780ae041b]*/
 {
     PyObject *encoded;
     HIST_ENTRY *old_entry;
@@ -662,12 +662,12 @@ readline.add_history
     string: object
     /
 
-add an item to the history buffer
+Add an item to the history buffer.
 [clinic start generated code]*/
 
 static PyObject *
 readline_add_history(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=b107b7e8106e803d input=f7a8e84a02d7452f]*/
+/*[clinic end generated code: output=b107b7e8106e803d input=e57c1cf6bc68d7e3]*/
 {
     PyObject *encoded = encode(string);
     if (encoded == NULL) {
@@ -706,12 +706,12 @@ readline_set_auto_history_impl(PyObject *module,
 /*[clinic input]
 readline.get_completer_delims
 
-get the word delimiters for completion
+Get the word delimiters for completion.
 [clinic start generated code]*/
 
 static PyObject *
 readline_get_completer_delims_impl(PyObject *module)
-/*[clinic end generated code: output=6b060280fa68ef43 input=51134d5723987d99]*/
+/*[clinic end generated code: output=6b060280fa68ef43 input=e36eb14fb8a1f08a]*/
 {
     return decode(rl_completer_word_break_characters);
 }
@@ -741,12 +741,12 @@ readline_set_completer_impl(PyObject *module, PyObject *function)
 /*[clinic input]
 readline.get_completer
 
-Returns current completer function.
+Get the current completer function.
 [clinic start generated code]*/
 
 static PyObject *
 readline_get_completer_impl(PyObject *module)
-/*[clinic end generated code: output=6e6bbd8226d14475 input=98ff8fd6a0f411d7]*/
+/*[clinic end generated code: output=6e6bbd8226d14475 input=6457522e56d70d13]*/
 {
     if (readlinestate_global->completer == NULL) {
         Py_RETURN_NONE;
@@ -782,12 +782,12 @@ readline.get_history_item
     index as idx: int
     /
 
-return the current contents of history item at index.
+Return the current contents of history item at index.
 [clinic start generated code]*/
 
 static PyObject *
 readline_get_history_item_impl(PyObject *module, int idx)
-/*[clinic end generated code: output=83d3e53ea5f34b3d input=a41383da49ae5c49]*/
+/*[clinic end generated code: output=83d3e53ea5f34b3d input=63fff0c3c4323269]*/
 {
     HIST_ENTRY *hist_ent;
 
@@ -822,12 +822,12 @@ readline_get_history_item_impl(PyObject *module, int idx)
 /*[clinic input]
 readline.get_current_history_length
 
-return the current (not the maximum) length of history.
+Return the current (not the maximum) length of history.
 [clinic start generated code]*/
 
 static PyObject *
 readline_get_current_history_length_impl(PyObject *module)
-/*[clinic end generated code: output=436b294f12ba1e3f input=d93e67c2cbeb29b0]*/
+/*[clinic end generated code: output=436b294f12ba1e3f input=9cb3f431a68d071f]*/
 {
     return PyLong_FromLong((long)_py_get_history_length());
 }
@@ -837,12 +837,12 @@ readline_get_current_history_length_impl(PyObject *module)
 /*[clinic input]
 readline.get_line_buffer
 
-return the current contents of the line buffer.
+Return the current contents of the line buffer.
 [clinic start generated code]*/
 
 static PyObject *
 readline_get_line_buffer_impl(PyObject *module)
-/*[clinic end generated code: output=d22f9025ecad80e4 input=2aff0d68f89f14b5]*/
+/*[clinic end generated code: output=d22f9025ecad80e4 input=5f5fbc0d12c69412]*/
 {
     return decode(rl_line_buffer);
 }

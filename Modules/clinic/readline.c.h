@@ -357,7 +357,7 @@ PyDoc_STRVAR(readline_get_endidx__doc__,
 "get_endidx($module, /)\n"
 "--\n"
 "\n"
-"get the ending index of the completion scope");
+"Get the ending index of the completion scope.");
 
 #define READLINE_GET_ENDIDX_METHODDEF    \
     {"get_endidx", (PyCFunction)readline_get_endidx, METH_NOARGS, readline_get_endidx__doc__},
@@ -375,7 +375,7 @@ PyDoc_STRVAR(readline_set_completer_delims__doc__,
 "set_completer_delims($module, string, /)\n"
 "--\n"
 "\n"
-"set the word delimiters for completion");
+"Set the word delimiters for completion.");
 
 #define READLINE_SET_COMPLETER_DELIMS_METHODDEF    \
     {"set_completer_delims", (PyCFunction)readline_set_completer_delims, METH_O, readline_set_completer_delims__doc__},
@@ -384,7 +384,7 @@ PyDoc_STRVAR(readline_remove_history_item__doc__,
 "remove_history_item($module, pos, /)\n"
 "--\n"
 "\n"
-"remove history item given by its position");
+"Remove history item given by its position.");
 
 #define READLINE_REMOVE_HISTORY_ITEM_METHODDEF    \
     {"remove_history_item", (PyCFunction)readline_remove_history_item, METH_O, readline_remove_history_item__doc__},
@@ -412,7 +412,7 @@ PyDoc_STRVAR(readline_replace_history_item__doc__,
 "replace_history_item($module, pos, line, /)\n"
 "--\n"
 "\n"
-"replaces history item given by its position with contents of line");
+"Replaces history item given by its position with contents of line.");
 
 #define READLINE_REPLACE_HISTORY_ITEM_METHODDEF    \
     {"replace_history_item", (PyCFunction)(void(*)(void))readline_replace_history_item, METH_FASTCALL, readline_replace_history_item__doc__},
@@ -453,7 +453,7 @@ PyDoc_STRVAR(readline_add_history__doc__,
 "add_history($module, string, /)\n"
 "--\n"
 "\n"
-"add an item to the history buffer");
+"Add an item to the history buffer.");
 
 #define READLINE_ADD_HISTORY_METHODDEF    \
     {"add_history", (PyCFunction)readline_add_history, METH_O, readline_add_history__doc__},
@@ -491,7 +491,7 @@ PyDoc_STRVAR(readline_get_completer_delims__doc__,
 "get_completer_delims($module, /)\n"
 "--\n"
 "\n"
-"get the word delimiters for completion");
+"Get the word delimiters for completion.");
 
 #define READLINE_GET_COMPLETER_DELIMS_METHODDEF    \
     {"get_completer_delims", (PyCFunction)readline_get_completer_delims, METH_NOARGS, readline_get_completer_delims__doc__},
@@ -545,7 +545,7 @@ PyDoc_STRVAR(readline_get_completer__doc__,
 "get_completer($module, /)\n"
 "--\n"
 "\n"
-"Returns current completer function.");
+"Get the current completer function.");
 
 #define READLINE_GET_COMPLETER_METHODDEF    \
     {"get_completer", (PyCFunction)readline_get_completer, METH_NOARGS, readline_get_completer__doc__},
@@ -563,7 +563,7 @@ PyDoc_STRVAR(readline_get_history_item__doc__,
 "get_history_item($module, index, /)\n"
 "--\n"
 "\n"
-"return the current contents of history item at index.");
+"Return the current contents of history item at index.");
 
 #define READLINE_GET_HISTORY_ITEM_METHODDEF    \
     {"get_history_item", (PyCFunction)readline_get_history_item, METH_O, readline_get_history_item__doc__},
@@ -591,7 +591,7 @@ PyDoc_STRVAR(readline_get_current_history_length__doc__,
 "get_current_history_length($module, /)\n"
 "--\n"
 "\n"
-"return the current (not the maximum) length of history.");
+"Return the current (not the maximum) length of history.");
 
 #define READLINE_GET_CURRENT_HISTORY_LENGTH_METHODDEF    \
     {"get_current_history_length", (PyCFunction)readline_get_current_history_length, METH_NOARGS, readline_get_current_history_length__doc__},
@@ -609,7 +609,7 @@ PyDoc_STRVAR(readline_get_line_buffer__doc__,
 "get_line_buffer($module, /)\n"
 "--\n"
 "\n"
-"return the current contents of the line buffer.");
+"Return the current contents of the line buffer.");
 
 #define READLINE_GET_LINE_BUFFER_METHODDEF    \
     {"get_line_buffer", (PyCFunction)readline_get_line_buffer, METH_NOARGS, readline_get_line_buffer__doc__},
@@ -683,4 +683,4 @@ readline_redisplay(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef READLINE_CLEAR_HISTORY_METHODDEF
     #define READLINE_CLEAR_HISTORY_METHODDEF
 #endif /* !defined(READLINE_CLEAR_HISTORY_METHODDEF) */
-/*[clinic end generated code: output=e82756fe693e40aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cb44f391ccbfb565 input=a9049054013a1b77]*/
