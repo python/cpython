@@ -2,7 +2,6 @@ import os
 import textwrap
 import unittest
 
-from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 

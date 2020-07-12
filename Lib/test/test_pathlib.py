@@ -11,7 +11,6 @@ import tempfile
 import unittest
 from unittest import mock
 
-from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath

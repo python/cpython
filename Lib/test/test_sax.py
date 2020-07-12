@@ -22,7 +22,6 @@ import shutil
 import sys
 from urllib.error import URLError
 import urllib.request
-from test import support
 from test.support import os_helper
 from test.support import findfile, run_unittest
 from test.support.os_helper import FakePath, TESTFN
