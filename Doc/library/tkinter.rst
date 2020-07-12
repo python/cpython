@@ -116,6 +116,8 @@ so, usually, to use Tkinter all you need is a simple import statement::
       possible for some entity other than the main loop to be dispatching
       events. Some examples are: calling the :meth:`Tk.update` command,
       :meth:`_tkinter.tkapp.doonevent`, and the python command line EventHook.
+      :meth:`Tk.dispatching` does not provide any information about entities
+      dispatching other than :meth:`Tk.mainloop`.
 
       .. versionadded:: 3.10
 
