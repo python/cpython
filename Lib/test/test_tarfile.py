@@ -429,6 +429,11 @@ class CommonReadTest(ReadTest):
                 with self.assertRaisesRegex(tarfile.ReadError, "unexpected end of data"):
                     tar.extractfile(t).read()
 
+    def test_length_zero_header(self):
+        with self.assertRaisesRegex(tarfile.ReadError, "file could not be opened successfully"):
+            with tarfile.open(support.findfile('recursion.tar')) as tar:
+                tar.getmembers()
+
 class MiscReadTestBase(CommonReadTest):
     def requires_name_attribute(self):
         pass
