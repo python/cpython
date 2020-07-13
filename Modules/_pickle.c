@@ -6001,13 +6001,13 @@ load_newobj_ex(UnpicklerObject *self)
     }
     if (!PyTuple_Check(args)) {
         PyErr_Format(st->UnpicklingError,
-                     "NEWOBJ_EX args argument must be a type, not %.200s",
+                     "NEWOBJ_EX args argument must be a tuple, not %.200s",
                      Py_TYPE(args)->tp_name);
         goto error;
     }
     if (!PyDict_Check(kwargs)) {
         PyErr_Format(st->UnpicklingError,
-                     "NEWOBJ_EX kwargs argument must be a type, not %.200s",
+                     "NEWOBJ_EX kwargs argument must be a dict, not %.200s",
                      Py_TYPE(kwargs)->tp_name);
         goto error;
     }
