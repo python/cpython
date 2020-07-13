@@ -758,6 +758,16 @@ include expressions.
    >>> foo.__doc__ is None
    True
 
+F-strings can also help with "printf-style" debugging.
+
+::
+
+   >>> foo = "bar"
+   >>> print(f"{foo=}")
+   "foo='bar'"
+   >>> print(f"{foo = }") # preserves whitespace before and after equals sign
+   "foo = 'bar'"
+
 See also :pep:`498` for the proposal that added formatted string literals,
 and :meth:`str.format`, which uses a related format string mechanism.
 
