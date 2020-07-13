@@ -1,2 +1,2 @@
 Remove docs for the deprecated and removed ``symbol.sym_name``.
-(Patchby Joannah Nanjekye)
+(Patch by Joannah Nanjekye)
