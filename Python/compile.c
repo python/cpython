@@ -5827,6 +5827,12 @@ compiler_match(struct compiler *c, stmt_ty s)
         last = i == cases - 1 - has_default;
         m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
+        if (!m->guard && m->pattern->kind == Name_kind &&
+            m->pattern->v.Name.ctx == Store && i != cases - 1)
+        {
+            CHECK(compiler_warn(c, "unguarded name capture pattern makes "
+                                   "remaining cases unreachable"));
+        }
         CHECK(next = compiler_new_block(c));
         if (!last) {
             ADDOP(c, DUP_TOP);
@@ -5846,12 +5852,6 @@ compiler_match(struct compiler *c, stmt_ty s)
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JREL(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, next);
-        if (!m->guard && m->pattern->kind == Name_kind &&
-            m->pattern->v.Name.ctx == Store && i != cases - 1)
-        {
-            CHECK(compiler_warn(c, "unguarded name capture pattern makes "
-                                   "remaining cases unreachable"));
-        }
     }
     if (has_default) {
         if (cases == 1) {

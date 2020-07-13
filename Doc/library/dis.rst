@@ -769,7 +769,7 @@ iterations of the loop.
 .. opcode:: MATCH_SEQUENCE
 
    If TOS is an instance of :class:`collections.abc.Sequence`, is not an
-   instance of :class:`string`/:class:`bytes`/:class:`bytearray`, and is not an
+   instance of :class:`str`/:class:`bytes`/:class:`bytearray`, and is not an
    :term:`iterator`, push ``True`` onto the stack.  Otherwise, push ``False``.
 
    .. versionadded:: 3.10
