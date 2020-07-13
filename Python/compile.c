@@ -176,7 +176,7 @@ struct compiler {
 };
 
 typedef struct {
-    PyObject* stores;
+    PyObject *stores;
 } pattern_context;
 
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
@@ -224,7 +224,7 @@ static int compiler_async_comprehension_generator(
                                       int depth,
                                       expr_ty elt, expr_ty val, int type);
 
-static int compiler_pattern(struct compiler *, expr_ty, pattern_context);
+static int compiler_pattern(struct compiler *, expr_ty, pattern_context *);
 static int compiler_match(struct compiler *, stmt_ty);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
@@ -5452,7 +5452,7 @@ compiler_slice(struct compiler *c, expr_ty s)
 
 
 static int
-pattern_load(struct compiler *c, expr_ty p, pattern_context pc)
+pattern_load(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     if (p->kind == Attribute_kind) {
         assert(p->v.Attribute.ctx == Load);
@@ -5472,25 +5472,45 @@ pattern_load(struct compiler *c, expr_ty p, pattern_context pc)
 
 
 static int
-pattern_store(struct compiler *c, expr_ty p, pattern_context pc) {
+pattern_store(struct compiler *c, expr_ty p, pattern_context *pc)
+{
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
     if (WILDCARD_CHECK(p)) {
         return compiler_error(c,
             "can't assign to '_' here; consider removing or renaming?");
     }
-    if (PySet_Contains(pc.stores, p->v.Name.id)) {
-        // TODO: Format this error message with the name.
-        return compiler_error(c, "multiple assignments to name in pattern");
+    if (!pc->stores) {
+        CHECK(pc->stores = PySet_New(NULL));
     }
-    CHECK(!PySet_Add(pc.stores, p->v.Name.id));
+    else {
+        int dupe = PySet_Contains(pc->stores, p->v.Name.id);
+        if (dupe < 0) {
+            return 0;
+        }
+        if (dupe) {
+            PyObject *str = PyUnicode_FromFormat(
+                "multiple assignments to name %R in pattern", p->v.Name.id);
+            if (!str) {
+                return 0;
+            }
+            const char *s = PyUnicode_AsUTF8(str);
+            if (!s) {
+                return 0;
+            }
+            compiler_error(c, s);
+            Py_DECREF(str);
+            return 0;
+        }
+    }
+    CHECK(!PySet_Add(pc->stores, p->v.Name.id));
     CHECK(compiler_nameop(c, p->v.Name.id, Store));
     return 1;
 }
 
 
 static int
-compiler_pattern_attribute(struct compiler *c, expr_ty p, pattern_context pc)
+compiler_pattern_attribute(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Attribute_kind);
     assert(p->v.Attribute.ctx == Load);
@@ -5501,62 +5521,67 @@ compiler_pattern_attribute(struct compiler *c, expr_ty p, pattern_context pc)
 
 
 static int
-compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context pc)
+compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == BoolOp_kind);
     assert(p->v.BoolOp.op == Or);
     basicblock *end;
     PyObject *control = NULL;
+    PyObject *diff;
     CHECK(end = compiler_new_block(c));
     Py_ssize_t size = asdl_seq_LEN(p->v.BoolOp.values);
     assert(size > 1);
-    PyObject *names_copy;
-    // TODO: Leaks sets.
+    PyObject *stores_init = pc->stores;
+    expr_ty alt;
     for (Py_ssize_t i = 0; i < size; i++) {
-        CHECK(names_copy  = PySet_New(pc.stores));
-        ADDOP(c, DUP_TOP);
-        // TODO: Just modify pc instead.
-        pattern_context sub_pc = pc;
-        sub_pc.stores = names_copy;
-        CHECK(compiler_pattern(c, asdl_seq_GET(p->v.BoolOp.values, i), sub_pc));
-        ADDOP_JABS(c, JUMP_IF_TRUE_OR_POP, end);
-        // TODO: Reuse names_copy without actually building a new copy each loop?
-        if (!i) {
-            control = names_copy;
+        // Can't use our helpful returning macros here (they'll leak sets):
+        alt = asdl_seq_GET(p->v.BoolOp.values, i);
+        pc->stores = PySet_New(stores_init);
+        SET_LOC(c, alt);
+        if (alt->kind == Name_kind && alt->v.Name.ctx == Store && i != size - 1) {
+            compiler_warn(c, "name capture pattern makes remaining alternate "
+                             "patterns unreachable");
         }
-        else if (PySet_GET_SIZE(control) || PySet_GET_SIZE(names_copy)) {
-            PyObject *diff = PyNumber_InPlaceXor(names_copy, control);
+        if (!(pc->stores && compiler_addop(c, DUP_TOP) &&
+              compiler_pattern(c, alt, pc) &&
+              compiler_addop_j(c, JUMP_IF_TRUE_OR_POP, end, 1)))
+        {
+            goto fail;
+        }
+        if (!i) {
+            control = pc->stores;
+            continue;
+        }
+        if (PySet_GET_SIZE(pc->stores) || PySet_GET_SIZE(control)) {
+            diff = PyNumber_InPlaceXor(pc->stores, control);
             if (!diff) {
-                Py_DECREF(control);
-                return 0;
+                goto fail;
             }
-            Py_DECREF(names_copy);
             if (PySet_GET_SIZE(diff)) {
-                // TODO: Format this error message with a name.
-                // PyObject *extra = PySet_Pop(diff);
-                Py_DECREF(control);
                 Py_DECREF(diff);
-                // TODO: Catch this during store.
-                return compiler_error(c, "pattern binds different names based on target");
+                compiler_error(c, "pattern binds different names based on target");
+                goto fail;
             }
             Py_DECREF(diff);
         }
-        else {
-            Py_DECREF(names_copy);
-        }
+        Py_DECREF(pc->stores);
     }
-    assert(control);
-    Py_DECREF(control);
+    Py_XDECREF(stores_init);
+    pc->stores = control;
     ADDOP_LOAD_CONST(c, Py_False);
     compiler_use_next_block(c, end);
     ADDOP(c, ROT_TWO);
     ADDOP(c, POP_TOP);
     return 1;
+fail:
+    Py_XDECREF(stores_init);
+    Py_XDECREF(control);
+    return 0;
 }
 
 
 static int
-compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context pc) {
+compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
     asdl_seq *args = p->v.Call.args;
     asdl_seq *kwargs = p->v.Call.keywords;
     Py_ssize_t nargs = asdl_seq_LEN(args);
@@ -5604,7 +5629,7 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context pc) {
 
 
 static int
-compiler_pattern_constant(struct compiler *c, expr_ty p, pattern_context pc)
+compiler_pattern_constant(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Constant_kind);
     CHECK(pattern_load(c, p, pc));
@@ -5614,7 +5639,7 @@ compiler_pattern_constant(struct compiler *c, expr_ty p, pattern_context pc)
 
 
 static int
-compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context pc)
+compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     basicblock *block, *end;
     CHECK(block = compiler_new_block(c));
@@ -5671,7 +5696,7 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context pc)
 
 
 static int
-compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context pc)
+compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == List_kind || p->kind == Tuple_kind);
     asdl_seq *values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
@@ -5741,7 +5766,7 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context pc)
 
 
 static int
-compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context pc)
+compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
@@ -5757,7 +5782,7 @@ compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context pc)
 
 
 static int
-compiler_pattern_namedexpr(struct compiler *c, expr_ty p, pattern_context pc)
+compiler_pattern_namedexpr(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == NamedExpr_kind);
     basicblock *block, *end;
@@ -5778,7 +5803,7 @@ compiler_pattern_namedexpr(struct compiler *c, expr_ty p, pattern_context pc)
 
 
 static int
-compiler_pattern(struct compiler *c, expr_ty p, pattern_context pc)
+compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     SET_LOC(c, p);
     switch (p->kind) {
@@ -5837,10 +5862,9 @@ compiler_match(struct compiler *c, stmt_ty s)
         if (!last) {
             ADDOP(c, DUP_TOP);
         }
-        // TODO: Set pc.stores lazily.
-        CHECK(pc.stores = PySet_New(NULL));
-        result = compiler_pattern(c, m->pattern, pc);
-        Py_DECREF(pc.stores);
+        pc.stores = NULL;
+        result = compiler_pattern(c, m->pattern, &pc);
+        Py_CLEAR(pc.stores);
         CHECK(result);
         ADDOP_JABS(c, POP_JUMP_IF_FALSE, next);
         if (m->guard) {
