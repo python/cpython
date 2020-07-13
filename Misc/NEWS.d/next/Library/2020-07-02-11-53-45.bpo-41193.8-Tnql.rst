@@ -1,4 +1,0 @@
-The ``write_history()`` atexit function of the readline completer now
-ignores any :exc:`OSError` to ignore error if the filesystem is read-only,
-instead of only ignoring :exc:`FileNotFoundError` and
-:exc:`PermissionError`.
