@@ -1176,6 +1176,24 @@ class AbstractUnpickleTests(unittest.TestCase):
             self.assertIs(type(unpickled), collections.UserDict)
             self.assertEqual(unpickled, collections.UserDict({1: 2}))
 
+    def test_bad_reduce(self):
+        self.assertEqual(self.loads(b'cbuiltins\nint\n)R.'), 0)
+        self.check_unpickling_error(TypeError, b'N)R.')
+        self.check_unpickling_error(TypeError, b'cbuiltins\nint\nNR.')
+
+    def test_bad_newobj(self):
+        error = (pickle.UnpicklingError, TypeError)
+        self.assertEqual(self.loads(b'cbuiltins\nint\n)\x81.'), 0)
+        self.check_unpickling_error(error, b'cbuiltins\nlen\n)\x81.')
+        self.check_unpickling_error(error, b'cbuiltins\nint\nN\x81.')
+
+    def test_bad_newobj_ex(self):
+        error = (pickle.UnpicklingError, TypeError)
+        self.assertEqual(self.loads(b'cbuiltins\nint\n)}\x92.'), 0)
+        self.check_unpickling_error(error, b'cbuiltins\nlen\n)}\x92.')
+        self.check_unpickling_error(error, b'cbuiltins\nint\nN}\x92.')
+        self.check_unpickling_error(error, b'cbuiltins\nint\n)N\x92.')
+
     def test_bad_stack(self):
         badpickles = [
             b'.',                       # STOP
