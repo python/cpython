@@ -768,6 +768,20 @@ F-strings can also help with "printf-style" debugging.
    >>> print(f"{foo = }") # preserves whitespace before and after equals sign
    "foo = 'bar'"
 
+Optional format specifiers can be placed after the equals sign.
+If no format specifiers are used then :meth:`repr` is used on the expression.
+If format specifier (like :20) is given, then :meth:`str` is used on the
+expression. You can use the repr() with the !r format specifier
+::
+
+   >>> line = "The mill's closed"
+   >>> f"{line = }"
+   'line = "The mill\'s closed"'
+   >>> f"{line = :20}"
+   "line = "The mill's closed   "
+   >>> f"{line = !r:20}"
+   'line = "The mill\s closed" '
+
 See also :pep:`498` for the proposal that added formatted string literals,
 and :meth:`str.format`, which uses a related format string mechanism.
 
