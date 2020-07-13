@@ -1581,7 +1581,7 @@ They are instances of a private class:
 
    .. attribute:: variadic
 
-      Assign a boolean to specify that the function takes a variable nubmer of
+      Assign a boolean to specify that the function takes a variable number of
       arguments.   This does not matter on most platforms, but for Apple arm64
       platforms variadic functions have a different calling convention than
       normal functions.
@@ -2552,4 +2552,3 @@ Arrays and pointers
 
         Returns the object to which to pointer points.  Assigning to this
         attribute changes the pointer to point to the assigned object.
-
