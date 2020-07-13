@@ -681,6 +681,7 @@ class FieldStorage:
             self.file = self.make_file()
         else:
             self.file = self.io_object()
+        self.__file = self.file
         todo = self.length
         if todo >= 0:
             while todo > 0:
