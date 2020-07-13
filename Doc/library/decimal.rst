@@ -1355,9 +1355,10 @@ In addition to the three supplied contexts, new contexts can be created with the
       must be integral.  The result will be inexact unless ``y`` is integral and
       the result is finite and can be expressed exactly in 'precision' digits.
       The rounding mode of the context is used. Results are always correctly-rounded
-      in the Python version. ``Decimal(0) ** Decimal(0)`` results in
-      ``InvalidOperation``, and if ``InvalidOperation`` is not trapped, then results in
-      ``Decimal('NaN')``.
+      in the Python version.
+
+      ``Decimal(0) ** Decimal(0)`` results in ``InvalidOperation``, and if ``InvalidOperation``
+      is not trapped, then results in ``Decimal('NaN')``.
 
       .. versionchanged:: 3.3
          The C module computes :meth:`power` in terms of the correctly-rounded
