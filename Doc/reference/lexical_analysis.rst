@@ -778,9 +778,9 @@ expression. You can use the repr() with the !r format specifier
    >>> f"{line = }"
    'line = "The mill\'s closed"'
    >>> f"{line = :20}"
-   "line = "The mill's closed   "
+   "line = The mill's closed   "
    >>> f"{line = !r:20}"
-   'line = "The mill\s closed" '
+   'line = "The mill\'s closed" '
 
 See also :pep:`498` for the proposal that added formatted string literals,
 and :meth:`str.format`, which uses a related format string mechanism.
