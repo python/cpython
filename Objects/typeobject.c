@@ -5963,21 +5963,31 @@ hackcheck(PyObject *self, setattrofunc func, const char *what)
     assert(PyTuple_Check(mro));
     Py_ssize_t i, n;
     n = PyTuple_GET_SIZE(mro);
+    int found_override = 0;
     for (i = 0; i < n; i++) {
         PyTypeObject *base = (PyTypeObject*) PyTuple_GET_ITEM(mro, i);
-        if (base->tp_setattro == func) {
-            /* 'func' is the earliest non-Python implementation in the MRO. */
+        if (base == &PyType_Type || base == &PyBaseObject_Type) {
+            if (base->tp_setattro == func) {
+                /* type or object are in the MRO and we are using it's func */
+                found_override = 1;
+            }
+            /* break to avoid going down the MRO, as we only care for the first
+               instance of type or object in the MRO */
             break;
-        } else if (base->tp_setattro != slot_tp_setattro) {
-            /* 'base' is not a Python class and overrides 'func'.
-               Its tp_setattro should be called instead. */
-            PyErr_Format(PyExc_TypeError,
-                         "can't apply this %s to %s object",
-                         what,
-                         type->tp_name);
-            return 0;
+        } else if (base->tp_setattro == func && base->tp_setattro == slot_tp_setattro) {
+            /* found a base class whose setattro matches the function being
+               called, that's allowed */
+            found_override = 1;
         }
     }
+    if (!found_override) {
+        PyErr_Format(PyExc_TypeError,
+                     "can't apply this %s to %s object",
+                     what,
+                     type->tp_name);
+        return 0;
+    }
+
     /* Either 'func' is not in the mro (which should fail when checking 'self'),
        or it's the right slot function to call. */
     return 1;

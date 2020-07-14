@@ -4308,6 +4308,41 @@ order (MRO) for bases """
         else:
             self.fail("Carlo Verre __delattr__ succeeded!")
 
+        class A(type):
+            def __setattr__(cls, key, value):
+                type.__setattr__(cls, key, value)
+
+        class B:
+            pass
+
+        class C(B, A):
+            pass
+
+        obj = C('D', (object,), {})
+        try:
+            obj.test = True
+        except TypeError:
+            self.fail("assignment to classes that override __setattr__ should be legal")
+
+        class A(type):
+            def __setattr__(cls, key, value):
+                object.__setattr__(cls, key, value)
+
+        class B:
+            pass
+
+        class C(B, A):
+            pass
+
+        obj = C('D', (object,), {})
+        try:
+            obj.test = True
+        except TypeError:
+            pass
+        else:
+            self.fail("it should be illegal to use object.__setattr__ if type is closer in the MRO")
+
+
     def test_weakref_segfault(self):
         # Testing weakref segfault...
         # SF 742911
