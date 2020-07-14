@@ -1,9 +1,11 @@
 import collections
 import contextlib
+import dataclasses
+import enum
 import unittest
 
 
-class TestMatch(unittest.TestCase):
+class TestPatma(unittest.TestCase):
 
     def test_patma_000(self):
         match 0:
@@ -1633,18 +1635,407 @@ class TestMatch(unittest.TestCase):
         self.assertEqual(x, 0)
         self.assertEqual(y, 0)
 
+    def test_patma_174(self):
+        def http_error(status):
+            match status:
+                case 400:
+                    return "Bad request"
+                case 401:
+                    return "Unauthorized"
+                case 403:
+                    return "Forbidden"
+                case 404:
+                    return "Not found"
+                case 418:
+                    return "I'm a teapot"
+                case _:
+                    return "Something else"
+        self.assertEqual(http_error(400), "Bad request")
+        self.assertEqual(http_error(401), "Unauthorized")
+        self.assertEqual(http_error(403), "Forbidden")
+        self.assertEqual(http_error(404), "Not found")
+        self.assertEqual(http_error(418), "I'm a teapot")
+        self.assertEqual(http_error(123), "Something else")
+        self.assertEqual(http_error("400"), "Something else")
+        self.assertEqual(http_error(401 | 403 | 404), "Something else")  # 407
 
-class PerfMatch(TestMatch):
+    def test_patma_175(self):
+        def http_error(status):
+            match status:
+                case 400:
+                    return "Bad request"
+                case 401 | 403 | 404:
+                    return "Not allowed"
+                case 418:
+                    return "I'm a teapot"
+        self.assertEqual(http_error(400), "Bad request")
+        self.assertEqual(http_error(401), "Not allowed")
+        self.assertEqual(http_error(403), "Not allowed")
+        self.assertEqual(http_error(404), "Not allowed")
+        self.assertEqual(http_error(418), "I'm a teapot")
+        self.assertIs(http_error(123), None)
+        self.assertIs(http_error("400"), None)
+        self.assertIs(http_error(401 | 403 | 404), None)  # 407
 
-    @staticmethod
-    def setUpClass():
-        raise unittest.SkipTest("performance testing")
+    def test_patma_176(self):
+        def whereis(point):
+            match point:
+                case (0, 0):
+                    return "Origin"
+                case (0, y):
+                    return f"Y={y}"
+                case (x, 0):
+                    return f"X={x}"
+                case (x, y):
+                    return f"X={x}, Y={y}"
+                case _:
+                    raise ValueError("Not a point")
+        self.assertEqual(whereis((0, 0)), "Origin")
+        self.assertEqual(whereis((0, -1.0)), "Y=-1.0")
+        self.assertEqual(whereis(("X", 0)), "X=X")
+        self.assertEqual(whereis((None, 1j)), "X=None, Y=1j")
+        with self.assertRaises(ValueError):
+            whereis(42)
+
+    def test_patma_177(self):
+        @dataclasses.dataclass
+        class Point:
+            x: int
+            y: int
+        def whereis(point):
+            match point:
+                case Point(0, 0):
+                    return "Origin"
+                case Point(0, y):
+                    return f"Y={y}"
+                case Point(x, 0):
+                    return f"X={x}"
+                case Point():
+                    return "Somewhere else"
+                case _:
+                    return "Not a point"
+        self.assertEqual(whereis(Point(1, 0)), "X=1")
+        self.assertEqual(whereis(Point(0, 0)), "Origin")
+        self.assertEqual(whereis(10), "Not a point")
+        self.assertEqual(whereis(Point(False, False)), "Origin")
+        self.assertEqual(whereis(Point(0, -1.0)), "Y=-1.0")
+        self.assertEqual(whereis(Point("X", 0)), "X=X")
+        self.assertEqual(whereis(Point(None, 1j)), "Somewhere else")
+        self.assertEqual(whereis(Point), "Not a point")
+        self.assertEqual(whereis(42), "Not a point")
+
+    def test_patma_178(self):
+        @dataclasses.dataclass
+        class Point:
+            x: int
+            y: int
+        def whereis(point):
+            match point:
+                case Point(1, var):
+                    return var
+        self.assertEqual(whereis(Point(1, 0)), 0)
+        self.assertIs(whereis(Point(0, 0)), None)
+
+    def test_patma_179(self):
+        @dataclasses.dataclass
+        class Point:
+            x: int
+            y: int
+        def whereis(point):
+            match point:
+                case Point(1, y=var):
+                    return var
+        self.assertEqual(whereis(Point(1, 0)), 0)
+        self.assertIs(whereis(Point(0, 0)), None)
+
+    def test_patma_180(self):
+        @dataclasses.dataclass
+        class Point:
+            x: int
+            y: int
+        def whereis(point):
+            match point:
+                case Point(x=1, y=var):
+                    return var
+        self.assertEqual(whereis(Point(1, 0)), 0)
+        self.assertIs(whereis(Point(0, 0)), None)
+
+    def test_patma_181(self):
+        @dataclasses.dataclass
+        class Point:
+            x: int
+            y: int
+        def whereis(point):
+            match point:
+                case Point(y=var, x=1):
+                    return var
+        self.assertEqual(whereis(Point(1, 0)), 0)
+        self.assertIs(whereis(Point(0, 0)), None)
+
+    def test_patma_182(self):
+        @dataclasses.dataclass
+        class Point:
+            x: int
+            y: int
+        def whereis(points):
+            match points:
+                case []:
+                    return "No points"
+                case [Point(0, 0)]:
+                    return "The origin"
+                case [Point(x, y)]:
+                    return f"Single point {x}, {y}"
+                case [Point(0, y1), Point(0, y2)]:
+                    return f"Two on the Y axis at {y1}, {y2}"
+                case _:
+                    return "Something else"
+        self.assertEqual(whereis([]), "No points")
+        self.assertEqual(whereis([Point(0, 0)]), "The origin")
+        self.assertEqual(whereis([Point(0, 1)]), "Single point 0, 1")
+        self.assertEqual(whereis([Point(0, 0), Point(0, 0)]), "Two on the Y axis at 0, 0")
+        self.assertEqual(whereis([Point(0, 1), Point(0, 1)]), "Two on the Y axis at 1, 1")
+        self.assertEqual(whereis([Point(0, 0), Point(1, 0)]), "Something else")
+        self.assertEqual(whereis([Point(0, 0), Point(0, 0), Point(0, 0)]), "Something else")
+        self.assertEqual(whereis([Point(0, 1), Point(0, 1), Point(0, 1)]), "Something else")
+
+    def test_patma_183(self):
+        @dataclasses.dataclass
+        class Point:
+            x: int
+            y: int
+        def whereis(point):
+            match point:
+                case Point(x, y) if x == y:
+                    return f"Y=X at {x}"
+                case Point(x, y):
+                    return "Not on the diagonal"
+        self.assertEqual(whereis(Point(0, 0)), "Y=X at 0")
+        self.assertEqual(whereis(Point(0, False)), "Y=X at 0")
+        self.assertEqual(whereis(Point(False, 0)), "Y=X at False")
+        self.assertEqual(whereis(Point(-1 - 1j, -1 - 1j)), "Y=X at (-1-1j)")
+        self.assertEqual(whereis(Point("X", "X")), "Y=X at X")
+        self.assertEqual(whereis(Point("X", "x")), "Not on the diagonal")
+
+    def test_patma_184(self):
+        class Seq(collections.abc.Sequence):
+            __getitem__ = None
+            def __len__(self):
+                return 0
+        match Seq():
+            case []:
+                y = 0
+        self.assertEqual(y, 0)
+
+    def test_patma_185(self):
+        class Seq(collections.abc.Sequence):
+            __getitem__ = None
+            def __len__(self):
+                return 42
+        match Seq():
+            case [*_]:
+                y = 0
+        self.assertEqual(y, 0)
+
+    def test_patma_186(self):
+        class Seq(collections.abc.Sequence):
+            def __getitem__(self, i):
+                return i
+            def __len__(self):
+                return 42
+        match Seq():
+            case [x, *y, z]:
+                w = 0
+        self.assertEqual(w, 0)
+        self.assertEqual(x, 0)
+        self.assertEqual(y, list(range(1, 41)))
+        self.assertEqual(z, 41)
+
+    def test_patma_187(self):
+        w = range(10)
+        match w:
+            case [x, y, *rest]:
+                z = 0
+        self.assertEqual(w, range(10))
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 1)
+        self.assertEqual(z, 0)
+        self.assertEqual(rest, list(range(2, 10)))
+
+    def test_patma_188(self):
+        w = range(100)
+        match w:
+            case (x, y, *rest):
+                z = 0
+        self.assertEqual(w, range(100))
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 1)
+        self.assertEqual(z, 0)
+        self.assertEqual(rest, list(range(2, 100)))
+
+    def test_patma_189(self):
+        w = range(1000)
+        match w:
+            case x, y, *rest:
+                z = 0
+        self.assertEqual(w, range(1000))
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 1)
+        self.assertEqual(z, 0)
+        self.assertEqual(rest, list(range(2, 1000)))
+
+    def test_patma_190(self):
+        w = range(1 << 10)
+        match w:
+            case [x, y, *_]:
+                z = 0
+        self.assertEqual(w, range(1 << 10))
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 1)
+        self.assertEqual(z, 0)
+
+    def test_patma_191(self):
+        w = range(1 << 20)
+        match w:
+            case (x, y, *_):
+                z = 0
+        self.assertEqual(w, range(1 << 20))
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 1)
+        self.assertEqual(z, 0)
+
+    def test_patma_192(self):
+        w = range(1 << 30)
+        match w:
+            case x, y, *_:
+                z = 0
+        self.assertEqual(w, range(1 << 30))
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 1)
+        self.assertEqual(z, 0)
+
+    def test_patma_193(self):
+        x = {"bandwidth": 0, "latency": 1}
+        match x:
+            case {"bandwidth": b, "latency": l}:
+                y = 0
+        self.assertEqual(x, {"bandwidth": 0, "latency": 1})
+        self.assertIs(b, x["bandwidth"])
+        self.assertIs(l, x["latency"])
+        self.assertEqual(y, 0)
+
+    def test_patma_194(self):
+        x = {"bandwidth": 0, "latency": 1, "key": "value"}
+        match x:
+            case {"latency": l, "bandwidth": b}:
+                y = 0
+        self.assertEqual(x, {"bandwidth": 0, "latency": 1, "key": "value"})
+        self.assertIs(l, x["latency"])
+        self.assertIs(b, x["bandwidth"])
+        self.assertEqual(y, 0)
+
+    def test_patma_195(self):
+        x = {"bandwidth": 0, "latency": 1, "key": "value"}
+        match x:
+            case {"bandwidth": b, "latency": l, **rest}:
+                y = 0
+        self.assertEqual(x, {"bandwidth": 0, "latency": 1, "key": "value"})
+        self.assertIs(b, x["bandwidth"])
+        self.assertIs(l, x["latency"])
+        self.assertEqual(rest, {"key": "value"})
+        self.assertEqual(y, 0)
+
+    def test_patma_196(self):
+        x = {"bandwidth": 0, "latency": 1}
+        match x:
+            case {"latency": l, "bandwidth": b, **rest}:
+                y = 0
+        self.assertEqual(x, {"bandwidth": 0, "latency": 1})
+        self.assertIs(l, x["latency"])
+        self.assertIs(b, x["bandwidth"])
+        self.assertEqual(rest, {})
+        self.assertEqual(y, 0)
+
+    def test_patma_197(self):
+        @dataclasses.dataclass
+        class Point:
+            x: int
+            y: int
+        w = [Point(-1, 0), Point(1, 2)]
+        match w:
+            case (Point(x1, y1), p2 := Point(x2, y2)):
+                z = 0
+        self.assertEqual(w, [Point(-1, 0), Point(1, 2)])
+        self.assertIs(x1, w[0].x)
+        self.assertIs(y1, w[0].y)
+        self.assertIs(p2, w[1])
+        self.assertIs(x2, w[1].x)
+        self.assertIs(y2, w[1].y)
+        self.assertIs(z, 0)
+
+    def test_patma_198(self):
+        class Color(enum.Enum):
+            RED = 0
+            GREEN = 1
+            BLUE = 2
+        def f(color):
+            match color:
+                case Color.RED:
+                    return "I see red!"
+                case Color.GREEN:
+                    return "Grass is green"
+                case Color.BLUE:
+                    return "I'm feeling the blues :("
+        self.assertEqual(f(Color.RED), "I see red!")
+        self.assertEqual(f(Color.GREEN), "Grass is green")
+        self.assertEqual(f(Color.BLUE), "I'm feeling the blues :(")
+        self.assertEqual(f(Color), None)
+        self.assertEqual(f(0), None)
+        self.assertEqual(f(1), None)
+        self.assertEqual(f(2), None)
+        self.assertEqual(f(3), None)
+        self.assertEqual(f(False), None)
+        self.assertEqual(f(True), None)
+        self.assertEqual(f(2+0j), None)
+        self.assertEqual(f(3.0), None)
+
+    def test_patma_199(self):
+        class Color(int, enum.Enum):
+            RED = 0
+            GREEN = 1
+            BLUE = 2
+        def f(color):
+            match color:
+                case Color.RED:
+                    return "I see red!"
+                case Color.GREEN:
+                    return "Grass is green"
+                case Color.BLUE:
+                    return "I'm feeling the blues :("
+        self.assertEqual(f(Color.RED), "I see red!")
+        self.assertEqual(f(Color.GREEN), "Grass is green")
+        self.assertEqual(f(Color.BLUE), "I'm feeling the blues :(")
+        self.assertEqual(f(Color), None)
+        self.assertEqual(f(0), "I see red!")
+        self.assertEqual(f(1), "Grass is green")
+        self.assertEqual(f(2), "I'm feeling the blues :(")
+        self.assertEqual(f(3), None)
+        self.assertEqual(f(False), "I see red!")
+        self.assertEqual(f(True), "Grass is green")
+        self.assertEqual(f(2+0j), "I'm feeling the blues :(")
+        self.assertEqual(f(3.0), None)
+
+
+class PerfPatma(TestPatma):
 
     def assertEqual(*_, **__):
         pass
 
     def assertIs(*_, **__):
         pass
+
+    @contextlib.contextmanager
+    def assertRaises(*_, **__):
+        yield
 
     def run_perf(self):
         attrs = vars(type(self)).items()
@@ -1653,9 +2044,13 @@ class PerfMatch(TestMatch):
             for test in tests:
                 test(self)
 
+    @staticmethod
+    def setUpClass():
+        raise unittest.SkipTest("performance testing")
+
 
 """
 sudo ./python -m pyperf system tune && \
-     ./python -m pyperf timeit -s "from test.test_patma import PerfMatch; p = PerfMatch()" "p.run_perf()"; \
+     ./python -m pyperf timeit -s "from test.test_patma import PerfPatma; p = PerfPatma()" "p.run_perf()"; \
 sudo ./python -m pyperf system reset
 """
