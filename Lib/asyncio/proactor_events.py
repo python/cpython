@@ -180,11 +180,16 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
 
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None, buffer_size=65536):
-        self._pending_data_length = -1
         self._paused = True
         super().__init__(loop, sock, protocol, waiter, extra, server)
 
-        self._data = bytearray(buffer_size)
+        if isinstance(protocol, protocols.BufferedProtocol):
+            self._data = protocol.get_buffer(-1)
+            self._pending_data_length = -1
+        else:
+            self._buffer_size = buffer_size
+            self._pending_data = None
+
         self._loop.call_soon(self._loop_reading)
         self._paused = False
 
@@ -218,12 +223,20 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         if self._read_fut is None:
             self._loop.call_soon(self._loop_reading, None)
 
-        length = self._pending_data_length
-        self._pending_data_length = -1
-        if length > -1:
-            # Call the protocol method after calling _loop_reading(),
-            # since the protocol can decide to pause reading again.
-            self._loop.call_soon(self._data_received, self._data[:length], length)
+        if isinstance(self._protocol, protocols.BufferedProtocol):
+            length = self._pending_data_length
+            self._pending_data_length = -1
+            if length > -1:
+                # Call the protocol method after calling _loop_reading(),
+                # since the protocol can decide to pause reading again.
+                self._loop.call_soon(self._buffer_updated, length)
+        else:
+            data = self._pending_data
+            self._pending_data = None
+            if data is not None:
+                # Call the protocol method after calling _loop_reading(),
+                # since the protocol can decide to pause reading again.
+                self._loop.call_soon(self._data_received, data)
 
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)
@@ -244,7 +257,7 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         if not keep_open:
             self.close()
 
-    def _data_received(self, data, length):
+    def _buffer_updated(self, length):
         if self._paused:
             # Don't call any protocol method while reading is paused.
             # The protocol will be called on resume_reading().
@@ -256,35 +269,47 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
             self._eof_received()
             return
 
-        if isinstance(self._protocol, protocols.BufferedProtocol):
-            try:
-                protocols._feed_data_to_buffered_proto(self._protocol, data)
-            except (SystemExit, KeyboardInterrupt):
-                raise
-            except BaseException as exc:
-                self._fatal_error(exc,
-                                  'Fatal error: protocol.buffer_updated() '
-                                  'call failed.')
-                return
-        else:
-            self._protocol.data_received(data)
+        try:
+            self._protocol.buffer_updated(length)
+        except BaseException as exc:
+            self._fatal_error(exc,
+                              'Fatal error: protocol.buffer_updated() '
+                              'call failed.')
+
+    def _data_received(self, data):
+        if self._paused:
+            # Don't call any protocol method while reading is paused.
+            # The protocol will be called on resume_reading().
+            assert self._pending_data is None
+            self._pending_data = data
+            return
+
+        if not data:
+            self._eof_received()
+            return
+
+        self._protocol.data_received(data)
 
     def _loop_reading(self, fut=None):
-        length = -1
-        data = None
         try:
             if fut is not None:
                 assert self._read_fut is fut or (self._read_fut is None and
                                                  self._closing)
                 self._read_fut = None
                 if fut.done():
-                    # deliver data later in "finally" clause
-                    length = fut.result()
-                    if length == 0:
-                        # we got end-of-file so no need to reschedule a new read
-                        return
-
-                    data = self._data[:length]
+                    if isinstance(self._protocol, protocols.BufferedProtocol):
+                        length = fut.result()
+                        if length > -1:
+                            self._buffer_updated(length)
+                            if length == 0:
+                                # we got end-of-file so no need to reschedule a new read
+                                return
+                    else:
+                        data = fut.result()
+                        self._data_received(data)
+                        if not data:
+                            # we got end-of-file so no need to reschedule a new read
+                            return
                 else:
                     # the future will be replaced by next proactor.recv call
                     fut.cancel()
@@ -298,7 +323,12 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
 
             if not self._paused:
                 # reschedule a new read
-                self._read_fut = self._loop._proactor.recv_into(self._sock, self._data)
+                if isinstance(self._protocol, protocols.BufferedProtocol):
+                    self._read_fut = self._loop._proactor.recv_into(
+                        self._sock, self._data)
+                else:
+                    self._read_fut = self._loop._proactor.recv(
+                        self._sock, self._buffer_size)
         except ConnectionAbortedError as exc:
             if not self._closing:
                 self._fatal_error(exc, 'Fatal read error on pipe transport')
@@ -315,9 +345,6 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         else:
             if not self._paused:
                 self._read_fut.add_done_callback(self._loop_reading)
-        finally:
-            if length > -1:
-                self._data_received(data, length)
 
 
 class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
