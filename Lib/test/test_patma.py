@@ -1,8 +1,15 @@
+import array
 import collections
 import contextlib
 import dataclasses
 import enum
 import unittest
+
+
+@dataclasses.dataclass
+class Point:
+    x: int
+    y: int
 
 
 class TestPatma(unittest.TestCase):
@@ -1698,10 +1705,6 @@ class TestPatma(unittest.TestCase):
             whereis(42)
 
     def test_patma_177(self):
-        @dataclasses.dataclass
-        class Point:
-            x: int
-            y: int
         def whereis(point):
             match point:
                 case Point(0, 0):
@@ -1725,10 +1728,6 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(whereis(42), "Not a point")
 
     def test_patma_178(self):
-        @dataclasses.dataclass
-        class Point:
-            x: int
-            y: int
         def whereis(point):
             match point:
                 case Point(1, var):
@@ -1737,10 +1736,6 @@ class TestPatma(unittest.TestCase):
         self.assertIs(whereis(Point(0, 0)), None)
 
     def test_patma_179(self):
-        @dataclasses.dataclass
-        class Point:
-            x: int
-            y: int
         def whereis(point):
             match point:
                 case Point(1, y=var):
@@ -1749,10 +1744,6 @@ class TestPatma(unittest.TestCase):
         self.assertIs(whereis(Point(0, 0)), None)
 
     def test_patma_180(self):
-        @dataclasses.dataclass
-        class Point:
-            x: int
-            y: int
         def whereis(point):
             match point:
                 case Point(x=1, y=var):
@@ -1761,10 +1752,6 @@ class TestPatma(unittest.TestCase):
         self.assertIs(whereis(Point(0, 0)), None)
 
     def test_patma_181(self):
-        @dataclasses.dataclass
-        class Point:
-            x: int
-            y: int
         def whereis(point):
             match point:
                 case Point(y=var, x=1):
@@ -1773,10 +1760,6 @@ class TestPatma(unittest.TestCase):
         self.assertIs(whereis(Point(0, 0)), None)
 
     def test_patma_182(self):
-        @dataclasses.dataclass
-        class Point:
-            x: int
-            y: int
         def whereis(points):
             match points:
                 case []:
@@ -1799,10 +1782,6 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(whereis([Point(0, 1), Point(0, 1), Point(0, 1)]), "Something else")
 
     def test_patma_183(self):
-        @dataclasses.dataclass
-        class Point:
-            x: int
-            y: int
         def whereis(point):
             match point:
                 case Point(x, y) if x == y:
@@ -1956,10 +1935,6 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 0)
 
     def test_patma_197(self):
-        @dataclasses.dataclass
-        class Point:
-            x: int
-            y: int
         w = [Point(-1, 0), Point(1, 2)]
         match w:
             case (Point(x1, y1), p2 := Point(x2, y2)):
@@ -2023,6 +1998,192 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(True), "Grass is green")
         self.assertEqual(f(2+0j), "I'm feeling the blues :(")
         self.assertEqual(f(3.0), None)
+
+    def test_patma_200(self):
+        class Class:
+            __match_args__ = ["a", "b"]
+        c = Class()
+        c.a = 0
+        c.b = 1
+        match c:
+            case Class(x, y):
+                z = 0
+        self.assertIs(x, c.a)
+        self.assertIs(y, c.b)
+        self.assertEqual(z, 0)
+
+    def test_patma_201(self):
+        class Class:
+            __match_args__ = ("a", "b")
+        c = Class()
+        c.a = 0
+        c.b = 1
+        match c:
+            case Class(x, b=y):
+                z = 0
+        self.assertIs(x, c.a)
+        self.assertIs(y, c.b)
+        self.assertEqual(z, 0)
+
+    def test_patma_202(self):
+        class Parent:
+            __match_args__ = "a", "b"
+        class Child(Parent):
+            __match_args__ = ["c", "d"]
+        c = Child()
+        c.a = 0
+        c.b = 1
+        match c:
+            case Parent(x, y):
+                z = 0
+        self.assertIs(x, c.a)
+        self.assertIs(y, c.b)
+        self.assertEqual(z, 0)
+
+    def test_patma_203(self):
+        class Parent:
+            __match_args__ = ("a", "b")
+        class Child(Parent):
+            __match_args__ = "c", "d"
+        c = Child()
+        c.a = 0
+        c.b = 1
+        match c:
+            case Parent(x, b=y):
+                z = 0
+        self.assertIs(x, c.a)
+        self.assertIs(y, c.b)
+        self.assertEqual(z, 0)
+
+    def test_patma_204(self):
+        def f(w):
+            match w:
+                case 42:
+                    out = locals().copy()
+                    del out["w"]
+                    return out
+        self.assertEqual(f(42), {})
+        self.assertIs(f(0), None)
+        self.assertEqual(f(42.0), {})
+        self.assertIs(f("42"), None)
+
+    def test_patma_205(self):
+        def f(w):
+            match w:
+                case 42.0:
+                    out = locals().copy()
+                    del out["w"]
+                    return out
+        self.assertEqual(f(42.0), {})
+        self.assertEqual(f(42), {})
+        self.assertIs(f(0.0), None)
+        self.assertIs(f(0), None)
+
+    def test_patma_206(self):
+        def f(w):
+            match w:
+                case 1 | 2 | 3:
+                    out = locals().copy()
+                    del out["w"]
+                    return out
+        self.assertEqual(f(1), {})
+        self.assertEqual(f(2), {})
+        self.assertEqual(f(3), {})
+        self.assertEqual(f(3.0), {})
+        self.assertIs(f(0), None)
+        self.assertIs(f(4), None)
+        self.assertIs(f("1"), None)
+
+    def test_patma_207(self):
+        def f(w):
+            match w:
+                case [1, 2] | [3, 4]:
+                    out = locals().copy()
+                    del out["w"]
+                    return out
+        self.assertEqual(f([1, 2]), {})
+        self.assertEqual(f([3, 4]), {})
+        self.assertIs(f(42), None)
+        self.assertIs(f([2, 3]), None)
+        self.assertIs(f([1, 2, 3]), None)
+        self.assertEqual(f([1, 2.0]), {})
+
+    def test_patma_208(self):
+        def f(w):
+            match w:
+                case x:
+                    out = locals().copy()
+                    del out["w"]
+                    return out
+        self.assertEqual(f(42), {"x": 42})
+        self.assertEqual(f((1, 2)), {"x": (1, 2)})
+        self.assertEqual(f(None), {"x": None})
+
+    def test_patma_209(self):
+        def f(w):
+            match w:
+                case _:
+                    out = locals().copy()
+                    del out["w"]
+                    return out
+        self.assertEqual(f(42), {})
+        self.assertEqual(f(None), {})
+        self.assertEqual(f((1, 2)), {})
+
+    def test_patma_210(self):
+        def f(w):
+            match w:
+                case (x, y, z):
+                    out = locals().copy()
+                    del out["w"]
+                    return out
+        self.assertEqual(f((1, 2, 3)), {"x": 1, "y": 2, "z": 3})
+        self.assertIs(f((1, 2)), None)
+        self.assertIs(f((1, 2, 3, 4)), None)
+        self.assertIs(f(123), None)
+        self.assertIs(f("abc"), None)
+        self.assertIs(f(b"abc"), None)
+        self.assertIs(f(array.array("b", b"abc")), None)
+        self.assertEqual(f(memoryview(b"abc")), {"x": 97, "y": 98, "z": 99})
+        self.assertIs(f(bytearray(b"abc")), None)
+
+    def test_patma_211(self):
+        def f(w):
+            match w:
+                case {"x": x, "y": "y", "z": z}:
+                    out = locals().copy()
+                    del out["w"]
+                    return out
+        self.assertEqual(f({"x": "x", "y": "y", "z": "z"}), {"x": "x", "z": "z"})
+        self.assertEqual(f({"x": "x", "y": "y", "z": "z", "a": "a"}), {"x": "x", "z": "z"})
+        self.assertIs(f(({"x": "x", "y": "yy", "z": "z", "a": "a"})), None)
+        self.assertIs(f(({"x": "x", "y": "y"})), None)
+
+    def test_patma_212(self):
+        @dataclasses.dataclass
+        class MyClass:
+            x: int
+            y: str
+            __match_args__ = ["x", "y"]
+        def f(w):
+            match w:
+                case MyClass(int(xx), y="hello"):
+                    out = locals().copy()
+                    del out["w"], out["MyClass"]
+                    return out
+        self.assertEqual(f(MyClass(42, "hello")), {"xx": 42})
+
+    def test_patma_213(self):
+        def f(w):
+            match w:
+                case x := (p, q):
+                    out = locals().copy()
+                    del out["w"]
+                    return out
+        self.assertEqual(f((1, 2)), {"p": 1, "q": 2, "x": (1, 2)})
+        self.assertEqual(f([1, 2]), {"p": 1, "q": 2, "x": [1, 2]})
+        self.assertIs(f(12), None)
+        self.assertIs(f((1, 2, 3)), None)
 
 
 class PerfPatma(TestPatma):
