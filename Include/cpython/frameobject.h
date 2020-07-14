@@ -4,15 +4,19 @@
 #  error "this header file must not be included directly"
 #endif
 
-/* These values are chosen so that all tests involve comparing to zero. */
-typedef enum _framestate {
+/* These values are chosen so that the inline functions below all
+ * compare f_state to zero.
+ */
+enum _framestate {
     FRAME_CREATED = -2,
     FRAME_SUSPENDED = -1,
     FRAME_EXECUTING = 0,
     FRAME_RETURNED = 1,
     FRAME_RAISED = 2,
     FRAME_CLEARED = 3
-} PyFrameState;
+};
+
+typedef signed char PyFrameState;
 
 typedef struct {
     int b_type;                 /* what kind of block this is */
