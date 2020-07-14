@@ -2143,7 +2143,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(f(123), None)
         self.assertIs(f("abc"), None)
         self.assertIs(f(b"abc"), None)
-        self.assertIs(f(array.array("b", b"abc")), None)
+        self.assertEqual(f(array.array("b", b"abc")), {'x': 97, 'y': 98, 'z': 99})
         self.assertEqual(f(memoryview(b"abc")), {"x": 97, "y": 98, "z": 99})
         self.assertIs(f(bytearray(b"abc")), None)
 
@@ -2184,6 +2184,12 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f([1, 2]), {"p": 1, "q": 2, "x": [1, 2]})
         self.assertIs(f(12), None)
         self.assertIs(f((1, 2, 3)), None)
+
+    # TODO: PEP tests
+    # TODO: Don't check side-effecty assignments
+    # TODO: Full coverage of errors and warnings
+    # TODO: Check numbers, dupes
+    # TODO: Better use of assertIs
 
 
 class PerfPatma(TestPatma):
