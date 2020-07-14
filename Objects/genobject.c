@@ -176,7 +176,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
         return NULL;
     }
 
-    assert(_PyFrameIsRunnable(f));
+    assert(_PyFrame_IsRunnable(f));
     if (f->f_lasti == -1) {
         if (arg && arg != Py_None) {
             const char *msg = "can't send non-None value to a "

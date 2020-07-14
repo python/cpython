@@ -49,7 +49,7 @@ struct _frame {
     PyObject *f_localsplus[1];  /* locals+stack, dynamically sized */
 };
 
-static inline int _PyFrame_IsExecutingRunnable(struct _frame *f) {
+static inline int _PyFrame_IsRunnable(struct _frame *f) {
     return f->f_state < FRAME_EXECUTING;
 }
 
