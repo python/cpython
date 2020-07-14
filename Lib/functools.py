@@ -883,6 +883,7 @@ def singledispatch(func):
     wrapper.dispatch = dispatch
     wrapper.registry = types.MappingProxyType(registry)
     wrapper._clear_cache = dispatch_cache.clear
+    wrapper._funcname = funcname
     update_wrapper(wrapper, func)
     return wrapper
 
@@ -911,6 +912,9 @@ class singledispatchmethod:
 
     def __get__(self, obj, cls=None):
         def _method(*args, **kwargs):
+            if not args:
+                raise TypeError(f'{self.dispatcher._funcname} requires at least '
+                                '1 positional argument')
             method = self.dispatcher.dispatch(args[0].__class__)
             return method.__get__(obj, cls)(*args, **kwargs)
 
