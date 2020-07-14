@@ -1847,7 +1847,7 @@ _is_running(PyInterpreterState *interp)
         return 0;
     }
 
-    int executing = _PyFrameIsExecuting(frame);
+    int executing = _PyFrame_IsExecuting(frame);
     Py_DECREF(frame);
 
     return executing;

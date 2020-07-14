@@ -683,7 +683,7 @@ frame_tp_clear(PyFrameObject *f)
 static PyObject *
 frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
-    if (_PyFrameIsExecuting(f)) {
+    if (_PyFrame_IsExecuting(f)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot clear an executing frame");
         return NULL;

@@ -143,7 +143,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     PyFrameObject *f = gen->gi_frame;
     PyObject *result;
 
-    if (f != NULL && _PyFrameIsExecuting(f)) {
+    if (f != NULL && _PyFrame_IsExecuting(f)) {
         const char *msg = "generator already executing";
         if (PyCoro_CheckExact(gen)) {
             msg = "coroutine already executing";
@@ -715,7 +715,7 @@ gen_getrunning(PyGenObject *gen, void *Py_UNUSED(ignored))
         Py_INCREF(Py_False);
         return Py_False;
     }
-    return PyBool_FromLong(_PyFrameIsExecuting(gen->gi_frame));
+    return PyBool_FromLong(_PyFrame_IsExecuting(gen->gi_frame));
 }
 
 static PyGetSetDef gen_getsetlist[] = {
@@ -944,7 +944,7 @@ cr_getrunning(PyCoroObject *coro, void *Py_UNUSED(ignored))
         Py_INCREF(Py_False);
         return Py_False;
     }
-    return PyBool_FromLong(_PyFrameIsExecuting(coro->cr_frame));
+    return PyBool_FromLong(_PyFrame_IsExecuting(coro->cr_frame));
 }
 
 static PyGetSetDef coro_getsetlist[] = {
