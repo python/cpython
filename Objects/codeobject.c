@@ -405,7 +405,7 @@ static PyObject *
 code_getlnotab(PyCodeObject *code, void *closure)
 {
      PyErr_Format(PyExc_NotImplementedError,
-                 "co_lnotab not implemented yet.";
+                 "co_lnotab not implemented yet.");
     return NULL;
 }
 
@@ -949,10 +949,162 @@ code_hash(PyCodeObject *co)
     return h;
 }
 
+typedef struct {
+    PyObject_HEAD
+    PyCodeObject *li_code;
+    PyAddrLineOffsets li_line;
+    char *li_end;
+} lineiterator;
+
+
+static void
+lineiter_dealloc(lineiterator *li)
+{
+    Py_DECREF(li->li_code);
+    Py_TYPE(li)->tp_free(li);
+}
+
+static void
+retreat(PyAddrLineOffsets *bounds)
+{
+    int ldelta = ((signed char *)bounds->lo_entry)[1];
+    if (ldelta == -128) {
+        ldelta = 0;
+    }
+    bounds->lo_line -= ldelta;
+    bounds->lo_entry -= 2;
+    bounds->lo_end = bounds->lo_start;
+    bounds->lo_start -= ((unsigned char *)bounds->lo_entry)[0];
+    ldelta = ((signed char *)bounds->lo_entry)[1];
+    bounds->lo_artificial = (ldelta == -128);
+}
+
+static void
+advance(PyAddrLineOffsets *bounds)
+{
+    bounds->lo_entry += 2;
+    bounds->lo_start = bounds->lo_end;
+    bounds->lo_end += ((unsigned char *)bounds->lo_entry)[0];
+    int ldelta = ((signed char *)bounds->lo_entry)[1];
+    if (ldelta == -128) {
+        bounds->lo_artificial = 1;
+    }
+    else {
+        bounds->lo_artificial = 0;
+        bounds->lo_line += ldelta;
+    }
+}
+
+static inline int
+past_end(PyAddrLineOffsets *bounds) {
+    return bounds->lo_entry >= bounds->lo_limit;
+}
+
+static PyObject *
+lineiter_next(lineiterator *li)
+{
+    PyAddrLineOffsets *bounds = &li->li_line;
+
+    if (past_end(bounds)) {
+        return NULL;
+    }
+    advance(bounds);
+    if (past_end(bounds)) {
+        return NULL;
+    }
+    while (bounds->lo_start == bounds->lo_end) {
+        advance(bounds);
+        assert (!past_end(bounds));
+    }
+    PyObject *start = NULL;
+    PyObject *end = NULL;
+    PyObject *line = NULL;
+    PyObject *result = PyTuple_New(3);
+    start = PyLong_FromLong(bounds->lo_start);
+    end = PyLong_FromLong(bounds->lo_end);
+    if (bounds->lo_artificial) {
+        Py_INCREF(Py_None);
+        line = Py_None;
+    }
+    else {
+        line = PyLong_FromLong(bounds->lo_line);
+    }
+    if (result == NULL || start == NULL || end == NULL || line == NULL) {
+        goto error;
+    }
+    PyTuple_SET_ITEM(result, 0, start);
+    PyTuple_SET_ITEM(result, 1, end);
+    PyTuple_SET_ITEM(result, 2, line);
+    return result;
+error:
+    Py_XDECREF(start);
+    Py_XDECREF(end);
+    Py_XDECREF(line);
+    Py_XDECREF(result);
+    return result;
+}
+
+static PyTypeObject LineIterator = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "line_iterator",                    /* tp_name */
+    sizeof(lineiterator),               /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)lineiter_dealloc,       /* tp_dealloc */
+    0,                                  /* tp_vectorcall_offset */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_as_async */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    0,                                  /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,       /* tp_flags */
+    0,                                  /* tp_doc */
+    0,                                  /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)lineiter_next,        /* tp_iternext */
+    0,                                  /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    0,                                  /* tp_new */
+    PyObject_Del,                       /* tp_free */
+};
+
+static PyObject *
+code_linesiterator(PyCodeObject *code, PyObject *Py_UNUSED(args))
+{
+    lineiterator *li = (lineiterator *)PyType_GenericAlloc(&LineIterator, 0);
+    if (li == NULL) {
+        return NULL;
+    }
+    Py_INCREF(code);
+    li->li_code = code;
+    _PyCode_InitBounds(code, &li->li_line);
+    return (PyObject *)li;
+}
+
 /* XXX code objects need to participate in GC? */
 
 static struct PyMethodDef code_methods[] = {
     {"__sizeof__", (PyCFunction)code_sizeof, METH_NOARGS},
+    {"co_lines", (PyCFunction)code_linesiterator, METH_NOARGS},
     CODE_REPLACE_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
@@ -1022,38 +1174,8 @@ _PyCode_InitBounds(PyCodeObject* co, PyAddrLineOffsets *bounds)
     bounds->lo_end = 0;
     bounds->lo_line = co->co_firstlineno;
     bounds->lo_artificial = 1;
+    bounds->lo_limit = PyBytes_AS_STRING(co->co_linetable) + PyBytes_GET_SIZE(co->co_linetable);
     return bounds->lo_line;
-}
-
-static void
-retreat(PyAddrLineOffsets *bounds)
-{
-    int ldelta = ((signed char *)bounds->lo_entry)[1];
-    if (ldelta == -128) {
-        ldelta = 0;
-    }
-    bounds->lo_line -= ldelta;
-    bounds->lo_entry -= 2;
-    bounds->lo_end = bounds->lo_start;
-    bounds->lo_start -= ((unsigned char *)bounds->lo_entry)[0];
-    ldelta = ((signed char *)bounds->lo_entry)[1];
-    bounds->lo_artificial = (ldelta == -128);
-}
-
-static void
-advance(PyAddrLineOffsets *bounds)
-{
-    bounds->lo_entry += 2;
-    bounds->lo_start = bounds->lo_end;
-    bounds->lo_end += ((unsigned char *)bounds->lo_entry)[0];
-    int ldelta = ((signed char *)bounds->lo_entry)[1];
-    if (ldelta == -128) {
-        bounds->lo_artificial = 1;
-    }
-    else {
-        bounds->lo_artificial = 0;
-        bounds->lo_line += ldelta;
-    }
 }
 
 /* Update *bounds to describe the first and one-past-the-last instructions in

@@ -449,6 +449,14 @@ def findlabels(code):
 def findlinestarts(code):
     """Find the offsets in a byte code which are start of lines in the source.
 
+    Generate pairs (offset, lineno)
+    """
+    for start, end, line in code.co_lines():
+        if line is not None:
+            yield start, line
+    return
+    """Find the offsets in a byte code which are start of lines in the source.
+
     Generate pairs (offset, lineno) as described in Python/compile.c.
 
     """
