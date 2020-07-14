@@ -1,1 +1,1 @@
-Add check for length = 0 to avoid infinite loop inside _proc_pax function in tarfile module
+Avoid infinite loop when reading specially crafted TAR files using the tarfile module (CVE-2019-20907).
