@@ -698,7 +698,7 @@ expression and after the ``'='`` are all retained in the output. By default, the
 format specified. When a format is specified it defaults to the :func:`str` of the
 expression unless a conversion ``'!r'`` is declared.
 
-.. versionchanged:: 3.8
+.. versionadded:: 3.8
    The equals ``'='`` was added in Python 3.8.
 
 If a conversion is specified, the result of evaluating the expression
