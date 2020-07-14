@@ -434,7 +434,7 @@ class CommonReadTest(ReadTest):
         # with an exception
         with self.assertRaisesRegex(tarfile.ReadError, "file could not be opened successfully"):
             with tarfile.open(support.findfile('recursion.tar')) as tar:
-                tar.getmembers()
+                pass
 
 class MiscReadTestBase(CommonReadTest):
     def requires_name_attribute(self):
