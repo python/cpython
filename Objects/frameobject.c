@@ -369,6 +369,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
                      "can't jump from the 'call' trace event of a new frame");
             return -1;
         case FRAME_RETURNED:
+        case FRAME_UNWINDING:
         case FRAME_RAISED:
         case FRAME_CLEARED:
             PyErr_SetString(PyExc_ValueError,

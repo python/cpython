@@ -3769,14 +3769,14 @@ error:
         PyTraceBack_Here(f);
 
         if (tstate->c_tracefunc != NULL) {
-            /* Temporarily set frame state to RAISED for benefit of frame.setlineno */
+            /* Make sure state is set to FRAME_EXECUTING for tracing */
             assert(f->f_state == FRAME_EXECUTING);
-            f->f_state = FRAME_RAISED;
+            f->f_state = FRAME_UNWINDING;
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
                            tstate, f);
-            f->f_state = FRAME_EXECUTING;
         }
 exception_unwind:
+        f->f_state = FRAME_UNWINDING;
         /* Unwind stacks if an exception occurred */
         while (f->f_iblock > 0) {
             /* Pop the current block. */
@@ -3835,6 +3835,7 @@ exception_unwind:
                     }
                 }
                 /* Resume normal execution */
+                f->f_state = FRAME_EXECUTING;
                 goto main_loop;
             }
         } /* unwind stack */

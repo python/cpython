@@ -12,8 +12,9 @@ enum _framestate {
     FRAME_SUSPENDED = -1,
     FRAME_EXECUTING = 0,
     FRAME_RETURNED = 1,
-    FRAME_RAISED = 2,
-    FRAME_CLEARED = 3
+    FRAME_UNWINDING = 2,
+    FRAME_RAISED = 3,
+    FRAME_CLEARED = 4
 };
 
 typedef signed char PyFrameState;
