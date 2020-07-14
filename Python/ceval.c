@@ -973,7 +973,7 @@ get_match_args(PyThreadState *tstate, PyObject *type)
 }
 
 static PyObject *
-do_match(PyThreadState *tstate, Py_ssize_t nargs, PyObject *kwargs, PyObject *type, PyObject *target)
+do_match(PyThreadState *tstate, Py_ssize_t nargs, PyObject *kwargs, PyObject *type, PyObject *subject)
 {
     // TODO: Break this up!
     if (!PyType_Check(type)) {
@@ -982,7 +982,7 @@ do_match(PyThreadState *tstate, Py_ssize_t nargs, PyObject *kwargs, PyObject *ty
         return NULL;
     }
     assert(PyTuple_CheckExact(kwargs));
-    if (PyObject_IsInstance(target, type) <= 0) {
+    if (PyObject_IsInstance(subject, type) <= 0) {
         return NULL;
     }
     PyObject *args = NULL;
@@ -1040,8 +1040,8 @@ do_match(PyThreadState *tstate, Py_ssize_t nargs, PyObject *kwargs, PyObject *ty
         if (i < nargs) {
             if (!args) {
                 assert(!i);
-                Py_INCREF(target);
-                PyTuple_SET_ITEM(attrs, 0, target);
+                Py_INCREF(subject);
+                PyTuple_SET_ITEM(attrs, 0, subject);
                 continue;
             }
             name = PyTuple_GET_ITEM(args, i);
@@ -1063,7 +1063,7 @@ do_match(PyThreadState *tstate, Py_ssize_t nargs, PyObject *kwargs, PyObject *ty
             }
             goto error;
         }
-        attr = PyObject_GetAttr(target, name);
+        attr = PyObject_GetAttr(subject, name);
         if (!attr) {
             if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
                 _PyErr_Clear(tstate);
@@ -3536,11 +3536,11 @@ main_loop:
         case TARGET(MATCH_CLASS): {
             PyObject *names = POP();
             PyObject *type = TOP();
-            PyObject *target = SECOND();
-            PyObject *attrs = do_match(tstate, oparg, names, type, target);
+            PyObject *subject = SECOND();
+            PyObject *attrs = do_match(tstate, oparg, names, type, subject);
             Py_DECREF(names);
             if (attrs) {
-                Py_DECREF(target);
+                Py_DECREF(subject);
                 SET_SECOND(attrs);
             }
             else if (_PyErr_Occurred(tstate)) {
@@ -3573,11 +3573,11 @@ main_loop:
         }
 
         case TARGET(MATCH_SEQUENCE): {
-            PyObject *target = TOP();
-            if (PyType_FastSubclass(Py_TYPE(target),
+            PyObject *subject = TOP();
+            if (PyType_FastSubclass(Py_TYPE(subject),
                     Py_TPFLAGS_BYTES_SUBCLASS | Py_TPFLAGS_UNICODE_SUBCLASS)
-                || PyIter_Check(target)
-                || PyByteArray_Check(target))
+                || PyIter_Check(subject)
+                || PyByteArray_Check(subject))
             {
                 Py_INCREF(Py_False);
                 PUSH(Py_False);
@@ -3595,7 +3595,7 @@ main_loop:
                     goto error;
                 }
             }
-            int match = PyObject_IsInstance(target, interp->seq_abc);
+            int match = PyObject_IsInstance(subject, interp->seq_abc);
             if (match < 0) {
                 goto error;
             }
@@ -3605,8 +3605,8 @@ main_loop:
 
         case TARGET(MATCH_KEYS): {
             PyObject *keys = TOP();
-            PyObject *target = SECOND();
-            PyObject *values = match_map_items(tstate, target, keys);
+            PyObject *subject = SECOND();
+            PyObject *values = match_map_items(tstate, subject, keys);
             if (!values) {
                 if (_PyErr_Occurred(tstate)) {
                     goto error;
@@ -3619,12 +3619,12 @@ main_loop:
                 DISPATCH();
             }
             if (oparg) {
-                PyObject *rest = match_map_copy(tstate, target, keys);
+                PyObject *rest = match_map_copy(tstate, subject, keys);
                 if (!rest) {
                     goto error;
                 }
                 SET_SECOND(rest);
-                Py_DECREF(target);
+                Py_DECREF(subject);
             }
             SET_TOP(values);
             Py_DECREF(keys);
@@ -3668,10 +3668,10 @@ main_loop:
             if (!items) {
                 goto error;
             }
-            PyObject *target = TOP();
+            PyObject *subject = TOP();
             PyObject *item;
             for (Py_ssize_t i = start; i < stop; i++) {
-                item = PySequence_GetItem(target, i);
+                item = PySequence_GetItem(subject, i);
                 if (!item) {
                     Py_DECREF(items);
                     goto error;

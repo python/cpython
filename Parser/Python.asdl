@@ -36,7 +36,7 @@ module Python
           | With(withitem* items, stmt* body, string? type_comment)
           | AsyncWith(withitem* items, stmt* body, string? type_comment)
 
-          | Match(expr target, match_case* cases)
+          | Match(expr subject, match_case* cases)
 
           | Raise(expr? exc, expr? cause)
           | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)

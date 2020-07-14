@@ -213,6 +213,7 @@ typedef struct {
     PyObject *slice;
     PyObject *step;
     PyObject *stmt_type;
+    PyObject *subject;
     PyObject *tag;
     PyObject *target;
     PyObject *targets;
@@ -469,6 +470,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(state->slice);
     Py_CLEAR(state->step);
     Py_CLEAR(state->stmt_type);
+    Py_CLEAR(state->subject);
     Py_CLEAR(state->tag);
     Py_CLEAR(state->target);
     Py_CLEAR(state->targets);
@@ -695,6 +697,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(state->slice);
     Py_VISIT(state->step);
     Py_VISIT(state->stmt_type);
+    Py_VISIT(state->subject);
     Py_VISIT(state->tag);
     Py_VISIT(state->target);
     Py_VISIT(state->targets);
@@ -786,6 +789,7 @@ static int init_identifiers(astmodulestate *state)
     if ((state->simple = PyUnicode_InternFromString("simple")) == NULL) return 0;
     if ((state->slice = PyUnicode_InternFromString("slice")) == NULL) return 0;
     if ((state->step = PyUnicode_InternFromString("step")) == NULL) return 0;
+    if ((state->subject = PyUnicode_InternFromString("subject")) == NULL) return 0;
     if ((state->tag = PyUnicode_InternFromString("tag")) == NULL) return 0;
     if ((state->target = PyUnicode_InternFromString("target")) == NULL) return 0;
     if ((state->targets = PyUnicode_InternFromString("targets")) == NULL) return 0;
@@ -902,7 +906,7 @@ static const char * const AsyncWith_fields[]={
     "type_comment",
 };
 static const char * const Match_fields[]={
-    "target",
+    "subject",
     "cases",
 };
 static const char * const Raise_fields[]={
@@ -1508,7 +1512,7 @@ static int init_types(astmodulestate *state)
         "     | If(expr test, stmt* body, stmt* orelse)\n"
         "     | With(withitem* items, stmt* body, string? type_comment)\n"
         "     | AsyncWith(withitem* items, stmt* body, string? type_comment)\n"
-        "     | Match(expr target, match_case* cases)\n"
+        "     | Match(expr subject, match_case* cases)\n"
         "     | Raise(expr? exc, expr? cause)\n"
         "     | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)\n"
         "     | Assert(expr test, expr? msg)\n"
@@ -1613,7 +1617,7 @@ static int init_types(astmodulestate *state)
         return 0;
     state->Match_type = make_type(state, "Match", state->stmt_type,
                                   Match_fields, 2,
-        "Match(expr target, match_case* cases)");
+        "Match(expr subject, match_case* cases)");
     if (!state->Match_type) return 0;
     state->Raise_type = make_type(state, "Raise", state->stmt_type,
                                   Raise_fields, 2,
@@ -2616,20 +2620,20 @@ AsyncWith(asdl_seq * items, asdl_seq * body, string type_comment, int lineno,
 }
 
 stmt_ty
-Match(expr_ty target, asdl_seq * cases, int lineno, int col_offset, int
+Match(expr_ty subject, asdl_seq * cases, int lineno, int col_offset, int
       end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
-    if (!target) {
+    if (!subject) {
         PyErr_SetString(PyExc_ValueError,
-                        "field 'target' is required for Match");
+                        "field 'subject' is required for Match");
         return NULL;
     }
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
     p->kind = Match_kind;
-    p->v.Match.target = target;
+    p->v.Match.subject = subject;
     p->v.Match.cases = cases;
     p->lineno = lineno;
     p->col_offset = col_offset;
@@ -4100,9 +4104,9 @@ ast2obj_stmt(astmodulestate *state, void* _o)
         tp = (PyTypeObject *)state->Match_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_expr(state, o->v.Match.target);
+        value = ast2obj_expr(state, o->v.Match.subject);
         if (!value) goto failed;
-        if (PyObject_SetAttr(result, state->target, value) == -1)
+        if (PyObject_SetAttr(result, state->subject, value) == -1)
             goto failed;
         Py_DECREF(value);
         value = ast2obj_list(state, o->v.Match.cases, ast2obj_match_case);
@@ -6873,19 +6877,19 @@ obj2ast_stmt(astmodulestate *state, PyObject* obj, stmt_ty* out, PyArena* arena)
         return 1;
     }
     if (isinstance) {
-        expr_ty target;
+        expr_ty subject;
         asdl_seq* cases;
 
-        if (_PyObject_LookupAttr(obj, state->target, &tmp) < 0) {
+        if (_PyObject_LookupAttr(obj, state->subject, &tmp) < 0) {
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from Match");
+            PyErr_SetString(PyExc_TypeError, "required field \"subject\" missing from Match");
             return 1;
         }
         else {
             int res;
-            res = obj2ast_expr(state, tmp, &target, arena);
+            res = obj2ast_expr(state, tmp, &subject, arena);
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
@@ -6922,7 +6926,7 @@ obj2ast_stmt(astmodulestate *state, PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = Match(target, cases, lineno, col_offset, end_lineno,
+        *out = Match(subject, cases, lineno, col_offset, end_lineno,
                      end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;

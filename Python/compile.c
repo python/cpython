@@ -5544,9 +5544,10 @@ compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
             compiler_warn(c, "name capture pattern makes remaining alternate "
                              "patterns unreachable");
         }
-        if (!(pc->stores && compiler_addop(c, DUP_TOP) &&
-              compiler_pattern(c, alt, pc) &&
-              compiler_addop_j(c, JUMP_IF_TRUE_OR_POP, end, 1)))
+        if (!pc->stores ||
+            !compiler_addop(c, DUP_TOP) ||
+            !compiler_pattern(c, alt, pc) ||
+            !compiler_addop_j(c, JUMP_IF_TRUE_OR_POP, end, 1))
         {
             goto fail;
         }
@@ -5841,7 +5842,7 @@ compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
 static int
 compiler_match(struct compiler *c, stmt_ty s)
 {
-    VISIT(c, expr, s->v.Match.target);
+    VISIT(c, expr, s->v.Match.subject);
     basicblock *next, *end;
     CHECK(end = compiler_new_block(c));
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);

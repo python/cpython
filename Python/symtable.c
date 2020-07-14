@@ -1293,7 +1293,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ(st, stmt, s->v.If.orelse);
         break;
     case Match_kind:
-        VISIT(st, expr, s->v.Match.target);
+        VISIT(st, expr, s->v.Match.subject);
         VISIT_SEQ(st, match_case, s->v.Match.cases);
         break;
     case Raise_kind:

@@ -538,7 +538,7 @@ validate_stmt(stmt_ty stmt)
         }
         return validate_body(stmt->v.AsyncWith.body, "AsyncWith");
     case Match_kind:
-        if (!validate_expr(stmt->v.Match.target, Load)
+        if (!validate_expr(stmt->v.Match.subject, Load)
             || !validate_nonempty_seq(stmt->v.Match.cases, "cases", "Match")) {
             return 0;
         }

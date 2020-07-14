@@ -713,7 +713,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(astfold_expr, expr_ty, node_->v.Expr.value);
         break;
     case Match_kind:
-        CALL(astfold_expr, expr_ty, node_->v.Match.target);
+        CALL(astfold_expr, expr_ty, node_->v.Match.subject);
         CALL_SEQ(astfold_match_case, match_case_ty, node_->v.Match.cases);
         break;
     default:

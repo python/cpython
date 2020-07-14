@@ -4899,11 +4899,11 @@ match_stmt_rule(Parser *p)
         Token * dedent_var;
         Token * indent_var;
         Token * newline_var;
-        expr_ty target;
+        expr_ty subject;
         if (
             (_keyword = _PyPegen_expect_soft_keyword(p, "match"))  // soft_keyword='"match"'
             &&
-            (target = match_expr_rule(p))  // match_expr
+            (subject = match_expr_rule(p))  // match_expr
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -4926,7 +4926,7 @@ match_stmt_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _Py_Match ( target , cases , EXTRA );
+            _res = _Py_Match ( subject , cases , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);

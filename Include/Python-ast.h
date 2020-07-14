@@ -180,7 +180,7 @@ struct _stmt {
         } AsyncWith;
 
         struct {
-            expr_ty target;
+            expr_ty subject;
             asdl_seq *cases;
         } Match;
 
@@ -537,8 +537,9 @@ stmt_ty _Py_AsyncWith(asdl_seq * items, asdl_seq * body, string type_comment,
                       int lineno, int col_offset, int end_lineno, int
                       end_col_offset, PyArena *arena);
 #define Match(a0, a1, a2, a3, a4, a5, a6) _Py_Match(a0, a1, a2, a3, a4, a5, a6)
-stmt_ty _Py_Match(expr_ty target, asdl_seq * cases, int lineno, int col_offset,
-                  int end_lineno, int end_col_offset, PyArena *arena);
+stmt_ty _Py_Match(expr_ty subject, asdl_seq * cases, int lineno, int
+                  col_offset, int end_lineno, int end_col_offset, PyArena
+                  *arena);
 #define Raise(a0, a1, a2, a3, a4, a5, a6) _Py_Raise(a0, a1, a2, a3, a4, a5, a6)
 stmt_ty _Py_Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset, int
                   end_lineno, int end_col_offset, PyArena *arena);

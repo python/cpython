@@ -1417,7 +1417,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Match(self, node):
         self.fill("match ")
-        self.traverse(node.target)
+        self.traverse(node.subject)
         with self.block():
             for case in node.cases:
                 self.traverse(case)

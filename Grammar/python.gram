@@ -202,8 +202,8 @@ match_expr[expr_ty]:
     | named_expression
 
 match_stmt[stmt_ty]:
-    | "match" target=match_expr ':' NEWLINE INDENT cases=case_block+ DEDENT {
-        _Py_Match(target, cases, EXTRA) }
+    | "match" subject=match_expr ':' NEWLINE INDENT cases=case_block+ DEDENT {
+        _Py_Match(subject, cases, EXTRA) }
 case_block[match_case_ty]:
     | "case" pattern=patterns guard=guard? ':' body=block {
         _Py_match_case(pattern, guard, body, p->arena) }
