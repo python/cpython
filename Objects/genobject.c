@@ -456,6 +456,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         if (!ret) {
             PyObject *val;
             /* Pop subiterator from stack */
+            assert(gen->gi_frame->f_stackdepth > 0);
             gen->gi_frame->f_stackdepth--;
             ret = gen->gi_frame->f_valuestack[gen->gi_frame->f_stackdepth];
             assert(ret == yf);
@@ -712,8 +713,7 @@ static PyObject *
 gen_getrunning(PyGenObject *gen, void *Py_UNUSED(ignored))
 {
     if (gen->gi_frame == NULL) {
-        Py_INCREF(Py_False);
-        return Py_False;
+        Py_RETURN_FALSE;
     }
     return PyBool_FromLong(_PyFrame_IsExecuting(gen->gi_frame));
 }
@@ -941,8 +941,7 @@ static PyObject *
 cr_getrunning(PyCoroObject *coro, void *Py_UNUSED(ignored))
 {
     if (coro->cr_frame == NULL) {
-        Py_INCREF(Py_False);
-        return Py_False;
+        Py_RETURN_FALSE;
     }
     return PyBool_FromLong(_PyFrame_IsExecuting(coro->cr_frame));
 }
