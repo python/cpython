@@ -15,6 +15,8 @@ import textwrap
 import unicodedata
 import unittest
 import warnings
+from test.support import import_helper
+from test.support import warnings_helper
 from test import support, string_tests
 from test.support.script_helper import assert_python_failure
 
@@ -504,7 +506,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertIs(text.replace(pattern, pattern), text)
 
     def test_bytes_comparison(self):
-        with support.check_warnings():
+        with warnings_helper.check_warnings():
             warnings.simplefilter('ignore', BytesWarning)
             self.assertEqual('abc' == b'abc', False)
             self.assertEqual('abc' != b'abc', True)
@@ -721,11 +723,12 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertFalse("0".isidentifier())
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
     def test_isidentifier_legacy(self):
         import _testcapi
         u = '𝖀𝖓𝖎𝖈𝖔𝖉𝖊'
         self.assertTrue(u.isidentifier())
-        with support.check_warnings():
+        with warnings_helper.check_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
             self.assertTrue(_testcapi.unicode_legacy_string(u).isidentifier())
 
@@ -2348,6 +2351,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(len(args), 1)
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
     def test_resize(self):
         from _testcapi import getargs_u
         for length in range(1, 100, 7):
@@ -2507,7 +2511,7 @@ class CAPITest(unittest.TestCase):
 
     # Test PyUnicode_FromFormat()
     def test_from_format(self):
-        support.import_module('ctypes')
+        import_helper.import_module('ctypes')
         from ctypes import (
             pythonapi, py_object, sizeof,
             c_int, c_long, c_longlong, c_ssize_t,
@@ -2748,7 +2752,7 @@ class CAPITest(unittest.TestCase):
     @support.cpython_only
     def test_aswidechar(self):
         from _testcapi import unicode_aswidechar
-        support.import_module('ctypes')
+        import_helper.import_module('ctypes')
         from ctypes import c_wchar, sizeof
 
         wchar, size = unicode_aswidechar('abcdef', 2)
@@ -2786,7 +2790,7 @@ class CAPITest(unittest.TestCase):
     @support.cpython_only
     def test_aswidecharstring(self):
         from _testcapi import unicode_aswidecharstring
-        support.import_module('ctypes')
+        import_helper.import_module('ctypes')
         from ctypes import c_wchar, sizeof
 
         wchar, size = unicode_aswidecharstring('abc')
@@ -2918,6 +2922,7 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, unicode_copycharacters, s, 0, b'', 0, 0)
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
     def test_encode_decimal(self):
         from _testcapi import unicode_encodedecimal
         self.assertEqual(unicode_encodedecimal('123'),
@@ -2934,6 +2939,7 @@ class CAPITest(unittest.TestCase):
             unicode_encodedecimal, "123\u20ac", "replace")
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
     def test_transform_decimal(self):
         from _testcapi import unicode_transformdecimaltoascii as transform_decimal
         self.assertEqual(transform_decimal('123'),

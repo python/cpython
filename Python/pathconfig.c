@@ -17,9 +17,6 @@ extern "C" {
 
 
 _PyPathConfig _Py_path_config = _PyPathConfig_INIT;
-#ifdef MS_WINDOWS
-wchar_t *_Py_dll_path = NULL;
-#endif
 
 
 static int
@@ -107,10 +104,6 @@ _PyPathConfig_ClearGlobal(void)
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     pathconfig_clear(&_Py_path_config);
-#ifdef MS_WINDOWS
-    PyMem_RawFree(_Py_dll_path);
-    _Py_dll_path = NULL;
-#endif
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -145,31 +138,6 @@ _PyWideStringList_Join(const PyWideStringList *list, wchar_t sep)
 
     return text;
 }
-
-
-#ifdef MS_WINDOWS
-/* Initialize _Py_dll_path on Windows. Do nothing on other platforms. */
-static PyStatus
-_PyPathConfig_InitDLLPath(void)
-{
-    if (_Py_dll_path != NULL) {
-        /* Already set: nothing to do */
-        return _PyStatus_OK();
-    }
-
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    _Py_dll_path = _Py_GetDLLPath();
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    if (_Py_dll_path == NULL) {
-        return _PyStatus_NO_MEMORY();
-    }
-    return _PyStatus_OK();
-}
-#endif
 
 
 static PyStatus
@@ -218,17 +186,84 @@ done:
     return status;
 }
 
+PyObject *
+_PyPathConfig_AsDict(void)
+{
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+
+#define SET_ITEM(KEY, EXPR) \
+        do { \
+            PyObject *obj = (EXPR); \
+            if (obj == NULL) { \
+                goto fail; \
+            } \
+            int res = PyDict_SetItemString(dict, KEY, obj); \
+            Py_DECREF(obj); \
+            if (res < 0) { \
+                goto fail; \
+            } \
+        } while (0)
+#define SET_ITEM_STR(KEY) \
+        SET_ITEM(#KEY, \
+            (_Py_path_config.KEY \
+             ? PyUnicode_FromWideChar(_Py_path_config.KEY, -1) \
+             : (Py_INCREF(Py_None), Py_None)))
+#define SET_ITEM_INT(KEY) \
+        SET_ITEM(#KEY, PyLong_FromLong(_Py_path_config.KEY))
+
+    SET_ITEM_STR(program_full_path);
+    SET_ITEM_STR(prefix);
+    SET_ITEM_STR(exec_prefix);
+    SET_ITEM_STR(module_search_path);
+    SET_ITEM_STR(program_name);
+    SET_ITEM_STR(home);
+#ifdef MS_WINDOWS
+    SET_ITEM_INT(isolated);
+    SET_ITEM_INT(site_import);
+    SET_ITEM_STR(base_executable);
+
+    {
+        wchar_t py3path[MAX_PATH];
+        HMODULE hPython3 = GetModuleHandleW(PY3_DLLNAME);
+        PyObject *obj;
+        if (hPython3
+            && GetModuleFileNameW(hPython3, py3path, Py_ARRAY_LENGTH(py3path)))
+        {
+            obj = PyUnicode_FromWideChar(py3path, -1);
+            if (obj == NULL) {
+                goto fail;
+            }
+        }
+        else {
+            obj = Py_None;
+            Py_INCREF(obj);
+        }
+        if (PyDict_SetItemString(dict, "python3_dll", obj) < 0) {
+            Py_DECREF(obj);
+            goto fail;
+        }
+        Py_DECREF(obj);
+    }
+#endif
+
+#undef SET_ITEM
+#undef SET_ITEM_STR
+#undef SET_ITEM_INT
+
+    return dict;
+
+fail:
+    Py_DECREF(dict);
+    return NULL;
+}
+
 
 PyStatus
 _PyConfig_WritePathConfig(const PyConfig *config)
 {
-#ifdef MS_WINDOWS
-    PyStatus status = _PyPathConfig_InitDLLPath();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-#endif
-
     return pathconfig_set_from_config(&_Py_path_config, config);
 }
 
@@ -454,13 +489,6 @@ static void
 pathconfig_global_init(void)
 {
     PyStatus status;
-
-#ifdef MS_WINDOWS
-    status = _PyPathConfig_InitDLLPath();
-    if (_PyStatus_EXCEPTION(status)) {
-        Py_ExitStatusException(status);
-    }
-#endif
 
     if (_Py_path_config.module_search_path == NULL) {
         status = pathconfig_global_read(&_Py_path_config);

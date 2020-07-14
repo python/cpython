@@ -9,8 +9,8 @@ extern int Py_DebugFlag;
 #endif
 static const int n_keyword_lists = 9;
 static KeywordToken *reserved_keywords[] = {
-    NULL,
-    NULL,
+    (KeywordToken[]) {{NULL, -1}},
+    (KeywordToken[]) {{NULL, -1}},
     (KeywordToken[]) {
         {"if", 510},
         {"in", 518},
