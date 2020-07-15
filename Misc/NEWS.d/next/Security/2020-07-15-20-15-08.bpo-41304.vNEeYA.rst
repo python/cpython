@@ -1,0 +1,1 @@
+Fixes `python3x._pth` being ignored on Windows
