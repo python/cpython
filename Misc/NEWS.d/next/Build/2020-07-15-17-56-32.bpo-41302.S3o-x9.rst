@@ -1,0 +1,1 @@
+Enable building Python 3.8 with libmpdec-2.5.0 to ease maintenance for Linux distributions. Patch by Felix Yan.
