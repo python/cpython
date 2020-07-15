@@ -598,12 +598,19 @@ class StartupImportTests(unittest.TestCase):
 @unittest.skipUnless(sys.platform == 'win32', "only supported on Windows")
 class _pthFileTests(unittest.TestCase):
 
-    def _create_underpth_exe(self, lines):
+    def _create_underpth_exe(self, lines, exe_pth=True):
+        import _winapi
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(test.support.rmtree, temp_dir)
         exe_file = os.path.join(temp_dir, os.path.split(sys.executable)[1])
+        dll_src_file = _winapi.GetModuleFileName(sys.dllhandle)
+        dll_file = os.path.join(temp_dir, os.path.split(dll_src_file)[1])
         shutil.copy(sys.executable, exe_file)
-        _pth_file = os.path.splitext(exe_file)[0] + '._pth'
+        shutil.copy(dll_src_file, dll_file)
+        if exe_pth:
+            _pth_file = os.path.splitext(exe_file)[0] + '._pth'
+        else:
+            _pth_file = os.path.splitext(dll_file)[0] + '._pth'
         with open(_pth_file, 'w') as f:
             for line in lines:
                 print(line, file=f)
@@ -656,6 +663,31 @@ class _pthFileTests(unittest.TestCase):
             '# comment',
             'import site'
         ])
+        sys_prefix = os.path.dirname(exe_file)
+        env = os.environ.copy()
+        env['PYTHONPATH'] = 'from-env'
+        env['PATH'] = '{};{}'.format(exe_prefix, os.getenv('PATH'))
+        rc = subprocess.call([exe_file, '-c',
+            'import sys; sys.exit(not sys.flags.no_site and '
+            '%r in sys.path and %r in sys.path and %r not in sys.path and '
+            'all("\\r" not in p and "\\n" not in p for p in sys.path))' % (
+                os.path.join(sys_prefix, 'fake-path-name'),
+                libpath,
+                os.path.join(sys_prefix, 'from-env'),
+            )], env=env)
+        self.assertTrue(rc, "sys.path is incorrect")
+
+
+    def test_underpth_dll_file(self):
+        libpath = os.path.dirname(os.path.dirname(encodings.__file__))
+        exe_prefix = os.path.dirname(sys.executable)
+        exe_file = self._create_underpth_exe([
+            'fake-path-name',
+            *[libpath for _ in range(200)],
+            '',
+            '# comment',
+            'import site'
+        ], exe_pth=False)
         sys_prefix = os.path.dirname(exe_file)
         env = os.environ.copy()
         env['PYTHONPATH'] = 'from-env'
