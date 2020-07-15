@@ -3778,6 +3778,7 @@ is_genericalias(PyObject *obj)
 static PyObject *
 type_or(PyTypeObject* self, PyObject* param) {
     // Check param is a PyType or GenericAlias
+    printf("Type_or \n");
     if ((param == NULL) ||
         (
          (param != Py_None) &&
@@ -5646,7 +5647,6 @@ PyType_Ready(PyTypeObject *type)
             add_subclass((PyTypeObject *)b, type) < 0)
             goto error;
     }
-
     /* All done -- set the ready flag */
     type->tp_flags =
         (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
