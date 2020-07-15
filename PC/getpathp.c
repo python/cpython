@@ -717,7 +717,7 @@ static int
 get_pth_filename(PyCalculatePath *calculate, wchar_t *filename,
                  const _PyPathConfig *pathconfig)
 {
-    if (get_dllpath(filename) &&
+    if (!get_dllpath(filename) &&
         !change_ext(filename, filename, L"._pth") &&
         exists(filename))
     {
