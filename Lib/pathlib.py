@@ -195,6 +195,7 @@ class _WindowsFlavour(_Flavour):
             if strict:
                 return self._ext_to_normal(_getfinalpathname(s))
             else:
+                s = path = os.path.abspath(s)
                 tail_parts = []  # End of the path after the first one not found
                 while True:
                     try:
@@ -202,9 +203,9 @@ class _WindowsFlavour(_Flavour):
                     except FileNotFoundError:
                         previous_s = s
                         s, tail = os.path.split(s)
-                        if previous_s == s:
-                            return os.path.join(s or os.getcwd(), *reversed(tail_parts))
                         tail_parts.append(tail)
+                        if previous_s == s:
+                            return path
                     else:
                         return os.path.join(s, *reversed(tail_parts))
         # Means fallback on absolute
