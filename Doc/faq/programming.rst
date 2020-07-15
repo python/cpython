@@ -539,8 +539,8 @@ desired effect in a number of ways.
       ...
       >>> args = ['old-value', 99]
       >>> func1(args)
-      >>> print(args[0], args[1])
-      new-value 100
+      >>> args
+      ['new-value', 100]
 
 4) By passing in a dictionary that gets mutated::
 
