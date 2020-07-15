@@ -2516,7 +2516,6 @@ class CAPITest(unittest.TestCase):
         name = "PyUnicode_FromFormat"
         _PyUnicode_FromFormat = getattr(pythonapi, name)
         _PyUnicode_FromFormat.argtypes = (c_char_p,)
-        _PyUnicode_FromFormat.variadic = True
         _PyUnicode_FromFormat.restype = py_object
 
         def PyUnicode_FromFormat(format, *args):

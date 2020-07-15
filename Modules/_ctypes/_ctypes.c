@@ -3321,35 +3321,6 @@ PyCFuncPtr_get_restype(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
 }
 
 static int
-PyCFuncPtr_set_variadic(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ignored))
-{
-    StgDictObject *dict = PyObject_stgdict((PyObject *)self);
-    assert(dict);
-    int r = PyObject_IsTrue(ob);
-    if (r == 1) {
-        dict->flags |= FUNCFLAG_VARIADIC;
-        return 0;
-    } else if (r == 0) {
-        dict->flags &= ~FUNCFLAG_VARIADIC;
-        return 0;
-    } else {
-        return -1;
-    }
-}
-
-static PyObject *
-PyCFuncPtr_get_variadic(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
-{
-    StgDictObject *dict = PyObject_stgdict((PyObject *)self);
-    assert(dict); /* Cannot be NULL for PyCFuncPtrObject instances */
-    if (dict->flags & FUNCFLAG_VARIADIC)
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
-}
-
-
-static int
 PyCFuncPtr_set_argtypes(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ignored))
 {
     PyObject *converters;
@@ -3394,8 +3365,6 @@ static PyGetSetDef PyCFuncPtr_getsets[] = {
     { "argtypes", (getter)PyCFuncPtr_get_argtypes,
       (setter)PyCFuncPtr_set_argtypes,
       "specify the argument types", NULL },
-    { "variadic", (getter)PyCFuncPtr_get_variadic, (setter)PyCFuncPtr_set_variadic,
-      "specify if function takes variable number of arguments", NULL },
     { NULL, NULL }
 };
 
@@ -5870,7 +5839,6 @@ PyInit__ctypes(void)
     PyModule_AddObject(m, "FUNCFLAG_USE_ERRNO", PyLong_FromLong(FUNCFLAG_USE_ERRNO));
     PyModule_AddObject(m, "FUNCFLAG_USE_LASTERROR", PyLong_FromLong(FUNCFLAG_USE_LASTERROR));
     PyModule_AddObject(m, "FUNCFLAG_PYTHONAPI", PyLong_FromLong(FUNCFLAG_PYTHONAPI));
-    PyModule_AddObject(m, "FUNCFLAG_VARIADIC", PyLong_FromLong(FUNCFLAG_VARIADIC));
     PyModule_AddStringConstant(m, "__version__", "1.1.0");
 
     PyModule_AddObject(m, "_memmove_addr", PyLong_FromVoidPtr(memmove));

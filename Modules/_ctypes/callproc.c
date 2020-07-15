@@ -847,11 +847,12 @@ static int _call_function_pointer(int flags,
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME false
 #   endif
 
-    /* Everyone SHOULD set f.variadic=True on variadic function pointers, but
-     * lots of existing code will not.  If there's at least one arg and more
-     * args are passed than are defined in the prototype, then it must be a
-     * variadic function. */
-    bool is_variadic = (flags & FUNCFLAG_VARIADIC) || (argtypecount != 0 && argcount > argtypecount);
+    /* Even on Apple-arm64 the calling convention for variadic functions conincides
+     * with the standard calling convention in the case that the function called
+     * only with its fixed arguments.   Thus, we do not need a special flag to be
+     * set on variadic functions.   We treat a function as variadic if it is called
+     * with a nonzero number of variadic arguments */
+    bool is_variadic = (argtypecount != 0 && argcount > argtypecount);
     (void) is_variadic;
 
 #if defined(__APPLE__) && defined(__arm64__)

@@ -1579,13 +1579,6 @@ They are instances of a private class:
       value usable as argument (integer, string, ctypes instance).  This allows
       defining adapters that can adapt custom objects as function parameters.
 
-   .. attribute:: variadic
-
-      Assign a boolean to specify that the function takes a variable number of
-      arguments.   This does not matter on most platforms, but for Apple arm64
-      platforms variadic functions have a different calling convention than
-      normal functions.
-
    .. attribute:: errcheck
 
       Assign a Python function or another callable to this attribute. The
