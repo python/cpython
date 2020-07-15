@@ -518,13 +518,13 @@ desired effect in a number of ways.
 
 1) By returning a tuple of the results::
 
-      >>> def func2(a, b):
+      >>> def func1(a, b):
       ...     a = 'new-value'        # a and b are local names
       ...     b = b + 1              # assigned to new objects
       ...     return a, b            # return new values
       ...
       >>> x, y = 'old-value', 99
-      >>> func2(x, y)
+      >>> func1(x, y)
       ('new-value', 100)
 
    This is almost always the clearest solution.
@@ -533,12 +533,12 @@ desired effect in a number of ways.
 
 3) By passing a mutable (changeable in-place) object::
 
-      >>> def func1(a):
+      >>> def func2(a):
       ...     a[0] = 'new-value'     # 'a' references a mutable list
       ...     a[1] = a[1] + 1        # changes a shared object
       ...
       >>> args = ['old-value', 99]
-      >>> func1(args)
+      >>> func2(args)
       >>> args
       ['new-value', 100]
 
@@ -555,16 +555,16 @@ desired effect in a number of ways.
 
 5) Or bundle up values in a class instance::
 
-      >>> class argSetter:
+      >>> class Namespace:
       ...     def __init__(self, /, **args):
       ...         for key, value in args.items():
       ...             setattr(self, key, value)
       ...
       >>> def func4(args):
-      ...     args.a = 'new-value'        # args is a mutable argSetter
+      ...     args.a = 'new-value'        # args is a mutable Namespace
       ...     args.b = args.b + 1         # change object in-place
       ...
-      >>> args = argSetter(a='old-value', b=99)
+      >>> args = Namespace(a='old-value', b=99)
       >>> func4(args)
       >>> vars(args)
       {'a': 'new-value', 'b': 100}
