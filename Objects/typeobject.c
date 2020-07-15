@@ -3741,12 +3741,16 @@ type_is_gc(PyTypeObject *type)
     return type->tp_flags & Py_TPFLAGS_HEAPTYPE;
 }
 
+
 static PyObject *
 type_or(PyTypeObject* self, PyObject* param) {
+    // PyObject_Print(param, stdout, 0);
+    // PyObject_Print(self, stdout, 0);
+    // printf("\n");
     PyObject* typing=PyImport_ImportModule("typing");
     PyTypeObject* genericAlias = (PyTypeObject*)PyObject_GetAttrString(typing,"_GenericAlias");
     PyTypeObject* typeVar = (PyTypeObject*)PyObject_GetAttrString(typing,"TypeVar");
-
+    // printf("Y: %d", Py_Type(*param));
     // Check param is a PyType or GenericAlias
     if ((param == NULL) ||
         (
@@ -3762,9 +3766,11 @@ type_or(PyTypeObject* self, PyObject* param) {
         Py_DECREF(typing);
         return NULL;
     }
-
     // 1. Create a tuple with types
-    PyObject *tuple=PyTuple_Pack(2,self, param);
+    PyObject *tuple=PyTuple_Pack(2, self, param);
+    PyObject *newUnionType=Py_Union(tuple);
+    // printf("%s", newUnionType.args);
+    // PyObject_Print(newUnionType, stdout, 0);
     // 2. Create Union with tuple
     PyObject* unionType = PyObject_GetAttrString(typing,"Union");
     PyObject *newUnion=PyObject_GetItem(unionType, tuple);
@@ -3774,6 +3780,7 @@ type_or(PyTypeObject* self, PyObject* param) {
     Py_DECREF(typing);
     Py_DECREF(unionType);
     Py_DECREF(tuple);
+    Py_DECREF(newUnionType);
     // 4. Return instance
     return newUnion;
 }

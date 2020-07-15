@@ -2571,7 +2571,9 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
     if (PyType_CheckExact(cls)) {
         return object_isinstance(inst, cls);
     }
+
     cls = union_to_tuple(cls);
+
     if (PyTuple_Check(cls)) {
         /* Not a general sequence -- that opens up the road to
            recursion and stack overflow. */

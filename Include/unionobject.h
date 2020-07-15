@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-PyAPI_FUNC(PyObject *) Py_Union(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) Py_Union(PyObject *);
 PyAPI_DATA(PyTypeObject) Py_UnionType;
 
 #ifdef __cplusplus
