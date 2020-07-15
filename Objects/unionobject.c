@@ -20,6 +20,26 @@ unionobject_dealloc(PyObject *self)
 }
 
 
+static Py_hash_t
+union_hash(PyObject *self)
+{
+    unionobject *alias = (unionobject *)self;
+    Py_hash_t h1 = PyObject_Hash(alias->args);
+    if (h1 == -1) {
+        return -1;
+    }
+    return h1;
+}
+
+static int
+union_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    unionobject *alias = (unionobject *)self;
+    Py_VISIT(alias->args);
+    return 0;
+}
+
+
 PyTypeObject Py_UnionType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "typing.Union",
@@ -31,6 +51,9 @@ PyTypeObject Py_UnionType = {
     .tp_alloc = PyType_GenericAlloc,
     .tp_free = PyObject_GC_Del,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_hash = union_hash,
+    .tp_traverse = union_traverse,
+
 };
 
 PyObject *
