@@ -115,7 +115,7 @@ _locale_setlocale_impl(PyObject *module, int category, const char *locale)
 #if defined(MS_WINDOWS)
     if (category < LC_MIN || category > LC_MAX)
     {
-        PyErr_SetString(get_locale_state(self)->Error,
+        PyErr_SetString(get_locale_state(module)->Error,
                         "invalid locale category");
         return NULL;
     }
@@ -126,7 +126,7 @@ _locale_setlocale_impl(PyObject *module, int category, const char *locale)
         result = setlocale(category, locale);
         if (!result) {
             /* operation failed, no setting was changed */
-            PyErr_SetString(get_locale_state(self)->Error,
+            PyErr_SetString(get_locale_state(module)->Error,
                             "unsupported locale setting");
             return NULL;
         }
@@ -137,7 +137,7 @@ _locale_setlocale_impl(PyObject *module, int category, const char *locale)
         /* get locale */
         result = setlocale(category, NULL);
         if (!result) {
-            PyErr_SetString(get_locale_state(self)->Error,
+            PyErr_SetString(get_locale_state(module)->Error,
                             "locale query failed");
             return NULL;
         }
@@ -703,7 +703,7 @@ _locale_bindtextdomain_impl(PyObject *module, const char *domain,
     PyObject *dirname_bytes = NULL, *result;
 
     if (!strlen(domain)) {
-        PyErr_SetString(get_locale_state(self)->Error,
+        PyErr_SetString(get_locale_state(module)->Error,
                         "domain must be a non-empty string");
         return 0;
     }

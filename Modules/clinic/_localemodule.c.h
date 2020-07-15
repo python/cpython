@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(_locale_setlocale__doc__,
-"setlocale($module, category, locale=None, /)\n"
+"setlocale($module, category, locale=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Activates/queries locale processing.");
@@ -22,11 +22,6 @@ _locale_setlocale(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *locale = NULL;
 
     if (!_PyArg_CheckPositional("setlocale", nargs, 1, 2)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     category = _PyLong_AsInt(args[0]);
@@ -51,7 +46,7 @@ _locale_setlocale(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("setlocale", 2, "str or None", args[1]);
+        _PyArg_BadArgument("setlocale", "argument 2", "str or None", args[1]);
         goto exit;
     }
 skip_optional:
@@ -104,7 +99,7 @@ _locale_strcoll(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("strcoll", 1, "str", args[0]);
+        _PyArg_BadArgument("strcoll", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -112,7 +107,7 @@ _locale_strcoll(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     os1 = args[0];
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("strcoll", 2, "str", args[1]);
+        _PyArg_BadArgument("strcoll", "argument 2", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -148,7 +143,7 @@ _locale_strxfrm(PyObject *module, PyObject *arg)
     PyObject *str;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("strxfrm", 0, "str", arg);
+        _PyArg_BadArgument("strxfrm", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -204,11 +199,6 @@ _locale_nl_langinfo(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int item;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     item = _PyLong_AsInt(arg);
     if (item == -1 && PyErr_Occurred()) {
         goto exit;
@@ -244,7 +234,7 @@ _locale_gettext(PyObject *module, PyObject *arg)
     const char *in;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("gettext", 0, "str", arg);
+        _PyArg_BadArgument("gettext", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t in_length;
@@ -305,11 +295,11 @@ _locale_dgettext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("dgettext", 1, "str or None", args[0]);
+        _PyArg_BadArgument("dgettext", "argument 1", "str or None", args[0]);
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("dgettext", 2, "str", args[1]);
+        _PyArg_BadArgument("dgettext", "argument 2", "str", args[1]);
         goto exit;
     }
     Py_ssize_t in_length;
@@ -370,11 +360,11 @@ _locale_dcgettext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
     }
     else {
-        _PyArg_BadArgument("dcgettext", 1, "str or None", args[0]);
+        _PyArg_BadArgument("dcgettext", "argument 1", "str or None", args[0]);
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("dcgettext", 2, "str", args[1]);
+        _PyArg_BadArgument("dcgettext", "argument 2", "str", args[1]);
         goto exit;
     }
     Py_ssize_t msgid_length;
@@ -384,11 +374,6 @@ _locale_dcgettext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (strlen(msgid) != (size_t)msgid_length) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     category = _PyLong_AsInt(args[2]);
@@ -438,7 +423,7 @@ _locale_textdomain(PyObject *module, PyObject *arg)
         }
     }
     else {
-        _PyArg_BadArgument("textdomain", 0, "str or None", arg);
+        _PyArg_BadArgument("textdomain", "argument", "str or None", arg);
         goto exit;
     }
     return_value = _locale_textdomain_impl(module, domain);
@@ -475,7 +460,7 @@ _locale_bindtextdomain(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("bindtextdomain", 1, "str", args[0]);
+        _PyArg_BadArgument("bindtextdomain", "argument 1", "str", args[0]);
         goto exit;
     }
     Py_ssize_t domain_length;
@@ -522,7 +507,7 @@ _locale_bind_textdomain_codeset(PyObject *module, PyObject *const *args, Py_ssiz
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("bind_textdomain_codeset", 1, "str", args[0]);
+        _PyArg_BadArgument("bind_textdomain_codeset", "argument 1", "str", args[0]);
         goto exit;
     }
     Py_ssize_t domain_length;
@@ -549,7 +534,7 @@ _locale_bind_textdomain_codeset(PyObject *module, PyObject *const *args, Py_ssiz
         }
     }
     else {
-        _PyArg_BadArgument("bind_textdomain_codeset", 2, "str or None", args[1]);
+        _PyArg_BadArgument("bind_textdomain_codeset", "argument 2", "str or None", args[1]);
         goto exit;
     }
     return_value = _locale_bind_textdomain_codeset_impl(module, domain, codeset);
@@ -599,4 +584,4 @@ exit:
 #ifndef _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
     #define _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif /* !defined(_LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF) */
-/*[clinic end generated code: output=df290a308b7a0753 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe944779cd572d8e input=a9049054013a1b77]*/
