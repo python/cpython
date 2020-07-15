@@ -1967,7 +1967,7 @@ order (MRO) for bases """
         # different error messages.
         set_add = set.add
 
-        expected_errmsg = "descriptor 'add' of 'set' object needs an argument"
+        expected_errmsg = "unbound method set.add() needs an argument"
 
         with self.assertRaises(TypeError) as cm:
             set_add()
@@ -2526,9 +2526,9 @@ order (MRO) for bases """
         except TypeError:
             pass
 
-        # Two essentially featureless objects, just inheriting stuff from
-        # object.
-        self.assertEqual(dir(NotImplemented), dir(Ellipsis))
+        # Two essentially featureless objects, (Ellipsis just inherits stuff
+        # from object.
+        self.assertEqual(dir(object()), dir(Ellipsis))
 
         # Nasty test case for proxied objects
         class Wrapper(object):
@@ -2659,12 +2659,8 @@ order (MRO) for bases """
         self.assertEqual(Sub.test(), Base.aProp)
 
         # Verify that super() doesn't allow keyword args
-        try:
+        with self.assertRaises(TypeError):
             super(Base, kw=1)
-        except TypeError:
-            pass
-        else:
-            self.assertEqual("super shouldn't accept keyword args")
 
     def test_basic_inheritance(self):
         # Testing inheritance from basic types...
@@ -3029,7 +3025,7 @@ order (MRO) for bases """
         # Testing a str subclass used as dict key ..
 
         class cistr(str):
-            """Sublcass of str that computes __eq__ case-insensitively.
+            """Subclass of str that computes __eq__ case-insensitively.
 
             Also computes a hash code of the string in canonical form.
             """
@@ -3555,13 +3551,6 @@ order (MRO) for bases """
         self.assertEqual(repr(o), 'A repr')
         self.assertEqual(o.__str__(), '41')
         self.assertEqual(o.__repr__(), 'A repr')
-
-        capture = io.StringIO()
-        # Calling str() or not exercises different internal paths.
-        print(o, file=capture)
-        print(str(o), file=capture)
-        self.assertEqual(capture.getvalue(), '41\n41\n')
-        capture.close()
 
     def test_keyword_arguments(self):
         # Testing keyword arguments to __init__, __call__...
@@ -4652,6 +4641,18 @@ order (MRO) for bases """
         x.y = 42
         self.assertEqual(x["y"], 42)
         self.assertEqual(x, -x)
+
+    def test_wrong_class_slot_wrapper(self):
+        # Check bpo-37619: a wrapper descriptor taken from the wrong class
+        # should raise an exception instead of silently being ignored
+        class A(int):
+            __eq__ = str.__eq__
+            __add__ = str.__add__
+        a = A()
+        with self.assertRaises(TypeError):
+            a == a
+        with self.assertRaises(TypeError):
+            a + a
 
     def test_slot_shadows_class_variable(self):
         with self.assertRaises(ValueError) as cm:

@@ -140,8 +140,11 @@ __all__ = [
     # Limits for the C version for compatibility
     'MAX_PREC',  'MAX_EMAX', 'MIN_EMIN', 'MIN_ETINY',
 
-    # C version: compile time choice that enables the thread local context
-    'HAVE_THREADS'
+    # C version: compile time choice that enables the thread local context (deprecated, now always true)
+    'HAVE_THREADS',
+
+    # C version: compile time choice that enables the coroutine local context
+    'HAVE_CONTEXTVAR'
 ]
 
 __xname__ = __name__    # sys.modules lookup (--without-threads)
@@ -172,6 +175,7 @@ ROUND_05UP = 'ROUND_05UP'
 
 # Compatibility with the C version
 HAVE_THREADS = True
+HAVE_CONTEXTVAR = True
 if sys.maxsize == 2**63-1:
     MAX_PREC = 999999999999999999
     MAX_EMAX = 999999999999999999

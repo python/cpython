@@ -1,10 +1,16 @@
-/* Implementation helper: a struct that looks like a tuple.  See timemodule
-   and posixmodule for example uses. */
+/* Implementation helper: a struct that looks like a tuple.
+   See timemodule and posixmodule for example uses.
+
+   The structseq helper is considered an internal CPython implementation
+   detail.  Docs for modules using structseqs should call them
+   "named tuples" (be sure to include a space between the two
+   words and add a link back to the term in Docs/glossary.rst).
+*/
 
 #include "Python.h"
-#include "pycore_tupleobject.h"
-#include "pycore_object.h"
-#include "structmember.h"
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "structmember.h"         // PyMemberDef
 
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
@@ -12,7 +18,7 @@ static const char unnamed_fields_key[] = "n_unnamed_fields";
 
 /* Fields with this name have only a field index, not a field name.
    They are only allowed for indices < n_visible_fields. */
-char *PyStructSequence_UnnamedField = "unnamed field";
+const char * const PyStructSequence_UnnamedField = "unnamed field";
 _Py_IDENTIFIER(n_sequence_fields);
 _Py_IDENTIFIER(n_fields);
 _Py_IDENTIFIER(n_unnamed_fields);
@@ -41,7 +47,7 @@ PyStructSequence_New(PyTypeObject *type)
         return NULL;
     /* Hack the size of the variable object, so invisible fields don't appear
      to Python code. */
-    Py_SIZE(obj) = VISIBLE_SIZE_TP(type);
+    Py_SET_SIZE(obj, VISIBLE_SIZE_TP(type));
     for (i = 0; i < size; i++)
         obj->ob_item[i] = NULL;
 
@@ -64,6 +70,9 @@ PyStructSequence_GetItem(PyObject* op, Py_ssize_t i)
 static int
 structseq_traverse(PyStructSequence *obj, visitproc visit, void *arg)
 {
+    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        Py_VISIT(Py_TYPE(obj));
+    }
     Py_ssize_t i, size;
     size = REAL_SIZE(obj);
     for (i = 0; i < size; ++i) {
@@ -101,12 +110,12 @@ class structseq "PyStructSequence *" "NULL"
 @classmethod
 structseq.__new__ as structseq_new
     sequence as arg: object
-    dict: object = NULL
+    dict: object(c_default="NULL") = {}
 [clinic start generated code]*/
 
 static PyObject *
 structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
-/*[clinic end generated code: output=baa082e788b171da input=9b44810243907377]*/
+/*[clinic end generated code: output=baa082e788b171da input=90532511101aa3fb]*/
 {
     PyObject *ob;
     PyStructSequence *res = NULL;

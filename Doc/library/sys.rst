@@ -25,7 +25,7 @@ always available.
 
 .. function:: addaudithook(hook)
 
-   Adds the callable *hook* to the collection of active auditing hooks for the
+   Append the callable *hook* to the list of active auditing hooks for the
    current interpreter.
 
    When an auditing event is raised through the :func:`sys.audit` function, each
@@ -33,18 +33,26 @@ always available.
    tuple of arguments. Native hooks added by :c:func:`PySys_AddAuditHook` are
    called first, followed by hooks added in the current interpreter.
 
-   Calling this function will trigger an event for all existing hooks, and if
-   any raise an exception derived from :class:`Exception`, the add will be
-   silently ignored. As a result, callers cannot assume that their hook has been
-   added unless they control all existing hooks.
+   .. audit-event:: sys.addaudithook "" sys.addaudithook
+
+      Raise an auditing event ``sys.addaudithook`` with no arguments. If any
+      existing hooks raise an exception derived from :class:`RuntimeError`, the
+      new hook will not be added and the exception suppressed. As a result,
+      callers cannot assume that their hook has been added unless they control
+      all existing hooks.
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.8.1
+
+      Exceptions derived from :class:`Exception` but not :class:`RuntimeError`
+      are no longer suppressed.
+
    .. impl-detail::
 
-      When tracing is enabled, Python hooks are only traced if the callable has
-      a ``__cantrace__`` member that is set to a true value. Otherwise, trace
-      functions will not see the hook.
+      When tracing is enabled (see :func:`settrace`), Python hooks are only
+      traced if the callable has a ``__cantrace__`` member that is set to a
+      true value. Otherwise, trace functions will skip the hook.
 
 
 .. data:: argv
@@ -57,6 +65,8 @@ always available.
 
    To loop over the standard input, or the list of files given on the
    command line, see the :mod:`fileinput` module.
+
+   See also :data:`sys.orig_argv`.
 
    .. note::
       On Unix, command line arguments are passed by bytes from OS.  Python decodes
@@ -71,7 +81,7 @@ always available.
 
    .. index:: single: auditing
 
-   Raises an auditing event with any active hooks. The event name is a string
+   Raise an auditing event with any active hooks. The event name is a string
    identifying the event and its associated schema, which is the number and
    types of arguments. The schema for a given event is considered public and
    stable API and should not be modified between releases.
@@ -85,6 +95,9 @@ always available.
 
    The native equivalent of this function is :c:func:`PySys_Audit`. Using the
    native function is preferred when possible.
+
+   See the :ref:`audit events table <audit-events>` for all events raised by
+   CPython.
 
    .. versionadded:: 3.8
 
@@ -166,7 +179,7 @@ always available.
 
    This function should be used for internal and specialized purposes only.
 
-   .. audit-event:: sys._current_frames
+   .. audit-event:: sys._current_frames "" sys._current_frames
 
 
 .. function:: breakpointhook()
@@ -302,6 +315,15 @@ always available.
    before the program exits.  The handling of such top-level exceptions can be
    customized by assigning another three-argument function to ``sys.excepthook``.
 
+   .. audit-event:: sys.excepthook hook,type,value,traceback sys.excepthook
+
+      Raise an auditing event ``sys.excepthook`` with arguments ``hook``,
+      ``type``, ``value``, ``traceback`` when an uncaught exception occurs.
+      If no hook has been set, ``hook`` may be ``None``. If any hook raises
+      an exception derived from :class:`RuntimeError` the call to the hook will
+      be suppressed. Otherwise, the audit hook exception will be reported as
+      unraisable and ``sys.excepthook`` will be called.
+
    .. seealso::
 
       The :func:`sys.unraisablehook` function handles unraisable exceptions
@@ -323,6 +345,8 @@ always available.
    .. versionadded:: 3.7
       __breakpointhook__
 
+   .. versionadded:: 3.8
+      __unraisablehook__
 
 .. function:: exc_info()
 
@@ -342,7 +366,7 @@ always available.
    ``(type, value, traceback)``.  Their meaning is: *type* gets the type of the
    exception being handled (a subclass of :exc:`BaseException`); *value* gets
    the exception instance (an instance of the exception type); *traceback* gets
-   a traceback object (see the Reference Manual) which encapsulates the call
+   a :ref:`traceback object <traceback-objects>` which encapsulates the call
    stack at the point where the exception originally occurred.
 
 
@@ -405,12 +429,12 @@ always available.
 
 .. data:: flags
 
-   The :term:`struct sequence` *flags* exposes the status of command line
+   The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ============================= =============================
+   ============================= ================================================================
    attribute                     flag
-   ============================= =============================
+   ============================= ================================================================
    :const:`debug`                :option:`-d`
    :const:`inspect`              :option:`-i`
    :const:`interactive`          :option:`-i`
@@ -424,9 +448,9 @@ always available.
    :const:`bytes_warning`        :option:`-b`
    :const:`quiet`                :option:`-q`
    :const:`hash_randomization`   :option:`-R`
-   :const:`dev_mode`             :option:`-X` ``dev``
-   :const:`utf8_mode`            :option:`-X` ``utf8``
-   ============================= =============================
+   :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
+   :const:`utf8_mode`            :option:`-X utf8 <-X>`
+   ============================= ================================================================
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -441,13 +465,14 @@ always available.
       Added ``isolated`` attribute for :option:`-I` ``isolated`` flag.
 
    .. versionchanged:: 3.7
-      Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag
-      and ``utf8_mode`` attribute for the new  :option:`-X` ``utf8`` flag.
+      Added the ``dev_mode`` attribute for the new :ref:`Python Development
+      Mode <devmode>` and the ``utf8_mode`` attribute for the new  :option:`-X`
+      ``utf8`` flag.
 
 
 .. data:: float_info
 
-   A :term:`struct sequence` holding information about the float type. It
+   A :term:`named tuple` holding information about the float type. It
    contains low level information about the precision and internal
    representation.  The values correspond to the various floating-point
    constants defined in the standard header file :file:`float.h` for the 'C'
@@ -459,8 +484,10 @@ always available.
    +---------------------+----------------+--------------------------------------------------+
    | attribute           | float.h macro  | explanation                                      |
    +=====================+================+==================================================+
-   | :const:`epsilon`    | DBL_EPSILON    | difference between 1 and the least value greater |
-   |                     |                | than 1 that is representable as a float          |
+   | :const:`epsilon`    | DBL_EPSILON    | difference between 1.0 and the least value       |
+   |                     |                | greater than 1.0 that is representable as a float|
+   |                     |                |                                                  |
+   |                     |                | See also :func:`math.ulp`.                       |
    +---------------------+----------------+--------------------------------------------------+
    | :const:`dig`        | DBL_DIG        | maximum number of decimal digits that can be     |
    |                     |                | faithfully represented in a float;  see below    |
@@ -468,20 +495,24 @@ always available.
    | :const:`mant_dig`   | DBL_MANT_DIG   | float precision: the number of base-``radix``    |
    |                     |                | digits in the significand of a float             |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`max`        | DBL_MAX        | maximum representable finite float               |
+   | :const:`max`        | DBL_MAX        | maximum representable positive finite float      |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`max_exp`    | DBL_MAX_EXP    | maximum integer e such that ``radix**(e-1)`` is  |
+   | :const:`max_exp`    | DBL_MAX_EXP    | maximum integer *e* such that ``radix**(e-1)`` is|
    |                     |                | a representable finite float                     |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`max_10_exp` | DBL_MAX_10_EXP | maximum integer e such that ``10**e`` is in the  |
+   | :const:`max_10_exp` | DBL_MAX_10_EXP | maximum integer *e* such that ``10**e`` is in the|
    |                     |                | range of representable finite floats             |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`min`        | DBL_MIN        | minimum positive normalized float                |
+   | :const:`min`        | DBL_MIN        | minimum representable positive *normalized* float|
+   |                     |                |                                                  |
+   |                     |                | Use :func:`math.ulp(0.0) <math.ulp>` to get the  |
+   |                     |                | smallest positive *denormalized* representable   |
+   |                     |                | float.                                           |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`min_exp`    | DBL_MIN_EXP    | minimum integer e such that ``radix**(e-1)`` is  |
+   | :const:`min_exp`    | DBL_MIN_EXP    | minimum integer *e* such that ``radix**(e-1)`` is|
    |                     |                | a normalized float                               |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`min_10_exp` | DBL_MIN_10_EXP | minimum integer e such that ``10**e`` is a       |
+   | :const:`min_10_exp` | DBL_MIN_10_EXP | minimum integer *e* such that ``10**e`` is a     |
    |                     |                | normalized float                                 |
    +---------------------+----------------+--------------------------------------------------+
    | :const:`radix`      | FLT_RADIX      | radix of exponent representation                 |
@@ -549,14 +580,6 @@ always available.
    .. availability:: Android.
 
    .. versionadded:: 3.7
-
-
-.. function:: getcheckinterval()
-
-   Return the interpreter's "check interval"; see :func:`setcheckinterval`.
-
-   .. deprecated:: 3.2
-      Use :func:`getswitchinterval` instead.
 
 
 .. function:: getdefaultencoding()
@@ -675,7 +698,7 @@ always available.
    that is deeper than the call stack, :exc:`ValueError` is raised.  The default
    for *depth* is zero, returning the frame at the top of the call stack.
 
-   .. audit-event:: sys._getframe
+   .. audit-event:: sys._getframe "" sys._getframe
 
    .. impl-detail::
 
@@ -787,7 +810,7 @@ always available.
 
 .. data:: hash_info
 
-   A :term:`struct sequence` giving parameters of the numeric hash
+   A :term:`named tuple` giving parameters of the numeric hash
    implementation.  For more details about hashing of numeric types, see
    :ref:`numeric-hash`.
 
@@ -835,7 +858,7 @@ always available.
 
    This is called ``hexversion`` since it only really looks meaningful when viewed
    as the result of passing it to the built-in :func:`hex` function.  The
-   :term:`struct sequence`  :data:`sys.version_info` may be used for a more
+   :term:`named tuple`  :data:`sys.version_info` may be used for a more
    human-friendly encoding of the same information.
 
    More details of ``hexversion`` can be found at :ref:`apiabiversion`.
@@ -880,10 +903,14 @@ always available.
 
    .. versionadded:: 3.3
 
+   .. note::
+
+      The addition of new required attributes must go through the normal PEP
+      process. See :pep:`421` for more information.
 
 .. data:: int_info
 
-   A :term:`struct sequence` that holds information about Python's internal
+   A :term:`named tuple` that holds information about Python's internal
    representation of integers.  The attributes are read only.
 
    .. tabularcolumns:: |l|L|
@@ -909,6 +936,12 @@ always available.
    <tut-interactive>`.  This is done after the :envvar:`PYTHONSTARTUP` file is
    read, so that you can set this hook there.  The :mod:`site` module
    :ref:`sets this <rlcompleter-config>`.
+
+   .. audit-event:: cpython.run_interactivehook hook sys.__interactivehook__
+
+      Raises an :ref:`auditing event <auditing>`
+      ``cpython.run_interactivehook`` with the hook object as the argument when
+      the hook is called on startup.
 
    .. versionadded:: 3.4
 
@@ -1004,6 +1037,16 @@ always available.
    loaded.  This can be manipulated to force reloading of modules and other tricks.
    However, replacing the dictionary will not necessarily work as expected and
    deleting essential items from the dictionary may cause Python to fail.
+
+
+.. data:: orig_argv
+
+   The list of the original command line arguments passed to the Python
+   executable.
+
+   See also :data:`sys.argv`.
+
+   .. versionadded:: 3.10
 
 
 .. data:: path
@@ -1107,6 +1150,28 @@ always available.
       system's identity.
 
 
+.. data:: platlibdir
+
+   Name of the platform-specific library directory. It is used to build the
+   path of standard library and the paths of installed extension modules.
+
+   It is equal to ``"lib"`` on most platforms. On Fedora and SuSE, it is equal
+   to ``"lib64"`` on 64-bit platforms which gives the following ``sys.path``
+   paths (where ``X.Y`` is the Python ``major.minor`` version):
+
+   * ``/usr/lib64/pythonX.Y/``:
+     Standard library (like ``os.py`` of the :mod:`os` module)
+   * ``/usr/lib64/pythonX.Y/lib-dynload/``:
+     C extension modules of the standard library (like the :mod:`errno` module,
+     the exact filename is platform specific)
+   * ``/usr/lib/pythonX.Y/site-packages/`` (always use ``lib``, not
+     :data:`sys.platlibdir`): Third-party modules
+   * ``/usr/lib64/pythonX.Y/site-packages/``:
+     C extension modules of third-party packages
+
+   .. versionadded:: 3.9
+
+
 .. data:: prefix
 
    A string giving the site-specific directory prefix where the platform
@@ -1139,21 +1204,6 @@ always available.
    assigned to either variable, its :func:`str` is re-evaluated each time the
    interpreter prepares to read a new interactive command; this can be used to
    implement a dynamic prompt.
-
-
-.. function:: setcheckinterval(interval)
-
-   Set the interpreter's "check interval".  This integer value determines how often
-   the interpreter checks for periodic things such as thread switches and signal
-   handlers.  The default is ``100``, meaning the check is performed every 100
-   Python virtual instructions. Setting it to a larger value may increase
-   performance for programs using threads.  Setting it to a value ``<=`` 0 checks
-   every virtual instruction, maximizing responsiveness as well as overhead.
-
-   .. deprecated:: 3.2
-      This function doesn't have an effect anymore, as the internal logic for
-      thread switching and asynchronous tasks has been rewritten.  Use
-      :func:`setswitchinterval` instead.
 
 
 .. function:: setdlopenflags(n)
@@ -1190,7 +1240,7 @@ always available.
    ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
    on the event type.
 
-   .. audit-event:: sys.setprofile
+   .. audit-event:: sys.setprofile "" sys.setprofile
 
    The events have the following meaning:
 
@@ -1263,7 +1313,8 @@ always available.
 
    The trace function is invoked (with *event* set to ``'call'``) whenever a new
    local scope is entered; it should return a reference to a local trace
-   function to be used that scope, or ``None`` if the scope shouldn't be traced.
+   function to be used for the new scope, or ``None`` if the scope shouldn't be
+   traced.
 
    The local trace function should return a reference to itself (or to another
    function for further tracing in that scope), or ``None`` to turn off tracing
@@ -1310,9 +1361,20 @@ always available.
    Note that as an exception is propagated down the chain of callers, an
    ``'exception'`` event is generated at each level.
 
+   For more fine-grained usage, it's possible to set a trace function by
+   assigning ``frame.f_trace = tracefunc`` explicitly, rather than relying on
+   it being set indirectly via the return value from an already installed
+   trace function. This is also required for activating the trace function on
+   the current frame, which :func:`settrace` doesn't do. Note that in order
+   for this to work, a global tracing function must have been installed
+   with :func:`settrace` in order to enable the runtime tracing machinery,
+   but it doesn't need to be the same tracing function (e.g. it could be a
+   low overhead tracing function that simply returns ``None`` to disable
+   itself immediately on each frame).
+
    For more information on code and frame objects, refer to :ref:`types`.
 
-   .. audit-event:: sys.settrace
+   .. audit-event:: sys.settrace "" sys.settrace
 
    .. impl-detail::
 
@@ -1334,9 +1396,9 @@ always available.
    first time. The *finalizer* will be called when an asynchronous generator
    is about to be garbage collected.
 
-   .. audit-event:: sys.set_asyncgen_hooks_firstiter
+   .. audit-event:: sys.set_asyncgen_hooks_firstiter "" sys.set_asyncgen_hooks
 
-   .. audit-event:: sys.set_asyncgen_hooks_finalizer
+   .. audit-event:: sys.set_asyncgen_hooks_finalizer "" sys.set_asyncgen_hooks
 
    Two auditing events are raised because the underlying API consists of two
    calls, each of which must raise its own event.
@@ -1409,7 +1471,7 @@ always available.
      On Windows, UTF-8 is used for the console device.  Non-character
      devices such as disk files and pipes use the system locale
      encoding (i.e. the ANSI codepage).  Non-console character
-     devices such as NUL (i.e. where isatty() returns True) use the
+     devices such as NUL (i.e. where ``isatty()`` returns ``True``) use the
      value of the console input and output codepages at startup,
      respectively for stdin and stdout/stderr. This defaults to the
      system locale encoding if the process is not initially attached
@@ -1427,9 +1489,15 @@ always available.
      for the Windows console, this only applies when
      :envvar:`PYTHONLEGACYWINDOWSSTDIO` is also set.
 
-   * When interactive, ``stdout`` and ``stderr`` streams are line-buffered.
-     Otherwise, they are block-buffered like regular text files.  You can
-     override this value with the :option:`-u` command-line option.
+   * When interactive, the ``stdout`` stream is line-buffered. Otherwise,
+     it is block-buffered like regular text files.  The ``stderr`` stream
+     is line-buffered in both cases.  You can make both streams unbuffered
+     by passing the :option:`-u` command-line option or setting the
+     :envvar:`PYTHONUNBUFFERED` environment variable.
+
+   .. versionchanged:: 3.9
+      Non-interactive ``stderr`` is now line-buffered instead of fully
+      buffered.
 
    .. note::
 
@@ -1466,7 +1534,7 @@ always available.
 
 .. data:: thread_info
 
-   A :term:`struct sequence` holding information about the thread
+   A :term:`named tuple` holding information about the thread
    implementation.
 
    .. tabularcolumns:: |l|p{0.7\linewidth}|
@@ -1534,6 +1602,13 @@ always available.
    hook completes to avoid resurrecting objects.
 
    See also :func:`excepthook` which handles uncaught exceptions.
+
+   .. audit-event:: sys.unraisablehook hook,unraisable sys.unraisablehook
+
+      Raise an auditing event ``sys.unraisablehook`` with arguments
+      ``hook``, ``unraisable`` when an exception that cannot be handled occurs.
+      The ``unraisable`` object is the same as what will be passed to the hook.
+      If no hook has been set, ``hook`` may be ``None``.
 
    .. versionadded:: 3.8
 

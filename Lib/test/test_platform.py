@@ -2,12 +2,12 @@ import os
 import platform
 import subprocess
 import sys
-import sysconfig
-import tempfile
 import unittest
 from unittest import mock
 
 from test import support
+from test.support import os_helper
+
 
 class PlatformTest(unittest.TestCase):
     def clear_caches(self):
@@ -18,39 +18,11 @@ class PlatformTest(unittest.TestCase):
     def test_architecture(self):
         res = platform.architecture()
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_architecture_via_symlink(self): # issue3762
-        # On Windows, the EXE needs to know where pythonXY.dll and *.pyd is at
-        # so we add the directory to the path, PYTHONHOME and PYTHONPATH.
-        env = None
-        if sys.platform == "win32":
-            env = {k.upper(): os.environ[k] for k in os.environ}
-            env["PATH"] = "{};{}".format(
-                os.path.dirname(sys.executable), env.get("PATH", ""))
-            env["PYTHONHOME"] = os.path.dirname(sys.executable)
-            if sysconfig.is_python_build(True):
-                env["PYTHONPATH"] = os.path.dirname(os.__file__)
-
-        def get(python, env=None):
-            cmd = [python, '-c',
-                'import platform; print(platform.architecture())']
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE, env=env)
-            r = p.communicate()
-            if p.returncode:
-                print(repr(r[0]))
-                print(repr(r[1]), file=sys.stderr)
-                self.fail('unexpected return code: {0} (0x{0:08X})'
-                          .format(p.returncode))
-            return r
-
-        real = os.path.realpath(sys.executable)
-        link = os.path.abspath(support.TESTFN)
-        os.symlink(real, link)
-        try:
-            self.assertEqual(get(real), get(link, env=env))
-        finally:
-            os.remove(link)
+        with support.PythonSymlink() as py:
+            cmd = "-c", "import platform; print(platform.architecture())"
+            self.assertEqual(py.call_real(*cmd), py.call_link(*cmd))
 
     def test_platform(self):
         for aliased in (False, True):
@@ -183,11 +155,39 @@ class PlatformTest(unittest.TestCase):
         res = platform.uname()
         self.assertTrue(any(res))
         self.assertEqual(res[0], res.system)
+        self.assertEqual(res[-6], res.system)
         self.assertEqual(res[1], res.node)
+        self.assertEqual(res[-5], res.node)
         self.assertEqual(res[2], res.release)
+        self.assertEqual(res[-4], res.release)
         self.assertEqual(res[3], res.version)
+        self.assertEqual(res[-3], res.version)
         self.assertEqual(res[4], res.machine)
+        self.assertEqual(res[-2], res.machine)
         self.assertEqual(res[5], res.processor)
+        self.assertEqual(res[-1], res.processor)
+        self.assertEqual(len(res), 6)
+
+    def test_uname_cast_to_tuple(self):
+        res = platform.uname()
+        expected = (
+            res.system, res.node, res.release, res.version, res.machine,
+            res.processor,
+        )
+        self.assertEqual(tuple(res), expected)
+
+    @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
+    def test_uname_processor(self):
+        """
+        On some systems, the processor must match the output
+        of 'uname -p'. See Issue 35967 for rationale.
+        """
+        try:
+            proc_res = subprocess.check_output(['uname', '-p'], text=True).strip()
+            expect = platform._unknown_as_blank(proc_res)
+        except (OSError, subprocess.CalledProcessError):
+            expect = ''
+        self.assertEqual(platform.uname().processor, expect)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_ARCHITEW6432(self):
@@ -265,9 +265,7 @@ class PlatformTest(unittest.TestCase):
 
         else:
             # parent
-            cpid, sts = os.waitpid(pid, 0)
-            self.assertEqual(cpid, pid)
-            self.assertEqual(sts, 0)
+            support.wait_process(pid, exitcode=0)
 
     def test_libc_ver(self):
         # check that libc_ver(executable) doesn't raise an exception
@@ -275,12 +273,17 @@ class PlatformTest(unittest.TestCase):
            os.path.exists(sys.executable+'.exe'):
             # Cygwin horror
             executable = sys.executable + '.exe'
+        elif sys.platform == "win32" and not os.path.exists(sys.executable):
+            # App symlink appears to not exist, but we want the
+            # real executable here anyway
+            import _winapi
+            executable = _winapi.GetModuleFileName(0)
         else:
             executable = sys.executable
         platform.libc_ver(executable)
 
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
 
         with mock.patch('os.confstr', create=True, return_value='mock 1.0'):
             # test os.confstr() code path

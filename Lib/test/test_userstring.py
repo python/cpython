@@ -51,6 +51,20 @@ class UserStringTest(
         str3 = ustr3('TEST')
         self.assertEqual(fmt2 % str3, 'value is TEST')
 
+    def test_encode_default_args(self):
+        self.checkequal(b'hello', 'hello', 'encode')
+        # Check that encoding defaults to utf-8
+        self.checkequal(b'\xf0\xa3\x91\x96', '\U00023456', 'encode')
+        # Check that errors defaults to 'strict'
+        self.checkraises(UnicodeError, '\ud800', 'encode')
+
+    def test_encode_explicit_none_args(self):
+        self.checkequal(b'hello', 'hello', 'encode', None, None)
+        # Check that encoding defaults to utf-8
+        self.checkequal(b'\xf0\xa3\x91\x96', '\U00023456', 'encode', None, None)
+        # Check that errors defaults to 'strict'
+        self.checkraises(UnicodeError, '\ud800', 'encode', None, None)
+
 
 if __name__ == "__main__":
     unittest.main()

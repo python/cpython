@@ -135,7 +135,7 @@ static PyObject *
 sys_exit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *status = NULL;
+    PyObject *status = Py_None;
 
     if (!_PyArg_CheckPositional("exit", nargs, 0, 1)) {
         goto exit;
@@ -228,7 +228,7 @@ sys_intern(PyObject *module, PyObject *arg)
     PyObject *s;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("intern", 0, "str", arg);
+        _PyArg_BadArgument("intern", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -281,62 +281,6 @@ sys_getprofile(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_getprofile_impl(module);
 }
 
-PyDoc_STRVAR(sys_setcheckinterval__doc__,
-"setcheckinterval($module, n, /)\n"
-"--\n"
-"\n"
-"Set the async event check interval to n instructions.\n"
-"\n"
-"This tells the Python interpreter to check for asynchronous events\n"
-"every n instructions.\n"
-"\n"
-"This also affects how often thread switches occur.");
-
-#define SYS_SETCHECKINTERVAL_METHODDEF    \
-    {"setcheckinterval", (PyCFunction)sys_setcheckinterval, METH_O, sys_setcheckinterval__doc__},
-
-static PyObject *
-sys_setcheckinterval_impl(PyObject *module, int n);
-
-static PyObject *
-sys_setcheckinterval(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    int n;
-
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    n = _PyLong_AsInt(arg);
-    if (n == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = sys_setcheckinterval_impl(module, n);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(sys_getcheckinterval__doc__,
-"getcheckinterval($module, /)\n"
-"--\n"
-"\n"
-"Return the current check interval; see sys.setcheckinterval().");
-
-#define SYS_GETCHECKINTERVAL_METHODDEF    \
-    {"getcheckinterval", (PyCFunction)sys_getcheckinterval, METH_NOARGS, sys_getcheckinterval__doc__},
-
-static PyObject *
-sys_getcheckinterval_impl(PyObject *module);
-
-static PyObject *
-sys_getcheckinterval(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys_getcheckinterval_impl(module);
-}
-
 PyDoc_STRVAR(sys_setswitchinterval__doc__,
 "setswitchinterval($module, interval, /)\n"
 "--\n"
@@ -362,9 +306,15 @@ sys_setswitchinterval(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double interval;
 
-    interval = PyFloat_AsDouble(arg);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(arg)) {
+        interval = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        interval = PyFloat_AsDouble(arg);
+        if (interval == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = sys_setswitchinterval_impl(module, interval);
 
@@ -422,11 +372,6 @@ sys_setrecursionlimit(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_limit;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     new_limit = _PyLong_AsInt(arg);
     if (new_limit == -1 && PyErr_Occurred()) {
         goto exit;
@@ -465,11 +410,6 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     depth = _PyLong_AsInt(args[0]);
@@ -640,11 +580,6 @@ sys_setdlopenflags(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_val;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     new_val = _PyLong_AsInt(arg);
     if (new_val == -1 && PyErr_Occurred()) {
         goto exit;
@@ -700,11 +635,6 @@ sys_mdebug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flag = _PyLong_AsInt(arg);
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
@@ -808,27 +738,6 @@ exit:
     return return_value;
 }
 
-#if defined(COUNT_ALLOCS)
-
-PyDoc_STRVAR(sys_getcounts__doc__,
-"getcounts($module, /)\n"
-"--\n"
-"\n");
-
-#define SYS_GETCOUNTS_METHODDEF    \
-    {"getcounts", (PyCFunction)sys_getcounts, METH_NOARGS, sys_getcounts__doc__},
-
-static PyObject *
-sys_getcounts_impl(PyObject *module);
-
-static PyObject *
-sys_getcounts(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys_getcounts_impl(module);
-}
-
-#endif /* defined(COUNT_ALLOCS) */
-
 PyDoc_STRVAR(sys__getframe__doc__,
 "_getframe($module, depth=0, /)\n"
 "--\n"
@@ -860,11 +769,6 @@ sys__getframe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (nargs < 1) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     depth = _PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
@@ -925,7 +829,7 @@ sys_call_tracing(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     func = args[0];
     if (!PyTuple_Check(args[1])) {
-        _PyArg_BadArgument("call_tracing", 2, "tuple", args[1]);
+        _PyArg_BadArgument("call_tracing", "argument 2", "tuple", args[1]);
         goto exit;
     }
     funcargs = args[1];
@@ -933,43 +837,6 @@ sys_call_tracing(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 
 exit:
     return return_value;
-}
-
-PyDoc_STRVAR(sys_callstats__doc__,
-"callstats($module, /)\n"
-"--\n"
-"\n"
-"Return a tuple of function call statistics.\n"
-"\n"
-"A tuple is returned only if CALL_PROFILE was defined when Python was\n"
-"built.  Otherwise, this returns None.\n"
-"\n"
-"When enabled, this function returns detailed, implementation-specific\n"
-"details about the number of function calls executed. The return value\n"
-"is a 11-tuple where the entries in the tuple are counts of:\n"
-"0. all function calls\n"
-"1. calls to PyFunction_Type objects\n"
-"2. PyFunction calls that do not create an argument tuple\n"
-"3. PyFunction calls that do not create an argument tuple\n"
-"   and bypass PyEval_EvalCodeEx()\n"
-"4. PyMethod calls\n"
-"5. PyMethod calls on bound methods\n"
-"6. PyType calls\n"
-"7. PyCFunction calls\n"
-"8. generator calls\n"
-"9. All other calls\n"
-"10. Number of stack pops performed by call_function()");
-
-#define SYS_CALLSTATS_METHODDEF    \
-    {"callstats", (PyCFunction)sys_callstats, METH_NOARGS, sys_callstats__doc__},
-
-static PyObject *
-sys_callstats_impl(PyObject *module);
-
-static PyObject *
-sys_callstats(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys_callstats_impl(module);
 }
 
 PyDoc_STRVAR(sys__debugmallocstats__doc__,
@@ -1075,11 +942,7 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define SYS_GETTOTALREFCOUNT_METHODDEF
 #endif /* !defined(SYS_GETTOTALREFCOUNT_METHODDEF) */
 
-#ifndef SYS_GETCOUNTS_METHODDEF
-    #define SYS_GETCOUNTS_METHODDEF
-#endif /* !defined(SYS_GETCOUNTS_METHODDEF) */
-
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=43c4fde7b5783d8d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=87baa3357293ea65 input=a9049054013a1b77]*/

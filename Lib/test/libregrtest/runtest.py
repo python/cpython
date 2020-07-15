@@ -11,9 +11,11 @@ import traceback
 import unittest
 
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 from test.libregrtest.refleak import dash_R, clear_caches
 from test.libregrtest.save_env import saved_test_environment
-from test.libregrtest.utils import print_warning
+from test.libregrtest.utils import format_duration, print_warning
 
 
 # Test result constants.
@@ -25,6 +27,7 @@ RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
 TEST_DID_NOT_RUN = -6
+TIMEOUT = -7
 
 _FORMAT_TEST_RESULT = {
     PASSED: '%s passed',
@@ -35,6 +38,7 @@ _FORMAT_TEST_RESULT = {
     INTERRUPTED: '%s interrupted',
     CHILD_ERROR: '%s crashed',
     TEST_DID_NOT_RUN: '%s run no tests',
+    TIMEOUT: '%s timed out',
 }
 
 # Minimum duration of a test to display its duration or to mention that
@@ -75,7 +79,10 @@ def is_failed(result, ns):
 
 def format_test_result(result):
     fmt = _FORMAT_TEST_RESULT.get(result.result, "%s")
-    return fmt % result.test_name
+    text = fmt % result.test_name
+    if result.result == TIMEOUT:
+        text = '%s (%s)' % (text, format_duration(result.test_time))
+    return text
 
 
 def findtestdir(path=None):
@@ -118,7 +125,7 @@ def _runtest(ns, test_name):
 
     start_time = time.perf_counter()
     try:
-        support.set_match_tests(ns.match_tests)
+        support.set_match_tests(ns.match_tests, ns.ignore_tests)
         support.junit_xml_list = xml_list = [] if ns.xmlpath else None
         if ns.failfast:
             support.failfast = True
@@ -179,6 +186,7 @@ def runtest(ns, test_name):
         FAILED           test failed
         PASSED           test passed
         EMPTY_TEST_SUITE test ran no subtests.
+        TIMEOUT          test timed out.
 
     If ns.xmlpath is not None, xml_data is a list containing each
     generated testsuite element.
@@ -210,7 +218,7 @@ def _runtest_inner2(ns, test_name):
     abstest = get_abs_module(ns, test_name)
 
     # remove the module from sys.module to reload it if it was already imported
-    support.unload(abstest)
+    import_helper.unload(abstest)
 
     the_module = importlib.import_module(abstest)
 
@@ -307,9 +315,7 @@ def cleanup_test_droppings(test_name, verbose):
     # since if a test leaves a file open, it cannot be deleted by name (while
     # there's nothing we can do about that here either, we can display the
     # name of the offending test, which is a real help).
-    for name in (support.TESTFN,
-                 "db_home",
-                ):
+    for name in (os_helper.TESTFN,):
         if not os.path.exists(name):
             continue
 
@@ -323,7 +329,7 @@ def cleanup_test_droppings(test_name, verbose):
                                f"directory nor file")
 
         if verbose:
-            print_warning("%r left behind %s %r" % (test_name, kind, name))
+            print_warning(f"{test_name} left behind {kind} {name!r}")
             support.environment_altered = True
 
         try:

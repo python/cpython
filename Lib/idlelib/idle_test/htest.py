@@ -67,6 +67,7 @@ outwin.OutputWindow (indirectly being tested with grep test)
 
 import idlelib.pyshell  # Set Windows DPI awareness before Tk().
 from importlib import import_module
+import textwrap
 import tkinter as tk
 from tkinter.ttk import Scrollbar
 tk.NoDefaultRoot()
@@ -110,10 +111,11 @@ _color_delegator_spec = {
 
 CustomRun_spec = {
     'file': 'query',
-    'kwds': {'title': 'Custom Run Args',
+    'kwds': {'title': 'Customize query.py Run',
              '_htest': True},
-    'msg': "Enter with <Return> or [Ok].  Print valid entry to Shell\n"
+    'msg': "Enter with <Return> or [Run].  Print valid entry to Shell\n"
            "Arguments are parsed into a list\n"
+           "Mode is currently restart True or False\n"
            "Close dialog with valid entry, <Escape>, [Cancel], [X]"
     }
 
@@ -202,6 +204,26 @@ _io_binding_spec = {
            "<Alt-s> to save-as another file.\n"
            "<Control-c> to save-copy-as another file.\n"
            "Check that changes were saved by opening the file elsewhere."
+    }
+
+_linenumbers_drag_scrolling_spec = {
+    'file': 'sidebar',
+    'kwds': {},
+    'msg': textwrap.dedent("""\
+        1. Click on the line numbers and drag down below the edge of the
+        window, moving the mouse a bit and then leaving it there for a while.
+        The text and line numbers should gradually scroll down, with the
+        selection updated continuously.
+
+        2. With the lines still selected, click on a line number above the
+        selected lines. Only the line whose number was clicked should be
+        selected.
+
+        3. Repeat step #1, dragging to above the window. The text and line
+        numbers should gradually scroll up, with the selection updated
+        continuously.
+
+        4. Repeat step #2, clicking a line number below the selection."""),
     }
 
 _multi_call_spec = {
@@ -334,7 +356,7 @@ _undo_delegator_spec = {
 ViewWindow_spec = {
     'file': 'textview',
     'kwds': {'title': 'Test textview',
-             'text': 'The quick brown fox jumps over the lazy dog.\n'*35,
+             'contents': 'The quick brown fox jumps over the lazy dog.\n'*35,
              '_htest': True},
     'msg': "Test for read-only property of text.\n"
            "Select text, scroll window, close"

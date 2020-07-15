@@ -1,0 +1,1 @@
+Fix incorrect refcounting in _ssl.c's ``_servername_callback()``.

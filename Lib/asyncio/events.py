@@ -19,7 +19,6 @@ import sys
 import threading
 
 from . import format_helpers
-from . import exceptions
 
 
 class Handle:
@@ -119,20 +118,24 @@ class TimerHandle(Handle):
         return hash(self._when)
 
     def __lt__(self, other):
-        return self._when < other._when
+        if isinstance(other, TimerHandle):
+            return self._when < other._when
+        return NotImplemented
 
     def __le__(self, other):
-        if self._when < other._when:
-            return True
-        return self.__eq__(other)
+        if isinstance(other, TimerHandle):
+            return self._when < other._when or self.__eq__(other)
+        return NotImplemented
 
     def __gt__(self, other):
-        return self._when > other._when
+        if isinstance(other, TimerHandle):
+            return self._when > other._when
+        return NotImplemented
 
     def __ge__(self, other):
-        if self._when > other._when:
-            return True
-        return self.__eq__(other)
+        if isinstance(other, TimerHandle):
+            return self._when > other._when or self.__eq__(other)
+        return NotImplemented
 
     def __eq__(self, other):
         if isinstance(other, TimerHandle):
@@ -141,10 +144,6 @@ class TimerHandle(Handle):
                     self._args == other._args and
                     self._cancelled == other._cancelled)
         return NotImplemented
-
-    def __ne__(self, other):
-        equal = self.__eq__(other)
-        return NotImplemented if equal is NotImplemented else not equal
 
     def cancel(self):
         if not self._cancelled:
@@ -247,6 +246,10 @@ class AbstractEventLoop:
 
     async def shutdown_asyncgens(self):
         """Shutdown all active asynchronous generators."""
+        raise NotImplementedError
+
+    async def shutdown_default_executor(self):
+        """Schedule the shutdown of the default executor."""
         raise NotImplementedError
 
     # Methods scheduling callbacks.  All these return Handles.
@@ -393,7 +396,7 @@ class AbstractEventLoop:
         The return value is a Server object, which can be used to stop
         the service.
 
-        path is a str, representing a file systsem path to bind the
+        path is a str, representing a file system path to bind the
         server socket to.
 
         sock can optionally be specified in order to use a preexisting
@@ -626,13 +629,13 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
         self._local = self._Local()
 
     def get_event_loop(self):
-        """Get the event loop.
+        """Get the event loop for the current context.
 
-        This may be None or an instance of EventLoop.
+        Returns an instance of EventLoop or raises an exception.
         """
         if (self._local._loop is None and
                 not self._local._set_called and
-                isinstance(threading.current_thread(), threading._MainThread)):
+                threading.current_thread() is threading.main_thread()):
             self.set_event_loop(self.new_event_loop())
 
         if self._local._loop is None:

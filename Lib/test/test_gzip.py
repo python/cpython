@@ -328,8 +328,15 @@ class TestGzip(BaseTest):
             cmByte = fRead.read(1)
             self.assertEqual(cmByte, b'\x08') # deflate
 
+            try:
+                expectedname = self.filename.encode('Latin-1') + b'\x00'
+                expectedflags = b'\x08' # only the FNAME flag is set
+            except UnicodeEncodeError:
+                expectedname = b''
+                expectedflags = b'\x00'
+
             flagsByte = fRead.read(1)
-            self.assertEqual(flagsByte, b'\x08') # only the FNAME flag is set
+            self.assertEqual(flagsByte, expectedflags)
 
             mtimeBytes = fRead.read(4)
             self.assertEqual(mtimeBytes, struct.pack('<i', mtime)) # little-endian
@@ -344,9 +351,8 @@ class TestGzip(BaseTest):
             # RFC 1952 specifies that this is the name of the input file, if any.
             # However, the gzip module defaults to storing the name of the output
             # file in this field.
-            expected = self.filename.encode('Latin-1') + b'\x00'
-            nameBytes = fRead.read(len(expected))
-            self.assertEqual(nameBytes, expected)
+            nameBytes = fRead.read(len(expectedname))
+            self.assertEqual(nameBytes, expectedname)
 
             # Since no other flags were set, the header ends here.
             # Rather than process the compressed data, let's seek to the trailer.
@@ -357,6 +363,30 @@ class TestGzip(BaseTest):
 
             isizeBytes = fRead.read(4)
             self.assertEqual(isizeBytes, struct.pack('<i', len(data1)))
+
+    def test_metadata_ascii_name(self):
+        self.filename = support.TESTFN_ASCII
+        self.test_metadata()
+
+    def test_compresslevel_metadata(self):
+        # see RFC 1952: http://www.faqs.org/rfcs/rfc1952.html
+        # specifically, discussion of XFL in section 2.3.1
+        cases = [
+            ('fast', 1, b'\x04'),
+            ('best', 9, b'\x02'),
+            ('tradeoff', 6, b'\x00'),
+        ]
+        xflOffset = 8
+
+        for (name, level, expectedXflByte) in cases:
+            with self.subTest(name):
+                fWrite = gzip.GzipFile(self.filename, 'w', compresslevel=level)
+                with fWrite:
+                    fWrite.write(data1)
+                with open(self.filename, 'rb') as fRead:
+                    fRead.seek(xflOffset)
+                    xflByte = fRead.read(1)
+                    self.assertEqual(xflByte, expectedXflByte)
 
     def test_with_open(self):
         # GzipFile supports the context management protocol
@@ -469,7 +499,9 @@ class TestGzip(BaseTest):
             if "x" in mode:
                 support.unlink(self.filename)
             with open(self.filename, mode) as f:
-                with gzip.GzipFile(fileobj=f) as g:
+                with self.assertWarns(FutureWarning):
+                    g = gzip.GzipFile(fileobj=f)
+                with g:
                     self.assertEqual(g.mode, gzip.WRITE)
 
     def test_bytes_filename(self):

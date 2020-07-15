@@ -2,9 +2,10 @@ c-api/arg,,:ref,"PyArg_ParseTuple(args, ""O|O:ref"", &object, &callback)"
 c-api/list,,:high,list[low:high]
 c-api/sequence,,:i2,del o[i1:i2]
 c-api/sequence,,:i2,o[i1:i2]
+c-api/tuple,,:high,p[low:high]
 c-api/unicode,,:end,str[start:end]
 c-api/unicode,,:start,unicode[start:start+length]
-distutils/examples,274,`,This is the description of the ``foobar`` package.
+distutils/examples,267,`,This is the description of the ``foobar`` package.
 distutils/setupscript,,::,
 extending/embedding,,:numargs,"if(!PyArg_ParseTuple(args, "":numargs""))"
 extending/extending,,:myfunction,"PyArg_ParseTuple(args, ""D:myfunction"", &c);"
@@ -107,6 +108,8 @@ howto/pyporting,,::,Programming Language :: Python :: 3
 howto/regex,,::,
 howto/regex,,:foo,(?:foo)
 howto/urllib2,,:password,"""joe:password@example.com"""
+library/ast,,:upper,lower:upper
+library/ast,,:step,lower:upper:step
 library/audioop,,:ipos,"# factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],"
 library/bisect,32,:hi,all(val >= x for val in a[i:hi])
 library/bisect,42,:hi,all(val > x for val in a[i:hi])
@@ -146,6 +149,8 @@ library/ipaddress,,:db8,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,::,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,:db8,IPv6Address('2001:db8::1000')
 library/ipaddress,,::,IPv6Address('2001:db8::1000')
+library/ipaddress,,::,IPv6Address('ff02::5678%1')
+library/ipaddress,,::,fe80::1234
 library/ipaddress,,:db8,">>> ipaddress.ip_address(""2001:db8::1"").reverse_pointer"
 library/ipaddress,,::,">>> ipaddress.ip_address(""2001:db8::1"").reverse_pointer"
 library/ipaddress,,::,"""::abc:7:def"""
@@ -200,7 +205,7 @@ library/readline,,:bind,"python:bind ^I rl_complete"
 library/smtplib,,:port,method must support that as well as a regular host:port
 library/socket,,::,'5aef:2b::8'
 library/socket,,:can,"return (can_id, can_dlc, data[:can_dlc])"
-library/socket,,:len,fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+library/socket,,:len,fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
 library/sqlite3,,:age,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
 library/sqlite3,,:memory,
 library/sqlite3,,:who,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
@@ -218,8 +223,6 @@ library/stdtypes,,:len,s[len(s):len(s)]
 library/stdtypes,,::,>>> y = m[::2]
 library/stdtypes,,::,>>> z = y[::-2]
 library/string,,`,"!""#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
-library/subprocess,,`,"output=`dmesg | grep hda`"
-library/subprocess,,`,"output=`mycmd myarg`"
 library/tarfile,,:bz2,
 library/tarfile,,:compression,filemode[:compression]
 library/tarfile,,:gz,
@@ -241,9 +244,9 @@ library/urllib.request,,:password,"""joe:password@python.org"""
 library/urllib.parse,,:scheme,<URL:scheme://host/path>
 library/urllib.parse,,:scheme,URL:scheme://host/path
 library/uuid,,:uuid,urn:uuid:12345678-1234-5678-1234-567812345678
-library/venv,,:param,":param nodist: If True, setuptools and pip are not installed into the"
+library/venv,,:param,":param nodist: If true, setuptools and pip are not installed into the"
 library/venv,,:param,":param progress: If setuptools or pip are installed, the progress of the"
-library/venv,,:param,":param nopip: If True, pip is not installed into the created"
+library/venv,,:param,":param nopip: If true, pip is not installed into the created"
 library/venv,,:param,:param context: The information for the virtual environment
 library/xmlrpc.client,,:nil,ex:nil
 library/xmlrpc.client,,:pass,http://user:pass@host:port/path
@@ -335,6 +338,9 @@ library/xml.etree.elementtree,,:character,<fictional:character>Commander Clement
 library/xml.etree.elementtree,,:actor,"for actor in root.findall('real_person:actor', ns):"
 library/xml.etree.elementtree,,:name,"name = actor.find('real_person:name', ns)"
 library/xml.etree.elementtree,,:character,"for char in actor.findall('role:character', ns):"
+library/xml.etree.elementtree,,:xi,<document xmlns:xi="http://www.w3.org/2001/XInclude">
+library/xml.etree.elementtree,,:include,  <xi:include href="source.xml" parse="xml" />
+library/xml.etree.elementtree,,:include,  Copyright (c) <xi:include href="year.txt" parse="text" />.
 library/zipapp,,:main,"$ python -m zipapp myapp -m ""myapp:main"""
 library/zipapp,,:fn,"pkg.mod:fn"
 library/zipapp,,:callable,"pkg.module:callable"
@@ -354,4 +360,5 @@ whatsnew/changelog,,::,error::BytesWarning
 whatsnew/changelog,,::,default::BytesWarning
 whatsnew/changelog,,::,default::DeprecationWarning
 library/importlib.metadata,,:main,"EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')"
-library/importlib.metadata,,`,of directories ``path`` (defaults to sys.path).
+library/importlib.metadata,,`,loading the metadata for packages for the indicated ``context``.
+library/re,,`,"`"

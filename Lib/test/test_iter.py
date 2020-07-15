@@ -2,8 +2,9 @@
 
 import sys
 import unittest
-from test.support import run_unittest, TESTFN, unlink, cpython_only
-from test.support import check_free_after_iterating
+from test.support import run_unittest, cpython_only
+from test.support.os_helper import TESTFN, unlink
+from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
 import pickle
 import collections.abc
 
@@ -41,6 +42,14 @@ class IteratingSequenceClass:
     def __iter__(self):
         return BasicIterClass(self.n)
 
+class IteratorProxyClass:
+    def __init__(self, i):
+        self.i = i
+    def __next__(self):
+        return next(self.i)
+    def __iter__(self):
+        return self
+
 class SequenceClass:
     def __init__(self, n):
         self.n = n
@@ -49,6 +58,12 @@ class SequenceClass:
             return i
         else:
             raise IndexError
+
+class SequenceProxyClass:
+    def __init__(self, s):
+        self.s = s
+    def __getitem__(self, i):
+        return self.s[i]
 
 class UnlimitedSequenceClass:
     def __getitem__(self, i):
@@ -61,6 +76,10 @@ class NoIterClass:
     def __getitem__(self, i):
         return i
     __iter__ = None
+
+class BadIterableClass:
+    def __iter__(self):
+        raise ZeroDivisionError
 
 # Main test suite
 
@@ -635,8 +654,16 @@ class TestCase(unittest.TestCase):
             for i in "abc", -1, 5, 42.42, (3, 4), [], {1: 1}, 3-12j, sc5:
                 self.assertNotIn(i, sc5)
 
+        self.assertIn(ALWAYS_EQ, IteratorProxyClass(iter([1])))
+        self.assertIn(ALWAYS_EQ, SequenceProxyClass([1]))
+        self.assertNotIn(ALWAYS_EQ, IteratorProxyClass(iter([NEVER_EQ])))
+        self.assertNotIn(ALWAYS_EQ, SequenceProxyClass([NEVER_EQ]))
+        self.assertIn(NEVER_EQ, IteratorProxyClass(iter([ALWAYS_EQ])))
+        self.assertIn(NEVER_EQ, SequenceProxyClass([ALWAYS_EQ]))
+
         self.assertRaises(TypeError, lambda: 3 in 12)
         self.assertRaises(TypeError, lambda: 3 not in map)
+        self.assertRaises(ZeroDivisionError, lambda: 3 in BadIterableClass())
 
         d = {"one": 1, "two": 2, "three": 3, 1j: 2j}
         for k in d:
@@ -719,6 +746,7 @@ class TestCase(unittest.TestCase):
 
         self.assertRaises(TypeError, indexOf, 42, 1)
         self.assertRaises(TypeError, indexOf, indexOf, indexOf)
+        self.assertRaises(ZeroDivisionError, indexOf, BadIterableClass(), 1)
 
         f = open(TESTFN, "w")
         try:
@@ -1006,6 +1034,7 @@ class TestCase(unittest.TestCase):
     def test_error_iter(self):
         for typ in (DefaultIterClass, NoIterClass):
             self.assertRaises(TypeError, iter, typ())
+        self.assertRaises(ZeroDivisionError, iter, BadIterableClass())
 
 
 def test_main():

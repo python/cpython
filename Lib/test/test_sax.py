@@ -19,7 +19,9 @@ from io import BytesIO, StringIO
 import codecs
 import os.path
 import shutil
+import sys
 from urllib.error import URLError
+import urllib.request
 from test import support
 from test.support import findfile, run_unittest, FakePath, TESTFN
 
@@ -34,7 +36,7 @@ except UnicodeEncodeError:
 supports_nonascii_filenames = True
 if not os.path.supports_unicode_filenames:
     try:
-        support.TESTFN_UNICODE.encode(support.TESTFN_ENCODING)
+        support.TESTFN_UNICODE.encode(sys.getfilesystemencoding())
     except (UnicodeError, TypeError):
         # Either the file system encoding is None, or the file name
         # cannot be encoded in the file system encoding.
@@ -979,6 +981,9 @@ class ExpatReaderTest(XmlTestBase):
         self.assertEqual(handler._entities, [("img", None, "expat.gif", "GIF")])
 
     def test_expat_external_dtd_enabled(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         parser = create_parser()
         parser.setFeature(feature_external_ges, True)
         resolver = self.TestEntityRecorder()
