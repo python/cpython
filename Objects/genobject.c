@@ -433,8 +433,8 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             gen->gi_frame->f_state = FRAME_EXECUTING;
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
-            tstate->frame = f;
             gen->gi_frame->f_state = state;
+            tstate->frame = f;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
             PyObject *meth;
