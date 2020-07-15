@@ -566,8 +566,8 @@ desired effect in a number of ways.
       ...
       >>> args = argSetter(a='old-value', b=99)
       >>> func4(args)
-      >>> print(args.a, args.b)
-      new-value 100
+      >>> vars(args)
+      {'a': 'new-value', 'b': 100}
 
 
    There's almost never a good reason to get this complicated.
