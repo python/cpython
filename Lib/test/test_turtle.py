@@ -1,8 +1,10 @@
 import pickle
 import unittest
 from test import support
+from test.support import import_helper
 
-turtle = support.import_module('turtle')
+
+turtle = import_helper.import_module('turtle')
 Vec2D = turtle.Vec2D
 
 test_config = """\

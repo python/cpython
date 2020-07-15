@@ -138,6 +138,31 @@ int_bit_length(PyObject *self, PyObject *Py_UNUSED(ignored))
     return int_bit_length_impl(self);
 }
 
+PyDoc_STRVAR(int_bit_count__doc__,
+"bit_count($self, /)\n"
+"--\n"
+"\n"
+"Number of ones in the binary representation of the absolute value of self.\n"
+"\n"
+"Also known as the population count.\n"
+"\n"
+">>> bin(13)\n"
+"\'0b1101\'\n"
+">>> (13).bit_count()\n"
+"3");
+
+#define INT_BIT_COUNT_METHODDEF    \
+    {"bit_count", (PyCFunction)int_bit_count, METH_NOARGS, int_bit_count__doc__},
+
+static PyObject *
+int_bit_count_impl(PyObject *self);
+
+static PyObject *
+int_bit_count(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return int_bit_count_impl(self);
+}
+
 PyDoc_STRVAR(int_as_integer_ratio__doc__,
 "as_integer_ratio($self, /)\n"
 "--\n"
@@ -209,14 +234,9 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     if (!args) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -313,4 +333,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=77bc3b2615822cb8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4257cfdb155efd00 input=a9049054013a1b77]*/

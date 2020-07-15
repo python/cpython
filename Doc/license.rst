@@ -87,7 +87,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       analyze, test, perform and/or display publicly, prepare derivative works,
       distribute, and otherwise use Python |release| alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2019 Python Software Foundation; All Rights
+      copyright, i.e., "Copyright © 2001-2020 Python Software Foundation; All Rights
       Reserved" are retained in Python |release| alone or in any derivative version
       prepared by Licensee.
 
@@ -889,7 +889,7 @@ libmpdec
 The :mod:`_decimal` module is built using an included copy of the libmpdec
 library unless the build is configured ``--with-system-libmpdec``::
 
-   Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+   Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions

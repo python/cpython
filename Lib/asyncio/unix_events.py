@@ -101,7 +101,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
         try:
             # Register a dummy signal handler to ask Python to write the signal
-            # number in the wakup file descriptor. _process_self_data() will
+            # number in the wakeup file descriptor. _process_self_data() will
             # read signal numbers from this file descriptor to handle signals.
             signal.signal(sig, _sighandler_noop)
 
@@ -1344,7 +1344,14 @@ class ThreadedChildWatcher(AbstractChildWatcher):
         return True
 
     def close(self):
-        pass
+        self._join_threads()
+
+    def _join_threads(self):
+        """Internal: Join all non-daemon threads"""
+        threads = [thread for thread in list(self._threads.values())
+                   if thread.is_alive() and not thread.daemon]
+        for thread in threads:
+            thread.join()
 
     def __enter__(self):
         return self

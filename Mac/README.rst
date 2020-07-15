@@ -49,7 +49,7 @@ macOS specific arguments to configure
   system header files in their traditional locations, like ``/usr/include`` and
   ``/System/Library/Frameworks``; instead they are found within a MacOSX SDK.
   The Apple-supplied build tools handle this transparently and current
-  versiona of Python now handle this as well.  So it is no longer necessary,
+  versions of Python now handle this as well.  So it is no longer necessary,
   and since macOS 10.14, no longer possible to force the installation of system
   headers with ``xcode-select``.
 

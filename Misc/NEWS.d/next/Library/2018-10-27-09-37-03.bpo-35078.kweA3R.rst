@@ -1,0 +1,3 @@
+Refactor formatweekday, formatmonthname methods in LocaleHTMLCalendar and LocaleTextCalendar classes in calendar module to call the base class methods.This enables customizable CSS classes for LocaleHTMLCalendar.
+Patch by Srinivas Reddy Thatiparthy
+

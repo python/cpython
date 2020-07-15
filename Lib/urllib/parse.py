@@ -29,6 +29,7 @@ test_urlparse.py provides a good indicator of parsing behavior.
 
 import re
 import sys
+import types
 import collections
 import warnings
 
@@ -175,6 +176,8 @@ class _NetlocResultMixinBase(object):
             if not ( 0 <= port <= 65535):
                 raise ValueError("Port out of range 0-65535")
         return port
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class _NetlocResultMixinStr(_NetlocResultMixinBase, _ResultMixinStr):
@@ -366,9 +369,23 @@ del _fix_result_transcoding
 def urlparse(url, scheme='', allow_fragments=True):
     """Parse a URL into 6 components:
     <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
-    Return a 6-tuple: (scheme, netloc, path, params, query, fragment).
-    Note that we don't break the components up in smaller bits
-    (e.g. netloc is a single string) and we don't expand % escapes."""
+
+    The result is a named 6-tuple with fields corresponding to the
+    above. It is either a ParseResult or ParseResultBytes object,
+    depending on the type of the url parameter.
+
+    The username, password, hostname, and port sub-components of netloc
+    can also be accessed as attributes of the returned object.
+
+    The scheme argument provides the default value of the scheme
+    component when no scheme is found in url.
+
+    If allow_fragments is False, no attempt is made to separate the
+    fragment component from the previous component, which can be either
+    path or query.
+
+    Note that % escapes are not expanded.
+    """
     url, scheme, _coerce_result = _coerce_args(url, scheme)
     splitresult = urlsplit(url, scheme, allow_fragments)
     scheme, netloc, url, query, fragment = splitresult
@@ -417,9 +434,24 @@ def _checknetloc(netloc):
 def urlsplit(url, scheme='', allow_fragments=True):
     """Parse a URL into 5 components:
     <scheme>://<netloc>/<path>?<query>#<fragment>
-    Return a 5-tuple: (scheme, netloc, path, query, fragment).
-    Note that we don't break the components up in smaller bits
-    (e.g. netloc is a single string) and we don't expand % escapes."""
+
+    The result is a named 5-tuple with fields corresponding to the
+    above. It is either a SplitResult or SplitResultBytes object,
+    depending on the type of the url parameter.
+
+    The username, password, hostname, and port sub-components of netloc
+    can also be accessed as attributes of the returned object.
+
+    The scheme argument provides the default value of the scheme
+    component when no scheme is found in url.
+
+    If allow_fragments is False, no attempt is made to separate the
+    fragment component from the previous component, which can be either
+    path or query.
+
+    Note that % escapes are not expanded.
+    """
+
     url, scheme, _coerce_result = _coerce_args(url, scheme)
     allow_fragments = bool(allow_fragments)
     key = url, scheme, allow_fragments, type(url), type(scheme)
@@ -1056,9 +1088,9 @@ def _splitport(host):
     """splitport('host:port') --> 'host', 'port'."""
     global _portprog
     if _portprog is None:
-        _portprog = re.compile('(.*):([0-9]*)$', re.DOTALL)
+        _portprog = re.compile('(.*):([0-9]*)', re.DOTALL)
 
-    match = _portprog.match(host)
+    match = _portprog.fullmatch(host)
     if match:
         host, port = match.groups()
         if port:

@@ -240,6 +240,16 @@ access internal read-only data of Unicode objects:
       :c:func:`PyUnicode_nBYTE_DATA` family of macros.
 
 
+.. c:function:: int PyUnicode_IsIdentifier(PyObject *o)
+
+   Return ``1`` if the string is a valid identifier according to the language
+   definition, section :ref:`identifiers`. Return ``0`` otherwise.
+
+   .. versionchanged:: 3.9
+      The function does not call :c:func:`Py_FatalError` anymore if the string
+      is not ready.
+
+
 Unicode Character Properties
 """"""""""""""""""""""""""""
 
@@ -714,20 +724,6 @@ Extension modules can continue using them, as they will not be removed in Python
    .. versionadded:: 3.3
 
 
-.. c:function:: Py_UNICODE* PyUnicode_AsUnicodeCopy(PyObject *unicode)
-
-   Create a copy of a Unicode string ending with a null code point. Return ``NULL``
-   and raise a :exc:`MemoryError` exception on memory allocation failure,
-   otherwise return a new allocated buffer (use :c:func:`PyMem_Free` to free
-   the buffer). Note that the resulting :c:type:`Py_UNICODE*` string may
-   contain embedded null code points, which would cause the string to be
-   truncated when used in most C functions.
-
-   .. versionadded:: 3.2
-
-   Please migrate to using :c:func:`PyUnicode_AsUCS4Copy` or similar new APIs.
-
-
 .. c:function:: Py_ssize_t PyUnicode_GetSize(PyObject *unicode)
 
    Return the size of the deprecated :c:type:`Py_UNICODE` representation, in
@@ -978,7 +974,7 @@ have the same semantics as the ones of the built-in :func:`str` string object
 constructor.
 
 Setting encoding to ``NULL`` causes the default encoding to be used
-which is ASCII.  The file system calls should use
+which is UTF-8.  The file system calls should use
 :c:func:`PyUnicode_FSConverter` for encoding file names. This uses the
 variable :c:data:`Py_FileSystemDefaultEncoding` internally. This
 variable should be treated as read-only: on some systems, it will be a

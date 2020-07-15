@@ -79,6 +79,7 @@ import glob
 import pprint
 import signal
 import inspect
+import tokenize
 import traceback
 import linecache
 
@@ -93,7 +94,7 @@ __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
 def find_function(funcname, filename):
     cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
     try:
-        fp = open(filename)
+        fp = tokenize.open(filename)
     except OSError:
         return None
     # consumer of this info expects the first line to be 1
@@ -473,7 +474,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except Exception:
             ret = []
         # Then, try to complete file names as well.
-        globs = glob.glob(text + '*')
+        globs = glob.glob(glob.escape(text) + '*')
         for fn in globs:
             if os.path.isdir(fn):
                 ret.append(fn + '/')
