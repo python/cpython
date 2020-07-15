@@ -524,9 +524,8 @@ desired effect in a number of ways.
       ...     return a, b            # return new values
       ...
       >>> x, y = 'old-value', 99
-      >>> x, y = func2(x, y)
-      >>> print(x, y)
-      new-value 100
+      >>> func2(x, y)
+      ('new-value', 100)
 
    This is almost always the clearest solution.
 
