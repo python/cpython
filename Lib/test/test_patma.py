@@ -3,7 +3,16 @@ import collections
 import contextlib
 import dataclasses
 import enum
+import inspect
 import unittest
+import warnings
+
+
+@dataclasses.dataclass
+class MyClass:
+    x: int
+    y: str
+    __match_args__ = ["x", "y"]
 
 
 @dataclasses.dataclass
@@ -2059,7 +2068,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case 42:
-                    out = locals().copy()
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f(42), {})
@@ -2071,7 +2080,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case 42.0:
-                    out = locals().copy()
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f(42.0), {})
@@ -2083,7 +2092,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case 1 | 2 | 3:
-                    out = locals().copy()
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f(1), {})
@@ -2098,7 +2107,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case [1, 2] | [3, 4]:
-                    out = locals().copy()
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f([1, 2]), {})
@@ -2112,7 +2121,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case x:
-                    out = locals().copy()
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f(42), {"x": 42})
@@ -2123,7 +2132,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case _:
-                    out = locals().copy()
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f(42), {})
@@ -2134,7 +2143,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case (x, y, z):
-                    out = locals().copy()
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f((1, 2, 3)), {"x": 1, "y": 2, "z": 3})
@@ -2151,7 +2160,7 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case {"x": x, "y": "y", "z": z}:
-                    out = locals().copy()
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f({"x": "x", "y": "y", "z": "z"}), {"x": "x", "z": "z"})
@@ -2160,16 +2169,11 @@ class TestPatma(unittest.TestCase):
         self.assertIs(f(({"x": "x", "y": "y"})), None)
 
     def test_patma_212(self):
-        @dataclasses.dataclass
-        class MyClass:
-            x: int
-            y: str
-            __match_args__ = ["x", "y"]
         def f(w):
             match w:
                 case MyClass(int(xx), y="hello"):
-                    out = locals().copy()
-                    del out["w"], out["MyClass"]
+                    out = locals()
+                    del out["w"]
                     return out
         self.assertEqual(f(MyClass(42, "hello")), {"xx": 42})
 
@@ -2177,13 +2181,143 @@ class TestPatma(unittest.TestCase):
         def f(w):
             match w:
                 case x := (p, q):
-                    out = locals().copy()
+                    out = locals()
                     del out["w"]
                     return out
         self.assertEqual(f((1, 2)), {"p": 1, "q": 2, "x": (1, 2)})
         self.assertEqual(f([1, 2]), {"p": 1, "q": 2, "x": [1, 2]})
         self.assertIs(f(12), None)
         self.assertIs(f((1, 2, 3)), None)
+
+    def test_patma_214(self):
+        def f():
+            match 42:
+                case 42:
+                    return locals()
+        self.assertEqual(set(f()), set())
+
+    def test_patma_215(self):
+        def f():
+            match 1:
+                case 1 | 2 | 3:
+                    return locals()
+        self.assertEqual(set(f()), set())
+
+    def test_patma_216(self):
+        def f():
+            match ...:
+                case _:
+                    return locals()
+        self.assertEqual(set(f()), set())
+
+    def test_patma_217(self):
+        def f():
+            match ...:
+                case abc:
+                    return locals()
+        self.assertEqual(set(f()), {"abc"})
+
+    def test_patma_218(self):
+        namespace = {}
+        code = """
+        match ...:
+            case a | a:
+                pass
+        """
+        with self.assertWarns(SyntaxWarning):
+            exec(inspect.cleandoc(code), None, namespace)
+        self.assertEqual(set(namespace), {"a"})
+
+    def test_patma_219(self):
+        code = """
+        match ...:
+            case a | "a":
+                pass
+        """
+        with self.assertWarns(SyntaxWarning), self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_220(self):
+        def f():
+            match ..., ...:
+                case a, b:
+                    return locals()
+        self.assertEqual(set(f()), {"a", "b"})
+
+    def test_patma_221(self):
+        code = """
+        match ...:
+            case a, a:
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_222(self):
+        def f():
+            match {"k": ..., "l": ...}:
+                case {"k": a, "l": b}:
+                    return locals()
+        self.assertEqual(set(f()), {"a", "b"})
+
+    def test_patma_223(self):
+        code = """
+        match ...:
+            case {"k": a, "l": a}:
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_224(self):
+        def f():
+            match MyClass(..., ...):
+                case MyClass(x, y=y):
+                    return locals()
+        self.assertEqual(set(f()), {"x", "y"})
+
+    def test_patma_225(self):
+        code = """
+        match ...:
+            case MyClass(x, x):
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_226(self):
+        code = """
+        match ...:
+            case MyClass(x=x, y=x):
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_227(self):
+        code = """
+        match ...:
+            case MyClass(x, y=x):
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_228(self):
+        def f():
+            match ...:
+                case a := b:
+                    return locals()
+        self.assertEqual(set(f()), {"a", "b"})
+
+    def test_patma_229(self):
+        code = """
+        match ...:
+            case a := a:
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
 
     # TODO: PEP tests
     # TODO: Don't check side-effecty assignments
@@ -2202,12 +2336,21 @@ class PerfPatma(TestPatma):
 
     @contextlib.contextmanager
     def assertRaises(*_, **__):
-        yield
+        try:
+            yield
+        except:
+            pass
+
+    @contextlib.contextmanager
+    def assertWarns(*_, **__):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            yield
 
     def run_perf(self):
-        attrs = vars(type(self)).items()
+        attrs = vars(TestPatma).items()
         tests = [attr for name, attr in attrs if name.startswith("test_")]
-        for _ in range(1 << 10):
+        for _ in range(1 << 8):
             for test in tests:
                 test(self)
 
