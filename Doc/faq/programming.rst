@@ -550,8 +550,8 @@ desired effect in a number of ways.
       ...
       >>> args = {'a': 'old-value', 'b': 99}
       >>> func3(args)
-      >>> print(args['a'], args['b'])
-      new-value 100
+      >>> args
+      {'a': 'new-value', 'b': 100}
 
 5) Or bundle up values in a class instance::
 
