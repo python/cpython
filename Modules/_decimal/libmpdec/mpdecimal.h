@@ -61,12 +61,6 @@ extern "C" {
   #define MPD_HIDE_SYMBOLS_END
 #endif
 
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-  #define UNUSED __attribute__((unused))
-#else
-  #define UNUSED
-#endif
-
 #if defined(_MSC_VER)
   #include "vccompat.h"
   #define EXTINLINE extern inline
