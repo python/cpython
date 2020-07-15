@@ -751,11 +751,16 @@ astfold_pattern_negative(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
     assert(node_->v.UnaryOp.op == USub);
     assert(node_->v.UnaryOp.operand->kind == Constant_kind);
     PyObject *value = node_->v.UnaryOp.operand->v.Constant.value;
-    assert(PyComplex_CheckExact(value) || PyFloat_CheckExact(value) || PyLong_CheckExact(value));
+    assert(PyComplex_CheckExact(value) ||
+           PyFloat_CheckExact(value) ||
+           PyLong_CheckExact(value));
     PyObject *negated = PyNumber_Negative(value);
     if (!negated) {
         return 0;
     }
+    assert(PyComplex_CheckExact(negated) ||
+           PyFloat_CheckExact(negated) ||
+           PyLong_CheckExact(negated));
     return make_const(node_, negated, ctx_);
 }
 
@@ -763,19 +768,17 @@ static int
 astfold_pattern_complex(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     expr_ty left = node_->v.BinOp.left;
+    expr_ty right = node_->v.BinOp.right;
     if (left->kind == UnaryOp_kind) {
         CALL(astfold_pattern_negative, expr_ty, left);
     }
-    expr_ty right = node_->v.BinOp.right;
-    assert(node_->v.BinOp.op == Add || node_->v.BinOp.op == Sub);
-    assert(node_->v.BinOp.left->kind = Constant_kind);
-    assert(node_->v.BinOp.right->kind = Constant_kind);
-    if (!PyFloat_CheckExact(left->v.Constant.value) && !PyLong_CheckExact(left->v.Constant.value)) {
+    assert(left->kind = Constant_kind);
+    assert(right->kind = Constant_kind);
+    if (!(PyFloat_CheckExact(left->v.Constant.value) ||
+          PyLong_CheckExact(left->v.Constant.value)) ||
+        !PyComplex_CheckExact(right->v.Constant.value))
+    {
         // Not actually valid, but it's the complier's job to complain:
-        return 1;
-    }
-    if (!PyComplex_CheckExact(right->v.Constant.value)) {
-        // Ditto:
         return 1;
     }
     PyObject *new;
@@ -783,11 +786,13 @@ astfold_pattern_complex(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state
         new = PyNumber_Add(left->v.Constant.value, right->v.Constant.value);
     }
     else {
+        assert(node_->v.BinOp.op == Sub);
         new = PyNumber_Subtract(left->v.Constant.value, right->v.Constant.value);
     }
     if (!new) {
         return 0;
     }
+    assert(PyComplex_CheckExact(new));
     return make_const(node_, new, ctx_);
 }
 

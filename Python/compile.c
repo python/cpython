@@ -5454,27 +5454,51 @@ compiler_slice(struct compiler *c, expr_ty s)
 
 
 static int
-pattern_load(struct compiler *c, expr_ty p, pattern_context *pc)
+pattern_load_name(struct compiler *c, expr_ty p, pattern_context *pc)
 {
-    if (p->kind == Attribute_kind) {
-        assert(p->v.Attribute.ctx == Load);
-        CHECK(pattern_load(c, p->v.Attribute.value, pc));
-        ADDOP_NAME(c, LOAD_ATTR, p->v.Attribute.attr, names);
-    }
-    else if (p->kind == Name_kind) {
-        assert(p->v.Name.ctx == Load);
-        CHECK(compiler_nameop(c, p->v.Name.id, Load));
-    }
-    else {
-        assert(p->kind == Constant_kind);
-        ADDOP_LOAD_CONST(c, p->v.Constant.value);
-    }
+    assert(p->kind == Name_kind);
+    assert(p->v.Name.ctx == Load);
+    CHECK(compiler_nameop(c, p->v.Name.id, Load));
     return 1;
 }
 
 
 static int
-pattern_store(struct compiler *c, expr_ty p, pattern_context *pc)
+pattern_load_attribute(struct compiler *c, expr_ty p, pattern_context *pc)
+{
+    assert(p->kind == Attribute_kind);
+    assert(p->v.Attribute.ctx == Load);
+    if (p->v.Attribute.value->kind == Attribute_kind) {
+        CHECK(pattern_load_attribute(c, p->v.Attribute.value, pc));
+    }
+    else {
+        assert(p->v.Attribute.value->kind == Name_kind);
+        CHECK(pattern_load_name(c, p->v.Attribute.value, pc));
+    }
+    ADDOP_NAME(c, LOAD_ATTR, p->v.Attribute.attr, names);
+    return 1;
+}
+
+
+static int
+pattern_load_constant(struct compiler *c, expr_ty p, pattern_context *pc)
+{
+    assert(p->kind == Constant_kind);
+    assert(PyBytes_CheckExact(p->v.Constant.value) ||
+           PyComplex_CheckExact(p->v.Constant.value) ||
+           PyFloat_CheckExact(p->v.Constant.value) ||
+           PyLong_CheckExact(p->v.Constant.value) ||
+           PyUnicode_CheckExact(p->v.Constant.value) ||
+           p->v.Constant.value == Py_False ||
+           p->v.Constant.value == Py_None ||
+           p->v.Constant.value == Py_True);
+    ADDOP_LOAD_CONST(c, p->v.Constant.value);
+    return 1;
+}
+
+
+static int
+pattern_store_name(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
@@ -5516,7 +5540,7 @@ compiler_pattern_attribute(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Attribute_kind);
     assert(p->v.Attribute.ctx == Load);
-    CHECK(pattern_load(c, p, pc));
+    CHECK(pattern_load_attribute(c, p, pc));
     ADDOP_COMPARE(c, Eq);
     return 1;
 }
@@ -5596,7 +5620,13 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
     CHECK(!validate_keywords(c, kwargs));
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
-    CHECK(pattern_load(c, p->v.Call.func, pc));
+    if (p->v.Call.func->kind == Attribute_kind) {
+        CHECK(pattern_load_attribute(c, p->v.Call.func, pc));
+    }
+    else {
+        assert(p->v.Call.func->kind == Name_kind);
+        CHECK(pattern_load_name(c, p->v.Call.func, pc));
+    }
     PyObject *kwnames, *name;
     CHECK(kwnames = PyTuple_New(nkwargs));
     Py_ssize_t i;
@@ -5635,7 +5665,7 @@ static int
 compiler_pattern_constant(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Constant_kind);
-    CHECK(pattern_load(c, p, pc));
+    CHECK(pattern_load_constant(c, p, pc));
     ADDOP_COMPARE(c, Eq);
     return 1;
 }
@@ -5666,7 +5696,13 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
         if (!key) {
             return compiler_error(c, "can't use starred pattern here; consider moving to end?");
         }
-        CHECK(pattern_load(c, key, pc));
+        if (key->kind == Attribute_kind) {
+            CHECK(pattern_load_attribute(c, key, pc));
+        }
+        else {
+            assert(key->kind == Constant_kind);
+            CHECK(pattern_load_constant(c, key, pc));
+        }
     }
     ADDOP_I(c, BUILD_TUPLE, size - star);
     ADDOP_I(c, MATCH_KEYS, star);
@@ -5682,7 +5718,7 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     ADDOP(c, POP_TOP);
     if (star) {
-        CHECK(pattern_store(c, asdl_seq_GET(values, size - 1), pc));
+        CHECK(pattern_store_name(c, asdl_seq_GET(values, size - 1), pc));
     }
     else {
         ADDOP(c, POP_TOP);
@@ -5777,7 +5813,7 @@ compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP(c, POP_TOP);
     }
     else {
-        CHECK(pattern_store(c, p, pc));
+        CHECK(pattern_store_name(c, p, pc));
     }
     ADDOP_LOAD_CONST(c, Py_True);
     return 1;
@@ -5794,7 +5830,7 @@ compiler_pattern_namedexpr(struct compiler *c, expr_ty p, pattern_context *pc)
     ADDOP(c, DUP_TOP);
     CHECK(compiler_pattern(c, p->v.NamedExpr.value, pc));
     ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
-    CHECK(pattern_store(c, p->v.NamedExpr.target, pc));
+    CHECK(pattern_store_name(c, p->v.NamedExpr.target, pc));
     ADDOP_LOAD_CONST(c, Py_True);
     ADDOP_JREL(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, block);
