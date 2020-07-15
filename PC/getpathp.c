@@ -673,7 +673,7 @@ calculate_init(PyCalculatePath *calculate,
 static int
 get_pth_filename(wchar_t *spbuffer, _PyPathConfig *config)
 {
-    if (get_dllpath(spbuffer) &&
+    if (!get_dllpath(spbuffer) &&
         !change_ext(spbuffer, spbuffer, L"._pth") &&
         exists(spbuffer))
     {
