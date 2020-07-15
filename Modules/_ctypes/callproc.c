@@ -57,6 +57,8 @@
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 
+#include <stdbool.h>
+
 #ifdef MS_WIN32
 #include <windows.h>
 #include <tchar.h>
@@ -837,26 +839,52 @@ static int _call_function_pointer(int flags,
         cc = FFI_STDCALL;
 #endif
 
-#if HAVE_FFI_PREP_CIF_VAR
+#   if USING_APPLE_OS_LIBFFI
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME __builtin_available(macos 11, ios 13, watchos 6, tvos 13, *)
+#   elif HAVE_FFI_PREP_CIF_VAR
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME true
+#   else
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME false
+#   endif
+
     /* Everyone SHOULD set f.variadic=True on variadic function pointers, but
      * lots of existing code will not.  If there's at least one arg and more
      * args are passed than are defined in the prototype, then it must be a
      * variadic function. */
-    if ((flags & FUNCFLAG_VARIADIC) ||
-        (argtypecount != 0 && argcount > argtypecount))
-    {
-        if (FFI_OK != ffi_prep_cif_var(&cif,
-                                       cc,
-                                       argtypecount,
-                                       argcount,
-                                       restype,
-                                       atypes)) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "ffi_prep_cif_var failed");
+    bool is_variadic = (flags & FUNCFLAG_VARIADIC) || (argtypecount != 0 && argcount > argtypecount);
+    (void) is_variadic;
+
+#if defined(__APPLE__) && defined(__arm64__)
+    if (is_variadic) {
+        if (HAVE_FFI_PREP_CIF_VAR_RUNTIME) {
+        } else {
+            PyErr_SetString(PyExc_NotImplementedError, "ffi_prep_cif_var() is missing");
             return -1;
         }
-    } else {
+    }
 #endif
+
+    bool called_ffi_prep_cif_var = false;
+
+#if HAVE_FFI_PREP_CIF_VAR
+    if (is_variadic) {
+        if (HAVE_FFI_PREP_CIF_VAR_RUNTIME) {
+            if (FFI_OK != ffi_prep_cif_var(&cif,
+                                        cc,
+                                        argtypecount,
+                                        argcount,
+                                        restype,
+                                        atypes)) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "ffi_prep_cif_var failed");
+                return -1;
+            }
+            called_ffi_prep_cif_var = true;
+        }
+    }
+#endif
+
+    if (!called_ffi_prep_cif_var) {
         if (FFI_OK != ffi_prep_cif(&cif,
                                    cc,
                                    argcount,
@@ -866,9 +894,7 @@ static int _call_function_pointer(int flags,
                             "ffi_prep_cif failed");
             return -1;
         }
-#if HAVE_FFI_PREP_CIF_VAR
     }
-#endif
 
     if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
         error_object = _ctypes_get_errobj(&space);

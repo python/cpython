@@ -2151,7 +2151,8 @@ class PyBuildExt(build_ext):
     def detect_ctypes(self):
         # Thomas Heller's _ctypes module
 
-        if not sysconfig.get_config_var("LIBFFI_INCLUDEDIR") and is_macosx_at_least((10,15)):
+        if (not sysconfig.get_config_var("LIBFFI_INCLUDEDIR") and
+            (is_macosx_at_least((10,15)) or '-arch arm64' in sysconfig.get_config_var("CFLAGS"))):
             self.use_system_libffi = True
         else:
             self.use_system_libffi = '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS")
@@ -2168,6 +2169,7 @@ class PyBuildExt(build_ext):
 
         if MACOS:
             sources.append('_ctypes/malloc_closure.c')
+            extra_compile_args.append('-DUSING_MALLOC_CLOSURE_DOT_C=1')
             sources.append('_ctypes/darwin/dlfcn_simple.c')
             extra_compile_args.append('-DMACOSX')
             include_dirs.append('_ctypes/darwin')
@@ -2209,6 +2211,7 @@ class PyBuildExt(build_ext):
         if MACOS:
             if not self.use_system_libffi:
                 return
+            ext.extra_compile_args.append("-DUSING_APPLE_OS_LIBFFI=1")
             ffi_in_sdk = os.path.join(macosx_sdk_root(), "usr/include/ffi")
             if os.path.exists(ffi_in_sdk):
                 ffi_inc = ffi_in_sdk
@@ -2235,13 +2238,10 @@ class PyBuildExt(build_ext):
 
         if ffi_inc and ffi_lib:
             ffi_headers = glob(os.path.join(ffi_inc, '*.h'))
-            if grep_headers_for('ffi_closure_alloc', ffi_headers):
-                try:
-                    sources.remove('_ctypes/malloc_closure.c')
-                except ValueError:
-                    pass
             if grep_headers_for('ffi_prep_cif_var', ffi_headers):
                 ext.extra_compile_args.append("-DHAVE_FFI_PREP_CIF_VAR=1")
+            if grep_headers_for('ffi_prep_closure_loc', ffi_headers):
+                ext.extra_compile_args.append("-DHAVE_FFI_PREP_CLOSURE_LOC=1")
             ext.include_dirs.append(ffi_inc)
             ext.libraries.append(ffi_lib)
             self.use_system_libffi = True
