@@ -184,9 +184,7 @@ def main(args=None):
     """
     if args is None:
         args = sys.argv[1:]
-    parser = argparse.ArgumentParser(
-        prog=__name__,
-        description="Compiles several source files.")
+    parser = argparse.ArgumentParser(prog=__name__)
     parser.add_argument(
         '-q', '--quiet', default=False,
         action='store_true', help='suppress error output')
