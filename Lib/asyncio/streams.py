@@ -690,6 +690,44 @@ class StreamReader:
         self._maybe_resume_transport()
         return data
 
+    async def readinto(self, buf):
+        """Read up to the length of `buf` number of bytes from the stream and
+        fill the `buf` bytes object with what was read from the stream.
+
+        Returns the number of bytes read from the stream.
+
+        If `buf` is empty, return 0 immediately.
+
+        If `buf` is not empty, this function tries to read the length of `buf`
+        number of bytes, and may fill the buffer with less or equal bytes than
+        requested, but at least one byte. If EOF was received before any byte
+        is read, this function returns 0.
+
+        Returned value is not limited with limit, configured at stream
+        creation.
+
+        If stream was paused, this function will automatically resume it if
+        needed.
+        """
+        n = len(buf)
+
+        if self._exception is not None:
+            raise self._exception
+
+        if n == 0:
+            return 0
+
+        if not self._buffer and not self._eof:
+            await self._wait_for_data('readinto')
+
+        length = min(n, len(self._buffer))
+        if length > 0:
+            buf[:length] = self._buffer[:length]
+
+        del self._buffer[:n]
+        self._maybe_resume_transport()
+        return length
+
     async def readexactly(self, n):
         """Read exactly `n` bytes.
 

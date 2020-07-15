@@ -211,6 +211,13 @@ StreamReader
 
       .. versionadded:: 3.5.2
 
+   .. coroutinemethod:: readinto(buf)
+
+      Read up to *n* bytes with *n* being equal to the length of *buf* and
+      copy the buffer read from the stream into *buf*.
+
+      Return the number of bytes read from the stream.
+
    .. method:: at_eof()
 
       Return ``True`` if the buffer is empty and :meth:`feed_eof`
