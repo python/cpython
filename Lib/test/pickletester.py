@@ -150,6 +150,15 @@ class K(object):
         # Shouldn't support the recursion itself
         return K, (self.value,)
 
+
+class L:
+    def __init__(self):
+        self.attr = self.__foo
+
+    def __foo(self):
+        return 42
+
+
 import __main__
 __main__.C = C
 C.__module__ = "__main__"
@@ -2248,6 +2257,13 @@ class AbstractPickleTests(unittest.TestCase):
                 dumped = self.dumps(obj, proto)
                 loaded = self.loads(dumped)
                 self.assert_is_copy(obj, loaded)
+
+    def test_mangled_private_methods_roundtrip(self):
+        obj = L()
+        for proto in protocols:
+            with self.subTest(proto=proto):
+                loaded = self.loads(self.dumps(obj, proto))
+                self.assertEqual(loaded.attr(), 42)
 
     def test_attribute_name_interning(self):
         # Test that attribute names of pickled objects are interned when

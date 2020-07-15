@@ -128,8 +128,20 @@ method_reduce(PyMethodObject *im, PyObject *Py_UNUSED(ignored))
     if (funcname == NULL) {
         return NULL;
     }
+    PyObject *name = _PyObject_GetAttrId((PyObject *)Py_TYPE(self),
+                                         &PyId___name__);
+    if (name == NULL) {
+        Py_DECREF(funcname);
+        return NULL;
+    }
+    PyObject *mangled = _Py_Mangle(name, funcname);
+    Py_DECREF(name);
+    Py_DECREF(funcname);
+    if (mangled == NULL) {
+        return NULL;
+    }
     return Py_BuildValue("N(ON)", _PyEval_GetBuiltinId(&PyId_getattr),
-                         self, funcname);
+                         self, mangled);
 }
 
 static PyMethodDef method_methods[] = {
