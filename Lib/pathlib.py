@@ -189,27 +189,25 @@ class _WindowsFlavour(_Flavour):
     def resolve(self, path, strict=False):
         s = str(path)
         if not s:
-            return path._accessor.getcwd()
+            s = path._accessor.getcwd()
+        if _getfinalpathname is None:
+            return None  # Means fallback on absolute
+        if strict:
+            return self._ext_to_normal(_getfinalpathname(s))
+        s = path = os.path.abspath(s)
         previous_s = None
-        if _getfinalpathname is not None:
-            if strict:
-                return self._ext_to_normal(_getfinalpathname(s))
+        tail_parts = []  # End of the path after the first one not found
+        while True:
+            try:
+                s = self._ext_to_normal(_getfinalpathname(s))
+            except FileNotFoundError:
+                previous_s = s
+                s, tail = os.path.split(s)
+                tail_parts.append(tail)
+                if previous_s == s:  # Root reached, fallback to abspath()
+                    return path
             else:
-                s = path = os.path.abspath(s)
-                tail_parts = []  # End of the path after the first one not found
-                while True:
-                    try:
-                        s = self._ext_to_normal(_getfinalpathname(s))
-                    except FileNotFoundError:
-                        previous_s = s
-                        s, tail = os.path.split(s)
-                        tail_parts.append(tail)
-                        if previous_s == s:
-                            return path
-                    else:
-                        return os.path.join(s, *reversed(tail_parts))
-        # Means fallback on absolute
-        return None
+                return os.path.join(s, *reversed(tail_parts))
 
     def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix):
         prefix = ''
