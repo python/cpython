@@ -2468,7 +2468,7 @@ clear_strong_cache(const PyTypeObject *const type)
 }
 
 static PyObject *
-new_weak_cache()
+new_weak_cache(void)
 {
     PyObject *weakref_module = PyImport_ImportModule("weakref");
     if (weakref_module == NULL) {
@@ -2482,7 +2482,7 @@ new_weak_cache()
 }
 
 static int
-initialize_caches()
+initialize_caches(void)
 {
     // TODO: Move to a PyModule_GetState / PEP 573 based caching system.
     if (TIMEDELTA_CACHE == NULL) {
