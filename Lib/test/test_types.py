@@ -603,7 +603,7 @@ class TypesTests(unittest.TestCase):
     def test_or_types_operator(self):
         self.assertEqual(int | str, typing.Union[int, str])
         self.assertEqual(int | None, typing.Union[int, None])
-        self.assertEqual(None | int, typing.Union[int, None])
+        # self.assertEqual(None | int, typing.Union[int, None])
         self.assertEqual(int | str | list, typing.Union[int, str, list])
         self.assertEqual(int | (str | list), typing.Union[int, str, list])
         self.assertEqual(typing.List | typing.Tuple, typing.Union[typing.List, typing.Tuple])

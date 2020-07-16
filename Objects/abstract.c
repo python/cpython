@@ -2471,8 +2471,12 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
 
 static PyObject*
 union_to_tuple(PyObject* cls) {
-    //printf("union_to_tuple");
-    if (!strcmp(Py_TYPE(cls)->tp_name,"_GenericAlias")) {
+    // if (!strcmp(Py_TYPE(cls)->tp_name, "typing.Union")) {
+    //     PyObject* args  = PyObject_GetAttrString(cls, "__args__");
+    //     PyObject_Print(args, stdout, 0);
+    //     // return args;
+    // }
+    if (!strcmp(Py_TYPE(cls)->tp_name, "_GenericAlias")) {
         PyObject* origin = PyObject_GetAttrString(cls, "__origin__");
         //printf("origin = %p\n",origin);
         if (origin == NULL) {
@@ -2493,6 +2497,7 @@ union_to_tuple(PyObject* cls) {
             if (data != NULL && !strcmp(data,"Union")) {
                 PyObject* new_cls = PyObject_GetAttrString(cls, "__args__");
                 if (new_cls != NULL) {
+                    printf("A down here.");
                     cls = new_cls;
                 }
             }
@@ -2525,7 +2530,6 @@ object_isinstance(PyObject *inst, PyObject *cls)
     PyObject *icls;
     int retval;
     _Py_IDENTIFIER(__class__);
-
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
@@ -2536,6 +2540,7 @@ object_isinstance(PyObject *inst, PyObject *cls)
                         (PyTypeObject *)icls,
                         (PyTypeObject *)cls);
                 }
+
                 else {
                     retval = 0;
                 }

@@ -3742,10 +3742,10 @@ type_is_gc(PyTypeObject *type)
 }
 
 static int
-is_typevar(PyObject *obj)
+is_typing_name(PyObject *obj, char *name)
 {
     PyTypeObject *type = Py_TYPE(obj);
-    if (strcmp(type->tp_name, "TypeVar") != 0) {
+    if (strcmp(type->tp_name, name) != 0) {
         return 0;
     }
     PyObject *module = PyObject_GetAttrString((PyObject *)type, "__module__");
@@ -3756,29 +3756,25 @@ is_typevar(PyObject *obj)
         && _PyUnicode_EqualToASCIIString(module, "typing");
     Py_DECREF(module);
     return res;
+}
+
+// TODO: MM: Move these?
+static int
+is_typevar(PyObject *obj)
+{
+    return is_typing_name(obj, "TypeVar");
 }
 
 static int
 is_genericalias(PyObject *obj)
 {
-    PyTypeObject *type = Py_TYPE(obj);
-    if (strcmp(type->tp_name, "GenericAlias") != 0) {
-        return 0;
-    }
-    PyObject *module = PyObject_GetAttrString((PyObject *)type, "__module__");
-    if (module == NULL) {
-        return -1;
-    }
-    int res = PyUnicode_Check(module)
-        && _PyUnicode_EqualToASCIIString(module, "typing");
-    Py_DECREF(module);
-    return res;
+    return is_typing_name(obj, "GenericAlias");
 }
+
 
 static PyObject *
 type_or(PyTypeObject* self, PyObject* param) {
     // Check param is a PyType or GenericAlias
-    printf("Type_or \n");
     if ((param == NULL) ||
         (
          (param != Py_None) &&
@@ -3787,12 +3783,34 @@ type_or(PyTypeObject* self, PyObject* param) {
          (PyObject_IsInstance(param, (PyObject *) &PyType_Type) != 1)
         )
             ) {
+        PyObject_Print(param, stdout, 0);
+        PyObject_Print(self, stdout, 0);
+        printf("%d", PyObject_IsInstance(param, (PyObject *) &PyType_Type));
         PyErr_SetString(PyExc_TypeError, "'type' expected");
-        // Py_DECREF(typing);
         return NULL;
     }
+    PyObject *tuple;
     // 1. Create a tuple with types
-    PyObject *tuple=PyTuple_Pack(2, self, param);
+    if (PyObject_IsInstance((PyObject *)self, (PyObject *) &Py_UnionType) && PyObject_IsInstance((PyObject *)param, (PyObject *) &_PyNone_Type) != 1) {
+        PyObject* existingArgs = PyObject_GetAttrString((PyObject *)self, "__args__");
+        int tuple_size = PyTuple_GET_SIZE(existingArgs);
+        tuple = PyTuple_New(tuple_size + 1);
+        for (Py_ssize_t iarg = 0; iarg < tuple_size; iarg++) {
+            PyObject* arg = PyTuple_GET_ITEM(existingArgs, iarg);
+            PyTuple_SET_ITEM(tuple, iarg, arg);
+        }
+        PyTuple_SET_ITEM(tuple, tuple_size, param);
+        Py_DECREF(existingArgs);
+
+    } else if (param == Py_None) {
+        PyTypeObject *type = Py_TYPE(param);
+        tuple=PyTuple_Pack(2, self, type);
+    } else if (self == Py_None) {
+        PyTypeObject *type = Py_TYPE(self);
+        tuple=PyTuple_Pack(2, type, param);
+    } else {
+        tuple=PyTuple_Pack(2, self, param);
+    }
     PyObject *newUnionType=Py_Union(tuple);
     Py_DECREF(tuple);
     return newUnionType;

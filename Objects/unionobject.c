@@ -39,6 +39,82 @@ union_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+static PyMemberDef union_members[] = {
+    {"__args__", T_OBJECT, offsetof(unionobject, args), READONLY},
+    {0}
+};
+
+
+// TODO; MM: Redo the implementation of this method;
+static PyObject *
+union_getattro(PyObject *self, PyObject *name)
+{
+    // printf("union_getattro");
+    unionobject *alias = (unionobject *) self;
+    // PyObject_Print(name, stdout, 0);
+    // printf("tp_name: (%s)\n", Py_TYPE(name)->tp_name);
+    return alias->args;
+    // return PyObject_GenericGetAttr(alias, name);
+}
+
+// TODO: MM: Implement this for isinstance checks
+static PyObject *
+union_instancecheck(PyObject *self, PyObject *instance)
+{
+    unionobject *alias = (unionobject *) self;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(alias->args);
+    int retval;
+    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
+        PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
+        if (PyType_Check(arg)) {
+            retval = PyObject_IsInstance(instance, arg);
+        }
+    }
+    return self;
+}
+
+
+static int
+is_typing_name(PyObject *obj, char *name)
+{
+    PyTypeObject *type = Py_TYPE(obj);
+    if (strcmp(type->tp_name, name) != 0) {
+        return 0;
+    }
+    PyObject *module = PyObject_GetAttrString((PyObject *)type, "__module__");
+    if (module == NULL) {
+        return -1;
+    }
+    int res = PyUnicode_Check(module)
+        && _PyUnicode_EqualToASCIIString(module, "typing");
+    Py_DECREF(module);
+    return res;
+}
+
+static PyMethodDef union_methods[] = {
+    {"__instancecheck__", union_instancecheck, METH_O},
+    {0}
+};
+
+static PyObject *
+union_richcompare(PyObject *a, PyObject *b, int op)
+{
+    unionobject *aa = (unionobject *)a;
+    if (is_typing_name(b, "_UnionGenericAlias")) {
+        PyObject* b_args = PyObject_GetAttrString(b, "__args__");
+        printf("\n");
+        PyObject_Print(b_args, stdout, 0);
+        PyObject_Print(aa->args, stdout, 0);
+        return PyObject_RichCompare(aa->args, b_args, Py_EQ);
+    }
+    PyTypeObject *type = Py_TYPE(b);
+    if (strcmp(type->tp_name, "typing.Union") != 0) {
+        unionobject *bb = (unionobject *)a;
+        return PyObject_RichCompare(aa->args, bb->args, Py_EQ);
+    }
+    Py_RETURN_FALSE;
+}
+
 
 PyTypeObject Py_UnionType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -53,7 +129,10 @@ PyTypeObject Py_UnionType = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_hash = union_hash,
     .tp_traverse = union_traverse,
-
+    .tp_getattro = union_getattro,
+    .tp_members = union_members,
+    .tp_methods = union_methods,
+    .tp_richcompare = union_richcompare,
 };
 
 PyObject *
