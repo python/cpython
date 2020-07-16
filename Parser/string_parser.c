@@ -385,7 +385,7 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
         return NULL;
     }
 
-    // The parentheses are needed in order to allow for leading whitespace withing
+    // The parentheses are needed in order to allow for leading whitespace within
     // the f-string expression. This consequently gets parsed as a group (see the
     // group rule in python.gram).
     str[0] = '(';
