@@ -3,7 +3,6 @@
 #include "Python.h"
 
 #include "Python-ast.h"
-#include "node.h"
 #include "ast.h"
 #include "code.h"
 #include "symtable.h"
@@ -511,8 +510,12 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         if (instrsize(j) > ilen) {
             goto exitUnchanged;
         }
-        assert(ilen <= INT_MAX);
         /* If instrsize(j) < ilen, we'll emit EXTENDED_ARG 0 */
+        if (ilen > 4) {
+            /* Can only happen when PyCode_Optimize() is called with
+               malformed bytecode. */
+            goto exitUnchanged;
+        }
         write_op_arg(codestr + h, opcode, j, (int)ilen);
         h += ilen;
     }

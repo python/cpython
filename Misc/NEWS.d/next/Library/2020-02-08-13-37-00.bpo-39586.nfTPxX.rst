@@ -1,2 +1,0 @@
-The distutils ``bdist_msi`` command is deprecated in Python 3.9, use
-``bdist_wheel`` (wheel packages) instead.

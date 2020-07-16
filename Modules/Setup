@@ -132,7 +132,7 @@ faulthandler faulthandler.c
 #
 # bpo-35053: The module must be builtin since _Py_NewReference()
 # can call _PyTraceMalloc_NewReference().
-_tracemalloc _tracemalloc.c hashtable.c
+_tracemalloc _tracemalloc.c
 
 # The rest of the modules listed in this file are all commented out by
 # default.  Usually they can be detected and built as dynamically
@@ -174,12 +174,13 @@ _symtable symtablemodule.c
 #_weakref _weakref.c	# basic weak reference support
 #_testcapi _testcapimodule.c    # Python C API test module
 #_testinternalcapi _testinternalcapi.c -I$(srcdir)/Include/internal -DPy_BUILD_CORE_MODULE  # Python internal C API test module
-#_random _randommodule.c	# Random number generator
+#_random _randommodule.c -DPy_BUILD_CORE_MODULE	# Random number generator
 #_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
 #_pickle _pickle.c	# pickle accelerator
 #_datetime _datetimemodule.c	# datetime accelerator
+#_zoneinfo _zoneinfo.c	# zoneinfo accelerator
 #_bisect _bisectmodule.c	# Bisection algorithms
-#_heapq _heapqmodule.c	# Heap queue algorithm
+#_heapq _heapqmodule.c -DPy_BUILD_CORE_MODULE	# Heap queue algorithm
 #_asyncio _asynciomodule.c  # Fast asyncio Future
 #_json -I$(srcdir)/Include/internal -DPy_BUILD_CORE_BUILTIN _json.c	# _json speedups
 #_statistics _statisticsmodule.c # statistics accelerator
@@ -247,8 +248,8 @@ _symtable symtablemodule.c
 # The _sha module implements the SHA checksum algorithms.
 # (NIST's Secure Hash Algorithms.)
 #_sha1 sha1module.c
-#_sha256 sha256module.c
-#_sha512 sha512module.c
+#_sha256 sha256module.c -DPy_BUILD_CORE_BUILTIN
+#_sha512 sha512module.c -DPy_BUILD_CORE_BUILTIN
 #_sha3 _sha3/sha3module.c
 
 # _blake module
@@ -326,10 +327,6 @@ _symtable symtablemodule.c
 
 # Helper module for various ascii-encoders
 #binascii binascii.c
-
-# Fred Drake's interface to the Python parser
-#parser parsermodule.c
-
 
 # Andrew Kuchling's zlib module.
 # This require zlib 1.1.3 (or later).

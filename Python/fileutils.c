@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "pycore_fileutils.h"
-#include "osdefs.h"
+#include "osdefs.h"               // SEP
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -1008,15 +1008,21 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 #ifdef MS_WINDOWS
     int err;
     struct _stat wstatbuf;
-    const wchar_t *wpath;
 
-    wpath = _PyUnicode_AsUnicode(path);
+#if USE_UNICODE_WCHAR_CACHE
+    const wchar_t *wpath = _PyUnicode_AsUnicode(path);
+#else /* USE_UNICODE_WCHAR_CACHE */
+    wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     if (wpath == NULL)
         return -2;
 
     err = _wstat(wpath, &wstatbuf);
     if (!err)
         statbuf->st_mode = wstatbuf.st_mode;
+#if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free(wpath);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     return err;
 #else
     int ret;
@@ -1274,7 +1280,12 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
 #endif
 
     if (gil_held) {
-        if (PySys_Audit("open", "sOi", pathname, Py_None, flags) < 0) {
+        PyObject *pathname_obj = PyUnicode_DecodeFSDefault(pathname);
+        if (pathname_obj == NULL) {
+            return -1;
+        }
+        if (PySys_Audit("open", "OOi", pathname_obj, Py_None, flags) < 0) {
+            Py_DECREF(pathname_obj);
             return -1;
         }
 
@@ -1284,12 +1295,16 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
             Py_END_ALLOW_THREADS
         } while (fd < 0
                  && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-        if (async_err)
-            return -1;
-        if (fd < 0) {
-            PyErr_SetFromErrnoWithFilename(PyExc_OSError, pathname);
+        if (async_err) {
+            Py_DECREF(pathname_obj);
             return -1;
         }
+        if (fd < 0) {
+            PyErr_SetFromErrnoWithFilenameObjects(PyExc_OSError, pathname_obj, NULL);
+            Py_DECREF(pathname_obj);
+            return -1;
+        }
+        Py_DECREF(pathname_obj);
     }
     else {
         fd = open(pathname, flags);
@@ -1385,9 +1400,15 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 FILE*
 _Py_fopen(const char *pathname, const char *mode)
 {
-    if (PySys_Audit("open", "ssi", pathname, mode, 0) < 0) {
+    PyObject *pathname_obj = PyUnicode_DecodeFSDefault(pathname);
+    if (pathname_obj == NULL) {
         return NULL;
     }
+    if (PySys_Audit("open", "Osi", pathname_obj, mode, 0) < 0) {
+        Py_DECREF(pathname_obj);
+        return NULL;
+    }
+    Py_DECREF(pathname_obj);
 
     FILE *f = fopen(pathname, mode);
     if (f == NULL)
@@ -1418,7 +1439,6 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     FILE *f;
     int async_err = 0;
 #ifdef MS_WINDOWS
-    const wchar_t *wpath;
     wchar_t wmode[10];
     int usize;
 
@@ -1433,7 +1453,11 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                      Py_TYPE(path));
         return NULL;
     }
-    wpath = _PyUnicode_AsUnicode(path);
+#if USE_UNICODE_WCHAR_CACHE
+    const wchar_t *wpath = _PyUnicode_AsUnicode(path);
+#else /* USE_UNICODE_WCHAR_CACHE */
+    wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     if (wpath == NULL)
         return NULL;
 
@@ -1441,6 +1465,9 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                                 wmode, Py_ARRAY_LENGTH(wmode));
     if (usize == 0) {
         PyErr_SetFromWindowsErr(0);
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(wpath);
+#endif /* USE_UNICODE_WCHAR_CACHE */
         return NULL;
     }
 
@@ -1450,9 +1477,12 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+#if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free(wpath);
+#endif /* USE_UNICODE_WCHAR_CACHE */
 #else
     PyObject *bytes;
-    char *path_bytes;
+    const char *path_bytes;
 
     assert(PyGILState_Check());
 
@@ -1461,6 +1491,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     path_bytes = PyBytes_AS_STRING(bytes);
 
     if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
+        Py_DECREF(bytes);
         return NULL;
     }
 

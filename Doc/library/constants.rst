@@ -31,7 +31,7 @@ A small number of constants live in the built-in namespace.  They are:
    etc.) to indicate that the operation is not implemented with respect to
    the other type; may be returned by the in-place binary special methods
    (e.g. :meth:`__imul__`, :meth:`__iand__`, etc.) for the same purpose.
-   Its truth value is true.
+   It should not be evaluated in a boolean context.
 
    .. note::
 
@@ -49,6 +49,11 @@ A small number of constants live in the built-in namespace.  They are:
       ``NotImplementedError`` and ``NotImplemented`` are not interchangeable,
       even though they have similar names and purposes.
       See :exc:`NotImplementedError` for details on when to use it.
+
+   .. versionchanged:: 3.9
+      Evaluating ``NotImplemented`` in a boolean context is deprecated. While
+      it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
+      It will raise a :exc:`TypeError` in a future version of Python.
 
 
 .. index:: single: ...; ellipsis literal

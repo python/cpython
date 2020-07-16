@@ -1,9 +1,18 @@
-/* Memoryview object implementation */
+/*
+ * Memoryview object implementation
+ * --------------------------------
+ *
+ *   This implementation is a complete rewrite contributed by Stefan Krah in
+ *   Python 3.3.  Substantial credit goes to Antoine Pitrou (who had already
+ *   fortified and rewritten the previous implementation) and Nick Coghlan
+ *   (who came up with the idea of the ManagedBuffer) for analyzing the complex
+ *   ownership rules.
+ *
+ */
 
 #include "Python.h"
+#include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
 #include "pystrhex.h"
 #include <stddef.h>
 
@@ -1569,7 +1578,7 @@ pylong_as_ld(PyObject *item)
     PyObject *tmp;
     long ld;
 
-    tmp = PyNumber_Index(item);
+    tmp = _PyNumber_Index(item);
     if (tmp == NULL)
         return -1;
 
@@ -1584,7 +1593,7 @@ pylong_as_lu(PyObject *item)
     PyObject *tmp;
     unsigned long lu;
 
-    tmp = PyNumber_Index(item);
+    tmp = _PyNumber_Index(item);
     if (tmp == NULL)
         return (unsigned long)-1;
 
@@ -1599,7 +1608,7 @@ pylong_as_lld(PyObject *item)
     PyObject *tmp;
     long long lld;
 
-    tmp = PyNumber_Index(item);
+    tmp = _PyNumber_Index(item);
     if (tmp == NULL)
         return -1;
 
@@ -1614,7 +1623,7 @@ pylong_as_llu(PyObject *item)
     PyObject *tmp;
     unsigned long long llu;
 
-    tmp = PyNumber_Index(item);
+    tmp = _PyNumber_Index(item);
     if (tmp == NULL)
         return (unsigned long long)-1;
 
@@ -1629,7 +1638,7 @@ pylong_as_zd(PyObject *item)
     PyObject *tmp;
     Py_ssize_t zd;
 
-    tmp = PyNumber_Index(item);
+    tmp = _PyNumber_Index(item);
     if (tmp == NULL)
         return -1;
 
@@ -1644,7 +1653,7 @@ pylong_as_zu(PyObject *item)
     PyObject *tmp;
     size_t zu;
 
-    tmp = PyNumber_Index(item);
+    tmp = _PyNumber_Index(item);
     if (tmp == NULL)
         return (size_t)-1;
 
@@ -2411,8 +2420,9 @@ is_multiindex(PyObject *key)
     size = PyTuple_GET_SIZE(key);
     for (i = 0; i < size; i++) {
         PyObject *x = PyTuple_GET_ITEM(key, i);
-        if (!PyIndex_Check(x))
+        if (!_PyIndex_Check(x)) {
             return 0;
+        }
     }
     return 1;
 }
@@ -2449,7 +2459,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
         }
     }
 
-    if (PyIndex_Check(key)) {
+    if (_PyIndex_Check(key)) {
         Py_ssize_t index;
         index = PyNumber_AsSsize_t(key, PyExc_IndexError);
         if (index == -1 && PyErr_Occurred())
@@ -2520,7 +2530,7 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
         }
     }
 
-    if (PyIndex_Check(key)) {
+    if (_PyIndex_Check(key)) {
         Py_ssize_t index;
         if (1 < view->ndim) {
             PyErr_SetString(PyExc_NotImplementedError,

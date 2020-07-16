@@ -1,4 +1,0 @@
-Revert "Do not expose abstract collection classes in the collections module"
-change (bpo-25988). Aliases to ABC like collections.Mapping are kept in
-Python 3.9 to ease transition from Python 2.7, but will be removed in Python
-3.10.

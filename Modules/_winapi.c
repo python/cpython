@@ -35,7 +35,7 @@
 /* See http://www.python.org/2.4/license for licensing details. */
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #define WINDOWS_LEAN_AND_MEAN
 #include "windows.h"
@@ -164,9 +164,10 @@ create_converter('LPCVOID', '" F_POINTER "')
 create_converter('BOOL', 'i') # F_BOOL used previously (always 'i')
 create_converter('DWORD', 'k') # F_DWORD is always "k" (which is much shorter)
 create_converter('LPCTSTR', 's')
-create_converter('LPCWSTR', 'u')
-create_converter('LPWSTR', 'u')
 create_converter('UINT', 'I') # F_UINT used previously (always 'I')
+
+class LPCWSTR_converter(Py_UNICODE_converter):
+    type = 'LPCWSTR'
 
 class HANDLE_return_converter(CReturnConverter):
     type = 'HANDLE'
@@ -197,7 +198,7 @@ class LPVOID_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = HANDLE_TO_PYNUM(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=79464c61a31ae932]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=011ee0c3a2244bfe]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -520,15 +521,15 @@ _winapi_CreateFileMapping_impl(PyObject *module, HANDLE file_handle,
 /*[clinic input]
 _winapi.CreateJunction
 
-    src_path: LPWSTR
-    dst_path: LPWSTR
+    src_path: LPCWSTR
+    dst_path: LPCWSTR
     /
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
-                            LPWSTR dst_path)
-/*[clinic end generated code: output=66b7eb746e1dfa25 input=8cd1f9964b6e3d36]*/
+_winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
+                            LPCWSTR dst_path)
+/*[clinic end generated code: output=44b3f5e9bbcc4271 input=963d29b44b9384a7]*/
 {
     /* Privilege adjustment */
     HANDLE token = NULL;
@@ -603,11 +604,10 @@ _winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
         sizeof(rdb->MountPointReparseBuffer.PathBuffer) +
         /* Two +1's for NUL terminators. */
         (prefix_len + print_len + 1 + print_len + 1) * sizeof(WCHAR);
-    rdb = (_Py_PREPARSE_DATA_BUFFER)PyMem_RawMalloc(rdb_size);
+    rdb = (_Py_PREPARSE_DATA_BUFFER)PyMem_RawCalloc(1, rdb_size);
     if (rdb == NULL)
         goto cleanup;
 
-    memset(rdb, 0, rdb_size);
     rdb->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
     rdb->ReparseDataLength = rdb_size - _Py_REPARSE_DATA_BUFFER_HEADER_SIZE;
     rdb->MountPointReparseBuffer.SubstituteNameOffset = 0;
@@ -1081,6 +1081,14 @@ _winapi_CreateProcess_impl(PyObject *module,
         return NULL;
     }
 
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    if (config->_isolated_interpreter) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "subprocess not supported for isolated subinterpreters");
+        return NULL;
+    }
+
     ZeroMemory(&si, sizeof(si));
     si.StartupInfo.cb = sizeof(si);
 
@@ -1111,8 +1119,8 @@ _winapi_CreateProcess_impl(PyObject *module,
         }
     }
     else if (command_line != Py_None) {
-        PyErr_Format(PyExc_TypeError, 
-                     "CreateProcess() argument 2 must be str or None, not %s", 
+        PyErr_Format(PyExc_TypeError,
+                     "CreateProcess() argument 2 must be str or None, not %s",
                      Py_TYPE(command_line)->tp_name);
         goto cleanup;
     }

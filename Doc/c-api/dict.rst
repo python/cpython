@@ -100,6 +100,10 @@ Dictionary Objects
    :meth:`__eq__` methods will get suppressed.
    To get error reporting use :c:func:`PyDict_GetItemWithError()` instead.
 
+   .. versionchanged:: 3.10
+      Calling this API without :term:`GIL` held had been allowed for historical
+      reason. It is no longer allowed.
+
 
 .. c:function:: PyObject* PyDict_GetItemWithError(PyObject *p, PyObject *key)
 
@@ -232,10 +236,3 @@ Dictionary Objects
           for key, value in seq2:
               if override or key not in a:
                   a[key] = value
-
-
-.. c:function:: int PyDict_ClearFreeList()
-
-   Clear the free list. Return the total number of freed items.
-
-   .. versionadded:: 3.3

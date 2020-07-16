@@ -28,6 +28,8 @@ import stat as st
 
 from _collections_abc import _check_methods
 
+GenericAlias = type(list[int])
+
 _names = sys.builtin_module_names
 
 # Note:  more names are added to __all__ later.
@@ -659,7 +661,7 @@ def get_exec_path(env=None):
 
 
 # Change environ to automatically call putenv() and unsetenv()
-from _collections_abc import MutableMapping
+from _collections_abc import MutableMapping, Mapping
 
 class _Environ(MutableMapping):
     def __init__(self, data, encodekey, decodekey, encodevalue, decodevalue):
@@ -713,6 +715,24 @@ class _Environ(MutableMapping):
         if key not in self:
             self[key] = value
         return self[key]
+
+    def __ior__(self, other):
+        self.update(other)
+        return self
+
+    def __or__(self, other):
+        if not isinstance(other, Mapping):
+            return NotImplemented
+        new = dict(self)
+        new.update(other)
+        return new
+
+    def __ror__(self, other):
+        if not isinstance(other, Mapping):
+            return NotImplemented
+        new = dict(other)
+        new.update(self)
+        return new
 
 def _createenviron():
     if name == 'nt':
@@ -846,12 +866,8 @@ if _exists("fork") and not _exists("spawnv") and _exists("execv"):
                 wpid, sts = waitpid(pid, 0)
                 if WIFSTOPPED(sts):
                     continue
-                elif WIFSIGNALED(sts):
-                    return -WTERMSIG(sts)
-                elif WIFEXITED(sts):
-                    return WEXITSTATUS(sts)
-                else:
-                    raise OSError("Not stopped, signaled or exited???")
+
+                return waitstatus_to_exitcode(sts)
 
     def spawnv(mode, file, args):
         """spawnv(mode, file, args) -> integer
@@ -1060,8 +1076,7 @@ class PathLike(abc.ABC):
             return _check_methods(subclass, '__fspath__')
         return NotImplemented
 
-    def __class_getitem__(cls, type):
-        return cls
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 if name == 'nt':

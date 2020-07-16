@@ -421,7 +421,7 @@ The :class:`SequenceMatcher` class has this constructor:
       is not changed.
 
 
-   .. method:: find_longest_match(alo, ahi, blo, bhi)
+   .. method:: find_longest_match(alo=0, ahi=None, blo=0, bhi=None)
 
       Find longest matching block in ``a[alo:ahi]`` and ``b[blo:bhi]``.
 
@@ -457,6 +457,9 @@ The :class:`SequenceMatcher` class has this constructor:
       If no blocks match, this returns ``(alo, blo, 0)``.
 
       This method returns a :term:`named tuple` ``Match(a, b, size)``.
+
+      .. versionchanged:: 3.9
+         Added default arguments.
 
 
    .. method:: get_matching_blocks()

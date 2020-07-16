@@ -6,7 +6,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include <ctype.h>
 
 /*[clinic input]
@@ -20,11 +20,17 @@ typedef struct {
     PyObject *StructError;
 } _structmodulestate;
 
-#define _structmodulestate(o) ((_structmodulestate *)PyModule_GetState(o))
+static inline _structmodulestate*
+get_struct_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_structmodulestate *)state;
+}
 
 static struct PyModuleDef _structmodule;
 
-#define _structmodulestate_global _structmodulestate(PyState_FindModule(&_structmodule))
+#define _structmodulestate_global get_struct_state(PyState_FindModule(&_structmodule))
 
 /* The translation function for each format character is table driven */
 typedef struct _formatdef {
@@ -115,7 +121,7 @@ get_pylong(PyObject *v)
     if (!PyLong_Check(v)) {
         /* Not an integer;  try to use __index__ to convert. */
         if (PyIndex_Check(v)) {
-            v = PyNumber_Index(v);
+            v = _PyNumber_Index(v);
             if (v == NULL)
                 return NULL;
         }
@@ -1290,6 +1296,11 @@ prepare_s(PyStructObject *self)
     size_t ncodes;
 
     fmt = PyBytes_AS_STRING(self->s_format);
+    if (strlen(fmt) != (size_t)PyBytes_GET_SIZE(self->s_format)) {
+        PyErr_SetString(_structmodulestate_global->StructError,
+                        "embedded null character");
+        return -1;
+    }
 
     f = whichtable(&fmt);
 
@@ -1635,6 +1646,7 @@ unpackiter_dealloc(unpackiterobject *self)
 static int
 unpackiter_traverse(unpackiterobject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->so);
     Py_VISIT(self->buf.obj);
     return 0;
@@ -1779,7 +1791,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset, char*
             if (e->format == 's') {
                 Py_ssize_t n;
                 int isstring;
-                void *p;
+                const void *p;
                 isstring = PyBytes_Check(v);
                 if (!isstring && !PyByteArray_Check(v)) {
                     PyErr_SetString(_structmodulestate_global->StructError,
@@ -1801,7 +1813,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset, char*
             } else if (e->format == 'p') {
                 Py_ssize_t n;
                 int isstring;
-                void *p;
+                const void *p;
                 isstring = PyBytes_Check(v);
                 if (!isstring && !PyByteArray_Check(v)) {
                     PyErr_SetString(_structmodulestate_global->StructError,
@@ -2310,18 +2322,24 @@ The variable struct.error is an exception raised on errors.\n");
 static int
 _structmodule_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    Py_VISIT(_structmodulestate(module)->PyStructType);
-    Py_VISIT(_structmodulestate(module)->unpackiter_type);
-    Py_VISIT(_structmodulestate(module)->StructError);
+    _structmodulestate *state = (_structmodulestate *)PyModule_GetState(module);
+    if (state) {
+        Py_VISIT(state->PyStructType);
+        Py_VISIT(state->unpackiter_type);
+        Py_VISIT(state->StructError);
+    }
     return 0;
 }
 
 static int
 _structmodule_clear(PyObject *module)
 {
-    Py_CLEAR(_structmodulestate(module)->PyStructType);
-    Py_CLEAR(_structmodulestate(module)->unpackiter_type);
-    Py_CLEAR(_structmodulestate(module)->StructError);
+    _structmodulestate *state = (_structmodulestate *)PyModule_GetState(module);
+    if (state) {
+        Py_CLEAR(state->PyStructType);
+        Py_CLEAR(state->unpackiter_type);
+        Py_CLEAR(state->StructError);
+    }
     return 0;
 }
 
@@ -2358,13 +2376,13 @@ PyInit__struct(void)
     }
     Py_INCREF(PyStructType);
     PyModule_AddObject(m, "Struct", PyStructType);
-    _structmodulestate(m)->PyStructType = PyStructType;
+    get_struct_state(m)->PyStructType = PyStructType;
 
     PyObject *unpackiter_type = PyType_FromSpec(&unpackiter_type_spec);
     if (unpackiter_type == NULL) {
         return NULL;
     }
-    _structmodulestate(m)->unpackiter_type = unpackiter_type;
+    get_struct_state(m)->unpackiter_type = unpackiter_type;
 
     /* Check endian and swap in faster functions */
     {
@@ -2395,6 +2413,9 @@ PyInit__struct(void)
                        "unknown" float format */
                     if (ptr->format == 'd' || ptr->format == 'f')
                         break;
+                    /* Skip _Bool, semantics are different for standard size */
+                    if (ptr->format == '?')
+                        break;
                     ptr->pack = native->pack;
                     ptr->unpack = native->unpack;
                     break;
@@ -2411,7 +2432,7 @@ PyInit__struct(void)
         return NULL;
     Py_INCREF(StructError);
     PyModule_AddObject(m, "error", StructError);
-    _structmodulestate(m)->StructError = StructError;
+    get_struct_state(m)->StructError = StructError;
 
     return m;
 }
