@@ -1,6 +1,8 @@
 #include "Python.h"
 #include "frameobject.h"
 
+#include <stdbool.h>
+
 #include <ffi.h>
 #ifdef MS_WIN32
 #include <windows.h>
