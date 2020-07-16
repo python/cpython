@@ -2719,19 +2719,18 @@ static PyObject *
 _curses_color_content_impl(PyObject *module, int color_number)
 /*[clinic end generated code: output=17b466df7054e0de input=c10ef58f694b13ee]*/
 {
-    PyObject *return_value = NULL;
     _NCURSES_COLOR_VAL_TYPE r,g,b;
 
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
     if (_COLOR_CONTENT_FUNC(color_number, &r, &g, &b) != ERR)
-        return_value = Py_BuildValue("(iii)", r, g, b);
-    else
+        return Py_BuildValue("(iii)", r, g, b);
+    else {
         PyErr_SetString(PyCursesError,
                         "Argument 1 was out of range. Check value of COLORS.");
-
-    return return_value;
+        return NULL;
+    }
 }
 
 #undef _COLOR_CONTENT_FUNC
@@ -2756,7 +2755,7 @@ _curses_color_pair_impl(PyObject *module, int color_number)
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    return PyLong_FromLong((long) (color_number << 8));
+    return  PyLong_FromLong(color_pair_to_attr(color_number));
 }
 
 /*[clinic input]
