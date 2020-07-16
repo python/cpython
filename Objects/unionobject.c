@@ -44,17 +44,11 @@ static PyMemberDef union_members[] = {
     {0}
 };
 
-
-// TODO; MM: Redo the implementation of this method;
 static PyObject *
 union_getattro(PyObject *self, PyObject *name)
 {
-    // printf("union_getattro");
     unionobject *alias = (unionobject *) self;
-    // PyObject_Print(name, stdout, 0);
-    // printf("tp_name: (%s)\n", Py_TYPE(name)->tp_name);
-    return alias->args;
-    // return PyObject_GenericGetAttr(alias, name);
+    return PyObject_GenericGetAttr(alias, name);
 }
 
 // TODO: MM: Implement this for isinstance checks
@@ -102,8 +96,8 @@ union_richcompare(PyObject *a, PyObject *b, int op)
     unionobject *aa = (unionobject *)a;
     if (is_typing_name(b, "_UnionGenericAlias")) {
         PyObject* b_args = PyObject_GetAttrString(b, "__args__");
-        printf("\n");
-        PyObject_Print(b_args, stdout, 0);
+        printf("\n: Aa->args");
+        // PyObject_Print(b_args, stdout, 0);
         PyObject_Print(aa->args, stdout, 0);
         return PyObject_RichCompare(aa->args, b_args, Py_EQ);
     }
