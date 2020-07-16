@@ -3802,14 +3802,10 @@ type_or(PyTypeObject* self, PyObject* param) {
         PyTuple_SET_ITEM(tuple, tuple_size, param);
         Py_DECREF(existingArgs);
 
-    } else if (param == Py_None) {
-        PyTypeObject *type = Py_TYPE(param);
-        tuple=PyTuple_Pack(2, self, type);
-    } else if (self == Py_None) {
-        PyTypeObject *type = Py_TYPE(self);
-        tuple=PyTuple_Pack(2, type, param);
     } else {
-        tuple=PyTuple_Pack(2, self, param);
+        PyTypeObject *param_type = param == Py_None ? Py_TYPE(param) : param;
+        PyTypeObject *self_type = self == Py_None ? Py_TYPE(self) : self;
+        tuple=PyTuple_Pack(2, self_type, param_type);
     }
     PyObject *newUnionType=Py_Union(tuple);
     Py_DECREF(tuple);
