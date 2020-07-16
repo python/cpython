@@ -293,6 +293,19 @@ class TestCurses(unittest.TestCase):
         if hasattr(curses, 'use_default_colors'):
             curses.use_default_colors()
 
+        self.assertRaises(ValueError, curses.color_content, -1)
+        self.assertRaises(ValueError, curses.color_content, curses.COLORS + 1)
+        self.assertRaises(ValueError, curses.color_content, -2**31 - 1)
+        self.assertRaises(ValueError, curses.color_content, 2**31)
+        self.assertRaises(ValueError, curses.color_content, -2**63 - 1)
+        self.assertRaises(ValueError, curses.color_content, 2**63 - 1)
+        self.assertRaises(ValueError, curses.pair_content, -1)
+        self.assertRaises(ValueError, curses.pair_content, curses.COLOR_PAIRS)
+        self.assertRaises(ValueError, curses.pair_content, -2**31 - 1)
+        self.assertRaises(ValueError, curses.pair_content, 2**31)
+        self.assertRaises(ValueError, curses.pair_content, -2**63 - 1)
+        self.assertRaises(ValueError, curses.pair_content, 2**63 - 1)
+
     @requires_curses_func('keyname')
     def test_keyname(self):
         curses.keyname(13)
