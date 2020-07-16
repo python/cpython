@@ -251,14 +251,13 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
 /*[clinic end generated code: output=fbd04d443e764ec2 input=89db6b19c6b126bf]*/
 {
     if (errors == NULL) {
-        Py_XSETREF(self->errors, _PyUnicode_FromId(&PyId_strict));
-        if (self->errors == NULL)
+        errors = _PyUnicode_FromId(&PyId_strict);
+        if (errors == NULL) {
             return -1;
+        }
     }
-    else {
-        Py_XSETREF(self->errors, errors);
-    }
-    Py_INCREF(self->errors);
+    Py_INCREF(errors);
+    Py_XSETREF(self->errors, errors);
 
     Py_INCREF(decoder);
     Py_XSETREF(self->decoder, decoder);
