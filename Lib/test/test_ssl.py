@@ -72,7 +72,7 @@ NOKIACERT = data_file("nokia.pem")
 NULLBYTECERT = data_file("nullbytecert.pem")
 TALOS_INVALID_CRLDP = data_file("talos-2019-0758.pem")
 
-DHFILE = data_file("dh1024.pem")
+DHFILE = data_file("ffdh3072.pem")
 BYTES_DHFILE = os.fsencode(DHFILE)
 
 
@@ -228,9 +228,9 @@ class BasicSocketTests(unittest.TestCase):
                           (('commonName', 'localhost'),))
                         )
         # Note the next three asserts will fail if the keys are regenerated
-        self.assertEqual(p['notAfter'], asn1time('Oct  5 23:01:56 2020 GMT'))
-        self.assertEqual(p['notBefore'], asn1time('Oct  8 23:01:56 2010 GMT'))
-        self.assertEqual(p['serialNumber'], 'D7C7381919AFC24E')
+        self.assertEqual(p['notAfter'], asn1time('Aug 26 14:23:15 2028 GMT'))
+        self.assertEqual(p['notBefore'], asn1time('Aug 29 14:23:15 2018 GMT'))
+        self.assertEqual(p['serialNumber'], '98A7CF88C74A32ED')
         self.assertEqual(p['subject'],
                          ((('countryName', 'XY'),),
                           (('localityName', 'Castle Anthrax'),),
