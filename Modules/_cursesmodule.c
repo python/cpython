@@ -406,7 +406,7 @@ color_converter(PyObject *arg, void *ptr)
     int overflow;
 
     color_number = PyLong_AsLongAndOverflow(arg, &overflow);
-    if (PyErr_Occurred())
+    if (color_number == -1 && PyErr_Occurred())
         return 0;
 
     if (overflow > 0 || color_number > COLORS) {
@@ -439,7 +439,7 @@ pair_converter(PyObject *arg, void *ptr)
     int overflow;
 
     pair_number = PyLong_AsLongAndOverflow(arg, &overflow);
-    if (PyErr_Occurred())
+    if (pair_number == -1 && PyErr_Occurred())
         return 0;
 
     if (overflow > 0 || pair_number > COLOR_PAIRS - 1) {
@@ -472,7 +472,7 @@ component_converter(PyObject *arg, void *ptr)
     int overflow;
 
     component = PyLong_AsLongAndOverflow(arg, &overflow);
-    if (PyErr_Occurred())
+    if (component == -1 && PyErr_Occurred())
         return 0;
 
     if (overflow > 0 || component > 1000) {
