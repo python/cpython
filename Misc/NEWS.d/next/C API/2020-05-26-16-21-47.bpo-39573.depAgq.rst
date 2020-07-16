@@ -1,0 +1,5 @@
+Convert :c:func:`Py_REFCNT` and :c:func:`Py_SIZE` macros to static inline
+functions. They cannot be used as l-value anymore: use
+:c:func:`Py_SET_REFCNT` and :c:func:`Py_SET_SIZE` to set an object reference
+count and size. This change is backward incompatible on purpose, to prepare
+the C API for an opaque :c:type:`PyObject` structure.

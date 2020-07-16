@@ -1,1 +1,0 @@
-Remove obsolete check for `__args__` in bdb.Bdb.format_stack_entry.

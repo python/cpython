@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* === Object Protocol ================================================== */
 
 #ifdef PY_SSIZE_T_CLEAN
@@ -65,15 +61,19 @@ PyVectorcall_NARGS(size_t n)
 static inline vectorcallfunc
 PyVectorcall_Function(PyObject *callable)
 {
+    PyTypeObject *tp;
+    Py_ssize_t offset;
+    vectorcallfunc *ptr;
+
     assert(callable != NULL);
-    PyTypeObject *tp = Py_TYPE(callable);
+    tp = Py_TYPE(callable);
     if (!PyType_HasFeature(tp, Py_TPFLAGS_HAVE_VECTORCALL)) {
         return NULL;
     }
     assert(PyCallable_Check(callable));
-    Py_ssize_t offset = tp->tp_vectorcall_offset;
+    offset = tp->tp_vectorcall_offset;
     assert(offset > 0);
-    vectorcallfunc *ptr = (vectorcallfunc *)(((char *)callable) + offset);
+    ptr = (vectorcallfunc *)(((char *)callable) + offset);
     return *ptr;
 }
 
@@ -100,15 +100,18 @@ _PyObject_VectorcallTstate(PyThreadState *tstate, PyObject *callable,
                            PyObject *const *args, size_t nargsf,
                            PyObject *kwnames)
 {
+    vectorcallfunc func;
+    PyObject *res;
+
     assert(kwnames == NULL || PyTuple_Check(kwnames));
     assert(args != NULL || PyVectorcall_NARGS(nargsf) == 0);
 
-    vectorcallfunc func = PyVectorcall_Function(callable);
+    func = PyVectorcall_Function(callable);
     if (func == NULL) {
         Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
         return _PyObject_MakeTpCall(tstate, callable, args, nargs, kwnames);
     }
-    PyObject *res = func(callable, args, nargsf, kwnames);
+    res = func(callable, args, nargsf, kwnames);
     return _Py_CheckFunctionResult(tstate, callable, res, NULL);
 }
 
@@ -142,12 +145,18 @@ PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
    "tuple" and keyword arguments "dict". "dict" may also be NULL */
 PyAPI_FUNC(PyObject *) PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict);
 
+static inline PyObject *
+_PyObject_FastCallTstate(PyThreadState *tstate, PyObject *func, PyObject *const *args, Py_ssize_t nargs)
+{
+    return _PyObject_VectorcallTstate(tstate, func, args, (size_t)nargs, NULL);
+}
+
 /* Same as PyObject_Vectorcall except without keyword arguments */
 static inline PyObject *
 _PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
 {
     PyThreadState *tstate = PyThreadState_GET();
-    return _PyObject_VectorcallTstate(tstate, func, args, (size_t)nargs, NULL);
+    return _PyObject_FastCallTstate(tstate, func, args, nargs);
 }
 
 /* Call a callable without any arguments
@@ -162,12 +171,16 @@ _PyObject_CallNoArg(PyObject *func) {
 static inline PyObject *
 PyObject_CallOneArg(PyObject *func, PyObject *arg)
 {
-    assert(arg != NULL);
     PyObject *_args[2];
-    PyObject **args = _args + 1;  // For PY_VECTORCALL_ARGUMENTS_OFFSET
+    PyObject **args;
+    PyThreadState *tstate;
+    size_t nargsf;
+
+    assert(arg != NULL);
+    args = _args + 1;  // For PY_VECTORCALL_ARGUMENTS_OFFSET
     args[0] = arg;
-    PyThreadState *tstate = PyThreadState_GET();
-    size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    tstate = PyThreadState_GET();
+    nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
     return _PyObject_VectorcallTstate(tstate, func, args, nargsf, NULL);
 }
 
@@ -185,8 +198,9 @@ PyObject_CallMethodNoArgs(PyObject *self, PyObject *name)
 static inline PyObject *
 PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
 {
-    assert(arg != NULL);
     PyObject *args[2] = {self, arg};
+
+    assert(arg != NULL);
     return PyObject_VectorcallMethod(name, args,
            2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
@@ -229,8 +243,9 @@ _PyObject_CallMethodIdNoArgs(PyObject *self, _Py_Identifier *name)
 static inline PyObject *
 _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg)
 {
-    assert(arg != NULL);
     PyObject *args[2] = {self, arg};
+
+    assert(arg != NULL);
     return _PyObject_VectorcallMethodId(name, args,
            2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
@@ -245,9 +260,7 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 /* === New Buffer API ============================================ */
 
 /* Return 1 if the getbuffer function is available, otherwise return 0. */
-#define PyObject_CheckBuffer(obj) \
-    ((Py_TYPE(obj)->tp_as_buffer != NULL) &&  \
-     (Py_TYPE(obj)->tp_as_buffer->bf_getbuffer != NULL))
+PyAPI_FUNC(int) PyObject_CheckBuffer(PyObject *obj);
 
 /* This is a C-API version of the getbuffer function call.  It checks
    to make sure object has the required function pointer and issues the
@@ -318,12 +331,6 @@ PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
     (Py_TYPE(obj)->tp_iternext != NULL && \
      Py_TYPE(obj)->tp_iternext != &_PyObject_NextNotImplemented)
 
-/* === Number Protocol ================================================== */
-
-#define PyIndex_Check(obj)                              \
-    (Py_TYPE(obj)->tp_as_number != NULL &&            \
-     Py_TYPE(obj)->tp_as_number->nb_index != NULL)
-
 /* === Sequence protocol ================================================ */
 
 /* Assume tp_as_sequence and sq_item exist and that 'i' does not
@@ -368,6 +375,5 @@ PyAPI_FUNC(void) _Py_add_one_to_index_C(int nd, Py_ssize_t *index,
 /* Convert Python int to Py_ssize_t. Do nothing if the argument is None. */
 PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
 
-#ifdef __cplusplus
-}
-#endif
+/* Same as PyNumber_Index but can return an instance of a subclass of int. */
+PyAPI_FUNC(PyObject *) _PyNumber_Index(PyObject *o);

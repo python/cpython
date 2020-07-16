@@ -1,7 +1,6 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
 #include "pycore_traceback.h"
-#include "pythread.h"
 #include <signal.h>
 #include <object.h>
 #include <frameobject.h>
@@ -540,7 +539,7 @@ faulthandler_py_enable(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_XSETREF(fatal_error.file, file);
     fatal_error.fd = fd;
     fatal_error.all_threads = all_threads;
-    fatal_error.interp = tstate->interp;
+    fatal_error.interp = PyThreadState_GetInterpreter(tstate);
 
     if (faulthandler_enable() < 0) {
         return NULL;
@@ -756,7 +755,7 @@ faulthandler_dump_traceback_later(PyObject *self,
     /* the downcast is safe: we check that 0 < timeout_us < PY_TIMEOUT_MAX */
     thread.timeout_us = (PY_TIMEOUT_T)timeout_us;
     thread.repeat = repeat;
-    thread.interp = tstate->interp;
+    thread.interp = PyThreadState_GetInterpreter(tstate);
     thread.exit = exit;
     thread.header = header;
     thread.header_len = header_len;
@@ -911,10 +910,9 @@ faulthandler_register_py(PyObject *self,
         return NULL;
 
     if (user_signals == NULL) {
-        user_signals = PyMem_Malloc(NSIG * sizeof(user_signal_t));
+        user_signals = PyMem_Calloc(NSIG, sizeof(user_signal_t));
         if (user_signals == NULL)
             return PyErr_NoMemory();
-        memset(user_signals, 0, NSIG * sizeof(user_signal_t));
     }
     user = &user_signals[signum];
 
@@ -939,7 +937,7 @@ faulthandler_register_py(PyObject *self,
     user->fd = fd;
     user->all_threads = all_threads;
     user->chain = chain;
-    user->interp = tstate->interp;
+    user->interp = PyThreadState_GetInterpreter(tstate);
     user->enabled = 1;
 
     Py_RETURN_NONE;
@@ -1293,59 +1291,55 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}  /* sentinel */
 };
 
+static int
+PyExec_faulthandler(PyObject *module) {
+    /* Add constants for unit tests */
+#ifdef MS_WINDOWS
+    /* RaiseException() codes (prefixed by an underscore) */
+    if (PyModule_AddIntConstant(module, "_EXCEPTION_ACCESS_VIOLATION",
+                                EXCEPTION_ACCESS_VIOLATION)) {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(module, "_EXCEPTION_INT_DIVIDE_BY_ZERO",
+                                EXCEPTION_INT_DIVIDE_BY_ZERO)) {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(module, "_EXCEPTION_STACK_OVERFLOW",
+                                EXCEPTION_STACK_OVERFLOW)) {
+        return -1;
+    }
+
+    /* RaiseException() flags (prefixed by an underscore) */
+    if (PyModule_AddIntConstant(module, "_EXCEPTION_NONCONTINUABLE",
+                                EXCEPTION_NONCONTINUABLE)) {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(module, "_EXCEPTION_NONCONTINUABLE_EXCEPTION",
+                                EXCEPTION_NONCONTINUABLE_EXCEPTION)) {
+        return -1;
+    }
+#endif
+    return 0;
+}
+
+static PyModuleDef_Slot faulthandler_slots[] = {
+    {Py_mod_exec, PyExec_faulthandler},
+    {0, NULL}
+};
+
 static struct PyModuleDef module_def = {
     PyModuleDef_HEAD_INIT,
-    "faulthandler",
-    module_doc,
-    0, /* non-negative size to be able to unload the module */
-    module_methods,
-    NULL,
-    faulthandler_traverse,
-    NULL,
-    NULL
+    .m_name = "faulthandler",
+    .m_doc = module_doc,
+    .m_methods = module_methods,
+    .m_traverse = faulthandler_traverse,
+    .m_slots = faulthandler_slots
 };
 
 PyMODINIT_FUNC
 PyInit_faulthandler(void)
 {
-    PyObject *m = PyModule_Create(&module_def);
-    if (m == NULL)
-        return NULL;
-
-    /* Add constants for unit tests */
-#ifdef MS_WINDOWS
-    /* RaiseException() codes (prefixed by an underscore) */
-    if (PyModule_AddIntConstant(m, "_EXCEPTION_ACCESS_VIOLATION",
-                                EXCEPTION_ACCESS_VIOLATION)) {
-        goto error;
-    }
-    if (PyModule_AddIntConstant(m, "_EXCEPTION_INT_DIVIDE_BY_ZERO",
-                                EXCEPTION_INT_DIVIDE_BY_ZERO)) {
-        goto error;
-    }
-    if (PyModule_AddIntConstant(m, "_EXCEPTION_STACK_OVERFLOW",
-                                EXCEPTION_STACK_OVERFLOW)) {
-        goto error;
-    }
-
-    /* RaiseException() flags (prefixed by an underscore) */
-    if (PyModule_AddIntConstant(m, "_EXCEPTION_NONCONTINUABLE",
-                                EXCEPTION_NONCONTINUABLE)) {
-        goto error;
-    }
-    if (PyModule_AddIntConstant(m, "_EXCEPTION_NONCONTINUABLE_EXCEPTION",
-                                EXCEPTION_NONCONTINUABLE_EXCEPTION)) {
-        goto error;
-    }
-#endif
-
-    return m;
-
-#ifdef MS_WINDOWS
-error:
-    Py_DECREF(m);
-    return NULL;
-#endif
+    return PyModuleDef_Init(&module_def);
 }
 
 static int

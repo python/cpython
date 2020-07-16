@@ -2,7 +2,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_runtime.h"  // _PyRuntime
 
 #if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
 /* clang MemorySanitizer doesn't yet understand getc_unlocked. */
@@ -76,7 +76,7 @@ PyFile_GetLine(PyObject *f, int n)
     }
 
     if (n < 0 && result != NULL && PyBytes_Check(result)) {
-        char *s = PyBytes_AS_STRING(result);
+        const char *s = PyBytes_AS_STRING(result);
         Py_ssize_t len = PyBytes_GET_SIZE(result);
         if (len == 0) {
             Py_DECREF(result);

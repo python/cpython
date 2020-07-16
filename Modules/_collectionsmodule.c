@@ -1,10 +1,10 @@
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
 #else
-#include <sys/types.h>          /* For size_t */
+#include <sys/types.h>            // size_t
 #endif
 
 /*[clinic input]
@@ -117,23 +117,9 @@ static PyTypeObject deque_type;
 #define CHECK_NOT_END(link)
 #endif
 
-/* A simple freelisting scheme is used to minimize calls to the memory
-   allocator.  It accommodates common use cases where new blocks are being
-   added at about the same rate as old blocks are being freed.
- */
-
-#define MAXFREEBLOCKS 16
-static Py_ssize_t numfreeblocks = 0;
-static block *freeblocks[MAXFREEBLOCKS];
-
 static block *
 newblock(void) {
-    block *b;
-    if (numfreeblocks) {
-        numfreeblocks--;
-        return freeblocks[numfreeblocks];
-    }
-    b = PyMem_Malloc(sizeof(block));
+    block *b = PyMem_Malloc(sizeof(block));
     if (b != NULL) {
         return b;
     }
@@ -144,12 +130,7 @@ newblock(void) {
 static void
 freeblock(block *b)
 {
-    if (numfreeblocks < MAXFREEBLOCKS) {
-        freeblocks[numfreeblocks] = b;
-        numfreeblocks++;
-    } else {
-        PyMem_Free(b);
-    }
+    PyMem_Free(b);
 }
 
 static PyObject *
@@ -489,7 +470,7 @@ deque_copy(PyObject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *result;
     dequeobject *old_deque = (dequeobject *)deque;
-    if (Py_TYPE(deque) == &deque_type) {
+    if (Py_IS_TYPE(deque, &deque_type)) {
         dequeobject *new_deque;
         PyObject *rv;
 
@@ -1609,6 +1590,8 @@ static PyMethodDef deque_methods[] = {
         METH_FASTCALL,            rotate_doc},
     {"__sizeof__",              (PyCFunction)deque_sizeof,
         METH_NOARGS,             sizeof_doc},
+    {"__class_getitem__",       (PyCFunction)Py_GenericAlias,
+        METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -1990,6 +1973,13 @@ defdict_missing(defdictobject *dd, PyObject *key)
     return value;
 }
 
+static inline PyObject*
+new_defdict(defdictobject *dd, PyObject *arg)
+{
+    return PyObject_CallFunctionObjArgs((PyObject*)Py_TYPE(dd),
+        dd->default_factory ? dd->default_factory : Py_None, arg, NULL);
+}
+
 PyDoc_STRVAR(defdict_copy_doc, "D.copy() -> a shallow copy of D.");
 
 static PyObject *
@@ -1999,11 +1989,7 @@ defdict_copy(defdictobject *dd, PyObject *Py_UNUSED(ignored))
        whose class constructor has the same signature.  Subclasses that
        define a different constructor signature must override copy().
     */
-
-    if (dd->default_factory == NULL)
-        return PyObject_CallFunctionObjArgs((PyObject*)Py_TYPE(dd), Py_None, dd, NULL);
-    return PyObject_CallFunctionObjArgs((PyObject*)Py_TYPE(dd),
-                                        dd->default_factory, dd, NULL);
+    return new_defdict(dd, (PyObject*)dd);
 }
 
 static PyObject *
@@ -2071,6 +2057,8 @@ static PyMethodDef defdict_methods[] = {
      defdict_copy_doc},
     {"__reduce__", (PyCFunction)defdict_reduce, METH_NOARGS,
      reduce_doc},
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("See PEP 585")},
     {NULL}
 };
 
@@ -2126,6 +2114,38 @@ defdict_repr(defdictobject *dd)
     Py_DECREF(baserepr);
     return result;
 }
+
+static PyObject*
+defdict_or(PyObject* left, PyObject* right)
+{
+    PyObject *self, *other;
+    if (PyObject_TypeCheck(left, &defdict_type)) {
+        self = left;
+        other = right;
+    }
+    else {
+        self = right;
+        other = left;
+    }
+    if (!PyDict_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    // Like copy(), this calls the object's class.
+    // Override __or__/__ror__ for subclasses with different constructors.
+    PyObject *new = new_defdict((defdictobject*)self, left);
+    if (!new) {
+        return NULL;
+    }
+    if (PyDict_Update(new, right)) {
+        Py_DECREF(new);
+        return NULL;
+    }
+    return new;
+}
+
+static PyNumberMethods defdict_as_number = {
+    .nb_or = defdict_or,
+};
 
 static int
 defdict_traverse(PyObject *self, visitproc visit, void *arg)
@@ -2198,7 +2218,7 @@ static PyTypeObject defdict_type = {
     0,                                  /* tp_setattr */
     0,                                  /* tp_as_async */
     (reprfunc)defdict_repr,             /* tp_repr */
-    0,                                  /* tp_as_number */
+    &defdict_as_number,                 /* tp_as_number */
     0,                                  /* tp_as_sequence */
     0,                                  /* tp_as_mapping */
     0,                                  /* tp_hash */
@@ -2454,6 +2474,14 @@ tuplegetter_reduce(_tuplegetterobject *self, PyObject *Py_UNUSED(ignored))
     return Py_BuildValue("(O(nO))", (PyObject*) Py_TYPE(self), self->index, self->doc);
 }
 
+static PyObject*
+tuplegetter_repr(_tuplegetterobject *self)
+{
+    return PyUnicode_FromFormat("%s(%zd, %R)",
+                                _PyType_Name(Py_TYPE(self)),
+                                self->index, self->doc);
+}
+
 
 static PyMemberDef tuplegetter_members[] = {
     {"__doc__",  T_OBJECT, offsetof(_tuplegetterobject, doc), 0},
@@ -2476,7 +2504,7 @@ static PyTypeObject tuplegetter_type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
+    (reprfunc)tuplegetter_repr,                 /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -2511,24 +2539,51 @@ static PyTypeObject tuplegetter_type = {
 
 /* module level code ********************************************************/
 
-PyDoc_STRVAR(module_doc,
+PyDoc_STRVAR(collections_doc,
 "High performance data structures.\n\
 - deque:        ordered collection accessible from endpoints only\n\
 - defaultdict:  dict subclass with a default value factory\n\
 ");
 
-static struct PyMethodDef module_functions[] = {
+static struct PyMethodDef collections_methods[] = {
     _COLLECTIONS__COUNT_ELEMENTS_METHODDEF
     {NULL,       NULL}          /* sentinel */
+};
+
+static int
+collections_exec(PyObject *module) {
+    PyTypeObject *typelist[] = {
+        &deque_type,
+        &defdict_type,
+        &PyODict_Type,
+        &dequeiter_type,
+        &dequereviter_type,
+        &tuplegetter_type
+    };
+
+    defdict_type.tp_base = &PyDict_Type;
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
+        if (PyModule_AddType(module, typelist[i]) < 0) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static struct PyModuleDef_Slot collections_slots[] = {
+    {Py_mod_exec, collections_exec},
+    {0, NULL}
 };
 
 static struct PyModuleDef _collectionsmodule = {
     PyModuleDef_HEAD_INIT,
     "_collections",
-    module_doc,
-    -1,
-    module_functions,
-    NULL,
+    collections_doc,
+    0,
+    collections_methods,
+    collections_slots,
     NULL,
     NULL,
     NULL
@@ -2537,40 +2592,5 @@ static struct PyModuleDef _collectionsmodule = {
 PyMODINIT_FUNC
 PyInit__collections(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&_collectionsmodule);
-    if (m == NULL)
-        return NULL;
-
-    if (PyType_Ready(&deque_type) < 0)
-        return NULL;
-    Py_INCREF(&deque_type);
-    PyModule_AddObject(m, "deque", (PyObject *)&deque_type);
-
-    defdict_type.tp_base = &PyDict_Type;
-    if (PyType_Ready(&defdict_type) < 0)
-        return NULL;
-    Py_INCREF(&defdict_type);
-    PyModule_AddObject(m, "defaultdict", (PyObject *)&defdict_type);
-
-    Py_INCREF(&PyODict_Type);
-    PyModule_AddObject(m, "OrderedDict", (PyObject *)&PyODict_Type);
-
-    if (PyType_Ready(&dequeiter_type) < 0)
-        return NULL;
-    Py_INCREF(&dequeiter_type);
-    PyModule_AddObject(m, "_deque_iterator", (PyObject *)&dequeiter_type);
-
-    if (PyType_Ready(&dequereviter_type) < 0)
-        return NULL;
-    Py_INCREF(&dequereviter_type);
-    PyModule_AddObject(m, "_deque_reverse_iterator", (PyObject *)&dequereviter_type);
-
-    if (PyType_Ready(&tuplegetter_type) < 0)
-        return NULL;
-    Py_INCREF(&tuplegetter_type);
-    PyModule_AddObject(m, "_tuplegetter", (PyObject *)&tuplegetter_type);
-
-    return m;
+    return PyModuleDef_Init(&_collectionsmodule);
 }
