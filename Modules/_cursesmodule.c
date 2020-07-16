@@ -141,10 +141,23 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #endif  /* defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS)  */
 
 #if _NCURSES_EXTENDED_COLOR_FUNCS
-#define _NCURSES_COLOR_VAL_TYPE        int
+#define _NCURSES_COLOR_VAL_TYPE         int
+#define _CURSES_INIT_COLOR_FUNC         init_extended_color
+#define _CURSES_INIT_PAIR_FUNC          init_extended_pair
+#define _COLOR_CONTENT_FUNC             extended_color_content
+#define _CURSES_PAIR_NUMBER_FUNC        extended_pair_content
 #else
-#define _NCURSES_COLOR_VAL_TYPE        short
+#define _NCURSES_COLOR_VAL_TYPE         short
+#define _CURSES_INIT_COLOR_FUNC         init_color
+#define _CURSES_INIT_PAIR_FUNC          init_pair
+#define _COLOR_CONTENT_FUNC             color_content
+#define _CURSES_PAIR_NUMBER_FUNC        pair_content
 #endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
+#define _CURSES_FUNC_NAME_STR(s)        #s
+
+#define _CURSES_INIT_COLOR_FUNC_NAME    _CURSES_FUNC_NAME_STR(_CURSES_INIT_COLOR_FUNC)
+#define _CURSES_INIT_PAIR_FUNC_NAME     _CURSES_FUNC_NAME_STR(_CURSES_INIT_PAIR_FUNC)
 
 /*[clinic input]
 module _curses
@@ -517,10 +530,6 @@ static int func_PyCursesInitialisedColor(void)
     PyCursesInitialisedColor;
     return 1;
 }
-
-/* _CURSES_FUNC_NAME_STR() is used by some of the         */
-/* color functions that have extended color alternatives  */
-#define _CURSES_FUNC_NAME_STR(s)  #s
 
 /*****************************************************************************
  The Window Object
@@ -2696,12 +2705,6 @@ _curses_cbreak_impl(PyObject *module, int flag)
 /*[clinic end generated code: output=9f9dee9664769751 input=150be619eb1f1458]*/
 NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
 
-#if _NCURSES_EXTENDED_COLOR_FUNCS
-#define _COLOR_CONTENT_FUNC   extended_color_content
-#else
-#define _COLOR_CONTENT_FUNC   color_content
-#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
-
 /*[clinic input]
 _curses.color_content
 
@@ -2732,8 +2735,6 @@ _curses_color_content_impl(PyObject *module, int color_number)
         return NULL;
     }
 }
-
-#undef _COLOR_CONTENT_FUNC
 
 /*[clinic input]
 _curses.color_pair
@@ -3146,14 +3147,6 @@ _curses_has_key_impl(PyObject *module, int key)
 }
 #endif
 
-#if _NCURSES_EXTENDED_COLOR_FUNCS
-#define _CURSES_INIT_COLOR_FUNC         init_extended_color
-#else
-#define _CURSES_INIT_COLOR_FUNC         init_color
-#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
-
-#define _CURSES_INIT_COLOR_FUNC_NAME    _CURSES_FUNC_NAME_STR(_CURSES_INIT_COLOR_FUNC)
-
 /*[clinic input]
 _curses.init_color
 
@@ -3185,17 +3178,6 @@ _curses_init_color_impl(PyObject *module, int color_number, short r, short g,
     return PyCursesCheckERR(_CURSES_INIT_COLOR_FUNC(color_number, r, g, b), _CURSES_INIT_COLOR_FUNC_NAME);
 }
 
-#undef _CURSES_INIT_COLOR_FUNC
-#undef _CURSES_INIT_COLOR_FUNC_NAME
-
-#if _NCURSES_EXTENDED_COLOR_FUNCS
-#define _CURSES_INIT_PAIR_FUNC    init_extended_pair
-#else
-#define _CURSES_INIT_PAIR_FUNC    init_pair
-#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
-
-#define _CURSES_INIT_PAIR_FUNC_NAME   _CURSES_FUNC_NAME_STR(_CURSES_INIT_PAIR_FUNC)
-
 /*[clinic input]
 _curses.init_pair
 
@@ -3222,9 +3204,6 @@ _curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
 
     return PyCursesCheckERR(_CURSES_INIT_PAIR_FUNC(pair_number, fg, bg), _CURSES_INIT_PAIR_FUNC_NAME);
 }
-
-#undef _CURSES_INIT_PAIR_FUNC
-#undef _CURSES_INIT_PAIR_FUNC_NAME
 
 static PyObject *ModDict;
 
@@ -3836,12 +3815,6 @@ static PyObject *
 _curses_noraw_impl(PyObject *module)
 /*[clinic end generated code: output=39894e5524c430cc input=6ec86692096dffb5]*/
 NoArgNoReturnFunctionBody(noraw)
-
-#if _NCURSES_EXTENDED_COLOR_FUNCS
-#define _CURSES_PAIR_NUMBER_FUNC  extended_pair_content
-#else
-#define _CURSES_PAIR_NUMBER_FUNC  pair_content
-#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
 
 /*[clinic input]
 _curses.pair_content
