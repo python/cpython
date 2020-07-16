@@ -2151,7 +2151,7 @@ class PyBuildExt(build_ext):
     def detect_ctypes(self):
         # Thomas Heller's _ctypes module
 
-        if (not sysconfig.get_config_var("LIBFFI_INCLUDEDIR") and
+        if (not sysconfig.get_config_var("LIBFFI_INCLUDEDIR") and MACOS and
             (is_macosx_at_least((10,15)) or '-arch arm64' in sysconfig.get_config_var("CFLAGS"))):
             self.use_system_libffi = True
         else:
