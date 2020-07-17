@@ -1,0 +1,2 @@
+When the ``MANPAGER`` and ``PAGER`` environment variables are not set,
+interactive :func:`help` now quits if enter is pressed on the last line.

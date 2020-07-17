@@ -1574,7 +1574,8 @@ def getpager():
     if sys.platform == 'win32':
         return lambda text: tempfilepager(plain(text), 'more <')
     if hasattr(os, 'system') and os.system('(less) 2>/dev/null') == 0:
-        return lambda text: pipepager(text, 'less')
+        cmd = 'less "-P?e(END) .(q to quit)" --quit-at-eof'
+        return lambda text: pipepager(text, cmd)
 
     import tempfile
     (fd, filename) = tempfile.mkstemp()
