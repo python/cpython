@@ -3772,13 +3772,35 @@ is_genericalias(PyObject *obj)
     return is_typing_name(obj, "GenericAlias");
 }
 
+static int
+is_new_type(PyObject *obj)
+{
+    if (!PyObject_IsInstance((PyObject *)obj, (PyObject *)&PyFunction_Type)) {
+        return 0;
+    }
+    PyObject *module = PyObject_GetAttrString((PyObject *)obj, "__module__");
+    if (module == NULL) {
+        return 0;
+    }
+    return PyUnicode_Check(module) && _PyUnicode_EqualToASCIIString(module, "typing");
+}
+
+static int
+is_not_unionable (PyObject *obj)
+{
+    return (obj != Py_None) &
+        !is_genericalias(obj) &&
+        !is_typevar(obj) &&
+        !is_new_type(obj) &&
+        (PyObject_IsInstance(obj, (PyObject *)&PyType_Type) != 1) &&
+        (PyObject_IsInstance(obj, (PyObject *)&Py_UnionType) != 1);
+}
 
 static PyObject *
 type_or(PyTypeObject* self, PyObject* param) {
     // Check param is a PyType or GenericAlias
-    if (param == NULL)
+    if ((param == NULL) || is_not_unionable(param)  || is_not_unionable(self))
     {
-        PyObject_Print(param, stdout, 0);
         PyErr_SetString(PyExc_TypeError, "'type' expected");
         return NULL;
     }
@@ -3795,7 +3817,6 @@ type_or(PyTypeObject* self, PyObject* param) {
         Py_DECREF(param_type);
         Py_DECREF(self_type);
     }
-    PyObject_Print(tuple, stdout, 0);
     PyObject *newUnionType=Py_Union(tuple);
     Py_DECREF(tuple);
     return newUnionType;
