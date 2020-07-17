@@ -19,6 +19,7 @@
 
 #include "Python.h"
 #include "datetime.h"
+#include "decimal.h"
 #include "marshal.h"
 #include "structmember.h"         // PyMemberDef
 #include <float.h>
@@ -2705,6 +2706,167 @@ test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
     return Py_BuildValue("(lll)", days, seconds, microseconds);
 }
 
+/* Test decimal API */
+static int decimal_initialized = 0;
+static PyObject *
+decimal_as_triple(PyObject *module, PyObject *dec)
+{
+    PyObject *tuple = NULL;
+    PyObject *sign, *hi, *lo;
+    mpd_uint128_triple_t triple;
+
+    (void)module;
+    if (!decimal_initialized) {
+       if (import_decimal() < 0) {
+            return NULL;
+       }
+
+       decimal_initialized = 1;
+    }
+
+    if (!PyDec_TypeCheck(dec)) {
+        PyErr_SetString(PyExc_TypeError,
+            "decimal_as_triple: argument must be a decimal");
+        return NULL;
+    }
+
+    triple = PyDec_AsUint128Triple(dec);
+
+    sign = PyLong_FromUnsignedLong(triple.sign);
+    if (sign == NULL) {
+        return NULL;
+    }
+
+    hi = PyLong_FromUnsignedLongLong(triple.hi);
+    if (hi == NULL) {
+        Py_DECREF(sign);
+        return NULL;
+    }
+
+    lo = PyLong_FromUnsignedLongLong(triple.lo);
+    if (lo == NULL) {
+        Py_DECREF(hi);
+        Py_DECREF(sign);
+        return NULL;
+    }
+
+    switch (triple.tag) {
+    case MPD_TRIPLE_QNAN:
+        assert(triple.exp == 0);
+        tuple = Py_BuildValue("(OOOs)", sign, hi, lo, "n");
+        break;
+
+    case MPD_TRIPLE_SNAN:
+        assert(triple.exp == 0);
+        tuple = Py_BuildValue("(OOOs)", sign, hi, lo, "N");
+        break;
+
+    case MPD_TRIPLE_INF:
+        assert(triple.hi == 0);
+        assert(triple.lo == 0);
+        assert(triple.exp == 0);
+        tuple = Py_BuildValue("(OOOs)", sign, hi, lo, "F");
+        break;
+
+    case MPD_TRIPLE_NORMAL:
+        tuple = Py_BuildValue("(OOOL)", sign, hi, lo, triple.exp);
+        break;
+
+    case MPD_TRIPLE_ERROR:
+        PyErr_SetString(PyExc_ValueError,
+            "value out of bounds for a uint128 triple");
+        break;
+
+    default:
+        PyErr_SetString(PyExc_RuntimeError,
+            "decimal_as_triple: internal error: unexpected tag");
+        break;
+    }
+
+    Py_DECREF(lo);
+    Py_DECREF(hi);
+    Py_DECREF(sign);
+
+    return tuple;
+}
+
+static PyObject *
+decimal_from_triple(PyObject *module, PyObject *tuple)
+{
+    mpd_uint128_triple_t triple = { MPD_TRIPLE_ERROR, 0, 0, 0, 0 };
+    PyObject *exp;
+    unsigned long sign;
+
+    (void)module;
+    if (!decimal_initialized) {
+       if (import_decimal() < 0) {
+            return NULL;
+       }
+
+       decimal_initialized = 1;
+    }
+
+    if (!PyTuple_Check(tuple)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a tuple");
+        return NULL;
+    }
+
+    if (PyTuple_GET_SIZE(tuple) != 4) {
+        PyErr_SetString(PyExc_ValueError, "tuple size must be 4");
+        return NULL;
+    }
+
+    sign = PyLong_AsUnsignedLong(PyTuple_GET_ITEM(tuple, 0));
+    if (sign == (unsigned long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (sign > UINT8_MAX) {
+        PyErr_SetString(PyExc_ValueError, "sign must be 0 or 1");
+        return NULL;
+    }
+    triple.sign = (uint8_t)sign;
+
+    triple.hi = PyLong_AsUnsignedLongLong(PyTuple_GET_ITEM(tuple, 1));
+    if (triple.hi == (unsigned long long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    triple.lo = PyLong_AsUnsignedLongLong(PyTuple_GET_ITEM(tuple, 2));
+    if (triple.lo == (unsigned long long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    exp = PyTuple_GET_ITEM(tuple, 3);
+    if (PyLong_Check(exp)) {
+        triple.tag = MPD_TRIPLE_NORMAL;
+        triple.exp = PyLong_AsLongLong(exp);
+        if (triple.exp == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+    }
+    else if (PyUnicode_Check(exp)) {
+        if (PyUnicode_CompareWithASCIIString(exp, "F") == 0) {
+            triple.tag = MPD_TRIPLE_INF;
+        }
+        else if (PyUnicode_CompareWithASCIIString(exp, "n") == 0) {
+            triple.tag = MPD_TRIPLE_QNAN;
+        }
+        else if (PyUnicode_CompareWithASCIIString(exp, "N") == 0) {
+            triple.tag = MPD_TRIPLE_SNAN;
+        }
+        else {
+            PyErr_SetString(PyExc_ValueError, "not a valid exponent");
+            return NULL;
+        }
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError, "exponent must be int or string");
+        return NULL;
+    }
+
+    return PyDec_FromUint128Triple(&triple);
+}
+
 /* test_thread_state spawns a thread of its own, and that thread releases
  * `thread_done` when it's finished.  The driver code has to know when the
  * thread finishes, because the thread uses a PyObject (the callable) that
@@ -5299,6 +5461,8 @@ static PyMethodDef TestMethods[] = {
     {"datetime_check_datetime",     datetime_check_datetime,     METH_VARARGS},
     {"datetime_check_delta",     datetime_check_delta,           METH_VARARGS},
     {"datetime_check_tzinfo",     datetime_check_tzinfo,         METH_VARARGS},
+    {"decimal_as_triple",       decimal_as_triple,               METH_O},
+    {"decimal_from_triple",     decimal_from_triple,             METH_O},
     {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},
     {"get_timezones_offset_zero",   get_timezones_offset_zero,   METH_NOARGS},
     {"get_timezone_utc_capi",    get_timezone_utc_capi,          METH_VARARGS},
