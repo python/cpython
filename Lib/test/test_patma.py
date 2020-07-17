@@ -84,13 +84,11 @@ class TestPatma(unittest.TestCase):
         x = 0
         class A:
             y = 1
-        z = None
         match x:
             case z := A.y:
                 pass
         self.assertEqual(x, 0)
         self.assertEqual(A.y, 1)
-        self.assertEqual(z, None)
 
     def test_patma_009(self):
         class A:
@@ -245,13 +243,11 @@ class TestPatma(unittest.TestCase):
     def test_patma_028(self):
         x = {0: 3}
         y = None
-        z = None
         match x:
             case {0: (z := 0 | 1 | 2)}:
                 y = 0
         self.assertEqual(x, {0: 3})
         self.assertEqual(y, None)
-        self.assertEqual(z, None)
 
     def test_patma_029(self):
         x = {}
@@ -402,13 +398,11 @@ class TestPatma(unittest.TestCase):
     def test_patma_043(self):
         x = 3
         y = None
-        z = None
         match x:
             case (z := 0) | (z := 1) | (z := 2) if z == x % 2:
                 y = 0
         self.assertEqual(x, 3)
         self.assertEqual(y, None)
-        self.assertEqual(z, None)
 
     def test_patma_044(self):
         x = ()
@@ -790,7 +784,6 @@ class TestPatma(unittest.TestCase):
 
     def test_patma_082(self):
         x = 0
-        z = None
         match x:
             case (z := 1) if not (x := 1):
                 y = 0
@@ -798,7 +791,6 @@ class TestPatma(unittest.TestCase):
                 y = 1
         self.assertEqual(x, 0)
         self.assertEqual(y, 1)
-        self.assertEqual(z, None)
 
     def test_patma_083(self):
         x = 0
@@ -812,13 +804,11 @@ class TestPatma(unittest.TestCase):
     def test_patma_084(self):
         x = 0
         y = None
-        z = None
         match x:
             case (z := 1):
                 y = 0
         self.assertEqual(x, 0)
         self.assertEqual(y, None)
-        self.assertEqual(z, None)
 
     def test_patma_085(self):
         x = 0
@@ -2318,6 +2308,78 @@ class TestPatma(unittest.TestCase):
         """
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
+
+    def test_patma_230(self):
+        def f(x):
+            match x:
+                case _:
+                    return 0
+        self.assertEqual(f(0), 0)
+        self.assertEqual(f(1), 0)
+        self.assertEqual(f(2), 0)
+        self.assertEqual(f(3), 0)
+
+    def test_patma_231(self):
+        def f(x):
+            match x:
+                case 0:
+                    return 0
+        self.assertEqual(f(0), 0)
+        self.assertIs(f(1), None)
+        self.assertIs(f(2), None)
+        self.assertIs(f(3), None)
+
+    def test_patma_232(self):
+        def f(x):
+            match x:
+                case 0:
+                    return 0
+                case _:
+                    return 1
+        self.assertEqual(f(0), 0)
+        self.assertEqual(f(1), 1)
+        self.assertEqual(f(2), 1)
+        self.assertEqual(f(3), 1)
+
+    def test_patma_233(self):
+        def f(x):
+            match x:
+                case 0:
+                    return 0
+                case 1:
+                    return 1
+        self.assertEqual(f(0), 0)
+        self.assertEqual(f(1), 1)
+        self.assertIs(f(2), None)
+        self.assertIs(f(3), None)
+
+    def test_patma_234(self):
+        def f(x):
+            match x:
+                case 0:
+                    return 0
+                case 1:
+                    return 1
+                case _:
+                    return 2
+        self.assertEqual(f(0), 0)
+        self.assertEqual(f(1), 1)
+        self.assertEqual(f(2), 2)
+        self.assertEqual(f(3), 2)
+
+    def test_patma_235(self):
+        def f(x):
+            match x:
+                case 0:
+                    return 0
+                case 1:
+                    return 1
+                case 2:
+                    return 2
+        self.assertEqual(f(0), 0)
+        self.assertEqual(f(1), 1)
+        self.assertEqual(f(2), 2)
+        self.assertIs(f(3), None)
 
     # TODO: PEP tests
     # TODO: Don't check side-effecty assignments

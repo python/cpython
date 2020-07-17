@@ -186,7 +186,7 @@ static int compiler_next_instr(basicblock *);
 static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *, int);
-static int compiler_error(struct compiler *, const char *);
+static int compiler_error(struct compiler *, const char *, ...);
 static int compiler_warn(struct compiler *, const char *, ...);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
 
@@ -4129,13 +4129,8 @@ validate_keywords(struct compiler *c, asdl_seq *keywords)
         for (Py_ssize_t j = i + 1; j < nkeywords; j++) {
             keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
             if (other->arg && !PyUnicode_Compare(key->arg, other->arg)) {
-                PyObject *msg = PyUnicode_FromFormat("keyword argument repeated: %U", key->arg);
-                if (msg == NULL) {
-                    return -1;
-                }
                 c->u->u_col_offset = other->col_offset;
-                compiler_error(c, PyUnicode_AsUTF8(msg));
-                Py_DECREF(msg);
+                compiler_error(c, "keyword argument repeated: %U", key->arg);
                 return -1;
             }
         }
@@ -5311,28 +5306,34 @@ compiler_annassign(struct compiler *c, stmt_ty s)
 */
 
 static int
-compiler_error(struct compiler *c, const char *errstr)
+compiler_error(struct compiler *c, const char *format, ...)
 {
-    PyObject *loc;
-    PyObject *u = NULL, *v = NULL;
-
-    loc = PyErr_ProgramTextObject(c->c_filename, c->u->u_lineno);
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    PyObject *msg = PyUnicode_FromFormatV(format, vargs);
+    va_end(vargs);
+    if (!msg) {
+        return 0;
+    }
+    PyObject *loc = PyErr_ProgramTextObject(c->c_filename, c->u->u_lineno);
     if (!loc) {
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    u = Py_BuildValue("(OiiO)", c->c_filename, c->u->u_lineno,
-                      c->u->u_col_offset + 1, loc);
-    if (!u)
+    PyObject *args = Py_BuildValue("O(OiiO)", msg, c->c_filename,
+                                   c->u->u_lineno, c->u->u_col_offset + 1, loc);
+    Py_DECREF(msg);
+    if (!args) {
         goto exit;
-    v = Py_BuildValue("(zO)", errstr, u);
-    if (!v)
-        goto exit;
-    PyErr_SetObject(PyExc_SyntaxError, v);
+    }
+    PyErr_SetObject(PyExc_SyntaxError, args);
  exit:
     Py_DECREF(loc);
-    Py_XDECREF(u);
-    Py_XDECREF(v);
+    Py_XDECREF(args);
     return 0;
 }
 
@@ -5444,23 +5445,13 @@ compiler_slice(struct compiler *c, expr_ty s)
 // For now, we eschew a full decision tree in favor of a simpler pass that just
 // tracks the most-recently-checked subclass and length info for the current
 // subject in the pattern_context struct. Experimentation suggests that the
-// current approach keeps most of the runtime benefits while dramatically
+// current approach can keep most of the runtime benefits while dramatically
 // reducing compiler complexity.
 
 
 #define WILDCARD_CHECK(N) \
     ((N)->kind == Name_kind && \
     _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
-
-
-static int
-pattern_load_name(struct compiler *c, expr_ty p, pattern_context *pc)
-{
-    assert(p->kind == Name_kind);
-    assert(p->v.Name.ctx == Load);
-    CHECK(compiler_nameop(c, p->v.Name.id, Load));
-    return 1;
-}
 
 
 static int
@@ -5473,7 +5464,8 @@ pattern_load_attribute(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     else {
         assert(p->v.Attribute.value->kind == Name_kind);
-        CHECK(pattern_load_name(c, p->v.Attribute.value, pc));
+        assert(p->v.Attribute.value->v.Name.ctx == Load);
+        CHECK(compiler_nameop(c, p->v.Attribute.value->v.Name.id, Load));
     }
     ADDOP_NAME(c, LOAD_ATTR, p->v.Attribute.attr, names);
     return 1;
@@ -5515,18 +5507,8 @@ pattern_store_name(struct compiler *c, expr_ty p, pattern_context *pc)
             return 0;
         }
         if (dupe) {
-            PyObject *str = PyUnicode_FromFormat(
+            return compiler_error(c,
                 "multiple assignments to name %R in pattern", p->v.Name.id);
-            if (!str) {
-                return 0;
-            }
-            const char *s = PyUnicode_AsUTF8(str);
-            if (!s) {
-                return 0;
-            }
-            compiler_error(c, s);
-            Py_DECREF(str);
-            return 0;
         }
     }
     CHECK(!PySet_Add(pc->stores, p->v.Name.id));
@@ -5564,9 +5546,10 @@ compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
         alt = asdl_seq_GET(p->v.BoolOp.values, i);
         pc->stores = PySet_New(stores_init);
         SET_LOC(c, alt);
-        if (alt->kind == Name_kind && alt->v.Name.ctx == Store && i != size - 1) {
-            compiler_warn(c, "name capture pattern makes remaining alternate "
-                             "patterns unreachable");
+        if (alt->kind == Name_kind && alt->v.Name.ctx == Store && i != size - 1)
+        {
+            compiler_warn(c, "name capture pattern %R makes remaining alternate "
+                             "patterns unreachable", alt->v.Name.id);
         }
         if (!pc->stores ||
             !compiler_addop(c, DUP_TOP) ||
@@ -5586,7 +5569,7 @@ compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
             }
             if (PySet_GET_SIZE(diff)) {
                 Py_DECREF(diff);
-                compiler_error(c, "pattern binds different names based on target");
+                compiler_error(c, "alternate patterns bind different names");
                 goto fail;
             }
             Py_DECREF(diff);
@@ -5625,7 +5608,8 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
     }
     else {
         assert(p->v.Call.func->kind == Name_kind);
-        CHECK(pattern_load_name(c, p->v.Call.func, pc));
+        assert(p->v.Call.func->v.Name.ctx == Load);
+        CHECK(compiler_nameop(c, p->v.Call.func->v.Name.id, Load));
     }
     PyObject *kwnames, *name;
     CHECK(kwnames = PyTuple_New(nkwargs));
@@ -5690,33 +5674,36 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP_COMPARE(c, GtE);
         ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
     }
-    Py_ssize_t i;
-    for (i = 0; i < size - star; i++) {
-        expr_ty key = asdl_seq_GET(keys, i);
-        if (!key) {
-            return compiler_error(c, "can't use starred pattern here; consider moving to end?");
+    if (size) {
+        Py_ssize_t i;
+        for (i = 0; i < size - star; i++) {
+            expr_ty key = asdl_seq_GET(keys, i);
+            if (!key) {
+                return compiler_error(c,
+                    "can't use starred pattern here; consider moving to end?");
+            }
+            if (key->kind == Attribute_kind) {
+                CHECK(pattern_load_attribute(c, key, pc));
+            }
+            else {
+                assert(key->kind == Constant_kind);
+                CHECK(pattern_load_constant(c, key, pc));
+            }
         }
-        if (key->kind == Attribute_kind) {
-            CHECK(pattern_load_attribute(c, key, pc));
-        }
-        else {
-            assert(key->kind == Constant_kind);
-            CHECK(pattern_load_constant(c, key, pc));
-        }
-    }
-    ADDOP_I(c, BUILD_TUPLE, size - star);
-    ADDOP_I(c, MATCH_KEYS, star);
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
-    for (i = 0; i < size - star; i++) {
-        expr_ty value = asdl_seq_GET(values, i);
-        if (WILDCARD_CHECK(value)) {
-            continue;
-        }
-        ADDOP_I(c, GET_INDEX, i);
-        CHECK(compiler_pattern(c, value, pc));
+        ADDOP_I(c, BUILD_TUPLE, size - star);
+        ADDOP_I(c, MATCH_KEYS, star);
         ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+        for (i = 0; i < size - star; i++) {
+            expr_ty value = asdl_seq_GET(values, i);
+            if (WILDCARD_CHECK(value)) {
+                continue;
+            }
+            ADDOP_I(c, GET_INDEX, i);
+            CHECK(compiler_pattern(c, value, pc));
+            ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+        }
+        ADDOP(c, POP_TOP);
     }
-    ADDOP(c, POP_TOP);
     if (star) {
         CHECK(pattern_store_name(c, asdl_seq_GET(values, size - 1), pc));
     }
@@ -5824,19 +5811,9 @@ static int
 compiler_pattern_namedexpr(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == NamedExpr_kind);
-    basicblock *block, *end;
-    CHECK(block = compiler_new_block(c));
-    CHECK(end = compiler_new_block(c));
     ADDOP(c, DUP_TOP);
-    CHECK(compiler_pattern(c, p->v.NamedExpr.value, pc));
-    ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
     CHECK(pattern_store_name(c, p->v.NamedExpr.target, pc));
-    ADDOP_LOAD_CONST(c, Py_True);
-    ADDOP_JREL(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, block);
-    ADDOP(c, ROT_TWO);
-    ADDOP(c, POP_TOP);
-    compiler_use_next_block(c, end);
+    CHECK(compiler_pattern(c, p->v.NamedExpr.value, pc));
     return 1;
 }
 
@@ -5884,21 +5861,22 @@ compiler_match(struct compiler *c, stmt_ty s)
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases);
     pattern_context pc;
-    int last, result;
+    int keep_subject, result;
     match_case_ty m = asdl_seq_GET(s->v.Match.cases, cases - 1);
-    int has_default = WILDCARD_CHECK(m->pattern);
+    int has_default = WILDCARD_CHECK(m->pattern) && 1 < cases;
     for (Py_ssize_t i = 0; i < cases - has_default; i++) {
-        last = i == cases - 1 - has_default;
+        keep_subject = i < cases - has_default - 1;
         m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
         if (!m->guard && m->pattern->kind == Name_kind &&
             m->pattern->v.Name.ctx == Store && i != cases - 1)
         {
-            CHECK(compiler_warn(c, "unguarded name capture pattern makes "
-                                   "remaining cases unreachable"));
+            CHECK(compiler_warn(c, "unguarded name capture pattern %R makes "
+                                   "remaining cases unreachable",
+                                   m->pattern->v.Name.id));
         }
         CHECK(next = compiler_new_block(c));
-        if (!last) {
+        if (keep_subject) {
             ADDOP(c, DUP_TOP);
         }
         pc.stores = NULL;
@@ -5909,17 +5887,18 @@ compiler_match(struct compiler *c, stmt_ty s)
         if (m->guard) {
             CHECK(compiler_jump_if(c, m->guard, next, 0));
         }
-        if (!last) {
+        if (keep_subject) {
             ADDOP(c, POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
-        ADDOP_JREL(c, JUMP_FORWARD, end);
+        if (i != cases - 1) {
+            ADDOP_JREL(c, JUMP_FORWARD, end);
+        }
         compiler_use_next_block(c, next);
     }
     if (has_default) {
-        if (cases == 1) {
-            ADDOP(c, POP_TOP);
-        }
+        // A trailing "case _" is common, and lets us save a bit of redundant
+        // pushing and popping in the loop above:
         m = asdl_seq_GET(s->v.Match.cases, cases - 1);
         if (m->guard) {
             CHECK(compiler_jump_if(c, m->guard, end, 0));

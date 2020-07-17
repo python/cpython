@@ -855,7 +855,10 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
     if (!nkeys) {
         return PyTuple_New(0);
     }
-    PyObject *get = NULL, *dummy = NULL, *seen = NULL, *values = NULL;
+    PyObject *get = NULL;
+    PyObject *dummy = NULL;
+    PyObject *seen = NULL;
+    PyObject *values = NULL;
     if (!PyDict_CheckExact(map)) {
         _Py_IDENTIFIER(get);
         get = _PyObject_GetAttrId(map, &PyId_get);
@@ -3634,6 +3637,7 @@ main_loop:
         }
 
         case TARGET(GET_INDEX): {
+            // PUSH(TOS[oparg])
             PyObject *item = PySequence_GetItem(TOP(), oparg);
             if (!item) {
                 goto error;
@@ -3643,6 +3647,12 @@ main_loop:
         }
 
         case TARGET(GET_INDEX_END): {
+            // PUSH(TOS[TOS1 - 1 - oparg])
+            // NOTE: We can't rely on support for negative indexing!
+            // Although PySequence_GetItem tries to correct negative indexes, we
+            // just use the length we already have at TOS1. In addition to
+            // avoiding tons of redundant __len__ calls, this also handles
+            // length changes during extraction more intuitively.
             Py_ssize_t len = PyLong_AsSsize_t(SECOND());
             if (len < 0) {
                 goto error;
@@ -3657,6 +3667,9 @@ main_loop:
         }
 
         case TARGET(GET_INDEX_SLICE): {
+            // PUSH(list(TOS[oparg & 0xFF: TOS1 - (oparg >> 8)]))
+            // NOTE: We can't rely on support for slicing or negative indexing!
+            // Ditto GET_INDEX_END's length handling.
             Py_ssize_t len = PyLong_AsSsize_t(SECOND());
             if (len < 0) {
                 goto error;
@@ -3664,19 +3677,29 @@ main_loop:
             Py_ssize_t start = oparg & 0xFF;
             Py_ssize_t stop = len - (oparg >> 8);
             assert(start <= stop);
-            PyObject *items = PyList_New(stop - start);
-            if (!items) {
-                goto error;
-            }
             PyObject *subject = TOP();
-            PyObject *item;
-            for (Py_ssize_t i = start; i < stop; i++) {
-                item = PySequence_GetItem(subject, i);
-                if (!item) {
-                    Py_DECREF(items);
+            PyObject *items;
+            if (PyList_CheckExact(subject)) {
+                items = PyList_GetSlice(subject, start, stop);
+                if (!items) {
                     goto error;
                 }
-                PyList_SET_ITEM(items, i - start, item);
+                assert(PyList_CheckExact(items));
+            }
+            else {
+                items = PyList_New(stop - start);
+                if (!items) {
+                    goto error;
+                }
+                PyObject *item;
+                for (Py_ssize_t i = start; i < stop; i++) {
+                    item = PySequence_GetItem(subject, i);
+                    if (!item) {
+                        Py_DECREF(items);
+                        goto error;
+                    }
+                    PyList_SET_ITEM(items, i - start, item);
+                }
             }
             PUSH(items);
             DISPATCH();
