@@ -16,8 +16,6 @@ extern "C" {
     PyObject_HEAD                                                           \
     /* Note: gi_frame can be NULL if the generator is "finished" */         \
     PyFrameObject *prefix##_frame;                                          \
-    /* True if generator is being executed. */                              \
-    char prefix##_running;                                                  \
     /* The code object backing the generator */                             \
     PyObject *prefix##_code;                                                \
     /* List of weak reference. */                                           \
