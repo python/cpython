@@ -2032,6 +2032,16 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.7
 
+.. attribute:: SSLContext.security_level
+
+   An integer representing the `security level
+   <https://www.openssl.org/docs/manmaster/man3/SSL_CTX_get_security_level.html>`_
+   for the context. This attribute is read-only.
+
+   .. availability:: OpenSSL 1.1.0 or newer
+
+   .. versionadded:: 3.10
+
 .. attribute:: SSLContext.verify_flags
 
    The flags for certificate verification operations. You can set flags like

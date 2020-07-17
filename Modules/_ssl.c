@@ -3746,6 +3746,15 @@ PyDoc_STRVAR(PySSLContext_num_tickets_doc,
 "Control the number of TLSv1.3 session tickets");
 #endif /* OpenSSL 1.1.1 */
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
+static PyObject *
+get_security_level(PySSLContext *self, void *c)
+{
+    return PyLong_FromLong(SSL_CTX_get_security_level(self->ctx));
+}
+PyDoc_STRVAR(PySSLContext_security_level_doc, "The current security level");
+#endif /* OpenSSL 1.1.0 */
+
 static PyObject *
 get_options(PySSLContext *self, void *c)
 {
@@ -4793,6 +4802,10 @@ static PyGetSetDef context_getsetlist[] = {
                      (setter) set_verify_flags, NULL},
     {"verify_mode", (getter) get_verify_mode,
                     (setter) set_verify_mode, NULL},
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
+    {"security_level", (getter) get_security_level,
+                       NULL, PySSLContext_security_level_doc},
+#endif
     {NULL},            /* sentinel */
 };
 
