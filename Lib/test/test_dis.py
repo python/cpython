@@ -360,8 +360,6 @@ dis_tryfinally = """\
              16 CALL_FUNCTION            0
              18 POP_TOP
              20 RERAISE
-             22 LOAD_CONST               0 (None)
-             24 RETURN_VALUE
 """ % (_tryfinally.__code__.co_firstlineno + 1,
        _tryfinally.__code__.co_firstlineno + 2,
        _tryfinally.__code__.co_firstlineno + 4,
@@ -385,8 +383,6 @@ dis_tryfinallyconst = """\
              16 CALL_FUNCTION            0
              18 POP_TOP
              20 RERAISE
-             22 LOAD_CONST               0 (None)
-             24 RETURN_VALUE
 """ % (_tryfinallyconst.__code__.co_firstlineno + 1,
        _tryfinallyconst.__code__.co_firstlineno + 2,
        _tryfinallyconst.__code__.co_firstlineno + 4,

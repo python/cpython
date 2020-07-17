@@ -1,0 +1,3 @@
+Bytecode optimizations are performed directly on the control flow graph.
+This will result in slightly more compact code objects in some
+circumstances.
