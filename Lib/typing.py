@@ -798,6 +798,12 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
     def __reduce__(self):
         return self._name
 
+    def __or__(self,right):
+        return Union[self,right]
+    def __ror__(self,right):
+        return Union[self,right]
+    def __invert__(self):
+        return Union[self,None]
 
 class _CallableGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):

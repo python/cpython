@@ -3776,15 +3776,9 @@ is_genericalias(PyObject *obj)
 static PyObject *
 type_or(PyTypeObject* self, PyObject* param) {
     // Check param is a PyType or GenericAlias
-    if ((param == NULL) ||
-        (
-         (param != Py_None) &
-         ! is_genericalias(param) &&
-         ! is_typevar(param) &&
-         (PyObject_IsInstance(param, (PyObject *) &PyType_Type) != 1) &&
-          (PyObject_IsInstance(param, (PyObject *) &Py_UnionType) != 1)
-        )
-            ) {
+    if (param == NULL)
+    {
+        PyObject_Print(param, stdout, 0);
         PyErr_SetString(PyExc_TypeError, "'type' expected");
         return NULL;
     }
@@ -3801,7 +3795,7 @@ type_or(PyTypeObject* self, PyObject* param) {
         Py_DECREF(param_type);
         Py_DECREF(self_type);
     }
-
+    PyObject_Print(tuple, stdout, 0);
     PyObject *newUnionType=Py_Union(tuple);
     Py_DECREF(tuple);
     return newUnionType;
