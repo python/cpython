@@ -1,7 +1,11 @@
 # Things remaining to do for final submission
 
 ## Mentor
-* Check with core-mentorship@python.org on infinite loop
+* Ask for feedback on core-mentorship@python.org
+* Update PR:
+  * https://www.google.com/search?q=update+github+pr&oq=update+github+PR&aqs=chrome.0.0l3.3732j0j7&sourceid=chrome&ie=UTF-8
+  * https://github.com/github/hub/issues/198#issuecomment-147059582
+  * Update draft email from email file
 
 ## Functionality
 * Allow `distutils.copytree` to update if there are symlinks to be overwritten.
@@ -25,6 +29,7 @@
 * Add suggestion to use shutil.{sym,}link rather than the `os.` versions
 
 ## Before submission
+* Remove this TODO file
 * Review https://devguide.python.org/committing/
 * Run `shutil` tests:  `git sh ./python Lib/test/test_shutil.py`
 * Rebase on latest upstream
