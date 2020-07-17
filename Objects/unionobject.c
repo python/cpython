@@ -14,7 +14,6 @@ unionobject_dealloc(PyObject *self)
     unionobject *alias = (unionobject *)self;
 
     _PyObject_GC_UNTRACK(self);
-    // Py_XDECREF(alias->origin);
     Py_XDECREF(alias->args);
     self->ob_type->tp_free(self);
 }
@@ -47,8 +46,7 @@ static PyMemberDef union_members[] = {
 static PyObject *
 union_getattro(PyObject *self, PyObject *name)
 {
-    unionobject *alias = (unionobject *) self;
-    return PyObject_GenericGetAttr(alias, name);
+    return PyObject_GenericGetAttr(self, name);
 }
 
 // TODO: MM: Implement this for isinstance checks
@@ -61,12 +59,12 @@ union_instancecheck(PyObject *self, PyObject *instance)
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
         if (PyType_Check(arg)) {
+            // MM: TODO: Find out best method to use for this.
             retval = PyObject_IsInstance(instance, arg);
         }
     }
     return self;
 }
-
 
 static int
 is_typing_name(PyObject *obj, char *name)
@@ -96,9 +94,6 @@ union_richcompare(PyObject *a, PyObject *b, int op)
     unionobject *aa = (unionobject *)a;
     if (is_typing_name(b, "_UnionGenericAlias")) {
         PyObject* b_args = PyObject_GetAttrString(b, "__args__");
-        printf("\n: Aa->args");
-        // PyObject_Print(b_args, stdout, 0);
-        PyObject_Print(aa->args, stdout, 0);
         return PyObject_RichCompare(aa->args, b_args, Py_EQ);
     }
     PyTypeObject *type = Py_TYPE(b);
@@ -151,4 +146,29 @@ Py_Union(PyObject *args)
     alias->args = args;
     _PyObject_GC_TRACK(alias);
     return (PyObject *) alias;
+}
+
+// TODO: MM - If we can somehow sort the arguments reliably, we wouldn't need the boolean parameter here.
+PyObject *
+Py_Union_AddToTuple(PyObject *existing_param, PyObject *new_param, int addFirst)
+{
+    int position = 0;
+    PyObject* existingArgs = PyObject_GetAttrString((PyObject *)existing_param, "__args__");
+    int tuple_size = PyTuple_GET_SIZE(existingArgs);
+    PyObject *tuple = PyTuple_New(tuple_size + 1);
+
+    if (addFirst != 0) {
+        position = 1;
+        PyTuple_SET_ITEM(tuple, 0, (PyObject *)new_param);
+    }
+
+    for (Py_ssize_t iarg = 0; iarg < tuple_size; iarg++) {
+        PyObject* arg = PyTuple_GET_ITEM(existingArgs, iarg);
+        PyTuple_SET_ITEM(tuple, iarg + position, arg);
+    }
+
+    if (!addFirst) {
+        PyTuple_SET_ITEM(tuple, tuple_size, new_param);
+    }
+    return tuple;
 }

@@ -3741,6 +3741,8 @@ type_is_gc(PyTypeObject *type)
     return type->tp_flags & Py_TPFLAGS_HEAPTYPE;
 }
 
+
+// TODO: MM: Move the following three functions?
 static int
 is_typing_name(PyObject *obj, char *name)
 {
@@ -3758,7 +3760,6 @@ is_typing_name(PyObject *obj, char *name)
     return res;
 }
 
-// TODO: MM: Move these?
 static int
 is_typevar(PyObject *obj)
 {
@@ -3777,36 +3778,30 @@ type_or(PyTypeObject* self, PyObject* param) {
     // Check param is a PyType or GenericAlias
     if ((param == NULL) ||
         (
-         (param != Py_None) &&
+         (param != Py_None) &
          ! is_genericalias(param) &&
          ! is_typevar(param) &&
-         (PyObject_IsInstance(param, (PyObject *) &PyType_Type) != 1)
+         (PyObject_IsInstance(param, (PyObject *) &PyType_Type) != 1) &&
+          (PyObject_IsInstance(param, (PyObject *) &Py_UnionType) != 1)
         )
             ) {
-        PyObject_Print(param, stdout, 0);
-        PyObject_Print(self, stdout, 0);
-        printf("%d", PyObject_IsInstance(param, (PyObject *) &PyType_Type));
         PyErr_SetString(PyExc_TypeError, "'type' expected");
         return NULL;
     }
-    PyObject *tuple;
-    // 1. Create a tuple with types
-    if (PyObject_IsInstance((PyObject *)self, (PyObject *) &Py_UnionType) && PyObject_IsInstance((PyObject *)param, (PyObject *) &_PyNone_Type) != 1) {
-        PyObject* existingArgs = PyObject_GetAttrString((PyObject *)self, "__args__");
-        int tuple_size = PyTuple_GET_SIZE(existingArgs);
-        tuple = PyTuple_New(tuple_size + 1);
-        for (Py_ssize_t iarg = 0; iarg < tuple_size; iarg++) {
-            PyObject* arg = PyTuple_GET_ITEM(existingArgs, iarg);
-            PyTuple_SET_ITEM(tuple, iarg, arg);
-        }
-        PyTuple_SET_ITEM(tuple, tuple_size, param);
-        Py_DECREF(existingArgs);
 
+    PyObject *tuple;
+    if (PyObject_IsInstance((PyObject *)self, (PyObject *) &Py_UnionType)) {
+        tuple = Py_Union_AddToTuple((PyObject *)self, param, 0);
+    } else if (PyObject_IsInstance(param, (PyObject *) &Py_UnionType)) {
+        tuple = Py_Union_AddToTuple(param, (PyObject *)self, 1);
     } else {
-        PyTypeObject *param_type = param == Py_None ? Py_TYPE(param) : param;
-        PyTypeObject *self_type = self == Py_None ? Py_TYPE(self) : self;
+        PyObject *param_type = param == Py_None ? (PyObject *)Py_TYPE(param) : param;
+        PyTypeObject *self_type = (PyObject *)self == Py_None ? Py_TYPE(self) : self;
         tuple=PyTuple_Pack(2, self_type, param_type);
+        Py_DECREF(param_type);
+        Py_DECREF(self_type);
     }
+
     PyObject *newUnionType=Py_Union(tuple);
     Py_DECREF(tuple);
     return newUnionType;
