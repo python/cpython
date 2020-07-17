@@ -2469,44 +2469,6 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
     }
 }
 
-static PyObject*
-union_to_tuple(PyObject* cls) {
-    // if (!strcmp(Py_TYPE(cls)->tp_name, "typing.Union")) {
-    //     PyObject* args  = PyObject_GetAttrString(cls, "__args__");
-    //     PyObject_Print(args, stdout, 0);
-    //     // return args;
-    // }
-    if (!strcmp(Py_TYPE(cls)->tp_name, "_GenericAlias")) {
-        PyObject* origin = PyObject_GetAttrString(cls, "__origin__");
-        //printf("origin = %p\n",origin);
-        if (origin == NULL) {
-            printf("origin == NULL, return cls");
-            return cls;
-        }
-        //printf("X origin = %s\n",Py_TYPE(cls)->tp_name);
-        if (PyObject_HasAttrString(origin, "_name")) {
-            PyObject* name = PyObject_GetAttrString(origin, "_name");
-            if (name==NULL) {
-                printf("_name = NULL\n");
-                Py_DECREF(origin);
-                return cls;
-            }
-            //printf("name = %s\n",Py_TYPE(name)->tp_name);
-            const char* data = (char*)PyUnicode_1BYTE_DATA(name);
-            //printf("DATA=%s\n",data);
-            if (data != NULL && !strcmp(data,"Union")) {
-                PyObject* new_cls = PyObject_GetAttrString(cls, "__args__");
-                if (new_cls != NULL) {
-                    printf("A down here.");
-                    cls = new_cls;
-                }
-            }
-            Py_DECREF(name);
-        }
-        Py_DECREF(origin);
-    }
-    return cls;
-}
 
 static int
 check_class(PyObject *cls, const char *error)
@@ -2576,8 +2538,6 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
     if (PyType_CheckExact(cls)) {
         return object_isinstance(inst, cls);
     }
-
-    cls = union_to_tuple(cls);
 
     if (PyTuple_Check(cls)) {
         /* Not a general sequence -- that opens up the road to
@@ -2666,8 +2626,6 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
             return 1;
         return recursive_issubclass(derived, cls);
     }
-
-    cls = union_to_tuple(cls);
 
     if (PyTuple_Check(cls)) {
 
