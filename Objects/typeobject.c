@@ -3799,7 +3799,7 @@ is_not_unionable (PyObject *obj)
 static PyObject *
 type_or(PyTypeObject* self, PyObject* param) {
     // Check param is a PyType or GenericAlias
-    if ((param == NULL) || is_not_unionable(param)  || is_not_unionable(self))
+    if ((param == NULL) || is_not_unionable(param)  || is_not_unionable((PyObject *)self))
     {
         PyErr_SetString(PyExc_TypeError, "'type' expected");
         return NULL;
