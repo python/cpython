@@ -5875,7 +5875,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *consts)
     PyObject *name = NULL;
     PyObject *freevars = NULL;
     PyObject *cellvars = NULL;
-    // PyObject *bytecode = NULL;
     Py_ssize_t nlocals;
     int nlocals_int;
     int flags;
