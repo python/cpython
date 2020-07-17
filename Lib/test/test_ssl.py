@@ -1270,6 +1270,25 @@ class ContextTests(unittest.TestCase):
             ctx.maximum_version = ssl.TLSVersion.TLSv1
 
 
+    @unittest.skipUnless(
+        hasattr(ssl.SSLContext, 'security_level'),
+        "requires OpenSSL >= 1.1.0"
+    )
+    def test_security_level(self):
+        ctx = ssl.SSLContext()
+        # The default security callback allows for levels between 0-5
+        # with OpenSSL defaulting to 1, however some vendors override the
+        # default value (e.g. Debian defaults to 2)
+        security_level_range = {
+            0,
+            1, # OpenSSL default
+            2, # Debian
+            3,
+            4,
+            5,
+        }
+        self.assertIn(ctx.security_level, security_level_range)
+
     @unittest.skipUnless(have_verify_flags(),
                          "verify_flags need OpenSSL > 0.9.8")
     def test_verify_flags(self):
