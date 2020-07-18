@@ -5624,6 +5624,8 @@ PyDec_AsUint128Triple(const PyObject *v)
 {
     if (!PyDec_Check(v)) {
         mpd_uint128_triple_t triple = { MPD_TRIPLE_ERROR, 0, 0, 0, 0 };
+        PyErr_SetString(PyExc_TypeError,
+            "PyDec_AsUint128Triple: argument must be a Decimal");
         return triple;
     }
 

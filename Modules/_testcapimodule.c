@@ -2812,13 +2812,10 @@ decimal_as_triple(PyObject *module, PyObject *dec)
        decimal_initialized = 1;
     }
 
-    if (!PyDec_TypeCheck(dec)) {
-        PyErr_SetString(PyExc_TypeError,
-            "decimal_as_triple: argument must be a decimal");
+    triple = PyDec_AsUint128Triple(dec);
+    if (triple.tag == MPD_TRIPLE_ERROR && PyErr_Occurred()) {
         return NULL;
     }
-
-    triple = PyDec_AsUint128Triple(dec);
 
     sign = PyLong_FromUnsignedLong(triple.sign);
     if (sign == NULL) {
