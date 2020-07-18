@@ -4755,54 +4755,6 @@ class CFunctionality(unittest.TestCase):
         self.assertEqual(C.DecTraps,
                          C.DecErrors|C.DecOverflow|C.DecUnderflow)
 
-    def test_decimal_api_get_digits(self):
-        # Capsule API
-
-        d = C.Decimal("0")
-        self.assertEqual(decimal_get_digits(d), 1)
-
-        d = C.Decimal("1234567890")
-        self.assertEqual(decimal_get_digits(d), 10)
-
-        d = C.Decimal("inf")
-        self.assertEqual(decimal_get_digits(d), 0)
-
-        d = C.Decimal("NaN")
-        self.assertEqual(decimal_get_digits(d), 0)
-
-        d = C.Decimal("sNaN")
-        self.assertEqual(decimal_get_digits(d), 0)
-
-        d = C.Decimal("NaN1234567890")
-        self.assertEqual(decimal_get_digits(d), 10)
-
-        d = C.Decimal("sNaN1234567890")
-        self.assertEqual(decimal_get_digits(d), 10)
-
-    def test_decimal_api_get_digits(self):
-        # Capsule API
-
-        d = C.Decimal("0")
-        self.assertEqual(decimal_get_digits(d), 1)
-
-        d = C.Decimal("1234567890")
-        self.assertEqual(decimal_get_digits(d), 10)
-
-        d = C.Decimal("inf")
-        self.assertEqual(decimal_get_digits(d), 0)
-
-        d = C.Decimal("NaN")
-        self.assertEqual(decimal_get_digits(d), 0)
-
-        d = C.Decimal("sNaN")
-        self.assertEqual(decimal_get_digits(d), 0)
-
-        d = C.Decimal("NaN1234567890")
-        self.assertEqual(decimal_get_digits(d), 10)
-
-        d = C.Decimal("sNaN1234567890")
-        self.assertEqual(decimal_get_digits(d), 10)
-
     def test_decimal_api_predicates(self):
         # Capsule API
 
@@ -4825,6 +4777,30 @@ class CFunctionality(unittest.TestCase):
         self.assertTrue(decimal_is_special(d))
         self.assertFalse(decimal_is_nan(d))
         self.assertTrue(decimal_is_infinite(d))
+
+    def test_decimal_api_get_digits(self):
+        # Capsule API
+
+        d = C.Decimal("0")
+        self.assertEqual(decimal_get_digits(d), 1)
+
+        d = C.Decimal("1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
+        d = C.Decimal("inf")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("NaN")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("sNaN")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("NaN1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
+        d = C.Decimal("sNaN1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
 
     def test_decimal_api_triple(self):
         # Capsule API
