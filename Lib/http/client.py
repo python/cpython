@@ -1089,8 +1089,9 @@ class HTTPConnection:
         else:
             raise CannotSendRequest(self.__state)
 
-        # Save the method for use later in the response phase
         self._validate_method(method)
+
+        # Save the method for use later in the response phase
         self._method = method
 
         url = url or '/'
