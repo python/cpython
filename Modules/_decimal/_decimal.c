@@ -5564,40 +5564,11 @@ static PyTypeObject PyDecContext_Type =
 
 static void **_decimal_api[CPYTHON_DECIMAL_MAX_API];
 
+/* Simple API */
 static int
 PyDec_TypeCheck(const PyObject *v)
 {
     return PyDec_Check(v);
-}
-
-static PyObject *
-PyDec_Alloc(void)
-{
-    return dec_alloc();
-}
-
-static mpd_t *
-PyDec_Get(PyObject *v)
-{
-    if (!PyDec_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-            "PyDec_Get: argument must be a Decimal");
-        return NULL;
-    }
-
-    return MPD(v);
-}
-
-static const mpd_t *
-PyDec_GetConst(const PyObject *v)
-{
-    if (!PyDec_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-            "PyDec_GetConst: argument must be a Decimal");
-        return NULL;
-    }
-
-    return MPD(v);
 }
 
 static int64_t
@@ -5647,16 +5618,50 @@ PyDec_FromUint128Triple(const mpd_uint128_triple_t *triple)
     return result;
 }
 
+/* Advanced API */
+static PyObject *
+PyDec_Alloc(void)
+{
+    return dec_alloc();
+}
+
+static mpd_t *
+PyDec_Get(PyObject *v)
+{
+    if (!PyDec_Check(v)) {
+        PyErr_SetString(PyExc_TypeError,
+            "PyDec_Get: argument must be a Decimal");
+        return NULL;
+    }
+
+    return MPD(v);
+}
+
+static const mpd_t *
+PyDec_GetConst(const PyObject *v)
+{
+    if (!PyDec_Check(v)) {
+        PyErr_SetString(PyExc_TypeError,
+            "PyDec_GetConst: argument must be a Decimal");
+        return NULL;
+    }
+
+    return MPD(v);
+}
+
 static PyObject *
 init_api(void)
 {
+    /* Simple API */
     _decimal_api[PyDec_TypeCheck_INDEX] = (void *)PyDec_TypeCheck;
-    _decimal_api[PyDec_Alloc_INDEX] = (void *)PyDec_Alloc;
-    _decimal_api[PyDec_Get_INDEX] = (void *)PyDec_Get;
-    _decimal_api[PyDec_GetConst_INDEX] = (void *)PyDec_GetConst;
     _decimal_api[PyDec_GetDigits_INDEX] = (void *)PyDec_GetDigits;
     _decimal_api[PyDec_AsUint128Triple_INDEX] = (void *)PyDec_AsUint128Triple;
     _decimal_api[PyDec_FromUint128Triple_INDEX] = (void *)PyDec_FromUint128Triple;
+
+    /* Advanced API */
+    _decimal_api[PyDec_Alloc_INDEX] = (void *)PyDec_Alloc;
+    _decimal_api[PyDec_Get_INDEX] = (void *)PyDec_Get;
+    _decimal_api[PyDec_GetConst_INDEX] = (void *)PyDec_GetConst;
 
     return PyCapsule_New(_decimal_api, "_decimal._API", NULL);
 }
