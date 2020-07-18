@@ -5612,7 +5612,7 @@ PyDec_GetDigits(const PyObject *v)
 {
     if (!PyDec_Check(v)) {
         PyErr_SetString(PyExc_TypeError,
-            "PyDec_GetConst: argument must be a Decimal");
+            "PyDec_GetDigits: argument must be a Decimal");
         return -1;
     }
 
