@@ -2709,6 +2709,72 @@ test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
 /* Test decimal API */
 static int decimal_initialized = 0;
 static PyObject *
+decimal_is_special(PyObject *module, PyObject *dec)
+{
+    int is_special;
+
+    (void)module;
+    if (!decimal_initialized) {
+       if (import_decimal() < 0) {
+            return NULL;
+       }
+
+       decimal_initialized = 1;
+    }
+
+    is_special = PyDec_IsSpecial(dec);
+    if (is_special < 0) {
+        return NULL;
+    }
+
+    return PyBool_FromLong(is_special);
+}
+
+static PyObject *
+decimal_is_nan(PyObject *module, PyObject *dec)
+{
+    int is_nan;
+
+    (void)module;
+    if (!decimal_initialized) {
+       if (import_decimal() < 0) {
+            return NULL;
+       }
+
+       decimal_initialized = 1;
+    }
+
+    is_nan = PyDec_IsNaN(dec);
+    if (is_nan < 0) {
+        return NULL;
+    }
+
+    return PyBool_FromLong(is_nan);
+}
+
+static PyObject *
+decimal_is_infinite(PyObject *module, PyObject *dec)
+{
+    int is_infinite;
+
+    (void)module;
+    if (!decimal_initialized) {
+       if (import_decimal() < 0) {
+            return NULL;
+       }
+
+       decimal_initialized = 1;
+    }
+
+    is_infinite = PyDec_IsInfinite(dec);
+    if (is_infinite < 0) {
+        return NULL;
+    }
+
+    return PyBool_FromLong(is_infinite);
+}
+
+static PyObject *
 decimal_get_digits(PyObject *module, PyObject *dec)
 {
     int64_t digits;
@@ -5483,6 +5549,9 @@ static PyMethodDef TestMethods[] = {
     {"datetime_check_datetime",     datetime_check_datetime,     METH_VARARGS},
     {"datetime_check_delta",     datetime_check_delta,           METH_VARARGS},
     {"datetime_check_tzinfo",     datetime_check_tzinfo,         METH_VARARGS},
+    {"decimal_is_special",      decimal_is_special,              METH_O},
+    {"decimal_is_nan",          decimal_is_nan,                  METH_O},
+    {"decimal_is_infinite",     decimal_is_infinite,             METH_O},
     {"decimal_get_digits",      decimal_get_digits,              METH_O},
     {"decimal_as_triple",       decimal_as_triple,               METH_O},
     {"decimal_from_triple",     decimal_from_triple,             METH_O},

@@ -5571,6 +5571,42 @@ PyDec_TypeCheck(const PyObject *v)
     return PyDec_Check(v);
 }
 
+static int
+PyDec_IsSpecial(const PyObject *v)
+{
+    if (!PyDec_Check(v)) {
+        PyErr_SetString(PyExc_TypeError,
+            "PyDec_IsSpecial: argument must be a Decimal");
+        return -1;
+    }
+
+    return mpd_isspecial(MPD(v));
+}
+
+static int
+PyDec_IsNaN(const PyObject *v)
+{
+    if (!PyDec_Check(v)) {
+        PyErr_SetString(PyExc_TypeError,
+            "PyDec_IsNaN: argument must be a Decimal");
+        return -1;
+    }
+
+    return mpd_isnan(MPD(v));
+}
+
+static int
+PyDec_IsInfinite(const PyObject *v)
+{
+    if (!PyDec_Check(v)) {
+        PyErr_SetString(PyExc_TypeError,
+            "PyDec_IsInfinite: argument must be a Decimal");
+        return -1;
+    }
+
+    return mpd_isinfinite(MPD(v));
+}
+
 static int64_t
 PyDec_GetDigits(const PyObject *v)
 {
@@ -5654,6 +5690,9 @@ init_api(void)
 {
     /* Simple API */
     _decimal_api[PyDec_TypeCheck_INDEX] = (void *)PyDec_TypeCheck;
+    _decimal_api[PyDec_IsSpecial_INDEX] = (void *)PyDec_IsSpecial;
+    _decimal_api[PyDec_IsNaN_INDEX] = (void *)PyDec_IsNaN;
+    _decimal_api[PyDec_IsInfinite_INDEX] = (void *)PyDec_IsInfinite;
     _decimal_api[PyDec_GetDigits_INDEX] = (void *)PyDec_GetDigits;
     _decimal_api[PyDec_AsUint128Triple_INDEX] = (void *)PyDec_AsUint128Triple;
     _decimal_api[PyDec_FromUint128Triple_INDEX] = (void *)PyDec_FromUint128Triple;

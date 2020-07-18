@@ -42,6 +42,9 @@ import random
 import inspect
 import threading
 
+from _testcapi import decimal_is_special
+from _testcapi import decimal_is_nan
+from _testcapi import decimal_is_infinite
 from _testcapi import decimal_get_digits
 from _testcapi import decimal_as_triple
 from _testcapi import decimal_from_triple
@@ -4752,6 +4755,77 @@ class CFunctionality(unittest.TestCase):
         self.assertEqual(C.DecTraps,
                          C.DecErrors|C.DecOverflow|C.DecUnderflow)
 
+    def test_decimal_api_get_digits(self):
+        # Capsule API
+
+        d = C.Decimal("0")
+        self.assertEqual(decimal_get_digits(d), 1)
+
+        d = C.Decimal("1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
+        d = C.Decimal("inf")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("NaN")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("sNaN")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("NaN1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
+        d = C.Decimal("sNaN1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
+    def test_decimal_api_get_digits(self):
+        # Capsule API
+
+        d = C.Decimal("0")
+        self.assertEqual(decimal_get_digits(d), 1)
+
+        d = C.Decimal("1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
+        d = C.Decimal("inf")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("NaN")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("sNaN")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("NaN1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
+        d = C.Decimal("sNaN1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
+    def test_decimal_api_predicates(self):
+        # Capsule API
+
+        d = C.Decimal("0")
+        self.assertFalse(decimal_is_special(d))
+        self.assertFalse(decimal_is_nan(d))
+        self.assertFalse(decimal_is_infinite(d))
+
+        d = C.Decimal("NaN")
+        self.assertTrue(decimal_is_special(d))
+        self.assertTrue(decimal_is_nan(d))
+        self.assertFalse(decimal_is_infinite(d))
+
+        d = C.Decimal("sNaN")
+        self.assertTrue(decimal_is_special(d))
+        self.assertTrue(decimal_is_nan(d))
+        self.assertFalse(decimal_is_infinite(d))
+
+        d = C.Decimal("inf")
+        self.assertTrue(decimal_is_special(d))
+        self.assertFalse(decimal_is_nan(d))
+        self.assertTrue(decimal_is_infinite(d))
+
     def test_decimal_api_triple(self):
         # Capsule API
 
@@ -4846,30 +4920,6 @@ class CFunctionality(unittest.TestCase):
             p = decimal_from_triple(ptriple)
             self.assertEqual(str(c), str(p))
 
-    def test_decimal_get_digits(self):
-        # Capsule API
-
-        d = C.Decimal("0")
-        self.assertEqual(decimal_get_digits(d), 1)
-
-        d = C.Decimal("1234567890")
-        self.assertEqual(decimal_get_digits(d), 10)
-
-        d = C.Decimal("inf")
-        self.assertEqual(decimal_get_digits(d), 0)
-
-        d = C.Decimal("NaN")
-        self.assertEqual(decimal_get_digits(d), 0)
-
-        d = C.Decimal("sNaN")
-        self.assertEqual(decimal_get_digits(d), 0)
-
-        d = C.Decimal("NaN1234567890")
-        self.assertEqual(decimal_get_digits(d), 10)
-
-        d = C.Decimal("sNaN1234567890")
-        self.assertEqual(decimal_get_digits(d), 10)
-
     def test_decimal_api_errors(self):
         # Capsule API
 
@@ -4893,6 +4943,9 @@ class CFunctionality(unittest.TestCase):
             self.assertRaises(C.InvalidOperation, decimal_from_triple, (0, 0, 0, 2**63-1))
             self.assertRaises(C.InvalidOperation, decimal_from_triple, (0, 0, 0, -2**63))
 
+        self.assertRaises(TypeError, decimal_is_special, "X")
+        self.assertRaises(TypeError, decimal_is_nan, "X")
+        self.assertRaises(TypeError, decimal_is_infinite, "X")
         self.assertRaises(TypeError, decimal_get_digits, "X")
 
 class CWhitebox(unittest.TestCase):

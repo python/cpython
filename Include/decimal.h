@@ -76,37 +76,52 @@ typedef struct {
 #define PyDec_TypeCheck_RETURN int
 #define PyDec_TypeCheck_ARGS (const PyObject *)
 
-#define PyDec_GetDigits_INDEX 1
+#define PyDec_IsSpecial_INDEX 1
+#define PyDec_IsSpecial_RETURN int
+#define PyDec_IsSpecial_ARGS (const PyObject *)
+
+#define PyDec_IsNaN_INDEX 2
+#define PyDec_IsNaN_RETURN int
+#define PyDec_IsNaN_ARGS (const PyObject *)
+
+#define PyDec_IsInfinite_INDEX 3
+#define PyDec_IsInfinite_RETURN int
+#define PyDec_IsInfinite_ARGS (const PyObject *)
+
+#define PyDec_GetDigits_INDEX 4
 #define PyDec_GetDigits_RETURN int64_t
 #define PyDec_GetDigits_ARGS (const PyObject *)
 
-#define PyDec_AsUint128Triple_INDEX 2
+#define PyDec_AsUint128Triple_INDEX 5
 #define PyDec_AsUint128Triple_RETURN mpd_uint128_triple_t
 #define PyDec_AsUint128Triple_ARGS (const PyObject *)
 
-#define PyDec_FromUint128Triple_INDEX 3
+#define PyDec_FromUint128Triple_INDEX 6
 #define PyDec_FromUint128Triple_RETURN PyObject *
 #define PyDec_FromUint128Triple_ARGS (const mpd_uint128_triple_t *triple)
 
 /* Advanced API */
-#define PyDec_Alloc_INDEX 4
+#define PyDec_Alloc_INDEX 7
 #define PyDec_Alloc_RETURN PyObject *
 #define PyDec_Alloc_ARGS (void)
 
-#define PyDec_Get_INDEX 5
+#define PyDec_Get_INDEX 8
 #define PyDec_Get_RETURN mpd_t *
 #define PyDec_Get_ARGS (PyObject *)
 
-#define PyDec_GetConst_INDEX 6
+#define PyDec_GetConst_INDEX 9
 #define PyDec_GetConst_RETURN const mpd_t *
 #define PyDec_GetConst_ARGS (const PyObject *)
 
-#define CPYTHON_DECIMAL_MAX_API 7
+#define CPYTHON_DECIMAL_MAX_API 10
 
 
 #ifdef CPYTHON_DECIMAL_MODULE
 /* Simple API */
 static PyDec_TypeCheck_RETURN PyDec_TypeCheck PyDec_TypeCheck_ARGS;
+static PyDec_IsSpecial_RETURN PyDec_IsSpecial PyDec_IsSpecial_ARGS;
+static PyDec_IsNaN_RETURN PyDec_IsNaN PyDec_IsNaN_ARGS;
+static PyDec_IsInfinite_RETURN PyDec_IsInfinite PyDec_IsInfinite_ARGS;
 static PyDec_GetDigits_RETURN PyDec_GetDigits PyDec_GetDigits_ARGS;
 static PyDec_AsUint128Triple_RETURN PyDec_AsUint128Triple PyDec_AsUint128Triple_ARGS;
 static PyDec_FromUint128Triple_RETURN PyDec_FromUint128Triple PyDec_FromUint128Triple_ARGS;
@@ -121,6 +136,15 @@ static void **_decimal_api;
 /* Simple API */
 #define PyDec_TypeCheck \
     (*(PyDec_TypeCheck_RETURN (*)PyDec_TypeCheck_ARGS) _decimal_api[PyDec_TypeCheck_INDEX])
+
+#define PyDec_IsSpecial \
+    (*(PyDec_IsSpecial_RETURN (*)PyDec_IsSpecial_ARGS) _decimal_api[PyDec_IsSpecial_INDEX])
+
+#define PyDec_IsNaN \
+    (*(PyDec_IsNaN_RETURN (*)PyDec_IsNaN_ARGS) _decimal_api[PyDec_IsNaN_INDEX])
+
+#define PyDec_IsInfinite \
+    (*(PyDec_IsInfinite_RETURN (*)PyDec_IsInfinite_ARGS) _decimal_api[PyDec_IsInfinite_INDEX])
 
 #define PyDec_GetDigits \
     (*(PyDec_GetDigits_RETURN (*)PyDec_GetDigits_ARGS) _decimal_api[PyDec_GetDigits_INDEX])
