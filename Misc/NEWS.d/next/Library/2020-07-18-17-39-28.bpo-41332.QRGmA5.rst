@@ -1,0 +1,2 @@
+Added missing connect_accepted_socket() method to
+``asyncio.AbstractEventLoop``.
