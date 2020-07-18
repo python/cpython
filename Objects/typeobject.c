@@ -5962,29 +5962,27 @@ hackcheck(PyObject *self, setattrofunc func, const char *what)
     }
     assert(PyTuple_Check(mro));
 
-    /* Find the base type that defined the type's slot function. */
+    /* Find the (base) type that defined the type's slot function. */
     PyTypeObject *defining_type = type;
-    Py_ssize_t i, n;
-    n = PyTuple_GET_SIZE(mro);
-    for (i = n-1; i >= 0; i--) {
+    Py_ssize_t i;
+    for (i = PyTuple_GET_SIZE(mro) - 1; i >= 0; i--) {
         PyTypeObject *base = (PyTypeObject*) PyTuple_GET_ITEM(mro, i);
         if (base->tp_setattro == slot_tp_setattro) {
             /* Ignore Python classes:
                they never define their own C-level setattro. */
         }
         else if (base->tp_setattro == type->tp_setattro) {
-            /* This (base) type defines the type's final setattr => stop. */
             defining_type = base;
             break;
         }
     }
 
-    /* Reject calls that jump over intermediate overrides. */
+    /* Reject calls that jump over intermediate C-level overrides. */
     PyTypeObject *base = defining_type;
     while (base && base->tp_setattro != func) {
         if (base->tp_setattro != slot_tp_setattro) {
-            /* 'base' is not a Python class and overrides 'func' in the
-               C-level bases.  Its tp_setattro should be called instead. */
+            /* 'base' is not a Python class and overrides 'func'.
+               Its tp_setattro should be called instead. */
             PyErr_Format(PyExc_TypeError,
                          "can't apply this %s to %s object",
                          what,
