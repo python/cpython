@@ -87,10 +87,10 @@ PyDoc_STRVAR(OrderedDict_pop__doc__,
 "pop($self, /, key, default=<unrepresentable>)\n"
 "--\n"
 "\n"
-"Remove specified key and return the corresponding value.\n"
+"od.pop(key[,default]) -> v, remove specified key and return the corresponding value.\n"
 "\n"
-"If key is not found, default is returned if given, otherwise KeyError\n"
-"is raised.");
+"If the key is not found, return the default if given; otherwise,\n"
+"raise a KeyError.");
 
 #define ORDEREDDICT_POP_METHODDEF    \
     {"pop", (PyCFunction)(void(*)(void))OrderedDict_pop, METH_FASTCALL|METH_KEYWORDS, OrderedDict_pop__doc__},
@@ -211,4 +211,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4291619a19f2a32d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e0afaad5b4bb47fe input=a9049054013a1b77]*/

@@ -1055,16 +1055,16 @@ OrderedDict.pop
     key: object
     default: object = NULL
 
-Remove specified key and return the corresponding value.
+od.pop(key[,default]) -> v, remove specified key and return the corresponding value.
 
-If key is not found, default is returned if given, otherwise KeyError
-is raised.
+If the key is not found, return the default if given; otherwise,
+raise a KeyError.
 [clinic start generated code]*/
 
 static PyObject *
 OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
                      PyObject *default_value)
-/*[clinic end generated code: output=7a6447d104e7494b input=ce5981242e2f8c54]*/
+/*[clinic end generated code: output=7a6447d104e7494b input=7efe36601007dff7]*/
 {
     return _odict_popkey((PyObject *)self, key, default_value);
 }
