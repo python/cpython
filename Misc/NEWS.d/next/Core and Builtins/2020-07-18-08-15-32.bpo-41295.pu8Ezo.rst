@@ -1,0 +1,3 @@
+Resolve a regression in CPython 3.8.4 where defining "__setattr__" in a
+multi-inheritance setup and calling up the hierarchy chain could fail
+if builtins/extension types were involved in the base types.
