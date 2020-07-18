@@ -1045,30 +1045,28 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
 
 /* pop() */
 
-PyDoc_STRVAR(odict_pop__doc__,
-"od.pop(k[,d]) -> v, remove specified key and return the corresponding\n\
-        value.  If key is not found, d is returned if given, otherwise KeyError\n\
-        is raised.\n\
-\n\
-        ");
-
 /* forward */
 static PyObject * _odict_popkey(PyObject *, PyObject *, PyObject *);
 
 /* Skips __missing__() calls. */
+/*[clinic input]
+OrderedDict.pop
+
+    key: object
+    default: object = NULL
+
+Remove specified key and return the corresponding value.
+
+If key is not found, default is returned if given, otherwise KeyError
+is raised.
+[clinic start generated code]*/
+
 static PyObject *
-odict_pop(PyObject *od, PyObject *args, PyObject *kwargs)
+OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
+                     PyObject *default_value)
+/*[clinic end generated code: output=7a6447d104e7494b input=ce5981242e2f8c54]*/
 {
-    static char *kwlist[] = {"key", "default", 0};
-    PyObject *key, *failobj = NULL;
-
-    /* borrowed */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:pop", kwlist,
-                                     &key, &failobj)) {
-        return NULL;
-    }
-
-    return _odict_popkey(od, key, failobj);
+    return _odict_popkey((PyObject *)self, key, default_value);
 }
 
 static PyObject *
@@ -1362,8 +1360,7 @@ static PyMethodDef odict_methods[] = {
     {"__reduce__",      (PyCFunction)odict_reduce,      METH_NOARGS,
      odict_reduce__doc__},
     ORDEREDDICT_SETDEFAULT_METHODDEF
-    {"pop",             (PyCFunction)(void(*)(void))odict_pop,
-     METH_VARARGS | METH_KEYWORDS, odict_pop__doc__},
+    ORDEREDDICT_POP_METHODDEF
     ORDEREDDICT_POPITEM_METHODDEF
     {"keys",            odictkeys_new,                  METH_NOARGS,
      odict_keys__doc__},
