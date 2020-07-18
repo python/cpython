@@ -44,11 +44,11 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
                               "test_misc.test_thread_gc()"],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
-        self.assertEqual(stdout.strip(), b"passed")
         self.assertEqual(stderr.strip(),
                          b"Exception ignored in: 'Deallocation of Tkapp "
                          b"attempted in wrong thread. Skipping deletion of Tcl "
                          b"interpreter (this will cause a memory leak).'")
+        self.assertEqual(stdout.strip(), b"passed")
 
     def test_generated_names(self):
         t = tkinter.Toplevel(self.root)
