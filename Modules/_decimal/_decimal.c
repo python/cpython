@@ -5577,7 +5577,7 @@ PyDec_Alloc(void)
 }
 
 static mpd_t *
-PyDec_Get(const PyObject *v)
+PyDec_Get(PyObject *v)
 {
     if (!PyDec_Check(v)) {
         PyErr_SetString(PyExc_TypeError,
@@ -5586,6 +5586,30 @@ PyDec_Get(const PyObject *v)
     }
 
     return MPD(v);
+}
+
+static const mpd_t *
+PyDec_GetConst(const PyObject *v)
+{
+    if (!PyDec_Check(v)) {
+        PyErr_SetString(PyExc_TypeError,
+            "PyDec_GetConst: argument must be a Decimal");
+        return NULL;
+    }
+
+    return MPD(v);
+}
+
+static int64_t
+PyDec_GetDigits(const PyObject *v)
+{
+    if (!PyDec_Check(v)) {
+        PyErr_SetString(PyExc_TypeError,
+            "PyDec_GetConst: argument must be a Decimal");
+        return -1;
+    }
+
+    return MPD(v)->digits;
 }
 
 static mpd_uint128_triple_t
@@ -5629,6 +5653,8 @@ init_api(void)
     _decimal_api[PyDec_TypeCheck_INDEX] = (void *)PyDec_TypeCheck;
     _decimal_api[PyDec_Alloc_INDEX] = (void *)PyDec_Alloc;
     _decimal_api[PyDec_Get_INDEX] = (void *)PyDec_Get;
+    _decimal_api[PyDec_GetConst_INDEX] = (void *)PyDec_GetConst;
+    _decimal_api[PyDec_GetDigits_INDEX] = (void *)PyDec_GetDigits;
     _decimal_api[PyDec_AsUint128Triple_INDEX] = (void *)PyDec_AsUint128Triple;
     _decimal_api[PyDec_FromUint128Triple_INDEX] = (void *)PyDec_FromUint128Triple;
 

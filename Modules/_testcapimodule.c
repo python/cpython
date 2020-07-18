@@ -2709,6 +2709,28 @@ test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
 /* Test decimal API */
 static int decimal_initialized = 0;
 static PyObject *
+decimal_get_digits(PyObject *module, PyObject *dec)
+{
+    int64_t digits;
+
+    (void)module;
+    if (!decimal_initialized) {
+       if (import_decimal() < 0) {
+            return NULL;
+       }
+
+       decimal_initialized = 1;
+    }
+
+    digits = PyDec_GetDigits(dec);
+    if (digits < 0) {
+        return NULL;
+    }
+
+    return PyLong_FromLongLong(digits);
+}
+
+static PyObject *
 decimal_as_triple(PyObject *module, PyObject *dec)
 {
     PyObject *tuple = NULL;
@@ -5461,6 +5483,7 @@ static PyMethodDef TestMethods[] = {
     {"datetime_check_datetime",     datetime_check_datetime,     METH_VARARGS},
     {"datetime_check_delta",     datetime_check_delta,           METH_VARARGS},
     {"datetime_check_tzinfo",     datetime_check_tzinfo,         METH_VARARGS},
+    {"decimal_get_digits",      decimal_get_digits,              METH_O},
     {"decimal_as_triple",       decimal_as_triple,               METH_O},
     {"decimal_from_triple",     decimal_from_triple,             METH_O},
     {"make_timezones_capi",     make_timezones_capi,             METH_NOARGS},

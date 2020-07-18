@@ -81,22 +81,32 @@ typedef struct {
 
 #define PyDec_Get_INDEX 2
 #define PyDec_Get_RETURN mpd_t *
-#define PyDec_Get_ARGS (const PyObject *)
+#define PyDec_Get_ARGS (PyObject *)
 
-#define PyDec_AsUint128Triple_INDEX 3
+#define PyDec_GetConst_INDEX 3
+#define PyDec_GetConst_RETURN const mpd_t *
+#define PyDec_GetConst_ARGS (const PyObject *)
+
+#define PyDec_GetDigits_INDEX 4
+#define PyDec_GetDigits_RETURN int64_t
+#define PyDec_GetDigits_ARGS (const PyObject *)
+
+#define PyDec_AsUint128Triple_INDEX 5
 #define PyDec_AsUint128Triple_RETURN mpd_uint128_triple_t
 #define PyDec_AsUint128Triple_ARGS (const PyObject *)
 
-#define PyDec_FromUint128Triple_INDEX 4
+#define PyDec_FromUint128Triple_INDEX 6
 #define PyDec_FromUint128Triple_RETURN PyObject *
 #define PyDec_FromUint128Triple_ARGS (const mpd_uint128_triple_t *triple)
 
-#define CPYTHON_DECIMAL_MAX_API 5
+#define CPYTHON_DECIMAL_MAX_API 7
 
 #ifdef CPYTHON_DECIMAL_MODULE
 static PyDec_TypeCheck_RETURN PyDec_TypeCheck PyDec_TypeCheck_ARGS;
 static PyDec_Alloc_RETURN PyDec_Alloc PyDec_Alloc_ARGS;
 static PyDec_Get_RETURN PyDec_Get PyDec_Get_ARGS;
+static PyDec_GetConst_RETURN PyDec_GetConst PyDec_GetConst_ARGS;
+static PyDec_GetDigits_RETURN PyDec_GetDigits PyDec_GetDigits_ARGS;
 static PyDec_AsUint128Triple_RETURN PyDec_AsUint128Triple PyDec_AsUint128Triple_ARGS;
 static PyDec_FromUint128Triple_RETURN PyDec_FromUint128Triple PyDec_FromUint128Triple_ARGS;
 #else
@@ -110,6 +120,12 @@ static void **_decimal_api;
 
 #define PyDec_Get \
     (*(PyDec_Get_RETURN (*)PyDec_Get_ARGS) _decimal_api[PyDec_Get_INDEX])
+
+#define PyDec_GetConst \
+    (*(PyDec_GetConst_RETURN (*)PyDec_GetConst_ARGS) _decimal_api[PyDec_GetConst_INDEX])
+
+#define PyDec_GetDigits \
+    (*(PyDec_GetDigits_RETURN (*)PyDec_GetDigits_ARGS) _decimal_api[PyDec_GetDigits_INDEX])
 
 #define PyDec_AsUint128Triple \
     (*(PyDec_AsUint128Triple_RETURN (*)PyDec_AsUint128Triple_ARGS) _decimal_api[PyDec_AsUint128Triple_INDEX])

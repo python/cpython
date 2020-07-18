@@ -42,6 +42,7 @@ import random
 import inspect
 import threading
 
+from _testcapi import decimal_get_digits
 from _testcapi import decimal_as_triple
 from _testcapi import decimal_from_triple
 
@@ -4845,6 +4846,30 @@ class CFunctionality(unittest.TestCase):
             p = decimal_from_triple(ptriple)
             self.assertEqual(str(c), str(p))
 
+    def test_decimal_get_digits(self):
+        # Capsule API
+
+        d = C.Decimal("0")
+        self.assertEqual(decimal_get_digits(d), 1)
+
+        d = C.Decimal("1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
+        d = C.Decimal("inf")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("NaN")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("sNaN")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("NaN1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
+        d = C.Decimal("sNaN1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
     def test_decimal_api_errors(self):
         # Capsule API
 
@@ -4867,6 +4892,8 @@ class CFunctionality(unittest.TestCase):
             self.assertRaises(C.InvalidOperation, decimal_from_triple, (2, 0, 0, 0))
             self.assertRaises(C.InvalidOperation, decimal_from_triple, (0, 0, 0, 2**63-1))
             self.assertRaises(C.InvalidOperation, decimal_from_triple, (0, 0, 0, -2**63))
+
+        self.assertRaises(TypeError, decimal_get_digits, "X")
 
 class CWhitebox(unittest.TestCase):
     """Whitebox testing for _decimal"""
