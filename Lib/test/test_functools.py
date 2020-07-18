@@ -2449,7 +2449,7 @@ class TestSingleDispatch(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, msg):
             f()
 
-    def test_invalid_positional_argument_singlemethoddispatch(self):
+    def test_invalid_positional_argument_singledispatchmethod(self):
         class A:
             @functools.singledispatchmethod
             def t(self):
