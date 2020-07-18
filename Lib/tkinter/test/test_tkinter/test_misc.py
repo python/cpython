@@ -12,7 +12,7 @@ support.requires('gui')
 def test_thread_gc():
     new_root = tkinter.Tk()
     new_root.destroy()
-    threading.Thread(target=lambda obj: time.sleep(0.1), args=(new_root,)).start()
+    threading.Thread(target=lambda obj: time.sleep(0.2), args=(new_root,)).start()
     del new_root
     time.sleep(0.6)
     print("passed")
@@ -44,10 +44,11 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
                               "test_misc.test_thread_gc()"],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
-        self.assertEqual(stdout, b"passed\n")
-        self.assertEqual(stderr, b"Exception ignored in: 'Deallocation of Tkapp "
+        self.assertEqual(stdout.strip(), b"passed")
+        self.assertEqual(stderr.strip(),
+                         b"Exception ignored in: 'Deallocation of Tkapp "
                          b"attempted in wrong thread. Skipping deletion of Tcl "
-                         b"interpreter (this will cause a memory leak).'\n")
+                         b"interpreter (this will cause a memory leak).'")
 
     def test_generated_names(self):
         t = tkinter.Toplevel(self.root)

@@ -3040,10 +3040,11 @@ static void
 Tkapp_Dealloc(PyObject *self)
 {
     PyObject *tp = (PyObject *) Py_TYPE(self);
-    if (((TkappObject *)self)->threaded && \
-        ((TkappObject *)self)->thread_id != Tcl_GetCurrentThread()) { \
+    if (((TkappObject *)self)->thread_id != Tcl_GetCurrentThread()) {
         // We cannot delete the interpreter in the wrong thread (bpo-39093)
-        PyErr_WriteUnraisable(PyUnicode_FromString("Deallocation of Tkapp attempted in wrong thread. Skipping deletion of Tcl interpreter (this will cause a memory leak).")); \
+        PyErr_WriteUnraisable(PyUnicode_FromString("Deallocation of Tkapp " \
+            "attempted in wrong thread. Skipping deletion of Tcl " \
+            "interpreter (this will cause a memory leak)."));
     } else {
         ENTER_TCL
         Tcl_DeleteInterp(Tkapp_Interp(self));
