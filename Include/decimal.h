@@ -46,7 +46,7 @@ extern "C" {
  */
 
 #ifndef LIBMPDEC_TRIPLE_H_
-struct mpd_t;
+struct mpd_t;  /* ABI-stable in the libmpdec-2.x series */
 
 /* status cases for getting a triple */
 enum mpd_triple_class {
