@@ -1,0 +1,2 @@
+Prevent http header injection by rejecting control characters in
+http.client.putrequest(...).
