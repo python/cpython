@@ -4308,7 +4308,7 @@ order (MRO) for bases """
         else:
             self.fail("Carlo Verre __delattr__ succeeded!")
 
-    def test_carloverre_multiinherit_valid(self):
+    def test_carloverre_multi_inherit_valid(self):
         class A(type):
             def __setattr__(cls, key, value):
                 type.__setattr__(cls, key, value)
@@ -4325,7 +4325,7 @@ order (MRO) for bases """
         except TypeError:
             self.fail("setattr through direct base types should be legal")
 
-    def test_carloverre_multiinherit_invalid(self):
+    def test_carloverre_multi_inherit_invalid(self):
         class A(type):
             def __setattr__(cls, key, value):
                 object.__setattr__(cls, key, value)  # this should fail!

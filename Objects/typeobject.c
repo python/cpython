@@ -5978,9 +5978,12 @@ hackcheck(PyObject *self, setattrofunc func, const char *what)
     }
 
     /* Reject calls that jump over intermediate C-level overrides. */
-    PyTypeObject *base = defining_type;
-    while (base && base->tp_setattro != func) {
-        if (base->tp_setattro != slot_tp_setattro) {
+    for (PyTypeObject *base = defining_type; base; base = base->tp_base) {
+        if (base->tp_setattro == func) {
+            /* 'func' is the right slot function to call. */
+            break;
+        }
+        else if (base->tp_setattro != slot_tp_setattro) {
             /* 'base' is not a Python class and overrides 'func'.
                Its tp_setattro should be called instead. */
             PyErr_Format(PyExc_TypeError,
@@ -5989,7 +5992,6 @@ hackcheck(PyObject *self, setattrofunc func, const char *what)
                          type->tp_name);
             return 0;
         }
-        base = base->tp_base;
     }
     return 1;
 }
