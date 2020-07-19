@@ -2420,7 +2420,7 @@ This adds flexibility to how strings can be formatted::
    >>> name = "Fred"
    >>> f"He said his name is {name!r}."
    "He said his name is 'Fred'."
-   
+
 The above is an example and will become clear as you read below.
 
 Everything outside the curly braces is treated as literally with the exception
@@ -2434,27 +2434,27 @@ of double braces which are treated as one brace::
    '}'
    >>> F'{{ }}'
    '{ }'
-   
+
 A single opening curly bracket, ``'{'``, marks a replacement field that starts with
 a python expression.::
 
    >>> f"4 * 3 is {4 * 3}"
    '4 * 3 is 12'
-   
+
 The above is quite contrived and a more useful use in code could be::
 
    >>> a = 4
    >>> b = 3
    >>> f"The product of {a} and {b} is {a * b}"
    'The product of 4 and 3 is 12'
-   
+
 Or more simply::
 
    >>> a = 4
    >>> b = 3
    >>> f"The product is {a * b}"
    'The product is 12'
-   
+
 Methods can also be used::
 
    >>> string = "hello, world!"
@@ -2465,14 +2465,14 @@ Methods can also be used::
    ...
    >>> f"{make_title(string)}"
    'Hello, World!'
-   
+
 Any variable that can be presented as a string can be used with f-strings::
 
    >>> import datetime
    >>> now = datetime.datetime.now()
    >>> f"{now}"
    '2020-07-19 23:39:01.199675'
-   
+
 Note that this is the :func:`str` format of a :mod:`datetime`. If you want to show the
 :func:`repr` format you use a conversion. There are three conversions beginning with the
 ``'!'`` (exclamation) mark:
@@ -2493,7 +2493,7 @@ In our example of the datetime that becomes::
    'datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
    >>> f"{now!a}"
    'datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
-   
+
 While debugging it may be helpful to see both the expression and its value.
 This can be shown by appending the ``'='`` (equal) after the Python expression.
 
@@ -2503,7 +2503,7 @@ This can be shown by appending the ``'='`` (equal) after the Python expression.
    'now=datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
    >>> f"{ now = }"  # Note the addition of spaces
    ' now = datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
-   
+
 Note that when using the debugging operator, any additional spaces will be left intact in the output.
 Also note that by default ``'='`` displays the :func:`repr` of the expression. It is possible to show
 the :func:`str` by appending a converter::
@@ -2520,7 +2520,7 @@ Formatting instructions are appended preceeded by a ``':'`` (colon).
 
    >>> f"{now:%B %d, %Y}"
    'July 19, 2020'
-   
+
 The format specifier is passed to the :meth:`__format__` method of the expression or conversion result.
 An empty string is passed when the format specifier is omitted. The formatted result is then included
 in the final value of the whole string.
