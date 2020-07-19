@@ -640,6 +640,7 @@ and formatted string literals may be concatenated with plain string literals.
    single: {} (curly brackets); in formatted string literal
    single: ! (exclamation); in formatted string literal
    single: : (colon); in formatted string literal
+   single: = (equal); for help in debugging using string literals
 .. _f-strings:
 
 Formatted string literals
