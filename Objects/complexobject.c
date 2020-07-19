@@ -687,14 +687,12 @@ complex_float(PyObject *v)
 /*[clinic input]
 complex.conjugate
 
-complex.conjugate() -> complex
-
 Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.
 [clinic start generated code]*/
 
 static PyObject *
 complex_conjugate_impl(PyComplexObject *self)
-/*[clinic end generated code: output=5059ef162edfc68e input=1d8257f99c298f70]*/
+/*[clinic end generated code: output=5059ef162edfc68e input=5fea33e9747ec2c4]*/
 {
     Py_complex c = self->cval;
     c.imag = -c.imag;
@@ -721,14 +719,12 @@ complex.__format__
     format_spec: unicode
     /
 
-complex.__format__() -> str
-
 Convert to a string according to format_spec.
 [clinic start generated code]*/
 
 static PyObject *
 complex___format___impl(PyComplexObject *self, PyObject *format_spec)
-/*[clinic end generated code: output=bfcb60df24cafea0 input=b62fc6fbc2ec61a5]*/
+/*[clinic end generated code: output=bfcb60df24cafea0 input=014ef5488acbe1d5]*/
 {
     _PyUnicodeWriter writer;
     int ret;

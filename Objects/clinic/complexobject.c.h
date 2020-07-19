@@ -6,8 +6,6 @@ PyDoc_STRVAR(complex_conjugate__doc__,
 "conjugate($self, /)\n"
 "--\n"
 "\n"
-"complex.conjugate() -> complex\n"
-"\n"
 "Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.");
 
 #define COMPLEX_CONJUGATE_METHODDEF    \
@@ -42,8 +40,6 @@ complex___getnewargs__(PyComplexObject *self, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(complex___format____doc__,
 "__format__($self, format_spec, /)\n"
 "--\n"
-"\n"
-"complex.__format__() -> str\n"
 "\n"
 "Convert to a string according to format_spec.");
 
@@ -117,4 +113,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=182de0d34f8a0e5a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=193a37aebaaa5f89 input=a9049054013a1b77]*/
