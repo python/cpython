@@ -1,2 +1,0 @@
-Convert methods of :class:`complex` to Argument Clinic. Patch by Dong-hee
-Na.
