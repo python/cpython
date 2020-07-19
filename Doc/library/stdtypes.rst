@@ -2405,8 +2405,8 @@ that ``'\0'`` is the end of the string.
    single: = (equal); in debug string literal
 .. _f-string-formated-string-literal:
 
-``f-string``Formatted String Literal
-------------------------------------
+``f-string``-Formatted String Literal
+-------------------------------------
 .. versionadded:: 3.6
 
 A :dfn:`formatted string literal` or :dfn:`f-string` is a string literal
