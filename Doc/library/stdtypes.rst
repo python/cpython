@@ -2494,8 +2494,10 @@ In our example of the datetime that becomes::
    >>> f"{now!a}"
    'datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
    
-While debugging it may be important to see both the expression and its value.
-This can be shown by adding the ``'='`` (equal) as part of the replacement expression.::
+While debugging it may be helpful to see both the expression and its value.
+This can be shown by appending the ``'='`` (equal) after the Python expression.
+
+::
 
    >>> f"{now=}"
    'now=datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
@@ -2512,7 +2514,7 @@ the :func:`str` by appending a converter::
    ' now = datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
 
 Once the output has been evaluated it can then be formatted using the :func:`format` protocol.
-Formatting instructions are appended preceeded by the ``':'`` (colon).
+Formatting instructions are appended preceeded by a ``':'`` (colon).
 
 ::
 
@@ -2531,6 +2533,20 @@ in the final value of the whole string.
    >>> value = decimal.Decimal("12.34567")
    >>> f"result: {value:{width}.{precision}}"
    'result:      12.35'
+
+When a format specifier is given together with the ``'='`` useful in debuging, the expressions' :func:`str`
+conversion is used by default. Conversion can be used to show the :func:`repr` form.
+
+::
+
+   >>> f"{value}"
+   '12.34567'
+   >>> f"{value=}"
+   "value=Decimal('12.34567')"
+   >>> f"{value=:20}"
+   'value=            12.34567'
+   >>> f"{value=!r:20}"
+   "value=Decimal('12.34567') "
 
 Formatted string literals cannot be used as docstrings, even if they do not
 include expressions.
