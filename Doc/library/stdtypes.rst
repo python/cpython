@@ -2392,6 +2392,180 @@ that ``'\0'`` is the end of the string.
 .. index::
    single: buffer protocol; binary sequence types
 
+
+.. index::
+   single: formatted string literal
+   single: interpolated string literal
+   single: string; formatted literal
+   single: string; interpolated literal
+   single: f-string
+   single: {} (curly brackets); in formatted string literal
+   single: ! (exclamation); in formatted string literal
+   single: : (colon); in formatted string literal
+   single: = (equal); in debug string literal
+.. _f-string-formated-string-literal:
+
+``f-string``Formatted String Literal
+------------------------------------
+.. versionadded:: 3.6
+
+A :dfn:`formatted string literal` or :dfn:`f-string` is a string literal
+that is prefixed with ``'f'`` or ``'F'``.  These strings may contain
+replacement fields, which are expressions delimited by curly braces ``{}``.
+While other string literals always have a constant value, formatted strings
+are really expressions evaluated at run time.
+
+This adds flexibility to how strings can be formatted::
+
+   >>> name = "Fred"
+   >>> f"He said his name is {name!r}."
+   "He said his name is 'Fred'."
+   
+The above is an example and will become clear as you read below.
+
+Everything outside the curly braces is treated as literally with the exception
+of double braces which are treated as one brace::
+
+   >>> f"This is a string"
+   'This is a string.'
+   >>> f'{{'
+   '{'
+   >>> F"{{"
+   '}'
+   >>> F'{{ }}'
+   '{ }'
+   
+A single opening curly bracket, ``'{'``, marks a replacement field that starts with
+a python expression.::
+
+   >>> f"4 * 3 is {4 * 3}"
+   '4 * 3 is 12'
+   
+The above is quite contrived and a more useful use in code could be::
+
+   >>> a = 4
+   >>> b = 3
+   >>> f"The product of {a} and {b} is {a * b}"
+   'The product of 4 and 3 is 12'
+   
+Or more simply::
+
+   >>> a = 4
+   >>> b = 3
+   >>> f"The product is {a * b}"
+   'The product is 12'
+   
+Methods can also be used::
+
+   >>> string = "hello, world!"
+   >>> f"{string.title()}"
+   'Hello, World!'
+   >>> def make_title(input):
+   ...     return input.title()
+   ...
+   >>> f"{make_title(string)}"
+   'Hello, World!'
+   
+Any variable that can be presented as a string can be used with f-strings::
+
+   >>> import datetime
+   >>> now = datetime.datetime.now()
+   >>> f"{now}"
+   '2020-07-19 23:39:01.199675'
+   
+Note that this is the :func:`str` format of a :mod:`datetime`. If you want to show the
+:func:`repr` format you use a conversion. There are three conversions beginning with the
+``'!'`` (exclamation) mark:
+
++------------+---------------+
+| Conversion | Meaning       |
++============+===============+
+| ``'!r'``   | :func:`repr`  |
++------------+---------------+
+| ``'!s'``   | :func:`str`   |
++------------+---------------+
+| ``'!a'``   | :func:`ascii` |
++------------+---------------+
+
+In our example of the datetime that becomes::
+
+   >>> f"{now!r}"
+   'datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
+   >>> f"{now!a}"
+   'datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
+   
+While debugging it may be important to see both the expression and its value.
+This can be shown by adding the ``'='`` (equal) as part of the replacement expression.::
+
+   >>> f"{now=}"
+   'now=datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
+   >>> f"{ now = }"  # Note the addition of spaces
+   ' now = datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
+   
+Note that when using the debugging operator, any additional spaces will be left intact in the output.
+Also note that by default ``'='`` displays the :func:`repr` of the expression. It is possible to show
+the :func:`str` by appending a converter::
+
+   >>> f"{now=!s}"
+   'now=2020-07-19 23:39:01.199675'
+   >>> f"{ now = !a}" # Note the additional spaces
+   ' now = datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
+
+Once the output has been evaluated it can then be formatted using the :func:`format` protocol.
+Formatting instructions are appended preceeded by the ``':'`` (colon).
+
+::
+
+   >>> f"{now:%B %d, %Y}"
+   'July 19, 2020'
+   
+The format specifier is passed to the :meth:`__format__` method of the expression or conversion result.
+An empty string is passed when the format specifier is omitted. The formatted result is then included
+in the final value of the whole string.
+
+::
+
+   >>> width = 10
+   >>> precision = 4
+   >>> import decimal
+   >>> value = decimal.Decimal("12.34567")
+   >>> f"result: {value:{width}.{precision}}"
+   'result:      12.35'
+
+Formatted string literals cannot be used as docstrings, even if they do not
+include expressions.
+
+::
+
+   >>> def foo():
+   ...     f"Not a docstring"
+   ...
+   >>> foo.__doc__ is None
+   True
+
+A consequence of sharing the same syntax as regular string literals is
+that characters in the replacement fields must not conflict with the
+quoting used in the outer formatted string literal::
+
+   f"abc {a["x"]} def"    # error: outer string literal ended prematurely
+   f"abc {a['x']} def"    # workaround: use different quoting
+
+Backslashes are not allowed in format expressions and will raise
+an error::
+
+   f"newline: {ord('\n')}"  # raises SyntaxError
+
+To include a value in which a backslash escape is required, create
+a temporary variable.
+
+::
+
+   >>> newline = ord('\n')
+   >>> f"newline: {newline}"
+   'newline: 10'
+
+
+
 .. _binaryseq:
 
 Binary Sequence Types --- :class:`bytes`, :class:`bytearray`, :class:`memoryview`
