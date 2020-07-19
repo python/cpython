@@ -36,11 +36,6 @@ from .warnings_helper import (
 from .testresult import get_test_runner
 
 
-try:
-    from _testcapi import unicode_legacy_string
-except ImportError:
-    unicode_legacy_string = None
-
 __all__ = [
     # globals
     "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
@@ -431,8 +426,17 @@ def requires_lzma(reason='requires lzma'):
         lzma = None
     return unittest.skipUnless(lzma, reason)
 
-requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
-                        'requires legacy Unicode C API')
+def requires_legacy_unicode_capi(test):
+    def wrapper(self):
+        try:
+            from _testcapi import unicode_legacy_string
+        except ImportError:
+            self.skipTest('requires legacy Unicode C API')
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            test(self)
+    return wrapper
 
 is_jython = sys.platform.startswith('java')
 
