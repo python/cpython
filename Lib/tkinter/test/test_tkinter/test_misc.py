@@ -46,11 +46,10 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         stdout, stderr = p.communicate()
         stderr = stderr.strip()
         try:
-            self.assertEqual(stderr,
-                             b"Exception ignored in: 'Deallocation of Tkapp "
-                             b"attempted in wrong thread. Skipping deletion of "
-                             b"Tcl interpreter (this will cause a memory "
-                             b"leak).'")
+            self.assertTrue(b"Exception ignored in: <class 'RuntimeWarning'>" in stderr)
+            self.assertTrue(b"RuntimeWarning: Deallocation of Tkapp attempted in wrong "
+                            b"thread. Skipping deletion of Tcl interpreter (this will "
+                            b"cause a memory leak)." in stderr)
         except AssertionError:
             # If there is an error in the subprocess
             # we need to be able to debug it
