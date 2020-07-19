@@ -15,7 +15,7 @@ from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 
 if os.name == 'nt':
-    from nt import _getfinalpathname
+    from nt import _getfinalpathname, _getfullpathname
 else:
     _getfinalpathname = None
 
@@ -194,7 +194,7 @@ class _WindowsFlavour(_Flavour):
             return None  # Means fallback on absolute
         if strict:
             return self._ext_to_normal(_getfinalpathname(s))
-        s = path = os.path.abspath(s)
+        s = path = _getfullpathname(s)
         previous_s = None
         tail_parts = []  # End of the path after the first one not found
         while True:
@@ -204,7 +204,8 @@ class _WindowsFlavour(_Flavour):
                 previous_s = s
                 s, tail = os.path.split(s)
                 tail_parts.append(tail)
-                if previous_s == s:  # Root reached, fallback to abspath()
+                if previous_s == s:
+                    # Root reached, fallback to _getfullpathname()
                     return path
             else:
                 return os.path.join(s, *reversed(tail_parts))
