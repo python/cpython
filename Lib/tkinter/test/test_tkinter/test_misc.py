@@ -2,7 +2,6 @@ import unittest
 import subprocess
 import sys
 import threading
-import time
 import tkinter
 from test import support
 from tkinter.test.support import AbstractTkTest
