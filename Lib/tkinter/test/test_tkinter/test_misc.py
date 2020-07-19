@@ -10,11 +10,16 @@ from tkinter.test.support import AbstractTkTest
 support.requires('gui')
 
 def test_thread_gc():
-    new_root = tkinter.Tk()
-    new_root.destroy()
-    threading.Thread(target=lambda obj: time.sleep(0.2), args=(new_root,)).start()
-    del new_root
-    time.sleep(0.4)
+    def wait(obj):
+        ev1.wait()
+        ev2.set()
+    root = tkinter.Tk()
+    root.destroy()
+    ev1, ev2 = threading.Event(), threading.Event()
+    threading.Thread(target=wait, args=(root,)).start()
+    del root
+    ev1.set()
+    ev2.wait()
     print("passed")
 
 class MiscTest(AbstractTkTest, unittest.TestCase):
