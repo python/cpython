@@ -49,21 +49,38 @@ union_getattro(PyObject *self, PyObject *name)
     return PyObject_GenericGetAttr(self, name);
 }
 
-// TODO: MM: Implement this for isinstance checks
 static PyObject *
 union_instancecheck(PyObject *self, PyObject *instance)
 {
     unionobject *alias = (unionobject *) self;
     Py_ssize_t nargs = PyTuple_GET_SIZE(alias->args);
-    int retval;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
         if (PyType_Check(arg)) {
-            // MM: TODO: Find out best method to use for this.
-            retval = PyObject_IsInstance(instance, arg);
+            if (PyObject_IsInstance(instance, arg) != 0)
+            {
+                return self;
+            }
         }
     }
-    return self;
+    return instance;
+}
+
+static PyObject *
+union_subclasscheck(PyObject *self, PyObject *instance)
+{
+    unionobject *alias = (unionobject *) self;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(alias->args);
+    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
+        PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
+        if (PyType_Check(arg)) {
+            if (PyType_IsSubtype(instance, arg) != 0)
+            {
+                return self;
+            }
+        }
+    }
+    return instance;
 }
 
 static int
@@ -85,8 +102,8 @@ is_typing_name(PyObject *obj, char *name)
 
 static PyMethodDef union_methods[] = {
     {"__instancecheck__", union_instancecheck, METH_O},
-    {0}
-};
+    {"__subclasscheck__", union_subclasscheck, METH_O},
+    {0}};
 
 static PyObject *
 union_richcompare(PyObject *a, PyObject *b, int op)
@@ -103,6 +120,8 @@ union_richcompare(PyObject *a, PyObject *b, int op)
     }
     Py_RETURN_FALSE;
 }
+
+
 
 
 PyTypeObject Py_UnionType = {

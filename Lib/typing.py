@@ -890,6 +890,15 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
                 return f'typing.Optional[{_type_repr(args[0])}]'
         return super().__repr__()
 
+    def __instancecheck__(self, obj):
+        return self.__subclasscheck__(type(obj))
+
+    def __subclasscheck__(self, cls):
+        for arg in self.__args__:
+            if issubclass(cls, arg):
+                return True
+
+
 
 class Generic:
     """Abstract base class for generic types.

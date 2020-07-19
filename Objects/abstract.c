@@ -2605,10 +2605,14 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
     if (!check_class(derived,
                      "issubclass() arg 1 must be a class"))
         return -1;
-    if (!check_class(cls,
-                    "issubclass() arg 2 must be a class"
-                    " or tuple of classes"))
+
+    PyTypeObject *type = Py_TYPE(cls);
+    int is_union = (PyType_Check(type) && strcmp(type->tp_name, "typing.Union") == 0);
+    if (!is_union && !check_class(cls,
+                            "issubclass() arg 2 must be a class"
+                            " or tuple of classes")) {
         return -1;
+    }
 
     return abstract_issubclass(derived, cls);
 }
