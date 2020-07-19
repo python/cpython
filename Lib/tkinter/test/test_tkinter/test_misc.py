@@ -14,7 +14,7 @@ def test_thread_gc():
     new_root.destroy()
     threading.Thread(target=lambda obj: time.sleep(0.2), args=(new_root,)).start()
     del new_root
-    time.sleep(0.6)
+    time.sleep(0.4)
     print("passed")
 
 class MiscTest(AbstractTkTest, unittest.TestCase):
