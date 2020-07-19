@@ -315,6 +315,25 @@ def make_test_protocol(base):
     return type('TestProtocol', (base,) + base.__bases__, dct)()
 
 
+def make_test_buffered_protocol(base, buffer_size):
+    protocol = make_test_protocol(base)
+    protocol._buffer = bytearray(buffer_size)
+    protocol._last_called_buffer = None
+
+    def get_buffer(*_, **__):
+        return protocol._buffer
+
+    def buffer_updated(nbytes):
+        protocol.buffer_updated.called = True
+        protocol._last_called_buffer = protocol._buffer[:nbytes]
+
+    protocol.get_buffer = get_buffer
+
+    protocol.buffer_updated = buffer_updated
+    protocol.buffer_updated.called = False
+    return protocol
+
+
 class TestSelector(selectors.BaseSelector):
 
     def __init__(self):
