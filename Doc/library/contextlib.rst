@@ -154,6 +154,38 @@ Functions and classes provided:
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
 
+.. function:: aclosing(thing)
+
+   Return an async context manager that calls the ``aclose()`` method of *thing*
+   upon completion of the block.  This is basically equivalent to::
+
+      from contextlib import asynccontextmanager
+
+      @asynccontextmanager
+      def aclosing(thing):
+          try:
+              yield thing
+          finally:
+              await thing.aclose()
+
+   And lets you write code like this::
+
+      async def ticker(delay, to):
+          for i in range(to):
+              yield i
+              await asyncio.sleep(delay)
+
+      with aclosing(ticker(10)) as ticks:
+          async for tick in ticks:
+              print(tick)
+
+   without needing to explicitly call the ``aclose()`` method of ``ticks``.
+   Even if an error occurs, ``ticks.aclose()`` will be called when
+   the :keyword:`async with` block is exited.
+
+   .. versionadded:: 3.10
+
+
 .. _simplifying-support-for-single-optional-context-managers:
 
 .. function:: nullcontext(enter_result=None)

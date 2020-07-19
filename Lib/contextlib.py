@@ -303,6 +303,31 @@ class closing(AbstractContextManager):
         self.thing.close()
 
 
+class aclosing(AbstractAsyncContextManager):
+    """Context to automatically aclose an async generator at the end of a block.
+
+    Code like this:
+
+        async with aclosing(<module>.fetch(<arguments>)) as agen:
+            <block>
+
+    is equivalent to this:
+
+        agen = <module>.fetch(<arguments>)
+        try:
+            <block>
+        finally:
+            await agen.aclose()
+
+    """
+    def __init__(self, thing):
+        self.thing = thing
+    async def __aenter__(self):
+        return self.thing
+    async def __aexit__(self, *exc_info):
+        await self.thing.aclose()
+
+
 class _RedirectStream(AbstractContextManager):
 
     _stream = None
