@@ -501,6 +501,7 @@ def _default_mime_types():
         '.tiff'   : 'image/tiff',
         '.tif'    : 'image/tiff',
         '.ico'    : 'image/vnd.microsoft.icon',
+        '.webp'   : 'image/webp',
         '.ras'    : 'image/x-cmu-raster',
         '.bmp'    : 'image/x-ms-bmp',
         '.pnm'    : 'image/x-portable-anymap',
