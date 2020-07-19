@@ -642,7 +642,7 @@ that method.
 If an asynchronous generator is not resumed before it reaches the end of function
 but the event loop where the generator is bound to continues to run (e.g., when
 the caller task is cancelled), the caller must explicitly close the async
-generator by calling :meth:`~agen:aclose` method to free the resources allocated
+generator by calling :meth:`~agen.aclose` method to free the resources allocated
 in the async generator function's stack and detach the generator from the event
 loop.
 
