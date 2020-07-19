@@ -3,6 +3,12 @@ Released on 2020-10-05?
 ======================================
 
 
+bpo-41300: Save files with non-ascii chars.  Fix regression in
+3.9.0b4 and 3.8.4.
+
+bpo-37765: Add keywords to module name completion list.  Rewrite
+Completions section of IDLE doc.
+
 bpo-41152: The encoding of ``stdin``, ``stdout`` and ``stderr`` in IDLE
 is now always UTF-8.
 
