@@ -44,8 +44,9 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
                               "test_misc.test_thread_gc()"],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
+        stderr = stderr.strip()
         try:
-            self.assertEqual(stderr.strip(),
+            self.assertEqual(stderr,
                              b"Exception ignored in: 'Deallocation of Tkapp "
                              b"attempted in wrong thread. Skipping deletion of "
                              b"Tcl interpreter (this will cause a memory "
@@ -53,7 +54,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         except AssertionError:
             # If there is an error in the subprocess
             # we need to be able to debug it
-            print(stderr, file=sys.stderr, end=" ")
+            print(stderr.decode("utf-8"), file=sys.stderr)
             raise
         self.assertEqual(stdout.strip(), b"passed")
 
