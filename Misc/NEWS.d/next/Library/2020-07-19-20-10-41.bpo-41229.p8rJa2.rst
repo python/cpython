@@ -1,0 +1,2 @@
+Add ``contextlib.aclosing`` analogous to ``contextlib.closing`` but for
+async generators and arbitrary objects with an ``aclose`` coroutine method.
