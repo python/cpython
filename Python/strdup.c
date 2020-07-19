@@ -4,9 +4,10 @@ char *
 strdup(const char *str)
 {
     if (str != NULL) {
-        char *copy = malloc(strlen(str) + 1);
+        size_t len = strlen(str) + 1;
+        char *copy = malloc(len);
         if (copy != NULL)
-            return strcpy(copy, str);
+            return memcpy(copy, str, len);
     }
     return NULL;
 }
