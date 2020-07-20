@@ -235,11 +235,21 @@ _set_uint128_coeff_exp(mpd_t *result, uint64_t hi, uint64_t lo, mpd_ssize_t exp)
 static inline int
 mpd_from_uint128_triple(mpd_t *result, const mpd_uint128_triple_t *triple, uint32_t *status)
 {
+    static const mpd_context_t maxcontext = {
+     .prec=MPD_MAX_PREC,
+     .emax=MPD_MAX_EMAX,
+     .emin=MPD_MIN_EMIN,
+     .round=MPD_ROUND_HALF_EVEN,
+     .traps=MPD_Traps,
+     .status=0,
+     .newtrap=0,
+     .clamp=0,
+     .allcr=1,
+    };
     const enum mpd_triple_class tag = triple->tag;
     const uint8_t sign = triple->sign;
     const uint64_t hi = triple->hi;
     const uint64_t lo = triple->lo;
-    mpd_context_t maxcontext;
     mpd_ssize_t exp;
 
 #ifdef CONFIG_32
@@ -298,7 +308,6 @@ mpd_from_uint128_triple(mpd_t *result, const mpd_uint128_triple_t *triple, uint3
             goto malloc_error;
         }
 
-        mpd_maxcontext(&maxcontext);
         uint32_t workstatus = 0;
         mpd_qfinalize(result, &maxcontext, &workstatus);
         if (workstatus & (MPD_Inexact|MPD_Rounded|MPD_Clamped)) {
