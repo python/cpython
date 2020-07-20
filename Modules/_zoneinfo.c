@@ -224,8 +224,14 @@ error:
     self = NULL;
 cleanup:
     if (file_obj != NULL) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
         PyObject *tmp = PyObject_CallMethod(file_obj, "close", NULL);
-        Py_DECREF(tmp);
+        _PyErr_ChainExceptions(exc, val, tb);
+        if (tmp == NULL) {
+            Py_CLEAR(self);
+        }
+        Py_XDECREF(tmp);
         Py_DECREF(file_obj);
     }
     Py_DECREF(file_path);
