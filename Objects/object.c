@@ -1169,7 +1169,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     /* Make sure the logic of _PyObject_GetMethod is in sync with
        this method.
 
-       When suppress=1, this function suppress AttributeError.
+       When suppress=1, this function suppresses AttributeError.
     */
 
     PyTypeObject *tp = Py_TYPE(obj);

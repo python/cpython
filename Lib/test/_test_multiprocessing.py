@@ -3768,6 +3768,18 @@ class _TestSharedMemory(BaseTestCase):
         self.assertGreaterEqual(sms.size, 512)
         self.assertGreaterEqual(len(sms.buf), sms.size)
 
+        # Verify __repr__
+        self.assertIn(sms.name, str(sms))
+        self.assertIn(str(sms.size), str(sms))
+
+        # Test pickling
+        sms.buf[0:6] = b'pickle'
+        pickled_sms = pickle.dumps(sms)
+        sms2 = pickle.loads(pickled_sms)
+        self.assertEqual(sms.name, sms2.name)
+        self.assertEqual(sms.size, sms2.size)
+        self.assertEqual(bytes(sms.buf[0:6]), bytes(sms2.buf[0:6]), b'pickle')
+
         # Modify contents of shared memory segment through memoryview.
         sms.buf[0] = 42
         self.assertEqual(sms.buf[0], 42)
@@ -3974,6 +3986,23 @@ class _TestSharedMemory(BaseTestCase):
             ['howdy', b'HoWdY', -273.154, 100, None, True, 42]
         )
         self.addCleanup(sl.shm.unlink)
+
+        # Verify __repr__
+        self.assertIn(sl.shm.name, str(sl))
+        self.assertIn(str(list(sl)), str(sl))
+
+        # Index Out of Range (get)
+        with self.assertRaises(IndexError):
+            sl[7]
+
+        # Index Out of Range (set)
+        with self.assertRaises(IndexError):
+            sl[7] = 2
+
+        # Assign value without format change (str -> str)
+        current_format = sl._get_packing_format(0)
+        sl[0] = 'howdy'
+        self.assertEqual(current_format, sl._get_packing_format(0))
 
         # Verify attributes are readable.
         self.assertEqual(sl.format, '8s8sdqxxxxxx?xxxxxxxx?q')
