@@ -6325,6 +6325,7 @@ mark_reachable(struct assembler *a) {
             }
         }
     }
+    PyObject_Free(stack);
     return 0;
 }
 
