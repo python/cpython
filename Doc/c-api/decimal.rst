@@ -208,7 +208,7 @@ Advanced API
 ------------
 
 This API enables the use of ``libmpdec`` functions.  Since Python is compiled with
-hidden symbols, the API requires and external libmpdec and the ``mpdecimal.h``
+hidden symbols, the API requires an external libmpdec and the ``mpdecimal.h``
 header.
 
 
