@@ -9,7 +9,7 @@
  *   3. Generate code for basic blocks.  See compiler_mod() in this file.
  *   4. Assemble the basic blocks into final code.  See assemble() in
  *      this file.
- *   5. Optimize the byte code (peephole optimizations).  See peephole.c
+ *   5. Optimize the byte code (peephole optimizations).
  *
  * Note that compiler_mod() suggests module, but the module ast type
  * (mod_ty) has cases for expressions and interactive statements.
@@ -6360,4 +6360,14 @@ optimize_cfg(struct assembler *a, PyObject *consts)
     return 0;
 }
 
+/* Retained for API compatibility.
+ * Optimization is now done in optimize_cfg */
+
+PyObject *
+PyCode_Optimize(PyObject *code, PyObject* Py_UNUSED(consts),
+                PyObject *Py_UNUSED(names), PyObject *Py_UNUSED(lnotab_obj))
+{
+    Py_INCREF(code);
+    return code;
+}
 

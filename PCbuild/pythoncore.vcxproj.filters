@@ -1028,9 +1028,6 @@
     <ClCompile Include="..\Python\pathconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\peephole.c">
-      <Filter>Python</Filter>
-    </ClCompile>
     <ClCompile Include="..\Python\preconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
