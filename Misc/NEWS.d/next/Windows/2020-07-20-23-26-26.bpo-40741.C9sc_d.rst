@@ -1,0 +1,1 @@
+Update Windows release to include SQLite 3.32.3.
