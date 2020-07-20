@@ -1,0 +1,230 @@
+.. bpo: 41304
+.. date: 2020-07-15-20-15-08
+.. nonce: vNEeYA
+.. release date: 2020-07-20
+.. section: Security
+
+Fixes `python3x._pth` being ignored on Windows, caused by the fix for
+:issue:`29778` (CVE-2020-15801).
+
+..
+
+.. bpo: 41162
+.. date: 2020-07-03-20-41-29
+.. nonce: tb8pVj
+.. section: Security
+
+Audit hooks are now cleared later during finalization to avoid missing
+events.
+
+..
+
+.. bpo: 29778
+.. date: 2020-07-03-17-21-37
+.. nonce: cR_fGS
+.. section: Security
+
+Ensure :file:`python3.dll` is loaded from correct locations when Python is
+embedded (CVE-2020-15523).
+
+..
+
+.. bpo: 39603
+.. date: 2020-02-12-14-17-39
+.. nonce: Gt3RSg
+.. section: Security
+
+Prevent http header injection by rejecting control characters in
+http.client.putrequest(...).
+
+..
+
+.. bpo: 41295
+.. date: 2020-07-18-08-15-32
+.. nonce: pu8Ezo
+.. section: Core and Builtins
+
+Resolve a regression in CPython 3.8.4 where defining "__setattr__" in a
+multi-inheritance setup and calling up the hierarchy chain could fail if
+builtins/extension types were involved in the base types.
+
+..
+
+.. bpo: 41247
+.. date: 2020-07-08-22-03-54
+.. nonce: PndYIk
+.. section: Core and Builtins
+
+Always cache the running loop holder when running
+``asyncio.set_running_loop``.
+
+..
+
+.. bpo: 41252
+.. date: 2020-07-08-21-55-23
+.. nonce: nBWL-Y
+.. section: Core and Builtins
+
+Fix incorrect refcounting in _ssl.c's ``_servername_callback()``.
+
+..
+
+.. bpo: 41215
+.. date: 2020-07-06-18-36-33
+.. nonce: vFGFIz
+.. section: Core and Builtins
+
+Use non-NULL default values in the PEG parser keyword list to overcome a bug
+that was preventing Python from being properly compiled when using the XLC
+compiler. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 41218
+.. date: 2020-07-06-13-35-17
+.. nonce: oKnSr2
+.. section: Core and Builtins
+
+Python 3.8.3 had a regression where compiling with
+ast.PyCF_ALLOW_TOP_LEVEL_AWAIT would aggressively mark list comprehension
+with CO_COROUTINE. Now only list comprehension making use of async/await
+will tagged as so.
+
+..
+
+.. bpo: 41175
+.. date: 2020-06-30-20-17-31
+.. nonce: acJoXB
+.. section: Core and Builtins
+
+Guard against a NULL pointer dereference within bytearrayobject triggered by
+the ``bytearray() + bytearray()`` operation.
+
+..
+
+.. bpo: 39960
+.. date: 2020-06-23-18-32-41
+.. nonce: Kez3fP
+.. section: Core and Builtins
+
+The "hackcheck" that prevents sneaking around a type's __setattr__() by
+calling the superclass method was rewritten to allow C implemented heap
+types.
+
+..
+
+.. bpo: 41288
+.. date: 2020-07-13-15-06-35
+.. nonce: 8mn5P-
+.. section: Library
+
+Unpickling invalid NEWOBJ_EX opcode with the C implementation raises now
+UnpicklingError instead of crashing.
+
+..
+
+.. bpo: 39017
+.. date: 2020-07-12-22-16-58
+.. nonce: x3Cg-9
+.. section: Library
+
+Avoid infinite loop when reading specially crafted TAR files using the
+tarfile module (CVE-2019-20907).
+
+..
+
+.. bpo: 41235
+.. date: 2020-07-07-21-56-26
+.. nonce: H2csMU
+.. section: Library
+
+Fix the error handling in :meth:`ssl.SSLContext.load_dh_params`.
+
+..
+
+.. bpo: 41207
+.. date: 2020-07-06-16-58-53
+.. nonce: Emw7Nk
+.. section: Library
+
+In distutils.spawn, restore expectation that DistutilsExecError is raised
+when the command is not found.
+
+..
+
+.. bpo: 39168
+.. date: 2020-07-04-21-56-46
+.. nonce: DQWsXj
+.. section: Library
+
+Remove the ``__new__`` method of :class:`typing.Generic`.
+
+..
+
+.. bpo: 41194
+.. date: 2020-07-03-13-15-08
+.. nonce: djrKjs
+.. section: Library
+
+Fix a crash in the ``_ast`` module: it can no longer be loaded more than
+once. It now uses a global state rather than a module state.
+
+..
+
+.. bpo: 39384
+.. date: 2020-05-30-12-44-29
+.. nonce: Iqxy3q
+.. section: Library
+
+Fixed email.contentmanager to allow set_content() to set a null string.
+
+..
+
+.. bpo: 37703
+.. date: 2019-08-16-20-25-42
+.. nonce: Qm_l_H
+.. section: Documentation
+
+Updated Documentation to comprehensively elaborate on the behaviour of
+gather.cancel()
+
+..
+
+.. bpo: 40741
+.. date: 2020-06-19-14-19-08
+.. nonce: L7yTbm
+.. section: macOS
+
+Update macOS installer to use SQLite 3.32.3.
+
+..
+
+.. bpo: 41300
+.. date: 2020-07-16-17-39-06
+.. nonce: wRixNb
+.. section: IDLE
+
+Save files with non-ascii chars. Fix regression released in 3.9.0b4 and
+3.8.4.
+
+..
+
+.. bpo: 37765
+.. date: 2020-07-07-18-44-30
+.. nonce: umc1o8
+.. section: IDLE
+
+Add keywords to module name completion list.  Rewrite Completions section of
+IDLE doc.
+
+..
+
+.. bpo: 40170
+.. date: 2020-07-08-10-14-52
+.. nonce: N6Qx1i
+.. section: C API
+
+Revert :c:func:`PyType_HasFeature` change: it reads again directly the
+:c:member:`PyTypeObject.tp_flags` member when the limited C API is not used,
+rather than always calling :c:func:`PyType_GetFlags` which hides
+implementation details.

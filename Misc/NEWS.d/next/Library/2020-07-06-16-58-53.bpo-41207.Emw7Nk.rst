@@ -1,1 +1,0 @@
-In distutils.spawn, restore expectation that DistutilsExecError is raised when the command is not found.
