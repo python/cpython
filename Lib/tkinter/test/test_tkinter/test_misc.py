@@ -10,15 +10,13 @@ support.requires('gui')
 
 def test_thread_gc():
     def wait(obj):
-        ev1.wait()
-        ev2.set()
+        ev.wait()
     root = tkinter.Tk()
     root.destroy()
-    ev1, ev2 = threading.Event(), threading.Event()
+    ev = threading.Event()
     threading.Thread(target=wait, args=(root,)).start()
     del root
-    ev1.set()
-    ev2.wait()
+    ev.set()
     print("passed")
 
 class MiscTest(AbstractTkTest, unittest.TestCase):
