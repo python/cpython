@@ -411,7 +411,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     }
 #if HAVE_FFI_PREP_CLOSURE_LOC
 #   if USING_APPLE_OS_LIBFFI
-#      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME __builtin_available(macos 11, ios 13, watchos 6, tvos 13, *)
+#      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
 #   else
 #      define HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME true
 #   endif
@@ -426,10 +426,14 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         PyErr_Format(PyExc_NotImplementedError, "ffi_prep_closure_loc() is missing");
         goto error;
 #else
+        #if __clang__
         #pragma clang diagnostic push
         #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        #endif
         result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
+        #if __clang__
         #pragma clang diagnostic pop
+        #endif
 #endif
     }
     if (result != FFI_OK) {

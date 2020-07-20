@@ -840,7 +840,7 @@ static int _call_function_pointer(int flags,
 #endif
 
 #   if USING_APPLE_OS_LIBFFI
-#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME __builtin_available(macos 11, ios 13, watchos 6, tvos 13, *)
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
 #   elif HAVE_FFI_PREP_CIF_VAR
 #      define HAVE_FFI_PREP_CIF_VAR_RUNTIME true
 #   else
