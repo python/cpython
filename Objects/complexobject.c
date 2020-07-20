@@ -684,46 +684,54 @@ complex_float(PyObject *v)
     return NULL;
 }
 
+/*[clinic input]
+complex.conjugate
+
+Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.
+[clinic start generated code]*/
+
 static PyObject *
-complex_conjugate(PyObject *self, PyObject *Py_UNUSED(ignored))
+complex_conjugate_impl(PyComplexObject *self)
+/*[clinic end generated code: output=5059ef162edfc68e input=5fea33e9747ec2c4]*/
 {
-    Py_complex c;
-    c = ((PyComplexObject *)self)->cval;
+    Py_complex c = self->cval;
     c.imag = -c.imag;
     return PyComplex_FromCComplex(c);
 }
 
-PyDoc_STRVAR(complex_conjugate_doc,
-"complex.conjugate() -> complex\n"
-"\n"
-"Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.");
+/*[clinic input]
+complex.__getnewargs__
+
+[clinic start generated code]*/
 
 static PyObject *
-complex_getnewargs(PyComplexObject *v, PyObject *Py_UNUSED(ignored))
+complex___getnewargs___impl(PyComplexObject *self)
+/*[clinic end generated code: output=689b8206e8728934 input=539543e0a50533d7]*/
 {
-    Py_complex c = v->cval;
+    Py_complex c = self->cval;
     return Py_BuildValue("(dd)", c.real, c.imag);
 }
 
-PyDoc_STRVAR(complex__format__doc,
-"complex.__format__() -> str\n"
-"\n"
-"Convert to a string according to format_spec.");
+
+/*[clinic input]
+complex.__format__
+
+    format_spec: unicode
+    /
+
+Convert to a string according to format_spec.
+[clinic start generated code]*/
 
 static PyObject *
-complex__format__(PyObject* self, PyObject* args)
+complex___format___impl(PyComplexObject *self, PyObject *format_spec)
+/*[clinic end generated code: output=bfcb60df24cafea0 input=014ef5488acbe1d5]*/
 {
-    PyObject *format_spec;
     _PyUnicodeWriter writer;
     int ret;
-
-    if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
-        return NULL;
-
     _PyUnicodeWriter_Init(&writer);
     ret = _PyComplex_FormatAdvancedWriter(
         &writer,
-        self,
+        (PyObject *)self,
         format_spec, 0, PyUnicode_GET_LENGTH(format_spec));
     if (ret == -1) {
         _PyUnicodeWriter_Dealloc(&writer);
@@ -733,11 +741,9 @@ complex__format__(PyObject* self, PyObject* args)
 }
 
 static PyMethodDef complex_methods[] = {
-    {"conjugate",       (PyCFunction)complex_conjugate, METH_NOARGS,
-     complex_conjugate_doc},
-    {"__getnewargs__",          (PyCFunction)complex_getnewargs,        METH_NOARGS},
-    {"__format__",          (PyCFunction)complex__format__,
-                                       METH_VARARGS, complex__format__doc},
+    COMPLEX_CONJUGATE_METHODDEF
+    COMPLEX___GETNEWARGS___METHODDEF
+    COMPLEX___FORMAT___METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
