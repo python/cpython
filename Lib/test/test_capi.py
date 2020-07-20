@@ -19,6 +19,7 @@ from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support import import_helper
 from test.support import threading_helper
+from test.support import warnings_helper
 from test.support.script_helper import assert_python_failure, assert_python_ok
 try:
     import _posixsubprocess
@@ -699,6 +700,11 @@ class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
                     for name in dir(_testcapi)
                     if name.startswith('test_') and not name.endswith('_code'))
+
+    # Suppress warning from PyUnicode_FromUnicode().
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_widechar(self):
+        _testcapi.test_widechar()
 
 
 class Test_testinternalcapi(unittest.TestCase):
