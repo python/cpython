@@ -57,6 +57,8 @@
 #include "Python.h"
 #include "structmember.h"         // PyMemberDef
 
+#include <stdbool.h>
+
 #ifdef MS_WIN32
 #include <windows.h>
 #include <tchar.h>
@@ -812,7 +814,8 @@ static int _call_function_pointer(int flags,
                                   ffi_type **atypes,
                                   ffi_type *restype,
                                   void *resmem,
-                                  int argcount)
+                                  int argcount,
+                                  int argtypecount)
 {
     PyThreadState *_save = NULL; /* For Py_BLOCK_THREADS and Py_UNBLOCK_THREADS */
     PyObject *error_object = NULL;
@@ -835,14 +838,60 @@ static int _call_function_pointer(int flags,
     if ((flags & FUNCFLAG_CDECL) == 0)
         cc = FFI_STDCALL;
 #endif
-    if (FFI_OK != ffi_prep_cif(&cif,
-                               cc,
-                               argcount,
-                               restype,
-                               atypes)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "ffi_prep_cif failed");
-        return -1;
+
+#   if USING_APPLE_OS_LIBFFI
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
+#   elif HAVE_FFI_PREP_CIF_VAR
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME true
+#   else
+#      define HAVE_FFI_PREP_CIF_VAR_RUNTIME false
+#   endif
+
+    /* Even on Apple-arm64 the calling convention for variadic functions conincides
+     * with the standard calling convention in the case that the function called
+     * only with its fixed arguments.   Thus, we do not need a special flag to be
+     * set on variadic functions.   We treat a function as variadic if it is called
+     * with a nonzero number of variadic arguments */
+    bool is_variadic = (argtypecount != 0 && argcount > argtypecount);
+    (void) is_variadic;
+
+#if defined(__APPLE__) && defined(__arm64__)
+    if (is_variadic) {
+        if (HAVE_FFI_PREP_CIF_VAR_RUNTIME) {
+        } else {
+            PyErr_SetString(PyExc_NotImplementedError, "ffi_prep_cif_var() is missing");
+            return -1;
+        }
+    }
+#endif
+
+#if HAVE_FFI_PREP_CIF_VAR
+    if (is_variadic) {
+        if (HAVE_FFI_PREP_CIF_VAR_RUNTIME) {
+            if (FFI_OK != ffi_prep_cif_var(&cif,
+                                        cc,
+                                        argtypecount,
+                                        argcount,
+                                        restype,
+                                        atypes)) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "ffi_prep_cif_var failed");
+                return -1;
+            }
+        }
+    } else
+#endif
+
+    {
+        if (FFI_OK != ffi_prep_cif(&cif,
+                                   cc,
+                                   argcount,
+                                   restype,
+                                   atypes)) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "ffi_prep_cif failed");
+            return -1;
+        }
     }
 
     if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
@@ -1212,9 +1261,8 @@ PyObject *_ctypes_callproc(PPROC pProc,
 
     if (-1 == _call_function_pointer(flags, pProc, avalues, atypes,
                                      rtype, resbuf,
-                                     Py_SAFE_DOWNCAST(argcount,
-                                                      Py_ssize_t,
-                                                      int)))
+                                     Py_SAFE_DOWNCAST(argcount, Py_ssize_t, int),
+                                     Py_SAFE_DOWNCAST(argtype_count, Py_ssize_t, int)))
         goto cleanup;
 
 #ifdef WORDS_BIGENDIAN
