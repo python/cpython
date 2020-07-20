@@ -15466,52 +15466,57 @@ PyUnicode_Format(PyObject *format, PyObject *args)
 }
 
 static PyObject *
-unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+unicode_subtype_new(PyTypeObject *type, PyObject *unicode);
+
+/*[clinic input]
+@classmethod
+str.__new__ as unicode_new
+
+    object as x: object = NULL
+    encoding: str = NULL
+    errors: str = NULL
+
+[clinic start generated code]*/
 
 static PyObject *
-unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+unicode_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
+                 const char *errors)
+/*[clinic end generated code: output=fc72d4878b0b57e9 input=e81255e5676d174e]*/
 {
-    PyObject *x = NULL;
-    static char *kwlist[] = {"object", "encoding", "errors", 0};
-    char *encoding = NULL;
-    char *errors = NULL;
+    PyObject *unicode;
+    if (x == NULL) {
+        unicode = unicode_new_empty();
+    }
+    else if (encoding == NULL && errors == NULL) {
+        unicode = PyObject_Str(x);
+    }
+    else {
+        unicode = PyUnicode_FromEncodedObject(x, encoding, errors);
+    }
 
-    if (type != &PyUnicode_Type)
-        return unicode_subtype_new(type, args, kwds);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:str",
-                                     kwlist, &x, &encoding, &errors))
-        return NULL;
-    if (x == NULL)
-        _Py_RETURN_UNICODE_EMPTY();
-    if (encoding == NULL && errors == NULL)
-        return PyObject_Str(x);
-    else
-        return PyUnicode_FromEncodedObject(x, encoding, errors);
+    if (unicode != NULL && type != &PyUnicode_Type) {
+        Py_SETREF(unicode, unicode_subtype_new(type, unicode));
+    }
+    return unicode;
 }
 
 static PyObject *
-unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
 {
-    PyObject *unicode, *self;
+    PyObject *self;
     Py_ssize_t length, char_size;
     int share_wstr, share_utf8;
     unsigned int kind;
     void *data;
 
     assert(PyType_IsSubtype(type, &PyUnicode_Type));
-
-    unicode = unicode_new(&PyUnicode_Type, args, kwds);
-    if (unicode == NULL)
-        return NULL;
     assert(_PyUnicode_CHECK(unicode));
     if (PyUnicode_READY(unicode) == -1) {
-        Py_DECREF(unicode);
         return NULL;
     }
 
     self = type->tp_alloc(type, 0);
     if (self == NULL) {
-        Py_DECREF(unicode);
         return NULL;
     }
     kind = PyUnicode_KIND(unicode);
@@ -15580,11 +15585,9 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #ifdef Py_DEBUG
     _PyUnicode_HASH(self) = _PyUnicode_HASH(unicode);
 #endif
-    Py_DECREF(unicode);
     return self;
 
 onError:
-    Py_DECREF(unicode);
     Py_DECREF(self);
     return NULL;
 }

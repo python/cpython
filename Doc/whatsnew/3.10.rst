@@ -121,6 +121,10 @@ arguments passed to the Python executable.
 Optimizations
 =============
 
+* Constructors :func:`str`, :func:`bytes` and :func:`bytearray` are now faster
+  (around 30--40% for small objects).
+  (Contributed by Serhiy Storchaka in :issue:`41334`.)
+
 * The :mod:`runpy` module now imports fewer modules.
   The ``python3 -m module-name`` command startup time is 1.3x faster in
   average.
