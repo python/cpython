@@ -122,7 +122,19 @@ def dyld_find(name, executable_path=None, env=None):
                 dyld_executable_path_search(name, executable_path),
                 dyld_default_search(name, env),
             ), env):
-        if os.path.isfile(path):
+
+        # on macOS 11 system libraries are in a shared library
+        # cache, not in the regular place in the filesystem.
+        # There still are symlinks (libz.dylib -> libz.1.dylib),
+        # but the target of the symlink no longer is there.
+        #
+        # There shouldn't be 3th-party libraries in these 
+        # system locations
+        if path.startswith("/System/") and os.path.islink(path):
+            return path
+        elif path.startswith("/usr/lib/") and os.path.islink(path):
+            return path
+        elif os.path.isfile(path):
             return path
     raise ValueError("dylib %s could not be found" % (name,))
 
