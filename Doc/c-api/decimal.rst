@@ -18,7 +18,7 @@ steps in its init function:
 
 .. code-block::
 
-    #include <decimal.h>
+    #include "pydecimal.h"
 
     static int decimal_initialized = 0;
     if (!decimal_initialized) {

@@ -19,7 +19,7 @@
 
 #include "Python.h"
 #include "datetime.h"
-#include "decimal.h"
+#include "pydecimal.h"
 #include "marshal.h"
 #include "structmember.h"         // PyMemberDef
 #include <float.h>
