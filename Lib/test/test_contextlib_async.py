@@ -278,6 +278,7 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         async with woohoo(self=11, func=22, args=33, kwds=44) as target:
             self.assertEqual(target, (11, 22, 33, 44))
 
+    @_async_test
     async def test_recursive(self):
         depth = 0
         @asynccontextmanager
