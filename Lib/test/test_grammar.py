@@ -584,12 +584,14 @@ class GrammarTests(unittest.TestCase):
         d22v(1, *(2, 3), **{'d': 4})
 
         # keyword argument type tests
-        try:
-            str('x', **{b'foo':1 })
-        except TypeError:
-            pass
-        else:
-            self.fail('Bytes should not work as keyword argument names')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', BytesWarning)
+            try:
+                str('x', **{b'foo':1 })
+            except TypeError:
+                pass
+            else:
+                self.fail('Bytes should not work as keyword argument names')
         # keyword only argument tests
         def pos0key1(*, key): return key
         pos0key1(key=100)

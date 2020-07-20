@@ -1,0 +1,2 @@
+Constructors :func:`str`, :func:`bytes` and :func:`bytearray` are now faster
+(around 30--40% for small objects).
