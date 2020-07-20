@@ -6,12 +6,9 @@
  * Optimization is now done in the compiler */
 
 PyObject *
-PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
-                PyObject *lnotab_obj)
+PyCode_Optimize(PyObject *code, PyObject* Py_UNUSED(consts),
+                PyObject *Py_UNUSED(names), PyObject *Py_UNUSED(lnotab_obj))
 {
     Py_INCREF(code);
-    (void)consts;
-    (void)names;
-    (void)lnotab_obj;
     return code;
 }

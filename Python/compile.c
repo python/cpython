@@ -5882,9 +5882,9 @@ makecode(struct compiler *c, struct assembler *a, PyObject *consts)
 
     names = dict_keys_inorder(c->u->u_names, 0);
     varnames = dict_keys_inorder(c->u->u_varnames, 0);
-    if (!names || !varnames)
+    if (!names || !varnames) {
         goto error;
-
+    }
     cellvars = dict_keys_inorder(c->u->u_cellvars, 0);
     if (!cellvars)
         goto error;
