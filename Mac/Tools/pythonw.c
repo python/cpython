@@ -223,7 +223,8 @@ main(int argc, char **argv) {
     /* We're weak-linking to posix-spawnv to ensure that
      * an executable build on 10.5 can work on 10.4.
      */
-    if (posix_spawn != NULL) {
+
+    if (&posix_spawn != NULL) {
         posix_spawnattr_t spawnattr = NULL;
 
         setup_spawnattr(&spawnattr);
