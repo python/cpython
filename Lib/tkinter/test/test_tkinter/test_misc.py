@@ -9,12 +9,10 @@ from tkinter.test.support import AbstractTkTest
 support.requires('gui')
 
 def test_thread_gc():
-    def wait(obj):
-        ev.wait()
     root = tkinter.Tk()
     root.destroy()
     ev = threading.Event()
-    threading.Thread(target=wait, args=(root,)).start()
+    threading.Thread(target=lambda obj: ev.wait(), args=(root,)).start()
     del root
     ev.set()
     print("passed")
