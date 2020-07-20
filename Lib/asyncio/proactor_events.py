@@ -181,17 +181,27 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
     def __init__(self, loop, sock, protocol, waiter=None,
                  extra=None, server=None, buffer_size=65536):
         self._paused = True
-        super().__init__(loop, sock, protocol, waiter, extra, server)
+        self._buffer_size = buffer_size
+        self._pending_data = None
+        self._pending_data_length = -1
+        self._recv_fut_canceled = False
+        self._read_fut = None
+        self._protocol = None
 
-        if isinstance(protocol, protocols.BufferedProtocol):
-            self._data = protocol.get_buffer(-1)
-            self._pending_data_length = -1
-        else:
-            self._buffer_size = buffer_size
-            self._pending_data = None
+        super().__init__(loop, sock, protocol, waiter, extra, server)
 
         self._loop.call_soon(self._loop_reading)
         self._paused = False
+
+    def set_protocol(self, protocol):
+        super().set_protocol(protocol)
+
+        if isinstance(protocol, protocols.BufferedProtocol):
+            self._data = protocol.get_buffer(self._buffer_size)
+
+        if self._read_fut:
+            self._read_fut.cancel()
+            self._recv_fut_canceled = True
 
     def is_reading(self):
         return not self._paused and not self._closing
@@ -290,6 +300,24 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
 
         self._protocol.data_received(data)
 
+    def _handle_recv_result(self, result):
+        """
+        Handles the future result of recv / recv_into.
+        Returns if should continue reading or not, determined by EOF.
+        """
+        if isinstance(self._protocol, protocols.BufferedProtocol):
+            length = result
+            if length > -1:
+                self._buffer_updated(length)
+                if length == 0:
+                    return False
+        else:
+            data = result
+            self._data_received(data)
+            if not data:
+                return False
+        return True
+
     def _loop_reading(self, fut=None):
         try:
             if fut is not None:
@@ -297,19 +325,16 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                                                  self._closing)
                 self._read_fut = None
                 if fut.done():
-                    if isinstance(self._protocol, protocols.BufferedProtocol):
-                        length = fut.result()
-                        if length > -1:
-                            self._buffer_updated(length)
-                            if length == 0:
-                                # we got end-of-file so no need to reschedule a new read
-                                return
-                    else:
-                        data = fut.result()
-                        self._data_received(data)
-                        if not data:
+                    try:
+                        if not self._handle_recv_result(fut.result()):
                             # we got end-of-file so no need to reschedule a new read
                             return
+                    except exceptions.CancelledError:
+                        if self._recv_fut_canceled:
+                            # a cancellation is expected on a change of protocol
+                            self._recv_fut_canceled = True
+                        else:
+                            raise
                 else:
                     # the future will be replaced by next proactor.recv call
                     fut.cancel()
