@@ -176,7 +176,7 @@ Module contents
 
    Path to the user site-packages for the running Python.  Can be ``None`` if
    :func:`getusersitepackages` hasn't been called yet.  Default value is
-   :file:`~/.local/lib/python{X.Y}/site-packages` for UNIX and non-framework Mac
+   :file:`~/.local/lib/python{X.Y}/site-packages` for UNIX and non-framework
    macOS builds, :file:`~/Library/Python/{X.Y}/lib/python/site-packages` for Mac
    framework builds, and :file:`{%APPDATA%}\\Python\\Python{XY}\\site-packages`
    on Windows.  This directory is a site directory, which means that

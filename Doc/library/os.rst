@@ -301,7 +301,7 @@ process and user.
 
    .. note::
 
-      On macOS, :func:`getgroups` behavior differs somewhat from
+      On Mac OS X, :func:`getgroups` behavior differs somewhat from
       other Unix platforms. If the Python interpreter was built with a
       deployment target of :const:`10.5` or earlier, :func:`getgroups` returns
       the list of effective group ids associated with the current user process;
@@ -486,7 +486,7 @@ process and user.
 
    .. availability:: Unix.
 
-   .. note:: On macOS, the length of *groups* may not exceed the
+   .. note:: On Mac OS X, the length of *groups* may not exceed the
       system-defined maximum number of effective group ids, typically 16.
       See the documentation for :func:`getgroups` for cases where it may not
       return the same group list set by calling setgroups().

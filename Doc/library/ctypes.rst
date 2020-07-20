@@ -1420,7 +1420,7 @@ correct library and dependencies are loaded.
 .. data:: DEFAULT_MODE
    :noindex:
 
-   The default mode which is used to load shared libraries.  On macOS 10.3, this is
+   The default mode which is used to load shared libraries.  On OSX 10.3, this is
    *RTLD_GLOBAL*, otherwise it is the same as *RTLD_LOCAL*.
 
 Instances of these classes have no public methods.  Functions exported by the
