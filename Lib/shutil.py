@@ -751,19 +751,9 @@ def rmtree(path, ignore_errors=False, onerror=None):
             os.close(fd)
     else:
         try:
-<<<<<<< HEAD
-<<<<<<< HEAD
-            if not os.path.exists(path):
-                raise FileNotFoundError("Cannot call rmtree on a missing path")
-            if os.path.islink(path):
-=======
-            if _rmtree_islink(path):
->>>>>>> bpo-37834: Normalise handling of reparse points on Windows (GH-15231)
-=======
             if not os.path.exists(path):
                 raise FileNotFoundError("Cannot call rmtree on a missing path")
             if _rmtree_islink(path):
->>>>>>> 735f5f25086c03b77a97c9ed7d75238e029623b9
                 # symlinks to directories are forbidden, see bug #1669
                 raise OSError("Cannot call rmtree on a symbolic link")
         except OSError:
