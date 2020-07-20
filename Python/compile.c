@@ -5476,14 +5476,13 @@ static int
 pattern_load_constant(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Constant_kind);
-    assert(PyBytes_CheckExact(p->v.Constant.value) ||
+    assert(PyBool_Check(p->v.Constant.value) ||
+           PyBytes_CheckExact(p->v.Constant.value) ||
            PyComplex_CheckExact(p->v.Constant.value) ||
            PyFloat_CheckExact(p->v.Constant.value) ||
            PyLong_CheckExact(p->v.Constant.value) ||
            PyUnicode_CheckExact(p->v.Constant.value) ||
-           p->v.Constant.value == Py_False ||
-           p->v.Constant.value == Py_None ||
-           p->v.Constant.value == Py_True);
+           p->v.Constant.value == Py_None);
     ADDOP_LOAD_CONST(c, p->v.Constant.value);
     return 1;
 }
@@ -5495,20 +5494,21 @@ pattern_store_name(struct compiler *c, expr_ty p, pattern_context *pc)
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
     if (WILDCARD_CHECK(p)) {
-        return compiler_error(c,
-            "can't assign to '_' here; consider removing or renaming?");
+        const char *e = "can't assign to '_' here; consider removing or "
+                        "renaming?";
+        return compiler_error(c, e);
     }
     if (!pc->stores) {
         CHECK(pc->stores = PySet_New(NULL));
     }
     else {
-        int dupe = PySet_Contains(pc->stores, p->v.Name.id);
-        if (dupe < 0) {
+        int duplicate = PySet_Contains(pc->stores, p->v.Name.id);
+        if (duplicate < 0) {
             return 0;
         }
-        if (dupe) {
-            return compiler_error(c,
-                "multiple assignments to name %R in pattern", p->v.Name.id);
+        if (duplicate) {
+            const char *e = "multiple assignments to name %R in pattern";
+            return compiler_error(c, e, p->v.Name.id);
         }
     }
     CHECK(!PySet_Add(pc->stores, p->v.Name.id));
@@ -5548,8 +5548,11 @@ compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
         SET_LOC(c, alt);
         if (alt->kind == Name_kind && alt->v.Name.ctx == Store && i != size - 1)
         {
-            compiler_warn(c, "name capture pattern %R makes remaining alternate "
-                             "patterns unreachable", alt->v.Name.id);
+            const char *w = "name capture pattern %R makes remaining alternate "
+                            "patterns unreachable"
+            if (compiler_warn(c, w, alt->v.Name.id)) {
+                goto fail;
+            }
         }
         if (!pc->stores ||
             !compiler_addop(c, DUP_TOP) ||
@@ -5679,8 +5682,9 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
         for (i = 0; i < size - star; i++) {
             expr_ty key = asdl_seq_GET(keys, i);
             if (!key) {
-                return compiler_error(c,
-                    "can't use starred pattern here; consider moving to end?");
+                const char *e = "can't use starred pattern here; consider "
+                                "moving to end?";
+                return compiler_error(c, e);
             }
             if (key->kind == Attribute_kind) {
                 CHECK(pattern_load_attribute(c, key, pc));
@@ -5871,9 +5875,9 @@ compiler_match(struct compiler *c, stmt_ty s)
         if (!m->guard && m->pattern->kind == Name_kind &&
             m->pattern->v.Name.ctx == Store && i != cases - 1)
         {
-            CHECK(compiler_warn(c, "unguarded name capture pattern %R makes "
-                                   "remaining cases unreachable",
-                                   m->pattern->v.Name.id));
+            const char *w = "unguarded name capture pattern %R makes remaining "
+                            "cases unreachable";
+            CHECK(compiler_warn(c, w, m->pattern->v.Name.id));
         }
         CHECK(next = compiler_new_block(c));
         if (keep_subject) {
