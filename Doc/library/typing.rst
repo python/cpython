@@ -441,6 +441,153 @@ Module contents
 
 The module defines the following classes, functions and decorators:
 
+Generic concrete collections
+............................
+
+.. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
+
+   A generic version of :class:`collections.ChainMap`.
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.1
+
+.. class:: Counter(collections.Counter, Dict[T, int])
+
+   A generic version of :class:`collections.Counter`.
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.1
+
+.. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
+
+   A generic version of :class:`collections.defaultdict`.
+
+   .. versionadded:: 3.5.2
+
+.. class:: Deque(deque, MutableSequence[T])
+
+   A generic version of :class:`collections.deque`.
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.1
+
+.. class:: Dict(dict, MutableMapping[KT, VT])
+
+   A generic version of :class:`dict`.
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use an abstract collection type such as :class:`Mapping`.
+
+   This type can be used as follows::
+
+      def count_words(text: str) -> Dict[str, int]:
+          ...
+
+.. class:: FrozenSet(frozenset, AbstractSet[T_co])
+
+   A generic version of :class:`builtins.frozenset <frozenset>`.
+
+.. class:: List(list, MutableSequence[T])
+
+   Generic version of :class:`list`.
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use an abstract collection type such as :class:`Sequence` or
+   :class:`Iterable`.
+
+   This type may be used as follows::
+
+      T = TypeVar('T', int, float)
+
+      def vec2(x: T, y: T) -> List[T]:
+          return [x, y]
+
+      def keep_positives(vector: Sequence[T]) -> List[T]:
+          return [item for item in vector if item > 0]
+
+.. class:: NamedTuple
+
+   Typed version of :func:`collections.namedtuple`.
+
+   Usage::
+
+       class Employee(NamedTuple):
+           name: str
+           id: int
+
+   This is equivalent to::
+
+       Employee = collections.namedtuple('Employee', ['name', 'id'])
+
+   To give a field a default value, you can assign to it in the class body::
+
+      class Employee(NamedTuple):
+          name: str
+          id: int = 3
+
+      employee = Employee('Guido')
+      assert employee.id == 3
+
+   Fields with a default value must come after any fields without a default.
+
+   The resulting class has an extra attribute ``__annotations__`` giving a
+   dict that maps the field names to the field types.  (The field names are in
+   the ``_fields`` attribute and the default values are in the
+   ``_field_defaults`` attribute both of which are part of the namedtuple
+   API.)
+
+   ``NamedTuple`` subclasses can also have docstrings and methods::
+
+      class Employee(NamedTuple):
+          """Represents an employee."""
+          name: str
+          id: int = 3
+
+          def __repr__(self) -> str:
+              return f'<Employee {self.name}, id={self.id}>'
+
+   Backward-compatible usage::
+
+       Employee = NamedTuple('Employee', [('name', str), ('id', int)])
+
+   .. versionchanged:: 3.6
+      Added support for :pep:`526` variable annotation syntax.
+
+   .. versionchanged:: 3.6.1
+      Added support for default values, methods, and docstrings.
+
+   .. versionchanged:: 3.8
+      The ``_field_types`` and ``__annotations__`` attributes are
+      now regular dictionaries instead of instances of ``OrderedDict``.
+
+   .. versionchanged:: 3.9
+      Removed the ``_field_types`` attribute in favor of the more
+      standard ``__annotations__`` attribute which has the same information.
+
+.. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
+
+   A generic version of :class:`collections.OrderedDict`.
+
+   .. versionadded:: 3.7.2
+
+.. class:: Set(set, MutableSet[T])
+
+   A generic version of :class:`builtins.set <set>`.
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use an abstract collection type such as :class:`AbstractSet`.
+
+.. data:: Tuple
+
+   Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
+   with the first item of type X and the second of type Y. The type of
+   the empty tuple can be written as ``Tuple[()]``.
+
+   Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
+   to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
+   of an int, a float and a string.
+
+   To specify a variable-length tuple of homogeneous type,
+   use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain :data:`Tuple`
+   is equivalent to ``Tuple[Any, ...]``, and in turn to :class:`tuple`.
+
 Aliases and constants
 .....................
 
@@ -899,40 +1046,6 @@ Remaining classes, functions and decorators
    As a shorthand for this type, :class:`bytes` can be used to
    annotate arguments of any of the types mentioned above.
 
-.. class:: Deque(deque, MutableSequence[T])
-
-   A generic version of :class:`collections.deque`.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.1
-
-.. class:: List(list, MutableSequence[T])
-
-   Generic version of :class:`list`.
-   Useful for annotating return types. To annotate arguments it is preferred
-   to use an abstract collection type such as :class:`Sequence` or
-   :class:`Iterable`.
-
-   This type may be used as follows::
-
-      T = TypeVar('T', int, float)
-
-      def vec2(x: T, y: T) -> List[T]:
-          return [x, y]
-
-      def keep_positives(vector: Sequence[T]) -> List[T]:
-          return [item for item in vector if item > 0]
-
-.. class:: Set(set, MutableSet[T])
-
-   A generic version of :class:`builtins.set <set>`.
-   Useful for annotating return types. To annotate arguments it is preferred
-   to use an abstract collection type such as :class:`AbstractSet`.
-
-.. class:: FrozenSet(frozenset, AbstractSet[T_co])
-
-   A generic version of :class:`builtins.frozenset <frozenset>`.
-
 .. class:: MappingView(Sized, Iterable[T_co])
 
    A generic version of :class:`collections.abc.MappingView`.
@@ -995,43 +1108,6 @@ Remaining classes, functions and decorators
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
-
-.. class:: Dict(dict, MutableMapping[KT, VT])
-
-   A generic version of :class:`dict`.
-   Useful for annotating return types. To annotate arguments it is preferred
-   to use an abstract collection type such as :class:`Mapping`.
-
-   This type can be used as follows::
-
-      def count_words(text: str) -> Dict[str, int]:
-          ...
-
-.. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
-
-   A generic version of :class:`collections.defaultdict`.
-
-   .. versionadded:: 3.5.2
-
-.. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
-
-   A generic version of :class:`collections.OrderedDict`.
-
-   .. versionadded:: 3.7.2
-
-.. class:: Counter(collections.Counter, Dict[T, int])
-
-   A generic version of :class:`collections.Counter`.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.1
-
-.. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
-
-   A generic version of :class:`collections.ChainMap`.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.1
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
 
@@ -1115,66 +1191,6 @@ Remaining classes, functions and decorators
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``.
-
-.. class:: NamedTuple
-
-   Typed version of :func:`collections.namedtuple`.
-
-   Usage::
-
-       class Employee(NamedTuple):
-           name: str
-           id: int
-
-   This is equivalent to::
-
-       Employee = collections.namedtuple('Employee', ['name', 'id'])
-
-   To give a field a default value, you can assign to it in the class body::
-
-      class Employee(NamedTuple):
-          name: str
-          id: int = 3
-
-      employee = Employee('Guido')
-      assert employee.id == 3
-
-   Fields with a default value must come after any fields without a default.
-
-   The resulting class has an extra attribute ``__annotations__`` giving a
-   dict that maps the field names to the field types.  (The field names are in
-   the ``_fields`` attribute and the default values are in the
-   ``_field_defaults`` attribute both of which are part of the namedtuple
-   API.)
-
-   ``NamedTuple`` subclasses can also have docstrings and methods::
-
-      class Employee(NamedTuple):
-          """Represents an employee."""
-          name: str
-          id: int = 3
-
-          def __repr__(self) -> str:
-              return f'<Employee {self.name}, id={self.id}>'
-
-   Backward-compatible usage::
-
-       Employee = NamedTuple('Employee', [('name', str), ('id', int)])
-
-   .. versionchanged:: 3.6
-      Added support for :pep:`526` variable annotation syntax.
-
-   .. versionchanged:: 3.6.1
-      Added support for default values, methods, and docstrings.
-
-   .. versionchanged:: 3.8
-      The ``_field_types`` and ``__annotations__`` attributes are
-      now regular dictionaries instead of instances of ``OrderedDict``.
-
-   .. versionchanged:: 3.9
-      Removed the ``_field_types`` attribute in favor of the more
-      standard ``__annotations__`` attribute which has the same information.
-
 
 .. class:: TypedDict(dict)
 
@@ -1313,20 +1329,6 @@ Remaining classes, functions and decorators
 
       def foo(arg: Optional[int] = None) -> None:
           ...
-
-.. data:: Tuple
-
-   Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
-   with the first item of type X and the second of type Y. The type of
-   the empty tuple can be written as ``Tuple[()]``.
-
-   Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
-   to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
-   of an int, a float and a string.
-
-   To specify a variable-length tuple of homogeneous type,
-   use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain :data:`Tuple`
-   is equivalent to ``Tuple[Any, ...]``, and in turn to :class:`tuple`.
 
 .. data:: Callable
 
