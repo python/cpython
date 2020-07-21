@@ -1291,6 +1291,71 @@ Functions and decorators
    Note that returning instances of private classes is not recommended.
    It is usually preferable to make such classes public.
 
+Generic ABCs (with initial A)
+.............................
+
+.. class:: AbstractSet(Sized, Collection[T_co])
+
+    A generic version of :class:`collections.abc.Set`.
+
+.. class:: AsyncContextManager(Generic[T_co])
+
+   A generic version of :class:`contextlib.AbstractAsyncContextManager`.
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.2
+
+.. class:: AsyncGenerator(AsyncIterator[T_co], Generic[T_co, T_contra])
+
+   An async generator can be annotated by the generic type
+   ``AsyncGenerator[YieldType, SendType]``. For example::
+
+      async def echo_round() -> AsyncGenerator[int, float]:
+          sent = yield 0
+          while sent >= 0.0:
+              rounded = await round(sent)
+              sent = yield rounded
+
+   Unlike normal generators, async generators cannot return a value, so there
+   is no ``ReturnType`` type parameter. As with :class:`Generator`, the
+   ``SendType`` behaves contravariantly.
+
+   If your generator will only yield values, set the ``SendType`` to
+   ``None``::
+
+      async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
+          while True:
+              yield start
+              start = await increment(start)
+
+   Alternatively, annotate your generator as having a return type of
+   either ``AsyncIterable[YieldType]`` or ``AsyncIterator[YieldType]``::
+
+      async def infinite_stream(start: int) -> AsyncIterator[int]:
+          while True:
+              yield start
+              start = await increment(start)
+
+   .. versionadded:: 3.6.1
+
+.. class:: AsyncIterable(Generic[T_co])
+
+   A generic version of :class:`collections.abc.AsyncIterable`.
+
+   .. versionadded:: 3.5.2
+
+.. class:: AsyncIterator(AsyncIterable[T_co])
+
+   A generic version of :class:`collections.abc.AsyncIterator`.
+
+   .. versionadded:: 3.5.2
+
+.. class:: Awaitable(Generic[T_co])
+
+   A generic version of :class:`collections.abc.Awaitable`.
+
+   .. versionadded:: 3.5.2
+
 Remaining classes, functions and decorators
 ...........................................
 
@@ -1319,10 +1384,6 @@ Remaining classes, functions and decorators
    A generic version of :class:`collections.abc.Collection`
 
    .. versionadded:: 3.6.0
-
-.. class:: AbstractSet(Sized, Collection[T_co])
-
-    A generic version of :class:`collections.abc.Set`.
 
 .. class:: MutableSet(AbstractSet[T])
 
@@ -1374,12 +1435,6 @@ Remaining classes, functions and decorators
 
    A generic version of :class:`collections.abc.ValuesView`.
 
-.. class:: Awaitable(Generic[T_co])
-
-   A generic version of :class:`collections.abc.Awaitable`.
-
-   .. versionadded:: 3.5.2
-
 .. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
 
    A generic version of :class:`collections.abc.Coroutine`.
@@ -1395,31 +1450,12 @@ Remaining classes, functions and decorators
 
    .. versionadded:: 3.5.3
 
-.. class:: AsyncIterable(Generic[T_co])
-
-   A generic version of :class:`collections.abc.AsyncIterable`.
-
-   .. versionadded:: 3.5.2
-
-.. class:: AsyncIterator(AsyncIterable[T_co])
-
-   A generic version of :class:`collections.abc.AsyncIterator`.
-
-   .. versionadded:: 3.5.2
-
 .. class:: ContextManager(Generic[T_co])
 
    A generic version of :class:`contextlib.AbstractContextManager`.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.0
-
-.. class:: AsyncContextManager(Generic[T_co])
-
-   A generic version of :class:`contextlib.AbstractAsyncContextManager`.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.2
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
 
@@ -1451,39 +1487,6 @@ Remaining classes, functions and decorators
           while True:
               yield start
               start += 1
-
-.. class:: AsyncGenerator(AsyncIterator[T_co], Generic[T_co, T_contra])
-
-   An async generator can be annotated by the generic type
-   ``AsyncGenerator[YieldType, SendType]``. For example::
-
-      async def echo_round() -> AsyncGenerator[int, float]:
-          sent = yield 0
-          while sent >= 0.0:
-              rounded = await round(sent)
-              sent = yield rounded
-
-   Unlike normal generators, async generators cannot return a value, so there
-   is no ``ReturnType`` type parameter. As with :class:`Generator`, the
-   ``SendType`` behaves contravariantly.
-
-   If your generator will only yield values, set the ``SendType`` to
-   ``None``::
-
-      async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
-          while True:
-              yield start
-              start = await increment(start)
-
-   Alternatively, annotate your generator as having a return type of
-   either ``AsyncIterable[YieldType]`` or ``AsyncIterator[YieldType]``::
-
-      async def infinite_stream(start: int) -> AsyncIterator[int]:
-          while True:
-              yield start
-              start = await increment(start)
-
-   .. versionadded:: 3.6.1
 
 .. class:: IO
            TextIO
