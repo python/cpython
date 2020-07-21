@@ -588,6 +588,45 @@ Generic concrete collections
    use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain :data:`Tuple`
    is equivalent to ``Tuple[Any, ...]``, and in turn to :class:`tuple`.
 
+Protocols
+.........
+
+.. class:: Reversible(Iterable[T_co])
+
+    A generic version of :class:`collections.abc.Reversible`.
+
+.. class:: SupportsAbs
+
+    An ABC with one abstract method ``__abs__`` that is covariant
+    in its return type.
+
+.. class:: SupportsBytes
+
+    An ABC with one abstract method ``__bytes__``.
+
+.. class:: SupportsComplex
+
+    An ABC with one abstract method ``__complex__``.
+
+.. class:: SupportsFloat
+
+    An ABC with one abstract method ``__float__``.
+
+.. class:: SupportsIndex
+
+    An ABC with one abstract method ``__index__``.
+
+    .. versionadded:: 3.8
+
+.. class:: SupportsInt
+
+    An ABC with one abstract method ``__int__``.
+
+.. class:: SupportsRound
+
+    An ABC with one abstract method ``__round__``
+    that is covariant in its return type.
+
 Aliases and constants
 .....................
 
@@ -953,42 +992,6 @@ Remaining classes, functions and decorators
 .. class:: Iterator(Iterable[T_co])
 
     A generic version of :class:`collections.abc.Iterator`.
-
-.. class:: Reversible(Iterable[T_co])
-
-    A generic version of :class:`collections.abc.Reversible`.
-
-.. class:: SupportsInt
-
-    An ABC with one abstract method ``__int__``.
-
-.. class:: SupportsFloat
-
-    An ABC with one abstract method ``__float__``.
-
-.. class:: SupportsComplex
-
-    An ABC with one abstract method ``__complex__``.
-
-.. class:: SupportsBytes
-
-    An ABC with one abstract method ``__bytes__``.
-
-.. class:: SupportsIndex
-
-    An ABC with one abstract method ``__index__``.
-
-    .. versionadded:: 3.8
-
-.. class:: SupportsAbs
-
-    An ABC with one abstract method ``__abs__`` that is covariant
-    in its return type.
-
-.. class:: SupportsRound
-
-    An ABC with one abstract method ``__round__``
-    that is covariant in its return type.
 
 .. class:: Container(Generic[T_co])
 
