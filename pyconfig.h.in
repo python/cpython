@@ -115,6 +115,9 @@
 /* Define if `unsetenv` does not return an int. */
 #undef HAVE_BROKEN_UNSETENV
 
+#undef HAVE_BUILTIN_AVAILABLE
+/* Define to 1 if the compiler supports __builtin_available */
+
 /* Has builtin atomics */
 #undef HAVE_BUILTIN_ATOMIC
 
