@@ -1,0 +1,1 @@
+Refactored typing.rst, arranging more than 70 classes, functions, and decorators into new sub-sections.
