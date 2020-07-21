@@ -45,7 +45,6 @@ Typical usage:
 """
 
 import os
-import platform
 import sys
 
 from enum import Enum
@@ -57,6 +56,7 @@ __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 if sys.platform in ('win32', 'darwin'):
     _AIX = _LINUX = False
 else:
+    import platform
     _platform_system = platform.system()
     _AIX     = _platform_system == 'AIX'
     _LINUX   = _platform_system == 'Linux'
