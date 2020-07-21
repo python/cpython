@@ -1034,6 +1034,219 @@ Generic concrete collections
    use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain :data:`Tuple`
    is equivalent to ``Tuple[Any, ...]``, and in turn to :class:`tuple`.
 
+Generic ABCs
+............
+
+.. class:: AbstractSet(Sized, Collection[T_co])
+
+    A generic version of :class:`collections.abc.Set`.
+
+.. class:: AsyncContextManager(Generic[T_co])
+
+   A generic version of :class:`contextlib.AbstractAsyncContextManager`.
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.2
+
+.. class:: AsyncGenerator(AsyncIterator[T_co], Generic[T_co, T_contra])
+
+   An async generator can be annotated by the generic type
+   ``AsyncGenerator[YieldType, SendType]``. For example::
+
+      async def echo_round() -> AsyncGenerator[int, float]:
+          sent = yield 0
+          while sent >= 0.0:
+              rounded = await round(sent)
+              sent = yield rounded
+
+   Unlike normal generators, async generators cannot return a value, so there
+   is no ``ReturnType`` type parameter. As with :class:`Generator`, the
+   ``SendType`` behaves contravariantly.
+
+   If your generator will only yield values, set the ``SendType`` to
+   ``None``::
+
+      async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
+          while True:
+              yield start
+              start = await increment(start)
+
+   Alternatively, annotate your generator as having a return type of
+   either ``AsyncIterable[YieldType]`` or ``AsyncIterator[YieldType]``::
+
+      async def infinite_stream(start: int) -> AsyncIterator[int]:
+          while True:
+              yield start
+              start = await increment(start)
+
+   .. versionadded:: 3.6.1
+
+.. class:: AsyncIterable(Generic[T_co])
+
+   A generic version of :class:`collections.abc.AsyncIterable`.
+
+   .. versionadded:: 3.5.2
+
+.. class:: AsyncIterator(AsyncIterable[T_co])
+
+   A generic version of :class:`collections.abc.AsyncIterator`.
+
+   .. versionadded:: 3.5.2
+
+.. class:: Awaitable(Generic[T_co])
+
+   A generic version of :class:`collections.abc.Awaitable`.
+
+   .. versionadded:: 3.5.2
+
+.. class:: ByteString(Sequence[int])
+
+   A generic version of :class:`collections.abc.ByteString`.
+
+   This type represents the types :class:`bytes`, :class:`bytearray`,
+   and :class:`memoryview` of byte sequences.
+
+   As a shorthand for this type, :class:`bytes` can be used to
+   annotate arguments of any of the types mentioned above.
+
+.. class:: Collection(Sized, Iterable[T_co], Container[T_co])
+
+   A generic version of :class:`collections.abc.Collection`
+
+   .. versionadded:: 3.6.0
+
+.. class:: Container(Generic[T_co])
+
+    A generic version of :class:`collections.abc.Container`.
+
+.. class:: ContextManager(Generic[T_co])
+
+   A generic version of :class:`contextlib.AbstractContextManager`.
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.0
+
+.. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
+
+   A generic version of :class:`collections.abc.Coroutine`.
+   The variance and order of type variables
+   correspond to those of :class:`Generator`, for example::
+
+      from typing import List, Coroutine
+      c = None # type: Coroutine[List[str], str, int]
+      ...
+      x = c.send('hi') # type: List[str]
+      async def bar() -> None:
+          x = await c # type: int
+
+   .. versionadded:: 3.5.3
+
+.. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
+
+   A generator can be annotated by the generic type
+   ``Generator[YieldType, SendType, ReturnType]``. For example::
+
+      def echo_round() -> Generator[int, float, str]:
+          sent = yield 0
+          while sent >= 0:
+              sent = yield round(sent)
+          return 'Done'
+
+   Note that unlike many other generics in the typing module, the ``SendType``
+   of :class:`Generator` behaves contravariantly, not covariantly or
+   invariantly.
+
+   If your generator will only yield values, set the ``SendType`` and
+   ``ReturnType`` to ``None``::
+
+      def infinite_stream(start: int) -> Generator[int, None, None]:
+          while True:
+              yield start
+              start += 1
+
+   Alternatively, annotate your generator as having a return type of
+   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
+
+      def infinite_stream(start: int) -> Iterator[int]:
+          while True:
+              yield start
+              start += 1
+
+.. class:: Hashable
+
+   An alias to :class:`collections.abc.Hashable`
+
+.. class:: IO
+           TextIO
+           BinaryIO
+
+   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
+   and ``BinaryIO(IO[bytes])``
+   represent the types of I/O streams such as returned by
+   :func:`open`. These types are in the `typing.io` namespace.
+
+.. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
+
+   A generic version of :class:`collections.abc.ItemsView`.
+
+.. class:: Iterable(Generic[T_co])
+
+    A generic version of :class:`collections.abc.Iterable`.
+
+.. class:: Iterator(Iterable[T_co])
+
+    A generic version of :class:`collections.abc.Iterator`.
+
+.. class:: KeysView(MappingView[KT_co], AbstractSet[KT_co])
+
+   A generic version of :class:`collections.abc.KeysView`.
+
+.. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
+
+    A generic version of :class:`collections.abc.Mapping`.
+    This type can be used as follows::
+
+      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
+          return word_list[word]
+
+.. class:: MappingView(Sized, Iterable[T_co])
+
+   A generic version of :class:`collections.abc.MappingView`.
+
+.. class:: MutableMapping(Mapping[KT, VT])
+
+    A generic version of :class:`collections.abc.MutableMapping`.
+
+.. class:: MutableSequence(Sequence[T])
+
+   A generic version of :class:`collections.abc.MutableSequence`.
+
+.. class:: MutableSet(AbstractSet[T])
+
+    A generic version of :class:`collections.abc.MutableSet`.
+
+.. class:: Pattern
+           Match
+
+   These type aliases
+   correspond to the return types from :func:`re.compile` and
+   :func:`re.match`.  These types (and the corresponding functions)
+   are generic in ``AnyStr`` and can be made specific by writing
+   ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
+   ``Match[bytes]``. These types are in the `typing.re` namespace.
+
+.. class:: Sequence(Reversible[T_co], Collection[T_co])
+
+    A generic version of :class:`collections.abc.Sequence`.
+
+.. class:: Sized
+
+   An alias to :class:`collections.abc.Sized`
+
+.. class:: ValuesView(MappingView[VT_co])
+
+   A generic version of :class:`collections.abc.ValuesView`.
+
 Protocols
 .........
 
@@ -1290,219 +1503,3 @@ Functions and decorators
 
    Note that returning instances of private classes is not recommended.
    It is usually preferable to make such classes public.
-
-Generic ABCs (with initials A to K)
-...................................
-
-.. class:: AbstractSet(Sized, Collection[T_co])
-
-    A generic version of :class:`collections.abc.Set`.
-
-.. class:: AsyncContextManager(Generic[T_co])
-
-   A generic version of :class:`contextlib.AbstractAsyncContextManager`.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.2
-
-.. class:: AsyncGenerator(AsyncIterator[T_co], Generic[T_co, T_contra])
-
-   An async generator can be annotated by the generic type
-   ``AsyncGenerator[YieldType, SendType]``. For example::
-
-      async def echo_round() -> AsyncGenerator[int, float]:
-          sent = yield 0
-          while sent >= 0.0:
-              rounded = await round(sent)
-              sent = yield rounded
-
-   Unlike normal generators, async generators cannot return a value, so there
-   is no ``ReturnType`` type parameter. As with :class:`Generator`, the
-   ``SendType`` behaves contravariantly.
-
-   If your generator will only yield values, set the ``SendType`` to
-   ``None``::
-
-      async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
-          while True:
-              yield start
-              start = await increment(start)
-
-   Alternatively, annotate your generator as having a return type of
-   either ``AsyncIterable[YieldType]`` or ``AsyncIterator[YieldType]``::
-
-      async def infinite_stream(start: int) -> AsyncIterator[int]:
-          while True:
-              yield start
-              start = await increment(start)
-
-   .. versionadded:: 3.6.1
-
-.. class:: AsyncIterable(Generic[T_co])
-
-   A generic version of :class:`collections.abc.AsyncIterable`.
-
-   .. versionadded:: 3.5.2
-
-.. class:: AsyncIterator(AsyncIterable[T_co])
-
-   A generic version of :class:`collections.abc.AsyncIterator`.
-
-   .. versionadded:: 3.5.2
-
-.. class:: Awaitable(Generic[T_co])
-
-   A generic version of :class:`collections.abc.Awaitable`.
-
-   .. versionadded:: 3.5.2
-
-.. class:: ByteString(Sequence[int])
-
-   A generic version of :class:`collections.abc.ByteString`.
-
-   This type represents the types :class:`bytes`, :class:`bytearray`,
-   and :class:`memoryview` of byte sequences.
-
-   As a shorthand for this type, :class:`bytes` can be used to
-   annotate arguments of any of the types mentioned above.
-
-.. class:: Collection(Sized, Iterable[T_co], Container[T_co])
-
-   A generic version of :class:`collections.abc.Collection`
-
-   .. versionadded:: 3.6.0
-
-.. class:: Container(Generic[T_co])
-
-    A generic version of :class:`collections.abc.Container`.
-
-.. class:: ContextManager(Generic[T_co])
-
-   A generic version of :class:`contextlib.AbstractContextManager`.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.0
-
-.. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
-
-   A generic version of :class:`collections.abc.Coroutine`.
-   The variance and order of type variables
-   correspond to those of :class:`Generator`, for example::
-
-      from typing import List, Coroutine
-      c = None # type: Coroutine[List[str], str, int]
-      ...
-      x = c.send('hi') # type: List[str]
-      async def bar() -> None:
-          x = await c # type: int
-
-   .. versionadded:: 3.5.3
-
-.. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
-
-   A generator can be annotated by the generic type
-   ``Generator[YieldType, SendType, ReturnType]``. For example::
-
-      def echo_round() -> Generator[int, float, str]:
-          sent = yield 0
-          while sent >= 0:
-              sent = yield round(sent)
-          return 'Done'
-
-   Note that unlike many other generics in the typing module, the ``SendType``
-   of :class:`Generator` behaves contravariantly, not covariantly or
-   invariantly.
-
-   If your generator will only yield values, set the ``SendType`` and
-   ``ReturnType`` to ``None``::
-
-      def infinite_stream(start: int) -> Generator[int, None, None]:
-          while True:
-              yield start
-              start += 1
-
-   Alternatively, annotate your generator as having a return type of
-   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
-
-      def infinite_stream(start: int) -> Iterator[int]:
-          while True:
-              yield start
-              start += 1
-
-.. class:: Hashable
-
-   An alias to :class:`collections.abc.Hashable`
-
-.. class:: IO
-           TextIO
-           BinaryIO
-
-   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
-   and ``BinaryIO(IO[bytes])``
-   represent the types of I/O streams such as returned by
-   :func:`open`. These types are in the `typing.io` namespace.
-
-.. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
-
-   A generic version of :class:`collections.abc.ItemsView`.
-
-.. class:: Iterable(Generic[T_co])
-
-    A generic version of :class:`collections.abc.Iterable`.
-
-.. class:: Iterator(Iterable[T_co])
-
-    A generic version of :class:`collections.abc.Iterator`.
-
-.. class:: KeysView(MappingView[KT_co], AbstractSet[KT_co])
-
-   A generic version of :class:`collections.abc.KeysView`.
-
-Remaining classes, functions and decorators
-...........................................
-
-.. class:: Sized
-
-   An alias to :class:`collections.abc.Sized`
-
-.. class:: MutableSet(AbstractSet[T])
-
-    A generic version of :class:`collections.abc.MutableSet`.
-
-.. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
-
-    A generic version of :class:`collections.abc.Mapping`.
-    This type can be used as follows::
-
-      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
-          return word_list[word]
-
-.. class:: MutableMapping(Mapping[KT, VT])
-
-    A generic version of :class:`collections.abc.MutableMapping`.
-
-.. class:: Sequence(Reversible[T_co], Collection[T_co])
-
-    A generic version of :class:`collections.abc.Sequence`.
-
-.. class:: MutableSequence(Sequence[T])
-
-   A generic version of :class:`collections.abc.MutableSequence`.
-
-.. class:: MappingView(Sized, Iterable[T_co])
-
-   A generic version of :class:`collections.abc.MappingView`.
-
-.. class:: ValuesView(MappingView[VT_co])
-
-   A generic version of :class:`collections.abc.ValuesView`.
-
-.. class:: Pattern
-           Match
-
-   These type aliases
-   correspond to the return types from :func:`re.compile` and
-   :func:`re.match`.  These types (and the corresponding functions)
-   are generic in ``AnyStr`` and can be made specific by writing
-   ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
-   ``Match[bytes]``.
