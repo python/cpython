@@ -9292,7 +9292,7 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     /* preadv method will be deleted if preadv is not available */
     #if __clang__
     #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    #pragma clang diagnostic ignored "-Wunguarded-availability-new"
     #endif
 
     Py_ssize_t cnt, n;
@@ -9897,7 +9897,7 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     /* pwritev method will be deleted if preadv is not available */
     #if __clang__
     #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    #pragma clang diagnostic ignored "-Wunguarded-availability-new"
     #endif
 
     Py_ssize_t cnt;
