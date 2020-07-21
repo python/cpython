@@ -1,16 +1,11 @@
 #include "Python.h"
+#include "py_available.h"
 #ifdef MS_WINDOWS
 #include <winsock2.h>         /* struct timeval */
 #endif
 
 #if defined(__APPLE__)
 #include <mach/mach_time.h>   /* mach_absolute_time(), mach_timebase_info() */
-#endif
-
-#if defined(__APPLE__) && HAVE_BUILTIN_AVAILABLE && !defined(__arm64__)
-#define HAVE_CLOCK_GETTIME_RUNTIME __builtin_available(macos 10.12, ios 10, tvos 10, watchos 3, *)
-#else
-#define HAVE_CLOCK_GETTIME_RUNTIME 1
 #endif
 
 #define _PyTime_check_mul_overflow(a, b) \

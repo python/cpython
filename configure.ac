@@ -3825,19 +3825,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
    AC_MSG_RESULT(yes)
 ])
 
-AC_MSG_CHECKING([to see if the compiler supports __builtin_available])
-AC_COMPILE_IFELSE([
-  AC_LANG_PROGRAM([[]],[[
-     if (__builtin_available(macOS 10.8, iOS 5.0, *)) {}
-    ]])
-  ],[
-    AC_MSG_RESULT([yes])
-    AC_DEFINE_UNQUOTED(HAVE_BUILTIN_AVAILABLE, 1,
-        [Define to 1 if the compiler supports __builtin_available])
-  ],[
-    AC_MSG_RESULT([no])
-])
-
 dnl check for true
 AC_CHECK_PROGS(TRUE, true, /bin/true)
 

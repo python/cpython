@@ -1,6 +1,7 @@
 /* Time module */
 
 #include "Python.h"
+#include "py_available.h"
 
 #include <ctype.h>
 
@@ -49,20 +50,6 @@
 #define _Py_timezone timezone
 #define _Py_daylight daylight
 #define _Py_tzname tzname
-#endif
-
-#if defined(__APPLE__)
-#include <TargetConditionals.h>
-#endif
-
-#if defined(__APPLE__) && HAVE_BUILTIN_AVAILABLE && !(TARGET_OS_OSX && __arm64__)
-#define HAVE_CLOCK_GETTIME_RUNTIME __builtin_available(macos 10.12, ios 10, tvos 10, watchos 3, *)
-#define HAVE_CLOCK_SETTIME_RUNTIME __builtin_available(macos 10.12, ios 10, tvos 10, watchos 3, *)
-#define HAVE_CLOCK_GETRES_RUNTIME  __builtin_available(macos 10.12, ios 10, tvos 10, watchos 3, *)
-#else
-#define HAVE_CLOCK_GETTIME_RUNTIME 1
-#define HAVE_CLOCK_SETTIME_RUNTIME 1
-#define HAVE_CLOCK_GETRES_RUNTIME 1
 #endif
 
 #define SEC_TO_NS (1000 * 1000 * 1000)
@@ -1927,14 +1914,7 @@ static struct PyModuleDef timemodule = {
 static void
 delete_method(const char *name)
 {
-    for (int i = 0; time_methods[i].ml_name != NULL; i++) {
-        if ( 0==strcmp(time_methods[i].ml_name, name)) {
-            for (int j = i; time_methods[j].ml_name != NULL; j++) {
-                time_methods[j] = time_methods[j+1];
-            }
-            break;
-        }
-    }
+    Py_delete_method(time_methods, sizeof(time_methods), name);
 }
 
 PyMODINIT_FUNC

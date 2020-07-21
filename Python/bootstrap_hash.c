@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
+#include "py_available.h"
 #ifdef MS_WINDOWS
 #  include <windows.h>
 /* All sample MSDN wincrypt programs include the header below. It is at least
@@ -29,16 +30,6 @@
 int _Py_HashSecret_Initialized = 0;
 #else
 static int _Py_HashSecret_Initialized = 0;
-#endif
-
-#if defined(__APPLE__)
-#include <TargetConditionals.h>
-#endif
-
-#if defined(__APPLE__) && HAVE_BUILTIN_AVAILABLE && !(TARGET_OS_OSX && __arm64__)
-#define HAVE_GETENTROPY_RUNTIME __builtin_available(macos 10.12, ios 10, tvos 10, watchos 3, *)
-#else
-#define HAVE_GETENTROPY_RUNTIME 1
 #endif
 
 #ifdef MS_WINDOWS

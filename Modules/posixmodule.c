@@ -42,6 +42,7 @@
 #else
 #  include "winreparse.h"
 #endif
+#include "py_available.h"
 
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
@@ -79,25 +80,7 @@ corresponding Unix manual entries for more information on calls.");
 #  include <sys/stat.h>
 #endif /* HAVE_SYS_STAT_H */
 
-#if defined(__APPLE__)
-#include <TargetConditionals.h>
-#endif
-
-#if defined(__APPLE__) && HAVE_BUILTIN_AVAILABLE && !(TARGET_OS_OSX && __arm64__)
-#define HAVE_UTIMENSAT_RUNTIME __builtin_available(macos 10.13, ios 11, tvos 11, watchos 4, *)
-#define HAVE_FUTIMENS_RUNTIME  __builtin_available(macos 10.13, ios 11, tvos 11, watchos 4, *)
-#define HAVE_PREADV_RUNTIME    __builtin_available(macos 10.16, ios 14, tvos 14, watchos 7, *)
-#define HAVE_PWRITEV_RUNTIME    __builtin_available(macos 10.16, ios 14, tvos 14, watchos 7, *)
-#define HAVE_POSIX_SPAWN_SETSID_RUNTIME __builtin_available(macos 10.15, ios 13, tvos 13, watchos 6, *)
-#else
-#define HAVE_UTIMENSAT_RUNTIME 1
-#define HAVE_FUTIMENS_RUNTIME 1
-#define HAVE_PREADV_RUNTIME 1
-#define HAVE_PWRITEV_RUNTIME 1
-#define HAVE_POSIX_SPAWN_SETSID_RUNTIME 1
-#endif
-
-#if defined(__APPLE__) && TARGET_OS_OSX && __arm64__ && __clang__
+#if __APPLE__ && TARGET_OS_OSX && __arm64__ && __clang__
 #pragma clang diagnostic ignored "-Wunguarded-availability-new"
 #endif
 
@@ -15169,17 +15152,8 @@ static struct PyModuleDef posixmodule = {
 static void
 delete_method(const char *name)
 {
-    int last_method_index = (sizeof(posix_methods)  / sizeof(posix_methods[0])) - 1;
-    for (int i = last_method_index; i >= 0; i--) {
-        if ( posix_methods[i].ml_name && 0==strcmp(posix_methods[i].ml_name, name)) {
-            for (int j = i; posix_methods[j].ml_name != NULL; j++) {
-                posix_methods[j] = posix_methods[j+1];
-            }
-            break;
-        }
-    }
+    Py_delete_method(posix_methods, sizeof(posix_methods), name);
 }
-
 
 PyMODINIT_FUNC
 INITFUNC(void)
