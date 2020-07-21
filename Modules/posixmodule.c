@@ -9289,64 +9289,69 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                int flags)
 /*[clinic end generated code: output=26fc9c6e58e7ada5 input=4173919dc1f7ed99]*/
 {
-    if (HAVE_PREADV_RUNTIME) {
-        Py_ssize_t cnt, n;
-        int async_err = 0;
-        struct iovec *iov;
-        Py_buffer *buf;
-
-        if (!PySequence_Check(buffers)) {
-            PyErr_SetString(PyExc_TypeError,
-                "preadv2() arg 2 must be a sequence");
-            return -1;
-        }
-
-        cnt = PySequence_Size(buffers);
-        if (cnt < 0) {
-            return -1;
-        }
-
-    #ifndef HAVE_PREADV2
-        if(flags != 0) {
-            argument_unavailable_error("preadv2", "flags");
-            return -1;
-        }
+    /* preadv method will be deleted if preadv is not available */
+    #if __clang__
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     #endif
 
-        if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0) {
-            return -1;
-        }
-    #ifdef HAVE_PREADV2
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            _Py_BEGIN_SUPPRESS_IPH
-            n = preadv2(fd, iov, cnt, offset, flags);
-            _Py_END_SUPPRESS_IPH
-            Py_END_ALLOW_THREADS
-        } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    #else
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            _Py_BEGIN_SUPPRESS_IPH
-            n = preadv(fd, iov, cnt, offset);
-            _Py_END_SUPPRESS_IPH
-            Py_END_ALLOW_THREADS
-        } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    #endif
+    Py_ssize_t cnt, n;
+    int async_err = 0;
+    struct iovec *iov;
+    Py_buffer *buf;
 
-        iov_cleanup(iov, buf, cnt);
-        if (n < 0) {
-            if (!async_err) {
-                posix_error();
-            }
-            return -1;
-        }
-
-        return n;
-    } else {
-        PyErr_SetString(PyExc_NotImplementedError, "preadv is not available");
+    if (!PySequence_Check(buffers)) {
+        PyErr_SetString(PyExc_TypeError,
+            "preadv2() arg 2 must be a sequence");
         return -1;
     }
+
+    cnt = PySequence_Size(buffers);
+    if (cnt < 0) {
+        return -1;
+    }
+
+#ifndef HAVE_PREADV2
+    if(flags != 0) {
+        argument_unavailable_error("preadv2", "flags");
+        return -1;
+    }
+#endif
+
+    if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0) {
+        return -1;
+    }
+#ifdef HAVE_PREADV2
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
+        n = preadv2(fd, iov, cnt, offset, flags);
+        _Py_END_SUPPRESS_IPH
+        Py_END_ALLOW_THREADS
+    } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+#else
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
+        n = preadv(fd, iov, cnt, offset);
+        _Py_END_SUPPRESS_IPH
+        Py_END_ALLOW_THREADS
+    } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+#endif
+
+    iov_cleanup(iov, buf, cnt);
+    if (n < 0) {
+        if (!async_err) {
+            posix_error();
+        }
+        return -1;
+    }
+
+    return n;
+
+    #if __clang__
+    #pragma clang diagnostic pop
+    #endif
 }
 #endif /* HAVE_PREADV */
 
@@ -9889,65 +9894,70 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                 int flags)
 /*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=35358c327e1a2a8e]*/
 {
-    if (HAVE_PWRITEV_RUNTIME) {
-        Py_ssize_t cnt;
-        Py_ssize_t result;
-        int async_err = 0;
-        struct iovec *iov;
-        Py_buffer *buf;
-
-        if (!PySequence_Check(buffers)) {
-            PyErr_SetString(PyExc_TypeError,
-                "pwritev() arg 2 must be a sequence");
-            return -1;
-        }
-
-        cnt = PySequence_Size(buffers);
-        if (cnt < 0) {
-            return -1;
-        }
-
-    #ifndef HAVE_PWRITEV2
-        if(flags != 0) {
-            argument_unavailable_error("pwritev2", "flags");
-            return -1;
-        }
+    /* pwritev method will be deleted if preadv is not available */
+    #if __clang__
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     #endif
 
-        if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_SIMPLE) < 0) {
-            return -1;
-        }
-    #ifdef HAVE_PWRITEV2
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            _Py_BEGIN_SUPPRESS_IPH
-            result = pwritev2(fd, iov, cnt, offset, flags);
-            _Py_END_SUPPRESS_IPH
-            Py_END_ALLOW_THREADS
-        } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    #else
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            _Py_BEGIN_SUPPRESS_IPH
-            result = pwritev(fd, iov, cnt, offset);
-            _Py_END_SUPPRESS_IPH
-            Py_END_ALLOW_THREADS
-        } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    #endif
+    Py_ssize_t cnt;
+    Py_ssize_t result;
+    int async_err = 0;
+    struct iovec *iov;
+    Py_buffer *buf;
 
-        iov_cleanup(iov, buf, cnt);
-        if (result < 0) {
-            if (!async_err) {
-                posix_error();
-            }
-            return -1;
-        }
-
-        return result;
-    } else {
-        PyErr_SetString(PyExc_NotImplementedError, "preadv is not available");
+    if (!PySequence_Check(buffers)) {
+        PyErr_SetString(PyExc_TypeError,
+            "pwritev() arg 2 must be a sequence");
         return -1;
     }
+
+    cnt = PySequence_Size(buffers);
+    if (cnt < 0) {
+        return -1;
+    }
+
+#ifndef HAVE_PWRITEV2
+    if(flags != 0) {
+        argument_unavailable_error("pwritev2", "flags");
+        return -1;
+    }
+#endif
+
+    if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_SIMPLE) < 0) {
+        return -1;
+    }
+#ifdef HAVE_PWRITEV2
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
+        result = pwritev2(fd, iov, cnt, offset, flags);
+        _Py_END_SUPPRESS_IPH
+        Py_END_ALLOW_THREADS
+    } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+#else
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
+        result = pwritev(fd, iov, cnt, offset);
+        _Py_END_SUPPRESS_IPH
+        Py_END_ALLOW_THREADS
+    } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+#endif
+
+    iov_cleanup(iov, buf, cnt);
+    if (result < 0) {
+        if (!async_err) {
+            posix_error();
+        }
+        return -1;
+    }
+
+    return result;
+
+    #if __clang__
+    #pragma clang diagnostic pop
+    #endif
 }
 #endif /* HAVE_PWRITEV */
 
