@@ -6122,7 +6122,11 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
         struct instr *inst = &bb->b_instr[i];
         int oparg = inst->i_oparg;
         int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
-        if ((inst->i_jabs || inst->i_jrel) &&  inst->i_target->b_iused > 0) {
+        if (inst->i_jabs || inst->i_jrel) {
+            /* Skip over empty basic blocks. */
+            while (inst->i_target->b_iused == 0) {
+                inst->i_target = inst->i_target->b_next;
+            }
             target = &inst->i_target->b_instr[0];
         }
         else {
@@ -6146,8 +6150,6 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                     bb->b_instr[i+1].i_opcode = NOP;
                     bb->b_instr[i+1].i_jabs = 0;
                 }
-
-
                 break;
 
                 /* Try to fold tuples of constants.
