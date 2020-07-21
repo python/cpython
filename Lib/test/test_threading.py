@@ -1209,17 +1209,17 @@ class ThreadingExceptionTests(BaseTestCase):
 
 
 
-class boolean_target (threading.Thread):
-    def __init__ (self, value):
+class boolean_target(threading.Thread):
+    def __init__(self, value):
         self.value = value
         self.ran = False
-    def __bool__ (self):
+    def __bool__(self):
         return self.value
-class callable_boolean_target (boolean_target):
-    def __call__ (self):
+class callable_boolean_target(boolean_target):
+    def __call__(self):
         self.ran = True
 
-class ThreadExecutionTests (unittest.TestCase):
+class ThreadExecutionTests(unittest.TestCase):
     """
     Test cases for issue # 41149.
     Previously, a thread target that was False as a boolean would not run,
@@ -1228,44 +1228,44 @@ class ThreadExecutionTests (unittest.TestCase):
     None, to raise an exception in the thread if the target is non-
     callable, and to call the target if it is callable.
     """
-    def setUp (self):
+    def setUp(self):
         self.save = threading.excepthook
         threading.excepthook = self.excepthook
 
-    def tearDown (self):
+    def tearDown(self):
         threading.excepthook = self.save
 
-    def excepthook (self, args):
+    def excepthook(self, args):
         self.exception_happened = True
-        self.save (args)
+        self.save(args)
 
-    def run_target (self, boolean, callable):
+    def run_target(self, boolean, callable):
         self.exception_happened = False
         if callable:
-            target = callable_boolean_target (boolean)
+            target = callable_boolean_target(boolean)
         else:
-            target = boolean_target (boolean)
-        thread = threading.Thread (target = target)
-        thread.start ()
-        thread.join ()
+            target = boolean_target(boolean)
+        thread = threading.Thread(target=target)
+        thread.start()
+        thread.join()
 
         if callable:
-            self.assertTrue (target.ran)
+            self.assertTrue(target.ran)
         else:
-            self.assertTrue (self.exception_happened)
+            self.assertTrue(self.exception_happened)
 
-    def test_targets (self):
-        self.run_target (False, False)
-        self.run_target (False, True)
-        self.run_target (True, False)
-        self.run_target (True, True)
+    def test_targets(self):
+        self.run_target(False, False)
+        self.run_target(False, True)
+        self.run_target(True, False)
+        self.run_target(True, True)
 
-    def test_none (self):
+    def test_none(self):
         self.exception_happened = False
-        thread = threading.Thread (target = None)
-        thread.start ()
-        thread.join ()
-        self.assertFalse (self.exception_happened)
+        thread = threading.Thread(target = None)
+        thread.start()
+        thread.join()
+        self.assertFalse(self.exception_happened)
 
 
 
