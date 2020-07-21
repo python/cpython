@@ -16,8 +16,8 @@ The :mod:`imghdr` module defines the following function:
 
 .. function:: what(file, h=None)
 
-   Tests the image data contained in the file named by *file*, and returns a
-   string describing the image type.  If optional *h* is provided, the *file*
+   Tests the image data contained in the file named *file*, and returns a
+   string describing the image type.  If *h* is provided, the *file*
    argument is ignored and *h* is assumed to contain the byte stream to test.
 
    .. versionchanged:: 3.6

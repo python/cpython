@@ -9,6 +9,9 @@ __all__ = ["what"]
 #-------------------------#
 
 def what(file, h=None):
+    """Return the type of image contained in a file or
+    byte stream.
+    """
     f = None
     try:
         if h is None:
@@ -42,6 +45,7 @@ def test_jpeg(h, f):
 tests.append(test_jpeg)
 
 def test_png(h, f):
+    """PNG data"""
     if h.startswith(b'\211PNG\r\n\032\n'):
         return 'png'
 
@@ -107,18 +111,21 @@ def test_xbm(h, f):
 tests.append(test_xbm)
 
 def test_bmp(h, f):
+    """BMP file"""
     if h.startswith(b'BM'):
         return 'bmp'
 
 tests.append(test_bmp)
 
 def test_webp(h, f):
+    """WebP file"""
     if h.startswith(b'RIFF') and h[8:12] == b'WEBP':
         return 'webp'
 
 tests.append(test_webp)
 
 def test_exr(h, f):
+    """OpenEXR file"""
     if h.startswith(b'\x76\x2f\x31\x01'):
         return 'exr'
 
