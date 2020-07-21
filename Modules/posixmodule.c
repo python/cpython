@@ -7218,7 +7218,8 @@ os_getgroups_impl(PyObject *module)
      * always first call getgroups with length 0 to get the actual number
      * of groups.
      */
-    n = getgroups(0, NULL);
+    /* getgroups will not fill the last slot with a gid, so we need +1 */
+    n = getgroups(0, NULL) + 1;
     if (n < 0) {
         return posix_error();
     } else if (n <= MAX_GROUPS) {
