@@ -5,6 +5,13 @@
 
 /* We define bool_repr to return "False" or "True" */
 
+/*[clinic input]
+class bool "struct _longobject *" "&PyBool_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7502400333e32995]*/
+
+#include "clinic/boolobject.c.h"
+
 static PyObject *false_str = NULL;
 static PyObject *true_str = NULL;
 
@@ -39,20 +46,18 @@ PyObject *PyBool_FromLong(long ok)
 
 /* We define bool_new to always return either Py_True or Py_False */
 
-static PyObject *
-bool_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyObject *x = Py_False;
-    long ok;
+/*[clinic input]
+@classmethod
+bool.__new__ as bool_new
+    x: bool = False
+    /
+[clinic start generated code]*/
 
-    if (!_PyArg_NoKeywords("bool", kwds))
-        return NULL;
-    if (!PyArg_UnpackTuple(args, "bool", 0, 1, &x))
-        return NULL;
-    ok = PyObject_IsTrue(x);
-    if (ok < 0)
-        return NULL;
-    return PyBool_FromLong(ok);
+static PyObject *
+bool_new_impl(PyTypeObject *type, int x)
+/*[clinic end generated code: output=dc081ba9d1ace642 input=97115382781fc4be]*/
+{
+    return PyBool_FromLong(x);
 }
 
 /* Arithmetic operations redefined to return bool if both args are bool. */
