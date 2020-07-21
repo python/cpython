@@ -1183,7 +1183,7 @@ Generic ABCs
    Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
    and ``BinaryIO(IO[bytes])``
    represent the types of I/O streams such as returned by
-   :func:`open`. These types are in the `typing.io` namespace.
+   :func:`open`. These types are in the ``typing.io`` namespace.
 
 .. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
 
@@ -1233,7 +1233,7 @@ Generic ABCs
    :func:`re.match`.  These types (and the corresponding functions)
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
-   ``Match[bytes]``. These types are in the `typing.re` namespace.
+   ``Match[bytes]``. These types are in the ``typing.re`` namespace.
 
 .. class:: Sequence(Reversible[T_co], Collection[T_co])
 
