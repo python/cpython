@@ -208,6 +208,11 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
      error.
 
    getentropy() is retried if it failed with EINTR: interrupted by a signal. */
+#ifdef __APPLE__
+static int
+py_getentropy(char *buffer, Py_ssize_t size, int raise) __attribute__((availability(macos,introduced=10.12)));
+#endif
+
 static int
 py_getentropy(char *buffer, Py_ssize_t size, int raise)
 {
@@ -498,6 +503,9 @@ pyurandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 #else
 
 #if defined(PY_GETRANDOM) || defined(PY_GETENTROPY)
+#ifdef __APPLE__
+    if (__builtin_available(macOS 10.12, *)) {
+#endif
 #ifdef PY_GETRANDOM
     res = py_getrandom(buffer, size, blocking, raise);
 #else
@@ -511,6 +519,9 @@ pyurandom(void *buffer, Py_ssize_t size, int blocking, int raise)
     }
     /* getrandom() or getentropy() function is not available: failed with
        ENOSYS or EPERM. Fall back on reading from /dev/urandom. */
+#ifdef __APPLE__
+    } /* end of availability block */
+#endif
 #endif
 
     return dev_urandom(buffer, size, raise);

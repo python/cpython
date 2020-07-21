@@ -7,18 +7,6 @@
    of the compiler used.  Different compilers define their own feature
    test macro, e.g. '_MSC_VER'. */
 
-#ifdef __APPLE__
-   /*
-    * Step 1 of support for weak-linking a number of symbols existing on
-    * OSX 10.4 and later, see the comment in the #ifdef __APPLE__ block
-    * at the end of this file for more information.
-    */
-#  pragma weak lchown
-#  pragma weak statvfs
-#  pragma weak fstatvfs
-
-#endif /* __APPLE__ */
-
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
@@ -2370,6 +2358,10 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
     STRUCT_STAT st;
     int result;
 
+#if defined(__APPLE__) && defined(HAVE_FSTATAT)
+    int fstatat_unavailable = 0;
+#endif
+
 #if !defined(MS_WINDOWS) && !defined(HAVE_FSTATAT) && !defined(HAVE_LSTAT)
     if (follow_symlinks_specified(function_name, follow_symlinks))
         return NULL;
@@ -2397,14 +2389,29 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
 #endif /* HAVE_LSTAT */
 #ifdef HAVE_FSTATAT
     if ((dir_fd != DEFAULT_DIR_FD) || !follow_symlinks)
+#ifdef __APPLE__
+     if (__builtin_available(macOS 10.10, *)) {
+#endif
         result = fstatat(dir_fd, path->narrow, &st,
                          follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
+
+#ifdef __APPLE__
+      } else {
+        fstatat_unavailable = 1;
+      }
+#endif
     else
 #endif /* HAVE_FSTATAT */
         result = STAT(path->narrow, &st);
 #endif /* MS_WINDOWS */
     Py_END_ALLOW_THREADS
 
+#if defined(__APPLE__) && defined(HAVE_FSTATAT)
+    if (fstatat_unavailable) {
+        argument_unavailable_error("stat", "dir_fd");
+        return NULL;
+    }
+#endif
     if (result != 0) {
         return path_error(path);
     }
@@ -2822,7 +2829,18 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     int result;
 #endif
 
-#ifndef HAVE_FACCESSAT
+#if defined(__APPLE__) && defined(HAVE_FACCESSAT)
+    int faccessat_unavailable = 0;
+#endif
+
+#if !defined(HAVE_FACCESSAT) || defined(__APPLE__)
+
+#if defined(HAVE_FACCESSAT) && defined(__APPLE) 
+  if (__builtin_available(macOS 10.10, *)) {
+     /* ^^^^ cannot use '!' here */
+  } else {
+#endif
+
     if (follow_symlinks_specified("access", follow_symlinks))
         return -1;
 
@@ -2830,6 +2848,11 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
         argument_unavailable_error("access", "effective_ids");
         return -1;
     }
+
+#if defined(HAVE_FACCESSAT) && defined(__APPLE) 
+  }
+#endif
+
 #endif
 
 #ifdef MS_WINDOWS
@@ -2856,17 +2879,31 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     if ((dir_fd != DEFAULT_DIR_FD) ||
         effective_ids ||
         !follow_symlinks) {
+#ifdef __APPLE__
+      if (__builtin_available(macOS 10.10, *)) {
+#endif
         int flags = 0;
         if (!follow_symlinks)
             flags |= AT_SYMLINK_NOFOLLOW;
         if (effective_ids)
             flags |= AT_EACCESS;
         result = faccessat(dir_fd, path->narrow, mode, flags);
+#ifdef __APPLE__
+      } else {
+        faccessat_unavailable = 1;
+      }
+#endif
     }
     else
 #endif
         result = access(path->narrow, mode);
     Py_END_ALLOW_THREADS
+#if defined(__APPLE__) && defined(HAVE_FACCESSAT)
+    if (faccessat_unavailable) {
+        argument_unavailable_error("access", "dir_fd");
+        return 0;
+    }
+#endif
     return_value = !result;
 #endif
 
@@ -3064,6 +3101,11 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 
 #ifdef HAVE_FCHMODAT
     int fchmodat_nofollow_unsupported = 0;
+
+#ifdef __APPLE__
+    int fchmodat_unsupported = 0;
+#endif
+
 #endif
 
 #if !(defined(HAVE_FCHMODAT) || defined(HAVE_LCHMOD))
@@ -3107,6 +3149,9 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 #endif
 #ifdef HAVE_FCHMODAT
     if ((dir_fd != DEFAULT_DIR_FD) || !follow_symlinks) {
+#ifdef __APPLE__
+      if (__builtin_available(macOS 10.10, *)) {
+#endif
         /*
          * fchmodat() doesn't currently support AT_SYMLINK_NOFOLLOW!
          * The documentation specifically shows how to use it,
@@ -3127,6 +3172,15 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
                          result &&
                          ((errno == ENOTSUP) || (errno == EOPNOTSUPP)) &&
                          !follow_symlinks;
+#ifdef __APPLE__
+      } else {
+        fchmodat_unsupported = 1;
+
+        /* These silence a compiler warning, values aren't used */
+        errno = ENOSYS;
+        result = -1;
+      }
+#endif
     }
     else
 #endif
@@ -3135,6 +3189,12 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 
     if (result) {
 #ifdef HAVE_FCHMODAT
+#ifdef __APPLE__
+        if (fchmodat_unsupported) {
+            argument_unavailable_error("chmod", "dir_fd");
+            return NULL;
+        } else
+#endif
         if (fchmodat_nofollow_unsupported) {
             if (dir_fd != DEFAULT_DIR_FD)
                 dir_fd_and_follow_symlinks_invalid("chmod",
@@ -3435,6 +3495,10 @@ os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
 {
     int result;
 
+#if defined(HAVE_FCHOWNAT) && defined(__APPLE__)
+    int fchownat_unsupported = 0;
+#endif
+
 #if !(defined(HAVE_LCHOWN) || defined(HAVE_FCHOWNAT))
     if (follow_symlinks_specified("chown", follow_symlinks))
         return NULL;
@@ -3442,19 +3506,6 @@ os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
     if (dir_fd_and_fd_invalid("chown", dir_fd, path->fd) ||
         fd_and_follow_symlinks_invalid("chown", path->fd, follow_symlinks))
         return NULL;
-
-#ifdef __APPLE__
-    /*
-     * This is for Mac OS X 10.3, which doesn't have lchown.
-     * (But we still have an lchown symbol because of weak-linking.)
-     * It doesn't have fchownat either.  So there's no possibility
-     * of a graceful failover.
-     */
-    if ((!follow_symlinks) && (lchown == NULL)) {
-        follow_symlinks_specified("chown", follow_symlinks);
-        return NULL;
-    }
-#endif
 
     if (PySys_Audit("os.chown", "OIIi", path->object, uid, gid,
                     dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
@@ -3473,13 +3524,28 @@ os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
     else
 #endif
 #ifdef HAVE_FCHOWNAT
-    if ((dir_fd != DEFAULT_DIR_FD) || (!follow_symlinks))
+    if ((dir_fd != DEFAULT_DIR_FD) || (!follow_symlinks)) {
+#ifdef __APPLE__
+      if (__builtin_available(macOS 10.10, *)) {
+#endif
         result = fchownat(dir_fd, path->narrow, uid, gid,
                           follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
-    else
+#ifdef __APPLE__
+      } else { 
+         fchownat_unsupported = 1;
+      }
+#endif
+    } else
 #endif
         result = chown(path->narrow, uid, gid);
     Py_END_ALLOW_THREADS
+
+#ifdef __APPLE__
+    if (fchownat_unsupported) {
+        argument_unavailable_error(NULL, "dir_fd");
+        return NULL;
+    }
+#endif
 
     if (result)
         return path_error(path);
@@ -3726,12 +3792,33 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 #else
     int result;
 #endif
+#if defined(__APPLE__) && defined(HAVE_LINKAT)
+    int linkat_unavailable = 0;
+#endif
 
-#ifndef HAVE_LINKAT
+#if !defined(HAVE_LINKAT) || defined(__APPLE__)
+
+#if defined(HAVE_LINKAT) && defined(__APPLE__)
+  if (__builtin_available(macOS 10.0, *)) {
+     /* pass: ^^^^ '!' cannot be used here */
+  } else {
+#endif
     if ((src_dir_fd != DEFAULT_DIR_FD) || (dst_dir_fd != DEFAULT_DIR_FD)) {
         argument_unavailable_error("link", "src_dir_fd and dst_dir_fd");
         return NULL;
     }
+  
+    /* XXX: !follow_symlinks requires linkat: Issue41355 */
+    if (!follow_symlinks) {
+        argument_unavailable_error("link", "not follow_symlinks");
+        return NULL;
+    }
+
+
+#if defined(HAVE_LINKAT) && defined(__APPLE__)
+  }
+#endif
+
 #endif
 
 #ifndef MS_WINDOWS
@@ -3761,13 +3848,30 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
     if ((src_dir_fd != DEFAULT_DIR_FD) ||
         (dst_dir_fd != DEFAULT_DIR_FD) ||
         (!follow_symlinks))
+#ifdef __APPLE__
+      if (__builtin_available(macOS 10.10, *)) {
+#endif
+
         result = linkat(src_dir_fd, src->narrow,
             dst_dir_fd, dst->narrow,
             follow_symlinks ? AT_SYMLINK_FOLLOW : 0);
+
+#ifdef __APPLE__
+      } else {
+        linkat_unavailable = 1;
+      }
+#endif
     else
 #endif /* HAVE_LINKAT */
         result = link(src->narrow, dst->narrow);
     Py_END_ALLOW_THREADS
+
+#if defined(__APPLE__) && defined(HAVE_LINKAT)
+    if (linkat_unavailable) {
+        argument_unavailable_error("link", "src_dir_fd, dst_dir_fd, not follow_symlinks");
+        return NULL;
+    }
+#endif
 
     if (result)
         return path_error2(src, dst);
@@ -3891,6 +3995,9 @@ _posix_listdir(path_t *path, PyObject *list)
     errno = 0;
 #ifdef HAVE_FDOPENDIR
     if (path->fd != -1) {
+#ifdef __APPLE__
+      if (__builtin_available(macOS 10.10, *)) {
+#endif
         /* closedir() closes the FD, so we duplicate it */
         fd = _Py_dup(path->fd);
         if (fd == -1)
@@ -3901,6 +4008,12 @@ _posix_listdir(path_t *path, PyObject *list)
         Py_BEGIN_ALLOW_THREADS
         dirp = fdopendir(fd);
         Py_END_ALLOW_THREADS
+#ifdef __APPLE__
+      } else {
+        argument_unavailable_error(NULL, "dir_fd");
+        return NULL;
+      }
+#endif
     }
     else
 #endif
@@ -4230,9 +4343,19 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 #else
     Py_BEGIN_ALLOW_THREADS
 #if HAVE_MKDIRAT
-    if (dir_fd != DEFAULT_DIR_FD)
+    if (dir_fd != DEFAULT_DIR_FD) {
+#ifdef __APPLE__
+      if (__builtin_available(macOS 10.10, *)) {
+#endif
         result = mkdirat(dir_fd, path->narrow, mode);
-    else
+
+#ifdef __APPLE__
+      } else {
+        argument_unavailable_error(NULL, "dir_fd");
+        return NULL;
+      }
+#endif
+    } else
 #endif
 #if defined(__WATCOMC__) && !defined(__QNX__)
         result = mkdir(path->narrow);
@@ -4388,9 +4511,20 @@ internal_rename(path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int is
 
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_RENAMEAT
-    if (dir_fd_specified)
+    if (dir_fd_specified) {
+#ifdef __APPLE__
+      if (__builtin_available(macOS 10.10, *)) {
+#endif
+
         result = renameat(src_dir_fd, src->narrow, dst_dir_fd, dst->narrow);
-    else
+
+#ifdef __APPLE__
+      } else {
+        argument_unavailable_error(NULL, "dir_fd");
+        return NULL;
+      }
+#endif
+    } else
 #endif
     result = rename(src->narrow, dst->narrow);
     Py_END_ALLOW_THREADS
@@ -4482,9 +4616,18 @@ os_rmdir_impl(PyObject *module, path_t *path, int dir_fd)
     result = !RemoveDirectoryW(path->wide);
 #else
 #ifdef HAVE_UNLINKAT
-    if (dir_fd != DEFAULT_DIR_FD)
+    if (dir_fd != DEFAULT_DIR_FD) {
+#ifdef __APPLE__
+      if (__builtin_available(macOS 10.10, *)) {
+#endif
         result = unlinkat(dir_fd, path->narrow, AT_REMOVEDIR);
-    else
+#ifdef __APPLE__
+      } else {
+        argument_unavailable_error(NULL, "dir_fd");
+        return NULL;
+      }
+#endif
+    } else
 #endif
         result = rmdir(path->narrow);
 #endif
@@ -4646,9 +4789,19 @@ os_unlink_impl(PyObject *module, path_t *path, int dir_fd)
     result = !Py_DeleteFileW(path->wide);
 #else
 #ifdef HAVE_UNLINKAT
-    if (dir_fd != DEFAULT_DIR_FD)
+    if (dir_fd != DEFAULT_DIR_FD) {
+#ifdef __APPLE__
+      if (__builtin_available(macOS 10.10, *)) {
+#endif
+
         result = unlinkat(dir_fd, path->narrow, 0);
-    else
+#ifdef __APPLE__
+      } else {
+        argument_unavailable_error(NULL, "dir_fd");
+        return NULL;
+      }
+#endif
+    } else
 #endif /* HAVE_UNLINKAT */
         result = unlink(path->narrow);
 #endif
@@ -4822,6 +4975,11 @@ typedef struct {
 
 #if defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMENSAT)
 
+#ifdef __APPLE__
+static int
+utime_dir_fd(utime_t *ut, int dir_fd, const char *path, int follow_symlinks) __attribute__((availability(macos, introduced=10.13)));
+#endif
+
 static int
 utime_dir_fd(utime_t *ut, int dir_fd, const char *path, int follow_symlinks)
 {
@@ -4852,11 +5010,25 @@ static int
 utime_fd(utime_t *ut, int fd)
 {
 #ifdef HAVE_FUTIMENS
+
+#ifdef __APPLE__
+    if (__builtin_available(macOS 10.13, *)) {
+#endif
+
     UTIME_TO_TIMESPEC;
     return futimens(fd, time);
-#else
+
+#ifdef __APPLE__
+    } else 
+#endif
+
+#endif
+
+#if !defined(HAVE_FUTIMENS) || defined(__APPLE__)
+    {
     UTIME_TO_TIMEVAL;
     return futimes(fd, time);
+    }
 #endif
 }
 
@@ -4875,11 +5047,21 @@ static int
 utime_nofollow_symlinks(utime_t *ut, const char *path)
 {
 #ifdef HAVE_UTIMENSAT
+#ifdef __APPLE__
+    if (__builtin_available(macOS 10.13, *)) {
+#endif
     UTIME_TO_TIMESPEC;
     return utimensat(DEFAULT_DIR_FD, path, time, AT_SYMLINK_NOFOLLOW);
-#else
+#ifdef __APPLE__
+    } else 
+#endif
+#endif
+
+#if !defined(HAVE_UTIMENSAT) || defined(__APPLE__)
+    {
     UTIME_TO_TIMEVAL;
     return lutimes(path, time);
+    }
 #endif
 }
 
@@ -4890,7 +5072,7 @@ utime_nofollow_symlinks(utime_t *ut, const char *path)
 static int
 utime_default(utime_t *ut, const char *path)
 {
-#ifdef HAVE_UTIMENSAT
+#if defined(HAVE_UTIMENSAT) && !defined(__APPLE__) /* XXX */
     UTIME_TO_TIMESPEC;
     return utimensat(DEFAULT_DIR_FD, path, time, 0);
 #elif defined(HAVE_UTIMES)
@@ -4983,6 +5165,9 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
     FILETIME atime, mtime;
 #else
     int result;
+#endif
+#if defined(__APPLE__) && (defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMENSAT))
+    int utime_dir_fd_unsupported = 0;
 #endif
 
     utime_t utime;
@@ -5099,9 +5284,19 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 #endif
 
 #if defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMENSAT)
-    if ((dir_fd != DEFAULT_DIR_FD) || (!follow_symlinks))
+    if ((dir_fd != DEFAULT_DIR_FD) || (!follow_symlinks)) {
+#ifdef __APPLE__
+     if (__builtin_available(macOS 10.13, *)) {
+#endif
         result = utime_dir_fd(&utime, dir_fd, path->narrow, follow_symlinks);
-    else
+
+#ifdef __APPLE__
+     } else {
+        utime_dir_fd_unsupported = 1;
+     }
+#endif
+
+    } else
 #endif
 
 #if defined(HAVE_FUTIMES) || defined(HAVE_FUTIMENS)
@@ -5113,6 +5308,13 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
     result = utime_default(&utime, path->narrow);
 
     Py_END_ALLOW_THREADS
+
+#if defined(__APPLE__) && (defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMENSAT))
+    if (utime_dir_fd_unsupported) {
+        argument_unavailable_error(NULL, "dir_fd");
+        return NULL;
+    }
+#endif
 
     if (result < 0) {
         /* see previous comment about not putting filename in error here */
@@ -8133,9 +8335,18 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
 
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_READLINKAT
-    if (dir_fd != DEFAULT_DIR_FD)
+    if (dir_fd != DEFAULT_DIR_FD) {
+#ifdef __APPLE__
+          if (__builtin_available(macOS 10.10, *)) {
+#endif
         length = readlinkat(dir_fd, path->narrow, buffer, MAXPATHLEN);
-    else
+#ifdef __APPLE__
+          } else {
+            argument_unavailable_error(NULL, "dir_fd");
+            return NULL;
+          }
+#endif
+    } else
 #endif
         length = readlink(path->narrow, buffer, MAXPATHLEN);
     Py_END_ALLOW_THREADS
@@ -8398,9 +8609,18 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
 
     Py_BEGIN_ALLOW_THREADS
 #if HAVE_SYMLINKAT
-    if (dir_fd != DEFAULT_DIR_FD)
+    if (dir_fd != DEFAULT_DIR_FD) {
+#ifdef __APPLE__
+      if (__builtin_available(macOS 10.10, *)) {
+#endif
         result = symlinkat(src->narrow, dir_fd, dst->narrow);
-    else
+#ifdef __APPLE__
+      } else {
+          argument_unavailable_error(NULL, "dir_fd");
+          return NULL;
+      }
+#endif
+    } else
 #endif
         result = symlink(src->narrow, dst->narrow);
     Py_END_ALLOW_THREADS
@@ -8699,9 +8919,19 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
         fd = _wopen(path->wide, flags, mode);
 #else
 #ifdef HAVE_OPENAT
-        if (dir_fd != DEFAULT_DIR_FD)
+        if (dir_fd != DEFAULT_DIR_FD) {
+#ifdef __APPLE__
+          if (__builtin_available(macOS 10.10, *)) {
+#endif
             fd = openat(dir_fd, path->narrow, flags, mode);
-        else
+
+#ifdef __APPLE__
+          } else {
+            argument_unavailable_error(NULL, "dir_fd");
+            return -1;
+          }
+#endif
+        } else
 #endif /* HAVE_OPENAT */
             fd = open(path->narrow, flags, mode);
 #endif /* !MS_WINDOWS */
@@ -9291,12 +9521,25 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
     do {
+#ifdef __APPLE__
+/* This entire function will be removed from the module dict when the API
+ * is not available.
+ */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+#endif
         Py_BEGIN_ALLOW_THREADS
         _Py_BEGIN_SUPPRESS_IPH
         n = preadv(fd, iov, cnt, offset);
         _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
+#ifdef __APPLE__
+#pragma clang diagnostic pop
+#endif
+
 #endif
 
     iov_cleanup(iov, buf, cnt);
@@ -9886,6 +10129,15 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
         Py_END_ALLOW_THREADS
     } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
+
+#ifdef __APPLE__
+/* This entire function will be removed from the module dict when the API
+ * is not available.
+ */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+#endif
     do {
         Py_BEGIN_ALLOW_THREADS
         _Py_BEGIN_SUPPRESS_IPH
@@ -9893,6 +10145,11 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
         _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
+#ifdef __APPLE__
+#pragma clang diagnostic pop
+#endif
+
 #endif
 
     iov_cleanup(iov, buf, cnt);
@@ -10782,13 +11039,6 @@ os_statvfs_impl(PyObject *module, path_t *path)
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FSTATVFS
     if (path->fd != -1) {
-#ifdef __APPLE__
-        /* handle weak-linking on Mac OS X 10.3 */
-        if (fstatvfs == NULL) {
-            fd_specified("statvfs", path->fd);
-            return NULL;
-        }
-#endif
         result = fstatvfs(path->fd, &st);
     }
     else
@@ -12870,12 +13120,23 @@ _Py_COMP_DIAG_POP
     const char *path = PyBytes_AS_STRING(ub);
     if (self->dir_fd != DEFAULT_DIR_FD) {
 #ifdef HAVE_FSTATAT
+#ifdef __APPLE__
+      if (__builtin_available(macOS 10.10, *)) {
+#endif
         result = fstatat(self->dir_fd, path, &st,
                          follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
-#else
+#ifdef __APPLE__
+      } else 
+#endif
+
+#endif
+
+#if !defined(HAVE_FSTATAT) || defined(__APPLE__)
+      {
         Py_DECREF(ub);
         PyErr_SetString(PyExc_NotImplementedError, "can't fetch stat");
         return NULL;
+      }
 #endif /* HAVE_FSTATAT */
     }
     else
@@ -13675,6 +13936,9 @@ os_scandir_impl(PyObject *module, path_t *path)
     errno = 0;
 #ifdef HAVE_FDOPENDIR
     if (iterator->path.fd != -1) {
+#ifdef __APPLE__
+      if (__builtin_available(macOS 10.10, *)) {
+#endif
         /* closedir() closes the FD, so we duplicate it */
         fd = _Py_dup(iterator->path.fd);
         if (fd == -1)
@@ -13683,6 +13947,12 @@ os_scandir_impl(PyObject *module, path_t *path)
         Py_BEGIN_ALLOW_THREADS
         iterator->dirp = fdopendir(fd);
         Py_END_ALLOW_THREADS
+#ifdef __APPLE__
+      } else {
+        argument_unavailable_error("opendir", "dir_fd");
+        return NULL;
+      }
+#endif
     }
     else
 #endif
@@ -15002,44 +15272,6 @@ posixmodule_exec(PyObject *m)
     PyModule_AddObject(m, "uname_result", (PyObject *)UnameResultType);
     state->UnameResultType = (PyObject *)UnameResultType;
 
-#ifdef __APPLE__
-    /*
-     * Step 2 of weak-linking support on Mac OS X.
-     *
-     * The code below removes functions that are not available on the
-     * currently active platform.
-     *
-     * This block allow one to use a python binary that was build on
-     * OSX 10.4 on OSX 10.3, without losing access to new APIs on
-     * OSX 10.4.
-     */
-#ifdef HAVE_FSTATVFS
-    if (fstatvfs == NULL) {
-        if (PyObject_DelAttrString(m, "fstatvfs") == -1) {
-            return -1;
-        }
-    }
-#endif /* HAVE_FSTATVFS */
-
-#ifdef HAVE_STATVFS
-    if (statvfs == NULL) {
-        if (PyObject_DelAttrString(m, "statvfs") == -1) {
-            return -1;
-        }
-    }
-#endif /* HAVE_STATVFS */
-
-# ifdef HAVE_LCHOWN
-    if (lchown == NULL) {
-        if (PyObject_DelAttrString(m, "lchown") == -1) {
-            return -1;
-        }
-    }
-#endif /* HAVE_LCHOWN */
-
-
-#endif /* __APPLE__ */
-
     if ((state->billion = PyLong_FromLong(1000000000)) == NULL)
         return -1;
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
@@ -15103,7 +15335,30 @@ static struct PyModuleDef posixmodule = {
 PyMODINIT_FUNC
 INITFUNC(void)
 {
-    return PyModuleDef_Init(&posixmodule);
+    PyObject* module = PyModuleDef_Init(&posixmodule);
+#if defined(__APPLE__) && defined(HAVE_PWRITEV) 
+    if (module) {
+        if (__builtin_available(macOS 11.0, *)) {
+            /* pass: ^^^^ cannot use '!' here */
+        } else {
+            /* pwritev and preadv were introduced in macOS 11 */
+            PyObject* dct = PyModule_GetDict(module);
+
+            if (dct == NULL) {
+                return NULL;
+            }
+
+            if (PyDict_DelItemString(dct, "pwritev") == -1) {
+                PyErr_Clear();
+            }
+            if (PyDict_DelItemString(dct, "preadv") == -1) {
+                PyErr_Clear();
+            }
+        }
+    }
+#endif
+
+    return module;
 }
 
 #ifdef __cplusplus

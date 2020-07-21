@@ -683,15 +683,22 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 
 #else   /* MS_WINDOWS */
     int err;
-#ifdef HAVE_CLOCK_GETTIME
+#if defined(HAVE_CLOCK_GETTIME)
     struct timespec ts;
-#else
+#endif
+
+#if !defined(HAVE_CLOCK_GETTIME) || defined(__APPLE__)
     struct timeval tv;
 #endif
 
     assert(info == NULL || raise);
 
 #ifdef HAVE_CLOCK_GETTIME
+
+#if defined(__APPLE__) 
+    if (__builtin_available(macOS 10.12, *)) {
+#endif
+
     err = clock_gettime(CLOCK_REALTIME, &ts);
     if (err) {
         if (raise) {
@@ -715,7 +722,14 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
             info->resolution = 1e-9;
         }
     }
-#else   /* HAVE_CLOCK_GETTIME */
+
+#ifdef __APPLE__
+    } else { 
+#endif
+
+#endif
+
+#if !defined(HAVE_CLOCK_GETTIME) || defined(__APPLE__)
 
      /* test gettimeofday() */
     err = gettimeofday(&tv, (struct timezone *)NULL);
@@ -735,6 +749,11 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
         info->monotonic = 0;
         info->adjustable = 1;
     }
+
+#ifdef __APPLE__
+    } /* end of availibity block */
+#endif
+
 #endif   /* !HAVE_CLOCK_GETTIME */
 #endif   /* !MS_WINDOWS */
     return 0;
