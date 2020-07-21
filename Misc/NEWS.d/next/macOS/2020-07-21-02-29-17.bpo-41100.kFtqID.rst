@@ -1,0 +1,1 @@
+Add runtime checks for MACOSX_DEPLOYMENT_TARGET=10.10 so backwards compatible python can be built with latest Xcode
