@@ -1291,7 +1291,7 @@ Functions and decorators
    Note that returning instances of private classes is not recommended.
    It is usually preferable to make such classes public.
 
-Generic ABCs (with initials A to H)
+Generic ABCs (with initials A to K)
 ...................................
 
 .. class:: AbstractSet(Sized, Collection[T_co])
@@ -1433,9 +1433,18 @@ Generic ABCs (with initials A to H)
 
    An alias to :class:`collections.abc.Hashable`
 
+.. class:: IO
+           TextIO
+           BinaryIO
 
-Remaining classes, functions and decorators
-...........................................
+   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
+   and ``BinaryIO(IO[bytes])``
+   represent the types of I/O streams such as returned by
+   :func:`open`. These types are in the `typing.io` namespace.
+
+.. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
+
+   A generic version of :class:`collections.abc.ItemsView`.
 
 .. class:: Iterable(Generic[T_co])
 
@@ -1444,6 +1453,13 @@ Remaining classes, functions and decorators
 .. class:: Iterator(Iterable[T_co])
 
     A generic version of :class:`collections.abc.Iterator`.
+
+.. class:: KeysView(MappingView[KT_co], AbstractSet[KT_co])
+
+   A generic version of :class:`collections.abc.KeysView`.
+
+Remaining classes, functions and decorators
+...........................................
 
 .. class:: Sized
 
@@ -1477,26 +1493,9 @@ Remaining classes, functions and decorators
 
    A generic version of :class:`collections.abc.MappingView`.
 
-.. class:: KeysView(MappingView[KT_co], AbstractSet[KT_co])
-
-   A generic version of :class:`collections.abc.KeysView`.
-
-.. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
-
-   A generic version of :class:`collections.abc.ItemsView`.
-
 .. class:: ValuesView(MappingView[VT_co])
 
    A generic version of :class:`collections.abc.ValuesView`.
-
-.. class:: IO
-           TextIO
-           BinaryIO
-
-   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
-   and ``BinaryIO(IO[bytes])``
-   represent the types of I/O streams such as returned by
-   :func:`open`.
 
 .. class:: Pattern
            Match
