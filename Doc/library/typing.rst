@@ -1291,8 +1291,8 @@ Functions and decorators
    Note that returning instances of private classes is not recommended.
    It is usually preferable to make such classes public.
 
-Generic ABCs (with initial A)
-.............................
+Generic ABCs (with initials A to H)
+...................................
 
 .. class:: AbstractSet(Sized, Collection[T_co])
 
@@ -1356,59 +1356,6 @@ Generic ABCs (with initial A)
 
    .. versionadded:: 3.5.2
 
-Remaining classes, functions and decorators
-...........................................
-
-.. class:: Iterable(Generic[T_co])
-
-    A generic version of :class:`collections.abc.Iterable`.
-
-.. class:: Iterator(Iterable[T_co])
-
-    A generic version of :class:`collections.abc.Iterator`.
-
-.. class:: Container(Generic[T_co])
-
-    A generic version of :class:`collections.abc.Container`.
-
-.. class:: Hashable
-
-   An alias to :class:`collections.abc.Hashable`
-
-.. class:: Sized
-
-   An alias to :class:`collections.abc.Sized`
-
-.. class:: Collection(Sized, Iterable[T_co], Container[T_co])
-
-   A generic version of :class:`collections.abc.Collection`
-
-   .. versionadded:: 3.6.0
-
-.. class:: MutableSet(AbstractSet[T])
-
-    A generic version of :class:`collections.abc.MutableSet`.
-
-.. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
-
-    A generic version of :class:`collections.abc.Mapping`.
-    This type can be used as follows::
-
-      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
-          return word_list[word]
-
-.. class:: MutableMapping(Mapping[KT, VT])
-
-    A generic version of :class:`collections.abc.MutableMapping`.
-
-.. class:: Sequence(Reversible[T_co], Collection[T_co])
-
-    A generic version of :class:`collections.abc.Sequence`.
-
-.. class:: MutableSequence(Sequence[T])
-
-   A generic version of :class:`collections.abc.MutableSequence`.
-
 .. class:: ByteString(Sequence[int])
 
    A generic version of :class:`collections.abc.ByteString`.
@@ -1419,21 +1366,22 @@ Remaining classes, functions and decorators
    As a shorthand for this type, :class:`bytes` can be used to
    annotate arguments of any of the types mentioned above.
 
-.. class:: MappingView(Sized, Iterable[T_co])
+.. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
-   A generic version of :class:`collections.abc.MappingView`.
+   A generic version of :class:`collections.abc.Collection`
 
-.. class:: KeysView(MappingView[KT_co], AbstractSet[KT_co])
+   .. versionadded:: 3.6.0
 
-   A generic version of :class:`collections.abc.KeysView`.
+.. class:: Container(Generic[T_co])
 
-.. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
+    A generic version of :class:`collections.abc.Container`.
 
-   A generic version of :class:`collections.abc.ItemsView`.
+.. class:: ContextManager(Generic[T_co])
 
-.. class:: ValuesView(MappingView[VT_co])
+   A generic version of :class:`contextlib.AbstractContextManager`.
 
-   A generic version of :class:`collections.abc.ValuesView`.
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.0
 
 .. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
 
@@ -1449,13 +1397,6 @@ Remaining classes, functions and decorators
           x = await c # type: int
 
    .. versionadded:: 3.5.3
-
-.. class:: ContextManager(Generic[T_co])
-
-   A generic version of :class:`contextlib.AbstractContextManager`.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.0
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
 
@@ -1487,6 +1428,66 @@ Remaining classes, functions and decorators
           while True:
               yield start
               start += 1
+
+.. class:: Hashable
+
+   An alias to :class:`collections.abc.Hashable`
+
+
+Remaining classes, functions and decorators
+...........................................
+
+.. class:: Iterable(Generic[T_co])
+
+    A generic version of :class:`collections.abc.Iterable`.
+
+.. class:: Iterator(Iterable[T_co])
+
+    A generic version of :class:`collections.abc.Iterator`.
+
+.. class:: Sized
+
+   An alias to :class:`collections.abc.Sized`
+
+.. class:: MutableSet(AbstractSet[T])
+
+    A generic version of :class:`collections.abc.MutableSet`.
+
+.. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
+
+    A generic version of :class:`collections.abc.Mapping`.
+    This type can be used as follows::
+
+      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
+          return word_list[word]
+
+.. class:: MutableMapping(Mapping[KT, VT])
+
+    A generic version of :class:`collections.abc.MutableMapping`.
+
+.. class:: Sequence(Reversible[T_co], Collection[T_co])
+
+    A generic version of :class:`collections.abc.Sequence`.
+
+.. class:: MutableSequence(Sequence[T])
+
+   A generic version of :class:`collections.abc.MutableSequence`.
+
+.. class:: MappingView(Sized, Iterable[T_co])
+
+   A generic version of :class:`collections.abc.MappingView`.
+
+.. class:: KeysView(MappingView[KT_co], AbstractSet[KT_co])
+
+   A generic version of :class:`collections.abc.KeysView`.
+
+.. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
+
+   A generic version of :class:`collections.abc.ItemsView`.
+
+.. class:: ValuesView(MappingView[VT_co])
+
+   A generic version of :class:`collections.abc.ValuesView`.
 
 .. class:: IO
            TextIO
