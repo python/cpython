@@ -1,3 +1,4 @@
+========================================
 :mod:`typing` --- Support for type hints
 ========================================
 
@@ -435,10 +436,63 @@ can define new custom protocols to fully enjoy structural subtyping
 (see examples below).
 
 
-Classes, functions, and decorators
-----------------------------------
+Module contents
+---------------
 
 The module defines the following classes, functions and decorators:
+
+Aliases and constants
+.....................
+
+.. data:: AnyStr
+
+   ``AnyStr`` is a type variable defined as
+   ``AnyStr = TypeVar('AnyStr', str, bytes)``.
+
+   It is meant to be used for functions that may accept any kind of string
+   without allowing different kinds of strings to mix. For example::
+
+      def concat(a: AnyStr, b: AnyStr) -> AnyStr:
+          return a + b
+
+      concat(u"foo", u"bar")  # Ok, output has type 'unicode'
+      concat(b"foo", b"bar")  # Ok, output has type 'bytes'
+      concat(u"foo", b"bar")  # Error, cannot mix unicode and bytes
+
+.. data:: TYPE_CHECKING
+
+   A special constant that is assumed to be ``True`` by 3rd party static
+   type checkers. It is ``False`` at runtime. Usage::
+
+      if TYPE_CHECKING:
+          import expensive_mod
+
+      def fun(arg: 'expensive_mod.SomeType') -> None:
+          local_var: expensive_mod.AnotherType = other_fun()
+
+   Note that the first type annotation must be enclosed in quotes, making it a
+   "forward reference", to hide the ``expensive_mod`` reference from the
+   interpreter runtime.  Type annotations for local variables are not
+   evaluated, so the second annotation does not need to be enclosed in quotes.
+
+   .. versionadded:: 3.5.2
+
+.. class:: Text
+
+   ``Text`` is an alias for ``str``. It is provided to supply a forward
+   compatible path for Python 2 code: in Python 2, ``Text`` is an alias for
+   ``unicode``.
+
+   Use ``Text`` to indicate that a value must contain a unicode string in
+   a manner that is compatible with both Python 2 and Python 3::
+
+       def add_unicode_checkmark(text: Text) -> Text:
+           return text + u' \u2713'
+
+   .. versionadded:: 3.5.2
+
+Remaining classes, functions and decorators
+...........................................
 
 .. class:: TypeVar
 
@@ -874,20 +928,6 @@ The module defines the following classes, functions and decorators:
               start = await increment(start)
 
    .. versionadded:: 3.6.1
-
-.. class:: Text
-
-   ``Text`` is an alias for ``str``. It is provided to supply a forward
-   compatible path for Python 2 code: in Python 2, ``Text`` is an alias for
-   ``unicode``.
-
-   Use ``Text`` to indicate that a value must contain a unicode string in
-   a manner that is compatible with both Python 2 and Python 3::
-
-       def add_unicode_checkmark(text: Text) -> Text:
-           return text + u' \u2713'
-
-   .. versionadded:: 3.5.2
 
 .. class:: IO
            TextIO
@@ -1368,39 +1408,6 @@ The module defines the following classes, functions and decorators:
    more details.
 
    .. versionadded:: 3.8
-
-.. data:: AnyStr
-
-   ``AnyStr`` is a type variable defined as
-   ``AnyStr = TypeVar('AnyStr', str, bytes)``.
-
-   It is meant to be used for functions that may accept any kind of string
-   without allowing different kinds of strings to mix. For example::
-
-      def concat(a: AnyStr, b: AnyStr) -> AnyStr:
-          return a + b
-
-      concat(u"foo", u"bar")  # Ok, output has type 'unicode'
-      concat(b"foo", b"bar")  # Ok, output has type 'bytes'
-      concat(u"foo", b"bar")  # Error, cannot mix unicode and bytes
-
-.. data:: TYPE_CHECKING
-
-   A special constant that is assumed to be ``True`` by 3rd party static
-   type checkers. It is ``False`` at runtime. Usage::
-
-      if TYPE_CHECKING:
-          import expensive_mod
-
-      def fun(arg: 'expensive_mod.SomeType') -> None:
-          local_var: expensive_mod.AnotherType = other_fun()
-
-   Note that the first type annotation must be enclosed in quotes, making it a
-   "forward reference", to hide the ``expensive_mod`` reference from the
-   interpreter runtime.  Type annotations for local variables are not
-   evaluated, so the second annotation does not need to be enclosed in quotes.
-
-   .. versionadded:: 3.5.2
 
 .. data:: Annotated
 
