@@ -1,0 +1,1 @@
+Add runtime checks so python can be built for Mac OS 10.10 using the latest Xcode
