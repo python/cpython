@@ -555,178 +555,44 @@ def _netstat_getnode():
     return _find_mac_under_heading('netstat', '-ian', b'Address')
 
 def _ipconfig_getnode():
-    """Get the hardware address on Windows by running ipconfig.exe."""
-    import os, re, subprocess
-    first_local_mac = None
-    dirs = ['', r'c:\windows\system32', r'c:\winnt\system32']
-    try:
-        import ctypes
-        buffer = ctypes.create_string_buffer(300)
-        ctypes.windll.kernel32.GetSystemDirectoryA(buffer, 300)
-        dirs.insert(0, buffer.value.decode('mbcs'))
-    except:
-        pass
-    for dir in dirs:
-        try:
-            proc = subprocess.Popen([os.path.join(dir, 'ipconfig'), '/all'],
-                                    stdout=subprocess.PIPE,
-                                    encoding="oem")
-        except OSError:
-            continue
-        with proc:
-            for line in proc.stdout:
-                value = line.split(':')[-1].strip().lower()
-                if re.fullmatch('(?:[0-9a-f][0-9a-f]-){5}[0-9a-f][0-9a-f]', value):
-                    mac = int(value.replace('-', ''), 16)
-                    if _is_universal(mac):
-                        return mac
-                    first_local_mac = first_local_mac or mac
-    return first_local_mac or None
+    """[DEPRECATED] Get the hardware address on Windows."""
+    # bpo-40501: UuidCreateSequential() is now the only supported approach
+    return _windll_getnode()
 
 def _netbios_getnode():
-    """Get the hardware address on Windows using NetBIOS calls.
-    See http://support.microsoft.com/kb/118623 for details."""
-    import win32wnet, netbios
-    first_local_mac = None
-    ncb = netbios.NCB()
-    ncb.Command = netbios.NCBENUM
-    ncb.Buffer = adapters = netbios.LANA_ENUM()
-    adapters._pack()
-    if win32wnet.Netbios(ncb) != 0:
-        return None
-    adapters._unpack()
-    for i in range(adapters.length):
-        ncb.Reset()
-        ncb.Command = netbios.NCBRESET
-        ncb.Lana_num = ord(adapters.lana[i])
-        if win32wnet.Netbios(ncb) != 0:
-            continue
-        ncb.Reset()
-        ncb.Command = netbios.NCBASTAT
-        ncb.Lana_num = ord(adapters.lana[i])
-        ncb.Callname = '*'.ljust(16)
-        ncb.Buffer = status = netbios.ADAPTER_STATUS()
-        if win32wnet.Netbios(ncb) != 0:
-            continue
-        status._unpack()
-        bytes = status.adapter_address[:6]
-        if len(bytes) != 6:
-            continue
-        mac = int.from_bytes(bytes, 'big')
-        if _is_universal(mac):
-            return mac
-        first_local_mac = first_local_mac or mac
-    return first_local_mac or None
+    """[DEPRECATED] Get the hardware address on Windows."""
+    # bpo-40501: UuidCreateSequential() is now the only supported approach
+    return _windll_getnode()
 
-
-_generate_time_safe = _UuidCreate = None
-_has_uuid_generate_time_safe = None
 
 # Import optional C extension at toplevel, to help disabling it when testing
 try:
     import _uuid
+    _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
+    _UuidCreate = getattr(_uuid, "UuidCreate", None)
+    _has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
 except ImportError:
     _uuid = None
+    _generate_time_safe = None
+    _UuidCreate = None
+    _has_uuid_generate_time_safe = None
 
 
 def _load_system_functions():
-    """
-    Try to load platform-specific functions for generating uuids.
-    """
-    global _generate_time_safe, _UuidCreate, _has_uuid_generate_time_safe
-
-    if _has_uuid_generate_time_safe is not None:
-        return
-
-    _has_uuid_generate_time_safe = False
-
-    if sys.platform == "darwin" and int(os.uname().release.split('.')[0]) < 9:
-        # The uuid_generate_* functions are broken on MacOS X 10.5, as noted
-        # in issue #8621 the function generates the same sequence of values
-        # in the parent process and all children created using fork (unless
-        # those children use exec as well).
-        #
-        # Assume that the uuid_generate functions are broken from 10.5 onward,
-        # the test can be adjusted when a later version is fixed.
-        pass
-    elif _uuid is not None:
-        _generate_time_safe = _uuid.generate_time_safe
-        _has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
-        return
-
-    try:
-        # If we couldn't find an extension module, try ctypes to find
-        # system routines for UUID generation.
-        # Thanks to Thomas Heller for ctypes and for his help with its use here.
-        import ctypes
-        import ctypes.util
-
-        # The uuid_generate_* routines are provided by libuuid on at least
-        # Linux and FreeBSD, and provided by libc on Mac OS X.
-        _libnames = ['uuid']
-        if not sys.platform.startswith('win'):
-            _libnames.append('c')
-        for libname in _libnames:
-            try:
-                lib = ctypes.CDLL(ctypes.util.find_library(libname))
-            except Exception:                           # pragma: nocover
-                continue
-            # Try to find the safe variety first.
-            if hasattr(lib, 'uuid_generate_time_safe'):
-                _uuid_generate_time_safe = lib.uuid_generate_time_safe
-                # int uuid_generate_time_safe(uuid_t out);
-                def _generate_time_safe():
-                    _buffer = ctypes.create_string_buffer(16)
-                    res = _uuid_generate_time_safe(_buffer)
-                    return bytes(_buffer.raw), res
-                _has_uuid_generate_time_safe = True
-                break
-
-            elif hasattr(lib, 'uuid_generate_time'):    # pragma: nocover
-                _uuid_generate_time = lib.uuid_generate_time
-                # void uuid_generate_time(uuid_t out);
-                _uuid_generate_time.restype = None
-                def _generate_time_safe():
-                    _buffer = ctypes.create_string_buffer(16)
-                    _uuid_generate_time(_buffer)
-                    return bytes(_buffer.raw), None
-                break
-
-        # On Windows prior to 2000, UuidCreate gives a UUID containing the
-        # hardware address.  On Windows 2000 and later, UuidCreate makes a
-        # random UUID and UuidCreateSequential gives a UUID containing the
-        # hardware address.  These routines are provided by the RPC runtime.
-        # NOTE:  at least on Tim's WinXP Pro SP2 desktop box, while the last
-        # 6 bytes returned by UuidCreateSequential are fixed, they don't appear
-        # to bear any relationship to the MAC address of any network device
-        # on the box.
-        try:
-            lib = ctypes.windll.rpcrt4
-        except:
-            lib = None
-        _UuidCreate = getattr(lib, 'UuidCreateSequential',
-                              getattr(lib, 'UuidCreate', None))
-
-    except Exception as exc:
-        import warnings
-        warnings.warn(f"Could not find fallback ctypes uuid functions: {exc}",
-                      ImportWarning)
+    """[DEPRECATED] Platform-specific functions loaded at import time"""
 
 
 def _unix_getnode():
-    """Get the hardware address on Unix using the _uuid extension module
-    or ctypes."""
-    _load_system_functions()
-    uuid_time, _ = _generate_time_safe()
-    return UUID(bytes=uuid_time).node
+    """Get the hardware address on Unix using the _uuid extension module."""
+    if _generate_time_safe:
+        uuid_time, _ = _generate_time_safe()
+        return UUID(bytes=uuid_time).node
 
 def _windll_getnode():
-    """Get the hardware address on Windows using ctypes."""
-    import ctypes
-    _load_system_functions()
-    _buffer = ctypes.create_string_buffer(16)
-    if _UuidCreate(_buffer) == 0:
-        return UUID(bytes=bytes_(_buffer.raw)).node
+    """Get the hardware address on Windows using the _uuid extension module."""
+    if _UuidCreate:
+        uuid_bytes = _UuidCreate()
+        return UUID(bytes_le=uuid_bytes).node
 
 def _random_getnode():
     """Get a random node ID."""
@@ -755,7 +621,8 @@ if _LINUX:
 elif _DARWIN:
     _OS_GETTERS = [_ifconfig_getnode, _arp_getnode, _netstat_getnode]
 elif _WINDOWS:
-    _OS_GETTERS = [_netbios_getnode, _ipconfig_getnode]
+    # bpo-40201: _windll_getnode will always succeed, so these are not needed
+    _OS_GETTERS = []
 elif _AIX:
     _OS_GETTERS = [_netstat_getnode]
 else:
@@ -802,7 +669,6 @@ def uuid1(node=None, clock_seq=None):
 
     # When the system provides a version-1 UUID generator, use it (but don't
     # use UuidCreate here because its UUIDs don't conform to RFC 4122).
-    _load_system_functions()
     if _generate_time_safe is not None and node is clock_seq is None:
         uuid_time, safely_generated = _generate_time_safe()
         try:

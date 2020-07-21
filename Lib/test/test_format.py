@@ -484,6 +484,17 @@ class FormatTest(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             format(c, ".%sf" % (INT_MAX + 1))
 
+    def test_g_format_has_no_trailing_zeros(self):
+        # regression test for bugs.python.org/issue40780
+        self.assertEqual("%.3g" % 1505.0, "1.5e+03")
+        self.assertEqual("%#.3g" % 1505.0, "1.50e+03")
+
+        self.assertEqual(format(1505.0, ".3g"), "1.5e+03")
+        self.assertEqual(format(1505.0, "#.3g"), "1.50e+03")
+
+        self.assertEqual(format(12300050.0, ".6g"), "1.23e+07")
+        self.assertEqual(format(12300050.0, "#.6g"), "1.23000e+07")
+
 
 if __name__ == "__main__":
     unittest.main()

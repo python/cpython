@@ -5,11 +5,13 @@ import os
 import time
 import pickle
 import warnings
+import test.support
+
 from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
 from test import support
 from fractions import Fraction
-
+from collections import Counter
 
 class TestBasicOps:
     # Superclass with tests common to all generators.
@@ -103,7 +105,8 @@ class TestBasicOps:
         shuffle = self.gen.shuffle
         mock_random = unittest.mock.Mock(return_value=0.5)
         seq = bytearray(b'abcdefghijk')
-        shuffle(seq, mock_random)
+        with self.assertWarns(DeprecationWarning):
+            shuffle(seq, mock_random)
         mock_random.assert_called_with()
 
     def test_choice(self):
@@ -147,7 +150,6 @@ class TestBasicOps:
 
     def test_sample_inputs(self):
         # SF bug #801342 -- population can be any iterable defining __len__()
-        self.gen.sample(set(range(20)), 2)
         self.gen.sample(range(20), 2)
         self.gen.sample(range(20), 2)
         self.gen.sample(str('abcdefghijklmnopqrst'), 2)
@@ -155,6 +157,82 @@ class TestBasicOps:
 
     def test_sample_on_dicts(self):
         self.assertRaises(TypeError, self.gen.sample, dict.fromkeys('abcdef'), 2)
+
+    def test_sample_on_sets(self):
+        with self.assertWarns(DeprecationWarning):
+            population = {10, 20, 30, 40, 50, 60, 70}
+            self.gen.sample(population, k=5)
+
+    def test_sample_with_counts(self):
+        sample = self.gen.sample
+
+        # General case
+        colors = ['red', 'green', 'blue', 'orange', 'black', 'brown', 'amber']
+        counts = [500,      200,     20,       10,       5,       0,       1 ]
+        k = 700
+        summary = Counter(sample(colors, counts=counts, k=k))
+        self.assertEqual(sum(summary.values()), k)
+        for color, weight in zip(colors, counts):
+            self.assertLessEqual(summary[color], weight)
+        self.assertNotIn('brown', summary)
+
+        # Case that exhausts the population
+        k = sum(counts)
+        summary = Counter(sample(colors, counts=counts, k=k))
+        self.assertEqual(sum(summary.values()), k)
+        for color, weight in zip(colors, counts):
+            self.assertLessEqual(summary[color], weight)
+        self.assertNotIn('brown', summary)
+
+        # Case with population size of 1
+        summary = Counter(sample(['x'], counts=[10], k=8))
+        self.assertEqual(summary, Counter(x=8))
+
+        # Case with all counts equal.
+        nc = len(colors)
+        summary = Counter(sample(colors, counts=[10]*nc, k=10*nc))
+        self.assertEqual(summary, Counter(10*colors))
+
+        # Test error handling
+        with self.assertRaises(TypeError):
+            sample(['red', 'green', 'blue'], counts=10, k=10)               # counts not iterable
+        with self.assertRaises(ValueError):
+            sample(['red', 'green', 'blue'], counts=[-3, -7, -8], k=2)      # counts are negative
+        with self.assertRaises(ValueError):
+            sample(['red', 'green', 'blue'], counts=[0, 0, 0], k=2)         # counts are zero
+        with self.assertRaises(ValueError):
+            sample(['red', 'green'], counts=[10, 10], k=21)                 # population too small
+        with self.assertRaises(ValueError):
+            sample(['red', 'green', 'blue'], counts=[1, 2], k=2)            # too few counts
+        with self.assertRaises(ValueError):
+            sample(['red', 'green', 'blue'], counts=[1, 2, 3, 4], k=2)      # too many counts
+
+    def test_sample_counts_equivalence(self):
+        # Test the documented strong equivalence to a sample with repeated elements.
+        # We run this test on random.Random() which makes deterministic selections
+        # for a given seed value.
+        sample = random.sample
+        seed = random.seed
+
+        colors =  ['red', 'green', 'blue', 'orange', 'black', 'amber']
+        counts = [500,      200,     20,       10,       5,       1 ]
+        k = 700
+        seed(8675309)
+        s1 = sample(colors, counts=counts, k=k)
+        seed(8675309)
+        expanded = [color for (color, count) in zip(colors, counts) for i in range(count)]
+        self.assertEqual(len(expanded), sum(counts))
+        s2 = sample(expanded, k=k)
+        self.assertEqual(s1, s2)
+
+        pop = 'abcdefghi'
+        counts = [10, 9, 8, 7, 6, 5, 4, 3, 2]
+        seed(8675309)
+        s1 = ''.join(sample(pop, counts=counts, k=30))
+        expanded = ''.join([letter for (letter, count) in zip(pop, counts) for i in range(count)])
+        seed(8675309)
+        s2 = ''.join(sample(expanded, k=30))
+        self.assertEqual(s1, s2)
 
     def test_choices(self):
         choices = self.gen.choices
@@ -263,6 +341,31 @@ class TestBasicOps:
             self.assertEqual(x1, x2)
             self.assertEqual(y1, y2)
 
+    def test_getrandbits(self):
+        # Verify ranges
+        for k in range(1, 1000):
+            self.assertTrue(0 <= self.gen.getrandbits(k) < 2**k)
+        self.assertEqual(self.gen.getrandbits(0), 0)
+
+        # Verify all bits active
+        getbits = self.gen.getrandbits
+        for span in [1, 2, 3, 4, 31, 32, 32, 52, 53, 54, 119, 127, 128, 129]:
+            all_bits = 2**span-1
+            cum = 0
+            cpl_cum = 0
+            for i in range(100):
+                v = getbits(span)
+                cum |= v
+                cpl_cum |= all_bits ^ v
+            self.assertEqual(cum, all_bits)
+            self.assertEqual(cpl_cum, all_bits)
+
+        # Verify argument checking
+        self.assertRaises(TypeError, self.gen.getrandbits)
+        self.assertRaises(TypeError, self.gen.getrandbits, 1, 2)
+        self.assertRaises(ValueError, self.gen.getrandbits, -1)
+        self.assertRaises(TypeError, self.gen.getrandbits, 10.1)
+
     def test_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             state = pickle.dumps(self.gen, proto)
@@ -270,6 +373,14 @@ class TestBasicOps:
             newgen = pickle.loads(state)
             restoredseq = [newgen.random() for i in range(10)]
             self.assertEqual(origseq, restoredseq)
+
+    @test.support.cpython_only
+    def test_bug_41052(self):
+        # _random.Random should not be allowed to serialization
+        import _random
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            r = _random.Random()
+            self.assertRaises(TypeError, pickle.dumps, r, proto)
 
     def test_bug_1727780(self):
         # verify that version-2-pickles can be loaded
@@ -290,6 +401,22 @@ class TestBasicOps:
         randrange = self.gen.randrange
         k = sum(randrange(6755399441055744) % 3 == 2 for i in range(n))
         self.assertTrue(0.30 < k/n < .37, (k/n))
+
+    def test_randbytes(self):
+        # Verify ranges
+        for n in range(1, 10):
+            data = self.gen.randbytes(n)
+            self.assertEqual(type(data), bytes)
+            self.assertEqual(len(data), n)
+
+        self.assertEqual(self.gen.randbytes(0), b'')
+
+        # Verify argument checking
+        self.assertRaises(TypeError, self.gen.randbytes)
+        self.assertRaises(TypeError, self.gen.randbytes, 1, 2)
+        self.assertRaises(ValueError, self.gen.randbytes, -1)
+        self.assertRaises(TypeError, self.gen.randbytes, 1.0)
+
 
 try:
     random.SystemRandom().random()
@@ -373,26 +500,6 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         # Zero and non-integer step
         raises(0, 42, 0)
         raises(0, 42, 3.14159)
-
-    def test_genrandbits(self):
-        # Verify ranges
-        for k in range(1, 1000):
-            self.assertTrue(0 <= self.gen.getrandbits(k) < 2**k)
-
-        # Verify all bits active
-        getbits = self.gen.getrandbits
-        for span in [1, 2, 3, 4, 31, 32, 32, 52, 53, 54, 119, 127, 128, 129]:
-            cum = 0
-            for i in range(100):
-                cum |= getbits(span)
-            self.assertEqual(cum, 2**span-1)
-
-        # Verify argument checking
-        self.assertRaises(TypeError, self.gen.getrandbits)
-        self.assertRaises(TypeError, self.gen.getrandbits, 1, 2)
-        self.assertRaises(ValueError, self.gen.getrandbits, 0)
-        self.assertRaises(ValueError, self.gen.getrandbits, -1)
-        self.assertRaises(TypeError, self.gen.getrandbits, 10.1)
 
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1
@@ -613,34 +720,18 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
             self.assertEqual(set(range(start,stop)),
                 set([self.gen.randrange(start,stop) for i in range(100)]))
 
-    def test_genrandbits(self):
+    def test_getrandbits(self):
+        super().test_getrandbits()
+
         # Verify cross-platform repeatability
         self.gen.seed(1234567)
         self.assertEqual(self.gen.getrandbits(100),
                          97904845777343510404718956115)
-        # Verify ranges
-        for k in range(1, 1000):
-            self.assertTrue(0 <= self.gen.getrandbits(k) < 2**k)
-
-        # Verify all bits active
-        getbits = self.gen.getrandbits
-        for span in [1, 2, 3, 4, 31, 32, 32, 52, 53, 54, 119, 127, 128, 129]:
-            cum = 0
-            for i in range(100):
-                cum |= getbits(span)
-            self.assertEqual(cum, 2**span-1)
-
-        # Verify argument checking
-        self.assertRaises(TypeError, self.gen.getrandbits)
-        self.assertRaises(TypeError, self.gen.getrandbits, 'a')
-        self.assertRaises(TypeError, self.gen.getrandbits, 1, 2)
-        self.assertRaises(ValueError, self.gen.getrandbits, 0)
-        self.assertRaises(ValueError, self.gen.getrandbits, -1)
 
     def test_randrange_uses_getrandbits(self):
         # Verify use of getrandbits by randrange
         # Use same seed as in the cross-platform repeatability test
-        # in test_genrandbits above.
+        # in test_getrandbits above.
         self.gen.seed(1234567)
         # If randrange uses getrandbits, it should pick getrandbits(100)
         # when called with a 100-bits stop argument.
@@ -679,10 +770,10 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
                 maxsize+1, maxsize=maxsize
             )
         self.gen._randbelow_without_getrandbits(5640, maxsize=maxsize)
-        # issue 33203: test that _randbelow raises ValueError on
+        # issue 33203: test that _randbelow returns zero on
         # n == 0 also in its getrandbits-independent branch.
-        with self.assertRaises(ValueError):
-            self.gen._randbelow_without_getrandbits(0, maxsize=maxsize)
+        x = self.gen._randbelow_without_getrandbits(0, maxsize=maxsize)
+        self.assertEqual(x, 0)
 
         # This might be going too far to test a single line, but because of our
         # noble aim of achieving 100% test coverage we need to write a case in
@@ -746,6 +837,57 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.gen.seed(9035768)
         c = self.gen.choices(population, cum_weights=cum_weights, k=10000)
         self.assertEqual(a, c)
+
+    def test_randbytes(self):
+        super().test_randbytes()
+
+        # Mersenne Twister randbytes() is deterministic
+        # and does not depend on the endian and bitness.
+        seed = 8675309
+        expected = b'3\xa8\xf9f\xf4\xa4\xd06\x19\x8f\x9f\x82\x02oe\xf0'
+
+        self.gen.seed(seed)
+        self.assertEqual(self.gen.randbytes(16), expected)
+
+        # randbytes(0) must not consume any entropy
+        self.gen.seed(seed)
+        self.assertEqual(self.gen.randbytes(0), b'')
+        self.assertEqual(self.gen.randbytes(16), expected)
+
+        # Four randbytes(4) calls give the same output than randbytes(16)
+        self.gen.seed(seed)
+        self.assertEqual(b''.join([self.gen.randbytes(4) for _ in range(4)]),
+                         expected)
+
+        # Each randbytes(1), randbytes(2) or randbytes(3) call consumes
+        # 4 bytes of entropy
+        self.gen.seed(seed)
+        expected1 = expected[3::4]
+        self.assertEqual(b''.join(self.gen.randbytes(1) for _ in range(4)),
+                         expected1)
+
+        self.gen.seed(seed)
+        expected2 = b''.join(expected[i + 2: i + 4]
+                             for i in range(0, len(expected), 4))
+        self.assertEqual(b''.join(self.gen.randbytes(2) for _ in range(4)),
+                         expected2)
+
+        self.gen.seed(seed)
+        expected3 = b''.join(expected[i + 1: i + 4]
+                             for i in range(0, len(expected), 4))
+        self.assertEqual(b''.join(self.gen.randbytes(3) for _ in range(4)),
+                         expected3)
+
+    def test_randbytes_getrandbits(self):
+        # There is a simple relation between randbytes() and getrandbits()
+        seed = 2849427419
+        gen2 = random.Random()
+        self.gen.seed(seed)
+        gen2.seed(seed)
+        for n in range(9):
+            self.assertEqual(self.gen.randbytes(n),
+                             gen2.getrandbits(n * 8).to_bytes(n, 'little'))
+
 
 def gamma(z, sqrt2pi=(2.0*pi)**0.5):
     # Reflection to right half of complex plane
@@ -1103,8 +1245,7 @@ class TestModule(unittest.TestCase):
                 child_val = eval(f.read())
             self.assertNotEqual(val, child_val)
 
-            pid, status = os.waitpid(pid, 0)
-            self.assertEqual(status, 0)
+            support.wait_process(pid, exitcode=0)
 
 
 if __name__ == "__main__":

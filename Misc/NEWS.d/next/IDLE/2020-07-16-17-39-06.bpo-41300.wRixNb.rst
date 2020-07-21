@@ -1,0 +1,2 @@
+Save files with non-ascii chars. Fix regression released in 3.9.0b4 and
+3.8.4.

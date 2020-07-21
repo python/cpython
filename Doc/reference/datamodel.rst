@@ -17,7 +17,7 @@ Objects, values and types
 
 :dfn:`Objects` are Python's abstraction for data.  All data in a Python program
 is represented by objects or by relations between objects. (In a sense, and in
-conformance to Von Neumann's model of a "stored program computer," code is also
+conformance to Von Neumann's model of a "stored program computer", code is also
 represented by objects.)
 
 .. index::
@@ -1350,7 +1350,7 @@ Basic customization
 
    .. versionchanged:: 3.7
       ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather
-      than ``format(str(self), '')``.
+      than ``format(str(x), '')``.
 
 
 .. _richcmpfuncs:

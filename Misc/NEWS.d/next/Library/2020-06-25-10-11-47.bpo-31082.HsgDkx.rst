@@ -1,0 +1,1 @@
+Use the term "iterable" in the docstring for :func:`functools.reduce`.

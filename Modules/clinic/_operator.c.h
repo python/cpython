@@ -1424,14 +1424,9 @@ _operator_length_hint(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -1491,4 +1486,4 @@ _operator__compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e7ed71a8c475a901 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eae5d08f971a65fd input=a9049054013a1b77]*/

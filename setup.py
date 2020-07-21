@@ -8,7 +8,7 @@ import os
 import re
 import sys
 import sysconfig
-from glob import glob
+from glob import glob, escape
 
 
 try:
@@ -95,6 +95,11 @@ Topic :: Software Development
 """
 
 
+def run_command(cmd):
+    status = os.system(cmd)
+    return os.waitstatus_to_exitcode(status)
+
+
 # Set common compiler and linker flags derived from the Makefile,
 # reserved for building the interpreter and the stdlib modules.
 # See bpo-21121 and bpo-35257
@@ -145,7 +150,9 @@ def sysroot_paths(make_vars, subdirs):
                 break
     return dirs
 
+
 MACOS_SDK_ROOT = None
+MACOS_SDK_SPECIFIED = None
 
 def macosx_sdk_root():
     """Return the directory of the current macOS SDK.
@@ -157,29 +164,32 @@ def macosx_sdk_root():
     (The SDK may be supplied via Xcode or via the Command Line Tools).
     The SDK paths used by Apple-supplied tool chains depend on the
     setting of various variables; see the xcrun man page for more info.
+    Also sets MACOS_SDK_SPECIFIED for use by macosx_sdk_specified().
     """
-    global MACOS_SDK_ROOT
+    global MACOS_SDK_ROOT, MACOS_SDK_SPECIFIED
 
     # If already called, return cached result.
     if MACOS_SDK_ROOT:
         return MACOS_SDK_ROOT
 
     cflags = sysconfig.get_config_var('CFLAGS')
-    m = re.search(r'-isysroot\s+(\S+)', cflags)
+    m = re.search(r'-isysroot\s*(\S+)', cflags)
     if m is not None:
         MACOS_SDK_ROOT = m.group(1)
+        MACOS_SDK_SPECIFIED = MACOS_SDK_ROOT != '/'
     else:
         MACOS_SDK_ROOT = '/'
+        MACOS_SDK_SPECIFIED = False
         cc = sysconfig.get_config_var('CC')
         tmpfile = '/tmp/setup_sdk_root.%d' % os.getpid()
         try:
             os.unlink(tmpfile)
         except:
             pass
-        ret = os.system('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
+        ret = run_command('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
         in_incdirs = False
         try:
-            if ret >> 8 == 0:
+            if ret == 0:
                 with open(tmpfile) as fp:
                     for line in fp.readlines():
                         if line.startswith("#include <...>"):
@@ -196,6 +206,28 @@ def macosx_sdk_root():
             os.unlink(tmpfile)
 
     return MACOS_SDK_ROOT
+
+
+def macosx_sdk_specified():
+    """Returns true if an SDK was explicitly configured.
+
+    True if an SDK was selected at configure time, either by specifying
+    --enable-universalsdk=(something other than no or /) or by adding a
+    -isysroot option to CFLAGS.  In some cases, like when making
+    decisions about macOS Tk framework paths, we need to be able to
+    know whether the user explicitly asked to build with an SDK versus
+    the implicit use of an SDK when header files are no longer
+    installed on a running system by the Command Line Tools.
+    """
+    global MACOS_SDK_SPECIFIED
+
+    # If already called, return cached result.
+    if MACOS_SDK_SPECIFIED:
+        return MACOS_SDK_SPECIFIED
+
+    # Find the sdk root and set MACOS_SDK_SPECIFIED
+    macosx_sdk_root()
+    return MACOS_SDK_SPECIFIED
 
 
 def is_macosx_sdk_path(path):
@@ -299,6 +331,17 @@ def find_library_file(compiler, libname, std_dirs, paths):
     else:
         assert False, "Internal error: Path not found in std_dirs or paths"
 
+def validate_tzpath():
+    base_tzpath = sysconfig.get_config_var('TZPATH')
+    if not base_tzpath:
+        return
+
+    tzpaths = base_tzpath.split(os.pathsep)
+    bad_paths = [tzpath for tzpath in tzpaths if not os.path.isabs(tzpath)]
+    if bad_paths:
+        raise ValueError('TZPATH must contain only absolute paths, '
+                         + f'found:\n{tzpaths!r}\nwith invalid paths:\n'
+                         + f'{bad_paths!r}')
 
 def find_module_file(module, dirlist):
     """Find a module in a set of possible folders. If it is not found
@@ -322,6 +365,7 @@ class PyBuildExt(build_ext):
         self.failed = []
         self.failed_on_import = []
         self.missing = []
+        self.disabled_configure = []
         if '-j' in os.environ.get('MAKEFLAGS', ''):
             self.parallel = True
 
@@ -357,7 +401,7 @@ class PyBuildExt(build_ext):
 
         # Python header files
         headers = [sysconfig.get_config_h_filename()]
-        headers += glob(os.path.join(sysconfig.get_path('include'), "*.h"))
+        headers += glob(os.path.join(escape(sysconfig.get_path('include')), "*.h"))
 
         for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
@@ -478,6 +522,14 @@ class PyBuildExt(build_ext):
             print_three_column([ext.name for ext in mods_disabled])
             print()
 
+        if self.disabled_configure:
+            print()
+            print("The following modules found by detect_modules() in"
+            " setup.py have not")
+            print("been built, they are *disabled* by configure:")
+            print_three_column(self.disabled_configure)
+            print()
+
         if self.failed:
             failed = self.failed[:]
             print()
@@ -595,11 +647,11 @@ class PyBuildExt(build_ext):
         tmpfile = os.path.join(self.build_temp, 'multiarch')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        ret = os.system(
+        ret = run_command(
             '%s -print-multiarch > %s 2> /dev/null' % (cc, tmpfile))
         multiarch_path_component = ''
         try:
-            if ret >> 8 == 0:
+            if ret == 0:
                 with open(tmpfile) as fp:
                     multiarch_path_component = fp.readline().strip()
         finally:
@@ -620,11 +672,11 @@ class PyBuildExt(build_ext):
         tmpfile = os.path.join(self.build_temp, 'multiarch')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        ret = os.system(
+        ret = run_command(
             'dpkg-architecture %s -qDEB_HOST_MULTIARCH > %s 2> /dev/null' %
             (opt, tmpfile))
         try:
-            if ret >> 8 == 0:
+            if ret == 0:
                 with open(tmpfile) as fp:
                     multiarch_path_component = fp.readline().strip()
                 add_dir_to_list(self.compiler.library_dirs,
@@ -639,12 +691,12 @@ class PyBuildExt(build_ext):
         tmpfile = os.path.join(self.build_temp, 'ccpaths')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        ret = os.system('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
+        ret = run_command('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
         is_gcc = False
         is_clang = False
         in_incdirs = False
         try:
-            if ret >> 8 == 0:
+            if ret == 0:
                 with open(tmpfile) as fp:
                     for line in fp.readlines():
                         if line.startswith("gcc version"):
@@ -801,13 +853,18 @@ class PyBuildExt(build_ext):
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
         self.add(Extension('_datetime', ['_datetimemodule.c'],
-                           libraries=['m']))
+                           libraries=['m'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        # zoneinfo module
+        self.add(Extension('_zoneinfo', ['_zoneinfo.c'])),
         # random number generator implemented in C
-        self.add(Extension("_random", ["_randommodule.c"]))
+        self.add(Extension("_random", ["_randommodule.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # bisect
         self.add(Extension("_bisect", ["_bisectmodule.c"]))
         # heapq
-        self.add(Extension("_heapq", ["_heapqmodule.c"]))
+        self.add(Extension("_heapq", ["_heapqmodule.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # C-optimized pickle replacement
         self.add(Extension("_pickle", ["_pickle.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
@@ -825,7 +882,8 @@ class PyBuildExt(build_ext):
         # _opcode module
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
-        self.add(Extension("_asyncio", ["_asynciomodule.c"]))
+        self.add(Extension("_asyncio", ["_asynciomodule.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _abc speedups
         self.add(Extension("_abc", ["_abc.c"]))
         # _queue module
@@ -860,9 +918,6 @@ class PyBuildExt(build_ext):
 
         # select(2); not on ancient System V
         self.add(Extension('select', ['selectmodule.c']))
-
-        # Fred Drake's interface to the Python parser
-        self.add(Extension('parser', ['parsermodule.c']))
 
         # Memory-mapped files (also works on Win32).
         self.add(Extension('mmap', ['mmapmodule.c']))
@@ -932,14 +987,14 @@ class PyBuildExt(build_ext):
         # Determine if readline is already linked against curses or tinfo.
         if do_readline:
             if CROSS_COMPILING:
-                ret = os.system("%s -d %s | grep '(NEEDED)' > %s" \
+                ret = run_command("%s -d %s | grep '(NEEDED)' > %s"
                                 % (sysconfig.get_config_var('READELF'),
                                    do_readline, tmpfile))
             elif find_executable('ldd'):
-                ret = os.system("ldd %s > %s" % (do_readline, tmpfile))
+                ret = run_command("ldd %s > %s" % (do_readline, tmpfile))
             else:
-                ret = 256
-            if ret >> 8 == 0:
+                ret = 1
+            if ret == 0:
                 with open(tmpfile) as fp:
                     for ln in fp:
                         if 'curses' in ln:
@@ -1088,8 +1143,12 @@ class PyBuildExt(build_ext):
     def detect_socket(self):
         # socket(2)
         if not VXWORKS:
-            self.add(Extension('_socket', ['socketmodule.c'],
-                               depends=['socketmodule.h']))
+            kwargs = {'depends': ['socketmodule.h']}
+            if MACOS:
+                # Issue #35569: Expose RFC 3542 socket options.
+                kwargs['extra_compile_args'] = ['-D__APPLE_USE_RFC_3542']
+
+            self.add(Extension('_socket', ['socketmodule.c'], **kwargs))
         elif self.compiler.find_library_file(self.lib_dirs, 'net'):
             libs = ['net']
             self.add(Extension('_socket', ['socketmodule.c'],
@@ -1654,9 +1713,9 @@ class PyBuildExt(build_ext):
                              ]
 
             cc = sysconfig.get_config_var('CC').split()[0]
-            ret = os.system(
+            ret = run_command(
                       '"%s" -Werror -Wno-unreachable-code -E -xc /dev/null >/dev/null 2>&1' % cc)
-            if ret >> 8 == 0:
+            if ret == 0:
                 extra_compile_args.append('-Wno-unreachable-code')
 
         self.add(Extension('pyexpat',
@@ -1797,31 +1856,73 @@ class PyBuildExt(build_ext):
         return True
 
     def detect_tkinter_darwin(self):
-        # The _tkinter module, using frameworks. Since frameworks are quite
-        # different the UNIX search logic is not sharable.
+        # Build default _tkinter on macOS using Tcl and Tk frameworks.
+        #
+        # The macOS native Tk (AKA Aqua Tk) and Tcl are most commonly
+        # built and installed as macOS framework bundles.  However,
+        # for several reasons, we cannot take full advantage of the
+        # Apple-supplied compiler chain's -framework options here.
+        # Instead, we need to find and pass to the compiler the
+        # absolute paths of the Tcl and Tk headers files we want to use
+        # and the absolute path to the directory containing the Tcl
+        # and Tk frameworks for linking.
+        #
+        # We want to handle here two common use cases on macOS:
+        # 1. Build and link with system-wide third-party or user-built
+        #    Tcl and Tk frameworks installed in /Library/Frameworks.
+        # 2. Build and link using a user-specified macOS SDK so that the
+        #    built Python can be exported to other systems.  In this case,
+        #    search only the SDK's /Library/Frameworks (normally empty)
+        #    and /System/Library/Frameworks.
+        #
+        # Any other use case should be able to be handled explicitly by
+        # using the options described above in detect_tkinter_explicitly().
+        # In particular it would be good to handle here the case where
+        # you want to build and link with a framework build of Tcl and Tk
+        # that is not in /Library/Frameworks, say, in your private
+        # $HOME/Library/Frameworks directory or elsewhere. It turns
+        # out to be difficult to make that work automtically here
+        # without bringing into play more tools and magic. That case
+        # can be hamdled using a recipe with the right arguments
+        # to detect_tkinter_explicitly().
+        #
+        # Note also that the fallback case here is to try to use the
+        # Apple-supplied Tcl and Tk frameworks in /System/Library but
+        # be forewarned that they are deprecated by Apple and typically
+        # out-of-date and buggy; their use should be avoided if at
+        # all possible by installing a newer version of Tcl and Tk in
+        # /Library/Frameworks before bwfore building Python without
+        # an explicit SDK or by configuring build arguments explicitly.
+
         from os.path import join, exists
-        framework_dirs = [
-            '/Library/Frameworks',
-            '/System/Library/Frameworks/',
-            join(os.getenv('HOME'), '/Library/Frameworks')
-        ]
 
-        sysroot = macosx_sdk_root()
+        sysroot = macosx_sdk_root() # path to the SDK or '/'
 
-        # Find the directory that contains the Tcl.framework and Tk.framework
-        # bundles.
-        # XXX distutils should support -F!
+        if macosx_sdk_specified():
+            # Use case #2: an SDK other than '/' was specified.
+            # Only search there.
+            framework_dirs = [
+                join(sysroot, 'Library', 'Frameworks'),
+                join(sysroot, 'System', 'Library', 'Frameworks'),
+            ]
+        else:
+            # Use case #1: no explicit SDK selected.
+            # Search the local system-wide /Library/Frameworks,
+            # not the one in the default SDK, othewise fall back to
+            # /System/Library/Frameworks whose header files may be in
+            # the default SDK or, on older systems, actually installed.
+            framework_dirs = [
+                join('/', 'Library', 'Frameworks'),
+                join(sysroot, 'System', 'Library', 'Frameworks'),
+            ]
+
+        # Find the directory that contains the Tcl.framework and
+        # Tk.framework bundles.
         for F in framework_dirs:
             # both Tcl.framework and Tk.framework should be present
-
-
             for fw in 'Tcl', 'Tk':
-                if is_macosx_sdk_path(F):
-                    if not exists(join(sysroot, F[1:], fw + '.framework')):
-                        break
-                else:
-                    if not exists(join(F, fw + '.framework')):
-                        break
+                if not exists(join(F, fw + '.framework')):
+                    break
             else:
                 # ok, F is now directory with both frameworks. Continure
                 # building
@@ -1831,24 +1932,16 @@ class PyBuildExt(build_ext):
             # will now resume.
             return False
 
-        # For 8.4a2, we must add -I options that point inside the Tcl and Tk
-        # frameworks. In later release we should hopefully be able to pass
-        # the -F option to gcc, which specifies a framework lookup path.
-        #
         include_dirs = [
             join(F, fw + '.framework', H)
             for fw in ('Tcl', 'Tk')
-            for H in ('Headers', 'Versions/Current/PrivateHeaders')
+            for H in ('Headers',)
         ]
 
-        # For 8.4a2, the X11 headers are not included. Rather than include a
-        # complicated search, this is a hard-coded path. It could bail out
-        # if X11 libs are not found...
-        include_dirs.append('/usr/X11R6/include')
-        frameworks = ['-framework', 'Tcl', '-framework', 'Tk']
+        # Add the base framework directory as well
+        compile_args = ['-F', F]
 
-        # All existing framework builds of Tcl/Tk don't support 64-bit
-        # architectures.
+        # Do not build tkinter for archs that this Tk was not built with.
         cflags = sysconfig.get_config_vars('CFLAGS')[0]
         archs = re.findall(r'-arch\s+(\w+)', cflags)
 
@@ -1856,13 +1949,9 @@ class PyBuildExt(build_ext):
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
 
-        # Note: cannot use os.popen or subprocess here, that
-        # requires extensions that are not available here.
-        if is_macosx_sdk_path(F):
-            os.system("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(os.path.join(sysroot, F[1:]), tmpfile))
-        else:
-            os.system("file %s/Tk.framework/Tk | grep 'for architecture' > %s"%(F, tmpfile))
-
+        run_command(
+            "file {}/Tk.framework/Tk | grep 'for architecture' > {}".format(F, tmpfile)
+        )
         with open(tmpfile) as fp:
             detected_archs = []
             for ln in fp:
@@ -1871,16 +1960,26 @@ class PyBuildExt(build_ext):
                     detected_archs.append(ln.split()[-1])
         os.unlink(tmpfile)
 
+        arch_args = []
         for a in detected_archs:
-            frameworks.append('-arch')
-            frameworks.append(a)
+            arch_args.append('-arch')
+            arch_args.append(a)
+
+        compile_args += arch_args
+        link_args = [','.join(['-Wl', '-F', F, '-framework', 'Tcl', '-framework', 'Tk']), *arch_args]
+
+        # The X11/xlib.h file bundled in the Tk sources can cause function
+        # prototype warnings from the compiler. Since we cannot easily fix
+        # that, suppress the warnings here instead.
+        if '-Wstrict-prototypes' in cflags.split():
+            compile_args.append('-Wno-strict-prototypes')
 
         self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
                            define_macros=[('WITH_APPINIT', 1)],
                            include_dirs=include_dirs,
                            libraries=[],
-                           extra_compile_args=frameworks[2:],
-                           extra_link_args=frameworks))
+                           extra_compile_args=compile_args,
+                           extra_link_args=link_args))
         return True
 
     def detect_tkinter(self):
@@ -2039,7 +2138,7 @@ class PyBuildExt(build_ext):
         # Thomas Heller's _ctypes module
         self.use_system_libffi = False
         include_dirs = []
-        extra_compile_args = []
+        extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
         extra_link_args = []
         sources = ['_ctypes/_ctypes.c',
                    '_ctypes/callbacks.c',
@@ -2289,34 +2388,73 @@ class PyBuildExt(build_ext):
                            libraries=openssl_libs))
 
     def detect_hash_builtins(self):
-        # We always compile these even when OpenSSL is available (issue #14693).
-        # It's harmless and the object code is tiny (40-50 KiB per module,
-        # only loaded when actually used).
-        self.add(Extension('_sha256', ['sha256module.c'],
-                           depends=['hashlib.h']))
-        self.add(Extension('_sha512', ['sha512module.c'],
-                           depends=['hashlib.h']))
-        self.add(Extension('_md5', ['md5module.c'],
-                           depends=['hashlib.h']))
-        self.add(Extension('_sha1', ['sha1module.c'],
-                           depends=['hashlib.h']))
+        # By default we always compile these even when OpenSSL is available
+        # (issue #14693). It's harmless and the object code is tiny
+        # (40-50 KiB per module, only loaded when actually used).  Modules can
+        # be disabled via the --with-builtin-hashlib-hashes configure flag.
+        supported = {"md5", "sha1", "sha256", "sha512", "sha3", "blake2"}
 
-        blake2_deps = glob(os.path.join(self.srcdir,
-                                        'Modules/_blake2/impl/*'))
-        blake2_deps.append('hashlib.h')
+        configured = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
+        configured = configured.strip('"').lower()
+        configured = {
+            m.strip() for m in configured.split(",")
+        }
 
-        self.add(Extension('_blake2',
-                           ['_blake2/blake2module.c',
-                            '_blake2/blake2b_impl.c',
-                            '_blake2/blake2s_impl.c'],
-                           depends=blake2_deps))
+        self.disabled_configure.extend(
+            sorted(supported.difference(configured))
+        )
 
-        sha3_deps = glob(os.path.join(self.srcdir,
-                                      'Modules/_sha3/kcp/*'))
-        sha3_deps.append('hashlib.h')
-        self.add(Extension('_sha3',
-                           ['_sha3/sha3module.c'],
-                           depends=sha3_deps))
+        if "sha256" in configured:
+            self.add(Extension(
+                '_sha256', ['sha256module.c'],
+                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
+                depends=['hashlib.h']
+            ))
+
+        if "sha512" in configured:
+            self.add(Extension(
+                '_sha512', ['sha512module.c'],
+                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
+                depends=['hashlib.h']
+            ))
+
+        if "md5" in configured:
+            self.add(Extension(
+                '_md5', ['md5module.c'],
+                depends=['hashlib.h']
+            ))
+
+        if "sha1" in configured:
+            self.add(Extension(
+                '_sha1', ['sha1module.c'],
+                depends=['hashlib.h']
+            ))
+
+        if "blake2" in configured:
+            blake2_deps = glob(
+                os.path.join(escape(self.srcdir), 'Modules/_blake2/impl/*')
+            )
+            blake2_deps.append('hashlib.h')
+            self.add(Extension(
+                '_blake2',
+                [
+                    '_blake2/blake2module.c',
+                    '_blake2/blake2b_impl.c',
+                    '_blake2/blake2s_impl.c'
+                ],
+                depends=blake2_deps
+            ))
+
+        if "sha3" in configured:
+            sha3_deps = glob(
+                os.path.join(escape(self.srcdir), 'Modules/_sha3/kcp/*')
+            )
+            sha3_deps.append('hashlib.h')
+            self.add(Extension(
+                '_sha3',
+                ['_sha3/sha3module.c'],
+                depends=sha3_deps
+            ))
 
     def detect_nis(self):
         if MS_WINDOWS or CYGWIN or HOST_PLATFORM == 'qnx6':
@@ -2441,6 +2579,7 @@ def main():
         ProcessPoolExecutor = None
 
     sys.modules['concurrent.futures.process'] = DummyProcess
+    validate_tzpath()
 
     # turn off warnings when deprecated modules are imported
     import warnings

@@ -1,0 +1,2 @@
+Fix a possible buffer overflow in the PEG parser when gathering information
+for emitting syntax errors. Patch by Pablo Galindo.

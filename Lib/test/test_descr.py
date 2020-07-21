@@ -3552,13 +3552,6 @@ order (MRO) for bases """
         self.assertEqual(o.__str__(), '41')
         self.assertEqual(o.__repr__(), 'A repr')
 
-        capture = io.StringIO()
-        # Calling str() or not exercises different internal paths.
-        print(o, file=capture)
-        print(str(o), file=capture)
-        self.assertEqual(capture.getvalue(), '41\n41\n')
-        capture.close()
-
     def test_keyword_arguments(self):
         # Testing keyword arguments to __init__, __call__...
         def f(a): return a
@@ -4314,6 +4307,42 @@ order (MRO) for bases """
             pass
         else:
             self.fail("Carlo Verre __delattr__ succeeded!")
+
+    def test_carloverre_multi_inherit_valid(self):
+        class A(type):
+            def __setattr__(cls, key, value):
+                type.__setattr__(cls, key, value)
+
+        class B:
+            pass
+
+        class C(B, A):
+            pass
+
+        obj = C('D', (object,), {})
+        try:
+            obj.test = True
+        except TypeError:
+            self.fail("setattr through direct base types should be legal")
+
+    def test_carloverre_multi_inherit_invalid(self):
+        class A(type):
+            def __setattr__(cls, key, value):
+                object.__setattr__(cls, key, value)  # this should fail!
+
+        class B:
+            pass
+
+        class C(B, A):
+            pass
+
+        obj = C('D', (object,), {})
+        try:
+            obj.test = True
+        except TypeError:
+            pass
+        else:
+            self.fail("setattr through indirect base types should be rejected")
 
     def test_weakref_segfault(self):
         # Testing weakref segfault...

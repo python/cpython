@@ -10,15 +10,17 @@
 
    The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
    macro defined, but only the public C API must be tested here. */
+
 #undef Py_BUILD_CORE_MODULE
+/* Always enable assertions */
+#undef NDEBUG
 
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
 #include "datetime.h"
 #include "marshal.h"
-#include "pythread.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #include <float.h>
 #include <signal.h>
 
@@ -1666,6 +1668,11 @@ exit:
 
 static volatile int x;
 
+#if USE_UNICODE_WCHAR_CACHE
+/* Ignore use of deprecated APIs */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 /* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
    of an error.
 */
@@ -1766,6 +1773,8 @@ test_Z_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_DECREF(tuple);
     Py_RETURN_NONE;
 }
+_Py_COMP_DIAG_POP
+#endif /* USE_UNICODE_WCHAR_CACHE */
 
 static PyObject *
 test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1818,6 +1827,10 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
         return raiseTestError("test_widechar",
                               "PyUnicode_FromWideChar(L\"\\U00110000\", 1) didn't fail");
 
+#if USE_UNICODE_WCHAR_CACHE
+/* Ignore use of deprecated APIs */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     wide = PyUnicode_FromUnicode(invalid, 1);
     if (wide == NULL)
         PyErr_Clear();
@@ -1838,6 +1851,8 @@ test_widechar(PyObject *self, PyObject *Py_UNUSED(ignored))
         return raiseTestError("test_widechar",
                               "PyUnicode_Ready() didn't fail");
     }
+_Py_COMP_DIAG_POP
+#endif /* USE_UNICODE_WCHAR_CACHE */
 #endif
 
     Py_RETURN_NONE;
@@ -2017,6 +2032,11 @@ unicode_copycharacters(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", to_copy, copied);
 }
 
+#if USE_UNICODE_WCHAR_CACHE
+/* Ignore use of deprecated APIs */
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 static PyObject *
 unicode_encodedecimal(PyObject *self, PyObject *args)
 {
@@ -2084,6 +2104,8 @@ unicode_legacy_string(PyObject *self, PyObject *args)
 
     return u;
 }
+_Py_COMP_DIAG_POP
+#endif /* USE_UNICODE_WCHAR_CACHE */
 
 static PyObject *
 getargs_w_star(PyObject *self, PyObject *args)
@@ -3456,6 +3478,8 @@ run_in_subinterp(PyObject *self, PyObject *args)
     const char *code;
     int r;
     PyThreadState *substate, *mainstate;
+    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
+    PyCompilerFlags cflags = {0};
 
     if (!PyArg_ParseTuple(args, "s:run_in_subinterp",
                           &code))
@@ -3474,7 +3498,7 @@ run_in_subinterp(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
         return NULL;
     }
-    r = PyRun_SimpleString(code);
+    r = PyRun_SimpleStringFlags(code, &cflags);
     Py_EndInterpreter(substate);
 
     PyThreadState_Swap(mainstate);
@@ -3588,7 +3612,7 @@ slot_tp_del(PyObject *self)
         _Py_NewReference(self);
         Py_SET_REFCNT(self, refcnt);
     }
-    assert(!PyType_IS_GC(Py_TYPE(self)) || _PyObject_GC_IS_TRACKED(self));
+    assert(!PyType_IS_GC(Py_TYPE(self)) || PyObject_GC_IsTracked(self));
     /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
        _Py_RefTotal, so we need to undo that. */
 #ifdef Py_REF_DEBUG
@@ -4223,15 +4247,15 @@ static PyObject*
 pymarshal_write_long_to_file(PyObject* self, PyObject *args)
 {
     long value;
-    char *filename;
+    PyObject *filename;
     int version;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "lsi:pymarshal_write_long_to_file",
+    if (!PyArg_ParseTuple(args, "lOi:pymarshal_write_long_to_file",
                           &value, &filename, &version))
         return NULL;
 
-    fp = fopen(filename, "wb");
+    fp = _Py_fopen_obj(filename, "wb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -4249,15 +4273,15 @@ static PyObject*
 pymarshal_write_object_to_file(PyObject* self, PyObject *args)
 {
     PyObject *obj;
-    char *filename;
+    PyObject *filename;
     int version;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "Osi:pymarshal_write_object_to_file",
+    if (!PyArg_ParseTuple(args, "OOi:pymarshal_write_object_to_file",
                           &obj, &filename, &version))
         return NULL;
 
-    fp = fopen(filename, "wb");
+    fp = _Py_fopen_obj(filename, "wb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -4276,13 +4300,13 @@ pymarshal_read_short_from_file(PyObject* self, PyObject *args)
 {
     int value;
     long pos;
-    char *filename;
+    PyObject *filename;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "s:pymarshal_read_short_from_file", &filename))
+    if (!PyArg_ParseTuple(args, "O:pymarshal_read_short_from_file", &filename))
         return NULL;
 
-    fp = fopen(filename, "rb");
+    fp = _Py_fopen_obj(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -4301,13 +4325,13 @@ static PyObject*
 pymarshal_read_long_from_file(PyObject* self, PyObject *args)
 {
     long value, pos;
-    char *filename;
+    PyObject *filename;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "s:pymarshal_read_long_from_file", &filename))
+    if (!PyArg_ParseTuple(args, "O:pymarshal_read_long_from_file", &filename))
         return NULL;
 
-    fp = fopen(filename, "rb");
+    fp = _Py_fopen_obj(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -4327,13 +4351,13 @@ pymarshal_read_last_object_from_file(PyObject* self, PyObject *args)
 {
     PyObject *obj;
     long pos;
-    char *filename;
+    PyObject *filename;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "s:pymarshal_read_last_object_from_file", &filename))
+    if (!PyArg_ParseTuple(args, "O:pymarshal_read_last_object_from_file", &filename))
         return NULL;
 
-    fp = fopen(filename, "rb");
+    fp = _Py_fopen_obj(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -4351,13 +4375,13 @@ pymarshal_read_object_from_file(PyObject* self, PyObject *args)
 {
     PyObject *obj;
     long pos;
-    char *filename;
+    PyObject *filename;
     FILE *fp;
 
-    if (!PyArg_ParseTuple(args, "s:pymarshal_read_object_from_file", &filename))
+    if (!PyArg_ParseTuple(args, "O:pymarshal_read_object_from_file", &filename))
         return NULL;
 
-    fp = fopen(filename, "rb");
+    fp = _Py_fopen_obj(filename, "rb");
     if (fp == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -5384,8 +5408,10 @@ static PyMethodDef TestMethods[] = {
     {"codec_incrementaldecoder",
      (PyCFunction)codec_incrementaldecoder,                      METH_VARARGS},
     {"test_s_code",             test_s_code,                     METH_NOARGS},
+#if USE_UNICODE_WCHAR_CACHE
     {"test_u_code",             test_u_code,                     METH_NOARGS},
     {"test_Z_code",             test_Z_code,                     METH_NOARGS},
+#endif /* USE_UNICODE_WCHAR_CACHE */
     {"test_widechar",           test_widechar,                   METH_NOARGS},
     {"unicode_aswidechar",      unicode_aswidechar,              METH_VARARGS},
     {"unicode_aswidecharstring",unicode_aswidecharstring,        METH_VARARGS},
@@ -5394,9 +5420,11 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asutf8andsize",   unicode_asutf8andsize,           METH_VARARGS},
     {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
+#if USE_UNICODE_WCHAR_CACHE
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
     {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},
     {"unicode_legacy_string",   unicode_legacy_string,           METH_VARARGS},
+#endif /* USE_UNICODE_WCHAR_CACHE */
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"_pending_threadfunc",     pending_threadfunc,              METH_VARARGS},
 #ifdef HAVE_GETTIMEOFDAY
@@ -6296,6 +6324,47 @@ static PyType_Spec HeapCTypeSubclass_spec = {
     HeapCTypeSubclass_slots
 };
 
+PyDoc_STRVAR(heapctypewithbuffer__doc__,
+"Heap type with buffer support.\n\n"
+"The buffer is set to [b'1', b'2', b'3', b'4']");
+
+typedef struct {
+    HeapCTypeObject base;
+    char buffer[4];
+} HeapCTypeWithBufferObject;
+
+static int
+heapctypewithbuffer_getbuffer(HeapCTypeWithBufferObject *self, Py_buffer *view, int flags)
+{
+    self->buffer[0] = '1';
+    self->buffer[1] = '2';
+    self->buffer[2] = '3';
+    self->buffer[3] = '4';
+    return PyBuffer_FillInfo(
+        view, (PyObject*)self, (void *)self->buffer, 4, 1, flags);
+}
+
+static void
+heapctypewithbuffer_releasebuffer(HeapCTypeWithBufferObject *self, Py_buffer *view)
+{
+    assert(view->obj == (void*) self);
+}
+
+static PyType_Slot HeapCTypeWithBuffer_slots[] = {
+    {Py_bf_getbuffer, heapctypewithbuffer_getbuffer},
+    {Py_bf_releasebuffer, heapctypewithbuffer_releasebuffer},
+    {Py_tp_doc, (char*)heapctypewithbuffer__doc__},
+    {0, 0},
+};
+
+static PyType_Spec HeapCTypeWithBuffer_spec = {
+    "_testcapi.HeapCTypeWithBuffer",
+    sizeof(HeapCTypeWithBufferObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    HeapCTypeWithBuffer_slots
+};
+
 PyDoc_STRVAR(heapctypesubclasswithfinalizer__doc__,
 "Subclass of HeapCType with a finalizer that reassigns __class__.\n\n"
 "__class__ is set to plain HeapCTypeSubclass during finalization.\n"
@@ -6471,6 +6540,80 @@ static PyType_Spec HeapCTypeWithWeakref_spec = {
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     HeapCTypeWithWeakref_slots
+};
+
+PyDoc_STRVAR(heapctypesetattr__doc__,
+"A heap type without GC, but with overridden __setattr__.\n\n"
+"The 'value' attribute is set to 10 in __init__ and updated via attribute setting.");
+
+typedef struct {
+    PyObject_HEAD
+    long value;
+} HeapCTypeSetattrObject;
+
+static struct PyMemberDef heapctypesetattr_members[] = {
+    {"pvalue", T_LONG, offsetof(HeapCTypeSetattrObject, value)},
+    {NULL} /* Sentinel */
+};
+
+static int
+heapctypesetattr_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    ((HeapCTypeSetattrObject *)self)->value = 10;
+    return 0;
+}
+
+static void
+heapctypesetattr_dealloc(HeapCTypeSetattrObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_Del(self);
+    Py_DECREF(tp);
+}
+
+static int
+heapctypesetattr_setattro(HeapCTypeSetattrObject *self, PyObject *attr, PyObject *value)
+{
+    PyObject *svalue = PyUnicode_FromString("value");
+    if (svalue == NULL)
+        return -1;
+    int eq = PyObject_RichCompareBool(svalue, attr, Py_EQ);
+    Py_DECREF(svalue);
+    if (eq < 0)
+        return -1;
+    if (!eq) {
+        return PyObject_GenericSetAttr((PyObject*) self, attr, value);
+    }
+    if (value == NULL) {
+        self->value = 0;
+        return 0;
+    }
+    PyObject *ivalue = PyNumber_Long(value);
+    if (ivalue == NULL)
+        return -1;
+    long v = PyLong_AsLong(ivalue);
+    Py_DECREF(ivalue);
+    if (v == -1 && PyErr_Occurred())
+        return -1;
+    self->value = v;
+    return 0;
+}
+
+static PyType_Slot HeapCTypeSetattr_slots[] = {
+    {Py_tp_init, heapctypesetattr_init},
+    {Py_tp_members, heapctypesetattr_members},
+    {Py_tp_setattro, heapctypesetattr_setattro},
+    {Py_tp_dealloc, heapctypesetattr_dealloc},
+    {Py_tp_doc, (char*)heapctypesetattr__doc__},
+    {0, 0},
+};
+
+static PyType_Spec HeapCTypeSetattr_spec = {
+    "_testcapi.HeapCTypeSetattr",
+    sizeof(HeapCTypeSetattrObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    HeapCTypeSetattr_slots
 };
 
 static PyMethodDef meth_instance_methods[] = {
@@ -6716,7 +6859,6 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(ULLONG_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
-    PyModule_AddObject(m, "SIZEOF_PYGC_HEAD", PyLong_FromSsize_t(sizeof(PyGC_Head)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
     Py_INCREF(&PyInstanceMethod_Type);
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
@@ -6774,6 +6916,18 @@ PyInit__testcapi(void)
     }
     PyModule_AddObject(m, "HeapCTypeWithWeakref", HeapCTypeWithWeakref);
 
+    PyObject *HeapCTypeWithBuffer = PyType_FromSpec(&HeapCTypeWithBuffer_spec);
+    if (HeapCTypeWithBuffer == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "HeapCTypeWithBuffer", HeapCTypeWithBuffer);
+
+    PyObject *HeapCTypeSetattr = PyType_FromSpec(&HeapCTypeSetattr_spec);
+    if (HeapCTypeSetattr == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "HeapCTypeSetattr", HeapCTypeSetattr);
+
     PyObject *subclass_with_finalizer_bases = PyTuple_Pack(1, HeapCTypeSubclass);
     if (subclass_with_finalizer_bases == NULL) {
         return NULL;
@@ -6810,29 +6964,36 @@ test_buildvalue_issue38913(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *res;
     const char str[] = "string";
     const Py_UNICODE unicode[] = L"unicode";
-    PyErr_SetNone(PyExc_ZeroDivisionError);
+    assert(!PyErr_Occurred());
 
     res = Py_BuildValue("(s#O)", str, 1, Py_None);
     assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
         return NULL;
     }
+    PyErr_Clear();
+
     res = Py_BuildValue("(z#O)", str, 1, Py_None);
     assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
         return NULL;
     }
+    PyErr_Clear();
+
     res = Py_BuildValue("(y#O)", str, 1, Py_None);
     assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
         return NULL;
     }
+    PyErr_Clear();
+
     res = Py_BuildValue("(u#O)", unicode, 1, Py_None);
     assert(res == NULL);
-    if (!PyErr_ExceptionMatches(PyExc_ZeroDivisionError)) {
+    if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
         return NULL;
     }
-
     PyErr_Clear();
+
+
     Py_RETURN_NONE;
 }

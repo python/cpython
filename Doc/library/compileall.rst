@@ -113,6 +113,11 @@ compile Python sources.
 
    Ignore symlinks pointing outside the given directory.
 
+.. cmdoption:: --hardlink-dupes
+
+   If two ``.pyc`` files with different optimization level have
+   the same content, use hard links to consolidate duplicate files.
+
 .. versionchanged:: 3.2
    Added the ``-i``, ``-b`` and ``-h`` options.
 
@@ -125,7 +130,7 @@ compile Python sources.
    Added the ``--invalidation-mode`` option.
 
 .. versionchanged:: 3.9
-   Added the ``-s``, ``-p``, ``-e`` options.
+   Added the ``-s``, ``-p``, ``-e`` and ``--hardlink-dupes`` options.
    Raised the default recursion limit from 10 to
    :py:func:`sys.getrecursionlimit()`.
    Added the possibility to specify the ``-o`` option multiple times.
@@ -143,14 +148,14 @@ runtime.
 Public functions
 ----------------
 
-.. function:: compile_dir(dir, maxlevels=sys.getrecursionlimit(), ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, workers=1, invalidation_mode=None, \*, stripdir=None, prependdir=None, limit_sl_dest=None)
+.. function:: compile_dir(dir, maxlevels=sys.getrecursionlimit(), ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, workers=1, invalidation_mode=None, \*, stripdir=None, prependdir=None, limit_sl_dest=None, hardlink_dupes=False)
 
    Recursively descend the directory tree named by *dir*, compiling all :file:`.py`
    files along the way. Return a true value if all the files compiled successfully,
    and a false value otherwise.
 
    The *maxlevels* parameter is used to limit the depth of the recursion; it
-   defaults to ``10``.
+   defaults to ``sys.getrecursionlimit()``.
 
    If *ddir* is given, it is prepended to the path to each file being compiled
    for use in compilation time tracebacks, and is also compiled in to the
@@ -176,7 +181,8 @@ Public functions
    coexist.
 
    *optimize* specifies the optimization level for the compiler.  It is passed to
-   the built-in :func:`compile` function.
+   the built-in :func:`compile` function. Accepts also a sequence of optimization
+   levels which lead to multiple compilations of one :file:`.py` file in one call.
 
    The argument *workers* specifies how many workers are used to
    compile files in parallel. The default is to not use multiple workers.
@@ -192,6 +198,9 @@ Public functions
    The *stripdir*, *prependdir* and *limit_sl_dest* arguments correspond to
    the ``-s``, ``-p`` and ``-e`` options described above.
    They may be specified as ``str``, ``bytes`` or :py:class:`os.PathLike`.
+
+   If *hardlink_dupes* is true and two ``.pyc`` files with different optimization
+   level have the same content, use hard links to consolidate duplicate files.
 
    .. versionchanged:: 3.2
       Added the *legacy* and *optimize* parameter.
@@ -219,9 +228,10 @@ Public functions
       Setting *workers* to 0 now chooses the optimal number of cores.
 
    .. versionchanged:: 3.9
-      Added *stripdir*, *prependdir* and *limit_sl_dest* arguments.
+      Added *stripdir*, *prependdir*, *limit_sl_dest* and *hardlink_dupes* arguments.
+      Default value of *maxlevels* was changed from ``10`` to ``sys.getrecursionlimit()``
 
-.. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, invalidation_mode=None, \*, stripdir=None, prependdir=None, limit_sl_dest=None)
+.. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, invalidation_mode=None, \*, stripdir=None, prependdir=None, limit_sl_dest=None, hardlink_dupes=False)
 
    Compile the file with path *fullname*. Return a true value if the file
    compiled successfully, and a false value otherwise.
@@ -247,7 +257,8 @@ Public functions
    coexist.
 
    *optimize* specifies the optimization level for the compiler.  It is passed to
-   the built-in :func:`compile` function.
+   the built-in :func:`compile` function. Accepts also a sequence of optimization
+   levels which lead to multiple compilations of one :file:`.py` file in one call.
 
    *invalidation_mode* should be a member of the
    :class:`py_compile.PycInvalidationMode` enum and controls how the generated
@@ -256,6 +267,9 @@ Public functions
    The *stripdir*, *prependdir* and *limit_sl_dest* arguments correspond to
    the ``-s``, ``-p`` and ``-e`` options described above.
    They may be specified as ``str``, ``bytes`` or :py:class:`os.PathLike`.
+
+   If *hardlink_dupes* is true and two ``.pyc`` files with different optimization
+   level have the same content, use hard links to consolidate duplicate files.
 
    .. versionadded:: 3.2
 
@@ -273,7 +287,7 @@ Public functions
       The *invalidation_mode* parameter's default value is updated to None.
 
    .. versionchanged:: 3.9
-      Added *stripdir*, *prependdir* and *limit_sl_dest* arguments.
+      Added *stripdir*, *prependdir*, *limit_sl_dest* and *hardlink_dupes* arguments.
 
 .. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, quiet=0, legacy=False, optimize=-1, invalidation_mode=None)
 

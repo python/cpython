@@ -1,0 +1,4 @@
+Remove ``ParserBase.error()`` method from the private and undocumented
+``_markupbase`` module.  :class:`html.parser.HTMLParser` is the only
+subclass of ``ParserBase`` and its ``error()`` implementation was deprecated
+in Python 3.4 and removed in Python 3.5.
