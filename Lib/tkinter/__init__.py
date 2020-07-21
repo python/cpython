@@ -33,6 +33,7 @@ tk.mainloop()
 import enum
 import sys
 import types
+from webbrowser import open as webopen
 
 import _tkinter # If this fails your Python may not be configured for Tk
 TclError = _tkinter.TclError
@@ -3143,6 +3144,31 @@ class Label(Widget):
 
         """
         Widget.__init__(self, master, 'label', cnf, kw)
+
+        
+class LinkLabel(Label):
+    """LinkLabel widget which can display the link and open it with the webbrowser in system"""
+
+    def __init__(self,master,link,font=('宋体',13),bg='#f0f0f0'):
+        super().__init__(master,text=link,font=font,fg='blue',bg=bg)
+        self.link=link
+        self.bind('<Enter>',self._changecolor)
+        self.bind('<Leave>',self._changecurcor)
+        self.bind('<Button-1>',self._golink)
+        self.isclick=False#if it is not clicked
+    
+    def _changecolor(self,event):
+        self['fg']='#D52BC4'#if Mouse <Enter>, turn the foreground color to #D52BC4
+        self['cursor']='hand2'
+    
+    def _changecurcor(self,event):
+        if self.isclick==False:#if is't clicked, the 'fg' of the widget will turn back to blue when Mouse Leave
+            self['fg']='blue'
+        self['cursor']='xterm'
+
+    def _golink(self,event):
+        self.isclick=True#if is clicked then it won't turn color
+        webopen(self.link)
 
 
 class Listbox(Widget, XView, YView):
