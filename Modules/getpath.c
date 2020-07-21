@@ -11,6 +11,7 @@
 
 #ifdef __APPLE__
 #  include <mach-o/dyld.h>
+#  include <AvailabilityMacros.h>
 #endif
 
 /* Search in some common locations for the associated Python libraries.
