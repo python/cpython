@@ -1304,6 +1304,20 @@ Aliases and constants
       concat(b"foo", b"bar")  # Ok, output has type 'bytes'
       concat(u"foo", b"bar")  # Error, cannot mix unicode and bytes
 
+.. class:: Text
+
+   ``Text`` is an alias for ``str``. It is provided to supply a forward
+   compatible path for Python 2 code: in Python 2, ``Text`` is an alias for
+   ``unicode``.
+
+   Use ``Text`` to indicate that a value must contain a unicode string in
+   a manner that is compatible with both Python 2 and Python 3::
+
+       def add_unicode_checkmark(text: Text) -> Text:
+           return text + u' \u2713'
+
+   .. versionadded:: 3.5.2
+
 .. data:: TYPE_CHECKING
 
    A special constant that is assumed to be ``True`` by 3rd party static
@@ -1319,20 +1333,6 @@ Aliases and constants
    "forward reference", to hide the ``expensive_mod`` reference from the
    interpreter runtime.  Type annotations for local variables are not
    evaluated, so the second annotation does not need to be enclosed in quotes.
-
-   .. versionadded:: 3.5.2
-
-.. class:: Text
-
-   ``Text`` is an alias for ``str``. It is provided to supply a forward
-   compatible path for Python 2 code: in Python 2, ``Text`` is an alias for
-   ``unicode``.
-
-   Use ``Text`` to indicate that a value must contain a unicode string in
-   a manner that is compatible with both Python 2 and Python 3::
-
-       def add_unicode_checkmark(text: Text) -> Text:
-           return text + u' \u2713'
 
    .. versionadded:: 3.5.2
 
