@@ -51,6 +51,20 @@
 #define _Py_tzname tzname
 #endif
 
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#endif
+
+#if defined(__APPLE__) && HAVE_BUILTIN_AVAILABLE && !(TARGET_OS_OSX && __arm64__)
+#define HAVE_CLOCK_GETTIME_RUNTIME __builtin_available(macos 10.12, ios 10, tvos 10, watchos 3, *)
+#define HAVE_CLOCK_SETTIME_RUNTIME __builtin_available(macos 10.12, ios 10, tvos 10, watchos 3, *)
+#define HAVE_CLOCK_GETRES_RUNTIME  __builtin_available(macos 10.12, ios 10, tvos 10, watchos 3, *)
+#else
+#define HAVE_CLOCK_GETTIME_RUNTIME 1
+#define HAVE_CLOCK_SETTIME_RUNTIME 1
+#define HAVE_CLOCK_GETRES_RUNTIME 1
+#endif
+
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
 /* Forward declarations */
@@ -152,25 +166,30 @@ perf_counter(_Py_clock_info_t *info)
 static PyObject *
 time_clock_gettime(PyObject *self, PyObject *args)
 {
-    int ret;
-    struct timespec tp;
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
+        int ret;
+        struct timespec tp;
 
-#if defined(_AIX) && (SIZEOF_LONG == 8)
-    long clk_id;
-    if (!PyArg_ParseTuple(args, "l:clock_gettime", &clk_id)) {
-#else
-    int clk_id;
-    if (!PyArg_ParseTuple(args, "i:clock_gettime", &clk_id)) {
-#endif
+    #if defined(_AIX) && (SIZEOF_LONG == 8)
+        long clk_id;
+        if (!PyArg_ParseTuple(args, "l:clock_gettime", &clk_id)) {
+    #else
+        int clk_id;
+        if (!PyArg_ParseTuple(args, "i:clock_gettime", &clk_id)) {
+    #endif
+            return NULL;
+        }
+
+        ret = clock_gettime((clockid_t)clk_id, &tp);
+        if (ret != 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+        }
+        return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
+    } else {
+        PyErr_SetString(PyExc_NotImplementedError, "clock_gettime is not available");
         return NULL;
     }
-
-    ret = clock_gettime((clockid_t)clk_id, &tp);
-    if (ret != 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
-    }
-    return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
 }
 
 PyDoc_STRVAR(clock_gettime_doc,
@@ -181,24 +200,29 @@ Return the time of the specified clock clk_id.");
 static PyObject *
 time_clock_gettime_ns(PyObject *self, PyObject *args)
 {
-    int ret;
-    int clk_id;
-    struct timespec ts;
-    _PyTime_t t;
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
+        int ret;
+        int clk_id;
+        struct timespec ts;
+        _PyTime_t t;
 
-    if (!PyArg_ParseTuple(args, "i:clock_gettime", &clk_id)) {
-        return NULL;
-    }
+        if (!PyArg_ParseTuple(args, "i:clock_gettime", &clk_id)) {
+            return NULL;
+        }
 
-    ret = clock_gettime((clockid_t)clk_id, &ts);
-    if (ret != 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
+        ret = clock_gettime((clockid_t)clk_id, &ts);
+        if (ret != 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+        }
+        if (_PyTime_FromTimespec(&t, &ts) < 0) {
+            return NULL;
+        }
+        return _PyTime_AsNanosecondsObject(t);
+    } else {
+        PyErr_SetString(PyExc_NotImplementedError, "clock_gettime is not available");
         return NULL;
     }
-    if (_PyTime_FromTimespec(&t, &ts) < 0) {
-        return NULL;
-    }
-    return _PyTime_AsNanosecondsObject(t);
 }
 
 PyDoc_STRVAR(clock_gettime_ns_doc,
@@ -211,27 +235,32 @@ Return the time of the specified clock clk_id as nanoseconds.");
 static PyObject *
 time_clock_settime(PyObject *self, PyObject *args)
 {
-    int clk_id;
-    PyObject *obj;
-    _PyTime_t t;
-    struct timespec tp;
-    int ret;
+    if (HAVE_CLOCK_SETTIME_RUNTIME) {
+        int clk_id;
+        PyObject *obj;
+        _PyTime_t t;
+        struct timespec tp;
+        int ret;
 
-    if (!PyArg_ParseTuple(args, "iO:clock_settime", &clk_id, &obj))
-        return NULL;
+        if (!PyArg_ParseTuple(args, "iO:clock_settime", &clk_id, &obj))
+            return NULL;
 
-    if (_PyTime_FromSecondsObject(&t, obj, _PyTime_ROUND_FLOOR) < 0)
-        return NULL;
+        if (_PyTime_FromSecondsObject(&t, obj, _PyTime_ROUND_FLOOR) < 0)
+            return NULL;
 
-    if (_PyTime_AsTimespec(t, &tp) == -1)
-        return NULL;
+        if (_PyTime_AsTimespec(t, &tp) == -1)
+            return NULL;
 
-    ret = clock_settime((clockid_t)clk_id, &tp);
-    if (ret != 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
+        ret = clock_settime((clockid_t)clk_id, &tp);
+        if (ret != 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+        }
+        Py_RETURN_NONE;
+    } else {
+        PyErr_SetString(PyExc_NotImplementedError, "clock_settime is not available");
         return NULL;
     }
-    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(clock_settime_doc,
@@ -242,29 +271,34 @@ Set the time of the specified clock clk_id.");
 static PyObject *
 time_clock_settime_ns(PyObject *self, PyObject *args)
 {
-    int clk_id;
-    PyObject *obj;
-    _PyTime_t t;
-    struct timespec ts;
-    int ret;
+    if (HAVE_CLOCK_SETTIME_RUNTIME) {
+        int clk_id;
+        PyObject *obj;
+        _PyTime_t t;
+        struct timespec ts;
+        int ret;
 
-    if (!PyArg_ParseTuple(args, "iO:clock_settime", &clk_id, &obj)) {
-        return NULL;
-    }
+        if (!PyArg_ParseTuple(args, "iO:clock_settime", &clk_id, &obj)) {
+            return NULL;
+        }
 
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
-        return NULL;
-    }
-    if (_PyTime_AsTimespec(t, &ts) == -1) {
-        return NULL;
-    }
+        if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
+            return NULL;
+        }
+        if (_PyTime_AsTimespec(t, &ts) == -1) {
+            return NULL;
+        }
 
-    ret = clock_settime((clockid_t)clk_id, &ts);
-    if (ret != 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
+        ret = clock_settime((clockid_t)clk_id, &ts);
+        if (ret != 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+        }
+        Py_RETURN_NONE;
+    } else {
+        PyErr_SetString(PyExc_NotImplementedError, "clock_settime is not available");
         return NULL;
     }
-    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(clock_settime_ns_doc,
@@ -277,20 +311,25 @@ Set the time of the specified clock clk_id with nanoseconds.");
 static PyObject *
 time_clock_getres(PyObject *self, PyObject *args)
 {
-    int ret;
-    int clk_id;
-    struct timespec tp;
+    if (HAVE_CLOCK_GETRES_RUNTIME) {
+        int ret;
+        int clk_id;
+        struct timespec tp;
 
-    if (!PyArg_ParseTuple(args, "i:clock_getres", &clk_id))
-        return NULL;
+        if (!PyArg_ParseTuple(args, "i:clock_getres", &clk_id))
+            return NULL;
 
-    ret = clock_getres((clockid_t)clk_id, &tp);
-    if (ret != 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
+        ret = clock_getres((clockid_t)clk_id, &tp);
+        if (ret != 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+        }
+
+        return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
+    } else {
+        PyErr_SetString(PyExc_NotImplementedError, "clock_getres is not available");
         return NULL;
     }
-
-    return PyFloat_FromDouble(tp.tv_sec + tp.tv_nsec * 1e-9);
 }
 
 PyDoc_STRVAR(clock_getres_doc,
@@ -1170,23 +1209,25 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     const char *function = "clock_gettime(CLOCK_PROCESS_CPUTIME_ID)";
 #endif
 
-    if (clock_gettime(clk_id, &ts) == 0) {
-        if (info) {
-            struct timespec res;
-            info->implementation = function;
-            info->monotonic = 1;
-            info->adjustable = 0;
-            if (clock_getres(clk_id, &res)) {
-                PyErr_SetFromErrno(PyExc_OSError);
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
+        if (clock_gettime(clk_id, &ts) == 0) {
+            if (info) {
+                struct timespec res;
+                info->implementation = function;
+                info->monotonic = 1;
+                info->adjustable = 0;
+                if (clock_getres(clk_id, &res)) {
+                    PyErr_SetFromErrno(PyExc_OSError);
+                    return -1;
+                }
+                info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+            }
+
+            if (_PyTime_FromTimespec(tp, &ts) < 0) {
                 return -1;
             }
-            info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+            return 0;
         }
-
-        if (_PyTime_FromTimespec(tp, &ts) < 0) {
-            return -1;
-        }
-        return 0;
     }
 #endif
 
@@ -1309,6 +1350,7 @@ sum of the kernel and user-space CPU time.");
 
 #if defined(MS_WINDOWS)
 #define HAVE_THREAD_TIME
+#define HAVE_THREAD_TIME_RUNTIME 1
 static int
 _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
@@ -1349,6 +1391,7 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 
 #elif defined(_AIX)
 #define HAVE_THREAD_TIME
+#define HAVE_THREAD_TIME_RUNTIME 1
 static int
 _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
@@ -1373,6 +1416,7 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 
 #elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_PROCESS_CPUTIME_ID)
 #define HAVE_THREAD_TIME
+#define HAVE_THREAD_TIME_RUNTIME HAVE_CLOCK_GETTIME_RUNTIME
 static int
 _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
@@ -1380,10 +1424,16 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     const clockid_t clk_id = CLOCK_THREAD_CPUTIME_ID;
     const char *function = "clock_gettime(CLOCK_THREAD_CPUTIME_ID)";
 
-    if (clock_gettime(clk_id, &ts)) {
-        PyErr_SetFromErrno(PyExc_OSError);
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
+        if (clock_gettime(clk_id, &ts)) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+    } else {
+        PyErr_SetString(PyExc_NotImplementedError, "clock_gettime is not available");
         return -1;
     }
+
     if (info) {
         struct timespec res;
         info->implementation = function;
@@ -1694,17 +1744,6 @@ init_timezone(PyObject *m)
 static PyMethodDef time_methods[] = {
     {"time",            time_time, METH_NOARGS, time_doc},
     {"time_ns",         time_time_ns, METH_NOARGS, time_ns_doc},
-#ifdef HAVE_CLOCK_GETTIME
-    {"clock_gettime",   time_clock_gettime, METH_VARARGS, clock_gettime_doc},
-    {"clock_gettime_ns",time_clock_gettime_ns, METH_VARARGS, clock_gettime_ns_doc},
-#endif
-#ifdef HAVE_CLOCK_SETTIME
-    {"clock_settime",   time_clock_settime, METH_VARARGS, clock_settime_doc},
-    {"clock_settime_ns",time_clock_settime_ns, METH_VARARGS, clock_settime_ns_doc},
-#endif
-#ifdef HAVE_CLOCK_GETRES
-    {"clock_getres",    time_clock_getres, METH_VARARGS, clock_getres_doc},
-#endif
 #ifdef HAVE_PTHREAD_GETCPUCLOCKID
     {"pthread_getcpuclockid", time_pthread_getcpuclockid, METH_VARARGS, pthread_getcpuclockid_doc},
 #endif
@@ -1727,13 +1766,24 @@ static PyMethodDef time_methods[] = {
     {"monotonic_ns",    time_monotonic_ns, METH_NOARGS, monotonic_ns_doc},
     {"process_time",    time_process_time, METH_NOARGS, process_time_doc},
     {"process_time_ns", time_process_time_ns, METH_NOARGS, process_time_ns_doc},
+    {"perf_counter",    time_perf_counter, METH_NOARGS, perf_counter_doc},
+    {"perf_counter_ns", time_perf_counter_ns, METH_NOARGS, perf_counter_ns_doc},
+    {"get_clock_info",  time_get_clock_info, METH_VARARGS, get_clock_info_doc},
+#ifdef HAVE_CLOCK_GETTIME
+    {"clock_gettime",   time_clock_gettime, METH_VARARGS, clock_gettime_doc},
+    {"clock_gettime_ns",time_clock_gettime_ns, METH_VARARGS, clock_gettime_ns_doc},
+#endif
+#ifdef HAVE_CLOCK_SETTIME
+    {"clock_settime",   time_clock_settime, METH_VARARGS, clock_settime_doc},
+    {"clock_settime_ns",time_clock_settime_ns, METH_VARARGS, clock_settime_ns_doc},
+#endif
 #ifdef HAVE_THREAD_TIME
     {"thread_time",     time_thread_time, METH_NOARGS, thread_time_doc},
     {"thread_time_ns",  time_thread_time_ns, METH_NOARGS, thread_time_ns_doc},
 #endif
-    {"perf_counter",    time_perf_counter, METH_NOARGS, perf_counter_doc},
-    {"perf_counter_ns", time_perf_counter_ns, METH_NOARGS, perf_counter_ns_doc},
-    {"get_clock_info",  time_get_clock_info, METH_VARARGS, get_clock_info_doc},
+#ifdef HAVE_CLOCK_GETRES
+    {"clock_getres",    time_clock_getres, METH_VARARGS, clock_getres_doc},
+#endif
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1874,9 +1924,49 @@ static struct PyModuleDef timemodule = {
     NULL
 };
 
+static void
+delete_method(const char *name)
+{
+    for (int i = 0; time_methods[i].ml_name != NULL; i++) {
+        if ( 0==strcmp(time_methods[i].ml_name, name)) {
+            for (int j = i; time_methods[j].ml_name != NULL; j++) {
+                time_methods[j] = time_methods[j+1];
+            }
+            break;
+        }
+    }
+}
+
 PyMODINIT_FUNC
 PyInit_time(void)
 {
+    #ifdef HAVE_CLOCK_GETTIME
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {} else {
+        delete_method("clock_gettime");
+        delete_method("clock_gettime_ns");
+    }
+    #endif
+
+    #ifdef HAVE_CLOCK_SETTIME
+    if (HAVE_CLOCK_SETTIME_RUNTIME) {} else {
+        delete_method("clock_settime");
+        delete_method("clock_settime_ns");
+    }
+    #endif
+
+    #ifdef HAVE_CLOCK_GETRES
+    if (HAVE_CLOCK_GETRES_RUNTIME) {} else {
+        delete_method("clock_getres");
+    }
+    #endif
+
+    #ifdef HAVE_THREAD_TIME
+    if (HAVE_THREAD_TIME_RUNTIME) {} else {
+        delete_method("thread_time");
+        delete_method("thread_time_ns");
+    }
+    #endif
+
     return PyModuleDef_Init(&timemodule);
 }
 

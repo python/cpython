@@ -7,6 +7,12 @@
 #include <mach/mach_time.h>   /* mach_absolute_time(), mach_timebase_info() */
 #endif
 
+#if defined(__APPLE__) && HAVE_BUILTIN_AVAILABLE && !defined(__arm64__)
+#define HAVE_CLOCK_GETTIME_RUNTIME __builtin_available(macos 10.12, ios 10, tvos 10, watchos 3, *)
+#else
+#define HAVE_CLOCK_GETTIME_RUNTIME 1
+#endif
+
 #define _PyTime_check_mul_overflow(a, b) \
     (assert(b > 0), \
      (_PyTime_t)(a) < _PyTime_MIN / (_PyTime_t)(b) \
@@ -683,59 +689,58 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 
 #else   /* MS_WINDOWS */
     int err;
-#ifdef HAVE_CLOCK_GETTIME
-    struct timespec ts;
-#else
-    struct timeval tv;
-#endif
 
     assert(info == NULL || raise);
 
 #ifdef HAVE_CLOCK_GETTIME
-    err = clock_gettime(CLOCK_REALTIME, &ts);
-    if (err) {
-        if (raise) {
-            PyErr_SetFromErrno(PyExc_OSError);
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
+        struct timespec ts;
+        err = clock_gettime(CLOCK_REALTIME, &ts);
+        if (err) {
+            if (raise) {
+                PyErr_SetFromErrno(PyExc_OSError);
+            }
+            return -1;
         }
-        return -1;
-    }
-    if (pytime_fromtimespec(tp, &ts, raise) < 0) {
-        return -1;
-    }
+        if (pytime_fromtimespec(tp, &ts, raise) < 0) {
+            return -1;
+        }
 
-    if (info) {
-        struct timespec res;
-        info->implementation = "clock_gettime(CLOCK_REALTIME)";
-        info->monotonic = 0;
-        info->adjustable = 1;
-        if (clock_getres(CLOCK_REALTIME, &res) == 0) {
-            info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+        if (info) {
+            struct timespec res;
+            info->implementation = "clock_gettime(CLOCK_REALTIME)";
+            info->monotonic = 0;
+            info->adjustable = 1;
+            if (clock_getres(CLOCK_REALTIME, &res) == 0) {
+                info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+            }
+            else {
+                info->resolution = 1e-9;
+            }
         }
-        else {
-            info->resolution = 1e-9;
+    } else
+#endif   /* HAVE_CLOCK_GETTIME */
+    {
+        struct timeval tv;
+        /* test gettimeofday() */
+        err = gettimeofday(&tv, (struct timezone *)NULL);
+        if (err) {
+            if (raise) {
+                PyErr_SetFromErrno(PyExc_OSError);
+            }
+            return -1;
         }
-    }
-#else   /* HAVE_CLOCK_GETTIME */
+        if (pytime_fromtimeval(tp, &tv, raise) < 0) {
+            return -1;
+        }
 
-     /* test gettimeofday() */
-    err = gettimeofday(&tv, (struct timezone *)NULL);
-    if (err) {
-        if (raise) {
-            PyErr_SetFromErrno(PyExc_OSError);
+        if (info) {
+            info->implementation = "gettimeofday()";
+            info->resolution = 1e-6;
+            info->monotonic = 0;
+            info->adjustable = 1;
         }
-        return -1;
     }
-    if (pytime_fromtimeval(tp, &tv, raise) < 0) {
-        return -1;
-    }
-
-    if (info) {
-        info->implementation = "gettimeofday()";
-        info->resolution = 1e-6;
-        info->monotonic = 0;
-        info->adjustable = 1;
-    }
-#endif   /* !HAVE_CLOCK_GETTIME */
 #endif   /* !MS_WINDOWS */
     return 0;
 }

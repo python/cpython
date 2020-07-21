@@ -31,6 +31,16 @@ int _Py_HashSecret_Initialized = 0;
 static int _Py_HashSecret_Initialized = 0;
 #endif
 
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#endif
+
+#if defined(__APPLE__) && HAVE_BUILTIN_AVAILABLE && !(TARGET_OS_OSX && __arm64__)
+#define HAVE_GETENTROPY_RUNTIME __builtin_available(macos 10.12, ios 10, tvos 10, watchos 3, *)
+#else
+#define HAVE_GETENTROPY_RUNTIME 1
+#endif
+
 #ifdef MS_WINDOWS
 static HCRYPTPROV hCryptProv = 0;
 
@@ -225,13 +235,19 @@ py_getentropy(char *buffer, Py_ssize_t size, int raise)
         Py_ssize_t len = Py_MIN(size, 256);
         int res;
 
-        if (raise) {
-            Py_BEGIN_ALLOW_THREADS
-            res = getentropy(buffer, len);
-            Py_END_ALLOW_THREADS
-        }
-        else {
-            res = getentropy(buffer, len);
+
+        if (HAVE_GETENTROPY_RUNTIME)  {
+            if (raise) {
+                Py_BEGIN_ALLOW_THREADS
+                res = getentropy(buffer, len);
+                Py_END_ALLOW_THREADS
+            }
+            else {
+                res = getentropy(buffer, len);
+            }
+        } else {
+            getentropy_works = 0;
+            return 0;
         }
 
         if (res < 0) {

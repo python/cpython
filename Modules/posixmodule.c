@@ -79,6 +79,28 @@ corresponding Unix manual entries for more information on calls.");
 #  include <sys/stat.h>
 #endif /* HAVE_SYS_STAT_H */
 
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#endif
+
+#if defined(__APPLE__) && HAVE_BUILTIN_AVAILABLE && !(TARGET_OS_OSX && __arm64__)
+#define HAVE_UTIMENSAT_RUNTIME __builtin_available(macos 10.13, ios 11, tvos 11, watchos 4, *)
+#define HAVE_FUTIMENS_RUNTIME  __builtin_available(macos 10.13, ios 11, tvos 11, watchos 4, *)
+#define HAVE_PREADV_RUNTIME    __builtin_available(macos 10.16, ios 14, tvos 14, watchos 7, *)
+#define HAVE_PWRITEV_RUNTIME    __builtin_available(macos 10.16, ios 14, tvos 14, watchos 7, *)
+#define HAVE_POSIX_SPAWN_SETSID_RUNTIME __builtin_available(macos 10.15, ios 13, tvos 13, watchos 6, *)
+#else
+#define HAVE_UTIMENSAT_RUNTIME 1
+#define HAVE_FUTIMENS_RUNTIME 1
+#define HAVE_PREADV_RUNTIME 1
+#define HAVE_PWRITEV_RUNTIME 1
+#define HAVE_POSIX_SPAWN_SETSID_RUNTIME 1
+#endif
+
+#if defined(__APPLE__) && TARGET_OS_OSX && __arm64__ && __clang__
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+#endif
+
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>           // WNOHANG
 #endif
@@ -4826,9 +4848,14 @@ static int
 utime_dir_fd(utime_t *ut, int dir_fd, const char *path, int follow_symlinks)
 {
 #ifdef HAVE_UTIMENSAT
-    int flags = follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW;
-    UTIME_TO_TIMESPEC;
-    return utimensat(dir_fd, path, time, flags);
+    if (HAVE_UTIMENSAT_RUNTIME) {
+        int flags = follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW;
+        UTIME_TO_TIMESPEC;
+        return utimensat(dir_fd, path, time, flags);
+    } else {
+        PyErr_SetString(PyExc_NotImplementedError, "utimensat is not available");
+        return -1;
+    }
 #elif defined(HAVE_FUTIMESAT)
     UTIME_TO_TIMEVAL;
     /*
@@ -4841,7 +4868,16 @@ utime_dir_fd(utime_t *ut, int dir_fd, const char *path, int follow_symlinks)
 #endif
 }
 
-    #define FUTIMENSAT_DIR_FD_CONVERTER dir_fd_converter
+static int
+utime_dir_fd_converter(PyObject *o, void *p)
+{
+    if (HAVE_UTIMENSAT_RUNTIME)
+        return dir_fd_converter(o,p);
+    else
+        return dir_fd_unavailable(o, p);
+}
+
+    #define FUTIMENSAT_DIR_FD_CONVERTER utime_dir_fd_converter
 #else
     #define FUTIMENSAT_DIR_FD_CONVERTER dir_fd_unavailable
 #endif
@@ -4852,12 +4888,15 @@ static int
 utime_fd(utime_t *ut, int fd)
 {
 #ifdef HAVE_FUTIMENS
-    UTIME_TO_TIMESPEC;
-    return futimens(fd, time);
-#else
-    UTIME_TO_TIMEVAL;
-    return futimes(fd, time);
+    if (HAVE_FUTIMENS_RUNTIME) {
+        UTIME_TO_TIMESPEC;
+        return futimens(fd, time);
+    } else
 #endif
+    {
+        UTIME_TO_TIMEVAL;
+        return futimes(fd, time);
+    }
 }
 
     #define PATH_UTIME_HAVE_FD 1
@@ -4875,12 +4914,15 @@ static int
 utime_nofollow_symlinks(utime_t *ut, const char *path)
 {
 #ifdef HAVE_UTIMENSAT
-    UTIME_TO_TIMESPEC;
-    return utimensat(DEFAULT_DIR_FD, path, time, AT_SYMLINK_NOFOLLOW);
-#else
-    UTIME_TO_TIMEVAL;
-    return lutimes(path, time);
+    if (HAVE_FUTIMENS_RUNTIME) {
+        UTIME_TO_TIMESPEC;
+        return utimensat(DEFAULT_DIR_FD, path, time, AT_SYMLINK_NOFOLLOW);
+    } else
 #endif
+    {
+        UTIME_TO_TIMEVAL;
+        return lutimes(path, time);
+    }
 }
 
 #endif
@@ -4891,9 +4933,12 @@ static int
 utime_default(utime_t *ut, const char *path)
 {
 #ifdef HAVE_UTIMENSAT
-    UTIME_TO_TIMESPEC;
-    return utimensat(DEFAULT_DIR_FD, path, time, 0);
-#elif defined(HAVE_UTIMES)
+    if (HAVE_UTIMENSAT_RUNTIME) {
+        UTIME_TO_TIMESPEC;
+        return utimensat(DEFAULT_DIR_FD, path, time, 0);
+    }
+#endif
+#if defined(HAVE_UTIMES)
     UTIME_TO_TIMEVAL;
     return utimes(path, time);
 #elif defined(HAVE_UTIME_H)
@@ -5513,7 +5558,12 @@ parse_posix_spawn_flags(PyObject *module, const char *func_name, PyObject *setpg
 
     if (setsid) {
 #ifdef POSIX_SPAWN_SETSID
-        all_flags |= POSIX_SPAWN_SETSID;
+        if (HAVE_POSIX_SPAWN_SETSID_RUNTIME) {
+            all_flags |= POSIX_SPAWN_SETSID;
+        } else {
+            argument_unavailable_error(func_name, "setsid");
+            return -1;
+        }
 #elif defined(POSIX_SPAWN_SETSID_NP)
         all_flags |= POSIX_SPAWN_SETSID_NP;
 #else
@@ -9255,59 +9305,64 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                int flags)
 /*[clinic end generated code: output=26fc9c6e58e7ada5 input=4173919dc1f7ed99]*/
 {
-    Py_ssize_t cnt, n;
-    int async_err = 0;
-    struct iovec *iov;
-    Py_buffer *buf;
+    if (HAVE_PREADV_RUNTIME) {
+        Py_ssize_t cnt, n;
+        int async_err = 0;
+        struct iovec *iov;
+        Py_buffer *buf;
 
-    if (!PySequence_Check(buffers)) {
-        PyErr_SetString(PyExc_TypeError,
-            "preadv2() arg 2 must be a sequence");
-        return -1;
-    }
-
-    cnt = PySequence_Size(buffers);
-    if (cnt < 0) {
-        return -1;
-    }
-
-#ifndef HAVE_PREADV2
-    if(flags != 0) {
-        argument_unavailable_error("preadv2", "flags");
-        return -1;
-    }
-#endif
-
-    if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0) {
-        return -1;
-    }
-#ifdef HAVE_PREADV2
-    do {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
-        n = preadv2(fd, iov, cnt, offset, flags);
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
-    } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-#else
-    do {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
-        n = preadv(fd, iov, cnt, offset);
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
-    } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-#endif
-
-    iov_cleanup(iov, buf, cnt);
-    if (n < 0) {
-        if (!async_err) {
-            posix_error();
+        if (!PySequence_Check(buffers)) {
+            PyErr_SetString(PyExc_TypeError,
+                "preadv2() arg 2 must be a sequence");
+            return -1;
         }
+
+        cnt = PySequence_Size(buffers);
+        if (cnt < 0) {
+            return -1;
+        }
+
+    #ifndef HAVE_PREADV2
+        if(flags != 0) {
+            argument_unavailable_error("preadv2", "flags");
+            return -1;
+        }
+    #endif
+
+        if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_WRITABLE) < 0) {
+            return -1;
+        }
+    #ifdef HAVE_PREADV2
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            _Py_BEGIN_SUPPRESS_IPH
+            n = preadv2(fd, iov, cnt, offset, flags);
+            _Py_END_SUPPRESS_IPH
+            Py_END_ALLOW_THREADS
+        } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    #else
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            _Py_BEGIN_SUPPRESS_IPH
+            n = preadv(fd, iov, cnt, offset);
+            _Py_END_SUPPRESS_IPH
+            Py_END_ALLOW_THREADS
+        } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    #endif
+
+        iov_cleanup(iov, buf, cnt);
+        if (n < 0) {
+            if (!async_err) {
+                posix_error();
+            }
+            return -1;
+        }
+
+        return n;
+    } else {
+        PyErr_SetString(PyExc_NotImplementedError, "preadv is not available");
         return -1;
     }
-
-    return n;
 }
 #endif /* HAVE_PREADV */
 
@@ -9850,60 +9905,65 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                 int flags)
 /*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=35358c327e1a2a8e]*/
 {
-    Py_ssize_t cnt;
-    Py_ssize_t result;
-    int async_err = 0;
-    struct iovec *iov;
-    Py_buffer *buf;
+    if (HAVE_PWRITEV_RUNTIME) {
+        Py_ssize_t cnt;
+        Py_ssize_t result;
+        int async_err = 0;
+        struct iovec *iov;
+        Py_buffer *buf;
 
-    if (!PySequence_Check(buffers)) {
-        PyErr_SetString(PyExc_TypeError,
-            "pwritev() arg 2 must be a sequence");
-        return -1;
-    }
-
-    cnt = PySequence_Size(buffers);
-    if (cnt < 0) {
-        return -1;
-    }
-
-#ifndef HAVE_PWRITEV2
-    if(flags != 0) {
-        argument_unavailable_error("pwritev2", "flags");
-        return -1;
-    }
-#endif
-
-    if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_SIMPLE) < 0) {
-        return -1;
-    }
-#ifdef HAVE_PWRITEV2
-    do {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
-        result = pwritev2(fd, iov, cnt, offset, flags);
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
-    } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-#else
-    do {
-        Py_BEGIN_ALLOW_THREADS
-        _Py_BEGIN_SUPPRESS_IPH
-        result = pwritev(fd, iov, cnt, offset);
-        _Py_END_SUPPRESS_IPH
-        Py_END_ALLOW_THREADS
-    } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-#endif
-
-    iov_cleanup(iov, buf, cnt);
-    if (result < 0) {
-        if (!async_err) {
-            posix_error();
+        if (!PySequence_Check(buffers)) {
+            PyErr_SetString(PyExc_TypeError,
+                "pwritev() arg 2 must be a sequence");
+            return -1;
         }
+
+        cnt = PySequence_Size(buffers);
+        if (cnt < 0) {
+            return -1;
+        }
+
+    #ifndef HAVE_PWRITEV2
+        if(flags != 0) {
+            argument_unavailable_error("pwritev2", "flags");
+            return -1;
+        }
+    #endif
+
+        if (iov_setup(&iov, &buf, buffers, cnt, PyBUF_SIMPLE) < 0) {
+            return -1;
+        }
+    #ifdef HAVE_PWRITEV2
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            _Py_BEGIN_SUPPRESS_IPH
+            result = pwritev2(fd, iov, cnt, offset, flags);
+            _Py_END_SUPPRESS_IPH
+            Py_END_ALLOW_THREADS
+        } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    #else
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            _Py_BEGIN_SUPPRESS_IPH
+            result = pwritev(fd, iov, cnt, offset);
+            _Py_END_SUPPRESS_IPH
+            Py_END_ALLOW_THREADS
+        } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    #endif
+
+        iov_cleanup(iov, buf, cnt);
+        if (result < 0) {
+            if (!async_err) {
+                posix_error();
+            }
+            return -1;
+        }
+
+        return result;
+    } else {
+        PyErr_SetString(PyExc_NotImplementedError, "preadv is not available");
         return -1;
     }
-
-    return result;
 }
 #endif /* HAVE_PWRITEV */
 
@@ -14156,9 +14216,7 @@ static PyMethodDef posix_methods[] = {
     OS_READ_METHODDEF
     OS_READV_METHODDEF
     OS_PREAD_METHODDEF
-    OS_PREADV_METHODDEF
     OS_WRITE_METHODDEF
-    OS_WRITEV_METHODDEF
     OS_PWRITE_METHODDEF
     OS_PWRITEV_METHODDEF
     OS_SENDFILE_METHODDEF
@@ -14228,6 +14286,9 @@ static PyMethodDef posix_methods[] = {
     OS__ADD_DLL_DIRECTORY_METHODDEF
     OS__REMOVE_DLL_DIRECTORY_METHODDEF
     OS_WAITSTATUS_TO_EXITCODE_METHODDEF
+
+    OS_PREADV_METHODDEF
+    OS_WRITEV_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 
@@ -15070,6 +15131,10 @@ posixmodule_exec(PyObject *m)
         return -1;
     }
     for (const char * const *trace = have_functions; *trace; trace++) {
+        if (HAVE_UTIMENSAT_RUNTIME) {} else if (0==strcmp(*trace, "HAVE_UTIMENSAT")) continue;
+        if (HAVE_FUTIMENS_RUNTIME) {} else if (0==strcmp(*trace, "HAVE_FUTIMENS")) continue;
+        if (HAVE_PREADV_RUNTIME) {} else if (0==strcmp(*trace, "HAVE_PREADV")) continue;
+        if (HAVE_PWRITEV_RUNTIME) {} else if (0==strcmp(*trace, "HAVE_PWRITEV")) continue;
         PyObject *unicode = PyUnicode_DecodeASCII(*trace, strlen(*trace), NULL);
         if (!unicode)
             return -1;
@@ -15100,9 +15165,30 @@ static struct PyModuleDef posixmodule = {
     .m_free = _posix_free,
 };
 
+static void
+delete_method(const char *name)
+{
+    int last_method_index = (sizeof(posix_methods)  / sizeof(posix_methods[0])) - 1;
+    for (int i = last_method_index; i >= 0; i--) {
+        if ( posix_methods[i].ml_name && 0==strcmp(posix_methods[i].ml_name, name)) {
+            for (int j = i; posix_methods[j].ml_name != NULL; j++) {
+                posix_methods[j] = posix_methods[j+1];
+            }
+            break;
+        }
+    }
+}
+
+
 PyMODINIT_FUNC
 INITFUNC(void)
 {
+    #ifdef HAVE_PREADV
+    if (HAVE_PREADV_RUNTIME) {} else { delete_method("preadv"); }
+    #endif
+    #ifdef HAVE_PWRITEV
+    if (HAVE_PWRITEV_RUNTIME) {} else { delete_method("pwritev"); }
+    #endif
     return PyModuleDef_Init(&posixmodule);
 }
 
