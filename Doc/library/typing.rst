@@ -491,6 +491,174 @@ Aliases and constants
 
    .. versionadded:: 3.5.2
 
+Functions and decorators
+........................
+
+.. function:: cast(typ, val)
+
+   Cast a value to a type.
+
+   This returns the value unchanged.  To the type checker this
+   signals that the return value has the designated type, but at
+   runtime we intentionally don't check anything (we want this
+   to be as fast as possible).
+
+.. decorator:: final
+
+   A decorator to indicate to type checkers that the decorated method
+   cannot be overridden, and the decorated class cannot be subclassed.
+   For example::
+
+      class Base:
+          @final
+          def done(self) -> None:
+              ...
+      class Sub(Base):
+          def done(self) -> None:  # Error reported by type checker
+                ...
+
+      @final
+      class Leaf:
+          ...
+      class Other(Leaf):  # Error reported by type checker
+          ...
+
+   There is no runtime checking of these properties. See :pep:`591` for
+   more details.
+
+   .. versionadded:: 3.8
+
+.. function:: get_args(tp)
+.. function:: get_origin(tp)
+
+   Provide basic introspection for generic types and special typing forms.
+
+   For a typing object of the form ``X[Y, Z, ...]`` these functions return
+   ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
+   :mod:`collections` class, it gets normalized to the original class.
+   For unsupported objects return ``None`` and ``()`` correspondingly.
+   Examples::
+
+      assert get_origin(Dict[str, int]) is dict
+      assert get_args(Dict[int, str]) == (int, str)
+
+      assert get_origin(Union[int, str]) is Union
+      assert get_args(Union[int, str]) == (int, str)
+
+   .. versionadded:: 3.8
+
+.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
+
+   Return a dictionary containing type hints for a function, method, module
+   or class object.
+
+   This is often the same as ``obj.__annotations__``. In addition,
+   forward references encoded as string literals are handled by evaluating
+   them in ``globals`` and ``locals`` namespaces. If necessary,
+   ``Optional[t]`` is added for function and method annotations if a default
+   value equal to ``None`` is set. For a class ``C``, return
+   a dictionary constructed by merging all the ``__annotations__`` along
+   ``C.__mro__`` in reverse order.
+
+   The function recursively replaces all ``Annotated[T, ...]`` with ``T``,
+   unless ``include_extras`` is set to ``True`` (see :class:`Annotated` for
+   more information). For example::
+
+       class Student(NamedTuple):
+           name: Annotated[str, 'some marker']
+
+       get_type_hints(Student) == {'name': str}
+       get_type_hints(Student, include_extras=False) == {'name': str}
+       get_type_hints(Student, include_extras=True) == {
+           'name': Annotated[str, 'some marker']
+       }
+
+   .. versionchanged:: 3.9
+      Added ``include_extras`` parameter as part of :pep:`593`.
+
+.. decorator:: no_type_check
+
+   Decorator to indicate that annotations are not type hints.
+
+   This works as class or function :term:`decorator`.  With a class, it
+   applies recursively to all methods defined in that class (but not
+   to methods defined in its superclasses or subclasses).
+
+   This mutates the function(s) in place.
+
+.. decorator:: no_type_check_decorator
+
+   Decorator to give another decorator the :func:`no_type_check` effect.
+
+   This wraps the decorator with something that wraps the decorated
+   function in :func:`no_type_check`.
+
+.. decorator:: overload
+
+   The ``@overload`` decorator allows describing functions and methods
+   that support multiple different combinations of argument types. A series
+   of ``@overload``-decorated definitions must be followed by exactly one
+   non-``@overload``-decorated definition (for the same function/method).
+   The ``@overload``-decorated definitions are for the benefit of the
+   type checker only, since they will be overwritten by the
+   non-``@overload``-decorated definition, while the latter is used at
+   runtime but should be ignored by a type checker.  At runtime, calling
+   a ``@overload``-decorated function directly will raise
+   :exc:`NotImplementedError`. An example of overload that gives a more
+   precise type than can be expressed using a union or a type variable::
+
+      @overload
+      def process(response: None) -> None:
+          ...
+      @overload
+      def process(response: int) -> Tuple[int, str]:
+          ...
+      @overload
+      def process(response: bytes) -> str:
+          ...
+      def process(response):
+          <actual implementation>
+
+   See :pep:`484` for details and comparison with other typing semantics.
+
+.. decorator:: runtime_checkable
+
+   Mark a protocol class as a runtime protocol.
+
+   Such a protocol can be used with :func:`isinstance` and :func:`issubclass`.
+   This raises :exc:`TypeError` when applied to a non-protocol class.  This
+   allows a simple-minded structural check, very similar to "one trick ponies"
+   in :mod:`collections.abc` such as :class:`Iterable`.  For example::
+
+      @runtime_checkable
+      class Closable(Protocol):
+          def close(self): ...
+
+      assert isinstance(open('/some/file'), Closable)
+
+   **Warning:** this will check only the presence of the required methods,
+   not their type signatures!
+
+   .. versionadded:: 3.8
+
+.. decorator:: type_check_only
+
+   Decorator to mark a class or function to be unavailable at runtime.
+
+   This decorator is itself not available at runtime. It is mainly
+   intended to mark classes that are defined in type stub files if
+   an implementation returns an instance of a private class::
+
+      @type_check_only
+      class Response:  # private or not available at runtime
+          code: int
+          def get_header(self, name: str) -> str: ...
+
+      def fetch_response() -> Response: ...
+
+   Note that returning instances of private classes is not recommended.
+   It is usually preferable to make such classes public.
+
 Remaining classes, functions and decorators
 ...........................................
 
@@ -1071,171 +1239,6 @@ Remaining classes, functions and decorators
       first_user = UserId(1)
 
    .. versionadded:: 3.5.2
-
-.. function:: cast(typ, val)
-
-   Cast a value to a type.
-
-   This returns the value unchanged.  To the type checker this
-   signals that the return value has the designated type, but at
-   runtime we intentionally don't check anything (we want this
-   to be as fast as possible).
-
-.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
-
-   Return a dictionary containing type hints for a function, method, module
-   or class object.
-
-   This is often the same as ``obj.__annotations__``. In addition,
-   forward references encoded as string literals are handled by evaluating
-   them in ``globals`` and ``locals`` namespaces. If necessary,
-   ``Optional[t]`` is added for function and method annotations if a default
-   value equal to ``None`` is set. For a class ``C``, return
-   a dictionary constructed by merging all the ``__annotations__`` along
-   ``C.__mro__`` in reverse order.
-
-   The function recursively replaces all ``Annotated[T, ...]`` with ``T``,
-   unless ``include_extras`` is set to ``True`` (see :class:`Annotated` for
-   more information). For example::
-
-       class Student(NamedTuple):
-           name: Annotated[str, 'some marker']
-
-       get_type_hints(Student) == {'name': str}
-       get_type_hints(Student, include_extras=False) == {'name': str}
-       get_type_hints(Student, include_extras=True) == {
-           'name': Annotated[str, 'some marker']
-       }
-
-   .. versionchanged:: 3.9
-      Added ``include_extras`` parameter as part of :pep:`593`.
-
-.. function:: get_origin(tp)
-.. function:: get_args(tp)
-
-   Provide basic introspection for generic types and special typing forms.
-
-   For a typing object of the form ``X[Y, Z, ...]`` these functions return
-   ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
-   :mod:`collections` class, it gets normalized to the original class.
-   For unsupported objects return ``None`` and ``()`` correspondingly.
-   Examples::
-
-      assert get_origin(Dict[str, int]) is dict
-      assert get_args(Dict[int, str]) == (int, str)
-
-      assert get_origin(Union[int, str]) is Union
-      assert get_args(Union[int, str]) == (int, str)
-
-   .. versionadded:: 3.8
-
-.. decorator:: overload
-
-   The ``@overload`` decorator allows describing functions and methods
-   that support multiple different combinations of argument types. A series
-   of ``@overload``-decorated definitions must be followed by exactly one
-   non-``@overload``-decorated definition (for the same function/method).
-   The ``@overload``-decorated definitions are for the benefit of the
-   type checker only, since they will be overwritten by the
-   non-``@overload``-decorated definition, while the latter is used at
-   runtime but should be ignored by a type checker.  At runtime, calling
-   a ``@overload``-decorated function directly will raise
-   :exc:`NotImplementedError`. An example of overload that gives a more
-   precise type than can be expressed using a union or a type variable::
-
-      @overload
-      def process(response: None) -> None:
-          ...
-      @overload
-      def process(response: int) -> Tuple[int, str]:
-          ...
-      @overload
-      def process(response: bytes) -> str:
-          ...
-      def process(response):
-          <actual implementation>
-
-   See :pep:`484` for details and comparison with other typing semantics.
-
-.. decorator:: final
-
-   A decorator to indicate to type checkers that the decorated method
-   cannot be overridden, and the decorated class cannot be subclassed.
-   For example::
-
-      class Base:
-          @final
-          def done(self) -> None:
-              ...
-      class Sub(Base):
-          def done(self) -> None:  # Error reported by type checker
-                ...
-
-      @final
-      class Leaf:
-          ...
-      class Other(Leaf):  # Error reported by type checker
-          ...
-
-   There is no runtime checking of these properties. See :pep:`591` for
-   more details.
-
-   .. versionadded:: 3.8
-
-.. decorator:: no_type_check
-
-   Decorator to indicate that annotations are not type hints.
-
-   This works as class or function :term:`decorator`.  With a class, it
-   applies recursively to all methods defined in that class (but not
-   to methods defined in its superclasses or subclasses).
-
-   This mutates the function(s) in place.
-
-.. decorator:: no_type_check_decorator
-
-   Decorator to give another decorator the :func:`no_type_check` effect.
-
-   This wraps the decorator with something that wraps the decorated
-   function in :func:`no_type_check`.
-
-.. decorator:: type_check_only
-
-   Decorator to mark a class or function to be unavailable at runtime.
-
-   This decorator is itself not available at runtime. It is mainly
-   intended to mark classes that are defined in type stub files if
-   an implementation returns an instance of a private class::
-
-      @type_check_only
-      class Response:  # private or not available at runtime
-          code: int
-          def get_header(self, name: str) -> str: ...
-
-      def fetch_response() -> Response: ...
-
-   Note that returning instances of private classes is not recommended.
-   It is usually preferable to make such classes public.
-
-.. decorator:: runtime_checkable
-
-   Mark a protocol class as a runtime protocol.
-
-   Such a protocol can be used with :func:`isinstance` and :func:`issubclass`.
-   This raises :exc:`TypeError` when applied to a non-protocol class.  This
-   allows a simple-minded structural check, very similar to "one trick ponies"
-   in :mod:`collections.abc` such as :class:`Iterable`.  For example::
-
-      @runtime_checkable
-      class Closable(Protocol):
-          def close(self): ...
-
-      assert isinstance(open('/some/file'), Closable)
-
-   **Warning:** this will check only the presence of the required methods,
-   not their type signatures!
-
-   .. versionadded:: 3.8
 
 .. data:: Any
 
