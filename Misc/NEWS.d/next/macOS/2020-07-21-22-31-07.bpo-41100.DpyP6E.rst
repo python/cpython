@@ -1,0 +1,1 @@
+fix a bug in getpath.c for arm64 Mac OS
