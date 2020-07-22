@@ -2249,7 +2249,6 @@ class PyBuildExt(build_ext):
               ]
             depends = [
               '_decimal/docstrings.h',
-              '_decimal/libmpdec_triple.h',
               '_decimal/libmpdec/basearith.h',
               '_decimal/libmpdec/bits.h',
               '_decimal/libmpdec/constants.h',

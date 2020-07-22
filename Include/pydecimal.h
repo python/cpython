@@ -40,12 +40,7 @@ extern "C" {
 /*                               Libmpdec API                               */
 /****************************************************************************/
 
-/*
- * Copied from libmpdec_triple.h. This will be in mpdecimal.h once the
- * functions are integrated into libmpdec.
- */
-
-#ifndef LIBMPDEC_TRIPLE_H_
+#ifndef LIBMPDEC_MPDECIMAL_H_
 struct mpd_t;  /* ABI-stable in the libmpdec-2.x series */
 
 /* status cases for getting a triple */

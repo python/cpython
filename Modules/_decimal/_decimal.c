@@ -34,7 +34,6 @@
 #include <stdlib.h>
 
 #define CPYTHON_DECIMAL_MODULE
-#include "libmpdec_triple.h"
 #include "pydecimal.h"
 #include "docstrings.h"
 
