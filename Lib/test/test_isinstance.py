@@ -211,12 +211,12 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
 
     def test_isinstance_with_or_union(self):
         # self.assertEqual(True, isinstance(AbstractChild(), AbstractChild | int))
-        self.assertEqual(False, isinstance(None, str | int))
-        self.assertEqual(True, isinstance(3, str | int))
-        self.assertEqual(True, isinstance("", str | int))
-        self.assertEqual(True, isinstance([], typing.List | typing.Tuple))
-        self.assertEqual(True, isinstance(2, typing.List | int))
-        self.assertEqual(False, isinstance(2, typing.List | typing.Tuple))
+        self.assertFalse(isinstance(None, str | int))
+        self.assertTrue(isinstance(3, str | int))
+        self.assertTrue(isinstance("", str | int))
+        self.assertTrue(isinstance([], typing.List | typing.Tuple))
+        self.assertTrue(isinstance(2, typing.List | int))
+        self.assertFalse(isinstance(2, typing.List | typing.Tuple))
 
     def test_subclass_normal(self):
         # normal classes
@@ -227,8 +227,8 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(True, issubclass(Child, Child))
         self.assertEqual(True, issubclass(Child, Super))
         self.assertEqual(False, issubclass(Child, AbstractSuper))
-        self.assertEqual(True, issubclass(typing.List, typing.List|typing.Tuple))
-        self.assertEqual(False, issubclass(int, typing.List|typing.Tuple))
+        self.assertTrue(issubclass(typing.List, typing.List|typing.Tuple))
+        self.assertFalse(issubclass(int, typing.List|typing.Tuple))
 
     def test_subclass_abstract(self):
         # abstract classes
@@ -264,8 +264,8 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertRaises(RecursionError, blowstack, isinstance, '', str)
 
     def test_subclass_with_union(self):
-        self.assertEqual(True, issubclass(int, int | float | int))
-        self.assertEqual(True, issubclass(str, str | Child | str))
+        self.assertTrue(issubclass(int, int | float | int))
+        self.assertTrue(issubclass(str, str | Child | str))
 
     def test_issubclass_refcount_handling(self):
         # bpo-39382: abstract_issubclass() didn't hold item reference while

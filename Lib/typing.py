@@ -578,12 +578,11 @@ class TypeVar(_Final, _Immutable, _root=True):
         if def_mod != 'typing':
             self.__module__ = def_mod
 
-    def __or__(self,right):
-        return Union[self,right]
-    def __ror__(self,right):
-        return Union[self,right]
-    def __invert__(self):
-        return Union[self,None]
+    def __or__(self, right):
+        return Union[self, right]
+
+    def __ror__(self, right):
+        return Union[self, right]
 
     def __repr__(self):
         if self.__covariant__:
@@ -692,12 +691,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     def __hash__(self):
         return hash((self.__origin__, self.__args__))
 
-    def __or__(self,right):
-        return Union[self,right]
-    def __ror__(self,right):
-        return Union[self,right]
-    def __invert__(self):
-        return Union[self,None]
+    def __or__(self, right):
+        return Union[self, right]
+
+    def __ror__(self, right):
+        return Union[self, right]
 
     @_tp_cache
     def __getitem__(self, params):
@@ -798,12 +796,11 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
     def __reduce__(self):
         return self._name
 
-    def __or__(self,right):
+    def __or__(self, right):
         return Union[self,right]
-    def __ror__(self,right):
-        return Union[self,right]
-    def __invert__(self):
-        return Union[self,None]
+
+    def __ror__(self, right):
+        return Union[self, right]
 
 class _CallableGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):

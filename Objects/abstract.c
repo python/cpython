@@ -910,7 +910,7 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
             strcmp(((PyCFunctionObject *)v)->m_ml->ml_name, "print") == 0)
         {
             PyErr_Format(PyExc_TypeError,
-                "unsupported operand type(s) for () %.100s: "
+                "unsupported operand type(s) for %.100s: "
                 "'%.100s' and '%.100s'. Did you mean \"print(<message>, "
                 "file=<output_stream>)\"?",
                 op_name,
@@ -2512,7 +2512,7 @@ object_isinstance(PyObject *inst, PyObject *cls)
     }
     else {
         if (!check_class(cls,
-            "isinstance() arg 2 must be a type, a tuple of types or union"))
+            "isinstance() arg 2 must be a type, a tuple of types or a union"))
             return -1;
         retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
         if (icls != NULL) {

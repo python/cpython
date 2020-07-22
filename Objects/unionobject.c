@@ -121,9 +121,6 @@ union_richcompare(PyObject *a, PyObject *b, int op)
     Py_RETURN_FALSE;
 }
 
-
-
-
 PyTypeObject Py_UnionType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "typing.Union",
