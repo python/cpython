@@ -1,0 +1,1 @@
+Calling :func:`bool` is now slightly (about 10%) faster.
