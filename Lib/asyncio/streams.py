@@ -112,7 +112,7 @@ if hasattr(socket, 'AF_UNIX'):
         return await loop.create_unix_server(factory, path, **kwds)
 
 
-class FlowControlMixin(protocols.Protocol):
+class FlowControlMixin(protocols.BaseProtocol):
     """Reusable flow control logic for StreamWriter.drain().
 
     This implements the protocol methods pause_writing(),
@@ -180,7 +180,7 @@ class FlowControlMixin(protocols.Protocol):
         raise NotImplementedError
 
 
-class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
+class BaseStreamReaderProtocol(FlowControlMixin):
     """Helper class to adapt between Protocol and StreamReader.
 
     (This is a helper class instead of making StreamReader itself a
@@ -267,11 +267,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._stream_writer = None
         self._transport = None
 
-    def data_received(self, data):
-        reader = self._stream_reader
-        if reader is not None:
-            reader.feed_data(data)
-
     def eof_received(self):
         reader = self._stream_reader
         if reader is not None:
@@ -296,6 +291,30 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         else:
             if closed.done() and not closed.cancelled():
                 closed.exception()
+
+
+class StreamReaderProtocol(BaseStreamReaderProtocol, protocols.Protocol):
+    def data_received(self, data):
+        reader = self._stream_reader
+        if reader is not None:
+            reader.feed_data(data)
+
+
+class StreamReaderBufferedProtocol(BaseStreamReaderProtocol, protocols.BufferedProtocol):
+    def __init__(self, stream_reader, client_connected_cb=None, loop=None,
+                 buffer_size=65536):
+        super().__init__(stream_reader,
+                         client_connected_cb=client_connected_cb,
+                         loop=loop)
+        self._buffer = memoryview(bytearray(buffer_size))
+
+    def get_buffer(self, sizehint):
+        return self._buffer
+
+    def buffer_updated(self, nbytes):
+        reader = self._stream_reader
+        if reader is not None:
+            reader.feed_data(self._buffer[:nbytes])
 
 
 class StreamWriter:
