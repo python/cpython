@@ -372,6 +372,31 @@ typedef unsigned char uchar;
 
 
 /******************************************************************************/
+/*                                    Triple                                  */
+/******************************************************************************/
+
+/* status cases for getting a triple */
+enum mpd_triple_class {
+  MPD_TRIPLE_NORMAL,
+  MPD_TRIPLE_INF,
+  MPD_TRIPLE_QNAN,
+  MPD_TRIPLE_SNAN,
+  MPD_TRIPLE_ERROR,
+};
+
+typedef struct {
+  enum mpd_triple_class tag;
+  uint8_t sign;
+  uint64_t hi;
+  uint64_t lo;
+  int64_t exp;
+} mpd_uint128_triple_t;
+
+int mpd_from_uint128_triple(mpd_t *result, const mpd_uint128_triple_t *triple, uint32_t *status);
+mpd_uint128_triple_t mpd_as_uint128_triple(const mpd_t *a);
+
+
+/******************************************************************************/
 /*                       Quiet, thread-safe functions                         */
 /******************************************************************************/
 
