@@ -293,7 +293,7 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         @woohoo()
         async def recursive():
             if depth < 10:
-                recursive()
+                await recursive()
 
         await recursive()
         self.assertEqual(depth, 0)
