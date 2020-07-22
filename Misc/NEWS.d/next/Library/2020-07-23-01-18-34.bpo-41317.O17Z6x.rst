@@ -1,0 +1,2 @@
+Use add_done_callback() in asyncio.loop.sock_accept() to unsubscribe reader
+early on cancellation.
