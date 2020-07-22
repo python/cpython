@@ -83,7 +83,7 @@ class ContextDecorator(object):
 class AsyncContextDecorator(object):
     "A base class or mixin that enables async context managers to work as decorators."
 
-    def __recreate_cm(self):
+    def _recreate_cm(self):
         """Return a recreated instance of self.
         """
         return self
