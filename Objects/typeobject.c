@@ -3775,10 +3775,10 @@ is_genericalias(PyObject *obj)
 static int
 is_new_type(PyObject *obj)
 {
-    if (!PyObject_IsInstance((PyObject *)obj, (PyObject *)&PyFunction_Type)) {
+    if (!PyObject_IsInstance(obj, (PyObject *)&PyFunction_Type)) {
         return 0;
     }
-    PyObject *module = PyObject_GetAttrString((PyObject *)obj, "__module__");
+    PyObject *module = PyObject_GetAttrString(obj, "__module__");
     if (module == NULL) {
         return 0;
     }
@@ -3786,23 +3786,27 @@ is_new_type(PyObject *obj)
 }
 
 static int
-is_not_unionable (PyObject *obj)
+is_unionable(PyObject *obj)
 {
-    return (obj != Py_None) &
-        !is_genericalias(obj) &&
-        !is_typevar(obj) &&
-        !is_new_type(obj) &&
-        (PyObject_IsInstance(obj, (PyObject *)&PyType_Type) != 1) &&
-        (PyObject_IsInstance(obj, (PyObject *)&Py_UnionType) != 1);
+    if (obj == Py_None) {
+        return 1;
+    }
+    return (
+        is_genericalias(obj) ||
+        is_typevar(obj) ||
+        is_new_type(obj) ||
+        (PyObject_IsInstance(obj, (PyObject *)&PyType_Type) == 1) ||
+    (PyObject_IsInstance(obj, (PyObject *)&Py_UnionType) == 1));
 }
 
 static PyObject *
 type_or(PyTypeObject* self, PyObject* param) {
     // Check param is a PyType or GenericAlias
-    if ((param == NULL) || is_not_unionable(param)  || is_not_unionable((PyObject *)self))
+    if ((param == NULL) || !is_unionable(param)  || !is_unionable((PyObject *)self))
     {
-        PyErr_SetString(PyExc_TypeError, "'type' expected");
-        return NULL;
+        Py_INCREF(Py_NotImplemented);
+        // PyErr_SetString(Py_NotImplemented, "'type' expected");
+        return Py_NotImplemented;
     }
 
     PyObject *tuple;
