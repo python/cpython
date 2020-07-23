@@ -555,20 +555,19 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
-        self._sock_accept(fut, False, sock)
+        self._sock_accept(fut, sock)
         return await fut
 
-    def _sock_accept(self, fut, registered, sock):
+    def _sock_accept(self, fut, sock):
         fd = sock.fileno()
-        if registered:
-            self.remove_reader(fd)
-        if fut.done():
-            return
         try:
             conn, address = sock.accept()
             conn.setblocking(False)
         except (BlockingIOError, InterruptedError):
-            self.add_reader(fd, self._sock_accept, fut, True, sock)
+            self._ensure_fd_no_transport(fd)
+            handle = self._add_reader(fd, self._sock_accept, fut, sock)
+            fut.add_done_callback(
+                functools.partial(self._sock_read_done, fd, handle=handle))
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
