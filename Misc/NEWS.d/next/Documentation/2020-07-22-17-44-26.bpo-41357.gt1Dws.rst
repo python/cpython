@@ -1,3 +1,2 @@
-Add a sentence to os.path.abspath() clarifying that it does not resolve symlink
-names.  Also, replace "os.path.abspath" with "os.path.realpath" in the table
+Add a sentence to os.path.abspath() clarifying that it does not resolve symlinks.  Also, replace "os.path.abspath" with "os.path.realpath" in the table
 at the end of the Path class section.  Patch by Jeffrey Kintscher.
