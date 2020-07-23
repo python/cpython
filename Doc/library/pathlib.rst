@@ -1114,7 +1114,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 ====================================   ==============================
 os and os.path                         pathlib
 ====================================   ==============================
-:func:`os.path.abspath`                :meth:`Path.resolve`
+:func:`os.path.realpath`               :meth:`Path.resolve`
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
 :func:`os.rename`                      :meth:`Path.rename`

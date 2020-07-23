@@ -65,7 +65,8 @@ the :mod:`glob` module.)
 
    Return a normalized absolutized version of the pathname *path*. On most
    platforms, this is equivalent to calling the function :func:`normpath` as
-   follows: ``normpath(join(os.getcwd(), path))``.
+   follows: ``normpath(join(os.getcwd(), path))``.  Unlike :func:`realpath`,
+   this function preserves symlink names.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
