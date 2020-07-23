@@ -351,6 +351,43 @@ Functions and classes provided:
    .. versionadded:: 3.2
 
 
+.. class:: AsyncContextManager
+    
+   Similar as ContextManger only for async
+
+   Example of ``ContextDecorator``::
+      
+      from asyncio import run
+      from contextlib import AsyncContextDecorator
+
+      class mycontext(AsyncContextDecorator):
+          async def __aenter__(self):
+              print('Starting')
+              return self
+
+          async def __aexit__(self, *exc):
+              print('Finishing')
+              return False
+
+      >>> @mycontext()
+      ... async def function():
+      ...     print('The bit in the middle')
+      ...
+      >>> run(function())
+      Starting
+      The bit in the middle
+      Finishing
+
+      >>> async def function():
+      ...    async with mycontext():
+      ...         print('The bit in the middle')
+      ...
+      >>> run(function())
+      Starting
+      The bit in the middle
+      Finishing
+
+
 .. class:: ExitStack()
 
    A context manager that is designed to make it easy to programmatically
