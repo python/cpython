@@ -57,6 +57,7 @@ if sys.version_info >= (3, 5):
     SelectorKey.data.__doc__ = ('''Optional opaque data associated to this file object.
     For example, this could be used to store a per-client session ID.''')
 
+
 class _SelectorMapping(Mapping):
     """Mapping of file objects to selector keys."""
 
@@ -580,16 +581,39 @@ if hasattr(select, 'kqueue'):
             super().close()
 
 
+def _can_use(method):
+    """Check if we can use the selector depending upon the
+    operating system. """
+    # Implementation based upon https://github.com/sethmlarson/selectors2/blob/master/selectors2.py
+    selector = getattr(select, method, None)
+    if selector is None:
+        # select module does not implement method
+        return False
+    # check if the OS and Kernel actually support the method. Call may fail with
+    # OSError: [Errno 38] Function not implemented
+    try:
+        selector_obj = selector()
+        if method == 'poll':
+            # check that poll actually works
+            selector_obj.poll(0)
+        else:
+            # close epoll, kqueue, and devpoll fd
+            selector_obj.close()
+        return True
+    except OSError:
+        return False
+
+
 # Choose the best implementation, roughly:
 #    epoll|kqueue|devpoll > poll > select.
 # select() also can't accept a FD > FD_SETSIZE (usually around 1024)
-if 'KqueueSelector' in globals():
+if _can_use('kqueue'):
     DefaultSelector = KqueueSelector
-elif 'EpollSelector' in globals():
+elif _can_use('epoll'):
     DefaultSelector = EpollSelector
-elif 'DevpollSelector' in globals():
+elif _can_use('devpoll'):
     DefaultSelector = DevpollSelector
-elif 'PollSelector' in globals():
+elif _can_use('poll'):
     DefaultSelector = PollSelector
 else:
     DefaultSelector = SelectSelector
