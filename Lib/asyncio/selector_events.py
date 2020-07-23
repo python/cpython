@@ -565,7 +565,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             conn.setblocking(False)
         except (BlockingIOError, InterruptedError):
             self._ensure_fd_no_transport(fd)
-            handle = self.add_reader(fd, self._sock_accept, fut, sock)
+            handle = self._add_reader(fd, self._sock_accept, fut, sock)
             fut.add_done_callback(
                 functools.partial(self._sock_read_done, fd, handle=handle))
         except (SystemExit, KeyboardInterrupt):
