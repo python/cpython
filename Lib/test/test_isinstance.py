@@ -210,13 +210,14 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(False, isinstance(AbstractChild(), Child))
 
     def test_isinstance_with_or_union(self):
-        # self.assertEqual(True, isinstance(AbstractChild(), AbstractChild | int))
+        self.assertEqual(True, isinstance(AbstractChild(), AbstractChild | int))
         self.assertFalse(isinstance(None, str | int))
         self.assertTrue(isinstance(3, str | int))
         self.assertTrue(isinstance("", str | int))
         self.assertTrue(isinstance([], typing.List | typing.Tuple))
         self.assertTrue(isinstance(2, typing.List | int))
         self.assertFalse(isinstance(2, typing.List | typing.Tuple))
+        self.assertTrue(isinstance(None, int |None))
 
     def test_subclass_normal(self):
         # normal classes

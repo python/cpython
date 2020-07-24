@@ -274,6 +274,110 @@ static PyNumberMethods union_as_number = {
         .nb_or = (binaryfunc)type_or, // Add __or__ function
 };
 
+static int
+union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
+{
+    _Py_IDENTIFIER(__module__);
+    _Py_IDENTIFIER(__qualname__);
+    _Py_IDENTIFIER(__origin__);
+    _Py_IDENTIFIER(__args__);
+    PyObject *qualname = NULL;
+    PyObject *module = NULL;
+    PyObject *r = NULL;
+    PyObject *tmp;
+    int err;
+
+    if (p == Py_Ellipsis) {
+        // The Ellipsis object
+        r = PyUnicode_FromString("...");
+        goto done;
+    }
+
+    if (_PyObject_LookupAttrId(p, &PyId___origin__, &tmp) < 0) {
+        goto done;
+    }
+    if (tmp != NULL) {
+        Py_DECREF(tmp);
+        if (_PyObject_LookupAttrId(p, &PyId___args__, &tmp) < 0) {
+            goto done;
+        }
+        if (tmp != NULL) {
+            Py_DECREF(tmp);
+            // It looks like a GenericAlias
+            goto use_repr;
+        }
+    }
+
+    if (_PyObject_LookupAttrId(p, &PyId___qualname__, &qualname) < 0) {
+        goto done;
+    }
+    if (qualname == NULL) {
+        goto use_repr;
+    }
+    if (_PyObject_LookupAttrId(p, &PyId___module__, &module) < 0) {
+        goto done;
+    }
+    if (module == NULL || module == Py_None) {
+        goto use_repr;
+    }
+
+    // Looks like a class
+    if (PyUnicode_Check(module) &&
+        _PyUnicode_EqualToASCIIString(module, "builtins"))
+    {
+        // builtins don't need a module name
+        r = PyObject_Str(qualname);
+        goto done;
+    }
+    else {
+        r = PyUnicode_FromFormat("%S.%S", module, qualname);
+        goto done;
+    }
+
+use_repr:
+    r = PyObject_Repr(p);
+
+done:
+    Py_XDECREF(qualname);
+    Py_XDECREF(module);
+    if (r == NULL) {
+        // error if any of the above PyObject_Repr/PyUnicode_From* fail
+        err = -1;
+    }
+    else {
+        err = _PyUnicodeWriter_WriteStr(writer, r);
+        Py_DECREF(r);
+    }
+    return err;
+}
+
+static PyObject *
+union_repr(PyObject *self)
+{
+    unionobject *alias = (unionobject *)self;
+    Py_ssize_t len = PyTuple_GET_SIZE(alias->args);
+
+
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+     for (Py_ssize_t i = 0; i < len; i++) {
+        if (i > 0) {
+            if (_PyUnicodeWriter_WriteASCIIString(&writer, " | ", 3) < 0) {
+                goto error;
+            }
+        }
+        PyObject *p = PyTuple_GET_ITEM(alias->args, i);
+        if (union_repr_item(&writer, p) < 0) {
+            goto error;
+        }
+    }
+    return _PyUnicodeWriter_Finish(&writer);
+error:
+    _PyUnicodeWriter_Dealloc(&writer);
+    return NULL;
+
+}
+
 
 PyTypeObject Py_UnionType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -293,7 +397,9 @@ PyTypeObject Py_UnionType = {
     .tp_methods = union_methods,
     .tp_richcompare = union_richcompare,
     .tp_as_number = &union_as_number,
+    .tp_repr = union_repr,
 };
+
 
 
 PyObject *

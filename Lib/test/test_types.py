@@ -604,13 +604,15 @@ class TypesTests(unittest.TestCase):
         self.assertEqual(int | str, typing.Union[int, str])
         self.assertEqual(str | int, typing.Union[int, str])
         self.assertEqual(int | None, typing.Union[int, None])
-        # self.assertEqual(None | int, typing.Union[int, None])
+        self.assertEqual(None | int, typing.Union[int, None])
         self.assertEqual(int | str | list, typing.Union[int, str, list])
         self.assertEqual(int | (str | list), typing.Union[int, str, list])
+        self.assertEqual(str | (int | list), typing.Union[int, str, list])
         self.assertEqual(typing.List | typing.Tuple, typing.Union[typing.List, typing.Tuple])
         self.assertEqual(typing.List[int] | typing.Tuple[int], typing.Union[typing.List[int], typing.Tuple[int]])
         self.assertEqual(typing.List[int] | None, typing.Union[typing.List[int], None])
         self.assertEqual(None | typing.List[int], typing.Union[None, typing.List[int]])
+        self.assertEqual(str | float | int | complex | int == (int | str) | (float | complex))
         self.assertEqual(
             BaseException |
             bool |
