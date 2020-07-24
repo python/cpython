@@ -3741,89 +3741,10 @@ type_is_gc(PyTypeObject *type)
     return type->tp_flags & Py_TPFLAGS_HEAPTYPE;
 }
 
-
-// TODO: MM: Move the following three functions?
-static int
-is_typing_name(PyObject *obj, char *name)
-{
-    PyTypeObject *type = Py_TYPE(obj);
-    if (strcmp(type->tp_name, name) != 0) {
-        return 0;
-    }
-    PyObject *module = PyObject_GetAttrString((PyObject *)type, "__module__");
-    if (module == NULL) {
-        return -1;
-    }
-    int res = PyUnicode_Check(module)
-        && _PyUnicode_EqualToASCIIString(module, "typing");
-    Py_DECREF(module);
-    return res;
-}
-
-static int
-is_typevar(PyObject *obj)
-{
-    return is_typing_name(obj, "TypeVar");
-}
-
-static int
-is_genericalias(PyObject *obj)
-{
-    return is_typing_name(obj, "GenericAlias");
-}
-
-static int
-is_new_type(PyObject *obj)
-{
-    if (!PyObject_IsInstance(obj, (PyObject *)&PyFunction_Type)) {
-        return 0;
-    }
-    PyObject *module = PyObject_GetAttrString(obj, "__module__");
-    if (module == NULL) {
-        return 0;
-    }
-    return PyUnicode_Check(module) && _PyUnicode_EqualToASCIIString(module, "typing");
-}
-
-static int
-is_unionable(PyObject *obj)
-{
-    if (obj == Py_None) {
-        return 1;
-    }
-    return (
-        is_genericalias(obj) ||
-        is_typevar(obj) ||
-        is_new_type(obj) ||
-        (PyObject_IsInstance(obj, (PyObject *)&PyType_Type) == 1) ||
-    (PyObject_IsInstance(obj, (PyObject *)&Py_UnionType) == 1));
-}
-
 static PyObject *
 type_or(PyTypeObject* self, PyObject* param) {
-    // Check param is a PyType or GenericAlias
-    if ((param == NULL) || !is_unionable(param)  || !is_unionable((PyObject *)self))
-    {
-        Py_INCREF(Py_NotImplemented);
-        // PyErr_SetString(Py_NotImplemented, "'type' expected");
-        return Py_NotImplemented;
-    }
-
-    PyObject *tuple;
-    if (PyObject_IsInstance((PyObject *)self, (PyObject *) &Py_UnionType)) {
-        tuple = Py_Union_AddToTuple((PyObject *)self, param, 0);
-    } else if (PyObject_IsInstance(param, (PyObject *) &Py_UnionType)) {
-        tuple = Py_Union_AddToTuple(param, (PyObject *)self, 1);
-    } else {
-        PyObject *param_type = param == Py_None ? (PyObject *)Py_TYPE(param) : param;
-        PyTypeObject *self_type = (PyObject *)self == Py_None ? Py_TYPE(self) : self;
-        tuple=PyTuple_Pack(2, self_type, param_type);
-        Py_DECREF(param_type);
-        Py_DECREF(self_type);
-    }
-    PyObject *newUnionType=Py_Union(tuple);
-    Py_DECREF(tuple);
-    return newUnionType;
+    PyObject* new_union = Py_Union_New(self, param);
+    return new_union;
 }
 
 static PyNumberMethods type_as_number = {
