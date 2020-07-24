@@ -2034,6 +2034,21 @@ class OtherTests(unittest.TestCase):
             with zipfile.ZipFile(zip_file) as zf:
                 self.assertRaises(RuntimeError, zf.extract, 'a.txt')
 
+    def test_close_on_closed_file(self):
+        # BPO-41350: check whether ZipFile.close()
+        # incorrectly throws a ValueError exception
+        # when initialized with a file-like object
+        # that is closed before ZipFile.close() is
+        # called.
+        bytes_io = io.BytesIO()
+        zip_file = zipfile.ZipFile(bytes_io, mode="w")
+        bytes_io.close()
+
+        try:
+            zip_file.close()
+        except ValueError:
+            self.fail('erroneous ValueError raised.')
+
     def tearDown(self):
         unlink(TESTFN)
         unlink(TESTFN2)

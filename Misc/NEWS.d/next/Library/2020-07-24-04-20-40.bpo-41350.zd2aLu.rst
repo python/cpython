@@ -1,0 +1,4 @@
+:func:`zipfile.ZipFile.close` no longer throws :exc:`ValueError' when it is
+initialized with a file-like object for writing/creating/appending and the
+file-like object is closed before :func:`zipfile.ZipFile.close` is called.
+Patch by Jeffrey Kintscher.

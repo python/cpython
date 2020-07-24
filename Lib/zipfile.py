@@ -1818,7 +1818,9 @@ class ZipFile:
                              "Close the writing handle before closing the zip.")
 
         try:
-            if self.mode in ('w', 'x', 'a') and self._didModify: # write ending records
+            fp_open = not self.fp.closed if isinstance(self.fp, io.IOBase) else True
+
+            if self.mode in ('w', 'x', 'a') and self._didModify and fp_open: # write ending records
                 with self._lock:
                     if self._seekable:
                         self.fp.seek(self.start_dir)
