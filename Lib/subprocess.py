@@ -1468,6 +1468,8 @@ class Popen(object):
                 if result == _winapi.WAIT_TIMEOUT:
                     raise TimeoutExpired(self.args, timeout)
                 self.returncode = _winapi.GetExitCodeProcess(self._handle)
+                if self.returncode != 0:
+                    self.returncode -= 2**32
             return self.returncode
 
 
