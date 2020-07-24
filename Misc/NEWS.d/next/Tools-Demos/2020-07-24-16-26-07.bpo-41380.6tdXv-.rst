@@ -1,0 +1,3 @@
+Simple snake game based on turtle module for beginners! I made it with basic algorithm! =)
+Why, I must to make it?
+Because, Its simple and also basic example game for turtle demo module!
