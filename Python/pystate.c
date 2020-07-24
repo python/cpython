@@ -286,6 +286,9 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     }
     HEAD_UNLOCK(runtime);
 
+    PyDict_Clear(interp->sysdict);
+    PyDict_Clear(interp->builtins);
+
     Py_CLEAR(interp->audit_hooks);
 
     PyConfig_Clear(&interp->config);
