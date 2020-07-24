@@ -1,0 +1,2 @@
+Show the fully-qualified name in :mod:`unittest` test runner output (for
+example, ``test.test_set.TestBinaryOps.test_eq``).

@@ -976,7 +976,7 @@ class ArgsTestCase(BaseTestCase):
                                   randomize=True)
 
     def parse_methods(self, output):
-        regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
+        regex = re.compile(r"\.(test[^ ]+).*ok$", flags=re.MULTILINE)
         return [match.group(1) for match in regex.finditer(output)]
 
     def test_ignorefile(self):
