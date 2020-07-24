@@ -1,0 +1,2 @@
+A bug was fixed where negative return codes would be shown as positive
+unsigned values
