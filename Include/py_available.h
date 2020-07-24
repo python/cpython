@@ -9,11 +9,7 @@
 #endif
 #endif
 
-#if __APPLE__
-#include <TargetConditionals.h>
-#endif
-
-#if __APPLE__ && HAVE_BUILTIN_AVAILABLE && !(TARGET_OS_OSX && __arm64__)
+#if __APPLE__ && HAVE_BUILTIN_AVAILABLE
 #define HAVE_UTIMENSAT_RUNTIME          __builtin_available(macos 10.13, ios 11, tvos 11, watchos 4, *)
 #define HAVE_FUTIMENS_RUNTIME           __builtin_available(macos 10.13, ios 11, tvos 11, watchos 4, *)
 #define HAVE_PREADV_RUNTIME             __builtin_available(macos 11.0,  ios 14, tvos 14, watchos 7, *)

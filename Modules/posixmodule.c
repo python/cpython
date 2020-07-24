@@ -80,10 +80,6 @@ corresponding Unix manual entries for more information on calls.");
 #  include <sys/stat.h>
 #endif /* HAVE_SYS_STAT_H */
 
-#if __APPLE__ && TARGET_OS_OSX && __arm64__ && __clang__
-#pragma clang diagnostic ignored "-Wunguarded-availability-new"
-#endif
-
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>           // WNOHANG
 #endif
