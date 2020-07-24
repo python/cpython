@@ -1468,8 +1468,11 @@ class Popen(object):
                 if result == _winapi.WAIT_TIMEOUT:
                     raise TimeoutExpired(self.args, timeout)
                 self.returncode = _winapi.GetExitCodeProcess(self._handle)
-                if self.returncode != 0:
+                # Check for negative return codes from a C-Style program
+                if self.returncode > 2**32 - 1:
+                    # Convert to signed int
                     self.returncode -= 2**32
+                    # Unfortunaly we cannot use ctypes here
             return self.returncode
 
 
