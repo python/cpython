@@ -231,6 +231,9 @@ class PyCompileCLITestCase(unittest.TestCase):
         support.rmtree(self.directory)
 
     def pycompilecmd(self, *args, **kwargs):
+        # assert_python_* helpers don't return proc object. We'll just use
+        # subprocess.run() instead of spawn_python() and its friends to test
+        # stdin support of the CLI.
         if args and args[0] == '-' and 'input' in kwargs:
             return subprocess.run([sys.executable, '-m', 'py_compile', '-'],
                                   input=kwargs['input'].encode(),
@@ -242,8 +245,7 @@ class PyCompileCLITestCase(unittest.TestCase):
 
     def test_stdin(self):
         result = self.pycompilecmd('-', input=self.source_path)
-        self.assertEqual(result.returncode, 0,
-                         self.directory + '---' + self.source_path + '---' + result.stdout.decode() + '---' + result.stderr.decode())
+        self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, b'')
         self.assertEqual(result.stderr, b'')
         self.assertTrue(os.path.exists(self.cache_path))
