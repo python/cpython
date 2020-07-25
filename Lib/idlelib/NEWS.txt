@@ -1,10 +1,20 @@
+What's New in IDLE 3.8.6
+Released on 2020-09-14?
+======================================
+
+
+bpo-41373: Save files loaded with no line ending, as when blank, or
+different line endings, by setting its line ending to the system
+default. Fix regression in 3.8.4 and 3.9.0b4.
+
+
 What's New in IDLE 3.8.5
 Released on 2020-07-20
 ======================================
 
-
 bpo-41300: Save files with non-ascii chars.  Fix regression in
 3.9.0b4 and 3.8.4.
+
 
 What's New in IDLE 3.8.4
 Released on 2020-06-30
