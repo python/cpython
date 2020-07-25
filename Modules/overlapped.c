@@ -293,7 +293,7 @@ struct PostCallbackData {
 };
 
 static VOID CALLBACK
-PostToQueueCallback(PVOID lpParameter, BOOL TimerOrWaitFired)
+PostToQueueCallback(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
 {
     struct PostCallbackData *p = (struct PostCallbackData*) lpParameter;
 
@@ -335,8 +335,7 @@ _overlapped_RegisterWaitWithQueue_impl(PyObject *module, HANDLE Object,
     *pdata = data;
 
     if (!RegisterWaitForSingleObject(
-            &NewWaitObject, Object, (WAITORTIMERCALLBACK)PostToQueueCallback,
-            pdata, Milliseconds,
+            &NewWaitObject, Object, PostToQueueCallback, pdata, Milliseconds,
             WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE))
     {
         PyMem_RawFree(pdata);

@@ -38,6 +38,7 @@ from test.support import (run_unittest, run_doctest, is_resource_enabled,
 from test.support import (TestFailed,
                           run_with_locale, cpython_only)
 from test.support.import_helper import import_fresh_module
+from test.support import warnings_helper
 import random
 import inspect
 import threading
@@ -584,6 +585,7 @@ class ExplicitConstructionTest(unittest.TestCase):
 
     @cpython_only
     @requires_legacy_unicode_capi
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_from_legacy_strings(self):
         import _testcapi
         Decimal = self.decimal.Decimal
@@ -2820,6 +2822,7 @@ class ContextAPItests(unittest.TestCase):
 
     @cpython_only
     @requires_legacy_unicode_capi
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_from_legacy_strings(self):
         import _testcapi
         c = self.decimal.Context()

@@ -3054,12 +3054,13 @@ dict.pop
 
 D.pop(k[,d]) -> v, remove specified key and return the corresponding value.
 
-If key is not found, default is returned if given, otherwise KeyError is raised
+If the key is not found, return the default if given; otherwise,
+raise a KeyError.
 [clinic start generated code]*/
 
 static PyObject *
 dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
-/*[clinic end generated code: output=3abb47b89f24c21c input=eeebec7812190348]*/
+/*[clinic end generated code: output=3abb47b89f24c21c input=e221baa01044c44c]*/
 {
     return _PyDict_Pop((PyObject*)self, key, default_value);
 }

@@ -127,6 +127,10 @@ arguments passed to the Python executable.
 Optimizations
 =============
 
+* Constructors :func:`str`, :func:`bytes` and :func:`bytearray` are now faster
+  (around 30--40% for small objects).
+  (Contributed by Serhiy Storchaka in :issue:`41334`.)
+
 * The :mod:`runpy` module now imports fewer modules.
   The ``python3 -m module-name`` command startup time is 1.3x faster in
   average.
@@ -139,6 +143,12 @@ Deprecated
 
 Removed
 =======
+
+* The ``ParserBase.error()`` method from the private and undocumented ``_markupbase``
+  module has been removed.  :class:`html.parser.HTMLParser` is the only subclass of
+  ``ParserBase`` and its ``error()`` implementation has already been removed in
+  Python 3.5.
+  (Contributed by Berker Peksag in :issue:`31844`.)
 
 
 Porting to Python 3.10
