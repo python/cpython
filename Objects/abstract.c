@@ -864,11 +864,9 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
         if (slotw == slotv)
             slotw = NULL;
     }
-
     if (slotv) {
         if (slotw && PyType_IsSubtype(Py_TYPE(w), Py_TYPE(v))) {
             x = slotw(v, w);
-            PyObject_Print(x, stdout, 0);
             if (x != Py_NotImplemented)
                 return x;
             Py_DECREF(x); /* can't do it */
@@ -2470,7 +2468,6 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
     }
 }
 
-
 static int
 check_class(PyObject *cls, const char *error)
 {
@@ -2503,7 +2500,6 @@ object_isinstance(PyObject *inst, PyObject *cls)
                         (PyTypeObject *)icls,
                         (PyTypeObject *)cls);
                 }
-
                 else {
                     retval = 0;
                 }
@@ -2608,10 +2604,10 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
         return -1;
 
     PyTypeObject *type = Py_TYPE(cls);
-    int is_union = (PyType_Check(type) && strcmp(type->tp_name, "types.Union") == 0);
+    int is_union = (PyType_Check(type) && type == &Py_UnionType);
     if (!is_union && !check_class(cls,
                             "issubclass() arg 2 must be a class"
-                            " or tuple of classes")) {
+                            " a tuple of classes, or a union.")) {
         return -1;
     }
 

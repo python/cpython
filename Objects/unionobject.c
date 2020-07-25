@@ -232,19 +232,6 @@ is_new_type(PyObject *obj)
 }
 
 static int
-is_class(PyObject *obj)
-{
-    if (!PyObject_HasAttrString(obj, "__module__")) {
-        return 0;
-    }
-    PyObject *module = PyObject_GetAttrString(obj, "__module__");
-    if (module == NULL) {
-        return 0;
-    }
-    return PyUnicode_Check(module) && _PyUnicode_EqualToASCIIString(module, "__main__");
-}
-
-static int
 is_unionable(PyObject *obj)
 {
     if (obj == Py_None) {
@@ -254,7 +241,7 @@ is_unionable(PyObject *obj)
         is_genericalias(obj) ||
         is_typevar(obj) ||
         is_new_type(obj) ||
-        is_class(obj) ||
+        PyType_Check(obj) ||
         (PyObject_IsInstance(obj, (PyObject *)&PyType_Type) == 1) ||
         (PyObject_IsInstance(obj, (PyObject *)&Py_UnionType) == 1));
 }
@@ -264,6 +251,7 @@ union_new(PyTypeObject* self, PyObject* param) {
     // Check param is a PyType or GenericAlias
     if ((param == NULL) || !is_unionable((PyObject *)param) || !is_unionable((PyObject*)self))
     {
+
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
     }
