@@ -110,6 +110,12 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
+py_compile
+----------
+
+Added ``--quiet`` option to command-line interface of :mod:`py_compile`.
+(Contributed by Gregory Schevchenko in :issue:`38731`.)
+
 sys
 ---
 
