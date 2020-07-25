@@ -624,8 +624,6 @@ if sys.platform == 'darwin':
         If no browser is specified, the default browser, as specified in the
         Internet System Preferences panel, will be used.
         """
-        def __init__(self, name):
-            self.name = name
 
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
@@ -662,11 +660,9 @@ if sys.platform == 'darwin':
             return not rc
 
     class MacOSXOSAScript(BaseBrowser):
-        def __init__(self, name):
-            self._name = name
 
         def open(self, url, new=0, autoraise=True):
-            if self._name == 'default':
+            if self.name == 'default':
                 script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
             else:
                 script = '''
@@ -674,7 +670,7 @@ if sys.platform == 'darwin':
                        activate
                        open location "%s"
                    end
-                   '''%(self._name, url.replace('"', '%22'))
+                   '''%(self.name, url.replace('"', '%22'))
 
             osapipe = os.popen("osascript", "w")
             if osapipe is None:
