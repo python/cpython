@@ -309,7 +309,7 @@ class OptionMenuTest(MenubuttonTest, unittest.TestCase):
 
     def test_bad_kwarg(self):
         with self.assertRaisesRegex(TclError, r"^unknown option -image$"):
-            tkinter.OptionMenu(self.root, None, 'b', 'a', 'b', 'c', image='::tk::icons::question')
+            tkinter.OptionMenu(self.root, None, 'b', image='')
 
 
 @add_standard_options(IntegerSizeTests, StandardOptionsTests)
