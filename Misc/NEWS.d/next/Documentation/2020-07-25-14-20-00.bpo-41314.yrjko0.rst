@@ -1,0 +1,1 @@
+changed mandatory `annotations` version from ``4.0`` to ``3.10``, also in :mod:`__future__`
