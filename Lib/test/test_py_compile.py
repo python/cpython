@@ -4,12 +4,13 @@ import os
 import py_compile
 import shutil
 import stat
+import subprocess
 import sys
 import tempfile
 import unittest
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, script_helper
 
 
 def without_source_date_epoch(fxn):
@@ -49,7 +50,7 @@ class SourceDateEpochTestMeta(type(unittest.TestCase)):
         return cls
 
 
-class PyCompileTestsBase:
+class PyCompileTestCase:
 
     def setUp(self):
         self.directory = tempfile.mkdtemp(dir=os.getcwd())
@@ -71,6 +72,9 @@ class PyCompileTestsBase:
         shutil.rmtree(self.directory)
         if self.cwd_drive:
             os.chdir(self.cwd_drive)
+
+
+class PyCompileTestsBase(PyCompileTestCase):
 
     def test_absolute_path(self):
         py_compile.compile(self.source_path, self.pyc_path)
@@ -202,47 +206,6 @@ class PyCompileTestsBase:
             with self.assertRaises(py_compile.PyCompileError):
                 py_compile.compile(bad_coding, doraise=True, quiet=1)
 
-    def test_main_with_stdin(self):
-        with support.captured_stdin() as stdin, support.captured_stderr() as stderr:
-            stdin.write('{0}\n{0}\n'.format(self.source_path))
-            stdin.seek(0)
-            self.assertEqual(py_compile.main(['-']), 0)
-            self.assertEqual(stderr.getvalue(), '')
-
-    def test_main_with_files(self):
-        with support.captured_stderr() as stderr:
-            self.assertEqual(py_compile.main(
-                [self.source_path, self.source_path]), 0)
-            self.assertEqual(stderr.getvalue(), '')
-
-    def test_main_bad_syntax(self):
-        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
-        with support.captured_stderr() as stderr:
-            self.assertEqual(py_compile.main(
-                [self.source_path, bad_syntax]), 1)
-            self.assertNotEqual(stderr.getvalue(), '')
-
-    def test_main_quiet_bad_syntax(self):
-        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
-        with support.captured_stderr() as stderr:
-            self.assertEqual(py_compile.main(
-                ['-q', self.source_path, bad_syntax]), 1)
-            self.assertEqual(stderr.getvalue(), '')
-
-    def test_main_file_not_exists(self):
-        should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')
-        with support.captured_stderr() as stderr:
-            self.assertEqual(py_compile.main(
-                [self.source_path, should_not_exists]), 1)
-            self.assertNotEqual(stderr.getvalue(), '')
-
-    def test_main_quiet_file_not_exists(self):
-        should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')
-        with support.captured_stderr() as stderr:
-            self.assertEqual(py_compile.main(
-                ['--quiet', self.source_path, should_not_exists]), 1)
-            self.assertEqual(stderr.getvalue(), '')
-
 
 class PyCompileTestsWithSourceEpoch(PyCompileTestsBase,
                                     unittest.TestCase,
@@ -256,6 +219,59 @@ class PyCompileTestsWithoutSourceEpoch(PyCompileTestsBase,
                                        metaclass=SourceDateEpochTestMeta,
                                        source_date_epoch=False):
     pass
+
+
+class PyCompileCLITestCase(PyCompileTestCase, unittest.TestCase):
+
+    def pycompilecmd(self, *args, **kwargs):
+        if args and args[0] == '-' and 'input' in kwargs:
+            return subprocess.run([sys.executable, '-m', 'py_compile', '-'],
+                                  input=kwargs['input'].encode(),
+                                  capture_output=True)
+        return script_helper.assert_python_ok('-m', 'py_compile', *args, **kwargs)
+
+    def pycompilecmd_failure(self, *args):
+        return script_helper.assert_python_failure('-m', 'py_compile', *args)
+
+    def test_stdin(self):
+        result = self.pycompilecmd('-', input=self.source_path)
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, b'')
+        self.assertEqual(result.stderr, b'')
+
+    def test_with_files(self):
+        rc, stdout, stderr = self.pycompilecmd(self.source_path, self.source_path)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout, b'')
+        self.assertEqual(stderr, b'')
+
+    def test_bad_syntax(self):
+        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
+        rc, stdout, stderr = self.pycompilecmd_failure(bad_syntax)
+        self.assertEqual(rc, 1)
+        self.assertEqual(stdout, b'')
+        self.assertIn(b'SyntaxError', stderr)
+
+    def test_bad_syntax_with_quiet(self):
+        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
+        rc, stdout, stderr = self.pycompilecmd_failure('-q', bad_syntax)
+        self.assertEqual(rc, 1)
+        self.assertEqual(stdout, b'')
+        self.assertEqual(stderr, b'')
+
+    def test_file_not_exists(self):
+        should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')
+        rc, stdout, stderr = self.pycompilecmd_failure(self.source_path, should_not_exists)
+        self.assertEqual(rc, 1)
+        self.assertEqual(stdout, b'')
+        self.assertIn(b'No such file or directory', stderr)
+
+    def test_file_not_exists_with_quiet(self):
+        should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')
+        rc, stdout, stderr = self.pycompilecmd_failure('-q', self.source_path, should_not_exists)
+        self.assertEqual(rc, 1)
+        self.assertEqual(stdout, b'')
+        self.assertEqual(stderr, b'')
 
 
 if __name__ == "__main__":

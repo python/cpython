@@ -125,12 +125,6 @@ byte-code cache files in the directory containing the source code.
       system external to Python like a build system.
 
 
-.. seealso::
-
-   Module :mod:`compileall`
-      Utilities to compile all Python source files in a directory tree.
-
-
 Command-Line Interface
 ----------------------
 
@@ -143,10 +137,10 @@ not be compiled.
 
 .. program:: python -m py_compile
 
-.. cmdoption:: file ...
+.. cmdoption:: <file> ... <fileN>
                -
 
-   Positional arguments are files to compile. If ``-`` is the only
+   Positional arguments are files to compile.  If ``-`` is the only
    parameter, the list of files is taken from standard input.
 
 .. cmdoption:: -q, --quiet
@@ -156,5 +150,11 @@ not be compiled.
 .. versionchanged:: 3.2
    Added support for ``-``.
 
-.. versionchanged:: 3.9
-   Added support for ``-q/--quiet``.
+.. versionchanged:: 3.10
+   Added support for :option:`-q`.
+
+
+.. seealso::
+
+   Module :mod:`compileall`
+      Utilities to compile all Python source files in a directory tree.

@@ -3,7 +3,6 @@
 This module has intimate knowledge of the format of .pyc files.
 """
 
-import argparse
 import enum
 import importlib._bootstrap_external
 import importlib.machinery
@@ -174,41 +173,40 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
     return cfile
 
 
-def main(args=None):
-    """Compiles several source files. The files named in 'filenames' are
-    compiled and the resulting bytecode is cached in the normal
-    manner. This program does not search a directory structure to locate
-    source files; it only compiles files named explicitly. If '-' is the
-    only file name in 'filenames', the list of files taken from standard
-    input. If flag '-q/--quiet' is set error output will be suppressed.
-    """
-    if args is None:
-        args = sys.argv[1:]
-    parser = argparse.ArgumentParser(prog=__name__)
+def main():
+    import argparse
+
+    description = 'A simple command-line interface for py_compile module.'
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
-        '-q', '--quiet', default=False,
-        action='store_true', help='suppress error output')
+        '-q', '--quiet',
+        action='store_true',
+        help='Suppress error output',
+    )
     parser.add_argument(
-        'filenames', nargs='+', help='files to compile')
-    args = parser.parse_args(args)
-    rv = 0
+        'filenames',
+        nargs='+',
+        help='Files to compile',
+    )
+    args = parser.parse_args()
     if args.filenames == ['-']:
-        filenames = (line.rstrip('\n') for line in sys.stdin)
+        filenames = sys.stdin.readlines()
     else:
         filenames = args.filenames
     for filename in filenames:
         try:
             compile(filename, doraise=True)
         except PyCompileError as error:
-            # return value to indicate at least one failure
-            rv = 1
-            if not args.quiet:
-                print(error.msg, file=sys.stderr)
+            if args.quiet:
+                parser.exit(1)
+            else:
+                parser.exit(1, error.msg)
         except OSError as error:
-            rv = 1
-            if not args.quiet:
-                print(error, file=sys.stderr)
-    return rv
+            if args.quiet:
+                parser.exit(1)
+            else:
+                parser.exit(1, str(error))
+
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
