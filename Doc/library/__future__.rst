@@ -90,7 +90,7 @@ language using this mechanism:
 | generator_stop   | 3.5.0b1     | 3.7          | :pep:`479`:                                 |
 |                  |             |              | *StopIteration handling inside generators*  |
 +------------------+-------------+--------------+---------------------------------------------+
-| annotations      | 3.7.0b1     | 4.0          | :pep:`563`:                                 |
+| annotations      | 3.7.0b1     | 3.10         | :pep:`563`:                                 |
 |                  |             |              | *Postponed evaluation of annotations*       |
 +------------------+-------------+--------------+---------------------------------------------+
 
