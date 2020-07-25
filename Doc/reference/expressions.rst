@@ -1650,9 +1650,26 @@ Assignment expressions
 .. productionlist::
    assignment_expression: [`identifier` ":="] `expression`
 
-.. TODO: BPO-39868
+An assignment expression (sometimes also called a "named expression" or
+"walrus") assigns an :token:`expression` to an :token:`identifier`, while also
+returning the value of the :token:`expression`.
 
-See :pep:`572` for more details about assignment expressions.
+One common use case is when handling matched regular expressions:
+
+.. code-block:: python
+
+   if matching := pattern.search(data):
+       do_something(matching)
+
+Or, when processing a file stream in chunks:
+
+.. code-block:: python
+
+   while chunk := file.read(9000):
+       process(chunk)
+
+.. versionadded:: 3.8
+   See :pep:`572` for more details about assignment expressions.
 
 
 .. _if_expr:
