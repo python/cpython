@@ -1825,7 +1825,7 @@ set_direct_contains(PySetObject *so, PyObject *key)
     return PyBool_FromLong(result);
 }
 
-PyDoc_STRVAR(contains_doc, "x.__contains__(y) <==> y in x.");
+PyDoc_STRVAR(contains_doc, "True if the set has the specified key, else False.");
 
 static PyObject *
 set_remove(PySetObject *so, PyObject *key)
