@@ -235,7 +235,7 @@ class PyCompileCLITestCase(PyCompileTestCase, unittest.TestCase):
 
     def test_stdin(self):
         result = self.pycompilecmd('-', input=self.source_path)
-        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.returncode, 0, result.stdout + b'---' + result.stderr)
         self.assertEqual(result.stdout, b'')
         self.assertEqual(result.stderr, b'')
 
