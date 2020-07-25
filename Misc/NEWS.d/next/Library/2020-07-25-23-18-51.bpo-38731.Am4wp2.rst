@@ -1,0 +1,1 @@
+Fix :exc:`NameError` in command-line interface of :mod:`py_compile`.
