@@ -50,7 +50,7 @@ class SourceDateEpochTestMeta(type(unittest.TestCase)):
         return cls
 
 
-class PyCompileTestCase:
+class PyCompileTestsBase:
 
     def setUp(self):
         self.directory = tempfile.mkdtemp(dir=os.getcwd())
@@ -72,9 +72,6 @@ class PyCompileTestCase:
         shutil.rmtree(self.directory)
         if self.cwd_drive:
             os.chdir(self.cwd_drive)
-
-
-class PyCompileTestsBase(PyCompileTestCase):
 
     def test_absolute_path(self):
         py_compile.compile(self.source_path, self.pyc_path)
@@ -221,7 +218,17 @@ class PyCompileTestsWithoutSourceEpoch(PyCompileTestsBase,
     pass
 
 
-class PyCompileCLITestCase(PyCompileTestCase, unittest.TestCase):
+class PyCompileCLITestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.directory = tempfile.mkdtemp()
+        self.source_path = os.path.join(self.directory, '_test.py')
+        self.cache_path = importlib.util.cache_from_source(self.source_path)
+        with open(self.source_path, 'w') as file:
+            file.write('x = 123\n')
+
+    def tearDown(self):
+        support.rmtree(self.directory)
 
     def pycompilecmd(self, *args, **kwargs):
         if args and args[0] == '-' and 'input' in kwargs:
@@ -235,15 +242,18 @@ class PyCompileCLITestCase(PyCompileTestCase, unittest.TestCase):
 
     def test_stdin(self):
         result = self.pycompilecmd('-', input=self.source_path)
-        self.assertEqual(result.returncode, 0, result.stdout.decode() + '---' + result.stderr.decode())
+        self.assertEqual(result.returncode, 0,
+                         self.directory + '---' + self.source_path + '---' + result.stdout.decode() + '---' + result.stderr.decode())
         self.assertEqual(result.stdout, b'')
         self.assertEqual(result.stderr, b'')
+        self.assertTrue(os.path.exists(self.cache_path))
 
     def test_with_files(self):
         rc, stdout, stderr = self.pycompilecmd(self.source_path, self.source_path)
         self.assertEqual(rc, 0)
         self.assertEqual(stdout, b'')
         self.assertEqual(stderr, b'')
+        self.assertTrue(os.path.exists(self.cache_path))
 
     def test_bad_syntax(self):
         bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
