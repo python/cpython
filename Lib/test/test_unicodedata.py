@@ -12,7 +12,7 @@ import sys
 import unicodedata
 import unittest
 from test.support import (open_urlresource, requires_resource, script_helper,
-                          cpython_only, check_disallow_instantiation)
+                          cpython_only, check_disallow_instantiation, socket_helper)
 
 
 class UnicodeMethodsTest(unittest.TestCase):
@@ -333,8 +333,9 @@ class NormalizationTest(unittest.TestCase):
 
         # Hit the exception early
         try:
-            testdata = open_urlresource(TESTDATAURL, encoding="utf-8",
-                                        check=self.check_version)
+            with socket_helper.transient_internet(TESTDATAURL):
+                testdata = open_urlresource(TESTDATAURL, encoding="utf-8",
+                                            check=self.check_version)
         except PermissionError:
             self.skipTest(f"Permission error when downloading {TESTDATAURL} "
                           f"into the test data directory")

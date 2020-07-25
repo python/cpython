@@ -1,0 +1,1 @@
+Make ``test_unicodedata`` pass when running without network.
