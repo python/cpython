@@ -12,6 +12,9 @@ import unittest.mock
 import weakref
 import typing
 
+class Example:
+    pass
+
 class TypesTests(unittest.TestCase):
 
     def test_truth_values(self):
@@ -638,6 +641,9 @@ class TypesTests(unittest.TestCase):
             int | 3
         with self.assertRaises(TypeError):
             3 | int
+        with self.assertRaises(TypeError):
+            Example() | int
+
 
     def test_or_type_operator_with_TypeVar(self):
         TV = typing.TypeVar('T')
