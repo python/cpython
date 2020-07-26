@@ -158,12 +158,6 @@ Import this class from the :mod:`email.charset` module.
       This method allows you to compare two :class:`Charset` instances for
       equality.
 
-
-   .. method:: __ne__(other)
-
-      This method allows you to compare two :class:`Charset` instances for
-      inequality.
-
 The :mod:`email.charset` module also provides the following functions for adding
 new entries to the global character set, alias, and codec registries:
 
