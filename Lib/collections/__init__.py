@@ -727,11 +727,8 @@ class Counter(dict):
             return NotImplemented
         return all(self[e] == other[e] for c in (self, other) for e in c)
 
-    def __ne__(self, other):
-        'True if any counts disagree. Missing counts are treated as zero.'
-        if not isinstance(other, Counter):
-            return NotImplemented
-        return not self == other
+    # Restore the default implementation, override dict.__ne__
+    __ne__ = object.__ne__
 
     def __le__(self, other):
         'True if all counts in self are a subset of those in other.'
