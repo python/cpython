@@ -66,6 +66,18 @@
 #include "ctypes_dlfcn.h"
 #endif
 
+#ifdef __APPLE__
+/*
+ * The API to query if a shared library is in the shared cache is 
+ * private for now, this should change in beta 4.
+ *
+ * TODO:
+ * - Switch to that API
+ * - Add feature macro and runtime guards  (as with the ffi.*loc API's)
+ */
+extern bool _dyld_shared_cache_contains_path(const char* path) __attribute__((weak_import));
+#endif
+
 #ifdef MS_WIN32
 #include <malloc.h>
 #endif
@@ -1446,6 +1458,37 @@ copy_com_pointer(PyObject *self, PyObject *args)
 }
 #else
 
+#ifdef __APPLE__
+ static PyObject *py_dyld_shared_cache_contains_path(PyObject *self, PyObject *args)
+ {
+     PyObject *name, *name2;
+     char *name_str;
+
+     if (_dyld_shared_cache_contains_path == NULL) {
+         PyErr_SetString(PyExc_NotImplementedError, "_dyld_shared_cache_contains_path symbol is missing");
+         return NULL;
+     }
+
+     if (!PyArg_ParseTuple(args, "O", &name))
+         return NULL;
+
+     if (name == Py_None)
+         Py_RETURN_FALSE;
+
+     if (PyUnicode_FSConverter(name, &name2) == 0)
+         return NULL;
+     if (PyBytes_Check(name2))
+         name_str = PyBytes_AS_STRING(name2);
+     else
+         name_str = PyByteArray_AS_STRING(name2);
+
+     if(_dyld_shared_cache_contains_path(name_str))
+         Py_RETURN_TRUE;
+     else
+         Py_RETURN_FALSE;
+ }
+ #endif
+
 static PyObject *py_dl_open(PyObject *self, PyObject *args)
 {
     PyObject *name, *name2;
@@ -1935,6 +1978,8 @@ buffer_info(PyObject *self, PyObject *arg)
     return Py_BuildValue("siN", dict->format, dict->ndim, shape);
 }
 
+
+
 PyMethodDef _ctypes_module_methods[] = {
     {"get_errno", get_errno, METH_NOARGS},
     {"set_errno", set_errno, METH_VARARGS},
@@ -1956,6 +2001,9 @@ PyMethodDef _ctypes_module_methods[] = {
      "dlopen(name, flag={RTLD_GLOBAL|RTLD_LOCAL}) open a shared library"},
     {"dlclose", py_dl_close, METH_VARARGS, "dlclose a library"},
     {"dlsym", py_dl_sym, METH_VARARGS, "find symbol in shared library"},
+#endif
+#ifdef __APPLE__
+     {"_dyld_shared_cache_contains_path", py_dyld_shared_cache_contains_path, METH_VARARGS, "check if path is in the shared cache"},
 #endif
     {"alignment", align_func, METH_O, alignment_doc},
     {"sizeof", sizeof_func, METH_O, sizeof_doc},

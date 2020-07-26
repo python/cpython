@@ -6,6 +6,11 @@ import os
 from ctypes.macholib.framework import framework_info
 from ctypes.macholib.dylib import dylib_info
 from itertools import *
+try:
+     from _ctypes import _dyld_shared_cache_contains_path
+except ImportError:
+     def _dyld_shared_cache_contains_path(*args):
+         raise NotImplementedError
 
 __all__ = [
     'dyld_find', 'framework_find',
@@ -123,19 +128,14 @@ def dyld_find(name, executable_path=None, env=None):
                 dyld_default_search(name, env),
             ), env):
 
-        # on macOS 11 system libraries are in a shared library
-        # cache, not in the regular place in the filesystem.
-        # There still are symlinks (libz.dylib -> libz.1.dylib),
-        # but the target of the symlink no longer is there.
-        #
-        # There shouldn't be 3th-party libraries in these 
-        # system locations
-        if path.startswith("/System/") and os.path.islink(path):
+        if os.path.isfile(path):
             return path
-        elif path.startswith("/usr/lib/") and os.path.islink(path):
-            return path
-        elif os.path.isfile(path):
-            return path
+        try:
+            if _dyld_shared_cache_contains_path(path):
+                return path
+        except NotImplementedError:
+             pass
+
     raise ValueError("dylib %s could not be found" % (name,))
 
 def framework_find(fn, executable_path=None, env=None):
