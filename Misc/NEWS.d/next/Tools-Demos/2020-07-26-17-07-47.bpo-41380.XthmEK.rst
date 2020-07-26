@@ -1,2 +1,1 @@
-Simple snake game based on turtle!
-We use very simple algorithm! =)
+Add snake game to turtledemo.
