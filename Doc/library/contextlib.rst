@@ -126,6 +126,16 @@ Functions and classes provided:
 
    .. versionadded:: 3.7
 
+   :func:`asynccontextmanager` uses :class:`AsyncContextDecorator` so the context managers
+   it creates can be used as decorators as well as in :keyword:`async with` statements.
+   When used as a decorator, a new generator instance is implicitly created on
+   each function call (this allows the otherwise "one-shot" context managers
+   created by :func:`asynccontextmanager` to meet the requirement that context
+   managers support multiple invocations in order to be used as decorators).
+
+  .. versionchanged:: 3.10
+  Use of :class:`AsyncContextDecorator`.
+
 
 .. function:: closing(thing)
 
