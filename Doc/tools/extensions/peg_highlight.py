@@ -1,8 +1,8 @@
 from pygments.lexer import RegexLexer, bygroups, include
-from pygments.token import (Comment, Generic, Keyword, Name, Operator,
-                            Punctuation, Text)
+from pygments.token import Comment, Generic, Keyword, Name, Operator, Punctuation, Text
 
 from sphinx.highlighting import lexers
+
 
 class PEGLexer(RegexLexer):
     """Pygments Lexer for PEG grammar (.gram) files
@@ -15,7 +15,9 @@ class PEGLexer(RegexLexer):
         - Lookaheads
         - Rule types
         - Rule options
+        - Rules named `invalid_*` or `incorrect_*`
     """
+
     name = "PEG"
     aliases = ["peg"]
     filenames = ["*.gram"]
@@ -23,11 +25,7 @@ class PEGLexer(RegexLexer):
     _text_ws = r"(\s*)"
 
     tokens = {
-        "ws": [
-            (r"\n", Text),
-            (r"\s+", Text),
-            (r"#.*$", Comment.Singleline),
-        ],
+        "ws": [(r"\n", Text), (r"\s+", Text), (r"#.*$", Comment.Singleline),],
         "lookaheads": [
             (r"(&\w+\s?)", bygroups(None)),
             (r"(&'.+'\s?)", bygroups(None)),
@@ -42,35 +40,31 @@ class PEGLexer(RegexLexer):
             (r"(@\w+ '''(.|\n)+?''')", bygroups(None)),
             (r"^(@.*)$", bygroups(None)),
         ],
-        "actions": [
-            (r"{(.|\n)+?}", bygroups(None)),
-        ],
+        "actions": [(r"{(.|\n)+?}", bygroups(None)),],
         "strings": [
             (r"'\w+?'", Keyword),
             (r'"\w+?"', Keyword),
             (r"'\W+?'", Text),
             (r'"\W+?"', Text),
         ],
-        "variables": [
-            (
-                _name + _text_ws + "(=)",
-                bygroups(None, None, None),
-            ),
+        "variables": [(_name + _text_ws + "(=)", bygroups(None, None, None),),],
+        "invalids": [
+            (r"^(\s+\|\s+invalid_\w+\s*\n)", bygroups(None)),
+            (r"^(\s+\|\s+incorrect_\w+\s*\n)", bygroups(None)),
+            (r"^(#.*invalid syntax.*(?:.|\n)*)", bygroups(None),),
         ],
         "root": [
+            include("invalids"),
             include("ws"),
             include("lookaheads"),
             include("metas"),
             include("actions"),
             include("strings"),
             include("variables"),
+            (r"\b(?!(NULL|EXTRA))([A-Z_]+)\b\s*(?!\()", Text,),
             (
-                r"\b(?!(NULL|EXTRA))([A-Z_]+)\b\s*(?!\()",
-                Text,
-            ),
-            (
-                r"^\s*" + _name + "\s*" + '(\[.*\])?' + "\s*" + '(\(.+\))?' + "\s*(:)",
-                bygroups(Name.Function, None, None, Punctuation)
+                r"^\s*" + _name + "\s*" + "(\[.*\])?" + "\s*" + "(\(.+\))?" + "\s*(:)",
+                bygroups(Name.Function, None, None, Punctuation),
             ),
             (_name, Name.Function),
             (r"[\||\.|\+|\*|\?]", Operator),
@@ -82,4 +76,4 @@ class PEGLexer(RegexLexer):
 
 def setup(app):
     lexers["peg"] = PEGLexer()
-    return {'version': '1.0', 'parallel_read_safe': True}
+    return {"version": "1.0", "parallel_read_safe": True}
