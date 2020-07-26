@@ -116,7 +116,8 @@ WORKDIR = "/tmp/_py"
 DEPSRC = os.path.join(WORKDIR, 'third-party')
 DEPSRC = os.path.expanduser('~/Universal/other-sources')
 
-universal_opts_map = { '32-bit': ('i386', 'ppc',),
+universal_opts_map = { 'universal2': ('arm64', 'x86_64'),
+                       '32-bit': ('i386', 'ppc',),
                        '64-bit': ('x86_64', 'ppc64',),
                        'intel':  ('i386', 'x86_64'),
                        'intel-32':  ('i386',),
@@ -124,6 +125,7 @@ universal_opts_map = { '32-bit': ('i386', 'ppc',),
                        '3-way':  ('ppc', 'i386', 'x86_64'),
                        'all':    ('i386', 'ppc', 'x86_64', 'ppc64',) }
 default_target_map = {
+        'universal2': '10.9',
         '64-bit': '10.5',
         '3-way': '10.5',
         'intel': '10.5',
@@ -147,6 +149,10 @@ SRCDIR = os.path.dirname(
 
 # $MACOSX_DEPLOYMENT_TARGET -> minimum OS X level
 DEPTARGET = '10.5'
+
+# If true only builds the 3th-party dependencies
+# in $WORKDIR
+DEPS_ONLY=False
 
 def getDeptargetTuple():
     return tuple([int(n) for n in DEPTARGET.split('.')[0:2]])
@@ -190,6 +196,27 @@ EXPECTED_SHARED_LIBS = {}
 def internalTk():
     return getDeptargetTuple() >= (10, 6)
 
+
+def tweak_tcl_build(basedir, archList):
+    with open("Makefile", "r") as fp:
+        contents = fp.readlines()
+
+    # For reasons I don't understand the tcl configure script 
+    # decides that some stdlib symbols aren't present, before 
+    # deciding that strtod is broken. 
+    new_contents = []
+    for line in contents:
+        if line.startswith("COMPAT_OBJS"):
+            # note: the space before strtod.o is intentional,
+            # the detection of a broken strtod results in
+            # "fixstrod.o" on this line.
+            for nm in ("strstr.o", "strtoul.o", " strtod.o"):
+                line = line.replace(nm, "")
+        new_contents.append(line)
+     
+    with open("Makefile", "w") as fp:
+        fp.writelines(new_contents)
+
 # List of names of third party software built with this installer.
 # The names will be inserted into the rtf version of the License.
 THIRD_PARTY_LIBS = []
@@ -215,6 +242,9 @@ def library_recipes():
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
+              patches=[
+                  "openssl-mac-arm64.patch",
+                   ],
           ),
     ])
 
@@ -231,6 +261,7 @@ def library_recipes():
                     '--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib'%(getVersion(),),
               ],
               useLDFlags=False,
+              buildrecipe=tweak_tcl_build,
               install='make TCL_LIBRARY=%(TCL_LIBRARY)s && make install TCL_LIBRARY=%(TCL_LIBRARY)s DESTDIR=%(DESTDIR)s'%{
                   "DESTDIR": shellQuote(os.path.join(WORKDIR, 'libraries')),
                   "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.6'%(getVersion())),
@@ -596,7 +627,7 @@ def checkEnvironment():
                                                     ev, os.environ[ev]))
                 del os.environ[ev]
 
-    base_path = '/bin:/sbin:/usr/bin:/usr/sbin'
+    base_path = '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin'
     if 'SDK_TOOLS_BIN' in os.environ:
         base_path = os.environ['SDK_TOOLS_BIN'] + ':' + base_path
     # Xcode 2.5 on OS X 10.4 does not include SetFile in its usr/bin;
@@ -618,6 +649,7 @@ def parseOptions(args=None):
     global UNIVERSALOPTS, UNIVERSALARCHS, ARCHLIST, CC, CXX
     global FW_VERSION_PREFIX
     global FW_SSL_DIRECTORY
+    global DEPS_ONLY
 
     if args is None:
         args = sys.argv[1:]
@@ -625,7 +657,7 @@ def parseOptions(args=None):
     try:
         options, args = getopt.getopt(args, '?hb',
                 [ 'build-dir=', 'third-party=', 'sdk-path=' , 'src-dir=',
-                  'dep-target=', 'universal-archs=', 'help' ])
+                  'dep-target=', 'universal-archs=', 'deps-only', 'help' ])
     except getopt.GetoptError:
         print(sys.exc_info()[1])
         sys.exit(1)
@@ -645,6 +677,9 @@ def parseOptions(args=None):
 
         elif k in ('--third-party',):
             DEPSRC=v
+
+        elif k in ('--deps-only',):
+            DEPS_ONLY=True
 
         elif k in ('--sdk-path',):
             print(" WARNING: --sdk-path is no longer supported")
@@ -691,6 +726,8 @@ def parseOptions(args=None):
     print(" -- Building a Python %s framework at patch level %s"
                 % (getVersion(), getFullVersion()))
     print("")
+    if DEPS_ONLY:
+        print("Stopping after building third-party libraries")
 
 def extractArchive(builddir, archiveName):
     """
@@ -801,6 +838,7 @@ def build_universal_openssl(basedir, archList):
         arch_opts = {
             "i386": ["darwin-i386-cc"],
             "x86_64": ["darwin64-x86_64-cc", "enable-ec_nistp_64_gcc_128"],
+            "arm64": ["darwin64-arm64-cc" ],
             "ppc": ["darwin-ppc-cc"],
             "ppc64": ["darwin64-ppc-cc"],
         }
@@ -1655,6 +1693,9 @@ def main():
 
     # Then build third-party libraries such as sleepycat DB4.
     buildLibraries()
+
+    if DEPS_ONLY:
+        sys.exit(1)
 
     # Now build python itself
     buildPython()
