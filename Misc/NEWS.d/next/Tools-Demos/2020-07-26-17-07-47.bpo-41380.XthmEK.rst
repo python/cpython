@@ -1,0 +1,2 @@
+Simple snake game based on turtle!
+We use very simple algorithm! =)
