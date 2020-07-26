@@ -1,7 +1,6 @@
 # Grammar for Python
 
-# NOTE WELL: You should also follow all the steps listed at
-# https://devguide.python.org/grammar/
+# NOTE: Editing this file has no effect except on the docs.
 
 # Start symbols for the grammar:
 #       single_input is a single interactive statement;
