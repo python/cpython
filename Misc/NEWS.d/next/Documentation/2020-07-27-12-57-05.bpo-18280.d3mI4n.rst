@@ -1,0 +1,6 @@
+Make documentation less personal.
+
+Rather than personal pronouns (I, you, we) re-write documentation without
+personal reference when possible - using 3rd person in other cases.
+
+Patch by M. Felt.
