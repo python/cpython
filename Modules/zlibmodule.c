@@ -866,8 +866,8 @@ zlib_Compress_flush_impl(compobject *self, int mode)
 /*[clinic end generated code: output=a203f4cefc9de727 input=73ed066794bd15bc]*/
 {
     int err;
-    Py_ssize_t length = DEF_BUF_SIZE;
-    PyObject *RetVal = NULL;
+    PyObject *RetVal;
+    _PyOutputBufferWriter writer;
 
     /* Flushing with Z_NO_FLUSH is a no-op, so there's no point in
        doing any work at all; just return an empty string. */
@@ -879,10 +879,12 @@ zlib_Compress_flush_impl(compobject *self, int mode)
 
     self->zst.avail_in = 0;
 
+    if (OBW(Init)(&writer, -1, &self->zst.avail_out) < 0) {
+        goto error;
+    }
+
     do {
-        length = arrange_output_buffer(&self->zst, &RetVal, length);
-        if (length < 0) {
-            Py_CLEAR(RetVal);
+        if (OBW(Grow)(&writer, &self->zst.next_out, &self->zst.avail_out) < 0) {
             goto error;
         }
 
@@ -892,7 +894,6 @@ zlib_Compress_flush_impl(compobject *self, int mode)
 
         if (err == Z_STREAM_ERROR) {
             zlib_error(self->zst, err, "while flushing");
-            Py_CLEAR(RetVal);
             goto error;
         }
     } while (self->zst.avail_out == 0);
@@ -905,7 +906,6 @@ zlib_Compress_flush_impl(compobject *self, int mode)
         err = deflateEnd(&self->zst);
         if (err != Z_OK) {
             zlib_error(self->zst, err, "while finishing compression");
-            Py_CLEAR(RetVal);
             goto error;
         }
         else
@@ -917,15 +917,18 @@ zlib_Compress_flush_impl(compobject *self, int mode)
         */
     } else if (err != Z_OK && err != Z_BUF_ERROR) {
         zlib_error(self->zst, err, "while flushing");
-        Py_CLEAR(RetVal);
         goto error;
     }
 
-    if (_PyBytes_Resize(&RetVal, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) < 0)
-        Py_CLEAR(RetVal);
+    RetVal = OBW(Finish)(&writer, self->zst.avail_out);
+    if (RetVal != NULL) {
+        goto success;
+    }
 
- error:
+error:
+    OBW(OnError)(&writer);
+    RetVal = NULL;
+success:
     LEAVE_ZLIB(self);
     return RetVal;
 }
