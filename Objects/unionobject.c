@@ -5,7 +5,7 @@
 
 
 typedef struct {
-    PyObject_HEAD;
+    PyObject_HEAD
     PyObject *args;
 } unionobject;
 
