@@ -141,7 +141,7 @@ flatten_args(PyObject* args)
 {
     int arg_length = PyTuple_GET_SIZE(args);
     int total_args = 0;
-    // Get number of args once it's flattened.
+    // Get number of total args once it's flattened.
     for (int i = 0; i < arg_length; i++) {
         PyObject *arg = PyTuple_GET_ITEM(args, i);
         PyTypeObject* arg_type = Py_TYPE(arg);
@@ -212,17 +212,10 @@ dedup_and_flatten_args(PyObject* args)
     return new_args;
 }
 
-
 static int
 is_typevar(PyObject *obj)
 {
     return is_typing_name(obj, "TypeVar");
-}
-
-static int
-is_genericalias(PyObject *obj)
-{
-    return is_typing_name(obj, "GenericAlias");
 }
 
 static int
@@ -245,10 +238,10 @@ is_unionable(PyObject *obj)
         return 1;
     }
     return (
-        is_genericalias(obj) ||
         is_typevar(obj) ||
         is_new_type(obj) ||
         PyType_Check(obj) ||
+        (PyObject_IsInstance(obj, (PyObject*)&Py_GenericAliasType)) ||
         (PyObject_IsInstance(obj, (PyObject *)&PyType_Type) == 1) ||
         (PyObject_IsInstance(obj, (PyObject *)&Py_UnionType) == 1));
 }
