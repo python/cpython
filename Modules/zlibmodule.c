@@ -763,40 +763,36 @@ zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
 /*[clinic end generated code: output=6e5173c74e710352 input=0a95d05a3bceaeaa]*/
 {
     int err = Z_OK;
-    Py_ssize_t ibuflen, obuflen = DEF_BUF_SIZE, hard_limit;
-    PyObject *RetVal = NULL;
+    Py_ssize_t ibuflen;
+    PyObject *RetVal;
+    _PyOutputBufferWriter writer;
 
     if (max_length < 0) {
         PyErr_SetString(PyExc_ValueError, "max_length must be non-negative");
         return NULL;
     } else if (max_length == 0)
-        hard_limit = PY_SSIZE_T_MAX;
-    else
-        hard_limit = max_length;
+        max_length = -1;
 
     self->zst.next_in = data->buf;
     ibuflen = data->len;
 
-    /* limit amount of data allocated to max_length */
-    if (max_length && obuflen > max_length)
-        obuflen = max_length;
-
     ENTER_ZLIB(self);
+
+    if (OBW(Init)(&writer, max_length, &self->zst.avail_out) < 0) {
+        goto abort;
+    }
 
     do {
         arrange_input_buffer(&self->zst, &ibuflen);
 
         do {
-            obuflen = arrange_output_buffer_with_maximum(&self->zst, &RetVal,
-                                                         obuflen, hard_limit);
-            if (obuflen == -2) {
-                if (max_length > 0) {
+            if (self->zst.avail_out == 0) {
+                if (OBW(GetDataSize)(&writer, self->zst.avail_out) == max_length) {
                     goto save;
                 }
-                PyErr_NoMemory();
-            }
-            if (obuflen < 0) {
-                goto abort;
+                if (OBW(Grow)(&writer, &self->zst.next_out, &self->zst.avail_out) < 0) {
+                    goto abort;
+                }
             }
 
             Py_BEGIN_ALLOW_THREADS
@@ -839,12 +835,14 @@ zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
         goto abort;
     }
 
-    if (_PyBytes_Resize(&RetVal, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) == 0)
+    RetVal = OBW(Finish)(&writer, self->zst.avail_out);
+    if (RetVal != NULL) {
         goto success;
+    }
 
  abort:
-    Py_CLEAR(RetVal);
+    OBW(OnError)(&writer);
+    RetVal = NULL;
  success:
     LEAVE_ZLIB(self);
     return RetVal;
