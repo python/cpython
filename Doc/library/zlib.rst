@@ -137,8 +137,7 @@ The available exception and functions in this module are:
    Decompresses the bytes in *data*, returning a bytes object containing the
    uncompressed data.  The *wbits* parameter depends on
    the format of *data*, and is discussed further below.
-   If *bufsize* is given, it is used as the initial size of the output
-   buffer.  Raises the :exc:`error` exception if any error occurs.
+   Raises the :exc:`error` exception if any error occurs.
 
    .. _decompress-wbits:
 
@@ -173,10 +172,13 @@ The available exception and functions in this module are:
    *bufsize* is the initial size of the buffer used to hold decompressed data.  If
    more space is required, the buffer size will be increased as needed, so you
    don't have to get this value exactly right; tuning it will only save a few calls
-   to :c:func:`malloc`.
+   to :c:func:`malloc`. This argument is ignored Since Python 3.10.
 
    .. versionchanged:: 3.6
       *wbits* and *bufsize* can be used as keyword arguments.
+
+   .. versionchanged:: 3.10
+      *bufsize* argument is ignored.
 
 .. function:: decompressobj(wbits=MAX_WBITS[, zdict])
 

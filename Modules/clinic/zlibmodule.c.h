@@ -71,7 +71,8 @@ PyDoc_STRVAR(zlib_decompress__doc__,
 "  wbits\n"
 "    The window buffer size and container format.\n"
 "  bufsize\n"
-"    The initial output buffer size.");
+"    The initial output buffer size. This parameter is ignored\n"
+"    since Python 3.10.");
 
 #define ZLIB_DECOMPRESS_METHODDEF    \
     {"decompress", (PyCFunction)(void(*)(void))zlib_decompress, METH_FASTCALL|METH_KEYWORDS, zlib_decompress__doc__},
@@ -757,4 +758,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=be34f273564e39a8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46bfcbe75f80e46a input=a9049054013a1b77]*/
