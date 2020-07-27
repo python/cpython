@@ -12829,19 +12829,6 @@ esac
 
 fi
 
-ac_fn_c_check_func "$LINENO" "strdup" "ac_cv_func_strdup"
-if test "x$ac_cv_func_strdup" = xyes; then :
-  $as_echo "#define HAVE_STRDUP 1" >>confdefs.h
-
-else
-  case " $LIBOBJS " in
-  *" strdup.$ac_objext "* ) ;;
-  *) LIBOBJS="$LIBOBJS strdup.$ac_objext"
- ;;
-esac
-
-fi
-
 
 for ac_func in getpgrp
 do :
