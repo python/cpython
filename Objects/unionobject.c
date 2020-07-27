@@ -115,7 +115,6 @@ union_richcompare(PyObject *a, PyObject *b, int op)
     if (is_typing_name(b, "_UnionGenericAlias")) {
         PyObject* b_args = PyObject_GetAttrString(b, "__args__");
         b_set = PySet_New(b_args);
-
     }
 
     PyTypeObject *type = Py_TYPE(b);
@@ -132,7 +131,8 @@ union_richcompare(PyObject *a, PyObject *b, int op)
 }
 
 static PyObject*
-flatten_args(PyObject* args) {
+flatten_args(PyObject* args)
+{
     int arg_length = PyTuple_GET_SIZE(args);
     int total_args = 0;
     // Get number of args once it's flattened.
@@ -171,7 +171,8 @@ flatten_args(PyObject* args) {
 }
 
 static PyObject*
-dedup_and_flatten_args(PyObject* args) {
+dedup_and_flatten_args(PyObject* args)
+{
     args = flatten_args(args);
     int arg_length = PyTuple_GET_SIZE(args);
     PyObject* temp[arg_length];
@@ -247,18 +248,18 @@ is_unionable(PyObject *obj)
 }
 
 static PyObject *
-union_new(PyTypeObject* self, PyObject* param) {
+union_new(PyTypeObject* self, PyObject* param)
+{
     // Check param is a PyType or GenericAlias
     if ((param == NULL) || !is_unionable((PyObject *)param) || !is_unionable((PyObject*)self))
     {
-
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
     }
 
     PyObject *param_type = param == Py_None ? (PyObject *)Py_TYPE(param) : param;
     PyTypeObject *self_type = (PyObject *)self == Py_None ? Py_TYPE(self) : self;
-    PyObject *tuple=PyTuple_Pack(2, self_type, param_type);
+    PyObject *tuple = PyTuple_Pack(2, self_type, param_type);
     PyObject *newUnionType = Py_Union(tuple);
     Py_DECREF(param_type);
     Py_DECREF(self_type);
@@ -268,12 +269,13 @@ union_new(PyTypeObject* self, PyObject* param) {
 
 
 static PyObject *
-type_or(PyTypeObject* self, PyObject* param) {
+type_or(PyTypeObject* self, PyObject* param)
+{
     return union_new(self, param);
 }
 
 static PyNumberMethods union_as_number = {
-        .nb_or = (binaryfunc)type_or, // Add __or__ function
+    .nb_or = (binaryfunc)type_or, // Add __or__ function
 };
 
 static int
@@ -359,7 +361,6 @@ union_repr(PyObject *self)
     unionobject *alias = (unionobject *)self;
     Py_ssize_t len = PyTuple_GET_SIZE(alias->args);
 
-
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
      for (Py_ssize_t i = 0; i < len; i++) {
@@ -377,9 +378,7 @@ union_repr(PyObject *self)
 error:
     _PyUnicodeWriter_Dealloc(&writer);
     return NULL;
-
 }
-
 
 PyTypeObject Py_UnionType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -401,8 +400,6 @@ PyTypeObject Py_UnionType = {
     .tp_as_number = &union_as_number,
     .tp_repr = union_repr,
 };
-
-
 
 PyObject *
 Py_Union(PyObject *args)
@@ -430,7 +427,7 @@ Py_Union(PyObject *args)
 }
 
 PyObject *
-Py_Union_New(PyTypeObject* self, PyObject* param) {
-    PyObject* new_union = union_new(self, param);
-    return new_union;
+Py_Union_New(PyTypeObject* self, PyObject* param)
+{
+    return union_new(self, param);
 }

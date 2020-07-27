@@ -117,7 +117,6 @@ __all__ = [
 # namespace, but excluded from __all__ because they might stomp on
 # legitimate imports of those modules.
 
-Union = type(int|str)
 
 def _type_check(arg, msg, is_argument=True):
     """Check that the argument is a type, and return it (internal helper).

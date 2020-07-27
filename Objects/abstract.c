@@ -2606,7 +2606,7 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
     PyTypeObject *type = Py_TYPE(cls);
     int is_union = (PyType_Check(type) && type == &Py_UnionType);
     if (!is_union && !check_class(cls,
-                            "issubclass() arg 2 must be a class"
+                            "issubclass() arg 2 must be a class,"
                             " a tuple of classes, or a union.")) {
         return -1;
     }

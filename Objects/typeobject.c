@@ -3743,8 +3743,7 @@ type_is_gc(PyTypeObject *type)
 
 static PyObject *
 type_or(PyTypeObject* self, PyObject* param) {
-    PyObject* new_union = Py_Union_New(self, param);
-    return new_union;
+    return Py_Union_New(self, param);
 }
 
 static PyNumberMethods type_as_number = {
