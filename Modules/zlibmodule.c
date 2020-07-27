@@ -317,17 +317,21 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                      Py_ssize_t bufsize)
 /*[clinic end generated code: output=77c7e35111dc8c42 input=a9ac17beff1f893f]*/
 {
-    PyObject *RetVal = NULL;
+    PyObject *RetVal;
     Byte *ibuf;
     Py_ssize_t ibuflen;
     int err, flush;
     z_stream zst;
+    _PyOutputBufferWriter writer;
 
     if (bufsize < 0) {
         PyErr_SetString(PyExc_ValueError, "bufsize must be non-negative");
         return NULL;
-    } else if (bufsize == 0) {
-        bufsize = 1;
+    }
+
+    // Initialize the writer before any goto error statement
+    if (OBW(Init)(&writer, -1, &zst.avail_out) < 0) {
+        goto error;
     }
 
     ibuf = data->buf;
@@ -358,8 +362,7 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
         flush = ibuflen == 0 ? Z_FINISH : Z_NO_FLUSH;
 
         do {
-            bufsize = arrange_output_buffer(&zst, &RetVal, bufsize);
-            if (bufsize < 0) {
+            if (OBW(Grow)(&writer, &zst.next_out, &zst.avail_out) < 0) {
                 inflateEnd(&zst);
                 goto error;
             }
@@ -401,14 +404,14 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
         goto error;
     }
 
-    if (_PyBytes_Resize(&RetVal, zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) < 0)
+    RetVal = OBW(Finish)(&writer, zst.avail_out);
+    if (RetVal == NULL) {
         goto error;
-
+    }
     return RetVal;
 
  error:
-    Py_XDECREF(RetVal);
+    OBW(OnError)(&writer);
     return NULL;
 }
 
