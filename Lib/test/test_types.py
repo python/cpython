@@ -605,6 +605,7 @@ class TypesTests(unittest.TestCase):
 
     def test_or_types_operator(self):
         self.assertEqual(int | str, typing.Union[int, str])
+        self.assertNotEqual(int | list, typing.Union[int, str])
         self.assertEqual(str | int, typing.Union[int, str])
         self.assertEqual(int | None, typing.Union[int, None])
         self.assertEqual(None | int, typing.Union[int, None])
@@ -643,6 +644,8 @@ class TypesTests(unittest.TestCase):
             3 | int
         with self.assertRaises(TypeError):
             Example() | int
+        with self.assertRaises(TypeError):
+            (int | str) < typing.Union[str, int]
 
 
     def test_or_type_operator_with_TypeVar(self):

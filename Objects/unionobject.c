@@ -108,6 +108,12 @@ static PyMethodDef union_methods[] = {
 static PyObject *
 union_richcompare(PyObject *a, PyObject *b, int op)
 {
+    if (op != Py_EQ && op != Py_NE) {
+        PyObject *result = Py_NotImplemented;
+        Py_INCREF(result);
+        return result;
+    }
+
     PyObject* b_set = NULL;
     unionobject *aa = (unionobject *)a;
     PyObject* a_set = PySet_New(aa->args);
@@ -127,7 +133,7 @@ union_richcompare(PyObject *a, PyObject *b, int op)
         Py_RETURN_FALSE;
     }
 
-    return PyObject_RichCompare(a_set, b_set, Py_EQ);
+    return PyObject_RichCompare(a_set, b_set, op);
 }
 
 static PyObject*
