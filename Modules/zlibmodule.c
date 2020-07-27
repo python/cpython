@@ -9,6 +9,11 @@
 #include "structmember.h"         // PyMemberDef
 #include "zlib.h"
 
+// _PyOutputBufferWriter
+#define OBW_SIZE_TYPE uint32_t    // type of avail_out
+#include "output_buffer_writer.h"
+#undef  OBW_SIZE_TYPE
+#define OBW(F) _PyOutputBufferWriter_##F
 
 #define ENTER_ZLIB(obj) \
     Py_BEGIN_ALLOW_THREADS; \
