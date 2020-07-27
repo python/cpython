@@ -1443,7 +1443,6 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
                     return name
     return None
 
-
 def _create_or_replace(dst, create_temp_dst):
     """Create or overwrite file `dst` atomically via os.replace.
 
@@ -1474,7 +1473,6 @@ def _create_or_replace(dst, create_temp_dst):
             os.remove(temp_path)
         raise e
 
-
 def _link_or_symlink(os_method, srcs, dst, **kwargs):
     """Create either links or symlinks based upon the value of `os_method`.
     Helper function for link and symlink.
@@ -1492,7 +1490,6 @@ def _link_or_symlink(os_method, srcs, dst, **kwargs):
     for bool_arg in bool_args[os_method]:
         if not isinstance(kwargs[bool_arg], bool):
             raise TypeError(f"{bool_arg} not a bool")
-
     os_method_args = {k: kwargs[k] for k in kwargs if k != 'overwrite'}
 
     for target in sources:
@@ -1509,7 +1506,6 @@ def _link_or_symlink(os_method, srcs, dst, **kwargs):
         else:
             create_link_at(link_name)
 
-
 def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
     """Create a hard link XXX
 
@@ -1525,7 +1521,6 @@ def link(srcs, dst, *, overwrite=False, follow_symlinks=True):
     """
     _link_or_symlink(os.link, srcs, dst, overwrite=overwrite,
                      follow_symlinks=follow_symlinks)
-
 
 def symlink(srcs, dst, *, overwrite=False, target_is_directory=False):
     """Create symbolic link(s) in `dst` pointing at `srcs`.
