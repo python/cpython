@@ -673,7 +673,7 @@ The parts of the string outside curly braces are treated literally,
 except that any doubled curly braces ``'{{'`` or ``'}}'`` are replaced
 with the corresponding single curly brace.  A single opening curly
 bracket ``'{'`` marks a replacement field, which starts with a
-Python expression. To display both the expression text and its value after 
+Python expression. To display both the expression text and its value after
 evaluation, (useful in debugging), an equal sign ``'='`` may be added after the
 expression. A conversion field, introduced by an exclamation point ``'!'`` may
 follow.  A format specifier may also be appended, introduced by a colon ``':'``.
@@ -753,7 +753,7 @@ Some examples of formatted string literals::
    "line = The mill's closed   "
    >>> f"{line = !r:20}"
    'line = "The mill\'s closed" '
-   
+
 
 A consequence of sharing the same syntax as regular string literals is
 that characters in the replacement fields must not conflict with the
