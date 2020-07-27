@@ -1,0 +1,3 @@
+The function :func:`os.link` noq raises if *follow_symlinks* is ``False``
+and the :c:func:`linkat` function is not available on the platform. Patch
+by Pablo Galindo.

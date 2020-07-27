@@ -3731,6 +3731,9 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
     if ((src_dir_fd != DEFAULT_DIR_FD) || (dst_dir_fd != DEFAULT_DIR_FD)) {
         argument_unavailable_error("link", "src_dir_fd and dst_dir_fd");
         return NULL;
+    } else if (!follow_symlinks) {
+        argument_unavailable_error("link", "follow_symlinks");
+        return NULL;
     }
 #endif
 
