@@ -220,11 +220,18 @@ static PyObject *
 zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
 /*[clinic end generated code: output=d80906d73f6294c8 input=638d54b6315dbed3]*/
 {
-    PyObject *RetVal = NULL;
+    PyObject *RetVal;
     Byte *ibuf;
-    Py_ssize_t ibuflen, obuflen = DEF_BUF_SIZE;
+    Py_ssize_t ibuflen;
     int err, flush;
     z_stream zst;
+    _PyOutputBufferWriter writer;
+
+    // OBW(OnError)(&writer) is after the `error` label,
+    // so initialize the writer before any `goto error` statement.
+    if (OBW(Init)(&writer, -1, &zst.avail_out) < 0) {
+        goto error;
+    }
 
     ibuf = data->buf;
     ibuflen = data->len;
@@ -256,8 +263,7 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
         flush = ibuflen == 0 ? Z_FINISH : Z_NO_FLUSH;
 
         do {
-            obuflen = arrange_output_buffer(&zst, &RetVal, obuflen);
-            if (obuflen < 0) {
+            if (OBW(Grow)(&writer, &zst.next_out, &zst.avail_out) < 0) {
                 deflateEnd(&zst);
                 goto error;
             }
@@ -280,15 +286,16 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
 
     err = deflateEnd(&zst);
     if (err == Z_OK) {
-        if (_PyBytes_Resize(&RetVal, zst.next_out -
-                            (Byte *)PyBytes_AS_STRING(RetVal)) < 0)
+        RetVal = OBW(Finish)(&writer, zst.avail_out);
+        if (RetVal == NULL) {
             goto error;
+        }
         return RetVal;
     }
     else
         zlib_error(zst, err, "while finishing compression");
  error:
-    Py_XDECREF(RetVal);
+    OBW(OnError)(&writer);
     return NULL;
 }
 
