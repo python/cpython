@@ -27,14 +27,10 @@ class PEGLexer(RegexLexer):
     tokens = {
         "ws": [(r"\n", Text), (r"\s+", Text), (r"#.*$", Comment.Singleline),],
         "lookaheads": [
-            (r"(&\w+\s?)", bygroups(None)),
-            (r"(&'.+'\s?)", bygroups(None)),
-            (r'(&".+"\s?)', bygroups(None)),
-            (r"(&\(.+\)\s?)", bygroups(None)),
-            (r"(!\w+\s?)", bygroups(None)),
-            (r"(!'.+'\s?)", bygroups(None)),
-            (r'(!".+"\s?)', bygroups(None)),
-            (r"(!\(.+\)\s?)", bygroups(None)),
+            (r"(?<=\|\s)(&\w+\s?)", bygroups(None)),
+            (r"(?<=\|\s)(&'.+'\s?)", bygroups(None)),
+            (r'(?<=\|\s)(&".+"\s?)', bygroups(None)),
+            (r"(?<=\|\s)(&\(.+\)\s?)", bygroups(None)),
         ],
         "metas": [
             (r"(@\w+ '''(.|\n)+?''')", bygroups(None)),
