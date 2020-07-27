@@ -1141,7 +1141,8 @@ _PyPegen_run_parser(Parser *p)
 #if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
     if (p->start_rule == Py_single_input ||
         p->start_rule == Py_file_input ||
-        p->start_rule == Py_eval_input) {
+        p->start_rule == Py_eval_input)
+    {
         assert(PyAST_Validate(res));
     }
 #endif
