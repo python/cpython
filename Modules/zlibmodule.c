@@ -646,21 +646,25 @@ static PyObject *
 zlib_Compress_compress_impl(compobject *self, Py_buffer *data)
 /*[clinic end generated code: output=5d5cd791cbc6a7f4 input=0d95908d6e64fab8]*/
 {
-    PyObject *RetVal = NULL;
-    Py_ssize_t ibuflen, obuflen = DEF_BUF_SIZE;
+    PyObject *RetVal;
+    Py_ssize_t ibuflen;
     int err;
+    _PyOutputBufferWriter writer;
 
     self->zst.next_in = data->buf;
     ibuflen = data->len;
 
     ENTER_ZLIB(self);
 
+    if (OBW(Init)(&writer, -1, &self->zst.avail_out) < 0) {
+        goto error;
+    }
+
     do {
         arrange_input_buffer(&self->zst, &ibuflen);
 
         do {
-            obuflen = arrange_output_buffer(&self->zst, &RetVal, obuflen);
-            if (obuflen < 0)
+            if (OBW(Grow)(&writer, &self->zst.next_out, &self->zst.avail_out) < 0)
                 goto error;
 
             Py_BEGIN_ALLOW_THREADS
@@ -677,12 +681,14 @@ zlib_Compress_compress_impl(compobject *self, Py_buffer *data)
 
     } while (ibuflen != 0);
 
-    if (_PyBytes_Resize(&RetVal, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) == 0)
+    RetVal = OBW(Finish)(&writer, self->zst.avail_out);
+    if (RetVal != NULL) {
         goto success;
+    }
 
  error:
-    Py_CLEAR(RetVal);
+    OBW(OnError)(&writer);
+    RetVal = NULL;
  success:
     LEAVE_ZLIB(self);
     return RetVal;
