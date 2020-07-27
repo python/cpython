@@ -1,0 +1,1 @@
+Increase LOOPBACK_TIMEOUT to 10 for VxWorks RTOS.
