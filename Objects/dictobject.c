@@ -3359,16 +3359,15 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     d = (PyDictObject *)self;
 
     /* The object has been implicitly tracked by tp_alloc */
-    if (type == &PyDict_Type)
+    if (type == &PyDict_Type) {
         _PyObject_GC_UNTRACK(d);
+    }
 
     d->ma_used = 0;
     d->ma_version_tag = DICT_NEXT_VERSION();
-    d->ma_keys = new_keys_object(PyDict_MINSIZE);
-    if (d->ma_keys == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
+    dictkeys_incref(Py_EMPTY_KEYS);
+    d->ma_keys = Py_EMPTY_KEYS;
+    d->ma_values = empty_values;
     ASSERT_CONSISTENT(d);
     return self;
 }
