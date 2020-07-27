@@ -4,6 +4,7 @@
 
 #include "pegen.h"
 #include "parse_string.h"
+#include "ast.h"
 
 PyObject *
 _PyPegen_new_type_comment(Parser *p, char *s)
@@ -1136,6 +1137,14 @@ _PyPegen_run_parser(Parser *p)
         return RAISE_SYNTAX_ERROR("multiple statements found while compiling a single statement");
     }
 
+#if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
+    if (p->start_rule == Py_single_input ||
+        p->start_rule == Py_file_input ||
+        p->start_rule == Py_eval_input)
+    {
+        assert(PyAST_Validate(res));
+    }
+#endif
     return res;
 }
 
