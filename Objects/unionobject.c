@@ -96,7 +96,7 @@ is_typing_name(PyObject *obj, char *name)
     }
     int res = PyUnicode_Check(module)
         && _PyUnicode_EqualToASCIIString(module, "typing");
-    // Py_DECREF(module);
+    Py_DECREF(module);
     return res;
 }
 
@@ -184,7 +184,6 @@ dedup_and_flatten_args(PyObject* args)
     args = flatten_args(args);
     int arg_length = PyTuple_GET_SIZE(args);
     PyObject* temp[arg_length];
-    Py_INCREF(temp);
     for (int i = 0; i < arg_length ; i++) { temp[i] = NULL; }
 
     // Add unique elements to an array.
@@ -209,9 +208,8 @@ dedup_and_flatten_args(PyObject* args)
     for(int k = 0; k < arg_length; k++) {
         temp_arg = temp[k];
 
-        if (temp_arg != NULL) {
+        if (temp_arg != NULL)
             PyTuple_SET_ITEM(new_args, k, temp_arg);
-        }
     }
     Py_INCREF(new_args);
     return new_args;
