@@ -672,11 +672,11 @@ The parts of the string outside curly braces are treated literally,
 except that any doubled curly braces ``'{{'`` or ``'}}'`` are replaced
 with the corresponding single curly brace.  A single opening curly
 bracket ``'{'`` marks a replacement field, which starts with a
-Python expression. To display both the expression text and its value after evaluation,
-(useful in debugging), an equals ``'='`` may be added after the expression. A conversion field,
-introduced by an exclamation point ``'!'`` may follow.  A format specifier may also
-be appended, introduced by a colon ``':'``.  A replacement field ends
-with a closing curly bracket ``'}'``.
+Python expression. To display both the expression text and its value after 
+evaluation, (useful in debugging), an equal sign ``'='`` may be added after the
+expression. A conversion field, introduced by an exclamation point ``'!'`` may
+follow.  A format specifier may also be appended, introduced by a colon ``':'``.
+A replacement field ends with a closing curly bracket ``'}'``.
 
 Expressions in formatted string literals are treated like regular
 Python expressions surrounded by parentheses, with a few exceptions.
@@ -692,15 +692,16 @@ left to right.
    containing an :keyword:`async for` clause were illegal in the expressions
    in formatted string literals due to a problem with the implementation.
 
-When the equals ``'='`` is provided, the output will have the expression text, the
-``'='`` and the evaluated value. Spaces after the opening brace ``'{'``, within the
-expression and after the ``'='`` are all retained in the output. By default, the
-``'='`` causes the :func:`repr` of the expression to be provided, unless there is a
-format specified. When a format is specified it defaults to the :func:`str` of the
-expression unless a conversion ``'!r'`` is declared.
+When the equal sign ``'='`` is provided, the output will have the expression
+text, the ``'='`` and the evaluated value. Spaces after the opening brace
+``'{'``, within the expression and after the ``'='`` are all retained in the
+output. By default, the ``'='`` causes the :func:`repr` of the expression to be
+provided, unless there is a format specified. When a format is specified it
+defaults to the :func:`str` of the expression unless a conversion ``'!r'`` is
+declared.
 
 .. versionadded:: 3.8
-   The equals ``'='`` was added in Python 3.8.
+   The equal sign ``'='`` was added in Python 3.8.
 
 If a conversion is specified, the result of evaluating the expression
 is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
