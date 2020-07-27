@@ -1116,8 +1116,9 @@ zlib_Decompress_flush_impl(compobject *self, Py_ssize_t length)
 {
     int err, flush;
     Py_buffer data;
-    PyObject *RetVal = NULL;
+    PyObject *RetVal;
     Py_ssize_t ibuflen;
+    _PyOutputBufferWriter writer;
 
     if (length <= 0) {
         PyErr_SetString(PyExc_ValueError, "length must be greater than zero");
@@ -1132,14 +1133,19 @@ zlib_Decompress_flush_impl(compobject *self, Py_ssize_t length)
     self->zst.next_in = data.buf;
     ibuflen = data.len;
 
+    if (OBW(Init)(&writer, -1, &self->zst.avail_out) < 0) {
+        goto abort;
+    }
+
     do {
         arrange_input_buffer(&self->zst, &ibuflen);
         flush = ibuflen == 0 ? Z_FINISH : Z_NO_FLUSH;
 
         do {
-            length = arrange_output_buffer(&self->zst, &RetVal, length);
-            if (length < 0)
-                goto abort;
+            if (self->zst.avail_out == 0) {
+                if (OBW(Grow)(&writer, &self->zst.next_out, &self->zst.avail_out) < 0)
+                    goto abort;
+            }
 
             Py_BEGIN_ALLOW_THREADS
             err = inflate(&self->zst, flush);
@@ -1179,12 +1185,14 @@ zlib_Decompress_flush_impl(compobject *self, Py_ssize_t length)
         }
     }
 
-    if (_PyBytes_Resize(&RetVal, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) == 0)
+    RetVal = OBW(Finish)(&writer, self->zst.avail_out);
+    if (RetVal != NULL) {
         goto success;
+    }
 
  abort:
-    Py_CLEAR(RetVal);
+    OBW(OnError)(&writer);
+    RetVal = NULL;
  success:
     PyBuffer_Release(&data);
     LEAVE_ZLIB(self);
