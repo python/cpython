@@ -10,6 +10,7 @@ import stat
 import fnmatch
 import collections
 import errno
+import tempfile
 
 try:
     import zlib
