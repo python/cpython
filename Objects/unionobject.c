@@ -96,7 +96,7 @@ is_typing_name(PyObject *obj, char *name)
     }
     int res = PyUnicode_Check(module)
         && _PyUnicode_EqualToASCIIString(module, "typing");
-    Py_DECREF(module);
+    // Py_DECREF(module);
     return res;
 }
 
@@ -164,15 +164,17 @@ flatten_args(PyObject* args)
             int nested_arg_length = PyTuple_GET_SIZE(nested_args);
             for (int j = 0; j < nested_arg_length; j++) {
                 PyObject* nested_arg = PyTuple_GET_ITEM(nested_args, j);
+                Py_INCREF(nested_arg);
                 PyTuple_SET_ITEM(flattened_args, pos, nested_arg);
                 pos++;
             }
         } else {
+            Py_INCREF(arg);
             PyTuple_SET_ITEM(flattened_args, pos, arg);
             pos++;
         }
     }
-
+    Py_INCREF(flattened_args);
     return flattened_args;
 }
 
@@ -182,6 +184,7 @@ dedup_and_flatten_args(PyObject* args)
     args = flatten_args(args);
     int arg_length = PyTuple_GET_SIZE(args);
     PyObject* temp[arg_length];
+    Py_INCREF(temp);
     for (int i = 0; i < arg_length ; i++) { temp[i] = NULL; }
 
     // Add unique elements to an array.
@@ -194,6 +197,7 @@ dedup_and_flatten_args(PyObject* args)
             if (i_tuple == j_tuple) is_duplicate = 1;
         }
         if (!is_duplicate) {
+            Py_INCREF(i_tuple);
             temp[temp_count] = i_tuple;
             temp_count++;
         }
@@ -205,10 +209,11 @@ dedup_and_flatten_args(PyObject* args)
     for(int k = 0; k < arg_length; k++) {
         temp_arg = temp[k];
 
-        if (temp_arg != NULL)
+        if (temp_arg != NULL) {
             PyTuple_SET_ITEM(new_args, k, temp_arg);
+        }
     }
-
+    Py_INCREF(new_args);
     return new_args;
 }
 
@@ -259,11 +264,9 @@ union_new(PyTypeObject* self, PyObject* param)
     PyObject *param_type = param == Py_None ? (PyObject *)Py_TYPE(param) : param;
     PyTypeObject *self_type = (PyObject *)self == Py_None ? Py_TYPE(self) : self;
     PyObject *tuple = PyTuple_Pack(2, self_type, param_type);
-    PyObject *newUnionType = Py_Union(tuple);
-    Py_DECREF(param_type);
-    Py_DECREF(self_type);
-    Py_DECREF(tuple);
-    return newUnionType;
+    PyObject *new_union = Py_Union(tuple);
+    Py_INCREF(new_union);
+    return new_union;
 }
 
 
