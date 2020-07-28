@@ -38,7 +38,7 @@ Special ``_`` variable
 
 There is a special variable ``_`` in interactive mode, stored in the :mod:`builtins` 
 module. It stores the result of the last evaluated expression (*except* ``None``
--- it remains unchanged).
+— it remains unchanged).
 
 For example:
 
