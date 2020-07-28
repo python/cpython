@@ -31,6 +31,26 @@ Typing an interrupt while a command is executing raises the
 :exc:`KeyboardInterrupt` exception, which may be handled by a :keyword:`try`
 statement.
 
+.. _special-var:
+
+Special ``_`` variable
+-------------------------
+
+There is a special variable ``_`` in interactive mode. It stores the result of the 
+last evaluation (*except* ``None``), stored in the :mod:`builtins` module.
+
+For example:
+
+   >>> 1 + 2
+   3
+   >>> _
+   3
+   >>> print("1+2=3")
+   1+2=3
+   >>> _  # Doesn't store None returned by print()
+   3
+   >>> _+4
+   7
 
 .. _tut-scripts:
 
