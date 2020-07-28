@@ -2499,7 +2499,7 @@ The new way to do this is to use the equal sign ``=`` after the expression.
 
 
 When used by its own, the debugging operator ``=``, outputs the :func:`repr` of
-the expression. A change this a converter is used::
+the expression. A converter can be used to change it::
 
    >>> f"{now=!s}"
    'now=2020-07-28 04:33:08.629606'
@@ -2512,13 +2512,13 @@ expression or conversion result. An empty string is passed when the format
 specifier is omitted. The formatted result is then returned as the final value
 of the whole string.
 
-As an example for :mod:`datetime` we use format specifiers from
-:ref:`strftime-strptime-behavior` which would give us::
+As an example for :mod:`datetime` we could use format specifiers described in
+:ref:`strftime-strptime-behavior`::
 
    >>> f"{now:%B %d, %Y}"
    'July 28, 2020'
 
-Most built-in types will comply with the :ref:`formatspec`.::
+Most built-in types will comply with the :ref:`formatspec`::
 
    >>> num = 12.3456
    >>> f"{num:20}"
@@ -2530,7 +2530,7 @@ Most built-in types will comply with the :ref:`formatspec`.::
 
 When a format specifier is given together with the equal sign ``'='`` the
 default conversion for the expressions' is :func:`str`. Conversion can be used
-to show the :func:`repr` form.::
+to show the :func:`repr` form::
 
    >>> import decimal
    >>> value = decimal.Decimal("12.34567")
@@ -2554,8 +2554,15 @@ A consequence of sharing the same syntax as regular string literals is
 that characters in the replacement fields must not conflict with the
 quoting used in the outer formatted string literal::
 
-   f"abc {a["x"]} def"    # error: outer string literal ended prematurely
-   f"abc {a['x']} def"    # workaround: use different quoting
+   >>> a = {"Terry":"Jones", "John":"Cleese", "x":"Gilliam", "Eric":"Idle"}
+   >>> f"abc {a["x"]} def" 
+     File  "<stdin>", line 1
+       f"abc {a["x"]} def"
+                 ^
+   SyntaxError: f-string: unmatched '['
+
+   >>> f"abc {a['x']} def"    # workaround: use different quoting
+   'abc Gilliam def'
 
 Backslashes are not allowed in format expressions and will raise
 an error::
