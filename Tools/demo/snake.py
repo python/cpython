@@ -57,7 +57,7 @@ head.shape("square")
 head.color("black")
 head.penup()
 head.goto(0,0)
-head.direction = "stop" 
+head.direction = "stop"
 
 # Snake food
 food = turtle.Turtle()
@@ -144,7 +144,7 @@ while True:
         delay = 0.1
 
         pen.clear()
-        pen.write("Score: {}  High Score: {}".format(score, high_score), align="center", font=("Courier", 24, "normal")) 
+        pen.write("Score: {}  High Score: {}".format(score, high_score), align="center", font=("Courier", 24, "normal"))
 
 
     # Check for a collision with the food
@@ -158,7 +158,7 @@ while True:
         new_segment = turtle.Turtle()
         new_segment.speed(0)
         new_segment.shape("square")
-        new_segment.color("gold") # body of snake =) 
+        new_segment.color("gold") # body of snake =)
         new_segment.penup()
         segments.append(new_segment)
 
