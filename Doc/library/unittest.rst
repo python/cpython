@@ -73,7 +73,7 @@ test runner
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
    `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_
-   or  `Hudson <http://hudson-ci.org/>`_.
+   or `Travis-CI <https://travis-ci.com>`_, or `AppVeyor <https://www.appveyor.com/>`_.
 
 
 .. _unittest-minimal-example:
