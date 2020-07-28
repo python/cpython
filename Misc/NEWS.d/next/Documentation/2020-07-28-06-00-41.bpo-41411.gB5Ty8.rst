@@ -1,0 +1,1 @@
+Intermediate documentation for f-strings added to /Doc/Lib/stdtypes.rst
