@@ -2555,7 +2555,7 @@ that characters in the replacement fields must not conflict with the
 quoting used in the outer formatted string literal::
 
    >>> a = {"Terry":"Jones", "John":"Cleese", "x":"Gilliam", "Eric":"Idle"}
-   >>> f"abc {a["x"]} def" 
+   >>> f"abc {a["x"]} def"
      File  "<stdin>", line 1
        f"abc {a["x"]} def"
                  ^
