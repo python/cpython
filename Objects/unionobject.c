@@ -182,9 +182,8 @@ static PyObject*
 dedup_and_flatten_args(PyObject* args)
 {
     args = flatten_args(args);
-    int arg_length = PyTuple_GET_SIZE(args);
-    PyObject* temp[arg_length];
-    for (int i = 0; i < arg_length ; i++) { temp[i] = NULL; }
+    Py_ssize_t arg_length = PyTuple_GET_SIZE(args);
+    PyObject *new_args = PyTuple_New(arg_length);
 
     // Add unique elements to an array.
     int temp_count = 0;
@@ -197,20 +196,13 @@ dedup_and_flatten_args(PyObject* args)
         }
         if (!is_duplicate) {
             Py_INCREF(i_tuple);
-            temp[temp_count] = i_tuple;
+            PyTuple_SET_ITEM(new_args, temp_count, i_tuple);
             temp_count++;
         }
     }
 
-    // Create new tuple from deduplicated array.
-    PyObject* temp_arg = NULL;
-    PyObject* new_args = PyTuple_New(temp_count);
-    for(int k = 0; k < arg_length; k++) {
-        temp_arg = temp[k];
+    _PyTuple_Resize(&new_args, temp_count);
 
-        if (temp_arg != NULL)
-            PyTuple_SET_ITEM(new_args, k, temp_arg);
-    }
     Py_INCREF(new_args);
     return new_args;
 }
