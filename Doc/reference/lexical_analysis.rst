@@ -364,10 +364,11 @@ classes are identified by the patterns of leading and trailing underscore
 characters:
 
 ``_*``
-   Not imported by ``from module import *``.  The special identifier ``_`` is used
-   in the interactive interpreter to store the result of the last non-``None`` evaluation; it is
-   stored in the :mod:`builtins` module.  When not in interactive mode, ``_``
-   has no special meaning and is not defined. See section :ref:`import`.
+   Not imported by ``from module import *``.  The special identifier ``_`` 
+   is used in the interactive interpreter to store the result of the last 
+   non-``None`` evaluation; it is stored in the :mod:`builtins` module.  
+   When not in interactive mode, ``_`` has no special meaning and is not 
+   defined. See section :ref:`import`.
 
    .. note::
 
