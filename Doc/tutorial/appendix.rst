@@ -36,7 +36,7 @@ statement.
 Special ``_`` variable
 -------------------------
 
-There is a special variable ``_`` in interactive mode, which stores the result of the last 
+There is a special variable ``_`` in interactive mode, which stores the result of the last
 evaluated expression. If the last expression evaluated to ``None``, then the value of ``_``
 is not updated.
 
