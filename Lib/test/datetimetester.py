@@ -5992,7 +5992,7 @@ class CapiTest(unittest.TestCase):
         for klass in [datetime, DateTimeSubclass]:
             for args in [(1993, 8, 26, 22, 12, 55, 99999),
                          (1993, 8, 26, 22, 12, 55, 99999,
-                          FixedOffset(0, "UTC", -2))]:
+                          timezone.utc)]:
                 d = klass(*args)
                 with self.subTest(cls=klass, date=args):
                     hour, minute, second, microsecond, tzinfo = \
@@ -6002,7 +6002,7 @@ class CapiTest(unittest.TestCase):
                     self.assertEqual(minute, d.minute)
                     self.assertEqual(second, d.second)
                     self.assertEqual(microsecond, d.microsecond)
-                    self.assertEqual(tzinfo, d.tzinfo)
+                    self.assertIs(tzinfo, d.tzinfo)
 
     def test_PyDateTime_TIME_GET(self):
         class TimeSubclass(time):
@@ -6010,7 +6010,7 @@ class CapiTest(unittest.TestCase):
 
         for klass in [time, TimeSubclass]:
             for args in [(12, 30, 20, 10),
-                         (12, 30, 20, 10, FixedOffset(0, "UTC", -2))]:
+                         (12, 30, 20, 10, timezone.utc)]:
                 d = klass(*args)
                 with self.subTest(cls=klass, date=args):
                     hour, minute, second, microsecond, tzinfo = \
@@ -6020,7 +6020,7 @@ class CapiTest(unittest.TestCase):
                     self.assertEqual(minute, d.minute)
                     self.assertEqual(second, d.second)
                     self.assertEqual(microsecond, d.microsecond)
-                    self.assertEqual(tzinfo, d.tzinfo)
+                    self.assertIs(tzinfo, d.tzinfo)
 
     def test_timezones_offset_zero(self):
         utc0, utc1, non_utc = _testcapi.get_timezones_offset_zero()
