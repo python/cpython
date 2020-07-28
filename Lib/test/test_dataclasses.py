@@ -9,9 +9,9 @@ import inspect
 import builtins
 import unittest
 from unittest.mock import Mock
-from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
+from typing import ClassVar, Any, List, Tuple, Dict, Generic, TypeVar, Optional
 from typing import get_type_hints
-from collections import deque, OrderedDict, namedtuple
+from collections import OrderedDict, namedtuple
 from functools import total_ordering
 
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
@@ -1971,12 +1971,6 @@ class TestFieldNoAnnotation(unittest.TestCase):
 
 
 class TestDocString(unittest.TestCase):
-    def assertDocStrEqual(self, a, b):
-        # Because 3.6 and 3.7 differ in how inspect.signature work
-        #  (see bpo #32108), for the time being just compare them with
-        #  whitespace stripped.
-        self.assertEqual(a.replace(' ', ''), b.replace(' ', ''))
-
     def test_existing_docstring_not_overridden(self):
         @dataclass
         class C:
@@ -1985,78 +1979,12 @@ class TestDocString(unittest.TestCase):
 
         self.assertEqual(C.__doc__, "Lorem ipsum")
 
-    def test_docstring_no_fields(self):
+    def test_default_docstring(self):
         @dataclass
         class C:
             pass
 
-        self.assertDocStrEqual(C.__doc__, "C()")
-
-    def test_docstring_one_field(self):
-        @dataclass
-        class C:
-            x: int
-
-        self.assertDocStrEqual(C.__doc__, "C(x:int)")
-
-    def test_docstring_two_fields(self):
-        @dataclass
-        class C:
-            x: int
-            y: int
-
-        self.assertDocStrEqual(C.__doc__, "C(x:int, y:int)")
-
-    def test_docstring_three_fields(self):
-        @dataclass
-        class C:
-            x: int
-            y: int
-            z: str
-
-        self.assertDocStrEqual(C.__doc__, "C(x:int, y:int, z:str)")
-
-    def test_docstring_one_field_with_default(self):
-        @dataclass
-        class C:
-            x: int = 3
-
-        self.assertDocStrEqual(C.__doc__, "C(x:int=3)")
-
-    def test_docstring_one_field_with_default_none(self):
-        @dataclass
-        class C:
-            x: Union[int, type(None)] = None
-
-        self.assertDocStrEqual(C.__doc__, "C(x:Optional[int]=None)")
-
-    def test_docstring_list_field(self):
-        @dataclass
-        class C:
-            x: List[int]
-
-        self.assertDocStrEqual(C.__doc__, "C(x:List[int])")
-
-    def test_docstring_list_field_with_default_factory(self):
-        @dataclass
-        class C:
-            x: List[int] = field(default_factory=list)
-
-        self.assertDocStrEqual(C.__doc__, "C(x:List[int]=<factory>)")
-
-    def test_docstring_deque_field(self):
-        @dataclass
-        class C:
-            x: deque
-
-        self.assertDocStrEqual(C.__doc__, "C(x:collections.deque)")
-
-    def test_docstring_deque_field_with_default_factory(self):
-        @dataclass
-        class C:
-            x: deque = field(default_factory=deque)
-
-        self.assertDocStrEqual(C.__doc__, "C(x:collections.deque=<factory>)")
+        self.assertIsNone(C.__doc__)
 
 
 class TestInit(unittest.TestCase):
