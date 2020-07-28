@@ -7182,6 +7182,13 @@ Unpickler_traverse(UnpicklerObject *self, visitproc visit, void *arg)
     Py_VISIT(self->stack);
     Py_VISIT(self->pers_func);
     Py_VISIT(self->buffers);
+    PyObject** memo = self->memo;
+    if (memo) {
+        Py_ssize_t i = self->memo_size;
+        while (--i >= 0) {
+            Py_VISIT(memo[i]);
+        }
+    }
     return 0;
 }
 
