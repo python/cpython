@@ -129,7 +129,7 @@ union_richcompare(PyObject *a, PyObject *b, int op)
         b_set = PySet_New(bb->args);
     }
 
-    if (b_set == NULL) {
+    if (b_set == NULL || a_set == NULL) {
         Py_RETURN_FALSE;
     }
 
@@ -154,6 +154,9 @@ flatten_args(PyObject* args)
     }
     // Create new tuple of flattened args.
     PyObject *flattened_args = PyTuple_New(total_args);
+    if (flattened_args == NULL) {
+        return NULL;
+    }
     int pos = 0;
     for (int i = 0; i < arg_length; i++) {
         PyObject *arg = PyTuple_GET_ITEM(args, i);
@@ -182,9 +185,14 @@ static PyObject*
 dedup_and_flatten_args(PyObject* args)
 {
     args = flatten_args(args);
+    if (args == NULL) {
+        return NULL;
+    }
     Py_ssize_t arg_length = PyTuple_GET_SIZE(args);
     PyObject *new_args = PyTuple_New(arg_length);
-
+    if (new_args == NULL) {
+        return NULL;
+    }
     // Add unique elements to an array.
     int temp_count = 0;
     for(int i = 0; i < arg_length; i++) {
@@ -202,7 +210,6 @@ dedup_and_flatten_args(PyObject* args)
     }
 
     _PyTuple_Resize(&new_args, temp_count);
-
     Py_INCREF(new_args);
     return new_args;
 }
@@ -413,6 +420,9 @@ Py_Union(PyObject *args)
     }
 
     PyObject* new_args = dedup_and_flatten_args(args);
+    if (new_args == NULL) {
+        return NULL;
+    }
     alias->args = new_args;
     _PyObject_GC_TRACK(alias);
     return (PyObject *) alias;
