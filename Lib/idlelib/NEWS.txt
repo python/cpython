@@ -3,6 +3,10 @@ Released on 2020-10-05?
 ======================================
 
 
+bpo-41373: Save files loaded with no line ending, as when blank, or
+different line endings, by setting its line ending to the system
+default. Fix regression in 3.8.4 and 3.9.0b4.
+
 bpo-41300: Save files with non-ascii chars.  Fix regression in
 3.9.0b4 and 3.8.4.
 
@@ -63,9 +67,9 @@ bpo-38636: Fix IDLE Format menu tab toggle and file indent width. These
 functions (default shortcuts Alt-T and Alt-U) were mistakenly disabled
 in 3.7.5 and 3.8.0.
 
-bpo-4360: Add an option to toggle IDLE's cursor blink for shell,
+bpo-4630: Add an option to toggle IDLE's cursor blink for shell,
 editor, and output windows.  See Settings, General, Window Preferences,
-Cursor Blink.  Patch by Zachary Spytz.
+Cursor Blink.  Patch by Zackery Spytz.
 
 bpo-26353: Stop adding newline when saving an IDLE shell window.
 

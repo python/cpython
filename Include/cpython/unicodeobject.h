@@ -52,7 +52,7 @@
 
 Py_DEPRECATED(3.3) static inline void
 Py_UNICODE_COPY(Py_UNICODE *target, const Py_UNICODE *source, Py_ssize_t length) {
-    memcpy(target, source, length * sizeof(Py_UNICODE));
+    memcpy(target, source, (size_t)(length) * sizeof(Py_UNICODE));
 }
 
 Py_DEPRECATED(3.3) static inline void

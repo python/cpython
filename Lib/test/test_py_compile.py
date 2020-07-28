@@ -4,12 +4,13 @@ import os
 import py_compile
 import shutil
 import stat
+import subprocess
 import sys
 import tempfile
 import unittest
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, script_helper
 
 
 def without_source_date_epoch(fxn):
@@ -215,6 +216,74 @@ class PyCompileTestsWithoutSourceEpoch(PyCompileTestsBase,
                                        metaclass=SourceDateEpochTestMeta,
                                        source_date_epoch=False):
     pass
+
+
+class PyCompileCLITestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.directory = tempfile.mkdtemp()
+        self.source_path = os.path.join(self.directory, '_test.py')
+        self.cache_path = importlib.util.cache_from_source(self.source_path)
+        with open(self.source_path, 'w') as file:
+            file.write('x = 123\n')
+
+    def tearDown(self):
+        support.rmtree(self.directory)
+
+    def pycompilecmd(self, *args, **kwargs):
+        # assert_python_* helpers don't return proc object. We'll just use
+        # subprocess.run() instead of spawn_python() and its friends to test
+        # stdin support of the CLI.
+        if args and args[0] == '-' and 'input' in kwargs:
+            return subprocess.run([sys.executable, '-m', 'py_compile', '-'],
+                                  input=kwargs['input'].encode(),
+                                  capture_output=True)
+        return script_helper.assert_python_ok('-m', 'py_compile', *args, **kwargs)
+
+    def pycompilecmd_failure(self, *args):
+        return script_helper.assert_python_failure('-m', 'py_compile', *args)
+
+    def test_stdin(self):
+        result = self.pycompilecmd('-', input=self.source_path)
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, b'')
+        self.assertEqual(result.stderr, b'')
+        self.assertTrue(os.path.exists(self.cache_path))
+
+    def test_with_files(self):
+        rc, stdout, stderr = self.pycompilecmd(self.source_path, self.source_path)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout, b'')
+        self.assertEqual(stderr, b'')
+        self.assertTrue(os.path.exists(self.cache_path))
+
+    def test_bad_syntax(self):
+        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
+        rc, stdout, stderr = self.pycompilecmd_failure(bad_syntax)
+        self.assertEqual(rc, 1)
+        self.assertEqual(stdout, b'')
+        self.assertIn(b'SyntaxError', stderr)
+
+    def test_bad_syntax_with_quiet(self):
+        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
+        rc, stdout, stderr = self.pycompilecmd_failure('-q', bad_syntax)
+        self.assertEqual(rc, 1)
+        self.assertEqual(stdout, b'')
+        self.assertEqual(stderr, b'')
+
+    def test_file_not_exists(self):
+        should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')
+        rc, stdout, stderr = self.pycompilecmd_failure(self.source_path, should_not_exists)
+        self.assertEqual(rc, 1)
+        self.assertEqual(stdout, b'')
+        self.assertIn(b'No such file or directory', stderr)
+
+    def test_file_not_exists_with_quiet(self):
+        should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')
+        rc, stdout, stderr = self.pycompilecmd_failure('-q', self.source_path, should_not_exists)
+        self.assertEqual(rc, 1)
+        self.assertEqual(stdout, b'')
+        self.assertEqual(stderr, b'')
 
 
 if __name__ == "__main__":

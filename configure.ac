@@ -3970,7 +3970,7 @@ AC_CHECK_FUNCS(forkpty,,
 # check for long file support functions
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)
 
-AC_REPLACE_FUNCS(dup2 strdup)
+AC_REPLACE_FUNCS(dup2)
 AC_CHECK_FUNCS(getpgrp,
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[getpgrp(0);]])],
     [AC_DEFINE(GETPGRP_HAVE_ARG, 1, [Define if getpgrp() must be called as getpgrp(0).])],
