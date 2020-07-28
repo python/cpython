@@ -31,7 +31,7 @@ Typing an interrupt while a command is executing raises the
 :exc:`KeyboardInterrupt` exception, which may be handled by a :keyword:`try`
 statement.
 
-.. _special-var:
+.. _tut-var:
 
 Special ``_`` variable
 -------------------------
