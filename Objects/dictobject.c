@@ -2503,6 +2503,86 @@ Return:
     return Py_SAFE_DOWNCAST(i, Py_ssize_t, int);
 }
 
+// Copy *src* dict into empty *dst* dict.
+// See asserts for preconditions.
+static int
+dict_copy2(PyDictObject *dst, PyDictObject *src)
+{
+    assert(dst->ma_used == 0);
+    assert(Py_TYPE(src)->tp_iter == (getiterfunc)dict_iter);
+
+    Py_ssize_t estimate = ESTIMATE_SIZE(src->ma_used);
+    Py_ssize_t keys_size;
+    for (keys_size = PyDict_MINSIZE;
+         keys_size < estimate && keys_size > 0;
+         keys_size <<= 1)
+        ;
+    if (keys_size <= 0) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    PyDictKeysObject *keys = new_keys_object(keys_size);
+    if (keys == NULL) {
+        return -1;
+    }
+
+    if (src->ma_keys->dk_lookup == lookdict_unicode
+            || src->ma_keys->dk_lookup == lookdict_split) {
+        keys->dk_lookup = lookdict_unicode_nodummy;
+    }
+    else {
+        keys->dk_lookup = src->ma_keys->dk_lookup;
+    }
+
+    // Copying entries.
+    PyDictKeyEntry *ep = DK_ENTRIES(src->ma_keys);
+    PyDictKeyEntry *newentries = DK_ENTRIES(keys);
+
+    if (src->ma_values) {
+        // split table. It must be dense.
+        PyObject **values = src->ma_values;
+        for (Py_ssize_t i = 0; i < src->ma_used; i++) {
+            assert(values[i] != NULL);
+            Py_INCREF(values[i]);
+            Py_INCREF(ep[i].me_key);
+            newentries[i].me_key = ep[i].me_key;
+            newentries[i].me_hash = ep[i].me_hash;
+            newentries[i].me_value = values[i];
+        }
+    }
+    else { // combined table. it might be sparce.
+        for (Py_ssize_t i = 0; i < src->ma_used; i++) {
+            while (ep->me_value == NULL)
+                ep++;
+            Py_INCREF(ep->me_key);
+            Py_INCREF(ep->me_value);
+            newentries[i] = *ep++;
+        }
+    }
+
+    build_indices(keys, newentries, src->ma_used);
+    keys->dk_usable -= src->ma_used;
+    keys->dk_nentries = src->ma_used;
+
+    dictkeys_decref(dst->ma_keys);
+    dst->ma_keys = keys;
+
+    if (dst->ma_values && dst->ma_values != empty_values) {
+        free_values(dst->ma_values);
+    }
+    dst->ma_values = NULL;
+    dst->ma_used = src->ma_used;
+    dst->ma_version_tag = DICT_NEXT_VERSION();
+
+    ASSERT_CONSISTENT(dst);
+
+    /* Maintain tracking. */
+    if (_PyObject_GC_IS_TRACKED(src) && !_PyObject_GC_IS_TRACKED(dst)) {
+        _PyObject_GC_TRACK(dst);
+    }
+    return 0;
+}
+
 static int
 dict_merge(PyObject *a, PyObject *b, int override)
 {
@@ -2527,12 +2607,13 @@ dict_merge(PyObject *a, PyObject *b, int override)
         if (other == mp || other->ma_used == 0)
             /* a.update(a) or a.update({}); nothing to do */
             return 0;
-        if (mp->ma_used == 0)
+        if (mp->ma_used == 0) {
             /* Since the target dict is empty, PyDict_GetItem()
-             * always returns NULL.  Setting override to 1
-             * skips the unnecessary test.
+             * always returns NULL. And there is no duplicated key
+             * in b.
              */
-            override = 1;
+            return dict_copy2(mp, other);
+        }
         /* Do one big resize at the start, rather than
          * incrementally resizing as we insert new items.  Expect
          * that there will be no (or few) overlapping keys.
