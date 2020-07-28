@@ -830,7 +830,10 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     if (tstate->overflowed) {
         if (tstate->recursion_depth > recursion_limit + 50) {
             /* Overflowing while handling an overflow. Give up. */
-            Py_FatalError("Cannot recover from stack overflow.");
+            Py_FatalError("Cannot recover from stack overflow, "
+                          "this might be caused by catching RecursionError "
+                          "but reaching the limit again before properly handling it, "
+                          "see ceval.h for more details.");
         }
         return 0;
     }
