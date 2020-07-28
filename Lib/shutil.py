@@ -10,7 +10,6 @@ import stat
 import fnmatch
 import collections
 import errno
-import tempfile
 
 try:
     import zlib
@@ -1452,6 +1451,10 @@ def _create_or_replace(dst, create_temp_dst):
     where the temporary file to replace `dst` should be created.  If it
     raises FileExistsError, it will be called again with another temp pathname.
     """
+    # Following import can't be at module level: to build standard modules,
+    # setup.py uses argparse which uses shutil.get_terminal_size().
+    # tempfile imports random which imports math which isn't available
+    import tempfile
     try:
         # Loop until successful creation of previously non-existent temp pathname
         while True:
