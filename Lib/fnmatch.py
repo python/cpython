@@ -65,11 +65,13 @@ def filter(names, pat):
             for match in matches:
                 if match(name):
                     result.append(name)
+                    break
     else:
         for name in names:
             for match in matches:
                 if match(os.path.normcase(name)):
                     result.append(name)
+                    break
     return result
 
 def fnmatchcase(name, pat):
