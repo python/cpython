@@ -1,2 +1,2 @@
-Added "Special  ``_`` Variable`` section to the 16. Appendix part of Python tutorial. 
+Added "Special  ``_`` Variable" section to the "16. Appendix" part of Python tutorial. 
 It includes the definition of ``_`` and an example.
