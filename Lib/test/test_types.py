@@ -646,6 +646,10 @@ class TypesTests(unittest.TestCase):
             Example() | int
         with self.assertRaises(TypeError):
             (int | str) < typing.Union[str, int]
+        with self.assertRaises(TypeError):
+            (int | str) < (int | bool)
+        with self.assertRaises(TypeError):
+            (int | str) <= (int | str)
 
 
     def test_or_type_operator_with_TypeVar(self):
