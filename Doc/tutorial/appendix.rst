@@ -55,7 +55,7 @@ For example:
    1+2=3
    >>> _  # Doesn't store None returned by print()
    3
-   >>> _+4
+   >>> _ + 4
    7
 
 .. _tut-scripts:
