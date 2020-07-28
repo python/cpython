@@ -2399,83 +2399,71 @@ that ``'\0'`` is the end of the string.
    single: string; formatted literal
    single: string; interpolated literal
    single: f-string
+   single: fstring
    single: {} (curly brackets); in formatted string literal
    single: ! (exclamation); in formatted string literal
    single: : (colon); in formatted string literal
-   single: = (equal); in debug string literal
+   single: = (equals); in debug string literal
 .. _f-string-formated-string-literal:
 
 ``f-string``-Formatted String Literal
 -------------------------------------
 .. versionadded:: 3.6
 
-A :dfn:`formatted string literal` or :dfn:`f-string` is a string literal
-that is prefixed with ``'f'`` or ``'F'``.  These strings may contain
-replacement fields, which are expressions delimited by curly braces ``{}``.
-While other string literals always have a constant value, formatted strings
-are really expressions evaluated at run time.
+A :dfn:`formatted string literal` or :dfn:`f-string` is a string literal that
+is prefixed with ``f`` or ``F``.  These strings may contain replacement
+fields, which are expressions delimited by curly braces ``{}``. While other
+string literals always have a constant value, formatted strings are expressions
+evaluated at run time.::
 
-This adds flexibility to how strings can be formatted::
+   >>> F"This is an f-string"
+   'This is an f-string'
+   >>> f"This is also an f-string"
+   'This is also an f-string'
 
-   >>> name = "Fred"
-   >>> f"He said his name is {name!r}."
-   "He said his name is 'Fred'."
+It is also possible to have a multi line string.::
 
-The above is an example and will become clear as you read below.
+   >>> f'''This is a string
+   ... on two lines'''
+   'This is a string\non two lines'
 
-Everything outside the curly braces is treated as literally with the exception
-of double braces which are treated as one brace::
-
-   >>> f"This is a string"
-   'This is a string.'
-   >>> f'{{'
-   '{'
-   >>> F"{{"
-   '}'
-   >>> F'{{ }}'
-   '{ }'
-
-A single opening curly bracket, ``'{'``, marks a replacement field that starts with
+A single opening curly bracket, ``'{'``, marks a replacement field that contains
 a python expression.::
 
-   >>> f"4 * 3 is {4 * 3}"
-   '4 * 3 is 12'
+   >>> name = "Fred"
+   >>> f"He said his name is {name}"
+   'He said his name is Fred'
 
-The above is quite contrived and a more useful use in code could be::
+Everything outside the braces is treated as a literal::
 
    >>> a = 4
    >>> b = 3
    >>> f"The product of {a} and {b} is {a * b}"
    'The product of 4 and 3 is 12'
 
-Or more simply::
+If you want to include a literal ``{`` or ``}``, you can double the curly
+brackets to escape them::
 
-   >>> a = 4
-   >>> b = 3
-   >>> f"The product is {a * b}"
-   'The product is 12'
+   >>> f'{{a}} is {a}'
+   '{a} is 4'
 
-Methods can also be used::
+Functions can also be used.::
 
-   >>> string = "hello, world!"
-   >>> f"{string.title()}"
-   'Hello, World!'
-   >>> def make_title(input):
-   ...     return input.title()
-   ...
-   >>> f"{make_title(string)}"
-   'Hello, World!'
+   >>> s = "Python"
+   >>> f"The string {s.upper()} contains {len(s)} characters."
+   'The string PYTHON contains 6 characters.'
 
-Any variable that can be presented as a string can be used with f-strings::
+By default the :func:`str` format of a variable is presented when using
+f-strings::
 
    >>> import datetime
    >>> now = datetime.datetime.now()
    >>> f"{now}"
-   '2020-07-19 23:39:01.199675'
+   '2020-07-28 04:33:08.629606'
 
-Note that this is the :func:`str` format of a :mod:`datetime`. If you want to show the
-:func:`repr` format you use a conversion. There are three conversions beginning with the
-``'!'`` (exclamation) mark:
+Note that this is the :func:`str` format of a :mod:`datetime`. To show a
+different format you use a conversion. There are three conversions beginning
+with the ``'!'`` (exclamation) mark.
 
 +------------+---------------+
 | Conversion | Meaning       |
@@ -2487,60 +2475,65 @@ Note that this is the :func:`str` format of a :mod:`datetime`. If you want to sh
 | ``'!a'``   | :func:`ascii` |
 +------------+---------------+
 
-In our example of the datetime that becomes::
+::
 
    >>> f"{now!r}"
-   'datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
-   >>> f"{now!a}"
-   'datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
+   'datetime.datetime(2020, 7, 28, 4, 33, 8, 629606)'
+   >>> hello = "你好"
+   >>> f"The ASCII version of {hello!r} is {hello!a}."
+   "The ASCII version of '你好' is '\\u4f60\\u597d'."
 
-While debugging it may be helpful to see both the expression and its value.
-This can be shown by appending the ``'='`` (equal) after the Python expression.
+While debugging it may be helpful to see both the expression and its value.::
+
+   >>> f"now={now}"
+   'now=2020-07-28 04:33:08.629606'
+
+The new way to do this is to use the equal sign ``=`` after the expression.
+
+.. versionadded:: 3.8
 
 ::
 
-   >>> f"{now=}"
-   'now=datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
-   >>> f"{ now = }"  # Note the addition of spaces
-   ' now = datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
+   >>> f"{now = }" # spaces within braces are maintained.
+   'now = datetime.datetime(2020, 7, 28, 4, 33, 8, 629606)'
 
-Note that when using the debugging operator, any additional spaces will be left intact in the output.
-Also note that by default ``'='`` displays the :func:`repr` of the expression. It is possible to show
-the :func:`str` by appending a converter::
+
+When used by its own, the debugging operator ``=``, outputs the :func:`repr` of
+the expression. A change this a converter is used::
 
    >>> f"{now=!s}"
-   'now=2020-07-19 23:39:01.199675'
-   >>> f"{ now = !a}" # Note the additional spaces
-   ' now = datetime.datetime(2020, 7, 19, 23, 39, 1, 199675)'
+   'now=2020-07-28 04:33:08.629606'
 
-Once the output has been evaluated it can then be formatted using the :func:`format` protocol.
-Formatting instructions are appended preceeded by a ``':'`` (colon).
+Once the output has been evaluated it can then be formatted using a formatting
+specifier that is appended preceeded by a ``':'`` (colon).
 
-::
+The format specifier is passed to the :meth:`__format__` method of the
+expression or conversion result. An empty string is passed when the format
+specifier is omitted. The formatted result is then returned as the final value
+of the whole string.
+
+As an example for :mod:`datetime` we use format specifiers from
+:ref:`strftime-strptime-behavior` which would give us::
 
    >>> f"{now:%B %d, %Y}"
-   'July 19, 2020'
+   'July 28, 2020'
 
-The format specifier is passed to the :meth:`__format__` method of the expression or conversion result.
-An empty string is passed when the format specifier is omitted. The formatted result is then included
-in the final value of the whole string.
+Most built-in types will comply with the :ref:`formatspec`.::
 
-::
+   >>> num = 12.3456
+   >>> f"{num:20}"
+   '             12.3456'
+   >>> f"{num:<20}"
+   '12.3456             '
+   >>> f"{num:e}"
+   '1.234560e+01'
 
-   >>> width = 10
-   >>> precision = 4
+When a format specifier is given together with the equal sign ``'='`` the
+default conversion for the expressions' is :func:`str`. Conversion can be used
+to show the :func:`repr` form.::
+
    >>> import decimal
    >>> value = decimal.Decimal("12.34567")
-   >>> f"result: {value:{width}.{precision}}"
-   'result:      12.35'
-
-When a format specifier is given together with the ``'='`` useful in debuging, the expressions' :func:`str`
-conversion is used by default. Conversion can be used to show the :func:`repr` form.
-
-::
-
-   >>> f"{value}"
-   '12.34567'
    >>> f"{value=}"
    "value=Decimal('12.34567')"
    >>> f"{value=:20}"
@@ -2549,15 +2542,13 @@ conversion is used by default. Conversion can be used to show the :func:`repr` f
    "value=Decimal('12.34567') "
 
 Formatted string literals cannot be used as docstrings, even if they do not
-include expressions.
-
-::
+include expressions.::
 
    >>> def foo():
    ...     f"Not a docstring"
    ...
-   >>> foo.__doc__ is None
-   True
+   >>> print(foo.__doc__)
+   None
 
 A consequence of sharing the same syntax as regular string literals is
 that characters in the replacement fields must not conflict with the
@@ -2569,12 +2560,13 @@ quoting used in the outer formatted string literal::
 Backslashes are not allowed in format expressions and will raise
 an error::
 
-   f"newline: {ord('\n')}"  # raises SyntaxError
+   >>> f'{ord("\n")}'
+     File "<stdin>", line 1
+       f'{ord("\n")}'
+   SyntaxError: f-string expression part cannot include a backslash
 
 To include a value in which a backslash escape is required, create
-a temporary variable.
-
-::
+a temporary variable.::
 
    >>> newline = ord('\n')
    >>> f"newline: {newline}"
