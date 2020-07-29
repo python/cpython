@@ -242,6 +242,15 @@ The module :mod:`curses` defines the following functions:
 
    Return ``True`` if the terminal can display colors; otherwise, return ``False``.
 
+.. function:: has_extended_color_support()
+
+   Return ``True`` if the module supports extended colors; otherwise, return
+   ``False``. Extended color support allows more than 256 color pairs for
+   terminals that support more than 16 colors (e.g. xterm-256color).
+
+   Extended color support requires ncurses version 6.1 or later.
+
+   .. versionadded:: 3.10
 
 .. function:: has_ic()
 
