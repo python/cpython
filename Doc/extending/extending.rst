@@ -50,6 +50,9 @@ be callable from Python as follows:
    >>> import spam
    >>> status = spam.system("ls -l")
 
+We also want this function to be well-documented; that is, we want the function's
+``help`` message to appear as ``system(command)`` plus a short description.
+
 Begin by creating a file :file:`spammodule.c`.  (Historically, if a module is
 called ``spam``, the C file containing its implementation is called
 :file:`spammodule.c`; if the module name is very long, like ``spammify``, the
@@ -323,7 +326,7 @@ First, we need to list its name and address in a "method table"::
    static PyMethodDef SpamMethods[] = {
        ...
        {"system",  spam_system, METH_VARARGS,
-        "Execute a shell command."},
+        "system(command)\n--\n\nExecute a shell command."},
        ...
        {NULL, NULL, 0, NULL}        /* Sentinel */
    };
@@ -342,6 +345,16 @@ arguments should be passed to the function.  In this case, the C function should
 accept a third ``PyObject *`` parameter which will be a dictionary of keywords.
 Use :c:func:`PyArg_ParseTupleAndKeywords` to parse the arguments to such a
 function.
+
+The fourth entry is the function's docstring. Note the ``"system(command)\n--\n\n"``
+at the beginning. Since C extension functions take a fixed number of arguments---
+e.g. 2 for ``METH_VARARGS``---the Python interpreter has no way of knowing the
+function's signature until the function is called. However, by making the docstring
+start with something of the form
+``"myfunc(arg1, arg2='my_default', arg3=17)\n--\n\n"``, the signature will be
+constructed and the remainder of the docstring will be used as the function's
+``__doc__`` attribute. This can be useful for generating nice messages with the
+``help`` function or ``Signature`` objects with the :mod:`inspect` module.
 
 The method table must be referenced in the module definition structure::
 
