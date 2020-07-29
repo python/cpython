@@ -1,0 +1,2 @@
+Close file object after reading contents in pickle and pickletools cli.
+This removes the ResourceWarning.
