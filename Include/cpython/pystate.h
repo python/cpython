@@ -167,6 +167,11 @@ PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 */
 PyAPI_FUNC(PyObject *) _PyThread_CurrentFrames(void);
 
+/* The implementation of sys._current_exceptions()  Returns a dict mapping
+   thread id to that thread's current exception.
+*/
+PyAPI_FUNC(PyObject *) _PyThread_CurrentExceptions(void);
+
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Main(void);
