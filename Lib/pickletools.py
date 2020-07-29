@@ -2882,9 +2882,11 @@ if __name__ == "__main__":
         elif len(args.pickle_file) == 1:
             dis(args.pickle_file[0], args.output, None,
                 args.indentlevel, annotate)
+            args.pickle_file[0].close()
         else:
             memo = {} if args.memo else None
             for f in args.pickle_file:
                 preamble = args.preamble.format(name=f.name)
                 args.output.write(preamble + '\n')
                 dis(f, args.output, memo, args.indentlevel, annotate)
+                f.close()
