@@ -314,7 +314,7 @@ Connection Objects
          The BLOB size cannot be changed using the :class:`Blob` class. Use
          ``zeroblob`` to create the blob in the wanted size in advance.
 
-      .. versionadded:: 3.8
+      .. versionadded:: 3.10
 
    .. method:: commit()
 
@@ -873,7 +873,7 @@ Exceptions
 Blob Objects
 ------------
 
-.. versionadded:: 3.8
+.. versionadded:: 3.10
 
 .. class:: Blob
 
