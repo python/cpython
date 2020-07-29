@@ -155,6 +155,17 @@ class IOBinding:
                                    parent=self.text)
             return False
 
+        if not isinstance(eol_convention, str):
+            # If the file does not contain line separators, it is None.
+            # If the file contains mixed line separators, it is a tuple.
+            if eol_convention is not None:
+                tkMessageBox.showwarning("Mixed Newlines",
+                                         "Mixed newlines detected.\n"
+                                         "The file will be changed on save.",
+                                         parent=self.text)
+                converted = True
+            eol_convention = os.linesep  # default
+
         self.text.delete("1.0", "end")
         self.set_filename(None)
         self.fileencoding = fileencoding

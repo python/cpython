@@ -110,6 +110,12 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
+py_compile
+----------
+
+Added ``--quiet`` option to command-line interface of :mod:`py_compile`.
+(Contributed by Gregory Schevchenko in :issue:`38731`.)
+
 sys
 ---
 
@@ -120,6 +126,10 @@ arguments passed to the Python executable.
 
 Optimizations
 =============
+
+* Constructors :func:`str`, :func:`bytes` and :func:`bytearray` are now faster
+  (around 30--40% for small objects).
+  (Contributed by Serhiy Storchaka in :issue:`41334`.)
 
 * The :mod:`runpy` module now imports fewer modules.
   The ``python3 -m module-name`` command startup time is 1.3x faster in
