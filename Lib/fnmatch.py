@@ -54,7 +54,10 @@ def _compile_pattern(pat):
 def filter(names, pat):
     """Return the subset of the list NAMES that match PAT."""
     result = []
-    pats = pat if isinstance(pat, tuple) else pat,
+    if isinstance(pat, tuple):
+        pats = pat
+    else:
+        pats = pat,
     matches = []
     for pat in pats:
         pat = os.path.normcase(pat)
