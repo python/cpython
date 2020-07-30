@@ -640,6 +640,7 @@ class BaseTestUUID:
             equal(str(u), v)
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork')
     def testIssue8621(self):
         # On at least some versions of OSX self.uuid.uuid4 generates
         # the same sequence of UUIDs in the parent and any
