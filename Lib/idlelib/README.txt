@@ -162,6 +162,7 @@ Edit
 Shell  # pyshell
   View Last Restart    # pyshell.PyShell.view_restart_mark
   Restart Shell        # pyshell.PyShell.restart_shell
+  Clear and Restart    # pyshell.PyShell.clear_and_restart_shell
   Interrupt Execution  # pyshell.PyShell.cancel_callback
 
 Debug (Shell only)

@@ -82,6 +82,7 @@ menudefs = [
  ('shell', [
    ('_View Last Restart', '<<view-restart>>'),
    ('_Restart Shell', '<<restart-shell>>'),
+   ('_Clear and Restart', '<<clear-restart-shell>>'),
    None,
    ('_Previous History', '<<history-previous>>'),
    ('_Next History', '<<history-next>>'),

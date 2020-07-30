@@ -614,6 +614,7 @@ class IdleConf:
             '<<interrupt-execution>>': ['<Control-c>'],
             '<<view-restart>>': ['<F6>'],
             '<<restart-shell>>': ['<Control-F6>'],
+            '<<clear-restart-shell>>': ['<Control-F7>'],
             '<<open-class-browser>>': ['<Alt-c>'],
             '<<open-module>>': ['<Alt-m>'],
             '<<open-new-window>>': ['<Control-n>'],
