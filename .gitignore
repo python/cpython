@@ -122,3 +122,14 @@ Tools/ssl/win32
 # Ignore ./python binary on Unix but still look into ./Python/ directory.
 /python
 !/Python/
+
+# Ignore configure temporary files
+/conftest
+/conftest.*
+/confcache
+/confdefs.h
+/@rules.*
+/@sed.*
+/CaseSensitiveTestDir
+/a.out
+/tmp_conf*
