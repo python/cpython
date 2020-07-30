@@ -35,12 +35,6 @@ def _supports_sched():
             return False
     return True
 
-def _supports_shell():
-    if sys.platform == "vxworks":
-        return False
-    else:
-        return True
-
 requires_sched = unittest.skipUnless(_supports_sched(), 'requires POSIX scheduler API')
 
 
@@ -1034,7 +1028,7 @@ class PosixTester(unittest.TestCase):
         self.assertIn(group, posix.getgrouplist(user, group))
 
 
-    @unittest.skipUnless(_supports_shell() and hasattr(os, 'getegid'), "test needs shell support and os.getegid()")
+    @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
     def test_getgroups(self):
         with os.popen('id -G 2>/dev/null') as idg:
             groups = idg.read().strip()
@@ -1084,7 +1078,7 @@ class PosixTester(unittest.TestCase):
         finally:
             posix.close(f)
 
-    @unittest.skipUnless(hasattr(os, 'chown') and (os.chown in os.supports_dir_fd), "test needs dir_fd support in os.chown()")
+    @unittest.skipUnless(os.chown in os.supports_dir_fd, "test needs dir_fd support in os.chown()")
     def test_chown_dir_fd(self):
         support.unlink(support.TESTFN)
         support.create_empty_file(support.TESTFN)
@@ -1172,7 +1166,7 @@ class PosixTester(unittest.TestCase):
             posix.close(f)
             support.rmtree(support.TESTFN + 'dir')
 
-    @unittest.skipUnless(hasattr(os, 'mknod') and (os.mknod in os.supports_dir_fd) and hasattr(stat, 'S_IFIFO'),
+    @unittest.skipUnless((os.mknod in os.supports_dir_fd) and hasattr(stat, 'S_IFIFO'),
                          "test requires both stat.S_IFIFO and dir_fd support for os.mknod()")
     def test_mknod_dir_fd(self):
         # Test using mknodat() to create a FIFO (the only use specified
@@ -1205,7 +1199,7 @@ class PosixTester(unittest.TestCase):
             posix.close(a)
             posix.close(b)
 
-    @unittest.skipUnless(hasattr(os, 'readlink') and (os.readlink in os.supports_dir_fd), "test needs dir_fd support in os.readlink()")
+    @unittest.skipUnless(os.readlink in os.supports_dir_fd, "test needs dir_fd support in os.readlink()")
     def test_readlink_dir_fd(self):
         os.symlink(support.TESTFN, support.TESTFN + 'link')
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
