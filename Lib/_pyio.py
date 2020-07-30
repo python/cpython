@@ -1439,6 +1439,8 @@ class BufferedRandom(BufferedWriter, BufferedReader):
     def truncate(self, pos=None):
         if pos is None:
             pos = self.tell()
+        elif pos == 0:
+            self.seek(0)
         # Use seek to flush the read buffer.
         return BufferedWriter.truncate(self, pos)
 
