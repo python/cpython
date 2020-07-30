@@ -9,7 +9,7 @@
  *   3. Generate code for basic blocks.  See compiler_mod() in this file.
  *   4. Assemble the basic blocks into final code.  See assemble() in
  *      this file.
- *   5. Optimize the byte code (peephole optimizations).  See peephole.c
+ *   5. Optimize the byte code (peephole optimizations).
  *
  * Note that compiler_mod() suggests module, but the module ast type
  * (mod_ty) has cases for expressions and interactive statements.
@@ -69,6 +69,7 @@ typedef struct basicblock_ {
     struct basicblock_ *b_next;
     /* b_return is true if a RETURN_VALUE opcode is inserted. */
     unsigned b_return : 1;
+    unsigned b_reachable : 1;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
     /* instruction offset for block, computed by assemble_jump_offsets() */
@@ -499,7 +500,7 @@ compiler_unit_check(struct compiler_unit *u)
         assert((uintptr_t)block != 0xdbdbdbdbU);
         if (block->b_instr != NULL) {
             assert(block->b_ialloc > 0);
-            assert(block->b_iused > 0);
+            assert(block->b_iused >= 0);
             assert(block->b_ialloc >= block->b_iused);
         }
         else {
@@ -3645,6 +3646,11 @@ compiler_boolop(struct compiler *c, expr_ty e)
     for (i = 0; i < n; ++i) {
         VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
         ADDOP_JABS(c, jumpi, end);
+        basicblock *next = compiler_new_block(c);
+        if (next == NULL) {
+            return 0;
+        }
+        compiler_use_next_block(c, next);
     }
     VISIT(c, expr, (expr_ty)asdl_seq_GET(s, n));
     compiler_use_next_block(c, end);
@@ -5861,28 +5867,24 @@ merge_const_tuple(struct compiler *c, PyObject **tuple)
 }
 
 static PyCodeObject *
-makecode(struct compiler *c, struct assembler *a)
+makecode(struct compiler *c, struct assembler *a, PyObject *consts)
 {
-    PyObject *tmp;
     PyCodeObject *co = NULL;
-    PyObject *consts = NULL;
     PyObject *names = NULL;
     PyObject *varnames = NULL;
     PyObject *name = NULL;
     PyObject *freevars = NULL;
     PyObject *cellvars = NULL;
-    PyObject *bytecode = NULL;
     Py_ssize_t nlocals;
     int nlocals_int;
     int flags;
     int posorkeywordargcount, posonlyargcount, kwonlyargcount, maxdepth;
 
-    consts = consts_dict_keys_inorder(c->u->u_consts);
     names = dict_keys_inorder(c->u->u_names, 0);
     varnames = dict_keys_inorder(c->u->u_varnames, 0);
-    if (!consts || !names || !varnames)
+    if (!names || !varnames) {
         goto error;
-
+    }
     cellvars = dict_keys_inorder(c->u->u_cellvars, 0);
     if (!cellvars)
         goto error;
@@ -5906,16 +5908,12 @@ makecode(struct compiler *c, struct assembler *a)
     if (flags < 0)
         goto error;
 
-    bytecode = PyCode_Optimize(a->a_bytecode, consts, names, a->a_lnotab);
-    if (!bytecode)
+    consts = PyList_AsTuple(consts); /* PyCode_New requires a tuple */
+    if (consts == NULL) {
         goto error;
-
-    tmp = PyList_AsTuple(consts); /* PyCode_New requires a tuple */
-    if (!tmp)
-        goto error;
-    Py_DECREF(consts);
-    consts = tmp;
+    }
     if (!merge_const_tuple(c, &consts)) {
+        Py_DECREF(consts);
         goto error;
     }
 
@@ -5924,21 +5922,21 @@ makecode(struct compiler *c, struct assembler *a)
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
     maxdepth = stackdepth(c);
     if (maxdepth < 0) {
+        Py_DECREF(consts);
         goto error;
     }
     co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
                                    posonlyargcount, kwonlyargcount, nlocals_int,
-                                   maxdepth, flags, bytecode, consts, names,
+                                   maxdepth, flags, a->a_bytecode, consts, names,
                                    varnames, freevars, cellvars, c->c_filename,
                                    c->u->u_name, c->u->u_firstlineno, a->a_lnotab);
+    Py_DECREF(consts);
  error:
-    Py_XDECREF(consts);
     Py_XDECREF(names);
     Py_XDECREF(varnames);
     Py_XDECREF(name);
     Py_XDECREF(freevars);
     Py_XDECREF(cellvars);
-    Py_XDECREF(bytecode);
     return co;
 }
 
@@ -5976,6 +5974,9 @@ dump_basicblock(const basicblock *b)
 }
 #endif
 
+static int
+optimize_cfg(struct assembler *a, PyObject *consts);
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -5983,6 +5984,7 @@ assemble(struct compiler *c, int addNone)
     struct assembler a;
     int i, j, nblocks;
     PyCodeObject *co = NULL;
+    PyObject *consts = NULL;
 
     /* Make sure every block that falls off the end returns None.
        XXX NEXT_BLOCK() isn't quite right, because if the last
@@ -6013,6 +6015,14 @@ assemble(struct compiler *c, int addNone)
         goto error;
     dfs(c, entryblock, &a, nblocks);
 
+    consts = consts_dict_keys_inorder(c->u->u_consts);
+    if (consts == NULL) {
+        goto error;
+    }
+    if (optimize_cfg(&a, consts)) {
+        goto error;
+    }
+
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
 
@@ -6029,8 +6039,9 @@ assemble(struct compiler *c, int addNone)
     if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0)
         goto error;
 
-    co = makecode(c, &a);
+    co = makecode(c, &a, consts);
  error:
+    Py_XDECREF(consts);
     assemble_free(&a);
     return co;
 }
@@ -6042,3 +6053,324 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
 {
     return PyAST_CompileEx(mod, filename, flags, -1, arena);
 }
+
+
+/* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
+   with    LOAD_CONST (c1, c2, ... cn).
+   The consts table must still be in list form so that the
+   new constant (c1, c2, ... cn) can be appended.
+   Called with codestr pointing to the first LOAD_CONST.
+*/
+static int
+fold_tuple_on_constants(struct instr *inst,
+                        int n, PyObject *consts)
+{
+    /* Pre-conditions */
+    assert(PyList_CheckExact(consts));
+    assert(inst[n].i_opcode == BUILD_TUPLE);
+    assert(inst[n].i_oparg == n);
+
+    for (int i = 0; i < n; i++) {
+        if (inst[i].i_opcode != LOAD_CONST) {
+            return 0;
+        }
+    }
+
+    /* Buildup new tuple of constants */
+    PyObject *newconst = PyTuple_New(n);
+    if (newconst == NULL) {
+        return -1;
+    }
+    for (int i = 0; i < n; i++) {
+        int arg = inst[i].i_oparg;
+        PyObject *constant = PyList_GET_ITEM(consts, arg);
+        Py_INCREF(constant);
+        PyTuple_SET_ITEM(newconst, i, constant);
+    }
+    Py_ssize_t index = PyList_GET_SIZE(consts);
+#if SIZEOF_SIZE_T > SIZEOF_INT
+    if ((size_t)index >= UINT_MAX - 1) {
+        Py_DECREF(newconst);
+        PyErr_SetString(PyExc_OverflowError, "too many constants");
+        return -1;
+    }
+#endif
+    if (PyList_Append(consts, newconst)) {
+        Py_DECREF(newconst);
+        return -1;
+    }
+    Py_DECREF(newconst);
+    for (int i = 0; i < n; i++) {
+        inst[i].i_opcode = NOP;
+    }
+    inst[n].i_opcode = LOAD_CONST;
+    inst[n].i_oparg = index;
+    return 0;
+}
+
+
+/* Optimization */
+static int
+optimize_basic_block(basicblock *bb, PyObject *consts)
+{
+    assert(PyList_CheckExact(consts));
+    struct instr nop;
+    nop.i_opcode = NOP;
+    struct instr *target;
+    int lineno;
+    for (int i = 0; i < bb->b_iused; i++) {
+        struct instr *inst = &bb->b_instr[i];
+        int oparg = inst->i_oparg;
+        int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
+        if (inst->i_jabs || inst->i_jrel) {
+            /* Skip over empty basic blocks. */
+            while (inst->i_target->b_iused == 0) {
+                inst->i_target = inst->i_target->b_next;
+            }
+            target = &inst->i_target->b_instr[0];
+        }
+        else {
+            target = &nop;
+        }
+        switch (inst->i_opcode) {
+            /* Skip over LOAD_CONST trueconst
+                   POP_JUMP_IF_FALSE xx.  This improves
+                   "while 1" performance.  */
+            case LOAD_CONST:
+                if (nextop != POP_JUMP_IF_FALSE) {
+                    break;
+                }
+                PyObject* cnt = PyList_GET_ITEM(consts, oparg);
+                int is_true = PyObject_IsTrue(cnt);
+                if (is_true == -1) {
+                    goto error;
+                }
+                if (is_true == 1) {
+                    inst->i_opcode = NOP;
+                    bb->b_instr[i+1].i_opcode = NOP;
+                    bb->b_instr[i+1].i_jabs = 0;
+                }
+                break;
+
+                /* Try to fold tuples of constants.
+                   Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
+                   Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
+                   Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
+            case BUILD_TUPLE:
+                if (nextop == UNPACK_SEQUENCE && oparg == bb->b_instr[i+1].i_oparg) {
+                    switch(oparg) {
+                        case 1:
+                            inst->i_opcode = NOP;
+                            bb->b_instr[i+1].i_opcode = NOP;
+                            break;
+                        case 2:
+                            inst->i_opcode = ROT_TWO;
+                            bb->b_instr[i+1].i_opcode = NOP;
+                            break;
+                        case 3:
+                            inst->i_opcode = ROT_THREE;
+                            bb->b_instr[i+1].i_opcode = ROT_TWO;
+                    }
+                    break;
+                }
+                if (i >= oparg) {
+                    if (fold_tuple_on_constants(inst-oparg, oparg, consts)) {
+                        goto error;
+                    }
+                }
+                break;
+
+                /* Simplify conditional jump to conditional jump where the
+                   result of the first test implies the success of a similar
+                   test or the failure of the opposite test.
+                   Arises in code like:
+                   "a and b or c"
+                   "(a and b) and c"
+                   "(a or b) or c"
+                   "(a or b) and c"
+                   x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_FALSE_OR_POP z
+                      -->  x:JUMP_IF_FALSE_OR_POP z
+                   x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_TRUE_OR_POP z
+                      -->  x:POP_JUMP_IF_FALSE y+1
+                   where y+1 is the instruction following the second test.
+                */
+            case JUMP_IF_FALSE_OR_POP:
+                switch(target->i_opcode) {
+                    case POP_JUMP_IF_FALSE:
+                        *inst = *target;
+                        break;
+                    case JUMP_ABSOLUTE:
+                    case JUMP_FORWARD:
+                    case JUMP_IF_FALSE_OR_POP:
+                        inst->i_target = target->i_target;
+                        break;
+                    case JUMP_IF_TRUE_OR_POP:
+                        assert (inst->i_target->b_iused == 1);
+                        inst->i_opcode = POP_JUMP_IF_FALSE;
+                        inst->i_target = inst->i_target->b_next;
+                        break;
+                }
+                break;
+
+            case JUMP_IF_TRUE_OR_POP:
+                switch(target->i_opcode) {
+                    case POP_JUMP_IF_TRUE:
+                        *inst = *target;
+                        break;
+                    case JUMP_ABSOLUTE:
+                    case JUMP_FORWARD:
+                    case JUMP_IF_TRUE_OR_POP:
+                        inst->i_target = target->i_target;
+                        break;
+                    case JUMP_IF_FALSE_OR_POP:
+                        assert (inst->i_target->b_iused == 1);
+                        inst->i_opcode = POP_JUMP_IF_TRUE;
+                        inst->i_target = inst->i_target->b_next;
+                        break;
+                }
+                break;
+
+            case POP_JUMP_IF_FALSE:
+                switch(target->i_opcode) {
+                    case JUMP_ABSOLUTE:
+                    case JUMP_FORWARD:
+                        inst->i_target = target->i_target;
+                        break;
+                }
+                break;
+
+            case POP_JUMP_IF_TRUE:
+                switch(target->i_opcode) {
+                    case JUMP_ABSOLUTE:
+                    case JUMP_FORWARD:
+                        inst->i_target = target->i_target;
+                        break;
+                }
+                break;
+
+            case JUMP_ABSOLUTE:
+            case JUMP_FORWARD:
+                switch(target->i_opcode) {
+                    case JUMP_FORWARD:
+                        inst->i_target = target->i_target;
+                        break;
+                    case JUMP_ABSOLUTE:
+                    case RETURN_VALUE:
+                    case RERAISE:
+                    case RAISE_VARARGS:
+                        lineno = inst->i_lineno;
+                        *inst = *target;
+                        inst->i_lineno = lineno;
+                        break;
+                }
+                break;
+        }
+    }
+    return 0;
+error:
+    return -1;
+}
+
+
+static void
+clean_basic_block(basicblock *bb) {
+    /* Remove NOPs and any code following a return or re-raise. */
+    int dest = 0;
+    for (int src = 0; src < bb->b_iused; src++) {
+        switch(bb->b_instr[src].i_opcode) {
+            case NOP:
+                /* skip */
+                break;
+            case RETURN_VALUE:
+            case RERAISE:
+                bb->b_next = NULL;
+                bb->b_instr[dest] = bb->b_instr[src];
+                dest++;
+                goto end;
+            default:
+                if (dest != src) {
+                    bb->b_instr[dest] = bb->b_instr[src];
+                }
+                dest++;
+                break;
+        }
+    }
+end:
+    assert(dest <= bb->b_iused);
+    bb->b_iused = dest;
+}
+
+static int
+mark_reachable(struct assembler *a) {
+    basicblock **stack, **sp;
+    sp = stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * a->a_nblocks);
+    if (stack == NULL) {
+        return -1;
+    }
+    basicblock *entry = a->a_reverse_postorder[0];
+    entry->b_reachable = 1;
+    *sp++ = entry;
+    while (sp > stack) {
+        basicblock *b = *(--sp);
+        if (b->b_next && b->b_next->b_reachable == 0) {
+            b->b_next->b_reachable = 1;
+            *sp++ = b->b_next;
+        }
+        for (int i = 0; i < b->b_iused; i++) {
+            basicblock *target;
+            if (b->b_instr[i].i_jrel || b->b_instr[i].i_jabs) {
+                target = b->b_instr[i].i_target;
+                if (target->b_reachable == 0) {
+                    target->b_reachable = 1;
+                    *sp++ = target;
+                }
+            }
+        }
+    }
+    PyObject_Free(stack);
+    return 0;
+}
+
+
+/* Perform basic peephole optimizations on a control flow graph.
+   The consts object should still be in list form to allow new constants
+   to be appended.
+
+   All transformations keep the code size the same or smaller.
+   For those that reduce size, the gaps are initially filled with
+   NOPs.  Later those NOPs are removed.
+*/
+
+static int
+optimize_cfg(struct assembler *a, PyObject *consts)
+{
+    for (int i = 0; i < a->a_nblocks; i++) {
+        if (optimize_basic_block(a->a_reverse_postorder[i], consts)) {
+            return -1;
+        }
+        clean_basic_block(a->a_reverse_postorder[i]);
+        assert(a->a_reverse_postorder[i]->b_reachable == 0);
+    }
+    if (mark_reachable(a)) {
+        return -1;
+    }
+    /* Delete unreachable instructions */
+    for (int i = 0; i < a->a_nblocks; i++) {
+       if (a->a_reverse_postorder[i]->b_reachable == 0) {
+            a->a_reverse_postorder[i]->b_iused = 0;
+       }
+    }
+    return 0;
+}
+
+/* Retained for API compatibility.
+ * Optimization is now done in optimize_cfg */
+
+PyObject *
+PyCode_Optimize(PyObject *code, PyObject* Py_UNUSED(consts),
+                PyObject *Py_UNUSED(names), PyObject *Py_UNUSED(lnotab_obj))
+{
+    Py_INCREF(code);
+    return code;
+}
+
