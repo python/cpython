@@ -18384,7 +18384,7 @@ for ac_last_try in false false false false false :; do
   . ./tmp_conf$$subs.sh ||
     as_fn_error $? "could not make $CONFIG_STATUS" "$LINENO" 5
 
-  ac_delim_n=`sed -n "s/.*$ac_delim\$/X/p" conf$$subs.awk | grep -c X`
+  ac_delim_n=`sed -n "s/.*$ac_delim\$/X/p" tmp_conf$$subs.awk | grep -c X`
   if test $ac_delim_n = $ac_delim_num; then
     break
   elif $ac_last_try; then
@@ -18435,13 +18435,13 @@ p
 g
 s/.\{148\}//
 t delim
-' <conf$$subs.awk | sed '
+' <tmp_conf$$subs.awk | sed '
 /^[^""]/{
   N
   s/\n//
 }
 ' >>$CONFIG_STATUS || ac_write_fail=1
-rm -f conf$$subs.awk
+rm -f tmp_conf$$subs.awk
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 _ACAWK
 cat >>"\$ac_tmp/subs1.awk" <<_ACAWK &&
