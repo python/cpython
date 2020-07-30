@@ -1,0 +1,6 @@
+[Please refer to the test case](https://github.com/841020/open_source)
+
+> happen at io's reading & updating(r+) mode <br>
+> if you remove whole content ( truncate(0) ), tell wil not back to 0<br>
+> then you start writing will start at current position<br>
+> that's why problem happen
