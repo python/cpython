@@ -306,6 +306,11 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         goto done;
     }
 
+    if (p == &_PyNone_Type) {
+        r = PyUnicode_FromString("None");
+        goto done;
+    }
+
     if (_PyObject_LookupAttrId(p, &PyId___origin__, &tmp) < 0) {
         goto done;
     }
