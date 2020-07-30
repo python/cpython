@@ -116,7 +116,7 @@ __all__ = [
 # The pseudo-submodules 're' and 'io' are part of the public
 # namespace, but excluded from __all__ because they might stomp on
 # legitimate imports of those modules.
-
+# Union = type(int | str)
 
 def _type_check(arg, msg, is_argument=True):
     """Check that the argument is a type, and return it (internal helper).
@@ -145,8 +145,9 @@ def _type_check(arg, msg, is_argument=True):
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
-    if isinstance(arg, (type, TypeVar, ForwardRef)):
+    if isinstance(arg, (type, TypeVar, ForwardRef, types.Union)):
         return arg
+
     if not callable(arg):
         raise TypeError(f"{msg} Got {arg!r:.100}.")
     return arg
@@ -205,7 +206,7 @@ def _remove_dups_flatten(parameters):
     # Flatten out Union[Union[...], ...].
     params = []
     for p in parameters:
-        if isinstance(p, _UnionGenericAlias):
+        if isinstance(p, (_UnionGenericAlias, types.Union)):
             params.extend(p.__args__)
         elif isinstance(p, tuple) and len(p) > 0 and p[0] is Union:
             params.extend(p[1:])
