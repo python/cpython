@@ -117,6 +117,9 @@ union_richcompare(PyObject *a, PyObject *b, int op)
     PyObject* b_set = NULL;
     unionobject *aa = (unionobject *)a;
     PyObject* a_set = PySet_New(aa->args);
+    if (a_set == NULL) {
+        Py_RETURN_FALSE;
+    }
 
     if (is_typing_name(b, "_UnionGenericAlias")) {
         PyObject* b_args = PyObject_GetAttrString(b, "__args__");
@@ -129,7 +132,7 @@ union_richcompare(PyObject *a, PyObject *b, int op)
         b_set = PySet_New(bb->args);
     }
 
-    if (b_set == NULL || a_set == NULL) {
+    if (b_set == NULL) {
         Py_RETURN_FALSE;
     }
 
