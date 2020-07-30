@@ -224,6 +224,12 @@ is_typevar(PyObject *obj)
 }
 
 static int
+is_special_form(PyObject *obj)
+{
+    return is_typing_name(obj, "_SpecialForm");
+}
+
+static int
 is_new_type(PyObject *obj)
 {
     if (!PyObject_IsInstance(obj, (PyObject *)&PyFunction_Type)) {
@@ -245,6 +251,7 @@ is_unionable(PyObject *obj)
     return (
         is_typevar(obj) ||
         is_new_type(obj) ||
+        is_special_form(obj) ||
         PyType_Check(obj) ||
         (PyObject_IsInstance(obj, (PyObject*)&Py_GenericAliasType)) ||
         (PyObject_IsInstance(obj, (PyObject *)&PyType_Type) == 1) ||

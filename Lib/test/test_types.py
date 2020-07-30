@@ -694,6 +694,14 @@ class TypesTests(unittest.TestCase):
     def test_or_type_operator_with_IO(self):
         assert typing.IO | str == typing.Union[typing.IO, str]
 
+    def test_or_type_operator_with_SpecialForm(self):
+        assert typing.Any | str == typing.Union[typing.Any, str]
+        assert typing.NoReturn | str = typing.Union[typing.NoReturn, str]
+        assert typing.ClassVar[int] | str = typing.Union[typing.ClassVar[int], str]
+        assert typing.Optional[int] | str = typing.Union[typing.Optional[int], str]
+        assert typing.Union[int, bool] | str = typing.Union[typing.Union[int, bool], str]
+
+
 class Forward: ...
 # T = typing.TypeVar('T')
 # ForwardAfter = T | 'Forward'
