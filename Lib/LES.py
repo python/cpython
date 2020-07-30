@@ -109,9 +109,7 @@ def HN():
 # Search Settings
 def s(link):
 	"""(Search) TO ANY Thing ON YOUR Defualt Browser"""
-	http="https:\\\\"
-	if http in link:http=""
-	os.system(f"python -m webbrowser -t \"{http}{link}\"")
+	os.system(f"python -m webbrowser -t \"{link}\"")
 
 
 # Sound Settings
@@ -168,7 +166,7 @@ class Git:
 
 
 # DataBase
-class SQLite:
+class sqlite:
 	"""[SQLite3] Work With SQLite"""
 
 	def __init__(self, _file=uuid.uuid4()):
@@ -258,7 +256,7 @@ class Sign:
 
 	def s_txt(self):o("sign_info.txt","a",f"ID:{self.id}\nName:{self.name}\nAge:{self.age}\nEmail:{self.email}\nPassword:{self.password}\n-------------------------\n")
 	def s_db(self):
-		sql = SQLite("sign")
+		sql = sqlite("sign")
 		sql.o()
 		sql.cr.execute("CREATE TABLE IF NOT EXISTS sign(id text, Name text, Age integer, Email text, Password text)")
 		sql.cr.execute(f"INSERT INTO sign(id, Name, Age, Email, Password) values('{self.id}', '{self.name}', '{self.age}', '{self.email}', '{self.password}')")
