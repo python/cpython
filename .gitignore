@@ -132,4 +132,3 @@ Tools/ssl/win32
 /@sed.*
 /CaseSensitiveTestDir
 /a.out
-/tmp_conf*
