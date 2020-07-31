@@ -18393,7 +18393,7 @@ for ac_last_try in false false false false false :; do
     ac_delim="$ac_delim!$ac_delim _$ac_delim!! "
   fi
 done
-rm -f tmp_conf$$subs.sh
+rm -f conf$$subs.sh
 
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 cat >>"\$ac_tmp/subs1.awk" <<\\_ACAWK &&
@@ -18435,13 +18435,13 @@ p
 g
 s/.\{148\}//
 t delim
-' <tmp_conf$$subs.awk | sed '
+' <conf$$subs.awk | sed '
 /^[^""]/{
   N
   s/\n//
 }
 ' >>$CONFIG_STATUS || ac_write_fail=1
-rm -f tmp_conf$$subs.awk
+rm -f conf$$subs.awk
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 _ACAWK
 cat >>"\$ac_tmp/subs1.awk" <<_ACAWK &&
