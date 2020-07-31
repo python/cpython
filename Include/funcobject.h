@@ -7,6 +7,18 @@
 extern "C" {
 #endif
 
+
+typedef struct {
+    PyObject *globals;
+    PyObject *builtins;
+    PyObject *name;
+    PyObject *qualname;
+    PyObject *code;        /* A code object, the __code__ attribute */
+    PyObject *defaults;    /* NULL or a tuple */
+    PyObject *kwdefaults;  /* NULL or a dict */
+    PyObject *closure;     /* NULL or a tuple of cell objects */
+} PyFrameConstructor;
+
 /* Function objects and code objects should not be confused with each other:
  *
  * Function objects are created by the execution of the 'def' statement.
@@ -20,18 +32,12 @@ extern "C" {
 
 typedef struct {
     PyObject_HEAD
-    PyObject *func_code;        /* A code object, the __code__ attribute */
-    PyObject *func_globals;     /* A dictionary (other mappings won't do) */
-    PyObject *func_defaults;    /* NULL or a tuple */
-    PyObject *func_kwdefaults;  /* NULL or a dict */
-    PyObject *func_closure;     /* NULL or a tuple of cell objects */
+    PyFrameConstructor func_descr;  /* Frame descriptor fields for this function */
     PyObject *func_doc;         /* The __doc__ attribute, can be anything */
-    PyObject *func_name;        /* The __name__ attribute, a string object */
     PyObject *func_dict;        /* The __dict__ attribute, a dict or NULL */
     PyObject *func_weakreflist; /* List of weak references */
     PyObject *func_module;      /* The __module__ attribute, can be anything */
     PyObject *func_annotations; /* Annotations, a dict or NULL */
-    PyObject *func_qualname;    /* The qualified name */
     vectorcallfunc vectorcall;
 
     /* Invariant:
@@ -70,17 +76,17 @@ PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
 #define PyFunction_GET_CODE(func) \
-        (((PyFunctionObject *)func) -> func_code)
+        (((PyFunctionObject *)func) -> func_descr.code)
 #define PyFunction_GET_GLOBALS(func) \
-        (((PyFunctionObject *)func) -> func_globals)
+        (((PyFunctionObject *)func) -> func_descr.globals)
 #define PyFunction_GET_MODULE(func) \
         (((PyFunctionObject *)func) -> func_module)
 #define PyFunction_GET_DEFAULTS(func) \
-        (((PyFunctionObject *)func) -> func_defaults)
+        (((PyFunctionObject *)func) -> func_descr.defaults)
 #define PyFunction_GET_KW_DEFAULTS(func) \
-        (((PyFunctionObject *)func) -> func_kwdefaults)
+        (((PyFunctionObject *)func) -> func_descr.kwdefaults)
 #define PyFunction_GET_CLOSURE(func) \
-        (((PyFunctionObject *)func) -> func_closure)
+        (((PyFunctionObject *)func) -> func_descr.closure)
 #define PyFunction_GET_ANNOTATIONS(func) \
         (((PyFunctionObject *)func) -> func_annotations)
 
