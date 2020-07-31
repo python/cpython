@@ -362,6 +362,31 @@ class _MergeNode:
         left.parent = right.parent = node
         return node
 
+    def promote_sibling(self):
+        """
+        Remove self and its sibling from the tree, while linking their
+        parent to the sibling's children.
+        """
+        assert self.leaf is self
+        parent = self.parent
+        # This can't be the last node because we switch to the
+        # fast yield-from case when we reach the last node.
+        assert parent is not None
+        left = parent.left
+        right = parent.right
+        sibling = left if self is right else right
+        parent.left = sibling.left
+        parent.right = sibling.right
+        parent.key = sibling.key
+        if sibling.leaf is sibling:
+            # sibling was a leaf, so now parent becomes a leaf
+            parent.leaf = parent
+        else:
+            parent.leaf = sibling.leaf
+            # give custody of sibling's children to parent
+            sibling.left.parent = sibling.right.parent = parent
+        return parent
+
 
 def merge(*iterables, key=None, reverse=False):
     '''Merge multiple sorted inputs into a single sorted output.
@@ -386,24 +411,29 @@ def merge(*iterables, key=None, reverse=False):
         leaf = _MergeNode.construct_leaf(it, key)
         if leaf is not None:
             nodes.append(leaf)
-    n = len(nodes)
     if not nodes:
         return
+    n = len(nodes)
     if n == 1:
-        key = None
+        (root,) = nodes
+        yield root.left
+        yield from root.right
+        return
 
     # unite pairs of adjacent nodes with a common parent until all nodes
     # are united into one big tree.
     while n > 1:
-        new_nodes = nodes[:n & 1] # leave unpaired nodes to the left
-        for i in range(n & 1, n - 1, 2):
-            left, right = nodes[i:i + 2]
+        # Prefer keeping the leftmost nodes shallower in the tree
+        # since they're more likely to win for stability reasons.
+        new_nodes, rest = nodes[:n & 1], nodes[n & 1:]
+        for left, right in zip(rest[::2], rest[1::2]):
             parent = _MergeNode.construct_parent(left, right, reverse)
             new_nodes.append(parent)
         nodes = new_nodes
         n = len(nodes)
     (root,) = nodes
 
+    _next, _StopIteration = next, StopIteration
     while True:
         # To find the value to yield, check which leaf
         # the root's key came from.
@@ -411,32 +441,17 @@ def merge(*iterables, key=None, reverse=False):
         yield node.left
 
         # refill the leaf with one value from the iterator.
-        for val in node.right:
-            node.left = val
-            node.key = val if key is None else key(val)
-            break
-        else:
-            # Leaf is exhausted.
-            # Move the leaf's sibling up to where its parent is now.
-            parent = node.parent
-            if parent is None:
+        try:
+            node.left = val = _next(node.right)
+        except _StopIteration:
+            node = node.promote_sibling()
+            if node.leaf is root:
+                assert node is root
+                yield node.left
+                yield from node.right
                 return
-            left = parent.left
-            right = parent.right
-            sibling = left if right is node else right
-            parent.left = sibling.left
-            parent.right = sibling.right
-            parent.key = sibling.key
-            if sibling.leaf is sibling:
-                # sibling was a leaf, so now parent becomes a leaf
-                parent.leaf = parent
-                # Fast out (don't compute the keys).
-                if parent is root:
-                    key = None
-            else:
-                parent.leaf = sibling.leaf
-                sibling.left.parent = sibling.right.parent = parent
-            node = parent
+        else:
+            node.key = val if key is None else key(val)
 
         # The tight loop: For each ancestor of the chosen leaf,
         # re-evaluate which of its children is higher priority,
