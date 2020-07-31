@@ -699,6 +699,7 @@ class TypesTests(unittest.TestCase):
         assert typing.Any | str == typing.Union[typing.Any, str]
         assert typing.NoReturn | str == typing.Union[typing.NoReturn, str]
         assert typing.Optional[int] | str == typing.Union[typing.Optional[int], str]
+        assert typing.Optional[int] | str == typing.Union[int, str, None]
         assert typing.Union[int, bool] | str == typing.Union[int, bool, str]
 
     def test_or_type_repr(self):
