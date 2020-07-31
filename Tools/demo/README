@@ -14,3 +14,4 @@ rpythond.py       Network programming: Small server for remote code execution.
 sortvisu.py       GUI programming: Visualization of different sort algorithms.
 spreadsheet.py    GUI/Application programming: A simple spreadsheet application.
 vector.py         Python basics: A vector class demonstrating special methods.
+heliorandom.py    Generate pseudorandom generator seeds from SDO solar images.
