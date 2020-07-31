@@ -271,7 +271,13 @@ union_new(PyTypeObject* self, PyObject* param)
     PyObject *param_type = param == Py_None ? (PyObject *)Py_TYPE(param) : param;
     PyTypeObject *self_type = (PyObject *)self == Py_None ? Py_TYPE(self) : self;
     PyObject *tuple = PyTuple_Pack(2, self_type, param_type);
+    if (tuple == NULL) {
+        return NULL;
+    }
     PyObject *new_union = Py_Union(tuple);
+    if (new_union == NULL) {
+        return NULL;
+    }
     Py_INCREF(new_union);
     return new_union;
 }
