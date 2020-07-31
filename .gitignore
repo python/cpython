@@ -132,3 +132,7 @@ Tools/ssl/win32
 /@sed.*
 /CaseSensitiveTestDir
 /a.out
+/conf*
+!/config.sub
+!/configure
+!/configure.ac
