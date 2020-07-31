@@ -18339,11 +18339,11 @@ $debug ||
 # Create a (secure) tmp directory for tmp files.
 
 {
-  tmp=`(umask 077 && mktemp -d "./tmp_confXXXXXX") 2>/dev/null` &&
+  tmp=`(umask 077 && mktemp -d "./confXXXXXX") 2>/dev/null` &&
   test -d "$tmp"
 }  ||
 {
-  tmp=./tmp_conf$$-$RANDOM
+  tmp=./conf$$-$RANDOM
   (umask 077 && mkdir "$tmp")
 } || as_fn_error $? "cannot create a temporary directory in ." "$LINENO" 5
 ac_tmp=$tmp
@@ -18373,18 +18373,18 @@ _ACEOF
 
 
 {
-  echo "cat >tmp_conf$$subs.awk <<_ACEOF" &&
+  echo "cat >conf$$subs.awk <<_ACEOF" &&
   echo "$ac_subst_vars" | sed 's/.*/&!$&$ac_delim/' &&
   echo "_ACEOF"
-} >tmp_conf$$subs.sh ||
+} >conf$$subs.sh ||
   as_fn_error $? "could not make $CONFIG_STATUS" "$LINENO" 5
 ac_delim_num=`echo "$ac_subst_vars" | grep -c '^'`
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
-  . ./tmp_conf$$subs.sh ||
+  . ./conf$$subs.sh ||
     as_fn_error $? "could not make $CONFIG_STATUS" "$LINENO" 5
 
-  ac_delim_n=`sed -n "s/.*$ac_delim\$/X/p" tmp_conf$$subs.awk | grep -c X`
+  ac_delim_n=`sed -n "s/.*$ac_delim\$/X/p" conf$$subs.awk | grep -c X`
   if test $ac_delim_n = $ac_delim_num; then
     break
   elif $ac_last_try; then
