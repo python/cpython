@@ -121,21 +121,21 @@ union_richcompare(PyObject *a, PyObject *b, int op)
         Py_RETURN_FALSE;
     }
 
+    PyTypeObject *type = Py_TYPE(b);
     if (is_typing_name(b, "_UnionGenericAlias")) {
         PyObject* b_args = PyObject_GetAttrString(b, "__args__");
         b_set = PySet_New(b_args);
-    }
-
-    PyTypeObject *type = Py_TYPE(b);
-    if (type == &Py_UnionType) {
+    } else if (type == &Py_UnionType) {
         unionobject *bb = (unionobject *)b;
         b_set = PySet_New(bb->args);
+    } else {
+        PyObject * tup = PyTuple_Pack(1, b);
+        b_set = PySet_New(tup);
     }
 
     if (b_set == NULL) {
         Py_RETURN_FALSE;
     }
-
     return PyObject_RichCompare(a_set, b_set, op);
 }
 
