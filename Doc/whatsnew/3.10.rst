@@ -154,7 +154,10 @@ Removed
 Porting to Python 3.10
 ======================
 
-* Add :func:`os.cpu_count()` support for VxWorks RTOS.
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
+
+
 
 Build Changes
 =============
