@@ -1,0 +1,2 @@
+Use `buffer_size` as chunk size for BufferedReader.read(-1). Patch by Ma
+Lin.

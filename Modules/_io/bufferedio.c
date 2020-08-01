@@ -1524,7 +1524,7 @@ static PyObject *
 _bufferedreader_read_all(buffered *self)
 {
     Py_ssize_t current_size;
-    PyObject *res = NULL, *data = NULL, *tmp = NULL, *chunks = NULL, *readall;
+    PyObject *res = NULL, *data = NULL, *tmp = NULL, *chunks = NULL;
 
     /* First copy what we have in the current buffer. */
     current_size = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
@@ -1544,29 +1544,6 @@ _bufferedreader_read_all(buffered *self)
     }
     _bufferedreader_reset_buf(self);
 
-    if (_PyObject_LookupAttr(self->raw, _PyIO_str_readall, &readall) < 0) {
-        goto cleanup;
-    }
-    if (readall) {
-        tmp = _PyObject_CallNoArg(readall);
-        Py_DECREF(readall);
-        if (tmp == NULL)
-            goto cleanup;
-        if (tmp != Py_None && !PyBytes_Check(tmp)) {
-            PyErr_SetString(PyExc_TypeError, "readall() should return bytes");
-            goto cleanup;
-        }
-        if (current_size == 0) {
-            res = tmp;
-        } else {
-            if (tmp != Py_None) {
-                PyBytes_Concat(&data, tmp);
-            }
-            res = data;
-        }
-        goto cleanup;
-    }
-
     chunks = PyList_New(0);
     if (chunks == NULL)
         goto cleanup;
@@ -1579,7 +1556,8 @@ _bufferedreader_read_all(buffered *self)
         }
 
         /* Read until EOF or until read() would block. */
-        data = PyObject_CallMethodNoArgs(self->raw, _PyIO_str_read);
+        data = _PyObject_CallMethodId(self->raw, &PyId_read,
+                                      "n", self->buffer_size);
         if (data == NULL)
             goto cleanup;
         if (data != Py_None && !PyBytes_Check(data)) {
