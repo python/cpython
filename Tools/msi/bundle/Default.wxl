@@ -89,7 +89,7 @@ Select Customize to review current options.</String>
   <String Id="ShortInstallLauncherAllUsersLabel">Install &amp;launcher for all users (recommended)</String>
   <String Id="PrecompileLabel">&amp;Precompile standard library</String>
   <String Id="Include_symbolsLabel">Download debugging &amp;symbols</String>
-  <String Id="Include_debugLabel">Download debu&amp;g binaries (requires VS 2015 or later)</String>
+  <String Id="Include_debugLabel">Download debu&amp;g binaries (requires VS 2017 or later)</String>
   
   <String Id="ProgressHeader">[ActionLikeInstallation] Progress</String>
   <String Id="ProgressLabel">[ActionLikeInstalling]:</String>
@@ -105,11 +105,11 @@ Select Customize to review current options.</String>
   <String Id="SuccessLaunchButton">&amp;Launch</String>
   <String Id="SuccessRestartText">You may need to restart your computer to finish updating files.</String>
   <String Id="SuccessRestartButton">&amp;Restart</String>
-  <String Id="SuccessInstallMessage">Special thanks to Mark Hammond, without whose years of freely shared Windows expertise, Python for Windows would still be Python for DOS.
+  <String Id="SuccessInstallMessage">New to Python? Start with the &lt;a href="https://docs.python.org/[ShortVersion]/tutorial/index.html"&gt;online tutorial&lt;/a&gt; and &lt;a href="https://docs.python.org/[ShortVersion]/index.html"&gt;documentation&lt;/a&gt;. At your terminal, type "py" to launch Python, or search for Python in your Start menu.
 
-New to Python? Start with the &lt;a href="https://docs.python.org/[ShortVersion]/tutorial/index.html"&gt;online tutorial&lt;/a&gt; and &lt;a href="https://docs.python.org/[ShortVersion]/index.html"&gt;documentation&lt;/a&gt;.
+See &lt;a href="https://docs.python.org/[ShortVersion]/whatsnew/[ShortVersion].html"&gt;what's new&lt;/a&gt; in this release, or find more info about &lt;a href="https://docs.python.org/[ShortVersion]/using/windows.html"&gt;using Python on Windows&lt;/a&gt;.
 
-See &lt;a href="https://docs.python.org/[ShortVersion]/whatsnew/[ShortVersion].html"&gt;what's new&lt;/a&gt; in this release.</String>
+Special thanks to Mark Hammond, without whose years of freely shared Windows expertise, Python for Windows would still be Python for DOS.</String>
   <String Id="SuccessModifyMessage">Thank you for using [WixBundleName].</String>
   <String Id="SuccessRepairMessage">Thank you for using [WixBundleName].
 
@@ -123,26 +123,9 @@ Feel free to email &lt;a href="mailto:python-list@python.org"&gt;python-list@pyt
   <String Id="FailureRestartButton">&amp;Restart</String>
   <String Id="FailureExistingInstall">Unable to install [WixBundleName] due to an existing install. Use Programs and Features to modify, repair or remove [WixBundleName].</String>
   
-  <String Id="FailureWin7MissingSP1">Windows 7 Service Pack 1 and all applicable updates are required to install [WixBundleName].
+  <String Id="FailureOldOS">At least Windows 8.1 or Windows Server 2012 are required to install [WixBundleName]
 
-Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%207%20service%20pack%201"&gt;update your machine&lt;/a&gt; and then restart the installation.</String>
-  <String Id="FailureVistaMissingSP2">Windows Vista Service Pack 2 and all applicable updates are required to install [WixBundleName].
-
-Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%20vista%20service%20pack%202"&gt;update your machine&lt;/a&gt; and then restart the installation.</String>
-  <String Id="FailureXPOrEarlier">Windows Vista or later is required to install and use [WixBundleName].
-
-Visit &lt;a href="https://www.python.org/"&gt;python.org&lt;/a&gt; to download Python 3.4.</String>
-
-  <String Id="FailureWS2K8R2MissingSP1">Windows Server 2008 R2 Service Pack 1 and all applicable updates are required to install [WixBundleName].
-
-Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%20server%202008%20r2%20service%20pack%201"&gt;update your machine&lt;/a&gt; and then restart the installation.</String>
-  <String Id="FailureWS2K8MissingSP2">Windows Server 2008 Service Pack 2 and all applicable updates are required to install [WixBundleName].
-
-Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%20server%202008%20service%20pack%202"&gt;update your machine&lt;/a&gt; and then restart the installation.</String>
-  <String Id="FailureWS2K3OrEarlier">Windows Server 2008 SP2 or later is required to install and use [WixBundleName].
-
-Visit &lt;a href="https://www.python.org/"&gt;python.org&lt;/a&gt; to download Python 3.4.</String>
-
+Visit &lt;a href="https://www.python.org/"&gt;python.org&lt;/a&gt; to download an earlier version of Python.</String>
   <String Id="SuccessMaxPathButton">Disable path length limit</String>
   <String Id="SuccessMaxPathButtonNote">Changes your machine configuration to allow programs, including Python, to bypass the 260 character "MAX_PATH" limitation.</String>
 </WixLocalization>

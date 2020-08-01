@@ -89,6 +89,8 @@ if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
     # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
     # seconds on Windows ARM32 buildbot
     LOOPBACK_TIMEOUT = 10
+elif sys.platform == 'vxworks':
+    LOOPBACK_TIMEOUT = 10
 
 # Timeout in seconds for network requests going to the Internet. The timeout is
 # short enough to prevent a test to wait for too long if the Internet request
