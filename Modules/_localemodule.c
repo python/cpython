@@ -289,8 +289,10 @@ _locale_localeconv_impl(PyObject *module)
     RESULT_INT(n_sign_posn);
 
     /* Numeric information: LC_NUMERIC encoding */
-    PyObject *decimal_point, *thousands_sep;
+    PyObject *decimal_point = NULL, *thousands_sep = NULL;
     if (_Py_GetLocaleconvNumeric(lc, &decimal_point, &thousands_sep) < 0) {
+        Py_XDECREF(decimal_point);
+        Py_XDECREF(thousands_sep);
         goto failed;
     }
 
