@@ -35,7 +35,7 @@ In the function ``greeting``, the argument ``name`` is expected to be of type
 arguments.
 
 Type aliases
-------------
+============
 
 A type alias is defined by assigning the type to the alias. In this example,
 ``Vector`` and ``List[float]`` will be treated as interchangeable synonyms::
@@ -73,7 +73,7 @@ Note that ``None`` as a type hint is a special case and is replaced by
 .. _distinct:
 
 NewType
--------
+=======
 
 Use the :func:`NewType` helper function to create distinct types::
 
@@ -150,7 +150,7 @@ See :pep:`484` for more details.
 .. versionadded:: 3.5.2
 
 Callable
---------
+========
 
 Frameworks expecting callback functions of specific signatures might be
 type hinted using ``Callable[[Arg1Type, Arg2Type], ReturnType]``.
@@ -173,7 +173,7 @@ for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
 .. _generics:
 
 Generics
---------
+========
 
 Since type information about objects kept in containers cannot be statically
 inferred in a generic way, abstract base classes have been extended to support
@@ -200,7 +200,7 @@ called :class:`TypeVar`.
 
 
 User-defined generic types
---------------------------
+==========================
 
 A user-defined class can be defined as a generic class.
 
@@ -318,7 +318,7 @@ comparable for equality.
 
 
 The :data:`Any` type
---------------------
+====================
 
 A special kind of type is :data:`Any`. A static type checker will treat
 every type as being compatible with :data:`Any` and :data:`Any` as being
@@ -396,7 +396,7 @@ manner. Use :data:`Any` to indicate that a value is dynamically typed.
 
 
 Nominal vs structural subtyping
--------------------------------
+===============================
 
 Initially :pep:`484` defined Python static type system as using
 *nominal subtyping*. This means that a class ``A`` is allowed where
@@ -435,14 +435,43 @@ Moreover, by subclassing a special class :class:`Protocol`, a user
 can define new custom protocols to fully enjoy structural subtyping
 (see examples below).
 
-
 Module contents
----------------
+===============
 
 The module defines the following classes, functions and decorators:
 
 Special typing primitives
-.........................
+-------------------------
+
+Special types
+"""""""""""""
+
+These can be used as types in annotations and do not support ``[]``.
+
+.. data:: Any
+
+   Special type indicating an unconstrained type.
+
+   * Every type is compatible with :data:`Any`.
+   * :data:`Any` is compatible with every type.
+
+.. data:: NoReturn
+
+   Special type indicating that a function never returns.
+   For example::
+
+      from typing import NoReturn
+
+      def stop() -> NoReturn:
+          raise RuntimeError('no way')
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.2
+
+Special forms
+"""""""""""""
+
+These can be used as types in annotations using ``[]``, each having a unique syntax.
 
 .. data:: Annotated
 
@@ -528,13 +557,6 @@ Special typing primitives
 
    .. versionadded:: 3.9
 
-.. data:: Any
-
-   Special type indicating an unconstrained type.
-
-   * Every type is compatible with :data:`Any`.
-   * :data:`Any` is compatible with every type.
-
 .. data:: Callable
 
    Callable type; ``Callable[[int], str]`` is a function of (int) -> str.
@@ -597,37 +619,6 @@ Special typing primitives
 
    .. versionadded:: 3.8
 
-.. class:: ForwardRef
-
-   A class used for internal typing representation of string forward references.
-   For example, ``List["SomeClass"]`` is implicitly transformed into
-   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
-   a user, but may be used by introspection tools.
-
-.. class:: Generic
-
-   Abstract base class for generic types.
-
-   A generic type is typically declared by inheriting from an
-   instantiation of this class with one or more type variables.
-   For example, a generic mapping type might be defined as::
-
-      class Mapping(Generic[KT, VT]):
-          def __getitem__(self, key: KT) -> VT:
-              ...
-              # Etc.
-
-   This class can then be used as follows::
-
-      X = TypeVar('X')
-      Y = TypeVar('Y')
-
-      def lookup_name(mapping: Mapping[X, Y], key: X, default: Y) -> Y:
-          try:
-              return mapping[key]
-          except KeyError:
-              return default
-
 .. data:: Literal
 
    A type that can be used to indicate to type checkers that the
@@ -650,30 +641,6 @@ Special typing primitives
 
    .. versionadded:: 3.8
 
-.. function:: NewType(name, tp)
-
-   A helper function to indicate a distinct type to a typechecker,
-   see :ref:`distinct`. At runtime it returns a function that returns
-   its argument. Usage::
-
-      UserId = NewType('UserId', int)
-      first_user = UserId(1)
-
-   .. versionadded:: 3.5.2
-
-.. data:: NoReturn
-
-   Special type indicating that a function never returns.
-   For example::
-
-      from typing import NoReturn
-
-      def stop() -> NoReturn:
-          raise RuntimeError('no way')
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.2
-
 .. data:: Optional
 
    Optional type.
@@ -695,38 +662,19 @@ Special typing primitives
       def foo(arg: Optional[int] = None) -> None:
           ...
 
-.. class:: Protocol(Generic)
+.. data:: Tuple
 
-   Base class for protocol classes. Protocol classes are defined like this::
+   Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
+   with the first item of type X and the second of type Y. The type of
+   the empty tuple can be written as ``Tuple[()]``.
 
-      class Proto(Protocol):
-          def meth(self) -> int:
-              ...
+   Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
+   to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
+   of an int, a float and a string.
 
-   Such classes are primarily used with static type checkers that recognize
-   structural subtyping (static duck-typing), for example::
-
-      class C:
-          def meth(self) -> int:
-              return 0
-
-      def func(x: Proto) -> int:
-          return x.meth()
-
-      func(C())  # Passes static type check
-
-   See :pep:`544` for details. Protocol classes decorated with
-   :func:`runtime_checkable` (described later) act as simple-minded runtime
-   protocols that check only the presence of given attributes, ignoring their
-   type signatures.
-
-   Protocol classes can be generic, for example::
-
-      class GenProto(Protocol[T]):
-          def meth(self) -> T:
-              ...
-
-   .. versionadded:: 3.8
+   To specify a variable-length tuple of homogeneous type,
+   use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain :data:`Tuple`
+   is equivalent to ``Tuple[Any, ...]``, and in turn to :class:`tuple`.
 
 .. class:: Type(Generic[CT_co])
 
@@ -769,6 +717,120 @@ Special typing primitives
    to ``type``, which is the root of Python's metaclass hierarchy.
 
    .. versionadded:: 3.5.2
+
+.. data:: Union
+
+   Union type; ``Union[X, Y]`` means either X or Y.
+
+   To define a union, use e.g. ``Union[int, str]``.  Details:
+
+   * The arguments must be types and there must be at least one.
+
+   * Unions of unions are flattened, e.g.::
+
+       Union[Union[int, str], float] == Union[int, str, float]
+
+   * Unions of a single argument vanish, e.g.::
+
+       Union[int] == int  # The constructor actually returns int
+
+   * Redundant arguments are skipped, e.g.::
+
+       Union[int, str, int] == Union[int, str]
+
+   * When comparing unions, the argument order is ignored, e.g.::
+
+       Union[int, str] == Union[str, int]
+
+   * You cannot subclass or instantiate a union.
+
+   * You cannot write ``Union[X][Y]``.
+
+   * You can use ``Optional[X]`` as a shorthand for ``Union[X, None]``.
+
+   .. versionchanged:: 3.7
+      Don't remove explicit subclasses from unions at runtime.
+
+Other special directives
+""""""""""""""""""""""""
+
+These are not used in annotations. They are building blocks used for declaring types.
+
+
+.. class:: ForwardRef
+
+   A class used for internal typing representation of string forward references.
+   For example, ``List["SomeClass"]`` is implicitly transformed into
+   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   a user, but may be used by introspection tools.
+
+.. class:: Generic
+
+   Abstract base class for generic types.
+
+   A generic type is typically declared by inheriting from an
+   instantiation of this class with one or more type variables.
+   For example, a generic mapping type might be defined as::
+
+      class Mapping(Generic[KT, VT]):
+          def __getitem__(self, key: KT) -> VT:
+              ...
+              # Etc.
+
+   This class can then be used as follows::
+
+      X = TypeVar('X')
+      Y = TypeVar('Y')
+
+      def lookup_name(mapping: Mapping[X, Y], key: X, default: Y) -> Y:
+          try:
+              return mapping[key]
+          except KeyError:
+              return default
+
+.. function:: NewType(name, tp)
+
+   A helper function to indicate a distinct type to a typechecker,
+   see :ref:`distinct`. At runtime it returns a function that returns
+   its argument. Usage::
+
+      UserId = NewType('UserId', int)
+      first_user = UserId(1)
+
+   .. versionadded:: 3.5.2
+
+.. class:: Protocol(Generic)
+
+   Base class for protocol classes. Protocol classes are defined like this::
+
+      class Proto(Protocol):
+          def meth(self) -> int:
+              ...
+
+   Such classes are primarily used with static type checkers that recognize
+   structural subtyping (static duck-typing), for example::
+
+      class C:
+          def meth(self) -> int:
+              return 0
+
+      def func(x: Proto) -> int:
+          return x.meth()
+
+      func(C())  # Passes static type check
+
+   See :pep:`544` for details. Protocol classes decorated with
+   :func:`runtime_checkable` (described later) act as simple-minded runtime
+   protocols that check only the presence of given attributes, ignoring their
+   type signatures.
+
+   Protocol classes can be generic, for example::
+
+      class GenProto(Protocol[T]):
+          def meth(self) -> T:
+              ...
+
+   .. versionadded:: 3.8
 
 .. class:: TypedDict(dict)
 
@@ -854,41 +916,54 @@ Special typing primitives
     for the type variable must be a subclass of the boundary type,
     see :pep:`484`.
 
-.. data:: Union
-
-   Union type; ``Union[X, Y]`` means either X or Y.
-
-   To define a union, use e.g. ``Union[int, str]``.  Details:
-
-   * The arguments must be types and there must be at least one.
-
-   * Unions of unions are flattened, e.g.::
-
-       Union[Union[int, str], float] == Union[int, str, float]
-
-   * Unions of a single argument vanish, e.g.::
-
-       Union[int] == int  # The constructor actually returns int
-
-   * Redundant arguments are skipped, e.g.::
-
-       Union[int, str, int] == Union[int, str]
-
-   * When comparing unions, the argument order is ignored, e.g.::
-
-       Union[int, str] == Union[str, int]
-
-   * You cannot subclass or instantiate a union.
-
-   * You cannot write ``Union[X][Y]``.
-
-   * You can use ``Optional[X]`` as a shorthand for ``Union[X, None]``.
-
-   .. versionchanged:: 3.7
-      Don't remove explicit subclasses from unions at runtime.
-
 Generic concrete collections
-............................
+""""""""""""""""""""""""""""
+
+Corresponding to built-in types
+...............................
+
+.. class:: Dict(dict, MutableMapping[KT, VT])
+
+   A generic version of :class:`dict`.
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use an abstract collection type such as :class:`Mapping`.
+
+   This type can be used as follows::
+
+      def count_words(text: str) -> Dict[str, int]:
+          ...
+
+.. class:: List(list, MutableSequence[T])
+
+   Generic version of :class:`list`.
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use an abstract collection type such as :class:`Sequence` or
+   :class:`Iterable`.
+
+   This type may be used as follows::
+
+      T = TypeVar('T', int, float)
+
+      def vec2(x: T, y: T) -> List[T]:
+          return [x, y]
+
+      def keep_positives(vector: Sequence[T]) -> List[T]:
+          return [item for item in vector if item > 0]
+
+.. class:: Set(set, MutableSet[T])
+
+   A generic version of :class:`builtins.set <set>`.
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use an abstract collection type such as :class:`AbstractSet`.
+
+.. class:: FrozenSet(frozenset, AbstractSet[T_co])
+
+   A generic version of :class:`builtins.frozenset <frozenset>`.
+
+.. note:: :data:`Tuple` is a special form.
+
+Corresponding to types in :mod:`collections`
+............................................
 
 .. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
 
@@ -916,38 +991,6 @@ Generic concrete collections
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
-
-.. class:: Dict(dict, MutableMapping[KT, VT])
-
-   A generic version of :class:`dict`.
-   Useful for annotating return types. To annotate arguments it is preferred
-   to use an abstract collection type such as :class:`Mapping`.
-
-   This type can be used as follows::
-
-      def count_words(text: str) -> Dict[str, int]:
-          ...
-
-.. class:: FrozenSet(frozenset, AbstractSet[T_co])
-
-   A generic version of :class:`builtins.frozenset <frozenset>`.
-
-.. class:: List(list, MutableSequence[T])
-
-   Generic version of :class:`list`.
-   Useful for annotating return types. To annotate arguments it is preferred
-   to use an abstract collection type such as :class:`Sequence` or
-   :class:`Iterable`.
-
-   This type may be used as follows::
-
-      T = TypeVar('T', int, float)
-
-      def vec2(x: T, y: T) -> List[T]:
-          return [x, y]
-
-      def keep_positives(vector: Sequence[T]) -> List[T]:
-          return [item for item in vector if item > 0]
 
 .. class:: NamedTuple
 
@@ -1014,28 +1057,8 @@ Generic concrete collections
 
    .. versionadded:: 3.7.2
 
-.. class:: Set(set, MutableSet[T])
-
-   A generic version of :class:`builtins.set <set>`.
-   Useful for annotating return types. To annotate arguments it is preferred
-   to use an abstract collection type such as :class:`AbstractSet`.
-
-.. data:: Tuple
-
-   Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
-   with the first item of type X and the second of type Y. The type of
-   the empty tuple can be written as ``Tuple[()]``.
-
-   Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
-   to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
-   of an int, a float and a string.
-
-   To specify a variable-length tuple of homogeneous type,
-   use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain :data:`Tuple`
-   is equivalent to ``Tuple[Any, ...]``, and in turn to :class:`tuple`.
-
-Generic ABCs
-............
+Other ABCs
+""""""""""
 
 .. class:: AbstractSet(Sized, Collection[T_co])
 
@@ -1248,7 +1271,7 @@ Generic ABCs
    A generic version of :class:`collections.abc.ValuesView`.
 
 Protocols
-.........
+"""""""""
 
 .. class:: Reversible(Iterable[T_co])
 
@@ -1287,7 +1310,7 @@ Protocols
     that is covariant in its return type.
 
 Aliases and constants
-.....................
+"""""""""""""""""""""
 
 .. data:: AnyStr
 
@@ -1337,7 +1360,7 @@ Aliases and constants
    .. versionadded:: 3.5.2
 
 Functions and decorators
-........................
+""""""""""""""""""""""""
 
 .. function:: cast(typ, val)
 
