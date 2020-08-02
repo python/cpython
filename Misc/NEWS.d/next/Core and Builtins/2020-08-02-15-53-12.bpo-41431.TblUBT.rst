@@ -1,0 +1,2 @@
+Optimize ``dict_merge`` for empty destination (e.g. ``dict(d)`` and
+``{}.update(d)``).
