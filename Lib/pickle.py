@@ -1815,4 +1815,4 @@ if __name__ == "__main__":
             for pickle_file in args.pickle_file:
                 with pickle_file as f:
                     obj = load(f)
-                    pprint.pprint(obj)
+                pprint.pprint(obj)
