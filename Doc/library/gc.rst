@@ -107,24 +107,24 @@ The :mod:`gc` module provides the following functions:
    starts.  Initially only generation ``0`` is examined.  If generation ``0`` has
    been examined more than *threshold1* times since generation ``1`` has been
    examined, then generation ``1`` is examined as well.
-   In addition to the various configurable thresholds, the GC only triggers 
-   a full collection of the oldest generation 
-   if the ratio ``long_lived_pending / long_lived_total`` is above a given value 
+   In addition to the various configurable thresholds, the GC only triggers
+   a full collection of the oldest generation
+   if the ratio ``long_lived_pending / long_lived_total`` is above a given value
    (hardwired to ``25%``). The reason is that, while "non-full" collections
    (i.e., collections of the young and middle generations) will always examine
-   roughly the same number of objects 
-   (determined by the aforementioned thresholds) 
-   the cost of a full collection is proportional to the total number 
+   roughly the same number of objects
+   (determined by the aforementioned thresholds)
+   the cost of a full collection is proportional to the total number
    of long-lived objects, which is virtually unbounded.
    Indeed, it has been remarked that doing a full collection every
-   ``<constant number>`` of object creations 
+   ``<constant number>`` of object creations
    entails a dramatic performance degradation in workloads which consist
-   of creating and storing lots of long-lived objects (e.g. building a large 
-   list of GC-tracked objects would show quadratic performance, 
+   of creating and storing lots of long-lived objects (e.g. building a large
+   list of GC-tracked objects would show quadratic performance,
    instead of linear as expected). Using the above ratio, instead, yields
    amortized linear performance in the total number of objects (the effect
-   of which can be summarized thusly: "each full garbage collection is more 
-   and more costly as the number of objects grows, but we do 
+   of which can be summarized thusly: "each full garbage collection is more
+   and more costly as the number of objects grows, but we do
    fewer and fewer of them").
 
 
