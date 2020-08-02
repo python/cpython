@@ -1812,7 +1812,7 @@ if __name__ == "__main__":
             parser.print_help()
         else:
             import pprint
-            for pickle_file in args.pickle_file:
-                with pickle_file as f:
+            for f in args.pickle_file:
+                with f:
                     obj = load(f)
                 pprint.pprint(obj)
