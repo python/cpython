@@ -2520,14 +2520,13 @@ dict_merge(PyObject *a, PyObject *b, int override)
              * skips the unnecessary test.
              */
             override = 1;
+            PyDictKeysObject *okeys = other->ma_keys;
 
-            // If other is clean combined dict, just clone it.
+            // If other is clean, combined, and just allocated, just clone it.
             if (other->ma_values == NULL &&
-                    other->ma_used == other->ma_keys->dk_nentries &&
-                    other->ma_keys->dk_size <= other->ma_used * 3 + PyDict_MINSIZE) {
-                /* Note: ma_used * 3 must not overflow, because sizeof(dict) is
-                 * much larger than ma_used * 3.
-                 */
+                    other->ma_used == okeys->dk_nentries &&
+                    (okeys->dk_size == PyDict_MINSIZE ||
+                     USABLE_FRACTION(okeys->dk_size/2) < other->ma_used)) {
                 PyDictKeysObject *keys = clone_combined_dict_keys(other);
                 if (keys == NULL) {
                     return -1;
