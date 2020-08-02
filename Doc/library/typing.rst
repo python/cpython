@@ -756,7 +756,6 @@ Other special directives
 
 These are not used in annotations. They are building blocks used for declaring types.
 
-
 .. class:: ForwardRef
 
    A class used for internal typing representation of string forward references.
@@ -916,11 +915,29 @@ These are not used in annotations. They are building blocks used for declaring t
     for the type variable must be a subclass of the boundary type,
     see :pep:`484`.
 
+Predefined type variable
+""""""""""""""""""""""""
+
+.. data:: AnyStr
+
+   ``AnyStr`` is a type variable defined as
+   ``AnyStr = TypeVar('AnyStr', str, bytes)``.
+
+   It is meant to be used for functions that may accept any kind of string
+   without allowing different kinds of strings to mix. For example::
+
+      def concat(a: AnyStr, b: AnyStr) -> AnyStr:
+          return a + b
+
+      concat(u"foo", u"bar")  # Ok, output has type 'unicode'
+      concat(b"foo", b"bar")  # Ok, output has type 'bytes'
+      concat(u"foo", b"bar")  # Error, cannot mix unicode and bytes
+
 Generic concrete collections
-""""""""""""""""""""""""""""
+----------------------------
 
 Corresponding to built-in types
-...............................
+"""""""""""""""""""""""""""""""
 
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
@@ -963,7 +980,19 @@ Corresponding to built-in types
 .. note:: :data:`Tuple` is a special form.
 
 Corresponding to types in :mod:`collections`
-............................................
+""""""""""""""""""""""""""""""""""""""""""""
+
+.. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
+
+   A generic version of :class:`collections.defaultdict`.
+
+   .. versionadded:: 3.5.2
+
+.. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
+
+   A generic version of :class:`collections.OrderedDict`.
+
+   .. versionadded:: 3.7.2
 
 .. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
 
@@ -978,12 +1007,6 @@ Corresponding to types in :mod:`collections`
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
-
-.. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
-
-   A generic version of :class:`collections.defaultdict`.
-
-   .. versionadded:: 3.5.2
 
 .. class:: Deque(deque, MutableSequence[T])
 
@@ -1051,18 +1074,192 @@ Corresponding to types in :mod:`collections`
       Removed the ``_field_types`` attribute in favor of the more
       standard ``__annotations__`` attribute which has the same information.
 
-.. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
 
-   A generic version of :class:`collections.OrderedDict`.
+Other concrete types
+""""""""""""""""""""
 
-   .. versionadded:: 3.7.2
+.. class:: IO
+           TextIO
+           BinaryIO
 
-Other ABCs
-""""""""""
+   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
+   and ``BinaryIO(IO[bytes])``
+   represent the types of I/O streams such as returned by
+   :func:`open`. These types are in the ``typing.io`` namespace.
+
+.. class:: Pattern
+           Match
+
+   These type aliases
+   correspond to the return types from :func:`re.compile` and
+   :func:`re.match`.  These types (and the corresponding functions)
+   are generic in ``AnyStr`` and can be made specific by writing
+   ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
+   ``Match[bytes]``. These types are in the ``typing.re`` namespace.
+
+.. class:: Text
+
+   ``Text`` is an alias for ``str``. It is provided to supply a forward
+   compatible path for Python 2 code: in Python 2, ``Text`` is an alias for
+   ``unicode``.
+
+   Use ``Text`` to indicate that a value must contain a unicode string in
+   a manner that is compatible with both Python 2 and Python 3::
+
+       def add_unicode_checkmark(text: Text) -> Text:
+           return text + u' \u2713'
+
+   .. versionadded:: 3.5.2
+
+Abstract Base Classes
+---------------------
+
+Corresponding to collections in :mod:`collections.abc`
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 .. class:: AbstractSet(Sized, Collection[T_co])
 
     A generic version of :class:`collections.abc.Set`.
+
+.. class:: ByteString(Sequence[int])
+
+   A generic version of :class:`collections.abc.ByteString`.
+
+   This type represents the types :class:`bytes`, :class:`bytearray`,
+   and :class:`memoryview` of byte sequences.
+
+   As a shorthand for this type, :class:`bytes` can be used to
+   annotate arguments of any of the types mentioned above.
+
+.. class:: Collection(Sized, Iterable[T_co], Container[T_co])
+
+   A generic version of :class:`collections.abc.Collection`
+
+   .. versionadded:: 3.6.0
+
+.. class:: Container(Generic[T_co])
+
+    A generic version of :class:`collections.abc.Container`.
+
+.. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
+
+   A generic version of :class:`collections.abc.ItemsView`.
+
+.. class:: KeysView(MappingView[KT_co], AbstractSet[KT_co])
+
+   A generic version of :class:`collections.abc.KeysView`.
+
+.. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
+
+    A generic version of :class:`collections.abc.Mapping`.
+    This type can be used as follows::
+
+      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
+          return word_list[word]
+
+.. class:: MappingView(Sized, Iterable[T_co])
+
+   A generic version of :class:`collections.abc.MappingView`.
+
+.. class:: MutableMapping(Mapping[KT, VT])
+
+    A generic version of :class:`collections.abc.MutableMapping`.
+
+.. class:: MutableSequence(Sequence[T])
+
+   A generic version of :class:`collections.abc.MutableSequence`.
+
+.. class:: MutableSet(AbstractSet[T])
+
+    A generic version of :class:`collections.abc.MutableSet`.
+
+.. class:: Sequence(Reversible[T_co], Collection[T_co])
+
+    A generic version of :class:`collections.abc.Sequence`.
+
+.. class:: ValuesView(MappingView[VT_co])
+
+   A generic version of :class:`collections.abc.ValuesView`.
+
+
+Corresponding to other types in :mod:`collections.abc`
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+.. class:: ContextManager(Generic[T_co])
+
+   A generic version of :class:`contextlib.AbstractContextManager`.
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.0
+
+.. class:: Iterable(Generic[T_co])
+
+    A generic version of :class:`collections.abc.Iterable`.
+
+.. class:: Iterator(Iterable[T_co])
+
+    A generic version of :class:`collections.abc.Iterator`.
+
+.. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
+
+   A generator can be annotated by the generic type
+   ``Generator[YieldType, SendType, ReturnType]``. For example::
+
+      def echo_round() -> Generator[int, float, str]:
+          sent = yield 0
+          while sent >= 0:
+              sent = yield round(sent)
+          return 'Done'
+
+   Note that unlike many other generics in the typing module, the ``SendType``
+   of :class:`Generator` behaves contravariantly, not covariantly or
+   invariantly.
+
+   If your generator will only yield values, set the ``SendType`` and
+   ``ReturnType`` to ``None``::
+
+      def infinite_stream(start: int) -> Generator[int, None, None]:
+          while True:
+              yield start
+              start += 1
+
+   Alternatively, annotate your generator as having a return type of
+   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
+
+      def infinite_stream(start: int) -> Iterator[int]:
+          while True:
+              yield start
+              start += 1
+
+.. class:: Hashable
+
+   An alias to :class:`collections.abc.Hashable`
+
+.. class:: Reversible(Iterable[T_co])
+
+    A generic version of :class:`collections.abc.Reversible`.
+
+.. class:: Sized
+
+   An alias to :class:`collections.abc.Sized`
+
+Asynchronous programming
+""""""""""""""""""""""""
+
+.. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
+
+   A generic version of :class:`collections.abc.Coroutine`.
+   The variance and order of type variables
+   correspond to those of :class:`Generator`, for example::
+
+      from typing import List, Coroutine
+      c = None # type: Coroutine[List[str], str, int]
+      ...
+      x = c.send('hi') # type: List[str]
+      async def bar() -> None:
+          x = await c # type: int
+
+   .. versionadded:: 3.5.3
 
 .. class:: AsyncContextManager(Generic[T_co])
 
@@ -1122,160 +1319,10 @@ Other ABCs
 
    .. versionadded:: 3.5.2
 
-.. class:: ByteString(Sequence[int])
-
-   A generic version of :class:`collections.abc.ByteString`.
-
-   This type represents the types :class:`bytes`, :class:`bytearray`,
-   and :class:`memoryview` of byte sequences.
-
-   As a shorthand for this type, :class:`bytes` can be used to
-   annotate arguments of any of the types mentioned above.
-
-.. class:: Collection(Sized, Iterable[T_co], Container[T_co])
-
-   A generic version of :class:`collections.abc.Collection`
-
-   .. versionadded:: 3.6.0
-
-.. class:: Container(Generic[T_co])
-
-    A generic version of :class:`collections.abc.Container`.
-
-.. class:: ContextManager(Generic[T_co])
-
-   A generic version of :class:`contextlib.AbstractContextManager`.
-
-   .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.0
-
-.. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
-
-   A generic version of :class:`collections.abc.Coroutine`.
-   The variance and order of type variables
-   correspond to those of :class:`Generator`, for example::
-
-      from typing import List, Coroutine
-      c = None # type: Coroutine[List[str], str, int]
-      ...
-      x = c.send('hi') # type: List[str]
-      async def bar() -> None:
-          x = await c # type: int
-
-   .. versionadded:: 3.5.3
-
-.. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
-
-   A generator can be annotated by the generic type
-   ``Generator[YieldType, SendType, ReturnType]``. For example::
-
-      def echo_round() -> Generator[int, float, str]:
-          sent = yield 0
-          while sent >= 0:
-              sent = yield round(sent)
-          return 'Done'
-
-   Note that unlike many other generics in the typing module, the ``SendType``
-   of :class:`Generator` behaves contravariantly, not covariantly or
-   invariantly.
-
-   If your generator will only yield values, set the ``SendType`` and
-   ``ReturnType`` to ``None``::
-
-      def infinite_stream(start: int) -> Generator[int, None, None]:
-          while True:
-              yield start
-              start += 1
-
-   Alternatively, annotate your generator as having a return type of
-   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
-
-      def infinite_stream(start: int) -> Iterator[int]:
-          while True:
-              yield start
-              start += 1
-
-.. class:: Hashable
-
-   An alias to :class:`collections.abc.Hashable`
-
-.. class:: IO
-           TextIO
-           BinaryIO
-
-   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
-   and ``BinaryIO(IO[bytes])``
-   represent the types of I/O streams such as returned by
-   :func:`open`. These types are in the ``typing.io`` namespace.
-
-.. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
-
-   A generic version of :class:`collections.abc.ItemsView`.
-
-.. class:: Iterable(Generic[T_co])
-
-    A generic version of :class:`collections.abc.Iterable`.
-
-.. class:: Iterator(Iterable[T_co])
-
-    A generic version of :class:`collections.abc.Iterator`.
-
-.. class:: KeysView(MappingView[KT_co], AbstractSet[KT_co])
-
-   A generic version of :class:`collections.abc.KeysView`.
-
-.. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
-
-    A generic version of :class:`collections.abc.Mapping`.
-    This type can be used as follows::
-
-      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
-          return word_list[word]
-
-.. class:: MappingView(Sized, Iterable[T_co])
-
-   A generic version of :class:`collections.abc.MappingView`.
-
-.. class:: MutableMapping(Mapping[KT, VT])
-
-    A generic version of :class:`collections.abc.MutableMapping`.
-
-.. class:: MutableSequence(Sequence[T])
-
-   A generic version of :class:`collections.abc.MutableSequence`.
-
-.. class:: MutableSet(AbstractSet[T])
-
-    A generic version of :class:`collections.abc.MutableSet`.
-
-.. class:: Pattern
-           Match
-
-   These type aliases
-   correspond to the return types from :func:`re.compile` and
-   :func:`re.match`.  These types (and the corresponding functions)
-   are generic in ``AnyStr`` and can be made specific by writing
-   ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
-   ``Match[bytes]``. These types are in the ``typing.re`` namespace.
-
-.. class:: Sequence(Reversible[T_co], Collection[T_co])
-
-    A generic version of :class:`collections.abc.Sequence`.
-
-.. class:: Sized
-
-   An alias to :class:`collections.abc.Sized`
-
-.. class:: ValuesView(MappingView[VT_co])
-
-   A generic version of :class:`collections.abc.ValuesView`.
-
 Protocols
-"""""""""
+---------
 
-.. class:: Reversible(Iterable[T_co])
-
-    A generic version of :class:`collections.abc.Reversible`.
+These protocols are decorated with :func:`runtime_checkable`.
 
 .. class:: SupportsAbs
 
@@ -1309,58 +1356,8 @@ Protocols
     An ABC with one abstract method ``__round__``
     that is covariant in its return type.
 
-Aliases and constants
-"""""""""""""""""""""
-
-.. data:: AnyStr
-
-   ``AnyStr`` is a type variable defined as
-   ``AnyStr = TypeVar('AnyStr', str, bytes)``.
-
-   It is meant to be used for functions that may accept any kind of string
-   without allowing different kinds of strings to mix. For example::
-
-      def concat(a: AnyStr, b: AnyStr) -> AnyStr:
-          return a + b
-
-      concat(u"foo", u"bar")  # Ok, output has type 'unicode'
-      concat(b"foo", b"bar")  # Ok, output has type 'bytes'
-      concat(u"foo", b"bar")  # Error, cannot mix unicode and bytes
-
-.. class:: Text
-
-   ``Text`` is an alias for ``str``. It is provided to supply a forward
-   compatible path for Python 2 code: in Python 2, ``Text`` is an alias for
-   ``unicode``.
-
-   Use ``Text`` to indicate that a value must contain a unicode string in
-   a manner that is compatible with both Python 2 and Python 3::
-
-       def add_unicode_checkmark(text: Text) -> Text:
-           return text + u' \u2713'
-
-   .. versionadded:: 3.5.2
-
-.. data:: TYPE_CHECKING
-
-   A special constant that is assumed to be ``True`` by 3rd party static
-   type checkers. It is ``False`` at runtime. Usage::
-
-      if TYPE_CHECKING:
-          import expensive_mod
-
-      def fun(arg: 'expensive_mod.SomeType') -> None:
-          local_var: expensive_mod.AnotherType = other_fun()
-
-   Note that the first type annotation must be enclosed in quotes, making it a
-   "forward reference", to hide the ``expensive_mod`` reference from the
-   interpreter runtime.  Type annotations for local variables are not
-   evaluated, so the second annotation does not need to be enclosed in quotes.
-
-   .. versionadded:: 3.5.2
-
 Functions and decorators
-""""""""""""""""""""""""
+------------------------
 
 .. function:: cast(typ, val)
 
@@ -1504,8 +1501,13 @@ Functions and decorators
 
       assert isinstance(open('/some/file'), Closable)
 
-   **Warning:** this will check only the presence of the required methods,
-   not their type signatures!
+   .. note::
+
+        :func:`runtime_checkable` will check only the presence of the required methods,
+        not their type signatures! For example, :class:`builtins.complex <complex>`
+        implements :func:`__float__`, therefore it passes an :func:`issubclass` check
+        against :class:`SupportsFloat`. However, the ``complex.__float__`` method
+        exists only to raise a :class:`TypeError` with a more informative message.
 
    .. versionadded:: 3.8
 
@@ -1526,3 +1528,26 @@ Functions and decorators
 
    Note that returning instances of private classes is not recommended.
    It is usually preferable to make such classes public.
+
+
+Constant
+--------
+
+.. data:: TYPE_CHECKING
+
+   A special constant that is assumed to be ``True`` by 3rd party static
+   type checkers. It is ``False`` at runtime. Usage::
+
+      if TYPE_CHECKING:
+          import expensive_mod
+
+      def fun(arg: 'expensive_mod.SomeType') -> None:
+          local_var: expensive_mod.AnotherType = other_fun()
+
+   Note that the first type annotation must be enclosed in quotes, making it a
+   "forward reference", to hide the ``expensive_mod`` reference from the
+   interpreter runtime.  Type annotations for local variables are not
+   evaluated, so the second annotation does not need to be enclosed in quotes.
+
+   .. versionadded:: 3.5.2
+
