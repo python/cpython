@@ -872,13 +872,13 @@ build_tree(mergeobject *mo)
 
     mo->root = (merge_node *)PyList_GET_ITEM(nodes, 0);
     Py_INCREF(mo->root);
-    Py_CLEAR(nodes);
+    Py_DECREF(nodes);
     return 0;
 
 error:
     Py_CLEAR(mo->iterables);
-    Py_CLEAR(new_nodes);
-    Py_CLEAR(nodes);
+    Py_XDECREF(new_nodes);
+    Py_XDECREF(nodes);
     return -1;
 }
 
@@ -1040,7 +1040,7 @@ merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     int reverse = 0;
 
     if (kwds != NULL) {
-        char *kwlist[] = {"key", "reverse", 0};
+        char *kwlist[] = {"key", "reverse", NULL};
         PyObject *tmpargs = PyTuple_New(0);
         if (tmpargs == NULL) {
             return NULL;
