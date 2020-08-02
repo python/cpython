@@ -2524,9 +2524,9 @@ dict_merge(PyObject *a, PyObject *b, int override)
             // If other is clean combined dict, just clone it.
             if (other->ma_values == NULL &&
                     other->ma_used == other->ma_keys->dk_nentries &&
-                    other->ma_keys->dk_size <= other->ma_used * 4 + PyDict_MINSIZE) {
-                /* Note: ma_used * 4 must not overflow, because sizeof(dict) is
-                 * much larger than ma_used*4.
+                    other->ma_keys->dk_size <= other->ma_used * 3 + PyDict_MINSIZE) {
+                /* Note: ma_used * 3 must not overflow, because sizeof(dict) is
+                 * much larger than ma_used * 3.
                  */
                 PyDictKeysObject *keys = clone_combined_dict_keys(other);
                 if (keys == NULL) {
