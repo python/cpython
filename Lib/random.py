@@ -682,7 +682,7 @@ class Random(_random.Random):
             bbb = alpha - LOG4
             ccc = alpha + ainv
 
-            while 1:
+            while True:
                 u1 = random()
                 if not 1e-7 < u1 < 0.9999999:
                     continue
