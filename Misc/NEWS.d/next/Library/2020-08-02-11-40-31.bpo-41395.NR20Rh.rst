@@ -1,2 +1,2 @@
 Use context manager to close filetype objects automatically and avoid
-ResourceWarning.
+ResourceWarning. Patch contributed by Amir Mohammadi.
