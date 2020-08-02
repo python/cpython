@@ -1,0 +1,2 @@
+Use context manager to close filetype objects automatically and avoid
+ResourceWarning.
