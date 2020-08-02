@@ -46,7 +46,9 @@ https://api.helioviewer.org/?action=getRandomSeed
 https://api.helioviewer.org/docs/v2/
 """
 
-import requests, json, random
+import json
+import random
+from urllib.request import urlopen
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
@@ -56,53 +58,48 @@ datasum = 0
 # This corresponds to an AIA camera. Camera 17 is excluded because it
 # takes pictures at a lower cadence and therefore has a much higher probability
 # of returning duplicate results.
-theSource = random.randint(8,16)
-print("Using source: "+str(theSource))
+theSource = random.randint(8, 16)
+print("Using source:", theSource)
 # convert now to date/time string in Zulu time
 dtnow = datetime.utcnow()
 datetimestring = dtnow.strftime("%Y-%m-%dT%H:%M:%SZ")
 # create HTTP response object url to the Helioviewer API to get latest image
-try:
-    resp = requests.get('https://api.helioviewer.org/v2/getClosestImage/?date='+datetimestring+'&sourceId='+str(theSource))
-except Exception as e:
-    raise
+resp = urlopen(f'https://api.helioviewer.org/v2/getClosestImage/?date={datetimestring}\
+&sourceId={theSource}')
+
+
+if resp.getcode() != 200:
+    print("Unable to connect to Helioviewer API.")
 else:
-    if resp.status_code != 200:
-        print("Unable to connect to Helioviewer API.")
+    # parse the returned json and get the id
+    resp_dict = json.load(resp)
+    id = resp_dict["id"]
+    if id is None:
+        print("Image not found.")
     else:
-        # parse the returned json and get the id
-        resp_dict = json.loads(resp.text)
-        id = resp_dict["id"]
-        if id is None:
-            print("Image not found.")
+        print("Requesting FITS data for image ID:", id)
+        # create HTTP response object for json FITS data of latest image
+        resp = urlopen(f'https://api.helioviewer.org/v2/getJP2Header/?id={id}')
+        if resp.getcode() != 200:
+            print("Unable to get FITS JSON data for image id:", id, "from Helioviewer API.")
         else:
-            print("Requesting FITS data for image ID: "+str(id))
-            # create HTTP response object for json FITS data of latest image
-            try:
-                resp = requests.get('https://api.helioviewer.org/v2/getJP2Header/?id='+str(id))
-            except Exception as e:
-                raise
+            # create element tree object
+            tree = ET.fromstring(resp.read())
+            # go find the datasum
+            datasum = tree.findtext('.//DATASUM')
+            if datasum is None:
+                print("Image has no datasum attribute, or attribute empty.")
+                datasum = 0
             else:
-                if resp.status_code != 200:
-                    print("Unable to get FITS JSON data for image id:"+id+" from Helioviewer API.")
-                else:
-                    # create element tree object
-                    tree = ET.fromstring(resp.text)
-                    # go find the datasum
-                    datasum = tree.findtext('.//DATASUM')
-                    if datasum is None:
-                        print("Image has no datasum attribute, or attribute empty.")
-                        datasum = 0
-                    else:
-                        print("The image datasum is: "+str(datasum))
-finally:
-    # seed the random number generator with timestamp + datasum
-    # and print some random numbers. if no image checksum was found
-    # always default to the current timestamp
-    theStamp = datetime.utcnow().timestamp()
-    theSeed = int(theStamp) + int(datasum)
-    print("Calculated seed: "+str(theSeed))
-    random.seed(theSeed)
-    print("10 sample random numbers...")
-    for i in range(0,10):
-        print(i+1,random.randint(0,100000000),sep='\t')
+                print("The image datasum is:", datasum)
+
+# seed the random number generator with timestamp + datasum
+# and print some random numbers. if no image checksum was found
+# always default to the current timestamp
+theStamp = datetime.utcnow().timestamp()
+theSeed = int(theStamp) + int(datasum)
+print("Calculated seed:", theSeed)
+random.seed(theSeed)
+print("10 sample random numbers...")
+for i in range(1, 11):
+    print(i, random.randint(0, 100000000), sep='\t')
