@@ -124,7 +124,8 @@ The :mod:`gc` module provides the following functions:
    instead of linear as expected). Using the above ratio, instead, yields
    amortized linear performance in the total number of objects (the effect
    of which can be summarized thusly: "each full garbage collection is more 
-   and more costly as the number of objects grows, but we do fewer and fewer of them").
+   and more costly as the number of objects grows, but we do 
+   fewer and fewer of them").
 
 
 .. function:: get_count()
