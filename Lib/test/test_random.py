@@ -79,7 +79,7 @@ class TestBasicOps:
         shuffled_seqs = [list(range(n)) for n in range(10)]
         for shuffled_seq in shuffled_seqs:
             shuffle(shuffled_seq)
-        for (seq, shuffled_seq) in zip(seqs, shuffled_seqs):
+        for (seq, shuffled_seq) in zip(seqs, shuffled_seqs, strict=True):
             self.assertEqual(len(seq), len(shuffled_seq))
             self.assertEqual(set(seq), set(shuffled_seq))
         # The above tests all would pass if the shuffle was a
@@ -99,6 +99,37 @@ class TestBasicOps:
         shuffle(lst)
         self.assertTrue(lst != shuffled_lst)
         self.assertRaises(TypeError, shuffle, (1, 2, 3))
+
+    def test_shuffled(self):
+        shuffled = self.gen.shuffled
+        lst = []
+        new = shuffled(lst)
+        self.assertEqual(new, [])
+        self.assertIsNot(lst, new)
+        lst = [37]
+        new = shuffled(lst)
+        self.assertEqual(new, [37])
+        seqs = [list(range(n)) for n in range(10)]
+        shuffled_seqs = [shuffled(list(range(n))) for n in range(10)]
+        for (seq, shuffled_seq) in zip(seqs, shuffled_seqs, strict=True):
+            self.assertEqual(len(seq), len(shuffled_seq))
+            self.assertEqual(set(seq), set(shuffled_seq))
+        # The above tests all would pass if the shuffle was a
+        # no-op. The following non-deterministic test covers that.  It
+        # asserts that the shuffled sequence of 1000 distinct elements
+        # must be different from the original one. Although there is
+        # mathematically a non-zero probability that this could
+        # actually happen in a genuinely random shuffle, it is
+        # completely negligible, given that the number of possible
+        # permutations of 1000 objects is 1000! (factorial of 1000),
+        # which is considerably larger than the number of atoms in the
+        # universe...
+        lst = list(range(1000))
+        shuffled_lst = shuffled(lst)
+        self.assertTrue(lst != shuffled_lst)
+        another_shuffled_list = shuffled(lst)
+        self.assertTrue(another_shuffled_list != shuffled_lst)
+        assert sorted(shuffled(iter(range(3)))) == [1, 2, 3] # Supports iterators
 
     def test_shuffle_random_argument(self):
         # Test random argument to shuffle.

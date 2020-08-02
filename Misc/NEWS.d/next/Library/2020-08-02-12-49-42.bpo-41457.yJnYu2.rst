@@ -1,0 +1,1 @@
+Add :func:`random.shuffled` to make a shuffled copy of an iterable.

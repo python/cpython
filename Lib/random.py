@@ -84,6 +84,7 @@ __all__ = [
     "seed",
     "setstate",
     "shuffle",
+    "shuffled",
     "triangular",
     "uniform",
     "vonmisesvariate",
@@ -370,6 +371,13 @@ class Random(_random.Random):
                 # pick an element in x[:i+1] with which to exchange x[i]
                 j = floor(random() * (i + 1))
                 x[i], x[j] = x[j], x[i]
+
+    def shuffled(self, iterable):
+        """Get a list of items from iterable in a random order."""
+        result = list(iterable)
+        self.shuffle(result)
+        return result
+
 
     def sample(self, population, k, *, counts=None):
         """Chooses k unique random elements from a population sequence or set.
@@ -821,6 +829,7 @@ choice = _inst.choice
 randrange = _inst.randrange
 sample = _inst.sample
 shuffle = _inst.shuffle
+shuffled = _inst.shuffled
 choices = _inst.choices
 normalvariate = _inst.normalvariate
 lognormvariate = _inst.lognormvariate
