@@ -175,7 +175,7 @@ The module defines the following user-callable items:
    If you want to force a bytes return value with otherwise default behavior,
    pass ``suffix=b''``.
 
-   If *text* is specified and ``True`` (or a truthy value), the file is 
+   If *text* is specified and ``True`` (or a truthy value), the file is
    opened in text mode. Otherwise, (the default) the file is opened in
    binary mode.
 
