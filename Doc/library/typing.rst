@@ -438,7 +438,25 @@ can define new custom protocols to fully enjoy structural subtyping
 Module contents
 ===============
 
-The module defines the following classes, functions and decorators:
+The module defines the following classes, functions and decorators.
+
+.. note::
+
+   This module defines several types that are subclasses of pre-existing
+   standard library classes which also extend :class:`Generic`
+   to support type variables inside ``[]``.
+   These types became redundant in Python 3.9 when the
+   corresponding pre-existing classes were enhanced to support ``[]``.
+
+   The redundant types are deprecated as of Python 3.9 but no
+   deprecation warnings will be issued by the interpreter.
+   It is expected that type checkers will flag the deprecated types
+   when the checked program targets Python 3.9 or newer.
+
+   The deprecated types will be removed from the :mod:`typing` module
+   in the first Python version released 5 years after the release of Python 3.9.0.
+   See details in :pep:`585`—*Type Hinting Generics In Standard Collections*.
+
 
 Special typing primitives
 -------------------------
@@ -486,6 +504,9 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    To specify a variable-length tuple of homogeneous type,
    use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain :data:`Tuple`
    is equivalent to ``Tuple[Any, ...]``, and in turn to :class:`tuple`.
+
+   .. deprecated:: 3.9
+      :class:`builtins.tuple <tuple>` now supports ``[]``. See :pep:`585`.
 
 .. data:: Union
 
@@ -558,6 +579,9 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    ``Callable[..., Any]``, and in turn to
    :class:`collections.abc.Callable`.
 
+   .. deprecated:: 3.9
+      :class:`collections.abc.Callable` now supports ``[]``. See :pep:`585`.
+
 .. class:: Type(Generic[CT_co])
 
    A variable annotated with ``C`` may accept a value of type ``C``. In
@@ -599,6 +623,9 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    to ``type``, which is the root of Python's metaclass hierarchy.
 
    .. versionadded:: 3.5.2
+
+   .. deprecated:: 3.9
+      :class:`builtins.type <type>` now supports ``[]``. See :pep:`585`.
 
 .. data:: Literal
 
@@ -1029,6 +1056,9 @@ Corresponding to built-in types
       def count_words(text: str) -> Dict[str, int]:
           ...
 
+   .. deprecated:: 3.9
+      :class:`builtins.dict <dict>` now supports ``[]``. See :pep:`585`.
+
 .. class:: List(list, MutableSequence[T])
 
    Generic version of :class:`list`.
@@ -1046,15 +1076,24 @@ Corresponding to built-in types
       def keep_positives(vector: Sequence[T]) -> List[T]:
           return [item for item in vector if item > 0]
 
+   .. deprecated:: 3.9
+      :class:`builtins.list <list>` now supports ``[]``. See :pep:`585`.
+
 .. class:: Set(set, MutableSet[T])
 
    A generic version of :class:`builtins.set <set>`.
    Useful for annotating return types. To annotate arguments it is preferred
    to use an abstract collection type such as :class:`AbstractSet`.
 
+   .. deprecated:: 3.9
+      :class:`builtins.set <set>` now supports ``[]``. See :pep:`585`.
+
 .. class:: FrozenSet(frozenset, AbstractSet[T_co])
 
    A generic version of :class:`builtins.frozenset <frozenset>`.
+
+   .. deprecated:: 3.9
+      :class:`builtins.frozenset <frozenset>` now supports ``[]``. See :pep:`585`.
 
 .. note:: :data:`Tuple` is a special form.
 
@@ -1067,11 +1106,17 @@ Corresponding to types in :mod:`collections`
 
    .. versionadded:: 3.5.2
 
+   .. deprecated:: 3.9
+      :class:`collections.defaultdict` now supports ``[]``. See :pep:`585`.
+
 .. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
 
    A generic version of :class:`collections.OrderedDict`.
 
    .. versionadded:: 3.7.2
+
+   .. deprecated:: 3.9
+      :class:`collections.OrderedDict` now supports ``[]``. See :pep:`585`.
 
 .. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
 
@@ -1080,6 +1125,9 @@ Corresponding to types in :mod:`collections`
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
+   .. deprecated:: 3.9
+      :class:`collections.ChainMap` now supports ``[]``. See :pep:`585`.
+
 .. class:: Counter(collections.Counter, Dict[T, int])
 
    A generic version of :class:`collections.Counter`.
@@ -1087,12 +1135,18 @@ Corresponding to types in :mod:`collections`
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
+   .. deprecated:: 3.9
+      :class:`collections.Counter` now supports ``[]``. See :pep:`585`.
+
 .. class:: Deque(deque, MutableSequence[T])
 
    A generic version of :class:`collections.deque`.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
+
+   .. deprecated:: 3.9
+      :class:`collections.deque` now supports ``[]``. See :pep:`585`.
 
 Other concrete types
 """"""""""""""""""""
@@ -1115,6 +1169,9 @@ Other concrete types
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``. These types are also in the ``typing.re`` namespace.
+
+   .. deprecated:: 3.9
+      Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``. See :pep:`585`.
 
 .. class:: Text
 
@@ -1140,6 +1197,9 @@ Corresponding to collections in :mod:`collections.abc`
 
     A generic version of :class:`collections.abc.Set`.
 
+   .. deprecated:: 3.9
+      :class:`collections.abc.Set` now supports ``[]``. See :pep:`585`.
+
 .. class:: ByteString(Sequence[int])
 
    A generic version of :class:`collections.abc.ByteString`.
@@ -1150,23 +1210,38 @@ Corresponding to collections in :mod:`collections.abc`
    As a shorthand for this type, :class:`bytes` can be used to
    annotate arguments of any of the types mentioned above.
 
+   .. deprecated:: 3.9
+      :class:`collections.abc.ByteString` now supports ``[]``. See :pep:`585`.
+
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
    A generic version of :class:`collections.abc.Collection`
 
    .. versionadded:: 3.6.0
 
+   .. deprecated:: 3.9
+      :class:`collections.abc.Collection` now supports ``[]``. See :pep:`585`.
+
 .. class:: Container(Generic[T_co])
 
     A generic version of :class:`collections.abc.Container`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Container` now supports ``[]``. See :pep:`585`.
 
 .. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
 
    A generic version of :class:`collections.abc.ItemsView`.
 
+   .. deprecated:: 3.9
+      :class:`collections.abc.ItemsView` now supports ``[]``. See :pep:`585`.
+
 .. class:: KeysView(MappingView[KT_co], AbstractSet[KT_co])
 
    A generic version of :class:`collections.abc.KeysView`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.KeysView` now supports ``[]``. See :pep:`585`.
 
 .. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
 
@@ -1176,30 +1251,50 @@ Corresponding to collections in :mod:`collections.abc`
       def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
           return word_list[word]
 
+   .. deprecated:: 3.9
+      :class:`collections.abc.Mapping` now supports ``[]``. See :pep:`585`.
+
 .. class:: MappingView(Sized, Iterable[T_co])
 
    A generic version of :class:`collections.abc.MappingView`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.MappingView` now supports ``[]``. See :pep:`585`.
 
 .. class:: MutableMapping(Mapping[KT, VT])
 
     A generic version of :class:`collections.abc.MutableMapping`.
 
+   .. deprecated:: 3.9
+      :class:`collections.abc.MutableMapping` now supports ``[]``. See :pep:`585`.
+
 .. class:: MutableSequence(Sequence[T])
 
    A generic version of :class:`collections.abc.MutableSequence`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.MutableSequence` now supports ``[]``. See :pep:`585`.
 
 .. class:: MutableSet(AbstractSet[T])
 
     A generic version of :class:`collections.abc.MutableSet`.
 
+   .. deprecated:: 3.9
+      :class:`collections.abc.MutableSet` now supports ``[]``. See :pep:`585`.
+
 .. class:: Sequence(Reversible[T_co], Collection[T_co])
 
     A generic version of :class:`collections.abc.Sequence`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Sequence` now supports ``[]``. See :pep:`585`.
 
 .. class:: ValuesView(MappingView[VT_co])
 
    A generic version of :class:`collections.abc.ValuesView`.
 
+   .. deprecated:: 3.9
+      :class:`collections.abc.ValuesView` now supports ``[]``. See :pep:`585`.
 
 Corresponding to other types in :mod:`collections.abc`
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -1208,9 +1303,15 @@ Corresponding to other types in :mod:`collections.abc`
 
     A generic version of :class:`collections.abc.Iterable`.
 
+   .. deprecated:: 3.9
+      :class:`collections.abc.Iterable` now supports ``[]``. See :pep:`585`.
+
 .. class:: Iterator(Iterable[T_co])
 
     A generic version of :class:`collections.abc.Iterator`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Iterator` now supports ``[]``. See :pep:`585`.
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
 
@@ -1243,6 +1344,9 @@ Corresponding to other types in :mod:`collections.abc`
               yield start
               start += 1
 
+   .. deprecated:: 3.9
+      :class:`collections.abc.Generator` now supports ``[]``. See :pep:`585`.
+
 .. class:: Hashable
 
    An alias to :class:`collections.abc.Hashable`
@@ -1250,6 +1354,9 @@ Corresponding to other types in :mod:`collections.abc`
 .. class:: Reversible(Iterable[T_co])
 
     A generic version of :class:`collections.abc.Reversible`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Reversible` now supports ``[]``. See :pep:`585`.
 
 .. class:: Sized
 
@@ -1272,6 +1379,9 @@ Asynchronous programming
           x = await c # type: int
 
    .. versionadded:: 3.5.3
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Coroutine` now supports ``[]``. See :pep:`585`.
 
 .. class:: AsyncGenerator(AsyncIterator[T_co], Generic[T_co, T_contra])
 
@@ -1306,11 +1416,17 @@ Asynchronous programming
 
    .. versionadded:: 3.6.1
 
+   .. deprecated:: 3.9
+      :class:`collections.abc.AsyncGenerator` now supports ``[]``. See :pep:`585`.
+
 .. class:: AsyncIterable(Generic[T_co])
 
    A generic version of :class:`collections.abc.AsyncIterable`.
 
    .. versionadded:: 3.5.2
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.AsyncIterable` now supports ``[]``. See :pep:`585`.
 
 .. class:: AsyncIterator(AsyncIterable[T_co])
 
@@ -1318,11 +1434,17 @@ Asynchronous programming
 
    .. versionadded:: 3.5.2
 
+   .. deprecated:: 3.9
+      :class:`collections.abc.AsyncIterator` now supports ``[]``. See :pep:`585`.
+
 .. class:: Awaitable(Generic[T_co])
 
    A generic version of :class:`collections.abc.Awaitable`.
 
    .. versionadded:: 3.5.2
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Awaitable` now supports ``[]``. See :pep:`585`.
 
 
 Context manager types
@@ -1335,6 +1457,9 @@ Context manager types
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.0
 
+   .. deprecated:: 3.9
+      :class:`collections.contextlib.AbstractContextManager` now supports ``[]``. See :pep:`585`.
+
 .. class:: AsyncContextManager(Generic[T_co])
 
    A generic version of :class:`contextlib.AbstractAsyncContextManager`.
@@ -1342,6 +1467,8 @@ Context manager types
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
 
+   .. deprecated:: 3.9
+      :class:`collections.contextlib.AbstractAsyncContextManager` now supports ``[]``. See :pep:`585`.
 
 Protocols
 ---------
