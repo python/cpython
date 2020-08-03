@@ -1,1 +1,1 @@
-Fix example in tkinter documentation
+Make tkinter doc example runnable.
