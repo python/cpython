@@ -346,7 +346,7 @@ PyObject* pysqlite_connection_blob(pysqlite_Connection *self, PyObject *args,
     PyObject *weakref;
 
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ssL|ps", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ssL|$ps", kwlist,
                                      &table, &column, &row, &readonly,
                                      &dbname)) {
         return NULL;
