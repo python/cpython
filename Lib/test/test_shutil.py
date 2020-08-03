@@ -2722,7 +2722,7 @@ class LinkSymlink(unittest.TestCase):
                 with self.subTest(method=method, type=description):
                     with self.assertRaisesRegex(FileExistsError,
                                                 re.escape(dst_path)):
-                        methods[method](src, dst_path)
+                        methods[method](src, dst_path, self.is_dir(src))
 
     # link and symlink - iterable of sources
 
@@ -2754,9 +2754,14 @@ class LinkSymlink(unittest.TestCase):
         for description, dst_path in exist.items():
             self.assertTrue(os.path.exists(dst_path))
             with self.subTest(type=description):
-                with self.assertRaisesRegex(NotADirectoryError,
-                                            re.escape(dst_path)):
-                    shutil.symlink(self.srcs, dst_path)
+                if os.name == 'posix':
+                    with self.assertRaisesRegex(NotADirectoryError,
+                                                re.escape(dst_path)):
+                        shutil.symlink(self.srcs, dst_path)
+                else:  # os.name == nt
+                    with self.assertRaisesRegex(FileNotFoundError,
+                                                re.escape(dst_path)):
+                        shutil.symlink(self.srcs, dst_path)
 
         for description, dst_path in absent.items():
             self.assertFalse(os.path.exists(dst_path))
