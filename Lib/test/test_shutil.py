@@ -2703,7 +2703,7 @@ class LinkSymlink(unittest.TestCase):
         dst = self.new1
         shutil.symlink(src, dst)
         self.assertTrue(os.path.islink(dst))
-        self.assertEqual(os.readlink(dst), src)
+        self.assertEqual(os.path.realpath(dst), os.path.realpath(src))
 
     def test_1src_dst_existing_path(self):
         src = self.src_file1
@@ -2732,7 +2732,8 @@ class LinkSymlink(unittest.TestCase):
                         if method_name == 'link':
                             self.assertTrue(os.path.samefile(src, dst))
                         else:  # method_name = 'symlink'
-                            self.assertEqual(src, os.readlink(dst))
+                            self.assertEqual(os.path.realpath(src),
+                                             os.readlink(dst))
 
     # symlink - iterable of sources
 
@@ -2766,7 +2767,7 @@ class LinkSymlink(unittest.TestCase):
         srcs = [self.new1]
         shutil.symlink(srcs, self.dst_dir1)
         link_path = os.path.join(self.dst_dir1, os.path.basename(srcs[0]))
-        self.assertEqual(os.readlink(link_path), srcs[0])
+        self.assertEqual(os.readlink(link_path), os.path.realpath(srcs[0]))
 
     # symlink - overwrite=True
 
@@ -2799,7 +2800,8 @@ class LinkSymlink(unittest.TestCase):
 
         for src in srcs:
             shutil.symlink(srcs, dst_dir, overwrite=True)
-            self.assertEqual(os.readlink(src_to_dst_path[src]), src)
+            self.assertEqual(os.readlink(src_to_dst_path[src]),
+                             os.path.realpath(src))
 
 class PublicAPITests(unittest.TestCase):
     """Ensures that the correct values are exposed in the public API."""
