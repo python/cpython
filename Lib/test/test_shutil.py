@@ -2733,7 +2733,7 @@ class LinkSymlink(unittest.TestCase):
                             self.assertTrue(os.path.samefile(src, dst))
                         else:  # method_name = 'symlink'
                             self.assertEqual(os.path.realpath(src),
-                                             os.readlink(dst))
+                                             os.path.realpath(dst))
 
     # symlink - iterable of sources
 
@@ -2767,7 +2767,7 @@ class LinkSymlink(unittest.TestCase):
         srcs = [self.new1]
         shutil.symlink(srcs, self.dst_dir1)
         link_path = os.path.join(self.dst_dir1, os.path.basename(srcs[0]))
-        self.assertEqual(os.readlink(link_path), os.path.realpath(srcs[0]))
+        self.assertEqual(os.path.realpath(link_path), os.path.realpath(srcs[0]))
 
     # symlink - overwrite=True
 
@@ -2788,7 +2788,8 @@ class LinkSymlink(unittest.TestCase):
                 dst_is_dir = True if description == 'link_to_dir' else False
                 shutil.symlink(src, dst, overwrite=True,
                                target_is_directory=dst_is_dir)
-                self.assertEqual(os.readlink(dst), src)
+                self.assertEqual(os.path.realpath(dst),
+                                 os.path.realpath(src))
 
     def test_symlink_many_srcs_overwrite(self):
         srcs = [self.src_file1, self.src_file2]
@@ -2802,7 +2803,7 @@ class LinkSymlink(unittest.TestCase):
 
         for src in srcs:
             shutil.symlink(srcs, dst_dir, overwrite=True)
-            self.assertEqual(os.readlink(src_to_dst_path[src]),
+            self.assertEqual(os.path.realpath(src_to_dst_path[src]),
                              os.path.realpath(src))
 
 class PublicAPITests(unittest.TestCase):
