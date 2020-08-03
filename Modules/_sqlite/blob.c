@@ -257,19 +257,19 @@ PyObject* pysqlite_blob_seek(pysqlite_Blob *self, PyObject *args)
             offset = self->length + offset;
             break;
         default:
-            return PyErr_Format(PyExc_ValueError,
+            return PyErr_SetString(PyExc_ValueError,
                                 "from_what should be 0, 1 or 2");
     }
 
     if (offset < 0 || offset > self->length) {
-        return PyErr_Format(PyExc_ValueError, "offset out of blob range");
+        return PyErr_SetString(PyExc_ValueError, "offset out of blob range");
     }
 
     self->offset = offset;
     Py_RETURN_NONE;
 
 overflow:
-    return PyErr_Format(PyExc_OverflowError, "seek offset result in overflow");
+    return PyErr_SetString(PyExc_OverflowError, "seek offset result in overflow");
 }
 
 
@@ -332,7 +332,7 @@ static int pysqlite_blob_contains(pysqlite_Blob *self, PyObject *args)
 {
     if (pysqlite_check_blob(self)) {
         PyErr_SetString(PyExc_SystemError,
-                        "Blob don't support cotains operation");
+                        "Blob don't support contains operation");
     }
     return -1;
 }
@@ -407,11 +407,11 @@ static PyObject * pysqlite_blob_subscript(pysqlite_Blob *self, PyObject *item)
             return NULL;
         }
 
-        if (slicelen <= 0)
+        if (slicelen <= 0) {
             return PyBytes_FromStringAndSize("", 0);
-        else if (step == 1)
+        } else if (step == 1) {
             return inner_read(self, slicelen, start);
-        else {
+        } else {
             char *result_buf = (char *)PyMem_Malloc(slicelen);
             char *data_buff = NULL;
             Py_ssize_t cur, i;
@@ -586,7 +586,7 @@ static int pysqlite_blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyOb
     }
     else {
         PyErr_SetString(PyExc_TypeError,
-                        "mmap indices must be integer");
+                        "Blob indices must be integer");
         return -1;
     }
 }
