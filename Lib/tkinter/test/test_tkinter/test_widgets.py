@@ -936,7 +936,8 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_from(self):
         widget = self.create()
-        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=float_round, allow_not_rounded=True)
+        # A change in Tk 8.6.10 means `from` is not rounded (bpo-41306)
+        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=float_round if get_tk_patchlevel() < (8, 6, 10) else noconv)
 
     def test_label(self):
         widget = self.create()
