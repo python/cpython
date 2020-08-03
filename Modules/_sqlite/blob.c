@@ -208,12 +208,17 @@ PyObject* pysqlite_blob_write(pysqlite_Blob *self, PyObject *data)
         return NULL;
     }
 
-    if (!pysqlite_check_blob(self)) {
+    if (data_buffer.len > self->length - self->offset) {
+        PyErr_SetString(PyExc_ValueError,
+                        "data longer than blob length");
         PyBuffer_Release(&data_buffer);
         return NULL;
     }
 
-    /* TODO: throw better error on data bigger then blob. */
+    if (!pysqlite_check_blob(self)) {
+        PyBuffer_Release(&data_buffer);
+        return NULL;
+    }
 
     rc = write_inner(self, data_buffer.buf, data_buffer.len, self->offset);
 
@@ -257,19 +262,22 @@ PyObject* pysqlite_blob_seek(pysqlite_Blob *self, PyObject *args)
             offset = self->length + offset;
             break;
         default:
-            return PyErr_SetString(PyExc_ValueError,
+            PyErr_SetString(PyExc_ValueError,
                                 "from_what should be 0, 1 or 2");
+            return NULL;
     }
 
     if (offset < 0 || offset > self->length) {
-        return PyErr_SetString(PyExc_ValueError, "offset out of blob range");
+        PyErr_SetString(PyExc_ValueError, "offset out of blob range");
+        return NULL;
     }
 
     self->offset = offset;
     Py_RETURN_NONE;
 
 overflow:
-    return PyErr_SetString(PyExc_OverflowError, "seek offset result in overflow");
+    PyErr_SetString(PyExc_OverflowError, "seek offset result in overflow");
+    return NULL;
 }
 
 

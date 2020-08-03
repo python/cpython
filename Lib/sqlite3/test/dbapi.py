@@ -584,7 +584,7 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(self.blob.tell(), 50)
 
     def CheckBlobWriteMoreThenBlobSize(self):
-        with self.assertRaises(sqlite.OperationalError):
+        with self.assertRaises(ValueError):
             self.blob.write(b"a" * 1000)
 
     def CheckBlobReadAfterRowChange(self):
