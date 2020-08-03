@@ -1,0 +1,1 @@
+time.perf_counter now tracks time elapsed during sleep on macOS 10.12+.

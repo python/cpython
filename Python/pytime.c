@@ -835,17 +835,30 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
             return -1;
         }
 
+#ifdef __MAC_10_12
+        t0 = mach_continuous_time();
+#else
         t0 = mach_absolute_time();
+#endif
     }
 
     if (info) {
+#ifdef __MAC_10_12
+        info->implementation = "mach_continuous_time()";
+#else
         info->implementation = "mach_absolute_time()";
+#endif
         info->resolution = (double)timebase.numer / (double)timebase.denom * 1e-9;
         info->monotonic = 1;
         info->adjustable = 0;
     }
 
+#ifdef __MAC_10_12
+    ticks = mach_continuous_time();
+#else
     ticks = mach_absolute_time();
+#endif
+
     /* Use a "time zero" to reduce precision loss when converting time
        to floatting point number, as in time.monotonic(). */
     ticks -= t0;

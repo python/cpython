@@ -295,6 +295,7 @@ Functions
    point of the returned value is undefined, so that only the difference between
    the results of consecutive calls is valid.
 
+   .. note:: On macOS versions prior to 10.12, perf_counter does not track time elapsed during sleep.
    .. versionadded:: 3.3
 
 .. function:: perf_counter_ns() -> int
