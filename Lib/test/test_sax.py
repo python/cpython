@@ -22,8 +22,10 @@ import shutil
 import sys
 from urllib.error import URLError
 import urllib.request
-from test import support
-from test.support import findfile, run_unittest, FakePath, TESTFN
+from test.support import os_helper
+from test.support import findfile, run_unittest
+from test.support.os_helper import FakePath, TESTFN
+
 
 TEST_XMLFILE = findfile("test.xml", subdir="xmltestdata")
 TEST_XMLFILE_OUT = findfile("test.xml.out", subdir="xmltestdata")
@@ -36,7 +38,7 @@ except UnicodeEncodeError:
 supports_nonascii_filenames = True
 if not os.path.supports_unicode_filenames:
     try:
-        support.TESTFN_UNICODE.encode(sys.getfilesystemencoding())
+        os_helper.TESTFN_UNICODE.encode(sys.getfilesystemencoding())
     except (UnicodeError, TypeError):
         # Either the file system encoding is None, or the file name
         # cannot be encoded in the file system encoding.
@@ -121,7 +123,7 @@ class ParseTest(unittest.TestCase):
     data = '<money value="$\xa3\u20ac\U0001017b">$\xa3\u20ac\U0001017b</money>'
 
     def tearDown(self):
-        support.unlink(TESTFN)
+        os_helper.unlink(TESTFN)
 
     def check_parse(self, f):
         from xml.sax import parse
@@ -349,12 +351,12 @@ class SaxutilsTest(unittest.TestCase):
 class PrepareInputSourceTest(unittest.TestCase):
 
     def setUp(self):
-        self.file = support.TESTFN
+        self.file = os_helper.TESTFN
         with open(self.file, "w") as tmp:
             tmp.write("This was read from a file.")
 
     def tearDown(self):
-        support.unlink(self.file)
+        os_helper.unlink(self.file)
 
     def make_byte_stream(self):
         return BytesIO(b"This is a byte stream.")
@@ -824,14 +826,14 @@ class StreamWriterXmlgenTest(XmlgenTest, unittest.TestCase):
                 (encoding, doc)).encode('ascii', 'xmlcharrefreplace')
 
 class StreamReaderWriterXmlgenTest(XmlgenTest, unittest.TestCase):
-    fname = support.TESTFN + '-codecs'
+    fname = os_helper.TESTFN + '-codecs'
 
     def ioclass(self):
         writer = codecs.open(self.fname, 'w', encoding='ascii',
                              errors='xmlcharrefreplace', buffering=0)
         def cleanup():
             writer.close()
-            support.unlink(self.fname)
+            os_helper.unlink(self.fname)
         self.addCleanup(cleanup)
         def getvalue():
             # Windows will not let use reopen without first closing
@@ -901,9 +903,9 @@ class ExpatReaderTest(XmlTestBase):
 
     @requires_nonascii_filenames
     def test_expat_binary_file_nonascii(self):
-        fname = support.TESTFN_UNICODE
+        fname = os_helper.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
-        self.addCleanup(support.unlink, fname)
+        self.addCleanup(os_helper.unlink, fname)
 
         parser = create_parser()
         result = BytesIO()
@@ -1137,9 +1139,9 @@ class ExpatReaderTest(XmlTestBase):
 
     @requires_nonascii_filenames
     def test_expat_inpsource_sysid_nonascii(self):
-        fname = support.TESTFN_UNICODE
+        fname = os_helper.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
-        self.addCleanup(support.unlink, fname)
+        self.addCleanup(os_helper.unlink, fname)
 
         parser = create_parser()
         result = BytesIO()
@@ -1239,9 +1241,9 @@ class ExpatReaderTest(XmlTestBase):
 
     @requires_nonascii_filenames
     def test_expat_locator_withinfo_nonascii(self):
-        fname = support.TESTFN_UNICODE
+        fname = os_helper.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
-        self.addCleanup(support.unlink, fname)
+        self.addCleanup(os_helper.unlink, fname)
 
         result = BytesIO()
         xmlgen = XMLGenerator(result)
