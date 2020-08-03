@@ -2539,6 +2539,8 @@ class TestGetTerminalSize(unittest.TestCase):
 
 
 class LinkSymlink(unittest.TestCase):
+    # We use os.path.readpath instead of os.readlink as the latter gives:
+    # '\\\\?\\C:\\Users\\' when used on Windows.
 
     def setUp(self):
         # Create extant directories, files and symlinks
