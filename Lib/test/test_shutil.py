@@ -2705,6 +2705,20 @@ class LinkSymlink(unittest.TestCase):
         self.assertTrue(os.path.islink(dst))
         self.assertEqual(os.path.realpath(dst), os.path.realpath(src))
 
+
+#         self.assertEqual(os.readlink(dst), src)
+#         ======================================================================
+# FAIL: test_symlink_1src_dst_not_exist (test.test_shutil.LinkSymlink)
+# ----------------------------------------------------------------------
+# Traceback (most recent call last):
+#   File "D:\a\cpython\cpython\lib\test\test_shutil.py", line 2705, in test_symlink_1src_dst_not_exist
+#     self.assertEqual(os.readlink(dst), src)
+# AssertionError: '\\\\?\\C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\tmpk7mjjfks\\file1' != 'C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\tmpk7mjjfks\\file1'
+# - \\?\C:\Users\RUNNER~1\AppData\Local\Temp\tmpk7mjjfks\file1
+# ? ----
+# + C:\Users\RUNNER~1\AppData\Local\Temp\tmpk7mjjfks\file1
+
+
     def test_1src_dst_existing_path(self):
         src = self.src_file1
         dst_existing = {k: v for k, v in self.path_types.items()
@@ -2785,7 +2799,9 @@ class LinkSymlink(unittest.TestCase):
             with self.subTest(type=description):
                 if description != 'absent':
                     self.assertTrue(os.path.lexists(dst))
-                shutil.symlink(src, dst, overwrite=True)
+                dst_is_dir = True if description == 'link_to_dir' else False
+                shutil.symlink(src, dst, overwrite=True,
+                               target_is_directory=dst_is_dir)
                 self.assertEqual(os.readlink(dst), src)
 
     def test_symlink_many_srcs_overwrite(self):
