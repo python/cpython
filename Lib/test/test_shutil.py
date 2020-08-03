@@ -13,6 +13,7 @@ import functools
 import pathlib
 import subprocess
 import random
+import re
 import string
 import contextlib
 import io
@@ -2715,7 +2716,8 @@ class LinkSymlink(unittest.TestCase):
         for method in methods:
             for description, dst_path in dst_existing.items():
                 with self.subTest(method=method, type=description):
-                    with self.assertRaisesRegex(FileExistsError, dst_path):
+                    with self.assertRaisesRegex(FileExistsError,
+                                                re.escape(dst_path)):
                         methods[method](src, dst_path)
 
     # link and symlink - iterable of sources
@@ -2748,13 +2750,15 @@ class LinkSymlink(unittest.TestCase):
         for description, dst_path in exist.items():
             self.assertTrue(os.path.exists(dst_path))
             with self.subTest(type=description):
-                with self.assertRaisesRegex(NotADirectoryError, dst_path):
+                with self.assertRaisesRegex(NotADirectoryError,
+                                            re.escape(dst_path)):
                     shutil.symlink(self.srcs, dst_path)
 
         for description, dst_path in absent.items():
             self.assertFalse(os.path.exists(dst_path))
             with self.subTest(type=description):
-                with self.assertRaisesRegex(FileNotFoundError, dst_path):
+                with self.assertRaisesRegex(FileNotFoundError,
+                                            re.escape(dst_path)):
                     shutil.symlink(self.srcs, dst_path)
 
     # symlink - iterable of sources - edge cases
@@ -2776,7 +2780,7 @@ class LinkSymlink(unittest.TestCase):
     def test_symlink_single_src_overwrite_existing_directory(self):
         dst = self.dst_dir1
         self.assertTrue(os.path.exists(dst))
-        with self.assertRaisesRegex(IsADirectoryError, dst):
+        with self.assertRaisesRegex(IsADirectoryError, re.escape(dst)):
             shutil.symlink(self.src_file1, dst, overwrite=True)
 
     def test_symlink_single_src_overwrite_existing_not_directory(self):
