@@ -879,8 +879,9 @@ Blob Objects
 
    A :class:`Blob` instance can read and write the data in the
    :abbr:`BLOB (Binary Large OBject)`. The :class:`Blob` object implement both
-   the file and sequence protocol. For example You can read data from the
+   the file and sequence protocol. For example, you can read data from the
    :class:`Blob` by doing ``obj.read(5)`` or by doing ``obj[:5]``.
+   You can call ``len(obj)`` to get size of the BLOB.
 
    .. method:: Blob.close()
 
@@ -911,7 +912,7 @@ Blob Objects
 
       Return the current offset of the BLOB.
 
-   .. method:: Blob.seek(offset, [whence])
+   .. method:: Blob.seek(offset, whence=os.SEEK_SET)
 
       Set the BLOB offset. The *whence* argument is optional and defaults to
       :data:`os.SEEK_SET` or 0 (absolute BLOB positioning); other values

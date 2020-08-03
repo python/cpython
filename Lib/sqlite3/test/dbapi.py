@@ -1177,9 +1177,11 @@ def suite():
     blob_suite = unittest.makeSuite(BlobTests, "Check")
     closed_blob_suite = unittest.makeSuite(ClosedBlobTests, "Check")
     blob_context_manager_suite = unittest.makeSuite(BlobContextManagerTests, "Check")
-    return unittest.TestSuite((module_suite, connection_suite, cursor_suite, thread_suite, constructor_suite,
-                               ext_suite, closed_con_suite, closed_cur_suite, on_conflict_suite,
-                               blob_suite, closed_blob_suite, blob_context_manager_suite))
+    return unittest.TestSuite((
+        module_suite, connection_suite, cursor_suite, thread_suite, constructor_suite,
+        ext_suite, closed_con_suite, closed_cur_suite, on_conflict_suite,
+        blob_suite, closed_blob_suite, blob_context_manager_suite,
+        ))
 
 def test():
     runner = unittest.TextTestRunner()
