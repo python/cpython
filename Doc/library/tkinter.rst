@@ -464,12 +464,11 @@ The Packer
 .. index:: single: packing (widgets)
 
 The packer is one of Tk's geometry-management mechanisms.    Geometry managers
-are used to specify the relative positioning of the positioning of widgets
-within their container - their mutual *master*.  In contrast to the more
-cumbersome *placer* (which is used less commonly, and we do not cover here), the
-packer takes qualitative relationship specification - *above*, *to the left of*,
-*filling*, etc - and works everything out to determine the exact placement
-coordinates for you.
+are used to specify the relative positioning of widgets within their container -
+their mutual *master*.  In contrast to the more cumbersome *placer* (which is
+used less commonly, and we do not cover here), the packer takes qualitative
+relationship specification - *above*, *to the left of*, *filling*, etc - and
+works everything out to determine the exact placement coordinates for you.
 
 The size of any *master* widget is determined by the size of the "slave widgets"
 inside.  The packer is used to control where slave widgets appear inside the
