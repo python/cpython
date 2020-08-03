@@ -2702,6 +2702,7 @@ class LinkSymlink(unittest.TestCase):
         src = self.src_file1
         dst = self.new1
         shutil.symlink(src, dst)
+        self.assertTrue(os.path.islink(dst))
         self.assertEqual(os.readlink(dst), src)
 
     def test_1src_dst_existing_path(self):
