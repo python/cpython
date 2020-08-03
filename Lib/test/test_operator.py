@@ -185,6 +185,25 @@ class OperatorTestCase:
         self.assertEqual(operator.indexOf([4, 3, 2, 1], 3), 1)
         self.assertRaises(ValueError, operator.indexOf, [4, 3, 2, 1], 0)
 
+    def test_index(self):
+        class X(object):
+            def __init__(self, value):
+                self.value = value
+
+            def __index__(self):
+                if type(self.value) is type:
+                    raise self.value
+                else:
+                    return self.value
+
+        operator = self.module
+        self.assertRaises(TypeError, operator.index)
+        self.assertRaises(TypeError, operator.index, None, None)
+        self.assertEqual(operator.index(4), 4)
+        self.assertEqual(operator.index(X(2)), 2)
+        self.assertEqual(operator.index(X(0)), 0)
+        self.assertRaises(LookupError, operator.index, X(LookupError))
+
     def test_invert(self):
         operator = self.module
         self.assertRaises(TypeError, operator.invert)
@@ -282,6 +301,18 @@ class OperatorTestCase:
         self.assertRaises(TypeError, operator.sub)
         self.assertRaises(TypeError, operator.sub, None, None)
         self.assertEqual(operator.sub(5, 2), 3)
+
+    def test_not_(self):
+        operator = self.module
+        class C(object):
+            def __bool__(self):
+                raise SyntaxError
+        self.assertRaises(TypeError, operator.not_)
+        self.assertRaises(SyntaxError, operator.not_, C())
+        self.assertTrue(operator.not_(0))
+        self.assertFalse(operator.not_(1))
+        self.assertFalse(operator.not_([0]))
+        self.assertTrue(operator.not_([]))
 
     def test_truth(self):
         operator = self.module
@@ -479,7 +510,9 @@ class OperatorTestCase:
         self.assertEqual(operator.isub     (c, 5), "isub")
         self.assertEqual(operator.itruediv (c, 5), "itruediv")
         self.assertEqual(operator.ixor     (c, 5), "ixor")
+
         self.assertEqual(operator.iconcat  (c, c), "iadd")
+        self.assertRaises(TypeError, operator.iconcat, 5, 6)
 
     def test_length_hint(self):
         operator = self.module
@@ -493,12 +526,18 @@ class OperatorTestCase:
                 else:
                     return self.value
 
+        class Y(object):
+            pass
+
         self.assertEqual(operator.length_hint([], 2), 0)
         self.assertEqual(operator.length_hint(iter([1, 2, 3])), 3)
 
         self.assertEqual(operator.length_hint(X(2)), 2)
         self.assertEqual(operator.length_hint(X(NotImplemented), 4), 4)
         self.assertEqual(operator.length_hint(X(TypeError), 12), 12)
+        self.assertEqual(operator.length_hint(Y(), 8), 8)
+        with self.assertRaises(TypeError):
+            operator.length_hint(X("abc"), "two by default")
         with self.assertRaises(TypeError):
             operator.length_hint(X("abc"))
         with self.assertRaises(ValueError):
