@@ -936,7 +936,7 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_from(self):
         widget = self.create()
-        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=float_round)
+        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=float_round, allow_not_rounded=True)
 
     def test_label(self):
         widget = self.create()

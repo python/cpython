@@ -101,9 +101,15 @@ class AbstractWidgetTest(AbstractTkTest):
         self.checkInvalidParam(widget, name, 3.2,
                 errmsg='expected integer but got "3.2"')
 
-    def checkFloatParam(self, widget, name, *values, conv=float, **kwargs):
+    def checkFloatParam(self, widget, name, *values, conv=float, allow_not_rounded=False, **kwargs):
         for value in values:
-            self.checkParam(widget, name, value, conv=conv, **kwargs)
+            try:
+                self.checkParam(widget, name, value, conv=conv, **kwargs)
+            except AssertionError:
+                if allow_not_rounded:
+                    self.checkParam(widget, name, value, conv=lambda val: val, **kwargs)
+                else:
+                    raise
         self.checkInvalidParam(widget, name, '',
                 errmsg='expected floating-point number but got ""')
         self.checkInvalidParam(widget, name, 'spam',
