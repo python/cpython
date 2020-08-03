@@ -336,7 +336,7 @@ PyObject* pysqlite_connection_blob(pysqlite_Connection *self, PyObject *args,
                                    PyObject *kwargs)
 {
     static char *kwlist[] = {"table", "column", "row", "readonly",
-                             "dbname", NULL, NULL};
+                             "dbname", NULL};
     int rc;
     const char *dbname = "main", *table, *column;
     long long row;

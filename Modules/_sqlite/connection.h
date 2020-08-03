@@ -66,7 +66,7 @@ typedef struct
 
     pysqlite_Cache* statement_cache;
 
-    /* Lists of weak references to statements, blobs and cursors used within this connection */
+    /* Lists of weak references to statements, cursors and blobs used within this connection */
     PyObject* statements;
     PyObject* cursors;
     PyObject* blobs;
