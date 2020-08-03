@@ -56,6 +56,9 @@ union_instancecheck(PyObject *self, PyObject *instance)
     Py_ssize_t nargs = PyTuple_GET_SIZE(alias->args);
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
+        if (arg == Py_None) {
+            arg = (PyObject *)Py_TYPE(arg);
+        }
         if (PyType_Check(arg)) {
             if (PyObject_IsInstance(instance, arg) != 0)
             {
@@ -124,6 +127,13 @@ union_richcompare(PyObject *a, PyObject *b, int op)
     PyTypeObject *type = Py_TYPE(b);
     if (is_typing_name(b, "_UnionGenericAlias")) {
         PyObject* b_args = PyObject_GetAttrString(b, "__args__");
+        int b_arg_length = PyTuple_GET_SIZE(b_args);
+        for (int i = 0; i < b_arg_length; i++) {
+            PyObject* arg = PyTuple_GET_ITEM(b_args, i);
+            if (arg == (PyObject *)&_PyNone_Type) {
+                PyTuple_SET_ITEM(b_args, i, Py_None);
+            }
+        }
         b_set = PySet_New(b_args);
     } else if (type == &Py_UnionType) {
         unionobject *bb = (unionobject *)b;
@@ -268,9 +278,7 @@ union_new(PyTypeObject* self, PyObject* param)
         return Py_NotImplemented;
     }
 
-    PyObject *param_type = param == Py_None ? (PyObject *)Py_TYPE(param) : param;
-    PyTypeObject *self_type = (PyObject *)self == Py_None ? Py_TYPE(self) : self;
-    PyObject *tuple = PyTuple_Pack(2, self_type, param_type);
+    PyObject *tuple = PyTuple_Pack(2, self, param);
     if (tuple == NULL) {
         return NULL;
     }
@@ -309,11 +317,6 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
     if (p == Py_Ellipsis) {
         // The Ellipsis object
         r = PyUnicode_FromString("...");
-        goto done;
-    }
-
-    if (p == &_PyNone_Type) {
-        r = PyUnicode_FromString("None");
         goto done;
     }
 
