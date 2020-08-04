@@ -6,7 +6,7 @@ util = test_util.import_importlib('importlib.util')
 
 import os.path
 import pathlib
-from test.support import CleanImport
+from test.support.import_helper import CleanImport
 import unittest
 import sys
 import warnings
