@@ -33,7 +33,7 @@
 #endif
 
 #ifdef __VXWORKS__
-#include "pycore_bitutils.h"      // _Py_popcount32()
+#  include "pycore_bitutils.h"    // _Py_popcount32()
 #endif
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_import.h"        // _PyImport_ReInitLock()
