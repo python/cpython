@@ -3435,6 +3435,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case Expr_kind:
         return compiler_visit_stmt_expr(c, s->v.Expr.value);
     case Pass_kind:
+        ADDOP(c, NOP);
         break;
     case Break_kind:
         return compiler_break(c);
@@ -5971,7 +5972,6 @@ assemble(struct compiler *c, int addNone)
        block ends with a jump or return b_next shouldn't set.
      */
     if (!c->u->u_curblock->b_return) {
-        NEXT_BLOCK(c);
         c->u->u_lineno = -1;
         if (addNone)
             ADDOP_LOAD_CONST(c, Py_None);
@@ -6261,22 +6261,42 @@ static void
 clean_basic_block(basicblock *bb) {
     /* Remove NOPs and any code following a return or re-raise. */
     int dest = 0;
+    int prev_lineno = -1;
     for (int src = 0; src < bb->b_iused; src++) {
         switch(bb->b_instr[src].i_opcode) {
-            case NOP:
-                /* skip */
-                break;
+            int lineno = bb->b_instr[src].i_lineno;
             case RETURN_VALUE:
             case RERAISE:
                 bb->b_next = NULL;
                 bb->b_instr[dest] = bb->b_instr[src];
                 dest++;
                 goto end;
+            case NOP:
+            {
+                /* Eliminate no-op if it doesn't have a line number, or
+                 * if the next instruction has same line number or no line number, or
+                 * if the previous instruction had the same line number. */
+                if (lineno < 0) {
+                    break;
+                }
+                if (prev_lineno == lineno) {
+                    break;
+                }
+                if (src < bb->b_iused - 1) {
+                    int next_lineno = bb->b_instr[src+1].i_lineno;
+                    if (next_lineno < 0 || next_lineno == lineno) {
+                        bb->b_instr[src+1].i_lineno = lineno;
+                        break;
+                    }
+                }
+                /* fall through */
+            }
             default:
                 if (dest != src) {
                     bb->b_instr[dest] = bb->b_instr[src];
                 }
                 dest++;
+                prev_lineno = lineno;
                 break;
         }
     }
