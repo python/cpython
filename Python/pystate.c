@@ -286,8 +286,8 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     }
     HEAD_UNLOCK(runtime);
 
-    PyDict_Clear(interp->sysdict);
-    PyDict_Clear(interp->builtins);
+    PyObject *sysdict = interp->sysdict;
+    PyObject *builtins = interp->builtins;
 
     Py_CLEAR(interp->audit_hooks);
 
@@ -311,6 +311,13 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     if (_PyRuntimeState_GetFinalizing(runtime) == NULL) {
         _PyWarnings_Fini(interp);
     }
+
+    /* We don't clear sysdict and builtins until the end of this function.
+       Because clearing other attributes can execute arbitrary Python code
+       which reuqires sysdict and builtins. */
+    PyDict_Clear(sysdict);
+    PyDict_Clear(builtins);
+
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.
