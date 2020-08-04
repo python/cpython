@@ -8,7 +8,7 @@ tests of their own.
 import os
 import sys
 import unittest
-from test import support
+from test.support import import_helper
 
 from test.test_tools import scriptsdir, import_tool, skip_if_missing
 
@@ -30,7 +30,7 @@ class TestSundryScripts(unittest.TestCase):
     skiplist = blacklist + whitelist + windows_only + other
 
     def test_sundry(self):
-        old_modules = support.modules_setup()
+        old_modules = import_helper.modules_setup()
         try:
             for fn in os.listdir(scriptsdir):
                 if not fn.endswith('.py'):
@@ -43,7 +43,7 @@ class TestSundryScripts(unittest.TestCase):
                 import_tool(name)
         finally:
             # Unload all modules loaded in this test
-            support.modules_cleanup(*old_modules)
+            import_helper.modules_cleanup(*old_modules)
 
     @unittest.skipIf(sys.platform != "win32", "Windows-only test")
     def test_sundry_windows(self):
