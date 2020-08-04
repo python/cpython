@@ -971,12 +971,17 @@ retreat(PyAddrLineOffsets *bounds)
     if (ldelta == -128) {
         ldelta = 0;
     }
-    bounds->lo_line -= ldelta;
+    bounds->lo_line_computed -= ldelta;
     bounds->lo_entry -= 2;
     bounds->lo_end = bounds->lo_start;
     bounds->lo_start -= ((unsigned char *)bounds->lo_entry)[0];
     ldelta = ((signed char *)bounds->lo_entry)[1];
-    bounds->lo_artificial = (ldelta == -128);
+    if (ldelta == -128) {
+        bounds->lo_line_actual = -1;
+    }
+    else {
+        bounds->lo_line_actual = bounds->lo_line_computed;
+    }
 }
 
 static void
@@ -984,20 +989,24 @@ advance(PyAddrLineOffsets *bounds)
 {
     bounds->lo_entry += 2;
     bounds->lo_start = bounds->lo_end;
-    bounds->lo_end += ((unsigned char *)bounds->lo_entry)[0];
+    int delta = ((unsigned char *)bounds->lo_entry)[0];
+    if (delta == 255) {
+        bounds->lo_start = -1;
+    }
+        bounds->lo_end += ((unsigned char *)bounds->lo_entry)[0];
     int ldelta = ((signed char *)bounds->lo_entry)[1];
     if (ldelta == -128) {
-        bounds->lo_artificial = 1;
+        bounds->lo_line_actual = -1;
     }
     else {
-        bounds->lo_artificial = 0;
-        bounds->lo_line += ldelta;
+        bounds->lo_line_computed += ldelta;
+        bounds->lo_line_actual = bounds->lo_line_computed;
     }
 }
 
 static inline int
-past_end(PyAddrLineOffsets *bounds) {
-    return bounds->lo_entry >= bounds->lo_limit;
+at_end(PyAddrLineOffsets *bounds) {
+    return ((unsigned char *)bounds->lo_entry)[2] == 255;
 }
 
 static PyObject *
@@ -1005,16 +1014,13 @@ lineiter_next(lineiterator *li)
 {
     PyAddrLineOffsets *bounds = &li->li_line;
 
-    if (past_end(bounds)) {
+    if (at_end(bounds)) {
         return NULL;
     }
     advance(bounds);
-    if (past_end(bounds)) {
-        return NULL;
-    }
     while (bounds->lo_start == bounds->lo_end) {
+        assert (!at_end(bounds));
         advance(bounds);
-        assert (!past_end(bounds));
     }
     PyObject *start = NULL;
     PyObject *end = NULL;
@@ -1022,12 +1028,12 @@ lineiter_next(lineiterator *li)
     PyObject *result = PyTuple_New(3);
     start = PyLong_FromLong(bounds->lo_start);
     end = PyLong_FromLong(bounds->lo_end);
-    if (bounds->lo_artificial) {
+    if (bounds->lo_line_actual < 0) {
         Py_INCREF(Py_None);
         line = Py_None;
     }
     else {
-        line = PyLong_FromLong(bounds->lo_line);
+        line = PyLong_FromLong(bounds->lo_line_actual);
     }
     if (result == NULL || start == NULL || end == NULL || line == NULL) {
         goto error;
@@ -1172,10 +1178,8 @@ _PyCode_InitBounds(PyCodeObject* co, PyAddrLineOffsets *bounds)
     bounds->lo_entry = PyBytes_AS_STRING(co->co_linetable)-2;
     bounds->lo_start = -1;
     bounds->lo_end = 0;
-    bounds->lo_line = co->co_firstlineno;
-    bounds->lo_artificial = 1;
-    bounds->lo_limit = PyBytes_AS_STRING(co->co_linetable) + PyBytes_GET_SIZE(co->co_linetable);
-    return bounds->lo_line;
+    bounds->lo_line_computed = bounds->lo_line_actual = co->co_firstlineno;
+    return bounds->lo_line_actual;
 }
 
 /* Update *bounds to describe the first and one-past-the-last instructions in
@@ -1190,7 +1194,7 @@ _PyCode_CheckLineNumber(int lasti, PyAddrLineOffsets *bounds)
     while (bounds->lo_start > lasti) {
         retreat(bounds);
     }
-    return bounds->lo_line;
+    return bounds->lo_line_actual;
 }
 
 

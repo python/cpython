@@ -5429,8 +5429,8 @@ struct assembler {
     basicblock **a_reverse_postorder; /* list of blocks in dfs postorder */
     PyObject *a_lnotab;    /* string containing lnotab */
     int a_lnotab_off;      /* offset into lnotab */
+    int a_prevlineno;     /* lineno of last emitted line in line table */
     int a_lineno;          /* lineno of last emitted instruction */
-    int a_lineno_actual;   /* is current computed line number*/
     int a_lineno_start;    /* bytecode start offset of current lineno */
 };
 
@@ -5534,7 +5534,7 @@ static int
 assemble_init(struct assembler *a, int nblocks, int firstlineno)
 {
     memset(a, 0, sizeof(struct assembler));
-    a->a_lineno = firstlineno;
+    a->a_prevlineno = a->a_lineno = firstlineno;
     a->a_bytecode = PyBytes_FromStringAndSize(NULL, DEFAULT_CODE_SIZE);
     if (!a->a_bytecode)
         return 0;
@@ -5551,8 +5551,6 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
         PyErr_NoMemory();
         return 0;
     }
-    a->a_lineno_actual = a->a_lineno = firstlineno;
-    a->a_lineno_start = 0;
     return 1;
 }
 
@@ -5576,128 +5574,81 @@ blocksize(basicblock *b)
     return size;
 }
 
-/* Appends a pair to the end of the line number table, a_lnotab, representing
-   the instruction's bytecode offset and line number.  See
-   Objects/lnotab_notes.txt for the description of the line number table. */
-
 static int
-assemble_lnotab(struct assembler *a, struct instr *i)
+assemble_emit_linetable_pair(struct assembler *a, int bdelta, int ldelta)
 {
-    int d_bytecode, d_lineno;
-    Py_ssize_t len;
-    unsigned char *lnotab;
-
-    if (i->i_lineno == a->a_lineno) {
-        return 1;
-    }
-    if (a->a_offset == 0) {
-        assert(a->a_lineno_start == 0);
-        if (i->i_lineno < 0) {
-            a->a_lineno = -1;
-        }
-        else {
-            a->a_lineno = a->a_lineno_actual = i->i_lineno;
-        }
-        return 1;
-    }
-
-    d_bytecode = (a->a_offset - a->a_lineno_start) * sizeof(_Py_CODEUNIT);
-    a->a_lineno_start = a->a_offset;
-    assert(d_bytecode >= 0);
-
-    if (d_bytecode > 255) {
-        int j, nbytes, ncodes = d_bytecode / 255;
-        nbytes = a->a_lnotab_off + 2 * ncodes;
-        len = PyBytes_GET_SIZE(a->a_lnotab);
-        if (nbytes >= len) {
-            if ((len <= INT_MAX / 2) && (len * 2 < nbytes))
-                len = nbytes;
-            else if (len <= INT_MAX / 2)
-                len *= 2;
-            else {
-                PyErr_NoMemory();
-                return 0;
-            }
-            if (_PyBytes_Resize(&a->a_lnotab, len) < 0)
-                return 0;
-        }
-        lnotab = (unsigned char *)
-                   PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-        for (j = 0; j < ncodes; j++) {
-            *lnotab++ = 255;
-            *lnotab++ = 0;
-        }
-        d_bytecode -= ncodes * 255;
-        a->a_lnotab_off += ncodes * 2;
-    }
-    assert(0 <= d_bytecode && d_bytecode <= 255);
-
-    if (i->i_lineno == -1) {
-        d_lineno = -128;
-    }
-    else {
-        d_lineno = i->i_lineno - a->a_lineno_actual;
-        if (d_lineno < -127 || 127 < d_lineno) {
-            int j, nbytes, ncodes, k;
-            if (d_lineno < 0) {
-                k = -128;
-                /* use division on positive numbers */
-                ncodes = (-d_lineno) / 128;
-            }
-            else {
-                k = 127;
-                ncodes = d_lineno / 127;
-            }
-            d_lineno -= ncodes * k;
-            assert(ncodes >= 1);
-            nbytes = a->a_lnotab_off + 2 * ncodes;
-            len = PyBytes_GET_SIZE(a->a_lnotab);
-            if (nbytes >= len) {
-                if ((len <= INT_MAX / 2) && len * 2 < nbytes)
-                    len = nbytes;
-                else if (len <= INT_MAX / 2)
-                    len *= 2;
-                else {
-                    PyErr_NoMemory();
-                    return 0;
-                }
-                if (_PyBytes_Resize(&a->a_lnotab, len) < 0)
-                    return 0;
-            }
-            lnotab = (unsigned char *)
-                    PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-            *lnotab++ = 0;
-            *lnotab++ = k;
-            for (j = 1; j < ncodes; j++) {
-                *lnotab++ = 0;
-                *lnotab++ = k;
-            }
-            a->a_lnotab_off += ncodes * 2;
-        }
-    }
-    assert(-128 <= d_lineno && d_lineno <= 127);
-
-    len = PyBytes_GET_SIZE(a->a_lnotab);
+    Py_ssize_t len = PyBytes_GET_SIZE(a->a_lnotab);
     if (a->a_lnotab_off + 2 >= len) {
         if (_PyBytes_Resize(&a->a_lnotab, len * 2) < 0)
             return 0;
     }
-    lnotab = (unsigned char *)
+    unsigned char *lnotab = (unsigned char *)
                     PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
 
     a->a_lnotab_off += 2;
-    assert (d_bytecode > 0);
-    *lnotab++ = d_bytecode;
-    *lnotab++ = d_lineno;
-    if (i->i_lineno == -1) {
-        a->a_lineno_actual = a->a_lineno;
-        a->a_lineno = -1;
-    }
-    else {
-        a->a_lineno_actual = a->a_lineno = i->i_lineno;
-    }
+    *lnotab++ = bdelta;
+    *lnotab++ = ldelta;
     return 1;
 }
+
+/* Appends a range to the end of the line number table. See
+ *  Objects/lnotab_notes.txt for the description of the line number table. */
+
+static int
+assemble_line_range(struct assembler *a)
+{
+    int ldelta, bdelta;
+    bdelta =  (a->a_offset - a->a_lineno_start) * 2;
+    if (bdelta == 0) {
+        return 1;
+    }
+    if (a->a_lineno < 0) {
+        ldelta = -128;
+    }
+    else {
+        ldelta = a->a_lineno - a->a_prevlineno;
+        a->a_prevlineno = a->a_lineno;
+        while (ldelta > 127) {
+            if (!assemble_emit_linetable_pair(a, 0, 127)) {
+                return 0;
+            }
+            ldelta -= 127;
+        }
+        while (ldelta < -127) {
+            if (!assemble_emit_linetable_pair(a, 0, -127)) {
+                return 0;
+            }
+            ldelta += 127;
+        }
+    }
+    assert(-128 <= ldelta && ldelta < 128);
+    while (bdelta > 254) {
+        if (!assemble_emit_linetable_pair(a, 254, ldelta)) {
+            return 0;
+        }
+        ldelta = a->a_lineno < 0 ? -128 : 0;
+        bdelta -= 254;
+    }
+    if (!assemble_emit_linetable_pair(a, bdelta, ldelta)) {
+        return 0;
+    }
+    a->a_lineno_start = a->a_offset;
+    return 1;
+}
+
+static int
+assemble_lnotab(struct assembler *a, struct instr *i)
+{
+    if (i->i_lineno == a->a_lineno) {
+        return 1;
+    }
+    if (!assemble_line_range(a)) {
+        return 0;
+    }
+    a->a_lineno = i->i_lineno;
+    return 1;
+}
+
 
 /* assemble_emit()
    Extend the bytecode with a new instruction.
@@ -6057,6 +6008,13 @@ assemble(struct compiler *c, int addNone)
         for (j = 0; j < b->b_iused; j++)
             if (!assemble_emit(&a, &b->b_instr[j]))
                 goto error;
+    }
+    if (!assemble_line_range(&a)) {
+        return 0;
+    }
+    /* Emit sentinel at end of line number table */
+    if (!assemble_emit_linetable_pair(&a, 255, -128)) {
+        goto error;
     }
 
     if (_PyBytes_Resize(&a.a_lnotab, a.a_lnotab_off) < 0)

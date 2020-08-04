@@ -137,11 +137,10 @@ PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 /* for internal use only */
 typedef struct _line_offsets {
     char *lo_entry;
-    char *lo_limit;
+    int lo_line_computed;
     int lo_start;
     int lo_end;
-    int lo_line;
-    char lo_artificial;
+    int lo_line_actual;
 } PyAddrLineOffsets;
 
 
