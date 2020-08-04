@@ -674,10 +674,11 @@ new_dict_with_shared_keys(PyDictKeysObject *keys)
 }
 
 
-static PyObject *
-clone_combined_dict(PyDictObject *orig)
+static PyDictKeysObject *
+clone_combined_dict_keys(PyDictObject *orig)
 {
-    assert(PyDict_CheckExact(orig));
+    assert(PyDict_Check(orig));
+    assert(Py_TYPE(orig)->tp_iter == (getiterfunc)dict_iter);
     assert(orig->ma_values == NULL);
     assert(orig->ma_keys->dk_refcnt == 1);
 
@@ -704,19 +705,6 @@ clone_combined_dict(PyDictObject *orig)
         }
     }
 
-    PyDictObject *new = (PyDictObject *)new_dict(keys, NULL);
-    if (new == NULL) {
-        /* In case of an error, `new_dict()` takes care of
-           cleaning up `keys`. */
-        return NULL;
-    }
-    new->ma_used = orig->ma_used;
-    ASSERT_CONSISTENT(new);
-    if (_PyObject_GC_IS_TRACKED(orig)) {
-        /* Maintain tracking. */
-        _PyObject_GC_TRACK(new);
-    }
-
     /* Since we copied the keys table we now have an extra reference
        in the system.  Manually call increment _Py_RefTotal to signal that
        we have it now; calling dictkeys_incref would be an error as
@@ -724,8 +712,7 @@ clone_combined_dict(PyDictObject *orig)
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
-
-    return (PyObject *)new;
+    return keys;
 }
 
 PyObject *
@@ -2527,12 +2514,45 @@ dict_merge(PyObject *a, PyObject *b, int override)
         if (other == mp || other->ma_used == 0)
             /* a.update(a) or a.update({}); nothing to do */
             return 0;
-        if (mp->ma_used == 0)
+        if (mp->ma_used == 0) {
             /* Since the target dict is empty, PyDict_GetItem()
              * always returns NULL.  Setting override to 1
              * skips the unnecessary test.
              */
             override = 1;
+            PyDictKeysObject *okeys = other->ma_keys;
+
+            // If other is clean, combined, and just allocated, just clone it.
+            if (other->ma_values == NULL &&
+                    other->ma_used == okeys->dk_nentries &&
+                    (okeys->dk_size == PyDict_MINSIZE ||
+                     USABLE_FRACTION(okeys->dk_size/2) < other->ma_used)) {
+                PyDictKeysObject *keys = clone_combined_dict_keys(other);
+                if (keys == NULL) {
+                    return -1;
+                }
+
+                dictkeys_decref(mp->ma_keys);
+                mp->ma_keys = keys;
+                if (mp->ma_values != NULL) {
+                    if (mp->ma_values != empty_values) {
+                        free_values(mp->ma_values);
+                    }
+                    mp->ma_values = NULL;
+                }
+
+                mp->ma_used = other->ma_used;
+                mp->ma_version_tag = DICT_NEXT_VERSION();
+                ASSERT_CONSISTENT(mp);
+
+                if (_PyObject_GC_IS_TRACKED(other) && !_PyObject_GC_IS_TRACKED(mp)) {
+                    /* Maintain tracking. */
+                    _PyObject_GC_TRACK(mp);
+                }
+
+                return 0;
+            }
+        }
         /* Do one big resize at the start, rather than
          * incrementally resizing as we insert new items.  Expect
          * that there will be no (or few) overlapping keys.
@@ -2718,12 +2738,13 @@ PyDict_Copy(PyObject *o)
         return (PyObject *)split_copy;
     }
 
-    if (PyDict_CheckExact(mp) && mp->ma_values == NULL &&
+    if (Py_TYPE(mp)->tp_iter == (getiterfunc)dict_iter &&
+            mp->ma_values == NULL &&
             (mp->ma_used >= (mp->ma_keys->dk_nentries * 2) / 3))
     {
         /* Use fast-copy if:
 
-           (1) 'mp' is an instance of a subclassed dict; and
+           (1) type(mp) doesn't override tp_iter; and
 
            (2) 'mp' is not a split-dict; and
 
@@ -2735,13 +2756,31 @@ PyDict_Copy(PyObject *o)
            operations and copied after that.  In cases like this, we defer to
            PyDict_Merge, which produces a compacted copy.
         */
-        return clone_combined_dict(mp);
+        PyDictKeysObject *keys = clone_combined_dict_keys(mp);
+        if (keys == NULL) {
+            return NULL;
+        }
+        PyDictObject *new = (PyDictObject *)new_dict(keys, NULL);
+        if (new == NULL) {
+            /* In case of an error, `new_dict()` takes care of
+               cleaning up `keys`. */
+            return NULL;
+        }
+
+        new->ma_used = mp->ma_used;
+        ASSERT_CONSISTENT(new);
+        if (_PyObject_GC_IS_TRACKED(mp)) {
+            /* Maintain tracking. */
+            _PyObject_GC_TRACK(new);
+        }
+
+        return (PyObject *)new;
     }
 
     copy = PyDict_New();
     if (copy == NULL)
         return NULL;
-    if (PyDict_Merge(copy, o, 1) == 0)
+    if (dict_merge(copy, o, 1) == 0)
         return copy;
     Py_DECREF(copy);
     return NULL;
@@ -3359,16 +3398,15 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     d = (PyDictObject *)self;
 
     /* The object has been implicitly tracked by tp_alloc */
-    if (type == &PyDict_Type)
+    if (type == &PyDict_Type) {
         _PyObject_GC_UNTRACK(d);
+    }
 
     d->ma_used = 0;
     d->ma_version_tag = DICT_NEXT_VERSION();
-    d->ma_keys = new_keys_object(PyDict_MINSIZE);
-    if (d->ma_keys == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
+    dictkeys_incref(Py_EMPTY_KEYS);
+    d->ma_keys = Py_EMPTY_KEYS;
+    d->ma_values = empty_values;
     ASSERT_CONSISTENT(d);
     return self;
 }
