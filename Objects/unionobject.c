@@ -56,14 +56,19 @@ union_instancecheck(PyObject *self, PyObject *instance)
     Py_ssize_t nargs = PyTuple_GET_SIZE(alias->args);
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
+        PyTypeObject* arg_type =  Py_TYPE(arg);
         if (arg == Py_None) {
-            arg = (PyObject *)Py_TYPE(arg);
+            arg = (PyObject *)arg_type;
         }
         if (PyType_Check(arg)) {
             if (PyObject_IsInstance(instance, arg) != 0)
             {
                 return self;
             }
+        } else if (arg_type == &Py_GenericAliasType) {
+            PyErr_SetString(PyExc_TypeError,
+                    "isinstance() argument 2 cannot contain a parameterized generic");
+            return NULL;
         }
     }
     return instance;

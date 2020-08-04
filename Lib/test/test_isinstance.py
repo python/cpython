@@ -218,6 +218,12 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertTrue(isinstance(2, typing.List | int))
         self.assertFalse(isinstance(2, typing.List | typing.Tuple))
         self.assertTrue(isinstance(None, int | None))
+        with self.assertRaises(TypeError):
+            isinstance(2, list[int])
+        with self.assertRaises(TypeError):
+            isinstance(2, list[int] | int)
+
+
 
     def test_subclass_normal(self):
         # normal classes
