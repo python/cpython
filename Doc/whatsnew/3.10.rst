@@ -103,6 +103,16 @@ New Modules
 Improved Modules
 ================
 
+curses
+------
+
+The extended color functions added in ncurses 6.1 will be used transparently
+by :func:`curses.color_content`, :func:`curses.init_color`,
+:func:`curses.init_pair`, and :func:`curses.pair_content`. A new function,
+:func:`curses.has_extended_color_support`, indicates whether extended color
+support is provided by the underlying ncurses library.
+(Contributed by Jeffrey Kintscher and Hans Petter Jansson in :issue:`36982`.)
+
 glob
 ----
 
