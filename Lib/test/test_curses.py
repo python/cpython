@@ -232,7 +232,8 @@ class TestCurses(unittest.TestCase):
                      curses.nocbreak, curses.noecho, curses.nonl,
                      curses.noqiflush, curses.noraw,
                      curses.reset_prog_mode, curses.termattrs,
-                     curses.termname, curses.erasechar]:
+                     curses.termname, curses.erasechar,
+                     curses.has_extended_color_support]:
             with self.subTest(func=func.__qualname__):
                 func()
         if hasattr(curses, 'filter'):
@@ -292,6 +293,19 @@ class TestCurses(unittest.TestCase):
 
         if hasattr(curses, 'use_default_colors'):
             curses.use_default_colors()
+
+        self.assertRaises(ValueError, curses.color_content, -1)
+        self.assertRaises(ValueError, curses.color_content, curses.COLORS + 1)
+        self.assertRaises(ValueError, curses.color_content, -2**31 - 1)
+        self.assertRaises(ValueError, curses.color_content, 2**31)
+        self.assertRaises(ValueError, curses.color_content, -2**63 - 1)
+        self.assertRaises(ValueError, curses.color_content, 2**63 - 1)
+        self.assertRaises(ValueError, curses.pair_content, -1)
+        self.assertRaises(ValueError, curses.pair_content, curses.COLOR_PAIRS)
+        self.assertRaises(ValueError, curses.pair_content, -2**31 - 1)
+        self.assertRaises(ValueError, curses.pair_content, 2**31)
+        self.assertRaises(ValueError, curses.pair_content, -2**63 - 1)
+        self.assertRaises(ValueError, curses.pair_content, 2**63 - 1)
 
     @requires_curses_func('keyname')
     def test_keyname(self):
