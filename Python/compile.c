@@ -56,17 +56,26 @@ struct instr {
 #define MASK_LOW_LOG_BITS 31
 
 static inline int
+is_bit_set_in_table(uint32_t *table, int bitindex) {
+    /* Is the relevant bit set in the relevant word? */
+    /* 256 bits fit into 8 32-bits words.
+     * Word is indexed by (bitindex>>ln(size of int in bits)).
+     * Bit within word is the low bits of bitindex.
+     */
+    uint32_t word = table[bitindex >> LOG_BITS_PER_INT];
+    return (word >> (bitindex & MASK_LOW_LOG_BITS)) & 1;
+}
+
+static inline int
 is_relative_jump(struct instr *i)
 {
-    int opcode = i->i_opcode;
-    return (_PyOpcode_RelativeJump[opcode>>LOG_BITS_PER_INT]>>(opcode&MASK_LOW_LOG_BITS))&1;
+    return is_bit_set_in_table(_PyOpcode_RelativeJump, i->i_opcode);
 }
 
 static inline int
 is_jump(struct instr *i)
 {
-    int opcode = i->i_opcode;
-    return (_PyOpcode_Jump[opcode>>LOG_BITS_PER_INT]>>(opcode&MASK_LOW_LOG_BITS))&1;
+    return is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
 }
 
 typedef struct basicblock_ {
