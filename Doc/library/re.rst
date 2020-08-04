@@ -1562,7 +1562,7 @@ find all of the adverbs in some text, they might use :func:`findall` in
 the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
-   >>> re.findall(r"\w+ly", text)
+   >>> re.findall(r"\w+ly\b", text)
    ['carefully', 'quickly']
 
 
