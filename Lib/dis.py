@@ -451,8 +451,10 @@ def findlinestarts(code):
 
     Generate pairs (offset, lineno)
     """
+    prev_line = -1
     for start, end, line in code.co_lines():
-        if line is not None:
+        if line is not None and line != prev_line:
+            prev_line = line
             yield start, line
     return
     """Find the offsets in a byte code which are start of lines in the source.

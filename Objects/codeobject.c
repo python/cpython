@@ -990,10 +990,8 @@ advance(PyAddrLineOffsets *bounds)
     bounds->lo_entry += 2;
     bounds->lo_start = bounds->lo_end;
     int delta = ((unsigned char *)bounds->lo_entry)[0];
-    if (delta == 255) {
-        bounds->lo_start = -1;
-    }
-        bounds->lo_end += ((unsigned char *)bounds->lo_entry)[0];
+    assert (delta < 255);
+    bounds->lo_end += delta;
     int ldelta = ((signed char *)bounds->lo_entry)[1];
     if (ldelta == -128) {
         bounds->lo_line_actual = -1;
