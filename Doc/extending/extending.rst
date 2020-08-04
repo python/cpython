@@ -50,8 +50,9 @@ be callable from Python as follows:
    >>> import spam
    >>> status = spam.system("ls -l")
 
-We also want this function to be well-documented; that is, we want the function's
-``help`` message to appear as ``system(command)`` plus a short description.
+We also want this function to be well-documented; that is, we want the
+function's :func:`help` message to appear as ``system(command)`` plus a short
+description.
 
 Begin by creating a file :file:`spammodule.c`.  (Historically, if a module is
 called ``spam``, the C file containing its implementation is called
@@ -354,7 +355,8 @@ start with something of the form
 ``"myfunc(arg1, arg2='my_default', arg3=17)\n--\n\n"``, the signature will be
 constructed and the remainder of the docstring will be used as the function's
 ``__doc__`` attribute. This can be useful for generating nice messages with the
-``help`` function or ``Signature`` objects with the :mod:`inspect` module.
+:func:`help` function or for getting the signature in object form with the
+:func:`inspect.signature` function.
 
 The method table must be referenced in the module definition structure::
 
