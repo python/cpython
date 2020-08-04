@@ -1,0 +1,2 @@
+Ensure :file:`python3.dll` is loaded from correct locations when Python is
+embedded (CVE-2020-15523).
