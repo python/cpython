@@ -887,7 +887,6 @@ Removed
   :func:`asyncio.current_task` and :func:`asyncio.all_tasks` instead.
   (Contributed by Rémi Lapeyre in :issue:`40967`)
 
-
 Porting to Python 3.9
 =====================
 

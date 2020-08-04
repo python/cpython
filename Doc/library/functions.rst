@@ -7,24 +7,38 @@ Built-in Functions
 The Python interpreter has a number of functions and types built into it that
 are always available.  They are listed here in alphabetical order.
 
-===================  =================  ==================  ==================  ====================
-..                   ..                 Built-in Functions  ..                  ..
-===================  =================  ==================  ==================  ====================
-:func:`abs`          :func:`delattr`    :func:`hash`        |func-memoryview|_  |func-set|_
-:func:`all`          |func-dict|_       :func:`help`        :func:`min`         :func:`setattr`
-:func:`any`          :func:`dir`        :func:`hex`         :func:`next`        :func:`slice`
-:func:`ascii`        :func:`divmod`     :func:`id`          :func:`object`      :func:`sorted`
-:func:`bin`          :func:`enumerate`  :func:`input`       :func:`oct`         :func:`staticmethod`
-:func:`bool`         :func:`eval`       :func:`int`         :func:`open`        |func-str|_
-:func:`breakpoint`   :func:`exec`       :func:`isinstance`  :func:`ord`         :func:`sum`
-|func-bytearray|_    :func:`filter`     :func:`issubclass`  :func:`pow`         :func:`super`
-|func-bytes|_        :func:`float`      :func:`iter`        :func:`print`       |func-tuple|_
-:func:`callable`     :func:`format`     :func:`len`         :func:`property`    :func:`type`
-:func:`chr`          |func-frozenset|_  |func-list|_        |func-range|_       :func:`vars`
-:func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`        :func:`zip`
-:func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`    :func:`__import__`
-:func:`complex`      :func:`hasattr`    :func:`max`         :func:`round`
-===================  =================  ==================  ==================  ====================
++---------------------------------------------------------------------------------------------------+
+|                                        Built-in Functions                                         |
++=========================+=======================+=======================+=========================+
+| |  **A**                | |  **E**              | |  **L**              | |  **R**                |
+| |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
+| |  :func:`all`          | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
+| |  :func:`any`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
+| |  :func:`ascii`        | |                     | |                     | |  :func:`round`        |
+| |                       | |  **F**              | |  **M**              | |                       |
+| |  **B**                | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
+| |  :func:`bin`          | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
+| |  :func:`bool`         | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
+| |  :func:`breakpoint`   | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`slice`        |
+| |  |func-bytearray|_    | |                     | |                     | |  :func:`sorted`       |
+| |  |func-bytes|_        | |  **G**              | |  **N**              | |  :func:`staticmethod` |
+| |                       | |  :func:`getattr`    | |  :func:`next`       | |  |func-str|_          |
+| |  **C**                | |  :func:`globals`    | |                     | |  :func:`sum`          |
+| |  :func:`callable`     | |                     | |  **O**              | |  :func:`super`        |
+| |  :func:`chr`          | |  **H**              | |  :func:`object`     | |                       |
+| |  :func:`classmethod`  | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
+| |  :func:`compile`      | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
+| |  :func:`complex`      | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
+| |                       | |  :func:`hex`        | |                     | |                       |
+| |  **D**                | |                     | |  **P**              | |  **V**                |
+| |  :func:`delattr`      | |  **I**              | |  :func:`pow`        | |  :func:`vars`         |
+| |  |func-dict|_         | |  :func:`id`         | |  :func:`print`      | |                       |
+| |  :func:`dir`          | |  :func:`input`      | |  :func:`property`   | |  **Z**                |
+| |  :func:`divmod`       | |  :func:`int`        | |                     | |  :func:`zip`          |
+| |                       | |  :func:`isinstance` | |                     | |                       |
+| |                       | |  :func:`issubclass` | |                     | |  **_**                |
+| |                       | |  :func:`iter`       | |                     | |  :func:`__import__`   |
++-------------------------+-----------------------+-----------------------+-------------------------+
 
 .. using :func:`dict` would create a link to another page, so local targets are
    used, with replacement texts to make the output in the table consistent

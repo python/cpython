@@ -291,10 +291,13 @@ error:
 static int
 set_running_loop(PyObject *loop)
 {
-    cached_running_holder = NULL;
-    cached_running_holder_tsid = 0;
+    PyObject *ts_dict = NULL;
 
-    PyObject *ts_dict = PyThreadState_GetDict();  // borrowed
+    PyThreadState *tstate = PyThreadState_Get();
+    if (tstate != NULL) {
+        ts_dict = _PyThreadState_GetDict(tstate);  // borrowed
+    }
+
     if (ts_dict == NULL) {
         PyErr_SetString(
             PyExc_RuntimeError, "thread-local storage is not available");
@@ -313,6 +316,9 @@ set_running_loop(PyObject *loop)
         return -1;
     }
     Py_DECREF(rl);
+
+    cached_running_holder = (PyObject *)rl;
+    cached_running_holder_tsid = PyThreadState_GetID(tstate);
 
     return 0;
 }

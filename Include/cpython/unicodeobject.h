@@ -11,7 +11,9 @@
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 
-#define USE_UNICODE_WCHAR_CACHE 1
+#ifndef USE_UNICODE_WCHAR_CACHE
+#  define USE_UNICODE_WCHAR_CACHE 1
+#endif /* USE_UNICODE_WCHAR_CACHE */
 
 /* Since splitting on whitespace is an important use case, and
    whitespace in most situations is solely ASCII whitespace, we
@@ -50,7 +52,7 @@
 
 Py_DEPRECATED(3.3) static inline void
 Py_UNICODE_COPY(Py_UNICODE *target, const Py_UNICODE *source, Py_ssize_t length) {
-    memcpy(target, source, length * sizeof(Py_UNICODE));
+    memcpy(target, source, (size_t)(length) * sizeof(Py_UNICODE));
 }
 
 Py_DEPRECATED(3.3) static inline void

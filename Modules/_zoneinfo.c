@@ -224,8 +224,14 @@ error:
     self = NULL;
 cleanup:
     if (file_obj != NULL) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
         PyObject *tmp = PyObject_CallMethod(file_obj, "close", NULL);
-        Py_DECREF(tmp);
+        _PyErr_ChainExceptions(exc, val, tb);
+        if (tmp == NULL) {
+            Py_CLEAR(self);
+        }
+        Py_XDECREF(tmp);
         Py_DECREF(file_obj);
     }
     Py_DECREF(file_path);
@@ -2468,7 +2474,7 @@ clear_strong_cache(const PyTypeObject *const type)
 }
 
 static PyObject *
-new_weak_cache()
+new_weak_cache(void)
 {
     PyObject *weakref_module = PyImport_ImportModule("weakref");
     if (weakref_module == NULL) {
@@ -2482,7 +2488,7 @@ new_weak_cache()
 }
 
 static int
-initialize_caches()
+initialize_caches(void)
 {
     // TODO: Move to a PyModule_GetState / PEP 573 based caching system.
     if (TIMEDELTA_CACHE == NULL) {

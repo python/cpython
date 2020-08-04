@@ -442,46 +442,45 @@ validate_and_copy_tuple(PyObject *tup)
     return newtuple;
 }
 
-PyDoc_STRVAR(code_doc,
-"code(argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,\n\
-      flags, codestring, constants, names, varnames, filename, name,\n\
-      firstlineno, lnotab[, freevars[, cellvars]])\n\
-\n\
-Create a code object.  Not for the faint of heart.");
+/*[clinic input]
+@classmethod
+code.__new__ as code_new
+
+    argcount: int
+    posonlyargcount: int
+    kwonlyargcount: int
+    nlocals: int
+    stacksize: int
+    flags: int
+    codestring as code: object(subclass_of="&PyBytes_Type")
+    constants as consts: object(subclass_of="&PyTuple_Type")
+    names: object(subclass_of="&PyTuple_Type")
+    varnames: object(subclass_of="&PyTuple_Type")
+    filename: unicode
+    name: unicode
+    firstlineno: int
+    lnotab: object(subclass_of="&PyBytes_Type")
+    freevars: object(subclass_of="&PyTuple_Type", c_default="NULL") = ()
+    cellvars: object(subclass_of="&PyTuple_Type", c_default="NULL") = ()
+    /
+
+Create a code object.  Not for the faint of heart.
+[clinic start generated code]*/
 
 static PyObject *
-code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
+              int kwonlyargcount, int nlocals, int stacksize, int flags,
+              PyObject *code, PyObject *consts, PyObject *names,
+              PyObject *varnames, PyObject *filename, PyObject *name,
+              int firstlineno, PyObject *lnotab, PyObject *freevars,
+              PyObject *cellvars)
+/*[clinic end generated code: output=612aac5395830184 input=85e678ea4178f234]*/
 {
-    int argcount;
-    int posonlyargcount;
-    int kwonlyargcount;
-    int nlocals;
-    int stacksize;
-    int flags;
     PyObject *co = NULL;
-    PyObject *code;
-    PyObject *consts;
-    PyObject *names, *ournames = NULL;
-    PyObject *varnames, *ourvarnames = NULL;
-    PyObject *freevars = NULL, *ourfreevars = NULL;
-    PyObject *cellvars = NULL, *ourcellvars = NULL;
-    PyObject *filename;
-    PyObject *name;
-    int firstlineno;
-    PyObject *lnotab;
-
-    if (!PyArg_ParseTuple(args, "iiiiiiSO!O!O!UUiS|O!O!:code",
-                          &argcount, &posonlyargcount, &kwonlyargcount,
-                              &nlocals, &stacksize, &flags,
-                          &code,
-                          &PyTuple_Type, &consts,
-                          &PyTuple_Type, &names,
-                          &PyTuple_Type, &varnames,
-                          &filename, &name,
-                          &firstlineno, &lnotab,
-                          &PyTuple_Type, &freevars,
-                          &PyTuple_Type, &cellvars))
-        return NULL;
+    PyObject *ournames = NULL;
+    PyObject *ourvarnames = NULL;
+    PyObject *ourfreevars = NULL;
+    PyObject *ourcellvars = NULL;
 
     if (PySys_Audit("code.__new__", "OOOiiiiii",
                     code, filename, name, argcount, posonlyargcount,
@@ -963,7 +962,7 @@ PyTypeObject PyCode_Type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    code_doc,                           /* tp_doc */
+    code_new__doc__,                    /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
     code_richcompare,                   /* tp_richcompare */

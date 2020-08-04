@@ -11,7 +11,7 @@
 --------------
 
 This module provides constants which represent the numeric values of leaf nodes
-of the parse tree (terminal tokens).  Refer to the file :file:`Grammar/Grammar`
+of the parse tree (terminal tokens).  Refer to the file :file:`Grammar/Tokens`
 in the Python distribution for the definitions of the names in the context of
 the language grammar.  The specific numeric values which the names map to may
 change between Python versions.

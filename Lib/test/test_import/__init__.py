@@ -19,11 +19,12 @@ import unittest
 from unittest import mock
 
 import test.support
-from test.support import (
-    TESTFN, forget, is_jython,
-    make_legacy_pyc, rmtree, swap_attr, swap_item, temp_umask,
-    unlink, unload, cpython_only, TESTFN_UNENCODABLE,
-    temp_dir, DirsOnSysPath)
+from test.support import os_helper
+from test.support import (is_jython, swap_attr, swap_item, cpython_only)
+from test.support.import_helper import (
+    forget, make_legacy_pyc, unlink, unload, DirsOnSysPath)
+from test.support.os_helper import (
+    TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE, temp_dir)
 from test.support import script_helper
 from test.support import threading_helper
 from test.test_importlib.util import uncache
@@ -997,22 +998,22 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
     tagged = package_name + '-tagged'
 
     def setUp(self):
-        test.support.rmtree(self.tagged)
-        test.support.rmtree(self.package_name)
+        os_helper.rmtree(self.tagged)
+        os_helper.rmtree(self.package_name)
         self.orig_sys_path = sys.path[:]
 
         # create a sample package; imagine you have a package with a tag and
         #  you want to symbolically link it from its untagged name.
         os.mkdir(self.tagged)
-        self.addCleanup(test.support.rmtree, self.tagged)
+        self.addCleanup(os_helper.rmtree, self.tagged)
         init_file = os.path.join(self.tagged, '__init__.py')
-        test.support.create_empty_file(init_file)
+        os_helper.create_empty_file(init_file)
         assert os.path.exists(init_file)
 
         # now create a symlink to the tagged package
         # sample -> sample-tagged
         os.symlink(self.tagged, self.package_name, target_is_directory=True)
-        self.addCleanup(test.support.unlink, self.package_name)
+        self.addCleanup(os_helper.unlink, self.package_name)
         importlib.invalidate_caches()
 
         self.assertEqual(os.path.isdir(self.package_name), True)
@@ -1027,7 +1028,7 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
         not hasattr(sys, 'getwindowsversion')
         or sys.getwindowsversion() >= (6, 0),
         "Windows Vista or later required")
-    @test.support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_symlinked_dir_importable(self):
         # make sure sample can only be imported from the current directory.
         sys.path[:] = ['.']

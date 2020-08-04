@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include <Python.h>
 
 #include "tokenizer.h"
@@ -277,26 +279,23 @@ _PyPegen_parsestr(Parser *p, int *bytesmode, int *rawmode, PyObject **result,
    `n` is the node which locations are going to be fixed relative to parent.
    `expr_str` is the child node's string representation, including braces.
 */
-static void
+static bool
 fstring_find_expr_location(Token *parent, char *expr_str, int *p_lines, int *p_cols)
 {
-    char *substr = NULL;
-    char *start;
-    int lines = 0;
-    int cols = 0;
-
+    *p_lines = 0;
+    *p_cols = 0;
     if (parent && parent->bytes) {
         char *parent_str = PyBytes_AsString(parent->bytes);
         if (!parent_str) {
-            return;
+            return false;
         }
-        substr = strstr(parent_str, expr_str);
+        char *substr = strstr(parent_str, expr_str);
         if (substr) {
             // The following is needed, in order to correctly shift the column
             // offset, in the case that (disregarding any whitespace) a newline
             // immediately follows the opening curly brace of the fstring expression.
-            int newline_after_brace = 1;
-            start = substr + 1;
+            bool newline_after_brace = 1;
+            char *start = substr + 1;
             while (start && *start != '}' && *start != '\n') {
                 if (*start != ' ' && *start != '\t' && *start != '\f') {
                     newline_after_brace = 0;
@@ -312,19 +311,18 @@ fstring_find_expr_location(Token *parent, char *expr_str, int *p_lines, int *p_c
                 while (start > parent_str && *start != '\n') {
                     start--;
                 }
-                cols += (int)(substr - start);
+                *p_cols += (int)(substr - start);
             }
             /* adjust the start based on the number of newlines encountered
                before the f-string expression */
             for (char* p = parent_str; p < substr; p++) {
                 if (*p == '\n') {
-                    lines++;
+                    (*p_lines)++;
                 }
             }
         }
     }
-    *p_lines = lines;
-    *p_cols = cols;
+    return true;
 }
 
 
@@ -382,9 +380,12 @@ fstring_compile_expr(Parser *p, const char *expr_start, const char *expr_end,
     str[len+2] = 0;
 
     int lines, cols;
-    fstring_find_expr_location(t, str, &lines, &cols);
+    if (!fstring_find_expr_location(t, str, &lines, &cols)) {
+        PyMem_FREE(str);
+        return NULL;
+    }
 
-    // The parentheses are needed in order to allow for leading whitespace withing
+    // The parentheses are needed in order to allow for leading whitespace within
     // the f-string expression. This consequently gets parsed as a group (see the
     // group rule in python.gram).
     str[0] = '(';
