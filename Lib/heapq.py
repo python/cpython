@@ -311,6 +311,7 @@ def _siftup_max(heap, pos):
     heap[pos] = newitem
     _siftdown_max(heap, startpos, pos)
 
+
 class _MergeNode:
     """
     Binary tree invariants:
@@ -362,6 +363,30 @@ class _MergeNode:
         left.parent = right.parent = node
         return node
 
+    @classmethod
+    def build_tree(cls, iterables, key, reverse):
+        nodes = []
+        for it in iterables:
+            leaf = cls.construct_leaf(it, key)
+            if leaf is not None:
+                nodes.append(leaf)
+        if not nodes:
+            return None
+        n = len(nodes)
+        # unite pairs of adjacent nodes with a common parent until all
+        # nodes are united into one big tree.
+        while n > 1:
+            # Prefer keeping the leftmost nodes shallower in the tree
+            # since they're more likely to win for stability reasons.
+            new_nodes, rest = nodes[:n & 1], nodes[n & 1:]
+            for left, right in zip(rest[::2], rest[1::2]):
+                parent = cls.construct_parent(left, right, reverse)
+                new_nodes.append(parent)
+            nodes = new_nodes
+            n = len(nodes)
+        (root,) = nodes
+        return root
+
     def promote_sibling(self):
         """
         Remove self and its sibling from the tree, while linking their
@@ -369,9 +394,6 @@ class _MergeNode:
         """
         assert self.leaf is self
         parent = self.parent
-        # This can't be the last node because we switch to the
-        # fast yield-from case when we reach the last node.
-        assert parent is not None
         left = parent.left
         right = parent.right
         sibling = left if self is right else right
@@ -406,32 +428,13 @@ def merge(*iterables, key=None, reverse=False):
 
     '''
 
-    nodes = []
-    for it in iterables:
-        leaf = _MergeNode.construct_leaf(it, key)
-        if leaf is not None:
-            nodes.append(leaf)
-    if not nodes:
+    root = _MergeNode.build_tree(iterables, key, reverse)
+    if root is None:
         return
-    n = len(nodes)
-    if n == 1:
-        (root,) = nodes
+    elif root.leaf is root:
         yield root.left
         yield from root.right
         return
-
-    # unite pairs of adjacent nodes with a common parent until all nodes
-    # are united into one big tree.
-    while n > 1:
-        # Prefer keeping the leftmost nodes shallower in the tree
-        # since they're more likely to win for stability reasons.
-        new_nodes, rest = nodes[:n & 1], nodes[n & 1:]
-        for left, right in zip(rest[::2], rest[1::2]):
-            parent = _MergeNode.construct_parent(left, right, reverse)
-            new_nodes.append(parent)
-        nodes = new_nodes
-        n = len(nodes)
-    (root,) = nodes
 
     _next, _StopIteration = next, StopIteration
     while True:
@@ -445,10 +448,9 @@ def merge(*iterables, key=None, reverse=False):
             node.left = val = _next(node.right)
         except _StopIteration:
             node = node.promote_sibling()
-            if node.leaf is root:
-                assert node is root
-                yield node.left
-                yield from node.right
+            if root.leaf is root:
+                yield root.left
+                yield from root.right
                 return
         else:
             node.key = val if key is None else key(val)
