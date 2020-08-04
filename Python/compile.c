@@ -52,18 +52,21 @@ struct instr {
     int i_lineno;
 };
 
-static int
+#define LOG_BITS_PER_INT 5
+#define MASK_LOW_LOG_BITS 31
+
+static inline int
 is_relative_jump(struct instr *i)
 {
     int opcode = i->i_opcode;
-    return (_PyOpcode_RelativeJump[opcode>>5]>>(opcode&31))&1;
+    return (_PyOpcode_RelativeJump[opcode>>LOG_BITS_PER_INT]>>(opcode&MASK_LOW_LOG_BITS))&1;
 }
 
-static int
+static inline int
 is_jump(struct instr *i)
 {
     int opcode = i->i_opcode;
-    return (_PyOpcode_Jump[opcode>>5]>>(opcode&31))&1;
+    return (_PyOpcode_Jump[opcode>>LOG_BITS_PER_INT]>>(opcode&MASK_LOW_LOG_BITS))&1;
 }
 
 typedef struct basicblock_ {
