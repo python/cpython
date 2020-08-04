@@ -1,1 +1,1 @@
-Add os.fork checking for test_ssl.BasicSocketTests.test_random_fork and test_uuid.TestUUIDWithExtModule.testIssue8621
+Port test_ssl and test_uuid to VxWorks RTOS.
