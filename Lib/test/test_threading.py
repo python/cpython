@@ -798,7 +798,6 @@ class ThreadTests(BaseTestCase):
 
 
 
-
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):
