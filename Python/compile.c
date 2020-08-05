@@ -1827,7 +1827,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
             return NULL;
     }
     /* Use 0 for firstlineno initially, will fixup in assemble(). */
-    if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 0))
+    if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 1))
         return NULL;
     switch (mod->kind) {
     case Module_kind:
@@ -3363,6 +3363,7 @@ compiler_visit_stmt_expr(struct compiler *c, expr_ty value)
 
     if (value->kind == Constant_kind) {
         /* ignore constant statement */
+        ADDOP(c, NOP);
         return 1;
     }
 
@@ -5989,7 +5990,7 @@ assemble(struct compiler *c, int addNone)
     if (!c->u->u_firstlineno) {
         if (entryblock && entryblock->b_instr && entryblock->b_instr->i_lineno)
             c->u->u_firstlineno = entryblock->b_instr->i_lineno;
-        else
+       else
             c->u->u_firstlineno = 1;
     }
     if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
@@ -6263,8 +6264,8 @@ clean_basic_block(basicblock *bb) {
     int dest = 0;
     int prev_lineno = -1;
     for (int src = 0; src < bb->b_iused; src++) {
+        int lineno = bb->b_instr[src].i_lineno;
         switch(bb->b_instr[src].i_opcode) {
-            int lineno = bb->b_instr[src].i_lineno;
             case RETURN_VALUE:
             case RERAISE:
                 bb->b_next = NULL;
@@ -6289,8 +6290,8 @@ clean_basic_block(basicblock *bb) {
                         break;
                     }
                 }
-                /* fall through */
             }
+            /* fallthrough */
             default:
                 if (dest != src) {
                     bb->b_instr[dest] = bb->b_instr[src];

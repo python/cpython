@@ -485,7 +485,7 @@ class DisTests(unittest.TestCase):
         self.assertEqual(got, expected)
 
     def test_opmap(self):
-        self.assertEqual(dis.opmap["PASS"], 9)
+        self.assertEqual(dis.opmap["NOP"], 9)
         self.assertIn(dis.opmap["LOAD_CONST"], dis.hasconst)
         self.assertIn(dis.opmap["STORE_NAME"], dis.hasname)
 

@@ -400,13 +400,128 @@ static PyMemberDef code_memberlist[] = {
     {NULL}      /* Sentinel */
 };
 
+static void
+retreat(PyAddrLineOffsets *bounds)
+{
+    int ldelta = ((signed char *)bounds->lo_entry)[1];
+    if (ldelta == -128) {
+        ldelta = 0;
+    }
+    bounds->lo_line_computed -= ldelta;
+    bounds->lo_entry -= 2;
+    bounds->lo_end = bounds->lo_start;
+    bounds->lo_start -= ((unsigned char *)bounds->lo_entry)[0];
+    ldelta = ((signed char *)bounds->lo_entry)[1];
+    if (ldelta == -128) {
+        bounds->lo_line_actual = -1;
+    }
+    else {
+        bounds->lo_line_actual = bounds->lo_line_computed;
+    }
+}
+
+static void
+advance(PyAddrLineOffsets *bounds)
+{
+    bounds->lo_entry += 2;
+    bounds->lo_start = bounds->lo_end;
+    int delta = ((unsigned char *)bounds->lo_entry)[0];
+    assert (delta < 255);
+    bounds->lo_end += delta;
+    int ldelta = ((signed char *)bounds->lo_entry)[1];
+    if (ldelta == -128) {
+        bounds->lo_line_actual = -1;
+    }
+    else {
+        bounds->lo_line_computed += ldelta;
+        bounds->lo_line_actual = bounds->lo_line_computed;
+    }
+}
+
+static inline int
+at_end(PyAddrLineOffsets *bounds) {
+    return ((unsigned char *)bounds->lo_entry)[2] == 255;
+}
+
+static int
+_PyCode_NextBounds(PyAddrLineOffsets *bounds)
+{
+    if (at_end(bounds)) {
+        return 0;
+    }
+    advance(bounds);
+    return 1;
+}
+
+static int
+emit_pair(PyObject **bytes, int *offset, int a, int b)
+{
+    Py_ssize_t len = PyBytes_GET_SIZE(*bytes);
+    if (*offset + 2 >= len) {
+        if (_PyBytes_Resize(bytes, len * 2) < 0)
+            return 0;
+    }
+    unsigned char *lnotab = (unsigned char *)
+                    PyBytes_AS_STRING(*bytes) + *offset;
+    *lnotab++ = a;
+    *lnotab++ = b;
+    *offset += 2;
+    return 1;
+}
+
+static int
+emit_delta(PyObject **bytes, int bdelta, int ldelta, int *offset)
+{
+    while (bdelta > 255) {
+        if (!emit_pair(bytes, offset, 255, 0)) {
+            return 0;
+        }
+        bdelta -= 255;
+    }
+    while (ldelta > 127) {
+        if (!emit_pair(bytes, offset, bdelta, 127)) {
+            return 0;
+        }
+        bdelta = 0;
+        ldelta -= 127;
+    }
+    while (ldelta < -128) {
+        if (!emit_pair(bytes, offset, bdelta, -128)) {
+            return 0;
+        }
+        bdelta = 0;
+        ldelta += 128;
+    }
+    return emit_pair(bytes, offset, bdelta, ldelta);
+}
 
 static PyObject *
 code_getlnotab(PyCodeObject *code, void *closure)
 {
-     PyErr_Format(PyExc_NotImplementedError,
-                 "co_lnotab not implemented yet.");
-    return NULL;
+    PyAddrLineOffsets bounds;
+    PyObject *bytes;
+    int table_offset = 0;
+    int code_offset = 0;
+    int line = code->co_firstlineno;
+    bytes = PyBytes_FromStringAndSize(NULL, 64);
+    if (bytes == NULL) {
+        return NULL;
+    }
+    _PyCode_InitBounds(code, &bounds);
+    while (_PyCode_NextBounds(&bounds)) {
+        if (bounds.lo_line_computed != line) {
+            int bdelta = bounds.lo_start - code_offset;
+            int ldelta = bounds.lo_line_computed - line;
+            if (!emit_delta(&bytes, bdelta, ldelta, &table_offset)) {
+                Py_DECREF(bytes);
+                return NULL;
+            }
+            code_offset = bounds.lo_start;
+            line = bounds.lo_line_computed;
+        }
+    }
+    _PyBytes_Resize(&bytes, table_offset);
+    return bytes;
 }
 
 
@@ -964,48 +1079,6 @@ lineiter_dealloc(lineiterator *li)
     Py_TYPE(li)->tp_free(li);
 }
 
-static void
-retreat(PyAddrLineOffsets *bounds)
-{
-    int ldelta = ((signed char *)bounds->lo_entry)[1];
-    if (ldelta == -128) {
-        ldelta = 0;
-    }
-    bounds->lo_line_computed -= ldelta;
-    bounds->lo_entry -= 2;
-    bounds->lo_end = bounds->lo_start;
-    bounds->lo_start -= ((unsigned char *)bounds->lo_entry)[0];
-    ldelta = ((signed char *)bounds->lo_entry)[1];
-    if (ldelta == -128) {
-        bounds->lo_line_actual = -1;
-    }
-    else {
-        bounds->lo_line_actual = bounds->lo_line_computed;
-    }
-}
-
-static void
-advance(PyAddrLineOffsets *bounds)
-{
-    bounds->lo_entry += 2;
-    bounds->lo_start = bounds->lo_end;
-    int delta = ((unsigned char *)bounds->lo_entry)[0];
-    assert (delta < 255);
-    bounds->lo_end += delta;
-    int ldelta = ((signed char *)bounds->lo_entry)[1];
-    if (ldelta == -128) {
-        bounds->lo_line_actual = -1;
-    }
-    else {
-        bounds->lo_line_computed += ldelta;
-        bounds->lo_line_actual = bounds->lo_line_computed;
-    }
-}
-
-static inline int
-at_end(PyAddrLineOffsets *bounds) {
-    return ((unsigned char *)bounds->lo_entry)[2] == 255;
-}
 
 static PyObject *
 lineiter_next(lineiterator *li)

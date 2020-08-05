@@ -776,7 +776,7 @@ class JumpTracer:
         if (self.firstLine is None and frame.f_code == self.code and
                 event == 'line'):
             self.firstLine = frame.f_lineno - 1
-        if (event == self.event and self.firstLine and
+        if (event == self.event and self.firstLine is not None and
                 frame.f_lineno == self.firstLine + self.jumpFrom):
             f = frame
             while f is not None and f.f_code != self.code:
@@ -1550,7 +1550,7 @@ output.append(4)
 """, "<fake module>", "exec")
         class fake_function:
             __code__ = code
-        tracer = JumpTracer(fake_function, 2, 0)
+        tracer = JumpTracer(fake_function, 4, 1)
         sys.settrace(tracer.trace)
         namespace = {"output": []}
         exec(code, namespace)
