@@ -1056,7 +1056,7 @@ are always available.  They are listed here in alphabetical order.
 
    Open *file* and return a corresponding :term:`file object`.  If the file
    cannot be opened, an :exc:`OSError` is raised. See
-   :ref:`tut-files` for file handle details.
+   :ref:`tut-files` for file object details.
 
    *file* is a :term:`path-like object` giving the pathname (absolute or
    relative to the current working directory) of the file to be opened or an
