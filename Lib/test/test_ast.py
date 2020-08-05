@@ -718,6 +718,15 @@ class ASTHelpers_Test(unittest.TestCase):
             'lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, '
             'col_offset=0, end_lineno=1, end_col_offset=5))'
         )
+        src = ast.Call(col_offset=1, lineno=1, end_lineno=1, end_col_offset=1)
+        new = ast.copy_location(src, ast.Call(
+            col_offset=None, lineno=None,
+            end_lineno=None, end_col_offset=None
+        ))
+        self.assertIsNone(new.end_lineno)
+        self.assertIsNone(new.end_col_offset)
+        self.assertEqual(new.lineno, 1)
+        self.assertEqual(new.col_offset, 1)
 
     def test_fix_missing_locations(self):
         src = ast.parse('write("spam")')
@@ -757,6 +766,12 @@ class ASTHelpers_Test(unittest.TestCase):
             'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
             'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
+        src = ast.Call(
+            func=ast.Name("test", ast.Load()), args=[], keywords=[],
+            lineno=1, end_lineno=None
+        )
+        self.assertEqual(ast.increment_lineno(src).lineno, 2)
+        self.assertIsNone(ast.increment_lineno(src).end_lineno)
 
     def test_iter_fields(self):
         node = ast.parse('foo()', mode='eval')
