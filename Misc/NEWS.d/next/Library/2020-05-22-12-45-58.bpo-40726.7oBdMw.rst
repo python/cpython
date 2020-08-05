@@ -1,0 +1,2 @@
+Handle cases where the ``end_lineno`` is ``None`` on
+:func:`ast.increment_lineno`.
