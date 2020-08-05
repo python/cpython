@@ -8,6 +8,7 @@ on:
     - 3.7
     paths:
     - 'Tools/msi/**'
+    - 'Lib/ensurepip/**'
   pull_request:
     branches:
     - master
@@ -15,6 +16,7 @@ on:
     - 3.7
     paths:
     - 'Tools/msi/**'
+    - 'Lib/ensurepip/**'
 
 jobs:
   build_win32:
