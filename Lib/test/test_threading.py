@@ -1228,7 +1228,6 @@ class ThreadingExceptionTests(BaseTestCase):
         thread.exc = None
 
 
-
 class ThreadRunFail(threading.Thread):
     def run(self):
         raise ValueError("run failed")
