@@ -314,7 +314,7 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
 
     /* We don't clear sysdict and builtins until the end of this function.
        Because clearing other attributes can execute arbitrary Python code
-       which reuqires sysdict and builtins. */
+       which requires sysdict and builtins. */
     PyDict_Clear(sysdict);
     PyDict_Clear(builtins);
 
