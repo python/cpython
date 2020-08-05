@@ -3603,6 +3603,10 @@ DLINCLDIR=.
 # platforms, such as AIX, have dlopen(), but don't want to use it.
 AC_CHECK_FUNCS(dlopen)
 
+AC_CHECK_DECL(_dyld_shared_cache_contains_path,
+  AC_DEFINE(HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH, 1, Define if you have the '_dyld_shared_cache_contains_path' function),
+  [], [#include <mach-o/dyld.h>])
+
 # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
 # loading of modules.
 AC_SUBST(DYNLOADFILE)

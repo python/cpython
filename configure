@@ -11601,6 +11601,15 @@ fi
 done
 
 
+ac_fn_c_check_decl "$LINENO" "_dyld_shared_cache_contains_path" "ac_cv_have_decl__dyld_shared_cache_contains_path" "#include <mach-o/dyld.h>
+"
+if test "x$ac_cv_have_decl__dyld_shared_cache_contains_path" = xyes; then :
+
+$as_echo "#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH 1" >>confdefs.h
+
+fi
+
+
 # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
 # loading of modules.
 
