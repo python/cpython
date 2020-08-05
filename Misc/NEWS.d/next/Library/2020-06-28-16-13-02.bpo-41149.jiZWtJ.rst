@@ -1,1 +1,1 @@
-Fix a bug that can cause threads to fail to start.
+Fix a bug that can cause threads to fail to start. Patch contributed by Barney Stratford.
