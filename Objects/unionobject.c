@@ -77,15 +77,24 @@ union_instancecheck(PyObject *self, PyObject *instance)
 static PyObject *
 union_subclasscheck(PyObject *self, PyObject *instance)
 {
-    unionobject *alias = (unionobject *) self;
+    if (!PyType_Check(instance)) {
+        PyErr_SetString(PyExc_TypeError, "issubclass() arg 1 must be a class");
+        return NULL;
+    }
+    unionobject *alias = (unionobject *)self;
     Py_ssize_t nargs = PyTuple_GET_SIZE(alias->args);
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
+
         if (PyType_Check(arg)) {
             if (PyType_IsSubtype((PyTypeObject *)instance, (PyTypeObject *)arg) != 0)
             {
                 return self;
             }
+        } else if (Py_TYPE(arg) == &Py_GenericAliasType) {
+            PyErr_SetString(PyExc_TypeError,
+                    "issubclass() argument 2 cannot contain a parameterized generic");
+            return NULL;
         }
     }
     return instance;

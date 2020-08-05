@@ -273,6 +273,10 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
     def test_subclass_with_union(self):
         self.assertTrue(issubclass(int, int | float | int))
         self.assertTrue(issubclass(str, str | Child | str))
+        with self.assertRaises(TypeError):
+            issubclass(2, Child | Super)
+        with self.assertRaises(TypeError):
+            issubclass(int, list[int] | Child)
 
     def test_issubclass_refcount_handling(self):
         # bpo-39382: abstract_issubclass() didn't hold item reference while
