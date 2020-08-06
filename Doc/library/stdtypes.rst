@@ -2416,9 +2416,9 @@ fields, which are expressions delimited by curly braces ``{}``. While other
 string literals always have a constant value, formatted strings are expressions
 evaluated at run time.::
 
-   >>> F"This is an f-string"
+   >>> f"This is an f-string"
    'This is an f-string'
-   >>> f"This is also an f-string"
+   >>> F"This is also an f-string"
    'This is also an f-string'
 
 It is also possible to have a multi line string.::
