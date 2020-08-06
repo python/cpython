@@ -589,7 +589,7 @@ def _default_mime_types():
 def _detect_content(h):
     first_non_ws = 0
     for idx, hb in enumerate(h):
-        if not hb in b'\t\n\x0c\r ':
+        if hb not in b'\t\n\x0c\r ':
             first_non_ws = idx
             break
 
@@ -599,7 +599,7 @@ def _detect_content(h):
         tp, charset = detect(h, first_non_ws)
         if tp:
             return (tp, charset)
-    return (None, None)
+    return None, None
 
 
 def _match_html_types(h, first_non_ws):
@@ -625,17 +625,15 @@ def _match_html_sig(h, sig):
 
     for hc, sc in zip(h, sig):
         if 65 <= sc <= 90:
-            hc&=0xDF
+            hc &= 0xDF
         if hc != sc:
             return (tp, charset)
 
     # should be a tag-terminating byte (0xTT)
     # https://mimesniff.spec.whatwg.org/#terminology
-    if not h[len(sig)] in b' >':
+    if h[len(sig)] not in b' >':
         return (tp, charset)
-    tp, charset = 'text/html', 'utf-8'
-    return (tp, charset)
-
+    return 'text/html', 'utf-8'
 
 def _match_exact_sig_types(h, first_non_ws):
     sigs = [
@@ -695,7 +693,7 @@ def _match_mask_sig_types(h, first_non_ws):
         if len(data) < len(pattern):
             return (None, None)
         for m, p, d in zip(mask, pattern, data):
-            if d&m != p:
+            if d & m != p:
                 match = False
                 break
         if match:
