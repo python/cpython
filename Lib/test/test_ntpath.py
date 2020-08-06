@@ -285,7 +285,7 @@ class TestNtpath(NtpathTestCase):
     def test_realpath_broken_symlinks(self):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         os.mkdir(ABSTFN)
-        self.addCleanup(support.rmtree, ABSTFN)
+        self.addCleanup(os_helper.rmtree, ABSTFN)
 
         with support.change_cwd(ABSTFN):
             os.mkdir("subdir")
@@ -427,9 +427,9 @@ class TestNtpath(NtpathTestCase):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
 
         os_helper.unlink(ABSTFN)
-        support.rmtree(ABSTFN)
+        os_helper.rmtree(ABSTFN)
         os.mkdir(ABSTFN)
-        self.addCleanup(support.rmtree, ABSTFN)
+        self.addCleanup(os_helper.rmtree, ABSTFN)
 
         test_dir_long = ntpath.join(ABSTFN, "MyVeryLongDirectoryName")
         os.mkdir(test_dir_long)
