@@ -1613,7 +1613,7 @@ Introspection helpers
 .. function:: eval_type(t, globalns=None, localns=None)
 
    Evaluate the given type ``t`` by resolving any forward references.
-   
+
    For usage of ``globalns`` and ``localns`` see :func:`get_type_hints`.
 
    .. versionadded:: 3.10
