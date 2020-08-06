@@ -99,6 +99,7 @@ __all__ = [
     # One-off things.
     'AnyStr',
     'cast',
+    'eval_type',
     'final',
     'get_args',
     'get_origin',
@@ -1276,6 +1277,13 @@ def cast(typ, val):
     to be as fast as possible).
     """
     return val
+
+
+def eval_type(t, globalns=None, localns=None):
+    """Evaluate all forward references in the given type t.
+    For use of globalns and localns see the docstring for get_type_hints().
+    """
+    return _eval_type(t, globalns, localns)
 
 
 def _get_defaults(func):

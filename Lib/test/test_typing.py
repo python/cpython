@@ -13,7 +13,7 @@ from typing import Union, Optional, Literal
 from typing import Tuple, List, Dict, MutableMapping
 from typing import Callable
 from typing import Generic, ClassVar, Final, final, Protocol
-from typing import cast, runtime_checkable
+from typing import cast, eval_type, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args
 from typing import no_type_check, no_type_check_decorator
@@ -4173,6 +4173,19 @@ class AnnotatedTests(BaseTestCase):
     def test_annotated_in_other_types(self):
         X = List[Annotated[T, 5]]
         self.assertEqual(X[int], List[Annotated[int, 5]])
+
+
+class EvalTypeTests(BaseTestCase):
+    def test_simple_reference(self):
+        self.assertIs(eval_type(str), str)
+
+    def test_forward_reference(self):
+        self.assertIs(eval_type(ForwardRef('int')), int)
+
+        class C:
+            pass
+
+        self.assertIs(eval_type(ForwardRef('C'), localns=locals()), C)
 
 
 class AllTests(BaseTestCase):
