@@ -37,7 +37,7 @@ __all__ = [
     "guess_type", "guess_all_extensions", "guess_extension",
     "add_type", "init", "read_mime_types",
     "suffix_map", "encodings_map", "types_map", "common_types",
-    "mimesniff"
+    "mimesniff",
 ]
 
 knownfiles = [
@@ -270,7 +270,6 @@ class MimeTypes:
                 except OSError:
                     continue
 
-
 def guess_type(url, strict=True):
     """Guess the type of a file based on its URL.
 
@@ -317,7 +316,6 @@ def mimesniff(data):
         return ('application/octet-stream', None)
     return (tp, charset)
 
-
 def guess_all_extensions(type, strict=True):
     """Guess the extensions for a file based on its MIME type.
 
@@ -335,7 +333,6 @@ def guess_all_extensions(type, strict=True):
         init()
     return _db.guess_all_extensions(type, strict)
 
-
 def guess_extension(type, strict=True):
     """Guess the extension for a file based on its MIME type.
 
@@ -351,7 +348,6 @@ def guess_extension(type, strict=True):
     if _db is None:
         init()
     return _db.guess_extension(type, strict)
-
 
 def add_type(type, ext, strict=True):
     """Add a mapping between a type and an extension.
