@@ -2465,15 +2465,13 @@ Note that this is the :func:`str` format of a :mod:`datetime`. To show a
 different format you use a conversion. There are three conversions beginning
 with the ``'!'`` (exclamation) mark.
 
-+------------+---------------+
-| Conversion | Meaning       |
-+============+===============+
-| ``'!r'``   | :func:`repr`  |
-+------------+---------------+
-| ``'!s'``   | :func:`str`   |
-+------------+---------------+
-| ``'!a'``   | :func:`ascii` |
-+------------+---------------+
+============ =============== 
+ Conversion   Meaning       
+============ ===============
+ ``!r``       :func:`repr`  
+ ``!s``       :func:`str`   
+ ``!a``       :func:`ascii` 
+============ ===============
 
 ::
 
