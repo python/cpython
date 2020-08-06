@@ -8,7 +8,7 @@ Reading this tutorial has probably reinforced your interest in using Python ---
 you should be eager to apply Python to solving your real-world problems. Where
 should you go to learn more?
 
-This tutorial is part of Python's documentation set.   Some other documents in
+This tutorial is part of Python's documentation set. Some other documents in
 the set are:
 
 * :ref:`library-index`:
@@ -30,13 +30,13 @@ the set are:
 
 More Python resources:
 
-* https://www.python.org:  The major Python Web site.  It contains code,
-  documentation, and pointers to Python-related pages around the Web.  This Web
-  site is mirrored in various places around the world, such as Europe, Japan, and
-  Australia; a mirror may be faster than the main site, depending on your
+* https://www.python.org:  The main Python Website.  It contains code,
+  documentation and pointers to Python-related pages around the Web.  This Web
+  site is mirrored in various places around the world, such as Europe, Japan and
+  Australia. a mirror may be faster than the main site, depending on your
   geographical location.
 
-* https://docs.python.org:  Fast access to Python's  documentation.
+* https://docs.python.org:  Fast access to Python's documentation.
 
 * https://pypi.org: The Python Package Index, previously also nicknamed
   the Cheese Shop [#]_, is an index of user-created Python modules that are available
@@ -59,10 +59,10 @@ More Python resources:
 For Python-related questions and problem reports, you can post to the newsgroup
 :newsgroup:`comp.lang.python`, or send them to the mailing list at
 python-list@python.org.  The newsgroup and mailing list are gatewayed, so
-messages posted to one will automatically be forwarded to the other.  There are
-hundreds of postings a day, asking (and
-answering) questions, suggesting new features, and announcing new modules.
-Mailing list archives are available at https://mail.python.org/pipermail/.
+messages posted to one will automatically be forwarded to the other. There are
+hundreds of postings a day, asking (and answering) questions, suggesting
+new features, and announcing new modules.Mailing list archives are 
+available at https://mail.python.org/pipermail/.
 
 Before posting, be sure to check the list of
 :ref:`Frequently Asked Questions <faq-index>` (also called the FAQ).  The
