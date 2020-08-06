@@ -1225,6 +1225,8 @@ dictresize(PyDictObject *mp, Py_ssize_t newsize)
     PyDictKeyEntry *oldentries, *newentries;
 
     assert(IS_POWER_OF_2(newsize));
+    assert(newsize >= PyDict_MINSIZE);
+
     oldkeys = mp->ma_keys;
 
     /* NOTE: Current odict checks mp->ma_keys to detect resize happen.
