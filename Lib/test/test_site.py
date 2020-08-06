@@ -7,6 +7,7 @@ executing have not been removed.
 import unittest
 import test.support
 from test import support
+from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
 from test.support.os_helper import TESTFN, EnvironmentVarGuard, change_cwd
@@ -601,7 +602,7 @@ class _pthFileTests(unittest.TestCase):
     def _create_underpth_exe(self, lines, exe_pth=True):
         import _winapi
         temp_dir = tempfile.mkdtemp()
-        self.addCleanup(test.support.rmtree, temp_dir)
+        self.addCleanup(os_helper.rmtree, temp_dir)
         exe_file = os.path.join(temp_dir, os.path.split(sys.executable)[1])
         dll_src_file = _winapi.GetModuleFileName(sys.dllhandle)
         dll_file = os.path.join(temp_dir, os.path.split(dll_src_file)[1])
