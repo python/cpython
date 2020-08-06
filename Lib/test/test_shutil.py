@@ -2066,6 +2066,31 @@ class TestMove(BaseTest, unittest.TestCase):
         finally:
             os.rmdir(dst_dir)
 
+    # bpo-26791: Check that a symlink to a directory can
+    #            be moved into that directory.
+    @os_helper.skip_unless_symlink
+    @mock_rename
+    def test_move_symlink_to_dir_into_dir(self):
+        src = os.path.join(self.src_dir, 'linktodir')
+        dst_link = os.path.join(self.dst_dir, 'linktodir')
+        os.symlink(self.dst_dir, src)
+        shutil.move(src, self.dst_dir)
+        self.assertTrue(os.path.islink(dst_link))
+        self.assertTrue(os.path.samefile(self.dst_dir, dst_link))
+        self.assertFalse(os.path.exists(src))
+
+        # Repeat the move operation with the destination
+        # symlink already in place (should raise shutil.Error).
+        try:
+            os.symlink(self.dst_dir, src)
+            shutil.move(src, self.dst_dir)
+        except shutil.Error:
+            pass
+        finally:
+            self.assertTrue(os.path.samefile(self.dst_dir, dst_link))
+            self.assertTrue(os.path.exists(src))
+            os.unlink(src)
+            os.unlink(dst_link)
 
 class TestCopyFile(unittest.TestCase):
 
