@@ -122,7 +122,7 @@ behavior of the module.
 
     Guess the type of given *data*.
     *data* should be :class:`bytes` or :class:`bytearray`.
-    Return value is a tuple (type, charset).
+    Returns two string values ``(type, charset)``.
     This function always returns the most valid type, but charset can be
     ``None`` if there no proper charset.
     If the *data* can not be guessed it will return 'application/octet-stream'.
