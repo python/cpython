@@ -12,7 +12,6 @@ from asyncio.proactor_events import _ProactorSocketTransport
 from asyncio.proactor_events import _ProactorWritePipeTransport
 from asyncio.proactor_events import _ProactorDuplexPipeTransport
 from asyncio.proactor_events import _ProactorDatagramTransport
-from test.support import os_helper
 from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 
