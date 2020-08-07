@@ -120,6 +120,12 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
+os
+--
+
+Added :func:`os.cpu_count()` support for VxWorks RTOS.
+(Contributed by Peixing Xin in :issue:`41440`.)
+
 py_compile
 ----------
 
