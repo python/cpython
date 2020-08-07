@@ -6,6 +6,7 @@ import sys
 import unittest
 import test.support
 from test.support import import_helper
+from test.support import os_helper
 from ctypes.util import find_library
 
 libc_name = None
@@ -125,7 +126,7 @@ class LoaderTest(unittest.TestCase):
         else:
             ext = ".dll"
 
-        with test.support.temp_dir() as tmp:
+        with os_helper.temp_dir() as tmp:
             # We copy two files and load _sqlite3.dll (formerly .pyd),
             # which has a dependency on sqlite3.dll. Then we test
             # loading it in subprocesses to avoid it starting in memory
