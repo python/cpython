@@ -1129,7 +1129,7 @@ class _TestQueue(BaseTestCase):
                     del q
                 """)
 
-            with os_helper.DirsOnSysPath(os.getcwd()):
+            with import_helper.DirsOnSysPath(os.getcwd()):
                 try:
                     __import__(module_name)
                 except pyqueue.Empty:
