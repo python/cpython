@@ -2271,7 +2271,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     c->u->u_argcount = asdl_seq_LEN(args->args);
     c->u->u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
     c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
-    VISIT_SEQ_IN_SCOPE(c, stmt, body);
+    for (i = docstring ? 1 : 0; i < asdl_seq_LEN(body); i++) {
+        VISIT(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
+    }
     co = assemble(c, 1);
     qualname = c->u->u_qualname;
     Py_INCREF(qualname);

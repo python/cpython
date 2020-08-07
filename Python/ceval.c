@@ -66,8 +66,8 @@ static void call_exc_trace(Py_tracefunc, PyObject *,
                            PyThreadState *, PyFrameObject *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
                                  PyThreadState *, PyFrameObject *,
-                                 PyAddrLineOffsets *, int *);
-static void maybe_dtrace_line(PyFrameObject *, PyAddrLineOffsets *, int *);
+                                 PyCodeAddressRange *, int *);
+static void maybe_dtrace_line(PyFrameObject *, PyCodeAddressRange *, int *);
 static void dtrace_function_entry(PyFrameObject *);
 static void dtrace_function_return(PyFrameObject *);
 
@@ -1389,8 +1389,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         dtrace_function_entry(f);
 
     co = f->f_code;
-    PyAddrLineOffsets bounds;
-    _PyCode_InitBounds(co, &bounds);
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(co, &bounds);
     int instr_prev = -1;
 
     names = co->co_names;
@@ -4962,7 +4962,7 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
 static int
 maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
                       PyThreadState *tstate, PyFrameObject *frame,
-                      PyAddrLineOffsets *bounds, int *instr_prev)
+                      PyCodeAddressRange *bounds, int *instr_prev)
 {
     int result = 0;
     int line = frame->f_lineno;
@@ -5905,7 +5905,7 @@ dtrace_function_return(PyFrameObject *f)
 /* DTrace equivalent of maybe_call_line_trace. */
 static void
 maybe_dtrace_line(PyFrameObject *frame,
-                  PyAddrLineOffsets *bounds, int *instr_prev)
+                  PyCodeAddressRange *bounds, int *instr_prev)
 {
     const char *co_filename, *co_name;
 

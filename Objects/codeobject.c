@@ -400,59 +400,6 @@ static PyMemberDef code_memberlist[] = {
     {NULL}      /* Sentinel */
 };
 
-static void
-retreat(PyAddrLineOffsets *bounds)
-{
-    int ldelta = ((signed char *)bounds->lo_entry)[1];
-    if (ldelta == -128) {
-        ldelta = 0;
-    }
-    bounds->lo_line_computed -= ldelta;
-    bounds->lo_entry -= 2;
-    bounds->lo_end = bounds->lo_start;
-    bounds->lo_start -= ((unsigned char *)bounds->lo_entry)[0];
-    ldelta = ((signed char *)bounds->lo_entry)[1];
-    if (ldelta == -128) {
-        bounds->lo_line_actual = -1;
-    }
-    else {
-        bounds->lo_line_actual = bounds->lo_line_computed;
-    }
-}
-
-static void
-advance(PyAddrLineOffsets *bounds)
-{
-    bounds->lo_entry += 2;
-    bounds->lo_start = bounds->lo_end;
-    int delta = ((unsigned char *)bounds->lo_entry)[0];
-    assert (delta < 255);
-    bounds->lo_end += delta;
-    int ldelta = ((signed char *)bounds->lo_entry)[1];
-    if (ldelta == -128) {
-        bounds->lo_line_actual = -1;
-    }
-    else {
-        bounds->lo_line_computed += ldelta;
-        bounds->lo_line_actual = bounds->lo_line_computed;
-    }
-}
-
-static inline int
-at_end(PyAddrLineOffsets *bounds) {
-    return ((unsigned char *)bounds->lo_entry)[2] == 255;
-}
-
-static int
-_PyCode_NextBounds(PyAddrLineOffsets *bounds)
-{
-    if (at_end(bounds)) {
-        return 0;
-    }
-    advance(bounds);
-    return 1;
-}
-
 static int
 emit_pair(PyObject **bytes, int *offset, int a, int b)
 {
@@ -498,7 +445,7 @@ emit_delta(PyObject **bytes, int bdelta, int ldelta, int *offset)
 static PyObject *
 code_getlnotab(PyCodeObject *code, void *closure)
 {
-    PyAddrLineOffsets bounds;
+    PyCodeAddressRange bounds;
     PyObject *bytes;
     int table_offset = 0;
     int code_offset = 0;
@@ -507,17 +454,17 @@ code_getlnotab(PyCodeObject *code, void *closure)
     if (bytes == NULL) {
         return NULL;
     }
-    _PyCode_InitBounds(code, &bounds);
-    while (_PyCode_NextBounds(&bounds)) {
-        if (bounds.lo_line_computed != line) {
-            int bdelta = bounds.lo_start - code_offset;
-            int ldelta = bounds.lo_line_computed - line;
+    _PyCode_InitAddressRange(code, &bounds);
+    while (PyLineTable_NextAddressRange(&bounds)) {
+        if (bounds.ar_computed_line != line) {
+            int bdelta = bounds.ar_start - code_offset;
+            int ldelta = bounds.ar_computed_line - line;
             if (!emit_delta(&bytes, bdelta, ldelta, &table_offset)) {
                 Py_DECREF(bytes);
                 return NULL;
             }
-            code_offset = bounds.lo_start;
-            line = bounds.lo_line_computed;
+            code_offset = bounds.ar_start;
+            line = bounds.ar_computed_line;
         }
     }
     _PyBytes_Resize(&bytes, table_offset);
@@ -1067,7 +1014,7 @@ code_hash(PyCodeObject *co)
 typedef struct {
     PyObject_HEAD
     PyCodeObject *li_code;
-    PyAddrLineOffsets li_line;
+    PyCodeAddressRange li_line;
     char *li_end;
 } lineiterator;
 
@@ -1079,32 +1026,25 @@ lineiter_dealloc(lineiterator *li)
     Py_TYPE(li)->tp_free(li);
 }
 
-
 static PyObject *
 lineiter_next(lineiterator *li)
 {
-    PyAddrLineOffsets *bounds = &li->li_line;
-
-    if (at_end(bounds)) {
+    PyCodeAddressRange *bounds = &li->li_line;
+    if (!PyLineTable_NextAddressRange(bounds)) {
         return NULL;
-    }
-    advance(bounds);
-    while (bounds->lo_start == bounds->lo_end) {
-        assert (!at_end(bounds));
-        advance(bounds);
     }
     PyObject *start = NULL;
     PyObject *end = NULL;
     PyObject *line = NULL;
     PyObject *result = PyTuple_New(3);
-    start = PyLong_FromLong(bounds->lo_start);
-    end = PyLong_FromLong(bounds->lo_end);
-    if (bounds->lo_line_actual < 0) {
+    start = PyLong_FromLong(bounds->ar_start);
+    end = PyLong_FromLong(bounds->ar_end);
+    if (bounds->ar_line < 0) {
         Py_INCREF(Py_None);
         line = Py_None;
     }
     else {
-        line = PyLong_FromLong(bounds->lo_line_actual);
+        line = PyLong_FromLong(bounds->ar_line);
     }
     if (result == NULL || start == NULL || end == NULL || line == NULL) {
         goto error;
@@ -1173,9 +1113,81 @@ code_linesiterator(PyCodeObject *code, PyObject *Py_UNUSED(args))
     }
     Py_INCREF(code);
     li->li_code = code;
-    _PyCode_InitBounds(code, &li->li_line);
+    _PyCode_InitAddressRange(code, &li->li_line);
     return (PyObject *)li;
 }
+
+static void
+retreat(PyCodeAddressRange *bounds)
+{
+    int ldelta = ((signed char *)bounds->lo_entry)[1];
+    if (ldelta == -128) {
+        ldelta = 0;
+    }
+    bounds->ar_computed_line -= ldelta;
+    bounds->lo_entry -= 2;
+    bounds->ar_end = bounds->ar_start;
+    bounds->ar_start -= ((unsigned char *)bounds->lo_entry)[0];
+    ldelta = ((signed char *)bounds->lo_entry)[1];
+    if (ldelta == -128) {
+        bounds->ar_line = -1;
+    }
+    else {
+        bounds->ar_line = bounds->ar_computed_line;
+    }
+}
+
+static void
+advance(PyCodeAddressRange *bounds)
+{
+    bounds->lo_entry += 2;
+    bounds->ar_start = bounds->ar_end;
+    int delta = ((unsigned char *)bounds->lo_entry)[0];
+    assert (delta < 255);
+    bounds->ar_end += delta;
+    int ldelta = ((signed char *)bounds->lo_entry)[1];
+    if (ldelta == -128) {
+        bounds->ar_line = -1;
+    }
+    else {
+        bounds->ar_computed_line += ldelta;
+        bounds->ar_line = bounds->ar_computed_line;
+    }
+}
+
+static inline int
+at_end(PyCodeAddressRange *bounds) {
+    return ((unsigned char *)bounds->lo_entry)[2] == 255;
+}
+
+int
+PyLineTable_PreviousAddressRange(PyCodeAddressRange *range)
+{
+    if (range->ar_start <= 0) {
+        return 0;
+    }
+    retreat(range);
+    while (range->ar_start == range->ar_end) {
+        assert(range->ar_start > 0);
+        retreat(range);
+    }
+    return 1;
+}
+
+int
+PyLineTable_NextAddressRange(PyCodeAddressRange *range)
+{
+    if (at_end(range)) {
+        return 0;
+    }
+    advance(range);
+    while (range->ar_start == range->ar_end) {
+        assert(!at_end(range));
+        advance(range);
+    }
+    return 1;
+}
+
 
 /* XXX code objects need to participate in GC? */
 
@@ -1238,34 +1250,44 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
         return co->co_firstlineno;
     }
     assert(addrq >= 0 && addrq < PyBytes_GET_SIZE(co->co_code));
-    PyAddrLineOffsets bounds;
-    _PyCode_InitBounds(co, &bounds);
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
 }
 
-int
-_PyCode_InitBounds(PyCodeObject* co, PyAddrLineOffsets *bounds)
+void
+PyLineTable_InitAddressRange(char *linetable, int firstlineno, PyCodeAddressRange *range)
 {
-    bounds->lo_entry = PyBytes_AS_STRING(co->co_linetable)-2;
-    bounds->lo_start = -1;
-    bounds->lo_end = 0;
-    bounds->lo_line_computed = bounds->lo_line_actual = co->co_firstlineno;
-    return bounds->lo_line_actual;
+    range->lo_entry = linetable-2;
+    range->ar_start = -1;
+    range->ar_end = 0;
+    range->ar_computed_line = range->ar_line = firstlineno;
+}
+
+int
+_PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds)
+{
+    char *linetable = PyBytes_AS_STRING(co->co_linetable);
+    PyLineTable_InitAddressRange(linetable, co->co_firstlineno, bounds);
+    return bounds->ar_line;
 }
 
 /* Update *bounds to describe the first and one-past-the-last instructions in
-   the same line as lasti.  Return the number of that line. */
+   the same line as lasti.  Return the number of that line, or -1 if lasti is out of bounds. */
 int
-_PyCode_CheckLineNumber(int lasti, PyAddrLineOffsets *bounds)
+_PyCode_CheckLineNumber(int lasti, PyCodeAddressRange *bounds)
 {
-
-    while (bounds->lo_end <= lasti) {
-        advance(bounds);
+    while (bounds->ar_end <= lasti) {
+        if (!PyLineTable_NextAddressRange(bounds)) {
+            return -1;
+        }
     }
-    while (bounds->lo_start > lasti) {
-        retreat(bounds);
+    while (bounds->ar_start > lasti) {
+        if (!PyLineTable_PreviousAddressRange(bounds)) {
+            return -1;
+        }
     }
-    return bounds->lo_line_actual;
+    return bounds->ar_line;
 }
 
 

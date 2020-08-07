@@ -249,9 +249,9 @@ explain_incompatible_block_stack(int64_t to_stack)
 static int *
 marklines(PyCodeObject *code, int len)
 {
-    PyAddrLineOffsets bounds;
-    _PyCode_InitBounds(code, &bounds);
-    assert (bounds.lo_end == 0);
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(code, &bounds);
+    assert (bounds.ar_end == 0);
 
     int *linestarts = PyMem_New(int, len);
     if (linestarts == NULL) {
@@ -261,10 +261,9 @@ marklines(PyCodeObject *code, int len)
         linestarts[i] = -1;
     }
 
-    while (bounds.lo_end < len*2) {
-        int line = _PyCode_CheckLineNumber(bounds.lo_end, &bounds);
-        assert(bounds.lo_start/2 < len);
-        linestarts[bounds.lo_start/2] = line;
+    while (PyLineTable_NextAddressRange(&bounds)) {
+        assert(bounds.ar_start/2 < len);
+        linestarts[bounds.ar_start/2] = bounds.ar_line;
     }
     return linestarts;
 }

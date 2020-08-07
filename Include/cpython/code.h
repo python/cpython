@@ -136,21 +136,17 @@ PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 /* for internal use only */
 typedef struct _line_offsets {
+    int ar_start;
+    int ar_end;
+    int ar_line;
+    int ar_computed_line;
     char *lo_entry;
-    int lo_line_computed;
-    int lo_start;
-    int lo_end;
-    int lo_line_actual;
-} PyAddrLineOffsets;
-
-
-int
-_PyCode_InitBounds(PyCodeObject* co, PyAddrLineOffsets *bounds);
+} PyCodeAddressRange;
 
 /* Update *bounds to describe the first and one-past-the-last instructions in the
    same line as lasti.  Return the number of that line.
 */
-PyAPI_FUNC(int) _PyCode_CheckLineNumber(int lasti, PyAddrLineOffsets *bounds);
+PyAPI_FUNC(int) _PyCode_CheckLineNumber(int lasti, PyCodeAddressRange *bounds);
 
 /* Create a comparable key used to compare constants taking in account the
  * object type. It is used to make sure types are not coerced (e.g., float and
@@ -169,3 +165,15 @@ PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
                                  void **extra);
 PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
                                  void *extra);
+
+/** API for initializing the line number table. */
+int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
+
+/** Out of process API for initializing the line number table. */
+void PyLineTable_InitAddressRange(char *linetable, int firstlineno, PyCodeAddressRange *range);
+
+/** API for traversing the line number table. */
+int PyLineTable_NextAddressRange(PyCodeAddressRange *range);
+int PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
+
+
