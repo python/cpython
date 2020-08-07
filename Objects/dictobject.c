@@ -1309,12 +1309,6 @@ dictresize(PyDictObject *mp, Py_ssize_t newsize)
     return 0;
 }
 
-static inline int
-dictresize_estimate(PyDictObject *mp, Py_ssize_t used)
-{
-    return dictresize(mp, estimate_keysize(used));
-}
-
 /* Returns NULL if unable to split table.
  * A NULL return does not necessarily indicate an error */
 static PyDictKeysObject *
