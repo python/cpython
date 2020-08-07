@@ -5,6 +5,7 @@ import subprocess
 import sys
 import unittest
 import test.support
+from test.support import import_helper
 from ctypes.util import find_library
 
 libc_name = None
@@ -117,7 +118,7 @@ class LoaderTest(unittest.TestCase):
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
     def test_load_dll_with_flags(self):
-        _sqlite3 = test.support.import_module("_sqlite3")
+        _sqlite3 = import_helper.import_module("_sqlite3")
         src = _sqlite3.__file__
         if src.lower().endswith("_d.pyd"):
             ext = "_d.dll"

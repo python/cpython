@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import warnings_helper
 import os
 import sys
 
@@ -15,7 +16,7 @@ class AllTest(unittest.TestCase):
 
     def check_all(self, modname):
         names = {}
-        with support.check_warnings(
+        with warnings_helper.check_warnings(
             (".* (module|package)", DeprecationWarning),
             (".* (module|package)", PendingDeprecationWarning),
             ("", ResourceWarning),
@@ -31,7 +32,7 @@ class AllTest(unittest.TestCase):
             raise NoAll(modname)
         names = {}
         with self.subTest(module=modname):
-            with support.check_warnings(
+            with warnings_helper.check_warnings(
                 ("", DeprecationWarning),
                 ("", ResourceWarning),
                 quiet=True):
