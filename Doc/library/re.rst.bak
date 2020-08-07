@@ -1561,7 +1561,7 @@ one as :func:`search` does.  For example, if a writer wanted to
 find all of the adverbs in some text, they might use :func:`findall` in
 the following manner::
 
-   >>> text = "The lying suspect was carefully disguised but captured quickly by police."
+   >>> text = "He was carefully disguised but captured quickly by police."
    >>> re.findall(r"\w+ly\b", text)
    ['carefully', 'quickly']
 
