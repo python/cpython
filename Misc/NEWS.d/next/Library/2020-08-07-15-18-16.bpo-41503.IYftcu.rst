@@ -1,0 +1,1 @@
+Fixed a race between setTarget and flush in logging.handlers.MemoryHandler.
