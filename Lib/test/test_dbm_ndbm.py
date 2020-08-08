@@ -1,4 +1,3 @@
-from test import support
 from test.support import import_helper
 from test.support import os_helper
 import_helper.import_module("dbm.ndbm") #skip if not supported
@@ -16,7 +15,7 @@ class DbmTestCase(unittest.TestCase):
 
     def tearDown(self):
         for suffix in ['', '.pag', '.dir', '.db']:
-            support.unlink(self.filename + suffix)
+            os_helper.unlink(self.filename + suffix)
 
     def test_keys(self):
         self.d = dbm.ndbm.open(self.filename, 'c')
@@ -108,7 +107,7 @@ class DbmTestCase(unittest.TestCase):
     def test_nonascii_filename(self):
         filename = os_helper.TESTFN_NONASCII
         for suffix in ['', '.pag', '.dir', '.db']:
-            self.addCleanup(support.unlink, filename + suffix)
+            self.addCleanup(os_helper.unlink, filename + suffix)
         with dbm.ndbm.open(filename, 'c') as db:
             db[b'key'] = b'value'
         self.assertTrue(any(os.path.exists(filename + suffix)
