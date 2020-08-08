@@ -518,14 +518,14 @@ desired effect in a number of ways.
 
 1) By returning a tuple of the results::
 
-      def func2(a, b):
-          a = 'new-value'        # a and b are local names
-          b = b + 1              # assigned to new objects
-          return a, b            # return new values
-
-      x, y = 'old-value', 99
-      x, y = func2(x, y)
-      print(x, y)                # output: new-value 100
+      >>> def func1(a, b):
+      ...     a = 'new-value'        # a and b are local names
+      ...     b = b + 1              # assigned to new objects
+      ...     return a, b            # return new values
+      ...
+      >>> x, y = 'old-value', 99
+      >>> func1(x, y)
+      ('new-value', 100)
 
    This is almost always the clearest solution.
 
@@ -533,38 +533,41 @@ desired effect in a number of ways.
 
 3) By passing a mutable (changeable in-place) object::
 
-      def func1(a):
-          a[0] = 'new-value'     # 'a' references a mutable list
-          a[1] = a[1] + 1        # changes a shared object
-
-      args = ['old-value', 99]
-      func1(args)
-      print(args[0], args[1])    # output: new-value 100
+      >>> def func2(a):
+      ...     a[0] = 'new-value'     # 'a' references a mutable list
+      ...     a[1] = a[1] + 1        # changes a shared object
+      ...
+      >>> args = ['old-value', 99]
+      >>> func2(args)
+      >>> args
+      ['new-value', 100]
 
 4) By passing in a dictionary that gets mutated::
 
-      def func3(args):
-          args['a'] = 'new-value'     # args is a mutable dictionary
-          args['b'] = args['b'] + 1   # change it in-place
-
-      args = {'a': 'old-value', 'b': 99}
-      func3(args)
-      print(args['a'], args['b'])
+      >>> def func3(args):
+      ...     args['a'] = 'new-value'     # args is a mutable dictionary
+      ...     args['b'] = args['b'] + 1   # change it in-place
+      ...
+      >>> args = {'a': 'old-value', 'b': 99}
+      >>> func3(args)
+      >>> args
+      {'a': 'new-value', 'b': 100}
 
 5) Or bundle up values in a class instance::
 
-      class callByRef:
-          def __init__(self, /, **args):
-              for key, value in args.items():
-                  setattr(self, key, value)
-
-      def func4(args):
-          args.a = 'new-value'        # args is a mutable callByRef
-          args.b = args.b + 1         # change object in-place
-
-      args = callByRef(a='old-value', b=99)
-      func4(args)
-      print(args.a, args.b)
+      >>> class Namespace:
+      ...     def __init__(self, /, **args):
+      ...         for key, value in args.items():
+      ...             setattr(self, key, value)
+      ...
+      >>> def func4(args):
+      ...     args.a = 'new-value'        # args is a mutable Namespace
+      ...     args.b = args.b + 1         # change object in-place
+      ...
+      >>> args = Namespace(a='old-value', b=99)
+      >>> func4(args)
+      >>> vars(args)
+      {'a': 'new-value', 'b': 100}
 
 
    There's almost never a good reason to get this complicated.
