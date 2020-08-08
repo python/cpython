@@ -24,6 +24,10 @@ for parsing and creating XML data.
    maliciously constructed data.  If you need to parse untrusted or
    unauthenticated data see :ref:`xml-vulnerabilities`.
 
+.. warning::
+
+   The :mod:`xml.etree.ElementTree` will be removed from python 3.9.
+
 Tutorial
 --------
 
