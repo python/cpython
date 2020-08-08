@@ -1,0 +1,5 @@
+update documentation to add warning in documentation about  `xml.etree.cElementTree` removal in python 3.9
+
+<!-- issue-number: [bpo-40064](https://bugs.python.org/issue40064) -->
+https://bugs.python.org/issue40064
+<!-- /issue-number -->
