@@ -2437,7 +2437,7 @@ fractional digits to be dropped from *csum*.
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    double x, csum = 1.0, oldcsum, frac = 0.0;
+    double x, csum = 1.0, oldcsum, frac = 0.0, scale;
     int max_e;
     Py_ssize_t i;
 
@@ -2451,20 +2451,18 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         return max;
     }
     frexp(max, &max_e);
+    scale = ldexp(1.0, -max_e);
     for (i=0 ; i < n ; i++) {
-        int e;
-
         x = vec[i];
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
-        x = frexp(x, &e);
-        x = ldexp(x, e - max_e);
+        x *= scale;
         x = x*x;
         oldcsum = csum;
         csum += x;
         assert(csum >= x);
         frac += (oldcsum - csum) + x;
     }
-    return ldexp(sqrt(csum - 1.0 + frac), max_e);
+    return sqrt(csum - 1.0 + frac) / scale;
 }
 
 #define NUM_STACK_ELEMS 16
