@@ -32,6 +32,9 @@
 #  include <windows.h>
 #endif
 
+#ifdef __VXWORKS__
+#  include "pycore_bitutils.h"    // _Py_popcount32()
+#endif
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_import.h"        // _PyImport_ReInitLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
@@ -988,6 +991,11 @@ typedef struct {
 static void
 path_cleanup(path_t *path)
 {
+#if !USE_UNICODE_WCHAR_CACHE
+    wchar_t *wide = (wchar_t *)path->wide;
+    path->wide = NULL;
+    PyMem_Free(wide);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     Py_CLEAR(path->object);
     Py_CLEAR(path->cleanup);
 }
@@ -1002,7 +1010,7 @@ path_converter(PyObject *o, void *p)
     const char *narrow;
 #ifdef MS_WINDOWS
     PyObject *wo = NULL;
-    const wchar_t *wide;
+    wchar_t *wide = NULL;
 #endif
 
 #define FORMAT_EXCEPTION(exc, fmt) \
@@ -1075,7 +1083,14 @@ path_converter(PyObject *o, void *p)
 
     if (is_unicode) {
 #ifdef MS_WINDOWS
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         wide = PyUnicode_AsUnicodeAndSize(o, &length);
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+        wide = PyUnicode_AsWideCharString(o, &length);
+#endif /* USE_UNICODE_WCHAR_CACHE */
         if (!wide) {
             goto error_exit;
         }
@@ -1091,6 +1106,9 @@ path_converter(PyObject *o, void *p)
         path->wide = wide;
         path->narrow = FALSE;
         path->fd = -1;
+#if !USE_UNICODE_WCHAR_CACHE
+        wide = NULL;
+#endif /* USE_UNICODE_WCHAR_CACHE */
         goto success_exit;
 #else
         if (!PyUnicode_FSConverter(o, &bytes)) {
@@ -1166,7 +1184,15 @@ path_converter(PyObject *o, void *p)
         goto error_exit;
     }
 
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     wide = PyUnicode_AsUnicodeAndSize(wo, &length);
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+    wide = PyUnicode_AsWideCharString(wo, &length);
+    Py_DECREF(wo);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     if (!wide) {
         goto error_exit;
     }
@@ -1180,8 +1206,12 @@ path_converter(PyObject *o, void *p)
     }
     path->wide = wide;
     path->narrow = TRUE;
-    path->cleanup = wo;
     Py_DECREF(bytes);
+#if USE_UNICODE_WCHAR_CACHE
+    path->cleanup = wo;
+#else /* USE_UNICODE_WCHAR_CACHE */
+    wide = NULL;
+#endif /* USE_UNICODE_WCHAR_CACHE */
 #else
     path->wide = NULL;
     path->narrow = narrow;
@@ -1205,7 +1235,11 @@ path_converter(PyObject *o, void *p)
     Py_XDECREF(o);
     Py_XDECREF(bytes);
 #ifdef MS_WINDOWS
+#if USE_UNICODE_WCHAR_CACHE
     Py_XDECREF(wo);
+#else /* USE_UNICODE_WCHAR_CACHE */
+    PyMem_Free(wide);
+#endif /* USE_UNICODE_WCHAR_CACHE */
 #endif
     return 0;
 }
@@ -10988,7 +11022,7 @@ conv_path_confname(PyObject *arg, int *valuep)
 /*[clinic input]
 os.fpathconf -> long
 
-    fd: int
+    fd: fildes
     name: path_confname
     /
 
@@ -10999,7 +11033,7 @@ If there is no limit, return -1.
 
 static long
 os_fpathconf_impl(PyObject *module, int fd, int name)
-/*[clinic end generated code: output=d5b7042425fc3e21 input=5942a024d3777810]*/
+/*[clinic end generated code: output=d5b7042425fc3e21 input=5b8d2471cfaae186]*/
 {
     long limit;
 
@@ -12576,6 +12610,8 @@ os_cpu_count_impl(PyObject *module)
     ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
     ncpu = sysconf(_SC_NPROCESSORS_ONLN);
+#elif defined(__VXWORKS__)
+    ncpu = _Py_popcount32(vxCpuEnabledGet());
 #elif defined(__DragonFly__) || \
       defined(__OpenBSD__)   || \
       defined(__FreeBSD__)   || \
@@ -12824,7 +12860,15 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
 #ifdef MS_WINDOWS
     if (!PyUnicode_FSDecoder(self->path, &ub))
         return NULL;
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     const wchar_t *path = PyUnicode_AsUnicode(ub);
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+    wchar_t *path = PyUnicode_AsWideCharString(ub, NULL);
+    Py_DECREF(ub);
+#endif /* USE_UNICODE_WCHAR_CACHE */
 #else /* POSIX */
     if (!PyUnicode_FSConverter(self->path, &ub))
         return NULL;
@@ -12834,6 +12878,7 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
         result = fstatat(self->dir_fd, path, &st,
                          follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
 #else
+        Py_DECREF(ub);
         PyErr_SetString(PyExc_NotImplementedError, "can't fetch stat");
         return NULL;
 #endif /* HAVE_FSTATAT */
@@ -12846,7 +12891,11 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
         else
             result = LSTAT(path, &st);
     }
+#if defined(MS_WINDOWS) && !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free(path);
+#else /* USE_UNICODE_WCHAR_CACHE */
     Py_DECREF(ub);
+#endif /* USE_UNICODE_WCHAR_CACHE */
 
     if (result != 0)
         return path_object_error(self->path);
@@ -13035,15 +13084,24 @@ os_DirEntry_inode_impl(DirEntry *self)
 #ifdef MS_WINDOWS
     if (!self->got_file_index) {
         PyObject *unicode;
-        const wchar_t *path;
         STRUCT_STAT stat;
         int result;
 
         if (!PyUnicode_FSDecoder(self->path, &unicode))
             return NULL;
-        path = PyUnicode_AsUnicode(unicode);
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+        const wchar_t *path = PyUnicode_AsUnicode(unicode);
         result = LSTAT(path, &stat);
         Py_DECREF(unicode);
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+        wchar_t *path = PyUnicode_AsWideCharString(unicode, NULL);
+        Py_DECREF(unicode);
+        result = LSTAT(path, &stat);
+        PyMem_Free(path);
+#endif /* USE_UNICODE_WCHAR_CACHE */
 
         if (result != 0)
             return path_object_error(self->path);
@@ -13597,10 +13655,9 @@ os_scandir_impl(PyObject *module, path_t *path)
     iterator->dirp = NULL;
 #endif
 
-    memcpy(&iterator->path, path, sizeof(path_t));
     /* Move the ownership to iterator->path */
-    path->object = NULL;
-    path->cleanup = NULL;
+    memcpy(&iterator->path, path, sizeof(path_t));
+    memset(path, 0, sizeof(path_t));
 
 #ifdef MS_WINDOWS
     iterator->first_time = 1;
@@ -13622,9 +13679,9 @@ os_scandir_impl(PyObject *module, path_t *path)
 #else /* POSIX */
     errno = 0;
 #ifdef HAVE_FDOPENDIR
-    if (path->fd != -1) {
+    if (iterator->path.fd != -1) {
         /* closedir() closes the FD, so we duplicate it */
-        fd = _Py_dup(path->fd);
+        fd = _Py_dup(iterator->path.fd);
         if (fd == -1)
             goto error;
 

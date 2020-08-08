@@ -20,7 +20,7 @@ from .import_helper import (
     forget, import_fresh_module, import_module, make_legacy_pyc,
     modules_cleanup, modules_setup, unload)
 from .os_helper import (
-    FS_NONASCII, SAVEDCWD, TESTFN, TESTFN_NONASCII,
+    FS_NONASCII, SAVEDCWD, TESTFN, TESTFN_ASCII, TESTFN_NONASCII,
     TESTFN_UNENCODABLE, TESTFN_UNDECODABLE,
     TESTFN_UNICODE, can_symlink, can_xattr,
     change_cwd, create_empty_file, fd_count,
@@ -35,6 +35,11 @@ from .warnings_helper import (
 
 from .testresult import get_test_runner
 
+
+try:
+    from _testcapi import unicode_legacy_string
+except ImportError:
+    unicode_legacy_string = None
 
 __all__ = [
     # globals
@@ -83,6 +88,8 @@ LOOPBACK_TIMEOUT = 5.0
 if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
     # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
     # seconds on Windows ARM32 buildbot
+    LOOPBACK_TIMEOUT = 10
+elif sys.platform == 'vxworks':
     LOOPBACK_TIMEOUT = 10
 
 # Timeout in seconds for network requests going to the Internet. The timeout is
@@ -425,6 +432,9 @@ def requires_lzma(reason='requires lzma'):
     except ImportError:
         lzma = None
     return unittest.skipUnless(lzma, reason)
+
+requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
+                        'requires legacy Unicode C API')
 
 is_jython = sys.platform.startswith('java')
 
@@ -1345,7 +1355,7 @@ class PythonSymlink:
                 dll,
                 os.path.join(dest_dir, os.path.basename(dll))
             ))
-            for runtime in glob.glob(os.path.join(src_dir, "vcruntime*.dll")):
+            for runtime in glob.glob(os.path.join(glob.escape(src_dir), "vcruntime*.dll")):
                 self._also_link.append((
                     runtime,
                     os.path.join(dest_dir, os.path.basename(runtime))
@@ -1673,9 +1683,15 @@ def missing_compiler_executable(cmd_names=[]):
     missing.
 
     """
-    from distutils import ccompiler, sysconfig, spawn
+    from distutils import ccompiler, sysconfig, spawn, errors
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)
+    if compiler.compiler_type == "msvc":
+        # MSVC has no executables, so check whether initialization succeeds
+        try:
+            compiler.initialize()
+        except errors.DistutilsPlatformError:
+            return "msvc"
     for name in compiler.executables:
         if cmd_names and name not in cmd_names:
             continue

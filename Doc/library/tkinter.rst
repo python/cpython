@@ -464,12 +464,11 @@ The Packer
 .. index:: single: packing (widgets)
 
 The packer is one of Tk's geometry-management mechanisms.    Geometry managers
-are used to specify the relative positioning of the positioning of widgets
-within their container - their mutual *master*.  In contrast to the more
-cumbersome *placer* (which is used less commonly, and we do not cover here), the
-packer takes qualitative relationship specification - *above*, *to the left of*,
-*filling*, etc - and works everything out to determine the exact placement
-coordinates for you.
+are used to specify the relative positioning of widgets within their container -
+their mutual *master*.  In contrast to the more cumbersome *placer* (which is
+used less commonly, and we do not cover here), the packer takes qualitative
+relationship specification - *above*, *to the left of*, *filling*, etc - and
+works everything out to determine the exact placement coordinates for you.
 
 The size of any *master* widget is determined by the size of the "slave widgets"
 inside.  The packer is used to control where slave widgets appear inside the
@@ -542,31 +541,35 @@ the variable, with no further intervention on your part.
 
 For example::
 
-   class App(Frame):
-       def __init__(self, master=None):
+   import tkinter as tk
+
+   class App(tk.Frame):
+       def __init__(self, master):
            super().__init__(master)
            self.pack()
 
-           self.entrythingy = Entry()
+           self.entrythingy = tk.Entry()
            self.entrythingy.pack()
 
-           # here is the application variable
-           self.contents = StringVar()
-           # set it to some value
+           # Create the application variable.
+           self.contents = tk.StringVar()
+           # Set it to some value.
            self.contents.set("this is a variable")
-           # tell the entry widget to watch this variable
+           # Tell the entry widget to watch this variable.
            self.entrythingy["textvariable"] = self.contents
 
-           # and here we get a callback when the user hits return.
-           # we will have the program print out the value of the
-           # application variable when the user hits return
+           # Define a callback for when the user hits return.
+           # It prints the current value of the variable.
            self.entrythingy.bind('<Key-Return>',
-                                 self.print_contents)
+                                self.print_contents)
 
        def print_contents(self, event):
-           print("hi. contents of entry is now ---->",
+           print("Hi. The current entry content is:",
                  self.contents.get())
 
+   root = tk.Tk()
+   myapp = App(root)
+   myapp.mainloop()
 
 The Window Manager
 ^^^^^^^^^^^^^^^^^^

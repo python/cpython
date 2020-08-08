@@ -8,7 +8,7 @@ import os
 import re
 import sys
 import sysconfig
-from glob import glob
+from glob import glob, escape
 
 
 try:
@@ -401,7 +401,7 @@ class PyBuildExt(build_ext):
 
         # Python header files
         headers = [sysconfig.get_config_h_filename()]
-        headers += glob(os.path.join(sysconfig.get_path('include'), "*.h"))
+        headers += glob(os.path.join(escape(sysconfig.get_path('include')), "*.h"))
 
         for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
@@ -863,7 +863,8 @@ class PyBuildExt(build_ext):
         # bisect
         self.add(Extension("_bisect", ["_bisectmodule.c"]))
         # heapq
-        self.add(Extension("_heapq", ["_heapqmodule.c"]))
+        self.add(Extension("_heapq", ["_heapqmodule.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # C-optimized pickle replacement
         self.add(Extension("_pickle", ["_pickle.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
@@ -2431,7 +2432,7 @@ class PyBuildExt(build_ext):
 
         if "blake2" in configured:
             blake2_deps = glob(
-                os.path.join(self.srcdir, 'Modules/_blake2/impl/*')
+                os.path.join(escape(self.srcdir), 'Modules/_blake2/impl/*')
             )
             blake2_deps.append('hashlib.h')
             self.add(Extension(
@@ -2446,7 +2447,7 @@ class PyBuildExt(build_ext):
 
         if "sha3" in configured:
             sha3_deps = glob(
-                os.path.join(self.srcdir, 'Modules/_sha3/kcp/*')
+                os.path.join(escape(self.srcdir), 'Modules/_sha3/kcp/*')
             )
             sha3_deps.append('hashlib.h')
             self.add(Extension(

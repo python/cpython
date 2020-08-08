@@ -1,0 +1,1 @@
+Remove the ``__new__`` method of :class:`typing.Generic`.

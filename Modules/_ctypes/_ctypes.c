@@ -1366,8 +1366,6 @@ WCharArray_get_value(CDataObject *self, void *Py_UNUSED(ignored))
 static int
 WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
-    Py_ssize_t result = 0;
-
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "can't delete attribute");
@@ -1378,29 +1376,24 @@ WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored
                         "unicode string expected instead of %s instance",
                         Py_TYPE(value)->tp_name);
         return -1;
-    } else
-        Py_INCREF(value);
+    }
 
+    Py_ssize_t size = self->b_size / sizeof(wchar_t);
     Py_ssize_t len = PyUnicode_AsWideChar(value, NULL, 0);
     if (len < 0) {
         return -1;
     }
     // PyUnicode_AsWideChar() returns number of wchars including trailing null byte,
     // when it is called with NULL.
-    if (((size_t)len-1) > self->b_size/sizeof(wchar_t)) {
+    assert(len > 0);
+    if (len - 1 > size) {
         PyErr_SetString(PyExc_ValueError, "string too long");
-        result = -1;
-        goto done;
+        return -1;
     }
-    result = PyUnicode_AsWideChar(value,
-                                  (wchar_t *)self->b_ptr,
-                                  self->b_size/sizeof(wchar_t));
-    if (result >= 0 && (size_t)result < self->b_size/sizeof(wchar_t))
-        ((wchar_t *)self->b_ptr)[result] = (wchar_t)0;
-  done:
-    Py_DECREF(value);
-
-    return result >= 0 ? 0 : -1;
+    if (PyUnicode_AsWideChar(value, (wchar_t *)self->b_ptr, size) < 0) {
+        return -1;
+    }
+    return 0;
 }
 
 static PyGetSetDef WCharArray_getsets[] = {
@@ -3484,10 +3477,12 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
     for (i = 0; i < len; ++i) {
         PyObject *item = PyTuple_GET_ITEM(paramflags, i);
         int flag;
-        char *name;
+        PyObject *name = Py_None;
         PyObject *defval;
         PyObject *typ;
-        if (!PyArg_ParseTuple(item, "i|ZO", &flag, &name, &defval)) {
+        if (!PyArg_ParseTuple(item, "i|OO", &flag, &name, &defval) ||
+            !(name == Py_None || PyUnicode_Check(name)))
+        {
             PyErr_SetString(PyExc_TypeError,
                    "paramflags must be a sequence of (int [,string [,value]]) tuples");
             return 0;

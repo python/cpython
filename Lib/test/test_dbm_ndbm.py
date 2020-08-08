@@ -1,5 +1,7 @@
 from test import support
-support.import_module("dbm.ndbm") #skip if not supported
+from test.support import import_helper
+from test.support import os_helper
+import_helper.import_module("dbm.ndbm") #skip if not supported
 import os
 import unittest
 import dbm.ndbm
@@ -8,7 +10,7 @@ from dbm.ndbm import error
 class DbmTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.filename = support.TESTFN
+        self.filename = os_helper.TESTFN
         self.d = dbm.ndbm.open(self.filename, 'c')
         self.d.close()
 
@@ -101,10 +103,10 @@ class DbmTestCase(unittest.TestCase):
             with self.assertRaises(error):
                 db[b'not exist key'] = b'not exist value'
 
-    @unittest.skipUnless(support.TESTFN_NONASCII,
+    @unittest.skipUnless(os_helper.TESTFN_NONASCII,
                          'requires OS support of non-ASCII encodings')
     def test_nonascii_filename(self):
-        filename = support.TESTFN_NONASCII
+        filename = os_helper.TESTFN_NONASCII
         for suffix in ['', '.pag', '.dir', '.db']:
             self.addCleanup(support.unlink, filename + suffix)
         with dbm.ndbm.open(filename, 'c') as db:

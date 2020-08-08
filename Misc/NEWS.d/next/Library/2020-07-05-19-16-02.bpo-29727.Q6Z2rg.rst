@@ -1,0 +1,2 @@
+Register :class:`array.array` as a
+:class:`~collections.abc.MutableSequence`. Patch by Pablo Galindo.

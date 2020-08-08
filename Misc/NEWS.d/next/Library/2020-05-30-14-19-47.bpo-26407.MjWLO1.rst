@@ -1,0 +1,3 @@
+Unexpected errors in calling the ``__iter__`` method are no longer masked
+by ``TypeError`` in :func:`csv.reader`, :func:`csv.writer.writerow` and
+:meth:`csv.writer.writerows`.

@@ -16,7 +16,7 @@ if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
-    #   Include/ -> Python-ast.h, graminit.h
+    #   Include/ -> Python-ast.h
     #   Python/  -> importlib.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
@@ -510,7 +510,7 @@ case $ac_sys_system/$ac_sys_release in
   # has no effect, don't bother defining them
   Darwin/@<:@6789@:>@.*)
     define_xopen_source=no;;
-  Darwin/1@<:@0-9@:>@.*)
+  Darwin/@<:@[12]@:>@@<:@0-9@:>@.*)
     define_xopen_source=no;;
   # On AIX 4 and 5.1, mbstate_t is defined only when _XOPEN_SOURCE == 500 but
   # used in wcsnrtombs() and mbsnrtowcs() even if _XOPEN_SOURCE is not defined
@@ -3970,7 +3970,7 @@ AC_CHECK_FUNCS(forkpty,,
 # check for long file support functions
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)
 
-AC_REPLACE_FUNCS(dup2 strdup)
+AC_REPLACE_FUNCS(dup2)
 AC_CHECK_FUNCS(getpgrp,
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[getpgrp(0);]])],
     [AC_DEFINE(GETPGRP_HAVE_ARG, 1, [Define if getpgrp() must be called as getpgrp(0).])],

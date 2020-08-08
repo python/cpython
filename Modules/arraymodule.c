@@ -1130,7 +1130,7 @@ array_array_index(arrayobject *self, PyObject *v)
         cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
         Py_DECREF(selfi);
         if (cmp > 0) {
-            return PyLong_FromLong((long)i);
+            return PyLong_FromSsize_t(i);
         }
         else if (cmp < 0)
             return NULL;
@@ -2989,6 +2989,26 @@ array_modexec(PyObject *m)
         Py_DECREF((PyObject *)&Arraytype);
         return -1;
     }
+
+    PyObject *abc_mod = PyImport_ImportModule("collections.abc");
+    if (!abc_mod) {
+        Py_DECREF((PyObject *)&Arraytype);
+        return -1;
+    }
+    PyObject *mutablesequence = PyObject_GetAttrString(abc_mod, "MutableSequence");
+    Py_DECREF(abc_mod);
+    if (!mutablesequence) {
+        Py_DECREF((PyObject *)&Arraytype);
+        return -1;
+    }
+    PyObject *res = PyObject_CallMethod(mutablesequence, "register", "O", (PyObject *)&Arraytype);
+    Py_DECREF(mutablesequence);
+    if (!res) {
+        Py_DECREF((PyObject *)&Arraytype);
+        return -1;
+    }
+    Py_DECREF(res);
+
     Py_INCREF((PyObject *)&Arraytype);
     if (PyModule_AddObject(m, "array", (PyObject *)&Arraytype) < 0) {
         Py_DECREF((PyObject *)&Arraytype);

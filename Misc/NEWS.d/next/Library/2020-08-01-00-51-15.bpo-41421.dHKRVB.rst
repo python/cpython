@@ -1,0 +1,3 @@
+Make an algebraic simplification to random.paretovariate().  It now is
+slightly less subject to round-off error and is slightly faster. Inputs that
+used to cause ZeroDivisionError now cause an OverflowError instead.

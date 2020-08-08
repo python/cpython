@@ -11,6 +11,10 @@
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 
+#ifndef USE_UNICODE_WCHAR_CACHE
+#  define USE_UNICODE_WCHAR_CACHE 1
+#endif /* USE_UNICODE_WCHAR_CACHE */
+
 /* Since splitting on whitespace is an important use case, and
    whitespace in most situations is solely ASCII whitespace, we
    optimize for the common case by using a quick look-up table
@@ -48,7 +52,7 @@
 
 Py_DEPRECATED(3.3) static inline void
 Py_UNICODE_COPY(Py_UNICODE *target, const Py_UNICODE *source, Py_ssize_t length) {
-    memcpy(target, source, length * sizeof(Py_UNICODE));
+    memcpy(target, source, (size_t)(length) * sizeof(Py_UNICODE));
 }
 
 Py_DEPRECATED(3.3) static inline void
@@ -579,7 +583,7 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicode(
 
 /* Similar to PyUnicode_AsUnicode(), but raises a ValueError if the string
    contains null characters. */
-Py_DEPRECATED(3.3) PyAPI_FUNC(const Py_UNICODE *) _PyUnicode_AsUnicode(
+PyAPI_FUNC(const Py_UNICODE *) _PyUnicode_AsUnicode(
     PyObject *unicode           /* Unicode object */
     );
 
@@ -592,9 +596,6 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE *) PyUnicode_AsUnicodeAndSize(
     PyObject *unicode,          /* Unicode object */
     Py_ssize_t *size            /* location where to save the length */
     );
-
-/* Get the maximum ordinal for a Unicode character. */
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE) PyUnicode_GetMax(void);
 
 
 /* --- _PyUnicodeWriter API ----------------------------------------------- */
@@ -975,7 +976,7 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeMBCS(
 
 */
 
-/* Py_DEPRECATED(3.3) */ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
+Py_DEPRECATED(3.3) PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
     Py_UNICODE *s,              /* Unicode buffer */
     Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
     char *output,               /* Output buffer; must have size >= length */
@@ -988,7 +989,7 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeMBCS(
    Returns a new Unicode string on success, NULL on failure.
 */
 
-/* Py_DEPRECATED(3.3) */
+Py_DEPRECATED(3.3)
 PyAPI_FUNC(PyObject*) PyUnicode_TransformDecimalToASCII(
     Py_UNICODE *s,              /* Unicode buffer */
     Py_ssize_t length           /* Number of Py_UNICODE chars to transform */
@@ -1163,52 +1164,7 @@ PyAPI_FUNC(int) _PyUnicode_IsAlpha(
     Py_UCS4 ch       /* Unicode character */
     );
 
-Py_DEPRECATED(3.3) PyAPI_FUNC(size_t) Py_UNICODE_strlen(
-    const Py_UNICODE *u
-    );
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strcpy(
-    Py_UNICODE *s1,
-    const Py_UNICODE *s2);
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strcat(
-    Py_UNICODE *s1, const Py_UNICODE *s2);
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strncpy(
-    Py_UNICODE *s1,
-    const Py_UNICODE *s2,
-    size_t n);
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(int) Py_UNICODE_strcmp(
-    const Py_UNICODE *s1,
-    const Py_UNICODE *s2
-    );
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(int) Py_UNICODE_strncmp(
-    const Py_UNICODE *s1,
-    const Py_UNICODE *s2,
-    size_t n
-    );
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strchr(
-    const Py_UNICODE *s,
-    Py_UNICODE c
-    );
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strrchr(
-    const Py_UNICODE *s,
-    Py_UNICODE c
-    );
-
 PyAPI_FUNC(PyObject*) _PyUnicode_FormatLong(PyObject *, int, int, int);
-
-/* Create a copy of a unicode string ending with a nul character. Return NULL
-   and raise a MemoryError exception on memory allocation failure, otherwise
-   return a new allocated buffer (use PyMem_Free() to free the buffer). */
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(Py_UNICODE*) PyUnicode_AsUnicodeCopy(
-    PyObject *unicode
-    );
 
 /* Return an interned Unicode object for an Identifier; may fail if there is no memory.*/
 PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
@@ -1216,5 +1172,8 @@ PyAPI_FUNC(PyObject*) _PyUnicode_FromId(_Py_Identifier*);
 /* Fast equality check when the inputs are known to be exact unicode types
    and where the hash values are equal (i.e. a very probable match) */
 PyAPI_FUNC(int) _PyUnicode_EQ(PyObject *, PyObject *);
+
+PyAPI_FUNC(int) _PyUnicode_WideCharString_Converter(PyObject *, void *);
+PyAPI_FUNC(int) _PyUnicode_WideCharString_Opt_Converter(PyObject *, void *);
 
 PyAPI_FUNC(Py_ssize_t) _PyUnicode_ScanIdentifier(PyObject *);

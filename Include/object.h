@@ -637,8 +637,16 @@ times.
 
 
 static inline int
-PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-    return ((PyType_GetFlags(type) & feature) != 0);
+PyType_HasFeature(PyTypeObject *type, unsigned long feature)
+{
+    unsigned long flags;
+#ifdef Py_LIMITED_API
+    // PyTypeObject is opaque in the limited C API
+    flags = PyType_GetFlags(type);
+#else
+    flags = type->tp_flags;
+#endif
+    return ((flags & feature) != 0);
 }
 
 #define PyType_FastSubclass(type, flag) PyType_HasFeature(type, flag)

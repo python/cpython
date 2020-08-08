@@ -12,14 +12,15 @@ import random
 import shutil
 import subprocess
 import threading
+from test.support import import_helper
 from test.support import threading_helper
-from test.support import unlink
+from test.support.os_helper import unlink
 import _compression
 import sys
 
 
 # Skip tests if the bz2 module doesn't exist.
-bz2 = support.import_module('bz2')
+bz2 = import_helper.import_module('bz2')
 from bz2 import BZ2File, BZ2Compressor, BZ2Decompressor
 
 has_cmdline_bunzip2 = None
@@ -70,7 +71,7 @@ class BaseTest(unittest.TestCase):
     # simply use the bigger test data for all tests.
     test_size = 0
     BIG_TEXT = bytearray(128*1024)
-    for fname in glob.glob(os.path.join(os.path.dirname(__file__), '*.py')):
+    for fname in glob.glob(os.path.join(glob.escape(os.path.dirname(__file__)), '*.py')):
         with open(fname, 'rb') as fh:
             test_size += fh.readinto(memoryview(BIG_TEXT)[test_size:])
         if test_size > 128*1024:

@@ -12,20 +12,24 @@ import textwrap
 import time
 import unittest
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 from test.support import script_helper
 from test.support import socket_helper
+from test.support import warnings_helper
 
-TESTFN = support.TESTFN
+TESTFN = os_helper.TESTFN
 
 
 class TestSupport(unittest.TestCase):
 
     def test_import_module(self):
-        support.import_module("ftplib")
-        self.assertRaises(unittest.SkipTest, support.import_module, "foo")
+        import_helper.import_module("ftplib")
+        self.assertRaises(unittest.SkipTest,
+                          import_helper.import_module, "foo")
 
     def test_import_fresh_module(self):
-        support.import_fresh_module("ftplib")
+        import_helper.import_fresh_module("ftplib")
 
     def test_get_attribute(self):
         self.assertEqual(support.get_attribute(self, "test_get_attribute"),
@@ -39,38 +43,38 @@ class TestSupport(unittest.TestCase):
     def test_unload(self):
         import sched
         self.assertIn("sched", sys.modules)
-        support.unload("sched")
+        import_helper.unload("sched")
         self.assertNotIn("sched", sys.modules)
 
     def test_unlink(self):
         with open(TESTFN, "w") as f:
             pass
-        support.unlink(TESTFN)
+        os_helper.unlink(TESTFN)
         self.assertFalse(os.path.exists(TESTFN))
-        support.unlink(TESTFN)
+        os_helper.unlink(TESTFN)
 
     def test_rmtree(self):
-        dirpath = support.TESTFN + 'd'
+        dirpath = os_helper.TESTFN + 'd'
         subdirpath = os.path.join(dirpath, 'subdir')
         os.mkdir(dirpath)
         os.mkdir(subdirpath)
-        support.rmtree(dirpath)
+        os_helper.rmtree(dirpath)
         self.assertFalse(os.path.exists(dirpath))
         with support.swap_attr(support, 'verbose', 0):
-            support.rmtree(dirpath)
+            os_helper.rmtree(dirpath)
 
         os.mkdir(dirpath)
         os.mkdir(subdirpath)
         os.chmod(dirpath, stat.S_IRUSR|stat.S_IXUSR)
         with support.swap_attr(support, 'verbose', 0):
-            support.rmtree(dirpath)
+            os_helper.rmtree(dirpath)
         self.assertFalse(os.path.exists(dirpath))
 
         os.mkdir(dirpath)
         os.mkdir(subdirpath)
         os.chmod(dirpath, 0)
         with support.swap_attr(support, 'verbose', 0):
-            support.rmtree(dirpath)
+            os_helper.rmtree(dirpath)
         self.assertFalse(os.path.exists(dirpath))
 
     def test_forget(self):
@@ -83,12 +87,12 @@ class TestSupport(unittest.TestCase):
             mod = __import__(TESTFN)
             self.assertIn(TESTFN, sys.modules)
 
-            support.forget(TESTFN)
+            import_helper.forget(TESTFN)
             self.assertNotIn(TESTFN, sys.modules)
         finally:
             del sys.path[0]
-            support.unlink(mod_filename)
-            support.rmtree('__pycache__')
+            os_helper.unlink(mod_filename)
+            os_helper.rmtree('__pycache__')
 
     def test_HOST(self):
         s = socket.create_server((socket_helper.HOST, 0))
@@ -115,23 +119,23 @@ class TestSupport(unittest.TestCase):
         try:
             path = os.path.join(parent_dir, 'temp')
             self.assertFalse(os.path.isdir(path))
-            with support.temp_dir(path) as temp_path:
+            with os_helper.temp_dir(path) as temp_path:
                 self.assertEqual(temp_path, path)
                 self.assertTrue(os.path.isdir(path))
             self.assertFalse(os.path.isdir(path))
         finally:
-            support.rmtree(parent_dir)
+            os_helper.rmtree(parent_dir)
 
     def test_temp_dir__path_none(self):
         """Test passing no path."""
-        with support.temp_dir() as temp_path:
+        with os_helper.temp_dir() as temp_path:
             self.assertTrue(os.path.isdir(temp_path))
         self.assertFalse(os.path.isdir(temp_path))
 
     def test_temp_dir__existing_dir__quiet_default(self):
         """Test passing a directory that already exists."""
         def call_temp_dir(path):
-            with support.temp_dir(path) as temp_path:
+            with os_helper.temp_dir(path) as temp_path:
                 raise Exception("should not get here")
 
         path = tempfile.mkdtemp()
@@ -150,8 +154,8 @@ class TestSupport(unittest.TestCase):
         path = os.path.realpath(path)
 
         try:
-            with support.check_warnings() as recorder:
-                with support.temp_dir(path, quiet=True) as temp_path:
+            with warnings_helper.check_warnings() as recorder:
+                with os_helper.temp_dir(path, quiet=True) as temp_path:
                     self.assertEqual(path, temp_path)
                 warnings = [str(w.message) for w in recorder.warnings]
             # Make sure temp_dir did not delete the original directory.
@@ -173,7 +177,8 @@ class TestSupport(unittest.TestCase):
         script_helper.assert_python_ok("-c", textwrap.dedent("""
             import os
             from test import support
-            with support.temp_cwd() as temp_path:
+            from test.support import os_helper
+            with os_helper.temp_cwd() as temp_path:
                 pid = os.fork()
                 if pid != 0:
                     # parent process
@@ -194,8 +199,8 @@ class TestSupport(unittest.TestCase):
     def test_change_cwd(self):
         original_cwd = os.getcwd()
 
-        with support.temp_dir() as temp_path:
-            with support.change_cwd(temp_path) as new_cwd:
+        with os_helper.temp_dir() as temp_path:
+            with os_helper.change_cwd(temp_path) as new_cwd:
                 self.assertEqual(new_cwd, temp_path)
                 self.assertEqual(os.getcwd(), new_cwd)
 
@@ -206,10 +211,10 @@ class TestSupport(unittest.TestCase):
         original_cwd = os.getcwd()
 
         def call_change_cwd(path):
-            with support.change_cwd(path) as new_cwd:
+            with os_helper.change_cwd(path) as new_cwd:
                 raise Exception("should not get here")
 
-        with support.temp_dir() as parent_dir:
+        with os_helper.temp_dir() as parent_dir:
             non_existent_dir = os.path.join(parent_dir, 'does_not_exist')
             self.assertRaises(FileNotFoundError, call_change_cwd,
                               non_existent_dir)
@@ -220,10 +225,10 @@ class TestSupport(unittest.TestCase):
         """Test passing a non-existent directory with quiet=True."""
         original_cwd = os.getcwd()
 
-        with support.temp_dir() as parent_dir:
+        with os_helper.temp_dir() as parent_dir:
             bad_dir = os.path.join(parent_dir, 'does_not_exist')
-            with support.check_warnings() as recorder:
-                with support.change_cwd(bad_dir, quiet=True) as new_cwd:
+            with warnings_helper.check_warnings() as recorder:
+                with os_helper.change_cwd(bad_dir, quiet=True) as new_cwd:
                     self.assertEqual(new_cwd, original_cwd)
                     self.assertEqual(os.getcwd(), new_cwd)
                 warnings = [str(w.message) for w in recorder.warnings]
@@ -240,8 +245,8 @@ class TestSupport(unittest.TestCase):
     def test_change_cwd__chdir_warning(self):
         """Check the warning message when os.chdir() fails."""
         path = TESTFN + '_does_not_exist'
-        with support.check_warnings() as recorder:
-            with support.change_cwd(path=path, quiet=True):
+        with warnings_helper.check_warnings() as recorder:
+            with os_helper.change_cwd(path=path, quiet=True):
                 pass
             messages = [str(w.message) for w in recorder.warnings]
 
@@ -256,7 +261,7 @@ class TestSupport(unittest.TestCase):
 
     def test_temp_cwd(self):
         here = os.getcwd()
-        with support.temp_cwd(name=TESTFN):
+        with os_helper.temp_cwd(name=TESTFN):
             self.assertEqual(os.path.basename(os.getcwd()), TESTFN)
         self.assertFalse(os.path.exists(TESTFN))
         self.assertEqual(os.getcwd(), here)
@@ -265,7 +270,7 @@ class TestSupport(unittest.TestCase):
     def test_temp_cwd__name_none(self):
         """Test passing None to temp_cwd()."""
         original_cwd = os.getcwd()
-        with support.temp_cwd(name=None) as new_cwd:
+        with os_helper.temp_cwd(name=None) as new_cwd:
             self.assertNotEqual(new_cwd, original_cwd)
             self.assertTrue(os.path.isdir(new_cwd))
             self.assertEqual(os.getcwd(), new_cwd)
@@ -275,7 +280,7 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(support.sortdict({3:3, 2:2, 1:1}), "{1: 1, 2: 2, 3: 3}")
 
     def test_make_bad_fd(self):
-        fd = support.make_bad_fd()
+        fd = os_helper.make_bad_fd()
         with self.assertRaises(OSError) as cm:
             os.write(fd, b"foo")
         self.assertEqual(cm.exception.errno, errno.EBADF)
@@ -287,11 +292,11 @@ class TestSupport(unittest.TestCase):
 
     def test_CleanImport(self):
         import importlib
-        with support.CleanImport("asyncore"):
+        with import_helper.CleanImport("asyncore"):
             importlib.import_module("asyncore")
 
     def test_DirsOnSysPath(self):
-        with support.DirsOnSysPath('foo', 'bar'):
+        with import_helper.DirsOnSysPath('foo', 'bar'):
             self.assertIn("foo", sys.path)
             self.assertIn("bar", sys.path)
         self.assertNotIn("foo", sys.path)
@@ -625,10 +630,10 @@ class TestSupport(unittest.TestCase):
         # We cannot test the absolute value of fd_count(): on old Linux
         # kernel or glibc versions, os.urandom() keeps a FD open on
         # /dev/urandom device and Python has 4 FD opens instead of 3.
-        start = support.fd_count()
+        start = os_helper.fd_count()
         fd = os.open(__file__, os.O_RDONLY)
         try:
-            more = support.fd_count()
+            more = os_helper.fd_count()
         finally:
             os.close(fd)
         self.assertEqual(more - start, 1)

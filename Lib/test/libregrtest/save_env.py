@@ -10,6 +10,7 @@ import threading
 import urllib.request
 import warnings
 from test import support
+from test.support import os_helper
 from test.libregrtest.utils import print_warning
 try:
     import _multiprocessing, multiprocessing.process
@@ -241,7 +242,7 @@ class saved_test_environment:
         return sorted(fn + ('/' if os.path.isdir(fn) else '')
                       for fn in os.listdir())
     def restore_files(self, saved_value):
-        fn = support.TESTFN
+        fn = os_helper.TESTFN
         if fn not in saved_value and (fn + '/') not in saved_value:
             if os.path.isfile(fn):
                 support.unlink(fn)

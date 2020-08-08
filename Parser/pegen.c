@@ -4,6 +4,7 @@
 
 #include "pegen.h"
 #include "string_parser.h"
+#include "ast.h"
 
 PyObject *
 _PyPegen_new_type_comment(Parser *p, char *s)
@@ -391,13 +392,28 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     PyObject *tmp = NULL;
     p->error_indicator = 1;
 
+    if (p->start_rule == Py_fstring_input) {
+        const char *fstring_msg = "f-string: ";
+        Py_ssize_t len = strlen(fstring_msg) + strlen(errmsg);
+
+        char *new_errmsg = PyMem_Malloc(len + 1); // Lengths of both strings plus NULL character
+        if (!new_errmsg) {
+            return (void *) PyErr_NoMemory();
+        }
+
+        // Copy both strings into new buffer
+        memcpy(new_errmsg, fstring_msg, strlen(fstring_msg));
+        memcpy(new_errmsg + strlen(fstring_msg), errmsg, strlen(errmsg));
+        new_errmsg[len] = 0;
+        errmsg = new_errmsg;
+    }
     errstr = PyUnicode_FromFormatV(errmsg, va);
     if (!errstr) {
         goto error;
     }
 
     if (p->start_rule == Py_file_input) {
-        error_line = PyErr_ProgramTextObject(p->tok->filename, lineno);
+        error_line = PyErr_ProgramTextObject(p->tok->filename, (int) lineno);
     }
 
     if (!error_line) {
@@ -408,6 +424,9 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         }
     }
 
+    if (p->start_rule == Py_fstring_input) {
+        col_offset -= p->starting_col_offset;
+    }
     Py_ssize_t col_number = col_offset;
 
     if (p->tok->encoding != NULL) {
@@ -427,11 +446,17 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 
     Py_DECREF(errstr);
     Py_DECREF(value);
+    if (p->start_rule == Py_fstring_input) {
+        PyMem_Free((void *)errmsg);
+    }
     return NULL;
 
 error:
     Py_XDECREF(errstr);
     Py_XDECREF(error_line);
+    if (p->start_rule == Py_fstring_input) {
+        PyMem_Free((void *)errmsg);
+    }
     return NULL;
 }
 
@@ -501,10 +526,13 @@ _PyPegen_dummy_name(Parser *p, ...)
 static int
 _get_keyword_or_name_type(Parser *p, const char *name, int name_len)
 {
-    if (name_len >= p->n_keyword_lists || p->keywords[name_len] == NULL) {
+    assert(name_len > 0);
+    if (name_len >= p->n_keyword_lists ||
+        p->keywords[name_len] == NULL ||
+        p->keywords[name_len]->type == -1) {
         return NAME;
     }
-    for (KeywordToken *k = p->keywords[name_len]; k->type != -1; k++) {
+    for (KeywordToken *k = p->keywords[name_len]; k != NULL && k->type != -1; k++) {
         if (strncmp(k->str, name, name_len) == 0) {
             return k->type;
         }
@@ -1018,7 +1046,7 @@ compute_parser_flags(PyCompilerFlags *flags)
     if (flags->cf_flags & PyCF_TYPE_COMMENTS) {
         parser_flags |= PyPARSE_TYPE_COMMENTS;
     }
-    if (flags->cf_feature_version < 7) {
+    if ((flags->cf_flags & PyCF_ONLY_AST) && flags->cf_feature_version < 7) {
         parser_flags |= PyPARSE_ASYNC_HACKS;
     }
     return parser_flags;
@@ -1110,6 +1138,14 @@ _PyPegen_run_parser(Parser *p)
         return RAISE_SYNTAX_ERROR("multiple statements found while compiling a single statement");
     }
 
+#if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
+    if (p->start_rule == Py_single_input ||
+        p->start_rule == Py_file_input ||
+        p->start_rule == Py_eval_input)
+    {
+        assert(PyAST_Validate(res));
+    }
+#endif
     return res;
 }
 
@@ -1191,7 +1227,8 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     mod_ty result = NULL;
 
     int parser_flags = compute_parser_flags(flags);
-    int feature_version = flags ? flags->cf_feature_version : PY_MINOR_VERSION;
+    int feature_version = flags && (flags->cf_flags & PyCF_ONLY_AST) ?
+        flags->cf_feature_version : PY_MINOR_VERSION;
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, feature_version,
                                     NULL, arena);
     if (p == NULL) {

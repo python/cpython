@@ -7,7 +7,7 @@ import sys
 import time
 import traceback
 import tokenize
-from glob import glob
+from glob import glob, escape
 from pathlib import PurePath
 
 from typing import List, Optional, Any, Tuple
@@ -109,7 +109,7 @@ def parse_directory(directory: str, verbose: bool, excluded_files: List[str], sh
     files = []
     total_seconds = 0
 
-    for file in sorted(glob(f"{directory}/**/*.py", recursive=True)):
+    for file in sorted(glob(os.path.join(escape(directory), f"**/*.py"), recursive=True)):
         # Only attempt to parse Python files and files that are not excluded
         if any(PurePath(file).match(pattern) for pattern in excluded_files):
             continue

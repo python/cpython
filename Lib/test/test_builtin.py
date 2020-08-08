@@ -26,10 +26,10 @@ from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType
 from operator import neg
 from test import support
-from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink,
-    maybe_get_event_loop_policy)
+from test.support import (swap_attr, maybe_get_event_loop_policy)
+from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
+from test.support.warnings_helper import check_warnings
 from unittest.mock import MagicMock, patch
 try:
     import pty, signal
@@ -370,6 +370,27 @@ class BuiltinTest(unittest.TestCase):
                 exec(code, ns)
                 rv = ns['f']()
                 self.assertEqual(rv, tuple(expected))
+
+    def test_compile_top_level_await_no_coro(self):
+        """Make sure top level non-await codes get the correct coroutine flags"""
+        modes = ('single', 'exec')
+        code_samples = [
+            '''def f():pass\n''',
+            '''[x for x in l]''',
+            '''{x for x in l}''',
+            '''(x for x in l)''',
+            '''{x:x for x in l}''',
+        ]
+        for mode, code_sample in product(modes, code_samples):
+            source = dedent(code_sample)
+            co = compile(source,
+                            '?',
+                            mode,
+                            flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+
+            self.assertNotEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                                msg=f"source={source} mode={mode}")
+
 
     def test_compile_top_level_await(self):
         """Test whether code some top level await can be compiled.

@@ -1420,7 +1420,7 @@ class IPv4Interface(IPv4Address):
             return False
 
     def __hash__(self):
-        return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+        return hash((self._ip, self._prefixlen, int(self.network.network_address)))
 
     __reduce__ = _IPAddressBase.__reduce__
 
@@ -1466,7 +1466,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
             address: A string or integer representing the IP [& network].
               '192.0.2.0/24'
               '192.0.2.0/255.255.255.0'
-              '192.0.0.2/0.0.0.255'
+              '192.0.2.0/0.0.0.255'
               are all functionally the same in IPv4. Similarly,
               '192.0.2.1'
               '192.0.2.1/255.255.255.255'
@@ -2120,7 +2120,7 @@ class IPv6Interface(IPv6Address):
             return False
 
     def __hash__(self):
-        return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+        return hash((self._ip, self._prefixlen, int(self.network.network_address)))
 
     __reduce__ = _IPAddressBase.__reduce__
 

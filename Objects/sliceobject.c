@@ -113,27 +113,35 @@ void _PySlice_Fini(PyThreadState *tstate)
 PyObject *
 PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
 {
+    if (step == NULL) {
+        step = Py_None;
+    }
+    if (start == NULL) {
+        start = Py_None;
+    }
+    if (stop == NULL) {
+        stop = Py_None;
+    }
+
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PySliceObject *obj;
     if (interp->slice_cache != NULL) {
         obj = interp->slice_cache;
         interp->slice_cache = NULL;
         _Py_NewReference((PyObject *)obj);
-    } else {
+    }
+    else {
         obj = PyObject_GC_New(PySliceObject, &PySlice_Type);
-        if (obj == NULL)
+        if (obj == NULL) {
             return NULL;
+        }
     }
 
-    if (step == NULL) step = Py_None;
     Py_INCREF(step);
-    if (start == NULL) start = Py_None;
-    Py_INCREF(start);
-    if (stop == NULL) stop = Py_None;
-    Py_INCREF(stop);
-
     obj->step = step;
+    Py_INCREF(start);
     obj->start = start;
+    Py_INCREF(stop);
     obj->stop = stop;
 
     _PyObject_GC_TRACK(obj);

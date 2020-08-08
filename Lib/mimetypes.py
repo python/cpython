@@ -372,7 +372,7 @@ def init(files=None):
 
 def read_mime_types(file):
     try:
-        f = open(file)
+        f = open(file, encoding='utf-8')
     except OSError:
         return None
     with f:

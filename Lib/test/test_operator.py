@@ -3,9 +3,13 @@ import pickle
 import sys
 
 from test import support
+from test.support import import_helper
 
-py_operator = support.import_fresh_module('operator', blocked=['_operator'])
-c_operator = support.import_fresh_module('operator', fresh=['_operator'])
+
+py_operator = import_helper.import_fresh_module('operator',
+                                                blocked=['_operator'])
+c_operator = import_helper.import_fresh_module('operator',
+                                               fresh=['_operator'])
 
 class Seq1:
     def __init__(self, lst):
@@ -34,6 +38,10 @@ class Seq2(object):
         return self.lst * other
     def __rmul__(self, other):
         return other * self.lst
+
+class BadIterable:
+    def __iter__(self):
+        raise ZeroDivisionError
 
 
 class OperatorTestCase:
@@ -142,6 +150,7 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.countOf)
         self.assertRaises(TypeError, operator.countOf, None, None)
+        self.assertRaises(ZeroDivisionError, operator.countOf, BadIterable(), 1)
         self.assertEqual(operator.countOf([1, 2, 1, 3, 1, 4], 3), 1)
         self.assertEqual(operator.countOf([1, 2, 1, 3, 1, 4], 5), 0)
 
@@ -176,6 +185,7 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.indexOf)
         self.assertRaises(TypeError, operator.indexOf, None, None)
+        self.assertRaises(ZeroDivisionError, operator.indexOf, BadIterable(), 1)
         self.assertEqual(operator.indexOf([4, 3, 2, 1], 3), 1)
         self.assertRaises(ValueError, operator.indexOf, [4, 3, 2, 1], 0)
 
@@ -258,6 +268,7 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.contains)
         self.assertRaises(TypeError, operator.contains, None, None)
+        self.assertRaises(ZeroDivisionError, operator.contains, BadIterable(), 1)
         self.assertTrue(operator.contains(range(4), 2))
         self.assertFalse(operator.contains(range(4), 5))
 
