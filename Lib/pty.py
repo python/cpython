@@ -237,6 +237,9 @@ def _ekill(child_pid):
         os.kill(child_pid, signal.SIGTERM)
         time.sleep(1)
         os.kill(child_pid, signal.SIGKILL)
+    except:
+        pass
+    try:
         os.waitpid(child_pid, 0)
     except:
         pass
