@@ -2438,6 +2438,7 @@ static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
     double x, csum = 1.0, oldcsum, frac = 0.0;
+    int max_e;
     Py_ssize_t i;
 
     if (Py_IS_INFINITY(max)) {
@@ -2449,17 +2450,21 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     if (max == 0.0 || n <= 1) {
         return max;
     }
+    frexp(max, &max_e);
     for (i=0 ; i < n ; i++) {
+        int e;
+
         x = vec[i];
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
-        x /= max;
+        x = frexp(x, &e);
+        x = ldexp(x, e - max_e);
         x = x*x;
         oldcsum = csum;
         csum += x;
         assert(csum >= x);
         frac += (oldcsum - csum) + x;
     }
-    return max * sqrt(csum - 1.0 + frac);
+    return ldexp(sqrt(csum - 1.0 + frac), max_e);
 }
 
 #define NUM_STACK_ELEMS 16
