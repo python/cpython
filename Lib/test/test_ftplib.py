@@ -21,6 +21,7 @@ from unittest import TestCase, skipUnless
 from test import support
 from test.support import threading_helper
 from test.support import socket_helper
+from test.support import warnings_helper
 from test.support.socket_helper import HOST, HOSTv6
 
 TIMEOUT = support.LOOPBACK_TIMEOUT
@@ -623,7 +624,7 @@ class TestFTPClass(TestCase):
 
         f = io.StringIO(RETR_DATA.replace('\r\n', '\n'))
         # storlines() expects a binary file, not a text file
-        with support.check_warnings(('', BytesWarning), quiet=True):
+        with warnings_helper.check_warnings(('', BytesWarning), quiet=True):
             self.assertRaises(TypeError, self.client.storlines, 'stor foo', f)
 
     def test_nlst(self):

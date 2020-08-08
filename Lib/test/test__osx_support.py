@@ -9,6 +9,7 @@ import sys
 import unittest
 
 import test.support
+from test.support import os_helper
 
 import _osx_support
 
@@ -39,9 +40,9 @@ class Test_OSXSupport(unittest.TestCase):
         if self.env['PATH']:
             self.env['PATH'] = self.env['PATH'] + ':'
         self.env['PATH'] = self.env['PATH'] + os.path.abspath(self.temp_path_dir)
-        test.support.unlink(self.prog_name)
+        os_helper.unlink(self.prog_name)
         self.assertIsNone(_osx_support._find_executable(self.prog_name))
-        self.addCleanup(test.support.unlink, self.prog_name)
+        self.addCleanup(os_helper.unlink, self.prog_name)
         with open(self.prog_name, 'w') as f:
             f.write("#!/bin/sh\n/bin/echo OK\n")
         os.chmod(self.prog_name, stat.S_IRWXU)
@@ -52,8 +53,8 @@ class Test_OSXSupport(unittest.TestCase):
         if self.env['PATH']:
             self.env['PATH'] = self.env['PATH'] + ':'
         self.env['PATH'] = self.env['PATH'] + os.path.abspath(self.temp_path_dir)
-        test.support.unlink(self.prog_name)
-        self.addCleanup(test.support.unlink, self.prog_name)
+        os_helper.unlink(self.prog_name)
+        self.addCleanup(os_helper.unlink, self.prog_name)
         with open(self.prog_name, 'w') as f:
             f.write("#!/bin/sh\n/bin/echo ExpectedOutput\n")
         os.chmod(self.prog_name, stat.S_IRWXU)
@@ -143,8 +144,8 @@ class Test_OSXSupport(unittest.TestCase):
         suffix = (':' + self.env['PATH']) if self.env['PATH'] else ''
         self.env['PATH'] = os.path.abspath(self.temp_path_dir) + suffix
         for c_name, c_output in compilers:
-            test.support.unlink(c_name)
-            self.addCleanup(test.support.unlink, c_name)
+            os_helper.unlink(c_name)
+            self.addCleanup(os_helper.unlink, c_name)
             with open(c_name, 'w') as f:
                 f.write("#!/bin/sh\n/bin/echo " + c_output)
             os.chmod(c_name, stat.S_IRWXU)
@@ -221,8 +222,8 @@ class Test_OSXSupport(unittest.TestCase):
         suffix = (':' + self.env['PATH']) if self.env['PATH'] else ''
         self.env['PATH'] = os.path.abspath(self.temp_path_dir) + suffix
         c_name = 'clang'
-        test.support.unlink(c_name)
-        self.addCleanup(test.support.unlink, c_name)
+        os_helper.unlink(c_name)
+        self.addCleanup(os_helper.unlink, c_name)
         # exit status 255 means no PPC support in this compiler chain
         with open(c_name, 'w') as f:
             f.write("#!/bin/sh\nexit 255")

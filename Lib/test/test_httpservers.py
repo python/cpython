@@ -67,7 +67,7 @@ class TestServerThread(threading.Thread):
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self._threads = threading_helper.threading_setup()
-        os.environ = support.EnvironmentVarGuard()
+        os.environ = os_helper.EnvironmentVarGuard()
         self.server_started = threading.Event()
         self.thread = TestServerThread(self, self.request_handler)
         self.thread.start()
@@ -621,7 +621,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
         # The shebang line should be pure ASCII: use symlink if possible.
         # See issue #7668.
         self._pythonexe_symlink = None
-        if support.can_symlink():
+        if os_helper.can_symlink():
             self.pythonexe = os.path.join(self.parent_dir, 'python')
             self._pythonexe_symlink = support.PythonSymlink(self.pythonexe).__enter__()
         else:
