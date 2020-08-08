@@ -46,6 +46,12 @@ def update_wrapper(wrapper,
        updated is a tuple naming the attributes of the wrapper that
        are updated with the corresponding attribute from the wrapped
        function (defaults to functools.WRAPPER_UPDATES)
+
+       There's a special treatment for the `__annotations__` attribute:
+       * If the wrapper defines a return type, then that will be used, if not,
+         the one from the wrapped function will be used if any.
+       * If the wrapper defines any parameter types, those will be used, if
+         not, the ones from the wrapped function will be used if any.
     """
     for attr in assigned:
         try:
@@ -59,24 +65,24 @@ def update_wrapper(wrapper,
 
     if '__annotations__' in assigned:
         try:
-            # Issue #41231: copy the annotations only if there's none defined
-            # in the wrapper
+            # Issue #41231: copy the annotations from wrapped, only if they are
+            #  not already defined in the wrapper
             if not wrapper.__annotations__:
                 wrapper.__annotations__ = wrapped.__annotations__
-            # if only the return wrapped has annotations, assume that the
-            # parameters stay the same
+            # if the wrapper does not annotate the parameters, copy their
+            # annotations over from the wrapped
             elif ('return' in wrapper.__annotations__
                   and len(wrapper.__annotations__) == 1):
                 wrapper.__annotations__ = {
                     **wrapped.__annotations__,
                     **wrapper.__annotations__,
                 }
-            # if only the parameters have annotations, assume that the return
-            # type stays the same
+            # if the wrapper does not annotate the return type, copy the
+            # annotation from the wrapped
             elif ('return' not in wrapper.__annotations__
                   and 'return' in wrapped.__annotations__):
                 wrapper.__annotations__['return'] = wrapped.__annotations__['return']
-        except AttributeError as error:
+        except AttributeError:
             pass
 
     for attr in updated:
