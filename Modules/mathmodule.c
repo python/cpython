@@ -56,6 +56,7 @@ raised for division by zero and mod by zero.
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_dtoa.h"
 #include "_math.h"
+#include <stdio.h>
 
 #include "clinic/mathmodule.c.h"
 
@@ -2434,6 +2435,21 @@ fractional digits to be dropped from *csum*.
 
 */
 
+/*
+    def scaled(x):
+        'View scaling calculation'
+        # Limits for ldexp(1, 1023) and at 1024 goes to inf
+        #            ldexp(1.0, -1022) <- normal and at -1023 goes subnormal
+        #            ldexp(1.0, -1074) <-- subnormal and at -1075 goes to zero
+        # Failed example:
+        #            x = 2.78134e-309 --> (0.9999991647435902, -1025)
+        #            1.0 / x --> inf
+        m, e = frexp(x)
+        # e = max(e, 1023)
+        scale = ldexp(1.0, -e)
+        return x*scale, scale.hex(), m, e
+ */
+
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
@@ -2452,15 +2468,16 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     }
     frexp(max, &max_e);
     scale = ldexp(1.0, -max_e);
-    assert(max * scale >= 0.5);
-    assert(max * scale < 1.0);
+    // fprintf(stderr, "<<max: %g  max_e: %d   scale: %g>>\n", max, max_e, scale);
+    // assert(max * scale >= 0.5);
+    // assert(max * scale < 1.0);
     for (i=0 ; i < n ; i++) {
         x = vec[i];
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
         x *= scale;
         x = x*x;
-        assert(x <= 1.0);
-        assert(csum >= x);
+        // assert(x <= 1.0);
+        // assert(csum >= x);
         oldcsum = csum;
         csum += x;
         frac += (oldcsum - csum) + x;

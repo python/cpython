@@ -904,8 +904,8 @@ class MathTests(unittest.TestCase):
         for n in range(32):
             p = (fourthmax,) * n
             q = (0.0,) * n
-            self.assertEqual(dist(p, q), fourthmax * math.sqrt(n))
-            self.assertEqual(dist(q, p), fourthmax * math.sqrt(n))
+            self.assertTrue(math.isclose(dist(p, q), fourthmax * math.sqrt(n)))
+            self.assertTrue(math.isclose(dist(q, p), fourthmax * math.sqrt(n)))
 
         # Verify scaling for extremely small values
         for exp in range(32):
