@@ -1,4 +1,4 @@
-"Test run, coverage 42%."
+"Test run, coverage 49%."
 
 from idlelib import run
 import unittest
@@ -327,7 +327,7 @@ class RecursionLimitTest(unittest.TestCase):
 class HandleErrorTest(unittest.TestCase):
     # Method of MyRPCServer
     func = Func()
-    @mock.patch('run.thread.interrupt_main', new=func)
+    @mock.patch('idlelib.run.thread.interrupt_main', new=func)
     def test_error(self):
         eq = self.assertEqual
         with captured_output('__stderr__') as err:
@@ -349,7 +349,7 @@ class HandleErrorTest(unittest.TestCase):
             self.assertIn('abc', msg)
             self.assertIn('123', msg)
             self.assertIn('IndexError', msg)
-
+            eq(self.func.called, 2)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
