@@ -388,12 +388,16 @@ class MyRPCServer(rpc.RPCServer):
         except:
             erf = sys.__stderr__
             print('\n' + '-'*40, file=erf)
-            print('Unhandled server exception!', file=erf)
+            print('Unhandled exection in user code execution server!', file=erf)
             print('Thread: %s' % threading.current_thread().name, file=erf)
-            print('Client Address: ', client_address, file=erf)
+            print('IDLE Client Address: ', client_address, file=erf)
             print('Request: ', repr(request), file=erf)
             traceback.print_exc(file=erf)
             print('\n*** Unrecoverable, server exiting!', file=erf)
+            print(
+"""Users should never see this; it is likely transient.
+If this recurs, report this with a copy of the message
+and an explanation of how to make it repeat""", file=erf)
             print('-'*40, file=erf)
             quitting = True
             thread.interrupt_main()

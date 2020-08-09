@@ -3,7 +3,8 @@
 from idlelib import run
 import unittest
 from unittest import mock
-from test.support import captured_stderr
+from idlelib.idle_test.mock_idle import Func
+from test.support import captured_output, captured_stderr
 
 import io
 import sys
@@ -319,6 +320,33 @@ class TestSysRecursionLimitWrappers(unittest.TestCase):
         func.__doc__ = None
         run.fixdoc(func, "more")
         self.assertEqual(func.__doc__, "more")
+
+
+class HandleErrorTest(unittest.TestCase):
+    # Method of MyRPCServer
+    func = Func()
+    @mock.patch('run.thread.interrupt_main', new=func)
+    def test_error(self):
+        eq = self.assertEqual
+        with captured_output('__stderr__') as err:
+            try:
+                raise EOFError
+            except EOFError:
+                run.MyRPCServer.handle_error(None, 'abc', '123')
+            eq(run.exit_now, True)
+            run.exit_now = False
+            eq(err.getvalue(), '')
+
+            try:
+                raise IndexError
+            except IndexError:
+                run.MyRPCServer.handle_error(None, 'abc', '123')
+            eq(run.quitting, True)
+            run.quitting = False
+            msg = err.getvalue()
+            self.assertIn('abc', msg)
+            self.assertIn('123', msg)
+            self.assertIn('IndexError', msg)
 
 
 if __name__ == '__main__':
