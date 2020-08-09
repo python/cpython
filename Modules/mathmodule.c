@@ -2452,14 +2452,17 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     }
     frexp(max, &max_e);
     scale = ldexp(1.0, -max_e);
+    assert(max * scale >= 0.5);
+    assert(max * scale < 1.0);
     for (i=0 ; i < n ; i++) {
         x = vec[i];
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
         x *= scale;
         x = x*x;
+        assert(x <= 1.0);
+        assert(csum >= x);
         oldcsum = csum;
         csum += x;
-        assert(csum >= x);
         frac += (oldcsum - csum) + x;
     }
     return sqrt(csum - 1.0 + frac) / scale;
