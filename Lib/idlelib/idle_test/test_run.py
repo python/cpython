@@ -282,7 +282,8 @@ class StdOutputFilesTest(unittest.TestCase):
         self.assertRaises(TypeError, f.close, 1)
 
 
-class TestSysRecursionLimitWrappers(unittest.TestCase):
+class RecursionLimitTest(unittest.TestCase):
+    # Test (un)install_recursionlimit_wrappers and fixdoc.
 
     def test_bad_setrecursionlimit_calls(self):
         run.install_recursionlimit_wrappers()
@@ -296,12 +297,12 @@ class TestSysRecursionLimitWrappers(unittest.TestCase):
         run.install_recursionlimit_wrappers()
         self.addCleanup(run.uninstall_recursionlimit_wrappers)
 
-        # check that setting the recursion limit works
+        # Check that setting the recursion limit works.
         orig_reclimit = sys.getrecursionlimit()
         self.addCleanup(sys.setrecursionlimit, orig_reclimit)
         sys.setrecursionlimit(orig_reclimit + 3)
 
-        # check that the new limit is returned by sys.getrecursionlimit()
+        # Check that the new limit is returned by sys.getrecursionlimit().
         new_reclimit = sys.getrecursionlimit()
         self.assertEqual(new_reclimit, orig_reclimit + 3)
 
@@ -313,6 +314,7 @@ class TestSysRecursionLimitWrappers(unittest.TestCase):
         self.assertEqual(new_reclimit, orig_reclimit)
 
     def test_fixdoc(self):
+        # Put here until better place for miscellaneous test.
         def func(): "docstring"
         run.fixdoc(func, "more")
         self.assertEqual(func.__doc__, "docstring\n\nmore")
