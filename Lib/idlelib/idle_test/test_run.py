@@ -1,9 +1,10 @@
-"Test run, coverage 42%."
+"Test run, coverage 49%."
 
 from idlelib import run
 import unittest
 from unittest import mock
-from test.support import captured_stderr
+from idlelib.idle_test.mock_idle import Func
+from test.support import captured_output, captured_stderr
 
 import io
 import sys
@@ -322,6 +323,33 @@ class RecursionLimitTest(unittest.TestCase):
         run.fixdoc(func, "more")
         self.assertEqual(func.__doc__, "more")
 
+
+class HandleErrorTest(unittest.TestCase):
+    # Method of MyRPCServer
+    func = Func()
+    @mock.patch('idlelib.run.thread.interrupt_main', new=func)
+    def test_error(self):
+        eq = self.assertEqual
+        with captured_output('__stderr__') as err:
+            try:
+                raise EOFError
+            except EOFError:
+                run.MyRPCServer.handle_error(None, 'abc', '123')
+            eq(run.exit_now, True)
+            run.exit_now = False
+            eq(err.getvalue(), '')
+
+            try:
+                raise IndexError
+            except IndexError:
+                run.MyRPCServer.handle_error(None, 'abc', '123')
+            eq(run.quitting, True)
+            run.quitting = False
+            msg = err.getvalue()
+            self.assertIn('abc', msg)
+            self.assertIn('123', msg)
+            self.assertIn('IndexError', msg)
+            eq(self.func.called, 2)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
