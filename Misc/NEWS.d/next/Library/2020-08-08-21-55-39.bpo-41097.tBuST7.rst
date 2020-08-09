@@ -1,0 +1,2 @@
+:func:`io.BytesIO.write` no longer raises :exc:`BufferError` when one or
+more buffer views exist as long as the buffer does not need to be resized.

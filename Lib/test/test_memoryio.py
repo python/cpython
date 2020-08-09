@@ -538,6 +538,32 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         self.ioclass(initial_bytes=buf)
         self.assertRaises(TypeError, self.ioclass, buf, foo=None)
 
+    # bpo-41097: The BytesIO object should be writable,
+    #            but not resizable, while there are active
+    #            buffer views.
+    def test_buffer_is_writable(self):
+        bufval1 = b'abc'
+        bufval2 = b'?bc'
+        bufval3 = b'???'
+        memio = self.ioclass()
+        memio.write(bufval1)
+        self.assertEqual(memio.getvalue(), bufval1)
+        buf = memio.getbuffer()
+        self.assertEqual(buf, bufval1)
+        memio.seek(0)
+        memio.write(b'?')  # should not raise an exception
+        self.assertEqual(memio.getvalue(), bufval2)
+        self.assertEqual(buf, bufval2)
+        # write past the end of the buffer while
+        # there is an active buffer view - should raise BufferError
+        self.assertEqual(memio.tell(), 1)
+        self.assertRaises(BufferError, memio.write, bufval3)
+        # release the buffer view and try forcing a
+        # buffer resize
+        del buf
+        self.assertEqual(memio.tell(), 1)
+        memio.write(bufval3)  # should not raise an exception
+        self.assertEqual(memio.getvalue(), b'????')
 
 class TextIOTestMixin:
 
