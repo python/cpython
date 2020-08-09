@@ -2450,6 +2450,13 @@ fractional digits to be dropped from *csum*.
         return x*scale, scale.hex(), m, e
  */
 
+/*
+     A way forward:
+             Use scaling for a broad range, perhaps -1000 to 1000
+             and have a separate code path with division for the rest.
+ */
+
+
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
@@ -2467,22 +2474,39 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         return max;
     }
     frexp(max, &max_e);
-    scale = ldexp(1.0, -max_e);
-    // fprintf(stderr, "<<max: %g  max_e: %d   scale: %g>>\n", max, max_e, scale);
-    // assert(max * scale >= 0.5);
-    // assert(max * scale < 1.0);
-    for (i=0 ; i < n ; i++) {
-        x = vec[i];
-        assert(Py_IS_FINITE(x) && fabs(x) <= max);
-        x *= scale;
-        x = x*x;
-        // assert(x <= 1.0);
-        // assert(csum >= x);
-        oldcsum = csum;
-        csum += x;
-        frac += (oldcsum - csum) + x;
+    if (-1000 <= max_e && max_e <= 1000) {
+        scale = ldexp(1.0, -max_e);
+        // fprintf(stderr, "<<max: %g  max_e: %d   scale: %g>>\n", max, max_e, scale);
+        assert(max * scale >= 0.5);
+        assert(max * scale < 1.0);
+        for (i=0 ; i < n ; i++) {
+            x = vec[i];
+            assert(Py_IS_FINITE(x) && fabs(x) <= max);
+            x *= scale;
+            x = x*x;
+            assert(x <= 1.0);
+            assert(csum >= x);
+            oldcsum = csum;
+            csum += x;
+            frac += (oldcsum - csum) + x;
+        }
+        return sqrt(csum - 1.0 + frac) / scale;
     }
-    return sqrt(csum - 1.0 + frac) / scale;
+    else
+    {
+        for (i=0 ; i < n ; i++) {
+            x = vec[i];
+            assert(Py_IS_FINITE(x) && fabs(x) <= max);
+            x /= max;
+            x = x*x;
+            assert(x <= 1.0);
+            assert(csum >= x);
+            oldcsum = csum;
+            csum += x;
+            frac += (oldcsum - csum) + x;
+        }
+        return max * sqrt(csum - 1.0 + frac);
+    }
 }
 
 #define NUM_STACK_ELEMS 16
