@@ -1120,15 +1120,15 @@ code_linesiterator(PyCodeObject *code, PyObject *Py_UNUSED(args))
 static void
 retreat(PyCodeAddressRange *bounds)
 {
-    int ldelta = ((signed char *)bounds->lo_entry)[1];
+    int ldelta = ((signed char *)bounds->lo_next)[-1];
     if (ldelta == -128) {
         ldelta = 0;
     }
     bounds->ar_computed_line -= ldelta;
-    bounds->lo_entry -= 2;
+    bounds->lo_next -= 2;
     bounds->ar_end = bounds->ar_start;
-    bounds->ar_start -= ((unsigned char *)bounds->lo_entry)[0];
-    ldelta = ((signed char *)bounds->lo_entry)[1];
+    bounds->ar_start -= ((unsigned char *)bounds->lo_next)[-2];
+    ldelta = ((signed char *)bounds->lo_next)[-1];
     if (ldelta == -128) {
         bounds->ar_line = -1;
     }
@@ -1140,12 +1140,12 @@ retreat(PyCodeAddressRange *bounds)
 static void
 advance(PyCodeAddressRange *bounds)
 {
-    bounds->lo_entry += 2;
     bounds->ar_start = bounds->ar_end;
-    int delta = ((unsigned char *)bounds->lo_entry)[0];
+    int delta = ((unsigned char *)bounds->lo_next)[0];
     assert (delta < 255);
     bounds->ar_end += delta;
-    int ldelta = ((signed char *)bounds->lo_entry)[1];
+    int ldelta = ((signed char *)bounds->lo_next)[1];
+    bounds->lo_next += 2;
     if (ldelta == -128) {
         bounds->ar_line = -1;
     }
@@ -1157,7 +1157,7 @@ advance(PyCodeAddressRange *bounds)
 
 static inline int
 at_end(PyCodeAddressRange *bounds) {
-    return ((unsigned char *)bounds->lo_entry)[2] == 255;
+    return ((unsigned char *)bounds->lo_next)[0] == 255;
 }
 
 int
@@ -1258,7 +1258,7 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
 void
 PyLineTable_InitAddressRange(char *linetable, int firstlineno, PyCodeAddressRange *range)
 {
-    range->lo_entry = linetable-2;
+    range->lo_next = linetable;
     range->ar_start = -1;
     range->ar_end = 0;
     range->ar_computed_line = range->ar_line = firstlineno;

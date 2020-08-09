@@ -140,7 +140,7 @@ typedef struct _line_offsets {
     int ar_end;
     int ar_line;
     int ar_computed_line;
-    char *lo_entry;
+    char *lo_next;
 } PyCodeAddressRange;
 
 /* Update *bounds to describe the first and one-past-the-last instructions in the
