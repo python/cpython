@@ -139,6 +139,13 @@ Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
 
+xml
+---
+
+Add a :class:`~xml.sax.handler.LexicalHandler` class to the
+:mod:`xml.sax.handler` module.
+(Contributed by Jonathan Gossage and Zackery Spytz in :issue:`35018`.)
+
 
 Optimizations
 =============
