@@ -28,11 +28,28 @@ jobs:
       - name: Check for source changes
         id: check
         run: |
+          echo "==env=="
+          env
+          echo "==env== done"
           if [ -z "GITHUB_BASE_REF" ]; then
             echo '::set-output name=run_tests::true'
           else
             git fetch origin $GITHUB_BASE_REF --depth=1
-            git diff --name-only origin/$GITHUB_BASE_REF... | grep -qvE '(\.rst$|^Doc|^Misc)' && echo '::set-output name=run_tests::true' || true
+
+            echo "==method .. =="
+            git diff --name-only origin/$GITHUB_BASE_REF.. || true
+
+            echo "==method ... =="
+            git diff --name-only origin/$GITHUB_BASE_REF... || true
+
+            echo "==method GITHUB_SHA=="
+            git diff --name-only origin/$GITHUB_BASE_REF..$GITHUB_SHA || true
+
+            echo "==method GITHUB_REF=="
+            git diff --name-only origin/$GITHUB_BASE_REF..$GITHUB_REF || true
+
+            echo "==real code with .. =="
+            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo '::set-output name=run_tests::true' || true
           fi
   build_win32:
     name: 'Windows (x86)'
