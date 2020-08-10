@@ -326,11 +326,11 @@ class RecursionLimitTest(unittest.TestCase):
 
 class HandleErrorTest(unittest.TestCase):
     # Method of MyRPCServer
-    func = Func()
-    @mock.patch('idlelib.run.thread.interrupt_main', new=func)
-    def test_error(self):
+    def test_fatal_error(self):
         eq = self.assertEqual
-        with captured_output('__stderr__') as err:
+        with captured_output('__stderr__') as err,\
+             mock.patch('idlelib.run.thread.interrupt_main',
+                        new_callable=Func) as func:
             try:
                 raise EOFError
             except EOFError:
@@ -349,7 +349,7 @@ class HandleErrorTest(unittest.TestCase):
             self.assertIn('abc', msg)
             self.assertIn('123', msg)
             self.assertIn('IndexError', msg)
-            eq(self.func.called, 2)
+            eq(func.called, 2)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
