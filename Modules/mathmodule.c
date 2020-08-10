@@ -2407,6 +2407,13 @@ math_fmod_impl(PyObject *module, double x, double y)
 /*
 Given an *n* length *vec* of values and a value *max*, compute:
 
+    sqrt(sum((x * scale) ** 2 for x in vec)) / scale
+
+           where scale is the first power of two
+           greater than max.
+
+or compute:
+
     max * sqrt(sum((x / max) ** 2 for x in vec))
 
 The value of the *max* variable must be non-negative and
@@ -2435,28 +2442,6 @@ fractional digits to be dropped from *csum*.
 
 */
 
-/*
-    def scaled(x):
-        'View scaling calculation'
-        # Limits for ldexp(1, 1023) and at 1024 goes to inf
-        #            ldexp(1.0, -1022) <- normal and at -1023 goes subnormal
-        #            ldexp(1.0, -1074) <-- subnormal and at -1075 goes to zero
-        # Failed example:
-        #            x = 2.78134e-309 --> (0.9999991647435902, -1025)
-        #            1.0 / x --> inf
-        m, e = frexp(x)
-        # e = max(e, 1023)
-        scale = ldexp(1.0, -e)
-        return x*scale, scale.hex(), m, e
- */
-
-/*
-     A way forward:
-             Use scaling for a broad range, perhaps -1000 to 1000
-             and have a separate code path with division for the rest.
- */
-
-
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
@@ -2474,9 +2459,13 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         return max;
     }
     frexp(max, &max_e);
-    if (-1000 <= max_e && max_e <= 1000) {
+    if (-1020 <= max_e && max_e <= 1020) {
+        /* Stay away from extreme values.
+           ldexp(1.0, -1075) returns zero.
+           ldexp(1.0, -1023) is subnormal.
+           ldexp(1.0, 1024) gives Inf.
+        */
         scale = ldexp(1.0, -max_e);
-        // fprintf(stderr, "<<max: %g  max_e: %d   scale: %g>>\n", max, max_e, scale);
         assert(max * scale >= 0.5);
         assert(max * scale < 1.0);
         for (i=0 ; i < n ; i++) {
@@ -2492,21 +2481,19 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         }
         return sqrt(csum - 1.0 + frac) / scale;
     }
-    else
-    {
-        for (i=0 ; i < n ; i++) {
-            x = vec[i];
-            assert(Py_IS_FINITE(x) && fabs(x) <= max);
-            x /= max;
-            x = x*x;
-            assert(x <= 1.0);
-            assert(csum >= x);
-            oldcsum = csum;
-            csum += x;
-            frac += (oldcsum - csum) + x;
-        }
-        return max * sqrt(csum - 1.0 + frac);
+    /* Near extreme values, just divide by *max*. */
+    for (i=0 ; i < n ; i++) {
+        x = vec[i];
+        assert(Py_IS_FINITE(x) && fabs(x) <= max);
+        x /= max;
+        x = x*x;
+        assert(x <= 1.0);
+        assert(csum >= x);
+        oldcsum = csum;
+        csum += x;
+        frac += (oldcsum - csum) + x;
     }
+    return max * sqrt(csum - 1.0 + frac);
 }
 
 #define NUM_STACK_ELEMS 16
