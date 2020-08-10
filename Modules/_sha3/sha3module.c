@@ -122,6 +122,28 @@
 #define SHA3_squeeze Keccak_HashSqueeze
 #define SHA3_copystate(dest, src) memcpy(&(dest), &(src), sizeof(SHA3_state))
 
+typedef struct {
+    PyTypeObject *sha3_224_type;
+    PyTypeObject *sha3_256_type;
+    PyTypeObject *sha3_384_type;
+    PyTypeObject *sha3_512_type;
+    PyTypeObject *shake128_type;
+    PyTypeObject *shake256_type;
+#ifdef PY_WITH_KECCAK
+    PyTypeObject *keccak224_type;
+    PyTypeObject *keccak256_type;
+    PyTypeObject *keccak384_type;
+    PyTypeObject *keccak512_type;
+#endif
+} SHA3State;
+
+static inline SHA3State*
+sha3_get_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (SHA3State *)state;
+}
 
 /*[clinic input]
 module _sha3
@@ -141,19 +163,6 @@ typedef struct {
     SHA3_state hash_state;
     PyThread_type_lock lock;
 } SHA3object;
-
-static PyTypeObject SHA3_224type;
-static PyTypeObject SHA3_256type;
-static PyTypeObject SHA3_384type;
-static PyTypeObject SHA3_512type;
-#ifdef PY_WITH_KECCAK
-static PyTypeObject Keccak_224type;
-static PyTypeObject Keccak_256type;
-static PyTypeObject Keccak_384type;
-static PyTypeObject Keccak_512type;
-#endif
-static PyTypeObject SHAKE128type;
-static PyTypeObject SHAKE256type;
 
 #include "clinic/sha3module.c.h"
 
@@ -184,42 +193,43 @@ static PyObject *
 py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
 /*[clinic end generated code: output=90409addc5d5e8b0 input=bcfcdf2e4368347a]*/
 {
-    SHA3object *self = NULL;
-    Py_buffer buf = {NULL, NULL};
-    HashReturn res;
-
-    self = newSHA3object(type);
+    SHA3object *self = newSHA3object(type);
     if (self == NULL) {
         goto error;
     }
 
-    if (type == &SHA3_224type) {
+    SHA3State *state = PyType_GetModuleState(type);
+    assert(state != NULL);
+
+    HashReturn res;
+    if (type == state->sha3_224_type) {
         res = Keccak_HashInitialize_SHA3_224(&self->hash_state);
-    } else if (type == &SHA3_256type) {
+    } else if (type == state->sha3_256_type) {
         res = Keccak_HashInitialize_SHA3_256(&self->hash_state);
-    } else if (type == &SHA3_384type) {
+    } else if (type == state->sha3_384_type) {
         res = Keccak_HashInitialize_SHA3_384(&self->hash_state);
-    } else if (type == &SHA3_512type) {
+    } else if (type == state->sha3_512_type) {
         res = Keccak_HashInitialize_SHA3_512(&self->hash_state);
 #ifdef PY_WITH_KECCAK
-    } else if (type == &Keccak_224type) {
+    } else if (type == state->keccak224_type) {
         res = Keccak_HashInitialize(&self->hash_state, 1152, 448, 224, 0x01);
-    } else if (type == &Keccak_256type) {
+    } else if (type == state->keccak256_type) {
         res = Keccak_HashInitialize(&self->hash_state, 1088, 512, 256, 0x01);
-    } else if (type == &Keccak_384type) {
+    } else if (type == state->keccak384_type) {
         res = Keccak_HashInitialize(&self->hash_state, 832, 768, 384, 0x01);
-    } else if (type == &Keccak_512type) {
+    } else if (type == state->keccak512_type) {
         res = Keccak_HashInitialize(&self->hash_state, 576, 1024, 512, 0x01);
 #endif
-    } else if (type == &SHAKE128type) {
+    } else if (type == state->shake128_type) {
         res = Keccak_HashInitialize_SHAKE128(&self->hash_state);
-    } else if (type == &SHAKE256type) {
+    } else if (type == state->shake256_type) {
         res = Keccak_HashInitialize_SHAKE256(&self->hash_state);
     } else {
         PyErr_BadInternalCall();
         goto error;
     }
 
+    Py_buffer buf = {NULL, NULL};
     if (data) {
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
@@ -416,27 +426,33 @@ static PyObject *
 SHA3_get_name(SHA3object *self, void *closure)
 {
     PyTypeObject *type = Py_TYPE(self);
-    if (type == &SHA3_224type) {
+
+    SHA3State *state = PyType_GetModuleState(type);
+    assert(state != NULL);
+
+    //Should I use Py_IS_TYPE instead of == here?
+
+    if (type == state->sha3_224_type) {
         return PyUnicode_FromString("sha3_224");
-    } else if (type == &SHA3_256type) {
+    } else if (type == state->sha3_256_type) {
         return PyUnicode_FromString("sha3_256");
-    } else if (type == &SHA3_384type) {
+    } else if (type == state->sha3_384_type) {
         return PyUnicode_FromString("sha3_384");
-    } else if (type == &SHA3_512type) {
+    } else if (type == state->sha3_512_type) {
         return PyUnicode_FromString("sha3_512");
 #ifdef PY_WITH_KECCAK
-    } else if (type == &Keccak_224type) {
+    } else if (type == state->keccak224_type) {
         return PyUnicode_FromString("keccak_224");
-    } else if (type == &Keccak_256type) {
+    } else if (type == state->keccak256_type) {
         return PyUnicode_FromString("keccak_256");
-    } else if (type == &Keccak_384type) {
+    } else if (type == state->keccak384_type) {
         return PyUnicode_FromString("keccak_384");
-    } else if (type == &Keccak_512type) {
+    } else if (type == state->keccak512_type) {
         return PyUnicode_FromString("keccak_512");
 #endif
-    } else if (type == &SHAKE128type) {
+    } else if (type == state->shake128_type) {
         return PyUnicode_FromString("shake_128");
-    } else if (type == &SHAKE256type) {
+    } else if (type == state->shake256_type) {
         return PyUnicode_FromString("shake_256");
     } else {
         PyErr_BadInternalCall();
@@ -476,7 +492,6 @@ SHA3_get_suffix(SHA3object *self, void *closure)
     return PyBytes_FromStringAndSize((const char *)suffix, 1);
 }
 
-
 static PyGetSetDef SHA3_getseters[] = {
     {"block_size", (getter)SHA3_get_block_size, NULL, NULL, NULL},
     {"name", (getter)SHA3_get_name, NULL, NULL, NULL},
@@ -487,48 +502,22 @@ static PyGetSetDef SHA3_getseters[] = {
     {NULL}  /* Sentinel */
 };
 
+#define SHA3_TYPE_SLOTS(type_slots_obj, type_doc, type_methods) \
+    static PyType_Slot type_slots_obj[] = { \
+        {Py_tp_dealloc, SHA3_dealloc}, \
+        {Py_tp_doc, (char*)type_doc}, \
+        {Py_tp_methods, type_methods}, \
+        {Py_tp_getset, SHA3_getseters}, \
+        {Py_tp_new, py_sha3_new}, \
+        {0,0} \
+    }
 
-#define SHA3_TYPE(type_obj, type_name, type_doc, type_methods) \
-    static PyTypeObject type_obj = { \
-        PyVarObject_HEAD_INIT(NULL, 0) \
-        type_name,          /* tp_name */ \
-        sizeof(SHA3object), /* tp_basicsize */ \
-        0,                  /* tp_itemsize */ \
-        /*  methods  */ \
-        (destructor)SHA3_dealloc, /* tp_dealloc */ \
-        0,                  /* tp_vectorcall_offset */ \
-        0,                  /* tp_getattr */ \
-        0,                  /* tp_setattr */ \
-        0,                  /* tp_as_async */ \
-        0,                  /* tp_repr */ \
-        0,                  /* tp_as_number */ \
-        0,                  /* tp_as_sequence */ \
-        0,                  /* tp_as_mapping */ \
-        0,                  /* tp_hash */ \
-        0,                  /* tp_call */ \
-        0,                  /* tp_str */ \
-        0,                  /* tp_getattro */ \
-        0,                  /* tp_setattro */ \
-        0,                  /* tp_as_buffer */ \
-        Py_TPFLAGS_DEFAULT, /* tp_flags */ \
-        type_doc,           /* tp_doc */ \
-        0,                  /* tp_traverse */ \
-        0,                  /* tp_clear */ \
-        0,                  /* tp_richcompare */ \
-        0,                  /* tp_weaklistoffset */ \
-        0,                  /* tp_iter */ \
-        0,                  /* tp_iternext */ \
-        type_methods,       /* tp_methods */ \
-        NULL,               /* tp_members */ \
-        SHA3_getseters,     /* tp_getset */ \
-        0,                  /* tp_base */ \
-        0,                  /* tp_dict */ \
-        0,                  /* tp_descr_get */ \
-        0,                  /* tp_descr_set */ \
-        0,                  /* tp_dictoffset */ \
-        0,                  /* tp_init */ \
-        0,                  /* tp_alloc */ \
-        py_sha3_new,        /* tp_new */ \
+#define SHA3_TYPE_SPEC(type_spec_obj, type_name, type_slots) \
+    static PyType_Spec type_spec_obj = { \
+        .name = type_name, \
+        .basicsize = sizeof(SHA3object), \
+        .flags = Py_TPFLAGS_DEFAULT, \
+        .slots = type_slots \
     }
 
 PyDoc_STRVAR(sha3_224__doc__,
@@ -551,11 +540,6 @@ PyDoc_STRVAR(sha3_512__doc__,
 \n\
 Return a new SHA3 hash object with a hashbit length of 64 bytes.");
 
-SHA3_TYPE(SHA3_224type, "_sha3.sha3_224", sha3_224__doc__, SHA3_methods);
-SHA3_TYPE(SHA3_256type, "_sha3.sha3_256", sha3_256__doc__, SHA3_methods);
-SHA3_TYPE(SHA3_384type, "_sha3.sha3_384", sha3_384__doc__, SHA3_methods);
-SHA3_TYPE(SHA3_512type, "_sha3.sha3_512", sha3_512__doc__, SHA3_methods);
-
 #ifdef PY_WITH_KECCAK
 PyDoc_STRVAR(keccak_224__doc__,
 "keccak_224([data], *, usedforsecurity=True) -> Keccak object\n\
@@ -577,10 +561,32 @@ PyDoc_STRVAR(keccak_512__doc__,
 \n\
 Return a new Keccak hash object with a hashbit length of 64 bytes.");
 
-SHA3_TYPE(Keccak_224type, "_sha3.keccak_224", keccak_224__doc__, SHA3_methods);
-SHA3_TYPE(Keccak_256type, "_sha3.keccak_256", keccak_256__doc__, SHA3_methods);
-SHA3_TYPE(Keccak_384type, "_sha3.keccak_384", keccak_384__doc__, SHA3_methods);
-SHA3_TYPE(Keccak_512type, "_sha3.keccak_512", keccak_512__doc__, SHA3_methods);
+#endif
+
+SHA3_TYPE_SLOTS(SHA3_224slots, sha3_224__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(SHA3_224typespec, "_sha3.sha3_224", SHA3_224slots);
+
+SHA3_TYPE_SLOTS(SHA3_256slots, sha3_256__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(SHA3_256typespec, "_sha3.sha3_256", SHA3_256slots);
+
+SHA3_TYPE_SLOTS(SHA3_384slots, sha3_384__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(SHA3_384typespec, "_sha3.sha3_384", SHA3_384slots);
+
+SHA3_TYPE_SLOTS(SHA3_512slots, sha3_512__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(SHA3_512typespec, "_sha3.sha3_512", SHA3_512slots);
+
+#ifdef PY_WITH_KECCAK
+SHA3_TYPE_SLOTS(Keccak_224slots, keccak_224__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(Keccak_224typespec, "_sha3.keccak_224", Keccak_224slots);
+
+SHA3_TYPE_SLOTS(Keccak_256slots, keccak_256__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(Keccak_256typespec, "_sha3.keccak_256", Keccak_256slots);
+
+SHA3_TYPE_SLOTS(Keccak_384slots, keccak_384__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(Keccak_384typespec, "_sha3.keccak_384", Keccak_384slots);
+
+SHA3_TYPE_SLOTS(Keccak_512slots, keccak_512__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(Keccak_512typespec, "_sha3.keccak_512", Keccak_512slots);
 #endif
 
 
@@ -684,58 +690,40 @@ PyDoc_STRVAR(shake_256__doc__,
 \n\
 Return a new SHAKE hash object.");
 
-SHA3_TYPE(SHAKE128type, "_sha3.shake_128", shake_128__doc__, SHAKE_methods);
-SHA3_TYPE(SHAKE256type, "_sha3.shake_256", shake_256__doc__, SHAKE_methods);
+SHA3_TYPE_SLOTS(SHAKE128slots, shake_128__doc__, SHAKE_methods);
+SHA3_TYPE_SPEC(SHAKE128typespec, "_sha3.shake_128", SHAKE128slots);
+
+SHA3_TYPE_SLOTS(SHAKE256slots, shake_256__doc__, SHAKE_methods);
+SHA3_TYPE_SPEC(SHAKE256typespec, "_sha3.shake_256", SHAKE256slots);
 
 
-/* Initialize this module. */
-static struct PyModuleDef _SHA3module = {
-        PyModuleDef_HEAD_INIT,
-        "_sha3",
-        NULL,
-        -1,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL
-};
+static int sha3_exec(PyObject *m) {
+    SHA3State *st = sha3_get_state(m);
 
-
-PyMODINIT_FUNC
-PyInit__sha3(void)
-{
-    PyObject *m = NULL;
-
-    if ((m = PyModule_Create(&_SHA3module)) == NULL) {
-        return NULL;
-    }
-
-#define init_sha3type(name, type)     \
-    do {                              \
-        Py_SET_TYPE(type, &PyType_Type); \
-        if (PyType_Ready(type) < 0) { \
-            goto error;               \
-        }                             \
-        Py_INCREF((PyObject *)type);  \
-        if (PyModule_AddObject(m, name, (PyObject *)type) < 0) { \
-            goto error;               \
-        }                             \
+#define init_sha3type(name, type, typespec)                     \
+    do {                                                        \
+        st->type = (PyTypeObject *)PyType_FromModuleAndSpec(    \
+            m, &typespec, NULL);                                \
+        if (st->type == NULL) {                                 \
+            return -1;                                          \
+        }                                                       \
+        if (PyModule_AddType(m, st->type) < 0) {                \
+            return -1;                                          \
+        }                                                       \
     } while(0)
 
-    init_sha3type("sha3_224", &SHA3_224type);
-    init_sha3type("sha3_256", &SHA3_256type);
-    init_sha3type("sha3_384", &SHA3_384type);
-    init_sha3type("sha3_512", &SHA3_512type);
+    init_sha3type("sha3_224", sha3_224_type, SHA3_224typespec);
+    init_sha3type("sha3_256", sha3_256_type, SHA3_256typespec);
+    init_sha3type("sha3_384", sha3_384_type, SHA3_384typespec);
+    init_sha3type("sha3_512", sha3_512_type, SHA3_512typespec);
 #ifdef PY_WITH_KECCAK
-    init_sha3type("keccak_224", &Keccak_224type);
-    init_sha3type("keccak_256", &Keccak_256type);
-    init_sha3type("keccak_384", &Keccak_384type);
-    init_sha3type("keccak_512", &Keccak_512type);
+    init_sha3type("keccak_224", keccak224_type, Keccak_224typespec);
+    init_sha3type("keccak_256", keccak256_type, Keccak_256typespec);
+    init_sha3type("keccak_384", keccak384_type, Keccak_384typespec);
+    init_sha3type("keccak_512", keccak512_type, Keccak_512typespec);
 #endif
-    init_sha3type("shake_128", &SHAKE128type);
-    init_sha3type("shake_256", &SHAKE256type);
-
+    init_sha3type("shake_128", shake128_type, SHAKE128typespec);
+    init_sha3type("shake_256", shake256_type, SHAKE256typespec);
 #undef init_sha3type
 
     if (PyModule_AddIntConstant(m, "keccakopt", KeccakOpt) < 0) {
@@ -746,8 +734,26 @@ PyInit__sha3(void)
         goto error;
     }
 
-    return m;
+    return 0;
   error:
-    Py_DECREF(m);
-    return NULL;
+    return -1;
+}
+
+static PyModuleDef_Slot _sha3_slots[] = {
+    {Py_mod_exec, sha3_exec},
+    {0, NULL}
+};
+
+/* Initialize this module. */
+static struct PyModuleDef _sha3module = {
+        PyModuleDef_HEAD_INIT,
+        .m_name = "_sha3",
+        .m_size = sizeof(SHA3State),
+        .m_slots = _sha3_slots
+};
+
+
+PyMODINIT_FUNC
+PyInit__sha3(void) {
+    return PyModuleDef_Init(&_sha3module);
 }
