@@ -1913,6 +1913,9 @@ static PyMethodDef winapi_functions[] = {
 #define WINAPI_CONSTANT(fmt, con) \
     do { \
         PyObject *value = Py_BuildValue(fmt, con); \
+        if (value == NULL) { \
+            return -1; \
+        } \
         if (PyDict_SetItemString(d, #con, value) < 0) { \
             Py_DECREF(value); \
             return -1; \
