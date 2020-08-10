@@ -422,20 +422,23 @@ sha512_final(unsigned char digest[SHA_DIGESTSIZE], SHAobject *sha_info)
  * ------------------------------------------------------------------------
  */
 
-static PyTypeObject SHA384type;
-static PyTypeObject SHA512type;
+typedef struct {
+    PyTypeObject* sha384_type;
+    PyTypeObject* sha512_type;
+} SHA512State;
 
-
-static SHAobject *
-newSHA384object(void)
-{
-    return (SHAobject *)PyObject_New(SHAobject, &SHA384type);
+static inline SHA512State* sha512_get_state(PyObject *module) {
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (SHA512State *)state;
 }
 
-static SHAobject *
-newSHA512object(void)
-{
-    return (SHAobject *)PyObject_New(SHAobject, &SHA512type);
+static SHAobject *newSHA384object(SHA512State *st) {
+    return (SHAobject *)PyObject_New(SHAobject, st->sha384_type);
+}
+
+static SHAobject *newSHA512object(SHA512State *st) {
+    return (SHAobject *)PyObject_New(SHAobject, st->sha512_type);
 }
 
 /* Internal methods for a hash object */
@@ -460,12 +463,13 @@ SHA512Type_copy_impl(SHAobject *self)
 /*[clinic end generated code: output=adea896ed3164821 input=9f5f31e6c457776a]*/
 {
     SHAobject *newobj;
+    SHA512State *st = PyType_GetModuleState(Py_TYPE(self));
 
-    if (Py_IS_TYPE((PyObject*)self, &SHA512type)) {
-        if ( (newobj = newSHA512object())==NULL)
+    if (Py_IS_TYPE((PyObject*)self, st->sha512_type)) {
+        if ( (newobj = newSHA512object(st))==NULL)
             return NULL;
     } else {
-        if ( (newobj = newSHA384object())==NULL)
+        if ( (newobj = newSHA384object(st))==NULL)
             return NULL;
     }
 
@@ -574,74 +578,35 @@ static PyMemberDef SHA_members[] = {
     {NULL}  /* Sentinel */
 };
 
-static PyTypeObject SHA384type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_sha512.sha384",   /*tp_name*/
-    sizeof(SHAobject),  /*tp_basicsize*/
-    0,                  /*tp_itemsize*/
-    /* methods */
-    SHA512_dealloc,     /*tp_dealloc*/
-    0,                  /*tp_vectorcall_offset*/
-    0,                  /*tp_getattr*/
-    0,                  /*tp_setattr*/
-    0,                  /*tp_as_async*/
-    0,                  /*tp_repr*/
-    0,                  /*tp_as_number*/
-    0,                  /*tp_as_sequence*/
-    0,                  /*tp_as_mapping*/
-    0,                  /*tp_hash*/
-    0,                  /*tp_call*/
-    0,                  /*tp_str*/
-    0,                  /*tp_getattro*/
-    0,                  /*tp_setattro*/
-    0,                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT, /*tp_flags*/
-    0,                  /*tp_doc*/
-    0,                  /*tp_traverse*/
-    0,                  /*tp_clear*/
-    0,                  /*tp_richcompare*/
-    0,                  /*tp_weaklistoffset*/
-    0,                  /*tp_iter*/
-    0,                  /*tp_iternext*/
-    SHA_methods,        /* tp_methods */
-    SHA_members,        /* tp_members */
-    SHA_getseters,      /* tp_getset */
+static PyType_Slot sha512_sha384_type_slots[] = {
+    {Py_tp_dealloc, SHA512_dealloc},
+    {Py_tp_methods, SHA_methods},
+    {Py_tp_members, SHA_members},
+    {Py_tp_getset, SHA_getseters},
+    {0,0}
 };
 
-static PyTypeObject SHA512type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_sha512.sha512",   /*tp_name*/
-    sizeof(SHAobject),  /*tp_basicsize*/
-    0,                  /*tp_itemsize*/
-    /* methods */
-    SHA512_dealloc,     /*tp_dealloc*/
-    0,                  /*tp_vectorcall_offset*/
-    0,                  /*tp_getattr*/
-    0,                  /*tp_setattr*/
-    0,                  /*tp_as_async*/
-    0,                  /*tp_repr*/
-    0,                  /*tp_as_number*/
-    0,                  /*tp_as_sequence*/
-    0,                  /*tp_as_mapping*/
-    0,                  /*tp_hash*/
-    0,                  /*tp_call*/
-    0,                  /*tp_str*/
-    0,                  /*tp_getattro*/
-    0,                  /*tp_setattro*/
-    0,                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT, /*tp_flags*/
-    0,                  /*tp_doc*/
-    0,                  /*tp_traverse*/
-    0,                  /*tp_clear*/
-    0,                  /*tp_richcompare*/
-    0,                  /*tp_weaklistoffset*/
-    0,                  /*tp_iter*/
-    0,                  /*tp_iternext*/
-    SHA_methods,        /* tp_methods */
-    SHA_members,        /* tp_members */
-    SHA_getseters,      /* tp_getset */
+static PyType_Spec sha512_sha384_type_spec = {
+    .name = "_sha512.sha384",
+    .basicsize =  sizeof(SHAobject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = sha512_sha384_type_slots
 };
 
+static PyType_Slot sha512_sha512_type_slots[] = {
+    {Py_tp_dealloc, SHA512_dealloc},
+    {Py_tp_methods, SHA_methods},
+    {Py_tp_members, SHA_members},
+    {Py_tp_getset, SHA_getseters},
+    {0,0}
+};
+
+static PyType_Spec sha512_sha512_type_spec = {
+    .name = "_sha512.sha512",
+    .basicsize =  sizeof(SHAobject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = sha512_sha512_type_slots
+};
 
 /* The single module-level function: new() */
 
@@ -662,10 +627,12 @@ _sha512_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
     SHAobject *new;
     Py_buffer buf;
 
+    SHA512State *st = sha512_get_state(module);
+
     if (string)
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
 
-    if ((new = newSHA512object()) == NULL) {
+    if ((new = newSHA512object(st)) == NULL) {
         if (string)
             PyBuffer_Release(&buf);
         return NULL;
@@ -704,10 +671,12 @@ _sha512_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity)
     SHAobject *new;
     Py_buffer buf;
 
+    SHA512State *st = sha512_get_state(module);
+
     if (string)
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
 
-    if ((new = newSHA384object()) == NULL) {
+    if ((new = newSHA384object(st)) == NULL) {
         if (string)
             PyBuffer_Release(&buf);
         return NULL;
@@ -740,41 +709,59 @@ static struct PyMethodDef SHA_functions[] = {
 
 
 /* Initialize this module. */
+static int sha512_exec(PyObject *m) {
+    SHA512State* st = sha512_get_state(m);
+
+    st->sha384_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        m, &sha512_sha384_type_spec, NULL);
+
+    st->sha512_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        m, &sha512_sha512_type_spec, NULL);
+
+    if (st->sha384_type == NULL || st->sha512_type == NULL) {
+        return -1;
+    }
+
+    //cannot use PyModule_AddType becuase "SHA1Type"
+    //isn't the same as _PyType_Name(st->sha1_type)
+    if (PyType_Ready(st->sha384_type) < 0) {
+        return -1;
+    }
+
+    if (PyType_Ready(st->sha512_type) < 0) {
+        return -1;
+    }
+
+    Py_INCREF(st->sha384_type);
+    if (PyModule_AddObject(m, "SHA384Type", (PyObject *)st->sha384_type) < 0) {
+        Py_DECREF(st->sha384_type);
+        return -1;
+    }
+
+    Py_INCREF(st->sha512_type);
+    if (PyModule_AddObject(m, "SHA384Type", (PyObject *)st->sha512_type) < 0) {
+        Py_DECREF(st->sha512_type);
+        return -1;
+    }
+
+    return 0;
+}
+
+static PyModuleDef_Slot _sha512_slots[] = {
+    {Py_mod_exec, sha512_exec},
+    {0, NULL}
+};
 
 static struct PyModuleDef _sha512module = {
         PyModuleDef_HEAD_INIT,
-        "_sha512",
-        NULL,
-        -1,
-        SHA_functions,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        .m_name = "_sha512",
+        .m_size = sizeof(SHA512State),
+        .m_methods = SHA_functions,
+        .m_slots = _sha512_slots
 };
 
 PyMODINIT_FUNC
 PyInit__sha512(void)
 {
-    PyObject *m;
-
-    Py_SET_TYPE(&SHA384type, &PyType_Type);
-    if (PyType_Ready(&SHA384type) < 0) {
-        return NULL;
-    }
-    Py_SET_TYPE(&SHA512type, &PyType_Type);
-    if (PyType_Ready(&SHA512type) < 0) {
-        return NULL;
-    }
-
-    m = PyModule_Create(&_sha512module);
-    if (m == NULL) {
-        return NULL;
-    }
-
-    Py_INCREF((PyObject *)&SHA384type);
-    PyModule_AddObject(m, "SHA384Type", (PyObject *)&SHA384type);
-    Py_INCREF((PyObject *)&SHA512type);
-    PyModule_AddObject(m, "SHA512Type", (PyObject *)&SHA512type);
-    return m;
+    return PyModuleDef_Init(&_sha512module);
 }
