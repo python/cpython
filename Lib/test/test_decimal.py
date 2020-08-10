@@ -43,6 +43,13 @@ import random
 import inspect
 import threading
 
+from _testcapi import decimal_is_special
+from _testcapi import decimal_is_nan
+from _testcapi import decimal_is_infinite
+from _testcapi import decimal_get_digits
+from _testcapi import decimal_as_triple
+from _testcapi import decimal_from_triple
+
 
 C = import_fresh_module('decimal', fresh=['_decimal'])
 P = import_fresh_module('decimal', blocked=['_decimal'])
@@ -4750,6 +4757,175 @@ class CFunctionality(unittest.TestCase):
 
         self.assertEqual(C.DecTraps,
                          C.DecErrors|C.DecOverflow|C.DecUnderflow)
+
+    def test_decimal_api_predicates(self):
+        # Capsule API
+
+        d = C.Decimal("0")
+        self.assertFalse(decimal_is_special(d))
+        self.assertFalse(decimal_is_nan(d))
+        self.assertFalse(decimal_is_infinite(d))
+
+        d = C.Decimal("NaN")
+        self.assertTrue(decimal_is_special(d))
+        self.assertTrue(decimal_is_nan(d))
+        self.assertFalse(decimal_is_infinite(d))
+
+        d = C.Decimal("sNaN")
+        self.assertTrue(decimal_is_special(d))
+        self.assertTrue(decimal_is_nan(d))
+        self.assertFalse(decimal_is_infinite(d))
+
+        d = C.Decimal("inf")
+        self.assertTrue(decimal_is_special(d))
+        self.assertFalse(decimal_is_nan(d))
+        self.assertTrue(decimal_is_infinite(d))
+
+    def test_decimal_api_get_digits(self):
+        # Capsule API
+
+        d = C.Decimal("0")
+        self.assertEqual(decimal_get_digits(d), 1)
+
+        d = C.Decimal("1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
+        d = C.Decimal("inf")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("NaN")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("sNaN")
+        self.assertEqual(decimal_get_digits(d), 0)
+
+        d = C.Decimal("NaN1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
+        d = C.Decimal("sNaN1234567890")
+        self.assertEqual(decimal_get_digits(d), 10)
+
+    def test_decimal_api_triple(self):
+        # Capsule API
+
+        def as_triple(d):
+            """Convert a decimal to a decimal triple with a split uint128_t
+               coefficient:
+
+                   (sign, hi, lo, exp)
+
+               It is called 'triple' because (hi, lo) are regarded as a single
+               uint128_t that is split because not all compilers support uint128_t.
+            """
+            sign, digits, exp = d.as_tuple()
+
+            s = "".join(str(d) for d in digits)
+            coeff = int(s) if s else 0
+
+            if coeff < 0 or coeff >= 2**128:
+                raise ValueError("value out of bounds for a uint128 triple");
+
+            hi, lo = divmod(coeff, 2**64)
+            return (sign, hi, lo, exp)
+
+        def from_triple(triple):
+            """Convert a decimal triple with a split uint128_t coefficient to a string.
+            """
+            sign, hi, lo, exp = triple
+            coeff = hi * 2**64 + lo
+
+            if coeff < 0 or coeff >= 2**128:
+                raise ValueError("value out of bounds for a uint128 triple");
+
+            digits = tuple(int(c) for c in str(coeff))
+
+            return P.Decimal((sign, digits, exp))
+
+        signs = ["", "-"]
+
+        coefficients = [
+            "000000000000000000000000000000000000000",
+
+            "299999999999999999999999999999999999999",
+            "299999999999999999990000000000000000000",
+            "200000000000000000009999999999999999999",
+            "000000000000000000009999999999999999999",
+
+            "299999999999999999999999999999000000000",
+            "299999999999999999999000000000999999999",
+            "299999999999000000000999999999999999999",
+            "299000000000999999999999999999999999999",
+            "000999999999999999999999999999999999999",
+
+            "300000000000000000000000000000000000000",
+            "310000000000000000001000000000000000000",
+            "310000000000000000000000000000000000000",
+            "300000000000000000001000000000000000000",
+
+            "340100000000100000000100000000100000000",
+            "340100000000100000000100000000000000000",
+            "340100000000100000000000000000100000000",
+            "340100000000000000000100000000100000000",
+            "340000000000100000000100000000100000000",
+
+            "340282366920938463463374607431768211455",
+        ]
+
+        exponents = [
+            "E+0", "E+1", "E-1",
+            "E+%s" % str(C.MAX_EMAX-38),
+            "E-%s" % str(C.MIN_ETINY+38),
+        ]
+
+        for sign in signs:
+            for coeff in coefficients:
+                for exp in exponents:
+                    s = sign + coeff + exp
+
+                    ctriple = decimal_as_triple(C.Decimal(s))
+                    ptriple = as_triple(P.Decimal(s))
+                    self.assertEqual(ctriple, ptriple)
+
+                    c = decimal_from_triple(ctriple)
+                    p = decimal_from_triple(ptriple)
+                    self.assertEqual(str(c), str(p))
+
+        for s in ["NaN", "-NaN", "sNaN", "-sNaN", "NaN123", "sNaN123", "inf", "-inf"]:
+            ctriple = decimal_as_triple(C.Decimal(s))
+            ptriple = as_triple(P.Decimal(s))
+            self.assertEqual(ctriple, ptriple)
+
+            c = decimal_from_triple(ctriple)
+            p = decimal_from_triple(ptriple)
+            self.assertEqual(str(c), str(p))
+
+    def test_decimal_api_errors(self):
+        # Capsule API
+
+        self.assertRaises(TypeError, decimal_as_triple, "X")
+        self.assertRaises(ValueError, decimal_as_triple, C.Decimal(2**128))
+        self.assertRaises(ValueError, decimal_as_triple, C.Decimal(-2**128))
+
+        self.assertRaises(TypeError, decimal_from_triple, "X")
+        self.assertRaises(ValueError, decimal_from_triple, ())
+        self.assertRaises(ValueError, decimal_from_triple, (1, 2, 3, 4, 5))
+        self.assertRaises(ValueError, decimal_from_triple, (2**8, 0, 0, 0))
+        self.assertRaises(OverflowError, decimal_from_triple, (0, 2**64, 0, 0))
+        self.assertRaises(OverflowError, decimal_from_triple, (0, 0, 2**64, 0))
+        self.assertRaises(OverflowError, decimal_from_triple, (0, 0, 0, 2**63))
+        self.assertRaises(OverflowError, decimal_from_triple, (0, 0, 0, -2**63-1))
+        self.assertRaises(ValueError, decimal_from_triple, (0, 0, 0, "X"))
+        self.assertRaises(TypeError, decimal_from_triple, (0, 0, 0, ()))
+
+        with C.localcontext(C.Context()):
+            self.assertRaises(C.InvalidOperation, decimal_from_triple, (2, 0, 0, 0))
+            self.assertRaises(C.InvalidOperation, decimal_from_triple, (0, 0, 0, 2**63-1))
+            self.assertRaises(C.InvalidOperation, decimal_from_triple, (0, 0, 0, -2**63))
+
+        self.assertRaises(TypeError, decimal_is_special, "X")
+        self.assertRaises(TypeError, decimal_is_nan, "X")
+        self.assertRaises(TypeError, decimal_is_infinite, "X")
+        self.assertRaises(TypeError, decimal_get_digits, "X")
 
 class CWhitebox(unittest.TestCase):
     """Whitebox testing for _decimal"""
