@@ -12,62 +12,53 @@
 
 #include "impl/blake2.h"
 
-extern PyTypeObject PyBlake2_BLAKE2bType;
-extern PyTypeObject PyBlake2_BLAKE2sType;
-
+extern PyType_Spec blake2b_type_spec;
+extern PyType_Spec blake2s_type_spec;
 
 PyDoc_STRVAR(blake2mod__doc__,
 "_blake2b provides BLAKE2b for hashlib\n"
 );
 
+typedef struct {
+    PyTypeObject* blake2b_type;
+    PyTypeObject* blake2s_type;
+} Blake2State;
+
+static inline Blake2State* blake2_get_state(PyObject *module) {
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (Blake2State *)state;
+}
 
 static struct PyMethodDef blake2mod_functions[] = {
     {NULL, NULL}
 };
 
-static struct PyModuleDef blake2_module = {
-    PyModuleDef_HEAD_INIT,
-    "_blake2",
-    blake2mod__doc__,
-    -1,
-    blake2mod_functions,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
 #define ADD_INT(d, name, value) do { \
     PyObject *x = PyLong_FromLong(value); \
     if (!x) { \
-        Py_DECREF(m); \
-        return NULL; \
+        return -1; \
     } \
     if (PyDict_SetItemString(d, name, x) < 0) { \
-        Py_DECREF(m); \
-        return NULL; \
+        return -1; \
     } \
     Py_DECREF(x); \
 } while(0)
 
 
-PyMODINIT_FUNC
-PyInit__blake2(void)
+static int blake2_exec(PyObject *m)
 {
-    PyObject *m;
-    PyObject *d;
+    Blake2State* st = blake2_get_state(m);
 
-    m = PyModule_Create(&blake2_module);
-    if (m == NULL)
-        return NULL;
+    st->blake2b_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        m, &blake2b_type_spec, NULL);
 
     /* BLAKE2b */
-    Py_SET_TYPE(&PyBlake2_BLAKE2bType, &PyType_Type);
-    if (PyModule_AddType(m, &PyBlake2_BLAKE2bType) < 0) {
-        return NULL;
+    if (PyModule_AddType(m, st->blake2b_type) < 0) {
+        return -1;
     }
 
-    d = PyBlake2_BLAKE2bType.tp_dict;
+    PyObject *d = st->blake2b_type->tp_dict;
     ADD_INT(d, "SALT_SIZE", BLAKE2B_SALTBYTES);
     ADD_INT(d, "PERSON_SIZE", BLAKE2B_PERSONALBYTES);
     ADD_INT(d, "MAX_KEY_SIZE", BLAKE2B_KEYBYTES);
@@ -79,12 +70,14 @@ PyInit__blake2(void)
     PyModule_AddIntConstant(m, "BLAKE2B_MAX_DIGEST_SIZE", BLAKE2B_OUTBYTES);
 
     /* BLAKE2s */
-    Py_SET_TYPE(&PyBlake2_BLAKE2sType, &PyType_Type);
-    if (PyModule_AddType(m, &PyBlake2_BLAKE2sType) < 0) {
-        return NULL;
+    st->blake2s_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        m, &blake2s_type_spec, NULL);
+
+    if (PyModule_AddType(m, st->blake2s_type) < 0) {
+        return -1;
     }
 
-    d = PyBlake2_BLAKE2sType.tp_dict;
+    d = st->blake2s_type->tp_dict;
     ADD_INT(d, "SALT_SIZE", BLAKE2S_SALTBYTES);
     ADD_INT(d, "PERSON_SIZE", BLAKE2S_PERSONALBYTES);
     ADD_INT(d, "MAX_KEY_SIZE", BLAKE2S_KEYBYTES);
@@ -95,5 +88,25 @@ PyInit__blake2(void)
     PyModule_AddIntConstant(m, "BLAKE2S_MAX_KEY_SIZE", BLAKE2S_KEYBYTES);
     PyModule_AddIntConstant(m, "BLAKE2S_MAX_DIGEST_SIZE", BLAKE2S_OUTBYTES);
 
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot _blake2_slots[] = {
+    {Py_mod_exec, blake2_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef blake2_module = {
+    PyModuleDef_HEAD_INIT,
+    "_blake2",
+    .m_doc = blake2mod__doc__,
+    .m_size = sizeof(Blake2State),
+    .m_methods = blake2mod_functions,
+    .m_slots = _blake2_slots
+};
+
+PyMODINIT_FUNC
+PyInit__blake2(void)
+{
+    return PyModuleDef_Init(&blake2_module);
 }
