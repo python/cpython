@@ -2458,12 +2458,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         return max;
     }
     frexp(max, &max_e);
-    if (-1020 <= max_e && max_e <= 1020) {
-        /* Stay away from extreme values.
-           ldexp(1.0, -1075) returns zero.
-           ldexp(1.0, -1023) is subnormal.
-           ldexp(1.0, 1024) gives Inf.
-        */
+    if (max_e >= -1023) {
         scale = ldexp(1.0, -max_e);
         assert(max * scale >= 0.5);
         assert(max * scale < 1.0);
@@ -2480,7 +2475,10 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         }
         return sqrt(csum - 1.0 + frac) / scale;
     }
-    /* Near extreme values, just divide by *max*. */
+    /* When max_e < -1023, a scale computed given by ldexp(1.0, -max_e)
+       would be subnormal and break range invariants for max*scale.
+       Instead, we just divide by *max*.
+    */
     for (i=0 ; i < n ; i++) {
         x = vec[i];
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
