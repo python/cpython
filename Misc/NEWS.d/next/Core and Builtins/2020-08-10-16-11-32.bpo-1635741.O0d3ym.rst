@@ -1,0 +1,3 @@
+Port :mod:`sha1` to multi-phase init
+Port :mod:`sha512` to multi-phase init
+Port :mod:`md5` to multi-phase init
