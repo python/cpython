@@ -168,10 +168,10 @@ multiprocessing_exec(PyObject *module)
         }
         if (PyDict_SetItemString(_PyMp_SemLockType.tp_dict, "SEM_VALUE_MAX",
                              py_sem_value_max) < 0) {
-            Py_DECREF(_PyMp_SemLockType.tp_dict);
             Py_DECREF(py_sem_value_max);
             return -1;
         }
+        Py_DECREF(py_sem_value_max);
     }
 
 #endif
