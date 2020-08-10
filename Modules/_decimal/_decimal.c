@@ -5561,7 +5561,7 @@ static PyTypeObject PyDecContext_Type =
 /*                                   C-API                                  */
 /****************************************************************************/
 
-static void **_decimal_api[CPYTHON_DECIMAL_MAX_API];
+static void *_decimal_api[CPYTHON_DECIMAL_MAX_API];
 
 /* Simple API */
 static int
