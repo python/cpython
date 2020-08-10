@@ -688,10 +688,14 @@ ast_clear(AST_object *self)
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
+    astmodulestate *state = get_global_ast_state();
+    if (state == NULL) {
+        return -1;
+    }
+
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields;
-    astmodulestate *state = get_global_ast_state();
     if (_PyObject_LookupAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
         goto cleanup;
     }
@@ -761,6 +765,10 @@ static PyObject *
 ast_type_reduce(PyObject *self, PyObject *unused)
 {
     astmodulestate *state = get_global_ast_state();
+    if (state == NULL) {
+        return NULL;
+    }
+
     PyObject *dict;
     if (_PyObject_LookupAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
@@ -969,9 +977,8 @@ static int add_ast_fields(astmodulestate *state)
 
 """, 0, reflow=False)
 
-        self.emit("static int init_types(void)",0)
+        self.emit("static int init_types(astmodulestate *state)",0)
         self.emit("{", 0)
-        self.emit("astmodulestate *state = get_global_ast_state();", 1)
         self.emit("if (state->initialized) return 1;", 1)
         self.emit("if (init_identifiers(state) < 0) return 0;", 1)
         self.emit("state->AST_type = PyType_FromSpec(&AST_type_spec);", 1)
@@ -1046,40 +1053,55 @@ static int add_ast_fields(astmodulestate *state)
 class ASTModuleVisitor(PickleVisitor):
 
     def visitModule(self, mod):
-        self.emit("PyMODINIT_FUNC", 0)
-        self.emit("PyInit__ast(void)", 0)
+        self.emit("static int", 0)
+        self.emit("astmodule_exec(PyObject *m)", 0)
         self.emit("{", 0)
-        self.emit("PyObject *m = PyModule_Create(&_astmodule);", 1)
-        self.emit("if (!m) {", 1)
-        self.emit("return NULL;", 2)
-        self.emit("}", 1)
         self.emit('astmodulestate *state = get_ast_state(m);', 1)
-        self.emit('', 1)
+        self.emit("", 0)
 
-        self.emit("if (!init_types()) {", 1)
-        self.emit("goto error;", 2)
+        self.emit("if (!init_types(state)) {", 1)
+        self.emit("return -1;", 2)
         self.emit("}", 1)
         self.emit('if (PyModule_AddObject(m, "AST", state->AST_type) < 0) {', 1)
-        self.emit('goto error;', 2)
+        self.emit('return -1;', 2)
         self.emit('}', 1)
         self.emit('Py_INCREF(state->AST_type);', 1)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0) {', 1)
-        self.emit("goto error;", 2)
+        self.emit("return -1;", 2)
         self.emit('}', 1)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0) {', 1)
-        self.emit("goto error;", 2)
+        self.emit("return -1;", 2)
         self.emit('}', 1)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {', 1)
-        self.emit("goto error;", 2)
+        self.emit("return -1;", 2)
         self.emit('}', 1)
         for dfn in mod.dfns:
             self.visit(dfn)
-        self.emit("return m;", 1)
-        self.emit("", 0)
-        self.emit("error:", 0)
-        self.emit("Py_DECREF(m);", 1)
-        self.emit("return NULL;", 1)
+        self.emit("return 0;", 1)
         self.emit("}", 0)
+        self.emit("", 0)
+        self.emit("""
+static PyModuleDef_Slot astmodule_slots[] = {
+    {Py_mod_exec, astmodule_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef _astmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_ast",
+    .m_size = sizeof(astmodulestate),
+    .m_slots = astmodule_slots,
+    .m_traverse = astmodule_traverse,
+    .m_clear = astmodule_clear,
+    .m_free = astmodule_free,
+};
+
+PyMODINIT_FUNC
+PyInit__ast(void)
+{
+    return PyModuleDef_Init(&_astmodule);
+}
+""".strip(), 0, reflow=False)
 
     def visitProduct(self, prod, name):
         self.addObj(name)
@@ -1095,7 +1117,7 @@ class ASTModuleVisitor(PickleVisitor):
     def addObj(self, name):
         self.emit("if (PyModule_AddObject(m, \"%s\", "
                   "state->%s_type) < 0) {" % (name, name), 1)
-        self.emit("goto error;", 2)
+        self.emit("return -1;", 2)
         self.emit('}', 1)
         self.emit("Py_INCREF(state->%s_type);" % name, 1)
 
@@ -1255,11 +1277,10 @@ class PartingShots(StaticVisitor):
     CODE = """
 PyObject* PyAST_mod2obj(mod_ty t)
 {
-    if (!init_types()) {
+    astmodulestate *state = get_global_ast_state();
+    if (state == NULL) {
         return NULL;
     }
-
-    astmodulestate *state = get_global_ast_state();
     return ast2obj_mod(state, t);
 }
 
@@ -1281,10 +1302,6 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 
     assert(0 <= mode && mode <= 2);
 
-    if (!init_types()) {
-        return NULL;
-    }
-
     isinstance = PyObject_IsInstance(ast, req_type[mode]);
     if (isinstance == -1)
         return NULL;
@@ -1303,11 +1320,10 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 
 int PyAST_Check(PyObject* obj)
 {
-    if (!init_types()) {
+    astmodulestate *state = get_global_ast_state();
+    if (state == NULL) {
         return -1;
     }
-
-    astmodulestate *state = get_global_ast_state();
     return PyObject_IsInstance(obj, state->AST_type);
 }
 """
@@ -1358,12 +1374,35 @@ def generate_module_def(f, mod):
         f.write('    PyObject *' + s + ';\n')
     f.write('} astmodulestate;\n\n')
     f.write("""
-static astmodulestate global_ast_state;
-
-static astmodulestate *
-get_ast_state(PyObject *Py_UNUSED(module))
+static astmodulestate*
+get_ast_state(PyObject *module)
 {
-    return &global_ast_state;
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (astmodulestate*)state;
+}
+
+static astmodulestate*
+get_global_ast_state(void)
+{
+    _Py_IDENTIFIER(_ast);
+    PyObject *name = _PyUnicode_FromId(&PyId__ast);  // borrowed reference
+    if (name == NULL) {
+        return NULL;
+    }
+    PyObject *module = PyImport_GetModule(name);
+    if (module == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        module = PyImport_Import(name);
+        if (module == NULL) {
+            return NULL;
+        }
+    }
+    astmodulestate *state = get_ast_state(module);
+    Py_DECREF(module);
+    return state;
 }
 
 static int astmodule_clear(PyObject *module)
@@ -1389,17 +1428,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
 static void astmodule_free(void* module) {
     astmodule_clear((PyObject*)module);
 }
-
-static struct PyModuleDef _astmodule = {
-    PyModuleDef_HEAD_INIT,
-    .m_name = "_ast",
-    .m_size = -1,
-    .m_traverse = astmodule_traverse,
-    .m_clear = astmodule_clear,
-    .m_free = astmodule_free,
-};
-
-#define get_global_ast_state() (&global_ast_state)
 
 """)
     f.write('static int init_identifiers(astmodulestate *state)\n')
