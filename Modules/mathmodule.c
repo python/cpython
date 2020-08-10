@@ -56,7 +56,6 @@ raised for division by zero and mod by zero.
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_dtoa.h"
 #include "_math.h"
-#include <stdio.h>
 
 #include "clinic/mathmodule.c.h"
 
