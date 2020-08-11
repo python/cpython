@@ -1,0 +1,187 @@
+.. bpo: 38156
+.. date: 2020-07-20-17-01-17
+.. nonce: ptcdRy
+.. release date: 2020-08-11
+.. section: Core and Builtins
+
+Handle interrupts that come after EOF correctly in ``PyOS_StdioReadline``.
+
+..
+
+.. bpo: 41497
+.. date: 2020-08-07-06-06-29
+.. nonce: aBtsWz
+.. section: Library
+
+Fix potential UnicodeDecodeError in dis module.
+
+..
+
+.. bpo: 41490
+.. date: 2020-08-05-23-16-39
+.. nonce: 6z47A_
+.. section: Library
+
+Update :mod:`ensurepip` to install pip 20.2.1 and setuptools 49.2.1.
+
+..
+
+.. bpo: 41467
+.. date: 2020-08-04-00-20-30
+.. nonce: Z8DgTL
+.. section: Library
+
+On Windows, fix asyncio ``recv_into()`` return value when the socket/pipe is
+closed (:exc:`BrokenPipeError`): return ``0`` rather than an empty byte
+string (``b''``).
+
+..
+
+.. bpo: 41425
+.. date: 2020-08-03-01-59-48
+.. nonce: KJo6zF
+.. section: Library
+
+Make tkinter doc example runnable.
+
+..
+
+.. bpo: 41384
+.. date: 2020-07-26-21-18-43
+.. nonce: MlzIgV
+.. section: Library
+
+Raise TclError instead of TypeError when an unknown option is passed to
+tkinter.OptionMenu.
+
+..
+
+.. bpo: 38731
+.. date: 2020-07-25-23-18-51
+.. nonce: Am4wp2
+.. section: Library
+
+Fix :exc:`NameError` in command-line interface of :mod:`py_compile`.
+
+..
+
+.. bpo: 41317
+.. date: 2020-07-23-01-18-34
+.. nonce: O17Z6x
+.. section: Library
+
+Use add_done_callback() in asyncio.loop.sock_accept() to unsubscribe reader
+early on cancellation.
+
+..
+
+.. bpo: 41364
+.. date: 2020-07-21-21-45-55
+.. nonce: 5O-k7A
+.. section: Library
+
+Reduce import overhead of :mod:`uuid`.
+
+..
+
+.. bpo: 41341
+.. date: 2020-07-20-19-13-17
+.. nonce: wqrj8C
+.. section: Library
+
+Recursive evaluation of `typing.ForwardRef` in `get_type_hints`.
+
+..
+
+.. bpo: 41182
+.. date: 2020-07-01-17-33-50
+.. nonce: FPFI0N
+.. section: Library
+
+selector: use DefaultSelector based upon implementation
+
+..
+
+.. bpo: 40726
+.. date: 2020-05-22-12-45-58
+.. nonce: 7oBdMw
+.. section: Library
+
+Handle cases where the ``end_lineno`` is ``None`` on
+:func:`ast.increment_lineno`.
+
+..
+
+.. bpo: 41045
+.. date: 2020-07-27-20-46-17
+.. nonce: GFF6Ul
+.. section: Documentation
+
+Add documentation for debug feature of f-strings.
+
+..
+
+.. bpo: 41314
+.. date: 2020-07-25-14-20-00
+.. nonce: yrjko0
+.. section: Documentation
+
+Changed the release when ``from __future__ import annotations`` becomes the
+default from ``4.0`` to ``3.10`` (following a change in PEP 563).
+
+..
+
+.. bpo: 41492
+.. date: 2020-08-06-16-59-10
+.. nonce: 2FQ9cM
+.. section: Windows
+
+Fixes the description that appears in UAC prompts.
+
+..
+
+.. bpo: 40948
+.. date: 2020-07-28-12-39-32
+.. nonce: ISUFO6
+.. section: Windows
+
+Improve post-install message to direct people to the "py" command.
+
+..
+
+.. bpo: 41412
+.. date: 2020-07-28-11-55-43
+.. nonce: ME20KB
+.. section: Windows
+
+The installer will now fail to install on Windows 7 and Windows 8. Further,
+the UCRT dependency is now always downloaded on demand.
+
+..
+
+.. bpo: 40741
+.. date: 2020-07-20-23-26-26
+.. nonce: C9sc_d
+.. section: Windows
+
+Update Windows release to include SQLite 3.32.3.
+
+..
+
+.. bpo: 41468
+.. date: 2020-08-09-13-42-55
+.. nonce: zkP0_Y
+.. section: IDLE
+
+Improve IDLE run crash error message (which users should never see).
+
+..
+
+.. bpo: 41373
+.. date: 2020-07-24-17-49-58
+.. nonce: YQIPu_
+.. section: IDLE
+
+Save files loaded with no line ending, as when blank, or different line
+endings, by setting its line ending to the system default. Fix regression in
+3.8.4 and 3.9.0b4.
