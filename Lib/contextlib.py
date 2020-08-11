@@ -309,12 +309,16 @@ class closing(AbstractContextManager, AbstractAsyncContextManager):
     """
     def __init__(self, thing):
         self.thing = thing
+
     def __enter__(self):
         return self.thing
+
     def __exit__(self, *exc_info):
         self.thing.close()
+
     async def __aenter__(self):
         return self.thing
+
     async def __aexit__(self, *exc_info):
         await self.thing.aclose()
 
