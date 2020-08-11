@@ -1208,26 +1208,30 @@ buffered_tell(buffered *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 _buffered_seek_unlocked(buffered *self, Py_off_t target, int whence)
 {
-    Py_off_t n;
     PyObject *res = NULL;
 
     if (self->writable) {
         res = _bufferedwriter_flush_unlocked(self);
-        if (res == NULL)
+        if (res == NULL) {
             return res;
+        }
         Py_CLEAR(res);
     }
 
     /* TODO: align on block boundary and read buffer if needed? */
-    if (whence == 1)
+    if (whence == 1) {
         target -= RAW_OFFSET(self);
-    n = _buffered_raw_seek(self, target, whence);
-    if (n == -1)
+    }
+
+    Py_off_t n = _buffered_raw_seek(self, target, whence);
+    if (n == -1) {
         return res;
+    }
     self->raw_pos = -1;
     res = PyLong_FromOff_t(n);
-    if (res != NULL && self->readable)
+    if (res != NULL && self->readable) {
         _bufferedreader_reset_buf(self);
+    }
 
     return res;
 }
@@ -1781,20 +1785,20 @@ _bufferedwriter_reset_buf(buffered *self)
 static void
 _bufferedwriter_set_append(buffered *self)
 {
-    PyObject *mode;
-
-    mode = _PyObject_GetAttrId(self->raw, &PyId_mode);
+    PyObject *mode = _PyObject_GetAttrId(self->raw, &PyId_mode);
     if (mode != NULL) {
-        /* Raw fileobj has no mode string so as far as we can know it has
-           normal write behavior */
-        if (PyUnicode_FindChar(mode, 'a', 0, PyUnicode_GET_LENGTH(mode), 1) != -1) {
+        if (PyUnicode_FindChar(mode, 'a', 0,
+                               PyUnicode_GET_LENGTH(mode), 1) != -1) {
             self->appending = 1;
-        } else {
+        }
+        else {
             self->appending = 0;
         }
         Py_DECREF(mode);
-    } else {
-        PyErr_Clear();
+    }
+    else {
+        /* Raw fileobj has no mode string so as far as we can know it has
+           normal write behavior */
         self->appending = 0;
     }
 }
@@ -1981,8 +1985,9 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
 
     if (self->appending) {
         res = _buffered_seek_unlocked(self, 0, SEEK_END);
-        if (res == NULL)
+        if (res == NULL) {
             goto error;
+        }
         Py_DECREF(res);
     }
 
