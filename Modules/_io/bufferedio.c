@@ -2059,18 +2059,21 @@ _bufferedwriter_raw_write(buffered *self, char *start, Py_ssize_t len)
 static PyObject *
 _bufferedwriter_flush_unlocked(buffered *self)
 {
+    Py_ssize_t written = 0;
     Py_off_t n, rewind;
 
     if (!VALID_WRITE_BUFFER(self) || self->write_pos == self->write_end)
         goto end;
-    /* First, rewind */
-    rewind = RAW_OFFSET(self) + (self->pos - self->write_pos);
-    if (rewind != 0) {
-        n = _buffered_raw_seek(self, -rewind, 1);
-        if (n < 0) {
-            goto error;
+    /* First, rewind unless raw file is in append mode */
+    if (!self->appending) {
+        Py_off_t rewind = RAW_OFFSET(self) + (self->pos - self->write_pos);
+        if (rewind != 0) {
+            n = _buffered_raw_seek(self, -rewind, 1);
+            if (n < 0) {
+                goto error;
+            }
+            self->raw_pos -= rewind;
         }
-        self->raw_pos -= rewind;
     }
     while (self->write_pos < self->write_end) {
         n = _bufferedwriter_raw_write(self,
