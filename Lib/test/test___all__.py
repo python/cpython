@@ -69,7 +69,7 @@ class AllTest(unittest.TestCase):
             yield path, modpath + fn[:-3]
 
     def test_all(self):
-        # Blacklisted modules and packages
+        # List of denied modules and packages
         denylist = set([
             # Will raise a SyntaxError when compiling the exec statement
             '__future__',
