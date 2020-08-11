@@ -2813,28 +2813,8 @@ static struct PyMethodDef _testbuffer_functions[] = {
     {NULL, NULL}
 };
 
-static struct PyModuleDef _testbuffermodule = {
-    PyModuleDef_HEAD_INIT,
-    "_testbuffer",
-    NULL,
-    -1,
-    _testbuffer_functions,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-
-PyMODINIT_FUNC
-PyInit__testbuffer(void)
+static int testbuffer_exec(PyObject *m)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&_testbuffermodule);
-    if (m == NULL)
-        return NULL;
-
     Py_SET_TYPE(&NDArray_Type, &PyType_Type);
     Py_INCREF(&NDArray_Type);
     PyModule_AddObject(m, "ndarray", (PyObject *)&NDArray_Type);
@@ -2845,16 +2825,16 @@ PyInit__testbuffer(void)
 
     structmodule = PyImport_ImportModule("struct");
     if (structmodule == NULL)
-        return NULL;
+        return -1;
 
     Struct = PyObject_GetAttrString(structmodule, "Struct");
     calcsize = PyObject_GetAttrString(structmodule, "calcsize");
     if (Struct == NULL || calcsize == NULL)
-        return NULL;
+        return -1;
 
     simple_format = PyUnicode_FromString(simple_fmt);
     if (simple_format == NULL)
-        return NULL;
+        return -1;
 
     PyModule_AddIntMacro(m, ND_MAX_NDIM);
     PyModule_AddIntMacro(m, ND_VAREXPORT);
@@ -2887,8 +2867,22 @@ PyInit__testbuffer(void)
     PyModule_AddIntMacro(m, PyBUF_READ);
     PyModule_AddIntMacro(m, PyBUF_WRITE);
 
-    return m;
+    return 0;
 }
 
+static PyModuleDef_Slot _testbuffer_slots[] = {
+    {Py_mod_exec, testbuffer_exec},
+    {0, NULL}
+};
 
+static struct PyModuleDef _testbuffermodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testbuffer",
+    .m_size = 0,
+    .m_methods = _testbuffer_functions,
+    .m_slots = _testbuffer_slots
+};
 
+PyMODINIT_FUNC PyInit__testbuffer(void) {
+    return PyModuleDef_Init(&_testbuffermodule);
+}
