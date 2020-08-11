@@ -610,7 +610,6 @@ _curses_panel_update_panels_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
-
 /* List of functions defined in the module */
 
 static PyMethodDef PyCurses_methods[] = {
@@ -622,33 +621,12 @@ static PyMethodDef PyCurses_methods[] = {
 };
 
 /* Initialization function for the module */
-
-
-static struct PyModuleDef _curses_panelmodule = {
-        PyModuleDef_HEAD_INIT,
-        "_curses_panel",
-        NULL,
-        sizeof(_curses_panelstate),
-        PyCurses_methods,
-        NULL,
-        _curses_panel_traverse,
-        _curses_panel_clear,
-        _curses_panel_free
-};
-
-PyMODINIT_FUNC
-PyInit__curses_panel(void)
+static int _curses_exec(PyObject *m)
 {
-    PyObject *m, *d, *v;
-
-    /* Create the module and add the functions */
-    m = PyModule_Create(&_curses_panelmodule);
-    if (m == NULL)
-        goto fail;
-    d = PyModule_GetDict(m);
+    PyObject *d = PyModule_GetDict(m);
 
     /* Initialize object type */
-    v = PyType_FromSpec(&PyCursesPanel_Type_spec);
+    PyObject *v = PyType_FromSpec(&PyCursesPanel_Type_spec);
     if (v == NULL)
         goto fail;
     ((PyTypeObject *)v)->tp_new = NULL;
@@ -671,8 +649,30 @@ PyInit__curses_panel(void)
     Py_INCREF(get_curses_panelstate(m)->PyCursesPanel_Type);
     PyModule_AddObject(m, "panel",
                        (PyObject *)get_curses_panelstate(m)->PyCursesPanel_Type);
-    return m;
+    return 0;
+
   fail:
-    Py_XDECREF(m);
-    return NULL;
+    return -1;
+}
+
+static PyModuleDef_Slot _curses_slots[] = {
+    {Py_mod_exec, _curses_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef _curses_panelmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_curses_panel",
+    .m_size = sizeof(_curses_panelstate),
+    .m_methods = PyCurses_methods,
+    .m_slots = _curses_slots,
+    .m_traverse = _curses_panel_traverse,
+    .m_clear = _curses_panel_clear,
+    .m_free = _curses_panel_free
+};
+
+PyMODINIT_FUNC
+PyInit__opcode(void)
+{
+    return PyModuleDef_Init(&_curses_panelmodule);
 }
