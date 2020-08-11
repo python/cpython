@@ -997,37 +997,14 @@ static void termiosmodule_free(void *m) {
     termiosmodule_clear((PyObject *)m);
 }
 
-static struct PyModuleDef termiosmodule = {
-    PyModuleDef_HEAD_INIT,
-    "termios",
-    termios__doc__,
-    sizeof(termiosmodulestate),
-    termios_methods,
-    NULL,
-    termiosmodule_traverse,
-    termiosmodule_clear,
-    termiosmodule_free,
-};
-
-PyMODINIT_FUNC
-PyInit_termios(void)
+static int 
+termios_exec(PyModule *m)
 {
-    PyObject *m;
     struct constant *constant = termios_constants;
-
-    if ((m = PyState_FindModule(&termiosmodule)) != NULL) {
-        Py_INCREF(m);
-        return m;
-    }
-
-    if ((m = PyModule_Create(&termiosmodule)) == NULL) {
-        return NULL;
-    }
-
     termiosmodulestate *state = get_termios_state(m);
     state->TermiosError = PyErr_NewException("termios.error", NULL, NULL);
     if (state->TermiosError == NULL) {
-        return NULL;
+        return -1;
     }
     Py_INCREF(state->TermiosError);
     PyModule_AddObject(m, "error", state->TermiosError);
@@ -1036,5 +1013,29 @@ PyInit_termios(void)
         PyModule_AddIntConstant(m, constant->name, constant->value);
         ++constant;
     }
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot termios_slots[] = {
+    {Py_mod_exec, termios_exec},
+    {0, NULL}
+};
+
+
+
+static struct PyModuleDef termiosmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "termios",
+    .m_doc = termios__doc__,
+    .m_size = sizeof(termiosmodulestate),
+    .m_methods = termios_methods,
+    .m_slots = termios_slots,
+    .m_traverse = termiosmodule_traverse,
+    .m_clear = termiosmodule_clear,
+    .m_free = termiosmodule_free,
+};
+
+
+PyMODINIT_FUNC PyInit_termios(void) {
+    return PyModuleDef_Init(&termiosmodule);
 }
