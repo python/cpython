@@ -1786,7 +1786,7 @@ static void
 _bufferedwriter_set_append(buffered *self)
 {
     PyObject *mode = _PyObject_GetAttrId(self->raw, &PyId_mode);
-    if (mode != NULL) {
+    if (mode != NULL && PyUnicode_Check(mode)) {
         if (PyUnicode_FindChar(mode, 'a', 0,
                                PyUnicode_GET_LENGTH(mode), 1) != -1) {
             self->appending = 1;
@@ -1797,6 +1797,9 @@ _bufferedwriter_set_append(buffered *self)
         Py_DECREF(mode);
     }
     else {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+        }
         /* Raw fileobj has no mode string so as far as we can know it has
            normal write behavior */
         self->appending = 0;
