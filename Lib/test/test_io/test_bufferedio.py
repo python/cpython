@@ -1490,7 +1490,7 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
                 f.seek(0)
 
                 # This read previously returned b'tBst testA' but that is
-                # inccorect if the underlying raw file is in append mode;
+                # incorect if the underlying raw file is in append mode;
                 # see bpo-20082
                 self.assertEqual(f.read(), b'test testAB')
                 f.flush()
