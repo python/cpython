@@ -1,2 +1,2 @@
-Added `__aenter__` and `__aexit__` methods to :class:`contextlib.closing`,
+Added ``__aenter__`` and ``__aexit__`` methods to :class:`contextlib.closing`,
 to allow its usage in async code. Patch by Bekbulatov Ramzan.
