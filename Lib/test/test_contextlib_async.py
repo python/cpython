@@ -1,5 +1,6 @@
 import asyncio
-from contextlib import asynccontextmanager, closing, AbstractAsyncContextManager, AsyncExitStack
+from contextlib import asynccontextmanager, closing, \
+    AbstractAsyncContextManager, AsyncExitStack
 import functools
 from test import support
 import unittest
