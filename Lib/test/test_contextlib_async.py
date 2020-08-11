@@ -286,7 +286,7 @@ class TestAsyncClosing(unittest.TestCase):
     async def test_async_closing(self):
         state = []
         class C:
-            async def close(self):
+            async def aclose(self):
                 await asyncio.sleep(0.)
                 state.append(1)
         x = C()
@@ -299,7 +299,7 @@ class TestAsyncClosing(unittest.TestCase):
     async def test_async_error(self):
         state = []
         class C:
-            async def close(self):
+            async def aclose(self):
                 await asyncio.sleep(0.)
                 state.append(1)
         x = C()

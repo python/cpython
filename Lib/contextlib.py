@@ -305,7 +305,7 @@ class closing(AbstractContextManager, AbstractAsyncContextManager):
         try:
             <block>
         finally:
-            await f.close()
+            await f.aclose()
     """
     def __init__(self, thing):
         self.thing = thing
@@ -316,7 +316,7 @@ class closing(AbstractContextManager, AbstractAsyncContextManager):
     async def __aenter__(self):
         return self.thing
     async def __aexit__(self, *exc_info):
-        await self.thing.close()
+        await self.thing.aclose()
 
 
 class _RedirectStream(AbstractContextManager):
