@@ -51,8 +51,6 @@ get_termios_state(PyObject *module)
     return (termiosmodulestate *)state;
 }
 
-#define modulestate_global get_termios_state(PyState_FindModule(&termiosmodule))
-
 static int fdconv(PyObject* obj, void* p)
 {
     int fd;
@@ -82,28 +80,29 @@ static PyObject *
 termios_tcgetattr(PyObject *self, PyObject *args)
 {
     int fd;
+    if (!PyArg_ParseTuple(args, "O&:tcgetattr",
+                          fdconv, (void*)&fd)) {
+        return NULL;
+    }
+
+    termiosmodulestate *state = PyModule_GetState(self);
     struct termios mode;
-    PyObject *cc;
-    speed_t ispeed, ospeed;
+    if (tcgetattr(fd, &mode) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
+
+    speed_t ispeed = cfgetispeed(&mode);
+    speed_t ospeed = cfgetospeed(&mode);
+
+    PyObject *cc = PyList_New(NCCS);
+    if (cc == NULL) {
+        return NULL;
+    }
+
     PyObject *v;
     int i;
-    char ch;
-
-    if (!PyArg_ParseTuple(args, "O&:tcgetattr",
-                          fdconv, (void*)&fd))
-        return NULL;
-
-    if (tcgetattr(fd, &mode) == -1)
-        return PyErr_SetFromErrno(modulestate_global->TermiosError);
-
-    ispeed = cfgetispeed(&mode);
-    ospeed = cfgetospeed(&mode);
-
-    cc = PyList_New(NCCS);
-    if (cc == NULL)
-        return NULL;
     for (i = 0; i < NCCS; i++) {
-        ch = (char)mode.c_cc[i];
+        char ch = (char)mode.c_cc[i];
         v = PyBytes_FromStringAndSize(&ch, 1);
         if (v == NULL)
             goto err;
@@ -159,14 +158,12 @@ static PyObject *
 termios_tcsetattr(PyObject *self, PyObject *args)
 {
     int fd, when;
-    struct termios mode;
-    speed_t ispeed, ospeed;
-    PyObject *term, *cc, *v;
-    int i;
-
+    PyObject *term;
     if (!PyArg_ParseTuple(args, "O&iO:tcsetattr",
-                          fdconv, &fd, &when, &term))
+                          fdconv, &fd, &when, &term)) {
         return NULL;
+    }
+
     if (!PyList_Check(term) || PyList_Size(term) != 7) {
         PyErr_SetString(PyExc_TypeError,
                      "tcsetattr, arg 3: must be 7 element list");
@@ -174,18 +171,22 @@ termios_tcsetattr(PyObject *self, PyObject *args)
     }
 
     /* Get the old mode, in case there are any hidden fields... */
-    termiosmodulestate *state = modulestate_global;
-    if (tcgetattr(fd, &mode) == -1)
+    termiosmodulestate *state = PyModule_GetState(self);
+    struct termios mode;
+    if (tcgetattr(fd, &mode) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
+    }
+
     mode.c_iflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 0));
     mode.c_oflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 1));
     mode.c_cflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 2));
     mode.c_lflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 3));
-    ispeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 4));
-    ospeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 5));
-    cc = PyList_GetItem(term, 6);
-    if (PyErr_Occurred())
+    speed_t ispeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 4));
+    speed_t ospeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 5));
+    PyObject *cc = PyList_GetItem(term, 6);
+    if (PyErr_Occurred()) {
         return NULL;
+    }
 
     if (!PyList_Check(cc) || PyList_Size(cc) != NCCS) {
         PyErr_Format(PyExc_TypeError,
@@ -194,6 +195,8 @@ termios_tcsetattr(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    int i;
+    PyObject *v;
     for (i = 0; i < NCCS; i++) {
         v = PyList_GetItem(cc, i);
 
@@ -229,12 +232,15 @@ static PyObject *
 termios_tcsendbreak(PyObject *self, PyObject *args)
 {
     int fd, duration;
-
     if (!PyArg_ParseTuple(args, "O&i:tcsendbreak",
-                          fdconv, &fd, &duration))
+                          fdconv, &fd, &duration)) {
         return NULL;
-    if (tcsendbreak(fd, duration) == -1)
-        return PyErr_SetFromErrno(modulestate_global->TermiosError);
+    }
+
+    termiosmodulestate *state = PyModule_GetState(self);
+    if (tcsendbreak(fd, duration) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
 
     Py_RETURN_NONE;
 }
@@ -248,12 +254,15 @@ static PyObject *
 termios_tcdrain(PyObject *self, PyObject *args)
 {
     int fd;
-
     if (!PyArg_ParseTuple(args, "O&:tcdrain",
-                          fdconv, &fd))
+                          fdconv, &fd)) {
         return NULL;
-    if (tcdrain(fd) == -1)
-        return PyErr_SetFromErrno(modulestate_global->TermiosError);
+    }
+
+    termiosmodulestate *state = PyModule_GetState(self);
+    if (tcdrain(fd) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
 
     Py_RETURN_NONE;
 }
@@ -270,12 +279,15 @@ static PyObject *
 termios_tcflush(PyObject *self, PyObject *args)
 {
     int fd, queue;
-
     if (!PyArg_ParseTuple(args, "O&i:tcflush",
-                          fdconv, &fd, &queue))
+                          fdconv, &fd, &queue)) {
         return NULL;
-    if (tcflush(fd, queue) == -1)
-        return PyErr_SetFromErrno(modulestate_global->TermiosError);
+    }
+
+    termiosmodulestate *state = PyModule_GetState(self);
+    if (tcflush(fd, queue) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
 
     Py_RETURN_NONE;
 }
@@ -292,12 +304,15 @@ static PyObject *
 termios_tcflow(PyObject *self, PyObject *args)
 {
     int fd, action;
-
     if (!PyArg_ParseTuple(args, "O&i:tcflow",
-                          fdconv, &fd, &action))
+                          fdconv, &fd, &action)) {
         return NULL;
-    if (tcflow(fd, action) == -1)
-        return PyErr_SetFromErrno(modulestate_global->TermiosError);
+    }
+
+    termiosmodulestate *state = PyModule_GetState(self);
+    if (tcflow(fd, action) == -1) {
+        return PyErr_SetFromErrno(state->TermiosError);
+    }
 
     Py_RETURN_NONE;
 }
@@ -997,44 +1012,43 @@ static void termiosmodule_free(void *m) {
     termiosmodule_clear((PyObject *)m);
 }
 
-static struct PyModuleDef termiosmodule = {
-    PyModuleDef_HEAD_INIT,
-    "termios",
-    termios__doc__,
-    sizeof(termiosmodulestate),
-    termios_methods,
-    NULL,
-    termiosmodule_traverse,
-    termiosmodule_clear,
-    termiosmodule_free,
-};
-
-PyMODINIT_FUNC
-PyInit_termios(void)
+static int 
+termios_exec(PyObject *mod)
 {
-    PyObject *m;
     struct constant *constant = termios_constants;
-
-    if ((m = PyState_FindModule(&termiosmodule)) != NULL) {
-        Py_INCREF(m);
-        return m;
-    }
-
-    if ((m = PyModule_Create(&termiosmodule)) == NULL) {
-        return NULL;
-    }
-
-    termiosmodulestate *state = get_termios_state(m);
+    termiosmodulestate *state = get_termios_state(mod);
     state->TermiosError = PyErr_NewException("termios.error", NULL, NULL);
     if (state->TermiosError == NULL) {
-        return NULL;
+        return -1;
     }
     Py_INCREF(state->TermiosError);
-    PyModule_AddObject(m, "error", state->TermiosError);
+    PyModule_AddObject(mod, "error", state->TermiosError);
 
     while (constant->name != NULL) {
-        PyModule_AddIntConstant(m, constant->name, constant->value);
+        PyModule_AddIntConstant(mod, constant->name, constant->value);
         ++constant;
     }
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot termios_slots[] = {
+    {Py_mod_exec, termios_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef termiosmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "termios",
+    .m_doc = termios__doc__,
+    .m_size = sizeof(termiosmodulestate),
+    .m_methods = termios_methods,
+    .m_slots = termios_slots,
+    .m_traverse = termiosmodule_traverse,
+    .m_clear = termiosmodule_clear,
+    .m_free = termiosmodule_free,
+};
+
+PyMODINIT_FUNC PyInit_termios(void)
+{
+    return PyModuleDef_Init(&termiosmodule);
 }
