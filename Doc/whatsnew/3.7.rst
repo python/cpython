@@ -171,7 +171,7 @@ on a per-module basis in Python 3.7 using a :mod:`__future__` import::
 
     from __future__ import annotations
 
-It will become the default in Python 4.0.
+It will become the default in Python 3.10.
 
 .. seealso::
 
