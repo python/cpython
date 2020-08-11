@@ -1469,7 +1469,10 @@ def _create_or_replace(dst, create_temp_dst):
                 # Race condition: temporary pathname was created after generation
                 pass  # Try again
 
-        os.replace(temp_path, dst)  # If successful, POSIX guarantees atomicity
+        try:
+            os.replace(temp_path, dst)  # If successful, POSIX guarantees atomicity
+        except FileExistsError:  # Windows raises this if dst exists
+            move(temp_path, dst)
 
     except BaseException as e:
         if os.path.lexists(temp_path):
