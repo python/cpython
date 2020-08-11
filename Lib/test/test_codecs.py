@@ -2644,7 +2644,7 @@ class TransformCodecTest(unittest.TestCase):
                 view_decoded = codecs.decode(view, encoding)
                 self.assertEqual(view_decoded, data)
 
-    def test_text_to_binary_blacklists_binary_transforms(self):
+    def test_text_to_binary_denylists_binary_transforms(self):
         # Check binary -> binary codecs give a good error for str input
         bad_input = "bad input type"
         for encoding in bytes_transform_encodings:
@@ -2656,14 +2656,14 @@ class TransformCodecTest(unittest.TestCase):
                     bad_input.encode(encoding)
                 self.assertIsNone(failure.exception.__cause__)
 
-    def test_text_to_binary_blacklists_text_transforms(self):
+    def test_text_to_binary_denylists_text_transforms(self):
         # Check str.encode gives a good error message for str -> str codecs
         msg = (r"^'rot_13' is not a text encoding; "
                r"use codecs.encode\(\) to handle arbitrary codecs")
         with self.assertRaisesRegex(LookupError, msg):
             "just an example message".encode("rot_13")
 
-    def test_binary_to_text_blacklists_binary_transforms(self):
+    def test_binary_to_text_denylists_binary_transforms(self):
         # Check bytes.decode and bytearray.decode give a good error
         # message for binary -> binary codecs
         data = b"encode first to ensure we meet any format restrictions"
@@ -2678,7 +2678,7 @@ class TransformCodecTest(unittest.TestCase):
                 with self.assertRaisesRegex(LookupError, msg):
                     bytearray(encoded_data).decode(encoding)
 
-    def test_binary_to_text_blacklists_text_transforms(self):
+    def test_binary_to_text_denylists_text_transforms(self):
         # Check str -> str codec gives a good error for binary input
         for bad_input in (b"immutable", bytearray(b"mutable")):
             with self.subTest(bad_input=bad_input):
