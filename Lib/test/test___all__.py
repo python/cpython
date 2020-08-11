@@ -69,8 +69,8 @@ class AllTest(unittest.TestCase):
             yield path, modpath + fn[:-3]
 
     def test_all(self):
-        # Blacklisted modules and packages
-        blacklist = set([
+        # List of denied modules and packages
+        denylist = set([
             # Will raise a SyntaxError when compiling the exec statement
             '__future__',
         ])
@@ -85,13 +85,13 @@ class AllTest(unittest.TestCase):
         lib_dir = os.path.dirname(os.path.dirname(__file__))
         for path, modname in self.walk_modules(lib_dir, ""):
             m = modname
-            blacklisted = False
+            denylisted = False
             while m:
-                if m in blacklist:
-                    blacklisted = True
+                if m in denylist:
+                    denylisted = True
                     break
                 m = m.rpartition('.')[0]
-            if blacklisted:
+            if denylisted:
                 continue
             if support.verbose:
                 print(modname)
