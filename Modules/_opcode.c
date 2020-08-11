@@ -67,30 +67,32 @@ _opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg,
     return effect;
 }
 
-
-
-
 static PyMethodDef
 opcode_functions[] =  {
     _OPCODE_STACK_EFFECT_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
+static int opcode_exec(PyObject *m) {
+    return 0;
+}
+
+static PyModuleDef_Slot opcode_slots[] = {
+    {Py_mod_exec, opcode_exec},
+    {0, NULL}
+};
 
 static struct PyModuleDef opcodemodule = {
     PyModuleDef_HEAD_INIT,
-    "_opcode",
-    "Opcode support module.",
-    -1,
-    opcode_functions,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_opcode",
+    .m_doc = "Opcode support module.",
+    .m_size = 0,
+    .m_methods = opcode_functions,
+    .m_slots = opcode_slots
 };
 
 PyMODINIT_FUNC
 PyInit__opcode(void)
 {
-    return PyModule_Create(&opcodemodule);
+    return PyModuleDef_Init(&opcodemodule);
 }
