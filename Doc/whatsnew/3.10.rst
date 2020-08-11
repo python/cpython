@@ -250,5 +250,5 @@ Removed
   :c:func:`PyUnicode_AsWideCharString`
   (Contributed by Inada Naoki in :issue:`41103`.)
 
-* Removed docs for the deprecated and removed ``symbol.sym_name``.
-  (Contributed by Joannah Nanjekye in :issue:`41234`.)
+* Removed :module:symbol.
+(Contributed by Lysandros Nikolaou in :issue:`40939` and Joannah Nanjekye in :issue:`41234`.)
