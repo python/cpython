@@ -1,1 +1,1 @@
-Adds pty.wspawn, which is like pty.spawn with window resizing support [ handles SIGWINCH ].
+Adds pty.wspawn, which is like pty.spawn + window resizing support [ handles SIGWINCH ].
