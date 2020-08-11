@@ -251,4 +251,4 @@ Removed
   (Contributed by Inada Naoki in :issue:`41103`.)
 
 * Removed :module:symbol.
-(Contributed by Lysandros Nikolaou in :issue:`40939` and Joannah Nanjekye in :issue:`41234`.)
+  (Contributed by Lysandros Nikolaou in :issue:`40939` and Joannah Nanjekye in :issue:`41234`.)
