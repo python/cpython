@@ -84,9 +84,11 @@ def _maybe_compile(compiler, source, filename, symbol):
     except SyntaxError:
         pass
 
-    # Suppress warnings after the first compile to avoid duplication.
+    # Catch syntax warnings after the first compile
+    # to emit SyntaxWarning at most once.
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+        warnings.simplefilter("error", SyntaxWarning)
+
         try:
             code1 = compiler(source + "\n", filename, symbol)
         except SyntaxError as e:

@@ -1,0 +1,1 @@
+Fix :mod:`codeop` regression: it no longer ignores :exc:`SyntaxWarning`.
