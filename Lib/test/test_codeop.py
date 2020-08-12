@@ -4,6 +4,7 @@
 """
 import sys
 import unittest
+import warnings
 from test import support
 from test.support import warnings_helper
 
@@ -309,6 +310,12 @@ class CodeopTests(unittest.TestCase):
         with warnings_helper.check_warnings((".*literal", SyntaxWarning)) as w:
             compile_command("0 is 0")
             self.assertEqual(len(w.warnings), 1)
+
+        # bpo-41520: check SyntaxWarning treated as an SyntaxError
+        with self.assertRaises(SyntaxError):
+            warnings.simplefilter('error', SyntaxWarning)
+            compile_command('1 is 1\n', symbol='exec')
+
 
 if __name__ == "__main__":
     unittest.main()
