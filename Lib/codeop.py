@@ -85,7 +85,7 @@ def _maybe_compile(compiler, source, filename, symbol):
         pass
 
     # Catch syntax warnings after the first compile
-    # to emit SyntaxWarning at most once.
+    # to emit warnings (SyntaxWarning, DeprecationWarning) at most once.
     with warnings.catch_warnings():
         warnings.simplefilter("error")
 
