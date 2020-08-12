@@ -8,19 +8,27 @@ def load_tzdata(key):
     package_name = ".".join(["tzdata.zoneinfo"] + components[:-1])
     resource_name = components[-1]
 
+    path = importlib.resources.path(package_name, resource_name)
+    
     try:
         return importlib.resources.open_binary(package_name, resource_name)
-    except (ImportError, FileNotFoundError, UnicodeEncodeError):
-        # There are three types of exception that can be raised that all amount
+    except (IsADirectoryError, ImportError, FileNotFoundError, PermissionError, UnicodeEncodeError, ValueError):
+        # There are six types of exception that can be raised that all amount
         # to "we cannot find this key":
         #
+        # IsADirectoryError: If resource_name is the name of a folder
+        # (e.g. Australia)
         # ImportError: If package_name doesn't exist (e.g. if tzdata is not
         #   installed, or if there's an error in the folder name like
         #   Amrica/New_York)
         # FileNotFoundError: If resource_name doesn't exist in the package
         #   (e.g. Europe/Krasnoy)
+        # PermissionError: If resource_name is the name of a folder on Windows
+        #   (e.g. Pacific)
         # UnicodeEncodeError: If package_name or resource_name are not UTF-8,
         #   such as keys containing a surrogate character.
+        # ValueError: If resource_name is not a valid TZif file
+        #   (e.g. __init__.py)
         raise ZoneInfoNotFoundError(f"No time zone found with key {key}")
 
 
