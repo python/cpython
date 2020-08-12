@@ -83,7 +83,7 @@ static const char usage_3[] = "\
              cumulative time (including nested imports) and self time (excluding\n\
              nested imports). Note that its output may be broken in multi-threaded\n\
              application. Typical usage is python3 -X importtime -c 'import asyncio'\n\
-         -X dev: enable CPython’s “development mode”, introducing additional runtime\n\
+         -X dev: enable CPython's \"development mode\", introducing additional runtime\n\
              checks which are too expensive to be enabled by default. Effect of the\n\
              developer mode:\n\
                 * Add default warning filter, as -W default\n\
