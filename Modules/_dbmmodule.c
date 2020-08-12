@@ -433,7 +433,7 @@ static PyType_Spec dbmtype_spec = {
 
 _dbm.open as dbmopen
 
-    filename: unicode
+    filename: object
         The filename to open.
 
     flags: str="r"
@@ -479,20 +479,22 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
         return NULL;
     }
 
-    PyObject *filenamechars = PyOS_FSPath(filename);
-    if (filenamechars == NULL)
+    PyObject *filenamecharsorbytes = PyOS_FSPath(filename);
+    if (filenamecharsorbytes == NULL) {
         return NULL;
-    if (PyUnicode_Check(filenamechars)) {
-        PyObject *tmp = PyUnicode_EncodeFSDefault(filenamechars);
-        Py_DECREF(filenamechars);
-        filenamechars = tmp;
-        if (tmp == NULL)
+    }
+
+    PyObject *filenamebytes;
+    if (PyUnicode_Check(filenamecharsorbytes)) {
+        filenamebytes = PyUnicode_EncodeFSDefault(filenamecharsorbytes);
+        Py_DECREF(filenamecharsorbytes);
+        if (filenamebytes == NULL) {
             return NULL;
+        }
+    } else {
+        filenamebytes = filenamecharsorbytes;
     }
-    PyObject *filenamebytes = PyUnicode_EncodeFSDefault(filenamechars);
-    if (filenamebytes == NULL) {
-        return NULL;
-    }
+
     const char *name = PyBytes_AS_STRING(filenamebytes);
     if (strlen(name) != (size_t)PyBytes_GET_SIZE(filenamebytes)) {
         Py_DECREF(filenamebytes);
