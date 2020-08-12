@@ -315,7 +315,7 @@ class CodeopTests(unittest.TestCase):
             self.assertEqual(len(w.warnings), 2)
 
         # bpo-41520: check SyntaxWarning treated as an SyntaxError
-        with self.assertRaises(SyntaxError):
+        with warnings.catch_warnings(), self.assertRaises(SyntaxError):
             warnings.simplefilter('error', SyntaxWarning)
             compile_command('1 is 1', symbol='exec')
 
