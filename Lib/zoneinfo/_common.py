@@ -31,7 +31,7 @@ def load_tzdata(key):
         #   (e.g. Pacific)
         import os
         import importlib.util
-        
+
         package_spec = importlib.util.find_spec(package_name)
         resource_path = os.path.join(os.path.dirname(package_spec.origin), key)
 
