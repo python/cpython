@@ -87,7 +87,7 @@ def _maybe_compile(compiler, source, filename, symbol):
     # Catch syntax warnings after the first compile
     # to emit SyntaxWarning at most once.
     with warnings.catch_warnings():
-        warnings.simplefilter("error", SyntaxWarning)
+        warnings.simplefilter("error")
 
         try:
             code1 = compiler(source + "\n", filename, symbol)
