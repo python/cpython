@@ -185,7 +185,7 @@ def p_as_triple(dec):
     coeff = int(s) if s else 0
 
     if coeff < 0 or coeff >= 2**128:
-        raise ValueError("value out of bounds for a uint128 triple");
+        raise ValueError("value out of bounds for a uint128 triple")
 
     return (sign, coeff, exp)
 
@@ -193,7 +193,7 @@ def p_from_triple(triple):
     sign, coeff, exp = triple
 
     if coeff < 0 or coeff >= 2**128:
-        raise ValueError("value out of bounds for a uint128 triple");
+        raise ValueError("value out of bounds for a uint128 triple")
 
     digits = tuple(int(c) for c in str(coeff))
 
@@ -894,7 +894,7 @@ def verify(t, stat):
         t.presults.append(str(t.rp.real))
 
         ctriple = None
-        if t.funcname not in ['__radd__', '__rmul__']: # see skip handler
+        if str(t.rc) == str(t.rp): # see skip handler
             try:
                 ctriple = c_as_triple(t.rc)
             except ValueError:
