@@ -146,6 +146,9 @@ union_richcompare(PyObject *a, PyObject *b, int op)
     PyTypeObject *type = Py_TYPE(b);
     if (is_typing_name(b, "_UnionGenericAlias")) {
         PyObject* b_args = PyObject_GetAttrString(b, "__args__");
+        if (b_args == NULL) {
+            return NULL;
+        }
         int b_arg_length = PyTuple_GET_SIZE(b_args);
         for (Py_ssize_t i = 0; i < b_arg_length; i++) {
             PyObject* arg = PyTuple_GET_ITEM(b_args, i);
@@ -154,25 +157,31 @@ union_richcompare(PyObject *a, PyObject *b, int op)
             }
         }
         b_set = PySet_New(b_args);
+        Py_DECREF(b_args);
     } else if (type == &Py_UnionType) {
         unionobject *bb = (unionobject *)b;
         b_set = PySet_New(bb->args);
         if (b_set == NULL) {
+            Py_DECREF(a_set);
             return NULL;
         }
     } else {
         PyObject *tuple = PyTuple_Pack(1, b);
         if (tuple == NULL ) {
+            Py_DECREF(a_set);
             return NULL;
         }
         b_set = PySet_New(tuple);
         Py_DECREF(tuple);
-        if (b_set == NULL) {
-            return NULL;
-        }
     }
-
-    return PyObject_RichCompare(a_set, b_set, op);
+    if (b_set == NULL) {
+        Py_DECREF(a_set);
+        return NULL;
+    }
+    PyObject *result = PyObject_RichCompare(a_set, b_set, op);
+    Py_DECREF(a_set);
+    Py_DECREF(b_set);
+    return result;
 }
 
 static PyObject*
@@ -268,7 +277,8 @@ is_special_form(PyObject *obj)
 static int
 is_new_type(PyObject *obj)
 {
-    if (!PyObject_IsInstance(obj, (PyObject *)&PyFunction_Type)) {
+    PyTypeObject *type = Py_TYPE(obj);
+    if (type != &PyFunction_Type) {
         return 0;
     }
     return is_typing_module(obj);
@@ -280,21 +290,24 @@ is_unionable(PyObject *obj)
     if (obj == Py_None) {
         return 1;
     }
+    PyTypeObject *type = Py_TYPE(obj);
     return (
         is_typevar(obj) ||
         is_new_type(obj) ||
         is_special_form(obj) ||
         PyType_Check(obj) ||
-        (PyObject_IsInstance(obj, (PyObject*)&Py_GenericAliasType)) ||
-        (PyObject_IsInstance(obj, (PyObject *)&PyType_Type) == 1) ||
-        (PyObject_IsInstance(obj, (PyObject *)&Py_UnionType) == 1));
+        type == &Py_GenericAliasType ||
+        type == &Py_UnionType);
 }
 
 static PyObject *
 union_new(PyTypeObject* self, PyObject* param)
 {
+    if (param == NULL) {
+        return NULL;
+    }
     // Check param is a PyType or GenericAlias
-    if ((param == NULL) || !is_unionable((PyObject *)param) || !is_unionable((PyObject*)self))
+    if (!is_unionable((PyObject *)param) || !is_unionable((PyObject*)self))
     {
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;

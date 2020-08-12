@@ -276,6 +276,8 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
     def test_subclass_with_union(self):
         self.assertTrue(issubclass(int, int | float | int))
         self.assertTrue(issubclass(str, str | Child | str))
+        self.assertFalse(issubclass(dict, float|str))
+        self.assertFalse(issubclass(object, float|str))
         with self.assertRaises(TypeError):
             issubclass(2, Child | Super)
         with self.assertRaises(TypeError):
