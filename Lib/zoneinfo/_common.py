@@ -2,17 +2,14 @@ import struct
 
 
 def load_tzdata(key):
-    try:
-        import importlib.resources as importlib_resources
-    except ImportError:
-        import importlib_resources
-
+    import importlib.resources
+    
     components = key.split("/")
     package_name = ".".join(["tzdata.zoneinfo"] + components[:-1])
     resource_name = components[-1]
 
     try:
-        return importlib_resources.open_binary(package_name, resource_name)
+        return importlib.resources.open_binary(package_name, resource_name)
     except (ImportError, FileNotFoundError, UnicodeEncodeError):
         # There are some types of exception that can be raised that all amount
         # to "we cannot find this key":
@@ -33,12 +30,9 @@ def load_tzdata(key):
         # PermissionError: If the resource_name links to a directory on Windows
         #   (e.g. Pacific)
         import os
-        try:
-            import importlib.util as importlib_util
-        except ImportError:
-            import importlib_util
+        import importlib.util
         
-        package_spec = importlib_util.find_spec(package_name)
+        package_spec = importlib.util.find_spec(package_name)
         resource_path = os.path.join(os.path.dirname(package_spec.origin), key)
 
         if os.path.isdir(resource_path):
