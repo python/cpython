@@ -218,10 +218,13 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertTrue(isinstance(2, typing.List | int))
         self.assertFalse(isinstance(2, typing.List | typing.Tuple))
         self.assertTrue(isinstance(None, int | None))
+        self.assertFalse(isinstance(3.14, int | str))
         with self.assertRaises(TypeError):
             isinstance(2, list[int])
         with self.assertRaises(TypeError):
             isinstance(2, list[int] | int)
+        with self.assertRaises(TypeError):
+            isinstance(2, int | str | list[int] | float)
 
 
 
