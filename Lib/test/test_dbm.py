@@ -174,10 +174,13 @@ class WhichDBTestCase(unittest.TestCase):
     def test_whichdb_ndbm(self):
         # Issue 17198: check that ndbm which is referenced in whichdb is defined
         db_file = '{}_ndbm.db'.format(_fname)
-        for path in [db_file, Path(db_file)]:
-            with open(path, 'w'):
-                self.addCleanup(test.support.unlink, path)
-            self.assertIsNone(self.dbm.whichdb(path[:-3]))
+        with open(db_file, 'w'):
+            self.addCleanup(os_helper.unlink, db_file)
+        self.assertIsNone(self.dbm.whichdb(db_file[:-3]))
+        path = Path(db_file)
+        with open(path, 'w'):
+            self.addCleanup(os_helper.unlink, path)
+        self.assertIsNone(self.dbm.whichdb(path.stem))
 
     def tearDown(self):
         delete_files()
