@@ -2,31 +2,49 @@ import struct
 
 
 def load_tzdata(key):
-    import importlib.resources
+    try:
+        import importlib.resources as importlib_resources
+    except ImportError:
+        import importlib_resources
 
     components = key.split("/")
     package_name = ".".join(["tzdata.zoneinfo"] + components[:-1])
     resource_name = components[-1]
 
     try:
-        return importlib.resources.open_binary(package_name, resource_name)
-    except (IsADirectoryError, ImportError, FileNotFoundError, 
-        PermissionError, UnicodeEncodeError):
-        # There are five types of exception that can be raised that all amount
+        return importlib_resources.open_binary(package_name, resource_name)
+    except (ImportError, FileNotFoundError, UnicodeEncodeError):
+        # There are some types of exception that can be raised that all amount
         # to "we cannot find this key":
         #
-        # IsADirectoryError: If resource_name is the name of a folder
-        # (e.g. Australia)
         # ImportError: If package_name doesn't exist (e.g. if tzdata is not
         #   installed, or if there's an error in the folder name like
         #   Amrica/New_York)
         # FileNotFoundError: If resource_name doesn't exist in the package
         #   (e.g. Europe/Krasnoy)
-        # PermissionError: If resource_name is the name of a folder on Windows
-        #   (e.g. Pacific)
         # UnicodeEncodeError: If package_name or resource_name are not UTF-8,
         #   such as keys containing a surrogate character.
         raise ZoneInfoNotFoundError(f"No time zone found with key {key}")
+    except OSError as exc:
+        # Exceptions inherited from OSError can be raised in various scenarios:
+        #
+        # IsADirectoryError: If the resource_name links to a directory
+        #   (e.g. Australia)
+        # PermissionError: If the resource_name links to a directory on Windows
+        #   (e.g. Pacific)
+        import os
+        try:
+            import importlib.util as importlib_util
+        except ImportError:
+            import importlib_util
+        
+        package_spec = importlib_util.find_spec(package_name)
+        resource_path = os.path.join(os.path.dirname(package_spec.origin), key)
+
+        if os.path.isdir(resource_path):
+            raise ZoneInfoNotFoundError(f"No time zone found with key {key}")
+        else:
+            raise
 
 
 def load_data(fobj):
