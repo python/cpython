@@ -3,7 +3,7 @@ import struct
 
 def load_tzdata(key):
     import importlib.resources
-    
+
     components = key.split("/")
     package_name = ".".join(["tzdata.zoneinfo"] + components[:-1])
     resource_name = components[-1]
