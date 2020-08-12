@@ -11,7 +11,7 @@ def load_tzdata(key):
     try:
         return importlib.resources.open_binary(package_name, resource_name)
     except (IsADirectoryError, ImportError, FileNotFoundError, 
-    PermissionError, UnicodeEncodeError):
+        PermissionError, UnicodeEncodeError):
         # There are five types of exception that can be raised that all amount
         # to "we cannot find this key":
         #
