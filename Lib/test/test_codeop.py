@@ -3,6 +3,7 @@
    Nick Mathewson
 """
 import unittest
+import warnings
 from test import support
 
 from codeop import compile_command, PyCF_DONT_IMPLY_DEDENT
@@ -299,6 +300,12 @@ class CodeopTests(unittest.TestCase):
         with support.check_warnings((".*literal", SyntaxWarning)) as w:
             compile_command("0 is 0")
             self.assertEqual(len(w.warnings), 1)
+
+        # bpo-41520: check SyntaxWarning treated as an SyntaxError
+        with self.assertRaises(SyntaxError):
+            warnings.simplefilter('error', SyntaxWarning)
+            compile_command('1 is 1\n', symbol='exec')
+
 
 if __name__ == "__main__":
     unittest.main()
