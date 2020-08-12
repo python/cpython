@@ -130,7 +130,7 @@ class AnyDBMTestCase:
         assert(f[key] == b"Python:")
         f.close()
 
-    def test_open_with_patlib_path(self):
+    def test_open_with_pathlib_path(self):
         dbm.open(Path(_fname), "c").close()
 
     def read_helper(self, f):

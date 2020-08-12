@@ -169,7 +169,7 @@ class TestGdbm(unittest.TestCase):
         self.assertIn(nonexisting_file, str(cm.exception))
         self.assertEqual(cm.exception.filename, nonexisting_file)
 
-    def test_open_with_patlib_path(self):
+    def test_open_with_pathlib_path(self):
         from pathlib import Path
         gdbm.open(Path(filename), "c").close()
 

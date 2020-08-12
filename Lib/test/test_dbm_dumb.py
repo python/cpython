@@ -294,7 +294,7 @@ class DumbDBMTestCase(unittest.TestCase):
             self.assertTrue(b'key' in db)
             self.assertEqual(db[b'key'], b'value')
 
-    def test_open_with_patlib_path(self):
+    def test_open_with_pathlib_path(self):
         from pathlib import Path
         dumbdbm.open(Path(_fname), "c").close()
 

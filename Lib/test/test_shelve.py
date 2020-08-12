@@ -87,7 +87,7 @@ class TestCase(unittest.TestCase):
     def test_proto2_file_shelf(self):
         self.test_open_template(protocol=2)
 
-    def test_patlib_path_file_shelf(self):
+    def test_pathlib_path_file_shelf(self):
         from pathlib import Path
         self.test_open_template(filename=Path(self.fn))
 
