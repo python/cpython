@@ -7,8 +7,6 @@ def load_tzdata(key):
     components = key.split("/")
     package_name = ".".join(["tzdata.zoneinfo"] + components[:-1])
     resource_name = components[-1]
-
-    path = importlib.resources.path(package_name, resource_name)
     
     try:
         return importlib.resources.open_binary(package_name, resource_name)
