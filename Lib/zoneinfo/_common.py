@@ -11,8 +11,8 @@ def load_tzdata(key):
     try:
         return importlib.resources.open_binary(package_name, resource_name)
     except (IsADirectoryError, ImportError, FileNotFoundError, 
-            PermissionError, UnicodeEncodeError, ValueError):
-        # There are six types of exception that can be raised that all amount
+    PermissionError, UnicodeEncodeError):
+        # There are five types of exception that can be raised that all amount
         # to "we cannot find this key":
         #
         # IsADirectoryError: If resource_name is the name of a folder
@@ -26,8 +26,6 @@ def load_tzdata(key):
         #   (e.g. Pacific)
         # UnicodeEncodeError: If package_name or resource_name are not UTF-8,
         #   such as keys containing a surrogate character.
-        # ValueError: If resource_name is not a valid TZif file
-        #   (e.g. __init__.py)
         raise ZoneInfoNotFoundError(f"No time zone found with key {key}")
 
 
