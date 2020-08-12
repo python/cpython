@@ -103,20 +103,23 @@ union_subclasscheck(PyObject *self, PyObject *instance)
 }
 
 static int
+is_typing_module(PyObject *obj) {
+    PyObject *module = PyObject_GetAttrString(obj, "__module__");
+    if (module == NULL) {
+        return -1;
+    }
+    Py_DECREF(module);
+    return PyUnicode_Check(module) && _PyUnicode_EqualToASCIIString(module, "typing");
+}
+
+static int
 is_typing_name(PyObject *obj, char *name)
 {
     PyTypeObject *type = Py_TYPE(obj);
     if (strcmp(type->tp_name, name) != 0) {
         return 0;
     }
-    PyObject *module = PyObject_GetAttrString((PyObject *)type, "__module__");
-    if (module == NULL) {
-        return -1;
-    }
-    int res = PyUnicode_Check(module)
-        && _PyUnicode_EqualToASCIIString(module, "typing");
-    Py_DECREF(module);
-    return res;
+    return is_typing_module(obj);
 }
 
 static PyMethodDef union_methods[] = {
@@ -268,11 +271,7 @@ is_new_type(PyObject *obj)
     if (!PyObject_IsInstance(obj, (PyObject *)&PyFunction_Type)) {
         return 0;
     }
-    PyObject *module = PyObject_GetAttrString(obj, "__module__");
-    if (module == NULL) {
-        return 0;
-    }
-    return PyUnicode_Check(module) && _PyUnicode_EqualToASCIIString(module, "typing");
+    return is_typing_module(obj);
 }
 
 static int
