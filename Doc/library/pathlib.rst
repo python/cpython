@@ -1201,6 +1201,7 @@ os and os.path                         pathlib
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`
 :func:`os.link`                        :meth:`Path.link_to`
+:func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,
