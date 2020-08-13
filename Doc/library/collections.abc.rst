@@ -185,7 +185,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
    expressions.  Custom implementations must provide the :meth:`__await__`
    method.
 
-   :term:`Coroutine` objects and instances of the
+   :term:`Coroutine <coroutine>` objects and instances of the
    :class:`~collections.abc.Coroutine` ABC are all instances of this ABC.
 
    .. note::
