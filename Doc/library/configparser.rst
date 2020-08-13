@@ -696,6 +696,7 @@ be overridden by subclasses or by attribute assignment.
   ``enabled``/``disabled``.
 
 .. method:: ConfigParser.optionxform(option)
+   :noindex:
 
   This method transforms option names on every read, get, or set
   operation.  The default converts the name to lowercase.  This also
