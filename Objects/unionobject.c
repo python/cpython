@@ -43,7 +43,7 @@ static PyMemberDef union_members[] = {
     {0}
 };
 
-static int*
+static int
 check_args(PyObject *args) {
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
