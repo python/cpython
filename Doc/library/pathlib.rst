@@ -1078,7 +1078,7 @@ call fails (for example because the path doesn't exist).
 
    Create a hard link pointing to a path named *target*.
 
-   .. versionchanged:: 3.8
+   .. versionadded:: 3.8
 
 
 .. method:: Path.write_bytes(data)
