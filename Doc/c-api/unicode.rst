@@ -199,7 +199,7 @@ access internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: PyUnicode_MAX_CHAR_VALUE(PyObject *o)
+.. c:macro:: PyUnicode_MAX_CHAR_VALUE(o)
 
    Return the maximum code point that is suitable for creating another string
    based on *o*, which must be in the "canonical" representation.  This is
