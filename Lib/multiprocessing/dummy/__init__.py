@@ -33,8 +33,8 @@ from queue import Queue
 
 class DummyProcess(threading.Thread):
 
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}):
-        threading.Thread.__init__(self, group, target, name, args, kwargs)
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None):
+        threading.Thread.__init__(self, group, target, name, args, kwargs, daemon=daemon)
         self._pid = None
         self._children = weakref.WeakKeyDictionary()
         self._start_called = False
