@@ -37,9 +37,11 @@ static struct PyMethodDef blake2mod_functions[] = {
 #define ADD_INT(d, name, value) do { \
     PyObject *x = PyLong_FromLong(value); \
     if (!x) { \
+        Py_DECREF(x); \
         return -1; \
     } \
     if (PyDict_SetItemString(d, name, x) < 0) { \
+        Py_DECREF(x); \
         return -1; \
     } \
     Py_DECREF(x); \
@@ -53,6 +55,8 @@ static int blake2_exec(PyObject *m)
     st->blake2b_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &blake2b_type_spec, NULL);
 
+    if (NULL == st->blake2b_type)
+        return -1;
     /* BLAKE2b */
     if (PyModule_AddType(m, st->blake2b_type) < 0) {
         return -1;
@@ -72,6 +76,9 @@ static int blake2_exec(PyObject *m)
     /* BLAKE2s */
     st->blake2s_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &blake2s_type_spec, NULL);
+
+    if (NULL == st->blake2s_type)
+        return -1;
 
     if (PyModule_AddType(m, st->blake2s_type) < 0) {
         return -1;
