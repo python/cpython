@@ -153,10 +153,25 @@ union_richcompare(PyObject *a, PyObject *b, int op)
         for (Py_ssize_t i = 0; i < b_arg_length; i++) {
             PyObject* arg = PyTuple_GET_ITEM(b_args, i);
             if (arg == (PyObject *)&_PyNone_Type) {
-                PyTuple_SET_ITEM(b_args, i, Py_None);
+                arg = Py_None;
+            }
+            if (b_set == NULL) {
+                PyObject* args = PyTuple_Pack(1, arg);
+                if (args == NULL) {
+                    return NULL;
+                }
+                b_set = PySet_New(args);
+                Py_DECREF(args);
+                if (b_set == NULL) {
+                    return NULL;
+                }
+            } else {
+                int err = PySet_Add(b_set, arg);
+                if (err == -1) {
+                    return NULL;
+                }
             }
         }
-        b_set = PySet_New(b_args);
         Py_DECREF(b_args);
     } else if (type == &Py_UnionType) {
         unionobject *bb = (unionobject *)b;
