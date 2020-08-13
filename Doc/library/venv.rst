@@ -98,7 +98,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
 .. class:: EnvBuilder(system_site_packages=False, clear=False, \
                       symlinks=False, upgrade=False, with_pip=False, \
-                      prompt=None, upgrade_deps=False)
+                      prompt=None, upgrade_deps=False, python_interpreter=None)
 
     The :class:`EnvBuilder` class accepts the following keyword arguments on
     instantiation:
@@ -127,6 +127,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     * ``upgrade_deps`` -- Update the base venv modules to the latest on PyPI
 
+    * ``python_interpreter`` -- a path to the python interpreter to use for this virtualenv.
+
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
 
@@ -135,6 +137,9 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. versionadded:: 3.9
        Added the ``upgrade_deps`` parameter
+
+    .. versionadded:: 3.10
+       Added the ``python_interpreter`` parameter
 
     Creators of third-party virtual environment tools will be free to use the
     provided :class:`EnvBuilder` class as a base class.
