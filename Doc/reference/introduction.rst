@@ -94,7 +94,6 @@ The descriptions of lexical analysis and syntax use a modified BNF grammar
 notation.  This uses the following style of definition:
 
 .. productionlist:: *
-   :noindex:
    name: `lc_letter` (`lc_letter` | "_")*
    lc_letter: "a"..."z"
 
