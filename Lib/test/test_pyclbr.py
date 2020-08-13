@@ -196,6 +196,8 @@ class PyclbrTest(TestCase):
             linkage.  We separate comparing string and number attributes
             from comparing the children of input children.
             """
+            print("Children 1 is: {}".format(children1))
+            print("Children 2 is: {}".format(children2))
             self.assertEqual(children1.keys(), children2.keys())
             for ob in children1.values():
                 self.assertIs(ob.parent, parent1)
