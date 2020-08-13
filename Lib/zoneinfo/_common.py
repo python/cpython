@@ -22,8 +22,8 @@ def load_tzdata(key):
         # UnicodeEncodeError: If package_name or resource_name are not UTF-8,
         #   such as keys containing a surrogate character.
         raise ZoneInfoNotFoundError(f"No time zone found with key {key}")
-    except OSError as exc:
-        # Exceptions inherited from OSError can be raised in various scenarios:
+    except (IsADirectoryError, PermissionError):
+        # A few exceptions inherited from OSError can be raised in various scenarios:
         #
         # IsADirectoryError: If the resource_name links to a directory
         #   (e.g. Australia)
