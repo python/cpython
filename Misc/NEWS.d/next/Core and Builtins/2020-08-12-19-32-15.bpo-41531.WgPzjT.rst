@@ -1,0 +1,2 @@
+Fix a bug that was dropping keys when compiling dict literals with more than
+0xFFFF elements. Patch by Pablo Galindo.

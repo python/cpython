@@ -3894,7 +3894,7 @@ compiler_dict(struct compiler *c, expr_ty e)
         }
         else {
             if (elements == 0xFFFF) {
-                if (!compiler_subdict(c, e, i - elements, i)) {
+                if (!compiler_subdict(c, e, i - elements, i + 1)) {
                     return 0;
                 }
                 if (have_dict) {
