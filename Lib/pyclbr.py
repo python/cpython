@@ -21,6 +21,7 @@ has the following attributes:
     name    -- name of the object;
     file    -- file in which the object is defined;
     lineno  -- line in the file where the object's definition starts;
+    end_lineno -- line in the file where the object's definition ends;
     parent  -- parent of this object, if any;
     children -- nested objects contained in this object.
 The 'children' attribute is a dictionary mapping names to objects.
