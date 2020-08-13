@@ -1,1 +1,0 @@
-Update the comparison section for os vs pathlib.
