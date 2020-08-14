@@ -186,7 +186,7 @@ class _AsyncGeneratorContextManager(_GeneratorContextManagerBase,
             # in this implementation
             try:
                 await self.gen.athrow(typ, value, traceback)
-                raise RuntimeError("generator didn't stop after throw()")
+                raise RuntimeError("generator didn't stop after athrow()")
             except StopAsyncIteration as exc:
                 return exc is not value
             except RuntimeError as exc:
