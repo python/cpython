@@ -325,7 +325,7 @@ every type as being compatible with :data:`Any` and :data:`Any` as being
 compatible with every type.
 
 This means that it is possible to perform any operation or method call on a
-value of type on :data:`Any` and assign it to any variable::
+value of type :data:`Any` and assign it to any variable::
 
    from typing import Any
 
