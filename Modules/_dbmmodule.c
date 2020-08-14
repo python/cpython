@@ -452,7 +452,7 @@ Return a database object.
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
              int mode)
-/*[clinic end generated code: output=9527750f5df90764 input=376a9d903a50df59]*/
+/*[clinic end generated code: output=9527750f5df90764 input=d8cf50a9f81218c8]*/
 {
     int iflags;
     _dbm_state *state =  get_dbm_state(module);

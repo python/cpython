@@ -622,7 +622,7 @@ when the database has to be created.  It defaults to octal 0o666.
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
              int mode)
-/*[clinic end generated code: output=9527750f5df90764 input=812b7d74399ceb0e]*/
+/*[clinic end generated code: output=9527750f5df90764 input=bca6ec81dc49292c]*/
 {
     int iflags;
     _gdbm_state *state = get_gdbm_state(module);
