@@ -3376,6 +3376,27 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    PyObject* arg = NULL;
+    
+    if (! PyArg_UnpackTuple(args, __func__, 0, 1, &arg)) {
+        return -1;
+    }
+    
+    int arg_size = ((arg != NULL) 
+        ? PyObject_Length(arg) 
+        : 0
+    );
+    
+    int kwds_size = ((kwds != NULL) 
+        ? ((PyDictObject*) kwds)->ma_used 
+        : 0
+    );
+    
+    if (dictresize((PyDictObject *)self, arg_size + kwds_size)) {
+        Py_DECREF(self);
+        return -1;
+    }
+    
     return dict_update_common(self, args, kwds, "dict");
 }
 
