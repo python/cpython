@@ -28,6 +28,7 @@ _O_CREX = os.O_CREAT | os.O_EXCL
 
 # FreeBSD (and perhaps other BSDs) limit names to 14 characters.
 _SHM_SAFE_NAME_LENGTH = 14
+_MAX_SHM_SIZE_LIMIT = 10**12  # 1TB
 
 # Shared memory block name prefix
 if _USE_POSIX:
@@ -77,7 +78,14 @@ class SharedMemory:
         if create:
             self._flags = _O_CREX | os.O_RDWR
             if size == 0:
-                raise ValueError("'size' must be a positive number different from zero")
+                raise ValueError(
+                    "'size' must be a positive number different from zero"
+                )
+            if size > _MAX_SHM_SIZE_LIMIT:
+                raise ValueError(
+                    "'size' cannot exceed {}".format(_MAX_SHM_SIZE_LIMIT)
+                )
+
         if name is None and not self._flags & os.O_EXCL:
             raise ValueError("'name' can only be None if create=True")
 
@@ -244,6 +252,7 @@ class SharedMemory:
 
 _encoding = "utf8"
 
+
 class ShareableList:
     """Pattern for a mutable list-like object shareable via a shared
     memory block.  It differs from the built-in list type in that these
@@ -298,10 +307,10 @@ class ShareableList:
             sequence = sequence or ()
             _formats = [
                 self._types_mapping[type(item)]
-                    if not isinstance(item, (str, bytes))
-                    else self._types_mapping[type(item)] % (
-                        self._alignment * (len(item) // self._alignment + 1),
-                    )
+                if not isinstance(item, (str, bytes))
+                else self._types_mapping[type(item)] % (
+                    self._alignment * (len(item) // self._alignment + 1),
+                )
                 for item in sequence
             ]
             self._list_len = len(_formats)
@@ -422,7 +431,8 @@ class ShareableList:
     def __getitem__(self, position):
         position = position if position >= 0 else position + self._list_len
         try:
-            offset = self._offset_data_start + self._allocated_offsets[position]
+            offset = self._offset_data_start + \
+                self._allocated_offsets[position]
             (v,) = struct.unpack_from(
                 self._get_packing_format(position),
                 self.shm.buf,
@@ -449,7 +459,8 @@ class ShareableList:
             new_format = self._types_mapping[type(value)]
             encoded_value = value
         else:
-            allocated_length = self._allocated_offsets[position + 1] - item_offset
+            allocated_length = self._allocated_offsets[position +
+                                                       1] - item_offset
 
             encoded_value = (value.encode(_encoding)
                              if isinstance(value, str) else value)

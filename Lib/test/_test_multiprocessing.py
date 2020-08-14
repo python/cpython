@@ -3892,6 +3892,10 @@ class _TestSharedMemory(BaseTestCase):
         with self.assertRaises(ValueError):
             sms_invalid = shared_memory.SharedMemory(create=True)
 
+        # Test creating a shared memory segment with size greater than shared_memory._MAX_SHM_SIZE_LIMIT
+        with self.assertRaises(ValueError):
+            shared_memory.SharedMemory(create=True, size=shared_memory._MAX_SHM_SIZE_LIMIT + 1)
+
     def test_shared_memory_across_processes(self):
         # bpo-40135: don't define shared memory block's name in case of
         # the failure when we run multiprocessing tests in parallel.

@@ -63,6 +63,7 @@ copying of data.
    based upon that platform's memory page size, the exact size of the shared
    memory block may be larger or equal to the size requested.  When attaching
    to an existing shared memory block, the ``size`` parameter is ignored.
+   Maximum ``size`` limit is 1TB.
 
    .. method:: close()
 

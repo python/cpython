@@ -1,0 +1,2 @@
+Prevent creating :class:`shared_memory.SharedMemory` objects with
+:code:`size` greater than 1TB.
