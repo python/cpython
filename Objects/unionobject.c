@@ -14,7 +14,6 @@ unionobject_dealloc(PyObject *self)
 {
     unionobject *alias = (unionobject *)self;
 
-    _PyObject_GC_UNTRACK(self);
     Py_XDECREF(alias->args);
     self->ob_type->tp_free(self);
 }
@@ -28,14 +27,6 @@ union_hash(PyObject *self)
         return -1;
     }
     return h1;
-}
-
-static int
-union_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    unionobject *alias = (unionobject *)self;
-    Py_VISIT(alias->args);
-    return 0;
 }
 
 static PyMemberDef union_members[] = {
@@ -460,10 +451,9 @@ PyTypeObject Py_UnionType = {
     .tp_basicsize = sizeof(unionobject),
     .tp_dealloc = unionobject_dealloc,
     .tp_alloc = PyType_GenericAlloc,
-    .tp_free = PyObject_GC_Del,
+    .tp_free = PyObject_Del,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_hash = union_hash,
-    .tp_traverse = union_traverse,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_members = union_members,
     .tp_methods = union_methods,
@@ -485,7 +475,7 @@ Py_Union(PyObject *args)
         Py_INCREF(args);
     }
 
-    unionobject *alias = PyObject_GC_New(unionobject, &Py_UnionType);
+    unionobject *alias = PyObject_New(unionobject, &Py_UnionType);
     if (alias == NULL) {
         Py_DECREF(args);
         return NULL;
@@ -497,7 +487,6 @@ Py_Union(PyObject *args)
         return NULL;
     }
     alias->args = new_args;
-    _PyObject_GC_TRACK(alias);
     return (PyObject *) alias;
 }
 
