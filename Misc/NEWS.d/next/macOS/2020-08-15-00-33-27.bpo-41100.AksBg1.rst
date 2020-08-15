@@ -1,0 +1,3 @@
+Additional fixes for testing on macOS 11 Big Sur Intel. Note: macOS 11 is
+not yet released, this release of Python is not fully supported on 11.0, and
+not all tests pass.

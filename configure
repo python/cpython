@@ -9251,6 +9251,9 @@ fi
     	ppc)
     		MACOSX_DEFAULT_ARCH="ppc64"
     		;;
+    	arm64)
+    		MACOSX_DEFAULT_ARCH="arm64"
+    		;;
     	*)
     		as_fn_error $? "Unexpected output of 'arch' on OSX" "$LINENO" 5
     		;;

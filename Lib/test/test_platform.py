@@ -236,6 +236,11 @@ class PlatformTest(unittest.TestCase):
             fd.close()
             self.assertFalse(real_ver is None)
             result_list = res[0].split('.')
+            # macOS 11.0 (Big Sur) may report its version number
+            # as 10.16 if the executable is built with an older
+            # SDK target but sw_vers reports 11.0.
+            if result_list == ['10', '16']:
+                result_list = ['11', '0']
             expect_list = real_ver.split('.')
             len_diff = len(result_list) - len(expect_list)
             # On Snow Leopard, sw_vers reports 10.6.0 as 10.6

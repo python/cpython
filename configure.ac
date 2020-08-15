@@ -2456,6 +2456,9 @@ case $ac_sys_system/$ac_sys_release in
     	ppc)
     		MACOSX_DEFAULT_ARCH="ppc64"
     		;;
+    	arm64)
+    		MACOSX_DEFAULT_ARCH="arm64"
+    		;;
     	*)
     		AC_MSG_ERROR([Unexpected output of 'arch' on OSX])
     		;;

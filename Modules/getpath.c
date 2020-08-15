@@ -566,11 +566,7 @@ calculate_program_full_path(const _PyCoreConfig *core_config,
     memset(program_full_path, 0, sizeof(program_full_path));
 
 #ifdef __APPLE__
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
     uint32_t nsexeclength = MAXPATHLEN;
-#else
-    unsigned long nsexeclength = MAXPATHLEN;
-#endif
     char execpath[MAXPATHLEN+1];
 #endif
 
