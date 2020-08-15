@@ -1,0 +1,2 @@
+Fix refleaks of `encodings.aliases` by Moving `encodings._aliases` to
+:func:`encodings.search_function`.

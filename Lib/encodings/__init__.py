@@ -35,7 +35,7 @@ from . import aliases
 _cache = {}
 _unknown = '--unknown--'
 _import_tail = ['*']
-_aliases = aliases.aliases
+
 
 class CodecRegistryError(LookupError, SystemError):
     pass
@@ -69,6 +69,7 @@ def normalize_encoding(encoding):
 
 def search_function(encoding):
 
+    _aliases = aliases.aliases
     # Cache lookup
     entry = _cache.get(encoding, _unknown)
     if entry is not _unknown:
