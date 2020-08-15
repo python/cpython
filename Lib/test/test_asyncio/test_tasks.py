@@ -1120,6 +1120,22 @@ class BaseTaskTests:
         res = loop.run_until_complete(task)
         self.assertEqual(res, "ok")
 
+    def test_wait_for_cancellation_race_condition(self):
+        def gen():
+            yield 0.1
+            yield 0.1
+            yield 0.1
+            yield 0.1
+
+        loop = self.new_test_loop(gen)
+
+        fut = self.new_future(loop)
+        loop.call_later(0.1, fut.set_result, "ok")
+        task = loop.create_task(asyncio.wait_for(fut, timeout=1))
+        loop.call_later(0.1, task.cancel)
+        res = loop.run_until_complete(task)
+        self.assertEqual(res, "ok")
+
     def test_wait_for_waits_for_task_cancellation(self):
         loop = asyncio.new_event_loop()
         self.addCleanup(loop.close)
