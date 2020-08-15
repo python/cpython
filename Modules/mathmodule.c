@@ -2432,12 +2432,17 @@ The *csum* variable tracks the cumulative sum and *frac* tracks
 the cumulative fractional errors at each step.  Since this
 variant assumes that |csum| >= |x| at each step, we establish
 the precondition by starting the accumulation from 1.0 which
-represents the largest possible value of (x/max)**2.
+represents the largest possible value of (x*scale)**2 or (x/max)**2.
 
 After the loop is finished, the initial 1.0 is subtracted out
 for a net zero effect on the final sum.  Since *csum* will be
 greater than 1.0, the subtraction of 1.0 will not cause
 fractional digits to be dropped from *csum*.
+
+To get the full benefit from compensated summation, the
+largest addend should be in the range:   0.5 <= x <= 1.0.
+Accordingly, scaling or division by *max* should not be skipped
+even if not otherwise needed to prevent overflow or loss of precision.
 
 */
 
@@ -2475,9 +2480,8 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         }
         return sqrt(csum - 1.0 + frac) / scale;
     }
-    /* When max_e < -1023, a scale computed given by ldexp(1.0, -max_e)
-       would be subnormal and break range invariants for max*scale.
-       Instead, we just divide by *max*.
+    /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
+       So instead of multiplying by a scale, we just divide by *max*.
     */
     for (i=0 ; i < n ; i++) {
         x = vec[i];
