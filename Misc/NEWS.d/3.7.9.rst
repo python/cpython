@@ -1,0 +1,90 @@
+.. bpo: 41304
+.. date: 2020-07-15-20-15-08
+.. nonce: vNEeYA
+.. release date: 2020-08-15
+.. section: Security
+
+Fixes `python3x._pth` being ignored on Windows, caused by the fix for
+:issue:`29778` (CVE-2020-15801).
+
+..
+
+.. bpo: 29778
+.. date: 2020-07-03-17-21-37
+.. nonce: cR_fGS
+.. section: Security
+
+Ensure :file:`python3.dll` is loaded from correct locations when Python is
+embedded (CVE-2020-15523).
+
+..
+
+.. bpo: 41004
+.. date: 2020-06-29-16-02-29
+.. nonce: ovF0KZ
+.. section: Security
+
+CVE-2020-14422: The __hash__() methods of  ipaddress.IPv4Interface and
+ipaddress.IPv6Interface incorrectly generated constant hash values of 32 and
+128 respectively. This resulted in always causing hash collisions. The fix
+uses hash() to generate hash values for the tuple of (address, mask length,
+network address).
+
+..
+
+.. bpo: 39603
+.. date: 2020-02-12-14-17-39
+.. nonce: Gt3RSg
+.. section: Security
+
+Prevent http header injection by rejecting control characters in
+http.client.putrequest(...).
+
+..
+
+.. bpo: 33786
+.. date: 2018-06-06-23-24-40
+.. nonce: lBvT8z
+.. section: Core and Builtins
+
+Fix asynchronous generators to handle GeneratorExit in athrow() correctly
+
+..
+
+.. bpo: 41288
+.. date: 2020-07-13-15-06-35
+.. nonce: 8mn5P-
+.. section: Library
+
+Unpickling invalid NEWOBJ_EX opcode with the C implementation raises now
+UnpicklingError instead of crashing.
+
+..
+
+.. bpo: 39017
+.. date: 2020-07-12-22-16-58
+.. nonce: x3Cg-9
+.. section: Library
+
+Avoid infinite loop when reading specially crafted TAR files using the
+tarfile module (CVE-2019-20907).
+
+..
+
+.. bpo: 41235
+.. date: 2020-07-07-21-56-26
+.. nonce: H2csMU
+.. section: Library
+
+Fix the error handling in :meth:`ssl.SSLContext.load_dh_params`.
+
+..
+
+.. bpo: 41100
+.. date: 2020-08-15-00-33-27
+.. nonce: AksBg1
+.. section: macOS
+
+Additional fixes for testing on macOS 11 Big Sur Intel. Note: macOS 11 is
+not yet released, this release of Python is not fully supported on 11.0, and
+not all tests pass.
