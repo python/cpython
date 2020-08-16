@@ -1,9 +1,9 @@
 #include <Python.h>
 #include <errcode.h>
-#include "../tokenizer.h"
+#include "tokenizer.h"
 
 #include "pegen.h"
-#include "parse_string.h"
+#include "string_parser.h"
 
 #include "vm.h"
 #include "vmparse.h"  // Generated parser tables
