@@ -1,22 +1,22 @@
-static const int n_keyword_lists = 15;
+static const int n_keyword_lists = 9;
 static KeywordToken *reserved_keywords[] = {
     NULL,
     NULL,
     (KeywordToken[]) {
         {"if", 510},
         {"in", 518},
-        {"is", 526},
-        {"as", 531},
-        {"or", 532},
+        {"as", 520},
+        {"is", 527},
+        {"or", 531},
         {NULL, -1},
     },
     (KeywordToken[]) {
         {"del", 503},
         {"try", 511},
         {"for", 517},
-        {"def", 522},
-        {"not", 525},
-        {"and", 533},
+        {"def", 523},
+        {"not", 526},
+        {"and", 532},
         {NULL, -1},
     },
     (KeywordToken[]) {
@@ -25,8 +25,8 @@ static KeywordToken *reserved_keywords[] = {
         {"elif", 515},
         {"else", 516},
         {"with", 519},
-        {"True", 527},
-        {"None", 529},
+        {"True", 528},
+        {"None", 530},
         {NULL, -1},
     },
     (KeywordToken[]) {
@@ -34,8 +34,8 @@ static KeywordToken *reserved_keywords[] = {
         {"yield", 504},
         {"break", 506},
         {"while", 512},
-        {"class", 523},
-        {"False", 528},
+        {"class", 524},
+        {"False", 529},
         {NULL, -1},
     },
     (KeywordToken[]) {
@@ -43,26 +43,17 @@ static KeywordToken *reserved_keywords[] = {
         {"assert", 505},
         {"global", 508},
         {"import", 513},
-        {"except", 520},
-        {"lambda", 524},
+        {"except", 521},
+        {"lambda", 525},
         {NULL, -1},
     },
     (KeywordToken[]) {
-        {"finally", 521},
+        {"finally", 522},
         {NULL, -1},
     },
     (KeywordToken[]) {
         {"continue", 507},
         {"nonlocal", 509},
-        {NULL, -1},
-    },
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    (KeywordToken[]) {
-        {"__new_parser__", 530},
         {NULL, -1},
     },
 };
@@ -140,6 +131,7 @@ enum {
     R_EXPRESSIONS,
     R_EXPRESSION,
     R_LAMBDEF,
+    R_LAMBDA_PARAMS,
     R_LAMBDA_PARAMETERS,
     R_LAMBDA_SLASH_NO_DEFAULT,
     R_LAMBDA_SLASH_WITH_DEFAULT,
@@ -208,7 +200,6 @@ enum {
     R_DEL_TARGETS,
     R_DEL_TARGET,
     R_DEL_T_ATOM,
-    R_DEL_TARGET_END,
     R_TARGETS,
     R_TARGET,
     R_T_PRIMARY,
@@ -218,14 +209,19 @@ enum {
     R_INVALID_KWARG,
     R_INVALID_NAMED_EXPRESSION,
     R_INVALID_ASSIGNMENT,
+    R_INVALID_ANN_ASSIGN_TARGET,
+    R_INVALID_DEL_STMT,
     R_INVALID_BLOCK,
     R_INVALID_COMPREHENSION,
     R_INVALID_DICT_COMPREHENSION,
     R_INVALID_PARAMETERS,
+    R_INVALID_LAMBDA_PARAMETERS,
     R_INVALID_STAR_ETC,
     R_INVALID_LAMBDA_STAR_ETC,
     R_INVALID_DOUBLE_TYPE_COMMENTS,
-    R_INVALID_DEL_TARGET,
+    R_INVALID_WITH_ITEM,
+    R_INVALID_FOR_TARGET,
+    R_INVALID_GROUP,
     R_INVALID_IMPORT_FROM_TARGETS,
     R_ROOT,
     R__LOOP0_1,
@@ -250,94 +246,94 @@ enum {
     R__GATHER_20,
     R__GATHER_21,
     R__TMP_22,
-    R__LOOP0_23,
-    R__LOOP1_24,
-    R__GATHER_25,
-    R__TMP_26,
-    R__GATHER_27,
-    R__TMP_28,
-    R__GATHER_29,
+    R__TMP_23,
+    R__LOOP0_24,
+    R__LOOP1_25,
+    R__GATHER_26,
+    R__TMP_27,
+    R__GATHER_28,
+    R__TMP_29,
     R__GATHER_30,
     R__GATHER_31,
     R__GATHER_32,
-    R__TMP_33,
-    R__LOOP1_34,
-    R__TMP_35,
+    R__GATHER_33,
+    R__TMP_34,
+    R__LOOP1_35,
     R__TMP_36,
     R__TMP_37,
     R__TMP_38,
     R__TMP_39,
-    R__LOOP0_40,
+    R__TMP_40,
     R__LOOP0_41,
     R__LOOP0_42,
-    R__LOOP1_43,
-    R__LOOP0_44,
-    R__LOOP1_45,
+    R__LOOP0_43,
+    R__LOOP1_44,
+    R__LOOP0_45,
     R__LOOP1_46,
     R__LOOP1_47,
-    R__LOOP0_48,
-    R__LOOP1_49,
-    R__LOOP0_50,
-    R__LOOP1_51,
-    R__LOOP0_52,
-    R__LOOP1_53,
+    R__LOOP1_48,
+    R__LOOP0_49,
+    R__LOOP1_50,
+    R__LOOP0_51,
+    R__LOOP1_52,
+    R__LOOP0_53,
     R__LOOP1_54,
-    R__TMP_55,
-    R__GATHER_56,
-    R__LOOP1_57,
-    R__GATHER_58,
-    R__LOOP1_59,
-    R__LOOP0_60,
+    R__LOOP1_55,
+    R__TMP_56,
+    R__GATHER_57,
+    R__LOOP1_58,
+    R__GATHER_59,
+    R__LOOP1_60,
     R__LOOP0_61,
     R__LOOP0_62,
-    R__LOOP1_63,
-    R__LOOP0_64,
-    R__LOOP1_65,
+    R__LOOP0_63,
+    R__LOOP1_64,
+    R__LOOP0_65,
     R__LOOP1_66,
     R__LOOP1_67,
-    R__LOOP0_68,
-    R__LOOP1_69,
-    R__LOOP0_70,
-    R__LOOP1_71,
-    R__LOOP0_72,
-    R__LOOP1_73,
+    R__LOOP1_68,
+    R__LOOP0_69,
+    R__LOOP1_70,
+    R__LOOP0_71,
+    R__LOOP1_72,
+    R__LOOP0_73,
     R__LOOP1_74,
     R__LOOP1_75,
     R__LOOP1_76,
-    R__TMP_77,
-    R__GATHER_78,
-    R__TMP_79,
+    R__LOOP1_77,
+    R__TMP_78,
+    R__GATHER_79,
     R__TMP_80,
     R__TMP_81,
     R__TMP_82,
-    R__LOOP1_83,
-    R__TMP_84,
+    R__TMP_83,
+    R__LOOP1_84,
     R__TMP_85,
-    R__GATHER_86,
-    R__LOOP1_87,
-    R__LOOP0_88,
+    R__TMP_86,
+    R__GATHER_87,
+    R__LOOP1_88,
     R__LOOP0_89,
-    R__TMP_90,
+    R__LOOP0_90,
     R__TMP_91,
-    R__GATHER_92,
+    R__TMP_92,
     R__GATHER_93,
     R__GATHER_94,
     R__GATHER_95,
-    R__LOOP0_96,
-    R__GATHER_97,
-    R__TMP_98,
-    R__GATHER_99,
+    R__GATHER_96,
+    R__LOOP0_97,
+    R__GATHER_98,
+    R__TMP_99,
     R__GATHER_100,
-    R__TMP_101,
-    R__LOOP0_102,
-    R__TMP_103,
-    R__TMP_104,
-    R__TMP_105,
+    R__GATHER_101,
+    R__TMP_102,
+    R__LOOP0_103,
+    R__LOOP0_104,
+    R__LOOP0_105,
     R__TMP_106,
-    R__LOOP0_107,
-    R__TMP_108,
+    R__TMP_107,
+    R__LOOP0_108,
     R__TMP_109,
-    R__TMP_110,
+    R__LOOP0_110,
     R__TMP_111,
     R__TMP_112,
     R__TMP_113,
@@ -349,9 +345,15 @@ enum {
     R__TMP_119,
     R__TMP_120,
     R__TMP_121,
-    R__LOOP1_122,
+    R__TMP_122,
     R__TMP_123,
     R__TMP_124,
+    R__TMP_125,
+    R__TMP_126,
+    R__LOOP1_127,
+    R__LOOP1_128,
+    R__TMP_129,
+    R__TMP_130,
 };
 
 enum {
@@ -419,6 +421,7 @@ enum {
     A_YIELD_STMT_0,
     A_ASSERT_STMT_0,
     A_DEL_STMT_0,
+    A_DEL_STMT_1,
     A_IMPORT_STMT_0,
     A_IMPORT_STMT_1,
     A_IMPORT_NAME_0,
@@ -442,11 +445,14 @@ enum {
     A_WHILE_STMT_0,
     A_FOR_STMT_0,
     A_FOR_STMT_1,
+    A_FOR_STMT_2,
     A_WITH_STMT_0,
     A_WITH_STMT_1,
     A_WITH_STMT_2,
     A_WITH_STMT_3,
     A_WITH_ITEM_0,
+    A_WITH_ITEM_1,
+    A_WITH_ITEM_2,
     A_TRY_STMT_0,
     A_TRY_STMT_1,
     A_EXCEPT_BLOCK_0,
@@ -515,6 +521,8 @@ enum {
     A_EXPRESSION_1,
     A_EXPRESSION_2,
     A_LAMBDEF_0,
+    A_LAMBDA_PARAMS_0,
+    A_LAMBDA_PARAMS_1,
     A_LAMBDA_PARAMETERS_0,
     A_LAMBDA_PARAMETERS_1,
     A_LAMBDA_PARAMETERS_2,
@@ -609,13 +617,13 @@ enum {
     A_ATOM_7,
     A_ATOM_8,
     A_ATOM_9,
-    A_ATOM_10,
     A_STRINGS_0,
     A_LIST_0,
     A_LISTCOMP_0,
     A_LISTCOMP_1,
     A_TUPLE_0,
     A_GROUP_0,
+    A_GROUP_1,
     A_GENEXP_0,
     A_GENEXP_1,
     A_SET_0,
@@ -631,6 +639,7 @@ enum {
     A_FOR_IF_CLAUSES_0,
     A_FOR_IF_CLAUSE_0,
     A_FOR_IF_CLAUSE_1,
+    A_FOR_IF_CLAUSE_2,
     A_YIELD_EXPR_0,
     A_YIELD_EXPR_1,
     A_ARGUMENTS_0,
@@ -672,12 +681,6 @@ enum {
     A_DEL_T_ATOM_1,
     A_DEL_T_ATOM_2,
     A_DEL_T_ATOM_3,
-    A_DEL_T_ATOM_4,
-    A_DEL_TARGET_END_0,
-    A_DEL_TARGET_END_1,
-    A_DEL_TARGET_END_2,
-    A_DEL_TARGET_END_3,
-    A_DEL_TARGET_END_4,
     A_TARGETS_0,
     A_TARGET_0,
     A_TARGET_1,
@@ -707,15 +710,22 @@ enum {
     A_INVALID_ASSIGNMENT_3,
     A_INVALID_ASSIGNMENT_4,
     A_INVALID_ASSIGNMENT_5,
+    A_INVALID_ANN_ASSIGN_TARGET_0,
+    A_INVALID_ANN_ASSIGN_TARGET_1,
+    A_INVALID_ANN_ASSIGN_TARGET_2,
+    A_INVALID_DEL_STMT_0,
     A_INVALID_BLOCK_0,
     A_INVALID_COMPREHENSION_0,
     A_INVALID_DICT_COMPREHENSION_0,
     A_INVALID_PARAMETERS_0,
+    A_INVALID_LAMBDA_PARAMETERS_0,
     A_INVALID_STAR_ETC_0,
     A_INVALID_STAR_ETC_1,
     A_INVALID_LAMBDA_STAR_ETC_0,
     A_INVALID_DOUBLE_TYPE_COMMENTS_0,
-    A_INVALID_DEL_TARGET_0,
+    A_INVALID_WITH_ITEM_0,
+    A_INVALID_FOR_TARGET_0,
+    A_INVALID_GROUP_0,
     A_INVALID_IMPORT_FROM_TARGETS_0,
     A__GATHER_3_0,
     A__GATHER_3_1,
@@ -751,99 +761,104 @@ enum {
     A__GATHER_21_0,
     A__GATHER_21_1,
     A__TMP_22_0,
-    A__GATHER_25_0,
-    A__GATHER_25_1,
-    A__TMP_26_0,
-    A__GATHER_27_0,
-    A__GATHER_27_1,
-    A__TMP_28_0,
-    A__GATHER_29_0,
-    A__GATHER_29_1,
+    A__TMP_23_0,
+    A__TMP_23_1,
+    A__GATHER_26_0,
+    A__GATHER_26_1,
+    A__TMP_27_0,
+    A__GATHER_28_0,
+    A__GATHER_28_1,
+    A__TMP_29_0,
     A__GATHER_30_0,
     A__GATHER_30_1,
     A__GATHER_31_0,
     A__GATHER_31_1,
     A__GATHER_32_0,
     A__GATHER_32_1,
-    A__TMP_33_0,
-    A__TMP_35_0,
+    A__GATHER_33_0,
+    A__GATHER_33_1,
+    A__TMP_34_0,
+    A__TMP_34_1,
+    A__TMP_34_2,
     A__TMP_36_0,
     A__TMP_37_0,
     A__TMP_38_0,
     A__TMP_39_0,
-    A__TMP_55_0,
-    A__GATHER_56_0,
-    A__GATHER_56_1,
-    A__GATHER_58_0,
-    A__GATHER_58_1,
-    A__TMP_77_0,
-    A__GATHER_78_0,
-    A__GATHER_78_1,
-    A__TMP_79_0,
+    A__TMP_40_0,
+    A__TMP_56_0,
+    A__GATHER_57_0,
+    A__GATHER_57_1,
+    A__GATHER_59_0,
+    A__GATHER_59_1,
+    A__TMP_78_0,
+    A__GATHER_79_0,
+    A__GATHER_79_1,
     A__TMP_80_0,
-    A__TMP_80_1,
-    A__TMP_80_2,
     A__TMP_81_0,
     A__TMP_81_1,
+    A__TMP_81_2,
     A__TMP_82_0,
     A__TMP_82_1,
-    A__TMP_82_2,
-    A__TMP_82_3,
-    A__TMP_84_0,
+    A__TMP_83_0,
+    A__TMP_83_1,
+    A__TMP_83_2,
+    A__TMP_83_3,
     A__TMP_85_0,
-    A__TMP_85_1,
-    A__GATHER_86_0,
-    A__GATHER_86_1,
-    A__TMP_90_0,
+    A__TMP_86_0,
+    A__TMP_86_1,
+    A__GATHER_87_0,
+    A__GATHER_87_1,
     A__TMP_91_0,
-    A__GATHER_92_0,
-    A__GATHER_92_1,
+    A__TMP_92_0,
     A__GATHER_93_0,
     A__GATHER_93_1,
     A__GATHER_94_0,
     A__GATHER_94_1,
     A__GATHER_95_0,
     A__GATHER_95_1,
-    A__GATHER_97_0,
-    A__GATHER_97_1,
-    A__TMP_98_0,
-    A__GATHER_99_0,
-    A__GATHER_99_1,
+    A__GATHER_96_0,
+    A__GATHER_96_1,
+    A__GATHER_98_0,
+    A__GATHER_98_1,
+    A__TMP_99_0,
     A__GATHER_100_0,
     A__GATHER_100_1,
-    A__TMP_101_0,
-    A__TMP_101_1,
-    A__TMP_103_0,
-    A__TMP_104_0,
-    A__TMP_104_1,
-    A__TMP_105_0,
-    A__TMP_105_1,
+    A__GATHER_101_0,
+    A__GATHER_101_1,
+    A__TMP_102_0,
+    A__TMP_102_1,
     A__TMP_106_0,
     A__TMP_106_1,
-    A__TMP_106_2,
-    A__TMP_108_0,
-    A__TMP_108_1,
+    A__TMP_107_0,
+    A__TMP_107_1,
+    A__TMP_107_2,
     A__TMP_109_0,
     A__TMP_109_1,
-    A__TMP_110_0,
-    A__TMP_110_1,
     A__TMP_111_0,
+    A__TMP_111_1,
     A__TMP_112_0,
     A__TMP_112_1,
     A__TMP_113_0,
     A__TMP_113_1,
     A__TMP_114_0,
     A__TMP_115_0,
+    A__TMP_115_1,
     A__TMP_116_0,
+    A__TMP_116_1,
     A__TMP_117_0,
     A__TMP_118_0,
     A__TMP_119_0,
     A__TMP_120_0,
     A__TMP_121_0,
+    A__TMP_122_0,
     A__TMP_123_0,
-    A__TMP_123_1,
     A__TMP_124_0,
-    A__TMP_124_1,
+    A__TMP_125_0,
+    A__TMP_126_0,
+    A__TMP_129_0,
+    A__TMP_129_1,
+    A__TMP_130_0,
+    A__TMP_130_1,
 };
 
 static Rule all_rules[] = {
@@ -1193,7 +1208,7 @@ static Rule all_rules[] = {
      R_ASSIGNMENT,
      0,  // memo
      0,  // leftrec
-     {0, 10, 21, 30, 38, -1},
+     {0, 10, 21, 34, 43, -1},
      {
         // NAME ':' expression ['=' annotated_rhs]
         OP_NAME, 
@@ -1211,16 +1226,20 @@ static Rule all_rules[] = {
         OP_OPTIONAL, 
         OP_RETURN, A_ASSIGNMENT_1,
 
-        // ((star_targets '='))+ (yield_expr | star_expressions) TYPE_COMMENT?
+        // ((star_targets '='))+ (yield_expr | star_expressions) !'=' TYPE_COMMENT?
         OP_RULE, R__LOOP1_17,
         OP_RULE, R__TMP_18,
+        OP_SAVE_MARK, 
+        OP_TOKEN, EQUAL,
+        OP_NEG_LOOKAHEAD, 
         OP_TOKEN, TYPE_COMMENT,
         OP_OPTIONAL, 
         OP_RETURN, A_ASSIGNMENT_2,
 
-        // single_target augassign (yield_expr | star_expressions)
+        // single_target augassign ~ (yield_expr | star_expressions)
         OP_RULE, R_SINGLE_TARGET,
         OP_RULE, R_AUGASSIGN,
+        OP_CUT, 
         OP_RULE, R__TMP_19,
         OP_RETURN, A_ASSIGNMENT_3,
 
@@ -1347,12 +1366,19 @@ static Rule all_rules[] = {
      R_DEL_STMT,
      0,  // memo
      0,  // leftrec
-     {0, -1},
+     {0, 10, -1},
      {
-        // 'del' del_targets
+        // 'del' del_targets &(';' | NEWLINE)
         OP_TOKEN, 503,
         OP_RULE, R_DEL_TARGETS,
+        OP_SAVE_MARK, 
+        OP_RULE, R__TMP_23,
+        OP_POS_LOOKAHEAD, 
         OP_RETURN, A_DEL_STMT_0,
+
+        // invalid_del_stmt
+        OP_RULE, R_INVALID_DEL_STMT,
+        OP_RETURN, A_DEL_STMT_1,
 
      },
     },
@@ -1393,7 +1419,7 @@ static Rule all_rules[] = {
      {
         // 'from' (('.' | '...'))* dotted_name 'import' import_from_targets
         OP_TOKEN, 514,
-        OP_RULE, R__LOOP0_23,
+        OP_RULE, R__LOOP0_24,
         OP_RULE, R_DOTTED_NAME,
         OP_TOKEN, 513,
         OP_RULE, R_IMPORT_FROM_TARGETS,
@@ -1401,7 +1427,7 @@ static Rule all_rules[] = {
 
         // 'from' (('.' | '...'))+ 'import' import_from_targets
         OP_TOKEN, 514,
-        OP_RULE, R__LOOP1_24,
+        OP_RULE, R__LOOP1_25,
         OP_TOKEN, 513,
         OP_RULE, R_IMPORT_FROM_TARGETS,
         OP_RETURN, A_IMPORT_FROM_1,
@@ -1446,7 +1472,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // ','.import_from_as_name+
-        OP_RULE, R__GATHER_25,
+        OP_RULE, R__GATHER_26,
         OP_RETURN, A_IMPORT_FROM_AS_NAMES_0,
 
      },
@@ -1459,7 +1485,7 @@ static Rule all_rules[] = {
      {
         // NAME ['as' NAME]
         OP_NAME, 
-        OP_RULE, R__TMP_26,
+        OP_RULE, R__TMP_27,
         OP_OPTIONAL, 
         OP_RETURN, A_IMPORT_FROM_AS_NAME_0,
 
@@ -1472,7 +1498,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // ','.dotted_as_name+
-        OP_RULE, R__GATHER_27,
+        OP_RULE, R__GATHER_28,
         OP_RETURN, A_DOTTED_AS_NAMES_0,
 
      },
@@ -1485,7 +1511,7 @@ static Rule all_rules[] = {
      {
         // dotted_name ['as' NAME]
         OP_RULE, R_DOTTED_NAME,
-        OP_RULE, R__TMP_28,
+        OP_RULE, R__TMP_29,
         OP_OPTIONAL, 
         OP_RETURN, A_DOTTED_AS_NAME_0,
 
@@ -1594,12 +1620,13 @@ static Rule all_rules[] = {
      R_FOR_STMT,
      0,  // memo
      0,  // leftrec
-     {0, 20, -1},
+     {0, 21, 44, -1},
      {
-        // 'for' star_targets 'in' star_expressions ':' TYPE_COMMENT? block else_block?
+        // 'for' star_targets 'in' ~ star_expressions ':' TYPE_COMMENT? block else_block?
         OP_TOKEN, 517,
         OP_RULE, R_STAR_TARGETS,
         OP_TOKEN, 518,
+        OP_CUT, 
         OP_RULE, R_STAR_EXPRESSIONS,
         OP_TOKEN, COLON,
         OP_TOKEN, TYPE_COMMENT,
@@ -1609,11 +1636,12 @@ static Rule all_rules[] = {
         OP_OPTIONAL, 
         OP_RETURN, A_FOR_STMT_0,
 
-        // ASYNC 'for' star_targets 'in' star_expressions ':' TYPE_COMMENT? block else_block?
+        // ASYNC 'for' star_targets 'in' ~ star_expressions ':' TYPE_COMMENT? block else_block?
         OP_TOKEN, ASYNC,
         OP_TOKEN, 517,
         OP_RULE, R_STAR_TARGETS,
         OP_TOKEN, 518,
+        OP_CUT, 
         OP_RULE, R_STAR_EXPRESSIONS,
         OP_TOKEN, COLON,
         OP_TOKEN, TYPE_COMMENT,
@@ -1622,6 +1650,10 @@ static Rule all_rules[] = {
         OP_RULE, R_ELSE_BLOCK,
         OP_OPTIONAL, 
         OP_RETURN, A_FOR_STMT_1,
+
+        // invalid_for_target
+        OP_RULE, R_INVALID_FOR_TARGET,
+        OP_RETURN, A_FOR_STMT_2,
 
      },
     },
@@ -1634,7 +1666,7 @@ static Rule all_rules[] = {
         // 'with' '(' ','.with_item+ ','? ')' ':' block
         OP_TOKEN, 519,
         OP_TOKEN, LPAR,
-        OP_RULE, R__GATHER_29,
+        OP_RULE, R__GATHER_30,
         OP_TOKEN, COMMA,
         OP_OPTIONAL, 
         OP_TOKEN, RPAR,
@@ -1644,7 +1676,7 @@ static Rule all_rules[] = {
 
         // 'with' ','.with_item+ ':' TYPE_COMMENT? block
         OP_TOKEN, 519,
-        OP_RULE, R__GATHER_30,
+        OP_RULE, R__GATHER_31,
         OP_TOKEN, COLON,
         OP_TOKEN, TYPE_COMMENT,
         OP_OPTIONAL, 
@@ -1655,7 +1687,7 @@ static Rule all_rules[] = {
         OP_TOKEN, ASYNC,
         OP_TOKEN, 519,
         OP_TOKEN, LPAR,
-        OP_RULE, R__GATHER_31,
+        OP_RULE, R__GATHER_32,
         OP_TOKEN, COMMA,
         OP_OPTIONAL, 
         OP_TOKEN, RPAR,
@@ -1666,7 +1698,7 @@ static Rule all_rules[] = {
         // ASYNC 'with' ','.with_item+ ':' TYPE_COMMENT? block
         OP_TOKEN, ASYNC,
         OP_TOKEN, 519,
-        OP_RULE, R__GATHER_32,
+        OP_RULE, R__GATHER_33,
         OP_TOKEN, COLON,
         OP_TOKEN, TYPE_COMMENT,
         OP_OPTIONAL, 
@@ -1679,13 +1711,24 @@ static Rule all_rules[] = {
      R_WITH_ITEM,
      0,  // memo
      0,  // leftrec
-     {0, -1},
+     {0, 12, 16, -1},
      {
-        // expression ['as' target]
+        // expression 'as' target &(',' | ')' | ':')
         OP_RULE, R_EXPRESSION,
-        OP_RULE, R__TMP_33,
-        OP_OPTIONAL, 
+        OP_TOKEN, 520,
+        OP_RULE, R_TARGET,
+        OP_SAVE_MARK, 
+        OP_RULE, R__TMP_34,
+        OP_POS_LOOKAHEAD, 
         OP_RETURN, A_WITH_ITEM_0,
+
+        // invalid_with_item
+        OP_RULE, R_INVALID_WITH_ITEM,
+        OP_RETURN, A_WITH_ITEM_1,
+
+        // expression
+        OP_RULE, R_EXPRESSION,
+        OP_RETURN, A_WITH_ITEM_2,
 
      },
     },
@@ -1706,7 +1749,7 @@ static Rule all_rules[] = {
         OP_TOKEN, 511,
         OP_TOKEN, COLON,
         OP_RULE, R_BLOCK,
-        OP_RULE, R__LOOP1_34,
+        OP_RULE, R__LOOP1_35,
         OP_RULE, R_ELSE_BLOCK,
         OP_OPTIONAL, 
         OP_RULE, R_FINALLY_BLOCK,
@@ -1722,16 +1765,16 @@ static Rule all_rules[] = {
      {0, 13, -1},
      {
         // 'except' expression ['as' NAME] ':' block
-        OP_TOKEN, 520,
+        OP_TOKEN, 521,
         OP_RULE, R_EXPRESSION,
-        OP_RULE, R__TMP_35,
+        OP_RULE, R__TMP_36,
         OP_OPTIONAL, 
         OP_TOKEN, COLON,
         OP_RULE, R_BLOCK,
         OP_RETURN, A_EXCEPT_BLOCK_0,
 
         // 'except' ':' block
-        OP_TOKEN, 520,
+        OP_TOKEN, 521,
         OP_TOKEN, COLON,
         OP_RULE, R_BLOCK,
         OP_RETURN, A_EXCEPT_BLOCK_1,
@@ -1745,7 +1788,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // 'finally' ':' block
-        OP_TOKEN, 521,
+        OP_TOKEN, 522,
         OP_TOKEN, COLON,
         OP_RULE, R_BLOCK,
         OP_RETURN, A_FINALLY_BLOCK_0,
@@ -1775,7 +1818,7 @@ static Rule all_rules[] = {
         // 'raise' expression ['from' expression]
         OP_TOKEN, 501,
         OP_RULE, R_EXPRESSION,
-        OP_RULE, R__TMP_36,
+        OP_RULE, R__TMP_37,
         OP_OPTIONAL, 
         OP_RETURN, A_RAISE_STMT_0,
 
@@ -1809,13 +1852,13 @@ static Rule all_rules[] = {
      {0, 22, -1},
      {
         // 'def' NAME '(' params? ')' ['->' expression] ':' func_type_comment? block
-        OP_TOKEN, 522,
+        OP_TOKEN, 523,
         OP_NAME, 
         OP_TOKEN, LPAR,
         OP_RULE, R_PARAMS,
         OP_OPTIONAL, 
         OP_TOKEN, RPAR,
-        OP_RULE, R__TMP_37,
+        OP_RULE, R__TMP_38,
         OP_OPTIONAL, 
         OP_TOKEN, COLON,
         OP_RULE, R_FUNC_TYPE_COMMENT,
@@ -1825,13 +1868,13 @@ static Rule all_rules[] = {
 
         // ASYNC 'def' NAME '(' params? ')' ['->' expression] ':' func_type_comment? block
         OP_TOKEN, ASYNC,
-        OP_TOKEN, 522,
+        OP_TOKEN, 523,
         OP_NAME, 
         OP_TOKEN, LPAR,
         OP_RULE, R_PARAMS,
         OP_OPTIONAL, 
         OP_TOKEN, RPAR,
-        OP_RULE, R__TMP_38,
+        OP_RULE, R__TMP_39,
         OP_OPTIONAL, 
         OP_TOKEN, COLON,
         OP_RULE, R_FUNC_TYPE_COMMENT,
@@ -1851,7 +1894,7 @@ static Rule all_rules[] = {
         OP_TOKEN, NEWLINE,
         OP_TOKEN, TYPE_COMMENT,
         OP_SAVE_MARK, 
-        OP_RULE, R__TMP_39,
+        OP_RULE, R__TMP_40,
         OP_POS_LOOKAHEAD, 
         OP_RETURN, A_FUNC_TYPE_COMMENT_0,
 
@@ -1889,28 +1932,28 @@ static Rule all_rules[] = {
      {
         // slash_no_default param_no_default* param_with_default* star_etc?
         OP_RULE, R_SLASH_NO_DEFAULT,
-        OP_RULE, R__LOOP0_40,
         OP_RULE, R__LOOP0_41,
+        OP_RULE, R__LOOP0_42,
         OP_RULE, R_STAR_ETC,
         OP_OPTIONAL, 
         OP_RETURN, A_PARAMETERS_0,
 
         // slash_with_default param_with_default* star_etc?
         OP_RULE, R_SLASH_WITH_DEFAULT,
-        OP_RULE, R__LOOP0_42,
+        OP_RULE, R__LOOP0_43,
         OP_RULE, R_STAR_ETC,
         OP_OPTIONAL, 
         OP_RETURN, A_PARAMETERS_1,
 
         // param_no_default+ param_with_default* star_etc?
-        OP_RULE, R__LOOP1_43,
-        OP_RULE, R__LOOP0_44,
+        OP_RULE, R__LOOP1_44,
+        OP_RULE, R__LOOP0_45,
         OP_RULE, R_STAR_ETC,
         OP_OPTIONAL, 
         OP_RETURN, A_PARAMETERS_2,
 
         // param_with_default+ star_etc?
-        OP_RULE, R__LOOP1_45,
+        OP_RULE, R__LOOP1_46,
         OP_RULE, R_STAR_ETC,
         OP_OPTIONAL, 
         OP_RETURN, A_PARAMETERS_3,
@@ -1928,13 +1971,13 @@ static Rule all_rules[] = {
      {0, 8, -1},
      {
         // param_no_default+ '/' ','
-        OP_RULE, R__LOOP1_46,
+        OP_RULE, R__LOOP1_47,
         OP_TOKEN, SLASH,
         OP_TOKEN, COMMA,
         OP_RETURN, A_SLASH_NO_DEFAULT_0,
 
         // param_no_default+ '/' &')'
-        OP_RULE, R__LOOP1_47,
+        OP_RULE, R__LOOP1_48,
         OP_TOKEN, SLASH,
         OP_SAVE_MARK, 
         OP_TOKEN, RPAR,
@@ -1950,15 +1993,15 @@ static Rule all_rules[] = {
      {0, 10, -1},
      {
         // param_no_default* param_with_default+ '/' ','
-        OP_RULE, R__LOOP0_48,
-        OP_RULE, R__LOOP1_49,
+        OP_RULE, R__LOOP0_49,
+        OP_RULE, R__LOOP1_50,
         OP_TOKEN, SLASH,
         OP_TOKEN, COMMA,
         OP_RETURN, A_SLASH_WITH_DEFAULT_0,
 
         // param_no_default* param_with_default+ '/' &')'
-        OP_RULE, R__LOOP0_50,
-        OP_RULE, R__LOOP1_51,
+        OP_RULE, R__LOOP0_51,
+        OP_RULE, R__LOOP1_52,
         OP_TOKEN, SLASH,
         OP_SAVE_MARK, 
         OP_TOKEN, RPAR,
@@ -1976,7 +2019,7 @@ static Rule all_rules[] = {
         // '*' param_no_default param_maybe_default* kwds?
         OP_TOKEN, STAR,
         OP_RULE, R_PARAM_NO_DEFAULT,
-        OP_RULE, R__LOOP0_52,
+        OP_RULE, R__LOOP0_53,
         OP_RULE, R_KWDS,
         OP_OPTIONAL, 
         OP_RETURN, A_STAR_ETC_0,
@@ -1984,7 +2027,7 @@ static Rule all_rules[] = {
         // '*' ',' param_maybe_default+ kwds?
         OP_TOKEN, STAR,
         OP_TOKEN, COMMA,
-        OP_RULE, R__LOOP1_53,
+        OP_RULE, R__LOOP1_54,
         OP_RULE, R_KWDS,
         OP_OPTIONAL, 
         OP_RETURN, A_STAR_ETC_1,
@@ -2137,7 +2180,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // (('@' named_expression NEWLINE))+
-        OP_RULE, R__LOOP1_54,
+        OP_RULE, R__LOOP1_55,
         OP_RETURN, A_DECORATORS_0,
 
      },
@@ -2166,9 +2209,9 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // 'class' NAME ['(' arguments? ')'] ':' block
-        OP_TOKEN, 523,
+        OP_TOKEN, 524,
         OP_NAME, 
-        OP_RULE, R__TMP_55,
+        OP_RULE, R__TMP_56,
         OP_OPTIONAL, 
         OP_TOKEN, COLON,
         OP_RULE, R_BLOCK,
@@ -2206,7 +2249,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // ','.star_expression+ ','?
-        OP_RULE, R__GATHER_56,
+        OP_RULE, R__GATHER_57,
         OP_TOKEN, COMMA,
         OP_OPTIONAL, 
         OP_RETURN, A_EXPRESSIONS_LIST_0,
@@ -2221,7 +2264,7 @@ static Rule all_rules[] = {
      {
         // star_expression ((',' star_expression))+ ','?
         OP_RULE, R_STAR_EXPRESSION,
-        OP_RULE, R__LOOP1_57,
+        OP_RULE, R__LOOP1_58,
         OP_TOKEN, COMMA,
         OP_OPTIONAL, 
         OP_RETURN, A_STAR_EXPRESSIONS_0,
@@ -2261,7 +2304,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // ','.star_named_expression+ ','?
-        OP_RULE, R__GATHER_58,
+        OP_RULE, R__GATHER_59,
         OP_TOKEN, COMMA,
         OP_OPTIONAL, 
         OP_RETURN, A_STAR_NAMED_EXPRESSIONS_0,
@@ -2289,11 +2332,12 @@ static Rule all_rules[] = {
      R_NAMED_EXPRESSION,
      0,  // memo
      0,  // leftrec
-     {0, 7, 15, -1},
+     {0, 8, 16, -1},
      {
-        // NAME ':=' expression
+        // NAME ':=' ~ expression
         OP_NAME, 
         OP_TOKEN, COLONEQUAL,
+        OP_CUT, 
         OP_RULE, R_EXPRESSION,
         OP_RETURN, A_NAMED_EXPRESSION_0,
 
@@ -2334,7 +2378,7 @@ static Rule all_rules[] = {
      {
         // expression ((',' expression))+ ','?
         OP_RULE, R_EXPRESSION,
-        OP_RULE, R__LOOP1_59,
+        OP_RULE, R__LOOP1_60,
         OP_TOKEN, COMMA,
         OP_OPTIONAL, 
         OP_RETURN, A_EXPRESSIONS_0,
@@ -2380,13 +2424,29 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, -1},
      {
-        // 'lambda' lambda_parameters? ':' expression
-        OP_TOKEN, 524,
-        OP_RULE, R_LAMBDA_PARAMETERS,
+        // 'lambda' lambda_params? ':' expression
+        OP_TOKEN, 525,
+        OP_RULE, R_LAMBDA_PARAMS,
         OP_OPTIONAL, 
         OP_TOKEN, COLON,
         OP_RULE, R_EXPRESSION,
         OP_RETURN, A_LAMBDEF_0,
+
+     },
+    },
+    {"lambda_params",
+     R_LAMBDA_PARAMS,
+     0,  // memo
+     0,  // leftrec
+     {0, 4, -1},
+     {
+        // invalid_lambda_parameters
+        OP_RULE, R_INVALID_LAMBDA_PARAMETERS,
+        OP_RETURN, A_LAMBDA_PARAMS_0,
+
+        // lambda_parameters
+        OP_RULE, R_LAMBDA_PARAMETERS,
+        OP_RETURN, A_LAMBDA_PARAMS_1,
 
      },
     },
@@ -2398,28 +2458,28 @@ static Rule all_rules[] = {
      {
         // lambda_slash_no_default lambda_param_no_default* lambda_param_with_default* lambda_star_etc?
         OP_RULE, R_LAMBDA_SLASH_NO_DEFAULT,
-        OP_RULE, R__LOOP0_60,
         OP_RULE, R__LOOP0_61,
+        OP_RULE, R__LOOP0_62,
         OP_RULE, R_LAMBDA_STAR_ETC,
         OP_OPTIONAL, 
         OP_RETURN, A_LAMBDA_PARAMETERS_0,
 
         // lambda_slash_with_default lambda_param_with_default* lambda_star_etc?
         OP_RULE, R_LAMBDA_SLASH_WITH_DEFAULT,
-        OP_RULE, R__LOOP0_62,
+        OP_RULE, R__LOOP0_63,
         OP_RULE, R_LAMBDA_STAR_ETC,
         OP_OPTIONAL, 
         OP_RETURN, A_LAMBDA_PARAMETERS_1,
 
         // lambda_param_no_default+ lambda_param_with_default* lambda_star_etc?
-        OP_RULE, R__LOOP1_63,
-        OP_RULE, R__LOOP0_64,
+        OP_RULE, R__LOOP1_64,
+        OP_RULE, R__LOOP0_65,
         OP_RULE, R_LAMBDA_STAR_ETC,
         OP_OPTIONAL, 
         OP_RETURN, A_LAMBDA_PARAMETERS_2,
 
         // lambda_param_with_default+ lambda_star_etc?
-        OP_RULE, R__LOOP1_65,
+        OP_RULE, R__LOOP1_66,
         OP_RULE, R_LAMBDA_STAR_ETC,
         OP_OPTIONAL, 
         OP_RETURN, A_LAMBDA_PARAMETERS_3,
@@ -2437,13 +2497,13 @@ static Rule all_rules[] = {
      {0, 8, -1},
      {
         // lambda_param_no_default+ '/' ','
-        OP_RULE, R__LOOP1_66,
+        OP_RULE, R__LOOP1_67,
         OP_TOKEN, SLASH,
         OP_TOKEN, COMMA,
         OP_RETURN, A_LAMBDA_SLASH_NO_DEFAULT_0,
 
         // lambda_param_no_default+ '/' &':'
-        OP_RULE, R__LOOP1_67,
+        OP_RULE, R__LOOP1_68,
         OP_TOKEN, SLASH,
         OP_SAVE_MARK, 
         OP_TOKEN, COLON,
@@ -2459,15 +2519,15 @@ static Rule all_rules[] = {
      {0, 10, -1},
      {
         // lambda_param_no_default* lambda_param_with_default+ '/' ','
-        OP_RULE, R__LOOP0_68,
-        OP_RULE, R__LOOP1_69,
+        OP_RULE, R__LOOP0_69,
+        OP_RULE, R__LOOP1_70,
         OP_TOKEN, SLASH,
         OP_TOKEN, COMMA,
         OP_RETURN, A_LAMBDA_SLASH_WITH_DEFAULT_0,
 
         // lambda_param_no_default* lambda_param_with_default+ '/' &':'
-        OP_RULE, R__LOOP0_70,
-        OP_RULE, R__LOOP1_71,
+        OP_RULE, R__LOOP0_71,
+        OP_RULE, R__LOOP1_72,
         OP_TOKEN, SLASH,
         OP_SAVE_MARK, 
         OP_TOKEN, COLON,
@@ -2485,7 +2545,7 @@ static Rule all_rules[] = {
         // '*' lambda_param_no_default lambda_param_maybe_default* lambda_kwds?
         OP_TOKEN, STAR,
         OP_RULE, R_LAMBDA_PARAM_NO_DEFAULT,
-        OP_RULE, R__LOOP0_72,
+        OP_RULE, R__LOOP0_73,
         OP_RULE, R_LAMBDA_KWDS,
         OP_OPTIONAL, 
         OP_RETURN, A_LAMBDA_STAR_ETC_0,
@@ -2493,7 +2553,7 @@ static Rule all_rules[] = {
         // '*' ',' lambda_param_maybe_default+ lambda_kwds?
         OP_TOKEN, STAR,
         OP_TOKEN, COMMA,
-        OP_RULE, R__LOOP1_73,
+        OP_RULE, R__LOOP1_74,
         OP_RULE, R_LAMBDA_KWDS,
         OP_OPTIONAL, 
         OP_RETURN, A_LAMBDA_STAR_ETC_1,
@@ -2607,7 +2667,7 @@ static Rule all_rules[] = {
      {
         // conjunction (('or' conjunction))+
         OP_RULE, R_CONJUNCTION,
-        OP_RULE, R__LOOP1_74,
+        OP_RULE, R__LOOP1_75,
         OP_RETURN, A_DISJUNCTION_0,
 
         // conjunction
@@ -2624,7 +2684,7 @@ static Rule all_rules[] = {
      {
         // inversion (('and' inversion))+
         OP_RULE, R_INVERSION,
-        OP_RULE, R__LOOP1_75,
+        OP_RULE, R__LOOP1_76,
         OP_RETURN, A_CONJUNCTION_0,
 
         // inversion
@@ -2640,7 +2700,7 @@ static Rule all_rules[] = {
      {0, 6, -1},
      {
         // 'not' inversion
-        OP_TOKEN, 525,
+        OP_TOKEN, 526,
         OP_RULE, R_INVERSION,
         OP_RETURN, A_INVERSION_0,
 
@@ -2658,7 +2718,7 @@ static Rule all_rules[] = {
      {
         // bitwise_or compare_op_bitwise_or_pair+
         OP_RULE, R_BITWISE_OR,
-        OP_RULE, R__LOOP1_76,
+        OP_RULE, R__LOOP1_77,
         OP_RETURN, A_COMPARISON_0,
 
         // bitwise_or
@@ -2735,7 +2795,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // ('!=') bitwise_or
-        OP_RULE, R__TMP_77,
+        OP_RULE, R__TMP_78,
         OP_RULE, R_BITWISE_OR,
         OP_RETURN, A_NOTEQ_BITWISE_OR_0,
 
@@ -2800,7 +2860,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // 'not' 'in' bitwise_or
-        OP_TOKEN, 525,
+        OP_TOKEN, 526,
         OP_TOKEN, 518,
         OP_RULE, R_BITWISE_OR,
         OP_RETURN, A_NOTIN_BITWISE_OR_0,
@@ -2827,8 +2887,8 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // 'is' 'not' bitwise_or
+        OP_TOKEN, 527,
         OP_TOKEN, 526,
-        OP_TOKEN, 525,
         OP_RULE, R_BITWISE_OR,
         OP_RETURN, A_ISNOT_BITWISE_OR_0,
 
@@ -2841,7 +2901,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // 'is' bitwise_or
-        OP_TOKEN, 526,
+        OP_TOKEN, 527,
         OP_RULE, R_BITWISE_OR,
         OP_RETURN, A_IS_BITWISE_OR_0,
 
@@ -3105,7 +3165,7 @@ static Rule all_rules[] = {
         OP_RETURN, A_SLICES_0,
 
         // ','.slice+ ','?
-        OP_RULE, R__GATHER_78,
+        OP_RULE, R__GATHER_79,
         OP_TOKEN, COMMA,
         OP_OPTIONAL, 
         OP_RETURN, A_SLICES_1,
@@ -3124,7 +3184,7 @@ static Rule all_rules[] = {
         OP_TOKEN, COLON,
         OP_RULE, R_EXPRESSION,
         OP_OPTIONAL, 
-        OP_RULE, R__TMP_79,
+        OP_RULE, R__TMP_80,
         OP_OPTIONAL, 
         OP_RETURN, A_SLICE_0,
 
@@ -3138,63 +3198,59 @@ static Rule all_rules[] = {
      R_ATOM,
      0,  // memo
      0,  // leftrec
-     {0, 3, 7, 11, 15, 19, 26, 29, 37, 45, 53, -1},
+     {0, 3, 7, 11, 15, 22, 25, 33, 41, 49, -1},
      {
         // NAME
         OP_NAME, 
         OP_RETURN, A_ATOM_0,
 
         // 'True'
-        OP_TOKEN, 527,
+        OP_TOKEN, 528,
         OP_RETURN, A_ATOM_1,
 
         // 'False'
-        OP_TOKEN, 528,
+        OP_TOKEN, 529,
         OP_RETURN, A_ATOM_2,
 
         // 'None'
-        OP_TOKEN, 529,
-        OP_RETURN, A_ATOM_3,
-
-        // '__new_parser__'
         OP_TOKEN, 530,
-        OP_RETURN, A_ATOM_4,
+        OP_RETURN, A_ATOM_3,
 
         // &STRING strings
         OP_SAVE_MARK, 
         OP_STRING, 
         OP_POS_LOOKAHEAD, 
         OP_RULE, R_STRINGS,
-        OP_RETURN, A_ATOM_5,
+        OP_RETURN, A_ATOM_4,
 
         // NUMBER
         OP_NUMBER, 
-        OP_RETURN, A_ATOM_6,
+        OP_RETURN, A_ATOM_5,
 
         // &'(' (tuple | group | genexp)
         OP_SAVE_MARK, 
         OP_TOKEN, LPAR,
         OP_POS_LOOKAHEAD, 
-        OP_RULE, R__TMP_80,
-        OP_RETURN, A_ATOM_7,
+        OP_RULE, R__TMP_81,
+        OP_RETURN, A_ATOM_6,
 
         // &'[' (list | listcomp)
         OP_SAVE_MARK, 
         OP_TOKEN, LSQB,
         OP_POS_LOOKAHEAD, 
-        OP_RULE, R__TMP_81,
-        OP_RETURN, A_ATOM_8,
+        OP_RULE, R__TMP_82,
+        OP_RETURN, A_ATOM_7,
 
         // &'{' (dict | set | dictcomp | setcomp)
         OP_SAVE_MARK, 
         OP_TOKEN, LBRACE,
         OP_POS_LOOKAHEAD, 
-        OP_RULE, R__TMP_82,
-        OP_RETURN, A_ATOM_9,
+        OP_RULE, R__TMP_83,
+        OP_RETURN, A_ATOM_8,
 
         // '...'
         OP_TOKEN, ELLIPSIS,
-        OP_RETURN, A_ATOM_10,
+        OP_RETURN, A_ATOM_9,
 
      },
     },
@@ -3205,7 +3261,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // STRING+
-        OP_RULE, R__LOOP1_83,
+        OP_RULE, R__LOOP1_84,
         OP_RETURN, A_STRINGS_0,
 
      },
@@ -3229,11 +3285,12 @@ static Rule all_rules[] = {
      R_LISTCOMP,
      0,  // memo
      0,  // leftrec
-     {0, 10, -1},
+     {0, 11, -1},
      {
-        // '[' named_expression for_if_clauses ']'
+        // '[' named_expression ~ for_if_clauses ']'
         OP_TOKEN, LSQB,
         OP_RULE, R_NAMED_EXPRESSION,
+        OP_CUT, 
         OP_RULE, R_FOR_IF_CLAUSES,
         OP_TOKEN, RSQB,
         OP_RETURN, A_LISTCOMP_0,
@@ -3252,7 +3309,7 @@ static Rule all_rules[] = {
      {
         // '(' [star_named_expression ',' star_named_expressions?] ')'
         OP_TOKEN, LPAR,
-        OP_RULE, R__TMP_84,
+        OP_RULE, R__TMP_85,
         OP_OPTIONAL, 
         OP_TOKEN, RPAR,
         OP_RETURN, A_TUPLE_0,
@@ -3263,13 +3320,17 @@ static Rule all_rules[] = {
      R_GROUP,
      0,  // memo
      0,  // leftrec
-     {0, -1},
+     {0, 8, -1},
      {
         // '(' (yield_expr | named_expression) ')'
         OP_TOKEN, LPAR,
-        OP_RULE, R__TMP_85,
+        OP_RULE, R__TMP_86,
         OP_TOKEN, RPAR,
         OP_RETURN, A_GROUP_0,
+
+        // invalid_group
+        OP_RULE, R_INVALID_GROUP,
+        OP_RETURN, A_GROUP_1,
 
      },
     },
@@ -3277,11 +3338,12 @@ static Rule all_rules[] = {
      R_GENEXP,
      0,  // memo
      0,  // leftrec
-     {0, 10, -1},
+     {0, 11, -1},
      {
-        // '(' expression for_if_clauses ')'
+        // '(' expression ~ for_if_clauses ')'
         OP_TOKEN, LPAR,
         OP_RULE, R_EXPRESSION,
+        OP_CUT, 
         OP_RULE, R_FOR_IF_CLAUSES,
         OP_TOKEN, RPAR,
         OP_RETURN, A_GENEXP_0,
@@ -3310,11 +3372,12 @@ static Rule all_rules[] = {
      R_SETCOMP,
      0,  // memo
      0,  // leftrec
-     {0, 10, -1},
+     {0, 11, -1},
      {
-        // '{' expression for_if_clauses '}'
+        // '{' expression ~ for_if_clauses '}'
         OP_TOKEN, LBRACE,
         OP_RULE, R_EXPRESSION,
+        OP_CUT, 
         OP_RULE, R_FOR_IF_CLAUSES,
         OP_TOKEN, RBRACE,
         OP_RETURN, A_SETCOMP_0,
@@ -3366,7 +3429,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // ','.double_starred_kvpair+ ','?
-        OP_RULE, R__GATHER_86,
+        OP_RULE, R__GATHER_87,
         OP_TOKEN, COMMA,
         OP_OPTIONAL, 
         OP_RETURN, A_DOUBLE_STARRED_KVPAIRS_0,
@@ -3411,7 +3474,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // for_if_clause+
-        OP_RULE, R__LOOP1_87,
+        OP_RULE, R__LOOP1_88,
         OP_RETURN, A_FOR_IF_CLAUSES_0,
 
      },
@@ -3420,24 +3483,30 @@ static Rule all_rules[] = {
      R_FOR_IF_CLAUSE,
      0,  // memo
      0,  // leftrec
-     {0, 14, -1},
+     {0, 15, 28, -1},
      {
-        // ASYNC 'for' star_targets 'in' disjunction (('if' disjunction))*
+        // ASYNC 'for' star_targets 'in' ~ disjunction (('if' disjunction))*
         OP_TOKEN, ASYNC,
         OP_TOKEN, 517,
         OP_RULE, R_STAR_TARGETS,
         OP_TOKEN, 518,
+        OP_CUT, 
         OP_RULE, R_DISJUNCTION,
-        OP_RULE, R__LOOP0_88,
+        OP_RULE, R__LOOP0_89,
         OP_RETURN, A_FOR_IF_CLAUSE_0,
 
-        // 'for' star_targets 'in' disjunction (('if' disjunction))*
+        // 'for' star_targets 'in' ~ disjunction (('if' disjunction))*
         OP_TOKEN, 517,
         OP_RULE, R_STAR_TARGETS,
         OP_TOKEN, 518,
+        OP_CUT, 
         OP_RULE, R_DISJUNCTION,
-        OP_RULE, R__LOOP0_89,
+        OP_RULE, R__LOOP0_90,
         OP_RETURN, A_FOR_IF_CLAUSE_1,
+
+        // invalid_for_target
+        OP_RULE, R_INVALID_FOR_TARGET,
+        OP_RETURN, A_FOR_IF_CLAUSE_2,
 
      },
     },
@@ -3490,7 +3559,7 @@ static Rule all_rules[] = {
      {
         // starred_expression [',' args]
         OP_RULE, R_STARRED_EXPRESSION,
-        OP_RULE, R__TMP_90,
+        OP_RULE, R__TMP_91,
         OP_OPTIONAL, 
         OP_RETURN, A_ARGS_0,
 
@@ -3500,7 +3569,7 @@ static Rule all_rules[] = {
 
         // named_expression [',' args]
         OP_RULE, R_NAMED_EXPRESSION,
-        OP_RULE, R__TMP_91,
+        OP_RULE, R__TMP_92,
         OP_OPTIONAL, 
         OP_RETURN, A_ARGS_2,
 
@@ -3513,17 +3582,17 @@ static Rule all_rules[] = {
      {0, 8, 12, -1},
      {
         // ','.kwarg_or_starred+ ',' ','.kwarg_or_double_starred+
-        OP_RULE, R__GATHER_92,
-        OP_TOKEN, COMMA,
         OP_RULE, R__GATHER_93,
+        OP_TOKEN, COMMA,
+        OP_RULE, R__GATHER_94,
         OP_RETURN, A_KWARGS_0,
 
         // ','.kwarg_or_starred+
-        OP_RULE, R__GATHER_94,
+        OP_RULE, R__GATHER_95,
         OP_RETURN, A_KWARGS_1,
 
         // ','.kwarg_or_double_starred+
-        OP_RULE, R__GATHER_95,
+        OP_RULE, R__GATHER_96,
         OP_RETURN, A_KWARGS_2,
 
      },
@@ -3601,7 +3670,7 @@ static Rule all_rules[] = {
 
         // star_target ((',' star_target))* ','?
         OP_RULE, R_STAR_TARGET,
-        OP_RULE, R__LOOP0_96,
+        OP_RULE, R__LOOP0_97,
         OP_TOKEN, COMMA,
         OP_OPTIONAL, 
         OP_RETURN, A_STAR_TARGETS_1,
@@ -3615,7 +3684,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // ','.star_target+ ','?
-        OP_RULE, R__GATHER_97,
+        OP_RULE, R__GATHER_98,
         OP_TOKEN, COMMA,
         OP_OPTIONAL, 
         OP_RETURN, A_STAR_TARGETS_SEQ_0,
@@ -3630,7 +3699,7 @@ static Rule all_rules[] = {
      {
         // '*' (!'*' star_target)
         OP_TOKEN, STAR,
-        OP_RULE, R__TMP_98,
+        OP_RULE, R__TMP_99,
         OP_RETURN, A_STAR_TARGET_0,
 
         // t_primary '.' NAME !t_lookahead
@@ -3746,7 +3815,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // ','.del_target+ ','?
-        OP_RULE, R__GATHER_99,
+        OP_RULE, R__GATHER_100,
         OP_TOKEN, COMMA,
         OP_OPTIONAL, 
         OP_RETURN, A_DEL_TARGETS_0,
@@ -3759,23 +3828,23 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, 11, 25, -1},
      {
-        // t_primary '.' NAME &del_target_end
+        // t_primary '.' NAME !t_lookahead
         OP_RULE, R_T_PRIMARY,
         OP_TOKEN, DOT,
         OP_NAME, 
         OP_SAVE_MARK, 
-        OP_RULE, R_DEL_TARGET_END,
-        OP_POS_LOOKAHEAD, 
+        OP_RULE, R_T_LOOKAHEAD,
+        OP_NEG_LOOKAHEAD, 
         OP_RETURN, A_DEL_TARGET_0,
 
-        // t_primary '[' slices ']' &del_target_end
+        // t_primary '[' slices ']' !t_lookahead
         OP_RULE, R_T_PRIMARY,
         OP_TOKEN, LSQB,
         OP_RULE, R_SLICES,
         OP_TOKEN, RSQB,
         OP_SAVE_MARK, 
-        OP_RULE, R_DEL_TARGET_END,
-        OP_POS_LOOKAHEAD, 
+        OP_RULE, R_T_LOOKAHEAD,
+        OP_NEG_LOOKAHEAD, 
         OP_RETURN, A_DEL_TARGET_1,
 
         // del_t_atom
@@ -3788,13 +3857,10 @@ static Rule all_rules[] = {
      R_DEL_T_ATOM,
      0,  // memo
      0,  // leftrec
-     {0, 7, 15, 24, 33, -1},
+     {0, 3, 11, 20, -1},
      {
-        // NAME &del_target_end
+        // NAME
         OP_NAME, 
-        OP_SAVE_MARK, 
-        OP_RULE, R_DEL_TARGET_END,
-        OP_POS_LOOKAHEAD, 
         OP_RETURN, A_DEL_T_ATOM_0,
 
         // '(' del_target ')'
@@ -3817,38 +3883,6 @@ static Rule all_rules[] = {
         OP_TOKEN, RSQB,
         OP_RETURN, A_DEL_T_ATOM_3,
 
-        // invalid_del_target
-        OP_RULE, R_INVALID_DEL_TARGET,
-        OP_RETURN, A_DEL_T_ATOM_4,
-
-     },
-    },
-    {"del_target_end",
-     R_DEL_TARGET_END,
-     0,  // memo
-     0,  // leftrec
-     {0, 4, 8, 12, 16, -1},
-     {
-        // ')'
-        OP_TOKEN, RPAR,
-        OP_RETURN, A_DEL_TARGET_END_0,
-
-        // ']'
-        OP_TOKEN, RSQB,
-        OP_RETURN, A_DEL_TARGET_END_1,
-
-        // ','
-        OP_TOKEN, COMMA,
-        OP_RETURN, A_DEL_TARGET_END_2,
-
-        // ';'
-        OP_TOKEN, SEMI,
-        OP_RETURN, A_DEL_TARGET_END_3,
-
-        // NEWLINE
-        OP_TOKEN, NEWLINE,
-        OP_RETURN, A_DEL_TARGET_END_4,
-
      },
     },
     {"targets",
@@ -3858,7 +3892,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // ','.target+ ','?
-        OP_RULE, R__GATHER_100,
+        OP_RULE, R__GATHER_101,
         OP_TOKEN, COMMA,
         OP_OPTIONAL, 
         OP_RETURN, A_TARGETS_0,
@@ -4017,7 +4051,7 @@ static Rule all_rules[] = {
         OP_RULE, R_EXPRESSION,
         OP_RULE, R_FOR_IF_CLAUSES,
         OP_TOKEN, COMMA,
-        OP_RULE, R__TMP_101,
+        OP_RULE, R__TMP_102,
         OP_OPTIONAL, 
         OP_RETURN, A_INCORRECT_ARGUMENTS_1,
 
@@ -4072,44 +4106,80 @@ static Rule all_rules[] = {
      R_INVALID_ASSIGNMENT,
      0,  // memo
      0,  // leftrec
-     {0, 6, 12, 22, 33, 41, -1},
+     {0, 8, 20, 28, 36, 44, -1},
      {
-        // list ':'
-        OP_RULE, R_LIST,
+        // invalid_ann_assign_target ':' expression
+        OP_RULE, R_INVALID_ANN_ASSIGN_TARGET,
         OP_TOKEN, COLON,
+        OP_RULE, R_EXPRESSION,
         OP_RETURN, A_INVALID_ASSIGNMENT_0,
 
-        // tuple ':'
-        OP_RULE, R_TUPLE,
-        OP_TOKEN, COLON,
-        OP_RETURN, A_INVALID_ASSIGNMENT_1,
-
-        // star_named_expression ',' star_named_expressions* ':'
+        // star_named_expression ',' star_named_expressions* ':' expression
         OP_RULE, R_STAR_NAMED_EXPRESSION,
         OP_TOKEN, COMMA,
-        OP_RULE, R__LOOP0_102,
+        OP_RULE, R__LOOP0_103,
         OP_TOKEN, COLON,
+        OP_RULE, R_EXPRESSION,
+        OP_RETURN, A_INVALID_ASSIGNMENT_1,
+
+        // expression ':' expression
+        OP_RULE, R_EXPRESSION,
+        OP_TOKEN, COLON,
+        OP_RULE, R_EXPRESSION,
         OP_RETURN, A_INVALID_ASSIGNMENT_2,
 
-        // expression ':' expression ['=' annotated_rhs]
-        OP_RULE, R_EXPRESSION,
-        OP_TOKEN, COLON,
-        OP_RULE, R_EXPRESSION,
-        OP_RULE, R__TMP_103,
-        OP_OPTIONAL, 
-        OP_RETURN, A_INVALID_ASSIGNMENT_3,
-
-        // star_expressions '=' (yield_expr | star_expressions)
+        // ((star_targets '='))* star_expressions '='
+        OP_RULE, R__LOOP0_104,
         OP_RULE, R_STAR_EXPRESSIONS,
         OP_TOKEN, EQUAL,
-        OP_RULE, R__TMP_104,
+        OP_RETURN, A_INVALID_ASSIGNMENT_3,
+
+        // ((star_targets '='))* yield_expr '='
+        OP_RULE, R__LOOP0_105,
+        OP_RULE, R_YIELD_EXPR,
+        OP_TOKEN, EQUAL,
         OP_RETURN, A_INVALID_ASSIGNMENT_4,
 
         // star_expressions augassign (yield_expr | star_expressions)
         OP_RULE, R_STAR_EXPRESSIONS,
         OP_RULE, R_AUGASSIGN,
-        OP_RULE, R__TMP_105,
+        OP_RULE, R__TMP_106,
         OP_RETURN, A_INVALID_ASSIGNMENT_5,
+
+     },
+    },
+    {"invalid_ann_assign_target",
+     R_INVALID_ANN_ASSIGN_TARGET,
+     0,  // memo
+     0,  // leftrec
+     {0, 4, 8, -1},
+     {
+        // list
+        OP_RULE, R_LIST,
+        OP_RETURN, A_INVALID_ANN_ASSIGN_TARGET_0,
+
+        // tuple
+        OP_RULE, R_TUPLE,
+        OP_RETURN, A_INVALID_ANN_ASSIGN_TARGET_1,
+
+        // '(' invalid_ann_assign_target ')'
+        OP_TOKEN, LPAR,
+        OP_RULE, R_INVALID_ANN_ASSIGN_TARGET,
+        OP_TOKEN, RPAR,
+        OP_RETURN, A_INVALID_ANN_ASSIGN_TARGET_2,
+
+     },
+    },
+    {"invalid_del_stmt",
+     R_INVALID_DEL_STMT,
+     0,  // memo
+     0,  // leftrec
+     {0, -1},
+     {
+        // 'del' star_expressions
+        OP_TOKEN, 503,
+        OP_RULE, R_STAR_EXPRESSIONS,
+        OP_RETURN, A_INVALID_DEL_STMT_0,
 
      },
     },
@@ -4135,7 +4205,7 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // ('[' | '(' | '{') starred_expression for_if_clauses
-        OP_RULE, R__TMP_106,
+        OP_RULE, R__TMP_107,
         OP_RULE, R_STARRED_EXPRESSION,
         OP_RULE, R_FOR_IF_CLAUSES,
         OP_RETURN, A_INVALID_COMPREHENSION_0,
@@ -4165,10 +4235,24 @@ static Rule all_rules[] = {
      {0, -1},
      {
         // param_no_default* (slash_with_default | param_with_default+) param_no_default
-        OP_RULE, R__LOOP0_107,
-        OP_RULE, R__TMP_108,
+        OP_RULE, R__LOOP0_108,
+        OP_RULE, R__TMP_109,
         OP_RULE, R_PARAM_NO_DEFAULT,
         OP_RETURN, A_INVALID_PARAMETERS_0,
+
+     },
+    },
+    {"invalid_lambda_parameters",
+     R_INVALID_LAMBDA_PARAMETERS,
+     0,  // memo
+     0,  // leftrec
+     {0, -1},
+     {
+        // lambda_param_no_default* (lambda_slash_with_default | lambda_param_with_default+) lambda_param_no_default
+        OP_RULE, R__LOOP0_110,
+        OP_RULE, R__TMP_111,
+        OP_RULE, R_LAMBDA_PARAM_NO_DEFAULT,
+        OP_RETURN, A_INVALID_LAMBDA_PARAMETERS_0,
 
      },
     },
@@ -4180,7 +4264,7 @@ static Rule all_rules[] = {
      {
         // '*' (')' | ',' (')' | '**'))
         OP_TOKEN, STAR,
-        OP_RULE, R__TMP_109,
+        OP_RULE, R__TMP_112,
         OP_RETURN, A_INVALID_STAR_ETC_0,
 
         // '*' ',' TYPE_COMMENT
@@ -4199,7 +4283,7 @@ static Rule all_rules[] = {
      {
         // '*' (':' | ',' (':' | '**'))
         OP_TOKEN, STAR,
-        OP_RULE, R__TMP_110,
+        OP_RULE, R__TMP_113,
         OP_RETURN, A_INVALID_LAMBDA_STAR_ETC_0,
 
      },
@@ -4220,18 +4304,46 @@ static Rule all_rules[] = {
 
      },
     },
-    {"invalid_del_target",
-     R_INVALID_DEL_TARGET,
+    {"invalid_with_item",
+     R_INVALID_WITH_ITEM,
      0,  // memo
      0,  // leftrec
      {0, -1},
      {
-        // star_expression &del_target_end
-        OP_RULE, R_STAR_EXPRESSION,
-        OP_SAVE_MARK, 
-        OP_RULE, R_DEL_TARGET_END,
-        OP_POS_LOOKAHEAD, 
-        OP_RETURN, A_INVALID_DEL_TARGET_0,
+        // expression 'as' expression
+        OP_RULE, R_EXPRESSION,
+        OP_TOKEN, 520,
+        OP_RULE, R_EXPRESSION,
+        OP_RETURN, A_INVALID_WITH_ITEM_0,
+
+     },
+    },
+    {"invalid_for_target",
+     R_INVALID_FOR_TARGET,
+     0,  // memo
+     0,  // leftrec
+     {0, -1},
+     {
+        // ASYNC? 'for' star_expressions
+        OP_TOKEN, ASYNC,
+        OP_OPTIONAL, 
+        OP_TOKEN, 517,
+        OP_RULE, R_STAR_EXPRESSIONS,
+        OP_RETURN, A_INVALID_FOR_TARGET_0,
+
+     },
+    },
+    {"invalid_group",
+     R_INVALID_GROUP,
+     0,  // memo
+     0,  // leftrec
+     {0, -1},
+     {
+        // '(' starred_expression ')'
+        OP_TOKEN, LPAR,
+        OP_RULE, R_STARRED_EXPRESSION,
+        OP_TOKEN, RPAR,
+        OP_RETURN, A_INVALID_GROUP_0,
 
      },
     },
@@ -4416,7 +4528,7 @@ static Rule all_rules[] = {
      {0, 4, 8, -1},
      {
         // 'def'
-        OP_TOKEN, 522,
+        OP_TOKEN, 523,
         OP_RETURN, A__TMP_10_0,
 
         // '@'
@@ -4436,7 +4548,7 @@ static Rule all_rules[] = {
      {0, 4, -1},
      {
         // 'class'
-        OP_TOKEN, 523,
+        OP_TOKEN, 524,
         OP_RETURN, A__TMP_11_0,
 
         // '@'
@@ -4528,7 +4640,7 @@ static Rule all_rules[] = {
      {0, 3, -1},
      {
         // (star_targets '=')
-        OP_RULE, R__TMP_111,
+        OP_RULE, R__TMP_114,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
@@ -4615,14 +4727,30 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop0_23",
-     R__LOOP0_23,
+    {"_tmp_23",
+     R__TMP_23,
+     0,  // memo
+     0,  // leftrec
+     {0, 4, -1},
+     {
+        // ';'
+        OP_TOKEN, SEMI,
+        OP_RETURN, A__TMP_23_0,
+
+        // NEWLINE
+        OP_TOKEN, NEWLINE,
+        OP_RETURN, A__TMP_23_1,
+
+     },
+    },
+    {"_loop0_24",
+     R__LOOP0_24,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
      {
         // ('.' | '...')
-        OP_RULE, R__TMP_112,
+        OP_RULE, R__TMP_115,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
@@ -4630,14 +4758,14 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop1_24",
-     R__LOOP1_24,
+    {"_loop1_25",
+     R__LOOP1_25,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
      {
         // ('.' | '...')
-        OP_RULE, R__TMP_113,
+        OP_RULE, R__TMP_116,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
@@ -4645,8 +4773,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_gather_25",
-     R__GATHER_25,
+    {"_gather_26",
+     R__GATHER_26,
      0,  // memo
      0,  // leftrec
      {0, 5, -1},
@@ -4662,21 +4790,21 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_26",
-     R__TMP_26,
+    {"_tmp_27",
+     R__TMP_27,
      0,  // memo
      0,  // leftrec
      {0, -1},
      {
         // 'as' NAME
-        OP_TOKEN, 531,
+        OP_TOKEN, 520,
         OP_NAME, 
-        OP_RETURN, A__TMP_26_0,
+        OP_RETURN, A__TMP_27_0,
 
      },
     },
-    {"_gather_27",
-     R__GATHER_27,
+    {"_gather_28",
+     R__GATHER_28,
      0,  // memo
      0,  // leftrec
      {0, 5, -1},
@@ -4692,33 +4820,16 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_28",
-     R__TMP_28,
+    {"_tmp_29",
+     R__TMP_29,
      0,  // memo
      0,  // leftrec
      {0, -1},
      {
         // 'as' NAME
-        OP_TOKEN, 531,
+        OP_TOKEN, 520,
         OP_NAME, 
-        OP_RETURN, A__TMP_28_0,
-
-     },
-    },
-    {"_gather_29",
-     R__GATHER_29,
-     0,  // memo
-     0,  // leftrec
-     {0, 5, -1},
-     {
-        // with_item ','
-        OP_RULE, R_WITH_ITEM,
-        OP_TOKEN, COMMA,
-        OP_LOOP_ITERATE, 
-
-        // with_item
-        OP_RULE, R_WITH_ITEM,
-        OP_LOOP_COLLECT_DELIMITED, 
+        OP_RETURN, A__TMP_29_0,
 
      },
     },
@@ -4773,21 +4884,45 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_33",
-     R__TMP_33,
+    {"_gather_33",
+     R__GATHER_33,
      0,  // memo
      0,  // leftrec
-     {0, -1},
+     {0, 5, -1},
      {
-        // 'as' target
-        OP_TOKEN, 531,
-        OP_RULE, R_TARGET,
-        OP_RETURN, A__TMP_33_0,
+        // with_item ','
+        OP_RULE, R_WITH_ITEM,
+        OP_TOKEN, COMMA,
+        OP_LOOP_ITERATE, 
+
+        // with_item
+        OP_RULE, R_WITH_ITEM,
+        OP_LOOP_COLLECT_DELIMITED, 
 
      },
     },
-    {"_loop1_34",
-     R__LOOP1_34,
+    {"_tmp_34",
+     R__TMP_34,
+     0,  // memo
+     0,  // leftrec
+     {0, 4, 8, -1},
+     {
+        // ','
+        OP_TOKEN, COMMA,
+        OP_RETURN, A__TMP_34_0,
+
+        // ')'
+        OP_TOKEN, RPAR,
+        OP_RETURN, A__TMP_34_1,
+
+        // ':'
+        OP_TOKEN, COLON,
+        OP_RETURN, A__TMP_34_2,
+
+     },
+    },
+    {"_loop1_35",
+     R__LOOP1_35,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -4801,28 +4936,15 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_35",
-     R__TMP_35,
-     0,  // memo
-     0,  // leftrec
-     {0, -1},
-     {
-        // 'as' NAME
-        OP_TOKEN, 531,
-        OP_NAME, 
-        OP_RETURN, A__TMP_35_0,
-
-     },
-    },
     {"_tmp_36",
      R__TMP_36,
      0,  // memo
      0,  // leftrec
      {0, -1},
      {
-        // 'from' expression
-        OP_TOKEN, 514,
-        OP_RULE, R_EXPRESSION,
+        // 'as' NAME
+        OP_TOKEN, 520,
+        OP_NAME, 
         OP_RETURN, A__TMP_36_0,
 
      },
@@ -4833,8 +4955,8 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, -1},
      {
-        // '->' expression
-        OP_TOKEN, RARROW,
+        // 'from' expression
+        OP_TOKEN, 514,
         OP_RULE, R_EXPRESSION,
         OP_RETURN, A__TMP_37_0,
 
@@ -4859,25 +4981,23 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, -1},
      {
-        // NEWLINE INDENT
-        OP_TOKEN, NEWLINE,
-        OP_TOKEN, INDENT,
+        // '->' expression
+        OP_TOKEN, RARROW,
+        OP_RULE, R_EXPRESSION,
         OP_RETURN, A__TMP_39_0,
 
      },
     },
-    {"_loop0_40",
-     R__LOOP0_40,
+    {"_tmp_40",
+     R__TMP_40,
      0,  // memo
      0,  // leftrec
-     {0, 3, -1},
+     {0, -1},
      {
-        // param_no_default
-        OP_RULE, R_PARAM_NO_DEFAULT,
-        OP_LOOP_ITERATE, 
-
-        // <Artificial alternative>
-        OP_LOOP_COLLECT, 
+        // NEWLINE INDENT
+        OP_TOKEN, NEWLINE,
+        OP_TOKEN, INDENT,
+        OP_RETURN, A__TMP_40_0,
 
      },
     },
@@ -4887,8 +5007,8 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, 3, -1},
      {
-        // param_with_default
-        OP_RULE, R_PARAM_WITH_DEFAULT,
+        // param_no_default
+        OP_RULE, R_PARAM_NO_DEFAULT,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
@@ -4911,23 +5031,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop1_43",
-     R__LOOP1_43,
-     0,  // memo
-     0,  // leftrec
-     {0, 3, -1},
-     {
-        // param_no_default
-        OP_RULE, R_PARAM_NO_DEFAULT,
-        OP_LOOP_ITERATE, 
-
-        // <Artificial alternative>
-        OP_LOOP_COLLECT_NONEMPTY, 
-
-     },
-    },
-    {"_loop0_44",
-     R__LOOP0_44,
+    {"_loop0_43",
+     R__LOOP0_43,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -4941,8 +5046,23 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop1_45",
-     R__LOOP1_45,
+    {"_loop1_44",
+     R__LOOP1_44,
+     0,  // memo
+     0,  // leftrec
+     {0, 3, -1},
+     {
+        // param_no_default
+        OP_RULE, R_PARAM_NO_DEFAULT,
+        OP_LOOP_ITERATE, 
+
+        // <Artificial alternative>
+        OP_LOOP_COLLECT_NONEMPTY, 
+
+     },
+    },
+    {"_loop0_45",
+     R__LOOP0_45,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -4952,7 +5072,7 @@ static Rule all_rules[] = {
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
-        OP_LOOP_COLLECT_NONEMPTY, 
+        OP_LOOP_COLLECT, 
 
      },
     },
@@ -4962,8 +5082,8 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, 3, -1},
      {
-        // param_no_default
-        OP_RULE, R_PARAM_NO_DEFAULT,
+        // param_with_default
+        OP_RULE, R_PARAM_WITH_DEFAULT,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
@@ -4986,8 +5106,23 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop0_48",
-     R__LOOP0_48,
+    {"_loop1_48",
+     R__LOOP1_48,
+     0,  // memo
+     0,  // leftrec
+     {0, 3, -1},
+     {
+        // param_no_default
+        OP_RULE, R_PARAM_NO_DEFAULT,
+        OP_LOOP_ITERATE, 
+
+        // <Artificial alternative>
+        OP_LOOP_COLLECT_NONEMPTY, 
+
+     },
+    },
+    {"_loop0_49",
+     R__LOOP0_49,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5001,8 +5136,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop1_49",
-     R__LOOP1_49,
+    {"_loop1_50",
+     R__LOOP1_50,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5016,8 +5151,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop0_50",
-     R__LOOP0_50,
+    {"_loop0_51",
+     R__LOOP0_51,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5031,8 +5166,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop1_51",
-     R__LOOP1_51,
+    {"_loop1_52",
+     R__LOOP1_52,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5046,8 +5181,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop0_52",
-     R__LOOP0_52,
+    {"_loop0_53",
+     R__LOOP0_53,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5058,21 +5193,6 @@ static Rule all_rules[] = {
 
         // <Artificial alternative>
         OP_LOOP_COLLECT, 
-
-     },
-    },
-    {"_loop1_53",
-     R__LOOP1_53,
-     0,  // memo
-     0,  // leftrec
-     {0, 3, -1},
-     {
-        // param_maybe_default
-        OP_RULE, R_PARAM_MAYBE_DEFAULT,
-        OP_LOOP_ITERATE, 
-
-        // <Artificial alternative>
-        OP_LOOP_COLLECT_NONEMPTY, 
 
      },
     },
@@ -5082,8 +5202,8 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, 3, -1},
      {
-        // ('@' named_expression NEWLINE)
-        OP_RULE, R__TMP_114,
+        // param_maybe_default
+        OP_RULE, R_PARAM_MAYBE_DEFAULT,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
@@ -5091,8 +5211,23 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_55",
-     R__TMP_55,
+    {"_loop1_55",
+     R__LOOP1_55,
+     0,  // memo
+     0,  // leftrec
+     {0, 3, -1},
+     {
+        // ('@' named_expression NEWLINE)
+        OP_RULE, R__TMP_117,
+        OP_LOOP_ITERATE, 
+
+        // <Artificial alternative>
+        OP_LOOP_COLLECT_NONEMPTY, 
+
+     },
+    },
+    {"_tmp_56",
+     R__TMP_56,
      0,  // memo
      0,  // leftrec
      {0, -1},
@@ -5102,12 +5237,12 @@ static Rule all_rules[] = {
         OP_RULE, R_ARGUMENTS,
         OP_OPTIONAL, 
         OP_TOKEN, RPAR,
-        OP_RETURN, A__TMP_55_0,
+        OP_RETURN, A__TMP_56_0,
 
      },
     },
-    {"_gather_56",
-     R__GATHER_56,
+    {"_gather_57",
+     R__GATHER_57,
      0,  // memo
      0,  // leftrec
      {0, 5, -1},
@@ -5123,14 +5258,14 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop1_57",
-     R__LOOP1_57,
+    {"_loop1_58",
+     R__LOOP1_58,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
      {
         // (',' star_expression)
-        OP_RULE, R__TMP_115,
+        OP_RULE, R__TMP_118,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
@@ -5138,8 +5273,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_gather_58",
-     R__GATHER_58,
+    {"_gather_59",
+     R__GATHER_59,
      0,  // memo
      0,  // leftrec
      {0, 5, -1},
@@ -5155,33 +5290,18 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop1_59",
-     R__LOOP1_59,
+    {"_loop1_60",
+     R__LOOP1_60,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
      {
         // (',' expression)
-        OP_RULE, R__TMP_116,
+        OP_RULE, R__TMP_119,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
         OP_LOOP_COLLECT_NONEMPTY, 
-
-     },
-    },
-    {"_loop0_60",
-     R__LOOP0_60,
-     0,  // memo
-     0,  // leftrec
-     {0, 3, -1},
-     {
-        // lambda_param_no_default
-        OP_RULE, R_LAMBDA_PARAM_NO_DEFAULT,
-        OP_LOOP_ITERATE, 
-
-        // <Artificial alternative>
-        OP_LOOP_COLLECT, 
 
      },
     },
@@ -5191,8 +5311,8 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, 3, -1},
      {
-        // lambda_param_with_default
-        OP_RULE, R_LAMBDA_PARAM_WITH_DEFAULT,
+        // lambda_param_no_default
+        OP_RULE, R_LAMBDA_PARAM_NO_DEFAULT,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
@@ -5215,23 +5335,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop1_63",
-     R__LOOP1_63,
-     0,  // memo
-     0,  // leftrec
-     {0, 3, -1},
-     {
-        // lambda_param_no_default
-        OP_RULE, R_LAMBDA_PARAM_NO_DEFAULT,
-        OP_LOOP_ITERATE, 
-
-        // <Artificial alternative>
-        OP_LOOP_COLLECT_NONEMPTY, 
-
-     },
-    },
-    {"_loop0_64",
-     R__LOOP0_64,
+    {"_loop0_63",
+     R__LOOP0_63,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5245,8 +5350,23 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop1_65",
-     R__LOOP1_65,
+    {"_loop1_64",
+     R__LOOP1_64,
+     0,  // memo
+     0,  // leftrec
+     {0, 3, -1},
+     {
+        // lambda_param_no_default
+        OP_RULE, R_LAMBDA_PARAM_NO_DEFAULT,
+        OP_LOOP_ITERATE, 
+
+        // <Artificial alternative>
+        OP_LOOP_COLLECT_NONEMPTY, 
+
+     },
+    },
+    {"_loop0_65",
+     R__LOOP0_65,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5256,7 +5376,7 @@ static Rule all_rules[] = {
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
-        OP_LOOP_COLLECT_NONEMPTY, 
+        OP_LOOP_COLLECT, 
 
      },
     },
@@ -5266,8 +5386,8 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, 3, -1},
      {
-        // lambda_param_no_default
-        OP_RULE, R_LAMBDA_PARAM_NO_DEFAULT,
+        // lambda_param_with_default
+        OP_RULE, R_LAMBDA_PARAM_WITH_DEFAULT,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
@@ -5290,8 +5410,23 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop0_68",
-     R__LOOP0_68,
+    {"_loop1_68",
+     R__LOOP1_68,
+     0,  // memo
+     0,  // leftrec
+     {0, 3, -1},
+     {
+        // lambda_param_no_default
+        OP_RULE, R_LAMBDA_PARAM_NO_DEFAULT,
+        OP_LOOP_ITERATE, 
+
+        // <Artificial alternative>
+        OP_LOOP_COLLECT_NONEMPTY, 
+
+     },
+    },
+    {"_loop0_69",
+     R__LOOP0_69,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5305,8 +5440,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop1_69",
-     R__LOOP1_69,
+    {"_loop1_70",
+     R__LOOP1_70,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5320,8 +5455,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop0_70",
-     R__LOOP0_70,
+    {"_loop0_71",
+     R__LOOP0_71,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5335,8 +5470,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop1_71",
-     R__LOOP1_71,
+    {"_loop1_72",
+     R__LOOP1_72,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5350,8 +5485,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop0_72",
-     R__LOOP0_72,
+    {"_loop0_73",
+     R__LOOP0_73,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5362,21 +5497,6 @@ static Rule all_rules[] = {
 
         // <Artificial alternative>
         OP_LOOP_COLLECT, 
-
-     },
-    },
-    {"_loop1_73",
-     R__LOOP1_73,
-     0,  // memo
-     0,  // leftrec
-     {0, 3, -1},
-     {
-        // lambda_param_maybe_default
-        OP_RULE, R_LAMBDA_PARAM_MAYBE_DEFAULT,
-        OP_LOOP_ITERATE, 
-
-        // <Artificial alternative>
-        OP_LOOP_COLLECT_NONEMPTY, 
 
      },
     },
@@ -5386,8 +5506,8 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, 3, -1},
      {
-        // ('or' conjunction)
-        OP_RULE, R__TMP_117,
+        // lambda_param_maybe_default
+        OP_RULE, R_LAMBDA_PARAM_MAYBE_DEFAULT,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
@@ -5401,8 +5521,8 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, 3, -1},
      {
-        // ('and' inversion)
-        OP_RULE, R__TMP_118,
+        // ('or' conjunction)
+        OP_RULE, R__TMP_120,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
@@ -5416,6 +5536,21 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, 3, -1},
      {
+        // ('and' inversion)
+        OP_RULE, R__TMP_121,
+        OP_LOOP_ITERATE, 
+
+        // <Artificial alternative>
+        OP_LOOP_COLLECT_NONEMPTY, 
+
+     },
+    },
+    {"_loop1_77",
+     R__LOOP1_77,
+     0,  // memo
+     0,  // leftrec
+     {0, 3, -1},
+     {
         // compare_op_bitwise_or_pair
         OP_RULE, R_COMPARE_OP_BITWISE_OR_PAIR,
         OP_LOOP_ITERATE, 
@@ -5425,20 +5560,20 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_77",
-     R__TMP_77,
+    {"_tmp_78",
+     R__TMP_78,
      0,  // memo
      0,  // leftrec
      {0, -1},
      {
         // '!='
         OP_TOKEN, NOTEQUAL,
-        OP_RETURN, A__TMP_77_0,
+        OP_RETURN, A__TMP_78_0,
 
      },
     },
-    {"_gather_78",
-     R__GATHER_78,
+    {"_gather_79",
+     R__GATHER_79,
      0,  // memo
      0,  // leftrec
      {0, 5, -1},
@@ -5454,8 +5589,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_79",
-     R__TMP_79,
+    {"_tmp_80",
+     R__TMP_80,
      0,  // memo
      0,  // leftrec
      {0, -1},
@@ -5464,27 +5599,7 @@ static Rule all_rules[] = {
         OP_TOKEN, COLON,
         OP_RULE, R_EXPRESSION,
         OP_OPTIONAL, 
-        OP_RETURN, A__TMP_79_0,
-
-     },
-    },
-    {"_tmp_80",
-     R__TMP_80,
-     0,  // memo
-     0,  // leftrec
-     {0, 4, 8, -1},
-     {
-        // tuple
-        OP_RULE, R_TUPLE,
         OP_RETURN, A__TMP_80_0,
-
-        // group
-        OP_RULE, R_GROUP,
-        OP_RETURN, A__TMP_80_1,
-
-        // genexp
-        OP_RULE, R_GENEXP,
-        OP_RETURN, A__TMP_80_2,
 
      },
     },
@@ -5492,15 +5607,19 @@ static Rule all_rules[] = {
      R__TMP_81,
      0,  // memo
      0,  // leftrec
-     {0, 4, -1},
+     {0, 4, 8, -1},
      {
-        // list
-        OP_RULE, R_LIST,
+        // tuple
+        OP_RULE, R_TUPLE,
         OP_RETURN, A__TMP_81_0,
 
-        // listcomp
-        OP_RULE, R_LISTCOMP,
+        // group
+        OP_RULE, R_GROUP,
         OP_RETURN, A__TMP_81_1,
+
+        // genexp
+        OP_RULE, R_GENEXP,
+        OP_RETURN, A__TMP_81_2,
 
      },
     },
@@ -5508,28 +5627,44 @@ static Rule all_rules[] = {
      R__TMP_82,
      0,  // memo
      0,  // leftrec
+     {0, 4, -1},
+     {
+        // list
+        OP_RULE, R_LIST,
+        OP_RETURN, A__TMP_82_0,
+
+        // listcomp
+        OP_RULE, R_LISTCOMP,
+        OP_RETURN, A__TMP_82_1,
+
+     },
+    },
+    {"_tmp_83",
+     R__TMP_83,
+     0,  // memo
+     0,  // leftrec
      {0, 4, 8, 12, -1},
      {
         // dict
         OP_RULE, R_DICT,
-        OP_RETURN, A__TMP_82_0,
+        OP_RETURN, A__TMP_83_0,
 
         // set
         OP_RULE, R_SET,
-        OP_RETURN, A__TMP_82_1,
+        OP_RETURN, A__TMP_83_1,
 
         // dictcomp
         OP_RULE, R_DICTCOMP,
-        OP_RETURN, A__TMP_82_2,
+        OP_RETURN, A__TMP_83_2,
 
         // setcomp
         OP_RULE, R_SETCOMP,
-        OP_RETURN, A__TMP_82_3,
+        OP_RETURN, A__TMP_83_3,
 
      },
     },
-    {"_loop1_83",
-     R__LOOP1_83,
+    {"_loop1_84",
+     R__LOOP1_84,
      0,  // memo
      0,  // leftrec
      {0, 2, -1},
@@ -5543,8 +5678,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_84",
-     R__TMP_84,
+    {"_tmp_85",
+     R__TMP_85,
      0,  // memo
      0,  // leftrec
      {0, -1},
@@ -5554,28 +5689,28 @@ static Rule all_rules[] = {
         OP_TOKEN, COMMA,
         OP_RULE, R_STAR_NAMED_EXPRESSIONS,
         OP_OPTIONAL, 
-        OP_RETURN, A__TMP_84_0,
+        OP_RETURN, A__TMP_85_0,
 
      },
     },
-    {"_tmp_85",
-     R__TMP_85,
+    {"_tmp_86",
+     R__TMP_86,
      0,  // memo
      0,  // leftrec
      {0, 4, -1},
      {
         // yield_expr
         OP_RULE, R_YIELD_EXPR,
-        OP_RETURN, A__TMP_85_0,
+        OP_RETURN, A__TMP_86_0,
 
         // named_expression
         OP_RULE, R_NAMED_EXPRESSION,
-        OP_RETURN, A__TMP_85_1,
+        OP_RETURN, A__TMP_86_1,
 
      },
     },
-    {"_gather_86",
-     R__GATHER_86,
+    {"_gather_87",
+     R__GATHER_87,
      0,  // memo
      0,  // leftrec
      {0, 5, -1},
@@ -5591,8 +5726,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop1_87",
-     R__LOOP1_87,
+    {"_loop1_88",
+     R__LOOP1_88,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5606,21 +5741,6 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop0_88",
-     R__LOOP0_88,
-     0,  // memo
-     0,  // leftrec
-     {0, 3, -1},
-     {
-        // ('if' disjunction)
-        OP_RULE, R__TMP_119,
-        OP_LOOP_ITERATE, 
-
-        // <Artificial alternative>
-        OP_LOOP_COLLECT, 
-
-     },
-    },
     {"_loop0_89",
      R__LOOP0_89,
      0,  // memo
@@ -5628,7 +5748,7 @@ static Rule all_rules[] = {
      {0, 3, -1},
      {
         // ('if' disjunction)
-        OP_RULE, R__TMP_120,
+        OP_RULE, R__TMP_122,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
@@ -5636,16 +5756,18 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_90",
-     R__TMP_90,
+    {"_loop0_90",
+     R__LOOP0_90,
      0,  // memo
      0,  // leftrec
-     {0, -1},
+     {0, 3, -1},
      {
-        // ',' args
-        OP_TOKEN, COMMA,
-        OP_RULE, R_ARGS,
-        OP_RETURN, A__TMP_90_0,
+        // ('if' disjunction)
+        OP_RULE, R__TMP_123,
+        OP_LOOP_ITERATE, 
+
+        // <Artificial alternative>
+        OP_LOOP_COLLECT, 
 
      },
     },
@@ -5662,8 +5784,21 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_gather_92",
-     R__GATHER_92,
+    {"_tmp_92",
+     R__TMP_92,
+     0,  // memo
+     0,  // leftrec
+     {0, -1},
+     {
+        // ',' args
+        OP_TOKEN, COMMA,
+        OP_RULE, R_ARGS,
+        OP_RETURN, A__TMP_92_0,
+
+     },
+    },
+    {"_gather_93",
+     R__GATHER_93,
      0,  // memo
      0,  // leftrec
      {0, 5, -1},
@@ -5675,23 +5810,6 @@ static Rule all_rules[] = {
 
         // kwarg_or_starred
         OP_RULE, R_KWARG_OR_STARRED,
-        OP_LOOP_COLLECT_DELIMITED, 
-
-     },
-    },
-    {"_gather_93",
-     R__GATHER_93,
-     0,  // memo
-     0,  // leftrec
-     {0, 5, -1},
-     {
-        // kwarg_or_double_starred ','
-        OP_RULE, R_KWARG_OR_DOUBLE_STARRED,
-        OP_TOKEN, COMMA,
-        OP_LOOP_ITERATE, 
-
-        // kwarg_or_double_starred
-        OP_RULE, R_KWARG_OR_DOUBLE_STARRED,
         OP_LOOP_COLLECT_DELIMITED, 
 
      },
@@ -5702,6 +5820,23 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, 5, -1},
      {
+        // kwarg_or_double_starred ','
+        OP_RULE, R_KWARG_OR_DOUBLE_STARRED,
+        OP_TOKEN, COMMA,
+        OP_LOOP_ITERATE, 
+
+        // kwarg_or_double_starred
+        OP_RULE, R_KWARG_OR_DOUBLE_STARRED,
+        OP_LOOP_COLLECT_DELIMITED, 
+
+     },
+    },
+    {"_gather_95",
+     R__GATHER_95,
+     0,  // memo
+     0,  // leftrec
+     {0, 5, -1},
+     {
         // kwarg_or_starred ','
         OP_RULE, R_KWARG_OR_STARRED,
         OP_TOKEN, COMMA,
@@ -5713,8 +5848,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_gather_95",
-     R__GATHER_95,
+    {"_gather_96",
+     R__GATHER_96,
      0,  // memo
      0,  // leftrec
      {0, 5, -1},
@@ -5730,14 +5865,14 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_loop0_96",
-     R__LOOP0_96,
+    {"_loop0_97",
+     R__LOOP0_97,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
      {
         // (',' star_target)
-        OP_RULE, R__TMP_121,
+        OP_RULE, R__TMP_124,
         OP_LOOP_ITERATE, 
 
         // <Artificial alternative>
@@ -5745,8 +5880,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_gather_97",
-     R__GATHER_97,
+    {"_gather_98",
+     R__GATHER_98,
      0,  // memo
      0,  // leftrec
      {0, 5, -1},
@@ -5762,8 +5897,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_98",
-     R__TMP_98,
+    {"_tmp_99",
+     R__TMP_99,
      0,  // memo
      0,  // leftrec
      {0, -1},
@@ -5773,12 +5908,12 @@ static Rule all_rules[] = {
         OP_TOKEN, STAR,
         OP_NEG_LOOKAHEAD, 
         OP_RULE, R_STAR_TARGET,
-        OP_RETURN, A__TMP_98_0,
+        OP_RETURN, A__TMP_99_0,
 
      },
     },
-    {"_gather_99",
-     R__GATHER_99,
+    {"_gather_100",
+     R__GATHER_100,
      0,  // memo
      0,  // leftrec
      {0, 5, -1},
@@ -5794,8 +5929,8 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_gather_100",
-     R__GATHER_100,
+    {"_gather_101",
+     R__GATHER_101,
      0,  // memo
      0,  // leftrec
      {0, 5, -1},
@@ -5811,25 +5946,25 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_101",
-     R__TMP_101,
+    {"_tmp_102",
+     R__TMP_102,
      0,  // memo
      0,  // leftrec
      {0, 4, -1},
      {
         // args
         OP_RULE, R_ARGS,
-        OP_RETURN, A__TMP_101_0,
+        OP_RETURN, A__TMP_102_0,
 
         // expression for_if_clauses
         OP_RULE, R_EXPRESSION,
         OP_RULE, R_FOR_IF_CLAUSES,
-        OP_RETURN, A__TMP_101_1,
+        OP_RETURN, A__TMP_102_1,
 
      },
     },
-    {"_loop0_102",
-     R__LOOP0_102,
+    {"_loop0_103",
+     R__LOOP0_103,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5843,48 +5978,33 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_103",
-     R__TMP_103,
+    {"_loop0_104",
+     R__LOOP0_104,
      0,  // memo
      0,  // leftrec
-     {0, -1},
+     {0, 3, -1},
      {
-        // '=' annotated_rhs
-        OP_TOKEN, EQUAL,
-        OP_RULE, R_ANNOTATED_RHS,
-        OP_RETURN, A__TMP_103_0,
+        // (star_targets '=')
+        OP_RULE, R__TMP_125,
+        OP_LOOP_ITERATE, 
+
+        // <Artificial alternative>
+        OP_LOOP_COLLECT, 
 
      },
     },
-    {"_tmp_104",
-     R__TMP_104,
+    {"_loop0_105",
+     R__LOOP0_105,
      0,  // memo
      0,  // leftrec
-     {0, 4, -1},
+     {0, 3, -1},
      {
-        // yield_expr
-        OP_RULE, R_YIELD_EXPR,
-        OP_RETURN, A__TMP_104_0,
+        // (star_targets '=')
+        OP_RULE, R__TMP_126,
+        OP_LOOP_ITERATE, 
 
-        // star_expressions
-        OP_RULE, R_STAR_EXPRESSIONS,
-        OP_RETURN, A__TMP_104_1,
-
-     },
-    },
-    {"_tmp_105",
-     R__TMP_105,
-     0,  // memo
-     0,  // leftrec
-     {0, 4, -1},
-     {
-        // yield_expr
-        OP_RULE, R_YIELD_EXPR,
-        OP_RETURN, A__TMP_105_0,
-
-        // star_expressions
-        OP_RULE, R_STAR_EXPRESSIONS,
-        OP_RETURN, A__TMP_105_1,
+        // <Artificial alternative>
+        OP_LOOP_COLLECT, 
 
      },
     },
@@ -5892,24 +6012,40 @@ static Rule all_rules[] = {
      R__TMP_106,
      0,  // memo
      0,  // leftrec
+     {0, 4, -1},
+     {
+        // yield_expr
+        OP_RULE, R_YIELD_EXPR,
+        OP_RETURN, A__TMP_106_0,
+
+        // star_expressions
+        OP_RULE, R_STAR_EXPRESSIONS,
+        OP_RETURN, A__TMP_106_1,
+
+     },
+    },
+    {"_tmp_107",
+     R__TMP_107,
+     0,  // memo
+     0,  // leftrec
      {0, 4, 8, -1},
      {
         // '['
         OP_TOKEN, LSQB,
-        OP_RETURN, A__TMP_106_0,
+        OP_RETURN, A__TMP_107_0,
 
         // '('
         OP_TOKEN, LPAR,
-        OP_RETURN, A__TMP_106_1,
+        OP_RETURN, A__TMP_107_1,
 
         // '{'
         OP_TOKEN, LBRACE,
-        OP_RETURN, A__TMP_106_2,
+        OP_RETURN, A__TMP_107_2,
 
      },
     },
-    {"_loop0_107",
-     R__LOOP0_107,
+    {"_loop0_108",
+     R__LOOP0_108,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -5923,53 +6059,34 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_108",
-     R__TMP_108,
-     0,  // memo
-     0,  // leftrec
-     {0, 4, -1},
-     {
-        // slash_with_default
-        OP_RULE, R_SLASH_WITH_DEFAULT,
-        OP_RETURN, A__TMP_108_0,
-
-        // param_with_default+
-        OP_RULE, R__LOOP1_122,
-        OP_RETURN, A__TMP_108_1,
-
-     },
-    },
     {"_tmp_109",
      R__TMP_109,
      0,  // memo
      0,  // leftrec
      {0, 4, -1},
      {
-        // ')'
-        OP_TOKEN, RPAR,
+        // slash_with_default
+        OP_RULE, R_SLASH_WITH_DEFAULT,
         OP_RETURN, A__TMP_109_0,
 
-        // ',' (')' | '**')
-        OP_TOKEN, COMMA,
-        OP_RULE, R__TMP_123,
+        // param_with_default+
+        OP_RULE, R__LOOP1_127,
         OP_RETURN, A__TMP_109_1,
 
      },
     },
-    {"_tmp_110",
-     R__TMP_110,
+    {"_loop0_110",
+     R__LOOP0_110,
      0,  // memo
      0,  // leftrec
-     {0, 4, -1},
+     {0, 3, -1},
      {
-        // ':'
-        OP_TOKEN, COLON,
-        OP_RETURN, A__TMP_110_0,
+        // lambda_param_no_default
+        OP_RULE, R_LAMBDA_PARAM_NO_DEFAULT,
+        OP_LOOP_ITERATE, 
 
-        // ',' (':' | '**')
-        OP_TOKEN, COMMA,
-        OP_RULE, R__TMP_124,
-        OP_RETURN, A__TMP_110_1,
+        // <Artificial alternative>
+        OP_LOOP_COLLECT, 
 
      },
     },
@@ -5977,12 +6094,15 @@ static Rule all_rules[] = {
      R__TMP_111,
      0,  // memo
      0,  // leftrec
-     {0, -1},
+     {0, 4, -1},
      {
-        // star_targets '='
-        OP_RULE, R_STAR_TARGETS,
-        OP_TOKEN, EQUAL,
+        // lambda_slash_with_default
+        OP_RULE, R_LAMBDA_SLASH_WITH_DEFAULT,
         OP_RETURN, A__TMP_111_0,
+
+        // lambda_param_with_default+
+        OP_RULE, R__LOOP1_128,
+        OP_RETURN, A__TMP_111_1,
 
      },
     },
@@ -5992,12 +6112,13 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, 4, -1},
      {
-        // '.'
-        OP_TOKEN, DOT,
+        // ')'
+        OP_TOKEN, RPAR,
         OP_RETURN, A__TMP_112_0,
 
-        // '...'
-        OP_TOKEN, ELLIPSIS,
+        // ',' (')' | '**')
+        OP_TOKEN, COMMA,
+        OP_RULE, R__TMP_129,
         OP_RETURN, A__TMP_112_1,
 
      },
@@ -6008,12 +6129,13 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, 4, -1},
      {
-        // '.'
-        OP_TOKEN, DOT,
+        // ':'
+        OP_TOKEN, COLON,
         OP_RETURN, A__TMP_113_0,
 
-        // '...'
-        OP_TOKEN, ELLIPSIS,
+        // ',' (':' | '**')
+        OP_TOKEN, COMMA,
+        OP_RULE, R__TMP_130,
         OP_RETURN, A__TMP_113_1,
 
      },
@@ -6024,10 +6146,9 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, -1},
      {
-        // '@' named_expression NEWLINE
-        OP_TOKEN, AT,
-        OP_RULE, R_NAMED_EXPRESSION,
-        OP_TOKEN, NEWLINE,
+        // star_targets '='
+        OP_RULE, R_STAR_TARGETS,
+        OP_TOKEN, EQUAL,
         OP_RETURN, A__TMP_114_0,
 
      },
@@ -6036,12 +6157,15 @@ static Rule all_rules[] = {
      R__TMP_115,
      0,  // memo
      0,  // leftrec
-     {0, -1},
+     {0, 4, -1},
      {
-        // ',' star_expression
-        OP_TOKEN, COMMA,
-        OP_RULE, R_STAR_EXPRESSION,
+        // '.'
+        OP_TOKEN, DOT,
         OP_RETURN, A__TMP_115_0,
+
+        // '...'
+        OP_TOKEN, ELLIPSIS,
+        OP_RETURN, A__TMP_115_1,
 
      },
     },
@@ -6049,12 +6173,15 @@ static Rule all_rules[] = {
      R__TMP_116,
      0,  // memo
      0,  // leftrec
-     {0, -1},
+     {0, 4, -1},
      {
-        // ',' expression
-        OP_TOKEN, COMMA,
-        OP_RULE, R_EXPRESSION,
+        // '.'
+        OP_TOKEN, DOT,
         OP_RETURN, A__TMP_116_0,
+
+        // '...'
+        OP_TOKEN, ELLIPSIS,
+        OP_RETURN, A__TMP_116_1,
 
      },
     },
@@ -6064,9 +6191,10 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, -1},
      {
-        // 'or' conjunction
-        OP_TOKEN, 532,
-        OP_RULE, R_CONJUNCTION,
+        // '@' named_expression NEWLINE
+        OP_TOKEN, AT,
+        OP_RULE, R_NAMED_EXPRESSION,
+        OP_TOKEN, NEWLINE,
         OP_RETURN, A__TMP_117_0,
 
      },
@@ -6077,9 +6205,9 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, -1},
      {
-        // 'and' inversion
-        OP_TOKEN, 533,
-        OP_RULE, R_INVERSION,
+        // ',' star_expression
+        OP_TOKEN, COMMA,
+        OP_RULE, R_STAR_EXPRESSION,
         OP_RETURN, A__TMP_118_0,
 
      },
@@ -6090,9 +6218,9 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, -1},
      {
-        // 'if' disjunction
-        OP_TOKEN, 510,
-        OP_RULE, R_DISJUNCTION,
+        // ',' expression
+        OP_TOKEN, COMMA,
+        OP_RULE, R_EXPRESSION,
         OP_RETURN, A__TMP_119_0,
 
      },
@@ -6103,9 +6231,9 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, -1},
      {
-        // 'if' disjunction
-        OP_TOKEN, 510,
-        OP_RULE, R_DISJUNCTION,
+        // 'or' conjunction
+        OP_TOKEN, 531,
+        OP_RULE, R_CONJUNCTION,
         OP_RETURN, A__TMP_120_0,
 
      },
@@ -6116,15 +6244,80 @@ static Rule all_rules[] = {
      0,  // leftrec
      {0, -1},
      {
-        // ',' star_target
-        OP_TOKEN, COMMA,
-        OP_RULE, R_STAR_TARGET,
+        // 'and' inversion
+        OP_TOKEN, 532,
+        OP_RULE, R_INVERSION,
         OP_RETURN, A__TMP_121_0,
 
      },
     },
-    {"_loop1_122",
-     R__LOOP1_122,
+    {"_tmp_122",
+     R__TMP_122,
+     0,  // memo
+     0,  // leftrec
+     {0, -1},
+     {
+        // 'if' disjunction
+        OP_TOKEN, 510,
+        OP_RULE, R_DISJUNCTION,
+        OP_RETURN, A__TMP_122_0,
+
+     },
+    },
+    {"_tmp_123",
+     R__TMP_123,
+     0,  // memo
+     0,  // leftrec
+     {0, -1},
+     {
+        // 'if' disjunction
+        OP_TOKEN, 510,
+        OP_RULE, R_DISJUNCTION,
+        OP_RETURN, A__TMP_123_0,
+
+     },
+    },
+    {"_tmp_124",
+     R__TMP_124,
+     0,  // memo
+     0,  // leftrec
+     {0, -1},
+     {
+        // ',' star_target
+        OP_TOKEN, COMMA,
+        OP_RULE, R_STAR_TARGET,
+        OP_RETURN, A__TMP_124_0,
+
+     },
+    },
+    {"_tmp_125",
+     R__TMP_125,
+     0,  // memo
+     0,  // leftrec
+     {0, -1},
+     {
+        // star_targets '='
+        OP_RULE, R_STAR_TARGETS,
+        OP_TOKEN, EQUAL,
+        OP_RETURN, A__TMP_125_0,
+
+     },
+    },
+    {"_tmp_126",
+     R__TMP_126,
+     0,  // memo
+     0,  // leftrec
+     {0, -1},
+     {
+        // star_targets '='
+        OP_RULE, R_STAR_TARGETS,
+        OP_TOKEN, EQUAL,
+        OP_RETURN, A__TMP_126_0,
+
+     },
+    },
+    {"_loop1_127",
+     R__LOOP1_127,
      0,  // memo
      0,  // leftrec
      {0, 3, -1},
@@ -6138,35 +6331,50 @@ static Rule all_rules[] = {
 
      },
     },
-    {"_tmp_123",
-     R__TMP_123,
+    {"_loop1_128",
+     R__LOOP1_128,
+     0,  // memo
+     0,  // leftrec
+     {0, 3, -1},
+     {
+        // lambda_param_with_default
+        OP_RULE, R_LAMBDA_PARAM_WITH_DEFAULT,
+        OP_LOOP_ITERATE, 
+
+        // <Artificial alternative>
+        OP_LOOP_COLLECT_NONEMPTY, 
+
+     },
+    },
+    {"_tmp_129",
+     R__TMP_129,
      0,  // memo
      0,  // leftrec
      {0, 4, -1},
      {
         // ')'
         OP_TOKEN, RPAR,
-        OP_RETURN, A__TMP_123_0,
+        OP_RETURN, A__TMP_129_0,
 
         // '**'
         OP_TOKEN, DOUBLESTAR,
-        OP_RETURN, A__TMP_123_1,
+        OP_RETURN, A__TMP_129_1,
 
      },
     },
-    {"_tmp_124",
-     R__TMP_124,
+    {"_tmp_130",
+     R__TMP_130,
      0,  // memo
      0,  // leftrec
      {0, 4, -1},
      {
         // ':'
         OP_TOKEN, COLON,
-        OP_RETURN, A__TMP_124_0,
+        OP_RETURN, A__TMP_130_0,
 
         // '**'
         OP_TOKEN, DOUBLESTAR,
-        OP_RETURN, A__TMP_124_1,
+        OP_RETURN, A__TMP_130_1,
 
      },
     },
@@ -6227,6 +6435,8 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_DEL_TARGET_2:
     case A_TARGET_2:
     case A_T_PRIMARY_4:
+    case A_INVALID_ANN_ASSIGN_TARGET_0:
+    case A_INVALID_ANN_ASSIGN_TARGET_1:
     case A__GATHER_3_0:
     case A__GATHER_3_1:
     case A__GATHER_4_0:
@@ -6244,36 +6454,36 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A__GATHER_20_1:
     case A__GATHER_21_0:
     case A__GATHER_21_1:
-    case A__GATHER_56_0:
-    case A__GATHER_56_1:
-    case A__GATHER_58_0:
-    case A__GATHER_58_1:
-    case A__GATHER_78_0:
-    case A__GATHER_78_1:
-    case A__TMP_80_0:
-    case A__TMP_80_1:
-    case A__TMP_80_2:
+    case A__GATHER_57_0:
+    case A__GATHER_57_1:
+    case A__GATHER_59_0:
+    case A__GATHER_59_1:
+    case A__GATHER_79_0:
+    case A__GATHER_79_1:
     case A__TMP_81_0:
     case A__TMP_81_1:
+    case A__TMP_81_2:
     case A__TMP_82_0:
     case A__TMP_82_1:
-    case A__TMP_82_2:
-    case A__TMP_82_3:
-    case A__TMP_85_0:
-    case A__TMP_85_1:
-    case A__GATHER_97_0:
-    case A__GATHER_97_1:
-    case A__GATHER_99_0:
-    case A__GATHER_99_1:
+    case A__TMP_83_0:
+    case A__TMP_83_1:
+    case A__TMP_83_2:
+    case A__TMP_83_3:
+    case A__TMP_86_0:
+    case A__TMP_86_1:
+    case A__GATHER_98_0:
+    case A__GATHER_98_1:
     case A__GATHER_100_0:
     case A__GATHER_100_1:
-    case A__TMP_101_0:
-    case A__TMP_101_1:
-    case A__TMP_104_0:
-    case A__TMP_104_1:
-    case A__TMP_105_0:
-    case A__TMP_105_1:
-    case A__TMP_111_0:
+    case A__GATHER_101_0:
+    case A__GATHER_101_1:
+    case A__TMP_102_0:
+    case A__TMP_102_1:
+    case A__TMP_106_0:
+    case A__TMP_106_1:
+    case A__TMP_114_0:
+    case A__TMP_125_0:
+    case A__TMP_126_0:
         return ((expr_ty)_f->vals[0]);
     case A_TYPE_EXPRESSIONS_0:
         return _PyPegen_seq_append_to_end ( p , CHECK ( _PyPegen_seq_append_to_end ( p , _f->vals[0] , ((expr_ty)_f->vals[3]) ) ) , ((expr_ty)_f->vals[6]) );
@@ -6303,9 +6513,12 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_COMPOUND_STMT_5:
     case A_COMPOUND_STMT_6:
     case A_ASSIGNMENT_4:
+    case A_DEL_STMT_1:
     case A_IMPORT_FROM_TARGETS_3:
     case A_IMPORT_FROM_AS_NAMES_0:
     case A_DOTTED_AS_NAMES_0:
+    case A_FOR_STMT_2:
+    case A_WITH_ITEM_1:
     case A_FUNC_TYPE_COMMENT_1:
     case A_FUNC_TYPE_COMMENT_2:
     case A_PARAMS_0:
@@ -6317,20 +6530,23 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_EXPRESSIONS_LIST_0:
     case A_STAR_NAMED_EXPRESSIONS_0:
     case A_NAMED_EXPRESSION_2:
+    case A_LAMBDA_PARAMS_0:
     case A_LAMBDA_SLASH_NO_DEFAULT_0:
     case A_LAMBDA_SLASH_NO_DEFAULT_1:
     case A_LAMBDA_STAR_ETC_3:
+    case A_ATOM_4:
     case A_ATOM_5:
     case A_ATOM_6:
     case A_ATOM_7:
     case A_ATOM_8:
-    case A_ATOM_9:
     case A_LISTCOMP_1:
+    case A_GROUP_1:
     case A_GENEXP_1:
     case A_SETCOMP_1:
     case A_DICTCOMP_1:
     case A_DOUBLE_STARRED_KVPAIRS_0:
     case A_FOR_IF_CLAUSES_0:
+    case A_FOR_IF_CLAUSE_2:
     case A_ARGUMENTS_1:
     case A_KWARGS_1:
     case A_KWARGS_2:
@@ -6338,15 +6554,15 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_KWARG_OR_DOUBLE_STARRED_2:
     case A_STAR_TARGETS_SEQ_0:
     case A_DEL_TARGETS_0:
-    case A_DEL_T_ATOM_4:
-    case A_DEL_TARGET_END_4:
     case A_TARGETS_0:
     case A__TMP_10_2:
     case A__TMP_12_1:
     case A__TMP_13_1:
-    case A__TMP_39_0:
-    case A__TMP_98_0:
-    case A__TMP_108_1:
+    case A__TMP_23_1:
+    case A__TMP_40_0:
+    case A__TMP_99_0:
+    case A__TMP_109_1:
+    case A__TMP_111_1:
         return _f->vals[0];
     case A_STATEMENTS_0:
         return _PyPegen_seq_flatten ( p , _f->vals[0] );
@@ -6450,9 +6666,9 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_WHILE_STMT_0:
         return _Py_While ( ((expr_ty)_f->vals[1]) , ((asdl_seq*)_f->vals[3]) , _f->vals[4] , EXTRA );
     case A_FOR_STMT_0:
-        return _Py_For ( ((expr_ty)_f->vals[1]) , ((expr_ty)_f->vals[3]) , ((asdl_seq*)_f->vals[6]) , _f->vals[7] , NEW_TYPE_COMMENT ( p , _f->vals[5] ) , EXTRA );
+        return _Py_For ( ((expr_ty)_f->vals[1]) , _f->vals[3] , _f->vals[6] , ((asdl_seq*)_f->vals[7]) , NEW_TYPE_COMMENT ( p , ((Token *)_f->vals[5]) ) , EXTRA );
     case A_FOR_STMT_1:
-        return CHECK_VERSION ( 5 , "Async for loops are" , _Py_AsyncFor ( ((expr_ty)_f->vals[2]) , ((expr_ty)_f->vals[4]) , ((asdl_seq*)_f->vals[7]) , _f->vals[8] , NEW_TYPE_COMMENT ( p , _f->vals[6] ) , EXTRA ) );
+        return CHECK_VERSION ( 5 , "Async for loops are" , _Py_AsyncFor ( ((expr_ty)_f->vals[2]) , _f->vals[4] , _f->vals[7] , ((asdl_seq*)_f->vals[8]) , NEW_TYPE_COMMENT ( p , ((Token *)_f->vals[6]) ) , EXTRA ) );
     case A_WITH_STMT_0:
         return _Py_With ( _f->vals[2] , ((asdl_seq*)_f->vals[6]) , NULL , EXTRA );
     case A_WITH_STMT_1:
@@ -6462,7 +6678,9 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_WITH_STMT_3:
         return CHECK_VERSION ( 5 , "Async with statements are" , _Py_AsyncWith ( _f->vals[2] , ((asdl_seq*)_f->vals[5]) , NEW_TYPE_COMMENT ( p , _f->vals[4] ) , EXTRA ) );
     case A_WITH_ITEM_0:
-        return _Py_withitem ( ((expr_ty)_f->vals[0]) , _f->vals[1] , p -> arena );
+        return _Py_withitem ( ((expr_ty)_f->vals[0]) , ((expr_ty)_f->vals[2]) , p -> arena );
+    case A_WITH_ITEM_2:
+        return _Py_withitem ( ((expr_ty)_f->vals[0]) , NULL , p -> arena );
     case A_TRY_STMT_0:
         return _Py_Try ( ((asdl_seq*)_f->vals[2]) , NULL , NULL , ((asdl_seq*)_f->vals[3]) , EXTRA );
     case A_TRY_STMT_1:
@@ -6485,10 +6703,11 @@ call_action(Parser *p, Frame *_f, int _iaction)
         return CHECK_VERSION ( 5 , "Async functions are" , _Py_AsyncFunctionDef ( ((expr_ty)_f->vals[2]) -> v . Name . id , ( _f->vals[4] )   ? _f->vals[4] : CHECK ( _PyPegen_empty_arguments ( p ) ) , ((asdl_seq*)_f->vals[9]) , NULL , _f->vals[6] , NEW_TYPE_COMMENT ( p , _f->vals[8] ) , EXTRA ) );
     case A_FUNC_TYPE_COMMENT_0:
     case A_GROUP_0:
-    case A__TMP_55_0:
-    case A__TMP_79_0:
+    case A__TMP_56_0:
+    case A__TMP_80_0:
         return _f->vals[1];
     case A_PARAMS_1:
+    case A_LAMBDA_PARAMS_1:
         return ((arguments_ty)_f->vals[0]);
     case A_PARAMETERS_0:
     case A_LAMBDA_PARAMETERS_0:
@@ -6539,27 +6758,27 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_ANNOTATION_0:
     case A_DEFAULT_0:
     case A_SINGLE_TARGET_2:
+    case A_INVALID_ANN_ASSIGN_TARGET_2:
     case A__TMP_14_0:
     case A__TMP_15_0:
     case A__TMP_16_0:
     case A__TMP_22_0:
-    case A__TMP_26_0:
-    case A__TMP_28_0:
-    case A__TMP_33_0:
-    case A__TMP_35_0:
+    case A__TMP_27_0:
+    case A__TMP_29_0:
     case A__TMP_36_0:
     case A__TMP_37_0:
     case A__TMP_38_0:
-    case A__TMP_90_0:
+    case A__TMP_39_0:
     case A__TMP_91_0:
-    case A__TMP_114_0:
-    case A__TMP_115_0:
-    case A__TMP_116_0:
+    case A__TMP_92_0:
     case A__TMP_117_0:
     case A__TMP_118_0:
     case A__TMP_119_0:
     case A__TMP_120_0:
     case A__TMP_121_0:
+    case A__TMP_122_0:
+    case A__TMP_123_0:
+    case A__TMP_124_0:
         return ((expr_ty)_f->vals[1]);
     case A_CLASS_DEF_0:
         return _PyPegen_class_def_decorators ( p , ((asdl_seq*)_f->vals[0]) , ((stmt_ty)_f->vals[1]) );
@@ -6576,7 +6795,7 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_STARRED_EXPRESSION_0:
         return _Py_Starred ( ((expr_ty)_f->vals[1]) , Load , EXTRA );
     case A_NAMED_EXPRESSION_0:
-        return _Py_NamedExpr ( CHECK ( _PyPegen_set_expr_context ( p , ((expr_ty)_f->vals[0]) , Store ) ) , ((expr_ty)_f->vals[2]) , EXTRA );
+        return _Py_NamedExpr ( CHECK ( _PyPegen_set_expr_context ( p , ((expr_ty)_f->vals[0]) , Store ) ) , _f->vals[2] , EXTRA );
     case A_EXPRESSION_0:
         return _Py_IfExp ( ((expr_ty)_f->vals[2]) , ((expr_ty)_f->vals[0]) , ((expr_ty)_f->vals[4]) , EXTRA );
     case A_LAMBDEF_0:
@@ -6687,24 +6906,22 @@ call_action(Parser *p, Frame *_f, int _iaction)
         return _Py_Constant ( Py_False , NULL , EXTRA );
     case A_ATOM_3:
         return _Py_Constant ( Py_None , NULL , EXTRA );
-    case A_ATOM_4:
-        return RAISE_SYNTAX_ERROR ( "You found it!" );
-    case A_ATOM_10:
+    case A_ATOM_9:
         return _Py_Constant ( Py_Ellipsis , NULL , EXTRA );
     case A_STRINGS_0:
         return _PyPegen_concatenate_strings ( p , _f->vals[0] );
     case A_LIST_0:
         return _Py_List ( _f->vals[1] , Load , EXTRA );
     case A_LISTCOMP_0:
-        return _Py_ListComp ( ((expr_ty)_f->vals[1]) , ((asdl_seq*)_f->vals[2]) , EXTRA );
+        return _Py_ListComp ( ((expr_ty)_f->vals[1]) , _f->vals[2] , EXTRA );
     case A_TUPLE_0:
         return _Py_Tuple ( _f->vals[1] , Load , EXTRA );
     case A_GENEXP_0:
-        return _Py_GeneratorExp ( ((expr_ty)_f->vals[1]) , ((asdl_seq*)_f->vals[2]) , EXTRA );
+        return _Py_GeneratorExp ( ((expr_ty)_f->vals[1]) , _f->vals[2] , EXTRA );
     case A_SET_0:
         return _Py_Set ( ((asdl_seq*)_f->vals[1]) , EXTRA );
     case A_SETCOMP_0:
-        return _Py_SetComp ( ((expr_ty)_f->vals[1]) , ((asdl_seq*)_f->vals[2]) , EXTRA );
+        return _Py_SetComp ( ((expr_ty)_f->vals[1]) , _f->vals[2] , EXTRA );
     case A_DICT_0:
         return _Py_Dict ( CHECK ( _PyPegen_get_keys ( p , _f->vals[1] ) ) , CHECK ( _PyPegen_get_values ( p , _f->vals[1] ) ) , EXTRA );
     case A_DICTCOMP_0:
@@ -6712,15 +6929,15 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_DOUBLE_STARRED_KVPAIR_0:
         return _PyPegen_key_value_pair ( p , NULL , ((expr_ty)_f->vals[1]) );
     case A_DOUBLE_STARRED_KVPAIR_1:
-    case A__GATHER_86_0:
-    case A__GATHER_86_1:
+    case A__GATHER_87_0:
+    case A__GATHER_87_1:
         return ((KeyValuePair*)_f->vals[0]);
     case A_KVPAIR_0:
         return _PyPegen_key_value_pair ( p , ((expr_ty)_f->vals[0]) , ((expr_ty)_f->vals[2]) );
     case A_FOR_IF_CLAUSE_0:
-        return CHECK_VERSION ( 6 , "Async comprehensions are" , _Py_comprehension ( ((expr_ty)_f->vals[2]) , ((expr_ty)_f->vals[4]) , _f->vals[5] , 1 , p -> arena ) );
+        return CHECK_VERSION ( 6 , "Async comprehensions are" , _Py_comprehension ( ((expr_ty)_f->vals[2]) , _f->vals[4] , ((expr_ty)_f->vals[5]) , 1 , p -> arena ) );
     case A_FOR_IF_CLAUSE_1:
-        return _Py_comprehension ( ((expr_ty)_f->vals[1]) , ((expr_ty)_f->vals[3]) , _f->vals[4] , 0 , p -> arena );
+        return _Py_comprehension ( ((expr_ty)_f->vals[1]) , _f->vals[3] , ((expr_ty)_f->vals[4]) , 0 , p -> arena );
     case A_YIELD_EXPR_0:
         return _Py_YieldFrom ( ((expr_ty)_f->vals[2]) , EXTRA );
     case A_YIELD_EXPR_1:
@@ -6776,10 +6993,6 @@ call_action(Parser *p, Frame *_f, int _iaction)
         return _Py_Tuple ( _f->vals[1] , Del , EXTRA );
     case A_DEL_T_ATOM_3:
         return _Py_List ( _f->vals[1] , Del , EXTRA );
-    case A_DEL_TARGET_END_0:
-    case A_DEL_TARGET_END_1:
-    case A_DEL_TARGET_END_2:
-    case A_DEL_TARGET_END_3:
     case A_T_LOOKAHEAD_0:
     case A_T_LOOKAHEAD_1:
     case A_T_LOOKAHEAD_2:
@@ -6791,22 +7004,25 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A__TMP_11_1:
     case A__TMP_12_0:
     case A__TMP_13_0:
-    case A__TMP_103_0:
-    case A__TMP_106_0:
-    case A__TMP_106_1:
-    case A__TMP_106_2:
-    case A__TMP_109_0:
-    case A__TMP_109_1:
-    case A__TMP_110_0:
-    case A__TMP_110_1:
+    case A__TMP_23_0:
+    case A__TMP_34_0:
+    case A__TMP_34_1:
+    case A__TMP_34_2:
+    case A__TMP_107_0:
+    case A__TMP_107_1:
+    case A__TMP_107_2:
     case A__TMP_112_0:
     case A__TMP_112_1:
     case A__TMP_113_0:
     case A__TMP_113_1:
-    case A__TMP_123_0:
-    case A__TMP_123_1:
-    case A__TMP_124_0:
-    case A__TMP_124_1:
+    case A__TMP_115_0:
+    case A__TMP_115_1:
+    case A__TMP_116_0:
+    case A__TMP_116_1:
+    case A__TMP_129_0:
+    case A__TMP_129_1:
+    case A__TMP_130_0:
+    case A__TMP_130_1:
         return ((Token *)_f->vals[0]);
     case A_INCORRECT_ARGUMENTS_0:
         return RAISE_SYNTAX_ERROR ( "iterable argument unpacking follows keyword argument unpacking" );
@@ -6823,16 +7039,19 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_INVALID_NAMED_EXPRESSION_0:
         return RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( ((expr_ty)_f->vals[0]) , "cannot use assignment expressions with %s" , _PyPegen_get_expr_name ( ((expr_ty)_f->vals[0]) ) );
     case A_INVALID_ASSIGNMENT_0:
-        return RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( ((expr_ty)_f->vals[0]) , "only single target (not list) can be annotated" );
+        return RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( ((expr_ty)_f->vals[0]) , "only single target (not %s) can be annotated" , _PyPegen_get_expr_name ( ((expr_ty)_f->vals[0]) ) );
     case A_INVALID_ASSIGNMENT_1:
-    case A_INVALID_ASSIGNMENT_2:
         return RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( ((expr_ty)_f->vals[0]) , "only single target (not tuple) can be annotated" );
-    case A_INVALID_ASSIGNMENT_3:
+    case A_INVALID_ASSIGNMENT_2:
         return RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( ((expr_ty)_f->vals[0]) , "illegal target for annotation" );
+    case A_INVALID_ASSIGNMENT_3:
+        return RAISE_SYNTAX_ERROR_INVALID_TARGET ( STAR_TARGETS , ((expr_ty)_f->vals[1]) );
     case A_INVALID_ASSIGNMENT_4:
-        return RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( _PyPegen_get_invalid_target ( ((expr_ty)_f->vals[0]) ) , "cannot assign to %s" , _PyPegen_get_expr_name ( _PyPegen_get_invalid_target ( ((expr_ty)_f->vals[0]) ) ) );
+        return RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( ((expr_ty)_f->vals[1]) , "assignment to yield expression not possible" );
     case A_INVALID_ASSIGNMENT_5:
         return RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( ((expr_ty)_f->vals[0]) , "'%s' is an illegal expression for augmented assignment" , _PyPegen_get_expr_name ( ((expr_ty)_f->vals[0]) ) );
+    case A_INVALID_DEL_STMT_0:
+        return RAISE_SYNTAX_ERROR_INVALID_TARGET ( DEL_TARGETS , ((expr_ty)_f->vals[1]) );
     case A_INVALID_BLOCK_0:
         return RAISE_INDENTATION_ERROR ( "expected an indented block" );
     case A_INVALID_COMPREHENSION_0:
@@ -6840,6 +7059,7 @@ call_action(Parser *p, Frame *_f, int _iaction)
     case A_INVALID_DICT_COMPREHENSION_0:
         return RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( ((Token *)_f->vals[1]) , "dict unpacking cannot be used in dict comprehension" );
     case A_INVALID_PARAMETERS_0:
+    case A_INVALID_LAMBDA_PARAMETERS_0:
         return RAISE_SYNTAX_ERROR ( "non-default argument follows default argument" );
     case A_INVALID_STAR_ETC_0:
     case A_INVALID_LAMBDA_STAR_ETC_0:
@@ -6848,38 +7068,43 @@ call_action(Parser *p, Frame *_f, int _iaction)
         return RAISE_SYNTAX_ERROR ( "bare * has associated type comment" );
     case A_INVALID_DOUBLE_TYPE_COMMENTS_0:
         return RAISE_SYNTAX_ERROR ( "Cannot have two type comments on def" );
-    case A_INVALID_DEL_TARGET_0:
-        return RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( ((expr_ty)_f->vals[0]) , "cannot delete %s" , _PyPegen_get_expr_name ( ((expr_ty)_f->vals[0]) ) );
+    case A_INVALID_WITH_ITEM_0:
+        return RAISE_SYNTAX_ERROR_INVALID_TARGET ( STAR_TARGETS , ((expr_ty)_f->vals[2]) );
+    case A_INVALID_FOR_TARGET_0:
+        return RAISE_SYNTAX_ERROR_INVALID_TARGET ( FOR_TARGETS , ((expr_ty)_f->vals[2]) );
+    case A_INVALID_GROUP_0:
+        return RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( ((expr_ty)_f->vals[1]) , "can't use starred expression here" );
     case A_INVALID_IMPORT_FROM_TARGETS_0:
         return RAISE_SYNTAX_ERROR ( "trailing comma not allowed without surrounding parentheses" );
-    case A__GATHER_25_0:
-    case A__GATHER_25_1:
-    case A__GATHER_27_0:
-    case A__GATHER_27_1:
+    case A__GATHER_26_0:
+    case A__GATHER_26_1:
+    case A__GATHER_28_0:
+    case A__GATHER_28_1:
         return ((alias_ty)_f->vals[0]);
-    case A__GATHER_29_0:
-    case A__GATHER_29_1:
     case A__GATHER_30_0:
     case A__GATHER_30_1:
     case A__GATHER_31_0:
     case A__GATHER_31_1:
     case A__GATHER_32_0:
     case A__GATHER_32_1:
+    case A__GATHER_33_0:
+    case A__GATHER_33_1:
         return ((withitem_ty)_f->vals[0]);
-    case A__TMP_77_0:
+    case A__TMP_78_0:
         return _PyPegen_check_barry_as_flufl ( p )   ? NULL : ((Token *)_f->vals[0]);
-    case A__TMP_84_0:
+    case A__TMP_85_0:
         return _PyPegen_seq_insert_in_front ( p , ((expr_ty)_f->vals[0]) , _f->vals[2] );
-    case A__GATHER_92_0:
-    case A__GATHER_92_1:
     case A__GATHER_93_0:
     case A__GATHER_93_1:
     case A__GATHER_94_0:
     case A__GATHER_94_1:
     case A__GATHER_95_0:
     case A__GATHER_95_1:
+    case A__GATHER_96_0:
+    case A__GATHER_96_1:
         return ((KeywordOrStarred*)_f->vals[0]);
-    case A__TMP_108_0:
+    case A__TMP_109_0:
+    case A__TMP_111_0:
         return ((SlashWithDefault*)_f->vals[0]);
     default:
         assert(0);
