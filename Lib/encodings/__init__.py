@@ -69,7 +69,6 @@ def normalize_encoding(encoding):
 
 def search_function(encoding):
 
-    _aliases = aliases.aliases
     # Cache lookup
     entry = _cache.get(encoding, _unknown)
     if entry is not _unknown:
@@ -83,8 +82,8 @@ def search_function(encoding):
     # try in the encodings package, then at top-level.
     #
     norm_encoding = normalize_encoding(encoding)
-    aliased_encoding = _aliases.get(norm_encoding) or \
-                       _aliases.get(norm_encoding.replace('.', '_'))
+    aliased_encoding = aliases.aliases.get(norm_encoding) or \
+                       aliases.aliases.get(norm_encoding.replace('.', '_'))
     if aliased_encoding is not None:
         modnames = [aliased_encoding,
                     norm_encoding]
@@ -146,8 +145,8 @@ def search_function(encoding):
         pass
     else:
         for alias in codecaliases:
-            if alias not in _aliases:
-                _aliases[alias] = modname
+            if alias not in aliases.aliases:
+                aliases.aliases[alias] = modname
 
     # Return the registry entry
     return entry
