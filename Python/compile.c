@@ -5546,14 +5546,6 @@ compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
         alt = asdl_seq_GET(p->v.BoolOp.values, i);
         pc->stores = PySet_New(stores_init);
         SET_LOC(c, alt);
-        if (alt->kind == Name_kind && alt->v.Name.ctx == Store && i != size - 1)
-        {
-            const char *w = "name capture pattern %R makes remaining alternate "
-                            "patterns unreachable"
-            if (compiler_warn(c, w, alt->v.Name.id)) {
-                goto fail;
-            }
-        }
         if (!pc->stores ||
             !compiler_addop(c, DUP_TOP) ||
             !compiler_pattern(c, alt, pc) ||
@@ -5816,6 +5808,8 @@ compiler_pattern_namedexpr(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == NamedExpr_kind);
     ADDOP(c, DUP_TOP);
+    // OPTIM: We store the target *before* matching the inner pattern, to avoid
+    // complicated cleanup if the inner pattern fails to match.
     CHECK(pattern_store_name(c, p->v.NamedExpr.target, pc));
     CHECK(compiler_pattern(c, p->v.NamedExpr.value, pc));
     return 1;

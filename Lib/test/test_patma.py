@@ -2208,15 +2208,13 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(set(f()), {"abc"})
 
     def test_patma_218(self):
-        namespace = {}
         code = """
         match ...:
-            case a | a:
+            case "a" | a:
                 pass
         """
-        with self.assertWarns(SyntaxWarning):
-            exec(inspect.cleandoc(code), None, namespace)
-        self.assertEqual(set(namespace), {"a"})
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
 
     def test_patma_219(self):
         code = """
@@ -2224,7 +2222,7 @@ class TestPatma(unittest.TestCase):
             case a | "a":
                 pass
         """
-        with self.assertWarns(SyntaxWarning), self.assertRaises(SyntaxError):
+        with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
     def test_patma_220(self):
