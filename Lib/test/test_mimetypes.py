@@ -301,78 +301,66 @@ class MimeSniffTestCase(unittest.TestCase):
 
     def test_mimesniff_text(self):
         import codecs
-
-        tp, charset = mimetypes.mimesniff('foo bar'.encode('utf-8'))
-        self.assertEqual(tp, 'text/plain')
-        self.assertEqual(charset, 'utf-8')
-
-        tp, charset = mimetypes.mimesniff(codecs.BOM_UTF16_LE + 'foo bar'.encode('utf-16-le'))
-        self.assertEqual(tp, 'text/plain')
-        self.assertEqual(charset, 'utf-16le')
-
-        tp, charset = mimetypes.mimesniff(codecs.BOM_UTF16_BE + 'foo bar'.encode('utf-16-be'))
-        self.assertEqual(tp, 'text/plain')
-        self.assertEqual(charset, 'utf-16be')
-
-        tp, charset = mimetypes.mimesniff(b'<HTML> Python.org </html>')
-        self.assertEqual(tp, 'text/html')
-        self.assertEqual(charset, 'utf-8')
-
-        tp, charset = mimetypes.mimesniff(b'\n\n<?xml!')
-        self.assertEqual(tp, 'text/xml')
-        self.assertEqual(charset, 'utf-8')
+        test_datas = [
+            ('foo bar'.encode('utf-8'), 'text/plain', 'utf-8'),
+            (codecs.BOM_UTF16_LE + 'foo bar'.encode('utf-16-le'), 'text/plain', 'utf-16le'),
+            (codecs.BOM_UTF16_BE + 'foo bar'.encode('utf-16-be'), 'text/plain', 'utf-16be'),
+            (b'<HTML> Python.org </html>', 'text/html', 'utf-8'),
+            (b'\n\n<?xml!', 'text/xml', 'utf-8')
+        ]
+        for data, expected_tp, expected_charset in test_datas:
+            with self.subTest(data=data):
+                tp, charset = mimetypes.mimesniff(data)
+                self.assertEqual(tp, expected_tp)
+                self.assertEqual(charset, expected_charset)
 
     def test_mimesniff_fonts(self):
-        tp, charset = mimetypes.mimesniff(b'wOF2\x00\x01\x00\x00\x00\x00')
-        self.assertEqual(tp, 'font/woff2')
-        self.assertIsNone(charset)
-
-        tp, charset = mimetypes.mimesniff(b'wOFF\x00\x01\x00\x00\x00\x00')
-        self.assertEqual(tp, 'font/woff')
-        self.assertIsNone(charset)
-
-        tp, charset = mimetypes.mimesniff(b'\x00\x01\x00\x00\x00\x12\x01\x00\x00\x04')
-        self.assertEqual(tp, 'font/ttf')
-        self.assertIsNone(charset)
-
-        tp, charset = mimetypes.mimesniff(b'OTTO\x00\x01\x00')
-        self.assertEqual(tp, 'font/otf')
-        self.assertIsNone(charset)
+        test_datas = [
+            (b'wOF2\x00\x01\x00\x00\x00\x00', 'font/woff2'),
+            (b'wOFF\x00\x01\x00\x00\x00\x00', 'font/woff'),
+            (b'\x00\x01\x00\x00\x00\x12\x01\x00\x00\x04', 'font/ttf'),
+            (b'OTTO\x00\x01\x00', 'font/otf')
+        ]
+        for data, expected_tp in test_datas:
+            with self.subTest(data=data):
+                tp, charset = mimetypes.mimesniff(data)
+                self.assertEqual(tp, expected_tp)
+                self.assertIsNone(charset)
 
     def test_mimesniff_application(self):
-        tp, charset = mimetypes.mimesniff(bytearray([0x01, 0x02]))
-        self.assertEqual(tp, 'application/octet-stream')
-        self.assertIsNone(charset)
-
-        tp, charset = mimetypes.mimesniff(b'%PDF-1.4')
-        self.assertEqual(tp, 'application/pdf')
-        self.assertIsNone(charset)
-
         import gzip
-        gzip_out = gzip.compress(b'test')
-        tp, charset = mimetypes.mimesniff(gzip_out)
-        self.assertEqual(tp, 'application/x-gzip')
-        self.assertIsNone(charset)
+        test_datas = [
+            (bytearray([0x01, 0x02]), 'application/octet-stream'),
+            (b'%PDF-1.4', 'application/pdf'),
+            (b'Rar!\x1A\x07\x00', 'application/x-rar-compressed'),
+            (b'Rar!\x1A\x07\x01\x00', 'application/x-rar-compressed')
+        ]
 
-        tp, charset = mimetypes.mimesniff(b'Rar!\x1A\x07\x00')
-        self.assertEqual(tp, 'application/x-rar-compressed')
-        self.assertIsNone(charset)
+        try:
+            import gzip
+            gzip_data = gzip.compress(b'test')
+            test_datas.append((gzip_data, 'application/x-gzip'))
+        except ImportError:
+            pass
 
-        tp, charset = mimetypes.mimesniff(b'Rar!\x1A\x07\x01\x00')
-        self.assertEqual(tp, 'application/x-rar-compressed')
-        self.assertIsNone(charset)
+        for data, expected_tp in test_datas:
+            with self.subTest(data=data):
+                tp, charset = mimetypes.mimesniff(data)
+                self.assertEqual(tp, expected_tp)
+                self.assertIsNone(charset)
 
     def test_mimesniff_audio(self):
         sounds = (('sndhdr.aiff', 'audio/aiff'),
                   ('sndhdr.au', 'audio/basic'),
                   ('sndhdr.wav', 'audio/wave'))
         for filename, expected in sounds:
-            filename = findfile(filename, subdir='sndhdrdata')
-            with open(filename, 'rb') as fp:
-                data = fp.read()
-                tp, charset = mimetypes.mimesniff(data)
-                self.assertEqual(tp, expected)
-                self.assertIsNone(charset)
+            with self.subTest(filename=filename):
+                filename = findfile(filename, subdir='sndhdrdata')
+                with open(filename, 'rb') as fp:
+                    data = fp.read()
+                    tp, charset = mimetypes.mimesniff(data)
+                    self.assertEqual(tp, expected)
+                    self.assertIsNone(charset)
 
     def test_mimesniff_image(self):
         images = (('python.png', 'image/png'),
@@ -381,12 +369,13 @@ class MimeSniffTestCase(unittest.TestCase):
             ('python.jpg', 'image/jpeg'),
             ('python.webp', 'image/webp'))
         for filename, expected in images:
-            filename = findfile(filename, subdir='imghdrdata')
-            with open(filename, 'rb') as fp:
-                data = fp.read()
-                tp, charset = mimetypes.mimesniff(data)
-                self.assertEqual(tp, expected)
-                self.assertIsNone(charset)
+            with self.subTest(filename=filename):
+                filename = findfile(filename, subdir='imghdrdata')
+                with open(filename, 'rb') as fp:
+                    data = fp.read()
+                    tp, charset = mimetypes.mimesniff(data)
+                    self.assertEqual(tp, expected)
+                    self.assertIsNone(charset)
 
 
 if __name__ == "__main__":
