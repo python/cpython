@@ -1,2 +1,2 @@
-Fix refleaks of `encodings.aliases` by Moving `encodings._aliases` to
+Fix refleaks of `encodings.aliases` by Using `encodings.aliases` directly in
 :func:`encodings.search_function`.
