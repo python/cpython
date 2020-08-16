@@ -586,56 +586,59 @@ def _default_mime_types():
         }
 
 
-def _detect_content(h):
+def _detect_content(data):
     first_non_ws = 0
-    for idx, hb in enumerate(h):
-        if hb not in b'\t\n\x0c\r ':
+    for idx, byte in enumerate(data):
+        if byte not in b'\t\n\x0c\r ':
             first_non_ws = idx
             break
 
     detects= [_match_html_types, _match_exact_sig_types,
               _match_mask_sig_types, _match_mp4_type, _match_text_type]
     for detect in detects:
-        tp, charset = detect(h, first_non_ws)
+        tp, charset = detect(data, first_non_ws)
         if tp:
             return (tp, charset)
     return None, None
 
 
-def _match_html_types(h, first_non_ws):
-    sigs = [b'<!DOCTYPE HTML', b'<HTML', b'<HEAD',
-            b'<SCRIPT', b'<IFRAME', b'<H1', b'<DIV',
-            b'<FONT', b'<TABLE', b'<A', b'<STYLE',
-            b'<TITLE', b'<B', b'<BODY', b'<BR', b'<P',
-            b'<!--']
-    h = h[first_non_ws:]
+def _match_html_types(data, first_non_ws):
+    tags = [
+        b'<!DOCTYPE HTML', b'<HTML', b'<HEAD',
+        b'<SCRIPT', b'<IFRAME', b'<H1', b'<DIV',
+        b'<FONT', b'<TABLE', b'<A', b'<STYLE',
+        b'<TITLE', b'<B', b'<BODY', b'<BR', b'<P',
+        b'<!--',
+    ]
 
-    for s in sigs:
-        tp, charset = _match_html_sig(h, s)
+    data = data[first_non_ws:]
+
+    for tag in tags:
+        tp, charset = _match_html_sig(data, tag)
         if tp:
             return (tp, charset)
 
     return (None, None)
 
 
-def _match_html_sig(h, sig):
+def _match_html_sig(data, tag):
     tp, charset = None, None
-    if len(h) < len(sig) + 1:
+    if len(data) < len(tag) + 1:
         return (tp, charset)
 
-    for hc, sc in zip(h, sig):
-        if 65 <= sc <= 90:
-            hc &= 0xDF
-        if hc != sc:
+    for byte, t in zip(data, tag):
+        if ord('A') <= t <= ord('Z'):
+            byte &= 0xDF
+        if byte != t:
             return (tp, charset)
 
     # should be a tag-terminating byte (0xTT)
     # https://mimesniff.spec.whatwg.org/#terminology
-    if h[len(sig)] not in b' >':
+    if data[-1] not in b' >':
         return (tp, charset)
     return 'text/html', 'utf-8'
 
-def _match_exact_sig_types(h, first_non_ws):
+def _match_exact_sig_types(data, first_non_ws):
     sigs = [
         # (pattern, mimetype)
         (b'\x00\x00\x01\x00', 'image/x-icon'),
@@ -658,42 +661,107 @@ def _match_exact_sig_types(h, first_non_ws):
         (b'Rar!\x1A\x07\x01\x00', 'application/x-rar-compressed'),
     ]
 
-    h = h[first_non_ws:]
+    data = data[first_non_ws:]
     for sig, mime in sigs:
-        if h.startswith(sig):
+        if data.startswith(sig):
             return (mime, None)
 
     return (None, None)
 
 
-def _match_mask_sig_types(h, first_non_ws):
+def _match_mask_sig_types(data, first_non_ws):
     sigs = [
         # (mask, pattern, skip_white_space, mimetype)
-        (b'\xFF\xFF\xFF\xFF\xFF', b'<?xml', True, ('text/xml','utf-8')),
-        (b'\xFF\xFF\x00\x00', b'\xFE\xFF\x00\x00', False, ('text/plain', 'utf-16be')),
-        (b'\xFF\xFF\x00\x00', b'\xFF\xFE\x00\x00', False, ('text/plain', 'utf-16le')),
-        (b'\xFF\xFF\xFF\x00', b'\xEF\xBB\xBF\x00', False, ('text/plain', 'utf-8')),
-        (b'\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF', b'RIFF\x00\x00\x00\x00WEBPVP', False, ('image/webp', None)),
-        (b'\xFF\xFF\xFF\xFF', b'.snd', False, ('audio/basic', None)),
-        (b'\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF', b'FORM\x00\x00\x00\x00AIFF', False, ('audio/aiff', None)),
-        (b'\xFF\xFF\xFF', b'ID3', False, ('audio/mpeg', None)),
-        (b'\xFF\xFF\xFF\xFF\xFF', b'OggS\x00', False, ('application/ogg', None)),
-        (b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF', b'MThd\x00\x00\x00\x06', False, ('audio/midi', None)),
-        (b'\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF', b'RIFF\x00\x00\x00\x00AVI ', False, ('video/avi', None)),
-        (b'\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF', b'RIFF\x00\x00\x00\x00WAVE', False, ('audio/wave', None)),
-        (b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00LP', b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF', False, ('application/vnd.ms-fontobject', None))
+        (
+            b'\xFF\xFF\xFF\xFF\xFF',
+            b'<?xml',
+            True,
+            ('text/xml','utf-8')
+        ),
+        (
+            b'\xFF\xFF\x00\x00',
+            b'\xFE\xFF\x00\x00',
+            False,
+            ('text/plain', 'utf-16be')
+        ),
+        (
+            b'\xFF\xFF\x00\x00',
+            b'\xFF\xFE\x00\x00',
+            False,
+            ('text/plain', 'utf-16le')
+        ),
+        (
+            b'\xFF\xFF\xFF\x00',
+            b'\xEF\xBB\xBF\x00',
+            False,
+            ('text/plain', 'utf-8')
+        ),
+        (
+            b'\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF',
+            b'RIFF\x00\x00\x00\x00WEBPVP',
+            False,
+            ('image/webp', None)
+        ),
+        (
+            b'\xFF\xFF\xFF\xFF',
+            b'.snd',
+            False,
+            ('audio/basic', None)
+        ),
+        (
+            b'\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF',
+            b'FORM\x00\x00\x00\x00AIFF',
+            False,
+            ('audio/aiff', None)
+        ),
+        (
+            b'\xFF\xFF\xFF',
+            b'ID3',
+            False,
+            ('audio/mpeg', None)
+        ),
+        (
+            b'\xFF\xFF\xFF\xFF\xFF',
+            b'OggS\x00',
+            False,
+            ('application/ogg', None)
+        ),
+        (
+            b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF',
+            b'MThd\x00\x00\x00\x06',
+            False,
+            ('audio/midi', None)
+        ),
+        (
+            b'\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF',
+            b'RIFF\x00\x00\x00\x00AVI ',
+            False,
+            ('video/avi', None)
+        ),
+        (
+            b'\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF',
+            b'RIFF\x00\x00\x00\x00WAVE',
+            False,
+            ('audio/wave', None)
+        ),
+        (
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00LP',
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF',
+            False,
+            ('application/vnd.ms-fontobject', None)
+        )
     ]
 
     for mask, pattern, skip_ws, (tp, charset) in sigs:
         match = True
         if skip_ws:
-            data = h[first_non_ws:]
+            data = data[first_non_ws:]
         if len(mask) != len(pattern):
             return (None, None)
         if len(data) < len(pattern):
             return (None, None)
-        for m, p, d in zip(mask, pattern, data):
-            if d & m != p:
+        for m, p, byte in zip(mask, pattern, data):
+            if byte & m != p:
                 match = False
                 break
         if match:
@@ -703,31 +771,31 @@ def _match_mask_sig_types(h, first_non_ws):
 
 
 # https://mimesniff.spec.whatwg.org/#signature-for-mp4
-def _match_mp4_type(h, first_non_ws):
-    if len(h) < 12:
+def _match_mp4_type(data, first_non_ws):
+    if len(data) < 12:
         return (None, None)
-    box_size = int.from_bytes(h[:4], byteorder='big')
-    if len(h) < box_size or box_size%4 != 0:
+    box_size = int.from_bytes(data[:4], byteorder='big')
+    if len(data) < box_size or box_size%4 != 0:
         return (None, None)
-    if h[4:8] != b'ftyp':
+    if data[4:8] != b'ftyp':
         return (None, None)
 
     for idx in range(8, box_size, 4):
         if idx == 12:
             continue
-        if h[idx:idx+3] == b'mp4':
+        if data[idx:idx+3] == b'mp4':
             return ('video/mp4', None)
 
     return (None, None)
 
 
-def _match_text_type(h, first_non_ws):
-    for b in h[first_non_ws:]:
-        if b <= 0x08 or b == 0x0B:
+def _match_text_type(data, first_non_ws):
+    for byte in data[first_non_ws:]:
+        if byte <= 0x08 or byte == 0x0B:
             return (None, None)
-        if 0x0E <= b <= 0x1A:
+        if 0x0E <= byte <= 0x1A:
             return (None, None)
-        if 0x1C <= b <= 0x1F:
+        if 0x1C <= byte <= 0x1F:
             return (None, None)
     return ('text/plain', 'utf-8')
 
