@@ -1125,7 +1125,7 @@ PYTHON_HEADERS= \
 
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 
-$(srcdir)/Parser/pegen/vm.o: $(srcdir)/Parser/pegen/vm.h $(srcdir)/Parser/pegen/vmparse.h
+$(srcdir)/Parser/vm.o: $(srcdir)/Parser/vm.h $(srcdir)/Parser/vmparse.h
 
 
 ######################################################################
