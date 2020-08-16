@@ -224,33 +224,14 @@ class QueryTestCase(unittest.TestCase):
                      frozenset_custom_repr(),
                      frozenset_custom_repr([1,2,3]),
                      frozenset_custom_repr(range(N)),
+                     dict_custom_repr(),
+                     dict_custom_repr({5: 6}),
+                     dict_custom_repr(zip(range(N),range(N))),
                     ):
             native = repr(cont)
             expected = '*' * len(native)
             self.assertEqual(pprint.pformat(cont), expected)
             self.assertEqual(pprint.pformat(cont, width=1, indent=0), expected)
-            self.assertEqual(pprint.saferepr(cont), expected)
-
-
-        # Dict behaves differently, see bpo 39994.
-        # Once fixed the dict case should be added to the previous loop and
-        # the ones below removed.
-        for cont in dict_custom_repr(), dict_custom_repr({5: 6}):
-            native = repr(cont)
-            expected = '*' * len(native)
-            WRONG = dict.__repr__(cont)
-            self.assertEqual(pprint.pformat(cont), expected)
-            self.assertEqual(pprint.pformat(cont, width=1, indent=0)
-                             .replace('\n', ' '), WRONG)
-            self.assertEqual(pprint.saferepr(cont), expected)
-
-        for cont in [dict_custom_repr(zip(range(N),range(N)))]:
-            native = repr(cont)
-            expected = '*' * len(native)
-            WRONG = dict.__repr__(cont)
-            self.assertEqual(pprint.pformat(cont).replace('\n', ''), WRONG)
-            self.assertEqual(pprint.pformat(cont, width=1, indent=0)
-                             .replace('\n', ' '), WRONG)
             self.assertEqual(pprint.saferepr(cont), expected)
 
     def test_basic_line_wrap(self):
