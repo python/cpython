@@ -301,8 +301,6 @@ def mimesniff(data):
     This function always returns the most valid type, but charset can be
     None if there no proper charset.
     If the data can not be guessed, it will return 'application/octet-stream'.
-    mimesniff is implemented based on the algorithm which is described at
-    https://mimesniff.spec.whatwg.org/
     """
     if not isinstance(data, (bytes, bytearray)):
         msg = f'expected bytes or bytearray, but got {type(data).__name__}'
