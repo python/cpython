@@ -1294,7 +1294,11 @@ class MemoryHandler(BufferingHandler):
         """
         Set the target handler for this handler.
         """
-        self.target = target
+        self.acquire()
+        try:
+            self.target = target
+        finally:
+            self.release()
 
     def flush(self):
         """
