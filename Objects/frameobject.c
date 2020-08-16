@@ -22,6 +22,15 @@ static PyMemberDef frame_memberlist[] = {
     {NULL}      /* Sentinel */
 };
 
+
+static struct _Py_frame_state *
+get_frame_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->frame;
+}
+
+
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
 {
@@ -291,17 +300,20 @@ first_line_not_before(int *lines, int len, int line)
 static void
 frame_stack_pop(PyFrameObject *f)
 {
-    PyObject *v = (*--f->f_stacktop);
+    assert(f->f_stackdepth >= 0);
+    f->f_stackdepth--;
+    PyObject *v = f->f_valuestack[f->f_stackdepth];
     Py_DECREF(v);
 }
 
 static void
 frame_block_unwind(PyFrameObject *f)
 {
+    assert(f->f_stackdepth >= 0);
     assert(f->f_iblock > 0);
     f->f_iblock--;
     PyTryBlock *b = &f->f_blockstack[f->f_iblock];
-    intptr_t delta = (f->f_stacktop - f->f_valuestack) - b->b_level;
+    intptr_t delta = f->f_stackdepth - b->b_level;
     while (delta > 0) {
         frame_stack_pop(f);
         delta--;
@@ -343,33 +355,36 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    /* Upon the 'call' trace event of a new frame, f->f_lasti is -1 and
-     * f->f_trace is NULL, check first on the first condition.
-     * Forbidding jumps from the 'call' event of a new frame is a side effect
-     * of allowing to set f_lineno only from trace functions. */
-    if (f->f_lasti == -1) {
-        PyErr_Format(PyExc_ValueError,
+    /*
+     * This code preserves the historical restrictions on
+     * setting the line number of a frame.
+     * Jumps are forbidden on a 'return' trace event (except after a yield).
+     * Jumps from 'call' trace events are also forbidden.
+     * In addition, jumps are forbidden when not tracing,
+     * as this is a debugging feature.
+     */
+    switch(f->f_state) {
+        case FRAME_CREATED:
+            PyErr_Format(PyExc_ValueError,
                      "can't jump from the 'call' trace event of a new frame");
-        return -1;
-    }
-
-    /* You can only do this from within a trace function, not via
-     * _getframe or similar hackery. */
-    if (!f->f_trace) {
-        PyErr_Format(PyExc_ValueError,
-                     "f_lineno can only be set by a trace function");
-        return -1;
-    }
-
-    /* Forbid jumps upon a 'return' trace event (except after executing a
-     * YIELD_VALUE or YIELD_FROM opcode, f_stacktop is not NULL in that case)
-     * and upon an 'exception' trace event.
-     * Jumps from 'call' trace events have already been forbidden above for new
-     * frames, so this check does not change anything for 'call' events. */
-    if (f->f_stacktop == NULL) {
-        PyErr_SetString(PyExc_ValueError,
+            return -1;
+        case FRAME_RETURNED:
+        case FRAME_UNWINDING:
+        case FRAME_RAISED:
+        case FRAME_CLEARED:
+            PyErr_SetString(PyExc_ValueError,
                 "can only jump from a 'line' trace event");
-        return -1;
+            return -1;
+        case FRAME_EXECUTING:
+        case FRAME_SUSPENDED:
+            /* You can only do this from within a trace function, not via
+            * _getframe or similar hackery. */
+            if (!f->f_trace) {
+                PyErr_Format(PyExc_ValueError,
+                            "f_lineno can only be set by a trace function");
+                return -1;
+            }
+            break;
     }
 
     int new_lineno;
@@ -397,7 +412,9 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    int len = PyBytes_GET_SIZE(f->f_code->co_code)/sizeof(_Py_CODEUNIT);
+    /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
+     * should never overflow. */
+    int len = (int)(PyBytes_GET_SIZE(f->f_code->co_code) / sizeof(_Py_CODEUNIT));
     int *lines = marklines(f->f_code, len);
     if (lines == NULL) {
         return -1;
@@ -559,37 +576,25 @@ static PyGetSetDef frame_getsetlist[] = {
 /* max value for numfree */
 #define PyFrame_MAXFREELIST 200
 
-/* bpo-40521: frame free lists are shared by all interpreters. */
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-#  undef PyFrame_MAXFREELIST
-#  define PyFrame_MAXFREELIST 0
-#endif
-
-#if PyFrame_MAXFREELIST > 0
-static PyFrameObject *free_list = NULL;
-static int numfree = 0;         /* number of frames currently in free_list */
-#endif
-
 static void _Py_HOT_FUNCTION
 frame_dealloc(PyFrameObject *f)
 {
-    PyObject **p, **valuestack;
-    PyCodeObject *co;
-
-    if (_PyObject_GC_IS_TRACKED(f))
+    if (_PyObject_GC_IS_TRACKED(f)) {
         _PyObject_GC_UNTRACK(f);
+    }
 
     Py_TRASHCAN_SAFE_BEGIN(f)
     /* Kill all local variables */
-    valuestack = f->f_valuestack;
-    for (p = f->f_localsplus; p < valuestack; p++)
+    PyObject **valuestack = f->f_valuestack;
+    for (PyObject **p = f->f_localsplus; p < valuestack; p++) {
         Py_CLEAR(*p);
+    }
 
     /* Free stack */
-    if (f->f_stacktop != NULL) {
-        for (p = valuestack; p < f->f_stacktop; p++)
-            Py_XDECREF(*p);
+    for (int i = 0; i < f->f_stackdepth; i++) {
+        Py_XDECREF(f->f_valuestack[i]);
     }
+    f->f_stackdepth = 0;
 
     Py_XDECREF(f->f_back);
     Py_DECREF(f->f_builtins);
@@ -597,19 +602,24 @@ frame_dealloc(PyFrameObject *f)
     Py_CLEAR(f->f_locals);
     Py_CLEAR(f->f_trace);
 
-    co = f->f_code;
+    PyCodeObject *co = f->f_code;
     if (co->co_zombieframe == NULL) {
         co->co_zombieframe = f;
     }
-#if PyFrame_MAXFREELIST > 0
-    else if (numfree < PyFrame_MAXFREELIST) {
-        ++numfree;
-        f->f_back = free_list;
-        free_list = f;
-    }
-#endif
     else {
-        PyObject_GC_Del(f);
+        struct _Py_frame_state *state = get_frame_state();
+#ifdef Py_DEBUG
+        // frame_dealloc() must not be called after _PyFrame_Fini()
+        assert(state->numfree != -1);
+#endif
+        if (state->numfree < PyFrame_MAXFREELIST) {
+            ++state->numfree;
+            f->f_back = state->free_list;
+            state->free_list = f;
+        }
+        else {
+            PyObject_GC_Del(f);
+        }
     }
 
     Py_DECREF(co);
@@ -642,10 +652,8 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     }
 
     /* stack */
-    if (f->f_stacktop != NULL) {
-        for (PyObject **p = f->f_valuestack; p < f->f_stacktop; p++) {
-            Py_VISIT(*p);
-        }
+    for (int i = 0; i < f->f_stackdepth; i++) {
+        Py_VISIT(f->f_valuestack[i]);
     }
     return 0;
 }
@@ -658,9 +666,7 @@ frame_tp_clear(PyFrameObject *f)
      * frame may also point to this frame, believe itself to still be
      * active, and try cleaning up this frame again.
      */
-    PyObject **oldtop = f->f_stacktop;
-    f->f_stacktop = NULL;
-    f->f_executing = 0;
+    f->f_state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
 
@@ -671,18 +677,17 @@ frame_tp_clear(PyFrameObject *f)
     }
 
     /* stack */
-    if (oldtop != NULL) {
-        for (PyObject **p = f->f_valuestack; p < oldtop; p++) {
-            Py_CLEAR(*p);
-        }
+    for (int i = 0; i < f->f_stackdepth; i++) {
+        Py_CLEAR(f->f_valuestack[i]);
     }
+    f->f_stackdepth = 0;
     return 0;
 }
 
 static PyObject *
 frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
-    if (f->f_executing) {
+    if (_PyFrame_IsExecuting(f)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot clear an executing frame");
         return NULL;
@@ -787,21 +792,23 @@ frame_alloc(PyCodeObject *code)
     Py_ssize_t ncells = PyTuple_GET_SIZE(code->co_cellvars);
     Py_ssize_t nfrees = PyTuple_GET_SIZE(code->co_freevars);
     Py_ssize_t extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
-#if PyFrame_MAXFREELIST > 0
-    if (free_list == NULL)
-#endif
+    struct _Py_frame_state *state = get_frame_state();
+    if (state->free_list == NULL)
     {
         f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, extras);
         if (f == NULL) {
             return NULL;
         }
     }
-#if PyFrame_MAXFREELIST > 0
     else {
-        assert(numfree > 0);
-        --numfree;
-        f = free_list;
-        free_list = free_list->f_back;
+#ifdef Py_DEBUG
+        // frame_alloc() must not be called after _PyFrame_Fini()
+        assert(state->numfree != -1);
+#endif
+        assert(state->numfree > 0);
+        --state->numfree;
+        f = state->free_list;
+        state->free_list = state->free_list->f_back;
         if (Py_SIZE(f) < extras) {
             PyFrameObject *new_f = PyObject_GC_Resize(PyFrameObject, f, extras);
             if (new_f == NULL) {
@@ -812,7 +819,6 @@ frame_alloc(PyCodeObject *code)
         }
         _Py_NewReference((PyObject *)f);
     }
-#endif
 
     f->f_code = code;
     extras = code->co_nlocals + ncells + nfrees;
@@ -892,7 +898,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
         return NULL;
     }
 
-    f->f_stacktop = f->f_valuestack;
+    f->f_stackdepth = 0;
     f->f_builtins = builtins;
     Py_XINCREF(back);
     f->f_back = back;
@@ -921,7 +927,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
     f->f_lasti = -1;
     f->f_lineno = code->co_firstlineno;
     f->f_iblock = 0;
-    f->f_executing = 0;
+    f->f_state = FRAME_CREATED;
     f->f_gen = NULL;
     f->f_trace_opcodes = 0;
     f->f_trace_lines = 1;
@@ -1181,34 +1187,36 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 
 /* Clear out the free list */
 void
-_PyFrame_ClearFreeList(void)
+_PyFrame_ClearFreeList(PyThreadState *tstate)
 {
-#if PyFrame_MAXFREELIST > 0
-    while (free_list != NULL) {
-        PyFrameObject *f = free_list;
-        free_list = free_list->f_back;
+    struct _Py_frame_state *state = &tstate->interp->frame;
+    while (state->free_list != NULL) {
+        PyFrameObject *f = state->free_list;
+        state->free_list = state->free_list->f_back;
         PyObject_GC_Del(f);
-        --numfree;
+        --state->numfree;
     }
-    assert(numfree == 0);
-#endif
+    assert(state->numfree == 0);
 }
 
 void
-_PyFrame_Fini(void)
+_PyFrame_Fini(PyThreadState *tstate)
 {
-    _PyFrame_ClearFreeList();
+    _PyFrame_ClearFreeList(tstate);
+#ifdef Py_DEBUG
+    struct _Py_frame_state *state = &tstate->interp->frame;
+    state->numfree = -1;
+#endif
 }
 
 /* Print summary info about the state of the optimized allocator */
 void
 _PyFrame_DebugMallocStats(FILE *out)
 {
-#if PyFrame_MAXFREELIST > 0
+    struct _Py_frame_state *state = get_frame_state();
     _PyDebugAllocatorStats(out,
                            "free PyFrameObject",
-                           numfree, sizeof(PyFrameObject));
-#endif
+                           state->numfree, sizeof(PyFrameObject));
 }
 
 

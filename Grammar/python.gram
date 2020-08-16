@@ -1,6 +1,5 @@
-# Simplified grammar for Python
+# PEG grammar for Python
 
-@bytecode True
 @trailer '''
 void *
 _PyPegen_parse(Parser *p)
@@ -92,9 +91,9 @@ assignment[stmt_ty]:
     | a=('(' b=single_target ')' { b }
          | single_subscript_attribute_target) ':' b=expression c=['=' d=annotated_rhs { d }] {
         CHECK_VERSION(6, "Variable annotations syntax is", _Py_AnnAssign(a, b, c, 0, EXTRA)) }
-    | a=(z=star_targets '=' { z })+ b=(yield_expr | star_expressions) tc=[TYPE_COMMENT] {
+    | a=(z=star_targets '=' { z })+ b=(yield_expr | star_expressions) !'=' tc=[TYPE_COMMENT] {
          _Py_Assign(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | a=single_target b=augassign c=(yield_expr | star_expressions) {
+    | a=single_target b=augassign ~ c=(yield_expr | star_expressions) {
          _Py_AugAssign(a, b->kind, c, EXTRA) }
     | invalid_assignment
 
@@ -122,7 +121,9 @@ yield_stmt[stmt_ty]: y=yield_expr { _Py_Expr(y, EXTRA) }
 
 assert_stmt[stmt_ty]: 'assert' a=expression b=[',' z=expression { z }] { _Py_Assert(a, b, EXTRA) }
 
-del_stmt[stmt_ty]: 'del' a=del_targets { _Py_Delete(a, EXTRA) }
+del_stmt[stmt_ty]:
+    | 'del' a=del_targets &(';' | NEWLINE) { _Py_Delete(a, EXTRA) }
+    | invalid_del_stmt
 
 import_stmt[stmt_ty]: import_name | import_from
 import_name[stmt_ty]: 'import' a=dotted_as_names { _Py_Import(a, EXTRA) }
@@ -165,10 +166,11 @@ while_stmt[stmt_ty]:
     | 'while' a=named_expression ':' b=block c=[else_block] { _Py_While(a, b, c, EXTRA) }
 
 for_stmt[stmt_ty]:
-    | 'for' t=star_targets 'in' ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+    | 'for' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         _Py_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | ASYNC 'for' t=star_targets 'in' ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
+    | ASYNC 'for' t=star_targets 'in' ~ ex=star_expressions ':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         CHECK_VERSION(5, "Async for loops are", _Py_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
+    | invalid_for_target
 
 with_stmt[stmt_ty]:
     | 'with' '(' a=','.with_item+ ','? ')' ':' b=block {
@@ -180,7 +182,9 @@ with_stmt[stmt_ty]:
     | ASYNC 'with' a=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
        CHECK_VERSION(5, "Async with statements are", _Py_AsyncWith(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
 with_item[withitem_ty]:
-    | e=expression o=['as' t=target { t }] { _Py_withitem(e, o, p->arena) }
+    | e=expression 'as' t=target &(',' | ')' | ':') { _Py_withitem(e, t, p->arena) }
+    | invalid_with_item
+    | e=expression { _Py_withitem(e, NULL, p->arena) }
 
 try_stmt[stmt_ty]:
     | 'try' ':' b=block f=finally_block { _Py_Try(b, NULL, NULL, f, EXTRA) }
@@ -312,7 +316,7 @@ star_named_expression[expr_ty]:
     | '*' a=bitwise_or { _Py_Starred(a, Load, EXTRA) }
     | named_expression
 named_expression[expr_ty]:
-    | a=NAME ':=' b=expression { _Py_NamedExpr(CHECK(_PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
+    | a=NAME ':=' ~ b=expression { _Py_NamedExpr(CHECK(_PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
     | expression !':='
     | invalid_named_expression
 
@@ -329,7 +333,11 @@ expression[expr_ty] (memo):
     | lambdef
 
 lambdef[expr_ty]:
-    | 'lambda' a=[lambda_parameters] ':' b=expression { _Py_Lambda((a) ? a : CHECK(_PyPegen_empty_arguments(p)), b, EXTRA) }
+    | 'lambda' a=[lambda_params] ':' b=expression { _Py_Lambda((a) ? a : CHECK(_PyPegen_empty_arguments(p)), b, EXTRA) }
+
+lambda_params[arguments_ty]:
+    | invalid_lambda_parameters
+    | lambda_parameters
 
 # lambda_parameters etc. duplicates parameters but without annotations
 # or type comments, and if there's no comma after a parameter, we expect
@@ -473,7 +481,6 @@ atom[expr_ty]:
     | 'True' { _Py_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _Py_Constant(Py_False, NULL, EXTRA) }
     | 'None' { _Py_Constant(Py_None, NULL, EXTRA) }
-    | '__new_parser__' { RAISE_SYNTAX_ERROR("You found it!") }
     | &STRING strings
     | NUMBER
     | &'(' (tuple | group | genexp)
@@ -485,18 +492,20 @@ strings[expr_ty] (memo): a=STRING+ { _PyPegen_concatenate_strings(p, a) }
 list[expr_ty]:
     | '[' a=[star_named_expressions] ']' { _Py_List(a, Load, EXTRA) }
 listcomp[expr_ty]:
-    | '[' a=named_expression b=for_if_clauses ']' { _Py_ListComp(a, b, EXTRA) }
+    | '[' a=named_expression ~ b=for_if_clauses ']' { _Py_ListComp(a, b, EXTRA) }
     | invalid_comprehension
 tuple[expr_ty]:
     | '(' a=[y=star_named_expression ',' z=[star_named_expressions] { _PyPegen_seq_insert_in_front(p, y, z) } ] ')' {
         _Py_Tuple(a, Load, EXTRA) }
-group[expr_ty]: '(' a=(yield_expr | named_expression) ')' { a }
+group[expr_ty]:
+    | '(' a=(yield_expr | named_expression) ')' { a }
+    | invalid_group
 genexp[expr_ty]:
-    | '(' a=expression b=for_if_clauses ')' { _Py_GeneratorExp(a, b, EXTRA) }
+    | '(' a=expression ~ b=for_if_clauses ')' { _Py_GeneratorExp(a, b, EXTRA) }
     | invalid_comprehension
 set[expr_ty]: '{' a=expressions_list '}' { _Py_Set(a, EXTRA) }
 setcomp[expr_ty]:
-    | '{' a=expression b=for_if_clauses '}' { _Py_SetComp(a, b, EXTRA) }
+    | '{' a=expression ~ b=for_if_clauses '}' { _Py_SetComp(a, b, EXTRA) }
     | invalid_comprehension
 dict[expr_ty]:
     | '{' a=[double_starred_kvpairs] '}' {
@@ -512,10 +521,11 @@ kvpair[KeyValuePair*]: a=expression ':' b=expression { _PyPegen_key_value_pair(p
 for_if_clauses[asdl_seq*]:
     | for_if_clause+
 for_if_clause[comprehension_ty]:
-    | ASYNC 'for' a=star_targets 'in' b=disjunction c=('if' z=disjunction { z })* {
+    | ASYNC 'for' a=star_targets 'in' ~ b=disjunction c=('if' z=disjunction { z })* {
         CHECK_VERSION(6, "Async comprehensions are", _Py_comprehension(a, b, c, 1, p->arena)) }
-    | 'for' a=star_targets 'in' b=disjunction c=('if' z=disjunction { z })* {
+    | 'for' a=star_targets 'in' ~ b=disjunction c=('if' z=disjunction { z })* {
         _Py_comprehension(a, b, c, 0, p->arena) }
+    | invalid_for_target
 
 yield_expr[expr_ty]:
     | 'yield' 'from' a=expression { _Py_YieldFrom(a, EXTRA) }
@@ -585,19 +595,15 @@ single_subscript_attribute_target[expr_ty]:
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
 
 del_targets[asdl_seq*]: a=','.del_target+ [','] { a }
-# The lookaheads to del_target_end ensure that we don't match expressions where a prefix of the
-# expression matches our rule, thereby letting these cases fall through to invalid_del_target.
 del_target[expr_ty] (memo):
-    | a=t_primary '.' b=NAME &del_target_end { _Py_Attribute(a, b->v.Name.id, Del, EXTRA) }
-    | a=t_primary '[' b=slices ']' &del_target_end { _Py_Subscript(a, b, Del, EXTRA) }
+    | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Del, EXTRA) }
+    | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Del, EXTRA) }
     | del_t_atom
 del_t_atom[expr_ty]:
-    | a=NAME &del_target_end { _PyPegen_set_expr_context(p, a, Del) }
+    | a=NAME { _PyPegen_set_expr_context(p, a, Del) }
     | '(' a=del_target ')' { _PyPegen_set_expr_context(p, a, Del) }
     | '(' a=[del_targets] ')' { _Py_Tuple(a, Del, EXTRA) }
     | '[' a=[del_targets] ']' { _Py_List(a, Del, EXTRA) }
-    | invalid_del_target
-del_target_end: ')' | ']' | ',' | ';' | NEWLINE
 
 targets[asdl_seq*]: a=','.target+ [','] { a }
 target[expr_ty] (memo):
@@ -640,23 +646,32 @@ invalid_named_expression:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
 invalid_assignment:
-    | a=list ':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not list) can be annotated") }
-    | a=tuple ':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not tuple) can be annotated") }
-    | a=star_named_expression ',' star_named_expressions* ':' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not tuple) can be annotated") }
-    | a=expression ':' expression ['=' annotated_rhs] {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "illegal target for annotation") }
-    | a=star_expressions '=' (yield_expr | star_expressions) {
+    | a=invalid_ann_assign_target ':' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
-            _PyPegen_get_invalid_target(a),
-            "cannot assign to %s", _PyPegen_get_expr_name(_PyPegen_get_invalid_target(a))) }
+            a,
+            "only single target (not %s) can be annotated",
+            _PyPegen_get_expr_name(a)
+        )}
+    | a=star_named_expression ',' star_named_expressions* ':' expression {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "only single target (not tuple) can be annotated") }
+    | a=expression ':' expression {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "illegal target for annotation") }
+    | (star_targets '=')* a=star_expressions '=' {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
+    | (star_targets '=')* a=yield_expr '=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "assignment to yield expression not possible") }
     | a=star_expressions augassign (yield_expr | star_expressions) {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION( 
-            a, 
+            a,
             "'%s' is an illegal expression for augmented assignment",
             _PyPegen_get_expr_name(a)
         )}
- 
+invalid_ann_assign_target[expr_ty]:
+    | list
+    | tuple
+    | '(' a=invalid_ann_assign_target ')' { a }
+invalid_del_stmt:
+    | 'del' a=star_expressions {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(DEL_TARGETS, a) }
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:
@@ -668,6 +683,9 @@ invalid_dict_comprehension:
 invalid_parameters:
     | param_no_default* (slash_with_default | param_with_default+) param_no_default {
         RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
+invalid_lambda_parameters:
+    | lambda_param_no_default* (lambda_slash_with_default | lambda_param_with_default+) lambda_param_no_default {
+        RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
 invalid_star_etc:
     | '*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
     | '*' ',' TYPE_COMMENT { RAISE_SYNTAX_ERROR("bare * has associated type comment") }
@@ -676,9 +694,17 @@ invalid_lambda_star_etc:
 invalid_double_type_comments:
     | TYPE_COMMENT NEWLINE TYPE_COMMENT NEWLINE INDENT {
         RAISE_SYNTAX_ERROR("Cannot have two type comments on def") }
-invalid_del_target:
-    | a=star_expression &del_target_end {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot delete %s", _PyPegen_get_expr_name(a)) }
+invalid_with_item:
+    | expression 'as' a=expression {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(STAR_TARGETS, a) }
+
+invalid_for_target:
+    | ASYNC? 'for' a=star_expressions {
+        RAISE_SYNTAX_ERROR_INVALID_TARGET(FOR_TARGETS, a) }
+
+invalid_group:
+    | '(' a=starred_expression ')' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "can't use starred expression here") }
 invalid_import_from_targets:
     | import_from_as_names ',' {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }

@@ -314,6 +314,7 @@ class AbstractBuilder(object):
             "shared", "--debug",
             "--prefix={}".format(self.install_dir)
         ]
+        # cmd.extend(["no-deprecated", "--api=1.1.0"])
         env = os.environ.copy()
         # set rpath
         env["LD_RUN_PATH"] = self.lib_dir

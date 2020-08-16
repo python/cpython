@@ -51,7 +51,6 @@ Objects/genobject.c	-	async_gen_memberlist	variable	static PyMemberDef async_gen
 Objects/genobject.c	-	async_gen_methods	variable	static PyMethodDef async_gen_methods
 Python/Python-ast.c	-	AsyncWith_fields	variable	static const char *AsyncWith_fields[]
 Python/Python-ast.c	-	AsyncWith_type	variable	static PyTypeObject *AsyncWith_type
-Parser/listnode.c	-	atbol	variable	static int atbol
 Modules/atexitmodule.c	-	atexit_methods	variable	static PyMethodDef atexit_methods
 Modules/atexitmodule.c	-	atexitmodule	variable	static struct PyModuleDef atexitmodule
 Modules/atexitmodule.c	-	atexit_slots	variable	static PyModuleDef_Slot atexit_slots[]
@@ -429,7 +428,6 @@ Modules/_json.c	encoder_call	kwlist	variable	static const char *kwlist[]
 Python/symtable.c	-	lambda	variable	static identifier lambda
 Python/Python-ast.c	-	Lambda_fields	variable	static const char *Lambda_fields[]
 Python/Python-ast.c	-	Lambda_type	variable	static PyTypeObject *Lambda_type
-Parser/listnode.c	-	level	variable	static int level
 Objects/listobject.c	-	list_as_mapping	variable	static PyMappingMethods list_as_mapping
 Objects/listobject.c	-	list_as_sequence	variable	static PySequenceMethods list_as_sequence
 Python/symtable.c	-	listcomp	variable	static identifier listcomp

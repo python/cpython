@@ -189,18 +189,25 @@ itimer_retval(struct itimerval *iv)
 }
 #endif
 
+/*[clinic input]
+signal.default_int_handler
+    signalnum: int
+    frame: object
+    /
+
+The default handler for SIGINT installed by Python.
+
+It raises KeyboardInterrupt.
+[clinic start generated code]*/
+
 static PyObject *
-signal_default_int_handler(PyObject *self, PyObject *args)
+signal_default_int_handler_impl(PyObject *module, int signalnum,
+                                PyObject *frame)
+/*[clinic end generated code: output=bb11c2eb115ace4e input=efcd4a56a207acfd]*/
 {
     PyErr_SetNone(PyExc_KeyboardInterrupt);
     return NULL;
 }
-
-PyDoc_STRVAR(default_int_handler_doc,
-"default_int_handler(...)\n\
-\n\
-The default handler for SIGINT installed by Python.\n\
-It raises KeyboardInterrupt.");
 
 
 static int
@@ -1297,7 +1304,7 @@ signal_pidfd_send_signal_impl(PyObject *module, int pidfd, int signalnum,
 /* List of functions defined in the module -- some of the methoddefs are
    defined to nothing if the corresponding C function is not available. */
 static PyMethodDef signal_methods[] = {
-    {"default_int_handler", signal_default_int_handler, METH_VARARGS, default_int_handler_doc},
+    SIGNAL_DEFAULT_INT_HANDLER_METHODDEF
     SIGNAL_ALARM_METHODDEF
     SIGNAL_SETITIMER_METHODDEF
     SIGNAL_GETITIMER_METHODDEF
@@ -1779,11 +1786,13 @@ PyOS_FiniInterrupts(void)
     finisignal();
 }
 
+
+// The caller doesn't have to hold the GIL
 int
-PyOS_InterruptOccurred(void)
+_PyOS_InterruptOccurred(PyThreadState *tstate)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!_Py_ThreadCanHandleSignals(interp)) {
+    _Py_EnsureTstateNotNULL(tstate);
+    if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
 
@@ -1795,14 +1804,26 @@ PyOS_InterruptOccurred(void)
     return 1;
 }
 
+
+// The caller must to hold the GIL
+int
+PyOS_InterruptOccurred(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyOS_InterruptOccurred(tstate);
+}
+
+
+#ifdef HAVE_FORK
 static void
 _clear_pending_signals(void)
 {
-    int i;
-    if (!_Py_atomic_load(&is_tripped))
+    if (!_Py_atomic_load(&is_tripped)) {
         return;
+    }
+
     _Py_atomic_store(&is_tripped, 0);
-    for (i = 1; i < NSIG; ++i) {
+    for (int i = 1; i < NSIG; ++i) {
         _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
     }
 }
@@ -1815,6 +1836,8 @@ _PySignal_AfterFork(void)
      * the interpreter had an opportunity to call the handlers.  issue9535. */
     _clear_pending_signals();
 }
+#endif   /* HAVE_FORK */
+
 
 int
 _PyOS_IsMainThread(void)

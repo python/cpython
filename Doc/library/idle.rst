@@ -147,7 +147,7 @@ Go to Line
    Clear any selection and update the line and column status.
 
 Show Completions
-   Open a scrollable list allowing selection of keywords and attributes. See
+   Open a scrollable list allowing selection of existing names. See
    :ref:`Completions <completions>` in the Editing and navigation section below.
 
 Expand Word
@@ -469,52 +469,58 @@ are restricted to four spaces due to Tcl/Tk limitations.
 See also the indent/dedent region commands on the
 :ref:`Format menu <format-menu>`.
 
-
 .. _completions:
 
 Completions
 ^^^^^^^^^^^
 
-Completions are supplied for functions, classes, and attributes of classes,
-both built-in and user-defined. Completions are also provided for
-filenames.
+Completions are supplied, when requested and available, for module
+names, attributes of classes or functions, or filenames.  Each request
+method displays a completion box with existing names.  (See tab
+completions below for an exception.) For any box, change the name
+being completed and the item highlighted in the box by
+typing and deleting characters; by hitting :kbd:`Up`, :kbd:`Down`,
+:kbd:`PageUp`, :kbd:`PageDown`, :kbd:`Home`, and :kbd:`End` keys;
+and by a single click within the box.  Close the box with :kbd:`Escape`,
+:kbd:`Enter`, and double :kbd:`Tab` keys or clicks outside the box.
+A double click within the box selects and closes.
 
-The AutoCompleteWindow (ACW) will open after a predefined delay (default is
-two seconds) after a '.' or (in a string) an os.sep is typed. If after one
-of those characters (plus zero or more other characters) a tab is typed
-the ACW will open immediately if a possible continuation is found.
+One way to open a box is to type a key character and wait for a
+predefined interval.  This defaults to 2 seconds; customize it
+in the settings dialog.  (To prevent auto popups, set the delay to a
+large number of milliseconds, such as 100000000.) For imported module
+names or class or function attributes, type '.'.
+For filenames in the root directory, type :data:`os.sep` or
+data:`os.altsep` immediately after an opening quote.  (On Windows,
+one can specify a drive first.)  Move into subdirectories by typing a
+directory name and a separator.
 
-If there is only one possible completion for the characters entered, a
-:kbd:`Tab` will supply that completion without opening the ACW.
+Instead of waiting, or after a box is closed, open a completion box
+immediately with Show Completions on the Edit menu.  The default hot
+key is :kbd:`C-space`.  If one types a prefix for the desired name
+before opening the box, the first match or near miss is made visible.
+The result is the same as if one enters a prefix
+after the box is displayed.  Show Completions after a quote completes
+filenames in the current directory instead of a root directory.
 
-'Show Completions' will force open a completions window, by default the
-:kbd:`C-space` will open a completions window. In an empty
-string, this will contain the files in the current directory. On a
-blank line, it will contain the built-in and user-defined functions and
-classes in the current namespaces, plus any modules imported. If some
-characters have been entered, the ACW will attempt to be more specific.
+Hitting :kbd:`Tab` after a prefix usually has the same effect as Show
+Completions.  (With no prefix, it indents.)  However, if there is only
+one match to the prefix, that match is immediately added to the editor
+text without opening a box.
 
-If a string of characters is typed, the ACW selection will jump to the
-entry most closely matching those characters.  Entering a :kbd:`tab` will
-cause the longest non-ambiguous match to be entered in the Editor window or
-Shell.  Two :kbd:`tab` in a row will supply the current ACW selection, as
-will return or a double click.  Cursor keys, Page Up/Down, mouse selection,
-and the scroll wheel all operate on the ACW.
+Invoking 'Show Completions', or hitting :kbd:`Tab` after a prefix,
+outside of a string and without a preceding '.' opens a box with
+keywords, builtin names, and available module-level names.
 
-"Hidden" attributes can be accessed by typing the beginning of hidden
-name after a '.', e.g. '_'. This allows access to modules with
-``__all__`` set, or to class-private attributes.
+When editing code in an editor (as oppose to Shell), increase the
+available module-level names by running your code
+and not restarting the Shell thereafter.  This is especially useful
+after adding imports at the top of a file.  This also increases
+possible attribute completions.
 
-Completions and the 'Expand Word' facility can save a lot of typing!
-
-Completions are currently limited to those in the namespaces. Names in
-an Editor window which are not via ``__main__`` and :data:`sys.modules` will
-not be found.  Run the module once with your imports to correct this situation.
-Note that IDLE itself places quite a few modules in sys.modules, so
-much can be found by default, e.g. the re module.
-
-If you don't like the ACW popping up unbidden, simply make the delay
-longer or disable the extension.
+Completion boxes intially exclude names beginning with '_' or, for
+modules, not included in '__all__'.  The hidden names can be accessed
+by typing '_' after '.', either before or after the box is opened.
 
 .. _calltips:
 

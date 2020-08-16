@@ -25,7 +25,7 @@ import threading
 import unittest
 import sqlite3 as sqlite
 
-from test.support import TESTFN, unlink
+from test.support.os_helper import TESTFN, unlink
 
 
 class ModuleTests(unittest.TestCase):

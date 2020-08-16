@@ -50,6 +50,7 @@ helper, :class:`auto`.
     the bitwise operations without losing their :class:`Flag` membership.
 
 .. function:: unique
+   :noindex:
 
     Enum class decorator that ensures only one name is bound to any one value.
 
@@ -113,7 +114,6 @@ The *type* of an enumeration member is the enumeration it belongs to::
     <enum 'Color'>
     >>> isinstance(Color.GREEN, Color)
     True
-    >>>
 
 Enum members also have a property that contains just their item name::
 

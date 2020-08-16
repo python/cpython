@@ -24,6 +24,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 
 .. class:: SequenceMatcher
+   :noindex:
 
    This is a flexible class for comparing pairs of sequences of any type, so long
    as the sequence elements are :term:`hashable`.  The basic algorithm predates, and is a
@@ -651,6 +652,7 @@ The :class:`Differ` class has this constructor:
 
 
 .. class:: Differ(linejunk=None, charjunk=None)
+   :noindex:
 
    Optional keyword parameters *linejunk* and *charjunk* are for filter functions
    (or ``None``):

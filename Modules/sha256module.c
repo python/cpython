@@ -17,7 +17,7 @@
 /* SHA objects */
 
 #include "Python.h"
-#include "pycore_byteswap.h"      // _Py_bswap32()
+#include "pycore_bitutils.h"      // _Py_bswap32()
 #include "structmember.h"         // PyMemberDef
 #include "hashlib.h"
 #include "pystrhex.h"
@@ -681,46 +681,45 @@ static struct PyMethodDef SHA_functions[] = {
     {NULL,      NULL}            /* Sentinel */
 };
 
-
-/* Initialize this module. */
-
-#define insint(n,v) { PyModule_AddIntConstant(m,n,v); }
-
-
-static struct PyModuleDef _sha256module = {
-        PyModuleDef_HEAD_INIT,
-        "_sha256",
-        NULL,
-        -1,
-        SHA_functions,
-        NULL,
-        NULL,
-        NULL,
-        NULL
-};
-
-PyMODINIT_FUNC
-PyInit__sha256(void)
+static int sha256_exec(PyObject *module)
 {
-    PyObject *m;
-
     Py_SET_TYPE(&SHA224type, &PyType_Type);
     if (PyType_Ready(&SHA224type) < 0) {
-        return NULL;
+        return -1;
     }
     Py_SET_TYPE(&SHA256type, &PyType_Type);
     if (PyType_Ready(&SHA256type) < 0) {
-        return NULL;
+        return -1;
     }
 
-    m = PyModule_Create(&_sha256module);
-    if (m == NULL)
-        return NULL;
-
     Py_INCREF((PyObject *)&SHA224type);
-    PyModule_AddObject(m, "SHA224Type", (PyObject *)&SHA224type);
+    if (PyModule_AddObject(module, "SHA224Type", (PyObject *)&SHA224type) < 0) {
+        Py_DECREF((PyObject *)&SHA224type);
+        return -1;
+    }
     Py_INCREF((PyObject *)&SHA256type);
-    PyModule_AddObject(m, "SHA256Type", (PyObject *)&SHA256type);
-    return m;
+    if (PyModule_AddObject(module, "SHA256Type", (PyObject *)&SHA256type) < 0) {
+        Py_DECREF((PyObject *)&SHA256type);
+        return -1;
+    }
+    return 0;
+}
 
+static PyModuleDef_Slot _sha256_slots[] = {
+    {Py_mod_exec, sha256_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef _sha256module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_sha256",
+    .m_methods = SHA_functions,
+    .m_slots = _sha256_slots,
+};
+
+/* Initialize this module. */
+PyMODINIT_FUNC
+PyInit__sha256(void)
+{
+    return PyModuleDef_Init(&_sha256module);
 }

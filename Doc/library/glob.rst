@@ -36,7 +36,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    The :mod:`pathlib` module offers high-level path objects.
 
 
-.. function:: glob(pathname, *, recursive=False)
+.. function:: glob(pathname, *, root_dir=None, dir_fd=None, recursive=False)
 
    Return a possibly-empty list of path names that match *pathname*, which must be
    a string containing a path specification. *pathname* can be either absolute
@@ -44,6 +44,15 @@ For example, ``'[?]'`` matches the character ``'?'``.
    :file:`../../Tools/\*/\*.gif`), and can contain shell-style wildcards. Broken
    symlinks are included in the results (as in the shell). Whether or not the
    results are sorted depends on the file system.
+
+   If *root_dir* is not ``None``, it should be a :term:`path-like object`
+   specifying the root directory for searching.  It has the same effect on
+   :func:`glob` as changing the current directory before calling it.  If
+   *pathname* is relative, the result will contain paths relative to
+   *root_dir*.
+
+   This function can support :ref:`paths relative to directory descriptors
+   <dir_fd>` with the *dir_fd* parameter.
 
    .. index::
       single: **; in glob-style wildcards
@@ -62,8 +71,11 @@ For example, ``'[?]'`` matches the character ``'?'``.
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
 
+   .. versionchanged:: 3.10
+      Added the *root_dir* and *dir_fd* parameters.
 
-.. function:: iglob(pathname, *, recursive=False)
+
+.. function:: iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False)
 
    Return an :term:`iterator` which yields the same values as :func:`glob`
    without actually storing them all simultaneously.

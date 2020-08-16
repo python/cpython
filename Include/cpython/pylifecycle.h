@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Only used by applications that embed the interpreter and need to
  * override the standard encoding determination mechanism
  */
@@ -66,7 +62,3 @@ PyAPI_FUNC(int) _Py_LegacyLocaleDetected(int warn);
 PyAPI_FUNC(char *) _Py_SetLocaleFromEnv(int category);
 
 PyAPI_FUNC(PyThreadState *) _Py_NewInterpreter(int isolated_subinterpreter);
-
-#ifdef __cplusplus
-}
-#endif

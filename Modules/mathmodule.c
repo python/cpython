@@ -53,6 +53,7 @@ raised for division by zero and mod by zero.
  */
 
 #include "Python.h"
+#include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_dtoa.h"
 #include "_math.h"
 
@@ -1255,9 +1256,15 @@ static PyObject *
 math_floor(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=c6a65c4884884b8a input=63af6b5d7ebcc3d6]*/
 {
+    double x;
+
     _Py_IDENTIFIER(__floor__);
 
-    if (!PyFloat_CheckExact(number)) {
+    if (PyFloat_CheckExact(number)) {
+        x = PyFloat_AS_DOUBLE(number);
+    }
+    else
+    {
         PyObject *method = _PyObject_LookupSpecial(number, &PyId___floor__);
         if (method != NULL) {
             PyObject *result = _PyObject_CallNoArg(method);
@@ -1266,11 +1273,10 @@ math_floor(PyObject *module, PyObject *number)
         }
         if (PyErr_Occurred())
             return NULL;
+        x = PyFloat_AsDouble(number);
+        if (x == -1.0 && PyErr_Occurred())
+            return NULL;
     }
-    double x = PyFloat_AsDouble(number);
-    if (x == -1.0 && PyErr_Occurred())
-        return NULL;
-
     return PyLong_FromDouble(floor(x));
 }
 
@@ -2400,6 +2406,13 @@ math_fmod_impl(PyObject *module, double x, double y)
 /*
 Given an *n* length *vec* of values and a value *max*, compute:
 
+    sqrt(sum((x * scale) ** 2 for x in vec)) / scale
+
+           where scale is the first power of two
+           greater than max.
+
+or compute:
+
     max * sqrt(sum((x / max) ** 2 for x in vec))
 
 The value of the *max* variable must be non-negative and
@@ -2419,19 +2432,25 @@ The *csum* variable tracks the cumulative sum and *frac* tracks
 the cumulative fractional errors at each step.  Since this
 variant assumes that |csum| >= |x| at each step, we establish
 the precondition by starting the accumulation from 1.0 which
-represents the largest possible value of (x/max)**2.
+represents the largest possible value of (x*scale)**2 or (x/max)**2.
 
 After the loop is finished, the initial 1.0 is subtracted out
 for a net zero effect on the final sum.  Since *csum* will be
 greater than 1.0, the subtraction of 1.0 will not cause
 fractional digits to be dropped from *csum*.
 
+To get the full benefit from compensated summation, the
+largest addend should be in the range:   0.5 <= x <= 1.0.
+Accordingly, scaling or division by *max* should not be skipped
+even if not otherwise needed to prevent overflow or loss of precision.
+
 */
 
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    double x, csum = 1.0, oldcsum, frac = 0.0;
+    double x, csum = 1.0, oldcsum, frac = 0.0, scale;
+    int max_e;
     Py_ssize_t i;
 
     if (Py_IS_INFINITY(max)) {
@@ -2443,14 +2462,36 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
     if (max == 0.0 || n <= 1) {
         return max;
     }
+    frexp(max, &max_e);
+    if (max_e >= -1023) {
+        scale = ldexp(1.0, -max_e);
+        assert(max * scale >= 0.5);
+        assert(max * scale < 1.0);
+        for (i=0 ; i < n ; i++) {
+            x = vec[i];
+            assert(Py_IS_FINITE(x) && fabs(x) <= max);
+            x *= scale;
+            x = x*x;
+            assert(x <= 1.0);
+            assert(csum >= x);
+            oldcsum = csum;
+            csum += x;
+            frac += (oldcsum - csum) + x;
+        }
+        return sqrt(csum - 1.0 + frac) / scale;
+    }
+    /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
+       So instead of multiplying by a scale, we just divide by *max*.
+    */
     for (i=0 ; i < n ; i++) {
         x = vec[i];
         assert(Py_IS_FINITE(x) && fabs(x) <= max);
         x /= max;
         x = x*x;
+        assert(x <= 1.0);
+        assert(csum >= x);
         oldcsum = csum;
         csum += x;
-        assert(csum >= x);
         frac += (oldcsum - csum) + x;
     }
     return max * sqrt(csum - 1.0 + frac);

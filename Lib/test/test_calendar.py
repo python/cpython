@@ -564,6 +564,30 @@ class CalendarTestCase(unittest.TestCase):
         new_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
         self.assertEqual(old_october, new_october)
 
+    def test_locale_html_calendar_custom_css_class_month_name(self):
+        try:
+            cal = calendar.LocaleHTMLCalendar(locale='')
+            local_month = cal.formatmonthname(2010, 10, 10)
+        except locale.Error:
+            # cannot set the system default locale -- skip rest of test
+            raise unittest.SkipTest('cannot set the system default locale')
+        self.assertIn('class="month"', local_month)
+        cal.cssclass_month_head = "text-center month"
+        local_month = cal.formatmonthname(2010, 10, 10)
+        self.assertIn('class="text-center month"', local_month)
+
+    def test_locale_html_calendar_custom_css_class_weekday(self):
+        try:
+            cal = calendar.LocaleHTMLCalendar(locale='')
+            local_weekday = cal.formatweekday(6)
+        except locale.Error:
+            # cannot set the system default locale -- skip rest of test
+            raise unittest.SkipTest('cannot set the system default locale')
+        self.assertIn('class="sun"', local_weekday)
+        cal.cssclasses_weekday_head = ["mon2", "tue2", "wed2", "thu2", "fri2", "sat2", "sun2"]
+        local_weekday = cal.formatweekday(6)
+        self.assertIn('class="sun2"', local_weekday)
+
     def test_itermonthdays3(self):
         # ensure itermonthdays3 doesn't overflow after datetime.MAXYEAR
         list(calendar.Calendar().itermonthdays3(datetime.MAXYEAR, 12))
