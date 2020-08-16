@@ -1046,16 +1046,10 @@ compute_parser_flags(PyCompilerFlags *flags)
     if (flags->cf_flags & PyCF_TYPE_COMMENTS) {
         parser_flags |= PyPARSE_TYPE_COMMENTS;
     }
-<<<<<<< HEAD:Parser/pegen/pegen.c
-    if (flags->cf_flags &PyCF_VMPARSER) {
+    if (flags->cf_flags & PyCF_VMPARSER) {
         parser_flags |= PyPARSE_VMPARSER;
     }
-    if (flags->cf_feature_version < 7) {
-||||||| merged common ancestors:Parser/pegen/pegen.c
-    if (flags->cf_feature_version < 7) {
-=======
     if ((flags->cf_flags & PyCF_ONLY_AST) && flags->cf_feature_version < 7) {
->>>>>>> upstream/master:Parser/pegen.c
         parser_flags |= PyPARSE_ASYNC_HACKS;
     }
     return parser_flags;
