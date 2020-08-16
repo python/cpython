@@ -629,7 +629,7 @@ class _PathParents(Sequence):
     def __getitem__(self, idx):
         if idx < 0 or idx >= len(self):
             raise IndexError(idx)
-        return self._pathcls._from_parsed_parts(self._drv, self._root,
+        return self._pathcls()._new_from_parsed_parts(self._drv, self._root,
                                                 self._parts[:-idx - 1])
 
     def __repr__(self):
@@ -700,6 +700,9 @@ class PurePath(object):
 
     @classmethod
     def _from_parsed_parts(cls, drv, root, parts, init=True):
+        import warnings
+        warnings.warn('_from_parsed_parts() is deprecated, use _new_from_parsed_parts() instead',
+                      DeprecationWarning, 2)
         self = object.__new__(cls)
         self._drv = drv
         self._root = root
@@ -707,6 +710,25 @@ class PurePath(object):
         if init:
             self._init()
         return self
+
+    def _new_from_parts(self, args, init=True):
+        obj = type(self)()
+        drv, root, parts = obj._parse_args(args)
+        obj._drv = drv
+        obj._root = root
+        obj._parts = parts
+        if init:
+            obj._init()
+        return obj
+
+    def _new_from_parsed_parts(self, drv, root, parts, init=True):
+        obj = type(self)()
+        obj._drv = drv
+        obj._root = root
+        obj._parts = parts
+        if init:
+            obj._init()
+        return obj
 
     @classmethod
     def _format_parsed_parts(cls, drv, root, parts):
@@ -723,7 +745,7 @@ class PurePath(object):
         drv, root, parts = self._parse_args(args)
         drv, root, parts = self._flavour.join_parsed_parts(
             self._drv, self._root, self._parts, drv, root, parts)
-        return self._from_parsed_parts(drv, root, parts)
+        return self._new_from_parsed_parts(drv, root, parts)
 
     def __str__(self):
         """Return the string representation of the path, suitable for
@@ -867,7 +889,7 @@ class PurePath(object):
         if (not name or name[-1] in [self._flavour.sep, self._flavour.altsep]
             or drv or root or len(parts) != 1):
             raise ValueError("Invalid name %r" % (name))
-        return self._from_parsed_parts(self._drv, self._root,
+        return self._new_from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
     def with_stem(self, stem):
@@ -892,8 +914,8 @@ class PurePath(object):
             name = name + suffix
         else:
             name = name[:-len(old_suffix)] + suffix
-        return self._from_parsed_parts(self._drv, self._root,
-                                       self._parts[:-1] + [name])
+        return self._new_from_parsed_parts(self._drv, self._root,
+                                           self._parts[:-1] + [name])
 
     def relative_to(self, *other):
         """Return the relative path to another path identified by the passed
@@ -925,8 +947,8 @@ class PurePath(object):
             raise ValueError("{!r} is not in the subpath of {!r}"
                     " OR one path is relative and the other is absolute."
                              .format(str(self), str(formatted)))
-        return self._from_parsed_parts('', root if n == 1 else '',
-                                       abs_parts[n:])
+        return self._new_from_parsed_parts('', root if n == 1 else '',
+                                           abs_parts[n:])
 
     def is_relative_to(self, *other):
         """Return True if the path is relative to another path or False.
@@ -965,7 +987,7 @@ class PurePath(object):
 
     def __rtruediv__(self, key):
         try:
-            return self._from_parts([key] + self._parts)
+            return self._new_from_parts([key] + self._parts)
         except TypeError:
             return NotImplemented
 
@@ -977,7 +999,7 @@ class PurePath(object):
         parts = self._parts
         if len(parts) == 1 and (drv or root):
             return self
-        return self._from_parsed_parts(drv, root, parts[:-1])
+        return self._new_from_parsed_parts(drv, root, parts[:-1])
 
     @property
     def parents(self):
@@ -1085,7 +1107,7 @@ class Path(PurePath):
         # This is an optimization used for dir walking.  `part` must be
         # a single part relative to this path.
         parts = self._parts + [part]
-        return self._from_parsed_parts(self._drv, self._root, parts)
+        return self._new_from_parsed_parts(self._drv, self._root, parts)
 
     def __enter__(self):
         return self
@@ -1188,7 +1210,7 @@ class Path(PurePath):
             return self
         # FIXME this must defer to the specific flavour (and, under Windows,
         # use nt._getfullpathname())
-        obj = self._from_parts([os.getcwd()] + self._parts, init=False)
+        obj = self._new_from_parts([os.getcwd()] + self._parts, init=False)
         obj._init(template=self)
         return obj
 
@@ -1206,7 +1228,7 @@ class Path(PurePath):
             s = str(self.absolute())
         # Now we have no symlinks in the path, it's safe to normalize it.
         normed = self._flavour.pathmod.normpath(s)
-        obj = self._from_parts((normed,), init=False)
+        obj = self._new_from_parts((normed,), init=False)
         obj._init(template=self)
         return obj
 
@@ -1276,7 +1298,7 @@ class Path(PurePath):
         Return the path to which the symbolic link points.
         """
         path = self._accessor.readlink(self)
-        obj = self._from_parts((path,), init=False)
+        obj = self._new_from_parts((path,), init=False)
         obj._init(template=self)
         return obj
 
@@ -1541,7 +1563,7 @@ class Path(PurePath):
         if (not (self._drv or self._root) and
             self._parts and self._parts[0][:1] == '~'):
             homedir = self._flavour.gethomedir(self._parts[0][1:])
-            return self._from_parts([homedir] + self._parts[1:])
+            return self._new_from_parts([homedir] + self._parts[1:])
 
         return self
 
