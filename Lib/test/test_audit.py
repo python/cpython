@@ -5,6 +5,9 @@ import subprocess
 import sys
 import unittest
 from test import support
+from test.support import import_helper
+from test.support import os_helper
+
 
 if not hasattr(sys, "addaudithook") or not hasattr(sys, "audit"):
     raise unittest.SkipTest("test only relevant when sys.audit is available")
@@ -52,7 +55,7 @@ class AuditTest(unittest.TestCase):
         self.do_test("test_block_add_hook_baseexception")
 
     def test_pickle(self):
-        support.import_module("pickle")
+        import_helper.import_module("pickle")
 
         self.do_test("test_pickle")
 
@@ -60,7 +63,7 @@ class AuditTest(unittest.TestCase):
         self.do_test("test_monkeypatch")
 
     def test_open(self):
-        self.do_test("test_open", support.TESTFN)
+        self.do_test("test_open", os_helper.TESTFN)
 
     def test_cantrace(self):
         self.do_test("test_cantrace")
@@ -89,7 +92,7 @@ class AuditTest(unittest.TestCase):
         )
 
     def test_winreg(self):
-        support.import_module("winreg")
+        import_helper.import_module("winreg")
         returncode, events, stderr = self.run_python("test_winreg")
         if returncode:
             self.fail(stderr)
@@ -103,7 +106,7 @@ class AuditTest(unittest.TestCase):
         self.assertSequenceEqual(["winreg.PyHKEY.Detach", " ", expected], events[4])
 
     def test_socket(self):
-        support.import_module("socket")
+        import_helper.import_module("socket")
         returncode, events, stderr = self.run_python("test_socket")
         if returncode:
             self.fail(stderr)

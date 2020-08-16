@@ -1134,7 +1134,7 @@ call fails (for example because the path doesn't exist).
 
    Create a hard link pointing to a path named *target*.
 
-   .. versionchanged:: 3.8
+   .. versionadded:: 3.8
 
 
 .. method:: Path.write_bytes(data)
@@ -1196,9 +1196,12 @@ os and os.path                         pathlib
 :func:`os.path.exists`                 :meth:`Path.exists`
 :func:`os.path.expanduser`             :meth:`Path.expanduser` and
                                        :meth:`Path.home`
+:func:`os.listdir`                     :meth:`Path.iterdir`
 :func:`os.path.isdir`                  :meth:`Path.is_dir`
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`
+:func:`os.link`                        :meth:`Path.link_to`
+:func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,

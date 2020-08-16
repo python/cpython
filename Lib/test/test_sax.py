@@ -13,7 +13,8 @@ except SAXReaderNotAvailable:
 from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
                              XMLFilterBase, prepare_input_source
 from xml.sax.expatreader import create_parser
-from xml.sax.handler import feature_namespaces, feature_external_ges
+from xml.sax.handler import (feature_namespaces, feature_external_ges,
+                             LexicalHandler)
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from io import BytesIO, StringIO
 import codecs
@@ -1356,6 +1357,155 @@ class XmlReaderTest(XmlTestBase):
         self.assertEqual(attrs.getQNameByName((ns_uri, "attr")), "ns:attr")
 
 
+class LexicalHandlerTest(unittest.TestCase):
+    def setUp(self):
+        self.parser = None
+
+        self.specified_version = '1.0'
+        self.specified_encoding = 'UTF-8'
+        self.specified_doctype = 'wish'
+        self.specified_entity_names = ('nbsp', 'source', 'target')
+        self.specified_comment = ('Comment in a DTD',
+                                  'Really! You think so?')
+        self.test_data = StringIO()
+        self.test_data.write('<?xml version="{}" encoding="{}"?>\n'.
+                             format(self.specified_version,
+                                    self.specified_encoding))
+        self.test_data.write('<!DOCTYPE {} [\n'.
+                             format(self.specified_doctype))
+        self.test_data.write('<!-- {} -->\n'.
+                             format(self.specified_comment[0]))
+        self.test_data.write('<!ELEMENT {} (to,from,heading,body,footer)>\n'.
+                             format(self.specified_doctype))
+        self.test_data.write('<!ELEMENT to (#PCDATA)>\n')
+        self.test_data.write('<!ELEMENT from (#PCDATA)>\n')
+        self.test_data.write('<!ELEMENT heading (#PCDATA)>\n')
+        self.test_data.write('<!ELEMENT body (#PCDATA)>\n')
+        self.test_data.write('<!ELEMENT footer (#PCDATA)>\n')
+        self.test_data.write('<!ENTITY {} "&#xA0;">\n'.
+                             format(self.specified_entity_names[0]))
+        self.test_data.write('<!ENTITY {} "Written by: Alexander.">\n'.
+                             format(self.specified_entity_names[1]))
+        self.test_data.write('<!ENTITY {} "Hope it gets to: Aristotle.">\n'.
+                             format(self.specified_entity_names[2]))
+        self.test_data.write(']>\n')
+        self.test_data.write('<{}>'.format(self.specified_doctype))
+        self.test_data.write('<to>Aristotle</to>\n')
+        self.test_data.write('<from>Alexander</from>\n')
+        self.test_data.write('<heading>Supplication</heading>\n')
+        self.test_data.write('<body>Teach me patience!</body>\n')
+        self.test_data.write('<footer>&{};&{};&{};</footer>\n'.
+                             format(self.specified_entity_names[1],
+                                    self.specified_entity_names[0],
+                                    self.specified_entity_names[2]))
+        self.test_data.write('<!-- {} -->\n'.format(self.specified_comment[1]))
+        self.test_data.write('</{}>\n'.format(self.specified_doctype))
+        self.test_data.seek(0)
+
+        # Data received from handlers - to be validated
+        self.version = None
+        self.encoding = None
+        self.standalone = None
+        self.doctype = None
+        self.publicID = None
+        self.systemID = None
+        self.end_of_dtd = False
+        self.comments = []
+
+    def test_handlers(self):
+        class TestLexicalHandler(LexicalHandler):
+            def __init__(self, test_harness, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.test_harness = test_harness
+
+            def startDTD(self, doctype, publicID, systemID):
+                self.test_harness.doctype = doctype
+                self.test_harness.publicID = publicID
+                self.test_harness.systemID = systemID
+
+            def endDTD(self):
+                self.test_harness.end_of_dtd = True
+
+            def comment(self, text):
+                self.test_harness.comments.append(text)
+
+        self.parser = create_parser()
+        self.parser.setContentHandler(ContentHandler())
+        self.parser.setProperty(
+            'http://xml.org/sax/properties/lexical-handler',
+            TestLexicalHandler(self))
+        source = InputSource()
+        source.setCharacterStream(self.test_data)
+        self.parser.parse(source)
+        self.assertEqual(self.doctype, self.specified_doctype)
+        self.assertIsNone(self.publicID)
+        self.assertIsNone(self.systemID)
+        self.assertTrue(self.end_of_dtd)
+        self.assertEqual(len(self.comments),
+                         len(self.specified_comment))
+        self.assertEqual(f' {self.specified_comment[0]} ', self.comments[0])
+
+
+class CDATAHandlerTest(unittest.TestCase):
+    def setUp(self):
+        self.parser = None
+        self.specified_chars = []
+        self.specified_chars.append(('Parseable character data', False))
+        self.specified_chars.append(('<> &% - assorted other XML junk.', True))
+        self.char_index = 0  # Used to index specified results within handlers
+        self.test_data = StringIO()
+        self.test_data.write('<root_doc>\n')
+        self.test_data.write('<some_pcdata>\n')
+        self.test_data.write(f'{self.specified_chars[0][0]}\n')
+        self.test_data.write('</some_pcdata>\n')
+        self.test_data.write('<some_cdata>\n')
+        self.test_data.write(f'<![CDATA[{self.specified_chars[1][0]}]]>\n')
+        self.test_data.write('</some_cdata>\n')
+        self.test_data.write('</root_doc>\n')
+        self.test_data.seek(0)
+
+        # Data received from handlers - to be validated
+        self.chardata = []
+        self.in_cdata = False
+
+    def test_handlers(self):
+        class TestLexicalHandler(LexicalHandler):
+            def __init__(self, test_harness, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.test_harness = test_harness
+
+            def startCDATA(self):
+                self.test_harness.in_cdata = True
+
+            def endCDATA(self):
+                self.test_harness.in_cdata = False
+
+        class TestCharHandler(ContentHandler):
+            def __init__(self, test_harness, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.test_harness = test_harness
+
+            def characters(self, content):
+                if content != '\n':
+                    h = self.test_harness
+                    t = h.specified_chars[h.char_index]
+                    h.assertEqual(t[0], content)
+                    h.assertEqual(t[1], h.in_cdata)
+                    h.char_index += 1
+
+        self.parser = create_parser()
+        self.parser.setContentHandler(TestCharHandler(self))
+        self.parser.setProperty(
+            'http://xml.org/sax/properties/lexical-handler',
+            TestLexicalHandler(self))
+        source = InputSource()
+        source.setCharacterStream(self.test_data)
+        self.parser.parse(source)
+
+        self.assertFalse(self.in_cdata)
+        self.assertEqual(self.char_index, 2)
+
+
 def test_main():
     run_unittest(MakeParserTest,
                  ParseTest,
@@ -1368,7 +1518,10 @@ def test_main():
                  StreamReaderWriterXmlgenTest,
                  ExpatReaderTest,
                  ErrorReportingTest,
-                 XmlReaderTest)
+                 XmlReaderTest,
+                 LexicalHandlerTest,
+                 CDATAHandlerTest)
+
 
 if __name__ == "__main__":
     test_main()
