@@ -209,6 +209,88 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertEqual(self.db.guess_extension(
             type='image/jpg', strict=False), '.jpg')
 
+
+@unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
+class Win32MimeTypesTestCase(unittest.TestCase):
+    def setUp(self):
+        # ensure all entries actually come from the Windows registry
+        self.original_types_map = mimetypes.types_map.copy()
+        mimetypes.types_map.clear()
+        mimetypes.init()
+        self.db = mimetypes.MimeTypes()
+
+    def tearDown(self):
+        # restore default settings
+        mimetypes.types_map.clear()
+        mimetypes.types_map.update(self.original_types_map)
+
+    @unittest.skipIf(win32_edition() in ('NanoServer', 'WindowsCoreHeadless', 'IoTEdgeOS'),
+                                         "MIME types registry keys unavailable")
+    def test_registry_parsing(self):
+        # the original, minimum contents of the MIME database in the
+        # Windows registry is undocumented AFAIK.
+        # Use file types that should *always* exist:
+        eq = self.assertEqual
+        eq(self.db.guess_type("foo.txt"), ("text/plain", None))
+        eq(self.db.guess_type("image.jpg"), ("image/jpeg", None))
+        eq(self.db.guess_type("image.png"), ("image/png", None))
+
+
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        support.check__all__(self, mimetypes)
+
+
+class MimetypesCliTestCase(unittest.TestCase):
+
+    def mimetypes_cmd(self, *args, **kwargs):
+        support.patch(self, sys, "argv", [sys.executable, *args])
+        with support.captured_stdout() as output:
+            mimetypes._main()
+            return output.getvalue().strip()
+
+    def test_help_option(self):
+        support.patch(self, sys, "argv", [sys.executable, "-h"])
+        with support.captured_stdout() as output:
+            with self.assertRaises(SystemExit) as cm:
+                mimetypes._main()
+
+        self.assertIn("Usage: mimetypes.py", output.getvalue())
+        self.assertEqual(cm.exception.code, 0)
+
+    def test_invalid_option(self):
+        support.patch(self, sys, "argv", [sys.executable, "--invalid"])
+        with support.captured_stdout() as output:
+            with self.assertRaises(SystemExit) as cm:
+                mimetypes._main()
+
+        self.assertIn("Usage: mimetypes.py", output.getvalue())
+        self.assertEqual(cm.exception.code, 1)
+
+    def test_guess_extension(self):
+        eq = self.assertEqual
+
+        extension = self.mimetypes_cmd("-l", "-e", "image/jpg")
+        eq(extension, ".jpg")
+
+        extension = self.mimetypes_cmd("-e", "image/jpg")
+        eq(extension, "I don't know anything about type image/jpg")
+
+        extension = self.mimetypes_cmd("-e", "image/jpeg")
+        eq(extension, ".jpg")
+
+    def test_guess_type(self):
+        eq = self.assertEqual
+
+        type_info = self.mimetypes_cmd("-l", "foo.pic")
+        eq(type_info, "type: image/pict encoding: None")
+
+        type_info = self.mimetypes_cmd("foo.pic")
+        eq(type_info, "I don't know anything about type foo.pic")
+
+
+class MimeSniffTestCase(unittest.TestCase):
+
     def test_mimesniff_type(self):
         tp, _ = mimetypes.mimesniff(b'foo bar'*512)
         self.assertIsNotNone(tp)
@@ -305,85 +387,6 @@ class MimeTypesTestCase(unittest.TestCase):
                 tp, charset = mimetypes.mimesniff(data)
                 self.assertEqual(tp, expected)
                 self.assertIsNone(charset)
-
-
-@unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
-class Win32MimeTypesTestCase(unittest.TestCase):
-    def setUp(self):
-        # ensure all entries actually come from the Windows registry
-        self.original_types_map = mimetypes.types_map.copy()
-        mimetypes.types_map.clear()
-        mimetypes.init()
-        self.db = mimetypes.MimeTypes()
-
-    def tearDown(self):
-        # restore default settings
-        mimetypes.types_map.clear()
-        mimetypes.types_map.update(self.original_types_map)
-
-    @unittest.skipIf(win32_edition() in ('NanoServer', 'WindowsCoreHeadless', 'IoTEdgeOS'),
-                                         "MIME types registry keys unavailable")
-    def test_registry_parsing(self):
-        # the original, minimum contents of the MIME database in the
-        # Windows registry is undocumented AFAIK.
-        # Use file types that should *always* exist:
-        eq = self.assertEqual
-        eq(self.db.guess_type("foo.txt"), ("text/plain", None))
-        eq(self.db.guess_type("image.jpg"), ("image/jpeg", None))
-        eq(self.db.guess_type("image.png"), ("image/png", None))
-
-
-class MiscTestCase(unittest.TestCase):
-    def test__all__(self):
-        support.check__all__(self, mimetypes)
-
-
-class MimetypesCliTestCase(unittest.TestCase):
-
-    def mimetypes_cmd(self, *args, **kwargs):
-        support.patch(self, sys, "argv", [sys.executable, *args])
-        with support.captured_stdout() as output:
-            mimetypes._main()
-            return output.getvalue().strip()
-
-    def test_help_option(self):
-        support.patch(self, sys, "argv", [sys.executable, "-h"])
-        with support.captured_stdout() as output:
-            with self.assertRaises(SystemExit) as cm:
-                mimetypes._main()
-
-        self.assertIn("Usage: mimetypes.py", output.getvalue())
-        self.assertEqual(cm.exception.code, 0)
-
-    def test_invalid_option(self):
-        support.patch(self, sys, "argv", [sys.executable, "--invalid"])
-        with support.captured_stdout() as output:
-            with self.assertRaises(SystemExit) as cm:
-                mimetypes._main()
-
-        self.assertIn("Usage: mimetypes.py", output.getvalue())
-        self.assertEqual(cm.exception.code, 1)
-
-    def test_guess_extension(self):
-        eq = self.assertEqual
-
-        extension = self.mimetypes_cmd("-l", "-e", "image/jpg")
-        eq(extension, ".jpg")
-
-        extension = self.mimetypes_cmd("-e", "image/jpg")
-        eq(extension, "I don't know anything about type image/jpg")
-
-        extension = self.mimetypes_cmd("-e", "image/jpeg")
-        eq(extension, ".jpg")
-
-    def test_guess_type(self):
-        eq = self.assertEqual
-
-        type_info = self.mimetypes_cmd("-l", "foo.pic")
-        eq(type_info, "type: image/pict encoding: None")
-
-        type_info = self.mimetypes_cmd("foo.pic")
-        eq(type_info, "I don't know anything about type foo.pic")
 
 
 if __name__ == "__main__":
