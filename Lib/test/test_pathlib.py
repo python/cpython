@@ -2652,7 +2652,7 @@ class PureWindowsSubclassNewAndInitTest(unittest.TestCase):
     of PurePosixPath get called when PosixPath functions
     and properties instantiate new objects of the subclass.
     """
-    cls = pathlib.PurePosixPath
+    cls = pathlib.PureWindowsPath
 
     class ASubclass(cls):
         new_called = False
@@ -2673,38 +2673,38 @@ class PureWindowsSubclassNewAndInitTest(unittest.TestCase):
         self.assertEqual(str(path), value)
 
     def test_class_initialization(self):
-        self.validate_object(self.ASubclass('c:/a/b/c.foo'), 'c:/a/b/c.foo')
+        self.validate_object(self.ASubclass('c:\\a\\b\\c.foo'), 'c:\\a\\b\\c.foo')
 
     def test_joinpath(self):
-        self.validate_object(self.ASubclass('c:/a/b/c.foo').parent.joinpath('d/e'),
-                             'c:/a/b/d/e')
+        self.validate_object(self.ASubclass('c:\\a\\b\\c.foo').parent.joinpath('d\\e'),
+                             'c:\\a\\b\\d\\e')
 
     def test_parent(self):
-        self.validate_object(self.ASubclass('c:/a/b/c.foo').parent, 'c:/a/b')
+        self.validate_object(self.ASubclass('c:\\a\\b\\c.foo').parent, 'c:\\a\\b')
 
     def test_parents(self):
-        path = self.ASubclass('c:/a/b/c.foo')
-        self.validate_object(path.parents[0], 'c:/a/b')
-        self.validate_object(path.parents[1], 'c:/a')
+        path = self.ASubclass('c:\\a\\b\\c.foo')
+        self.validate_object(path.parents[0], 'c:\\a\\b')
+        self.validate_object(path.parents[1], 'c:\\a')
 
     def test_relative_to(self):
-        self.validate_object(self.ASubclass('c:/a/b/c.foo').relative_to('c:/a'),
-                             'b/c.foo')
+        self.validate_object(self.ASubclass('c:\\a\\b\\c.foo').relative_to('c:\\a'),
+                             'b\\c.foo')
 
     def test_rtruediv(self):
-        self.validate_object('c:/left' / self.ASubclass('test'), 'c:/left/test')
+        self.validate_object('c:\\left' / self.ASubclass('test'), 'c:\\left\\test')
 
     def test_truediv(self):
-        path = self.ASubclass('c:/a/b/c.foo')
-        self.validate_object(path.parent / 'd', 'c:/a/b/d')
+        path = self.ASubclass('c:\\a\\b\\c.foo')
+        self.validate_object(path.parent / 'd', 'c:\\a\\b\\d')
 
     def test_with_name(self):
-        self.validate_object(self.ASubclass('c:/a/b/c.foo').with_name('bar'),
-                             'c:/a/b/bar')
+        self.validate_object(self.ASubclass('c:\\a\\b\\c.foo').with_name('bar'),
+                             'c:\\a\\b\\bar')
 
     def test_with_suffix(self):
-        self.validate_object(self.ASubclass('c:/a/b/c.foo').with_suffix('.bar'),
-                             'c:/a/b/c.bar')
+        self.validate_object(self.ASubclass('c:\\a\\b\\c.foo').with_suffix('.bar'),
+                             'c:\\a\\b\\c.bar')
 
 
 @only_posix
