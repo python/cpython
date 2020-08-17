@@ -1105,7 +1105,7 @@ class Path(PurePath):
                                       % (cls.__name__,))
         return self
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args):
         super().__init__(*args, init=False)
         self._init()
 
