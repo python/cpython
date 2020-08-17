@@ -666,7 +666,7 @@ class PurePath(object):
         self._root = root
         self._parts = parts
         if init:
-            self._init()        
+            self._init()
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
