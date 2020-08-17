@@ -1410,7 +1410,7 @@ def detect_api_mismatch(ref_api, other_api, *, ignore=()):
 
 
 def check__all__(test_case, module, name_of_module=None, extra=(),
-                 blacklist=()):
+                 not_exported=()):
     """Assert that the __all__ variable of 'module' contains all public names.
 
     The module's public names (its API) are detected automatically based on
@@ -1427,7 +1427,7 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
     '__module__' attribute. If provided, it will be added to the
     automatically detected ones.
 
-    The 'blacklist' argument can be a set of names that must not be treated
+    The 'not_exported' argument can be a set of names that must not be treated
     as part of the public API even though their names indicate otherwise.
 
     Usage:
@@ -1443,10 +1443,10 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
         class OtherTestCase(unittest.TestCase):
             def test__all__(self):
                 extra = {'BAR_CONST', 'FOO_CONST'}
-                blacklist = {'baz'}  # Undocumented name.
+                not_exported = {'baz'}  # Undocumented name.
                 # bar imports part of its API from _bar.
                 support.check__all__(self, bar, ('bar', '_bar'),
-                                     extra=extra, blacklist=blacklist)
+                                     extra=extra, not_exported=not_exported)
 
     """
 
@@ -1458,7 +1458,7 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
     expected = set(extra)
 
     for name in dir(module):
-        if name.startswith('_') or name in blacklist:
+        if name.startswith('_') or name in not_exported:
             continue
         obj = getattr(module, name)
         if (getattr(obj, '__module__', None) in name_of_module or
