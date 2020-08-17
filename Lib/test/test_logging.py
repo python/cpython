@@ -5363,12 +5363,12 @@ class NTEventLogHandlerTest(BaseTest):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'logThreads', 'logMultiprocessing',
-                     'logProcesses', 'currentframe',
-                     'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
-                     'Filterer', 'PlaceHolder', 'Manager', 'RootLogger',
-                     'root', 'threading'}
-        support.check__all__(self, logging, blacklist=blacklist)
+        not_exported = {
+            'logThreads', 'logMultiprocessing', 'logProcesses', 'currentframe',
+            'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
+            'Filterer', 'PlaceHolder', 'Manager', 'RootLogger', 'root',
+            'threading'}
+        support.check__all__(self, logging, not_exported=not_exported)
 
 
 # Set the locale to the platform-dependent default.  I have no idea
