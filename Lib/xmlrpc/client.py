@@ -138,6 +138,7 @@ import urllib.parse
 from xml.parsers import expat
 import errno
 from io import BytesIO
+import socket
 try:
     import gzip
 except ImportError:
@@ -1136,11 +1137,12 @@ class Transport:
     encode_threshold = None #None = don't encode
 
     def __init__(self, use_datetime=False, use_builtin_types=False,
-                 *, headers=()):
+                 *, headers=(), timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         self._use_datetime = use_datetime
         self._use_builtin_types = use_builtin_types
         self._connection = (None, None)
         self._headers = list(headers)
+        self._timeout = timeout
         self._extra_headers = []
 
     ##
@@ -1247,7 +1249,7 @@ class Transport:
             return self._connection[1]
         # create a HTTP connection object from a host descriptor
         chost, self._extra_headers, x509 = self.get_host_info(host)
-        self._connection = host, http.client.HTTPConnection(chost)
+        self._connection = host, http.client.HTTPConnection(chost, timeout=self._timeout)
         return self._connection[1]
 
     ##
@@ -1354,10 +1356,11 @@ class SafeTransport(Transport):
     """Handles an HTTPS transaction to an XML-RPC server."""
 
     def __init__(self, use_datetime=False, use_builtin_types=False,
-                 *, headers=(), context=None):
+                 *, headers=(), context=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         super().__init__(use_datetime=use_datetime,
                          use_builtin_types=use_builtin_types,
-                         headers=headers)
+                         headers=headers,
+                         timeout=timeout)
         self.context = context
 
     # FIXME: mostly untested
@@ -1373,7 +1376,7 @@ class SafeTransport(Transport):
         # host may be a string, or a (host, x509-dict) tuple
         chost, self._extra_headers, x509 = self.get_host_info(host)
         self._connection = host, http.client.HTTPSConnection(chost,
-            None, context=self.context, **(x509 or {}))
+            None, context=self.context, timeout=self._timeout, **(x509 or {}))
         return self._connection[1]
 
 ##
@@ -1410,6 +1413,8 @@ class ServerProxy:
 
         transport: a transport factory
         encoding: the request encoding (default is UTF-8)
+        timeout: the timeout to use when creating the transport; this
+            defaults to socket._GLOBAL_DEFAULT_TIMEOUT
 
     All 8-bit strings passed to the server proxy are assumed to use
     the given encoding.
@@ -1417,7 +1422,8 @@ class ServerProxy:
 
     def __init__(self, uri, transport=None, encoding=None, verbose=False,
                  allow_none=False, use_datetime=False, use_builtin_types=False,
-                 *, headers=(), context=None):
+                 *, headers=(), context=None,
+                 timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         # establish a "logical" server connection
 
         # get the url
@@ -1437,6 +1443,7 @@ class ServerProxy:
             transport = handler(use_datetime=use_datetime,
                                 use_builtin_types=use_builtin_types,
                                 headers=headers,
+                                timeout=timeout,
                                 **extra_kwargs)
         self.__transport = transport
 
