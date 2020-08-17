@@ -41,13 +41,13 @@ class EnvBuilder:
                      environment
     :param prompt: Alternative terminal prefix for the environment.
     :param upgrade_deps: Update the base venv modules to the latest on PyPI
-    :param python_interpreter: Optional path to a python interpreter to use instead of the default
+    :param executable: Optional path to a python interpreter to use instead of the default
                                sys._base_executable
     """
 
     def __init__(self, system_site_packages=False, clear=False,
                  symlinks=False, upgrade=False, with_pip=False, prompt=None,
-                 upgrade_deps=False, python_interpreter=None):
+                 upgrade_deps=False, executable=None):
         self.system_site_packages = system_site_packages
         self.clear = clear
         self.symlinks = symlinks
@@ -57,7 +57,7 @@ class EnvBuilder:
             prompt = os.path.basename(os.getcwd())
         self.prompt = prompt
         self.upgrade_deps = upgrade_deps
-        self.python_interpreter = python_interpreter or sys._base_executable
+        self.executable = executable or sys._base_executable
 
     def create(self, env_dir):
         """
@@ -117,7 +117,7 @@ class EnvBuilder:
         prompt = self.prompt if self.prompt is not None else context.env_name
         context.prompt = '(%s) ' % prompt
         create_if_needed(env_dir)
-        executable = self.python_interpreter
+        executable = self.executable
         dirname, exename = os.path.split(os.path.abspath(executable))
         context.executable = executable
         context.python_dir = dirname

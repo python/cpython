@@ -1,3 +1,3 @@
-Add `python_interpreter` argument to `venv.EnvBuilder` to control which
+Add `executable` argument to `venv.EnvBuilder` to control which
 python interpreter to use for creating the virtualenv much like the `-p`
 parameter of the `virtualenv` command.
