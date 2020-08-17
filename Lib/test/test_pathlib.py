@@ -2649,7 +2649,7 @@ class PurePosixSubclassNewAndInitTest(unittest.TestCase):
 class PureWindowsSubclassNewAndInitTest(unittest.TestCase):
     """
     Test that the __init__() and __new__() functions of subclasses
-    of PurePosixPath get called when PosixPath functions
+    of PureWindowsPath get called when PosixPath functions
     and properties instantiate new objects of the subclass.
     """
     cls = pathlib.PureWindowsPath
