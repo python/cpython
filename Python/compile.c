@@ -5432,10 +5432,11 @@ compiler_slice(struct compiler *c, expr_ty s)
 // PEP 622: Structural Pattern Matching
 
 // To keep things simple, all compiler_pattern_* routines follow the convention
-// of replacing TOS (the subject for the given pattern) with either True (match)
-// or False (no match). We do this even for irrefutable patterns; the idea is
-// that it's much easier to smooth out any redundant pushing, popping, and
-// jumping in the peephole optimizer than to detect or predict it here.
+// of preserving TOS (the subject for the given pattern) and pushing either True
+// (match) or False (no match) on top of it. We do this even for irrefutable
+// patterns; the idea is that it's much easier to smooth out any redundant
+// pushing, popping, and jumping in the peephole optimizer than to detect or
+// predict it here.
 
 // Other than that, go nuts. The PEP intentionally gives us broad freedom to
 // take (reasonable) shortcuts - the AST optimization pass in particular is full
@@ -5522,6 +5523,7 @@ compiler_pattern_attribute(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Attribute_kind);
     assert(p->v.Attribute.ctx == Load);
+    ADDOP(c, DUP_TOP);
     CHECK(pattern_load_attribute(c, p, pc));
     ADDOP_COMPARE(c, Eq);
     return 1;
@@ -5547,7 +5549,6 @@ compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
         pc->stores = PySet_New(stores_init);
         SET_LOC(c, alt);
         if (!pc->stores ||
-            !compiler_addop(c, DUP_TOP) ||
             !compiler_pattern(c, alt, pc) ||
             !compiler_addop_j(c, JUMP_IF_TRUE_OR_POP, end, 1))
         {
@@ -5575,8 +5576,6 @@ compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
     pc->stores = control;
     ADDOP_LOAD_CONST(c, Py_False);
     compiler_use_next_block(c, end);
-    ADDOP(c, ROT_TWO);
-    ADDOP(c, POP_TOP);
     return 1;
 fail:
     Py_XDECREF(stores_init);
@@ -5598,6 +5597,7 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
     CHECK(!validate_keywords(c, kwargs));
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
+    ADDOP(c, DUP_TOP);  // TODO: Refactor MATCH_CLASS
     if (p->v.Call.func->kind == Attribute_kind) {
         CHECK(pattern_load_attribute(c, p->v.Call.func, pc));
     }
@@ -5630,6 +5630,8 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
         }
         ADDOP_I(c, GET_INDEX, i);
         CHECK(compiler_pattern(c, arg, pc));
+        ADDOP(c, ROT_TWO);
+        ADDOP(c, POP_TOP);
         ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
     }
     ADDOP_LOAD_CONST(c, Py_True);
@@ -5644,6 +5646,7 @@ static int
 compiler_pattern_constant(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Constant_kind);
+    ADDOP(c, DUP_TOP);
     CHECK(pattern_load_constant(c, p, pc));
     ADDOP_COMPARE(c, Eq);
     return 1;
@@ -5660,16 +5663,17 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
     asdl_seq *values = p->v.Dict.values;
     Py_ssize_t size = asdl_seq_LEN(values);
     int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
-    // TODO :(i >= (1 << 8)) || (n-i-1 >= (INT_MAX >> 8))
+    // TODO: (i >= (1 << 8)) || (n-i-1 >= (INT_MAX >> 8))
     ADDOP(c, MATCH_MAPPING);
-    ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
+    ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
     if (size - star) {
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star));
         ADDOP_COMPARE(c, GtE);
-        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
+        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
     }
     if (size) {
+        ADDOP(c, DUP_TOP);
         Py_ssize_t i;
         for (i = 0; i < size - star; i++) {
             expr_ty key = asdl_seq_GET(keys, i);
@@ -5696,15 +5700,17 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
             }
             ADDOP_I(c, GET_INDEX, i);
             CHECK(compiler_pattern(c, value, pc));
+            ADDOP(c, ROT_TWO);
+            ADDOP(c, POP_TOP);
             ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
         }
         ADDOP(c, POP_TOP);
-    }
-    if (star) {
-        CHECK(pattern_store_name(c, asdl_seq_GET(values, size - 1), pc));
-    }
-    else {
-        ADDOP(c, POP_TOP);
+        if (star) {
+            CHECK(pattern_store_name(c, asdl_seq_GET(values, size - 1), pc));
+        }
+        else {
+            ADDOP(c, POP_TOP);
+        }
     }
     ADDOP_LOAD_CONST(c, Py_True);
     ADDOP_JREL(c, JUMP_FORWARD, end);
@@ -5734,27 +5740,32 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
         }
         star = i;
     }
-    basicblock *block, *end;
-    CHECK(block = compiler_new_block(c));
+    basicblock *block, *end, *subblock;
     CHECK(end = compiler_new_block(c));
     ADDOP(c, MATCH_SEQUENCE);
     ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
     ADDOP(c, GET_LEN);
-    if (star < 0) {
-        ADDOP(c, DUP_TOP);
+    if (!size) {
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
         ADDOP_COMPARE(c, Eq);
-        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
+        compiler_use_next_block(c, end);
+        return 1;
     }
-    else if (size) {
-        ADDOP(c, DUP_TOP);
+    CHECK(subblock = compiler_new_block(c));
+    CHECK(block = compiler_new_block(c));
+    ADDOP(c, DUP_TOP);
+    if (star < 0) {
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
+        ADDOP_COMPARE(c, Eq);
+    }
+    else {
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - 1));
         ADDOP_COMPARE(c, GtE);
-        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
     }
+    ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
     ADDOP(c, ROT_TWO);
     for (Py_ssize_t i = 0; i < size; i++) {
-        // TODO :(i >= (1 << 8)) || (n-i-1 >= (INT_MAX >> 8))
+        // TODO: (i >= (1 << 8)) || (n-i-1 >= (INT_MAX >> 8))
         expr_ty value = asdl_seq_GET(values, i);
         if (WILDCARD_CHECK(value)) {
             continue;
@@ -5774,15 +5785,20 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
             ADDOP_I(c, GET_INDEX_END, size - 1 - i);
         }
         CHECK(compiler_pattern(c, value, pc));
-        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, block);
+        ADDOP_JABS(c, POP_JUMP_IF_FALSE, subblock);
+        ADDOP(c, POP_TOP);
     }
+    ADDOP(c, ROT_TWO);
+    ADDOP(c, POP_TOP);
     ADDOP_LOAD_CONST(c, Py_True);
+    ADDOP_JREL(c, JUMP_FORWARD, end);
+    compiler_use_next_block(c, subblock);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, ROT_TWO);
     compiler_use_next_block(c, block);
-    ADDOP(c, ROT_TWO);
     ADDOP(c, POP_TOP);
+    ADDOP_LOAD_CONST(c, Py_False);
     compiler_use_next_block(c, end);
-    ADDOP(c, ROT_TWO);
-    ADDOP(c, POP_TOP);
     return 1;
 }
 
@@ -5792,10 +5808,8 @@ compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
-    if (WILDCARD_CHECK(p)) {
-        ADDOP(c, POP_TOP);
-    }
-    else {
+    if (!WILDCARD_CHECK(p)) {
+        ADDOP(c, DUP_TOP);
         CHECK(pattern_store_name(c, p, pc));
     }
     ADDOP_LOAD_CONST(c, Py_True);
@@ -5807,11 +5821,14 @@ static int
 compiler_pattern_namedexpr(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == NamedExpr_kind);
-    ADDOP(c, DUP_TOP);
-    // OPTIM: We store the target *before* matching the inner pattern, to avoid
-    // complicated cleanup if the inner pattern fails to match.
-    CHECK(pattern_store_name(c, p->v.NamedExpr.target, pc));
+    basicblock *end;
+    CHECK(end = compiler_new_block(c));
     CHECK(compiler_pattern(c, p->v.NamedExpr.value, pc));
+    ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
+    ADDOP(c, DUP_TOP);
+    CHECK(pattern_store_name(c, p->v.NamedExpr.target, pc));
+    ADDOP_LOAD_CONST(c, Py_True);
+    compiler_use_next_block(c, end);
     return 1;
 }
 
@@ -5859,11 +5876,10 @@ compiler_match(struct compiler *c, stmt_ty s)
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases);
     pattern_context pc;
-    int keep_subject, result;
+    int result;
     match_case_ty m = asdl_seq_GET(s->v.Match.cases, cases - 1);
     int has_default = WILDCARD_CHECK(m->pattern) && 1 < cases;
     for (Py_ssize_t i = 0; i < cases - has_default; i++) {
-        keep_subject = i < cases - has_default - 1;
         m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
         if (!m->guard && m->pattern->kind == Name_kind &&
@@ -5874,9 +5890,6 @@ compiler_match(struct compiler *c, stmt_ty s)
             CHECK(compiler_warn(c, w, m->pattern->v.Name.id));
         }
         CHECK(next = compiler_new_block(c));
-        if (keep_subject) {
-            ADDOP(c, DUP_TOP);
-        }
         pc.stores = NULL;
         result = compiler_pattern(c, m->pattern, &pc);
         Py_CLEAR(pc.stores);
@@ -5885,15 +5898,12 @@ compiler_match(struct compiler *c, stmt_ty s)
         if (m->guard) {
             CHECK(compiler_jump_if(c, m->guard, next, 0));
         }
-        if (keep_subject) {
-            ADDOP(c, POP_TOP);
-        }
+        ADDOP(c, POP_TOP);
         VISIT_SEQ(c, stmt, m->body);
-        if (i != cases - 1) {
-            ADDOP_JREL(c, JUMP_FORWARD, end);
-        }
+        ADDOP_JREL(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, next);
     }
+    ADDOP(c, POP_TOP);
     if (has_default) {
         // A trailing "case _" is common, and lets us save a bit of redundant
         // pushing and popping in the loop above:

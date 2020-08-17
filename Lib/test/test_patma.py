@@ -2421,6 +2421,6 @@ class PerfPatma(TestPatma):
 
 """
 sudo ./python -m pyperf system tune && \
-     ./python -m pyperf timeit -s "from test.test_patma import PerfPatma; p = PerfPatma()" "p.run_perf()"; \
+     ./python -m pyperf timeit --rigorous --setup "from test.test_patma import PerfPatma; p = PerfPatma()" "p.run_perf()"; \
 sudo ./python -m pyperf system reset
 """
