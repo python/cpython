@@ -5581,9 +5581,11 @@ class TestSyncManagerTypes(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        # Just make sure names in blacklist are excluded
+        # Just make sure names in not_exported are excluded
         support.check__all__(self, multiprocessing, extra=multiprocessing.__all__,
-                             blacklist=['SUBDEBUG', 'SUBWARNING'])
+                             not_exported=['SUBDEBUG', 'SUBWARNING'])
+
+
 #
 # Mixins
 #
