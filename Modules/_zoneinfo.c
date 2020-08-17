@@ -2525,6 +2525,7 @@ zoneinfo_init_subclass(PyTypeObject *cls, PyObject *args, PyObject **kwargs)
     }
 
     PyObject_SetAttrString((PyObject *)cls, "_weak_cache", weak_cache);
+    Py_DECREF(weak_cache);
     Py_RETURN_NONE;
 }
 
