@@ -2585,10 +2585,10 @@ class CompatiblePathTest(unittest.TestCase):
             10 / pathlib.PurePath("test")
 
 
-class PurePosixSubclassNewAndInitTest(unittest.TestCase):
+class PurePosixPathSubclassNewAndInitTest(unittest.TestCase):
     """
     Test that the __init__() and __new__() functions of subclasses
-    of PurePosixPath get called when PosixPath functions
+    of PurePosixPath get called when PurePosixPath functions
     and properties instantiate new objects of the subclass.
     """
     cls = pathlib.PurePosixPath
@@ -2646,10 +2646,10 @@ class PurePosixSubclassNewAndInitTest(unittest.TestCase):
                              'a/b/c.bar')
 
 
-class PureWindowsSubclassNewAndInitTest(unittest.TestCase):
+class PureWindowsPathSubclassNewAndInitTest(unittest.TestCase):
     """
     Test that the __init__() and __new__() functions of subclasses
-    of PureWindowsPath get called when PosixPath functions
+    of PureWindowsPath get called when PureWindowsPath functions
     and properties instantiate new objects of the subclass.
     """
     cls = pathlib.PureWindowsPath
