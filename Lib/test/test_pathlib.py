@@ -2646,6 +2646,67 @@ class PurePosixSubclassNewAndInitTest(unittest.TestCase):
                              'a/b/c.bar')
 
 
+class PureWindowsSubclassNewAndInitTest(unittest.TestCase):
+    """
+    Test that the __init__() and __new__() functions of subclasses
+    of PurePosixPath get called when PosixPath functions
+    and properties instantiate new objects of the subclass.
+    """
+    cls = pathlib.PurePosixPath
+
+    class ASubclass(cls):
+        new_called = False
+        init_called = False
+
+        def __new__(cls, *args, **kwargs):
+            cls.new_called = True
+            return super().__new__(cls, *args, **kwargs)
+
+        def __init__(self, *args, **kwargs):
+            self.init_called = True
+            super().__init__()
+
+    def validate_object(self, path, value):
+        self.assertIs(type(path), self.ASubclass)
+        self.assertTrue(path.new_called)
+        self.assertTrue(path.init_called)
+        self.assertEqual(str(path), value)
+
+    def test_class_initialization(self):
+        self.validate_object(self.ASubclass('c:/a/b/c.foo'), 'c:/a/b/c.foo')
+
+    def test_joinpath(self):
+        self.validate_object(self.ASubclass('c:/a/b/c.foo').parent.joinpath('d/e'),
+                             'c:/a/b/d/e')
+
+    def test_parent(self):
+        self.validate_object(self.ASubclass('c:/a/b/c.foo').parent, 'c:/a/b')
+
+    def test_parents(self):
+        path = self.ASubclass('c:/a/b/c.foo')
+        self.validate_object(path.parents[0], 'c:/a/b')
+        self.validate_object(path.parents[1], 'c:/a')
+
+    def test_relative_to(self):
+        self.validate_object(self.ASubclass('c:/a/b/c.foo').relative_to('c:/a'),
+                             'b/c.foo')
+
+    def test_rtruediv(self):
+        self.validate_object('c:/left' / self.ASubclass('test'), 'c:/left/test')
+
+    def test_truediv(self):
+        path = self.ASubclass('c:/a/b/c.foo')
+        self.validate_object(path.parent / 'd', 'c:/a/b/d')
+
+    def test_with_name(self):
+        self.validate_object(self.ASubclass('c:/a/b/c.foo').with_name('bar'),
+                             'c:/a/b/bar')
+
+    def test_with_suffix(self):
+        self.validate_object(self.ASubclass('c:/a/b/c.foo').with_suffix('.bar'),
+                             'c:/a/b/c.bar')
+
+
 @only_posix
 class PosixPathSubclassNewAndInitTest(unittest.TestCase):
     """
