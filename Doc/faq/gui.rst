@@ -94,6 +94,17 @@ Python bindings for `the FLTK toolkit <http://www.fltk.org>`_, a simple yet
 powerful and mature cross-platform windowing system, are available from `the
 PyFLTK project <http://pyfltk.sourceforge.net>`_.
 
+Dear PyGui
+---------
+
+Dear PyGui (https://github.com/hoffstadt/DearPyGui) is a free, portable GUI class
+library written in C++ that provides a wrapping of Dear ImGui that simulates a traditional retained mode GUI, as opposed
+to Dear ImGui's immediate mode paradigm. Dear PyGui provides a consistent look across Windows, Mac OS X, and Linux.
+
+DearPyGui is free, open source, software with
+permissive licences that allow their use in commercial products as
+well as in freeware or shareware.
+
 OpenGL
 ------
 
