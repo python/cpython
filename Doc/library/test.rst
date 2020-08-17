@@ -878,7 +878,7 @@ The :mod:`test.support` module defines the following functions:
    missing.
 
 
-.. function:: check__all__(test_case, module, name_of_module=None, extra=(), blacklist=())
+.. function:: check__all__(test_case, module, name_of_module=None, extra=(), not_exported=())
 
    Assert that the ``__all__`` variable of *module* contains all public names.
 
@@ -895,8 +895,8 @@ The :mod:`test.support` module defines the following functions:
    detected as "public", like objects without a proper ``__module__``
    attribute. If provided, it will be added to the automatically detected ones.
 
-   The *blacklist* argument can be a set of names that must not be treated as part of
-   the public API even though their names indicate otherwise.
+   The *not_exported* argument can be a set of names that must not be treated
+   as part of the public API even though their names indicate otherwise.
 
    Example use::
 
@@ -912,10 +912,10 @@ The :mod:`test.support` module defines the following functions:
       class OtherTestCase(unittest.TestCase):
           def test__all__(self):
               extra = {'BAR_CONST', 'FOO_CONST'}
-              blacklist = {'baz'}  # Undocumented name.
+              not_exported = {'baz'}  # Undocumented name.
               # bar imports part of its API from _bar.
               support.check__all__(self, bar, ('bar', '_bar'),
-                                   extra=extra, blacklist=blacklist)
+                                   extra=extra, not_exported=not_exported)
 
    .. versionadded:: 3.6
 
