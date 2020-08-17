@@ -658,7 +658,15 @@ class PurePath(object):
         """
         if cls is PurePath:
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return cls._from_parts(args)
+        return object.__new__(cls)
+
+    def __init__(self, *args, init=True):
+        drv, root, parts = self._parse_args(args)
+        self._drv = drv
+        self._root = root
+        self._parts = parts
+        if init:
+            self._init()        
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
@@ -687,6 +695,9 @@ class PurePath(object):
 
     @classmethod
     def _from_parts(cls, args, init=True):
+        import warnings
+        warnings.warn('_from_parsed_parts() is deprecated, use _new_from_parsed_parts() instead',
+                      DeprecationWarning, 2)
         # We need to call _parse_args on the instance, so as to get the
         # right flavour.
         self = object.__new__(cls)
@@ -1088,11 +1099,15 @@ class Path(PurePath):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
         self = cls._from_parts(args, init=False)
+        self = object.__new__(cls)
         if not self._flavour.is_supported:
             raise NotImplementedError("cannot instantiate %r on your system"
                                       % (cls.__name__,))
-        self._init()
         return self
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, init=False)
+        self._init()
 
     def _init(self,
               # Private non-constructor arguments

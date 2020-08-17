@@ -2603,7 +2603,7 @@ class PurePosixPathSubclassNewAndInitTest(unittest.TestCase):
 
         def __init__(self, *args, **kwargs):
             self.init_called = True
-            super().__init__()
+            super().__init__(*args, **kwargs)
 
     def validate_object(self, path, value):
         self.assertIs(type(path), self.ASubclass)
@@ -2664,7 +2664,7 @@ class PureWindowsPathSubclassNewAndInitTest(unittest.TestCase):
 
         def __init__(self, *args, **kwargs):
             self.init_called = True
-            super().__init__()
+            super().__init__(*args, **kwargs)
 
     def validate_object(self, path, value):
         self.assertIs(type(path), self.ASubclass)
@@ -2726,7 +2726,7 @@ class PosixPathSubclassNewAndInitTest(unittest.TestCase):
 
         def __init__(self, *args, **kwargs):
             self.init_called = True
-            super().__init__()
+            super().__init__(*args, **kwargs)
 
     def validate_object(self, path, value):
         self.assertIs(type(path), self.ASubclass)
@@ -2816,7 +2816,7 @@ class WindowsPathSubclassNewAndInitTest(unittest.TestCase):
 
         def __init__(self, *args, **kwargs):
             self.init_called = True
-            super().__init__()
+            super().__init__(*args, **kwargs)
 
     def validate_object(self, path, value):
         self.assertIs(type(path), self.ASubclass)
