@@ -2732,13 +2732,13 @@ class _BasePathSubclassNewAndInitTest(object):
         filename = 'fileA'
         path = self.ASubclass(d)
         self.validate_object(path, d)
-        cases = [(path.glob, 'f*', join(d, filename)),    # _WildcardSelector
-                 (path.glob, 'fileA', join(d, filename)), # _PreciseSelector
-                 (path.glob, '**', d)]                    # _RecursiveWildcardSelector
+        cases = [('f*', join(d, filename)),    # _WildcardSelector
+                 ('fileA', join(d, filename)), # _PreciseSelector
+                 ('**', d)]                    # _RecursiveWildcardSelector
 
-        for func, param, value in cases:
+        for param, value in cases:
             n = 0
-            for name in func(param):
+            for name in path.glob(param):
                 self.validate_object(name, value)
                 n += 1
             self.assertEqual(n, 1)
