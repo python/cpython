@@ -2497,7 +2497,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             csum += x;
             frac += (oldcsum - csum) + x;
         }
-        result = sqrt(csum - 1.0 + frac) / scale;
+        result = sqrt(csum - 1.0 + frac);
 
         x = result;
         t = x * T27;
