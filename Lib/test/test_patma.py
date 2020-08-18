@@ -415,7 +415,7 @@ class TestPatma(unittest.TestCase):
     def test_patma_045(self):
         x = ()
         match x:
-            case []:
+            case ():
                 y = 0
         self.assertEqual(x, ())
         self.assertEqual(y, 0)
@@ -609,12 +609,12 @@ class TestPatma(unittest.TestCase):
     def test_patma_066(self):
         x = "x"
         match x:
-            case "x":
+            case "":
                 y = 0
-            case "y":
+            case "x":
                 y = 1
         self.assertEqual(x, "x")
-        self.assertEqual(y, 0)
+        self.assertEqual(y, 1)
 
     def test_patma_067(self):
         x = b"x"
@@ -1052,13 +1052,17 @@ class TestPatma(unittest.TestCase):
         class A:
             class B:
                 C = 0
-        x = 0
+                D = 1
+        x = 1
         match x:
             case A.B.C:
                 y = 0
+            case A.B.D:
+                y = 1
         self.assertEqual(A.B.C, 0)
-        self.assertEqual(x, 0)
-        self.assertEqual(y, 0)
+        self.assertEqual(A.B.D, 1)
+        self.assertEqual(x, 1)
+        self.assertEqual(y, 1)
 
     def test_patma_114(self):
         class A:
@@ -1078,13 +1082,17 @@ class TestPatma(unittest.TestCase):
             class B:
                 class C:
                     D = 0
-        x = 0
+                    E = 1
+        x = 1
         match x:
             case A.B.C.D:
                 y = 0
+            case A.B.C.E:
+                y = 1
         self.assertEqual(A.B.C.D, 0)
-        self.assertEqual(x, 0)
-        self.assertEqual(y, 0)
+        self.assertEqual(A.B.C.E, 1)
+        self.assertEqual(x, 1)
+        self.assertEqual(y, 1)
 
     def test_patma_116(self):
         match = case = 0
@@ -1447,7 +1455,7 @@ class TestPatma(unittest.TestCase):
         x = 0
         y = None
         match x:
-            case 1:
+            case 1e1000:
                 y = 0
         self.assertEqual(x, 0)
         self.assertIs(y, None)
@@ -1473,12 +1481,12 @@ class TestPatma(unittest.TestCase):
     def test_patma_158(self):
         x = 0
         match x:
-            case 0:
+            case -1e1000:
                 y = 0
             case 0:
                 y = 1
         self.assertEqual(x, 0)
-        self.assertEqual(y, 0)
+        self.assertEqual(y, 1)
 
     def test_patma_159(self):
         x = 0
@@ -2379,10 +2387,8 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(2), 2)
         self.assertIs(f(3), None)
 
-    # TODO: Check numbers, dupes
     # TODO: Full coverage of errors and warnings
     # TODO: Better use of assertIs
-    # TODO: PEP tests
     # TODO: Don't check side-effecty assignments
 
 
