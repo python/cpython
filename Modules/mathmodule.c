@@ -2474,7 +2474,6 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             x = vec[i];
             assert(Py_IS_FINITE(x) && fabs(x) <= max);
             x *= scale;
-            x = x*x;
             assert(x <= 1.0);
             assert(csum >= x);
 
