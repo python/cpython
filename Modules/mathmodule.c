@@ -2475,24 +2475,26 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             assert(Py_IS_FINITE(x) && fabs(x) <= max);
             x *= scale;
             assert(x <= 1.0);
-            assert(csum >= x);
 
             t = x * T27;
             hi = t - (t - x);
             lo = x - hi;
             assert (hi + lo == x);
 
-            x = lo * lo;
+            x = hi * hi;
+            assert(csum >= x);
             oldcsum = csum;
             csum += x;
             frac += (oldcsum - csum) + x;
 
             x = 2.0 * hi * lo;
+            assert(csum >= x);
             oldcsum = csum;
             csum += x;
             frac += (oldcsum - csum) + x;
 
-            x = hi * hi;
+            x = lo * lo;
+            assert(csum >= x);
             oldcsum = csum;
             csum += x;
             frac += (oldcsum - csum) + x;
@@ -2506,16 +2508,19 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         assert (hi + lo == x);
 
         x = -lo * lo;
+        assert(csum >= x);
         oldcsum = csum;
         csum += x;
         frac += (oldcsum - csum) + x;
 
         x = -2.0 * hi * lo;
+        assert(csum >= x);
         oldcsum = csum;
         csum += x;
         frac += (oldcsum - csum) + x;
 
         x = -hi * hi;
+        assert(csum >= x);
         oldcsum = csum;
         csum += x;
         frac += (oldcsum - csum) + x;
