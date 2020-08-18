@@ -2446,10 +2446,13 @@ even if not otherwise needed to prevent overflow or loss of precision.
 
 */
 
+static const double T27 = 134217729.0;   /* T27=ldexp(1.0, 27)+1.0) */
+
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
     double x, csum = 1.0, oldcsum, frac = 0.0, scale;
+    double t, hi, lo, result;
     int max_e;
     Py_ssize_t i;
 
@@ -2474,11 +2477,53 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             x = x*x;
             assert(x <= 1.0);
             assert(csum >= x);
+
+            t = x * T27;
+            hi = t - (t - x);
+            lo = x - hi;
+            assert (hi + lo == x);
+
+            x = lo * lo;
+            oldcsum = csum;
+            csum += x;
+            frac += (oldcsum - csum) + x;
+
+            x = 2.0 * hi * lo;
+            oldcsum = csum;
+            csum += x;
+            frac += (oldcsum - csum) + x;
+
+            x = hi * hi;
             oldcsum = csum;
             csum += x;
             frac += (oldcsum - csum) + x;
         }
-        return sqrt(csum - 1.0 + frac) / scale;
+        result = sqrt(csum - 1.0 + frac) / scale;
+
+        x = result;
+        t = x * T27;
+        hi = t - (t - x);
+        lo = x - hi;
+        assert (hi + lo == x);
+
+        x = -lo * lo;
+        oldcsum = csum;
+        csum += x;
+        frac += (oldcsum - csum) + x;
+
+        x = -2.0 * hi * lo;
+        oldcsum = csum;
+        csum += x;
+        frac += (oldcsum - csum) + x;
+
+        x = -hi * hi;
+        oldcsum = csum;
+        csum += x;
+        frac += (oldcsum - csum) + x;
+
+        x = csum - 1.0 + frac;
+        result += x / (2.0 * result);
+        return result / scale;
     }
     /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
        So instead of multiplying by a scale, we just divide by *max*.
