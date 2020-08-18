@@ -542,6 +542,11 @@ Waiting Primitives
    | :const:`ALL_COMPLETED`      | The function will return when all      |
    |                             | futures finish or are cancelled.       |
    +-----------------------------+----------------------------------------+
+   
+   Using ``return_when=FIRST_COMPLETED`` or ``return_when=FIRST_EXCEPTION``
+   does *not* imply that the ``done`` set will contain only the first
+   finished future, as multiple futures may finish before the function
+   returns.
 
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
