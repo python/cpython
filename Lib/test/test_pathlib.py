@@ -2769,14 +2769,14 @@ class _BasePathSubclassNewAndInitTest(object):
     def test_readlink(self):
         d = BASE
         filename = 'fileA'
-        linkname = 'linkA'
-
-        # create a symlink to the file
-        os.symlink(join(d, filename), join(d, linkname))
-
-        path = (self.ASubclass(d) / linkname).readlink()
-        self.validate_object(path, join(d, filename))
-        os.unlink(path)
+        linkname = join(d, 'linkA')
+        path = self.ASubclass(linkname)
+        self.validate_object(path, linkname)
+        os.symlink(filename, linkname)
+        try:
+            self.validate_object(path.readlink(), filename)
+        finally:
+            os.unlink(linkname)
 
     def test_resolve(self):
         # create a file in a temp directory
