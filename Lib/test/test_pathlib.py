@@ -2707,8 +2707,88 @@ class PureWindowsPathSubclassNewAndInitTest(unittest.TestCase):
                              'c:\\a\\b\\c.bar')
 
 
+class _BasePathSubclassNewAndInitTest(object):
+    """
+    Test that the __init__() and __new__() functions of subclasses
+    of Path get called when Path functions
+    and properties instantiate new objects of the subclass.
+    """
+    def setUp(self):
+        def cleanup():
+            os_helper.rmtree(BASE)
+        self.addCleanup(cleanup)
+        os.mkdir(BASE)
+        with open(join(BASE, 'fileA'), 'wb') as f:
+            f.write(b"this is file A\n")
+
+    def validate_object(self, path, value):
+        self.assertIs(type(path), self.ASubclass)
+        self.assertTrue(path.new_called)
+        self.assertTrue(path.init_called)
+        self.assertEqual(str(path), value)
+
+    def test_glob(self):
+        d = BASE
+        filename = 'fileA'
+        path = self.ASubclass(d)
+        self.validate_object(path, d)
+        cases = [(path.glob, 'f*', join(d, filename)),    # _WildcardSelector
+                 (path.glob, 'fileA', join(d, filename)), # _PreciseSelector
+                 (path.glob, '**', d)]                    # _RecursiveWildcardSelector
+
+        for func, param, value in cases:
+            n = 0
+            for name in func(param):
+                self.validate_object(name, value)
+                n += 1
+            self.assertEqual(n, 1)
+
+    def test_rglob(self):
+        d = BASE
+        filename = 'fileA'
+        path = self.ASubclass(d)
+        self.validate_object(path, d)
+        n = 0
+        for name in path.rglob('f*'):
+            self.validate_object(name, join(d, filename))
+            n += 1
+        self.assertEqual(n, 1)
+
+    def test_iterdir(self):
+        d = BASE
+        filename = 'fileA'
+        path = self.ASubclass(d)
+        self.validate_object(path, d)
+        n = 0
+        for name in path.iterdir():
+            self.validate_object(name, join(d, filename))
+            n += 1
+        self.assertEqual(n, 1)
+
+    @os_helper.skip_unless_symlink
+    def test_readlink(self):
+        d = BASE
+        filename = 'fileA'
+        linkname = 'linkA'
+
+        # create a symlink to the file
+        os.symlink(join(d, filename), join(d, linkname))
+
+        path = (self.ASubclass(d) / linkname).readlink()
+        self.validate_object(path, join(d, filename))
+        os.unlink(path)
+
+    def test_resolve(self):
+        # create a file in a temp directory
+        d = BASE
+        filename = 'fileA'
+        self.validate_object(self.ASubclass(d, filename).resolve(strict=True),
+                             join(d, filename))
+
+
 @only_posix
-class PosixPathSubclassNewAndInitTest(unittest.TestCase):
+class PosixPathSubclassNewAndInitTest(_BasePathSubclassNewAndInitTest,
+                                      unittest.TestCase):
     """
     Test that the __init__() and __new__() functions of subclasses
     of PosixPath get called when PosixPath functions
@@ -2728,12 +2808,6 @@ class PosixPathSubclassNewAndInitTest(unittest.TestCase):
             self.init_called = True
             super().__init__(*args, **kwargs)
 
-    def validate_object(self, path, value):
-        self.assertIs(type(path), self.ASubclass)
-        self.assertTrue(path.new_called)
-        self.assertTrue(path.init_called)
-        self.assertEqual(str(path), value)
-
     def test_class_initialization(self):
         self.validate_object(self.ASubclass('a/b/c.foo'), 'a/b/c.foo')
 
@@ -2752,53 +2826,10 @@ class PosixPathSubclassNewAndInitTest(unittest.TestCase):
             env.pop('HOME', None)
             self.validate_object(path.expanduser(), join(userhome, 'Documents'))
 
-    def test_glob_rglob_iterdir(self):
-        # create a file in a temp directory
-        d = tempfile.mkdtemp()
-        filename = 'fileA'
-        with open(join(d, filename), 'wb') as f:
-            f.write(b"this is file A\n")
-
-        # create an Asubclass object for testing
-        path = self.ASubclass(d)
-        self.validate_object(path, d)
-
-        # verify __new__ and __init__ are called
-        # in the subclass for each created instance
-        # and the subclass value is correct
-        cases = [(path.glob, 'f*', join(d, filename)),    # _WildcardSelector
-                 (path.glob, 'fileA', join(d, filename)), # _PreciseSelector
-                 (path.glob, '**', d),                    # _RecursiveWildcardSelector
-                 (path.rglob, 'f*', join(d, filename)),
-                 (path.iterdir, None, join(d, filename))]
-
-        for func, param, value in cases:
-            n = 0
-            for name in func() if param is None else func(param):
-                self.validate_object(name, value)
-                n += 1
-            self.assertEqual(n, 1)
-
-    def test_resolve(self):
-        relpath = 'a/b/c.foo'
-        self.validate_object(self.ASubclass(relpath).resolve(),
-                             join(os.getcwd(), relpath))
-
-    @os_helper.skip_unless_symlink
-    def test_readlink(self):
-        # create a file in a temp directory
-        d = tempfile.mkdtemp()
-        with open(join(d, 'fileA'), 'wb') as f:
-            f.write(b"this is file A\n")
-        # create a symlink to the file
-        os.symlink(join(d, 'fileA'), join(d, 'linkA'))
-
-        path = (self.ASubclass(d) / 'linkA').readlink()
-        self.validate_object(path, join(d, 'fileA'))
-
 
 @only_nt
-class WindowsPathSubclassNewAndInitTest(unittest.TestCase):
+class WindowsPathSubclassNewAndInitTest(_BasePathSubclassNewAndInitTest,
+                                        unittest.TestCase):
     """
     Test that the __init__() and __new__() functions of subclasses
     of WindowsPath get called when WindowsPath functions
@@ -2818,12 +2849,6 @@ class WindowsPathSubclassNewAndInitTest(unittest.TestCase):
             self.init_called = True
             super().__init__(*args, **kwargs)
 
-    def validate_object(self, path, value):
-        self.assertIs(type(path), self.ASubclass)
-        self.assertTrue(path.new_called)
-        self.assertTrue(path.init_called)
-        self.assertEqual(str(path), value)
-
     def test_class_initialization(self):
         self.validate_object(self.ASubclass('c:\\a\\b\\c.foo'), 'c:\\a\\b\\c.foo')
 
@@ -2841,55 +2866,6 @@ class WindowsPathSubclassNewAndInitTest(unittest.TestCase):
         with os_helper.EnvironmentVarGuard() as env:
             env.pop('HOME', None)
             self.validate_object(path.expanduser(), join(userhome, 'Documents'))
-
-    def test_glob_rglob_iterdir(self):
-        # create a file in a temp directory
-        d = tempfile.mkdtemp()
-        filename = 'fileA'
-        with open(join(d, filename), 'wb') as f:
-            f.write(b"this is file A\n")
-
-        # create an Asubclass object for testing
-        path = self.ASubclass(d)
-        self.validate_object(path, d)
-
-        # verify __new__ and __init__ are called
-        # in the subclass for each created instance
-        # and the subclass value is correct
-        cases = [(path.glob, 'f*', join(d, filename)),    # _WildcardSelector
-                 (path.glob, 'fileA', join(d, filename)), # _PreciseSelector
-                 (path.glob, '**', d),                    # _RecursiveWildcardSelector
-                 (path.rglob, 'f*', join(d, filename)),
-                 (path.iterdir, None, join(d, filename))]
-
-        for func, param, value in cases:
-            n = 0
-            for name in func() if param is None else func(param):
-                self.validate_object(name, value)
-                n += 1
-            self.assertEqual(n, 1)
-
-    def test_resolve(self):
-        # create a file in a temp directory
-        d = tempfile.mkdtemp()
-        filename = 'fileA'
-        with open(join(d, filename), 'wb') as f:
-            f.write(b"this is file A\n")
-
-        self.validate_object(self.ASubclass(d, filename).resolve(strict=True),
-                             join(d, filename))
-
-    @os_helper.skip_unless_symlink
-    def test_readlink(self):
-        # create a file in a temp directory
-        d = tempfile.mkdtemp()
-        with open(join(d, 'fileA'), 'wb') as f:
-            f.write(b"this is file A\n")
-        # create a symlink to the file
-        os.symlink('fileA', join(d, 'linkA'))
-
-        path = self.ASubclass(d, 'linkA').readlink()
-        self.validate_object(path, 'fileA')
 
 
 if __name__ == "__main__":
