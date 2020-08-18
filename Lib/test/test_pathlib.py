@@ -2781,9 +2781,10 @@ class _BasePathSubclassNewAndInitTest(object):
     def test_resolve(self):
         # create a file in a temp directory
         d = BASE
-        filename = 'fileA'
-        self.validate_object(self.ASubclass(d, filename).resolve(strict=True),
-                             join(d, filename))
+        filename = join(d, 'fileA')
+        path = self.ASubclass(d, filename)
+        self.validate_object(path, filename)
+        self.validate_object(path.resolve(strict=True), filename)
 
 
 @only_posix
