@@ -69,7 +69,6 @@ union_instancecheck(PyObject *self, PyObject *instance)
     Py_RETURN_FALSE;
 }
 
-
 static PyObject *
 union_subclasscheck(PyObject *self, PyObject *instance)
 {
@@ -182,9 +181,9 @@ union_richcompare(PyObject *a, PyObject *b, int op)
         }
         b_set = PySet_New(tuple);
         Py_DECREF(tuple);
-    }
-    if (b_set == NULL) {
-       goto error;
+        if (b_set == NULL) {
+            goto error;
+        }
     }
     PyObject *result = PyObject_RichCompare(a_set, b_set, op);
     Py_DECREF(a_set);
@@ -192,6 +191,7 @@ union_richcompare(PyObject *a, PyObject *b, int op)
     return result;
 error:
     Py_DECREF(a_set);
+    Py_DECREF(b_set);
     return NULL;
 }
 
@@ -312,43 +312,15 @@ is_unionable(PyObject *obj)
 }
 
 static PyObject *
-union_new(PyTypeObject* self, PyObject* param)
+type_or(PyTypeObject* self, PyObject* param)
 {
-    if (param == NULL) {
-        return NULL;
-    }
-    // Check param is a PyType or GenericAlias
-    int is_param_unionable  = is_unionable((PyObject *)param);
-    if (is_param_unionable < 0) {
-        return NULL;
-    }
-    int is_self_unionable = is_unionable((PyObject*)self);
-    if (is_self_unionable < 0) {
-        return NULL;
-    }
-    if (!is_param_unionable || !is_self_unionable)
-    {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
-
     PyObject *tuple = PyTuple_Pack(2, self, param);
     if (tuple == NULL) {
         return NULL;
     }
     PyObject *new_union = Py_Union(tuple);
     Py_DECREF(tuple);
-    if (new_union == NULL) {
-        return NULL;
-    }
     return new_union;
-}
-
-
-static PyObject *
-type_or(PyTypeObject* self, PyObject* param)
-{
-    return union_new(self, param);
 }
 
 static PyNumberMethods union_as_number = {
@@ -486,23 +458,38 @@ Py_Union(PyObject *args)
         Py_INCREF(args);
     }
 
+    // Check arguments are unionable.
+    int nargs = PyTuple_GET_SIZE(args);
+    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
+        PyObject *arg = PyTuple_GET_ITEM(args, iarg);
+        if (arg == NULL) {
+            goto error;
+        }
+        int is_arg_unionable = is_unionable(arg);
+        if (is_arg_unionable < 0) {
+            goto error;
+        }
+        if (!is_arg_unionable) {
+            Py_DECREF(args);
+            Py_INCREF(Py_NotImplemented);
+            return Py_NotImplemented;
+        }
+    }
+
     unionobject *alias = PyObject_New(unionobject, &Py_UnionType);
     if (alias == NULL) {
-        Py_DECREF(args);
-        return NULL;
+        goto error;
     }
 
     PyObject* new_args = dedup_and_flatten_args(args);
-    Py_DECREF(args);
     if (new_args == NULL) {
-        return NULL;
+        goto error;
     }
+    Py_DECREF(args);
     alias->args = new_args;
     return (PyObject *) alias;
-}
 
-PyObject *
-Py_Union_New(PyTypeObject* self, PyObject* param)
-{
-    return union_new(self, param);
+error:
+    Py_DECREF(args);
+    return NULL;
 }

@@ -3743,7 +3743,13 @@ type_is_gc(PyTypeObject *type)
 
 static PyObject *
 type_or(PyTypeObject* self, PyObject* param) {
-    return Py_Union_New(self, param);
+    PyObject *tuple = PyTuple_Pack(2, self, param);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    PyObject *new_union = Py_Union(tuple);
+    Py_DECREF(tuple);
+    return new_union;
 }
 
 static PyNumberMethods type_as_number = {
