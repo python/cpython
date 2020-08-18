@@ -2612,7 +2612,10 @@ class PurePosixPathSubclassNewAndInitTest(unittest.TestCase):
         self.assertEqual(str(path), value)
 
     def test_class_initialization(self):
-        self.validate_object(self.ASubclass('a/b/c.foo'), 'a/b/c.foo')
+        self.validate_object(self.ASubclass('/a/b/c.foo'), '/a/b/c.foo')
+        self.validate_object(self.ASubclass('/', 'a', 'b', 'c.foo'),
+                                            '/a/b/c.foo')
+        self.validate_object(self.ASubclass(self.cls('/a/b')), '/a/b')
 
     def test_joinpath(self):
         self.validate_object(self.ASubclass('a/b/c.foo').parent.joinpath('d/e'),
@@ -2673,7 +2676,11 @@ class PureWindowsPathSubclassNewAndInitTest(unittest.TestCase):
         self.assertEqual(str(path), value)
 
     def test_class_initialization(self):
-        self.validate_object(self.ASubclass('c:\\a\\b\\c.foo'), 'c:\\a\\b\\c.foo')
+        self.validate_object(self.ASubclass('c:\\a\\b\\c.foo'),
+                                            'c:\\a\\b\\c.foo')
+        self.validate_object(self.ASubclass('c:', '\\', 'a', 'b', 'c.foo'),
+                                            'c:\\a\\b\\c.foo')
+        self.validate_object(self.ASubclass(self.cls('c:\\a')), 'c:\\a')
 
     def test_joinpath(self):
         self.validate_object(self.ASubclass('c:\\a\\b\\c.foo').parent.joinpath('d\\e'),
@@ -2810,7 +2817,10 @@ class PosixPathSubclassNewAndInitTest(_BasePathSubclassNewAndInitTest,
             super().__init__(*args, **kwargs)
 
     def test_class_initialization(self):
-        self.validate_object(self.ASubclass('a/b/c.foo'), 'a/b/c.foo')
+        self.validate_object(self.ASubclass('/a/b/c.foo'), '/a/b/c.foo')
+        self.validate_object(self.ASubclass('/', 'a', 'b', 'c.foo'),
+                                            '/a/b/c.foo')
+        self.validate_object(self.ASubclass(self.cls('/a/b')), '/a/b')
 
     def test_absolute(self):
         relpath = 'a/b/c.foo'
@@ -2851,7 +2861,11 @@ class WindowsPathSubclassNewAndInitTest(_BasePathSubclassNewAndInitTest,
             super().__init__(*args, **kwargs)
 
     def test_class_initialization(self):
-        self.validate_object(self.ASubclass('c:\\a\\b\\c.foo'), 'c:\\a\\b\\c.foo')
+        self.validate_object(self.ASubclass('c:\\a\\b\\c.foo'),
+                                            'c:\\a\\b\\c.foo')
+        self.validate_object(self.ASubclass('c:', '\\', 'a', 'b', 'c.foo'),
+                                            'c:\\a\\b\\c.foo')
+        self.validate_object(self.ASubclass(self.cls('c:\\a')), 'c:\\a')
 
     def test_absolute(self):
         relpath = 'a\\b\\c.foo'
