@@ -64,10 +64,8 @@ except ImportError:
     grp = None
 try:
     import fcntl
-    from fcntl import F_SETPIPE_SZ
 except ImportError:
     fcntl = None
-    F_SETPIPE_SZ = None
 
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
@@ -1258,11 +1256,11 @@ class Popen(object):
             if stdin is None:
                 p2cread = _winapi.GetStdHandle(_winapi.STD_INPUT_HANDLE)
                 if p2cread is None:
-                    p2cread, _ = _winapi.CreatePipe(None, 0)
+                    p2cread, _ = _winapi.CreatePipe(None, self.pipesize)
                     p2cread = Handle(p2cread)
                     _winapi.CloseHandle(_)
             elif stdin == PIPE:
-                p2cread, p2cwrite = _winapi.CreatePipe(None, 0)
+                p2cread, p2cwrite = _winapi.CreatePipe(None, self.pipesize)
                 p2cread, p2cwrite = Handle(p2cread), Handle(p2cwrite)
             elif stdin == DEVNULL:
                 p2cread = msvcrt.get_osfhandle(self._get_devnull())
@@ -1276,11 +1274,11 @@ class Popen(object):
             if stdout is None:
                 c2pwrite = _winapi.GetStdHandle(_winapi.STD_OUTPUT_HANDLE)
                 if c2pwrite is None:
-                    _, c2pwrite = _winapi.CreatePipe(None, 0)
+                    _, c2pwrite = _winapi.CreatePipe(None, self.pipesize)
                     c2pwrite = Handle(c2pwrite)
                     _winapi.CloseHandle(_)
             elif stdout == PIPE:
-                c2pread, c2pwrite = _winapi.CreatePipe(None, 0)
+                c2pread, c2pwrite = _winapi.CreatePipe(None, self.pipesize)
                 c2pread, c2pwrite = Handle(c2pread), Handle(c2pwrite)
             elif stdout == DEVNULL:
                 c2pwrite = msvcrt.get_osfhandle(self._get_devnull())
@@ -1294,11 +1292,11 @@ class Popen(object):
             if stderr is None:
                 errwrite = _winapi.GetStdHandle(_winapi.STD_ERROR_HANDLE)
                 if errwrite is None:
-                    _, errwrite = _winapi.CreatePipe(None, 0)
+                    _, errwrite = _winapi.CreatePipe(None, self.pipesize)
                     errwrite = Handle(errwrite)
                     _winapi.CloseHandle(_)
             elif stderr == PIPE:
-                errread, errwrite = _winapi.CreatePipe(None, 0)
+                errread, errwrite = _winapi.CreatePipe(None, self.pipesize)
                 errread, errwrite = Handle(errread), Handle(errwrite)
             elif stderr == STDOUT:
                 errwrite = c2pwrite
@@ -1586,8 +1584,8 @@ class Popen(object):
                 pass
             elif stdin == PIPE:
                 p2cread, p2cwrite = os.pipe()
-                if fcntl and self.pipesize > 0:
-                    fcntl.fcntl(p2cwrite, F_SETPIPE_SZ, self.pipesize)
+                if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
+                    fcntl.fcntl(p2cwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
             elif stdin == DEVNULL:
                 p2cread = self._get_devnull()
             elif isinstance(stdin, int):
@@ -1600,8 +1598,8 @@ class Popen(object):
                 pass
             elif stdout == PIPE:
                 c2pread, c2pwrite = os.pipe()
-                if fcntl and self.pipesize > 0:
-                    fcntl.fcntl(c2pwrite, F_SETPIPE_SZ, self.pipesize)
+                if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
+                    fcntl.fcntl(c2pwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
             elif stdout == DEVNULL:
                 c2pwrite = self._get_devnull()
             elif isinstance(stdout, int):
@@ -1614,8 +1612,8 @@ class Popen(object):
                 pass
             elif stderr == PIPE:
                 errread, errwrite = os.pipe()
-                if fcntl and self.pipesize > 0:
-                    fcntl.fcntl(errwrite, F_SETPIPE_SZ, self.pipesize)
+                if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
+                    fcntl.fcntl(errwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
             elif stderr == STDOUT:
                 if c2pwrite != -1:
                     errwrite = c2pwrite
