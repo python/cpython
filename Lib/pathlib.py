@@ -1098,7 +1098,6 @@ class Path(PurePath):
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        self = cls._from_parts(args, init=False)
         self = object.__new__(cls)
         if not self._flavour.is_supported:
             raise NotImplementedError("cannot instantiate %r on your system"
