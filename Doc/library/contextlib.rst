@@ -218,6 +218,20 @@ Functions and classes provided:
           with cm as file:
               # Perform processing on the file
 
+   It can also be used as a stand-in for
+   :ref:`asynchronous context managers <async-context-managers>`::
+
+       async def send_http(session=None):
+          if not session:
+              # If no http session, create it with aiohttp
+              cm = aiohttp.ClientSession()
+          else:
+              # Caller is responsible for closing the session
+              cm = nullcontext(session)
+
+          async with cm as session:
+              # Send http requests with session
+
    .. versionadded:: 3.7
 
 
