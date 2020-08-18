@@ -10,6 +10,7 @@ import signal
 import io
 import itertools
 import os
+import fcntl
 import errno
 import tempfile
 import time
@@ -660,6 +661,22 @@ class ProcessTestCase(BaseTestCase):
                               stdin=subprocess.DEVNULL)
         p.wait()
         self.assertEqual(p.stdin, None)
+
+    @unittest.skipIf(sys.platform != "linux", "Pipe size can only be set on linux.")
+    def test_pipesizes(self):
+        # stdin redirection
+        pipesize = 16 * 1024
+        p = subprocess.Popen([sys.executable, "-c",
+                         'import sys; sys.stdin.read(); sys.stdout.write("out"); sys.stderr.write("error!")'],
+                         stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                         pipesize=pipesize)
+        for fifo in [p.stdin, p.stdout, p.stderr]:
+            self.assertEqual(fcntl.fcntl(fifo.fileno(), fcntl.F_GETPIPE_SZ), pipesize)
+        p.stdin.write(b"pear")
+        p.stdin.close()
+        p.wait()
 
     def test_env(self):
         newenv = os.environ.copy()
