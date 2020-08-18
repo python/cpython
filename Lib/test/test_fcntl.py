@@ -72,11 +72,14 @@ class TestFcntl(unittest.TestCase):
 
     def setUp(self):
         self.f = None
+        self.testpipe_path = "testpipe"
 
     def tearDown(self):
         if self.f and not self.f.closed:
             self.f.close()
         unlink(TESTFN)
+        if os.path.exists(self.testpipe_path):
+            unlink(self.testpipe_path)
 
     def test_fcntl_fileno(self):
         # the example from the library docs
@@ -189,6 +192,16 @@ class TestFcntl(unittest.TestCase):
         expected = os.path.abspath(TESTFN).encode('utf-8')
         res = fcntl.fcntl(self.f.fileno(), fcntl.F_GETPATH, bytes(len(expected)))
         self.assertEqual(expected, res)
+
+    @unittest.skipIf(sys.platform != 'linux', "F_SETPIPE_SZ and F_GETPIPE_SZ are only available on linux")
+    def test_fcntl_f_pipesize(self):
+        os.mkfifo(self.testpipe_path)
+        test_pipe_fd = os.open(self.testpipe_path, os.O_RDWR)
+        pipesize = 16 * 1024  # 64K is linux default.
+        self.assertNotEqual(fcntl.fcntl(test_pipe_fd, fcntl.F_GETPIPE_SZ), pipesize)
+        fcntl.fcntl(test_pipe_fd, fcntl.F_SETPIPE_SZ, pipesize)
+        self.assertEqual(fcntl.fcntl(test_pipe_fd, fcntl.F_GETPIPE_SZ), pipesize)
+
 
 def test_main():
     run_unittest(TestFcntl)
