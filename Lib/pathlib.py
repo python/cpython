@@ -660,13 +660,11 @@ class PurePath(object):
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
         return object.__new__(cls)
 
-    def __init__(self, *args, init=True):
+    def __init__(self, *args):
         drv, root, parts = self._parse_args(args)
         self._drv = drv
         self._root = root
         self._parts = parts
-        if init:
-            self._init()
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
@@ -1105,7 +1103,7 @@ class Path(PurePath):
         return self
 
     def __init__(self, *args):
-        super().__init__(*args, init=False)
+        super().__init__(*args)
         self._init()
 
     def _init(self,
