@@ -33,6 +33,12 @@ requireVenvCreate = unittest.skipUnless(
     or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
 
+requireAlternativePythonInPath = unittest.skipUnless(
+        shutil.which("python") is not None
+        and shutil.which("python") != sys._base_executable,
+        ('testing alternative executable for venv only makes '
+        'sense when one is available'))
+
 def check_output(cmd, encoding=None):
     p = subprocess.Popen(cmd,
         stdout=subprocess.PIPE,
@@ -334,6 +340,27 @@ class BasicTest(BaseTest):
         out, err = check_output([envpy, '-c',
             'import sys; print(sys.executable)'])
         self.assertEqual(out.strip(), envpy.encode())
+
+    @requireAlternativePythonInPath
+    def test_custom_executable(self):
+        alt_python = shutil.which("python")
+
+        # sanity check
+        self.assertNotEqual(alt_python, sys._base_executable)
+
+        builder = venv.EnvBuilder()
+        self.assertNotEqual(alt_python, builder.executable)
+        self.assertEqual(sys._base_executable, builder.executable)
+
+        builder = venv.EnvBuilder(executable=alt_python)
+        self.assertEqual(alt_python, builder.executable)
+        self.assertNotEqual(sys._base_executable, builder.executable)
+
+        # make sure it can be created with the alternative executable
+        rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        self.isdir(self.bindir)
+        self.isdir(self.include)
 
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
     def test_unicode_in_batch_file(self):
