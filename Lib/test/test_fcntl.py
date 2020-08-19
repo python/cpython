@@ -190,7 +190,8 @@ class TestFcntl(unittest.TestCase):
         res = fcntl.fcntl(self.f.fileno(), fcntl.F_GETPATH, bytes(len(expected)))
         self.assertEqual(expected, res)
 
-    @unittest.skipIf(sys.platform != 'linux', "F_SETPIPE_SZ and F_GETPIPE_SZ are only available on linux")
+    @unittest.skipIf(not (hasattr(fcntl, "F_SETPIPE_SZ") and hasattr(fcntl, "F_GETPIPE_SZ")),
+                     "F_SETPIPE_SZ and F_GETPIPE_SZ are not available on all unix platforms.")
     def test_fcntl_f_pipesize(self):
         test_pipe_r, test_pipe_w = os.pipe()
         pipesize = 16 * 1024  # 64K is linux default.
