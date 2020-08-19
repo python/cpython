@@ -1,0 +1,2 @@
+Add F_SETPIPE_SZ and F_GETPIPE_SZ to fcntl module. Allow setting pipesize on
+subprocess.Popen.
