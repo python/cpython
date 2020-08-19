@@ -77,6 +77,27 @@ def slave_open(tty_name):
         pass
     return result
 
+def login_tty(fd):
+    """Makes the calling process a session leader, makes fd its
+    controlling terminal, stdin, stdout, and stderr. Closes fd."""
+    # Establish a new session.
+    os.setsid()
+
+    # Make fd the controlling terminal.
+    try:
+        from fcntl import ioctl
+        ioctl(fd, tty.TIOCSCTTY)
+    except (ImportError, AttributeError, OSError):
+        tmp_fd = os.open(os.ttyname(fd), os.O_RDWR)
+        os.close(tmp_fd)
+
+    # fd becomes stdin/stdout/stderr.
+    os.dup2(fd, STDIN_FILENO)
+    os.dup2(fd, STDOUT_FILENO)
+    os.dup2(fd, STDERR_FILENO)
+    if (fd > STDERR_FILENO):
+        os.close(fd)
+
 def fork():
     """fork() -> (pid, master_fd)
     Fork and make the child a session leader with a controlling terminal."""
@@ -97,20 +118,8 @@ def fork():
     master_fd, slave_fd = openpty()
     pid = os.fork()
     if pid == CHILD:
-        # Establish a new session.
-        os.setsid()
         os.close(master_fd)
-
-        # Slave becomes stdin/stdout/stderr of child.
-        os.dup2(slave_fd, STDIN_FILENO)
-        os.dup2(slave_fd, STDOUT_FILENO)
-        os.dup2(slave_fd, STDERR_FILENO)
-        if (slave_fd > STDERR_FILENO):
-            os.close (slave_fd)
-
-        # Explicitly open the tty to make it become a controlling tty.
-        tmp_fd = os.open(os.ttyname(STDOUT_FILENO), os.O_RDWR)
-        os.close(tmp_fd)
+        login_tty(slave_fd)
     else:
         os.close(slave_fd)
 
@@ -148,14 +157,33 @@ def _copy(master_fd, master_read=_read, stdin_read=_read):
             else:
                 _writen(master_fd, data)
 
+def _setwinsz(fd):
+    """Sets window size.
+    If both stdin and fd are terminals,
+    then set fd's window size to be the
+    same as that of stdin's."""
+    try:
+        from struct import pack
+        from fcntl import ioctl
+        strct = pack('HHHH', 0, 0, 0, 0)
+        winsz = ioctl(STDIN_FILENO, tty.TIOCGWINSZ, strct)
+        ioctl(fd, tty.TIOCSWINSZ, winsz)
+    except (ImportError, AttributeError, OSError):
+        pass
+
 def spawn(argv, master_read=_read, stdin_read=_read):
     """Create a spawned process."""
     if type(argv) == type(''):
         argv = (argv,)
     sys.audit('pty.spawn', argv)
-    pid, master_fd = fork()
+    master_fd, slave_fd = openpty()
+    _setwinsz(slave_fd)
+    pid = os.fork()
     if pid == CHILD:
+        os.close(master_fd)
+        login_tty(slave_fd)
         os.execlp(argv[0], *argv)
+    os.close(slave_fd)
     try:
         mode = tty.tcgetattr(STDIN_FILENO)
         tty.setraw(STDIN_FILENO)
