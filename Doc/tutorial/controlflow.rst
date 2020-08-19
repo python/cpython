@@ -661,7 +661,7 @@ Finally, consider this function definition which has a potential collision betwe
         return 'name' in kwds
 
 There is no possible call that will make it return ``True`` as the keyword ``'name'``
-will always to bind to the first parameter. For example::
+will always bind to the first parameter. For example::
 
     >>> foo(1, **{'name': 2})
     Traceback (most recent call last):
