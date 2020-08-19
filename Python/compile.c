@@ -5443,12 +5443,6 @@ compiler_slice(struct compiler *c, expr_ty s)
 // of low-hanging fruit. Please *always* document these with a comment of the
 // form "OPTIM: ...", so we can track exactly when and where they're happening.
 
-// For now, we eschew a full decision tree in favor of a simpler pass that just
-// tracks the most-recently-checked subclass and length info for the current
-// subject in the pattern_context struct. Experimentation suggests that the
-// current approach can keep most of the runtime benefits while dramatically
-// reducing compiler complexity.
-
 
 #define WILDCARD_CHECK(N) \
     ((N)->kind == Name_kind && \
@@ -5597,7 +5591,7 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
     CHECK(!validate_keywords(c, kwargs));
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
-    ADDOP(c, DUP_TOP);  // TODO: Refactor MATCH_CLASS
+    ADDOP(c, DUP_TOP);  // TODO: Refactor MATCH_CLASS?
     if (p->v.Call.func->kind == Attribute_kind) {
         CHECK(pattern_load_attribute(c, p->v.Call.func, pc));
     }
