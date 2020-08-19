@@ -720,23 +720,15 @@ class PurePath(object):
             self._init()
         return self
 
-    def _new_from_parts(self, args, init=True):
-        obj = type(self)()
-        drv, root, parts = obj._parse_args(args)
-        obj._drv = drv
-        obj._root = root
-        obj._parts = parts
-        if init:
-            obj._init()
+    def _new_from_parts(self, args):
+        obj = type(self)(*args)
         return obj
 
-    def _new_from_parsed_parts(self, drv, root, parts, init=True):
+    def _new_from_parsed_parts(self, drv, root, parts):
         obj = type(self)()
         obj._drv = drv
         obj._root = root
         obj._parts = parts
-        if init:
-            obj._init()
         return obj
 
     @classmethod
@@ -1222,7 +1214,7 @@ class Path(PurePath):
             return self
         # FIXME this must defer to the specific flavour (and, under Windows,
         # use nt._getfullpathname())
-        obj = self._new_from_parts([os.getcwd()] + self._parts, init=False)
+        obj = self._new_from_parts([os.getcwd()] + self._parts)
         obj._init(template=self)
         return obj
 
@@ -1240,7 +1232,7 @@ class Path(PurePath):
             s = str(self.absolute())
         # Now we have no symlinks in the path, it's safe to normalize it.
         normed = self._flavour.pathmod.normpath(s)
-        obj = self._new_from_parts((normed,), init=False)
+        obj = self._new_from_parts((normed,))
         obj._init(template=self)
         return obj
 
@@ -1310,7 +1302,7 @@ class Path(PurePath):
         Return the path to which the symbolic link points.
         """
         path = self._accessor.readlink(self)
-        obj = self._new_from_parts((path,), init=False)
+        obj = self._new_from_parts((path,))
         obj._init(template=self)
         return obj
 
