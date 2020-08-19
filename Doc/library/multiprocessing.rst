@@ -14,7 +14,8 @@ Introduction
 :mod:`multiprocessing` is a package that supports spawning processes using an
 API similar to the :mod:`threading` module.  The :mod:`multiprocessing` package
 offers both local and remote concurrency, effectively side-stepping the
-:term:`Global Interpreter Lock` by using subprocesses instead of threads.  Due
+:term:`Global Interpreter Lock <global interpreter lock>` by using
+subprocesses instead of threads.  Due
 to this, the :mod:`multiprocessing` module allows the programmer to fully
 leverage multiple processors on a given machine.  It runs on both Unix and
 Windows.

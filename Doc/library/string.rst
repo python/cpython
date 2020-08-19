@@ -308,7 +308,7 @@ non-empty format specification typically modifies the result.
 
 The general form of a *standard format specifier* is:
 
-.. productionlist:: sf
+.. productionlist::
    format_spec: [[`fill`]`align`][`sign`][#][0][`width`][`grouping_option`][.`precision`][`type`]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
