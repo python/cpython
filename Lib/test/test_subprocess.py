@@ -3528,7 +3528,7 @@ class MiscTests(unittest.TestCase):
 
     def test__all__(self):
         """Ensure that __all__ is populated properly."""
-        intentionally_excluded = {"list2cmdline", "Handle", "pwd", "grp"}
+        intentionally_excluded = {"list2cmdline", "Handle", "pwd", "grp", "fcntl"}
         exported = set(subprocess.__all__)
         possible_exports = set()
         import types
