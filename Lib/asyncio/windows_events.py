@@ -469,7 +469,7 @@ class IocpProactor:
             else:
                 ov.ReadFileInto(conn.fileno(), buf)
         except BrokenPipeError:
-            return self._result(b'')
+            return self._result(0)
 
         def finish_recv(trans, key, ov):
             try:
