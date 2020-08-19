@@ -10,7 +10,6 @@ import signal
 import io
 import itertools
 import os
-import fcntl
 import errno
 import tempfile
 import time
@@ -39,6 +38,11 @@ try:
     import grp
 except ImportError:
     grp = None
+
+try:
+    import fcntl
+except:
+    fcntl = None
 
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
@@ -662,7 +666,6 @@ class ProcessTestCase(BaseTestCase):
         p.wait()
         self.assertEqual(p.stdin, None)
 
-    @unittest.skipIf(sys.platform != "linux", "Pipe size can only be set on linux.")
     def test_pipesizes(self):
         # stdin redirection
         pipesize = 16 * 1024
@@ -672,8 +675,13 @@ class ProcessTestCase(BaseTestCase):
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
                          pipesize=pipesize)
-        for fifo in [p.stdin, p.stdout, p.stderr]:
-            self.assertEqual(fcntl.fcntl(fifo.fileno(), fcntl.F_GETPIPE_SZ), pipesize)
+        # We only assert pipe size has changed on platforms that support it.
+        if sys.platform != "win32" and hasattr(fcntl, "F_GETPIPE_SZ"):
+            for fifo in [p.stdin, p.stdout, p.stderr]:
+                self.assertEqual(fcntl.fcntl(fifo.fileno(), fcntl.F_GETPIPE_SZ), pipesize)
+        # Windows pipe size can be acquired with the GetNamedPipeInfoFunction
+        # https://docs.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-getnamedpipeinfo
+        # However, this function is not yet in _winapi.
         p.stdin.write(b"pear")
         p.stdin.close()
         p.wait()
