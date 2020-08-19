@@ -134,11 +134,11 @@ Added :func:`os.cpu_count()` support for VxWorks RTOS.
 
 pathlib
 -------
-Subclasses of :class:`Path` and :class:`PurePath` now call the
+Subclasses of :class:`pathlib.Path` and :class:`pathlib.PurePath` now call the
 :func:`__new__` and :func:`__init__` functions of the subclasses when
-instantiating new subclass objects returned by various :class:`Path` and
-:class:`PurePath` functions and properties.  (Contributed by Jeffrey Kintscher
-in :issue:`41109`.)
+instantiating new subclass objects returned by various :class:`pathlib.Path` and
+:class:`pathlib.PurePath` functions and properties.  (Contributed by Jeffrey
+Kintscher in :issue:`41109`.)
 
 py_compile
 ----------
