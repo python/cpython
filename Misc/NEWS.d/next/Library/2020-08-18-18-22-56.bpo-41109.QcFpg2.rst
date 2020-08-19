@@ -1,4 +1,4 @@
-Subclasses of :class:`Path`: and :class:`PurePath`: now call the
-:func:`__new__`: and :func:`__init__`: functions of the subclasses when
-instantiating new subclass objects returned by various :class:`Path`: and
-:class:`PurePath`: functions and properties.  Patch by Jeffrey Kintscher.
+Subclasses of :class:`Path` and :class:`PurePath` now call the
+:func:`__new__` and :func:`__init__` functions of the subclasses when
+instantiating new subclass objects returned by various :class:`Path` and
+:class:`PurePath` functions and properties.  Patch by Jeffrey Kintscher.
