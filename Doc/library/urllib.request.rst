@@ -946,7 +946,7 @@ tracking URIs for which authentication credentials should always be sent.
    If *is_authenticated* is specified as ``True``, *realm* is ignored.
 
 
-.. method:: HTTPPasswordMgr.find_user_password(realm, authuri)
+.. method:: HTTPPasswordMgrWithPriorAuth.find_user_password(realm, authuri)
 
    Same as for :class:`HTTPPasswordMgrWithDefaultRealm` objects
 

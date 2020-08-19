@@ -752,6 +752,16 @@ if 1:
             self.assertEqual(None, opcodes[0].argval)
             self.assertEqual('RETURN_VALUE', opcodes[1].opname)
 
+    def test_big_dict_literal(self):
+        # The compiler has a flushing point in "compiler_dict" that calls compiles
+        # a portion of the dictionary literal when the loop that iterates over the items
+        # reaches 0xFFFF elements but the code was not including the boundary element,
+        # dropping the key at position 0xFFFF. See bpo-41531 for more information
+
+        dict_size = 0xFFFF + 1
+        the_dict = "{" + ",".join(f"{x}:{x}" for x in range(dict_size)) + "}"
+        self.assertEqual(len(eval(the_dict)), dict_size)
+
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
     # stays within reasonable bounds (see issue #21523 for an example

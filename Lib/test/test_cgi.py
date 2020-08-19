@@ -553,9 +553,10 @@ this is the content of the fake file
             ("form-data", {"name": "files", "filename": 'fo"o;bar'}))
 
     def test_all(self):
-        blacklist = {"logfile", "logfp", "initlog", "dolog", "nolog",
-                     "closelog", "log", "maxlen", "valid_boundary"}
-        support.check__all__(self, cgi, blacklist=blacklist)
+        not_exported = {
+            "logfile", "logfp", "initlog", "dolog", "nolog", "closelog", "log",
+            "maxlen", "valid_boundary"}
+        support.check__all__(self, cgi, not_exported=not_exported)
 
 
 BOUNDARY = "---------------------------721837373350705526688164684"
