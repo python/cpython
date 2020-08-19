@@ -460,7 +460,6 @@
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
-    <ClCompile Include="..\Python\peephole.c" />
     <ClCompile Include="..\Python\preconfig.c" />
     <ClCompile Include="..\Python\pyarena.c" />
     <ClCompile Include="..\Python\pyctype.c" />

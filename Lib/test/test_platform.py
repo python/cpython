@@ -196,7 +196,7 @@ class PlatformTest(unittest.TestCase):
         # using it, per
         # http://blogs.msdn.com/david.wang/archive/2006/03/26/HOWTO-Detect-Process-Bitness.aspx
         try:
-            with support.EnvironmentVarGuard() as environ:
+            with os_helper.EnvironmentVarGuard() as environ:
                 if 'PROCESSOR_ARCHITEW6432' in environ:
                     del environ['PROCESSOR_ARCHITEW6432']
                 environ['PROCESSOR_ARCHITECTURE'] = 'foo'

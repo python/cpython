@@ -371,18 +371,19 @@ validate_pattern(expr_ty p)
             for (i = 0; i < size; i++) {
                 key = asdl_seq_GET(keys, i);
                 if (key) {
-                    if (key->kind == Name_kind) {
-                        if (key->v.Name.ctx != Load) {
-                            PyErr_SetString(PyExc_ValueError,
-                                "Name ctx in Dict keys pattern must be Load");
-                            return 0;
-                        }
-                    }
-                    else if (key->kind != Constant_kind) {
-                        PyErr_SetString(PyExc_ValueError,
-                            "Dict keys pattern must be Constant or Name");
-                        return 0;
-                    }
+                    // TODO: Attribute is valid here, not Name!
+                    // if (key->kind == Name_kind) {
+                    //     if (key->v.Name.ctx != Load) {
+                    //         PyErr_SetString(PyExc_ValueError,
+                    //             "Name ctx in Dict keys pattern must be Load");
+                    //         return 0;
+                    //     }
+                    // }
+                    // else if (key->kind != Constant_kind) {
+                    //     PyErr_SetString(PyExc_ValueError,
+                    //         "Dict keys pattern must be Constant or Name");
+                    //     return 0;
+                    // }
                     return validate_expr(key, Load);
                 }
                 else {
@@ -400,6 +401,9 @@ validate_pattern(expr_ty p)
                     return 0;
                 }
             }
+            return 1;
+        case JoinedStr_kind:
+            // Not actually valid, but it's the compiler's job to complain:
             return 1;
         case List_kind:
         case Tuple_kind:

@@ -887,7 +887,6 @@ Removed
   :func:`asyncio.current_task` and :func:`asyncio.all_tasks` instead.
   (Contributed by Rémi Lapeyre in :issue:`40967`)
 
-
 Porting to Python 3.9
 =====================
 
@@ -1024,6 +1023,13 @@ C API Changes
 
 New Features
 ------------
+
+* :pep:`573`: Add :c:func:`PyType_FromModuleAndSpec` to associate
+  a module with a class; :c:func:`PyType_GetModule` and
+  :c:func:`PyType_GetModuleState` to retrieve the module and its state; and
+  :c:data:`PyCMethod` and :c:data:`METH_METHOD` to allow a method to
+  access the class it was defined in.
+  (Contributed by Marcel Plch and Petr Viktorin in :issue:`38787`.)
 
 * Add :c:func:`PyFrame_GetCode` function: get a frame code.
   Add :c:func:`PyFrame_GetBack` function: get the frame next outer frame.

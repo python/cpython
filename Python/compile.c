@@ -9,7 +9,7 @@
  *   3. Generate code for basic blocks.  See compiler_mod() in this file.
  *   4. Assemble the basic blocks into final code.  See assemble() in
  *      this file.
- *   5. Optimize the byte code (peephole optimizations).  See peephole.c
+ *   5. Optimize the byte code (peephole optimizations).
  *
  * Note that compiler_mod() suggests module, but the module ast type
  * (mod_ty) has cases for expressions and interactive statements.
@@ -27,6 +27,7 @@
 #include "ast.h"
 #include "code.h"
 #include "symtable.h"
+#define NEED_OPCODE_JUMP_TABLES
 #include "opcode.h"
 #include "wordcode_helpers.h"
 
@@ -45,13 +46,37 @@
         && (c->u->u_ste->ste_type == ModuleBlock))
 
 struct instr {
-    unsigned i_jabs : 1;
-    unsigned i_jrel : 1;
     unsigned char i_opcode;
     int i_oparg;
     struct basicblock_ *i_target; /* target block (if jump instruction) */
     int i_lineno;
 };
+
+#define LOG_BITS_PER_INT 5
+#define MASK_LOW_LOG_BITS 31
+
+static inline int
+is_bit_set_in_table(uint32_t *table, int bitindex) {
+    /* Is the relevant bit set in the relevant word? */
+    /* 256 bits fit into 8 32-bits words.
+     * Word is indexed by (bitindex>>ln(size of int in bits)).
+     * Bit within word is the low bits of bitindex.
+     */
+    uint32_t word = table[bitindex >> LOG_BITS_PER_INT];
+    return (word >> (bitindex & MASK_LOW_LOG_BITS)) & 1;
+}
+
+static inline int
+is_relative_jump(struct instr *i)
+{
+    return is_bit_set_in_table(_PyOpcode_RelativeJump, i->i_opcode);
+}
+
+static inline int
+is_jump(struct instr *i)
+{
+    return is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
+}
 
 typedef struct basicblock_ {
     /* Each basicblock in a compilation unit is linked via b_list in the
@@ -69,6 +94,7 @@ typedef struct basicblock_ {
     struct basicblock_ *b_next;
     /* b_return is true if a RETURN_VALUE opcode is inserted. */
     unsigned b_return : 1;
+    unsigned b_reachable : 1;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
     /* instruction offset for block, computed by assemble_jump_offsets() */
@@ -185,7 +211,7 @@ static basicblock *compiler_new_block(struct compiler *);
 static int compiler_next_instr(basicblock *);
 static int compiler_addop(struct compiler *, int);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
-static int compiler_addop_j(struct compiler *, int, basicblock *, int);
+static int compiler_addop_j(struct compiler *, int, basicblock *);
 static int compiler_error(struct compiler *, const char *, ...);
 static int compiler_warn(struct compiler *, const char *, ...);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
@@ -506,7 +532,7 @@ compiler_unit_check(struct compiler_unit *u)
         assert((uintptr_t)block != 0xdbdbdbdbU);
         if (block->b_instr != NULL) {
             assert(block->b_ialloc > 0);
-            assert(block->b_iused > 0);
+            assert(block->b_iused >= 0);
             assert(block->b_ialloc >= block->b_iused);
         }
         else {
@@ -1398,7 +1424,7 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
 }
 
 static int
-compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
+compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 {
     struct instr *i;
     int off;
@@ -1415,10 +1441,6 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
     i = &c->u->u_curblock->b_instr[off];
     i->i_opcode = opcode;
     i->i_target = b;
-    if (absolute)
-        i->i_jabs = 1;
-    else
-        i->i_jrel = 1;
     i->i_lineno = c->u->u_lineno;
     return 1;
 }
@@ -1488,16 +1510,10 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
         return 0; \
 }
 
-#define ADDOP_JABS(C, OP, O) { \
-    if (!compiler_addop_j((C), (OP), (O), 1)) \
+#define ADDOP_JUMP(C, OP, O) { \
+    if (!compiler_addop_j((C), (OP), (O))) \
         return 0; \
 }
-
-#define ADDOP_JREL(C, OP, O) { \
-    if (!compiler_addop_j((C), (OP), (O), 0)) \
-        return 0; \
-}
-
 
 #define ADDOP_COMPARE(C, CMP) { \
     if (!compiler_addcompare((C), (cmpop_ty)(CMP))) \
@@ -2567,7 +2583,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
             return 0;
         if (!compiler_jump_if(c, e->v.IfExp.body, next, cond))
             return 0;
-        ADDOP_JREL(c, JUMP_FORWARD, end);
+        ADDOP_JUMP(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, next2);
         if (!compiler_jump_if(c, e->v.IfExp.orelse, next, cond))
             return 0;
@@ -2590,20 +2606,20 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
                 ADDOP(c, DUP_TOP);
                 ADDOP(c, ROT_THREE);
                 ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, i));
-                ADDOP_JABS(c, POP_JUMP_IF_FALSE, cleanup);
+                ADDOP_JUMP(c, POP_JUMP_IF_FALSE, cleanup);
                 NEXT_BLOCK(c);
             }
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
             ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, n));
-            ADDOP_JABS(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+            ADDOP_JUMP(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
             basicblock *end = compiler_new_block(c);
             if (end == NULL)
                 return 0;
-            ADDOP_JREL(c, JUMP_FORWARD, end);
+            ADDOP_JUMP(c, JUMP_FORWARD, end);
             compiler_use_next_block(c, cleanup);
             ADDOP(c, POP_TOP);
             if (!cond) {
-                ADDOP_JREL(c, JUMP_FORWARD, next);
+                ADDOP_JUMP(c, JUMP_FORWARD, next);
             }
             compiler_use_next_block(c, end);
             return 1;
@@ -2618,7 +2634,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
 
     /* general implementation */
     VISIT(c, expr, e);
-    ADDOP_JABS(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
+    ADDOP_JUMP(c, cond ? POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE, next);
     return 1;
 }
 
@@ -2637,7 +2653,7 @@ compiler_ifexp(struct compiler *c, expr_ty e)
     if (!compiler_jump_if(c, e->v.IfExp.test, next, 0))
         return 0;
     VISIT(c, expr, e->v.IfExp.body);
-    ADDOP_JREL(c, JUMP_FORWARD, end);
+    ADDOP_JUMP(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, next);
     VISIT(c, expr, e->v.IfExp.orelse);
     compiler_use_next_block(c, end);
@@ -2743,7 +2759,7 @@ compiler_if(struct compiler *c, stmt_ty s)
         }
         VISIT_SEQ(c, stmt, s->v.If.body);
         if (asdl_seq_LEN(s->v.If.orelse)) {
-            ADDOP_JREL(c, JUMP_FORWARD, end);
+            ADDOP_JUMP(c, JUMP_FORWARD, end);
             compiler_use_next_block(c, next);
             VISIT_SEQ(c, stmt, s->v.If.orelse);
         }
@@ -2770,10 +2786,10 @@ compiler_for(struct compiler *c, stmt_ty s)
     VISIT(c, expr, s->v.For.iter);
     ADDOP(c, GET_ITER);
     compiler_use_next_block(c, start);
-    ADDOP_JREL(c, FOR_ITER, cleanup);
+    ADDOP_JUMP(c, FOR_ITER, cleanup);
     VISIT(c, expr, s->v.For.target);
     VISIT_SEQ(c, stmt, s->v.For.body);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, start);
+    ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
     compiler_use_next_block(c, cleanup);
 
     compiler_pop_fblock(c, FOR_LOOP, start);
@@ -2809,7 +2825,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
         return 0;
     }
     /* SETUP_FINALLY to guard the __anext__ call */
-    ADDOP_JREL(c, SETUP_FINALLY, except);
+    ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, YIELD_FROM);
@@ -2818,7 +2834,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     /* Success block for __anext__ */
     VISIT(c, expr, s->v.AsyncFor.target);
     VISIT_SEQ(c, stmt, s->v.AsyncFor.body);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, start);
+    ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
 
     compiler_pop_fblock(c, FOR_LOOP, start);
 
@@ -2882,7 +2898,7 @@ compiler_while(struct compiler *c, stmt_ty s)
             return 0;
     }
     VISIT_SEQ(c, stmt, s->v.While.body);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, loop);
+    ADDOP_JUMP(c, JUMP_ABSOLUTE, loop);
 
     /* XXX should the two POP instructions be in a separate block
        if there is no else clause ?
@@ -2941,7 +2957,7 @@ compiler_break(struct compiler *c)
     if (!compiler_unwind_fblock(c, loop, 0)) {
         return 0;
     }
-    ADDOP_JABS(c, JUMP_ABSOLUTE, loop->fb_exit);
+    ADDOP_JUMP(c, JUMP_ABSOLUTE, loop->fb_exit);
     return 1;
 }
 
@@ -2955,7 +2971,7 @@ compiler_continue(struct compiler *c)
     if (loop == NULL) {
         return compiler_error(c, "'continue' not properly in loop");
     }
-    ADDOP_JABS(c, JUMP_ABSOLUTE, loop->fb_block);
+    ADDOP_JUMP(c, JUMP_ABSOLUTE, loop->fb_block);
     return 1;
 }
 
@@ -3001,7 +3017,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
         return 0;
 
     /* `try` block */
-    ADDOP_JREL(c, SETUP_FINALLY, end);
+    ADDOP_JUMP(c, SETUP_FINALLY, end);
     compiler_use_next_block(c, body);
     if (!compiler_push_fblock(c, FINALLY_TRY, body, end, s->v.Try.finalbody))
         return 0;
@@ -3015,7 +3031,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, FINALLY_TRY, body);
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-    ADDOP_JREL(c, JUMP_FORWARD, exit);
+    ADDOP_JUMP(c, JUMP_FORWARD, exit);
     /* `finally` block */
     compiler_use_next_block(c, end);
     if (!compiler_push_fblock(c, FINALLY_END, end, NULL, NULL))
@@ -3069,14 +3085,14 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     end = compiler_new_block(c);
     if (body == NULL || except == NULL || orelse == NULL || end == NULL)
         return 0;
-    ADDOP_JREL(c, SETUP_FINALLY, except);
+    ADDOP_JUMP(c, SETUP_FINALLY, except);
     compiler_use_next_block(c, body);
     if (!compiler_push_fblock(c, EXCEPT, body, NULL, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.body);
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, EXCEPT, body);
-    ADDOP_JREL(c, JUMP_FORWARD, orelse);
+    ADDOP_JUMP(c, JUMP_FORWARD, orelse);
     n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
     for (i = 0; i < n; i++) {
@@ -3091,7 +3107,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         if (handler->v.ExceptHandler.type) {
             ADDOP(c, DUP_TOP);
             VISIT(c, expr, handler->v.ExceptHandler.type);
-            ADDOP_JABS(c, JUMP_IF_NOT_EXC_MATCH, except);
+            ADDOP_JUMP(c, JUMP_IF_NOT_EXC_MATCH, except);
         }
         ADDOP(c, POP_TOP);
         if (handler->v.ExceptHandler.name) {
@@ -3118,7 +3134,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             */
 
             /* second try: */
-            ADDOP_JREL(c, SETUP_FINALLY, cleanup_end);
+            ADDOP_JUMP(c, SETUP_FINALLY, cleanup_end);
             compiler_use_next_block(c, cleanup_body);
             if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, NULL, handler->v.ExceptHandler.name))
                 return 0;
@@ -3132,7 +3148,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             ADDOP_LOAD_CONST(c, Py_None);
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
-            ADDOP_JREL(c, JUMP_FORWARD, end);
+            ADDOP_JUMP(c, JUMP_FORWARD, end);
 
             /* except: */
             compiler_use_next_block(c, cleanup_end);
@@ -3159,7 +3175,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
             ADDOP(c, POP_EXCEPT);
-            ADDOP_JREL(c, JUMP_FORWARD, end);
+            ADDOP_JUMP(c, JUMP_FORWARD, end);
         }
         compiler_use_next_block(c, except);
     }
@@ -3670,7 +3686,12 @@ compiler_boolop(struct compiler *c, expr_ty e)
     assert(n >= 0);
     for (i = 0; i < n; ++i) {
         VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
-        ADDOP_JABS(c, jumpi, end);
+        ADDOP_JUMP(c, jumpi, end);
+        basicblock *next = compiler_new_block(c);
+        if (next == NULL) {
+            return 0;
+        }
+        compiler_use_next_block(c, next);
     }
     VISIT(c, expr, (expr_ty)asdl_seq_GET(s, n));
     compiler_use_next_block(c, end);
@@ -3899,7 +3920,7 @@ compiler_dict(struct compiler *c, expr_ty e)
         }
         else {
             if (elements == 0xFFFF) {
-                if (!compiler_subdict(c, e, i - elements, i)) {
+                if (!compiler_subdict(c, e, i - elements, i + 1)) {
                     return 0;
                 }
                 if (have_dict) {
@@ -3953,7 +3974,7 @@ compiler_compare(struct compiler *c, expr_ty e)
             ADDOP(c, DUP_TOP);
             ADDOP(c, ROT_THREE);
             ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, i));
-            ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, cleanup);
+            ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, cleanup);
             NEXT_BLOCK(c);
         }
         VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n));
@@ -3961,7 +3982,7 @@ compiler_compare(struct compiler *c, expr_ty e)
         basicblock *end = compiler_new_block(c);
         if (end == NULL)
             return 0;
-        ADDOP_JREL(c, JUMP_FORWARD, end);
+        ADDOP_JUMP(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, cleanup);
         ADDOP(c, ROT_TWO);
         ADDOP(c, POP_TOP);
@@ -4450,7 +4471,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
     if (start) {
         depth++;
         compiler_use_next_block(c, start);
-        ADDOP_JREL(c, FOR_ITER, anchor);
+        ADDOP_JUMP(c, FOR_ITER, anchor);
         NEXT_BLOCK(c);
     }
     VISIT(c, expr, gen->target);
@@ -4502,7 +4523,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
     }
     compiler_use_next_block(c, if_cleanup);
     if (start) {
-        ADDOP_JABS(c, JUMP_ABSOLUTE, start);
+        ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
         compiler_use_next_block(c, anchor);
     }
 
@@ -4541,7 +4562,7 @@ compiler_async_comprehension_generator(struct compiler *c,
 
     compiler_use_next_block(c, start);
 
-    ADDOP_JREL(c, SETUP_FINALLY, except);
+    ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, YIELD_FROM);
@@ -4592,7 +4613,7 @@ compiler_async_comprehension_generator(struct compiler *c,
         }
     }
     compiler_use_next_block(c, if_cleanup);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, start);
+    ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
 
     compiler_use_next_block(c, except);
     ADDOP(c, END_ASYNC_FOR);
@@ -4788,7 +4809,7 @@ compiler_with_except_finish(struct compiler *c) {
     exit = compiler_new_block(c);
     if (exit == NULL)
         return 0;
-    ADDOP_JABS(c, POP_JUMP_IF_TRUE, exit);
+    ADDOP_JUMP(c, POP_JUMP_IF_TRUE, exit);
     ADDOP(c, RERAISE);
     compiler_use_next_block(c, exit);
     ADDOP(c, POP_TOP);
@@ -4850,7 +4871,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, YIELD_FROM);
 
-    ADDOP_JREL(c, SETUP_ASYNC_WITH, final);
+    ADDOP_JUMP(c, SETUP_ASYNC_WITH, final);
 
     /* SETUP_ASYNC_WITH pushes a finally block. */
     compiler_use_next_block(c, block);
@@ -4888,7 +4909,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     ADDOP(c, POP_TOP);
 
-    ADDOP_JABS(c, JUMP_ABSOLUTE, exit);
+    ADDOP_JUMP(c, JUMP_ABSOLUTE, exit);
 
     /* For exceptional outcome: */
     compiler_use_next_block(c, final);
@@ -4942,7 +4963,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
     /* Will push bound __exit__ */
-    ADDOP_JREL(c, SETUP_WITH, final);
+    ADDOP_JUMP(c, SETUP_WITH, final);
 
     /* SETUP_WITH pushes a finally block. */
     compiler_use_next_block(c, block);
@@ -4976,7 +4997,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     if (!compiler_call_exit_with_nones(c))
         return 0;
     ADDOP(c, POP_TOP);
-    ADDOP_JREL(c, JUMP_FORWARD, exit);
+    ADDOP_JUMP(c, JUMP_FORWARD, exit);
 
     /* For exceptional outcome: */
     compiler_use_next_block(c, final);
@@ -5544,7 +5565,8 @@ compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
         SET_LOC(c, alt);
         if (!pc->stores ||
             !compiler_pattern(c, alt, pc) ||
-            !compiler_addop_j(c, JUMP_IF_TRUE_OR_POP, end, 1))
+            !compiler_addop_j(c, JUMP_IF_TRUE_OR_POP, end) ||
+            !compiler_next_block(c))
         {
             goto fail;
         }
@@ -5610,7 +5632,7 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
     }
     ADDOP_LOAD_CONST_NEW(c, kwnames);
     ADDOP_I(c, MATCH_CLASS, nargs);
-    ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
+    ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
     expr_ty arg;
     for (i = 0; i < nargs + nkwargs; i++) {
         if (i < nargs) {
@@ -5626,7 +5648,8 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
         CHECK(compiler_pattern(c, arg, pc));
         ADDOP(c, ROT_TWO);
         ADDOP(c, POP_TOP);
-        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
+        ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
+        NEXT_BLOCK(c);
     }
     ADDOP_LOAD_CONST(c, Py_True);
     compiler_use_next_block(c, end);
@@ -5659,12 +5682,14 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
     int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
     // TODO: (i >= (1 << 8)) || (n-i-1 >= (INT_MAX >> 8))
     ADDOP(c, MATCH_MAPPING);
-    ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
+    ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
+    NEXT_BLOCK(c);
     if (size - star) {
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star));
         ADDOP_COMPARE(c, GtE);
-        ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
+        ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
+        NEXT_BLOCK(c);
     }
     if (size) {
         ADDOP(c, DUP_TOP);
@@ -5686,7 +5711,8 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
         }
         ADDOP_I(c, BUILD_TUPLE, size - star);
         ADDOP_I(c, MATCH_KEYS, star);
-        ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, block);
+        NEXT_BLOCK(c);
         for (i = 0; i < size - star; i++) {
             expr_ty value = asdl_seq_GET(values, i);
             if (WILDCARD_CHECK(value)) {
@@ -5696,7 +5722,8 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
             CHECK(compiler_pattern(c, value, pc));
             ADDOP(c, ROT_TWO);
             ADDOP(c, POP_TOP);
-            ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+            ADDOP_JUMP(c, POP_JUMP_IF_FALSE, block);
+            NEXT_BLOCK(c);
         }
         ADDOP(c, POP_TOP);
         if (star) {
@@ -5707,7 +5734,7 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
         }
     }
     ADDOP_LOAD_CONST(c, Py_True);
-    ADDOP_JREL(c, JUMP_FORWARD, end);
+    ADDOP_JUMP(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, block);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
@@ -5737,7 +5764,8 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
     basicblock *block, *end, *subblock;
     CHECK(end = compiler_new_block(c));
     ADDOP(c, MATCH_SEQUENCE);
-    ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
+    ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
+    NEXT_BLOCK(c);
     ADDOP(c, GET_LEN);
     if (!size) {
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
@@ -5756,7 +5784,8 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - 1));
         ADDOP_COMPARE(c, GtE);
     }
-    ADDOP_JABS(c, POP_JUMP_IF_FALSE, block);
+    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, block);
+    NEXT_BLOCK(c);
     ADDOP(c, ROT_TWO);
     for (Py_ssize_t i = 0; i < size; i++) {
         // TODO: (i >= (1 << 8)) || (n-i-1 >= (INT_MAX >> 8))
@@ -5779,13 +5808,14 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
             ADDOP_I(c, GET_INDEX_END, size - 1 - i);
         }
         CHECK(compiler_pattern(c, value, pc));
-        ADDOP_JABS(c, POP_JUMP_IF_FALSE, subblock);
+        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, subblock);
+        NEXT_BLOCK(c);
         ADDOP(c, POP_TOP);
     }
     ADDOP(c, ROT_TWO);
     ADDOP(c, POP_TOP);
     ADDOP_LOAD_CONST(c, Py_True);
-    ADDOP_JREL(c, JUMP_FORWARD, end);
+    ADDOP_JUMP(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, subblock);
     ADDOP(c, POP_TOP);
     ADDOP(c, ROT_TWO);
@@ -5818,7 +5848,8 @@ compiler_pattern_namedexpr(struct compiler *c, expr_ty p, pattern_context *pc)
     basicblock *end;
     CHECK(end = compiler_new_block(c));
     CHECK(compiler_pattern(c, p->v.NamedExpr.value, pc));
-    ADDOP_JABS(c, JUMP_IF_FALSE_OR_POP, end);
+    ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
+    NEXT_BLOCK(c);
     ADDOP(c, DUP_TOP);
     CHECK(pattern_store_name(c, p->v.NamedExpr.target, pc));
     ADDOP_LOAD_CONST(c, Py_True);
@@ -5888,13 +5919,14 @@ compiler_match(struct compiler *c, stmt_ty s)
         result = compiler_pattern(c, m->pattern, &pc);
         Py_CLEAR(pc.stores);
         CHECK(result);
-        ADDOP_JABS(c, POP_JUMP_IF_FALSE, next);
+        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, next);
+        NEXT_BLOCK(c);
         if (m->guard) {
             CHECK(compiler_jump_if(c, m->guard, next, 0));
         }
         ADDOP(c, POP_TOP);
         VISIT_SEQ(c, stmt, m->body);
-        ADDOP_JREL(c, JUMP_FORWARD, end);
+        ADDOP_JUMP(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, next);
     }
     ADDOP(c, POP_TOP);
@@ -5997,7 +6029,7 @@ stackdepth(struct compiler *c)
                 maxdepth = new_depth;
             }
             assert(depth >= 0); /* invalid code or bug in stackdepth() */
-            if (instr->i_jrel || instr->i_jabs) {
+            if (is_jump(instr)) {
                 effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
                 assert(effect != PY_INVALID_STACK_EFFECT);
                 int target_depth = depth + effect;
@@ -6235,9 +6267,9 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
                    the jump instruction.
                 */
                 bsize += isize;
-                if (instr->i_jabs || instr->i_jrel) {
+                if (is_jump(instr)) {
                     instr->i_oparg = instr->i_target->b_offset;
-                    if (instr->i_jrel) {
+                    if (is_relative_jump(instr)) {
                         instr->i_oparg -= bsize;
                     }
                     instr->i_oparg *= sizeof(_Py_CODEUNIT);
@@ -6372,28 +6404,24 @@ merge_const_tuple(struct compiler *c, PyObject **tuple)
 }
 
 static PyCodeObject *
-makecode(struct compiler *c, struct assembler *a)
+makecode(struct compiler *c, struct assembler *a, PyObject *consts)
 {
-    PyObject *tmp;
     PyCodeObject *co = NULL;
-    PyObject *consts = NULL;
     PyObject *names = NULL;
     PyObject *varnames = NULL;
     PyObject *name = NULL;
     PyObject *freevars = NULL;
     PyObject *cellvars = NULL;
-    PyObject *bytecode = NULL;
     Py_ssize_t nlocals;
     int nlocals_int;
     int flags;
     int posorkeywordargcount, posonlyargcount, kwonlyargcount, maxdepth;
 
-    consts = consts_dict_keys_inorder(c->u->u_consts);
     names = dict_keys_inorder(c->u->u_names, 0);
     varnames = dict_keys_inorder(c->u->u_varnames, 0);
-    if (!consts || !names || !varnames)
+    if (!names || !varnames) {
         goto error;
-
+    }
     cellvars = dict_keys_inorder(c->u->u_cellvars, 0);
     if (!cellvars)
         goto error;
@@ -6417,16 +6445,12 @@ makecode(struct compiler *c, struct assembler *a)
     if (flags < 0)
         goto error;
 
-    bytecode = PyCode_Optimize(a->a_bytecode, consts, names, a->a_lnotab);
-    if (!bytecode)
+    consts = PyList_AsTuple(consts); /* PyCode_New requires a tuple */
+    if (consts == NULL) {
         goto error;
-
-    tmp = PyList_AsTuple(consts); /* PyCode_New requires a tuple */
-    if (!tmp)
-        goto error;
-    Py_DECREF(consts);
-    consts = tmp;
+    }
     if (!merge_const_tuple(c, &consts)) {
+        Py_DECREF(consts);
         goto error;
     }
 
@@ -6435,21 +6459,21 @@ makecode(struct compiler *c, struct assembler *a)
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
     maxdepth = stackdepth(c);
     if (maxdepth < 0) {
+        Py_DECREF(consts);
         goto error;
     }
     co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
                                    posonlyargcount, kwonlyargcount, nlocals_int,
-                                   maxdepth, flags, bytecode, consts, names,
+                                   maxdepth, flags, a->a_bytecode, consts, names,
                                    varnames, freevars, cellvars, c->c_filename,
                                    c->u->u_name, c->u->u_firstlineno, a->a_lnotab);
+    Py_DECREF(consts);
  error:
-    Py_XDECREF(consts);
     Py_XDECREF(names);
     Py_XDECREF(varnames);
     Py_XDECREF(name);
     Py_XDECREF(freevars);
     Py_XDECREF(cellvars);
-    Py_XDECREF(bytecode);
     return co;
 }
 
@@ -6459,8 +6483,8 @@ makecode(struct compiler *c, struct assembler *a)
 static void
 dump_instr(const struct instr *i)
 {
-    const char *jrel = i->i_jrel ? "jrel " : "";
-    const char *jabs = i->i_jabs ? "jabs " : "";
+    const char *jrel = (is_relative_jump(instr)) ? "jrel " : "";
+    const char *jabs = (is_jump(instr) && !is_relative_jump(instr))? "jabs " : "";
     char arg[128];
 
     *arg = '\0';
@@ -6487,6 +6511,9 @@ dump_basicblock(const basicblock *b)
 }
 #endif
 
+static int
+optimize_cfg(struct assembler *a, PyObject *consts);
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -6494,6 +6521,7 @@ assemble(struct compiler *c, int addNone)
     struct assembler a;
     int i, j, nblocks;
     PyCodeObject *co = NULL;
+    PyObject *consts = NULL;
 
     /* Make sure every block that falls off the end returns None.
        XXX NEXT_BLOCK() isn't quite right, because if the last
@@ -6524,6 +6552,14 @@ assemble(struct compiler *c, int addNone)
         goto error;
     dfs(c, entryblock, &a, nblocks);
 
+    consts = consts_dict_keys_inorder(c->u->u_consts);
+    if (consts == NULL) {
+        goto error;
+    }
+    if (optimize_cfg(&a, consts)) {
+        goto error;
+    }
+
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
 
@@ -6540,8 +6576,9 @@ assemble(struct compiler *c, int addNone)
     if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0)
         goto error;
 
-    co = makecode(c, &a);
+    co = makecode(c, &a, consts);
  error:
+    Py_XDECREF(consts);
     assemble_free(&a);
     return co;
 }
@@ -6552,4 +6589,323 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
               PyArena *arena)
 {
     return PyAST_CompileEx(mod, filename, flags, -1, arena);
+}
+
+
+/* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
+   with    LOAD_CONST (c1, c2, ... cn).
+   The consts table must still be in list form so that the
+   new constant (c1, c2, ... cn) can be appended.
+   Called with codestr pointing to the first LOAD_CONST.
+*/
+static int
+fold_tuple_on_constants(struct instr *inst,
+                        int n, PyObject *consts)
+{
+    /* Pre-conditions */
+    assert(PyList_CheckExact(consts));
+    assert(inst[n].i_opcode == BUILD_TUPLE);
+    assert(inst[n].i_oparg == n);
+
+    for (int i = 0; i < n; i++) {
+        if (inst[i].i_opcode != LOAD_CONST) {
+            return 0;
+        }
+    }
+
+    /* Buildup new tuple of constants */
+    PyObject *newconst = PyTuple_New(n);
+    if (newconst == NULL) {
+        return -1;
+    }
+    for (int i = 0; i < n; i++) {
+        int arg = inst[i].i_oparg;
+        PyObject *constant = PyList_GET_ITEM(consts, arg);
+        Py_INCREF(constant);
+        PyTuple_SET_ITEM(newconst, i, constant);
+    }
+    Py_ssize_t index = PyList_GET_SIZE(consts);
+#if SIZEOF_SIZE_T > SIZEOF_INT
+    if ((size_t)index >= UINT_MAX - 1) {
+        Py_DECREF(newconst);
+        PyErr_SetString(PyExc_OverflowError, "too many constants");
+        return -1;
+    }
+#endif
+    if (PyList_Append(consts, newconst)) {
+        Py_DECREF(newconst);
+        return -1;
+    }
+    Py_DECREF(newconst);
+    for (int i = 0; i < n; i++) {
+        inst[i].i_opcode = NOP;
+    }
+    inst[n].i_opcode = LOAD_CONST;
+    inst[n].i_oparg = index;
+    return 0;
+}
+
+
+/* Optimization */
+static int
+optimize_basic_block(basicblock *bb, PyObject *consts)
+{
+    assert(PyList_CheckExact(consts));
+    struct instr nop;
+    nop.i_opcode = NOP;
+    struct instr *target;
+    int lineno;
+    for (int i = 0; i < bb->b_iused; i++) {
+        struct instr *inst = &bb->b_instr[i];
+        int oparg = inst->i_oparg;
+        int nextop = i+1 < bb->b_iused ? bb->b_instr[i+1].i_opcode : 0;
+        if (is_jump(inst)) {
+            /* Skip over empty basic blocks. */
+            while (inst->i_target->b_iused == 0) {
+                inst->i_target = inst->i_target->b_next;
+            }
+            target = &inst->i_target->b_instr[0];
+        }
+        else {
+            target = &nop;
+        }
+        switch (inst->i_opcode) {
+            /* Skip over LOAD_CONST trueconst
+                   POP_JUMP_IF_FALSE xx.  This improves
+                   "while 1" performance.  */
+            case LOAD_CONST:
+                if (nextop != POP_JUMP_IF_FALSE) {
+                    break;
+                }
+                PyObject* cnt = PyList_GET_ITEM(consts, oparg);
+                int is_true = PyObject_IsTrue(cnt);
+                if (is_true == -1) {
+                    goto error;
+                }
+                if (is_true == 1) {
+                    inst->i_opcode = NOP;
+                    bb->b_instr[i+1].i_opcode = NOP;
+                }
+                break;
+
+                /* Try to fold tuples of constants.
+                   Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
+                   Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
+                   Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
+            case BUILD_TUPLE:
+                if (nextop == UNPACK_SEQUENCE && oparg == bb->b_instr[i+1].i_oparg) {
+                    switch(oparg) {
+                        case 1:
+                            inst->i_opcode = NOP;
+                            bb->b_instr[i+1].i_opcode = NOP;
+                            break;
+                        case 2:
+                            inst->i_opcode = ROT_TWO;
+                            bb->b_instr[i+1].i_opcode = NOP;
+                            break;
+                        case 3:
+                            inst->i_opcode = ROT_THREE;
+                            bb->b_instr[i+1].i_opcode = ROT_TWO;
+                    }
+                    break;
+                }
+                if (i >= oparg) {
+                    if (fold_tuple_on_constants(inst-oparg, oparg, consts)) {
+                        goto error;
+                    }
+                }
+                break;
+
+                /* Simplify conditional jump to conditional jump where the
+                   result of the first test implies the success of a similar
+                   test or the failure of the opposite test.
+                   Arises in code like:
+                   "a and b or c"
+                   "(a and b) and c"
+                   "(a or b) or c"
+                   "(a or b) and c"
+                   x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_FALSE_OR_POP z
+                      -->  x:JUMP_IF_FALSE_OR_POP z
+                   x:JUMP_IF_FALSE_OR_POP y   y:JUMP_IF_TRUE_OR_POP z
+                      -->  x:POP_JUMP_IF_FALSE y+1
+                   where y+1 is the instruction following the second test.
+                */
+            case JUMP_IF_FALSE_OR_POP:
+                switch(target->i_opcode) {
+                    case POP_JUMP_IF_FALSE:
+                        *inst = *target;
+                        break;
+                    case JUMP_ABSOLUTE:
+                    case JUMP_FORWARD:
+                    case JUMP_IF_FALSE_OR_POP:
+                        inst->i_target = target->i_target;
+                        break;
+                    case JUMP_IF_TRUE_OR_POP:
+                        assert (inst->i_target->b_iused == 1);
+                        inst->i_opcode = POP_JUMP_IF_FALSE;
+                        inst->i_target = inst->i_target->b_next;
+                        break;
+                }
+                break;
+
+            case JUMP_IF_TRUE_OR_POP:
+                switch(target->i_opcode) {
+                    case POP_JUMP_IF_TRUE:
+                        *inst = *target;
+                        break;
+                    case JUMP_ABSOLUTE:
+                    case JUMP_FORWARD:
+                    case JUMP_IF_TRUE_OR_POP:
+                        inst->i_target = target->i_target;
+                        break;
+                    case JUMP_IF_FALSE_OR_POP:
+                        assert (inst->i_target->b_iused == 1);
+                        inst->i_opcode = POP_JUMP_IF_TRUE;
+                        inst->i_target = inst->i_target->b_next;
+                        break;
+                }
+                break;
+
+            case POP_JUMP_IF_FALSE:
+                switch(target->i_opcode) {
+                    case JUMP_ABSOLUTE:
+                    case JUMP_FORWARD:
+                        inst->i_target = target->i_target;
+                        break;
+                }
+                break;
+
+            case POP_JUMP_IF_TRUE:
+                switch(target->i_opcode) {
+                    case JUMP_ABSOLUTE:
+                    case JUMP_FORWARD:
+                        inst->i_target = target->i_target;
+                        break;
+                }
+                break;
+
+            case JUMP_ABSOLUTE:
+            case JUMP_FORWARD:
+                switch(target->i_opcode) {
+                    case JUMP_FORWARD:
+                        inst->i_target = target->i_target;
+                        break;
+                    case JUMP_ABSOLUTE:
+                    case RETURN_VALUE:
+                    case RERAISE:
+                    case RAISE_VARARGS:
+                        lineno = inst->i_lineno;
+                        *inst = *target;
+                        inst->i_lineno = lineno;
+                        break;
+                }
+                break;
+        }
+    }
+    return 0;
+error:
+    return -1;
+}
+
+
+static void
+clean_basic_block(basicblock *bb) {
+    /* Remove NOPs and any code following a return or re-raise. */
+    int dest = 0;
+    for (int src = 0; src < bb->b_iused; src++) {
+        switch(bb->b_instr[src].i_opcode) {
+            case NOP:
+                /* skip */
+                break;
+            case RETURN_VALUE:
+            case RERAISE:
+                bb->b_next = NULL;
+                bb->b_instr[dest] = bb->b_instr[src];
+                dest++;
+                goto end;
+            default:
+                if (dest != src) {
+                    bb->b_instr[dest] = bb->b_instr[src];
+                }
+                dest++;
+                break;
+        }
+    }
+end:
+    assert(dest <= bb->b_iused);
+    bb->b_iused = dest;
+}
+
+static int
+mark_reachable(struct assembler *a) {
+    basicblock **stack, **sp;
+    sp = stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * a->a_nblocks);
+    if (stack == NULL) {
+        return -1;
+    }
+    basicblock *entry = a->a_reverse_postorder[0];
+    entry->b_reachable = 1;
+    *sp++ = entry;
+    while (sp > stack) {
+        basicblock *b = *(--sp);
+        if (b->b_next && b->b_next->b_reachable == 0) {
+            b->b_next->b_reachable = 1;
+            *sp++ = b->b_next;
+        }
+        for (int i = 0; i < b->b_iused; i++) {
+            basicblock *target;
+            if (is_jump(&b->b_instr[i])) {
+                target = b->b_instr[i].i_target;
+                if (target->b_reachable == 0) {
+                    target->b_reachable = 1;
+                    *sp++ = target;
+                }
+            }
+        }
+    }
+    PyObject_Free(stack);
+    return 0;
+}
+
+
+/* Perform basic peephole optimizations on a control flow graph.
+   The consts object should still be in list form to allow new constants
+   to be appended.
+
+   All transformations keep the code size the same or smaller.
+   For those that reduce size, the gaps are initially filled with
+   NOPs.  Later those NOPs are removed.
+*/
+
+static int
+optimize_cfg(struct assembler *a, PyObject *consts)
+{
+    for (int i = 0; i < a->a_nblocks; i++) {
+        if (optimize_basic_block(a->a_reverse_postorder[i], consts)) {
+            return -1;
+        }
+        clean_basic_block(a->a_reverse_postorder[i]);
+        assert(a->a_reverse_postorder[i]->b_reachable == 0);
+    }
+    if (mark_reachable(a)) {
+        return -1;
+    }
+    /* Delete unreachable instructions */
+    for (int i = 0; i < a->a_nblocks; i++) {
+       if (a->a_reverse_postorder[i]->b_reachable == 0) {
+            a->a_reverse_postorder[i]->b_iused = 0;
+       }
+    }
+    return 0;
+}
+
+/* Retained for API compatibility.
+ * Optimization is now done in optimize_cfg */
+
+PyObject *
+PyCode_Optimize(PyObject *code, PyObject* Py_UNUSED(consts),
+                PyObject *Py_UNUSED(names), PyObject *Py_UNUSED(lnotab_obj))
+{
+    Py_INCREF(code);
+    return code;
 }

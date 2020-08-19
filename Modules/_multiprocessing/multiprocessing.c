@@ -183,35 +183,17 @@ static PyMethodDef module_methods[] = {
  * Initialize
  */
 
-static struct PyModuleDef multiprocessing_module = {
-    PyModuleDef_HEAD_INIT,
-    "_multiprocessing",
-    NULL,
-    -1,
-    module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-
-PyMODINIT_FUNC
-PyInit__multiprocessing(void)
+static int
+multiprocessing_exec(PyObject *module)
 {
-    PyObject *module, *temp, *value = NULL;
-
-    /* Initialize module */
-    module = PyModule_Create(&multiprocessing_module);
-    if (!module)
-        return NULL;
-
 #if defined(MS_WINDOWS) ||                                              \
   (defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED))
+
     /* Add _PyMp_SemLock type to module */
-    if (PyType_Ready(&_PyMp_SemLockType) < 0)
-        return NULL;
-    Py_INCREF(&_PyMp_SemLockType);
+    if (PyModule_AddType(module, &_PyMp_SemLockType) < 0) {
+        return -1;
+    }
+
     {
         PyObject *py_sem_value_max;
         /* Some systems define SEM_VALUE_MAX as an unsigned value that
@@ -223,25 +205,41 @@ PyInit__multiprocessing(void)
             py_sem_value_max = PyLong_FromLong(INT_MAX);
         else
             py_sem_value_max = PyLong_FromLong(SEM_VALUE_MAX);
-        if (py_sem_value_max == NULL)
-            return NULL;
-        PyDict_SetItemString(_PyMp_SemLockType.tp_dict, "SEM_VALUE_MAX",
-                             py_sem_value_max);
+
+        if (py_sem_value_max == NULL) {
+            Py_DECREF(py_sem_value_max);
+            return -1;
+        }
+        if (PyDict_SetItemString(_PyMp_SemLockType.tp_dict, "SEM_VALUE_MAX",
+                             py_sem_value_max) < 0) {
+            Py_DECREF(py_sem_value_max);
+            return -1;
+        }
+        Py_DECREF(py_sem_value_max);
     }
-    PyModule_AddObject(module, "SemLock", (PyObject*)&_PyMp_SemLockType);
+
 #endif
 
     /* Add configuration macros */
-    temp = PyDict_New();
-    if (!temp)
-        return NULL;
+    PyObject *flags = PyDict_New();
+    if (!flags) {
+        return -1;
+    }
 
-#define ADD_FLAG(name)                                            \
-    value = Py_BuildValue("i", name);                             \
-    if (value == NULL) { Py_DECREF(temp); return NULL; }          \
-    if (PyDict_SetItemString(temp, #name, value) < 0) {           \
-        Py_DECREF(temp); Py_DECREF(value); return NULL; }         \
-    Py_DECREF(value)
+#define ADD_FLAG(name)                                          \
+    do {                                                        \
+        PyObject *value = PyLong_FromLong(name);                \
+        if (value == NULL) {                                    \
+            Py_DECREF(flags);                                   \
+            return -1;                                          \
+        }                                                       \
+        if (PyDict_SetItemString(flags, #name, value) < 0) {    \
+            Py_DECREF(flags);                                   \
+            Py_DECREF(value);                                   \
+            return -1;                                          \
+        }                                                       \
+        Py_DECREF(value);                                       \
+    } while (0)
 
 #if defined(HAVE_SEM_OPEN) && !defined(POSIX_SEMAPHORES_NOT_ENABLED)
     ADD_FLAG(HAVE_SEM_OPEN);
@@ -256,8 +254,28 @@ PyInit__multiprocessing(void)
     ADD_FLAG(HAVE_BROKEN_SEM_UNLINK);
 #endif
 
-    if (PyModule_AddObject(module, "flags", temp) < 0)
-        return NULL;
+    if (PyModule_AddObject(module, "flags", flags) < 0) {
+        Py_DECREF(flags);
+        return -1;
+    }
 
-    return module;
+    return 0;
+}
+
+static PyModuleDef_Slot multiprocessing_slots[] = {
+    {Py_mod_exec, multiprocessing_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef multiprocessing_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_multiprocessing",
+    .m_methods = module_methods,
+    .m_slots = multiprocessing_slots,
+};
+
+PyMODINIT_FUNC
+PyInit__multiprocessing(void)
+{
+    return PyModuleDef_Init(&multiprocessing_module);
 }

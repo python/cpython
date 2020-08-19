@@ -1055,7 +1055,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
 
    Open *file* and return a corresponding :term:`file object`.  If the file
-   cannot be opened, an :exc:`OSError` is raised.
+   cannot be opened, an :exc:`OSError` is raised. See
+   :ref:`tut-files` for more examples of how to use this function.
 
    *file* is a :term:`path-like object` giving the pathname (absolute or
    relative to the current working directory) of the file to be opened or an

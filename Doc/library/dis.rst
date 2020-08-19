@@ -640,7 +640,7 @@ the original TOS1.
 
 .. opcode:: LIST_APPEND (i)
 
-   Calls ``list.append(TOS[-i], TOS)``.  Used to implement list comprehensions.
+   Calls ``list.append(TOS1[-i], TOS)``.  Used to implement list comprehensions.
 
 
 .. opcode:: MAP_ADD (i)

@@ -4171,10 +4171,10 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
        In theory the proper fix would be to identify which classes rely on
        this invariant and somehow disallow __class__ assignment only for them,
        perhaps via some mechanism like a new Py_TPFLAGS_IMMUTABLE flag (a
-       "blacklisting" approach). But in practice, since this problem wasn't
+       "denylisting" approach). But in practice, since this problem wasn't
        noticed late in the 3.5 RC cycle, we're taking the conservative
        approach and reinstating the same HEAPTYPE->HEAPTYPE check that we used
-       to have, plus a "whitelist". For now, the whitelist consists only of
+       to have, plus an "allowlist". For now, the allowlist consists only of
        ModuleType subtypes, since those are the cases that motivated the patch
        in the first place -- see https://bugs.python.org/issue22986 -- and
        since module objects are mutable we can be sure that they are
@@ -5965,14 +5965,29 @@ hackcheck(PyObject *self, setattrofunc func, const char *what)
         return 1;
     }
     assert(PyTuple_Check(mro));
-    Py_ssize_t i, n;
-    n = PyTuple_GET_SIZE(mro);
-    for (i = 0; i < n; i++) {
+
+    /* Find the (base) type that defined the type's slot function. */
+    PyTypeObject *defining_type = type;
+    Py_ssize_t i;
+    for (i = PyTuple_GET_SIZE(mro) - 1; i >= 0; i--) {
         PyTypeObject *base = (PyTypeObject*) PyTuple_GET_ITEM(mro, i);
-        if (base->tp_setattro == func) {
-            /* 'func' is the earliest non-Python implementation in the MRO. */
+        if (base->tp_setattro == slot_tp_setattro) {
+            /* Ignore Python classes:
+               they never define their own C-level setattro. */
+        }
+        else if (base->tp_setattro == type->tp_setattro) {
+            defining_type = base;
             break;
-        } else if (base->tp_setattro != slot_tp_setattro) {
+        }
+    }
+
+    /* Reject calls that jump over intermediate C-level overrides. */
+    for (PyTypeObject *base = defining_type; base; base = base->tp_base) {
+        if (base->tp_setattro == func) {
+            /* 'func' is the right slot function to call. */
+            break;
+        }
+        else if (base->tp_setattro != slot_tp_setattro) {
             /* 'base' is not a Python class and overrides 'func'.
                Its tp_setattro should be called instead. */
             PyErr_Format(PyExc_TypeError,
@@ -5982,8 +5997,6 @@ hackcheck(PyObject *self, setattrofunc func, const char *what)
             return 0;
         }
     }
-    /* Either 'func' is not in the mro (which should fail when checking 'self'),
-       or it's the right slot function to call. */
     return 1;
 }
 

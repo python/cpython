@@ -4433,7 +4433,7 @@ class DSLParser:
 
                 if 'c_default' not in kwargs:
                     # we can only represent very simple data values in C.
-                    # detect whether default is okay, via a blacklist
+                    # detect whether default is okay, via a denylist
                     # of disallowed ast nodes.
                     class DetectBadNodes(ast.NodeVisitor):
                         bad = False
@@ -4456,9 +4456,9 @@ class DSLParser:
                         # "starred": "a = [1, 2, 3]; *a"
                         visit_Starred = bad_node
 
-                    blacklist = DetectBadNodes()
-                    blacklist.visit(module)
-                    bad = blacklist.bad
+                    denylist = DetectBadNodes()
+                    denylist.visit(module)
+                    bad = denylist.bad
                 else:
                     # if they specify a c_default, we can be more lenient about the default value.
                     # but at least make an attempt at ensuring it's a valid expression.

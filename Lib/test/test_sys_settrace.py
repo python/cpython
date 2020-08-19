@@ -948,7 +948,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(11)
         output.append(12)
 
-    @jump_test(5, 11, [2, 4], (ValueError, 'unreachable'))
+    @jump_test(5, 11, [2, 4], (ValueError, 'after'))
     def test_no_jump_over_return_try_finally_in_finally_block(output):
         try:
             output.append(2)
@@ -1457,7 +1457,7 @@ class JumpTestCase(unittest.TestCase):
         async with asynctracecontext(output, 4):
             output.append(5)
 
-    @jump_test(5, 7, [2, 4], (ValueError, "unreachable"))
+    @jump_test(5, 7, [2, 4], (ValueError, "after"))
     def test_no_jump_over_return_out_of_finally_block(output):
         try:
             output.append(2)

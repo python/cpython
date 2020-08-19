@@ -4,7 +4,8 @@ Tests for the threading module.
 
 import test.support
 from test.support import threading_helper
-from test.support import verbose, import_module, cpython_only
+from test.support import verbose, cpython_only
+from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 import random
@@ -1364,9 +1365,9 @@ class BarrierTests(lock_tests.BarrierTests):
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         extra = {"ThreadError"}
-        blacklist = {'currentThread', 'activeCount'}
+        not_exported = {'currentThread', 'activeCount'}
         support.check__all__(self, threading, ('threading', '_thread'),
-                             extra=extra, blacklist=blacklist)
+                             extra=extra, not_exported=not_exported)
 
 
 class InterruptMainTests(unittest.TestCase):
