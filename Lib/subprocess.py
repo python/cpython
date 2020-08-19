@@ -775,12 +775,14 @@ class Popen(object):
         self._communication_started = False
         if bufsize is None:
             bufsize = -1  # Restore default
-        if pipesize is None:
-            pipesize = -1  # Restore default
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
+
+        if pipesize is None:
+            pipesize = -1  # Restore default
         if not isinstance(pipesize, int):
             raise TypeError("pipesize must be an integer")
+
         if _mswindows:
             if preexec_fn is not None:
                 raise ValueError("preexec_fn is not supported on Windows "
@@ -1256,11 +1258,11 @@ class Popen(object):
             if stdin is None:
                 p2cread = _winapi.GetStdHandle(_winapi.STD_INPUT_HANDLE)
                 if p2cread is None:
-                    p2cread, _ = _winapi.CreatePipe(None, self.pipesize)
+                    p2cread, _ = _winapi.CreatePipe(None, 0)
                     p2cread = Handle(p2cread)
                     _winapi.CloseHandle(_)
             elif stdin == PIPE:
-                p2cread, p2cwrite = _winapi.CreatePipe(None, self.pipesize)
+                p2cread, p2cwrite = _winapi.CreatePipe(None, 0)
                 p2cread, p2cwrite = Handle(p2cread), Handle(p2cwrite)
             elif stdin == DEVNULL:
                 p2cread = msvcrt.get_osfhandle(self._get_devnull())
@@ -1274,11 +1276,11 @@ class Popen(object):
             if stdout is None:
                 c2pwrite = _winapi.GetStdHandle(_winapi.STD_OUTPUT_HANDLE)
                 if c2pwrite is None:
-                    _, c2pwrite = _winapi.CreatePipe(None, self.pipesize)
+                    _, c2pwrite = _winapi.CreatePipe(None, 0)
                     c2pwrite = Handle(c2pwrite)
                     _winapi.CloseHandle(_)
             elif stdout == PIPE:
-                c2pread, c2pwrite = _winapi.CreatePipe(None, self.pipesize)
+                c2pread, c2pwrite = _winapi.CreatePipe(None, 0)
                 c2pread, c2pwrite = Handle(c2pread), Handle(c2pwrite)
             elif stdout == DEVNULL:
                 c2pwrite = msvcrt.get_osfhandle(self._get_devnull())
@@ -1292,11 +1294,11 @@ class Popen(object):
             if stderr is None:
                 errwrite = _winapi.GetStdHandle(_winapi.STD_ERROR_HANDLE)
                 if errwrite is None:
-                    _, errwrite = _winapi.CreatePipe(None, self.pipesize)
+                    _, errwrite = _winapi.CreatePipe(None, 0)
                     errwrite = Handle(errwrite)
                     _winapi.CloseHandle(_)
             elif stderr == PIPE:
-                errread, errwrite = _winapi.CreatePipe(None, self.pipesize)
+                errread, errwrite = _winapi.CreatePipe(None, 0)
                 errread, errwrite = Handle(errread), Handle(errwrite)
             elif stderr == STDOUT:
                 errwrite = c2pwrite
