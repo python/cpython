@@ -2387,7 +2387,181 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(2), 2)
         self.assertIs(f(3), None)
 
-    # TODO: Full coverage of errors and warnings
+    def test_patma_236(self):
+        code = """
+        match ...:
+            case {**rest, "key": value}:
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_237(self):
+        code = """
+        match ...:
+            case {"first": first, **rest, "last": last}:
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_238(self):
+        code = """
+        match ...:
+            case *a, b, *c, d, *e:
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_239(self):
+        code = """
+        match ...:
+            case a, *b, c, *d, e:
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_240(self):
+        code = """
+        match ...:
+            case 0+0:
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_241(self):
+        code = """
+        match ...:
+            case f"":
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_242(self):
+        code = """
+        match ...:
+            case f"{x}":
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_243(self):
+        namespace = {}
+        code = """
+        match 42:
+            case x:
+                pass
+            case y:
+                pass
+        """
+        with self.assertWarns(SyntaxWarning):
+            exec(inspect.cleandoc(code), None, namespace)
+        self.assertEqual(namespace, {"x": 42})
+
+    def test_patma_244(self):
+        code = """
+        match ...:
+            case {**_}:
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_245(self):
+        code = """
+        match ...:
+            case _ := 42:
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_246(self):
+        class Class:
+            __match_args__ = None
+        x = Class()
+        y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y):
+                    z = 0
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
+    def test_patma_247(self):
+        class Class:
+            __match_args__ = "XYZ"
+        x = Class()
+        y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y):
+                    z = 0
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
+    def test_patma_248(self):
+        class Class:
+            __match_args__ = [None]
+        x = Class()
+        y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y):
+                    z = 0
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
+    def test_patma_249(self):
+        class Class:
+            __match_args__ = []
+        x = Class()
+        y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y):
+                    z = 0
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
+    def test_patma_250(self):
+        code = """
+        match ...:
+            case Class(a=_, a=_):
+                pass
+        """
+        with self.assertRaises(SyntaxError):
+            exec(inspect.cleandoc(code))
+
+    def test_patma_251(self):
+        x = {"a": 0, "b": 1}
+        w = y = z = None
+        with self.assertRaises(ValueError):
+            match x:
+                case {"a": y, "a": z}:
+                    w = 0
+        self.assertIs(w, None)
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
+    def test_patma_252(self):
+        class Keys:
+            KEY = "a"
+        x = {"a": 0, "b": 1}
+        w = y = z = None
+        with self.assertRaises(ValueError):
+            match x:
+                case {Keys.KEY: y, "a": z}:
+                    w = 0
+        self.assertIs(w, None)
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
     # TODO: Better use of assertIs
     # TODO: Don't check side-effecty assignments
 
