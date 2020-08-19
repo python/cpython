@@ -306,9 +306,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         switch (opcode) {
             // Simplify LOAD_CONST followed by conditional jumping/popping:
             case LOAD_CONST:
-                cumlc = lastlc + 1;  // TODO?
                 if (!(JUMPS_ON_FALSE(nextop) || JUMPS_ON_TRUE(nextop)) ||
-                    !ISBASICBLOCK(blocks, op_start, i + 1)) {
+                    !ISBASICBLOCK(blocks, op_start, nexti))
+                {
+                    cumlc = lastlc + 1;
                     break;
                 }
                 PyObject* cnt = PyList_GET_ITEM(consts, get_arg(codestr, i));
@@ -326,7 +327,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
             // Remove DUP_TOP + POP_TOP:
             case DUP_TOP:
-                if (nextop == POP_TOP) {
+                if (nextop == POP_TOP && ISBASICBLOCK(blocks, op_start, nexti))
+                {
                     fill_nops(codestr, op_start, nexti + 1);
                 }
                 break;
