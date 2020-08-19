@@ -2562,6 +2562,34 @@ class TestPatma(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+    def test_patma_253(self):
+        class Class:
+            __match_args__ = ["a", "a"]
+            a = None
+        x = Class()
+        w = y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y, z):
+                    w = 0
+        self.assertIs(w, None)
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
+    def test_patma_254(self):
+        class Class:
+            __match_args__ = ["a"]
+            a = None
+        x = Class()
+        w = y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y, a=z):
+                    w = 0
+        self.assertIs(w, None)
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
     # TODO: Better use of assertIs
     # TODO: Don't check side-effecty assignments
 
