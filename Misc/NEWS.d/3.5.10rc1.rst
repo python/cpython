@@ -1,0 +1,106 @@
+.. bpo: 29778
+.. date: 2020-07-03-17-21-37
+.. nonce: cR_fGS
+.. release date: 2020-08-19
+.. section: Security
+
+Ensure :file:`python3.dll` is loaded from correct locations when Python is
+embedded (CVE-2020-15523).
+
+..
+
+.. bpo: 41004
+.. date: 2020-06-29-16-02-29
+.. nonce: ovF0KZ
+.. section: Security
+
+CVE-2020-14422: The __hash__() methods of  ipaddress.IPv4Interface and
+ipaddress.IPv6Interface incorrectly generated constant hash values of 32 and
+128 respectively. This resulted in always causing hash collisions. The fix
+uses hash() to generate hash values for the tuple of (address, mask length,
+network address).
+
+..
+
+.. bpo: 39073
+.. date: 2020-03-15-01-28-36
+.. nonce: 6Szd3i
+.. section: Security
+
+Disallow CR or LF in email.headerregistry.Address arguments to guard against
+header injection attacks.
+
+..
+
+.. bpo: 38576
+.. date: 2020-03-14-14-57-44
+.. nonce: OowwQn
+.. section: Security
+
+Disallow control characters in hostnames in http.client, addressing
+CVE-2019-18348. Such potentially malicious header injection URLs now cause a
+InvalidURL to be raised.
+
+..
+
+.. bpo: 39503
+.. date: 2020-01-30-16-15-29
+.. nonce: B299Yq
+.. section: Security
+
+CVE-2020-8492: The :class:`~urllib.request.AbstractBasicAuthHandler` class
+of the :mod:`urllib.request` module uses an inefficient regular expression
+which can be exploited by an attacker to cause a denial of service. Fix the
+regex to prevent the catastrophic backtracking. Vulnerability reported by
+Ben Caller and Matt Schwager.
+
+..
+
+.. bpo: 38945
+.. date: 2019-12-01-22-44-40
+.. nonce: ztmNXc
+.. section: Security
+
+Newline characters have been escaped when performing uu encoding to prevent
+them from overflowing into to content section of the encoded file. This
+prevents malicious or accidental modification of data during the decoding
+process.
+
+..
+
+.. bpo: 38804
+.. date: 2019-11-15-00-54-42
+.. nonce: vjbM8V
+.. section: Security
+
+Fixes a ReDoS vulnerability in :mod:`http.cookiejar`. Patch by Ben Caller.
+
+..
+
+.. bpo: 39017
+.. date: 2020-07-12-22-16-58
+.. nonce: x3Cg-9
+.. section: Library
+
+Avoid infinite loop when reading specially crafted TAR files using the
+tarfile module (CVE-2019-20907).
+
+..
+
+.. bpo: 41183
+.. date: 2020-07-01-16-59-46
+.. nonce: 9stVAW
+.. section: Library
+
+Use 3072 RSA keys and SHA-256 signature for test certs and keys.
+
+..
+
+.. bpo: 39503
+.. date: 2020-03-25-16-02-16
+.. nonce: YmMbYn
+.. section: Library
+
+:class:`~urllib.request.AbstractBasicAuthHandler` of :mod:`urllib.request`
+now parses all WWW-Authenticate HTTP headers and accepts multiple challenges
+per header: use the realm of the first Basic challenge.
