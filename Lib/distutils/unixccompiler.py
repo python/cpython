@@ -242,11 +242,13 @@ class UnixCCompiler(CCompiler):
                 return ["-Wl,+s", "-L" + dir]
             return ["+s", "-L" + dir]
         else:
-            if self._is_gcc(compiler):
+            if sys.platform[:5] == "linux" or self._is_gcc(compiler):
                 # gcc on non-GNU systems does not need -Wl, but can
                 # use it anyway.  Since distutils has always passed in
                 # -Wl whenever gcc was used in the past it is probably
                 # safest to keep doing so.
+                # non-gcc compilers on Linux need gcc style linker
+                # option.
                 if sysconfig.get_config_var("GNULD") == "yes":
                     # GNU ld needs an extra option to get a RUNPATH
                     # instead of just an RPATH.
