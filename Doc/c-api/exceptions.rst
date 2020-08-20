@@ -771,7 +771,7 @@ Standard Exceptions
 
 All standard Python exceptions are available as global variables whose names are
 ``PyExc_`` followed by the Python exception name.  These have the type
-:c:type:`PyObject\*`; they are all class objects.  For completeness, here are all
+:c:type:`PyObject*`; they are all class objects.  For completeness, here are all
 the variables:
 
 .. index::
@@ -991,7 +991,7 @@ Standard Warning Categories
 
 All standard Python warning categories are available as global variables whose
 names are ``PyExc_`` followed by the Python exception name. These have the type
-:c:type:`PyObject\*`; they are all class objects. For completeness, here are all
+:c:type:`PyObject*`; they are all class objects. For completeness, here are all
 the variables:
 
 .. index::
