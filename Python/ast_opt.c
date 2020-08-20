@@ -778,7 +778,7 @@ astfold_pattern_complex(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state
           PyLong_CheckExact(left->v.Constant.value)) ||
         !PyComplex_CheckExact(right->v.Constant.value))
     {
-        // Not actually valid, but it's the complier's job to complain:
+        // Not actually valid, but it's the compiler's job to complain:
         return 1;
     }
     PyObject *new;
@@ -810,7 +810,7 @@ astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         case Call_kind:
         case Constant_kind:
         case Dict_kind:
-        // Not actually valid, but it's the complier's job to complain:
+        // Not actually valid, but it's the compiler's job to complain:
         case JoinedStr_kind:
         case List_kind:
         case Name_kind:
