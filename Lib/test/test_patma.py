@@ -8,6 +8,11 @@ import unittest
 import warnings
 
 
+def no_perf(f):
+    f.no_perf = None
+    return f
+
+
 @dataclasses.dataclass
 class MyClass:
     x: int
@@ -1691,6 +1696,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(http_error("400"), None)
         self.assertIs(http_error(401 | 403 | 404), None)  # 407
 
+    @no_perf
     def test_patma_176(self):
         def whereis(point):
             match point:
@@ -2215,6 +2221,7 @@ class TestPatma(unittest.TestCase):
                     return locals()
         self.assertEqual(set(f()), {"abc"})
 
+    @no_perf
     def test_patma_218(self):
         code = """
         match ...:
@@ -2224,6 +2231,7 @@ class TestPatma(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
+    @no_perf
     def test_patma_219(self):
         code = """
         match ...:
@@ -2240,6 +2248,7 @@ class TestPatma(unittest.TestCase):
                     return locals()
         self.assertEqual(set(f()), {"a", "b"})
 
+    @no_perf
     def test_patma_221(self):
         code = """
         match ...:
@@ -2256,6 +2265,7 @@ class TestPatma(unittest.TestCase):
                     return locals()
         self.assertEqual(set(f()), {"a", "b"})
 
+    @no_perf
     def test_patma_223(self):
         code = """
         match ...:
@@ -2272,6 +2282,7 @@ class TestPatma(unittest.TestCase):
                     return locals()
         self.assertEqual(set(f()), {"x", "y"})
 
+    @no_perf
     def test_patma_225(self):
         code = """
         match ...:
@@ -2281,6 +2292,7 @@ class TestPatma(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
+    @no_perf
     def test_patma_226(self):
         code = """
         match ...:
@@ -2290,6 +2302,7 @@ class TestPatma(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
+    @no_perf
     def test_patma_227(self):
         code = """
         match ...:
@@ -2306,6 +2319,7 @@ class TestPatma(unittest.TestCase):
                     return locals()
         self.assertEqual(set(f()), {"a", "b"})
 
+    @no_perf
     def test_patma_229(self):
         code = """
         match ...:
@@ -2387,6 +2401,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(2), 2)
         self.assertIs(f(3), None)
 
+    @no_perf
     def test_patma_236(self):
         code = """
         match ...:
@@ -2396,6 +2411,7 @@ class TestPatma(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
+    @no_perf
     def test_patma_237(self):
         code = """
         match ...:
@@ -2405,6 +2421,7 @@ class TestPatma(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
+    @no_perf
     def test_patma_238(self):
         code = """
         match ...:
@@ -2414,6 +2431,7 @@ class TestPatma(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
+    @no_perf
     def test_patma_239(self):
         code = """
         match ...:
@@ -2423,6 +2441,7 @@ class TestPatma(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
+    @no_perf
     def test_patma_240(self):
         code = """
         match ...:
@@ -2432,6 +2451,7 @@ class TestPatma(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
+    @no_perf
     def test_patma_241(self):
         code = """
         match ...:
@@ -2441,6 +2461,7 @@ class TestPatma(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
+    @no_perf
     def test_patma_242(self):
         code = """
         match ...:
@@ -2450,6 +2471,7 @@ class TestPatma(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
+    @no_perf
     def test_patma_243(self):
         namespace = {}
         code = """
@@ -2463,6 +2485,7 @@ class TestPatma(unittest.TestCase):
             exec(inspect.cleandoc(code), None, namespace)
         self.assertEqual(namespace, {"x": 42})
 
+    @no_perf
     def test_patma_244(self):
         code = """
         match ...:
@@ -2472,6 +2495,7 @@ class TestPatma(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
+    @no_perf
     def test_patma_245(self):
         code = """
         match ...:
@@ -2481,6 +2505,7 @@ class TestPatma(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
+    @no_perf
     def test_patma_246(self):
         class Class:
             __match_args__ = None
@@ -2493,6 +2518,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+    @no_perf
     def test_patma_247(self):
         class Class:
             __match_args__ = "XYZ"
@@ -2505,6 +2531,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+    @no_perf
     def test_patma_248(self):
         class Class:
             __match_args__ = [None]
@@ -2517,6 +2544,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+    @no_perf
     def test_patma_249(self):
         class Class:
             __match_args__ = []
@@ -2529,6 +2557,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+    @no_perf
     def test_patma_250(self):
         code = """
         match ...:
@@ -2538,6 +2567,7 @@ class TestPatma(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec(inspect.cleandoc(code))
 
+    @no_perf
     def test_patma_251(self):
         x = {"a": 0, "b": 1}
         w = y = z = None
@@ -2549,6 +2579,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+    @no_perf
     def test_patma_252(self):
         class Keys:
             KEY = "a"
@@ -2562,6 +2593,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+    @no_perf
     def test_patma_253(self):
         class Class:
             __match_args__ = ["a", "a"]
@@ -2576,6 +2608,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+    @no_perf
     def test_patma_254(self):
         class Class:
             __match_args__ = ["a"]
@@ -2602,22 +2635,18 @@ class PerfPatma(TestPatma):
     def assertIs(*_, **__):
         pass
 
-    @contextlib.contextmanager
     def assertRaises(*_, **__):
-        try:
-            yield
-        except:
-            pass
+        assert False, "this test should be decorated with @no_perf!"
 
-    @contextlib.contextmanager
     def assertWarns(*_, **__):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            yield
+        assert False, "this test should be decorated with @no_perf!"
 
     def run_perf(self):
         attrs = vars(TestPatma).items()
-        tests = [attr for name, attr in attrs if name.startswith("test_")]
+        tests = [
+            attr for name, attr in attrs
+            if name.startswith("test_") and not hasattr(attr, "no_perf")
+        ]
         for _ in range(1 << 8):
             for test in tests:
                 test(self)
