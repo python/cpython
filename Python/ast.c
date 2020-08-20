@@ -390,12 +390,12 @@ validate_pattern(expr_ty p)
                     if (i != size - 1) {
                         // TODO
                     }
-                    if (key->kind != Name_kind) {
-                        // TODO
-                    }
-                    if (key->v.Name.ctx != Store) {
-                        // TODO
-                    }
+                    // if (key->kind != Name_kind) {
+                    //     // TODO
+                    // }
+                    // if (key->v.Name.ctx != Store) {
+                    //     // TODO
+                    // }
                 }
                 if (!validate_pattern(asdl_seq_GET(values, i))) {
                     return 0;
