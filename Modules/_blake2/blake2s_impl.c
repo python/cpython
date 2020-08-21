@@ -406,6 +406,8 @@ static PyType_Slot blake2s_type_slots[] = {
     {0,0}
 };
 
+// Using PyType_GetModuleState() on this type is safe since
+// it cannot be subclassed: it does not have the Py_TPFLAGS_BASETYPE flag.
 PyType_Spec blake2s_type_spec = {
     .name = "_blake2.blake2s",
     .basicsize =  sizeof(BLAKE2sObject),
