@@ -512,6 +512,8 @@ static PyGetSetDef SHA3_getseters[] = {
         {0,0} \
     }
 
+// Using PyType_GetModuleState() on these types is safe since
+// it cannot be subclassed: it does not have the Py_TPFLAGS_BASETYPE flag.
 #define SHA3_TYPE_SPEC(type_spec_obj, type_name, type_slots) \
     static PyType_Spec type_spec_obj = { \
         .name = type_name, \
