@@ -1434,9 +1434,9 @@ class OfflineTest(TestCase):
         expected = {"responses"}  # White-list documented dict() object
         # HTTPMessage, parse_headers(), and the HTTP status code constants are
         # intentionally omitted for simplicity
-        blacklist = {"HTTPMessage", "parse_headers"}
+        denylist = {"HTTPMessage", "parse_headers"}
         for name in dir(client):
-            if name.startswith("_") or name in blacklist:
+            if name.startswith("_") or name in denylist:
                 continue
             module_object = getattr(client, name)
             if getattr(module_object, "__module__", None) == "http.client":

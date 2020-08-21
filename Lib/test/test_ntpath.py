@@ -6,7 +6,7 @@ import warnings
 from test.support import os_helper
 from test.support import TestFailed
 from test.support.os_helper import FakePath
-from test import support, test_genericpath
+from test import test_genericpath
 from tempfile import TemporaryFile
 
 
@@ -285,9 +285,9 @@ class TestNtpath(NtpathTestCase):
     def test_realpath_broken_symlinks(self):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         os.mkdir(ABSTFN)
-        self.addCleanup(support.rmtree, ABSTFN)
+        self.addCleanup(os_helper.rmtree, ABSTFN)
 
-        with support.change_cwd(ABSTFN):
+        with os_helper.change_cwd(ABSTFN):
             os.mkdir("subdir")
             os.chdir("subdir")
             os.symlink(".", "recursive")
@@ -427,9 +427,9 @@ class TestNtpath(NtpathTestCase):
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
 
         os_helper.unlink(ABSTFN)
-        support.rmtree(ABSTFN)
+        os_helper.rmtree(ABSTFN)
         os.mkdir(ABSTFN)
-        self.addCleanup(support.rmtree, ABSTFN)
+        self.addCleanup(os_helper.rmtree, ABSTFN)
 
         test_dir_long = ntpath.join(ABSTFN, "MyVeryLongDirectoryName")
         os.mkdir(test_dir_long)
@@ -443,11 +443,11 @@ class TestNtpath(NtpathTestCase):
 
         self.assertPathEqual(test_file_long, ntpath.realpath(test_file_short))
 
-        with support.change_cwd(test_dir_long):
+        with os_helper.change_cwd(test_dir_long):
             self.assertPathEqual(test_file_long, ntpath.realpath("file.txt"))
-        with support.change_cwd(test_dir_long.lower()):
+        with os_helper.change_cwd(test_dir_long.lower()):
             self.assertPathEqual(test_file_long, ntpath.realpath("file.txt"))
-        with support.change_cwd(test_dir_short):
+        with os_helper.change_cwd(test_dir_short):
             self.assertPathEqual(test_file_long, ntpath.realpath("file.txt"))
 
     def test_expandvars(self):
@@ -673,7 +673,7 @@ class TestNtpath(NtpathTestCase):
             # locations below cannot then refer to mount points
             #
             drive, path = ntpath.splitdrive(sys.executable)
-            with support.change_cwd(ntpath.dirname(sys.executable)):
+            with os_helper.change_cwd(ntpath.dirname(sys.executable)):
                 self.assertFalse(ntpath.ismount(drive.lower()))
                 self.assertFalse(ntpath.ismount(drive.upper()))
 
