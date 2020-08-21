@@ -238,7 +238,7 @@ Functions and classes provided:
    You can capture that output in a string by redirecting the output to an
    :class:`io.StringIO` object. For convenience, the new stream is returned
    from the ``__enter__`` method and so is available as the target of the
-   :keyword:`with` statementt::
+   :keyword:`with` statement::
 
         with redirect_stdout(io.StringIO()) as f:
             help(pow)
