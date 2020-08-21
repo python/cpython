@@ -1,0 +1,1 @@
+IDLE smart backspace not delete multiple whitespace if not at front of line
