@@ -447,6 +447,7 @@ static void
 SHA512_dealloc(PyObject *ptr)
 {
     PyObject_Del(ptr);
+    Py_DECREF(Py_TYPE(ptr));
 }
 
 
@@ -455,15 +456,17 @@ SHA512_dealloc(PyObject *ptr)
 /*[clinic input]
 SHA512Type.copy
 
+    cls: defining_class
+
 Return a copy of the hash object.
 [clinic start generated code]*/
 
 static PyObject *
-SHA512Type_copy_impl(SHAobject *self)
-/*[clinic end generated code: output=adea896ed3164821 input=9f5f31e6c457776a]*/
+SHA512Type_copy_impl(SHAobject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=85ea5b47837a08e6 input=f673a18f66527c90]*/
 {
     SHAobject *newobj;
-    SHA512State *st = PyType_GetModuleState(Py_TYPE(self));
+    SHA512State *st = PyType_GetModuleState(cls);
 
     if (Py_IS_TYPE((PyObject*)self, st->sha512_type)) {
         if ( (newobj = newSHA512object(st))==NULL)
@@ -586,6 +589,8 @@ static PyType_Slot sha512_sha384_type_slots[] = {
     {0,0}
 };
 
+// Using PyType_GetModuleState() on this type is safe since
+// it cannot be subclassed: it does not have the Py_TPFLAGS_BASETYPE flag.
 static PyType_Spec sha512_sha384_type_spec = {
     .name = "_sha512.sha384",
     .basicsize =  sizeof(SHAobject),
@@ -601,6 +606,8 @@ static PyType_Slot sha512_sha512_type_slots[] = {
     {0,0}
 };
 
+// Using PyType_GetModuleState() on this type is safe since
+// it cannot be subclassed: it does not have the Py_TPFLAGS_BASETYPE flag.
 static PyType_Spec sha512_sha512_type_spec = {
     .name = "_sha512.sha512",
     .basicsize =  sizeof(SHAobject),

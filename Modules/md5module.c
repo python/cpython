@@ -340,6 +340,7 @@ static void
 MD5_dealloc(PyObject *ptr)
 {
     PyObject_Del(ptr);
+    Py_DECREF(Py_TYPE(ptr));
 }
 
 
@@ -475,6 +476,8 @@ static PyType_Slot md5_type_slots[] = {
     {0,0}
 };
 
+// Using PyType_GetModuleState() on this type is safe since
+// it cannot be subclassed: it does not have the Py_TPFLAGS_BASETYPE flag.
 static PyType_Spec md5_type_spec = {
     .name = "_md5.md5",
     .basicsize =  sizeof(MD5object),
