@@ -1288,7 +1288,7 @@ class EditorWindow(object):
             else:
                 text.bell()     # at start of buffer
             return "break"
-        if  chars[-1] not in " \t":
+        if chars[-1] not in " \t" or not _line_indent_re.fullmatch(chars):
             # easy: delete preceding real char
             text.delete("insert-1c")
             return "break"
@@ -1304,7 +1304,7 @@ class EditorWindow(object):
             if chars == self.prompt_last_line:  # '' unless PyShell
                 break
             chars = chars[:-1]
-            ncharsdeleted = ncharsdeleted + 1
+            ncharsdeleted += 1
             have = len(chars.expandtabs(tabwidth))
             if have <= want or chars[-1] not in " \t":
                 break
