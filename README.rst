@@ -1,9 +1,9 @@
 This is Python version 3.10.0 alpha 0
 =====================================
 
-.. image:: https://travis-ci.org/python/cpython.svg?branch=master
+.. image:: https://travis-ci.com/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
-   :target: https://travis-ci.org/python/cpython
+   :target: https://travis-ci.com/python/cpython
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
    :alt: CPython build status on GitHub Actions
