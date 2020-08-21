@@ -550,8 +550,6 @@ static int md5_exec(PyObject *m) {
         return -1;
     }
 
-    //cannot use PyModule_AddType becuase "MD5Type"
-    //isn't the same as _PyType_Name(st->md5_type)
     if (PyType_Ready(st->md5_type) < 0) {
         return -1;
     }
