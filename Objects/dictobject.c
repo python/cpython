@@ -1217,6 +1217,49 @@ After resizing a table is always combined,
 but can be resplit by make_keys_shared().
 */
 static int
+dictresize2(PyDictObject *mp, Py_ssize_t newsize)
+{
+    Py_ssize_t numentries;
+    PyDictKeysObject *oldkeys;
+    PyDictKeyEntry *newentries;
+
+    if (newsize <= 0) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    assert(IS_POWER_OF_2(newsize));
+    assert(newsize >= PyDict_MINSIZE);
+
+    oldkeys = mp->ma_keys;
+
+    /* NOTE: Current odict checks mp->ma_keys to detect resize happen.
+     * So we can't reuse oldkeys even if oldkeys->dk_size == newsize.
+     * TODO: Try reusing oldkeys when reimplement odict.
+     */
+
+    /* Allocate a new table. */
+    mp->ma_keys = new_keys_object(newsize);
+    if (mp->ma_keys == NULL) {
+        mp->ma_keys = oldkeys;
+        return -1;
+    }
+    // New table must be large enough.
+    assert(mp->ma_keys->dk_usable >= mp->ma_used);
+    if (oldkeys != NULL && oldkeys->dk_lookup == lookdict) {
+        mp->ma_keys->dk_lookup = lookdict;
+    }
+
+    numentries = mp->ma_used;
+    newentries = DK_ENTRIES(mp->ma_keys);
+
+    build_indices(mp->ma_keys, newentries, numentries);
+    mp->ma_keys->dk_usable -= numentries;
+    mp->ma_keys->dk_nentries = numentries;
+    return 0;
+}
+
+
+static int
 dictresize(PyDictObject *mp, Py_ssize_t newsize)
 {
     Py_ssize_t numentries;
@@ -2382,7 +2425,6 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
 {
     PyObject *arg = NULL;
     int result = 0;
-
     if (!PyArg_UnpackTuple(args, methname, 0, 1, &arg)) {
         result = -1;
     }
@@ -2405,8 +2447,9 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
 static PyObject *
 dict_update(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    if (dict_update_common(self, args, kwds, "update") != -1)
+    if (dict_update_common(self, args, kwds, "update") != -1) {
         Py_RETURN_NONE;
+    }
     return NULL;
 }
 
@@ -3419,20 +3462,15 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     d->ma_used = 0;
     d->ma_version_tag = DICT_NEXT_VERSION();
-    dictkeys_incref(Py_EMPTY_KEYS);
-    d->ma_keys = Py_EMPTY_KEYS;
-    d->ma_values = empty_values;
-    ASSERT_CONSISTENT(d);
-    return self;
-}
-
-static int
-dict_init(PyObject *self, PyObject *args, PyObject *kwds)
-{
+    
+    
     PyObject* arg = NULL;
     
-    if (! PyArg_UnpackTuple(args, __func__, 0, 1, &arg)) {
-        return -1;
+    if (args != NULL) {
+        if (! PyArg_UnpackTuple(args, __func__, 0, 1, &arg)) {
+            Py_DECREF(self);
+            return NULL;
+        }
     }
     
     int arg_size = ((arg != NULL) 
@@ -3445,11 +3483,21 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
         : 0
     );
     
-    if (dictresize((PyDictObject *)self, arg_size + kwds_size)) {
+    Py_ssize_t keys_size = calculate_keysize(arg_size + kwds_size);
+    
+    if (dictresize2((PyDictObject *)self, keys_size)) {
         Py_DECREF(self);
-        return -1;
+        return NULL;
     }
     
+    d->ma_values = empty_values;
+    ASSERT_CONSISTENT(d);
+    return self;
+}
+
+static int
+dict_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
     return dict_update_common(self, args, kwds, "dict");
 }
 
