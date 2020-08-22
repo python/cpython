@@ -1166,9 +1166,9 @@ functions.
    +--------------+---------------------------------------------+
    | Format       | Description                                 |
    +==============+=============================================+
-   | *filename*   | Specifies that a FileHandler be created,    |
-   |              | using the specified filename, rather than a |
-   |              | StreamHandler.                              |
+   | *filename*   | Specifies that a class:`FileHandler` be     |
+   |              | created, using the specified filename,      |
+   |              | rather than a StreamHandler.                |
    +--------------+---------------------------------------------+
    | *filemode*   | If *filename* is specified, open the file   |
    |              | in this :ref:`mode <filemodes>`. Defaults   |
