@@ -1281,6 +1281,7 @@ class EditorWindow(object):
         # Delete whitespace left, until hitting a real char or closest
         # preceding virtual tab stop.
         chars = text.get("insert linestart", "insert")
+        echars = text.get("insert", "insert lineend")
         if chars == '':
             if text.compare("insert", ">", "1.0"):
                 # easy: delete preceding newline
@@ -1288,7 +1289,12 @@ class EditorWindow(object):
             else:
                 text.bell()     # at start of buffer
             return "break"
-        if chars[-1] not in " \t" or not _line_indent_re.fullmatch(chars):
+        if chars.startswith(self.prompt_last_line):
+            isindent = _line_indent_re.fullmatch(chars[len(self.prompt_last_line):])
+        else:
+            isindent = _line_indent_re.fullmatch(chars)
+        istrailing = _line_indent_re.fullmatch(echars)
+        if chars[-1] not in " \t" or not (isindent or istrailing):
             # easy: delete preceding real char
             text.delete("insert-1c")
             return "break"
@@ -1297,7 +1303,10 @@ class EditorWindow(object):
         tabwidth = self.tabwidth
         have = len(chars.expandtabs(tabwidth))
         assert have > 0
-        want = ((have - 1) // self.indentwidth) * self.indentwidth
+        if istrailing and not isindent:
+            want = 0
+        else:
+            want = ((have - 1) // self.indentwidth) * self.indentwidth
         # Debug prompt is multilined....
         ncharsdeleted = 0
         while 1:
