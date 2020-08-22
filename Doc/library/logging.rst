@@ -1166,7 +1166,7 @@ functions.
    +--------------+---------------------------------------------+
    | Format       | Description                                 |
    +==============+=============================================+
-   | *filename*   | Specifies that a class:`FileHandler` be     |
+   | *filename*   | Specifies that a :class:`FileHandler` be    |
    |              | created, using the specified filename,      |
    |              | rather than a StreamHandler.                |
    +--------------+---------------------------------------------+
