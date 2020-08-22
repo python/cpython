@@ -161,7 +161,7 @@ then re-raise the exception (allowing a caller to handle the exception as well):
    except ValueError:
        print("Could not convert data to an integer.")
    except BaseException as err:
-       print("Unexpected error:", err)
+       print(f"Unexpected {err=}, {type(err)=}")
        raise
 
 Alternatively the last except clause may omit the exception name(s), however the exception
@@ -489,4 +489,3 @@ used in a way that ensures they are always cleaned up promptly and correctly. ::
 After the statement is executed, the file *f* is always closed, even if a
 problem was encountered while processing the lines. Objects which, like files,
 provide predefined clean-up actions will indicate this in their documentation.
-
