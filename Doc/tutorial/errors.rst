@@ -165,7 +165,7 @@ then re-raise the exception (allowing a caller to handle the exception as well):
        raise
 
 Alternatively the last except clause may omit the exception name(s), however the exception
-value must then be retrieved from ``sys.exc_info()[0]``.
+value must then be retrieved from ``sys.exc_info()[1]``.
 
 The :keyword:`try` ... :keyword:`except` statement has an optional *else
 clause*, which, when present, must follow all except clauses.  It is useful for
@@ -489,5 +489,4 @@ used in a way that ensures they are always cleaned up promptly and correctly. ::
 After the statement is executed, the file *f* is always closed, even if a
 problem was encountered while processing the lines. Objects which, like files,
 provide predefined clean-up actions will indicate this in their documentation.
-
 
