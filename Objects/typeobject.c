@@ -2882,6 +2882,11 @@ static const short slotoffsets[] = {
 #include "typeslots.inc"
 };
 
+static const short static_slotoffsets[] = {
+    -1, /* invalid slot */
+#include "statictypeslots.inc"
+};
+
 PyObject *
 PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
@@ -3114,11 +3119,18 @@ PyType_GetSlot(PyTypeObject *type, int slot)
         PyErr_BadInternalCall();
         return NULL;
     }
-    if ((size_t)slot >= Py_ARRAY_LENGTH(slotoffsets)) {
-        /* Extension module requesting slot from a future version */
-        return NULL;
+
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE) &&
+        (size_t)slot < Py_ARRAY_LENGTH(slotoffsets)) {
+        return  *(void**)(((char*)type) + slotoffsets[slot]);
     }
-    return  *(void**)(((char*)type) + slotoffsets[slot]);
+    else if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE) &&
+             (size_t)slot < Py_ARRAY_LENGTH(static_slotoffsets)) {
+        return  *(void**)(((char*)type) + static_slotoffsets[slot]);
+    }
+
+    /* Extension module requesting slot from a future version */
+    return  NULL;
 }
 
 PyObject *
