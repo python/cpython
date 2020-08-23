@@ -2474,11 +2474,10 @@ References:
 
 */
 
-static const double T27 = 134217729.0;   /* T27=ldexp(1.0, 27)+1.0) */
-
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
+    const double T27 = 134217729.0;     /* ldexp(1.0, 27)+1.0) */
     double x, csum = 1.0, oldcsum, frac = 0.0, scale;
     double t, hi, lo, h;
     int max_e;
