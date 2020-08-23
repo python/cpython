@@ -103,6 +103,12 @@ New Modules
 Improved Modules
 ================
 
+base64
+------
+
+Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
+Base32 Encoding with Extended Hex Alphabet.
+
 curses
 ------
 
@@ -120,6 +126,12 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
+os
+--
+
+Added :func:`os.cpu_count()` support for VxWorks RTOS.
+(Contributed by Peixing Xin in :issue:`41440`.)
+
 py_compile
 ----------
 
@@ -132,6 +144,13 @@ sys
 Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
+
+xml
+---
+
+Add a :class:`~xml.sax.handler.LexicalHandler` class to the
+:mod:`xml.sax.handler` module.
+(Contributed by Jonathan Gossage and Zackery Spytz in :issue:`35018`.)
 
 
 Optimizations
