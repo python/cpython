@@ -2591,6 +2591,20 @@ class TestPatma(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+    def test_patma_255(self):
+        match():
+            case():
+                x = 0
+        self.assertEqual(x, 0)
+
+    def test_patma_256(self):
+        x = 0
+        match(x):
+            case(x):
+                y = 0
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+
     # TODO: Better use of assertIs
     # TODO: Don't check side-effecty assignments
 
