@@ -3543,20 +3543,19 @@ main_loop:
         }
 
         case TARGET(MATCH_CLASS): {
-            PyObject *names = POP();
-            PyObject *type = TOP();
-            PyObject *subject = SECOND();
+            PyObject *names = TOP();
+            PyObject *type = SECOND();
+            PyObject *subject = THIRD();
             PyObject *attrs = do_match(tstate, oparg, names, type, subject);
-            Py_DECREF(names);
             if (attrs) {
-                Py_DECREF(subject);
+                Py_DECREF(type);
                 SET_SECOND(attrs);
             }
             else if (_PyErr_Occurred(tstate)) {
                 goto error;
             }
+            Py_DECREF(names);
             SET_TOP(PyBool_FromLong(!!attrs));
-            Py_DECREF(type);
             DISPATCH();
         }
 

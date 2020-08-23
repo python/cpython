@@ -1135,7 +1135,7 @@ stack_effect(int opcode, int oparg, int jump)
         case GET_LEN:
             return 1;
         case MATCH_CLASS:
-            return -1;
+            return 0;
         case GET_INDEX:
         case GET_INDEX_END:
         case GET_INDEX_SLICE:
@@ -5613,7 +5613,6 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
     CHECK(!validate_keywords(c, kwargs));
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
-    ADDOP(c, DUP_TOP);  // TODO: Refactor MATCH_CLASS?
     if (p->v.Call.func->kind == Attribute_kind) {
         CHECK(pattern_load_attribute(c, p->v.Call.func, pc));
     }
@@ -5633,6 +5632,7 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
     ADDOP_LOAD_CONST_NEW(c, kwnames);
     ADDOP_I(c, MATCH_CLASS, nargs);
     ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
+    NEXT_BLOCK(c);
     expr_ty arg;
     for (i = 0; i < nargs + nkwargs; i++) {
         if (i < nargs) {
