@@ -2472,9 +2472,9 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         assert(max * scale < 1.0);
         for (i=0 ; i < n ; i++) {
             x = vec[i];
-            assert(Py_IS_FINITE(x) && fabs(x) <= max);
+            assert(Py_IS_FINITE(x) && x >= 0.0 && fabs(x) <= max);
             x *= scale;
-            assert(x <= 1.0);
+            assert(x < 1.0);
 
             t = x * T27;
             hi = t - (t - x);
