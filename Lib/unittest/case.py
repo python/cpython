@@ -574,7 +574,7 @@ class TestCase(object):
                 self._addSkip(result, self, skip_why)
             finally:
                 result.stopTest(self)
-            return
+            return result
         expecting_failure_method = getattr(testMethod,
                                            "__unittest_expecting_failure__", False)
         expecting_failure_class = getattr(self,
