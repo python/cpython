@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # Usage: typeslots.py < Include/typeslots.h typeslots.inc
 
 import sys, re

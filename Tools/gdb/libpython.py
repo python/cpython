@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 '''
 From gdb 7 onwards, gdb's build can be configured --with-python, allowing gdb
 to be extended with Python code e.g. for library-specific data visualizations,

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (C) 2012   Christian Heimes (christian@python.org)
 # Licensed to PSF under a Contributor Agreement.
 #
