@@ -28,6 +28,10 @@ class Point:
 
 class TestPatma(unittest.TestCase):
 
+    def assert_syntax_error(self, code: str):
+        with self.assertRaises(SyntaxError):
+            compile(inspect.cleandoc(code), "<test>", "exec")
+
     def test_patma_000(self):
         match 0:
             case 0:
@@ -2223,23 +2227,19 @@ class TestPatma(unittest.TestCase):
 
     @no_perf
     def test_patma_218(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case "a" | a:
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     @no_perf
     def test_patma_219(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case a | "a":
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     def test_patma_220(self):
         def f():
@@ -2250,13 +2250,11 @@ class TestPatma(unittest.TestCase):
 
     @no_perf
     def test_patma_221(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case a, a:
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     def test_patma_222(self):
         def f():
@@ -2267,13 +2265,11 @@ class TestPatma(unittest.TestCase):
 
     @no_perf
     def test_patma_223(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case {"k": a, "l": a}:
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     def test_patma_224(self):
         def f():
@@ -2284,33 +2280,27 @@ class TestPatma(unittest.TestCase):
 
     @no_perf
     def test_patma_225(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case MyClass(x, x):
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     @no_perf
     def test_patma_226(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case MyClass(x=x, y=x):
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     @no_perf
     def test_patma_227(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case MyClass(x, y=x):
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     def test_patma_228(self):
         def f():
@@ -2321,13 +2311,11 @@ class TestPatma(unittest.TestCase):
 
     @no_perf
     def test_patma_229(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case a := a:
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     def test_patma_230(self):
         def f(x):
@@ -2403,73 +2391,59 @@ class TestPatma(unittest.TestCase):
 
     @no_perf
     def test_patma_236(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case {**rest, "key": value}:
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     @no_perf
     def test_patma_237(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case {"first": first, **rest, "last": last}:
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     @no_perf
     def test_patma_238(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case *a, b, *c, d, *e:
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     @no_perf
     def test_patma_239(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case a, *b, c, *d, e:
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     @no_perf
     def test_patma_240(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case 0+0:
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     @no_perf
     def test_patma_241(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case f"":
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     @no_perf
     def test_patma_242(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case f"{x}":
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     @no_perf
     def test_patma_243(self):
@@ -2487,23 +2461,19 @@ class TestPatma(unittest.TestCase):
 
     @no_perf
     def test_patma_244(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case {**_}:
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     @no_perf
     def test_patma_245(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case _ := 42:
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     @no_perf
     def test_patma_246(self):
@@ -2559,13 +2529,11 @@ class TestPatma(unittest.TestCase):
 
     @no_perf
     def test_patma_250(self):
-        code = """
+        self.assert_syntax_error("""
         match ...:
             case Class(a=_, a=_):
                 pass
-        """
-        with self.assertRaises(SyntaxError):
-            exec(inspect.cleandoc(code))
+        """)
 
     @no_perf
     def test_patma_251(self):
