@@ -627,7 +627,8 @@ functions.
 
    *pipesize* can be used to change the size of the pipe when
    :data:`PIPE` is used for *stdin*, *stdout* or *stderr*. The size of the pipe
-   is only changed on platforms that support this.
+   is only changed on platforms that support this (only Linux at this time of
+   writing). Other platforms will ignore this parameter.
 
    .. versionadded:: 3.10
       The ``pipesize`` parameter was added.
