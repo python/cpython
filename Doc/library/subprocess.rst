@@ -691,14 +691,8 @@ If the shell is invoked explicitly, via ``shell=True``, it is the application's
 responsibility to ensure that all whitespace and metacharacters are
 quoted appropriately to avoid
 `shell injection <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
-vulnerabilities.
-
-When using ``shell=True`` on **Unix** systems, the :func:`shlex.quote`
-function can be used to properly escape whitespace and shell metacharacters in
-strings that are going to be used to construct shell commands. Note that
-the :mod:`shlex` module is *only meant for Unix systems* and using it on other
-operating systems such as Windows can create a command injection vulnerability
-when coupled with ``shell=True``.
+vulnerabilities. On :ref:`some platforms <shlex-quote-warning>`, it is possible
+to use :func:`shlex.quote` for this escaping.
 
 
 Popen Objects

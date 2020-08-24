@@ -61,6 +61,8 @@ The :mod:`shlex` module defines the following functions:
    string that can safely be used as one token in a shell command line, for
    cases where you cannot use a list.
 
+   .. _shlex-quote-warning:
+
    .. warning::
 
       The ``shlex`` module is **only designed for Unix shells**.
