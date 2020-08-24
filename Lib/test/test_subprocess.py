@@ -686,6 +686,26 @@ class ProcessTestCase(BaseTestCase):
         p.stdin.close()
         p.wait()
 
+    def test_pipesize_default(self):
+        p = subprocess.Popen([sys.executable, "-c",
+                         'import sys; sys.stdin.read(); sys.stdout.write("out");'
+                         ' sys.stderr.write("error!")'],
+                         stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                         pipesize=-1)
+        # UNIX tests using fcntl
+        if sys.platform != "win32" and hasattr(fcntl, "F_GETPIPE_SZ"):
+            fp_r, fp_w = os.pipe()
+            default_pipesize = fcntl.fcntl(fp_w, fcntl.F_GETPIPE_SZ)
+            for fifo in [p.stdin, p.stdout, p.stderr]:
+                self.assertEqual(
+                    fcntl.fcntl(fifo.fileno(), fcntl.F_GETPIPE_SZ), default_pipesize)
+        # On other platforms we cannot test the pipe size (yet). But above code
+        # using pipesize=-1 should not crash.
+        p.stdin.close()
+        p.wait()
+
     def test_env(self):
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange"
