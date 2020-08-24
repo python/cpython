@@ -2455,7 +2455,7 @@ The differential correction starts with a value *x* that is
 the difference between the square of *h*, the possibly inaccurately
 rounded square root, and the accurately computed sum of squares.
 The correction is the first order term of the Maclaurin series
-expansion of sqrt(h**2 - x) == h - x/(2*h) + O(x**2).
+expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2).
 
 Essentially, this differential correction is equivalent to one
 refinement step in the Newton divide-and-average square root
