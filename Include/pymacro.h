@@ -127,4 +127,19 @@
     Py_FatalError("Unreachable C code path reached")
 #endif
 
+
+// Test if the compiler has the specified builtin function.
+//
+// __has_builtin() is used if the compiler provides it.
+// Otherwise, always return 0.
+// For example, clang and GCC 10 provide __has_builtin().
+//
+// _Py_has_builtin() should not be used to detect support for a builtin macro;
+// use #ifdef instead.
+#ifdef __has_builtin
+#  define _Py_has_builtin(x) __has_builtin(x)
+#else
+#  define _Py_has_builtin(x) 0
+#endif
+
 #endif /* Py_PYMACRO_H */
