@@ -381,6 +381,123 @@ class FileTests(unittest.TestCase):
             self.assertEqual(read[out_seek:],
                              data[in_skip:in_skip+i])
 
+    @unittest.skipUnless(hasattr(os, 'splice'), 'test needs os.splice()')
+    def test_splice_invalid_values(self):
+        with self.assertRaises(ValueError):
+            os.splice(0, 1, -10)
+
+    @unittest.skipUnless(hasattr(os, 'splice'), 'test needs os.splice()')
+    def test_splice(self):
+        TESTFN2 = os_helper.TESTFN + ".3"
+        data = b'0123456789'
+
+        create_file(os_helper.TESTFN, data)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+
+        in_file = open(os_helper.TESTFN, 'rb')
+        self.addCleanup(in_file.close)
+        in_fd = in_file.fileno()
+
+        read_fd, write_fd = os.pipe()
+        self.addCleanup(lambda: os.close(read_fd))
+        self.addCleanup(lambda: os.close(write_fd))
+
+        try:
+            i = os.splice(in_fd, write_fd, 5)
+        except OSError as e:
+            # Handle the case in which Python was compiled
+            # in a system with the syscall but without support
+            # in the kernel.
+            if e.errno != errno.ENOSYS:
+                raise
+            self.skipTest(e)
+        else:
+            # The number of copied bytes can be less than
+            # the number of bytes originally requested.
+            self.assertIn(i, range(0, 6));
+
+            self.assertEqual(os.read(read_fd, 100), data[:i])
+
+    @unittest.skipUnless(hasattr(os, 'splice'), 'test needs os.splice()')
+    def test_splice_offset_in(self):
+        TESTFN4 = os_helper.TESTFN + ".4"
+        data = b'0123456789'
+        bytes_to_copy = 6
+        in_skip = 3
+
+        create_file(os_helper.TESTFN, data)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+
+        in_file = open(os_helper.TESTFN, 'rb')
+        self.addCleanup(in_file.close)
+        in_fd = in_file.fileno()
+
+        read_fd, write_fd = os.pipe()
+        self.addCleanup(lambda: os.close(read_fd))
+        self.addCleanup(lambda: os.close(write_fd))
+
+        try:
+            i = os.splice(in_fd, write_fd, bytes_to_copy, offset_src=in_skip)
+        except OSError as e:
+            # Handle the case in which Python was compiled
+            # in a system with the syscall but without support
+            # in the kernel.
+            if e.errno != errno.ENOSYS:
+                raise
+            self.skipTest(e)
+        else:
+            # The number of copied bytes can be less than
+            # the number of bytes originally requested.
+            self.assertIn(i, range(0, bytes_to_copy+1));
+
+            read = os.read(read_fd, 100)
+            # 012 are skipped (in_skip)
+            # 345678 are copied in the file (in_skip + bytes_to_copy)
+            self.assertEqual(read, data[in_skip:in_skip+i])
+
+    @unittest.skipUnless(hasattr(os, 'splice'), 'test needs os.splice()')
+    def test_splice_offset_out(self):
+        TESTFN4 = os_helper.TESTFN + ".4"
+        data = b'0123456789'
+        bytes_to_copy = 6
+        out_seek = 3
+
+        create_file(os_helper.TESTFN, data)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+
+        read_fd, write_fd = os.pipe()
+        self.addCleanup(lambda: os.close(read_fd))
+        self.addCleanup(lambda: os.close(write_fd))
+        os.write(write_fd, data)
+
+        out_file = open(TESTFN4, 'w+b')
+        self.addCleanup(os_helper.unlink, TESTFN4)
+        self.addCleanup(out_file.close)
+        out_fd = out_file.fileno()
+
+        try:
+            i = os.splice(read_fd, out_fd, bytes_to_copy, offset_dst=out_seek)
+        except OSError as e:
+            # Handle the case in which Python was compiled
+            # in a system with the syscall but without support
+            # in the kernel.
+            if e.errno != errno.ENOSYS:
+                raise
+            self.skipTest(e)
+        else:
+            # The number of copied bytes can be less than
+            # the number of bytes originally requested.
+            self.assertIn(i, range(0, bytes_to_copy+1));
+
+            with open(TESTFN4, 'rb') as in_file:
+                read = in_file.read()
+            # seeked bytes (5) are zero'ed
+            self.assertEqual(read[:out_seek], b'\x00'*out_seek)
+            # 012 are skipped (in_skip)
+            # 345678 are copied in the file (in_skip + bytes_to_copy)
+            self.assertEqual(read[out_seek:], data[:i])
+
+
 # Test attributes on return values from os.*stat* family.
 class StatAttributeTests(unittest.TestCase):
     def setUp(self):
