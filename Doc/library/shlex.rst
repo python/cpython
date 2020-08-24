@@ -65,10 +65,10 @@ The :mod:`shlex` module defines the following functions:
 
       The ``shlex`` module is **only designed for Unix shells**.
 
-      The :func:`quote` function is not garaunteed to be safe on non-compliant
-      shells or shells from other operating systems such as Windows. Executing
-      commands quoted by this module on such shells can open up the possibility
-      of a command injection vulnerability.
+      The :func:`quote` function is not garaunteed to be safe on non-POSIX
+      compliant shells or shells from other operating systems such as Windows.
+      Executing commands quoted by this module on such shells can open up the
+      possibility of a command injection vulnerability.
 
       Consider using functions that pass command arguments with lists such as
       :func:`subprocess.run` with ``shell=False``.
