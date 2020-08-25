@@ -1,1 +1,1 @@
-If :func:`operator.__ipow__` returns :const:`NotImplemented` :func:`operator.__rpow__` will be called now as expected.
+If :func:`object.__ipow__` returns :const:`NotImplemented`, the operator will correctly fall back to :func:`object.__pow__` and :func:`object.__rpow__` as expected.
