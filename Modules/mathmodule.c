@@ -2404,52 +2404,79 @@ math_fmod_impl(PyObject *module, double x, double y)
 }
 
 /*
-Given an *n* length *vec* of values and a value *max*, compute:
+Given a *vec* of values, compute the vector norm:
 
-    sqrt(sum((x * scale) ** 2 for x in vec)) / scale
+    sqrt(sum(x ** 2 for x in vec))
 
-           where scale is the first power of two
-           greater than max.
-
-or compute:
-
-    max * sqrt(sum((x / max) ** 2 for x in vec))
-
-The value of the *max* variable must be non-negative and
-equal to the absolute value of the largest magnitude
-entry in the vector.  If n==0, then *max* should be 0.0.
+The *max* variable should be equal to the largest fabs(x).
+The *n* variable is the length of *vec*.
+If n==0, then *max* should be 0.0.
 If an infinity is present in the vec, *max* should be INF.
-
 The *found_nan* variable indicates whether some member of
 the *vec* is a NaN.
 
-To improve accuracy and to increase the number of cases where
-vector_norm() is commutative, we use a variant of Neumaier
-summation specialized to exploit that we always know that
-|csum| >= |x|.
+To avoid overflow/underflow and to achieve high accuracy giving results
+that are almost always correctly rounded, four techniques are used:
 
-The *csum* variable tracks the cumulative sum and *frac* tracks
-the cumulative fractional errors at each step.  Since this
-variant assumes that |csum| >= |x| at each step, we establish
-the precondition by starting the accumulation from 1.0 which
-represents the largest possible value of (x*scale)**2 or (x/max)**2.
+* lossless scaling using a power-of-two scaling factor
+* accurate squaring using Veltkamp-Dekker splitting
+* compensated summation using a variant of the Neumaier algorithm
+* differential correction of the square root
 
-After the loop is finished, the initial 1.0 is subtracted out
-for a net zero effect on the final sum.  Since *csum* will be
-greater than 1.0, the subtraction of 1.0 will not cause
-fractional digits to be dropped from *csum*.
+The usual presentation of the Neumaier summation algorithm has an
+expensive branch depending on which operand has the larger
+magnitude.  We avoid this cost by arranging the calculation so that
+fabs(csum) is always as large as fabs(x).
 
-To get the full benefit from compensated summation, the
-largest addend should be in the range:   0.5 <= x <= 1.0.
-Accordingly, scaling or division by *max* should not be skipped
-even if not otherwise needed to prevent overflow or loss of precision.
+To establish the invariant, *csum* is initialized to 1.0 which is
+always larger than x**2 after scaling or division by *max*.
+After the loop is finished, the initial 1.0 is subtracted out for a
+net zero effect on the final sum.  Since *csum* will be greater than
+1.0, the subtraction of 1.0 will not cause fractional digits to be
+dropped from *csum*.
+
+To get the full benefit from compensated summation, the largest
+addend should be in the range: 0.5 <= |x| <= 1.0.  Accordingly,
+scaling or division by *max* should not be skipped even if not
+otherwise needed to prevent overflow or loss of precision.
+
+The assertion that hi*hi >= 1.0 is a bit subtle.  Each vector element
+gets scaled to a magnitude below 1.0.  The Veltkamp-Dekker splitting
+algorithm gives a *hi* value that is correctly rounded to half
+precision.  When a value at or below 1.0 is correctly rounded, it
+never goes above 1.0.  And when values at or below 1.0 are squared,
+they remain at or below 1.0, thus preserving the summation invariant.
+
+The square root differential correction is needed because a
+correctly rounded square root of a correctly rounded sum of
+squares can still be off by as much as one ulp.
+
+The differential correction starts with a value *x* that is
+the difference between the square of *h*, the possibly inaccurately
+rounded square root, and the accurately computed sum of squares.
+The correction is the first order term of the Maclaurin series
+expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2).
+
+Essentially, this differential correction is equivalent to one
+refinement step in the Newton divide-and-average square root
+algorithm, effectively doubling the number of accurate bits.
+This technique is used in Dekker's SQRT2 algorithm and again in
+Borges' ALGORITHM 4 and 5.
+
+References:
+
+1. Veltkamp-Dekker splitting: http://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
+2. Compensated summation:  http://www.ti3.tu-harburg.de/paper/rump/Ru08b.pdf
+3. Square root diffential correction:  https://arxiv.org/pdf/1904.09481.pdf
 
 */
 
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
+    const double T27 = 134217729.0;     /* ldexp(1.0, 27)+1.0) */
     double x, csum = 1.0, oldcsum, frac = 0.0, scale;
+    double t, hi, lo, h;
     int max_e;
     Py_ssize_t i;
 
@@ -2470,15 +2497,62 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         for (i=0 ; i < n ; i++) {
             x = vec[i];
             assert(Py_IS_FINITE(x) && fabs(x) <= max);
+
             x *= scale;
-            x = x*x;
+            assert(fabs(x) < 1.0);
+
+            t = x * T27;
+            hi = t - (t - x);
+            lo = x - hi;
+            assert(hi + lo == x);
+
+            x = hi * hi;
             assert(x <= 1.0);
-            assert(csum >= x);
+            assert(fabs(csum) >= fabs(x));
+            oldcsum = csum;
+            csum += x;
+            frac += (oldcsum - csum) + x;
+
+            x = 2.0 * hi * lo;
+            assert(fabs(csum) >= fabs(x));
+            oldcsum = csum;
+            csum += x;
+            frac += (oldcsum - csum) + x;
+
+            x = lo * lo;
+            assert(fabs(csum) >= fabs(x));
             oldcsum = csum;
             csum += x;
             frac += (oldcsum - csum) + x;
         }
-        return sqrt(csum - 1.0 + frac) / scale;
+        h = sqrt(csum - 1.0 + frac);
+
+        x = h;
+        t = x * T27;
+        hi = t - (t - x);
+        lo = x - hi;
+        assert (hi + lo == x);
+
+        x = -hi * hi;
+        assert(fabs(csum) >= fabs(x));
+        oldcsum = csum;
+        csum += x;
+        frac += (oldcsum - csum) + x;
+
+        x = -2.0 * hi * lo;
+        assert(fabs(csum) >= fabs(x));
+        oldcsum = csum;
+        csum += x;
+        frac += (oldcsum - csum) + x;
+
+        x = -lo * lo;
+        assert(fabs(csum) >= fabs(x));
+        oldcsum = csum;
+        csum += x;
+        frac += (oldcsum - csum) + x;
+
+        x = csum - 1.0 + frac;
+        return (h + x / (2.0 * h)) / scale;
     }
     /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
        So instead of multiplying by a scale, we just divide by *max*.
@@ -2489,7 +2563,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         x /= max;
         x = x*x;
         assert(x <= 1.0);
-        assert(csum >= x);
+        assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
         frac += (oldcsum - csum) + x;
