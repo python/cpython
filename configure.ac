@@ -1994,7 +1994,10 @@ esac
 # -fwrapv for new icc versions
 case "$CC" in
 *icc*)
-    CFLAGS_NODIST="$CFLAGS_NODIST -fwrapv"
+    icc_version=`icc -dumpversion`
+    if test ${icc_version} '>' 18.9; then
+        CFLAGS_NODIST="$CFLAGS_NODIST -fwrapv"
+    fi
     ;;
 esac
 
