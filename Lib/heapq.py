@@ -209,7 +209,7 @@ def _siftdown(heap, startpos, pos):
     while pos > startpos:
         parentpos = (pos - 1) >> 1
         parent = heap[parentpos]
-        if newitem < parent:
+        if newitem[0] < parent[0]:
             heap[pos] = parent
             pos = parentpos
             continue
@@ -264,7 +264,7 @@ def _siftup(heap, pos):
     while childpos < endpos:
         # Set childpos to index of smaller child.
         rightpos = childpos + 1
-        if rightpos < endpos and not heap[childpos] < heap[rightpos]:
+        if rightpos < endpos and not heap[childpos][0] < heap[rightpos][0]:
             childpos = rightpos
         # Move the smaller child up.
         heap[pos] = heap[childpos]
