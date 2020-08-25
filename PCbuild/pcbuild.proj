@@ -8,6 +8,7 @@
     <IncludeExternals Condition="'$(IncludeExternals)' == ''">true</IncludeExternals>
     <IncludeTests Condition="'$(IncludeTest)' == ''">true</IncludeTests>
     <IncludeCTypes Condition="'$(IncludeCTypes)' == ''">true</IncludeCTypes>
+    <IncludeCurses Condition="'$(IncludeCurses)' == ''">true</IncludeCurses>
     <IncludeSSL Condition="'$(IncludeSSL)' == ''">true</IncludeSSL>
     <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
     <IncludeUwp Condition="'$(IncludeUwp)' == ''">false</IncludeUwp>
@@ -53,6 +54,8 @@
     <!-- Extension modules -->
     <ExtensionModules Include="_asyncio;_zoneinfo;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;_queue;select;unicodedata;winsound;_uuid" />
     <ExtensionModules Include="_ctypes" Condition="$(IncludeCTypes)" />
+    <ExtensionModules Include="_curses" Condition="$(IncludeCurses)" />
+    <ExtensionModules Include="_curses_panel" Condition="$(IncludeCurses)" />
     <!-- Extension modules that require external sources -->
     <ExternalModules Include="_bz2;_lzma;_sqlite3" />
     <!-- venv launchers -->

@@ -104,6 +104,9 @@ static const char PyCursesVersion[] = "2.2";
 
 #include "Python.h"
 
+#if defined(MS_WINDOWS)
+#include <windows.h>
+#endif
 
 #ifdef __hpux
 #define STRICT_SYSV_CURSES
@@ -654,7 +657,7 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
 
     if (encoding == NULL) {
 #if defined(MS_WINDOWS)
-        char *buffer[100];
+        char buffer[100];
         UINT cp;
         cp = GetConsoleOutputCP();
         if (cp != 0) {

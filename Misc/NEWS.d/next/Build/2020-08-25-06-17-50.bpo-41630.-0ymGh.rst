@@ -1,0 +1,1 @@
+Build _curses and _curses_panel using Visual Studio.

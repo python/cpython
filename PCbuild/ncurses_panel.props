@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ncursesIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(ncursesOutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>panelw.dll.lib;ncursesw.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <_PANELDLL Include="$(ncursesOutDir)\panelw6.dll" />
+  </ItemGroup>
+  <Target Name="_CopyPANELDLL" Inputs="@(_PANELDLL)" Outputs="@(_PANELDLL->'$(OutDir)%(Filename)%(Extension)')" AfterTargets="Build">
+    <Copy SourceFiles="@(_PANELDLL)" DestinationFolder="$(OutDir)" />
+  </Target>
+  <Target Name="_CleanPANELDLL" BeforeTargets="Clean">
+    <Delete Files="@(_PANELDLL->'$(OutDir)%(Filename)%(Extension)')" TreatErrorsAsWarnings="true" />
+  </Target>
+</Project>

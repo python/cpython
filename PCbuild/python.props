@@ -66,6 +66,9 @@
     <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1g\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
+    <ncursesDir>$(ExternalsDir)ncurses\</ncursesDir>
+    <ncursesOutDir>$(ExternalsDir)ncurses\$(ArchName)\</ncursesOutDir>
+    <ncursesIncludeDir>$(ncursesOutDir)include</ncursesIncludeDir>
     <zlibDir>$(ExternalsDir)\zlib-1.2.11\</zlibDir>
     
     <!-- Suffix for all binaries when building for debug -->
