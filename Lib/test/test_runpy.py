@@ -5,6 +5,7 @@ import os.path
 import pathlib
 import py_compile
 import re
+import signal
 import subprocess
 import sys
 import tempfile
@@ -755,6 +756,12 @@ s = "non-ASCII: h\xe9"
 
 
 class TestExit(unittest.TestCase):
+    STATUS_CONTROL_C_EXIT = 0xC000013A
+    EXPECTED_CODE = (
+        STATUS_CONTROL_C_EXIT
+        if sys.platform == "win32"
+        else -signal.SIGINT
+    )
     @staticmethod
     @contextlib.contextmanager
     def tmp_path(*args, **kwargs):
@@ -777,7 +784,7 @@ class TestExit(unittest.TestCase):
     def assertSigInt(self, *args, **kwargs):
         proc = subprocess.run(*args, **kwargs, text=True, stderr=subprocess.PIPE)
         self.assertTrue(proc.stderr.endswith("\nKeyboardInterrupt\n"))
-        self.assertEqual(proc.returncode, -2)
+        self.assertEqual(proc.returncode, self.EXPECTED_CODE)
 
     def test_pymain_run_file(self):
         self.assertSigInt([sys.executable, self.ham])
