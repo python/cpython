@@ -1,0 +1,1 @@
+The segmentation fault caused by ICC compiler versions 19.0 and above is fixed by adding the -fwarp flag.
