@@ -303,6 +303,16 @@ class TestRawDataManager(TestEmailBase):
         self.assertEqual(m.get_payload(decode=True).decode('utf-8'), content)
         self.assertEqual(m.get_content(), content)
 
+    def test_set_text_plain_max_line_length(self):
+        self.policy = policy.default.clone(max_line_length=None,
+                                           content_manager=raw_data_manager)
+        m = self._make_message()
+        content = "Simple message.\n"
+        with self.assertRaises(ValueError) as ar:
+            raw_data_manager.set_content(m, content)
+            exc = str(ar.exception)
+            self.assertIn("Unknown content transfer encoding None", exc)
+
     def test_set_text_plain_null(self):
         m = self._make_message()
         content = ''

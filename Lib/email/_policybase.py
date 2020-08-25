@@ -46,7 +46,12 @@ class _PolicyBase:
         """
         for name, value in kw.items():
             if hasattr(self, name):
-                super(_PolicyBase,self).__setattr__(name, value)
+                # Behaviour for max-line-length == None is the same
+                # as it is for when it is 0.
+                if name == "max_line_length":
+                    super(_PolicyBase, self).__setattr__(name, value or 0)
+                else:
+                    super(_PolicyBase, self).__setattr__(name, value)
             else:
                 raise TypeError(
                     "{!r} is an invalid keyword argument for {}".format(
@@ -72,7 +77,10 @@ class _PolicyBase:
                 raise TypeError(
                     "{!r} is an invalid keyword argument for {}".format(
                         attr, self.__class__.__name__))
-            object.__setattr__(newpolicy, attr, value)
+            if attr == "max_line_length":
+                object.__setattr__(newpolicy, attr, value or 0)
+            else:
+                object.__setattr__(newpolicy, attr, value)
         return newpolicy
 
     def __setattr__(self, name, value):

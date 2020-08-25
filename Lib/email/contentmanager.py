@@ -153,17 +153,19 @@ def _encode_text(string, charset, cte, policy):
                 pass
             if policy.cte_type == '8bit':
                 return '8bit', normal_body(lines).decode('ascii', 'surrogateescape')
-        sniff = embedded_body(lines[:10])
-        sniff_qp = quoprimime.body_encode(sniff.decode('latin-1'),
-                                          policy.max_line_length)
-        sniff_base64 = binascii.b2a_base64(sniff)
-        # This is a little unfair to qp; it includes lineseps, base64 doesn't.
-        if len(sniff_qp) > len(sniff_base64):
-            cte = 'base64'
-        else:
-            cte = 'quoted-printable'
-            if len(lines) <= 10:
-                return cte, sniff_qp
+        # quoprimime requires at least 4 max_line_length
+        if 4 <= policy.max_line_length:
+            sniff = embedded_body(lines[:10])
+            sniff_qp = quoprimime.body_encode(sniff.decode('latin-1'),
+                                            policy.max_line_length)
+            sniff_base64 = binascii.b2a_base64(sniff)
+            # This is a little unfair to qp; it includes lineseps, base64 doesn't.
+            if len(sniff_qp) > len(sniff_base64):
+                cte = 'base64'
+            else:
+                cte = 'quoted-printable'
+                if len(lines) <= 10:
+                    return cte, sniff_qp
     if cte == '7bit':
         data = normal_body(lines).decode('ascii')
     elif cte == '8bit':
