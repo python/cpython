@@ -3897,7 +3897,7 @@ order (MRO) for bases """
         class A:
             def __ipow__(self, other):
                 return NotImplemented
-        
+
         class B(A):
             def __rpow__(self, other):
                 return 1
