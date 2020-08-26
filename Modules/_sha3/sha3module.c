@@ -563,30 +563,30 @@ Return a new Keccak hash object with a hashbit length of 64 bytes.");
 
 #endif
 
-SHA3_TYPE_SLOTS(sha3_224slots, sha3_224__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(sha3_224typespec, "_sha3.sha3_224", sha3_224slots);
+SHA3_TYPE_SLOTS(sha3_224_slots, sha3_224__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(sha3_224_spec, "_sha3.sha3_224", sha3_224_slots);
 
-SHA3_TYPE_SLOTS(sha3_256slots, sha3_256__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(sha3_256typespec, "_sha3.sha3_256", sha3_256slots);
+SHA3_TYPE_SLOTS(sha3_256_slots, sha3_256__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(sha3_256_spec, "_sha3.sha3_256", sha3_256_slots);
 
-SHA3_TYPE_SLOTS(sha3_384slots, sha3_384__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(sha3_384typespec, "_sha3.sha3_384", sha3_384slots);
+SHA3_TYPE_SLOTS(sha3_384_slots, sha3_384__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(sha3_384_spec, "_sha3.sha3_384", sha3_384_slots);
 
-SHA3_TYPE_SLOTS(sha3_512slots, sha3_512__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(sha3_512typespec, "_sha3.sha3_512", sha3_512slots);
+SHA3_TYPE_SLOTS(sha3_512_slots, sha3_512__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(sha3_512_spec, "_sha3.sha3_512", sha3_512_slots);
 
 #ifdef PY_WITH_KECCAK
-SHA3_TYPE_SLOTS(Keccak_224slots, keccak_224__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(Keccak_224typespec, "_sha3.keccak_224", Keccak_224slots);
+SHA3_TYPE_SLOTS(Keccak_224_slots, keccak_224__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(Keccak_224_spec, "_sha3.keccak_224", Keccak_224_slots);
 
-SHA3_TYPE_SLOTS(Keccak_256slots, keccak_256__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(Keccak_256typespec, "_sha3.keccak_256", Keccak_256slots);
+SHA3_TYPE_SLOTS(Keccak_256_slots, keccak_256__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(Keccak_256_spec, "_sha3.keccak_256", Keccak_256_slots);
 
-SHA3_TYPE_SLOTS(Keccak_384slots, keccak_384__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(Keccak_384typespec, "_sha3.keccak_384", Keccak_384slots);
+SHA3_TYPE_SLOTS(Keccak_384_slots, keccak_384__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(Keccak_384_spec, "_sha3.keccak_384", Keccak_384_slots);
 
-SHA3_TYPE_SLOTS(Keccak_512slots, keccak_512__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(Keccak_512typespec, "_sha3.keccak_512", Keccak_512slots);
+SHA3_TYPE_SLOTS(Keccak_512_slots, keccak_512__doc__, SHA3_methods);
+SHA3_TYPE_SPEC(Keccak_512_spec, "_sha3.keccak_512", Keccak_512_slots);
 #endif
 
 
@@ -691,10 +691,10 @@ PyDoc_STRVAR(shake_256__doc__,
 Return a new SHAKE hash object.");
 
 SHA3_TYPE_SLOTS(SHAKE128slots, shake_128__doc__, SHAKE_methods);
-SHA3_TYPE_SPEC(SHAKE128typespec, "_sha3.shake_128", SHAKE128slots);
+SHA3_TYPE_SPEC(SHAKE128_spec, "_sha3.shake_128", SHAKE128slots);
 
 SHA3_TYPE_SLOTS(SHAKE256slots, shake_256__doc__, SHAKE_methods);
-SHA3_TYPE_SPEC(SHAKE256typespec, "_sha3.shake_256", SHAKE256slots);
+SHA3_TYPE_SPEC(SHAKE256_spec, "_sha3.shake_256", SHAKE256slots);
 
 
 static int
@@ -713,18 +713,18 @@ sha3_exec(PyObject *m) {
         }                                                       \
     } while(0)
 
-    init_sha3type(sha3_224_type, sha3_224typespec);
-    init_sha3type(sha3_256_type, sha3_256typespec);
-    init_sha3type(sha3_384_type, sha3_384typespec);
-    init_sha3type(sha3_512_type, sha3_512typespec);
+    init_sha3type(sha3_224_type, sha3_224_spec);
+    init_sha3type(sha3_256_type, sha3_256_spec);
+    init_sha3type(sha3_384_type, sha3_384_spec);
+    init_sha3type(sha3_512_type, sha3_512_spec);
 #ifdef PY_WITH_KECCAK
-    init_sha3type(keccak_224_type, Keccak_224typespec);
-    init_sha3type(keccak_256_type, Keccak_256typespec);
-    init_sha3type(keccak_384_type, Keccak_384typespec);
-    init_sha3type(keccak_512_type, Keccak_512typespec);
+    init_sha3type(keccak_224_type, Keccak_224_spec);
+    init_sha3type(keccak_256_type, Keccak_256_spec);
+    init_sha3type(keccak_384_type, Keccak_384_spec);
+    init_sha3type(keccak_512_type, Keccak_512_spec);
 #endif
-    init_sha3type(shake_128_type, SHAKE128typespec);
-    init_sha3type(shake_256_type, SHAKE256typespec);
+    init_sha3type(shake_128_type, SHAKE128_spec);
+    init_sha3type(shake_256_type, SHAKE256_spec);
 #undef init_sha3type
 
     if (PyModule_AddIntConstant(m, "keccakopt", KeccakOpt) < 0) {
