@@ -59,6 +59,12 @@ def compile_c_extension(
     extra_link_args = get_extra_flags("LDFLAGS", "PY_LDFLAGS_NODIST")
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
+
+    # testing pegen requires generating a C extension module, which contains
+    # a copy of the symbols defined in Python-ast.c and needs to be treated
+    # as the _ast module. See ast_dump.py.
+    extra_compile_args.append("-DAST_SKIP_MODULE_CHECK")
+
     extension = [
         Extension(
             extension_name,

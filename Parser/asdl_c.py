@@ -1408,7 +1408,14 @@ get_global_ast_state(void)
             "Non-module object imported as _ast");
         return NULL;
     }
-    if (PyModule_GetDef(module) != &_astmodule) {
+
+// testing "pegen" requires generating a C extension module, which contains
+// a copy of the symbols defined in Python-ast.c and needs to be treated
+// as the _ast module.
+#ifndef AST_SKIP_MODULE_CHECK
+
+    struct PyModuleDef *def = PyModule_GetDef(module);
+    if (def != &_astmodule) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(
                 PyExc_SystemError,
@@ -1416,6 +1423,8 @@ get_global_ast_state(void)
         }
         return NULL;
     }
+#endif
+
     astmodulestate *state = get_ast_state(module);
     Py_DECREF(module);
     return state;
