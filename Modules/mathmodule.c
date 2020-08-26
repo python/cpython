@@ -2440,7 +2440,7 @@ addend should be in the range: 0.5 <= |x| <= 1.0.  Accordingly,
 scaling or division by *max* should not be skipped even if not
 otherwise needed to prevent overflow or loss of precision.
 
-The assertion that hi*hi >= 1.0 is a bit subtle.  Each vector element
+The assertion that hi*hi <= 1.0 is a bit subtle.  Each vector element
 gets scaled to a magnitude below 1.0.  The Veltkamp-Dekker splitting
 algorithm gives a *hi* value that is correctly rounded to half
 precision.  When a value at or below 1.0 is correctly rounded, it
@@ -2458,7 +2458,7 @@ The correction is the first order term of the Maclaurin series
 expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2).
 
 Essentially, this differential correction is equivalent to one
-refinement step in the Newton divide-and-average square root
+refinement step in Newton's divide-and-average square root
 algorithm, effectively doubling the number of accurate bits.
 This technique is used in Dekker's SQRT2 algorithm and again in
 Borges' ALGORITHM 4 and 5.
