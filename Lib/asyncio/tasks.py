@@ -419,8 +419,13 @@ async def wait_for(fut, timeout, *, loop=None):
         if fut.done():
             return fut.result()
 
-        fut.cancel()
-        raise futures.TimeoutError()
+        await _cancel_and_wait(fut, loop=loop)
+        try:
+            fut.result()
+        except futures.CancelledError as exc:
+            raise futures.TimeoutError() from exc
+        else:
+            raise futures.TimeoutError()
 
     waiter = loop.create_future()
     timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
