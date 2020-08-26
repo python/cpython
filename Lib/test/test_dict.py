@@ -37,6 +37,38 @@ class DictTest(unittest.TestCase):
             dictliteral = '{' + ', '.join(formatted_items) + '}'
             self.assertEqual(eval(dictliteral), dict(items))
 
+    def test_merge_operator(self):
+
+        a = {0: 0, 1: 1, 2: 1}
+        b = {1: 1, 2: 2, 3: 3}
+
+        c = a.copy()
+        c |= b
+
+        self.assertEqual(a | b, {0: 0, 1: 1, 2: 2, 3: 3})
+        self.assertEqual(c, {0: 0, 1: 1, 2: 2, 3: 3})
+
+        c = b.copy()
+        c |= a
+
+        self.assertEqual(b | a, {1: 1, 2: 1, 3: 3, 0: 0})
+        self.assertEqual(c, {1: 1, 2: 1, 3: 3, 0: 0})
+
+        c = a.copy()
+        c |= [(1, 1), (2, 2), (3, 3)]
+
+        self.assertEqual(c, {0: 0, 1: 1, 2: 2, 3: 3})
+
+        self.assertIs(a.__or__(None), NotImplemented)
+        self.assertIs(a.__or__(()), NotImplemented)
+        self.assertIs(a.__or__("BAD"), NotImplemented)
+        self.assertIs(a.__or__(""), NotImplemented)
+
+        self.assertRaises(TypeError, a.__ior__, None)
+        self.assertEqual(a.__ior__(()), {0: 0, 1: 1, 2: 1})
+        self.assertRaises(ValueError, a.__ior__, "BAD")
+        self.assertEqual(a.__ior__(""), {0: 0, 1: 1, 2: 1})
+
     def test_bool(self):
         self.assertIs(not {}, True)
         self.assertTrue({1: 2})
@@ -72,6 +104,26 @@ class DictTest(unittest.TestCase):
         self.assertEqual(set(d.items()), {(1, 2)})
         self.assertRaises(TypeError, d.items, None)
         self.assertEqual(repr(dict(a=1).items()), "dict_items([('a', 1)])")
+
+    def test_views_mapping(self):
+        mappingproxy = type(type.__dict__)
+        class Dict(dict):
+            pass
+        for cls in [dict, Dict]:
+            d = cls()
+            m1 = d.keys().mapping
+            m2 = d.values().mapping
+            m3 = d.items().mapping
+
+            for m in [m1, m2, m3]:
+                self.assertIsInstance(m, mappingproxy)
+                self.assertEqual(m, d)
+
+            d["foo"] = "bar"
+
+            for m in [m1, m2, m3]:
+                self.assertIsInstance(m, mappingproxy)
+                self.assertEqual(m, d)
 
     def test_contains(self):
         d = {}
@@ -665,6 +717,16 @@ class DictTest(unittest.TestCase):
         self.assertEqual(k1 ^ k2, {(3,3)})
         self.assertEqual(k1 ^ k3, {(1,1), (2,2), (4,4)})
 
+    def test_items_symmetric_difference(self):
+        rr = random.randrange
+        for _ in range(100):
+            left = {x:rr(3) for x in range(20) if rr(2)}
+            right = {x:rr(3) for x in range(20) if rr(2)}
+            with self.subTest(left=left, right=right):
+                expected = set(left.items()) ^ set(right.items())
+                actual = left.items() ^ right.items()
+                self.assertEqual(actual, expected)
+
     def test_dictview_mixed_set_operations(self):
         # Just a few for .keys()
         self.assertTrue({1:1}.keys() == {1})
@@ -1221,7 +1283,7 @@ class DictTest(unittest.TestCase):
         support.check_free_after_iterating(self, lambda d: iter(d.items()), dict)
 
     def test_equal_operator_modifying_operand(self):
-        # test fix for seg fault reported in issue 27945 part 3.
+        # test fix for seg fault reported in bpo-27945 part 3.
         class X():
             def __del__(self):
                 dict_b.clear()
@@ -1236,6 +1298,16 @@ class DictTest(unittest.TestCase):
         dict_a = {X(): 0}
         dict_b = {X(): X()}
         self.assertTrue(dict_a == dict_b)
+
+        # test fix for seg fault reported in bpo-38588 part 1.
+        class Y:
+            def __eq__(self, other):
+                dict_d.clear()
+                return True
+
+        dict_c = {0: Y()}
+        dict_d = {0: set()}
+        self.assertTrue(dict_c == dict_d)
 
     def test_fromkeys_operator_modifying_dict_operand(self):
         # test fix for seg fault reported in issue 27945 part 4a.
@@ -1282,6 +1354,19 @@ class DictTest(unittest.TestCase):
         d = {0: set()}
         (0, X()) in d.items()
 
+    def test_dict_contain_use_after_free(self):
+        # bpo-40489
+        class S(str):
+            def __eq__(self, other):
+                d.clear()
+                return NotImplemented
+
+            def __hash__(self):
+                return hash('test')
+
+        d = {S(): 'value'}
+        self.assertFalse('test' in d)
+
     def test_init_use_after_free(self):
         class X:
             def __hash__(self):
@@ -1311,6 +1396,31 @@ class DictTest(unittest.TestCase):
         r = reversed(d)
         self.assertEqual(list(r), list('dcba'))
         self.assertRaises(StopIteration, next, r)
+
+    def test_reverse_iterator_for_empty_dict(self):
+        # bpo-38525: revered iterator should work properly
+
+        # empty dict is directly used for reference count test
+        self.assertEqual(list(reversed({})), [])
+        self.assertEqual(list(reversed({}.items())), [])
+        self.assertEqual(list(reversed({}.values())), [])
+        self.assertEqual(list(reversed({}.keys())), [])
+
+        # dict() and {} don't trigger the same code path
+        self.assertEqual(list(reversed(dict())), [])
+        self.assertEqual(list(reversed(dict().items())), [])
+        self.assertEqual(list(reversed(dict().values())), [])
+        self.assertEqual(list(reversed(dict().keys())), [])
+
+    def test_reverse_iterator_for_shared_shared_dicts(self):
+        class A:
+            def __init__(self, x, y):
+                if x: self.x = x
+                if y: self.y = y
+
+        self.assertEqual(list(reversed(A(1, 2).__dict__)), ['y', 'x'])
+        self.assertEqual(list(reversed(A(1, 0).__dict__)), ['x'])
+        self.assertEqual(list(reversed(A(0, 1).__dict__)), ['y'])
 
     def test_dict_copy_order(self):
         # bpo-34320

@@ -2,6 +2,52 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(py_sha3_new__doc__,
+"sha3_224(data=b\'\', /, *, usedforsecurity=True)\n"
+"--\n"
+"\n"
+"Return a new BLAKE2b hash object.");
+
+static PyObject *
+py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity);
+
+static PyObject *
+py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "usedforsecurity", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sha3_224", 0};
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    PyObject *data = NULL;
+    int usedforsecurity = 1;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional_posonly;
+    }
+    noptargs--;
+    data = fastargs[0];
+skip_optional_posonly:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    usedforsecurity = PyObject_IsTrue(fastargs[1]);
+    if (usedforsecurity < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = py_sha3_new_impl(type, data, usedforsecurity);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_sha3_sha3_224_copy__doc__,
 "copy($self, /)\n"
 "--\n"
@@ -118,4 +164,4 @@ _sha3_shake_128_hexdigest(SHA3object *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5b3e99b9a96471e8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c8a97b34e80def62 input=a9049054013a1b77]*/

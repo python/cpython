@@ -1,3 +1,0 @@
-Ensure method signature is used instead of constructor signature of a class
-while asserting mock object against method calls. Patch by Karthikeyan
-Singaravelan.

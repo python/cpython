@@ -1,6 +1,6 @@
-import os
 import unittest
 
+GLOBAL_VAR = None
 
 class NamedExpressionInvalidTest(unittest.TestCase):
 
@@ -31,7 +31,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
     def test_named_expression_invalid_06(self):
         code = """((a, b) := (1, 2))"""
 
-        with self.assertRaisesRegex(SyntaxError, "cannot use named assignment with tuple"):
+        with self.assertRaisesRegex(SyntaxError, "cannot use assignment expressions with tuple"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_07(self):
@@ -89,7 +89,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         code = """(lambda: x := 1)"""
 
         with self.assertRaisesRegex(SyntaxError,
-            "cannot use named assignment with lambda"):
+            "cannot use assignment expressions with lambda"):
             exec(code, {}, {})
 
     def test_named_expression_invalid_16(self):
@@ -469,6 +469,50 @@ spam()"""
                 exec(code, ns)
                 self.assertEqual(ns["x"], 2)
                 self.assertEqual(ns["result"], [0, 1, 2])
+
+    def test_named_expression_global_scope(self):
+        sentinel = object()
+        global GLOBAL_VAR
+        def f():
+            global GLOBAL_VAR
+            [GLOBAL_VAR := sentinel for _ in range(1)]
+            self.assertEqual(GLOBAL_VAR, sentinel)
+        try:
+            f()
+            self.assertEqual(GLOBAL_VAR, sentinel)
+        finally:
+            GLOBAL_VAR = None
+
+    def test_named_expression_global_scope_no_global_keyword(self):
+        sentinel = object()
+        def f():
+            GLOBAL_VAR = None
+            [GLOBAL_VAR := sentinel for _ in range(1)]
+            self.assertEqual(GLOBAL_VAR, sentinel)
+        f()
+        self.assertEqual(GLOBAL_VAR, None)
+
+    def test_named_expression_nonlocal_scope(self):
+        sentinel = object()
+        def f():
+            nonlocal_var = None
+            def g():
+                nonlocal nonlocal_var
+                [nonlocal_var := sentinel for _ in range(1)]
+            g()
+            self.assertEqual(nonlocal_var, sentinel)
+        f()
+
+    def test_named_expression_nonlocal_scope_no_nonlocal_keyword(self):
+        sentinel = object()
+        def f():
+            nonlocal_var = None
+            def g():
+                [nonlocal_var := sentinel for _ in range(1)]
+            g()
+            self.assertEqual(nonlocal_var, None)
+        f()
+
 
 if __name__ == "__main__":
     unittest.main()

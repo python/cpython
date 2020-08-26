@@ -1070,7 +1070,7 @@ Currently Argument Clinic supports only a few return converters:
     DecodeFSDefault
 
 None of these take parameters.  For the first three, return -1 to indicate
-error.  For ``DecodeFSDefault``, the return type is ``const char *``; return a NULL
+error.  For ``DecodeFSDefault``, the return type is ``const char *``; return a ``NULL``
 pointer to indicate an error.
 
 (There's also an experimental ``NoneType`` converter, which lets you

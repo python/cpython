@@ -518,14 +518,14 @@ desired effect in a number of ways.
 
 1) By returning a tuple of the results::
 
-      def func2(a, b):
-          a = 'new-value'        # a and b are local names
-          b = b + 1              # assigned to new objects
-          return a, b            # return new values
-
-      x, y = 'old-value', 99
-      x, y = func2(x, y)
-      print(x, y)                # output: new-value 100
+      >>> def func1(a, b):
+      ...     a = 'new-value'        # a and b are local names
+      ...     b = b + 1              # assigned to new objects
+      ...     return a, b            # return new values
+      ...
+      >>> x, y = 'old-value', 99
+      >>> func1(x, y)
+      ('new-value', 100)
 
    This is almost always the clearest solution.
 
@@ -533,38 +533,41 @@ desired effect in a number of ways.
 
 3) By passing a mutable (changeable in-place) object::
 
-      def func1(a):
-          a[0] = 'new-value'     # 'a' references a mutable list
-          a[1] = a[1] + 1        # changes a shared object
-
-      args = ['old-value', 99]
-      func1(args)
-      print(args[0], args[1])    # output: new-value 100
+      >>> def func2(a):
+      ...     a[0] = 'new-value'     # 'a' references a mutable list
+      ...     a[1] = a[1] + 1        # changes a shared object
+      ...
+      >>> args = ['old-value', 99]
+      >>> func2(args)
+      >>> args
+      ['new-value', 100]
 
 4) By passing in a dictionary that gets mutated::
 
-      def func3(args):
-          args['a'] = 'new-value'     # args is a mutable dictionary
-          args['b'] = args['b'] + 1   # change it in-place
-
-      args = {'a': 'old-value', 'b': 99}
-      func3(args)
-      print(args['a'], args['b'])
+      >>> def func3(args):
+      ...     args['a'] = 'new-value'     # args is a mutable dictionary
+      ...     args['b'] = args['b'] + 1   # change it in-place
+      ...
+      >>> args = {'a': 'old-value', 'b': 99}
+      >>> func3(args)
+      >>> args
+      {'a': 'new-value', 'b': 100}
 
 5) Or bundle up values in a class instance::
 
-      class callByRef:
-          def __init__(self, /, **args):
-              for key, value in args.items():
-                  setattr(self, key, value)
-
-      def func4(args):
-          args.a = 'new-value'        # args is a mutable callByRef
-          args.b = args.b + 1         # change object in-place
-
-      args = callByRef(a='old-value', b=99)
-      func4(args)
-      print(args.a, args.b)
+      >>> class Namespace:
+      ...     def __init__(self, /, **args):
+      ...         for key, value in args.items():
+      ...             setattr(self, key, value)
+      ...
+      >>> def func4(args):
+      ...     args.a = 'new-value'        # args is a mutable Namespace
+      ...     args.b = args.b + 1         # change object in-place
+      ...
+      >>> args = Namespace(a='old-value', b=99)
+      >>> func4(args)
+      >>> vars(args)
+      {'a': 'new-value', 'b': 100}
 
 
    There's almost never a good reason to get this complicated.
@@ -779,26 +782,23 @@ A slash in the argument list of a function denotes that the parameters prior to
 it are positional-only.  Positional-only parameters are the ones without an
 externally-usable name.  Upon calling a function that accepts positional-only
 parameters, arguments are mapped to parameters based solely on their position.
-For example, :func:`pow` is a function that accepts positional-only parameters.
-Its documentation looks like this::
+For example, :func:`divmod` is a function that accepts positional-only
+parameters. Its documentation looks like this::
 
-   >>> help(pow)
-   Help on built-in function pow in module builtins:
+   >>> help(divmod)
+   Help on built-in function divmod in module builtins:
 
-   pow(x, y, z=None, /)
-      Equivalent to x**y (with two arguments) or x**y % z (with three arguments)
+   divmod(x, y, /)
+       Return the tuple (x//y, x%y).  Invariant: div*y + mod == x.
 
-      Some types, such as ints, are able to use a more efficient algorithm when
-      invoked using the three argument form.
+The slash at the end of the parameter list means that both parameters are
+positional-only. Thus, calling :func:`divmod` with keyword arguments would lead
+to an error::
 
-The slash at the end of the parameter list means that all three parameters are
-positional-only. Thus, calling :func:`pow` with keyword arguments would lead to
-an error::
-
-   >>> pow(x=3, y=4)
+   >>> divmod(x=3, y=4)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: pow() takes no keyword arguments
+   TypeError: divmod() takes no keyword arguments
 
 
 Numbers and strings
@@ -854,10 +854,11 @@ For integers, use the built-in :func:`int` type constructor, e.g. ``int('144')
 e.g. ``float('144') == 144.0``.
 
 By default, these interpret the number as decimal, so that ``int('0144') ==
-144`` and ``int('0x144')`` raises :exc:`ValueError`. ``int(string, base)`` takes
-the base to convert from as a second optional argument, so ``int('0x144', 16) ==
-324``.  If the base is specified as 0, the number is interpreted using Python's
-rules: a leading '0o' indicates octal, and '0x' indicates a hex number.
+144`` holds true, and ``int('0x144')`` raises :exc:`ValueError`. ``int(string,
+base)`` takes the base to convert from as a second optional argument, so ``int(
+'0x144', 16) == 324``.  If the base is specified as 0, the number is interpreted
+using Python's rules: a leading '0o' indicates octal, and '0x' indicates a hex
+number.
 
 Do not use the built-in function :func:`eval` if all you need is to convert
 strings to numbers.  :func:`eval` will be significantly slower and it presents a
@@ -1022,7 +1023,7 @@ That's a tough one, in general.  First, here are a list of things to
 remember before diving further:
 
 * Performance characteristics vary across Python implementations.  This FAQ
-  focusses on :term:`CPython`.
+  focuses on :term:`CPython`.
 * Behaviour can vary across operating systems, especially when talking about
   I/O or multi-threading.
 * You should always find the hot spots in your program *before* attempting to
@@ -1497,8 +1498,8 @@ to uppercase::
 
 Here the ``UpperOut`` class redefines the ``write()`` method to convert the
 argument string to uppercase before calling the underlying
-``self.__outfile.write()`` method.  All other methods are delegated to the
-underlying ``self.__outfile`` object.  The delegation is accomplished via the
+``self._outfile.write()`` method.  All other methods are delegated to the
+underlying ``self._outfile`` object.  The delegation is accomplished via the
 ``__getattr__`` method; consult :ref:`the language reference <attribute-access>`
 for more information about controlling attribute access.
 

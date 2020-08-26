@@ -434,11 +434,6 @@ _tkinter_tkapp_createfilehandler(TkappObject *self, PyObject *const *args, Py_ss
         goto exit;
     }
     file = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     mask = _PyLong_AsInt(args[1]);
     if (mask == -1 && PyErr_Occurred()) {
         goto exit;
@@ -503,11 +498,6 @@ _tkinter_tkapp_createtimerhandler(TkappObject *self, PyObject *const *args, Py_s
     if (!_PyArg_CheckPositional("createtimerhandler", nargs, 2, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     milliseconds = _PyLong_AsInt(args[0]);
     if (milliseconds == -1 && PyErr_Occurred()) {
         goto exit;
@@ -542,11 +532,6 @@ _tkinter_tkapp_mainloop(TkappObject *self, PyObject *const *args, Py_ssize_t nar
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     threshold = _PyLong_AsInt(args[0]);
     if (threshold == -1 && PyErr_Occurred()) {
         goto exit;
@@ -580,11 +565,6 @@ _tkinter_tkapp_dooneevent(TkappObject *self, PyObject *const *args, Py_ssize_t n
     }
     if (nargs < 1) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     flags = _PyLong_AsInt(args[0]);
     if (flags == -1 && PyErr_Occurred()) {
@@ -674,7 +654,7 @@ PyDoc_STRVAR(_tkinter__flatten__doc__,
     {"_flatten", (PyCFunction)_tkinter__flatten, METH_O, _tkinter__flatten__doc__},
 
 PyDoc_STRVAR(_tkinter_create__doc__,
-"create($module, screenName=None, baseName=None, className=\'Tk\',\n"
+"create($module, screenName=None, baseName=\'\', className=\'Tk\',\n"
 "       interactive=False, wantobjects=False, wantTk=True, sync=False,\n"
 "       use=None, /)\n"
 "--\n"
@@ -702,7 +682,7 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     const char *screenName = NULL;
-    const char *baseName = NULL;
+    const char *baseName = "";
     const char *className = "Tk";
     int interactive = 0;
     int wantobjects = 0;
@@ -842,11 +822,6 @@ _tkinter_setbusywaitinterval(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_val;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     new_val = _PyLong_AsInt(arg);
     if (new_val == -1 && PyErr_Occurred()) {
         goto exit;
@@ -892,4 +867,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=94c0701cf3e9e70b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=931011b3f7c69383 input=a9049054013a1b77]*/

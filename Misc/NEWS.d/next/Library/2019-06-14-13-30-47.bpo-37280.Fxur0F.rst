@@ -1,1 +1,0 @@
-Use threadpool for reading from file for sendfile fallback mode.

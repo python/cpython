@@ -8,10 +8,12 @@ import encodings
 from unittest import mock
 
 from test import support
+from test.support import os_helper
+from test.support import warnings_helper
 
 try:
     import _testcapi
-except ImportError as exc:
+except ImportError:
     _testcapi = None
 
 try:
@@ -709,11 +711,11 @@ class UTF16Test(ReadTest, unittest.TestCase):
         s1 = 'Hello\r\nworld\r\n'
 
         s = s1.encode(self.encoding)
-        self.addCleanup(support.unlink, support.TESTFN)
-        with open(support.TESTFN, 'wb') as fp:
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(s)
-        with support.check_warnings(('', DeprecationWarning)):
-            reader = codecs.open(support.TESTFN, 'U', encoding=self.encoding)
+        with warnings_helper.check_warnings(('', DeprecationWarning)):
+            reader = codecs.open(os_helper.TESTFN, 'U', encoding=self.encoding)
         with reader:
             self.assertEqual(reader.read(), s1)
 
@@ -1142,6 +1144,7 @@ class UTF8SigTest(UTF8Test, unittest.TestCase):
             got = ostream.getvalue()
             self.assertEqual(got, unistring)
 
+
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
         self.assertEqual(codecs.escape_decode(b""), (b"", 0))
@@ -1330,6 +1333,18 @@ class PunycodeTest(unittest.TestCase):
             self.assertEqual(uni, puny.decode("punycode"))
             puny = puny.decode("ascii").encode("ascii")
             self.assertEqual(uni, puny.decode("punycode"))
+
+    def test_decode_invalid(self):
+        testcases = [
+            (b"xn--w&", "strict", UnicodeError()),
+            (b"xn--w&", "ignore", "xn-"),
+        ]
+        for puny, errors, expected in testcases:
+            with self.subTest(puny=puny, errors=errors):
+                if isinstance(expected, Exception):
+                    self.assertRaises(UnicodeError, puny.decode, "punycode", errors)
+                else:
+                    self.assertEqual(puny.decode("punycode", errors), expected)
 
 
 # From http://www.gnu.org/software/libidn/draft-josefsson-idn-test-vectors.html
@@ -1684,10 +1699,10 @@ class CodecsModuleTest(unittest.TestCase):
             getattr(codecs, api)
 
     def test_open(self):
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         for mode in ('w', 'r', 'r+', 'w+', 'a', 'a+'):
             with self.subTest(mode), \
-                    codecs.open(support.TESTFN, mode, 'ascii') as file:
+                    codecs.open(os_helper.TESTFN, mode, 'ascii') as file:
                 self.assertIsInstance(file, codecs.StreamReaderWriter)
 
     def test_undefined(self):
@@ -1700,6 +1715,14 @@ class CodecsModuleTest(unittest.TestCase):
                 codecs.encode, 'abc', 'undefined', errors)
             self.assertRaises(UnicodeError,
                 codecs.decode, b'abc', 'undefined', errors)
+
+    def test_file_closes_if_lookup_error_raised(self):
+        mock_open = mock.mock_open()
+        with mock.patch('builtins.open', mock_open) as file:
+            with self.assertRaises(LookupError):
+                codecs.open(os_helper.TESTFN, 'wt', 'invalid-encoding')
+
+            file().close.assert_called()
 
 
 class StreamReaderTest(unittest.TestCase):
@@ -2495,10 +2518,10 @@ class BomTest(unittest.TestCase):
                  "utf-32",
                  "utf-32-le",
                  "utf-32-be")
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         for encoding in tests:
             # Check if the BOM is written only once
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data)
                 f.write(data)
                 f.seek(0)
@@ -2507,7 +2530,7 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data * 2)
 
             # Check that the BOM is written after a seek(0)
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data[0])
                 self.assertNotEqual(f.tell(), 0)
                 f.seek(0)
@@ -2516,7 +2539,7 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data)
 
             # (StreamWriter) Check that the BOM is written after a seek(0)
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.writer.write(data[0])
                 self.assertNotEqual(f.writer.tell(), 0)
                 f.writer.seek(0)
@@ -2526,7 +2549,7 @@ class BomTest(unittest.TestCase):
 
             # Check that the BOM is not written after a seek() at a position
             # different than the start
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data)
                 f.seek(f.tell())
                 f.write(data)
@@ -2535,7 +2558,7 @@ class BomTest(unittest.TestCase):
 
             # (StreamWriter) Check that the BOM is not written after a seek()
             # at a position different than the start
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.writer.write(data)
                 f.writer.seek(f.writer.tell())
                 f.writer.write(data)
@@ -2621,7 +2644,7 @@ class TransformCodecTest(unittest.TestCase):
                 view_decoded = codecs.decode(view, encoding)
                 self.assertEqual(view_decoded, data)
 
-    def test_text_to_binary_blacklists_binary_transforms(self):
+    def test_text_to_binary_denylists_binary_transforms(self):
         # Check binary -> binary codecs give a good error for str input
         bad_input = "bad input type"
         for encoding in bytes_transform_encodings:
@@ -2633,14 +2656,14 @@ class TransformCodecTest(unittest.TestCase):
                     bad_input.encode(encoding)
                 self.assertIsNone(failure.exception.__cause__)
 
-    def test_text_to_binary_blacklists_text_transforms(self):
+    def test_text_to_binary_denylists_text_transforms(self):
         # Check str.encode gives a good error message for str -> str codecs
         msg = (r"^'rot_13' is not a text encoding; "
                r"use codecs.encode\(\) to handle arbitrary codecs")
         with self.assertRaisesRegex(LookupError, msg):
             "just an example message".encode("rot_13")
 
-    def test_binary_to_text_blacklists_binary_transforms(self):
+    def test_binary_to_text_denylists_binary_transforms(self):
         # Check bytes.decode and bytearray.decode give a good error
         # message for binary -> binary codecs
         data = b"encode first to ensure we meet any format restrictions"
@@ -2655,7 +2678,7 @@ class TransformCodecTest(unittest.TestCase):
                 with self.assertRaisesRegex(LookupError, msg):
                     bytearray(encoded_data).decode(encoding)
 
-    def test_binary_to_text_blacklists_text_transforms(self):
+    def test_binary_to_text_denylists_text_transforms(self):
         # Check str -> str codec gives a good error for binary input
         for bad_input in (b"immutable", bytearray(b"mutable")):
             with self.subTest(bad_input=bad_input):

@@ -1,8 +1,8 @@
 .. _distutils_examples:
 
-********
-Examples
-********
+******************
+Distutils Examples
+******************
 
 .. include:: ./_setuptools_disclaimer.rst
 
@@ -255,7 +255,7 @@ Running the ``check`` command will display some warnings:
     running check
     warning: check: missing required meta-data: version, url
     warning: check: missing meta-data: either (author and author_email) or
-             (maintainer and maintainer_email) must be supplied
+             (maintainer and maintainer_email) should be supplied
 
 
 If you use the reStructuredText syntax in the ``long_description`` field and

@@ -170,6 +170,28 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaises(tkinter.TclError):
             root.tk.call('after', 'info', idle1)
 
+    def test_clipboard(self):
+        root = self.root
+        root.clipboard_clear()
+        root.clipboard_append('Ùñî')
+        self.assertEqual(root.clipboard_get(), 'Ùñî')
+        root.clipboard_append('çōđě')
+        self.assertEqual(root.clipboard_get(), 'Ùñîçōđě')
+        root.clipboard_clear()
+        with self.assertRaises(tkinter.TclError):
+            root.clipboard_get()
+
+    def test_clipboard_astral(self):
+        root = self.root
+        root.clipboard_clear()
+        root.clipboard_append('𝔘𝔫𝔦')
+        self.assertEqual(root.clipboard_get(), '𝔘𝔫𝔦')
+        root.clipboard_append('𝔠𝔬𝔡𝔢')
+        self.assertEqual(root.clipboard_get(), '𝔘𝔫𝔦𝔠𝔬𝔡𝔢')
+        root.clipboard_clear()
+        with self.assertRaises(tkinter.TclError):
+            root.clipboard_get()
+
 
 tests_gui = (MiscTest, )
 

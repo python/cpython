@@ -1,0 +1,2 @@
+Fix in tutorial section 4.2.
+Code snippet is now correct.

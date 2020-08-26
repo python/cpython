@@ -6,6 +6,8 @@ import signal
 import socket
 import sys
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
 from time import sleep
 import unittest
 import unittest.mock
@@ -22,7 +24,7 @@ if hasattr(socket, 'socketpair'):
 else:
     def socketpair(family=socket.AF_INET, type=socket.SOCK_STREAM, proto=0):
         with socket.socket(family, type, proto) as l:
-            l.bind((support.HOST, 0))
+            l.bind((socket_helper.HOST, 0))
             l.listen()
             c = socket.socket(family, type, proto)
             try:
@@ -535,13 +537,26 @@ class KqueueSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn):
         # a file descriptor that's been closed should raise an OSError
         # with EBADF
         s = self.SELECTOR()
-        bad_f = support.make_bad_fd()
+        bad_f = os_helper.make_bad_fd()
         with self.assertRaises(OSError) as cm:
             s.register(bad_f, selectors.EVENT_READ)
         self.assertEqual(cm.exception.errno, errno.EBADF)
         # the SelectorKey has been removed
         with self.assertRaises(KeyError):
             s.get_key(bad_f)
+
+    def test_empty_select_timeout(self):
+        # Issues #23009, #29255: Make sure timeout is applied when no fds
+        # are registered.
+        s = self.SELECTOR()
+        self.addCleanup(s.close)
+
+        t0 = time()
+        self.assertEqual(s.select(1), [])
+        t1 = time()
+        dt = t1 - t0
+        # Tolerate 2.0 seconds for very slow buildbots
+        self.assertTrue(0.8 <= dt <= 2.0, dt)
 
 
 @unittest.skipUnless(hasattr(selectors, 'DevpollSelector'),

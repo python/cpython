@@ -1,0 +1,2 @@
+:data:`test.support.TESTFN` and the current directory for tests when run via
+``test.regrtest`` contain now non-ascii characters if possible.

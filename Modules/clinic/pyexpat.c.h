@@ -128,7 +128,8 @@ pyexpat_xmlparser_GetInputContext(xmlparseobject *self, PyObject *Py_UNUSED(igno
 }
 
 PyDoc_STRVAR(pyexpat_xmlparser_ExternalEntityParserCreate__doc__,
-"ExternalEntityParserCreate($self, context, encoding=None, /)\n"
+"ExternalEntityParserCreate($self, context, encoding=<unrepresentable>,\n"
+"                           /)\n"
 "--\n"
 "\n"
 "Create a parser for parsing an external entity based on the information passed to the ExternalEntityRefHandler.");
@@ -215,11 +216,6 @@ pyexpat_xmlparser_SetParamEntityParsing(xmlparseobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flag = _PyLong_AsInt(arg);
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
@@ -275,7 +271,7 @@ exit:
 
 PyDoc_STRVAR(pyexpat_ParserCreate__doc__,
 "ParserCreate($module, /, encoding=None, namespace_separator=None,\n"
-"             intern=None)\n"
+"             intern=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Return a new XML parser object.");
@@ -378,11 +374,6 @@ pyexpat_ErrorString(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     long code;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     code = PyLong_AsLong(arg);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
@@ -396,4 +387,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=27df5de1bbd06973 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=facaee775814ab60 input=a9049054013a1b77]*/

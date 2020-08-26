@@ -7,13 +7,10 @@
 
 
 import time
-try:
-    from test.support import import_fresh_module
-except ImportError:
-    from test.test_support import import_fresh_module
 
-C = import_fresh_module('decimal', fresh=['_decimal'])
-P = import_fresh_module('decimal', blocked=['_decimal'])
+import _decimal as C
+import _pydecimal as P
+
 
 #
 # NOTE: This is the pi function from the decimal documentation, modified

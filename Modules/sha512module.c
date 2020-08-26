@@ -17,7 +17,8 @@
 /* SHA objects */
 
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_bitutils.h"      // _Py_bswap32()
+#include "structmember.h"         // PyMemberDef
 #include "hashlib.h"
 #include "pystrhex.h"
 
@@ -30,13 +31,8 @@ class SHA512Type "SHAobject *" "&PyType_Type"
 /* Some useful types */
 
 typedef unsigned char SHA_BYTE;
-
-#if SIZEOF_INT == 4
-typedef unsigned int SHA_INT32; /* 32-bit integer */
-typedef unsigned long long SHA_INT64;        /* 64-bit integer */
-#else
-/* not defined. compilation will die. */
-#endif
+typedef uint32_t SHA_INT32;  /* 32-bit integer */
+typedef uint64_t SHA_INT64;  /* 64-bit integer */
 
 /* The SHA block size and message digest sizes, in bytes */
 
@@ -62,22 +58,9 @@ typedef struct {
 #if PY_LITTLE_ENDIAN
 static void longReverse(SHA_INT64 *buffer, int byteCount)
 {
-    SHA_INT64 value;
-
     byteCount /= sizeof(*buffer);
-    while (byteCount--) {
-        value = *buffer;
-
-                ((unsigned char*)buffer)[0] = (unsigned char)(value >> 56) & 0xff;
-                ((unsigned char*)buffer)[1] = (unsigned char)(value >> 48) & 0xff;
-                ((unsigned char*)buffer)[2] = (unsigned char)(value >> 40) & 0xff;
-                ((unsigned char*)buffer)[3] = (unsigned char)(value >> 32) & 0xff;
-                ((unsigned char*)buffer)[4] = (unsigned char)(value >> 24) & 0xff;
-                ((unsigned char*)buffer)[5] = (unsigned char)(value >> 16) & 0xff;
-                ((unsigned char*)buffer)[6] = (unsigned char)(value >>  8) & 0xff;
-                ((unsigned char*)buffer)[7] = (unsigned char)(value      ) & 0xff;
-
-                buffer++;
+    for (; byteCount--; buffer++) {
+        *buffer = _Py_bswap64(*buffer);
     }
 }
 #endif
@@ -478,7 +461,7 @@ SHA512Type_copy_impl(SHAobject *self)
 {
     SHAobject *newobj;
 
-    if (((PyObject*)self)->ob_type == &SHA512type) {
+    if (Py_IS_TYPE((PyObject*)self, &SHA512type)) {
         if ( (newobj = newSHA512object())==NULL)
             return NULL;
     } else {
@@ -666,13 +649,15 @@ static PyTypeObject SHA512type = {
 _sha512.sha512
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA-512 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha512_sha512_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=8b865a2df73bd387 input=e69bad9ae9b6a308]*/
+_sha512_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=a8d9e5f9e6a0831c input=23b4daebc2ebb9c9]*/
 {
     SHAobject *new;
     Py_buffer buf;
@@ -706,13 +691,15 @@ _sha512_sha512_impl(PyObject *module, PyObject *string)
 _sha512.sha384
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA-384 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha512_sha384_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=ae4b2e26decf81e8 input=c9327788d4ea4545]*/
+_sha512_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=da7d594a08027ac3 input=59ef72f039a6b431]*/
 {
     SHAobject *new;
     Py_buffer buf;
@@ -754,9 +741,6 @@ static struct PyMethodDef SHA_functions[] = {
 
 /* Initialize this module. */
 
-#define insint(n,v) { PyModule_AddIntConstant(m,n,v); }
-
-
 static struct PyModuleDef _sha512module = {
         PyModuleDef_HEAD_INIT,
         "_sha512",
@@ -774,16 +758,19 @@ PyInit__sha512(void)
 {
     PyObject *m;
 
-    Py_TYPE(&SHA384type) = &PyType_Type;
-    if (PyType_Ready(&SHA384type) < 0)
+    Py_SET_TYPE(&SHA384type, &PyType_Type);
+    if (PyType_Ready(&SHA384type) < 0) {
         return NULL;
-    Py_TYPE(&SHA512type) = &PyType_Type;
-    if (PyType_Ready(&SHA512type) < 0)
+    }
+    Py_SET_TYPE(&SHA512type, &PyType_Type);
+    if (PyType_Ready(&SHA512type) < 0) {
         return NULL;
+    }
 
     m = PyModule_Create(&_sha512module);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
+    }
 
     Py_INCREF((PyObject *)&SHA384type);
     PyModule_AddObject(m, "SHA384Type", (PyObject *)&SHA384type);

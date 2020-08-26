@@ -135,9 +135,13 @@ def _fastcopy_sendfile(fsrc, fdst):
     # should not make any difference, also in case the file content
     # changes while being copied.
     try:
-        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MB
-    except Exception:
-        blocksize = 2 ** 27  # 128MB
+        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MiB
+    except OSError:
+        blocksize = 2 ** 27  # 128MiB
+    # On 32-bit architectures truncate to 1GiB to avoid OverflowError,
+    # see bpo-38319.
+    if sys.maxsize < 2 ** 32:
+        blocksize = min(blocksize, 2 ** 30)
 
     offset = 0
     while True:
@@ -231,6 +235,8 @@ def copyfile(src, dst, *, follow_symlinks=True):
     symlink will be created instead of copying the file it points to.
 
     """
+    sys.audit("shutil.copyfile", src, dst)
+
     if _samefile(src, dst):
         raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
 
@@ -285,6 +291,8 @@ def copymode(src, dst, *, follow_symlinks=True):
     (e.g. Linux) this method does nothing.
 
     """
+    sys.audit("shutil.copymode", src, dst)
+
     if not follow_symlinks and _islink(src) and os.path.islink(dst):
         if hasattr(os, 'lchmod'):
             stat_func, chmod_func = os.lstat, os.lchmod
@@ -336,6 +344,8 @@ def copystat(src, dst, *, follow_symlinks=True):
     If the optional flag `follow_symlinks` is not set, symlinks aren't
     followed if and only if both `src` and `dst` are symlinks.
     """
+    sys.audit("shutil.copystat", src, dst)
+
     def _nop(*args, ns=None, follow_symlinks=None):
         pass
 
@@ -438,7 +448,7 @@ def ignore_patterns(*patterns):
 def _copytree(entries, src, dst, symlinks, ignore, copy_function,
               ignore_dangling_symlinks, dirs_exist_ok=False):
     if ignore is not None:
-        ignored_names = ignore(src, set(os.listdir(src)))
+        ignored_names = ignore(os.fspath(src), [x.name for x in entries])
     else:
         ignored_names = set()
 
@@ -539,11 +549,12 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
 
     """
     sys.audit("shutil.copytree", src, dst)
-    with os.scandir(src) as entries:
-        return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
-                         ignore=ignore, copy_function=copy_function,
-                         ignore_dangling_symlinks=ignore_dangling_symlinks,
-                         dirs_exist_ok=dirs_exist_ok)
+    with os.scandir(src) as itr:
+        entries = list(itr)
+    return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
+                     ignore=ignore, copy_function=copy_function,
+                     ignore_dangling_symlinks=ignore_dangling_symlinks,
+                     dirs_exist_ok=dirs_exist_ok)
 
 if hasattr(os.stat_result, 'st_file_attributes'):
     # Special handling for directory junctions to make them behave like
@@ -730,8 +741,20 @@ def rmtree(path, ignore_errors=False, onerror=None):
 rmtree.avoids_symlink_attacks = _use_fd_functions
 
 def _basename(path):
-    # A basename() variant which first strips the trailing slash, if present.
-    # Thus we always get the last component of the path, even for directories.
+    """A basename() variant which first strips the trailing slash, if present.
+    Thus we always get the last component of the path, even for directories.
+
+    path: Union[PathLike, str]
+
+    e.g.
+    >>> os.path.basename('/bar/foo')
+    'foo'
+    >>> os.path.basename('/bar/foo/')
+    ''
+    >>> _basename('/bar/foo/')
+    'foo'
+    """
+    path = os.fspath(path)
     sep = os.path.sep + (os.path.altsep or '')
     return os.path.basename(path.rstrip(sep))
 
@@ -761,6 +784,7 @@ def move(src, dst, copy_function=copy2):
     the issues this implementation glosses over.
 
     """
+    sys.audit("shutil.move", src, dst)
     real_dst = dst
     if os.path.isdir(dst):
         if _samefile(src, dst):
@@ -769,7 +793,10 @@ def move(src, dst, copy_function=copy2):
             os.rename(src, dst)
             return
 
+        # Using _basename instead of os.path.basename is important, as we must
+        # ignore any trailing slash to avoid the basename returning ''
         real_dst = os.path.join(dst, _basename(src))
+
         if os.path.exists(real_dst):
             raise Error("Destination path '%s' already exists" % real_dst)
     try:
@@ -1188,6 +1215,8 @@ def unpack_archive(filename, extract_dir=None, format=None):
 
     In case none is found, a ValueError is raised.
     """
+    sys.audit("shutil.unpack_archive", filename, extract_dir, format)
+
     if extract_dir is None:
         extract_dir = os.getcwd()
 
@@ -1255,6 +1284,7 @@ def chown(path, user=None, group=None):
     user and group can be the uid/gid or the user/group names, and in that case,
     they are converted to their respective uid/gid.
     """
+    sys.audit('shutil.chown', path, user, group)
 
     if user is None and group is None:
         raise ValueError("user and/or group must be set")

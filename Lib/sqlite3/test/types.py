@@ -275,13 +275,13 @@ class ColNamesTests(unittest.TestCase):
 
     def CheckColName(self):
         self.cur.execute("insert into test(x) values (?)", ("xxx",))
-        self.cur.execute('select x as "x [bar]" from test')
+        self.cur.execute('select x as "x y [bar]" from test')
         val = self.cur.fetchone()[0]
         self.assertEqual(val, "<xxx>")
 
         # Check if the stripping of colnames works. Everything after the first
-        # whitespace should be stripped.
-        self.assertEqual(self.cur.description[0][0], "x")
+        # '[' (and the preceeding space) should be stripped.
+        self.assertEqual(self.cur.description[0][0], "x y")
 
     def CheckCaseInConverterName(self):
         self.cur.execute("select 'other' as \"x [b1b1]\"")

@@ -19,9 +19,11 @@ in :pep:`557`.
 The member variables to use in these generated methods are defined
 using :pep:`526` type annotations.  For example this code::
 
+  from dataclasses import dataclass
+
   @dataclass
   class InventoryItem:
-      '''Class for keeping track of an item in inventory.'''
+      """Class for keeping track of an item in inventory."""
       name: str
       unit_price: float
       quantity_on_hand: int = 0
@@ -60,8 +62,9 @@ Module-level decorators, classes, and functions
 
    The :func:`dataclass` decorator will add various "dunder" methods to
    the class, described below.  If any of the added methods already
-   exist on the class, a :exc:`TypeError` will be raised.  The decorator
-   returns the same class that is called on: no new class is created.
+   exist on the class, the behavior depends on the parameter, as documented
+   below. The decorator returns the same class that is called on; no new
+   class is created.
 
    If :func:`dataclass` is used just as a simple decorator with no parameters,
    it acts as if it has the default values documented in this
@@ -115,7 +118,7 @@ Module-level decorators, classes, and functions
 
      If the class already defines any of :meth:`__lt__`,
      :meth:`__le__`, :meth:`__gt__`, or :meth:`__ge__`, then
-     :exc:`ValueError` is raised.
+     :exc:`TypeError` is raised.
 
    - ``unsafe_hash``: If ``False`` (the default), a :meth:`__hash__` method
      is generated according to how ``eq`` and ``frozen`` are set.
@@ -153,7 +156,7 @@ Module-level decorators, classes, and functions
      method of the superclass will be used (if the superclass is
      :class:`object`, this means it will fall back to id-based hashing).
 
-   - ``frozen``: If true (the default is False), assigning to fields will
+   - ``frozen``: If true (the default is ``False``), assigning to fields will
      generate an exception.  This emulates read-only frozen instances.  If
      :meth:`__setattr__` or :meth:`__delattr__` is defined in the class, then
      :exc:`TypeError` is raised.  See the discussion below.
@@ -386,8 +389,8 @@ Module-level decorators, classes, and functions
 
 .. function:: is_dataclass(class_or_instance)
 
-   Returns True if its parameter is a dataclass or an instance of one,
-   otherwise returns False.
+   Return ``True`` if its parameter is a dataclass or an instance of one,
+   otherwise return ``False``.
 
    If you need to know if a class is an instance of a dataclass (and
    not a dataclass itself), then add a further check for ``not

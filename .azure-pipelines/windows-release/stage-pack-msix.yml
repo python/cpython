@@ -3,7 +3,7 @@ jobs:
   displayName: Pack MSIX bundles
 
   pool:
-    vmName: win2016-vs2017
+    vmImage: windows-2019
 
   workspace:
     clean: all
@@ -17,6 +17,16 @@ jobs:
         ShouldSign: true
       amd64_store:
         Name: amd64
+        Artifact: appxstore
+        Suffix: -store
+        Upload: true
+      arm64:
+        Name: arm64
+        Artifact: appx
+        Suffix:
+        ShouldSign: true
+      arm64_store:
+        Name: arm64
         Artifact: appxstore
         Suffix: -store
         Upload: true
@@ -95,8 +105,14 @@ jobs:
     clean: all
 
   steps:
-  - checkout: none
+  - template: ./checkout.yml
   - template: ./find-sdk.yml
+
+  - powershell: |
+      $d = (.\PCbuild\build.bat -V) | %{ if($_ -match '\s+(\w+):\s*(.+)\s*$') { @{$Matches[1] = $Matches[2];} }};
+      Write-Host "##vso[task.setvariable variable=SigningDescription]Python $($d.PythonVersion)"
+    displayName: 'Update signing description'
+    condition: and(succeeded(), not(variables['SigningDescription']))
 
   - task: DownloadBuildArtifacts@0
     displayName: 'Download Artifact: unsigned_msix'

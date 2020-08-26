@@ -930,6 +930,14 @@ class TarInfo(object):
         """Return a header block. info is a dictionary with file
            information, format must be one of the *_FORMAT constants.
         """
+        has_device_fields = info.get("type") in (CHRTYPE, BLKTYPE)
+        if has_device_fields:
+            devmajor = itn(info.get("devmajor", 0), 8, format)
+            devminor = itn(info.get("devminor", 0), 8, format)
+        else:
+            devmajor = stn("", 8, encoding, errors)
+            devminor = stn("", 8, encoding, errors)
+
         parts = [
             stn(info.get("name", ""), 100, encoding, errors),
             itn(info.get("mode", 0) & 0o7777, 8, format),
@@ -943,8 +951,8 @@ class TarInfo(object):
             info.get("magic", POSIX_MAGIC),
             stn(info.get("uname", ""), 32, encoding, errors),
             stn(info.get("gname", ""), 32, encoding, errors),
-            itn(info.get("devmajor", 0), 8, format),
-            itn(info.get("devminor", 0), 8, format),
+            devmajor,
+            devminor,
             stn(info.get("prefix", ""), 155, encoding, errors)
         ]
 
@@ -1241,6 +1249,8 @@ class TarInfo(object):
 
             length, keyword = match.groups()
             length = int(length)
+            if length == 0:
+                raise InvalidHeaderError("invalid header")
             value = buf[match.end(2) + 1:match.start(1) + length - 1]
 
             # Normally, we could just use "utf-8" as the encoding and "strict"
@@ -1655,13 +1665,12 @@ class TarFile(object):
             raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
-            import gzip
-            gzip.GzipFile
-        except (ImportError, AttributeError):
+            from gzip import GzipFile
+        except ImportError:
             raise CompressionError("gzip module is not available")
 
         try:
-            fileobj = gzip.GzipFile(name, mode + "b", compresslevel, fileobj)
+            fileobj = GzipFile(name, mode + "b", compresslevel, fileobj)
         except OSError:
             if fileobj is not None and mode == 'r':
                 raise ReadError("not a gzip file")
@@ -1689,12 +1698,11 @@ class TarFile(object):
             raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
-            import bz2
+            from bz2 import BZ2File
         except ImportError:
             raise CompressionError("bz2 module is not available")
 
-        fileobj = bz2.BZ2File(fileobj or name, mode,
-                              compresslevel=compresslevel)
+        fileobj = BZ2File(fileobj or name, mode, compresslevel=compresslevel)
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
@@ -1718,15 +1726,15 @@ class TarFile(object):
             raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
-            import lzma
+            from lzma import LZMAFile, LZMAError
         except ImportError:
             raise CompressionError("lzma module is not available")
 
-        fileobj = lzma.LZMAFile(fileobj or name, mode, preset=preset)
+        fileobj = LZMAFile(fileobj or name, mode, preset=preset)
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
-        except (lzma.LZMAError, EOFError):
+        except (LZMAError, EOFError):
             fileobj.close()
             if mode == 'r':
                 raise ReadError("not an lzma file")
@@ -2461,9 +2469,14 @@ class TarFile(object):
 def is_tarfile(name):
     """Return True if name points to a tar archive that we
        are able to handle, else return False.
+
+       'name' should be a string, file, or file-like object.
     """
     try:
-        t = open(name)
+        if hasattr(name, "read"):
+            t = open(fileobj=name)
+        else:
+            t = open(name)
         t.close()
         return True
     except TarError:

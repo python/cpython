@@ -1,1 +1,0 @@
-inspect.py now uses sys.exit() instead of exit()

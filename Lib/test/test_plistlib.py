@@ -10,6 +10,7 @@ import codecs
 import binascii
 import collections
 from test import support
+from test.support import os_helper
 from io import BytesIO
 
 from plistlib import UID
@@ -110,7 +111,7 @@ class TestPlistlib(unittest.TestCase):
 
     def tearDown(self):
         try:
-            os.unlink(support.TESTFN)
+            os.unlink(os_helper.TESTFN)
         except:
             pass
 
@@ -148,10 +149,10 @@ class TestPlistlib(unittest.TestCase):
 
     def test_io(self):
         pl = self._create()
-        with open(support.TESTFN, 'wb') as fp:
+        with open(os_helper.TESTFN, 'wb') as fp:
             plistlib.dump(pl, fp)
 
-        with open(support.TESTFN, 'rb') as fp:
+        with open(os_helper.TESTFN, 'rb') as fp:
             pl2 = plistlib.load(fp)
 
         self.assertEqual(dict(pl), dict(pl2))
@@ -503,6 +504,26 @@ class TestPlistlib(unittest.TestCase):
                 pl2 = plistlib.loads(data)
                 self.assertEqual(dict(pl), dict(pl2))
 
+    def test_dump_invalid_format(self):
+        with self.assertRaises(ValueError):
+            plistlib.dumps({}, fmt="blah")
+
+    def test_load_invalid_file(self):
+        with self.assertRaises(plistlib.InvalidFileException):
+            plistlib.loads(b"these are not plist file contents")
+
+    def test_modified_uid_negative(self):
+        neg_uid = UID(1)
+        neg_uid.data = -1  # dodge the negative check in the constructor
+        with self.assertRaises(ValueError):
+            plistlib.dumps(neg_uid, fmt=plistlib.FMT_BINARY)
+
+    def test_modified_uid_huge(self):
+        huge_uid = UID(1)
+        huge_uid.data = 2 ** 64  # dodge the size check in the constructor
+        with self.assertRaises(OverflowError):
+            plistlib.dumps(huge_uid, fmt=plistlib.FMT_BINARY)
+
 
 class TestBinaryPlistlib(unittest.TestCase):
 
@@ -651,13 +672,9 @@ class TestKeyedArchive(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {"PlistFormat", "PLISTHEADER"}
-        support.check__all__(self, plistlib, blacklist=blacklist)
-
-
-def test_main():
-    support.run_unittest(TestPlistlib, TestKeyedArchive, MiscTestCase)
+        not_exported = {"PlistFormat", "PLISTHEADER"}
+        support.check__all__(self, plistlib, not_exported=not_exported)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

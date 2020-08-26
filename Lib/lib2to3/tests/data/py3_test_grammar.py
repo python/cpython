@@ -473,15 +473,27 @@ class GrammarTests(unittest.TestCase):
         test_inner()
 
     def testReturn(self):
-        # 'return' [testlist]
+        # 'return' [testlist_star_expr]
         def g1(): return
         def g2(): return 1
+        return_list = [2, 3]
+        def g3(): return 1, *return_list
         g1()
         x = g2()
+        x3 = g3()
         check_syntax_error(self, "class foo:return 1")
 
     def testYield(self):
+        # 'yield' [yield_arg]
+        def g1(): yield 1
+        yield_list = [2, 3]
+        def g2(): yield 1, *yield_list
+        def g3(): yield from iter(yield_list)
+        x1 = g1()
+        x2 = g2()
+        x3 = g3()
         check_syntax_error(self, "class foo:yield 1")
+        check_syntax_error(self, "def g4(): yield from *a")
 
     def testRaise(self):
         # 'raise' test [',' test]

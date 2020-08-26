@@ -19,10 +19,18 @@ jobs:
         Name: win32
       amd64:
         Name: amd64
+      arm64:
+        Name: arm64
 
   steps:
   - template: ./checkout.yml
   - template: ./find-sdk.yml
+
+  - powershell: |
+      $d = (.\PCbuild\build.bat -V) | %{ if($_ -match '\s+(\w+):\s*(.+)\s*$') { @{$Matches[1] = $Matches[2];} }};
+      Write-Host "##vso[task.setvariable variable=SigningDescription]Python $($d.PythonVersion)"
+    displayName: 'Update signing description'
+    condition: and(succeeded(), not(variables['SigningDescription']))
 
   - powershell: |
       Write-Host "##vso[build.addbuildtag]signed"
@@ -112,7 +120,7 @@ jobs:
   condition: and(succeeded(), not(variables['SigningCertificate']))
 
   pool:
-    vmName: win2016-vs2017
+    vmImage: windows-2019
 
   steps:
   - checkout: none

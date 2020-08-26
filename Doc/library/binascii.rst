@@ -92,6 +92,8 @@ The :mod:`binascii` module defines the following functions:
    The string should contain a complete number of binary bytes, or (in case of the
    last portion of the binhex4 data) have the remaining bits zero.
 
+   .. deprecated:: 3.9
+
 
 .. function:: rledecode_hqx(data)
 
@@ -104,10 +106,14 @@ The :mod:`binascii` module defines the following functions:
    .. versionchanged:: 3.2
       Accept only bytestring or bytearray objects as input.
 
+   .. deprecated:: 3.9
+
 
 .. function:: rlecode_hqx(data)
 
    Perform binhex4 style RLE-compression on *data* and return the result.
+
+   .. deprecated:: 3.9
 
 
 .. function:: b2a_hqx(data)
@@ -115,6 +121,8 @@ The :mod:`binascii` module defines the following functions:
    Perform hexbin4 binary-to-ASCII translation and return the resulting string. The
    argument should already be RLE-coded, and have a length divisible by 3 (except
    possibly the last fragment).
+
+   .. deprecated:: 3.9
 
 
 .. function:: crc_hqx(data, value)

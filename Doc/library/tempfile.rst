@@ -105,8 +105,8 @@ The module defines the following user-callable items:
    causes the file to roll over to an on-disk file regardless of its size.
 
    The returned object is a file-like object whose :attr:`_file` attribute
-   is either an :class:`io.BytesIO` or :class:`io.StringIO` object (depending on
-   whether binary or text *mode* was specified) or a true file
+   is either an :class:`io.BytesIO` or :class:`io.TextIOWrapper` object
+   (depending on whether binary or text *mode* was specified) or a true file
    object, depending on whether :func:`rollover` has been called.  This
    file-like object can be used in a :keyword:`with` statement, just like
    a normal file.
@@ -175,9 +175,8 @@ The module defines the following user-callable items:
    If you want to force a bytes return value with otherwise default behavior,
    pass ``suffix=b''``.
 
-   If *text* is specified, it indicates whether to open the file in binary
-   mode (the default) or text mode.  On some platforms, this makes no
-   difference.
+   If *text* is specified and true, the file is opened in text mode.
+   Otherwise, (the default) the file is opened in binary mode.
 
    :func:`mkstemp` returns a tuple containing an OS-level handle to an open
    file (as would be returned by :func:`os.open`) and the absolute pathname

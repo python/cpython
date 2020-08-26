@@ -318,7 +318,7 @@ PyDoc_STRVAR(binascii_crc_hqx__doc__,
 #define BINASCII_CRC_HQX_METHODDEF    \
     {"crc_hqx", (PyCFunction)(void(*)(void))binascii_crc_hqx, METH_FASTCALL, binascii_crc_hqx__doc__},
 
-static unsigned int
+static PyObject *
 binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc);
 
 static PyObject *
@@ -327,7 +327,6 @@ binascii_crc_hqx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     unsigned int crc;
-    unsigned int _return_value;
 
     if (!_PyArg_CheckPositional("crc_hqx", nargs, 2, 2)) {
         goto exit;
@@ -339,20 +338,11 @@ binascii_crc_hqx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("crc_hqx", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     crc = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
     if (crc == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
     }
-    _return_value = binascii_crc_hqx_impl(module, &data, crc);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+    return_value = binascii_crc_hqx_impl(module, &data, crc);
 
 exit:
     /* Cleanup for data */
@@ -396,11 +386,6 @@ binascii_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     crc = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
     if (crc == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
@@ -422,7 +407,7 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_b2a_hex__doc__,
-"b2a_hex($module, /, data, sep=None, bytes_per_sep=1)\n"
+"b2a_hex($module, /, data, sep=<unrepresentable>, bytes_per_sep=1)\n"
 "--\n"
 "\n"
 "Hexadecimal representation of binary data.\n"
@@ -483,11 +468,6 @@ binascii_b2a_hex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     bytes_per_sep = _PyLong_AsInt(args[2]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
         goto exit;
@@ -505,7 +485,7 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_hexlify__doc__,
-"hexlify($module, /, data, sep=None, bytes_per_sep=1)\n"
+"hexlify($module, /, data, sep=<unrepresentable>, bytes_per_sep=1)\n"
 "--\n"
 "\n"
 "Hexadecimal representation of binary data.\n"
@@ -557,11 +537,6 @@ binascii_hexlify(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         if (!--noptargs) {
             goto skip_optional_pos;
         }
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     bytes_per_sep = _PyLong_AsInt(args[2]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
@@ -771,4 +746,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=737cae0d4e91d26a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fbebc806917c62f6 input=a9049054013a1b77]*/

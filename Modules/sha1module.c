@@ -480,13 +480,15 @@ static PyTypeObject SHA1type = {
 _sha1.sha1
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA1 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha1_sha1_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=e5982830d1dece51 input=27ea54281d995ec2]*/
+_sha1_sha1_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=6f8b3af05126e18e input=bd54b68e2bf36a8a]*/
 {
     SHA1object *new;
     Py_buffer buf;
@@ -527,9 +529,6 @@ static struct PyMethodDef SHA1_functions[] = {
 
 /* Initialize this module. */
 
-#define insint(n,v) { PyModule_AddIntConstant(m,n,v); }
-
-
 static struct PyModuleDef _sha1module = {
         PyModuleDef_HEAD_INIT,
         "_sha1",
@@ -547,13 +546,15 @@ PyInit__sha1(void)
 {
     PyObject *m;
 
-    Py_TYPE(&SHA1type) = &PyType_Type;
-    if (PyType_Ready(&SHA1type) < 0)
+    Py_SET_TYPE(&SHA1type, &PyType_Type);
+    if (PyType_Ready(&SHA1type) < 0) {
         return NULL;
+    }
 
     m = PyModule_Create(&_sha1module);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
+    }
 
     Py_INCREF((PyObject *)&SHA1type);
     PyModule_AddObject(m, "SHA1Type", (PyObject *)&SHA1type);

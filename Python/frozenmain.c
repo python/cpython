@@ -2,7 +2,7 @@
 /* Python interpreter main program for frozen scripts */
 
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_runtime.h"  // _PyRuntime_Initialize()
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -40,11 +40,7 @@ Py_FrozenMain(int argc, char **argv)
     }
 
     PyConfig config;
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
     config.pathconfig_warnings = 0;   /* Suppress errors from getpath.c */
 
     if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
@@ -103,7 +99,7 @@ Py_FrozenMain(int argc, char **argv)
 
     n = PyImport_ImportFrozenModule("__main__");
     if (n == 0)
-        Py_FatalError("__main__ not frozen");
+        Py_FatalError("the __main__ module is not frozen");
     if (n < 0) {
         PyErr_Print();
         sts = 1;

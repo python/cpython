@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
-"decimal($self, chr, default=None, /)\n"
+"decimal($self, chr, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Converts a Unicode character into its equivalent decimal value.\n"
@@ -53,7 +53,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicodedata_UCD_digit__doc__,
-"digit($self, chr, default=None, /)\n"
+"digit($self, chr, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Converts a Unicode character into its equivalent digit value.\n"
@@ -102,7 +102,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicodedata_UCD_numeric__doc__,
-"numeric($self, chr, default=None, /)\n"
+"numeric($self, chr, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Converts a Unicode character into its equivalent numeric value.\n"
@@ -481,7 +481,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicodedata_UCD_name__doc__,
-"name($self, chr, default=None, /)\n"
+"name($self, chr, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Returns the name assigned to the character chr as a string.\n"
@@ -559,4 +559,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3238f76814fb48d1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=10c23477dbe8a202 input=a9049054013a1b77]*/

@@ -8,7 +8,7 @@ PyDoc_STRVAR(select_select__doc__,
 "\n"
 "Wait until one or more file descriptors are ready for some kind of I/O.\n"
 "\n"
-"The first three arguments are sequences of file descriptors to be waited for:\n"
+"The first three arguments are iterables of file descriptors to be waited for:\n"
 "rlist -- wait until ready for reading\n"
 "wlist -- wait until ready for writing\n"
 "xlist -- wait for an \"exceptional condition\"\n"
@@ -65,7 +65,8 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL))
 
 PyDoc_STRVAR(select_poll_register__doc__,
-"register($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
+"register($self, fd,\n"
+"         eventmask=select.POLLIN | select.POLLPRI | select.POLLOUT, /)\n"
 "--\n"
 "\n"
 "Register a file descriptor with the polling object.\n"
@@ -226,7 +227,8 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_register__doc__,
-"register($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
+"register($self, fd,\n"
+"         eventmask=select.POLLIN | select.POLLPRI | select.POLLOUT, /)\n"
 "--\n"
 "\n"
 "Register a file descriptor with the polling object.\n"
@@ -275,7 +277,8 @@ exit:
 #if (defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)) && defined(HAVE_SYS_DEVPOLL_H)
 
 PyDoc_STRVAR(select_devpoll_modify__doc__,
-"modify($self, fd, eventmask=POLLIN | POLLPRI | POLLOUT, /)\n"
+"modify($self, fd,\n"
+"       eventmask=select.POLLIN | select.POLLPRI | select.POLLOUT, /)\n"
 "--\n"
 "\n"
 "Modify a possible already registered file descriptor.\n"
@@ -528,11 +531,6 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto skip_optional_pos;
     }
     if (fastargs[0]) {
-        if (PyFloat_Check(fastargs[0])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         sizehint = _PyLong_AsInt(fastargs[0]);
         if (sizehint == -1 && PyErr_Occurred()) {
             goto exit;
@@ -540,11 +538,6 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         if (!--noptargs) {
             goto skip_optional_pos;
         }
-    }
-    if (PyFloat_Check(fastargs[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     flags = _PyLong_AsInt(fastargs[1]);
     if (flags == -1 && PyErr_Occurred()) {
@@ -625,11 +618,6 @@ select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     fd = _PyLong_AsInt(arg);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
@@ -645,7 +633,8 @@ exit:
 #if defined(HAVE_EPOLL)
 
 PyDoc_STRVAR(select_epoll_register__doc__,
-"register($self, /, fd, eventmask=EPOLLIN | EPOLLPRI | EPOLLOUT)\n"
+"register($self, /, fd,\n"
+"         eventmask=select.EPOLLIN | select.EPOLLPRI | select.EPOLLOUT)\n"
 "--\n"
 "\n"
 "Registers a new fd or raises an OSError if the fd is already registered.\n"
@@ -684,11 +673,6 @@ select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
     }
     if (!noptargs) {
         goto skip_optional_pos;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
     if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
@@ -738,11 +722,6 @@ select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     if (!fildes_converter(args[0], &fd)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
@@ -845,11 +824,6 @@ select_epoll_poll(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs,
         if (!--noptargs) {
             goto skip_optional_pos;
         }
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     maxevents = _PyLong_AsInt(args[1]);
     if (maxevents == -1 && PyErr_Occurred()) {
@@ -959,11 +933,11 @@ select_kqueue(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
 
-    if ((type == &kqueue_queue_Type) &&
+    if ((type == _selectstate_global->kqueue_queue_Type) &&
         !_PyArg_NoPositional("kqueue", args)) {
         goto exit;
     }
-    if ((type == &kqueue_queue_Type) &&
+    if ((type == _selectstate_global->kqueue_queue_Type) &&
         !_PyArg_NoKeywords("kqueue", kwargs)) {
         goto exit;
     }
@@ -1041,11 +1015,6 @@ select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     fd = _PyLong_AsInt(arg);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1094,11 +1063,6 @@ select_kqueue_control(kqueue_queue_Object *self, PyObject *const *args, Py_ssize
         goto exit;
     }
     changelist = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     maxevents = _PyLong_AsInt(args[1]);
     if (maxevents == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1215,4 +1179,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=03041f3d09b04a3d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7144233c42e18279 input=a9049054013a1b77]*/

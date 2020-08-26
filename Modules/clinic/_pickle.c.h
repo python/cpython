@@ -69,8 +69,9 @@ PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "This takes a binary file for writing a pickle data stream.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
-"protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
-"protocol is 3; a backward-incompatible protocol designed for Python 3.\n"
+"protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
+"protocol is 4. It was introduced in Python 3.4, and is incompatible\n"
+"with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
 "version supported.  The higher the protocol used, the more recent the\n"
@@ -112,9 +113,9 @@ _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *file;
-    PyObject *protocol = NULL;
+    PyObject *protocol = Py_None;
     int fix_imports = 1;
-    PyObject *buffer_callback = NULL;
+    PyObject *buffer_callback = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 4, 0, argsbuf);
     if (!fastargs) {
@@ -292,7 +293,7 @@ exit:
 
 PyDoc_STRVAR(_pickle_Unpickler___init____doc__,
 "Unpickler(file, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\',\n"
-"          buffers=None)\n"
+"          buffers=())\n"
 "--\n"
 "\n"
 "This takes a binary file for reading a pickle data stream.\n"
@@ -463,8 +464,8 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "be more efficient.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
-"protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
-"protocol is 4. It was introduced in Python 3.4, it is incompatible\n"
+"protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
+"protocol is 4. It was introduced in Python 3.4, and is incompatible\n"
 "with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
@@ -502,9 +503,9 @@ _pickle_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *obj;
     PyObject *file;
-    PyObject *protocol = NULL;
+    PyObject *protocol = Py_None;
     int fix_imports = 1;
-    PyObject *buffer_callback = NULL;
+    PyObject *buffer_callback = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
     if (!args) {
@@ -550,8 +551,8 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
 "Return the pickled representation of the object as a bytes object.\n"
 "\n"
 "The optional *protocol* argument tells the pickler to use the given\n"
-"protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
-"protocol is 4. It was introduced in Python 3.4, it is incompatible\n"
+"protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default\n"
+"protocol is 4. It was introduced in Python 3.4, and is incompatible\n"
 "with previous versions.\n"
 "\n"
 "Specifying a negative protocol version selects the highest protocol\n"
@@ -582,9 +583,9 @@ _pickle_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *obj;
-    PyObject *protocol = NULL;
+    PyObject *protocol = Py_None;
     int fix_imports = 1;
-    PyObject *buffer_callback = NULL;
+    PyObject *buffer_callback = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -623,7 +624,7 @@ exit:
 
 PyDoc_STRVAR(_pickle_load__doc__,
 "load($module, /, file, *, fix_imports=True, encoding=\'ASCII\',\n"
-"     errors=\'strict\', buffers=None)\n"
+"     errors=\'strict\', buffers=())\n"
 "--\n"
 "\n"
 "Read and return an object from the pickle data stored in a file.\n"
@@ -734,8 +735,8 @@ exit:
 }
 
 PyDoc_STRVAR(_pickle_loads__doc__,
-"loads($module, /, data, *, fix_imports=True, encoding=\'ASCII\',\n"
-"      errors=\'strict\', buffers=None)\n"
+"loads($module, data, /, *, fix_imports=True, encoding=\'ASCII\',\n"
+"      errors=\'strict\', buffers=())\n"
 "--\n"
 "\n"
 "Read and return an object from the given pickle data.\n"
@@ -765,7 +766,7 @@ static PyObject *
 _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"data", "fix_imports", "encoding", "errors", "buffers", NULL};
+    static const char * const _keywords[] = {"", "fix_imports", "encoding", "errors", "buffers", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "loads", 0};
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
@@ -835,4 +836,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=17f6a76ebd94325d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=324aad69644beda2 input=a9049054013a1b77]*/

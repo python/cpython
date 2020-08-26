@@ -1,2 +1,0 @@
-Eliminate :exc:`RuntimeError` raised by :func:`asyncio.all_tasks()` if
-internal tasks weak set is changed by another thread during iteration.

@@ -5,7 +5,7 @@ codecov:
 comment: off
 ignore:
   - "Doc/**/*"
-  - "Misc/*"
+  - "Misc/**/*"
   - "Mac/**/*"
   - "PC/**/*"
   - "PCbuild/**/*"

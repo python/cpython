@@ -1,2 +1,0 @@
-Fixed :func:`inspect.getattr_static` used ``isinstance`` while it should
-avoid dynamic lookup.

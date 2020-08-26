@@ -1053,7 +1053,7 @@ class Misc:
         return self.tk.call('winfo', 'class', self._w)
 
     def winfo_colormapfull(self):
-        """Return true if at the last color request the colormap was full."""
+        """Return True if at the last color request the colormap was full."""
         return self.tk.getboolean(
             self.tk.call('winfo', 'colormapfull', self._w))
 
@@ -3226,7 +3226,7 @@ class Listbox(Widget, XView, YView):
     select_clear = selection_clear
 
     def selection_includes(self, index):
-        """Return 1 if INDEX is part of the selection."""
+        """Return True if INDEX is part of the selection."""
         return self.tk.getboolean(self.tk.call(
             self._w, 'selection', 'includes', index))
 
@@ -3965,7 +3965,7 @@ class OptionMenu(Menubutton):
         if 'command' in kwargs:
             del kwargs['command']
         if kwargs:
-            raise TclError('unknown option -'+kwargs.keys()[0])
+            raise TclError('unknown option -'+next(iter(kwargs)))
         menu.add_command(label=value,
                  command=_setit(variable, value, callback))
         for v in values:

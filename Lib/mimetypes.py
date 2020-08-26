@@ -114,8 +114,7 @@ class MimeTypes:
         but non-standard types.
         """
         url = os.fspath(url)
-        p = urllib.parse.urlparse(url)
-        scheme, url = p.scheme, p.path
+        scheme, url = urllib.parse._splittype(url)
         if scheme == 'data':
             # syntax of data URLs:
             # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
@@ -373,7 +372,7 @@ def init(files=None):
 
 def read_mime_types(file):
     try:
-        f = open(file)
+        f = open(file, encoding='utf-8')
     except OSError:
         return None
     with f:
@@ -402,6 +401,7 @@ def _default_mime_types():
         '.Z': 'compress',
         '.bz2': 'bzip2',
         '.xz': 'xz',
+        '.br': 'br',
         }
 
     # Before adding new types, make sure they are either registered with IANA,
@@ -415,6 +415,7 @@ def _default_mime_types():
         '.js'     : 'application/javascript',
         '.mjs'    : 'application/javascript',
         '.json'   : 'application/json',
+        '.webmanifest': 'application/manifest+json',
         '.doc'    : 'application/msword',
         '.dot'    : 'application/msword',
         '.wiz'    : 'application/msword',
@@ -447,6 +448,7 @@ def _default_mime_types():
         '.dvi'    : 'application/x-dvi',
         '.gtar'   : 'application/x-gtar',
         '.hdf'    : 'application/x-hdf',
+        '.h5'     : 'application/x-hdf5',
         '.latex'  : 'application/x-latex',
         '.mif'    : 'application/x-mif',
         '.cdf'    : 'application/x-netcdf',
@@ -563,7 +565,7 @@ def _default_mime_types():
 _default_mime_types()
 
 
-if __name__ == '__main__':
+def _main():
     import getopt
 
     USAGE = """\
@@ -607,3 +609,7 @@ More than one type argument may be given.
             guess, encoding = guess_type(gtype, strict)
             if not guess: print("I don't know anything about type", gtype)
             else: print('type:', guess, 'encoding:', encoding)
+
+
+if __name__ == '__main__':
+    _main()
