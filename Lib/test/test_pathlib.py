@@ -2385,6 +2385,19 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         # Non-strict
         self._check_symlink_loop(BASE, 'linkW', 'foo', strict=False)
 
+    def test_resolve_pwd_root(self):
+        P = self.cls
+
+        # Resolve relative path in root directory.
+        old_path = os.getcwd()
+        os.chdir("/")
+        try:
+            given = P("var").resolve()
+            expect = P("/var")
+            self.assertEqual(given, expect)
+        finally:
+            os.chdir(old_path)
+
     def test_glob(self):
         P = self.cls
         p = P(BASE)
