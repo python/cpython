@@ -888,6 +888,9 @@ class BaseTaskTests:
                 nonlocal task_done
                 try:
                     await asyncio.sleep(0.2)
+                except asyncio.CancelledError:
+                    await asyncio.sleep(0.1)
+                    raise
                 finally:
                     task_done = True
 
@@ -899,6 +902,34 @@ class BaseTaskTests:
             self.assertTrue(task_done)
 
         loop.run_until_complete(foo())
+
+    def test_wait_for_waits_for_task_cancellation_w_timeout_0(self):
+        loop = asyncio.new_event_loop()
+        self.addCleanup(loop.close)
+
+        task_done = False
+
+        async def foo():
+            async def inner():
+                nonlocal task_done
+                try:
+                    await asyncio.sleep(10)
+                except asyncio.CancelledError:
+                    await asyncio.sleep(0.1)
+                    raise
+                finally:
+                    task_done = True
+
+            inner_task = self.new_task(loop, inner())
+            await asyncio.sleep(0.1)
+            await asyncio.wait_for(inner_task, timeout=0)
+
+        with self.assertRaises(asyncio.TimeoutError) as cm:
+            loop.run_until_complete(foo())
+
+        self.assertTrue(task_done)
+        chained = cm.exception.__context__
+        self.assertEqual(type(chained), asyncio.CancelledError)
 
     def test_wait_for_self_cancellation(self):
         loop = asyncio.new_event_loop()
