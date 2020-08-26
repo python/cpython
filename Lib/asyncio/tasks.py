@@ -465,9 +465,12 @@ async def wait_for(fut, timeout, *, loop=None):
         try:
             await waiter
         except exceptions.CancelledError:
-            fut.remove_done_callback(cb)
-            fut.cancel()
-            raise
+            if fut.done():
+                return fut.result()
+            else:
+                fut.remove_done_callback(cb)
+                fut.cancel()
+                raise
 
         if fut.done():
             return fut.result()
