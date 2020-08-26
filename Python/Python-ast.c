@@ -232,6 +232,8 @@ get_ast_state(PyObject *module)
     return (astmodulestate*)state;
 }
 
+static struct PyModuleDef _astmodule;
+
 static astmodulestate*
 get_global_ast_state(void)
 {
@@ -249,6 +251,20 @@ get_global_ast_state(void)
         if (module == NULL) {
             return NULL;
         }
+    }
+    if (!PyModule_Check(module)) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "Non-module object imported as _ast");
+        return NULL;
+    }
+    if (PyModule_GetDef(module) != &_astmodule) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(
+                PyExc_SystemError,
+                "Unexpected module imported as _ast");
+        }
+        return NULL;
     }
     astmodulestate *state = get_ast_state(module);
     Py_DECREF(module);

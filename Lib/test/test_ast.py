@@ -1945,6 +1945,22 @@ class NodeVisitorTests(unittest.TestCase):
         ])
 
 
+class ModuleReplacementTests(unittest.TestCase):
+    # bpo-41631
+    # Check that compile(..., ast.PyCF_ONLY_AST) fails if _ast is tampered with
+    def test_replaced_ast_module(self):
+        old_ast = sys.modules['_ast']
+        try:
+            for replacement in None, 'a string', ast:
+                with self.subTest(replacement=replacement):
+                    sys.modules['_ast'] = replacement
+                    with self.assertRaises(SystemError):
+                        compile('1+1', '<string>', 'eval',
+                                flags=ast.PyCF_ONLY_AST)
+        finally:
+            sys.modules['_ast'] = old_ast
+
+
 def main():
     if __name__ != '__main__':
         return
