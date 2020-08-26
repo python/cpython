@@ -1030,7 +1030,7 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     uses the current owner and group.
     """
     sys.audit("shutil.make_archive", base_name, format, root_dir, base_dir)
-    base_name = os.fsdecode(base_dir)
+    base_name = os.fsdecode(base_name)
     save_cwd = os.getcwd()
     if root_dir is not None:
         root_dir = os.fsdecode(root_dir)
