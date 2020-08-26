@@ -1,0 +1,1 @@
+always support pathlib in shutil.make_archive
