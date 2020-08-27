@@ -1,0 +1,1 @@
+Invalid file descriptor values are now prevented from being passed to os.fpathconf. (discovered by Coverity)

@@ -493,6 +493,14 @@ class TestPegen(unittest.TestCase):
         # Would assert False without a special case in compute_left_recursives().
         make_parser(grammar)
 
+    def test_opt_sequence(self) -> None:
+        grammar = """
+        start: [NAME*]
+        """
+        # This case was failing because of a double trailing comma at the end
+        # of a line in the generated source. See bpo-41044
+        make_parser(grammar)
+
     def test_left_recursion_too_complex(self) -> None:
         grammar = """
         start: foo

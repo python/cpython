@@ -4205,7 +4205,7 @@ The constructors for both classes work the same:
 
 
    Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
-   :meth:`difference`, and :meth:`symmetric_difference`, :meth:`issubset`, and
+   :meth:`difference`, :meth:`symmetric_difference`, :meth:`issubset`, and
    :meth:`issuperset` methods will accept any iterable as an argument.  In
    contrast, their operator based counterparts require their arguments to be
    sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
@@ -4622,6 +4622,12 @@ support membership tests:
    .. versionchanged:: 3.8
       Dictionary views are now reversible.
 
+.. describe:: dictview.mapping
+
+   Return a :class:`types.MappingProxyType` that wraps the original
+   dictionary to which the view refers.
+
+   .. versionadded:: 3.10
 
 Keys views are set-like since their entries are unique and hashable.  If all
 values are hashable, so that ``(key, value)`` pairs are unique and hashable,
@@ -4660,6 +4666,12 @@ An example of dictionary view usage::
    {'bacon'}
    >>> keys ^ {'sausage', 'juice'}
    {'juice', 'sausage', 'bacon', 'spam'}
+
+   >>> # get back a read-only proxy for the original dictionary
+   >>> values.mapping
+   mappingproxy({'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500})
+   >>> values.mapping['spam']
+   500
 
 
 .. _typecontextmanager:

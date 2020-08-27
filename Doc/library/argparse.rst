@@ -1133,6 +1133,20 @@ container should match the type_ specified::
 
 Any container can be passed as the *choices* value, so :class:`list` objects,
 :class:`set` objects, and custom containers are all supported.
+This includes :class:`enum.Enum`, which could be used to restrain
+argument's choices; if we reuse previous rock/paper/scissors game example,
+this could be as follows::
+
+   >>> from enum import Enum
+   >>> class GameMove(Enum):
+   ...     ROCK = 'rock'
+   ...     PAPER = 'paper'
+   ...     SCISSORS = 'scissors'
+   ...
+   >>> parser = argparse.ArgumentParser(prog='game.py')
+   >>> parser.add_argument('move', type=GameMove, choices=GameMove)
+   >>> parser.parse_args(['rock'])
+   Namespace(move=<GameMove.ROCK: 'rock'>)
 
 
 required

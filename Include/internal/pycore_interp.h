@@ -13,13 +13,6 @@ extern "C" {
 #include "pycore_gc.h"        /* struct _gc_runtime_state */
 #include "pycore_warnings.h"  /* struct _warnings_runtime_state */
 
-struct _Py_parser_state {
-    struct {
-        int level;
-        int atbol;
-    } listnode;
-};
-
 struct _pending_calls {
     PyThread_type_lock lock;
     /* Request for running pending calls. */
@@ -65,8 +58,26 @@ struct _Py_unicode_fs_codec {
     _Py_error_handler error_handler;
 };
 
+struct _Py_bytes_state {
+    PyObject *empty_string;
+    PyBytesObject *characters[256];
+};
+
 struct _Py_unicode_state {
+    // The empty Unicode object is a singleton to improve performance.
+    PyObject *empty_string;
+    /* Single character Unicode strings in the Latin-1 range are being
+       shared as well. */
+    PyObject *latin1[256];
     struct _Py_unicode_fs_codec fs_codec;
+};
+
+struct _Py_float_state {
+    /* Special free list
+       free_list is a singly-linked list of available PyFloatObjects,
+       linked via abuse of their ob_type members. */
+    int numfree;
+    PyFloatObject *free_list;
 };
 
 /* Speed optimization to avoid frequent malloc/free of small tuples */
@@ -99,12 +110,16 @@ struct _Py_list_state {
     int numfree;
 };
 
-struct _Py_float_state {
-    /* Special free list
-       free_list is a singly-linked list of available PyFloatObjects,
-       linked via abuse of their ob_type members. */
+#ifndef PyDict_MAXFREELIST
+#  define PyDict_MAXFREELIST 80
+#endif
+
+struct _Py_dict_state {
+    /* Dictionary reuse scheme to save calls to malloc and free */
+    PyDictObject *free_list[PyDict_MAXFREELIST];
     int numfree;
-    PyFloatObject *free_list;
+    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
+    int keys_numfree;
 };
 
 struct _Py_frame_state {
@@ -135,6 +150,12 @@ struct _Py_context_state {
     int numfree;
 };
 
+struct _Py_exc_state {
+    // The dict mapping from errno codes to OSError subclasses
+    PyObject *errnomap;
+    PyBaseExceptionObject *memerrors_freelist;
+    int memerrors_numfree;
+};
 
 
 /* interpreter state */
@@ -182,8 +203,6 @@ struct _is {
     PyObject *codec_error_registry;
     int codecs_initialized;
 
-    struct _Py_unicode_state unicode;
-
     PyConfig config;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
@@ -214,8 +233,6 @@ struct _is {
 
     PyObject *audit_hooks;
 
-    struct _Py_parser_state parser;
-
 #if _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS > 0
     /* Small integers are preallocated in this array so that they
        can be shared.
@@ -224,16 +241,20 @@ struct _is {
     */
     PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
 #endif
-    struct _Py_tuple_state tuple;
-    struct _Py_list_state list;
+    struct _Py_bytes_state bytes;
+    struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
-    struct _Py_frame_state frame;
-    struct _Py_async_gen_state async_gen;
-    struct _Py_context_state context;
-
     /* Using a cache is very effective since typically only a single slice is
        created and then deleted again. */
     PySliceObject *slice_cache;
+
+    struct _Py_tuple_state tuple;
+    struct _Py_list_state list;
+    struct _Py_dict_state dict_state;
+    struct _Py_frame_state frame;
+    struct _Py_async_gen_state async_gen;
+    struct _Py_context_state context;
+    struct _Py_exc_state exc_state;
 };
 
 /* Used by _PyImport_Cleanup() */

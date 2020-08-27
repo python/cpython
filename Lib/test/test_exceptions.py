@@ -8,10 +8,13 @@ import pickle
 import weakref
 import errno
 
-from test.support import (TESTFN, captured_stderr, check_impl_detail,
-                          check_warnings, cpython_only, gc_collect,
-                          no_tracing, unlink, import_module, script_helper,
+from test.support import (captured_stderr, check_impl_detail,
+                          cpython_only, gc_collect,
+                          no_tracing, script_helper,
                           SuppressCrashReport)
+from test.support.import_helper import import_module
+from test.support.os_helper import TESTFN, unlink
+from test.support.warnings_helper import check_warnings
 from test import support
 
 
@@ -251,9 +254,9 @@ class ExceptionTests(unittest.TestCase):
         check('def f():\n  x, y: int', 2, 3)
         check('[*x for x in xs]', 1, 2)
         check('foo(x for x in range(10), 100)', 1, 5)
-        check('(yield i) = 2', 1, 1 if support.use_old_parser() else 2)
-        check('def f(*):\n  pass', 1, 7 if support.use_old_parser() else 8)
-        check('for 1 in []: pass', 1, 5 if support.use_old_parser() else 7)
+        check('for 1 in []: pass', 1, 5)
+        check('(yield i) = 2', 1, 2)
+        check('def f(*):\n  pass', 1, 8)
 
     @cpython_only
     def testSettingException(self):

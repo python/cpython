@@ -2311,7 +2311,7 @@ Multi-threading
 ===============
 
 * The mechanism for serializing execution of concurrently running Python threads
-  (generally known as the :term:`GIL` or :term:`Global Interpreter Lock`) has
+  (generally known as the :term:`GIL` or Global Interpreter Lock) has
   been rewritten.  Among the objectives were more predictable switching
   intervals and reduced overhead due to lock contention and the number of
   ensuing system calls.  The notion of a "check interval" to allow thread

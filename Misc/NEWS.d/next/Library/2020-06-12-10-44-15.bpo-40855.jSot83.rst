@@ -1,0 +1,2 @@
+The standard deviation and variance functions in the statistics module were
+ignoring their mu and xbar arguments.

@@ -72,7 +72,6 @@ static const char usage_3[] = "\
 -X opt : set implementation-specific option. The following options are available:\n\
 \n\
          -X faulthandler: enable faulthandler\n\
-         -X oldparser: enable the traditional LL(1) parser; also PYTHONOLDPARSER\n\
          -X showrefcount: output the total reference count and number of used\n\
              memory blocks when the program finishes or after each statement in the\n\
              interactive interpreter. This only works on debug builds\n\
@@ -601,6 +600,8 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->run_module);
     CLEAR(config->run_filename);
     CLEAR(config->check_hash_pycs_mode);
+
+    _PyWideStringList_Clear(&config->orig_argv);
 #undef CLEAR
 }
 
@@ -640,7 +641,6 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
-    config->_use_peg_parser = 1;
 }
 
 
@@ -798,7 +798,6 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(isolated);
     COPY_ATTR(use_environment);
     COPY_ATTR(dev_mode);
-    COPY_ATTR(_use_peg_parser);
     COPY_ATTR(install_signal_handlers);
     COPY_ATTR(use_hash_seed);
     COPY_ATTR(hash_seed);
@@ -857,7 +856,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(pathconfig_warnings);
     COPY_ATTR(_init_main);
     COPY_ATTR(_isolated_interpreter);
-    COPY_WSTRLIST(_orig_argv);
+    COPY_WSTRLIST(orig_argv);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -869,9 +868,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
 static PyObject *
 config_as_dict(const PyConfig *config)
 {
-    PyObject *dict;
-
-    dict = PyDict_New();
+    PyObject *dict = PyDict_New();
     if (dict == NULL) {
         return NULL;
     }
@@ -905,7 +902,6 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(isolated);
     SET_ITEM_INT(use_environment);
     SET_ITEM_INT(dev_mode);
-    SET_ITEM_INT(_use_peg_parser);
     SET_ITEM_INT(install_signal_handlers);
     SET_ITEM_INT(use_hash_seed);
     SET_ITEM_UINT(hash_seed);
@@ -959,7 +955,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(pathconfig_warnings);
     SET_ITEM_INT(_init_main);
     SET_ITEM_INT(_isolated_interpreter);
-    SET_ITEM_WSTRLIST(_orig_argv);
+    SET_ITEM_WSTRLIST(orig_argv);
 
     return dict;
 
@@ -1451,11 +1447,6 @@ config_read_complex_options(PyConfig *config)
         config->import_time = 1;
     }
 
-    if (config_get_env(config, "PYTHONOLDPARSER")
-       || config_get_xoption(config, L"oldparser")) {
-        config->_use_peg_parser = 0;
-    }
-
     PyStatus status;
     if (config->tracemalloc < 0) {
         status = config_init_tracemalloc(config);
@@ -1871,8 +1862,8 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
     preconfig->use_environment = config->use_environment;
     preconfig->dev_mode = config->dev_mode;
 
-    if (_Py_SetArgcArgv(config->_orig_argv.length,
-                        config->_orig_argv.items) < 0)
+    if (_Py_SetArgcArgv(config->orig_argv.length,
+                        config->orig_argv.items) < 0)
     {
         return _PyStatus_NO_MEMORY();
     }
@@ -2508,11 +2499,11 @@ PyConfig_Read(PyConfig *config)
 
     config_get_global_vars(config);
 
-    if (config->_orig_argv.length == 0
+    if (config->orig_argv.length == 0
         && !(config->argv.length == 1
              && wcscmp(config->argv.items[0], L"") == 0))
     {
-        if (_PyWideStringList_Copy(&config->_orig_argv, &config->argv) < 0) {
+        if (_PyWideStringList_Copy(&config->orig_argv, &config->argv) < 0) {
             return _PyStatus_NO_MEMORY();
         }
     }
@@ -2549,7 +2540,6 @@ PyConfig_Read(PyConfig *config)
     assert(config->isolated >= 0);
     assert(config->use_environment >= 0);
     assert(config->dev_mode >= 0);
-    assert(config->_use_peg_parser >= 0);
     assert(config->install_signal_handlers >= 0);
     assert(config->use_hash_seed >= 0);
     assert(config->faulthandler >= 0);
@@ -2597,7 +2587,7 @@ PyConfig_Read(PyConfig *config)
     assert(config->check_hash_pycs_mode != NULL);
     assert(config->_install_importlib >= 0);
     assert(config->pathconfig_warnings >= 0);
-    assert(_PyWideStringList_CheckConsistency(&config->_orig_argv));
+    assert(_PyWideStringList_CheckConsistency(&config->orig_argv));
 
     status = _PyStatus_OK();
 
@@ -2647,6 +2637,16 @@ _Py_GetConfigsAsDict(void)
         goto error;
     }
     if (PyDict_SetItemString(result, "config", dict) < 0) {
+        goto error;
+    }
+    Py_CLEAR(dict);
+
+    /* path config */
+    dict = _PyPathConfig_AsDict();
+    if (dict == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(result, "path_config", dict) < 0) {
         goto error;
     }
     Py_CLEAR(dict);

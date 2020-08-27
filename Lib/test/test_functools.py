@@ -19,15 +19,18 @@ import gc
 from weakref import proxy
 import contextlib
 
+from test.support import import_helper
 from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 
 import functools
 
-py_functools = support.import_fresh_module('functools', blocked=['_functools'])
-c_functools = support.import_fresh_module('functools', fresh=['_functools'])
+py_functools = import_helper.import_fresh_module('functools',
+                                                 blocked=['_functools'])
+c_functools = import_helper.import_fresh_module('functools',
+                                                fresh=['_functools'])
 
-decimal = support.import_fresh_module('decimal', fresh=['_decimal'])
+decimal = import_helper.import_fresh_module('decimal', fresh=['_decimal'])
 
 @contextlib.contextmanager
 def replaced_module(name, replacement):

@@ -956,8 +956,6 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
     }
     self->input_iter = PyObject_GetIter(iterator);
     if (self->input_iter == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "argument 1 must be an iterator");
         Py_DECREF(self);
         return NULL;
     }
@@ -1163,10 +1161,14 @@ csv_writerow(WriterObj *self, PyObject *seq)
     PyObject *iter, *field, *line, *result;
 
     iter = PyObject_GetIter(seq);
-    if (iter == NULL)
-        return PyErr_Format(_csvstate_global->error_obj,
-                            "iterable expected, not %.200s",
-                            Py_TYPE(seq)->tp_name);
+    if (iter == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Format(_csvstate_global->error_obj,
+                         "iterable expected, not %.200s",
+                         Py_TYPE(seq)->tp_name);
+        }
+        return NULL;
+    }
 
     /* Join all fields in internal buffer.
      */
@@ -1256,8 +1258,6 @@ csv_writerows(WriterObj *self, PyObject *seqseq)
 
     row_iter = PyObject_GetIter(seqseq);
     if (row_iter == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "writerows() argument must be iterable");
         return NULL;
     }
     while ((row_obj = PyIter_Next(row_iter))) {

@@ -224,8 +224,14 @@ error:
     self = NULL;
 cleanup:
     if (file_obj != NULL) {
+        PyObject *exc, *val, *tb;
+        PyErr_Fetch(&exc, &val, &tb);
         PyObject *tmp = PyObject_CallMethod(file_obj, "close", NULL);
-        Py_DECREF(tmp);
+        _PyErr_ChainExceptions(exc, val, tb);
+        if (tmp == NULL) {
+            Py_CLEAR(self);
+        }
+        Py_XDECREF(tmp);
         Py_DECREF(file_obj);
     }
     Py_DECREF(file_path);
@@ -278,13 +284,11 @@ zoneinfo_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
         instance =
             PyObject_CallMethod(weak_cache, "setdefault", "OO", key, tmp);
-        ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
-
         Py_DECREF(tmp);
-
         if (instance == NULL) {
             return NULL;
         }
+        ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
     }
 
     update_strong_cache(type, key, instance);
@@ -408,7 +412,6 @@ zoneinfo_clear_cache(PyObject *cls, PyObject *args, PyObject *kwargs)
         }
 
         clear_strong_cache(type);
-        ZONEINFO_STRONG_CACHE = NULL;
     }
     else {
         PyObject *item = NULL;
@@ -1622,7 +1625,7 @@ parse_abbr(const char *const p, PyObject **abbr)
     }
 
     *abbr = PyUnicode_FromStringAndSize(str_start, str_end - str_start);
-    if (abbr == NULL) {
+    if (*abbr == NULL) {
         return -1;
     }
 
@@ -2467,10 +2470,11 @@ clear_strong_cache(const PyTypeObject *const type)
     }
 
     strong_cache_free(ZONEINFO_STRONG_CACHE);
+    ZONEINFO_STRONG_CACHE = NULL;
 }
 
 static PyObject *
-new_weak_cache()
+new_weak_cache(void)
 {
     PyObject *weakref_module = PyImport_ImportModule("weakref");
     if (weakref_module == NULL) {
@@ -2484,7 +2488,7 @@ new_weak_cache()
 }
 
 static int
-initialize_caches()
+initialize_caches(void)
 {
     // TODO: Move to a PyModule_GetState / PEP 573 based caching system.
     if (TIMEDELTA_CACHE == NULL) {
@@ -2521,6 +2525,7 @@ zoneinfo_init_subclass(PyTypeObject *cls, PyObject *args, PyObject **kwargs)
     }
 
     PyObject_SetAttrString((PyObject *)cls, "_weak_cache", weak_cache);
+    Py_DECREF(weak_cache);
     Py_RETURN_NONE;
 }
 
@@ -2553,7 +2558,7 @@ static PyMethodDef zoneinfo_methods[] = {
     {"_unpickle", (PyCFunction)zoneinfo__unpickle, METH_VARARGS | METH_CLASS,
      PyDoc_STR("Private method used in unpickling.")},
     {"__init_subclass__", (PyCFunction)(void (*)(void))zoneinfo_init_subclass,
-     METH_VARARGS | METH_KEYWORDS,
+     METH_VARARGS | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("Function to initialize subclasses.")},
     {NULL} /* Sentinel */
 };
@@ -2612,8 +2617,7 @@ module_free()
         Py_CLEAR(ZONEINFO_WEAK_CACHE);
     }
 
-    strong_cache_free(ZONEINFO_STRONG_CACHE);
-    ZONEINFO_STRONG_CACHE = NULL;
+    clear_strong_cache(&PyZoneInfo_ZoneInfoType);
 }
 
 static int

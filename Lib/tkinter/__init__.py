@@ -3965,7 +3965,7 @@ class OptionMenu(Menubutton):
         if 'command' in kwargs:
             del kwargs['command']
         if kwargs:
-            raise TclError('unknown option -'+kwargs.keys()[0])
+            raise TclError('unknown option -'+next(iter(kwargs)))
         menu.add_command(label=value,
                  command=_setit(variable, value, callback))
         for v in values:

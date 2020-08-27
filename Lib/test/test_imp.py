@@ -5,6 +5,8 @@ import os.path
 import py_compile
 import sys
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 from test.support import script_helper
 import unittest
 import warnings
@@ -107,8 +109,8 @@ class ImportTests(unittest.TestCase):
             self.assertEqual(file.encoding, 'cp1252')
         finally:
             del sys.path[0]
-            support.unlink(temp_mod_name + '.py')
-            support.unlink(temp_mod_name + '.pyc')
+            os_helper.unlink(temp_mod_name + '.py')
+            os_helper.unlink(temp_mod_name + '.pyc')
 
     def test_issue5604(self):
         # Test cannot cover imp.load_compiled function.
@@ -192,10 +194,10 @@ class ImportTests(unittest.TestCase):
         finally:
             del sys.path[0]
             for ext in ('.py', '.pyc'):
-                support.unlink(temp_mod_name + ext)
-                support.unlink(init_file_name + ext)
-            support.rmtree(test_package_name)
-            support.rmtree('__pycache__')
+                os_helper.unlink(temp_mod_name + ext)
+                os_helper.unlink(init_file_name + ext)
+            os_helper.rmtree(test_package_name)
+            os_helper.rmtree('__pycache__')
 
     def test_issue9319(self):
         path = os.path.dirname(__file__)
@@ -204,7 +206,7 @@ class ImportTests(unittest.TestCase):
 
     def test_load_from_source(self):
         # Verify that the imp module can correctly load and find .py files
-        # XXX (ncoghlan): It would be nice to use support.CleanImport
+        # XXX (ncoghlan): It would be nice to use import_helper.CleanImport
         # here, but that breaks because the os module registers some
         # handlers in copy_reg on import. Since CleanImport doesn't
         # revert that registration, the module is left in a broken
@@ -213,7 +215,7 @@ class ImportTests(unittest.TestCase):
         # workaround
         orig_path = os.path
         orig_getenv = os.getenv
-        with support.EnvironmentVarGuard():
+        with os_helper.EnvironmentVarGuard():
             x = imp.find_module("os")
             self.addCleanup(x[0].close)
             new_os = imp.load_module("os", *x)
@@ -299,11 +301,11 @@ class ImportTests(unittest.TestCase):
     @unittest.skipIf(sys.dont_write_bytecode,
         "test meaningful only when writing bytecode")
     def test_bug7732(self):
-        with support.temp_cwd():
-            source = support.TESTFN + '.py'
+        with os_helper.temp_cwd():
+            source = os_helper.TESTFN + '.py'
             os.mkdir(source)
             self.assertRaisesRegex(ImportError, '^No module',
-                imp.find_module, support.TESTFN, ["."])
+                imp.find_module, os_helper.TESTFN, ["."])
 
     def test_multiple_calls_to_get_data(self):
         # Issue #18755: make sure multiple calls to get_data() can succeed.
@@ -364,7 +366,7 @@ class ImportTests(unittest.TestCase):
 
     def test_find_and_load_checked_pyc(self):
         # issue 34056
-        with support.temp_cwd():
+        with os_helper.temp_cwd():
             with open('mymod.py', 'wb') as fp:
                 fp.write(b'x = 42\n')
             py_compile.compile(
@@ -383,24 +385,24 @@ class ReloadTests(unittest.TestCase):
     reload()."""
 
     def test_source(self):
-        # XXX (ncoghlan): It would be nice to use test.support.CleanImport
+        # XXX (ncoghlan): It would be nice to use test.import_helper.CleanImport
         # here, but that breaks because the os module registers some
         # handlers in copy_reg on import. Since CleanImport doesn't
         # revert that registration, the module is left in a broken
         # state after reversion. Reinitialising the module contents
         # and just reverting os.environ to its previous state is an OK
         # workaround
-        with support.EnvironmentVarGuard():
+        with os_helper.EnvironmentVarGuard():
             import os
             imp.reload(os)
 
     def test_extension(self):
-        with support.CleanImport('time'):
+        with import_helper.CleanImport('time'):
             import time
             imp.reload(time)
 
     def test_builtin(self):
-        with support.CleanImport('marshal'):
+        with import_helper.CleanImport('marshal'):
             import marshal
             imp.reload(marshal)
 
@@ -443,10 +445,10 @@ class PEP3147Tests(unittest.TestCase):
 
 
 class NullImporterTests(unittest.TestCase):
-    @unittest.skipIf(support.TESTFN_UNENCODABLE is None,
+    @unittest.skipIf(os_helper.TESTFN_UNENCODABLE is None,
                      "Need an undecodeable filename")
     def test_unencodeable(self):
-        name = support.TESTFN_UNENCODABLE
+        name = os_helper.TESTFN_UNENCODABLE
         os.mkdir(name)
         try:
             self.assertRaises(ImportError, imp.NullImporter, name)

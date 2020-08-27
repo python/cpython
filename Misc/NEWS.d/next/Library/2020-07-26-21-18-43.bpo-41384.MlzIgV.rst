@@ -1,0 +1,2 @@
+Raise TclError instead of TypeError when an unknown option is passed to
+tkinter.OptionMenu.

@@ -7,8 +7,8 @@
    - _Py_bswap64(uint64_t)
 */
 
-#ifndef Py_INTERNAL_BSWAP_H
-#define Py_INTERNAL_BSWAP_H
+#ifndef Py_INTERNAL_BITUTILS_H
+#define Py_INTERNAL_BITUTILS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -131,8 +131,47 @@ _Py_popcount32(uint32_t x)
 }
 
 
+// Return the index of the most significant 1 bit in 'x'. This is the smallest
+// integer k such that x < 2**k. Equivalent to floor(log2(x)) + 1 for x != 0.
+static inline int
+_Py_bit_length(unsigned long x)
+{
+#if (defined(__clang__) || defined(__GNUC__))
+    if (x != 0) {
+        // __builtin_clzl() is available since GCC 3.4.
+        // Undefined behavior for x == 0.
+        return (int)sizeof(unsigned long) * 8 - __builtin_clzl(x);
+    }
+    else {
+        return 0;
+    }
+#elif defined(_MSC_VER)
+    // _BitScanReverse() is documented to search 32 bits.
+    Py_BUILD_ASSERT(sizeof(unsigned long) <= 4);
+    unsigned long msb;
+    if (_BitScanReverse(&msb, x)) {
+        return (int)msb + 1;
+    }
+    else {
+        return 0;
+    }
+#else
+    const int BIT_LENGTH_TABLE[32] = {
+        0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+    };
+    int msb = 0;
+    while (x >= 32) {
+        msb += 6;
+        x >>= 6;
+    }
+    msb += BIT_LENGTH_TABLE[x];
+    return msb;
+#endif
+}
+
+
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_INTERNAL_BSWAP_H */
-
+#endif /* !Py_INTERNAL_BITUTILS_H */

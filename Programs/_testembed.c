@@ -485,9 +485,6 @@ static int test_init_from_config(void)
 
     config.install_signal_handlers = 0;
 
-    putenv("PYTHONOLDPARSER=1");
-    config._use_peg_parser = 0;
-
     /* FIXME: test use_environment */
 
     putenv("PYTHONHASHSEED=42");
@@ -674,7 +671,6 @@ static void set_most_env_vars(void)
     putenv("PYTHONNOUSERSITE=1");
     putenv("PYTHONFAULTHANDLER=1");
     putenv("PYTHONIOENCODING=iso8859-1:replace");
-    putenv("PYTHONOLDPARSER=1");
     putenv("PYTHONPLATLIBDIR=env_platlibdir");
 }
 
@@ -1116,8 +1112,11 @@ static int test_open_code_hook(void)
     return result;
 }
 
+static int _audit_hook_clear_count = 0;
+
 static int _audit_hook(const char *event, PyObject *args, void *userdata)
 {
+    assert(args && PyTuple_CheckExact(args));
     if (strcmp(event, "_testembed.raise") == 0) {
         PyErr_SetString(PyExc_RuntimeError, "Intentional error");
         return -1;
@@ -1126,6 +1125,8 @@ static int _audit_hook(const char *event, PyObject *args, void *userdata)
             return -1;
         }
         return 0;
+    } else if (strcmp(event, "cpython._PySys_ClearAuditHooks") == 0) {
+        _audit_hook_clear_count += 1;
     }
     return 0;
 }
@@ -1171,6 +1172,9 @@ static int test_audit(void)
 {
     int result = _test_audit(42);
     Py_Finalize();
+    if (_audit_hook_clear_count != 1) {
+        return 0x1000 | _audit_hook_clear_count;
+    }
     return result;
 }
 

@@ -82,6 +82,12 @@ matrix:
           packages:
             - xvfb
       before_script:
+        - |
+            if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]
+            then
+              echo "Don't run Python coverage on pull requests."
+              exit
+            fi
         - ./configure
         - make -j4
         # Need a venv that can parse covered code.
@@ -109,6 +115,12 @@ matrix:
             - lcov
             - xvfb
       before_script:
+        - |
+            if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]
+            then
+              echo "Don't run C coverage on pull requests."
+              exit
+            fi
         - ./configure
       script:
         - xvfb-run make -j4 coverage-report

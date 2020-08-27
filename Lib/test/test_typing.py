@@ -1387,7 +1387,7 @@ class ProtocolTests(BaseTestCase):
         self.assertIsSubclass(B, Custom)
         self.assertNotIsSubclass(A, Custom)
 
-    def test_builtin_protocol_whitelist(self):
+    def test_builtin_protocol_allowlist(self):
         with self.assertRaises(TypeError):
             class CustomProtocol(TestCase, Protocol):
                 pass
@@ -1417,8 +1417,6 @@ class GenericTests(BaseTestCase):
     def test_generic_errors(self):
         T = TypeVar('T')
         S = TypeVar('S')
-        with self.assertRaises(TypeError):
-            Generic[T]()
         with self.assertRaises(TypeError):
             Generic[T][T]
         with self.assertRaises(TypeError):
@@ -2457,6 +2455,12 @@ class ForwardRefTests(BaseTestCase):
 
         self.assertEqual(get_type_hints(foo, globals(), locals()),
                          {'a': tuple[T]})
+
+    def test_double_forward(self):
+        def foo(a: 'List[\'int\']'):
+            pass
+        self.assertEqual(get_type_hints(foo, globals(), locals()),
+                         {'a': List[int]})
 
     def test_forward_recursion_actually(self):
         def namespace1():
