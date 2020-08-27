@@ -127,14 +127,14 @@ typedef struct {
     PyTypeObject *sha3_256_type;
     PyTypeObject *sha3_384_type;
     PyTypeObject *sha3_512_type;
-    PyTypeObject *shake_128_type;
-    PyTypeObject *shake_256_type;
 #ifdef PY_WITH_KECCAK
     PyTypeObject *keccak_224_type;
     PyTypeObject *keccak_256_type;
     PyTypeObject *keccak_384_type;
     PyTypeObject *keccak_512_type;
 #endif
+    PyTypeObject *shake_128_type;
+    PyTypeObject *shake_256_type;
 } SHA3State;
 
 static inline SHA3State*
@@ -272,9 +272,8 @@ SHA3_dealloc(SHA3object *self)
     if (self->lock) {
         PyThread_free_lock(self->lock);
     }
-    PyObject_Del(self);
-
     Py_DECREF(Py_TYPE(self));
+    PyObject_Del(self);
 }
 
 
@@ -516,7 +515,7 @@ static PyGetSetDef SHA3_getseters[] = {
 // cannot be subclassed: it does not have the Py_TPFLAGS_BASETYPE flag.
 #define SHA3_TYPE_SPEC(type_spec_obj, type_name, type_slots) \
     static PyType_Spec type_spec_obj = { \
-        .name = type_name, \
+        .name = "_sha3." type_name, \
         .basicsize = sizeof(SHA3object), \
         .flags = Py_TPFLAGS_DEFAULT, \
         .slots = type_slots \
@@ -566,29 +565,29 @@ Return a new Keccak hash object with a hashbit length of 64 bytes.");
 #endif
 
 SHA3_TYPE_SLOTS(sha3_224_slots, sha3_224__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(sha3_224_spec, "_sha3.sha3_224", sha3_224_slots);
+SHA3_TYPE_SPEC(sha3_224_spec, "sha3_224", sha3_224_slots);
 
 SHA3_TYPE_SLOTS(sha3_256_slots, sha3_256__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(sha3_256_spec, "_sha3.sha3_256", sha3_256_slots);
+SHA3_TYPE_SPEC(sha3_256_spec, "sha3_256", sha3_256_slots);
 
 SHA3_TYPE_SLOTS(sha3_384_slots, sha3_384__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(sha3_384_spec, "_sha3.sha3_384", sha3_384_slots);
+SHA3_TYPE_SPEC(sha3_384_spec, "sha3_384", sha3_384_slots);
 
 SHA3_TYPE_SLOTS(sha3_512_slots, sha3_512__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(sha3_512_spec, "_sha3.sha3_512", sha3_512_slots);
+SHA3_TYPE_SPEC(sha3_512_spec, "sha3_512", sha3_512_slots);
 
 #ifdef PY_WITH_KECCAK
 SHA3_TYPE_SLOTS(Keccak_224_slots, keccak_224__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(Keccak_224_spec, "_sha3.keccak_224", Keccak_224_slots);
+SHA3_TYPE_SPEC(Keccak_224_spec, "keccak_224", Keccak_224_slots);
 
 SHA3_TYPE_SLOTS(Keccak_256_slots, keccak_256__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(Keccak_256_spec, "_sha3.keccak_256", Keccak_256_slots);
+SHA3_TYPE_SPEC(Keccak_256_spec, "keccak_256", Keccak_256_slots);
 
 SHA3_TYPE_SLOTS(Keccak_384_slots, keccak_384__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(Keccak_384_spec, "_sha3.keccak_384", Keccak_384_slots);
+SHA3_TYPE_SPEC(Keccak_384_spec, "keccak_384", Keccak_384_slots);
 
 SHA3_TYPE_SLOTS(Keccak_512_slots, keccak_512__doc__, SHA3_methods);
-SHA3_TYPE_SPEC(Keccak_512_spec, "_sha3.keccak_512", Keccak_512_slots);
+SHA3_TYPE_SPEC(Keccak_512_spec, "keccak_512", Keccak_512_slots);
 #endif
 
 
@@ -693,10 +692,10 @@ PyDoc_STRVAR(shake_256__doc__,
 Return a new SHAKE hash object.");
 
 SHA3_TYPE_SLOTS(SHAKE128slots, shake_128__doc__, SHAKE_methods);
-SHA3_TYPE_SPEC(SHAKE128_spec, "_sha3.shake_128", SHAKE128slots);
+SHA3_TYPE_SPEC(SHAKE128_spec, "shake_128", SHAKE128slots);
 
 SHA3_TYPE_SLOTS(SHAKE256slots, shake_256__doc__, SHAKE_methods);
-SHA3_TYPE_SPEC(SHAKE256_spec, "_sha3.shake_256", SHAKE256slots);
+SHA3_TYPE_SPEC(SHAKE256_spec, "shake_256", SHAKE256slots);
 
 
 static int
@@ -744,7 +743,7 @@ _sha3_free(void *module)
 }
 
 static int
-sha3_exec(PyObject *m)
+_sha3_exec(PyObject *m)
 {
     SHA3State *st = sha3_get_state(m);
 
@@ -786,7 +785,7 @@ sha3_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot _sha3_slots[] = {
-    {Py_mod_exec, sha3_exec},
+    {Py_mod_exec, _sha3_exec},
     {0, NULL}
 };
 
