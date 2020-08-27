@@ -1312,14 +1312,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             # _getval() already printed the error
             return
         code = None
-        # Is it a function?
-        try:
-            code = value.__code__
-        except Exception:
-            pass
-        if code:
-            self.message('Function %s' % code.co_name)
-            return
         # Is it an instance method?
         try:
             code = value.__func__.__code__
@@ -1327,6 +1319,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             pass
         if code:
             self.message('Method %s' % code.co_name)
+            return
+        # Is it a function?
+        try:
+            code = value.__code__
+        except Exception:
+            pass
+        if code:
+            self.message('Function %s' % code.co_name)
             return
         # Is it a class?
         if value.__class__ is type:
