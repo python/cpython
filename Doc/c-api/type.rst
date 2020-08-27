@@ -117,6 +117,13 @@ Type Objects
    If no module is associated with the given type, sets :py:class:`TypeError`
    and returns ``NULL``.
 
+   This function is usually used to get the module in which a method is defined.
+   Note that in such a method, ``PyType_GetModule(Py_TYPE(self))``
+   may not return the intended result.
+   ``Py_TYPE(self)`` may be a *subclass* of the intended class, and subclasses
+   are not necessarily defined in the same module as their superclass.
+   See :c:type:`PyCMethod` to get the class that defines the method.
+
    .. versionadded:: 3.9
 
 .. c:function:: void* PyType_GetModuleState(PyTypeObject *type)
@@ -151,9 +158,12 @@ The following functions and structs are used to create
    If *bases* is ``NULL``, the *Py_tp_base* slot is used instead.
    If that also is ``NULL``, the new type derives from :class:`object`.
 
-   The *module* must be a module object or ``NULL``.
+   The *module* argument can be used to record the module in which the new
+   class is defined. It must be a module object or ``NULL``.
    If not ``NULL``, the module is associated with the new type and can later be
    retreived with :c:func:`PyType_GetModule`.
+   The associated module is not inherited by subclasses; it must be specified
+   for each class individually.
 
    This function calls :c:func:`PyType_Ready` on the new type.
 
