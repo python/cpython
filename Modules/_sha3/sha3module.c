@@ -273,6 +273,8 @@ SHA3_dealloc(SHA3object *self)
         PyThread_free_lock(self->lock);
     }
     PyObject_Del(self);
+
+    Py_DECREF(Py_TYPE(self));
 }
 
 
@@ -698,7 +700,52 @@ SHA3_TYPE_SPEC(SHAKE256_spec, "_sha3.shake_256", SHAKE256slots);
 
 
 static int
-sha3_exec(PyObject *m) {
+_sha3_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    SHA3State *state = sha3_get_state(module);
+    Py_VISIT(state->sha3_224_type);
+    Py_VISIT(state->sha3_256_type);
+    Py_VISIT(state->sha3_384_type);
+    Py_VISIT(state->sha3_512_type);
+#ifdef PY_WITH_KECCAK
+    Py_VISIT(state->keccak_224_type);
+    Py_VISIT(state->keccak_256_type);
+    Py_VISIT(state->keccak_384_type);
+    Py_VISIT(state->keccak_512_type);
+#endif
+    Py_VISIT(state->shake_128_type);
+    Py_VISIT(state->shake_256_type);
+    return 0;
+}
+
+static int
+_sha3_clear(PyObject *module)
+{
+    SHA3State *state = sha3_get_state(module);
+    Py_CLEAR(state->sha3_224_type);
+    Py_CLEAR(state->sha3_256_type);
+    Py_CLEAR(state->sha3_384_type);
+    Py_CLEAR(state->sha3_512_type);
+#ifdef PY_WITH_KECCAK
+    Py_CLEAR(state->keccak_224_type);
+    Py_CLEAR(state->keccak_256_type);
+    Py_CLEAR(state->keccak_384_type);
+    Py_CLEAR(state->keccak_512_type);
+#endif
+    Py_CLEAR(state->shake_128_type);
+    Py_CLEAR(state->shake_256_type);
+    return 0;
+}
+
+static void
+_sha3_free(void *module)
+{
+    _sha3_clear((PyObject *)module);
+}
+
+static int
+sha3_exec(PyObject *m)
+{
     SHA3State *st = sha3_get_state(m);
 
 #define init_sha3type(type, typespec)                           \
@@ -728,16 +775,14 @@ sha3_exec(PyObject *m) {
 #undef init_sha3type
 
     if (PyModule_AddIntConstant(m, "keccakopt", KeccakOpt) < 0) {
-        goto error;
+        return -1;
     }
     if (PyModule_AddStringConstant(m, "implementation",
                                    KeccakP1600_implementation) < 0) {
-        goto error;
+        return -1;
     }
 
     return 0;
-  error:
-    return -1;
 }
 
 static PyModuleDef_Slot _sha3_slots[] = {
@@ -747,14 +792,18 @@ static PyModuleDef_Slot _sha3_slots[] = {
 
 /* Initialize this module. */
 static struct PyModuleDef _sha3module = {
-        PyModuleDef_HEAD_INIT,
-        .m_name = "_sha3",
-        .m_size = sizeof(SHA3State),
-        .m_slots = _sha3_slots
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_sha3",
+    .m_size = sizeof(SHA3State),
+    .m_slots = _sha3_slots,
+    .m_traverse = _sha3_traverse,
+    .m_clear = _sha3_clear,
+    .m_free = _sha3_free,
 };
 
 
 PyMODINIT_FUNC
-PyInit__sha3(void) {
+PyInit__sha3(void)
+{
     return PyModuleDef_Init(&_sha3module);
 }
