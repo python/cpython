@@ -26,6 +26,7 @@ except ImportError:
 
 from test.support import run_unittest, cpython_only
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
+from test.support import os_helper
 from test.support.import_helper import DirsOnSysPath
 from test.support.os_helper import TESTFN
 from test.support.script_helper import assert_python_ok, assert_python_failure
@@ -510,7 +511,7 @@ class TestRetrievingSourceCode(GetSourceBase):
             del linecache.cache[co.co_filename]
 
     def test_getsource_empty_file(self):
-        with support.temp_cwd() as cwd:
+        with os_helper.temp_cwd() as cwd:
             with open('empty_file.py', 'w'):
                 pass
             sys.path.insert(0, cwd)
