@@ -733,7 +733,7 @@ The module defines the following classes, functions and decorators:
 
    .. versionadded:: 3.5.2
 
-.. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
+.. class:: Coroutine(Awaitable[V_co], Generic[T_co, T_contra, V_co])
 
    A generic version of :class:`collections.abc.Coroutine`.
    The variance and order of type variables
