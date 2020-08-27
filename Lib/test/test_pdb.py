@@ -425,6 +425,47 @@ def test_list_commands():
     (Pdb) continue
     """
 
+def test_pdb_whatis_command():
+    """Test the whatis command
+
+    >>> myvar = (1,2)
+    >>> def myfunc():
+    ...     pass
+
+    >>> class MyClass:
+    ...    def mymethod(self):
+    ...        pass
+
+    >>> def test_function():
+    ...   import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...    'whatis myvar',
+    ...    'whatis myfunc',
+    ...    'whatis MyClass',
+    ...    'whatis MyClass()',
+    ...    'whatis MyClass.mymethod',
+    ...    'whatis MyClass().mymethod',
+    ...    'continue',
+    ... ]):
+    ...    test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_whatis_command[3]>(2)test_function()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) whatis myvar
+    <class 'tuple'>
+    (Pdb) whatis myfunc
+    Function myfunc
+    (Pdb) whatis MyClass
+    Class test.test_pdb.MyClass
+    (Pdb) whatis MyClass()
+    <class 'test.test_pdb.MyClass'>
+    (Pdb) whatis MyClass.mymethod
+    Function mymethod
+    (Pdb) whatis MyClass().mymethod
+    Method mymethod
+    (Pdb) continue
+    """
 
 def test_post_mortem():
     """Test post mortem traceback debugging.
