@@ -1,0 +1,1 @@
+`lib2to3.refactor.RefactoringTool.traverse_by` do a pre-order or post-order traverse algorithm, and apply every candidate fixer to each node when traverse the tree. when a prior fixer add a new node that contains children, these children won't be visited by posterior fixers.
