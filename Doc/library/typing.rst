@@ -1365,7 +1365,7 @@ Corresponding to other types in :mod:`collections.abc`
 Asynchronous programming
 """"""""""""""""""""""""
 
-.. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
+.. class:: Coroutine(Awaitable[V_co], Generic[T_co, T_contra, V_co])
 
    A generic version of :class:`collections.abc.Coroutine`.
    The variance and order of type variables
