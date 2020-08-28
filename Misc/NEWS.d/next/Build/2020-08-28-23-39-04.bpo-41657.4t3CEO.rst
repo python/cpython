@@ -1,0 +1,3 @@
+Done a refactor in the variable OBJECT_OBJS inside Makefile.pre.in.
+
+This change was done because a redundancy found in this variable. And it will benefit the next builds if a source file is created inside the Object folder, because this variable will seek this file automatically.
