@@ -2542,7 +2542,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         csum += x;
         frac += (oldcsum - csum) + x;
 
-        x = -2.0 * hi * lo;
+        x = -lo * lo;
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
