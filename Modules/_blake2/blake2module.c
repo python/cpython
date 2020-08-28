@@ -134,9 +134,9 @@ static struct PyModuleDef blake2_module = {
     .m_size = sizeof(Blake2State),
     .m_methods = blake2mod_functions,
     .m_slots = _blake2_slots,
-    .traverse = _blake2_traverse,
-    .clear = __blake2_clear,
-    .free = _blake2_free,
+    .m_traverse = _blake2_traverse,
+    .m_clear = _blake2_clear,
+    .m_free = _blake2_free,
 };
 
 PyMODINIT_FUNC
