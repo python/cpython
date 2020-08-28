@@ -538,9 +538,31 @@ static struct PyMethodDef MD5_functions[] = {
     {NULL,      NULL}            /* Sentinel */
 };
 
+static int
+_md5_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    MD5State *state = md5_get_state(module);
+    Py_VISIT(state->md5_type);
+    return 0;
+}
+
+static int
+_md5_clear(PyObject *module)
+{
+    MD5State *state = md5_get_state(module);
+    Py_CLEAR(state->md5_type);
+    return 0;
+}
+
+static void
+_md5_free(void *module)
+{
+    _md5_clear((PyObject *)module);
+}
 
 /* Initialize this module. */
-static int md5_exec(PyObject *m) {
+static int md5_exec(PyObject *m)
+{
     MD5State *st = md5_get_state(m);
 
     st->md5_type = (PyTypeObject *)PyType_FromModuleAndSpec(
@@ -574,7 +596,10 @@ static struct PyModuleDef _md5module = {
         .m_name = "_md5",
         .m_size = sizeof(MD5State),
         .m_methods = MD5_functions,
-        .m_slots = _md5_slots
+        .m_slots = _md5_slots,
+        .m_traverse = _md5_traverse,
+        .m_clear = _md5_clear,
+        .m_free = _md5_free,
 };
 
 PyMODINIT_FUNC

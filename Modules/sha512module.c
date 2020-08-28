@@ -714,9 +714,34 @@ static struct PyMethodDef SHA_functions[] = {
     {NULL,      NULL}            /* Sentinel */
 };
 
+static int
+_sha512_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    SHA512State *state = sha512_get_state(module);
+    Py_VISIT(state->sha384_type);
+    Py_VISIT(state->sha512_type);
+    return 0;
+}
+
+static int
+_sha512_clear(PyObject *module)
+{
+    SHA512State *state = sha512_get_state(module);
+    Py_CLEAR(state->sha384_type);
+    Py_CLEAR(state->sha512_type);
+    return 0;
+}
+
+static void
+_sha512_free(void *module)
+{
+    _sha512_clear((PyObject *)module);
+}
+
 
 /* Initialize this module. */
-static int sha512_exec(PyObject *m) {
+static int sha512_exec(PyObject *m)
+{
     SHA512State* st = sha512_get_state(m);
 
     st->sha384_type = (PyTypeObject *)PyType_FromModuleAndSpec(
@@ -764,7 +789,10 @@ static struct PyModuleDef _sha512module = {
         .m_name = "_sha512",
         .m_size = sizeof(SHA512State),
         .m_methods = SHA_functions,
-        .m_slots = _sha512_slots
+        .m_slots = _sha512_slots,
+        .m_traverse = _sha512_traverse,
+        .m_clear = _sha512_clear,
+        .m_free = _sha512_free
 };
 
 PyMODINIT_FUNC

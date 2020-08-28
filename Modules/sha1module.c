@@ -516,6 +516,28 @@ static struct PyMethodDef SHA1_functions[] = {
     {NULL,      NULL}            /* Sentinel */
 };
 
+static int
+_sha1_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    SHA1State *state = sha1_get_state(module);
+    Py_VISIT(state->sha1_type);
+    return 0;
+}
+
+static int
+_sha1_clear(PyObject *module)
+{
+    SHA1State *state = sha1_get_state(module);
+    Py_CLEAR(state->sha1_type);
+    return 0;
+}
+
+static void
+_sha1_free(void *module)
+{
+    _sha1_clear((PyObject *)module);
+}
+
 static int sha1_exec(PyObject *module) {
     SHA1State* st = sha1_get_state(module);
 
@@ -556,7 +578,10 @@ static struct PyModuleDef _sha1module = {
         .m_name = "_sha1",
         .m_size = sizeof(SHA1State),
         .m_methods = SHA1_functions,
-        .m_slots = _sha1_slots
+        .m_slots = _sha1_slots,
+        .m_traverse = _sha1_traverse,
+        .m_clear = _sha1_clear,
+        .m_free = _sha1_free
 };
 
 PyMODINIT_FUNC
