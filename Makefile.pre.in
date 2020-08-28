@@ -385,50 +385,7 @@ PYTHON_OBJS=	\
 
 ##########################################################################
 # Objects
-OBJECT_OBJS=	\
-		Objects/abstract.o \
-		Objects/accu.o \
-		Objects/boolobject.o \
-		Objects/bytes_methods.o \
-		Objects/bytearrayobject.o \
-		Objects/bytesobject.o \
-		Objects/call.o \
-		Objects/capsule.o \
-		Objects/cellobject.o \
-		Objects/classobject.o \
-		Objects/codeobject.o \
-		Objects/complexobject.o \
-		Objects/descrobject.o \
-		Objects/enumobject.o \
-		Objects/exceptions.o \
-		Objects/genericaliasobject.o \
-		Objects/genobject.o \
-		Objects/fileobject.o \
-		Objects/floatobject.o \
-		Objects/frameobject.o \
-		Objects/funcobject.o \
-		Objects/interpreteridobject.o \
-		Objects/iterobject.o \
-		Objects/listobject.o \
-		Objects/longobject.o \
-		Objects/dictobject.o \
-		Objects/odictobject.o \
-		Objects/memoryobject.o \
-		Objects/methodobject.o \
-		Objects/moduleobject.o \
-		Objects/namespaceobject.o \
-		Objects/object.o \
-		Objects/obmalloc.o \
-		Objects/picklebufobject.o \
-		Objects/rangeobject.o \
-		Objects/setobject.o \
-		Objects/sliceobject.o \
-		Objects/structseq.o \
-		Objects/tupleobject.o \
-		Objects/typeobject.o \
-		Objects/unicodeobject.o \
-		Objects/unicodectype.o \
-		Objects/weakrefobject.o
+OBJECT_OBJS=$(patsubst %.c, %.o, $(wildcard Objects/*.c))
 
 ##########################################################################
 # objects that get linked into the Python library
