@@ -558,34 +558,34 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         eq(a/3600000, td(0, 0, 7*24*1000))
 
         # Multiplication by float
-        us = td(microseconds=1)
-        eq((3*us) * 0.5, 2*us)
-        eq((5*us) * 0.5, 2*us)
-        eq(0.5 * (3*us), 2*us)
-        eq(0.5 * (5*us), 2*us)
-        eq((-3*us) * 0.5, -2*us)
-        eq((-5*us) * 0.5, -2*us)
+        res = td.resolution
+        eq((3*res) * 0.5, 2*res)
+        eq((5*res) * 0.5, 2*res)
+        eq(0.5 * (3*res), 2*res)
+        eq(0.5 * (5*res), 2*res)
+        eq((-3*res) * 0.5, -2*res)
+        eq((-5*res) * 0.5, -2*res)
 
         # Issue #23521
         eq(td(seconds=1) * 0.123456, td(microseconds=123456))
-        eq(td(seconds=1) * 0.6112295, td(microseconds=611229))
+        eq(td(seconds=1) * 0.6112295, td(microseconds=611229 if td.resolution == td(microseconds=1) else 611229.5))
 
         # Division by int and float
-        eq((3*us) / 2, 2*us)
-        eq((5*us) / 2, 2*us)
-        eq((-3*us) / 2.0, -2*us)
-        eq((-5*us) / 2.0, -2*us)
-        eq((3*us) / -2, -2*us)
-        eq((5*us) / -2, -2*us)
-        eq((3*us) / -2.0, -2*us)
-        eq((5*us) / -2.0, -2*us)
+        eq((3*res) / 2, 2*res)
+        eq((5*res) / 2, 2*res)
+        eq((-3*res) / 2.0, -2*res)
+        eq((-5*res) / 2.0, -2*res)
+        eq((3*res) / -2, -2*res)
+        eq((5*res) / -2, -2*res)
+        eq((3*res) / -2.0, -2*res)
+        eq((5*res) / -2.0, -2*res)
         for i in range(-10, 10):
-            eq((i*us/3)//us, round(i/3))
+            eq((i*res/3)//res, round(i/3))
         for i in range(-10, 10):
-            eq((i*us/-3)//us, round(i/-3))
+            eq((i*res/-3)//res, round(i/-3))
 
         # Issue #23521
-        eq(td(seconds=1) / (1 / 0.6112295), td(microseconds=611229))
+        eq(td(seconds=1) / (1 / 0.6112295), td(microseconds=611229 if td.resolution == td(microseconds=1) else 611229.5))
 
         # Issue #11576
         eq(td(999999999, 86399, 999999) - td(999999999, 86399, 999998),
@@ -736,6 +736,9 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
                    microseconds=999999)),
            "999999999 days, 23:59:59.999999")
 
+        if td.resolution < td(microseconds=1):
+            eq(str(td(nanoseconds=1)), "0:00:00.000000001")
+
     def test_repr(self):
         name = 'datetime.' + self.theclass.__name__
         self.assertEqual(repr(self.theclass(1)),
@@ -754,6 +757,12 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
                          "%s(days=1, microseconds=100)" % name)
         self.assertEqual(repr(self.theclass(seconds=1, microseconds=100)),
                          "%s(seconds=1, microseconds=100)" % name)
+
+        if timedelta.resolution < timedelta(microseconds=1):
+            self.assertEqual(repr(self.theclass(nanoseconds=100200)),
+                             "%s(nanoseconds=100200)" % name)
+            self.assertEqual(repr(self.theclass(seconds=1, nanoseconds=100200)),
+                             "%s(seconds=1, nanoseconds=100200)" % name)
 
     def test_roundtrip(self):
         for td in (timedelta(days=999999999, hours=23, minutes=59,
@@ -779,8 +788,12 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertIsInstance(timedelta.resolution, timedelta)
         self.assertTrue(timedelta.max > timedelta.min)
         self.assertEqual(timedelta.min, timedelta(-999999999))
-        self.assertEqual(timedelta.max, timedelta(999999999, 24*3600-1, 1e6-1))
-        self.assertEqual(timedelta.resolution, timedelta(0, 0, 1))
+        if timedelta.resolution == timedelta(microseconds=1):
+            self.assertEqual(timedelta.max, timedelta(999999999, 24*3600-1, microseconds=1e6-1))
+            self.assertEqual(timedelta.resolution, timedelta(0, 0, microseconds=1))
+        else:
+            self.assertEqual(timedelta.max, timedelta(999999999, 24*3600-1, nanoseconds=1e9-1))
+            self.assertEqual(timedelta.resolution, timedelta(0, 0, nanoseconds=1))
 
     def test_overflow(self):
         tiny = timedelta.resolution
@@ -815,33 +828,42 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         eq = self.assertEqual
 
         # Single-field rounding.
-        eq(td(milliseconds=0.4/1000), td(0))    # rounds to 0
-        eq(td(milliseconds=-0.4/1000), td(0))    # rounds to 0
-        eq(td(milliseconds=0.5/1000), td(microseconds=0))
-        eq(td(milliseconds=-0.5/1000), td(microseconds=-0))
-        eq(td(milliseconds=0.6/1000), td(microseconds=1))
-        eq(td(milliseconds=-0.6/1000), td(microseconds=-1))
-        eq(td(milliseconds=1.5/1000), td(microseconds=2))
-        eq(td(milliseconds=-1.5/1000), td(microseconds=-2))
-        eq(td(seconds=0.5/10**6), td(microseconds=0))
-        eq(td(seconds=-0.5/10**6), td(microseconds=-0))
-        eq(td(seconds=1/2**7), td(microseconds=7812))
-        eq(td(seconds=-1/2**7), td(microseconds=-7812))
+        if td.resolution == td(microseconds=1):
+            td_big = lambda x: td(seconds=x)
+            td_tick = lambda x: td(microseconds=x)
+            ticks_per_second = 1e6
+        else:
+            td_big = lambda x: td(milliseconds=x)
+            td_tick = lambda x: td(nanoseconds=x)
+            ticks_per_second = 1e9
+
+        eq(td_big(0.4/1000000), td(0))    # rounds to 0
+        eq(td_big(-0.4/1000000), td(0))    # rounds to 0
+        eq(td_big(0.5/1000000), td_tick(0))
+        eq(td_big(-0.5/1000000), td_tick(-0))
+        eq(td_big(0.6/1000000), td_tick(1))
+        eq(td_big(-0.6/1000000), td_tick(-1))
+        eq(td_big(1.5/1000000), td_tick(2))
+        eq(td_big(-1.5/1000000), td_tick(-2))
+        eq(td_big(0.5/10**6), td_tick(0))
+        eq(td_big(-0.5/10**6), td_tick(-0))
+        eq(td_big(1/2**7), td_tick(7812))
+        eq(td_big(-1/2**7), td_tick(-7812))
 
         # Rounding due to contributions from more than one field.
-        us_per_hour = 3600e6
-        us_per_day = us_per_hour * 24
-        eq(td(days=.4/us_per_day), td(0))
-        eq(td(hours=.2/us_per_hour), td(0))
-        eq(td(days=.4/us_per_day, hours=.2/us_per_hour), td(microseconds=1))
+        ticks_per_hour = 3600 * ticks_per_second
+        ticks_per_day = ticks_per_hour * 24
+        eq(td(days=.4/ticks_per_day), td(0))
+        eq(td(hours=.2/ticks_per_hour), td(0))
+        eq(td(days=.4/ticks_per_day, hours=.2/ticks_per_hour), td_tick(1))
 
-        eq(td(days=-.4/us_per_day), td(0))
-        eq(td(hours=-.2/us_per_hour), td(0))
-        eq(td(days=-.4/us_per_day, hours=-.2/us_per_hour), td(microseconds=-1))
+        eq(td(days=-.4/ticks_per_day), td(0))
+        eq(td(hours=-.2/ticks_per_hour), td(0))
+        eq(td(days=-.4/ticks_per_day, hours=-.2/ticks_per_hour), td_tick(-1))
 
         # Test for a patch in Issue 8860
-        eq(td(microseconds=0.5), 0.5*td(microseconds=1.0))
-        eq(td(microseconds=0.5)//td.resolution, 0.5*td.resolution//td.resolution)
+        eq(td_tick(0.5), 0.5*td_tick(1.0))
+        eq(td_tick(0.5)//td.resolution, 0.5*td.resolution//td.resolution)
 
     def test_massive_normalization(self):
         td = timedelta(microseconds=-1)
@@ -1976,7 +1998,10 @@ class TestDateTime(TestDate):
         self.assertEqual(dt.microsecond, 8000)
 
     def test_roundtrip(self):
-        for dt in (self.theclass(1, 2, 3, 4, 5, 6, 7),
+        test = self.theclass(1, 2, 3, 4, 5, 6, 7)
+        if timedelta.resolution < timedelta(microseconds=1):
+            test = self.theclass(1, 2, 3, 4, 5, 6, nanosecond=7)
+        for dt in (test,
                    self.theclass.now()):
             # Verify dt -> string -> datetime identity.
             s = repr(dt)
@@ -1989,6 +2014,8 @@ class TestDateTime(TestDate):
             dt2 = self.theclass(dt.year, dt.month, dt.day,
                                 dt.hour, dt.minute, dt.second,
                                 dt.microsecond)
+            if timedelta.resolution < timedelta(microseconds=1):
+                dt2 = dt2.replace(nanosecond=dt.nanosecond)
             self.assertEqual(dt, dt2)
 
     def test_isoformat(self):
@@ -2034,6 +2061,16 @@ class TestDateTime(TestDate):
         tz = FixedOffset(timedelta(seconds=16), 'XXX')
         t = self.theclass(2, 3, 2, tzinfo=tz)
         self.assertEqual(t.isoformat(), "0002-03-02T00:00:00+00:00:16")
+
+        if timedelta.resolution < timedelta(microseconds=1):
+            t = self.theclass(1, 2, 3, 4, 5, 1, nanosecond=123456)
+            self.assertEqual(t.isoformat(timespec='seconds'), "0001-02-03T04:05:01")
+            self.assertEqual(t.isoformat(timespec='milliseconds'), "0001-02-03T04:05:01.000")
+            self.assertEqual(t.isoformat(timespec='microseconds'), "0001-02-03T04:05:01.000123")
+            self.assertEqual(t.isoformat(timespec='nanoseconds'), "0001-02-03T04:05:01.000123456")
+            self.assertEqual(t.isoformat(timespec='auto'), "0001-02-03T04:05:01.000123456")
+
+            self.assertEqual(str(t), "0001-02-03 04:05:01.000123456")
 
     def test_isoformat_timezone(self):
         tzoffsets = [
@@ -3334,6 +3371,10 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                          "%s(12, 2, 3)" % name)
         self.assertEqual(repr(self.theclass(23, 15, 0, 0)),
                          "%s(23, 15)" % name)
+
+        if timedelta.resolution < timedelta(microseconds=1):
+            self.assertEqual(repr(self.theclass(1, 2, 3, nanosecond=4)),
+                             "%s(1, 2, 3, nanosecond=4)" % name)
 
     def test_resolution_info(self):
         self.assertIsInstance(self.theclass.min, self.theclass)
