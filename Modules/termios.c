@@ -998,7 +998,7 @@ static void termiosmodule_free(void *m) {
 }
 
 static int 
-termios_exec(PyModule *m)
+termios_exec(PyObject *m)
 {
     struct constant *constant = termios_constants;
     termiosmodulestate *state = get_termios_state(m);
@@ -1021,8 +1021,6 @@ static PyModuleDef_Slot termios_slots[] = {
     {0, NULL}
 };
 
-
-
 static struct PyModuleDef termiosmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "termios",
@@ -1034,7 +1032,6 @@ static struct PyModuleDef termiosmodule = {
     .m_clear = termiosmodule_clear,
     .m_free = termiosmodule_free,
 };
-
 
 PyMODINIT_FUNC PyInit_termios(void)
 {
