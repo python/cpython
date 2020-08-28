@@ -88,7 +88,7 @@ def _get_accept_type_dict(fixer_list, fixer_accept_type):
                 for node_type in heads:
                     fixer_accept_type[fixer].add(node_type)
         else:
-            if fixer._accept_type is not none:
+            if fixer._accept_type is not None:
                 fixer_accept_type[fixer].add(fixer._accept_type)
             else:
                 every.append(fixer)
