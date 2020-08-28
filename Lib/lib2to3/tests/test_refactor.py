@@ -114,6 +114,7 @@ from __future__ import print_function"""
         self.assertEqual(run(inp), empty)
 
     def test_get_accept_type_dict(self):
+        import collections
         class NoneFix(fixer_base.BaseFix):
             pass
 
