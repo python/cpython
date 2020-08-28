@@ -951,6 +951,25 @@ class BreakpointTestCase(BaseTestCase):
         with TracerRun(self) as tracer:
             self.assertRaises(BdbError, tracer.runcall, tfunc_import)
 
+    def test_load_bps_from_previous_Bdb_instance(self):
+        reset_Breakpoint()
+        db1 = Bdb()
+        fname = db1.canonic(__file__)
+        db1.set_break(__file__, 1)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        db2 = Bdb()
+        db2.set_break(__file__, 2)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [1, 2]})
+        reset_Breakpoint()
+        db3 = Bdb()
+        db3.set_break(__file__, 3)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [1, 2]})
+        self.assertEqual(db3.get_all_breaks(), {fname: [3]})
+        reset_Breakpoint()
+
+
 class RunTestCase(BaseTestCase):
     """Test run, runeval and set_trace."""
 
