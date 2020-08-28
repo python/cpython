@@ -72,10 +72,11 @@ def _get_head_types(pat):
     raise Exception("Oh no! I don't understand pattern %s" %(pat))
 
 
-def _get_headnode_dict(fixer_list):
-    """ Accepts a list of fixers and returns a dictionary
-        of head node type --> fixer list.  """
-    head_nodes = collections.defaultdict(list)
+def _get_accept_type_dict(fixer_list, fixer_accept_type):
+    """
+    Accepts a list of fixers and a collections.defaultdict(set) of
+    fixer --> set of head node type.
+    """
     every = []
     for fixer in fixer_list:
         if fixer.pattern:
@@ -85,16 +86,16 @@ def _get_headnode_dict(fixer_list):
                 every.append(fixer)
             else:
                 for node_type in heads:
-                    head_nodes[node_type].append(fixer)
+                    fixer_accept_type[fixer].add(node_type)
         else:
-            if fixer._accept_type is not None:
-                head_nodes[fixer._accept_type].append(fixer)
+            if fixer._accept_type is not none:
+                fixer_accept_type[fixer].add(fixer._accept_type)
             else:
                 every.append(fixer)
     for node_type in chain(pygram.python_grammar.symbol2number.values(),
                            pygram.python_grammar.tokens):
-        head_nodes[node_type].extend(every)
-    return dict(head_nodes)
+        for fixer in every:
+            fixer_accept_type[fixer].add(node_type)
 
 
 def get_fixers_from_package(pkg_name):
@@ -211,8 +212,9 @@ class RefactoringTool(object):
             elif fixer in self.post_order:
                 self.bmi_post_order.append(fixer)
 
-        self.bmi_pre_order_heads = _get_headnode_dict(self.bmi_pre_order)
-        self.bmi_post_order_heads = _get_headnode_dict(self.bmi_post_order)
+        self.fixer_accept_type = collections.defaultdict(set)
+        _get_accept_type_dict(self.bmi_pre_order, self.fixer_accept_type)
+        _get_accept_type_dict(self.bmi_post_order, self.fixer_accept_type)
 
 
 
@@ -407,8 +409,8 @@ class RefactoringTool(object):
             fixer.start_tree(tree, name)
 
         #use traditional matching for the incompatible fixers
-        self.traverse_by(self.bmi_pre_order_heads, tree.pre_order())
-        self.traverse_by(self.bmi_post_order_heads, tree.post_order())
+        self.traverse_by(self.bmi_pre_order, tree)
+        self.traverse_by(self.bmi_post_order, tree)
 
         # obtain a set of candidate nodes
         match_set = self.BM.run(tree.leaves())
@@ -466,22 +468,31 @@ class RefactoringTool(object):
             fixer.finish_tree(tree, name)
         return tree.was_changed
 
-    def traverse_by(self, fixers, traversal):
+    def traverse_by(self, fixers, tree):
         """Traverse an AST, applying a set of fixers to each node.
 
         This is a helper method for refactor_tree().
 
         Args:
             fixers: a list of fixer instances.
-            traversal: a generator that yields AST nodes.
+            tree: a pytree.Node instance representing the root of the tree
+                  to be refactored.
 
         Returns:
             None
         """
         if not fixers:
             return
-        for node in traversal:
-            for fixer in fixers[node.type]:
+        for fixer in fixers:
+            if fixer.order == 'pre':
+                traversal = tree.pre_order()
+            elif fixer.order == 'post':
+                traversal = tree.post_order()
+            else:
+                raise FixerError("Illegal fixer order: %r" % fixer.order)
+            for node in traversal:
+                if node.type not in self.fixer_accept_type[fixer]:
+                    continue
                 results = fixer.match(node)
                 if results:
                     new = fixer.transform(node, results)

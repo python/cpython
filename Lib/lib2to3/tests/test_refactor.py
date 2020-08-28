@@ -113,7 +113,7 @@ from __future__ import print_function"""
         inp = "class x: pass\nfrom __future__ import print_function"
         self.assertEqual(run(inp), empty)
 
-    def test_get_headnode_dict(self):
+    def test_get_accept_type_dict(self):
         class NoneFix(fixer_base.BaseFix):
             pass
 
@@ -126,13 +126,16 @@ from __future__ import print_function"""
         no_head = NoneFix({}, [])
         with_head = FileInputFix({}, [])
         simple = SimpleFix({}, [])
-        d = refactor._get_headnode_dict([no_head, with_head, simple])
-        top_fixes = d.pop(pygram.python_symbols.file_input)
-        self.assertEqual(top_fixes, [with_head, no_head])
-        name_fixes = d.pop(token.NAME)
-        self.assertEqual(name_fixes, [simple, no_head])
-        for fixes in d.values():
-            self.assertEqual(fixes, [no_head])
+        accept_type_dict = collections.defaultdict(set)
+        refactor._get_accept_type_dict([no_head, with_head, simple],
+                accept_type_dict)
+        accept_types = accept_type_dict[with_head]
+        self.assertEqual(accept_types, {pygram.python_symbols.file_input})
+        accept_types = accept_type_dict[simple]
+        self.assertEqual(accept_types, {token.NAME})
+        for node_type in chain(pygram.python_grammar.symbol2number.values(),
+                           pygram.python_grammar.tokens):
+            self.assertTrue(node_type in accept_type_dict[no_head])
 
     def test_fixer_loading(self):
         from myfixes.fix_first import FixFirst
