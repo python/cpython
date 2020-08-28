@@ -34,6 +34,30 @@ static struct PyMethodDef blake2mod_functions[] = {
     {NULL, NULL}
 };
 
+static int
+_blake2_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    Blake2State *state = blake2_get_state(module);
+    Py_VISIT(state->blake2b_type);
+    Py_VISIT(state->blake2s_type);
+    return 0;
+}
+
+static int
+_blake2_clear(PyObject *module)
+{
+    Blake2State *state = blake2_get_state(module);
+    Py_CLEAR(state->blake2b_type);
+    Py_CLEAR(state->blake2s_type);
+    return 0;
+}
+
+static void
+_blake2_free(void *module)
+{
+    _blake2_clear((PyObject *)module);
+}
+
 #define ADD_INT(d, name, value) do { \
     PyObject *x = PyLong_FromLong(value); \
     if (!x) { \
@@ -109,7 +133,10 @@ static struct PyModuleDef blake2_module = {
     .m_doc = blake2mod__doc__,
     .m_size = sizeof(Blake2State),
     .m_methods = blake2mod_functions,
-    .m_slots = _blake2_slots
+    .m_slots = _blake2_slots,
+    .traverse = _blake2_traverse,
+    .clear = __blake2_clear,
+    .free = _blake2_free,
 };
 
 PyMODINIT_FUNC
