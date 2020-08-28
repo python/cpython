@@ -2519,6 +2519,7 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             csum += x;
             frac += (oldcsum - csum) + x;
 
+            assert(csum + lo * lo == csum);
             frac += lo * lo;
         }
         h = sqrt(csum - 1.0 + frac);
@@ -2541,7 +2542,11 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         csum += x;
         frac += (oldcsum - csum) + x;
 
-        frac -= lo * lo;
+        x = -2.0 * hi * lo;
+        assert(fabs(csum) >= fabs(x));
+        oldcsum = csum;
+        csum += x;
+        frac += (oldcsum - csum) + x;
 
         x = csum - 1.0 + frac;
         return (h + x / (2.0 * h)) / scale;
