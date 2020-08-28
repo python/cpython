@@ -115,6 +115,7 @@ from __future__ import print_function"""
 
     def test_get_accept_type_dict(self):
         import collections
+        from itertools import chain
         class NoneFix(fixer_base.BaseFix):
             pass
 
