@@ -1367,7 +1367,8 @@ the first is the signal number, the second is the interrupted stack frame.");
 
 
 
-static int signal_exec(PyObject *m) {
+static int signal_exec(PyObject *m)
+{
     /* add the functions */
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
     if (!initialized) {
@@ -1385,34 +1386,34 @@ static int signal_exec(PyObject *m) {
     DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
     if (!DefaultHandler ||
         PyDict_SetItemString(d, "SIG_DFL", DefaultHandler) < 0) {
-        goto error;
+        return -1;
     }
 
     IgnoreHandler = PyLong_FromVoidPtr((void *)SIG_IGN);
     if (!IgnoreHandler ||
         PyDict_SetItemString(d, "SIG_IGN", IgnoreHandler) < 0) {
-        goto error;
+        return -1;
     }
 
     if (PyModule_AddIntMacro(m, NSIG))
-        goto error;
+        return -1;
 
 #ifdef SIG_BLOCK
     if (PyModule_AddIntMacro(m, SIG_BLOCK))
-         goto error;
+         return -1;
 #endif
 #ifdef SIG_UNBLOCK
     if (PyModule_AddIntMacro(m, SIG_UNBLOCK))
-         goto error;
+         return -1;
 #endif
 #ifdef SIG_SETMASK
     if (PyModule_AddIntMacro(m, SIG_SETMASK))
-         goto error;
+         return -1;
 #endif
 
     IntHandler = PyDict_GetItemString(d, "default_int_handler");
     if (!IntHandler)
-        goto error;
+        return -1;
     Py_INCREF(IntHandler);
 
     _Py_atomic_store_relaxed(&Handlers[0].tripped, 0);
@@ -1437,168 +1438,168 @@ static int signal_exec(PyObject *m) {
 
 #ifdef SIGHUP
     if (PyModule_AddIntMacro(m, SIGHUP))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGINT
     if (PyModule_AddIntMacro(m, SIGINT))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGBREAK
     if (PyModule_AddIntMacro(m, SIGBREAK))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGQUIT
     if (PyModule_AddIntMacro(m, SIGQUIT))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGILL
     if (PyModule_AddIntMacro(m, SIGILL))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGTRAP
     if (PyModule_AddIntMacro(m, SIGTRAP))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGIOT
     if (PyModule_AddIntMacro(m, SIGIOT))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGABRT
     if (PyModule_AddIntMacro(m, SIGABRT))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGEMT
     if (PyModule_AddIntMacro(m, SIGEMT))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGFPE
     if (PyModule_AddIntMacro(m, SIGFPE))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGKILL
     if (PyModule_AddIntMacro(m, SIGKILL))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGBUS
     if (PyModule_AddIntMacro(m, SIGBUS))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGSEGV
     if (PyModule_AddIntMacro(m, SIGSEGV))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGSYS
     if (PyModule_AddIntMacro(m, SIGSYS))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGPIPE
     if (PyModule_AddIntMacro(m, SIGPIPE))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGALRM
     if (PyModule_AddIntMacro(m, SIGALRM))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGTERM
     if (PyModule_AddIntMacro(m, SIGTERM))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGUSR1
     if (PyModule_AddIntMacro(m, SIGUSR1))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGUSR2
     if (PyModule_AddIntMacro(m, SIGUSR2))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGCLD
     if (PyModule_AddIntMacro(m, SIGCLD))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGCHLD
     if (PyModule_AddIntMacro(m, SIGCHLD))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGPWR
     if (PyModule_AddIntMacro(m, SIGPWR))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGIO
     if (PyModule_AddIntMacro(m, SIGIO))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGURG
     if (PyModule_AddIntMacro(m, SIGURG))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGWINCH
     if (PyModule_AddIntMacro(m, SIGWINCH))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGPOLL
     if (PyModule_AddIntMacro(m, SIGPOLL))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGSTOP
     if (PyModule_AddIntMacro(m, SIGSTOP))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGTSTP
     if (PyModule_AddIntMacro(m, SIGTSTP))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGCONT
     if (PyModule_AddIntMacro(m, SIGCONT))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGTTIN
     if (PyModule_AddIntMacro(m, SIGTTIN))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGTTOU
     if (PyModule_AddIntMacro(m, SIGTTOU))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGVTALRM
     if (PyModule_AddIntMacro(m, SIGVTALRM))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGPROF
     if (PyModule_AddIntMacro(m, SIGPROF))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGXCPU
     if (PyModule_AddIntMacro(m, SIGXCPU))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGXFSZ
     if (PyModule_AddIntMacro(m, SIGXFSZ))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGRTMIN
     if (PyModule_AddIntMacro(m, SIGRTMIN))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGRTMAX
     if (PyModule_AddIntMacro(m, SIGRTMAX))
-         goto error;
+         return -1;
 #endif
 #ifdef SIGINFO
     if (PyModule_AddIntMacro(m, SIGINFO))
-         goto error;
+         return -1;
 #endif
 
 #ifdef ITIMER_REAL
     if (PyModule_AddIntMacro(m, ITIMER_REAL))
-         goto error;
+         return -1;
 #endif
 #ifdef ITIMER_VIRTUAL
     if (PyModule_AddIntMacro(m, ITIMER_VIRTUAL))
-         goto error;
+         return -1;
 #endif
 #ifdef ITIMER_PROF
     if (PyModule_AddIntMacro(m, ITIMER_PROF))
-         goto error;
+         return -1;
 #endif
 
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
@@ -1606,18 +1607,18 @@ static int signal_exec(PyObject *m) {
             PyExc_OSError, NULL);
     if (!ItimerError ||
         PyDict_SetItemString(d, "ItimerError", ItimerError) < 0) {
-        goto error;
+        return -1;
     }
 #endif
 
 #ifdef CTRL_C_EVENT
     if (PyModule_AddIntMacro(m, CTRL_C_EVENT))
-         goto error;
+         return -1;
 #endif
 
 #ifdef CTRL_BREAK_EVENT
     if (PyModule_AddIntMacro(m, CTRL_BREAK_EVENT))
-         goto error;
+         return -1;
 #endif
 
 #ifdef MS_WINDOWS
@@ -1630,9 +1631,6 @@ static int signal_exec(PyObject *m) {
     }
 
   return 0;
-
-  error:
-    return -1;
 }
 
 static PyModuleDef_Slot signal_slots[] = {
@@ -1649,7 +1647,8 @@ static struct PyModuleDef signalmodule = {
     .m_slots = signal_slots
 };
 
-PyMODINIT_FUNC PyInit__signal(void) {
+PyMODINIT_FUNC PyInit__signal(void)
+{
     return PyModuleDef_Init(&signalmodule);
 }
 

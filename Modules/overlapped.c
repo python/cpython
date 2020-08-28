@@ -719,6 +719,7 @@ Overlapped_dealloc(OverlappedObject *self)
     }
 
     Overlapped_clear(self);
+    Py_DECREF(Py_TYPE(self));
     PyObject_Del(self);
     SetLastError(olderr);
 }
@@ -1894,6 +1895,28 @@ static PyMethodDef overlapped_functions[] = {
     {NULL}
 };
 
+static int
+overlapped_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    OverlappedState *state = overlapped_get_state(module);
+    Py_VISIT(state->overlapped_type);
+    return 0;
+}
+
+static int
+overlapped_clear(PyObject *module)
+{
+    OverlappedState *state = overlapped_get_state(module);
+    Py_CLEAR(state->overlapped_type);
+    return 0;
+}
+
+static void
+overlapped_free(void *module)
+{
+    overlapped_clear((PyObject *)module);
+}
+
 #define WINAPI_CONSTANT(fmt, con) \
     do { \
         PyObject *value = Py_BuildValue(fmt, con); \
@@ -1957,9 +1980,13 @@ static struct PyModuleDef overlapped_module = {
     .m_name = "_overlapped",
     .m_size = sizeof(OverlappedState),
     .m_methods = overlapped_functions,
-    .m_slots = overlapped_slots
+    .m_slots = overlapped_slots,
+    .m_traverse = overlapped_traverse,
+    .m_clear = overlapped_clear,
+    .m_free = overlapped_free
 };
 
-PyMODINIT_FUNC PyInit__overlapped(void) {
+PyMODINIT_FUNC PyInit__overlapped(void)
+{
     return PyModuleDef_Init(&overlapped_module);
 }

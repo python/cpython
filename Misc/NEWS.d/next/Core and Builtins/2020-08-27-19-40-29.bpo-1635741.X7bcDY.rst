@@ -1,0 +1,5 @@
+Port :mod:`_curses_panel` to multi-phase init Port :mod:`_opcode` to
+multi-phase init Port :mod:`_testbuffer` to multi-phase init Port
+:mod:`overlapped` to multi-phase init and convert to heap types Port
+:mod:`signalmodule` to multi-phase init Port :mod:`termios` to multi-phase
+init

@@ -1036,6 +1036,7 @@ static struct PyModuleDef termiosmodule = {
 };
 
 
-PyMODINIT_FUNC PyInit_termios(void) {
+PyMODINIT_FUNC PyInit_termios(void)
+{
     return PyModuleDef_Init(&termiosmodule);
 }
