@@ -272,8 +272,10 @@ SHA3_dealloc(SHA3object *self)
     if (self->lock) {
         PyThread_free_lock(self->lock);
     }
-    Py_DECREF(Py_TYPE(self));
+
+    PyObject *tp = Py_TYPE(self);
     PyObject_Del(self);
+    Py_DECREF(tp);
 }
 
 
