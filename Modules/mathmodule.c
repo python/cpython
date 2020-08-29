@@ -2447,6 +2447,14 @@ precision.  When a value at or below 1.0 is correctly rounded, it
 never goes above 1.0.  And when values at or below 1.0 are squared,
 they remain at or below 1.0, thus preserving the summation invariant.
 
+Another interesting assertion is that csum+lo*lo == csum. In the loop,
+each scaled vector element has a magnitude less than 1.0.  After the
+Veltkamp split, *lo* has a maximum value of 2**-27.  So the maximum
+value of *lo* squared is 2**-54.  The value of ulp(1.0)/2.0 is 2**-53.
+Given that csum >= 1.0, we have:
+    lo**2 <= 2**-54 < 2**-53 == 1/2*ulp(1.0) <= ulp(csum)/2
+Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
+
 The square root differential correction is needed because a
 correctly rounded square root of a correctly rounded sum of
 squares can still be off by as much as one ulp.
@@ -2519,11 +2527,8 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             csum += x;
             frac += (oldcsum - csum) + x;
 
-            x = lo * lo;
-            assert(fabs(csum) >= fabs(x));
-            oldcsum = csum;
-            csum += x;
-            frac += (oldcsum - csum) + x;
+            assert(csum + lo * lo == csum);
+            frac += lo * lo;
         }
         h = sqrt(csum - 1.0 + frac);
 
