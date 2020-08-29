@@ -434,11 +434,13 @@ static inline SHA512State* sha512_get_state(PyObject *module)
     return (SHA512State *)state;
 }
 
-static SHAobject *newSHA384object(SHA512State *st) {
+static SHAobject *newSHA384object(SHA512State *st)
+{
     return (SHAobject *)PyObject_New(SHAobject, st->sha384_type);
 }
 
-static SHAobject *newSHA512object(SHA512State *st) {
+static SHAobject *newSHA512object(SHA512State *st)
+{
     return (SHAobject *)PyObject_New(SHAobject, st->sha512_type);
 }
 
