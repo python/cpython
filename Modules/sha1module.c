@@ -318,7 +318,7 @@ newSHA1object(SHA1State *st)
 static void
 SHA1_dealloc(PyObject *ptr)
 {
-    PyObject *tp = Py_TYPE(ptr);
+    PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_Del(ptr);
     Py_DECREF(tp);
 }

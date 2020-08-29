@@ -449,7 +449,7 @@ static SHAobject *newSHA512object(SHA512State *st)
 static void
 SHA512_dealloc(PyObject *ptr)
 {
-    PyObject *tp = Py_TYPE(ptr);
+    PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_Del(ptr);
     Py_DECREF(tp);
 }

@@ -340,7 +340,7 @@ newMD5object(MD5State * st)
 static void
 MD5_dealloc(PyObject *ptr)
 {
-    PyObject *tp = Py_TYPE(ptr);
+    PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_Del(ptr);
     Py_DECREF(tp);
 }
