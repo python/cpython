@@ -392,8 +392,9 @@ py_blake2b_dealloc(PyObject *self)
         obj->lock = NULL;
     }
 
-    Py_DECREF(Py_TYPE(self));
+    PyObject *type = Py_TYPE(self);
     PyObject_Del(self);
+    Py_DECREF(type);
 }
 
 static PyType_Slot blake2b_type_slots[] = {

@@ -24,7 +24,8 @@ typedef struct {
     PyTypeObject* blake2s_type;
 } Blake2State;
 
-static inline Blake2State* blake2_get_state(PyObject *module) {
+static inline Blake2State* blake2_get_state(PyObject *module)
+{
     void *state = PyModule_GetState(module);
     assert(state != NULL);
     return (Blake2State *)state;
