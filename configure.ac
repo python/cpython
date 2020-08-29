@@ -1040,14 +1040,14 @@ AC_MSG_RESULT($LINKCC)
 
 # EXPORTSYMS holds the list of exported symbols for AIX.
 # EXPORTSFROM holds the module name exporting symbols on AIX.
+EXPORTSYMS=
+EXPORTSFROM=
 AC_SUBST(EXPORTSYMS)
 AC_SUBST(EXPORTSFROM)
 AC_MSG_CHECKING(EXPORTSYMS)
 case $ac_sys_system in
 AIX*)
-	if test -z "$EXPORTSYMS"; then
-	    EXPORTSYMS="Modules/python.exp"
-	fi
+	EXPORTSYMS="Modules/python.exp"
 	if test $ac_sys_release -ge 5 -o \
 		$ac_sys_release -eq 4 -a `uname -r` -ge 2 ; then
 	    EXPORTSFROM=. # the main executable
