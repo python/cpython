@@ -2440,14 +2440,6 @@ addend should be in the range: 0.5 <= |x| <= 1.0.  Accordingly,
 scaling or division by *max* should not be skipped even if not
 otherwise needed to prevent overflow or loss of precision.
 
-Neumaier summation computes an exact fractional value when updating
-*csum*; however, the accumulation of fractional values is inexact and
-loses information.  To minimize this loss, three separate fractional
-accumulators are used.  Like pairwise summation, this technique
-exploits associativity to minimize accumulated round-off error.  Also,
-this technique exploits commutativity to segregate the addends into
-groups with similar magnitudes.
-
 The assertion that hi*hi <= 1.0 is a bit subtle.  Each vector element
 gets scaled to a magnitude below 1.0.  The Veltkamp-Dekker splitting
 algorithm gives a *hi* value that is correctly rounded to half
@@ -2462,6 +2454,9 @@ value of *lo* squared is 2**-54.  The value of ulp(1.0)/2.0 is 2**-53.
 Given that csum >= 1.0, we have:
     lo**2 <= 2**-54 < 2**-53 == 1/2*ulp(1.0) <= ulp(csum)/2
 Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
+
+To minimize loss of information during the accumulation of fractional
+values, the lo**2 term has a separate accumulator.
 
 The square root differential correction is needed because a
 correctly rounded square root of a correctly rounded sum of
@@ -2493,7 +2488,7 @@ static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
     const double T27 = 134217729.0;     /* ldexp(1.0, 27)+1.0) */
-    double x, csum = 1.0, oldcsum, frac = 0.0, frac2 = 0.0, frac3 = 0.0, scale;
+    double x, csum = 1.0, oldcsum, frac = 0.0, frac_lo = 0.0, scale;
     double t, hi, lo, h;
     int max_e;
     Py_ssize_t i;
@@ -2529,18 +2524,18 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             assert(fabs(csum) >= fabs(x));
             oldcsum = csum;
             csum += x;
-            frac1 += (oldcsum - csum) + x;
+            frac += (oldcsum - csum) + x;
 
             x = 2.0 * hi * lo;
             assert(fabs(csum) >= fabs(x));
             oldcsum = csum;
             csum += x;
-            frac2 += (oldcsum - csum) + x;
+            frac += (oldcsum - csum) + x;
 
             assert(csum + lo * lo == csum);
-            frac3 += lo * lo;
+            frac_lo += lo * lo;
         }
-        frac += frac2 + frac3;
+        frac += frac_lo;
         h = sqrt(csum - 1.0 + frac);
 
         x = h;
