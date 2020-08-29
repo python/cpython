@@ -8,11 +8,6 @@ Coroutines and Tasks
 This section outlines high-level asyncio APIs to work with coroutines
 and Tasks.
 
-.. contents::
-   :depth: 1
-   :local:
-
-
 .. _coroutine:
 
 Coroutines
