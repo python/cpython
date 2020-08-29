@@ -24,7 +24,8 @@ typedef struct {
     PyTypeObject* blake2s_type;
 } Blake2State;
 
-static inline Blake2State* blake2_get_state(PyObject *module)
+static inline Blake2State*
+blake2_get_state(PyObject *module)
 {
     void *state = PyModule_GetState(module);
     assert(state != NULL);
@@ -61,10 +62,8 @@ _blake2_free(void *module)
 
 #define ADD_INT(d, name, value) do { \
     PyObject *x = PyLong_FromLong(value); \
-    if (!x) { \
-        Py_DECREF(x); \
+    if (!x) \
         return -1; \
-    } \
     if (PyDict_SetItemString(d, name, x) < 0) { \
         Py_DECREF(x); \
         return -1; \
@@ -72,8 +71,8 @@ _blake2_free(void *module)
     Py_DECREF(x); \
 } while(0)
 
-
-static int blake2_exec(PyObject *m)
+static int
+blake2_exec(PyObject *m)
 {
     Blake2State* st = blake2_get_state(m);
 

@@ -392,7 +392,7 @@ py_blake2b_dealloc(PyObject *self)
         obj->lock = NULL;
     }
 
-    PyObject *type = Py_TYPE(self);
+    PyTypeObject *type = Py_TYPE(self);
     PyObject_Del(self);
     Py_DECREF(type);
 }
@@ -406,8 +406,6 @@ static PyType_Slot blake2b_type_slots[] = {
     {0,0}
 };
 
-// Using PyType_GetModuleState() on this type is safe since
-// it cannot be subclassed: it does not have the Py_TPFLAGS_BASETYPE flag.
 PyType_Spec blake2b_type_spec = {
     .name = "_blake2.blake2b",
     .basicsize =  sizeof(BLAKE2bObject),
