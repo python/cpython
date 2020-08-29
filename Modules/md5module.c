@@ -322,7 +322,8 @@ typedef struct {
     PyTypeObject* md5_type;
 } MD5State;
 
-static inline MD5State* md5_get_state(PyObject *module) {
+static inline MD5State* md5_get_state(PyObject *module)
+{
     void *state = PyModule_GetState(module);
     assert(state != NULL);
     return (MD5State *)state;
@@ -339,8 +340,9 @@ newMD5object(MD5State * st)
 static void
 MD5_dealloc(PyObject *ptr)
 {
-    Py_DECREF(Py_TYPE(ptr));
+    PyObject *tp = Py_TYPE(ptr);
     PyObject_Del(ptr);
+    Py_DECREF(tp);
 }
 
 
@@ -569,10 +571,6 @@ static int md5_exec(PyObject *m)
         m, &md5_type_spec, NULL);
 
     if (st->md5_type == NULL) {
-        return -1;
-    }
-
-    if (PyType_Ready(st->md5_type) < 0) {
         return -1;
     }
 

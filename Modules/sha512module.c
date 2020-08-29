@@ -427,7 +427,8 @@ typedef struct {
     PyTypeObject* sha512_type;
 } SHA512State;
 
-static inline SHA512State* sha512_get_state(PyObject *module) {
+static inline SHA512State* sha512_get_state(PyObject *module)
+{
     void *state = PyModule_GetState(module);
     assert(state != NULL);
     return (SHA512State *)state;
@@ -446,8 +447,9 @@ static SHAobject *newSHA512object(SHA512State *st) {
 static void
 SHA512_dealloc(PyObject *ptr)
 {
-    Py_DECREF(Py_TYPE(ptr));
+    PyObject *tp = Py_TYPE(ptr);
     PyObject_Del(ptr);
+    Py_DECREF(tp);
 }
 
 
@@ -751,16 +753,6 @@ static int sha512_exec(PyObject *m)
         m, &sha512_sha512_type_spec, NULL);
 
     if (st->sha384_type == NULL || st->sha512_type == NULL) {
-        return -1;
-    }
-
-    //cannot use PyModule_AddType becuase "SHA1Type"
-    //isn't the same as _PyType_Name(st->sha1_type)
-    if (PyType_Ready(st->sha384_type) < 0) {
-        return -1;
-    }
-
-    if (PyType_Ready(st->sha512_type) < 0) {
         return -1;
     }
 

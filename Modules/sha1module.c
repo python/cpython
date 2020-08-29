@@ -299,7 +299,8 @@ typedef struct {
     PyTypeObject* sha1_type;
 } SHA1State;
 
-static inline SHA1State* sha1_get_state(PyObject *module) {
+static inline SHA1State* sha1_get_state(PyObject *module)
+{
     void *state = PyModule_GetState(module);
     assert(state != NULL);
     return (SHA1State *)state;
@@ -317,8 +318,9 @@ newSHA1object(SHA1State *st)
 static void
 SHA1_dealloc(PyObject *ptr)
 {
-    Py_DECREF(Py_TYPE(ptr));
+    PyObject *tp = Py_TYPE(ptr);
     PyObject_Del(ptr);
+    Py_DECREF(tp);
 }
 
 
@@ -538,19 +540,14 @@ _sha1_free(void *module)
     _sha1_clear((PyObject *)module);
 }
 
-static int sha1_exec(PyObject *module) {
+static int sha1_exec(PyObject *module)
+{
     SHA1State* st = sha1_get_state(module);
 
     st->sha1_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &sha1_type_spec, NULL);
 
     if (st->sha1_type == NULL) {
-        return -1;
-    }
-
-    //cannot use PyModule_AddType becuase "SHA1Type"
-    //isn't the same as _PyType_Name(st->sha1_type)
-    if (PyType_Ready(st->sha1_type) < 0) {
         return -1;
     }
 

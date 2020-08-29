@@ -1,3 +1,1 @@
-Port :mod:`sha1` to multi-phase init
-Port :mod:`sha512` to multi-phase init
-Port :mod:`md5` to multi-phase init
+Port :mod:`sha1`, :mod:`sha512`, and :mod:`md5` to multi-phase init (PEP 489)
