@@ -62,8 +62,9 @@ Are there tools to help find bugs or perform static analysis?
 
 Yes.
 
-`Pylint <https://www.pylint.org/>`_ and `Pyflakes <https://www.pylint.org/>`_
-do basic checking that will help you catch bugs sooner.
+`Pylint <https://www.pylint.org/>`_ and
+`Pyflakes <https://github.com/PyCQA/pyflakes>`_ do basic checking that will
+help you catch bugs sooner.
 
 Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
 `Pyre <https://pyre-check.org/>`_, and
