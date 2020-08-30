@@ -2455,6 +2455,9 @@ Given that csum >= 1.0, we have:
     lo**2 <= 2**-54 < 2**-53 == 1/2*ulp(1.0) <= ulp(csum)/2
 Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 
+To minimize loss of information during the accumulation of fractional
+values, the lo**2 term has a separate accumulator.
+
 The square root differential correction is needed because a
 correctly rounded square root of a correctly rounded sum of
 squares can still be off by as much as one ulp.
@@ -2475,7 +2478,8 @@ References:
 
 1. Veltkamp-Dekker splitting: http://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
 2. Compensated summation:  http://www.ti3.tu-harburg.de/paper/rump/Ru08b.pdf
-3. Square root diffential correction:  https://arxiv.org/pdf/1904.09481.pdf
+3. Square root differential correction:  https://arxiv.org/pdf/1904.09481.pdf
+4. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
 
 */
 
@@ -2483,7 +2487,7 @@ static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
     const double T27 = 134217729.0;     /* ldexp(1.0, 27)+1.0) */
-    double x, csum = 1.0, oldcsum, frac = 0.0, scale;
+    double x, csum = 1.0, oldcsum, frac = 0.0, frac_lo = 0.0, scale;
     double t, hi, lo, h;
     int max_e;
     Py_ssize_t i;
@@ -2528,8 +2532,9 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             frac += (oldcsum - csum) + x;
 
             assert(csum + lo * lo == csum);
-            frac += lo * lo;
+            frac_lo += lo * lo;
         }
+        frac += frac_lo;
         h = sqrt(csum - 1.0 + frac);
 
         x = h;
