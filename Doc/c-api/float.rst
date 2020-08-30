@@ -76,8 +76,3 @@ Floating Point Objects
 .. c:function:: double PyFloat_GetMin()
 
    Return the minimum normalized positive float *DBL_MIN* as C :c:type:`double`.
-
-.. c:function:: int PyFloat_ClearFreeList()
-
-   Clear the float free list. Return the number of items that could not
-   be freed.

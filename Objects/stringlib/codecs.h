@@ -4,7 +4,7 @@
 # error "codecs.h is specific to Unicode"
 #endif
 
-#include "pycore_byteswap.h"      // _Py_bswap32()
+#include "pycore_bitutils.h"      // _Py_bswap32()
 
 /* Mask to quickly check whether a C 'long' contains a
    non-ASCII, UTF8-encoded char. */

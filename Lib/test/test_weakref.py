@@ -411,6 +411,26 @@ class ReferencesTestCase(TestBase):
             # can be killed in the middle of the call
             "blech" in p
 
+    def test_proxy_reversed(self):
+        class MyObj:
+            def __len__(self):
+                return 3
+            def __reversed__(self):
+                return iter('cba')
+
+        obj = MyObj()
+        self.assertEqual("".join(reversed(weakref.proxy(obj))), "cba")
+
+    def test_proxy_hash(self):
+        cool_hash = 299_792_458
+
+        class MyObj:
+            def __hash__(self):
+                return cool_hash
+
+        obj = MyObj()
+        self.assertEqual(hash(weakref.proxy(obj)), cool_hash)
+
     def test_getweakrefcount(self):
         o = C()
         ref1 = weakref.ref(o)

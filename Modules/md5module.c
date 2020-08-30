@@ -552,9 +552,6 @@ static struct PyMethodDef MD5_functions[] = {
 
 /* Initialize this module. */
 
-#define insint(n,v) { PyModule_AddIntConstant(m,n,v); }
-
-
 static struct PyModuleDef _md5module = {
         PyModuleDef_HEAD_INIT,
         "_md5",

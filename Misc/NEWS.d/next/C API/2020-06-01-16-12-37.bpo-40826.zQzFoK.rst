@@ -1,0 +1,2 @@
+:c:func:`PyOS_InterruptOccurred` now fails with a fatal error if it is
+called with the GIL released.

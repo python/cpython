@@ -22,7 +22,6 @@ import time
 import traceback
 import types
 import warnings
-from queue import Empty
 
 # If threading is available then ThreadPool should be provided.  Therefore
 # we avoid top-level imports which are liable to fail on some systems.

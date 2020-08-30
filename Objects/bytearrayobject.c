@@ -22,22 +22,15 @@ char _PyByteArray_empty_string[] = "";
 static int
 _getbytevalue(PyObject* arg, int *value)
 {
-    long face_value;
+    int overflow;
+    long face_value = PyLong_AsLongAndOverflow(arg, &overflow);
 
-    if (PyLong_Check(arg)) {
-        face_value = PyLong_AsLong(arg);
-    } else {
-        PyObject *index = PyNumber_Index(arg);
-        if (index == NULL) {
-            *value = -1;
-            return 0;
-        }
-        face_value = PyLong_AsLong(index);
-        Py_DECREF(index);
+    if (face_value == -1 && PyErr_Occurred()) {
+        *value = -1;
+        return 0;
     }
-
     if (face_value < 0 || face_value >= 256) {
-        /* this includes the OverflowError in case the long is too large */
+        /* this includes an overflow in converting to C long */
         PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
         *value = -1;
         return 0;
@@ -273,7 +266,9 @@ PyByteArray_Concat(PyObject *a, PyObject *b)
 
     result = (PyByteArrayObject *) \
         PyByteArray_FromStringAndSize(NULL, va.len + vb.len);
-    if (result != NULL) {
+    // result->ob_bytes is NULL if result is an empty string:
+    // if va.len + vb.len equals zero.
+    if (result != NULL && result->ob_bytes != NULL) {
         memcpy(result->ob_bytes, va.buf, va.len);
         memcpy(result->ob_bytes + va.len, vb.buf, vb.len);
     }
@@ -743,13 +738,20 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
     }
 }
 
+/*[clinic input]
+bytearray.__init__
+
+    source as arg: object = NULL
+    encoding: str = NULL
+    errors: str = NULL
+
+[clinic start generated code]*/
+
 static int
-bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
+bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
+                        const char *encoding, const char *errors)
+/*[clinic end generated code: output=4ce1304649c2f8b3 input=1141a7122eefd7b9]*/
 {
-    static char *kwlist[] = {"source", "encoding", "errors", 0};
-    PyObject *arg = NULL;
-    const char *encoding = NULL;
-    const char *errors = NULL;
     Py_ssize_t count;
     PyObject *it;
     PyObject *(*iternext)(PyObject *);
@@ -759,11 +761,6 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
         if (PyByteArray_Resize((PyObject *)self, 0) < 0)
             return -1;
     }
-
-    /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:bytearray", kwlist,
-                                     &arg, &encoding, &errors))
-        return -1;
 
     /* Make a quick exit if no first argument */
     if (arg == NULL) {
@@ -1179,6 +1176,71 @@ static PyObject *
 bytearray_endswith(PyByteArrayObject *self, PyObject *args)
 {
     return _Py_bytes_endswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+}
+
+/*[clinic input]
+bytearray.removeprefix as bytearray_removeprefix
+
+    prefix: Py_buffer
+    /
+
+Return a bytearray with the given prefix string removed if present.
+
+If the bytearray starts with the prefix string, return
+bytearray[len(prefix):].  Otherwise, return a copy of the original
+bytearray.
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_removeprefix_impl(PyByteArrayObject *self, Py_buffer *prefix)
+/*[clinic end generated code: output=6cabc585e7f502e0 input=968aada38aedd262]*/
+{
+    const char *self_start = PyByteArray_AS_STRING(self);
+    Py_ssize_t self_len = PyByteArray_GET_SIZE(self);
+    const char *prefix_start = prefix->buf;
+    Py_ssize_t prefix_len = prefix->len;
+
+    if (self_len >= prefix_len
+        && memcmp(self_start, prefix_start, prefix_len) == 0)
+    {
+        return PyByteArray_FromStringAndSize(self_start + prefix_len,
+                                             self_len - prefix_len);
+    }
+
+    return PyByteArray_FromStringAndSize(self_start, self_len);
+}
+
+/*[clinic input]
+bytearray.removesuffix as bytearray_removesuffix
+
+    suffix: Py_buffer
+    /
+
+Return a bytearray with the given suffix string removed if present.
+
+If the bytearray ends with the suffix string and that suffix is not
+empty, return bytearray[:-len(suffix)].  Otherwise, return a copy of
+the original bytearray.
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_removesuffix_impl(PyByteArrayObject *self, Py_buffer *suffix)
+/*[clinic end generated code: output=2bc8cfb79de793d3 input=c1827e810b2f6b99]*/
+{
+    const char *self_start = PyByteArray_AS_STRING(self);
+    Py_ssize_t self_len = PyByteArray_GET_SIZE(self);
+    const char *suffix_start = suffix->buf;
+    Py_ssize_t suffix_len = suffix->len;
+
+    if (self_len >= suffix_len
+        && memcmp(self_start + self_len - suffix_len,
+                  suffix_start, suffix_len) == 0)
+    {
+        return PyByteArray_FromStringAndSize(self_start,
+                                             self_len - suffix_len);
+    }
+
+    return PyByteArray_FromStringAndSize(self_start, self_len);
 }
 
 
@@ -2203,6 +2265,8 @@ bytearray_methods[] = {
     BYTEARRAY_POP_METHODDEF
     BYTEARRAY_REMOVE_METHODDEF
     BYTEARRAY_REPLACE_METHODDEF
+    BYTEARRAY_REMOVEPREFIX_METHODDEF
+    BYTEARRAY_REMOVESUFFIX_METHODDEF
     BYTEARRAY_REVERSE_METHODDEF
     {"rfind", (PyCFunction)bytearray_rfind, METH_VARARGS, _Py_rfind__doc__},
     {"rindex", (PyCFunction)bytearray_rindex, METH_VARARGS, _Py_rindex__doc__},
@@ -2292,7 +2356,7 @@ PyTypeObject PyByteArray_Type = {
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
-    (initproc)bytearray_init,           /* tp_init */
+    (initproc)bytearray___init__,       /* tp_init */
     PyType_GenericAlloc,                /* tp_alloc */
     PyType_GenericNew,                  /* tp_new */
     PyObject_Del,                       /* tp_free */

@@ -141,9 +141,14 @@ static void recreate_gil(struct _gil_runtime_state *gil)
 }
 
 static void
-drop_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
+drop_gil(struct _ceval_runtime_state *ceval, struct _ceval_state *ceval2,
+         PyThreadState *tstate)
 {
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    struct _gil_runtime_state *gil = &ceval2->gil;
+#else
     struct _gil_runtime_state *gil = &ceval->gil;
+#endif
     if (!_Py_atomic_load_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
     }
@@ -163,7 +168,7 @@ drop_gil(struct _ceval_runtime_state *ceval, PyThreadState *tstate)
     MUTEX_UNLOCK(gil->mutex);
 
 #ifdef FORCE_SWITCHING
-    if (_Py_atomic_load_relaxed(&ceval->gil_drop_request) && tstate != NULL) {
+    if (_Py_atomic_load_relaxed(&ceval2->gil_drop_request) && tstate != NULL) {
         MUTEX_LOCK(gil->switch_mutex);
         /* Not switched yet => wait */
         if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) == tstate)
@@ -226,7 +231,12 @@ take_gil(PyThreadState *tstate)
     assert(is_tstate_valid(tstate));
     PyInterpreterState *interp = tstate->interp;
     struct _ceval_runtime_state *ceval = &interp->runtime->ceval;
+    struct _ceval_state *ceval2 = &interp->ceval;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    struct _gil_runtime_state *gil = &ceval2->gil;
+#else
     struct _gil_runtime_state *gil = &ceval->gil;
+#endif
 
     /* Check that _PyEval_InitThreads() was called to create the lock */
     assert(gil_created(gil));
@@ -289,12 +299,12 @@ _ready:
            in take_gil() while the main thread called
            wait_for_thread_shutdown() from Py_Finalize(). */
         MUTEX_UNLOCK(gil->mutex);
-        drop_gil(ceval, tstate);
+        drop_gil(ceval, ceval2, tstate);
         PyThread_exit_thread();
     }
     assert(is_tstate_valid(tstate));
 
-    if (_Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
+    if (_Py_atomic_load_relaxed(&ceval2->gil_drop_request)) {
         RESET_GIL_DROP_REQUEST(interp);
     }
     else {
@@ -303,7 +313,6 @@ _ready:
            handle signals.
 
            Note: RESET_GIL_DROP_REQUEST() calls COMPUTE_EVAL_BREAKER(). */
-        struct _ceval_state *ceval2 = &interp->ceval;
         COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
     }
 
@@ -319,10 +328,22 @@ _ready:
 
 void _PyEval_SetSwitchInterval(unsigned long microseconds)
 {
-    _PyRuntime.ceval.gil.interval = microseconds;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    struct _gil_runtime_state *gil = &interp->ceval.gil;
+#else
+    struct _gil_runtime_state *gil = &_PyRuntime.ceval.gil;
+#endif
+    gil->interval = microseconds;
 }
 
 unsigned long _PyEval_GetSwitchInterval()
 {
-    return _PyRuntime.ceval.gil.interval;
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    struct _gil_runtime_state *gil = &interp->ceval.gil;
+#else
+    struct _gil_runtime_state *gil = &_PyRuntime.ceval.gil;
+#endif
+    return gil->interval;
 }

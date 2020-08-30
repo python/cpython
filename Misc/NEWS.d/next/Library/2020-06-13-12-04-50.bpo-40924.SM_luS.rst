@@ -1,0 +1,3 @@
+Ensure ``importlib.resources.path`` returns an extant path for the
+SourceFileLoader's resource reader. Avoids the regression identified in
+master while a long-term solution is devised.

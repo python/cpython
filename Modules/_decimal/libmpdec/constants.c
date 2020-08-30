@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,7 +27,6 @@
 
 
 #include "mpdecimal.h"
-#include <stdio.h>
 #include "constants.h"
 
 
@@ -128,5 +127,3 @@ const char *mpd_clamp_string[MPD_CLAMP_GUARD] = {
     "CLAMP_DEFAULT",
     "CLAMP_IEEE_754"
 };
-
-

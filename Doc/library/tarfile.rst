@@ -151,6 +151,7 @@ Some facts and figures:
 
 
 .. class:: TarFile
+   :noindex:
 
    Class for reading and writing tar archives. Do not use this class directly:
    use :func:`tarfile.open` instead. See :ref:`tarfile-objects`.
@@ -787,7 +788,7 @@ How to read a gzip compressed tar archive and display some member information::
    import tarfile
    tar = tarfile.open("sample.tar.gz", "r:gz")
    for tarinfo in tar:
-       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is", end="")
+       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
        if tarinfo.isreg():
            print("a regular file.")
        elif tarinfo.isdir():

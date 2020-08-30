@@ -1,0 +1,1 @@
+Skip some :mod:`multiprocessing` tests when MD5 hash digest is blocked.

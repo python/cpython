@@ -91,7 +91,7 @@ The command, if run with ``-h``, will show the available options::
    PS C:\> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
    See `About Execution Policies
-   <ttps:/go.microsoft.com/fwlink/?LinkID=135170>`_
+   <https://go.microsoft.com/fwlink/?LinkID=135170>`_
    for more information.
 
 The created ``pyvenv.cfg`` file also includes the

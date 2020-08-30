@@ -551,7 +551,9 @@ Pure paths provide the following methods and properties:
         File "<stdin>", line 1, in <module>
         File "pathlib.py", line 694, in relative_to
           .format(str(self), str(formatted)))
-      ValueError: '/etc/passwd' does not start with '/usr'
+      ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other absolute.
+
+   NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
 
 
 .. method:: PurePath.with_name(name)
@@ -1145,7 +1147,7 @@ call fails (for example because the path doesn't exist).
 
    Create a hard link pointing to a path named *target*.
 
-   .. versionchanged:: 3.8
+   .. versionadded:: 3.8
 
 
 .. method:: Path.write_bytes(data)
@@ -1198,6 +1200,7 @@ os and os.path                         pathlib
 :func:`os.path.abspath`                :meth:`Path.resolve`
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
+:func:`os.makedirs`                    :meth:`Path.mkdir`
 :func:`os.rename`                      :meth:`Path.rename`
 :func:`os.replace`                     :meth:`Path.replace`
 :func:`os.rmdir`                       :meth:`Path.rmdir`
@@ -1206,9 +1209,12 @@ os and os.path                         pathlib
 :func:`os.path.exists`                 :meth:`Path.exists`
 :func:`os.path.expanduser`             :meth:`Path.expanduser` and
                                        :meth:`Path.home`
+:func:`os.listdir`                     :meth:`Path.iterdir`
 :func:`os.path.isdir`                  :meth:`Path.is_dir`
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`
+:func:`os.link`                        :meth:`Path.link_to`
+:func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,

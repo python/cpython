@@ -1485,9 +1485,14 @@ def main():
         iconfile = os.path.join(icondir, 'idle.ico')
         root.wm_iconbitmap(default=iconfile)
     elif not macosx.isAquaTk():
-        ext = '.png' if TkVersion >= 8.6 else '.gif'
+        if TkVersion >= 8.6:
+            ext = '.png'
+            sizes = (16, 32, 48, 256)
+        else:
+            ext = '.gif'
+            sizes = (16, 32, 48)
         iconfiles = [os.path.join(icondir, 'idle_%d%s' % (size, ext))
-                     for size in (16, 32, 48)]
+                     for size in sizes]
         icons = [PhotoImage(master=root, file=iconfile)
                  for iconfile in iconfiles]
         root.wm_iconphoto(True, *icons)

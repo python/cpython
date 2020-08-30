@@ -651,7 +651,7 @@ Why doesn't Python have a "with" statement for attribute assignments?
 ---------------------------------------------------------------------
 
 Python has a 'with' statement that wraps the execution of a block, calling code
-on the entrance and exit from the block.  Some language have a construct that
+on the entrance and exit from the block.  Some languages have a construct that
 looks like this::
 
    with obj:

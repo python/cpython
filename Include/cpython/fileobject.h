@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PyAPI_FUNC(char *) Py_UniversalNewlineFgets(char *, int, FILE*, PyObject *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
@@ -26,7 +22,3 @@ typedef PyObject * (*Py_OpenCodeHookFunction)(PyObject *, void *);
 PyAPI_FUNC(PyObject *) PyFile_OpenCode(const char *utf8path);
 PyAPI_FUNC(PyObject *) PyFile_OpenCodeObject(PyObject *path);
 PyAPI_FUNC(int) PyFile_SetOpenCodeHook(Py_OpenCodeHookFunction hook, void *userData);
-
-#ifdef __cplusplus
-}
-#endif

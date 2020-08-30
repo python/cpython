@@ -1085,6 +1085,14 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
                         "optional 3rd arg must be a dictionary");
         return NULL;
     }
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->config._isolated_interpreter) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "thread is not supported for isolated subinterpreters");
+        return NULL;
+    }
+
     boot = PyMem_NEW(struct bootstate, 1);
     if (boot == NULL)
         return PyErr_NoMemory();

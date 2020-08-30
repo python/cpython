@@ -1,3 +1,0 @@
-Remove undocumented support for *closing* a `pathlib.Path` object via its
-context manager. The context manager magic methods remain, but they are now a
-no-op, making `Path` objects immutable.

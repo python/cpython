@@ -922,7 +922,8 @@ class PurePath(object):
         cf = self._flavour.casefold_parts
         if (root or drv) if n == 0 else cf(abs_parts[:n]) != cf(to_abs_parts):
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
-            raise ValueError("{!r} does not start with {!r}"
+            raise ValueError("{!r} is not in the subpath of {!r}"
+                    " OR one path is relative and the other is absolute."
                              .format(str(self), str(formatted)))
         return self._from_parsed_parts('', root if n == 1 else '',
                                        abs_parts[n:])

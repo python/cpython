@@ -1007,7 +1007,7 @@ io_check_errors(PyObject *errors)
 
     /* Avoid calling PyCodec_LookupError() before the codec registry is ready:
        before_PyUnicode_InitEncodings() is called. */
-    if (!interp->fs_codec.encoding) {
+    if (!interp->unicode.fs_codec.encoding) {
         return 0;
     }
 

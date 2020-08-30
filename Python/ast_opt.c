@@ -563,7 +563,8 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(fold_tuple, expr_ty, node_);
         break;
     case Name_kind:
-        if (_PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
+        if (node_->v.Name.ctx == Load &&
+                _PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
             return make_const(node_, PyBool_FromLong(!state->optimize), ctx_);
         }
         break;

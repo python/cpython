@@ -1,5 +1,5 @@
 from importlib import _bootstrap_external
-from test import support
+from test.support import os_helper
 import unittest
 import sys
 from .. import util
@@ -23,7 +23,7 @@ class ExtensionModuleCaseSensitivityTest(util.CASEOKTestBase):
 
     @unittest.skipIf(sys.flags.ignore_environment, 'ignore_environment flag was set')
     def test_case_sensitive(self):
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env.unset('PYTHONCASEOK')
             self.caseok_env_changed(should_exist=False)
             loader = self.find_module()
@@ -31,7 +31,7 @@ class ExtensionModuleCaseSensitivityTest(util.CASEOKTestBase):
 
     @unittest.skipIf(sys.flags.ignore_environment, 'ignore_environment flag was set')
     def test_case_insensitivity(self):
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env.set('PYTHONCASEOK', '1')
             self.caseok_env_changed(should_exist=True)
             loader = self.find_module()

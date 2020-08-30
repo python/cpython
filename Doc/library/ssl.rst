@@ -615,7 +615,7 @@ Constants
    Possible value for :attr:`SSLContext.verify_flags`. In this mode, only the
    peer cert is checked but none of the intermediate CA certificates. The mode
    requires a valid CRL that is signed by the peer cert's issuer (its direct
-   ancestor CA). If no proper CRL has has been loaded with
+   ancestor CA). If no proper CRL has been loaded with
    :attr:`SSLContext.load_verify_locations`, validation will fail.
 
    .. versionadded:: 3.4
@@ -2031,6 +2031,16 @@ to speed up repeated connections from the same clients.
       Only writeable with OpenSSL 1.1.0 or higher.
 
    .. versionadded:: 3.7
+
+.. attribute:: SSLContext.security_level
+
+   An integer representing the `security level
+   <https://www.openssl.org/docs/manmaster/man3/SSL_CTX_get_security_level.html>`_
+   for the context. This attribute is read-only.
+
+   .. availability:: OpenSSL 1.1.0 or newer
+
+   .. versionadded:: 3.10
 
 .. attribute:: SSLContext.verify_flags
 

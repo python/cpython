@@ -398,9 +398,9 @@ def win32_ver(release='', version='', csd='', ptype=''):
     else:
         try:
             cvkey = r'SOFTWARE\Microsoft\Windows NT\CurrentVersion'
-            with winreg.OpenKeyEx(HKEY_LOCAL_MACHINE, cvkey) as key:
-                ptype = QueryValueEx(key, 'CurrentType')[0]
-        except:
+            with winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, cvkey) as key:
+                ptype = winreg.QueryValueEx(key, 'CurrentType')[0]
+        except OSError:
             pass
 
     return release, version, csd, ptype
@@ -798,9 +798,10 @@ class uname_result(
         )
 
     def __getitem__(self, key):
-        if key == 5:
-            return self.processor
-        return super().__getitem__(key)
+        return tuple(iter(self))[key]
+
+    def __len__(self):
+        return len(tuple(iter(self)))
 
 
 _uname_cache = None
