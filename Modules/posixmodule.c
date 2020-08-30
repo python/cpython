@@ -93,6 +93,10 @@ corresponding Unix manual entries for more information on calls.");
 #  include <signal.h>
 #endif
 
+#ifdef HAVE_EVENTFD
+#include <sys/eventfd.h>
+#endif
+
 #ifdef HAVE_FCNTL_H
 #  include <fcntl.h>
 #endif
@@ -5317,6 +5321,30 @@ fail:
 }
 
 #endif
+
+#ifdef HAVE_EVENTFD
+/*[clinic input]
+os.eventfd
+
+    initval: unsigned_int = 0
+        Initial value for the counter
+    flags: int = 0
+    /
+
+Creates a file descriptor with a counter that can be used as an event wait/notify mechanism.
+[clinic start generated code]*/
+
+static PyObject *
+os_eventfd_impl(PyObject *module, unsigned int initval, int flags)
+/*[clinic end generated code: output=ce9c9bbd1446f2de input=0653730fb2f3da46]*/
+{
+    int result = eventfd(initval, flags);
+    if (result == -1) {
+        return posix_error();
+    }
+    return PyLong_FromLong(result);
+}
+#endif /* HAVE_EVENTFD */
 
 
 #ifdef HAVE_EXECV
@@ -14070,6 +14098,7 @@ static PyMethodDef posix_methods[] = {
     OS_LCHFLAGS_METHODDEF
     OS_CHROOT_METHODDEF
     OS_CTERMID_METHODDEF
+    OS_EVENTFD_METHODDEF
     OS_GETCWD_METHODDEF
     OS_GETCWDB_METHODDEF
     OS_LINK_METHODDEF
@@ -14513,6 +14542,13 @@ all_ins(PyObject *m)
 #endif
 #ifdef SF_SYNC
     if (PyModule_AddIntMacro(m, SF_SYNC)) return -1;
+#endif
+
+    /* constants for eventfd */
+#ifdef HAVE_EVENTFD
+    if (PyModule_AddIntConstant(m, "EFD_CLOEXEC", EFD_CLOEXEC)) return -1;
+    if (PyModule_AddIntConstant(m, "EFD_NONBLOCK", EFD_NONBLOCK)) return -1;
+    if (PyModule_AddIntConstant(m, "EFD_SEMAPHORE", EFD_SEMAPHORE)) return -1;
 #endif
 
     /* constants for posix_fadvise */

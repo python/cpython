@@ -305,6 +305,9 @@
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
 
+/* Define to 1 if you have the `eventfd' function. */
+#undef HAVE_EVENTFD
+
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
 

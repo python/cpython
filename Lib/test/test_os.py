@@ -22,6 +22,7 @@ import stat
 import subprocess
 import sys
 import sysconfig
+import struct
 import tempfile
 import threading
 import time
@@ -4250,6 +4251,15 @@ class TimesTests(unittest.TestCase):
             self.assertEqual(times.children_system, 0)
             self.assertEqual(times.elapsed, 0)
 
+class EventfdTests(unittest.TestCase):
+    @unittest.skipUnless(hasattr(os, "eventfd"), 'requires os.eventfd')
+    def test_read(self):
+        fd = os.eventfd()
+        self.addCleanup(os.close, fd)
+        os.write(fd, struct.pack("L", 42))
+        data = os.read(fd, struct.calcsize("L"))
+        val, = struct.unpack("L", data)
+        self.assertEqual(val, 42)
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested
 # the pure Python implementation.

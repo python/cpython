@@ -3661,7 +3661,7 @@ fi
 
 # checks for library functions
 AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
- clock confstr copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
+ clock confstr copy_file_range ctermid dup3 eventfd execv explicit_bzero explicit_memset \
  faccessat fchmod fchmodat fchown fchownat \
  fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \

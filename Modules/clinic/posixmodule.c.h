@@ -2046,6 +2046,55 @@ exit:
     return return_value;
 }
 
+#if defined(HAVE_EVENTFD)
+
+PyDoc_STRVAR(os_eventfd__doc__,
+"eventfd($module, initval=0, flags=0, /)\n"
+"--\n"
+"\n"
+"Creates a file descriptor with a counter that can be used as an event wait/notify mechanism.\n"
+"\n"
+"  initval\n"
+"    Initial value for the counter");
+
+#define OS_EVENTFD_METHODDEF    \
+    {"eventfd", (PyCFunction)(void(*)(void))os_eventfd, METH_FASTCALL, os_eventfd__doc__},
+
+static PyObject *
+os_eventfd_impl(PyObject *module, unsigned int initval, int flags);
+
+static PyObject *
+os_eventfd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned int initval = 0;
+    int flags = 0;
+
+    if (!_PyArg_CheckPositional("eventfd", nargs, 0, 2)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    if (!_PyLong_UnsignedInt_Converter(args[0], &initval)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    flags = _PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = os_eventfd_impl(module, initval, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_EVENTFD) */
+
 #if defined(HAVE_EXECV)
 
 PyDoc_STRVAR(os_execv__doc__,
@@ -8456,6 +8505,10 @@ exit:
     #define OS_UNAME_METHODDEF
 #endif /* !defined(OS_UNAME_METHODDEF) */
 
+#ifndef OS_EVENTFD_METHODDEF
+    #define OS_EVENTFD_METHODDEF
+#endif /* !defined(OS_EVENTFD_METHODDEF) */
+
 #ifndef OS_EXECV_METHODDEF
     #define OS_EXECV_METHODDEF
 #endif /* !defined(OS_EXECV_METHODDEF) */
@@ -8919,4 +8972,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=a0fbdea47249ee0c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=94e031ce48534222 input=a9049054013a1b77]*/
