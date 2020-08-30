@@ -1222,7 +1222,7 @@ functions.
    |              | opening the output file. If not specified,  |
    |              | the value 'backslashreplace' is used. Note  |
    |              | that if ``None`` is specified, it will be   |
-   |              | passed as such to func:`open`, which means  |
+   |              | passed as such to :func:`open`, which means |
    |              | that it will be treated the same as passing |
    |              | 'errors'.                                   |
    +--------------+---------------------------------------------+
