@@ -2478,9 +2478,8 @@ References:
 
 1. Veltkamp-Dekker splitting: http://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
 2. Compensated summation:  http://www.ti3.tu-harburg.de/paper/rump/Ru08b.pdf
-3. Pairwise summation:  https://en.wikipedia.org/wiki/Pairwise_summation
-4. Square root differential correction:  https://arxiv.org/pdf/1904.09481.pdf
-5. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+3. Square root differential correction:  https://arxiv.org/pdf/1904.09481.pdf
+4. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
 
 */
 
