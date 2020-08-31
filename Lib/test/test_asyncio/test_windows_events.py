@@ -211,6 +211,26 @@ class ProactorTests(test_utils.TestCase):
         fut.cancel()
         fut.cancel()
 
+    def test_read_self_pipe_restart(self):
+        # Regression test for https://bugs.python.org/issue39010
+        # Previously, restarting a proactor event loop in certain states
+        # would lead to spurious ConnectionResetErrors being logged.
+        self.loop.call_exception_handler = mock.Mock()
+        # Start an operation in another thread so that the self-pipe is used.
+        # This is theoretically timing-dependent (the task in the executor
+        # must complete before our start/stop cycles), but in practice it
+        # seems to work every time.
+        f = self.loop.run_in_executor(None, lambda: None)
+        self.loop.stop()
+        self.loop.run_forever()
+        self.loop.stop()
+        self.loop.run_forever()
+        # If we don't wait for f to complete here, we may get another
+        # warning logged about a thread that didn't shut down cleanly.
+        self.loop.run_until_complete(f)
+        self.loop.close()
+        self.assertFalse(self.loop.call_exception_handler.called)
+
 
 class WinPolicyTests(test_utils.TestCase):
 
