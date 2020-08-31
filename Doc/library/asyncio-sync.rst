@@ -105,7 +105,7 @@ Event
 
    An Event object manages an internal flag that can be set to *true*
    with the :meth:`set` method and reset to *false* with the
-   :meth:`clear` method.  The :meth:`wait` method blocks until the
+   :meth:`clear` method.  The :meth:`~asyncio.Event.wait` method blocks until the
    flag is set to *true*.  The flag is set to *false* initially.
 
 
@@ -155,7 +155,7 @@ Event
 
       Clear (unset) the event.
 
-      Tasks awaiting on :meth:`wait` will now block until the
+      Tasks awaiting on :meth:`~asyncio.Event.wait` will now block until the
       :meth:`set` method is called again.
 
    .. method:: is_set()
