@@ -498,7 +498,7 @@ class FormatTest(unittest.TestCase):
     def test_with_two_commas_in_format_specifier(self):
         error_msg = "Cannot specify ',' with ','."
         with self.assertRaisesRegex(ValueError, error_msg):
-            '{1:,,}'.format(1)
+            '{:,,}'.format(1)
 
 if __name__ == "__main__":
     unittest.main()
