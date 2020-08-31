@@ -704,7 +704,6 @@ compile as builtin_compile
     optimize: int = -1
     *
     _feature_version as feature_version: int = -1
-    noopt as noopt_obj: object = None
 
 Compile source into a code object that can be executed by exec() or eval().
 
@@ -723,8 +722,8 @@ in addition to any features explicitly specified.
 static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
-                     int optimize, int feature_version, PyObject *noopt_obj)
-/*[clinic end generated code: output=0fac52056ff4025d input=5c58fcfcf38274ac]*/
+                     int optimize, int feature_version)
+/*[clinic end generated code: output=b0c09c84f116d3d7 input=40171fb92c1d580d]*/
 {
     PyObject *source_copy;
     const char *str;
@@ -732,35 +731,13 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     int is_ast;
     int start[] = {Py_file_input, Py_eval_input, Py_single_input, Py_func_type_input};
     PyObject *result;
-    int noopt;
-
-    if (noopt_obj == Py_None) {
+    int noopt = flags & PyCF_DISABLE_ALL_OPTIMIZATIONS;
+    if (!noopt) {
         const PyConfig *config = &_PyInterpreterState_GET()->config;
         noopt = !config->optimize;
     }
-    else {
-        if (optimize != -1) {
-            PyErr_SetString(PyExc_ValueError,
-                            "compile(): either 'noopt' or 'optimize' can be "
-                            "used at the same time");
-            goto error;
-        }
-        noopt = _PyLong_AsInt(noopt_obj);
-        if (noopt == -1 && PyErr_Occurred()) {
-            goto error;
-        }
-        if (noopt < -1) {
-            PyErr_SetString(PyExc_ValueError,
-                            "compile(): invalid noopt value");
-            goto error;
-        }
-        /* normalize noopt value (ex: noopt=4 becomes noopt=1) */
-        if (noopt > 1) {
-            noopt = 1;
-        }
-    }
 
-    if (noopt == 1) {
+    if (noopt) {
         optimize = _PyCompiler_disable_all_optimizations;
     }
 

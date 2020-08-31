@@ -117,8 +117,8 @@ Base32 Encoding with Extended Hex Alphabet.
 builtins
 --------
 
-The :func:`compile` function gets a new optional keyword-only *noopt* parameter
-to disable compiler optimizations.
+The :func:`compile` function gets a new optional bit in the *flags* argument
+(`ast.PyCF_DISABLE_ALL_OPTIMIZATIONS) to disable all compiler optimizations.
 
 curses
 ------

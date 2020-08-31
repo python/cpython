@@ -242,7 +242,7 @@ are always available.  They are listed here in alphabetical order.
       Class methods can now wrap other :term:`descriptors <descriptor>` such as
       :func:`property`.
 
-.. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1, noopt=None)
+.. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
    Compile the *source* into a code or AST object.  Code objects can be executed
    by :func:`exec` or :func:`eval`.  *source* can either be a normal string, a
@@ -280,14 +280,15 @@ are always available.  They are listed here in alphabetical order.
    object has ``CO_COROUTINE`` set in ``co_code``, and can be interactively
    executed via ``await eval(code_object)``.
 
+   If the *ast.PyCF_DISABLE_ALL_OPTIMIZATIONS* bit is set in *flags*, all compiler
+   optimizations will be disabled and the value of *optimize* will be ignored. If
+   this bit is not set, the value of ``sys.flags.noopt`` will be used.
+
    The argument *optimize* specifies the optimization level of the compiler; the
    default value of ``-1`` selects the optimization level of the interpreter as
    given by :option:`-O` options.  Explicit levels are ``0`` (no optimization;
    ``__debug__`` is true), ``1`` (asserts are removed, ``__debug__`` is false)
    or ``2`` (docstrings are removed too).
-
-   If *noopt* is false, disable compiler optimizations and ignore *optimize*
-   argument. If it is ``None``, use ``sys.flags.noopt`` value.
 
    This function raises :exc:`SyntaxError` if the compiled source is invalid,
    and :exc:`ValueError` if the source contains null bytes.

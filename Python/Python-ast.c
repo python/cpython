@@ -9879,6 +9879,9 @@ astmodule_exec(PyObject *m)
     if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {
         return -1;
     }
+    if (PyModule_AddIntMacro(m, PyCF_DISABLE_ALL_OPTIMIZATIONS) < 0) {
+        return -1;
+    }
     if (PyModule_AddObject(m, "mod", state->mod_type) < 0) {
         return -1;
     }

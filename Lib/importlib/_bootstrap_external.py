@@ -853,14 +853,18 @@ class SourceLoader(_LoaderBasics):
                               name=fullname) from exc
         return decode_source(source_bytes)
 
-    def source_to_code(self, data, path, *, _optimize=-1, _noopt=None):
+    def source_to_code(self, data, path, *, _optimize=-1, _noopt=False):
         """Return the code object compiled from source.
 
         The 'data' argument can be any object type that compile() supports.
         """
+        if _noopt:
+            import ast
+            return _bootstrap._call_with_frames_removed(compile, data, path, 'exec',
+                                            dont_inherit=True, optimize=_optimize,
+                                            flags=ast.PyCF_DISABLE_ALL_OPTIMIZATIONS)
         return _bootstrap._call_with_frames_removed(compile, data, path, 'exec',
-                                        dont_inherit=True, optimize=_optimize,
-                                        noopt=_noopt)
+                                        dont_inherit=True, optimize=_optimize)
 
     def get_code(self, fullname):
         """Concrete implementation of InspectLoader.get_code.

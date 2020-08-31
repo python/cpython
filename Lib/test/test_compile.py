@@ -1,3 +1,4 @@
+from ast import PyCF_DISABLE_ALL_OPTIMIZATIONS
 import _ast
 import dis
 import io
@@ -769,10 +770,12 @@ if 1:
         self.assertEqual(len(eval(the_dict)), dict_size)
 
     def test_noopt(self):
-        for noopt in (None, False, True):
+        for flags in (0, PyCF_DISABLE_ALL_OPTIMIZATIONS):
             out = io.StringIO()
-            code = compile("if 0: breakpoint()", "<string>", "exec", noopt=noopt)
+            code = compile("if 0: breakpoint()", "<string>", "exec",
+                           flags=flags)
             dis.dis(code, file=out)
+            noopt = (flags & PyCF_DISABLE_ALL_OPTIMIZATIONS)
             if noopt is not None:
                 optimize = not noopt
             else:

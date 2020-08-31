@@ -1075,6 +1075,9 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {', 1)
         self.emit("return -1;", 2)
         self.emit('}', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_DISABLE_ALL_OPTIMIZATIONS) < 0) {', 1)
+        self.emit("return -1;", 2)
+        self.emit('}', 1)
         for dfn in mod.dfns:
             self.visit(dfn)
         self.emit("return 0;", 1)
