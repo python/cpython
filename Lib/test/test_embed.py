@@ -388,6 +388,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'bytes_warning': 0,
         'inspect': 0,
         'interactive': 0,
+        'optimize': 1,
         'optimization_level': 0,
         'parser_debug': 0,
         'write_bytecode': 1,
@@ -1071,6 +1072,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'program_name': './argv0',
             'run_command': 'pass\n',
             'use_environment': 0,
+            'optimize': 0,
+            'xoptions': ['noopt'],
         }
         self.check_all_configs("test_init_parse_argv", config, api=API_PYTHON)
 
@@ -1080,7 +1083,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         config = {
             'parse_argv': 0,
-            'argv': ['./argv0', '-E', '-c', 'pass', 'arg1', '-v', 'arg3'],
+            'argv': ['./argv0', '-E', '-X', 'noopt', '-c', 'pass', 'arg1', '-v', 'arg3'],
             'orig_argv': ['./argv0', '-E', '-c', 'pass', 'arg1', '-v', 'arg3'],
             'program_name': './argv0',
         }

@@ -36,6 +36,7 @@ __all__ = [
     "check_syntax_error",
     "BasicTestRunner", "run_unittest", "run_doctest",
     "requires_gzip", "requires_bz2", "requires_lzma",
+    "requires_compiler_optimizations",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
@@ -183,7 +184,6 @@ def _force_run(path, func, *args):
             print('re-run %s%r' % (func.__name__, args))
         os.chmod(path, stat.S_IRWXU)
         return func(*args)
-
 
 # Check whether a gui is actually available
 def _is_gui_available():
@@ -416,6 +416,17 @@ def requires_lzma(reason='requires lzma'):
 
 requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
                         'requires legacy Unicode C API')
+
+
+def requires_compiler_optimizations(test):
+    """Skip decorator for tests that require compiler optimizations.
+
+    Skip test if sys.flags.noopt is true.
+    """
+    if sys.flags.noopt:
+        test = unittest.skip('need compiler optimizations')(test)
+    return test
+
 
 is_jython = sys.platform.startswith('java')
 

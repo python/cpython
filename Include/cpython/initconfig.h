@@ -417,6 +417,17 @@ typedef struct {
 
        _PyConfig_Write() initializes Py_GetArgcArgv() to this list. */
     PyWideStringList orig_argv;
+
+    /* Should the compiler optimize bytecode?
+
+       If equal to 0, disable compiler optimizations and set optimization_level
+       to 0.
+
+       If equal to 1, enable compiler optimizations.
+
+       Set to 0 by -X noopt. */
+    int optimize;
+
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);

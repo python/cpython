@@ -134,6 +134,7 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
+from test import support
 from test.support import (run_doctest, run_unittest, cpython_only,
                           check_impl_detail)
 
@@ -292,12 +293,14 @@ class CodeConstsTest(unittest.TestCase):
         self.assertIsInterned(v)
 
     @cpython_only
+    @support.requires_compiler_optimizations
     def test_interned_string_in_tuple(self):
         co = compile('res = ("str_value",)', '?', 'exec')
         v = self.find_const(co.co_consts, ('str_value',))
         self.assertIsInterned(v[0])
 
     @cpython_only
+    @support.requires_compiler_optimizations
     def test_interned_string_in_frozenset(self):
         co = compile('res = a in {"str_value"}', '?', 'exec')
         v = self.find_const(co.co_consts, frozenset(('str_value',)))

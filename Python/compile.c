@@ -185,7 +185,7 @@ struct compiler {
     PyFutureFeatures *c_future; /* pointer to module's __future__ */
     PyCompilerFlags *c_flags;
 
-    int c_optimize;              /* optimization level */
+    int c_optimization_level;    /* optimization level */
     int c_interactive;           /* true if in interactive mode */
     int c_nestlevel;
     int c_do_not_emit_bytecode;  /* The compiler won't emit any bytecode
@@ -340,7 +340,7 @@ compiler_init(struct compiler *c)
 
 PyCodeObject *
 PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
-                   int optimize, PyArena *arena)
+                    int optimize, PyArena *arena)
 {
     struct compiler c;
     PyCodeObject *co = NULL;
@@ -372,16 +372,19 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_future->ff_features = merged;
     flags->cf_flags = merged;
     c.c_flags = flags;
-    c.c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
+    c.c_nestlevel = 0;
+    c.c_do_not_emit_bytecode = 0;
     c.c_nestlevel = 0;
     c.c_do_not_emit_bytecode = 0;
 
+    c.c_optimization_level = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     _PyASTOptimizeState state;
-    state.optimize = c.c_optimize;
+    state.optimize = c.c_optimization_level;
     state.ff_features = merged;
-
-    if (!_PyAST_Optimize(mod, arena, &state)) {
-        goto finally;
+    if (c.c_optimization_level >= 0) {
+        if (!_PyAST_Optimize(mod, arena, &state)) {
+            goto finally;
+        }
     }
 
     c.c_st = PySymtable_BuildObject(mod, filename, c.c_future);
@@ -1799,7 +1802,7 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
     if (!asdl_seq_LEN(stmts))
         return 1;
     /* if not -OO mode, set docstring */
-    if (c->c_optimize < 2) {
+    if (c->c_optimization_level < 2) {
         docstring = _PyAST_GetDocString(stmts);
         if (docstring) {
             i = 1;
@@ -2266,7 +2269,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     }
 
     /* if not -OO mode, add docstring */
-    if (c->c_optimize < 2) {
+    if (c->c_optimization_level < 2) {
         docstring = _PyAST_GetDocString(body);
     }
     if (compiler_add_const(c, docstring ? docstring : Py_None) < 0) {
@@ -2698,13 +2701,16 @@ static int
 compiler_if(struct compiler *c, stmt_ty s)
 {
     basicblock *end, *next;
-    int constant;
     assert(s->kind == If_kind);
     end = compiler_new_block(c);
     if (end == NULL)
         return 0;
 
-    constant = expr_constant(s->v.If.test);
+    int constant = -1;
+    if (c->c_optimization_level >= 0) {
+        constant = expr_constant(s->v.If.test);
+    }
+
     /* constant = 0: "if 0"
      * constant = 1: "if 1", "if 2", ...
      * constant = -1: rest */
@@ -2830,7 +2836,11 @@ static int
 compiler_while(struct compiler *c, stmt_ty s)
 {
     basicblock *loop, *orelse, *end, *anchor = NULL;
-    int constant = expr_constant(s->v.While.test);
+
+    int constant = -1;
+    if (c->c_optimization_level >= 0) {
+        constant = expr_constant(s->v.While.test);
+    }
 
     if (constant == 0) {
         BEGIN_DO_NOT_EMIT_BYTECODE
@@ -3325,8 +3335,9 @@ compiler_assert(struct compiler *c, stmt_ty s)
 {
     basicblock *end;
 
-    if (c->c_optimize)
+    if (c->c_optimization_level > 0) {
         return 1;
+    }
     if (s->v.Assert.test->kind == Tuple_kind &&
         asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0)
     {
@@ -6034,8 +6045,10 @@ assemble(struct compiler *c, int addNone)
     if (consts == NULL) {
         goto error;
     }
-    if (optimize_cfg(&a, consts)) {
-        goto error;
+    if (c->c_optimization_level >= 0) {
+        if (optimize_cfg(&a, consts)) {
+            goto error;
+        }
     }
 
     /* Can't modify the bytecode after computing jump offsets. */

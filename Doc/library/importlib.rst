@@ -1410,7 +1410,7 @@ an :term:`importer`.
 
    .. versionadded:: 3.4
 
-.. function:: cache_from_source(path, debug_override=None, *, optimization=None)
+.. function:: cache_from_source(path, debug_override=None, *, optimization=None, noopt=None)
 
    Return the :pep:`3147`/:pep:`488` path to the byte-compiled file associated
    with the source *path*.  For example, if *path* is ``/foo/bar/baz.py`` the return
@@ -1429,6 +1429,11 @@ an :term:`importer`.
    ``/foo/bar/__pycache__/baz.cpython-32.opt-2.pyc``. The string representation
    of *optimization* can only be alphanumeric, else :exc:`ValueError` is raised.
 
+   The *noopt* parameter is used to specify if compiler optimization are
+   disabled. If it is true, *optimization* is ignored and ``.noopt`` suffix is
+   used (ex: ``baz.cpython-32.noopt.pyc``). If it is ``None``, use
+   ``sys.flags.noopt`` value.
+
    The *debug_override* parameter is deprecated and can be used to override
    the system's value for ``__debug__``. A ``True`` value is the equivalent of
    setting *optimization* to the empty string. A ``False`` value is the same as
@@ -1443,6 +1448,9 @@ an :term:`importer`.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.10
+      Added *noopt* parameter.
 
 
 .. function:: source_from_cache(path)

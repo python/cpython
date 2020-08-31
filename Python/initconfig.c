@@ -625,6 +625,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->bytes_warning = -1;
     config->inspect = -1;
     config->interactive = -1;
+    config->optimize = 1;
     config->optimization_level = -1;
     config->parser_debug= -1;
     config->write_bytecode = -1;
@@ -833,6 +834,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(bytes_warning);
     COPY_ATTR(inspect);
     COPY_ATTR(interactive);
+    COPY_ATTR(optimize);
     COPY_ATTR(optimization_level);
     COPY_ATTR(parser_debug);
     COPY_ATTR(write_bytecode);
@@ -933,6 +935,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(bytes_warning);
     SET_ITEM_INT(inspect);
     SET_ITEM_INT(interactive);
+    SET_ITEM_INT(optimize);
     SET_ITEM_INT(optimization_level);
     SET_ITEM_INT(parser_debug);
     SET_ITEM_INT(write_bytecode);
@@ -1461,6 +1464,19 @@ config_read_complex_options(PyConfig *config)
             return status;
         }
     }
+
+    if (config_get_xoption(config, L"noopt")) {
+        config->optimize = 0;
+    }
+    else if (config->optimize < 0) {
+        config->optimize = 1;
+    }
+
+    /* -X noopt imply optimization_level=0 */
+    if (!config->optimize) {
+        config->optimization_level = 0;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -1801,7 +1817,6 @@ config_read(PyConfig *config)
     if (config->configure_c_stdio < 0) {
         config->configure_c_stdio = 1;
     }
-
     return _PyStatus_OK();
 }
 
@@ -2548,6 +2563,7 @@ PyConfig_Read(PyConfig *config)
     assert(config->bytes_warning >= 0);
     assert(config->inspect >= 0);
     assert(config->interactive >= 0);
+    assert(config->optimize >= 0);
     assert(config->optimization_level >= 0);
     assert(config->parser_debug >= 0);
     assert(config->write_bytecode >= 0);

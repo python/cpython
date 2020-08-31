@@ -63,11 +63,19 @@ def arigo_example0():
         pass
     x = 1
 
-arigo_example0.events = [(0, 'call'),
-                        (1, 'line'),
-                        (2, 'line'),
-                        (5, 'line'),
-                        (5, 'return')]
+if sys.flags.noopt:
+    arigo_example0.events = [(0, 'call'),
+                            (1, 'line'),
+                            (2, 'line'),
+                            (3, 'line'),
+                            (5, 'line'),
+                            (5, 'return')]
+else:
+    arigo_example0.events = [(0, 'call'),
+                            (1, 'line'),
+                            (2, 'line'),
+                            (5, 'line'),
+                            (5, 'return')]
 
 def arigo_example1():
     x = 1
@@ -76,11 +84,19 @@ def arigo_example1():
         pass
     x = 1
 
-arigo_example1.events = [(0, 'call'),
-                        (1, 'line'),
-                        (2, 'line'),
-                        (5, 'line'),
-                        (5, 'return')]
+if sys.flags.noopt:
+    arigo_example1.events = [(0, 'call'),
+                            (1, 'line'),
+                            (2, 'line'),
+                            (3, 'line'),
+                            (5, 'line'),
+                            (5, 'return')]
+else:
+    arigo_example1.events = [(0, 'call'),
+                            (1, 'line'),
+                            (2, 'line'),
+                            (5, 'line'),
+                            (5, 'return')]
 
 def arigo_example2():
     x = 1
@@ -91,12 +107,21 @@ def arigo_example2():
         pass
     return None
 
-arigo_example2.events = [(0, 'call'),
-                        (1, 'line'),
-                        (2, 'line'),
-                        (4, 'line'),
-                        (7, 'line'),
-                        (7, 'return')]
+if sys.flags.noopt:
+    arigo_example2.events = [(0, 'call'),
+                            (1, 'line'),
+                            (2, 'line'),
+                            (3, 'line'),
+                            (4, 'line'),
+                            (7, 'line'),
+                            (7, 'return')]
+else:
+    arigo_example2.events = [(0, 'call'),
+                            (1, 'line'),
+                            (2, 'line'),
+                            (4, 'line'),
+                            (7, 'line'),
+                            (7, 'return')]
 
 
 # check that lines consisting of just one instruction get traced:
@@ -233,18 +258,36 @@ def tightloop_example():
     except IndexError:
         pass
 
-tightloop_example.events = [(0, 'call'),
-                            (1, 'line'),
-                            (2, 'line'),
-                            (3, 'line'),
-                            (5, 'line'),
-                            (5, 'line'),
-                            (5, 'line'),
-                            (5, 'line'),
-                            (5, 'exception'),
-                            (6, 'line'),
-                            (7, 'line'),
-                            (7, 'return')]
+if sys.flags.noopt:
+    tightloop_example.events = [(0, 'call'),
+                                (1, 'line'),
+                                (2, 'line'),
+                                (3, 'line'),
+                                (4, 'line'),
+                                (5, 'line'),
+                                (4, 'line'),
+                                (5, 'line'),
+                                (4, 'line'),
+                                (5, 'line'),
+                                (4, 'line'),
+                                (5, 'line'),
+                                (5, 'exception'),
+                                (6, 'line'),
+                                (7, 'line'),
+                                (7, 'return')]
+else:
+    tightloop_example.events = [(0, 'call'),
+                                (1, 'line'),
+                                (2, 'line'),
+                                (3, 'line'),
+                                (5, 'line'),
+                                (5, 'line'),
+                                (5, 'line'),
+                                (5, 'line'),
+                                (5, 'exception'),
+                                (6, 'line'),
+                                (7, 'line'),
+                                (7, 'return')]
 
 def tighterloop_example():
     items = range(1, 4)

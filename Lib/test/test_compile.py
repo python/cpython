@@ -1,11 +1,12 @@
+import _ast
 import dis
+import io
 import math
 import os
-import unittest
 import sys
-import _ast
 import tempfile
 import types
+import unittest
 from test import support
 from test.support import script_helper
 from test.support.os_helper import FakePath
@@ -32,6 +33,7 @@ class TestSpecifics(unittest.TestCase):
         compile("hi\r\nstuff\r\ndef f():\n    pass\r", "<test>", "exec")
         compile("this_is\rreally_old_mac\rdef f():\n    pass", "<test>", "exec")
 
+    @support.requires_compiler_optimizations
     def test_debug_assignment(self):
         # catch assignments to __debug__
         self.assertRaises(SyntaxError, compile, '__debug__ = 1', '?', 'single')
@@ -590,6 +592,7 @@ if 1:
     # Merging equal constants is not a strict requirement for the Python
     # semantics, it's a more an implementation detail.
     @support.cpython_only
+    @support.requires_compiler_optimizations
     def test_merge_constants(self):
         # Issue #25843: compile() must merge constants which are equal
         # and have the same type.
@@ -637,6 +640,7 @@ if 1:
     # that peephole optimization was actually done though that isn't an
     # indication of the bugs presence or not (crashing is).
     @support.cpython_only
+    @support.requires_compiler_optimizations
     def test_peephole_opt_unreachable_code_array_access_in_bounds(self):
         """Regression test for issue35193 when run under clang msan."""
         def unused_code_at_end():
@@ -650,6 +654,7 @@ if 1:
             'RETURN_VALUE',
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
+    @support.requires_compiler_optimizations
     def test_dont_merge_constants(self):
         # Issue #25843: compile() must not merge constants which are equal
         # but have a different type.
@@ -702,6 +707,7 @@ if 1:
     # Multiple users rely on the fact that CPython does not generate
     # bytecode for dead code blocks. See bpo-37500 for more context.
     @support.cpython_only
+    @support.requires_compiler_optimizations
     def test_dead_blocks_do_not_generate_bytecode(self):
         def unused_block_if():
             if 0:
@@ -761,6 +767,22 @@ if 1:
         dict_size = 0xFFFF + 1
         the_dict = "{" + ",".join(f"{x}:{x}" for x in range(dict_size)) + "}"
         self.assertEqual(len(eval(the_dict)), dict_size)
+
+    def test_noopt(self):
+        for noopt in (None, False, True):
+            out = io.StringIO()
+            code = compile("if 0: breakpoint()", "<string>", "exec", noopt=noopt)
+            dis.dis(code, file=out)
+            if noopt is not None:
+                optimize = not noopt
+            else:
+                optimize = not sys.flags.noopt
+            with self.subTest(noopt=noopt, sys_flags_noopt=sys.flags.noopt):
+                if optimize:
+                    self.assertNotIn("CALL_FUNCTION", out.getvalue())
+                else:
+                    self.assertIn("CALL_FUNCTION", out.getvalue())
+
 
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object

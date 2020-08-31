@@ -106,4 +106,7 @@ PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, _PyASTOptimizeSta
 /* This doesn't need to match anything */
 #define Py_fstring_input 800
 
+/* Value of 'optimize' to deactivate all optimizations */
+#define _PyCompiler_disable_all_optimizations  -2
+
 #endif /* !Py_COMPILE_H */

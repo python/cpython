@@ -1,0 +1,3 @@
+Add :option:`-X noopt <-X>` command line option to disable compiler
+optimizations. Add ``sys.flags.noopt`` flag. :mod:`importlib` uses
+``.noopt.pyc`` suffix for .pyc files if :data:`sys.flags.noopt` is true.

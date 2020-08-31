@@ -290,6 +290,7 @@ MAGIC_NUMBER = (3425).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
+_NOOPT = 'noopt'
 _OPT = 'opt-'
 
 SOURCE_SUFFIXES = ['.py']  # _setup() adds .pyw as needed.
@@ -298,7 +299,8 @@ BYTECODE_SUFFIXES = ['.pyc']
 # Deprecated.
 DEBUG_BYTECODE_SUFFIXES = OPTIMIZED_BYTECODE_SUFFIXES = BYTECODE_SUFFIXES
 
-def cache_from_source(path, debug_override=None, *, optimization=None):
+def cache_from_source(path, debug_override=None, *, optimization=None,
+                      noopt=None):
     """Given the path to a .py file, return the path to its .pyc file.
 
     The .py file does not need to exist; this simply returns the path to the
@@ -330,16 +332,21 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
     if tag is None:
         raise NotImplementedError('sys.implementation.cache_tag is None')
     almost_filename = ''.join([(base if base else rest), sep, tag])
-    if optimization is None:
-        if sys.flags.optimize == 0:
-            optimization = ''
-        else:
-            optimization = sys.flags.optimize
-    optimization = str(optimization)
-    if optimization != '':
-        if not optimization.isalnum():
-            raise ValueError('{!r} is not alphanumeric'.format(optimization))
-        almost_filename = '{}.{}{}'.format(almost_filename, _OPT, optimization)
+    if noopt is None:
+        noopt = sys.flags.noopt
+    if noopt:
+        almost_filename = f'{almost_filename}.{_NOOPT}'
+    else:
+        if optimization is None:
+            if sys.flags.optimize == 0:
+                optimization = ''
+            else:
+                optimization = sys.flags.optimize
+        optimization = str(optimization)
+        if optimization != '':
+            if not optimization.isalnum():
+                raise ValueError('{!r} is not alphanumeric'.format(optimization))
+            almost_filename = f'{almost_filename}.{_OPT}{optimization}'
     filename = almost_filename + BYTECODE_SUFFIXES[0]
     if sys.pycache_prefix is not None:
         # We need an absolute path to the py file to avoid the possibility of
@@ -398,13 +405,14 @@ def source_from_cache(path):
         raise ValueError(f'expected only 2 or 3 dots in {pycache_filename!r}')
     elif dot_count == 3:
         optimization = pycache_filename.rsplit('.', 2)[-2]
-        if not optimization.startswith(_OPT):
+        if optimization.startswith(_OPT):
+            opt_level = optimization[len(_OPT):]
+            if not opt_level.isalnum():
+                raise ValueError(f"optimization level {optimization!r} "
+                                 "is not an alphanumeric value")
+        elif not optimization.startswith(_NOOPT):
             raise ValueError("optimization portion of filename does not start "
-                             f"with {_OPT!r}")
-        opt_level = optimization[len(_OPT):]
-        if not opt_level.isalnum():
-            raise ValueError(f"optimization level {optimization!r} is not an "
-                             "alphanumeric value")
+                             f"with {_OPT!r} nor {_NOOPT!r}")
     base_filename = pycache_filename.partition('.')[0]
     return _path_join(head, base_filename + SOURCE_SUFFIXES[0])
 
@@ -845,13 +853,14 @@ class SourceLoader(_LoaderBasics):
                               name=fullname) from exc
         return decode_source(source_bytes)
 
-    def source_to_code(self, data, path, *, _optimize=-1):
+    def source_to_code(self, data, path, *, _optimize=-1, _noopt=None):
         """Return the code object compiled from source.
 
         The 'data' argument can be any object type that compile() supports.
         """
         return _bootstrap._call_with_frames_removed(compile, data, path, 'exec',
-                                        dont_inherit=True, optimize=_optimize)
+                                        dont_inherit=True, optimize=_optimize,
+                                        noopt=_noopt)
 
     def get_code(self, fullname):
         """Concrete implementation of InspectLoader.get_code.

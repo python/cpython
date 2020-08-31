@@ -405,7 +405,10 @@ class TestCoverage(unittest.TestCase):
         # XXX This is needed to run regrtest.py as a script
         modname = trace._fullmodname(sys.modules[modname].__file__)
         self.assertIn(modname, coverage)
-        self.assertEqual(coverage[modname], (5, 100))
+        if sys.flags.noopt:
+            self.assertEqual(coverage[modname], (7, 100))
+        else:
+            self.assertEqual(coverage[modname], (5, 100))
 
 ### Tests that don't mess with sys.settrace and can be traced
 ### themselves TODO: Skip tests that do mess with sys.settrace when

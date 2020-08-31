@@ -93,6 +93,11 @@ Other Language Changes
   :meth:`~object.__index__` method).
   (Contributed by Serhiy Storchaka in :issue:`37999`.)
 
+* Added :option:`-X noopt <-X>` command line to disable compiler optimizations.
+  :mod:`importlib` uses ``.noopt.pyc`` suffix for ``.pyc`` filenames if
+  :data:`sys.flags.noopt` is true.
+  (Contributed by Yury Selivanov, Victor Stinner and Pablo Galindo in :issue:`2506`)
+
 
 New Modules
 ===========
@@ -108,6 +113,12 @@ base64
 
 Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
 Base32 Encoding with Extended Hex Alphabet.
+
+builtins
+--------
+
+The :func:`compile` function gets a new optional keyword-only *noopt* parameter
+to disable compiler optimizations.
 
 curses
 ------
@@ -125,6 +136,20 @@ glob
 Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
+
+importlib
+---------
+
+Add a new *noopt* optional keyword-only parameter to
+:func:`importlib.util.cache_from_source` to disable compiler optimizations.
+(Contributed by Yury Selivanov, Victor Stinner and Pablo Galindo in :issue:`2506`)
+
+py_compile
+----------
+
+Add a new *noopt* optional keyword-only parameter to :func:`py_compile.compile`
+to disable compiler optimizations.
+(Contributed by Yury Selivanov, Victor Stinner and Pablo Galindo in :issue:`2506`)
 
 os
 --
@@ -144,6 +169,11 @@ sys
 Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
+
+
+Add new :data:`sys.flags.noopt` flag for the new :option:`-X noopt <-X>` option
+(disable compiler optimizations).
+(Contributed by Yury Selivanov, Victor Stinner and Pablo Galindo in :issue:`2506`)
 
 xml
 ---

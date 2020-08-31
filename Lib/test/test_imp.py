@@ -9,6 +9,7 @@ from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
 import unittest
+from unittest import mock
 import warnings
 with warnings.catch_warnings():
     warnings.simplefilter('ignore', DeprecationWarning)
@@ -430,7 +431,9 @@ class PEP3147Tests(unittest.TestCase):
         path = os.path.join('foo', 'bar', 'baz', 'qux.py')
         expect = os.path.join('foo', 'bar', 'baz', '__pycache__',
                               'qux.{}.pyc'.format(self.tag))
-        self.assertEqual(imp.cache_from_source(path, True), expect)
+        with mock.patch('sys.flags') as mock_flags:
+            mock_flags.noopt = False
+            self.assertEqual(imp.cache_from_source(path, True), expect)
 
     @unittest.skipUnless(sys.implementation.cache_tag is not None,
                          'requires sys.implementation.cache_tag to not be '

@@ -444,10 +444,11 @@ byte_compile(files, optimize=%r, force=%r,
             #   dfile - purported source filename (same as 'file' by default)
             if optimize >= 0:
                 opt = '' if optimize == 0 else optimize
-                cfile = importlib.util.cache_from_source(
-                    file, optimization=opt)
+                cfile = importlib.util.cache_from_source(file,
+                                                         optimization=opt,
+                                                         noopt=False)
             else:
-                cfile = importlib.util.cache_from_source(file)
+                cfile = importlib.util.cache_from_source(file, noopt=False)
             dfile = file
             if prefix:
                 if file[:len(prefix)] != prefix:
@@ -462,7 +463,7 @@ byte_compile(files, optimize=%r, force=%r,
                 if force or newer(file, cfile):
                     log.info("byte-compiling %s to %s", file, cfile_base)
                     if not dry_run:
-                        compile(file, cfile, dfile)
+                        compile(file, cfile, dfile, noopt=False)
                 else:
                     log.debug("skipping byte-compilation of %s to %s",
                               file, cfile_base)

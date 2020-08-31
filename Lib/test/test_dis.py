@@ -576,6 +576,7 @@ class DisTests(unittest.TestCase):
         self.do_disassembly_test(func(1249), expected(1249, 4))
         self.do_disassembly_test(func(1250), expected(1250, 5))
 
+    @support.requires_compiler_optimizations
     def test_disassemble_str(self):
         self.do_disassembly_test(expr_str, dis_expr_str)
         self.do_disassembly_test(simple_stmt_str, dis_simple_stmt_str)
@@ -847,7 +848,7 @@ class CodeInfoTests(unittest.TestCase):
     def test_show_code(self):
         self.maxDiff = 1000
         for x, expected in self.test_pairs:
-            with captured_stdout() as output:
+            with support.captured_stdout() as output:
                 dis.show_code(x)
             self.assertRegex(output.getvalue(), expected+"\n")
             output = io.StringIO()
@@ -1121,22 +1122,25 @@ class InstructionTests(BytecodeTestCase):
         actual = dis.get_instructions(simple, first_line=None)
         self.assertEqual(list(actual), expected_opinfo_simple)
 
+    @support.requires_compiler_optimizations
     def test_outer(self):
         actual = dis.get_instructions(outer, first_line=expected_outer_line)
         self.assertEqual(list(actual), expected_opinfo_outer)
 
+    @support.requires_compiler_optimizations
     def test_nested(self):
-        with captured_stdout():
+        with support.captured_stdout():
             f = outer()
         actual = dis.get_instructions(f, first_line=expected_f_line)
         self.assertEqual(list(actual), expected_opinfo_f)
 
     def test_doubly_nested(self):
-        with captured_stdout():
+        with support.captured_stdout():
             inner = outer()()
         actual = dis.get_instructions(inner, first_line=expected_inner_line)
         self.assertEqual(list(actual), expected_opinfo_inner)
 
+    @support.requires_compiler_optimizations
     def test_jumpy(self):
         actual = dis.get_instructions(jumpy, first_line=expected_jumpy_line)
         self.assertEqual(list(actual), expected_opinfo_jumpy)
@@ -1161,6 +1165,7 @@ class BytecodeTests(unittest.TestCase):
                 via_generator = list(dis.get_instructions(obj))
                 self.assertEqual(via_object, via_generator)
 
+    @support.requires_compiler_optimizations
     def test_explicit_first_line(self):
         actual = dis.Bytecode(outer, first_line=expected_outer_line)
         self.assertEqual(list(actual), expected_opinfo_outer)

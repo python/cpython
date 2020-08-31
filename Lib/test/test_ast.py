@@ -1492,6 +1492,7 @@ class ConstantTests(unittest.TestCase):
         return consts
 
     @support.cpython_only
+    @support.requires_compiler_optimizations
     def test_load_const(self):
         consts = [None,
                   True, False,

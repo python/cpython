@@ -580,6 +580,14 @@ PyConfig
       by the function calculating the :ref:`Path Configuration
       <init-path-config>`.
 
+   .. c:member:: int optimize
+
+      Should the compiler optimize bytecode? If equal to 0, disable the
+      compiler optimizations and set :c:member:`~PyConfig.optimization_level`
+      to 0. Set to 0 by :option:`-X noopt <-X>` command line option.
+
+      .. versionadded:: 3.10
+
    .. c:member:: int optimization_level
 
       Compilation optimization level:
