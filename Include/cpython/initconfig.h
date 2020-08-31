@@ -425,7 +425,7 @@ typedef struct {
 
        If equal to 1, enable compiler optimizations.
 
-       Set to 0 by -X noopt. */
+       Set to 0 by -X noopt. It's default value is 1 */
     int optimize;
 
 } PyConfig;

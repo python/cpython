@@ -1,5 +1,6 @@
 # Minimal tests for dis module
 
+from test import support
 from test.support import captured_stdout
 from test.support.bytecode_helper import BytecodeTestCase
 import unittest

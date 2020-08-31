@@ -1068,7 +1068,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = {
             'parse_argv': 1,
             'argv': ['-c', 'arg1', '-v', 'arg3'],
-            'orig_argv': ['./argv0', '-E', '-c', 'pass', 'arg1', '-v', 'arg3'],
+            'orig_argv': ['./argv0', '-E', '-X', 'noopt', '-c', 'pass', 'arg1', '-v', 'arg3'],
             'program_name': './argv0',
             'run_command': 'pass\n',
             'use_environment': 0,
@@ -1084,7 +1084,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         config = {
             'parse_argv': 0,
             'argv': ['./argv0', '-E', '-X', 'noopt', '-c', 'pass', 'arg1', '-v', 'arg3'],
-            'orig_argv': ['./argv0', '-E', '-c', 'pass', 'arg1', '-v', 'arg3'],
+            'orig_argv': ['./argv0', '-E', '-X', 'noopt', '-c', 'pass', 'arg1', '-v', 'arg3'],
             'program_name': './argv0',
         }
         self.check_all_configs("test_init_dont_parse_argv", config, pre_config,

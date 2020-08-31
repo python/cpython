@@ -1430,9 +1430,9 @@ an :term:`importer`.
    of *optimization* can only be alphanumeric, else :exc:`ValueError` is raised.
 
    The *noopt* parameter is used to specify if compiler optimization are
-   disabled. If it is true, *optimization* is ignored and ``.noopt`` suffix is
-   used (ex: ``baz.cpython-32.noopt.pyc``). If it is ``None``, use
-   ``sys.flags.noopt`` value.
+   disabled. If it is true, disable compiler optimizations, *optimization* is
+   ignored and ``.noopt`` suffix is used (ex: ``baz.cpython-32.noopt.pyc``). If
+   it is ``None``, use ``sys.flags.noopt`` value.
 
    The *debug_override* parameter is deprecated and can be used to override
    the system's value for ``__debug__``. A ``True`` value is the equivalent of
