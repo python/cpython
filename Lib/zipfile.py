@@ -836,9 +836,11 @@ class ZipExtFile(io.BufferedIOBase):
 
         if hasattr(zipinfo, 'CRC'):
             self._expected_crc = zipinfo.CRC
+            self._orig_crc = zipinfo.CRC
             self._running_crc = crc32(b'')
         else:
             self._expected_crc = None
+            self._orig_crc = None
 
         self._seekable = False
         try:
@@ -1069,17 +1071,17 @@ class ZipExtFile(io.BufferedIOBase):
             raise ValueError("I/O operation on closed file.")
         return self._seekable
 
-    def seek(self, offset, whence=0):
+    def seek(self, offset, whence=os.SEEK_SET):
         if self.closed:
             raise ValueError("seek on closed file.")
         if not self._seekable:
             raise io.UnsupportedOperation("underlying stream is not seekable")
         curr_pos = self.tell()
-        if whence == 0: # Seek from start of file
+        if whence == os.SEEK_SET:
             new_pos = offset
-        elif whence == 1: # Seek from current position
+        elif whence == os.SEEK_CUR:
             new_pos = curr_pos + offset
-        elif whence == 2: # Seek from EOF
+        elif whence == os.SEEK_END:
             new_pos = self._orig_file_size + offset
         else:
             raise ValueError("whence must be os.SEEK_SET (0), "
@@ -1102,6 +1104,7 @@ class ZipExtFile(io.BufferedIOBase):
             # Position is before the current position. Reset the ZipExtFile
             self._fileobj.seek(self._orig_compress_start)
             self._running_crc = self._orig_start_crc
+            self._expected_crc = self._orig_crc
             self._compress_left = self._orig_compress_size
             self._left = self._orig_file_size
             self._readbuffer = b''
@@ -1111,6 +1114,15 @@ class ZipExtFile(io.BufferedIOBase):
             read_offset = new_pos
             if self._decrypter is not None:
                 self._init_decrypter()
+
+        if read_offset > 0 and self._compress_type == ZIP_STORED and self._decrypter == None:
+            # disable CRC checking after first seeking - it would be invalid
+            self._expected_crc = None
+
+            self._fileobj.seek(read_offset, os.SEEK_CUR)
+            self._left -= read_offset
+            self._offset = 0
+            read_offset = 0
 
         while read_offset > 0:
             read_len = min(self.MAX_SEEK_READ, read_offset)
