@@ -1,0 +1,1 @@
+Add compatibility for path-like objects on sys.path. Patch by sroet
