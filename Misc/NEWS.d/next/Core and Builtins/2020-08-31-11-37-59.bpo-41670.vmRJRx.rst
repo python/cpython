@@ -1,0 +1,2 @@
+Prevent line trace being skipped on Windows and Mac when a for loop is
+nexted within a try-except block.
