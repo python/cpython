@@ -495,6 +495,10 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(format(12300050.0, ".6g"), "1.23e+07")
         self.assertEqual(format(12300050.0, "#.6g"), "1.23000e+07")
 
+    def test_with_two_commas_in_format_specifier(self):
+        error_msg = "Cannot specify ',' with ','."
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{1:,,}'.format(1)
 
 if __name__ == "__main__":
     unittest.main()
