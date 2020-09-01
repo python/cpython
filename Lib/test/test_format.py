@@ -1,6 +1,7 @@
 from test.support import verbose, TestFailed
 import locale
 import sys
+import re
 import test.support as support
 import unittest
 
@@ -496,7 +497,7 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(format(12300050.0, "#.6g"), "1.23000e+07")
 
     def test_with_two_commas_in_format_specifier(self):
-        error_msg = "Cannot specify ',' with ','."
+        error_msg = re.escape("Cannot specify ',' with ','.")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:,,}'.format(1)
 

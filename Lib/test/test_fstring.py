@@ -9,6 +9,7 @@
 
 import ast
 import os
+import re
 import types
 import decimal
 import unittest
@@ -1199,7 +1200,7 @@ non-important content
             compile("f'{a $ b}'", "?", "exec")
 
     def test_with_two_commas_in_format_specifier(self):
-        error_msg = "Cannot specify ',' with ','."
+        error_msg = re.escape("Cannot specify ',' with ','.")
         with self.assertRaisesRegex(ValueError, error_msg):
             f'{1:,,}'
 
