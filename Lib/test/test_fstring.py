@@ -1204,5 +1204,20 @@ non-important content
         with self.assertRaisesRegex(ValueError, error_msg):
             f'{1:,,}'
 
+    def test_with_two_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify '_' with '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:__}'
+
+    def test_with_a_commas_and_an_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:,_}'
+
+    def test_with_an_underscore_and_a_comma_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:,_}'
+
 if __name__ == '__main__':
     unittest.main()
