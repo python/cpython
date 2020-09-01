@@ -1,0 +1,2 @@
+Fix ``pycore_bitutils.h`` header file to support old clang versions:
+``__builtin_bswap16()`` is not available in LLVM clang 3.0.

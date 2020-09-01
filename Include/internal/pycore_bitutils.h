@@ -17,10 +17,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#if defined(__clang__) || \
-    (defined(__GNUC__) && \
-     ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 8)))
-   /* __builtin_bswap16() is available since GCC 4.8,
+#if ((defined(__GNUC__) \
+      && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 8))) \
+     || (defined(__clang__) \
+         && (__clang_major__ >= 4 \
+             || (__clang_major__ == 3 && __clang_minor__ >= 2))))
+   /* __builtin_bswap16() is available since GCC 4.8 and clang 3.2,
       __builtin_bswap32() is available since GCC 4.3,
       __builtin_bswap64() is available since GCC 4.3. */
 #  define _PY_HAVE_BUILTIN_BSWAP
