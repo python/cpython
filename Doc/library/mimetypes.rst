@@ -123,8 +123,8 @@ behavior of the module.
    Guess the type of given *data*.
    *data* should be :class:`bytes` or :class:`bytearray`.
    Returns two string values ``(type, charset)``.
-   This function always returns the most valid type, but charset can be
-   ``None`` if there no proper charset.
+   This function always returns the most valid type, but ``charset`` can be
+   ``None`` if there no proper character encoding.
    If the *data* can not be guessed it will return 'application/octet-stream'.
    :func:`mimetypes.mimesniff` is implemented based on the algorithm which is described at
    `WHATWG MIME Sniffing specification <https://mimesniff.spec.whatwg.org/>`_.
