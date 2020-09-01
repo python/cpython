@@ -427,19 +427,22 @@ typedef struct {
     PyTypeObject* sha512_type;
 } SHA512State;
 
-static inline SHA512State* sha512_get_state(PyObject *module)
+static inline SHA512State*
+sha512_get_state(PyObject *module)
 {
     void *state = PyModule_GetState(module);
     assert(state != NULL);
     return (SHA512State *)state;
 }
 
-static SHAobject *newSHA384object(SHA512State *st)
+static SHAobject *
+newSHA384object(SHA512State *st)
 {
     return (SHAobject *)PyObject_New(SHAobject, st->sha384_type);
 }
 
-static SHAobject *newSHA512object(SHA512State *st)
+static SHAobject *
+newSHA512object(SHA512State *st)
 {
     return (SHAobject *)PyObject_New(SHAobject, st->sha512_type);
 }
@@ -473,11 +476,14 @@ SHA512Type_copy_impl(SHAobject *self, PyTypeObject *cls)
     SHA512State *st = PyType_GetModuleState(cls);
 
     if (Py_IS_TYPE((PyObject*)self, st->sha512_type)) {
-        if ( (newobj = newSHA512object(st))==NULL)
+        if ( (newobj = newSHA512object(st))==NULL) {
             return NULL;
-    } else {
-        if ( (newobj = newSHA384object(st))==NULL)
+        }
+    }
+    else {
+        if ( (newobj = newSHA384object(st))==NULL) {
             return NULL;
+        }
     }
 
     SHAcopy(self, newobj);
@@ -744,7 +750,8 @@ _sha512_free(void *module)
 
 
 /* Initialize this module. */
-static int sha512_exec(PyObject *m)
+static int
+_sha512_exec(PyObject *m)
 {
     SHA512State* st = sha512_get_state(m);
 
@@ -774,7 +781,7 @@ static int sha512_exec(PyObject *m)
 }
 
 static PyModuleDef_Slot _sha512_slots[] = {
-    {Py_mod_exec, sha512_exec},
+    {Py_mod_exec, _sha512_exec},
     {0, NULL}
 };
 

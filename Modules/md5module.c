@@ -322,7 +322,8 @@ typedef struct {
     PyTypeObject* md5_type;
 } MD5State;
 
-static inline MD5State* md5_get_state(PyObject *module)
+static inline MD5State*
+md5_get_state(PyObject *module)
 {
     void *state = PyModule_GetState(module);
     assert(state != NULL);
@@ -563,7 +564,8 @@ _md5_free(void *module)
 }
 
 /* Initialize this module. */
-static int md5_exec(PyObject *m)
+static int
+md5_exec(PyObject *m)
 {
     MD5State *st = md5_get_state(m);
 

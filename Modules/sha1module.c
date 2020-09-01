@@ -299,7 +299,8 @@ typedef struct {
     PyTypeObject* sha1_type;
 } SHA1State;
 
-static inline SHA1State* sha1_get_state(PyObject *module)
+static inline SHA1State*
+sha1_get_state(PyObject *module)
 {
     void *state = PyModule_GetState(module);
     assert(state != NULL);
@@ -540,7 +541,8 @@ _sha1_free(void *module)
     _sha1_clear((PyObject *)module);
 }
 
-static int sha1_exec(PyObject *module)
+static int
+_sha1_exec(PyObject *module)
 {
     SHA1State* st = sha1_get_state(module);
 
@@ -566,7 +568,7 @@ static int sha1_exec(PyObject *module)
 /* Initialize this module. */
 
 static PyModuleDef_Slot _sha1_slots[] = {
-    {Py_mod_exec, sha1_exec},
+    {Py_mod_exec, _sha1_exec},
     {0, NULL}
 };
 
