@@ -266,4 +266,3 @@ Examples::
 
    `NumPy <https://numpy.org/>`_
       The NumPy package defines another array type.
-
