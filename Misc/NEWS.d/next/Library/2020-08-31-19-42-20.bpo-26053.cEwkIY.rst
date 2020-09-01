@@ -1,1 +1,1 @@
-Fix args echoed by the pdb prompt's 'run' command.
+Fix args echoed by the pdb prompt run command.
