@@ -330,14 +330,16 @@ SHA1_dealloc(PyObject *ptr)
 /*[clinic input]
 SHA1Type.copy
 
+    cls: defining_class
+
 Return a copy of the hash object.
 [clinic start generated code]*/
 
 static PyObject *
-SHA1Type_copy_impl(SHA1object *self)
-/*[clinic end generated code: output=b4e001264620f02a input=b7eae10df6f89b36]*/
+SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls)
+/*[clinic end generated code: output=b32d4461ce8bc7a7 input=6c22e66fcc34c58e]*/
 {
-    SHA1State *st = PyType_GetModuleState(Py_TYPE(self));
+    SHA1State *st = PyType_GetModuleState(cls);
 
     SHA1object *newobj;
     if ((newobj = newSHA1object(st)) == NULL)

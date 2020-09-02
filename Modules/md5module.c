@@ -352,14 +352,16 @@ MD5_dealloc(PyObject *ptr)
 /*[clinic input]
 MD5Type.copy
 
+    cls: defining_class
+
 Return a copy of the hash object.
 [clinic start generated code]*/
 
 static PyObject *
-MD5Type_copy_impl(MD5object *self)
-/*[clinic end generated code: output=596eb36852f02071 input=2c09e6d2493f3079]*/
+MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
+/*[clinic end generated code: output=bf055e08244bf5ee input=d89087dcfb2a8620]*/
 {
-    MD5State *st = PyType_GetModuleState(Py_TYPE(self));
+    MD5State *st = PyType_GetModuleState(cls);
 
     MD5object *newobj;
     if ((newobj = newMD5object(st))==NULL)
