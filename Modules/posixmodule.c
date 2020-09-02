@@ -9519,6 +9519,8 @@ done:
         return NULL;
 
 #if defined(__sun) && defined(__SVR4)
+    // On Solaris, sendfile raises EINVAL rather than returning 0
+    // when the offset is equal or bigger than the in_fd size.
     int res;
     struct stat st;
 
