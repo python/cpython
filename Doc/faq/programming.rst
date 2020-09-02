@@ -35,12 +35,6 @@ for Windows Extensions <https://sourceforge.net/projects/pywin32/>`__ project an
 as a part of the ActivePython distribution (see
 https://www.activestate.com/activepython\ ).
 
-`Boa Constructor <http://boa-constructor.sourceforge.net/>`_ is an IDE and GUI
-builder that uses wxWidgets.  It offers visual frame creation and manipulation,
-an object inspector, many views on the source like object browsers, inheritance
-hierarchies, doc string generated html documentation, an advanced debugger,
-integrated help, and Zope support.
-
 `Eric <http://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
 and the Scintilla editing component.
 
