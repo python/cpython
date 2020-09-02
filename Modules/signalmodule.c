@@ -1373,11 +1373,14 @@ signal_exec(PyObject *m)
     /* add the functions */
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
     if (!initialized) {
-        if (PyStructSequence_InitType2(&SiginfoType, &struct_siginfo_desc) < 0)
+        if (PyStructSequence_InitType2(&SiginfoType, &struct_siginfo_desc) < 0) {
             return -1;
+        }
     }
-    Py_INCREF((PyObject*) &SiginfoType);
-    PyModule_AddObject(m, "struct_siginfo", (PyObject*) &SiginfoType);
+
+    if (PyModule_AddType(m, "struct_siginfo", &SiginfoType) < 0) {
+        return -1;
+    }
     initialized = 1;
 #endif
 
