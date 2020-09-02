@@ -74,7 +74,7 @@ Terms and conditions for accessing or otherwise using Python
 
 Python software and documentation are licensed under the
 :ref:`PSF License Agreement <PSF-license>`.
-Starting with Python X.X.X, examples, recipes, and other code in
+Starting with Python 3.8.6, examples, recipes, and other code in
 the documentation are dual licensed under the PSF License Agreement
 and the :ref:`Zero-Clause BSD license <BSD0>`.
 
