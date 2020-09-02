@@ -673,9 +673,9 @@ signal_siginterrupt_impl(PyObject *module, int signalnum, int flag)
     else {
         act.sa_flags |= SA_RESTART;
     }
-    if (sigaction(signalnum, &act, NULL)<0) {
+    if (sigaction(signalnum, &act, NULL) < 0) {
 #else
-    if (siginterrupt(signalnum, flag)<0) {
+    if (siginterrupt(signalnum, flag) < 0) {
 #endif
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
