@@ -1,0 +1,2 @@
+Fix a possible stack overflow in the parser when parsing functions and
+classes with a huge ammount of arguments. Patch by Pablo Galindo.
