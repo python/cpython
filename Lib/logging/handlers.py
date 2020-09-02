@@ -582,17 +582,24 @@ class SocketHandler(logging.Handler):
         This function allows for partial sends which can happen when the
         network is busy.
         """
-        if self.sock is None:
-            self.createSocket()
-        #self.sock can be None either because we haven't reached the retry
-        #time yet, or because we have reached the retry time and retried,
-        #but are still unable to connect.
-        if self.sock:
+        attempt = True
+        while True:
+            if self.sock is None:
+                attempt = False
+                self.createSocket()
+                # self.sock can be None either because we haven't reached the retry
+                # time yet, or because we have reached the retry time and retried,
+                # but are still unable to connect.
+                if self.sock is None:
+                    break
             try:
                 self.sock.sendall(s)
             except OSError: #pragma: no cover
                 self.sock.close()
                 self.sock = None  # so we can call createSocket next time
+                if attempt:
+                    continue
+            break
 
     def makePickle(self, record):
         """
