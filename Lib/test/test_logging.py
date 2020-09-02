@@ -4354,7 +4354,7 @@ class LogRecordTest(BaseTest):
         r.removeHandler(h)
         h.close()
 
-    @staticmethod
+    @staticmethod # pickled as target of child process in the following test
     def _extract_logrecord_process_name(conn=None):
         import multiprocessing as mp
         name = mp.current_process().name
@@ -4383,7 +4383,8 @@ class LogRecordTest(BaseTest):
         import multiprocessing
         parent_conn, child_conn = multiprocessing.Pipe()
         p = multiprocessing.Process(
-            target=self._extract_logrecord_process_name, args=(child_conn,)
+            target=self._extract_logrecord_process_name,
+            args=(child_conn,)
         )
         p.start()
         results = parent_conn.recv()
