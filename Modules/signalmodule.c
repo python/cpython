@@ -1378,7 +1378,7 @@ signal_exec(PyObject *m)
         }
     }
 
-    if (PyModule_AddType(m, "struct_siginfo", &SiginfoType) < 0) {
+    if (PyModule_AddType(m, &SiginfoType) < 0) {
         return -1;
     }
     initialized = 1;
