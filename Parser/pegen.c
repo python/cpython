@@ -2237,18 +2237,18 @@ expr_ty _PyPegen_collect_call_seqs(Parser *p, asdl_seq *a, asdl_seq *b) {
         total_len += asdl_seq_LEN(starreds);
     }
 
-    asdl_seq *new_seq = _Py_asdl_seq_new(total_len, p->arena);
+    asdl_seq *args = _Py_asdl_seq_new(total_len, p->arena);
 
     Py_ssize_t i = 0;
     for (i = 0; i < args_len; i++) {
-        asdl_seq_SET(new_seq, i, asdl_seq_GET(a, i));
+        asdl_seq_SET(args, i, asdl_seq_GET(a, i));
     }
-    for (;i < total_len; i++) {
-        asdl_seq_SET(new_seq, i, asdl_seq_GET(starreds, i - args_len ));
+    for (; i < total_len; i++) {
+        asdl_seq_SET(args, i, asdl_seq_GET(starreds, i - args_len));
     }
 
-    expr_ty first = asdl_seq_GET(new_seq, 0);
+    expr_ty first = asdl_seq_GET(args, 0);
     expr_ty last = asdl_seq_GET(b, asdl_seq_LEN(b)-1);
 
-    return _Py_Call(_PyPegen_dummy_name(p), new_seq, keywords, EXTRA_EXPR(first, last));
+    return _Py_Call(_PyPegen_dummy_name(p), args, keywords, EXTRA_EXPR(first, last));
 }
