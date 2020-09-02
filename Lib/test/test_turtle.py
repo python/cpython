@@ -1,8 +1,11 @@
 import pickle
 import unittest
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 
-turtle = support.import_module('turtle')
+
+turtle = import_helper.import_module('turtle')
 Vec2D = turtle.Vec2D
 
 test_config = """\
@@ -50,10 +53,10 @@ visible = False
 class TurtleConfigTest(unittest.TestCase):
 
     def get_cfg_file(self, cfg_str):
-        self.addCleanup(support.unlink, support.TESTFN)
-        with open(support.TESTFN, 'w') as f:
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, 'w') as f:
             f.write(cfg_str)
-        return support.TESTFN
+        return os_helper.TESTFN
 
     def test_config_dict(self):
 

@@ -3,6 +3,20 @@
 
 #include "clinic/_operator.c.h"
 
+typedef struct {
+    PyObject *itemgetter_type;
+    PyObject *attrgetter_type;
+    PyObject *methodcaller_type;
+} _operator_state;
+
+static inline _operator_state*
+get_operator_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_operator_state *)state;
+}
+
 /*[clinic input]
 module _operator
 [clinic start generated code]*/
@@ -942,8 +956,6 @@ typedef struct {
     Py_ssize_t index; // -1 unless *item* is a single non-negative integer index
 } itemgetterobject;
 
-static PyTypeObject itemgetter_type;
-
 /* AC 3.5: treats first argument as an iterable, otherwise uses *args */
 static PyObject *
 itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -960,13 +972,15 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (nitems <= 1) {
         if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &item))
             return NULL;
-    } else
+    } else {
         item = args;
-
+    }
+    _operator_state *state = PyType_GetModuleState(type);
     /* create itemgetterobject structure */
-    ig = PyObject_GC_New(itemgetterobject, &itemgetter_type);
-    if (ig == NULL)
+    ig = PyObject_GC_New(itemgetterobject, (PyTypeObject *) state->itemgetter_type);
+    if (ig == NULL) {
         return NULL;
+    }
 
     Py_INCREF(item);
     ig->item = item;
@@ -994,9 +1008,11 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 itemgetter_dealloc(itemgetterobject *ig)
 {
+    PyTypeObject *tp = Py_TYPE(ig);
     PyObject_GC_UnTrack(ig);
     Py_XDECREF(ig->item);
-    PyObject_GC_Del(ig);
+    tp->tp_free(ig);
+    Py_DECREF(tp);
 }
 
 static int
@@ -1093,49 +1109,25 @@ Return a callable object that fetches the given item(s) from its operand.\n\
 After f = itemgetter(2), the call f(r) returns r[2].\n\
 After g = itemgetter(2, 5, 3), the call g(r) returns (r[2], r[5], r[3])");
 
-static PyTypeObject itemgetter_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "operator.itemgetter",              /* tp_name */
-    sizeof(itemgetterobject),           /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)itemgetter_dealloc,     /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    (reprfunc)itemgetter_repr,          /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    (ternaryfunc)itemgetter_call,       /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,            /* tp_flags */
-    itemgetter_doc,                     /* tp_doc */
-    (traverseproc)itemgetter_traverse,          /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iternext */
-    itemgetter_methods,                 /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    itemgetter_new,                     /* tp_new */
-    0,                                  /* tp_free */
+static PyType_Slot itemgetter_type_slots[] = {
+    {Py_tp_doc, (void *)itemgetter_doc},
+    {Py_tp_dealloc, itemgetter_dealloc},
+    {Py_tp_call, itemgetter_call},
+    {Py_tp_traverse, itemgetter_traverse},
+    {Py_tp_methods, itemgetter_methods},
+    {Py_tp_new, itemgetter_new},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_repr, itemgetter_repr},
+    {0, 0}
 };
 
+static PyType_Spec itemgetter_type_spec = {
+    .name = "operator.itemgetter",
+    .basicsize = sizeof(itemgetterobject),
+    .itemsize = 0,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = itemgetter_type_slots,
+};
 
 /* attrgetter object **********************************************************/
 
@@ -1144,8 +1136,6 @@ typedef struct {
     Py_ssize_t nattrs;
     PyObject *attr;
 } attrgetterobject;
-
-static PyTypeObject attrgetter_type;
 
 /* AC 3.5: treats first argument as an iterable, otherwise uses *args */
 static PyObject *
@@ -1246,8 +1236,9 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
+    _operator_state *state = PyType_GetModuleState(type);
     /* create attrgetterobject structure */
-    ag = PyObject_GC_New(attrgetterobject, &attrgetter_type);
+    ag = PyObject_GC_New(attrgetterobject, (PyTypeObject *)state->attrgetter_type);
     if (ag == NULL) {
         Py_DECREF(attr);
         return NULL;
@@ -1263,9 +1254,11 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 attrgetter_dealloc(attrgetterobject *ag)
 {
+    PyTypeObject *tp = Py_TYPE(ag);
     PyObject_GC_UnTrack(ag);
     Py_XDECREF(ag->attr);
-    PyObject_GC_Del(ag);
+    tp->tp_free(ag);
+    Py_DECREF(tp);
 }
 
 static int
@@ -1438,47 +1431,24 @@ After g = attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).\n\
 After h = attrgetter('name.first', 'name.last'), the call h(r) returns\n\
 (r.name.first, r.name.last).");
 
-static PyTypeObject attrgetter_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "operator.attrgetter",              /* tp_name */
-    sizeof(attrgetterobject),           /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)attrgetter_dealloc,     /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    (reprfunc)attrgetter_repr,          /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    (ternaryfunc)attrgetter_call,       /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,            /* tp_flags */
-    attrgetter_doc,                     /* tp_doc */
-    (traverseproc)attrgetter_traverse,          /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iternext */
-    attrgetter_methods,                 /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    attrgetter_new,                     /* tp_new */
-    0,                                  /* tp_free */
+static PyType_Slot attrgetter_type_slots[] = {
+    {Py_tp_doc, (void *)attrgetter_doc},
+    {Py_tp_dealloc, attrgetter_dealloc},
+    {Py_tp_call, attrgetter_call},
+    {Py_tp_traverse, attrgetter_traverse},
+    {Py_tp_methods, attrgetter_methods},
+    {Py_tp_new, attrgetter_new},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_repr, attrgetter_repr},
+    {0, 0}
+};
+
+static PyType_Spec attrgetter_type_spec = {
+    .name = "operator.attrgetter",
+    .basicsize = sizeof(attrgetterobject),
+    .itemsize = 0,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = attrgetter_type_slots,
 };
 
 
@@ -1490,8 +1460,6 @@ typedef struct {
     PyObject *args;
     PyObject *kwds;
 } methodcallerobject;
-
-static PyTypeObject methodcaller_type;
 
 /* AC 3.5: variable number of arguments, not currently support by AC */
 static PyObject *
@@ -1513,10 +1481,12 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    _operator_state *state = PyType_GetModuleState(type);
     /* create methodcallerobject structure */
-    mc = PyObject_GC_New(methodcallerobject, &methodcaller_type);
-    if (mc == NULL)
+    mc = PyObject_GC_New(methodcallerobject, (PyTypeObject *)state->methodcaller_type);
+    if (mc == NULL) {
         return NULL;
+    }
 
     name = PyTuple_GET_ITEM(args, 0);
     Py_INCREF(name);
@@ -1539,11 +1509,13 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 methodcaller_dealloc(methodcallerobject *mc)
 {
+    PyTypeObject *tp = Py_TYPE(mc);
     PyObject_GC_UnTrack(mc);
     Py_XDECREF(mc->name);
     Py_XDECREF(mc->args);
     Py_XDECREF(mc->kwds);
-    PyObject_GC_Del(mc);
+    tp->tp_free(mc);
+    Py_DECREF(tp);
 }
 
 static int
@@ -1704,63 +1676,52 @@ After f = methodcaller('name'), the call f(r) returns r.name().\n\
 After g = methodcaller('name', 'date', foo=1), the call g(r) returns\n\
 r.name('date', foo=1).");
 
-static PyTypeObject methodcaller_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "operator.methodcaller",            /* tp_name */
-    sizeof(methodcallerobject),         /* tp_basicsize */
-    0,                                  /* tp_itemsize */
-    /* methods */
-    (destructor)methodcaller_dealloc, /* tp_dealloc */
-    0,                                  /* tp_vectorcall_offset */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_as_async */
-    (reprfunc)methodcaller_repr,        /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    (ternaryfunc)methodcaller_call,     /* tp_call */
-    0,                                  /* tp_str */
-    PyObject_GenericGetAttr,            /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
-    methodcaller_doc,                           /* tp_doc */
-    (traverseproc)methodcaller_traverse,        /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iternext */
-    methodcaller_methods,               /* tp_methods */
-    0,                                  /* tp_members */
-    0,                                  /* tp_getset */
-    0,                                  /* tp_base */
-    0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
-    0,                                  /* tp_descr_set */
-    0,                                  /* tp_dictoffset */
-    0,                                  /* tp_init */
-    0,                                  /* tp_alloc */
-    methodcaller_new,                   /* tp_new */
-    0,                                  /* tp_free */
+static PyType_Slot methodcaller_type_slots[] = {
+    {Py_tp_doc, (void *)methodcaller_doc},
+    {Py_tp_dealloc, methodcaller_dealloc},
+    {Py_tp_call, methodcaller_call},
+    {Py_tp_traverse, methodcaller_traverse},
+    {Py_tp_methods, methodcaller_methods},
+    {Py_tp_new, methodcaller_new},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_repr, methodcaller_repr},
+    {0, 0}
 };
 
+static PyType_Spec methodcaller_type_spec = {
+    .name = "operator.methodcaller",
+    .basicsize = sizeof(methodcallerobject),
+    .itemsize = 0,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = methodcaller_type_slots,
+};
 
 static int
 operator_exec(PyObject *module)
 {
-    PyTypeObject *types[] = {
-        &itemgetter_type,
-        &attrgetter_type,
-        &methodcaller_type
-    };
+    _operator_state *state = get_operator_state(module);
+    state->attrgetter_type = PyType_FromModuleAndSpec(module, &attrgetter_type_spec, NULL);
+    if (state->attrgetter_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, (PyTypeObject *)state->attrgetter_type) < 0) {
+        return -1;
+    }
 
-    for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
-        if (PyModule_AddType(module, types[i]) < 0) {
-            return -1;
-        }
+    state->itemgetter_type = PyType_FromModuleAndSpec(module, &itemgetter_type_spec, NULL);
+    if (state->itemgetter_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, (PyTypeObject *)state->itemgetter_type) < 0) {
+        return -1;
+    }
+
+    state->methodcaller_type = PyType_FromModuleAndSpec(module, &methodcaller_type_spec, NULL);
+    if (state->methodcaller_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, (PyTypeObject *)state->methodcaller_type) < 0) {
+        return -1;
     }
 
     return 0;
@@ -1772,17 +1733,42 @@ static struct PyModuleDef_Slot operator_slots[] = {
     {0, NULL}
 };
 
+static int
+operator_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    _operator_state *state = get_operator_state(module);
+    Py_VISIT(state->attrgetter_type);
+    Py_VISIT(state->itemgetter_type);
+    Py_VISIT(state->methodcaller_type);
+    return 0;
+}
+
+static int
+operator_clear(PyObject *module)
+{
+    _operator_state *state = get_operator_state(module);
+    Py_CLEAR(state->attrgetter_type);
+    Py_CLEAR(state->itemgetter_type);
+    Py_CLEAR(state->methodcaller_type);
+    return 0;
+}
+
+static void
+operator_free(void *module)
+{
+    operator_clear((PyObject *)module);
+}
 
 static struct PyModuleDef operatormodule = {
     PyModuleDef_HEAD_INIT,
-    "_operator",
-    operator_doc,
-    0,
-    operator_methods,
-    operator_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_operator",
+    .m_doc = operator_doc,
+    .m_size = sizeof(_operator_state),
+    .m_methods = operator_methods,
+    .m_slots = operator_slots,
+    .m_traverse = operator_traverse,
+    .m_clear = operator_clear,
+    .m_free = operator_free,
 };
 
 PyMODINIT_FUNC

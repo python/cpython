@@ -5912,108 +5912,78 @@ load_inst(UnpicklerObject *self)
     return 0;
 }
 
-static int
-load_newobj(UnpicklerObject *self)
+static void
+newobj_unpickling_error(const char * msg, int use_kwargs, PyObject *arg)
 {
-    PyObject *args = NULL;
-    PyObject *clsraw = NULL;
-    PyTypeObject *cls;          /* clsraw cast to its true type */
-    PyObject *obj;
     PickleState *st = _Pickle_GetGlobalState();
-
-    /* Stack is ... cls argtuple, and we want to call
-     * cls.__new__(cls, *argtuple).
-     */
-    PDATA_POP(self->stack, args);
-    if (args == NULL)
-        goto error;
-    if (!PyTuple_Check(args)) {
-        PyErr_SetString(st->UnpicklingError,
-                        "NEWOBJ expected an arg " "tuple.");
-        goto error;
-    }
-
-    PDATA_POP(self->stack, clsraw);
-    cls = (PyTypeObject *)clsraw;
-    if (cls == NULL)
-        goto error;
-    if (!PyType_Check(cls)) {
-        PyErr_SetString(st->UnpicklingError, "NEWOBJ class argument "
-                        "isn't a type object");
-        goto error;
-    }
-    if (cls->tp_new == NULL) {
-        PyErr_SetString(st->UnpicklingError, "NEWOBJ class argument "
-                        "has NULL tp_new");
-        goto error;
-    }
-
-    /* Call __new__. */
-    obj = cls->tp_new(cls, args, NULL);
-    if (obj == NULL)
-        goto error;
-
-    Py_DECREF(args);
-    Py_DECREF(clsraw);
-    PDATA_PUSH(self->stack, obj, -1);
-    return 0;
-
-  error:
-    Py_XDECREF(args);
-    Py_XDECREF(clsraw);
-    return -1;
+    PyErr_Format(st->UnpicklingError, msg,
+                 use_kwargs ? "NEWOBJ_EX" : "NEWOBJ",
+                 Py_TYPE(arg)->tp_name);
 }
 
 static int
-load_newobj_ex(UnpicklerObject *self)
+load_newobj(UnpicklerObject *self, int use_kwargs)
 {
-    PyObject *cls, *args, *kwargs;
+    PyObject *cls, *args, *kwargs = NULL;
     PyObject *obj;
-    PickleState *st = _Pickle_GetGlobalState();
 
-    PDATA_POP(self->stack, kwargs);
-    if (kwargs == NULL) {
-        return -1;
+    /* Stack is ... cls args [kwargs], and we want to call
+     * cls.__new__(cls, *args, **kwargs).
+     */
+    if (use_kwargs) {
+        PDATA_POP(self->stack, kwargs);
+        if (kwargs == NULL) {
+            return -1;
+        }
     }
     PDATA_POP(self->stack, args);
     if (args == NULL) {
-        Py_DECREF(kwargs);
+        Py_XDECREF(kwargs);
         return -1;
     }
     PDATA_POP(self->stack, cls);
     if (cls == NULL) {
-        Py_DECREF(kwargs);
+        Py_XDECREF(kwargs);
         Py_DECREF(args);
         return -1;
     }
 
     if (!PyType_Check(cls)) {
-        Py_DECREF(kwargs);
-        Py_DECREF(args);
-        PyErr_Format(st->UnpicklingError,
-                     "NEWOBJ_EX class argument must be a type, not %.200s",
-                     Py_TYPE(cls)->tp_name);
-        Py_DECREF(cls);
-        return -1;
+        newobj_unpickling_error("%s class argument must be a type, not %.200s",
+                                use_kwargs, cls);
+        goto error;
+    }
+    if (((PyTypeObject *)cls)->tp_new == NULL) {
+        newobj_unpickling_error("%s class argument '%.200s' doesn't have __new__",
+                                use_kwargs, cls);
+        goto error;
+    }
+    if (!PyTuple_Check(args)) {
+        newobj_unpickling_error("%s args argument must be a tuple, not %.200s",
+                                use_kwargs, args);
+        goto error;
+    }
+    if (use_kwargs && !PyDict_Check(kwargs)) {
+        newobj_unpickling_error("%s kwargs argument must be a dict, not %.200s",
+                                use_kwargs, kwargs);
+        goto error;
     }
 
-    if (((PyTypeObject *)cls)->tp_new == NULL) {
-        Py_DECREF(kwargs);
-        Py_DECREF(args);
-        Py_DECREF(cls);
-        PyErr_SetString(st->UnpicklingError,
-                        "NEWOBJ_EX class argument doesn't have __new__");
-        return -1;
-    }
     obj = ((PyTypeObject *)cls)->tp_new((PyTypeObject *)cls, args, kwargs);
-    Py_DECREF(kwargs);
+    if (obj == NULL) {
+        goto error;
+    }
+    Py_XDECREF(kwargs);
     Py_DECREF(args);
     Py_DECREF(cls);
-    if (obj == NULL) {
-        return -1;
-    }
     PDATA_PUSH(self->stack, obj, -1);
     return 0;
+
+error:
+    Py_XDECREF(kwargs);
+    Py_DECREF(args);
+    Py_DECREF(cls);
+    return -1;
 }
 
 static int
@@ -6943,8 +6913,8 @@ load(UnpicklerObject *self)
         OP(FROZENSET, load_frozenset)
         OP(OBJ, load_obj)
         OP(INST, load_inst)
-        OP(NEWOBJ, load_newobj)
-        OP(NEWOBJ_EX, load_newobj_ex)
+        OP_ARG(NEWOBJ, load_newobj, 0)
+        OP_ARG(NEWOBJ_EX, load_newobj, 1)
         OP(GLOBAL, load_global)
         OP(STACK_GLOBAL, load_stack_global)
         OP(APPEND, load_append)

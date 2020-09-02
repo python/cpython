@@ -125,6 +125,39 @@ class Availability(Directive):
 
 # Support for documenting audit event
 
+def audit_events_purge(app, env, docname):
+    """This is to remove from env.all_audit_events old traces of removed
+    documents.
+    """
+    if not hasattr(env, 'all_audit_events'):
+        return
+    fresh_all_audit_events = {}
+    for name, event in env.all_audit_events.items():
+        event["source"] = [(d, t) for d, t in event["source"] if d != docname]
+        if event["source"]:
+            # Only keep audit_events that have at least one source.
+            fresh_all_audit_events[name] = event
+    env.all_audit_events = fresh_all_audit_events
+
+
+def audit_events_merge(app, env, docnames, other):
+    """In Sphinx parallel builds, this merges env.all_audit_events from
+    subprocesses.
+
+    all_audit_events is a dict of names, with values like:
+    {'source': [(docname, target), ...], 'args': args}
+    """
+    if not hasattr(other, 'all_audit_events'):
+        return
+    if not hasattr(env, 'all_audit_events'):
+        env.all_audit_events = {}
+    for name, value in other.all_audit_events.items():
+        if name in env.all_audit_events:
+            env.all_audit_events[name]["source"].extend(value["source"])
+        else:
+            env.all_audit_events[name] = value
+
+
 class AuditEvent(Directive):
 
     has_content = True
@@ -589,4 +622,6 @@ def setup(app):
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
     app.connect('doctree-resolved', process_audit_events)
+    app.connect('env-merge-info', audit_events_merge)
+    app.connect('env-purge-doc', audit_events_purge)
     return {'version': '1.0', 'parallel_read_safe': True}

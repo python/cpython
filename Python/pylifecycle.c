@@ -1257,12 +1257,13 @@ flush_std_files(void)
 
 
 static void
-finalize_interp_types(PyThreadState *tstate, int is_main_interp)
+finalize_interp_types(PyThreadState *tstate)
 {
     _PyExc_Fini(tstate);
     _PyFrame_Fini(tstate);
     _PyAsyncGen_Fini(tstate);
     _PyContext_Fini(tstate);
+    _PyUnicode_ClearInterned(tstate);
 
     _PyDict_Fini(tstate);
     _PyList_Fini(tstate);
@@ -1285,9 +1286,14 @@ finalize_interp_clear(PyThreadState *tstate)
     /* Clear interpreter state and all thread states */
     PyInterpreterState_Clear(tstate->interp);
 
-    /* Trigger a GC collection on subinterpreters*/
-    if (!is_main_interp) {
-        _PyGC_CollectNoFail();
+    /* Last explicit GC collection */
+    _PyGC_CollectNoFail();
+
+    /* Clear all loghooks */
+    /* Both _PySys_Audit function and users still need PyObject, such as tuple.
+       Call _PySys_ClearAuditHooks when PyObject available. */
+    if (is_main_interp) {
+        _PySys_ClearAuditHooks(tstate);
     }
 
     _PyGC_Fini(tstate);
@@ -1300,7 +1306,7 @@ finalize_interp_clear(PyThreadState *tstate)
 
     _PyWarnings_Fini(tstate->interp);
 
-    finalize_interp_types(tstate, is_main_interp);
+    finalize_interp_types(tstate);
 }
 
 
@@ -1403,9 +1409,6 @@ Py_FinalizeEx(void)
      * XXX I haven't seen a real-life report of either of these.
      */
     _PyGC_CollectIfEnabled();
-
-    /* Clear all loghooks */
-    _PySys_ClearAuditHooks(tstate);
 
     /* Destroy all modules */
     _PyImport_Cleanup(tstate);

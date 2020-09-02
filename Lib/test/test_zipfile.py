@@ -19,9 +19,10 @@ from tempfile import TemporaryFile
 from random import randint, random, randbytes
 
 from test.support import script_helper
-from test.support import (TESTFN, findfile, unlink, rmtree, temp_dir, temp_cwd,
-                          requires_zlib, requires_bz2, requires_lzma,
-                          captured_stdout)
+from test.support import (findfile, requires_zlib, requires_bz2,
+                          requires_lzma, captured_stdout)
+from test.support.os_helper import TESTFN, unlink, rmtree, temp_dir, temp_cwd
+
 
 TESTFN2 = TESTFN + "2"
 TESTFNDIR = TESTFN + "d"

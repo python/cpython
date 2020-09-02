@@ -4,6 +4,7 @@
 
 #include "pegen.h"
 #include "string_parser.h"
+#include "ast.h"
 
 PyObject *
 _PyPegen_new_type_comment(Parser *p, char *s)
@@ -525,10 +526,13 @@ _PyPegen_dummy_name(Parser *p, ...)
 static int
 _get_keyword_or_name_type(Parser *p, const char *name, int name_len)
 {
-    if (name_len >= p->n_keyword_lists || p->keywords[name_len] == NULL) {
+    assert(name_len > 0);
+    if (name_len >= p->n_keyword_lists ||
+        p->keywords[name_len] == NULL ||
+        p->keywords[name_len]->type == -1) {
         return NAME;
     }
-    for (KeywordToken *k = p->keywords[name_len]; k->type != -1; k++) {
+    for (KeywordToken *k = p->keywords[name_len]; k != NULL && k->type != -1; k++) {
         if (strncmp(k->str, name, name_len) == 0) {
             return k->type;
         }
@@ -1134,6 +1138,14 @@ _PyPegen_run_parser(Parser *p)
         return RAISE_SYNTAX_ERROR("multiple statements found while compiling a single statement");
     }
 
+#if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
+    if (p->start_rule == Py_single_input ||
+        p->start_rule == Py_file_input ||
+        p->start_rule == Py_eval_input)
+    {
+        assert(PyAST_Validate(res));
+    }
+#endif
     return res;
 }
 

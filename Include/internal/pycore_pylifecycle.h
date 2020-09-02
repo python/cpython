@@ -78,6 +78,7 @@ extern void _PyGC_Fini(PyThreadState *tstate);
 extern void _PyType_Fini(void);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(PyThreadState *tstate);
+extern void _PyUnicode_ClearInterned(PyThreadState *tstate);
 extern void _PyLong_Fini(PyThreadState *tstate);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);

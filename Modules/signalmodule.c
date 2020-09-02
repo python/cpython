@@ -189,18 +189,25 @@ itimer_retval(struct itimerval *iv)
 }
 #endif
 
+/*[clinic input]
+signal.default_int_handler
+    signalnum: int
+    frame: object
+    /
+
+The default handler for SIGINT installed by Python.
+
+It raises KeyboardInterrupt.
+[clinic start generated code]*/
+
 static PyObject *
-signal_default_int_handler(PyObject *self, PyObject *args)
+signal_default_int_handler_impl(PyObject *module, int signalnum,
+                                PyObject *frame)
+/*[clinic end generated code: output=bb11c2eb115ace4e input=efcd4a56a207acfd]*/
 {
     PyErr_SetNone(PyExc_KeyboardInterrupt);
     return NULL;
 }
-
-PyDoc_STRVAR(default_int_handler_doc,
-"default_int_handler(...)\n\
-\n\
-The default handler for SIGINT installed by Python.\n\
-It raises KeyboardInterrupt.");
 
 
 static int
@@ -657,7 +664,19 @@ signal_siginterrupt_impl(PyObject *module, int signalnum, int flag)
                         "signal number out of range");
         return NULL;
     }
-    if (siginterrupt(signalnum, flag)<0) {
+#ifdef HAVE_SIGACTION
+    struct sigaction act;
+    (void) sigaction(signalnum, NULL, &act);
+    if (flag) {
+        act.sa_flags &= ~SA_RESTART;
+    }
+    else {
+        act.sa_flags |= SA_RESTART;
+    }
+    if (sigaction(signalnum, &act, NULL) < 0) {
+#else
+    if (siginterrupt(signalnum, flag) < 0) {
+#endif
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
@@ -1297,7 +1316,7 @@ signal_pidfd_send_signal_impl(PyObject *module, int pidfd, int signalnum,
 /* List of functions defined in the module -- some of the methoddefs are
    defined to nothing if the corresponding C function is not available. */
 static PyMethodDef signal_methods[] = {
-    {"default_int_handler", signal_default_int_handler, METH_VARARGS, default_int_handler_doc},
+    SIGNAL_DEFAULT_INT_HANDLER_METHODDEF
     SIGNAL_ALARM_METHODDEF
     SIGNAL_SETITIMER_METHODDEF
     SIGNAL_GETITIMER_METHODDEF

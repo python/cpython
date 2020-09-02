@@ -1,0 +1,2 @@
+The decimal module now requires libmpdec-2.5.0. Users of
+--with-system-libmpdec should update their system library.

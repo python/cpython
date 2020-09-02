@@ -18,12 +18,20 @@ class list3(list):
     def __repr__(self):
         return list.__repr__(self)
 
+class list_custom_repr(list):
+    def __repr__(self):
+        return '*'*len(list.__repr__(self))
+
 class tuple2(tuple):
     pass
 
 class tuple3(tuple):
     def __repr__(self):
         return tuple.__repr__(self)
+
+class tuple_custom_repr(tuple):
+    def __repr__(self):
+        return '*'*len(tuple.__repr__(self))
 
 class set2(set):
     pass
@@ -32,6 +40,10 @@ class set3(set):
     def __repr__(self):
         return set.__repr__(self)
 
+class set_custom_repr(set):
+    def __repr__(self):
+        return '*'*len(set.__repr__(self))
+
 class frozenset2(frozenset):
     pass
 
@@ -39,12 +51,20 @@ class frozenset3(frozenset):
     def __repr__(self):
         return frozenset.__repr__(self)
 
+class frozenset_custom_repr(frozenset):
+    def __repr__(self):
+        return '*'*len(frozenset.__repr__(self))
+
 class dict2(dict):
     pass
 
 class dict3(dict):
     def __repr__(self):
         return dict.__repr__(self)
+
+class dict_custom_repr(dict):
+    def __repr__(self):
+        return '*'*len(dict.__repr__(self))
 
 class Unorderable:
     def __repr__(self):
@@ -155,7 +175,8 @@ class QueryTestCase(unittest.TestCase):
                              "expected not isreadable for %r" % (unreadable,))
 
     def test_same_as_repr(self):
-        # Simple objects, small containers and classes that overwrite __repr__
+        # Simple objects, small containers and classes that override __repr__
+        # to directly call super's __repr__.
         # For those the result should be the same as repr().
         # Ahem.  The docs don't say anything about that -- this appears to
         # be testing an implementation quirk.  Starting in Python 2.5, it's
@@ -186,6 +207,32 @@ class QueryTestCase(unittest.TestCase):
             self.assertEqual(pprint.pformat(simple, width=1, indent=0)
                              .replace('\n', ' '), native)
             self.assertEqual(pprint.saferepr(simple), native)
+
+    def test_container_repr_override_called(self):
+        N = 1000
+        # Ensure that __repr__ override is called for subclasses of containers
+
+        for cont in (list_custom_repr(),
+                     list_custom_repr([1,2,3]),
+                     list_custom_repr(range(N)),
+                     tuple_custom_repr(),
+                     tuple_custom_repr([1,2,3]),
+                     tuple_custom_repr(range(N)),
+                     set_custom_repr(),
+                     set_custom_repr([1,2,3]),
+                     set_custom_repr(range(N)),
+                     frozenset_custom_repr(),
+                     frozenset_custom_repr([1,2,3]),
+                     frozenset_custom_repr(range(N)),
+                     dict_custom_repr(),
+                     dict_custom_repr({5: 6}),
+                     dict_custom_repr(zip(range(N),range(N))),
+                    ):
+            native = repr(cont)
+            expected = '*' * len(native)
+            self.assertEqual(pprint.pformat(cont), expected)
+            self.assertEqual(pprint.pformat(cont, width=1, indent=0), expected)
+            self.assertEqual(pprint.saferepr(cont), expected)
 
     def test_basic_line_wrap(self):
         # verify basic line-wrapping operation

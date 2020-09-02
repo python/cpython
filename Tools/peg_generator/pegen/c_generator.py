@@ -440,7 +440,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             num_groups = max(groups) + 1 if groups else 1
             for keywords_length in range(num_groups):
                 if keywords_length not in groups.keys():
-                    self.print("NULL,")
+                    self.print("(KeywordToken[]) {{NULL, -1}},")
                 else:
                     self.print("(KeywordToken[]) {")
                     with self.indent():

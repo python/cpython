@@ -1160,6 +1160,27 @@ class MemoryHandlerTest(BaseTest):
         # assert that no new lines have been added
         self.assert_log_lines(lines)  # no change
 
+    def test_race_between_set_target_and_flush(self):
+        class MockRaceConditionHandler:
+            def __init__(self, mem_hdlr):
+                self.mem_hdlr = mem_hdlr
+
+            def removeTarget(self):
+                self.mem_hdlr.setTarget(None)
+
+            def handle(self, msg):
+                t = threading.Thread(target=self.removeTarget)
+                t.daemon = True
+                t.start()
+
+        target = MockRaceConditionHandler(self.mem_hdlr)
+        self.mem_hdlr.setTarget(target)
+
+        for _ in range(10):
+            time.sleep(0.005)
+            self.mem_logger.info("not flushed")
+            self.mem_logger.warning("flushed")
+
 
 class ExceptionFormatter(logging.Formatter):
     """A special exception formatter."""
@@ -5342,12 +5363,12 @@ class NTEventLogHandlerTest(BaseTest):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'logThreads', 'logMultiprocessing',
-                     'logProcesses', 'currentframe',
-                     'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
-                     'Filterer', 'PlaceHolder', 'Manager', 'RootLogger',
-                     'root', 'threading'}
-        support.check__all__(self, logging, blacklist=blacklist)
+        not_exported = {
+            'logThreads', 'logMultiprocessing', 'logProcesses', 'currentframe',
+            'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
+            'Filterer', 'PlaceHolder', 'Manager', 'RootLogger', 'root',
+            'threading'}
+        support.check__all__(self, logging, not_exported=not_exported)
 
 
 # Set the locale to the platform-dependent default.  I have no idea

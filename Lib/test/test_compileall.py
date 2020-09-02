@@ -23,6 +23,7 @@ except ImportError:
     _have_multiprocessing = False
 
 from test import support
+from test.support import os_helper
 from test.support import script_helper
 
 from .test_py_compile import without_source_date_epoch
@@ -356,7 +357,7 @@ class CompileallTestsBase:
                 except Exception:
                     pass
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_ignore_symlink_destination(self):
         # Create folders for allowed files, symlinks and prohibited area
         allowed_path = os.path.join(self.directory, "test", "dir", "allowed")
@@ -438,7 +439,7 @@ class CommandLineTestsBase:
                 sys_path_writable = False
                 break
             finally:
-                support.unlink(str(path))
+                os_helper.unlink(str(path))
                 if directory_created:
                     directory.rmdir()
         else:
@@ -477,7 +478,7 @@ class CommandLineTestsBase:
 
     def setUp(self):
         self.directory = tempfile.mkdtemp()
-        self.addCleanup(support.rmtree, self.directory)
+        self.addCleanup(os_helper.rmtree, self.directory)
         self.pkgdir = os.path.join(self.directory, 'foo')
         os.mkdir(self.pkgdir)
         self.pkgdir_cachedir = os.path.join(self.pkgdir, '__pycache__')
@@ -625,7 +626,7 @@ class CommandLineTestsBase:
         self.assertCompiled(spamfn)
         self.assertCompiled(eggfn)
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_symlink_loop(self):
         # Currently, compileall ignores symlinks to directories.
         # If that limitation is ever lifted, it should protect against
@@ -823,7 +824,7 @@ class CommandLineTestsBase:
                 except Exception:
                     pass
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_ignore_symlink_destination(self):
         # Create folders for allowed files, symlinks and prohibited area
         allowed_path = os.path.join(self.directory, "test", "dir", "allowed")
