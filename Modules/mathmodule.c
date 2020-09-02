@@ -2456,7 +2456,7 @@ Given that csum >= 1.0, we have:
 Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 
 To minimize loss of information during the accumulation of fractional
-values, the lo**2 term has a separate accumulator.
+values, each term has a separate accumulator.
 
 The square root differential correction is needed because a
 correctly rounded square root of a correctly rounded sum of
@@ -2487,7 +2487,7 @@ static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
     const double T27 = 134217729.0;     /* ldexp(1.0, 27)+1.0) */
-    double x, csum = 1.0, oldcsum, frac = 0.0, frac_lo = 0.0, scale;
+    double x, csum = 1.0, oldcsum, scale, frac=0.0, frac_mid=0.0, frac_lo=0.0;
     double t, hi, lo, h;
     int max_e;
     Py_ssize_t i;
@@ -2529,12 +2529,12 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             assert(fabs(csum) >= fabs(x));
             oldcsum = csum;
             csum += x;
-            frac += (oldcsum - csum) + x;
+            frac_mid += (oldcsum - csum) + x;
 
             assert(csum + lo * lo == csum);
             frac_lo += lo * lo;
         }
-        frac += frac_lo;
+        frac += frac_lo + frac_mid;
         h = sqrt(csum - 1.0 + frac);
 
         x = h;
