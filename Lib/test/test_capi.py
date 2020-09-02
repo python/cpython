@@ -401,6 +401,10 @@ class CAPITest(unittest.TestCase):
             del L
             self.assertEqual(PyList.num, 0)
 
+    def test_heap_ctype_doc_and_text_signature(self):
+        self.assertEqual(_testcapi.HeapDocCType.__doc__, "somedoc")
+        self.assertEqual(_testcapi.HeapDocCType.__text_signature__, "(arg1, arg2)")
+
     def test_subclass_of_heap_gc_ctype_with_tpdealloc_decrefs_once(self):
         class HeapGcCTypeSubclass(_testcapi.HeapGcCType):
             def __init__(self):
