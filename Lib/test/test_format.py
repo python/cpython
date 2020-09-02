@@ -514,7 +514,7 @@ class FormatTest(unittest.TestCase):
     def test_with_an_underscore_and_a_comma_in_format_specifier(self):
         error_msg = re.escape("Cannot specify both ',' and '_'.")
         with self.assertRaisesRegex(ValueError, error_msg):
-            '{:,_}'.format(1)
+            '{:_,}'.format(1)
 
 if __name__ == "__main__":
     unittest.main()
