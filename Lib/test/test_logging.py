@@ -4354,8 +4354,8 @@ class LogRecordTest(BaseTest):
         r.removeHandler(h)
         h.close()
 
-    @classmethod
-    def _check_process_name(cls, conn=None):
+    @staticmethod
+    def _extract_logrecord_process_name(conn=None):
         import multiprocessing as mp
         name = mp.current_process().name
 
@@ -4376,13 +4376,15 @@ class LogRecordTest(BaseTest):
         r = logging.makeLogRecord({})
         self.assertEqual(r.processName, 'MainProcess')
 
-        results = self._check_process_name()
+        results = self._extract_logrecord_process_name()
         self.assertEqual(results['processName'], results['r1.processName'])
         self.assertEqual(results['processName'], results['r2.processName'])
 
         import multiprocessing
         parent_conn, child_conn = multiprocessing.Pipe()
-        p = multiprocessing.Process(target=self._check_process_name, args=(child_conn,))
+        p = multiprocessing.Process(
+            target=self._extract_logrecord_process_name, args=(child_conn,)
+        )
         p.start()
         results = parent_conn.recv()
         self.assertEqual(results['processName'], results['r1.processName'])
