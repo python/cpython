@@ -144,7 +144,7 @@ venv:
 	$(PYTHON) -m venv $(VENVDIR)
 #	$(VENVDIR)/bin/python3 -m pip install -U pip setuptools
 	$(VENVDIR)/bin/python3 -m pip install -U pip setuptools==49.2.1
-	$(VENVDIR)/bin/python3 -m pip install -U Sphinx==2.3.1 blurb python-docs-theme
+	$(VENVDIR)/bin/python3 -m pip install -U Sphinx==3.2.1 blurb python-docs-theme
 	@echo "The venv has been created in the $(VENVDIR) directory"
 
 dist:
