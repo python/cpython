@@ -328,10 +328,8 @@ class LogRecord(object):
         else: # pragma: no cover
             self.thread = None
             self.threadName = None
-        if not logMultiprocessing: # pragma: no cover
-            self.processName = None
-        else:
-            self.processName = 'MainProcess'
+        self.processName = None
+        if logMultiprocessing:
             mp = sys.modules.get('multiprocessing')
             if mp is not None:
                 # Errors may occur if multiprocessing has not finished loading
@@ -342,6 +340,8 @@ class LogRecord(object):
                     self.processName = mp.current_process().name
                 except Exception: #pragma: no cover
                     pass
+            if self.processName is None and hasattr(os, 'getpid'):
+                self.processName = f'PID{os.getpid()}'
         if logProcesses and hasattr(os, 'getpid'):
             self.process = os.getpid()
         else:

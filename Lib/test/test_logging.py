@@ -4354,15 +4354,44 @@ class LogRecordTest(BaseTest):
         r.removeHandler(h)
         h.close()
 
+    @staticmethod # pickled as target of child process in the following test
+    def _extract_logrecord_process_name(conn=None):
+        import multiprocessing as mp
+        name = mp.current_process().name
+
+        r1 = logging.makeLogRecord({'msg': 'msg1'})
+        del sys.modules['multiprocessing']
+        r2 = logging.makeLogRecord({'msg': 'msg2'})
+
+        results = {'processName'  : name,
+                   'r1.processName': r1.processName,
+                   'r2.processName': r2.processName,
+                   'PID' : os.getpid(),
+                  }
+        if conn:
+            conn.send(results)
+        else:
+            return results
+
     def test_multiprocessing(self):
         r = logging.makeLogRecord({})
         self.assertEqual(r.processName, 'MainProcess')
-        try:
-            import multiprocessing as mp
-            r = logging.makeLogRecord({})
-            self.assertEqual(r.processName, mp.current_process().name)
-        except ImportError:
-            pass
+
+        results = self._extract_logrecord_process_name()
+        self.assertEqual(results['processName'], results['r1.processName'])
+        self.assertEqual(f"PID{results['PID']}", results['r2.processName'])
+
+        import multiprocessing
+        parent_conn, child_conn = multiprocessing.Pipe()
+        p = multiprocessing.Process(
+            target=self._extract_logrecord_process_name,
+            args=(child_conn,)
+        )
+        p.start()
+        results = parent_conn.recv()
+        self.assertEqual(results['processName'], results['r1.processName'])
+        self.assertEqual(f"PID{results['PID']}", results['r2.processName'])
+        p.join()
 
     def test_optional(self):
         r = logging.makeLogRecord({})
