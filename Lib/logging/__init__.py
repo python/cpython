@@ -332,8 +332,9 @@ class LogRecord(object):
             self.processName = None
         else:
             self.processName = 'MainProcess'
-            mp = sys.modules.get('multiprocessing')
-            if mp is not None:
+            # import can fail, e.g. during shutdown. See issue 20037.
+            try:
+                import multiprocessing as mp
                 # Errors may occur if multiprocessing has not finished loading
                 # yet - e.g. if a custom import hook causes third-party code
                 # to run when multiprocessing calls import. See issue 8200
@@ -342,6 +343,8 @@ class LogRecord(object):
                     self.processName = mp.current_process().name
                 except Exception: #pragma: no cover
                     pass
+            except ImportError:
+                pass
         if logProcesses and hasattr(os, 'getpid'):
             self.process = os.getpid()
         else:
