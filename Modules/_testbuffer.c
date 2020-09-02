@@ -9,8 +9,6 @@
 
 /* struct module */
 static PyObject *structmodule = NULL;
-static PyObject *Struct = NULL;
-static PyObject *calcsize = NULL;
 
 /* cache simple format string */
 static const char *simple_fmt = "B";
@@ -22,6 +20,19 @@ static PyObject *simple_format = NULL;
 /**************************************************************************/
 /*                             NDArray Object                             */
 /**************************************************************************/
+
+typedef struct {
+    PyObject *Struct;
+    PyObject *calcsize;
+} _testbuffer_state;
+
+static inline _testbuffer_state*
+_testbuffer_get_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_testbuffer_state *)state;
+}
 
 static PyTypeObject NDArray_Type;
 #define NDArray_Check(v) Py_IS_TYPE(v, &NDArray_Type)
@@ -1279,6 +1290,7 @@ ndarray_push_base(NDArrayObject *nd, PyObject *items,
 static int
 ndarray_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    PyObject *module;
     NDArrayObject *nd = (NDArrayObject *)self;
     static char *kwlist[] = {
         "obj", "shape", "strides", "offset", "format", "flags", "getbuf", NULL
@@ -1338,7 +1350,7 @@ ndarray_init(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     /* Initialize and push the first base buffer onto the linked list. */
-    return ndarray_push_base(nd, v, shape, strides, offset, format, flags);
+    return ndarray_push_base(module, nd, v, shape, strides, offset, format, flags);
 }
 
 /* Push an additional base onto the linked list. */
@@ -2825,13 +2837,17 @@ _testbuffer_exec(PyObject *m)
     }
 
     structmodule = PyImport_ImportModule("struct");
-    if (structmodule == NULL)
+    if (structmodule == NULL) {
         return -1;
+    }
 
-    Struct = PyObject_GetAttrString(structmodule, "Struct");
-    calcsize = PyObject_GetAttrString(structmodule, "calcsize");
-    if (Struct == NULL || calcsize == NULL)
+    _testbuffer_state *st = _testbuffer_get_state(m);
+
+    st->Struct = PyObject_GetAttrString(structmodule, "Struct");
+    st->calcsize = PyObject_GetAttrString(structmodule, "calcsize");
+    if (st->Struct == NULL || st->calcsize == NULL) {
         return -1;
+    }
 
     simple_format = PyUnicode_FromString(simple_fmt);
     if (simple_format == NULL)
