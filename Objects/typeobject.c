@@ -3120,17 +3120,56 @@ PyType_GetSlot(PyTypeObject *type, int slot)
         return NULL;
     }
 
-    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE) &&
-        (size_t)slot < Py_ARRAY_LENGTH(slotoffsets)) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        if ((size_t)slot >= Py_ARRAY_LENGTH(slotoffsets)) {
+            /* Extension module requesting slot from a future version */
+            return NULL;
+        }
         return  *(void**)(((char*)type) + slotoffsets[slot]);
     }
-    else if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE) &&
-             (size_t)slot < Py_ARRAY_LENGTH(static_slotoffsets)) {
-        return  *(void**)(((char*)type) + static_slotoffsets[slot]);
-    }
 
-    /* Extension module requesting slot from a future version */
-    return  NULL;
+    void *methods = NULL;
+    size_t base_slot = slot - STATIC_TYPE_OFFSET;
+    int methods_flag = 0;
+    if (base_slot >= Py_ARRAY_LENGTH(static_slotoffsets)) {
+        return NULL;
+    } else if (slot >= Py_type_am_await &&
+               slot <= Py_type_am_anext) {
+        methods = *(void**)(((char*)type) +
+                static_slotoffsets[Py_type_as_async - STATIC_TYPE_OFFSET]);
+        methods_flag = 1;
+    } else if (slot >= Py_type_nb_add &&
+               slot <= Py_type_nb_inplace_matrix_multiply) {
+        methods = *(void**)(((char*)type) +
+                static_slotoffsets[Py_type_as_number - STATIC_TYPE_OFFSET]);
+        methods_flag = 1;
+    } else if (slot >= Py_type_sq_length &&
+               slot <= Py_type_sq_inplace_repeat) {
+        methods = *(void**)(((char*)type) +
+                static_slotoffsets[Py_type_as_sequence - STATIC_TYPE_OFFSET]);
+        methods_flag = 1;
+    } else if (slot >= Py_type_mp_length &&
+               slot <= Py_type_mp_ass_subscript) {
+        methods = *(void**)(((char*)type) +
+                static_slotoffsets[Py_type_as_mapping - STATIC_TYPE_OFFSET]);
+        methods_flag = 1;
+    } else if (slot >= Py_type_bf_getbuffer &&
+               slot <= Py_type_bf_releasebuffer) {
+        methods = *(void**)(((char*)type) +
+                static_slotoffsets[Py_type_as_buffer - STATIC_TYPE_OFFSET]);
+        methods_flag = 1;
+    }
+    if (methods != NULL) {
+        return *(void**)(methods +
+                static_slotoffsets[slot - STATIC_TYPE_OFFSET]);
+    }
+    else {
+        if (methods_flag) {
+            return NULL;
+        }
+        return  *(void**)(((char*)type) +
+                static_slotoffsets[slot - STATIC_TYPE_OFFSET]);
+    }
 }
 
 PyObject *

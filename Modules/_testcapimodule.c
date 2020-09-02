@@ -1033,13 +1033,24 @@ test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *decimal_str = tp_repr(object);
     assert(decimal_str);
 
-    ternaryfunc tp_call = PyType_GetSlot(&PyLong_Type,
-                                         Py_type_call);
+    ternaryfunc tp_call = PyType_GetSlot(&PyLong_Type, Py_type_call);
     assert(tp_call == 0);
+
+    binaryfunc nb_add = PyType_GetSlot(&PyLong_Type, Py_type_nb_add); 
+    PyObject *result = nb_add(object, object);
+    assert(result);
+
+    lenfunc mp_length = PyType_GetSlot(&PyLong_Type, Py_type_mp_length);
+    assert(mp_length == NULL);
+
+    void *over_value = PyType_GetSlot(&PyLong_Type,
+            Py_type_bf_releasebuffer + 1);
+    assert(over_value == NULL);
 
     Py_DECREF(decimal_str);
     Py_DECREF(args);
     Py_DECREF(object);
+    Py_DECREF(result);
     Py_RETURN_NONE;
 }
 
