@@ -118,7 +118,7 @@ builtins
 --------
 
 The :func:`compile` function gets a new optional bit in the *flags* argument
-(`ast.PyCF_DISABLE_ALL_OPTIMIZATIONS) to disable all compiler optimizations.
+(:data:`ast.PyCF_DISABLE_ALL_OPTIMIZATIONS`) to disable all compiler optimizations.
 
 curses
 ------
