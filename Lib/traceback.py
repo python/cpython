@@ -476,7 +476,7 @@ class TracebackException:
         _seen.add(id(exc_value))
         # Gracefully handle (the way Python 2.4 and earlier did) the case of
         # being called with no type or value (None, None, None).
-        if (exc_value and exc_value.__cause__ is not None
+        if (exc_value and hasattr(exc_value, "__cause__") and exc_value.__cause__ is not None
             and id(exc_value.__cause__) not in _seen):
             cause = TracebackException(
                 type(exc_value.__cause__),
