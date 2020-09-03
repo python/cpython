@@ -72,6 +72,19 @@ make these releases possible.
 Terms and conditions for accessing or otherwise using Python
 ============================================================
 
+Python software and documentation are licensed under the
+:ref:`PSF License Agreement <PSF-license>`.
+
+Starting with Python 3.8.6, examples, recipes, and other code in
+the documentation are dual licensed under the PSF License Agreement
+and the :ref:`Zero-Clause BSD license <BSD0>`.
+
+Some software incorporated into Python is under different licenses.
+The licenses are listed with code falling under that license.
+See :ref:`OtherLicenses` for an incomplete list of these licenses.
+
+
+.. _PSF-license:
 
 PSF LICENSE AGREEMENT FOR PYTHON |release|
 ------------------------------------------
@@ -257,6 +270,27 @@ CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2
    ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
    SOFTWARE.
 
+
+.. _BSD0:
+
+ZERO-CLAUSE BSD LICENSE FOR CODE IN THE PYTHON |release| DOCUMENTATION
+----------------------------------------------------------------------
+
+.. parsed-literal::
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
+
+
+.. _OtherLicenses:
 
 Licenses and Acknowledgements for Incorporated Software
 =======================================================
