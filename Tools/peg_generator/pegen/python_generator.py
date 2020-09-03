@@ -217,6 +217,9 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
                     else:
                         self.print("and")
                     self.visit(item)
+                    if is_gather:
+                        self.print("is not None")
+
             self.print("):")
             with self.indent():
                 action = node.action
