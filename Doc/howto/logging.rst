@@ -1091,8 +1091,8 @@ need:
 +-----------------------------------------------------+---------------------------------------------------+
 | Current process ID (:func:`os.getpid`)              | Set ``logging.logProcesses`` to ``False``.        |
 +-----------------------------------------------------+---------------------------------------------------+
-| Current process name when using ``multiprocessing`` | Set ``logging.logMultiprocessing`` to ``False``.  |
-| to manage multiple processes.                       |                                                   |
+| Current process name                                | Set ``logging.logMultiprocessing`` to ``False``.  |
+| (:class:`multiprocessing.Process`)                  |                                                   |
 +-----------------------------------------------------+---------------------------------------------------+
 
 Also note that the core logging module only includes the basic handlers. If
