@@ -1089,7 +1089,7 @@ need:
 +-----------------------------------------------------+---------------------------------------------------+
 | Threading information.                              | Set ``logging.logThreads`` to ``False``.          |
 +-----------------------------------------------------+---------------------------------------------------+
-| Current process ID (``os.getpid()``)                | Set ``logging.logProcesses`` to ``False``.        |
+| Current process ID (:func:`os.getpid`)              | Set ``logging.logProcesses`` to ``False``.        |
 +-----------------------------------------------------+---------------------------------------------------+
 | Current process name when using ``multiprocessing`` | Set ``logging.logMultiprocessing`` to ``False``.  |
 | to manage multiple processes.                       |                                                   |
