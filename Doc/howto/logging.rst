@@ -1078,20 +1078,21 @@ need more precise control over what logging information is collected. Here's a
 list of things you can do to avoid processing during logging which you don't
 need:
 
-+-----------------------------------------------+----------------------------------------+
-| What you don't want to collect                | How to avoid collecting it             |
-+===============================================+========================================+
-| Information about where calls were made from. | Set ``logging._srcfile`` to ``None``.  |
-|                                               | This avoids calling                    |
-|                                               | :func:`sys._getframe`, which may help  |
-|                                               | to speed up your code in environments  |
-|                                               | like PyPy (which can't speed up code   |
-|                                               | that uses :func:`sys._getframe`).      |
-+-----------------------------------------------+----------------------------------------+
-| Threading information.                        | Set ``logging.logThreads`` to ``0``.   |
-+-----------------------------------------------+----------------------------------------+
-| Process information.                          | Set ``logging.logProcesses`` to ``0``. |
-+-----------------------------------------------+----------------------------------------+
++-----------------------------------------------+---------------------------------------------------+
+| What you don't want to collect                | How to avoid collecting it                        |
++===============================================+===================================================+
+| Information about where calls were made from. | Set ``logging._srcfile`` to ``None``.             |
+|                                               | This avoids calling :func:`sys._getframe`, which  |
+|                                               | may help to speed up your code in environments    |
+|                                               | like PyPy (which can't speed up code that uses    |
+|                                               | :func:`sys._getframe`).                           |
++-----------------------------------------------+---------------------------------------------------+
+| Threading information.                        | Set ``logging.logThreads`` to ``False``.          |
++-----------------------------------------------+---------------------------------------------------+
+| Process information.                          | Set ``logging.logProcesses`` to ``False``.        |
++-----------------------------------------------+---------------------------------------------------+
+| Multiprocess information.                     | Set ``logging.logMultiprocessing`` to ``False``.  |
++-----------------------------------------------+---------------------------------------------------+
 
 Also note that the core logging module only includes the basic handlers. If
 you don't import :mod:`logging.handlers` and :mod:`logging.config`, they won't
