@@ -70,17 +70,26 @@ Code that modifies a collection while iterating over that same collection can
 be tricky to get right.  Instead, it is usually more straight-forward to loop
 over a copy of the collection or to create a new collection::
 
-    # Strategy:  Iterate over a copy
-    for user, status in users.copy().items():
-        if status == 'inactive':
-            del users[user]
+    >>> # Strategy:  Iterate over a copy
+    >>> cheeses = ['Cheshire', 'Brie', 'Roquefort']
+    >>> for c in cheeses[:]:
+    ...     if c == 'Brie':
+    ...         cheeses.append(c)
+    ...
+    >>> print(cheeses)
+    ['Cheshire', 'Brie', 'Roquefort', 'Brie']
 
-    # Strategy:  Create a new collection
-    active_users = {}
-    for user, status in users.items():
-        if status == 'active':
-            active_users[user] = status
-
+    >>> # Strategy:  Create a new collection
+    >>> cheeses = ['Cheshire', 'Brie', 'Roquefort']
+    >>> switched = []
+    >>> for c in cheeses:
+    ...     if c == 'Brie':
+    ...         switched.append("Stilton")
+    ...     else:
+    ...         switched.append(c)
+    ...
+    >>> print(switched)
+    ['Cheshire', 'Stilton', 'Roquefort']
 
 .. _tut-range:
 
