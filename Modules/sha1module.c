@@ -459,8 +459,6 @@ static PyType_Slot sha1_type_slots[] = {
     {0,0}
 };
 
-// Using PyType_GetModuleState() on this type is safe since
-// it cannot be subclassed: it does not have the Py_TPFLAGS_BASETYPE flag.
 static PyType_Spec sha1_type_spec = {
     .name = "_sha1.sha1",
     .basicsize =  sizeof(SHA1object),
