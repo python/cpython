@@ -225,10 +225,18 @@ class ProactorTests(test_utils.TestCase):
         self.loop.run_forever()
         self.loop.stop()
         self.loop.run_forever()
-        # If we don't wait for f to complete here, we may get another
-        # warning logged about a thread that didn't shut down cleanly.
+
+        # Shut everything down cleanly. This is an important part of the
+        # test - in issue 39010, the error occurred during loop.close(),
+        # so we want to close the loop during the test instead of leaving
+        # it for tearDown.
+        #
+        # First wait for f to complete to avoid a "future's result was never
+        # retrieved" error.
         self.loop.run_until_complete(f)
-        self.loop.close()
+        # Now shut down the loop itself (self.close_loop also shuts down the
+        # loop's default executor).
+        self.close_loop(self.loop)
         self.assertFalse(self.loop.call_exception_handler.called)
 
 
