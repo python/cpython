@@ -1993,10 +1993,13 @@ yes)
     ;;
 esac
 
-# ICC needs -fp-model strict or floats behave badly
 case "$CC" in
 *icc*)
+    # ICC needs -fp-model strict or floats behave badly
     CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
+    ;;
+*xlc*)
+    CFLAGS_NODIST="$CFLAGS_NODIST -qalias=noansi -qmaxmem=-1"
     ;;
 esac
 
