@@ -149,10 +149,10 @@ if _PYTHON_BUILD:
 def _subst_vars(s, local_vars):
     try:
         return s.format(**local_vars)
-    except KeyError:
+    except KeyError as var:
         try:
             return s.format(**os.environ)
-        except KeyError as var:
+        except KeyError:
             raise AttributeError('{%s}' % var) from None
 
 def _extend_dict(target_dict, other_dict):
