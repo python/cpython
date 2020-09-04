@@ -53,12 +53,12 @@ _INSTALL_SCHEMES = {
         },
     # NOTE: When modifying "purelib" scheme, update site._get_path() too.
     'nt_user': {
-        'stdlib': '{userbase}/Python{py_version_nodot}',
-        'platstdlib': '{userbase}/Python{py_version_nodot}',
-        'purelib': '{userbase}/Python{py_version_nodot}/site-packages',
-        'platlib': '{userbase}/Python{py_version_nodot}/site-packages',
-        'include': '{userbase}/Python{py_version_nodot}/Include',
-        'scripts': '{userbase}/Python{py_version_nodot}/Scripts',
+        'stdlib': '{userbase}/Python{py_version_nodot_plat}',
+        'platstdlib': '{userbase}/Python{py_version_nodot_plat}',
+        'purelib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
+        'platlib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
+        'include': '{userbase}/Python{py_version_nodot_plat}/Include',
+        'scripts': '{userbase}/Python{py_version_nodot_plat}/Scripts',
         'data': '{userbase}',
         },
     'posix_user': {
@@ -431,6 +431,8 @@ def _init_non_posix(vars):
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
+    vars['TZPATH'] = ''
+    vars['py_version_nodot_plat'] = sys.winver.replace('.', '')
 
 #
 # public APIs
@@ -546,7 +548,6 @@ def get_config_vars(*args):
 
         if os.name == 'nt':
             _init_non_posix(_CONFIG_VARS)
-            _CONFIG_VARS['TZPATH'] = ''
         if os.name == 'posix':
             _init_posix(_CONFIG_VARS)
         # For backward compatibility, see issue19555
