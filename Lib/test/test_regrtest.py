@@ -520,7 +520,7 @@ class BaseTestCase(unittest.TestCase):
         if 'stderr' not in kw:
             kw['stderr'] = subprocess.STDOUT
         proc = subprocess.run(args,
-                              universal_newlines=True,
+                              text=True,
                               input=input,
                               stdout=subprocess.PIPE,
                               **kw)
@@ -1305,6 +1305,22 @@ class TestUtils(unittest.TestCase):
                          '3 hour 2 min')
         self.assertEqual(utils.format_duration(3 * 3600 + 1),
                          '3 hour 1 sec')
+
+
+class MiscTestCase(BaseTestCase):
+    def test_num_imports(self):
+        # bpo-41718: "import test.libregrtest" must not import too many
+        # modules.
+        code = textwrap.dedent("""
+            import sys
+            import test.libregrtest
+            print(len(sys.modules))
+        """)
+        proc = self.run_command([sys.executable, '-I', '-c', code])
+        out = proc.stdout.strip()
+        nmodules = int(out)
+        # Python 3.10 on Linux imports 149 modules
+        self.assertLess(nmodules, 155)
 
 
 if __name__ == '__main__':

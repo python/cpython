@@ -1,0 +1,2 @@
+test.libregrtest.save_env no longer imports asyncio, multiprocessing nor
+urllib to reduce the number of imports, to better isolate unit tests.

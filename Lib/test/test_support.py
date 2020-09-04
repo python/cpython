@@ -468,7 +468,7 @@ class TestSupport(unittest.TestCase):
         proc = subprocess.run(cmd,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.DEVNULL,
-                              universal_newlines=True,
+                              text=True,
                               env=env)
         if expected is None:
             expected = args
@@ -655,6 +655,20 @@ class TestSupport(unittest.TestCase):
                                  "Warning -- msg\n")
         self.check_print_warning("a\nb",
                                  'Warning -- a\nWarning -- b\n')
+
+    def test_num_imports(self):
+        # bpo-41718: "import test.support" must not import too many modules.
+        code = textwrap.dedent("""
+            import sys
+            import test.support
+            print(len(sys.modules))
+        """)
+        cmd = [sys.executable, '-I', '-c', code]
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, text=True, check=True)
+        out = proc.stdout.strip()
+        nmodules = int(out)
+        # Python 3.10 on Linux imports 96 modules
+        self.assertLess(nmodules, 100)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc
