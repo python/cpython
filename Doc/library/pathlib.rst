@@ -890,6 +890,11 @@ call fails (for example because the path doesn't exist).
       PosixPath('docs/_static')
       PosixPath('docs/Makefile')
 
+   The children are yielded in arbitrary order, and the special entries
+   ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
+   to the directory after creating the iterator, whether an path object for
+   that file be included is unspecified.
+
 .. method:: Path.lchmod(mode)
 
    Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
