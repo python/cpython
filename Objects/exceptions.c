@@ -2295,8 +2295,9 @@ MemoryError_dealloc(PyBaseExceptionObject *self)
 {
     BaseException_clear(self);
 
-    if (Py_TYPE(self) != PyExc_MemoryError) {
-        return Py_TYPE(self)->tp_free((PyObject *)self);
+    if (Py_TYPE(self) != (PyTypeObject *)PyExc_MemoryError) {
+        Py_TYPE(self)->tp_free((PyObject *)self);
+        return;
     }
 
     _PyObject_GC_UNTRACK(self);
