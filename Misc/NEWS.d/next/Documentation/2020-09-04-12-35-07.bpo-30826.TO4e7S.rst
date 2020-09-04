@@ -1,0 +1,5 @@
+Up to this point in the tutorial the reader has not been introduced to
+the `dict` data type but the example is using it to demonstrate a point.
+Since the reader has been introduced to the `list` data type and some of
+its basic functionalities like shallow copy and `append`, the example has
+been leveraging those to demonstrate the same point.
