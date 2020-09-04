@@ -129,12 +129,12 @@ which disallows mutable objects such as :class:`bytearray`.
 ``S`` (:class:`bytes`) [PyBytesObject \*]
    Requires that the Python object is a :class:`bytes` object, without
    attempting any conversion.  Raises :exc:`TypeError` if the object is not
-   a bytes object.  The C variable may also be declared as :c:type:`PyObject\*`.
+   a bytes object.  The C variable may also be declared as :c:type:`PyObject*`.
 
 ``Y`` (:class:`bytearray`) [PyByteArrayObject \*]
    Requires that the Python object is a :class:`bytearray` object, without
    attempting any conversion.  Raises :exc:`TypeError` if the object is not
-   a :class:`bytearray` object. The C variable may also be declared as :c:type:`PyObject\*`.
+   a :class:`bytearray` object. The C variable may also be declared as :c:type:`PyObject*`.
 
 ``u`` (:class:`str`) [const Py_UNICODE \*]
    Convert a Python Unicode object to a C pointer to a NUL-terminated buffer of
@@ -181,7 +181,7 @@ which disallows mutable objects such as :class:`bytearray`.
 ``U`` (:class:`str`) [PyObject \*]
    Requires that the Python object is a Unicode object, without attempting
    any conversion.  Raises :exc:`TypeError` if the object is not a Unicode
-   object.  The C variable may also be declared as :c:type:`PyObject\*`.
+   object.  The C variable may also be declared as :c:type:`PyObject*`.
 
 ``w*`` (read-write :term:`bytes-like object`) [Py_buffer]
    This format accepts any object which implements the read-write buffer
@@ -194,10 +194,10 @@ which disallows mutable objects such as :class:`bytearray`.
    It only works for encoded data without embedded NUL bytes.
 
    This format requires two arguments.  The first is only used as input, and
-   must be a :c:type:`const char\*` which points to the name of an encoding as a
+   must be a :c:type:`const char*` which points to the name of an encoding as a
    NUL-terminated string, or ``NULL``, in which case ``'utf-8'`` encoding is used.
    An exception is raised if the named encoding is not known to Python.  The
-   second argument must be a :c:type:`char\*\*`; the value of the pointer it
+   second argument must be a :c:type:`char**`; the value of the pointer it
    references will be set to a buffer with the contents of the argument text.
    The text will be encoded in the encoding specified by the first argument.
 
@@ -217,10 +217,10 @@ which disallows mutable objects such as :class:`bytearray`.
    characters.
 
    It requires three arguments.  The first is only used as input, and must be a
-   :c:type:`const char\*` which points to the name of an encoding as a
+   :c:type:`const char*` which points to the name of an encoding as a
    NUL-terminated string, or ``NULL``, in which case ``'utf-8'`` encoding is used.
    An exception is raised if the named encoding is not known to Python.  The
-   second argument must be a :c:type:`char\*\*`; the value of the pointer it
+   second argument must be a :c:type:`char**`; the value of the pointer it
    references will be set to a buffer with the contents of the argument text.
    The text will be encoded in the encoding specified by the first argument.
    The third argument must be a pointer to an integer; the referenced integer
@@ -320,7 +320,7 @@ Other objects
 ``O!`` (object) [*typeobject*, PyObject \*]
    Store a Python object in a C object pointer.  This is similar to ``O``, but
    takes two C arguments: the first is the address of a Python type object, the
-   second is the address of the C variable (of type :c:type:`PyObject\*`) into which
+   second is the address of the C variable (of type :c:type:`PyObject*`) into which
    the object pointer is stored.  If the Python object does not have the required
    type, :exc:`TypeError` is raised.
 
@@ -329,13 +329,13 @@ Other objects
 ``O&`` (object) [*converter*, *anything*]
    Convert a Python object to a C variable through a *converter* function.  This
    takes two arguments: the first is a function, the second is the address of a C
-   variable (of arbitrary type), converted to :c:type:`void \*`.  The *converter*
+   variable (of arbitrary type), converted to :c:type:`void *`.  The *converter*
    function in turn is called as follows::
 
       status = converter(object, address);
 
    where *object* is the Python object to be converted and *address* is the
-   :c:type:`void\*` argument that was passed to the :c:func:`PyArg_Parse\*` function.
+   :c:type:`void*` argument that was passed to the :c:func:`PyArg_Parse\*` function.
    The returned *status* should be ``1`` for a successful conversion and ``0`` if
    the conversion has failed.  When the conversion fails, the *converter* function
    should raise an exception and leave the content of *address* unmodified.
@@ -481,7 +481,7 @@ API Functions
    *args*; it must actually be a tuple.  The length of the tuple must be at least
    *min* and no more than *max*; *min* and *max* may be equal.  Additional
    arguments must be passed to the function, each of which should be a pointer to a
-   :c:type:`PyObject\*` variable; these will be filled in with the values from
+   :c:type:`PyObject*` variable; these will be filled in with the values from
    *args*; they will contain borrowed references.  The variables which correspond
    to optional parameters not given by *args* will not be filled in; these should
    be initialized by the caller. This function returns true on success and false if
@@ -650,8 +650,8 @@ Building values
 
    ``O&`` (object) [*converter*, *anything*]
       Convert *anything* to a Python object through a *converter* function.  The
-      function is called with *anything* (which should be compatible with :c:type:`void
-      \*`) as its argument and should return a "new" Python object, or ``NULL`` if an
+      function is called with *anything* (which should be compatible with :c:type:`void*`)
+      as its argument and should return a "new" Python object, or ``NULL`` if an
       error occurred.
 
    ``(items)`` (:class:`tuple`) [*matching-items*]

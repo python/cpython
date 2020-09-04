@@ -151,6 +151,7 @@ Some facts and figures:
 
 
 .. class:: TarFile
+   :noindex:
 
    Class for reading and writing tar archives. Do not use this class directly:
    use :func:`tarfile.open` instead. See :ref:`tarfile-objects`.

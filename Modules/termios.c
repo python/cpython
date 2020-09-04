@@ -1,4 +1,4 @@
-/* termiosmodule.c -- POSIX terminal I/O module implementation.  */
+/* termios.c -- POSIX terminal I/O module implementation.  */
 
 #include "Python.h"
 

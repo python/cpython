@@ -85,13 +85,13 @@ class AllTest(unittest.TestCase):
         lib_dir = os.path.dirname(os.path.dirname(__file__))
         for path, modname in self.walk_modules(lib_dir, ""):
             m = modname
-            denylisted = False
+            denied = False
             while m:
                 if m in denylist:
-                    denylisted = True
+                    denied = True
                     break
                 m = m.rpartition('.')[0]
-            if denylisted:
+            if denied:
                 continue
             if support.verbose:
                 print(modname)

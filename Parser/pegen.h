@@ -257,6 +257,9 @@ stmt_ty _PyPegen_class_def_decorators(Parser *, asdl_seq *, stmt_ty);
 KeywordOrStarred *_PyPegen_keyword_or_starred(Parser *, void *, int);
 asdl_seq *_PyPegen_seq_extract_starred_exprs(Parser *, asdl_seq *);
 asdl_seq *_PyPegen_seq_delete_starred_exprs(Parser *, asdl_seq *);
+expr_ty _PyPegen_collect_call_seqs(Parser *, asdl_seq *, asdl_seq *,
+                     int lineno, int col_offset, int end_lineno,
+                     int end_col_offset, PyArena *arena);
 expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_seq *);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
 int _PyPegen_check_barry_as_flufl(Parser *);

@@ -59,7 +59,7 @@ class PEGLexer(RegexLexer):
             include("variables"),
             (r"\b(?!(NULL|EXTRA))([A-Z_]+)\b\s*(?!\()", Text,),
             (
-                r"^\s*" + _name + "\s*" + "(\[.*\])?" + "\s*" + "(\(.+\))?" + "\s*(:)",
+                r"^\s*" + _name + r"\s*" + r"(\[.*\])?" + r"\s*" + r"(\(.+\))?" + r"\s*(:)",
                 bygroups(Name.Function, None, None, Punctuation),
             ),
             (_name, Name.Function),

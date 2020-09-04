@@ -1,0 +1,1 @@
+Fix handling of debug mode in :func:`asyncio.run`. This allows setting ``PYTHONASYNCIODEBUG`` or ``-X dev`` to enable asyncio debug mode when using :func:`asyncio.run`.
