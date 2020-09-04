@@ -295,7 +295,7 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
             Py_DECREF(binding_name_obj);
             if (!current_param) {
                 if (!PyErr_Occurred() || PyErr_ExceptionMatches(PyExc_LookupError)) {
-                    PyErr_Format(pysqlite_ProgrammingError, "You did not supply a value for binding %d.", i);
+                    PyErr_Format(pysqlite_ProgrammingError, "You did not supply a value for binding parameter :%s.", binding_name);
                 }
                 return;
             }
