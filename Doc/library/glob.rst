@@ -43,7 +43,9 @@ For example, ``'[?]'`` matches the character ``'?'``.
    (like :file:`/usr/src/Python-1.5/Makefile`) or relative (like
    :file:`../../Tools/\*/\*.gif`), and can contain shell-style wildcards. Broken
    symlinks are included in the results (as in the shell). Whether or not the
-   results are sorted depends on the file system.
+   results are sorted depends on the file system.  If a file that satisfies
+   conditions is removed or added during the call of this function, whether
+   a path name for that file be included is unspecified.
 
    .. index::
       single: **; in glob-style wildcards
