@@ -1649,25 +1649,31 @@ signal_exec(PyObject *m)
   return 0;
 }
 
-static PyModuleDef_Slot signal_slots[] = {
-    {Py_mod_exec, signal_exec},
-    {0, NULL}
-};
 
 static struct PyModuleDef signalmodule = {
     PyModuleDef_HEAD_INIT,
     "_signal",
     .m_doc = module_doc,
-    .m_size = 0,
+    .m_size = -1,
     .m_methods = signal_methods,
-    .m_slots = signal_slots
 };
+
 
 PyMODINIT_FUNC
 PyInit__signal(void)
 {
-    return PyModuleDef_Init(&signalmodule);
+    PyObject *mod = PyModule_Create(&signalmodule);
+    if (mod == NULL) {
+        return NULL;
+    }
+
+    if (signal_exec(mod) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+    return mod;
 }
+
 
 static void
 finisignal(void)
