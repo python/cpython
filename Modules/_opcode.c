@@ -74,14 +74,7 @@ opcode_functions[] =  {
     {NULL, NULL, 0, NULL}
 };
 
-static int
-_opcode_exec(PyObject *m)
-{
-    return 0;
-}
-
 static PyModuleDef_Slot opcode_slots[] = {
-    {Py_mod_exec, _opcode_exec},
     {0, NULL}
 };
 
