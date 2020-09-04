@@ -432,7 +432,6 @@ def _init_non_posix(vars):
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
     vars['TZPATH'] = ''
-    vars['py_version_nodot_plat'] = sys.winver.replace('.', '')
 
 #
 # public APIs
@@ -545,6 +544,10 @@ def get_config_vars(*args):
         except AttributeError:
             # sys.abiflags may not be defined on all platforms.
             _CONFIG_VARS['abiflags'] = ''
+        try:
+            _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
+        except AttributeError:
+            _CONFIG_VARS['py_version_nodot_plat'] = ''
 
         if os.name == 'nt':
             _init_non_posix(_CONFIG_VARS)
