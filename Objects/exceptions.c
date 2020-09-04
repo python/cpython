@@ -2286,8 +2286,11 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyBaseExceptionObject *self;
 
-    if (type != (PyTypeObject *) PyExc_MemoryError)
+    /* If this is a subclass of MemoryError, don't use the freelist
+     * and just return a fresh object */
+    if (type != (PyTypeObject *) PyExc_MemoryError) {
         return BaseException_new(type, args, kwds);
+    }
 
     struct _Py_exc_state *state = get_exc_state();
     if (state->memerrors_freelist == NULL) {
@@ -2313,8 +2316,15 @@ MemoryError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 MemoryError_dealloc(PyBaseExceptionObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
     BaseException_clear(self);
+
+    /* If this is a subclass of MemoryError, we don't need to
+     * do anything in the free-list*/
+    if (!Py_IS_TYPE(self, (PyTypeObject *) PyExc_MemoryError)) {
+        return Py_TYPE(self)->tp_free((PyObject *)self);
+    }
+
+    _PyObject_GC_UNTRACK(self);
 
     struct _Py_exc_state *state = get_exc_state();
     if (state->memerrors_numfree >= MEMERRORS_SAVE) {
