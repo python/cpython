@@ -3169,7 +3169,7 @@ PyType_GetSlot(PyTypeObject *type, int slot)
         methods_flag = 1;
     }
     if (methods != NULL) {
-        return *(void**)(methods +
+        return *(void**)((char *)methods +
                 static_slotoffsets[slot - STATIC_TYPE_OFFSET]);
     }
     else {
