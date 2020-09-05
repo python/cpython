@@ -984,8 +984,9 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     PyGILState_STATE gilstate;
 
 #ifdef HAVE_TRACE_V2
-    if (type != SQLITE_TRACE_STMT)
+    if (type != SQLITE_TRACE_STMT) {
         return 0;
+    }
 #endif
 
     gilstate = PyGILState_Ensure();
