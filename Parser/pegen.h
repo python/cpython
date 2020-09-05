@@ -73,6 +73,7 @@ typedef struct {
     growable_comment_array type_ignore_comments;
     Token *known_err_token;
     int level;
+    int call_invalid_rules;
 } Parser;
 
 typedef struct {
