@@ -372,12 +372,14 @@ class BuiltinTest(unittest.TestCase):
                 self.assertEqual(rv, tuple(expected))
 
     def test_compile_top_level_await_no_coro(self):
-        """Make sure top level non-await codes get the correct coroutine flags.
-        """
+        """Make sure top level non-await codes get the correct coroutine flags"""
         modes = ('single', 'exec')
         code_samples = [
             '''def f():pass\n''',
-            '''[x for x in l]'''
+            '''[x for x in l]''',
+            '''{x for x in l}''',
+            '''(x for x in l)''',
+            '''{x:x for x in l}''',
         ]
         for mode, code_sample in product(modes, code_samples):
             source = dedent(code_sample)
