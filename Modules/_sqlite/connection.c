@@ -43,6 +43,10 @@
 #define HAVE_BACKUP_API
 #endif
 
+#if SQLITE_VERSION_NUMBER >= 3014000
+#define HAVE_TRACE_V2
+#endif
+
 _Py_IDENTIFIER(cursor);
 
 static const char * const begin_statements[] = {
@@ -962,12 +966,28 @@ static int _progress_handler(void* user_arg)
     return rc;
 }
 
+#ifdef HAVE_TRACE_V2
+/*
+ * From https://sqlite.org/c3ref/trace_v2.html:
+ * The integer return value from the callback is currently ignored, though this
+ * may change in future releases. Callback implementations should return zero
+ * to ensure future compatibility.
+ */
+static int _trace_callback(unsigned int type, void* user_arg, void* prepared_statement, void* statement_string)
+#else
 static void _trace_callback(void* user_arg, const char* statement_string)
+#endif
 {
     PyObject *py_statement = NULL;
     PyObject *ret = NULL;
 
     PyGILState_STATE gilstate;
+
+#ifdef HAVE_TRACE_V2
+    if (type != SQLITE_TRACE_STMT) {
+        return 0;
+    }
+#endif
 
     gilstate = PyGILState_Ensure();
     py_statement = PyUnicode_DecodeUTF8(statement_string,
@@ -988,6 +1008,9 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     }
 
     PyGILState_Release(gilstate);
+#ifdef HAVE_TRACE_V2
+    return 0;
+#endif
 }
 
 static PyObject* pysqlite_connection_set_authorizer(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
@@ -1046,6 +1069,11 @@ static PyObject* pysqlite_connection_set_progress_handler(pysqlite_Connection* s
     Py_RETURN_NONE;
 }
 
+/*
+ * Ref.
+ * - https://sqlite.org/c3ref/c_trace.html
+ * - https://sqlite.org/c3ref/trace_v2.html
+ */
 static PyObject* pysqlite_connection_set_trace_callback(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
 {
     PyObject* trace_callback;
@@ -1063,10 +1091,18 @@ static PyObject* pysqlite_connection_set_trace_callback(pysqlite_Connection* sel
 
     if (trace_callback == Py_None) {
         /* None clears the trace callback previously set */
+#ifdef HAVE_TRACE_V2
+        sqlite3_trace_v2(self->db, SQLITE_TRACE_STMT, 0, 0);
+#else
         sqlite3_trace(self->db, 0, (void*)0);
+#endif
         Py_XSETREF(self->function_pinboard_trace_callback, NULL);
     } else {
+#ifdef HAVE_TRACE_V2
+        sqlite3_trace_v2(self->db, SQLITE_TRACE_STMT, _trace_callback, trace_callback);
+#else
         sqlite3_trace(self->db, _trace_callback, trace_callback);
+#endif
         Py_INCREF(trace_callback);
         Py_XSETREF(self->function_pinboard_trace_callback, trace_callback);
     }
