@@ -501,8 +501,9 @@ set_inflate_zdict(zlibstate *state, compobject *self)
         PyBuffer_Release(&zdict_buf);
         return -1;
     }
-    int err = inflateSetDictionary(&self->zst,
-        zdict_buf.buf, (unsigned int)zdict_buf.len);
+    int err;
+    err = inflateSetDictionary(&self->zst,
+                               zdict_buf.buf, (unsigned int)zdict_buf.len);
     PyBuffer_Release(&zdict_buf);
     if (err != Z_OK) {
         zlib_error(state, self->zst, err, "while setting zdict");
@@ -1371,9 +1372,9 @@ PyDoc_STRVAR(zlib_module_documentation,
 "objects support decompress() and flush().");
 
 static int
-zlib_clear(PyObject *m)
+zlib_clear(PyObject *mod)
 {
-    zlibstate *state = get_zlib_state(m);
+    zlibstate *state = get_zlib_state(mod);
     Py_CLEAR(state->Comptype);
     Py_CLEAR(state->Decomptype);
     Py_CLEAR(state->ZlibError);
@@ -1381,9 +1382,9 @@ zlib_clear(PyObject *m)
 }
 
 static int
-zlib_traverse(PyObject *m, visitproc visit, void *arg)
+zlib_traverse(PyObject *mod, visitproc visit, void *arg)
 {
-    zlibstate *state = get_zlib_state(m);
+    zlibstate *state = get_zlib_state(mod);
     Py_VISIT(state->Comptype);
     Py_VISIT(state->Decomptype);
     Py_VISIT(state->ZlibError);
@@ -1391,24 +1392,24 @@ zlib_traverse(PyObject *m, visitproc visit, void *arg)
 }
 
 static void
-zlib_free(void *m)
+zlib_free(void *mod)
 {
-    zlib_clear((PyObject *)m);
+    zlib_clear((PyObject *)mod);
 }
 
 static int
-zlib_exec(PyObject *m)
+zlib_exec(PyObject *mod)
 {
-    zlibstate *state = get_zlib_state(m);
+    zlibstate *state = get_zlib_state(mod);
 
     state->Comptype = (PyTypeObject *)PyType_FromModuleAndSpec(
-        m, &Comptype_spec, NULL);
+        mod, &Comptype_spec, NULL);
     if (state->Comptype == NULL) {
         return -1;
     }
 
     state->Decomptype = (PyTypeObject *)PyType_FromModuleAndSpec(
-        m, &Decomptype_spec, NULL);
+        mod, &Decomptype_spec, NULL);
     if (state->Decomptype == NULL) {
         return -1;
     }
@@ -1416,16 +1417,16 @@ zlib_exec(PyObject *m)
     PyObject *ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
     if (ZlibError != NULL) {
         Py_INCREF(ZlibError);
-        if (PyModule_AddObject(m, "error", ZlibError) < 0) {
+        if (PyModule_AddObject(mod, "error", ZlibError) < 0) {
             Py_DECREF(ZlibError);
             return -1;
         }
-        get_zlib_state(m)->ZlibError = ZlibError;
+        state->ZlibError = ZlibError;
     }
 
 #define ZLIB_ADD_INT_MACRO(c)                           \
     do {                                                \
-        if ((PyModule_AddIntConstant(m, #c, c)) < 0) {  \
+        if ((PyModule_AddIntConstant(mod, #c, c)) < 0) {  \
             return -1;                                  \
         }                                               \
     } while(0)
@@ -1463,19 +1464,21 @@ zlib_exec(PyObject *m)
 #endif
     PyObject *ver = PyUnicode_FromString(ZLIB_VERSION);
     if (ver != NULL) {
-        if (PyModule_AddObject(m, "ZLIB_VERSION", ver) < 0) {
+        if (PyModule_AddObject(mod, "ZLIB_VERSION", ver) < 0) {
+            Py_DECREF(ver);
             return -1;
         }
     }
 
     ver = PyUnicode_FromString(zlibVersion());
     if (ver != NULL) {
-        if (PyModule_AddObject(m, "ZLIB_RUNTIME_VERSION", ver) < 0) {
+        if (PyModule_AddObject(mod, "ZLIB_RUNTIME_VERSION", ver) < 0) {
+            Py_DECREF(ver);
             return -1;
         }
     }
 
-    if (PyModule_AddStringConstant(m, "__version__", "1.0") < 0) {
+    if (PyModule_AddStringConstant(mod, "__version__", "1.0") < 0) {
         return -1;
     }
     return 0;
