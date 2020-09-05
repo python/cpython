@@ -1166,9 +1166,9 @@ functions.
    +--------------+---------------------------------------------+
    | Format       | Description                                 |
    +==============+=============================================+
-   | *filename*   | Specifies that a FileHandler be created,    |
-   |              | using the specified filename, rather than a |
-   |              | StreamHandler.                              |
+   | *filename*   | Specifies that a :class:`FileHandler` be    |
+   |              | created, using the specified filename,      |
+   |              | rather than a :class:`StreamHandler`.       |
    +--------------+---------------------------------------------+
    | *filemode*   | If *filename* is specified, open the file   |
    |              | in this :ref:`mode <filemodes>`. Defaults   |
@@ -1192,9 +1192,10 @@ functions.
    |              | :ref:`level <levels>`.                      |
    +--------------+---------------------------------------------+
    | *stream*     | Use the specified stream to initialize the  |
-   |              | StreamHandler. Note that this argument is   |
-   |              | incompatible with *filename* - if both      |
-   |              | are present, a ``ValueError`` is raised.    |
+   |              | :class:`StreamHandler`. Note that this      |
+   |              | argument is incompatible with *filename* -  |
+   |              | if both are present, a ``ValueError`` is    |
+   |              | raised.                                     |
    +--------------+---------------------------------------------+
    | *handlers*   | If specified, this should be an iterable of |
    |              | already created handlers to add to the root |
@@ -1213,18 +1214,18 @@ functions.
    +--------------+---------------------------------------------+
    | *encoding*   | If this keyword argument is specified along |
    |              | with *filename*, its value is used when the |
-   |              | FileHandler is created, and thus used when  |
-   |              | opening the output file.                    |
+   |              | :class:`FileHandler` is created, and thus   |
+   |              | used when opening the output file.          |
    +--------------+---------------------------------------------+
    | *errors*     | If this keyword argument is specified along |
    |              | with *filename*, its value is used when the |
-   |              | FileHandler is created, and thus used when  |
-   |              | opening the output file. If not specified,  |
-   |              | the value 'backslashreplace' is used. Note  |
-   |              | that if ``None`` is specified, it will be   |
-   |              | passed as such to func:`open`, which means  |
-   |              | that it will be treated the same as passing |
-   |              | 'errors'.                                   |
+   |              | :class:`FileHandler` is created, and thus   |
+   |              | used when opening the output file. If not   |
+   |              | specified, the value 'backslashreplace' is  |
+   |              | used. Note that if ``None`` is specified,   |
+   |              | it will be passed as such to :func:`open`,  |
+   |              | which means that it will be treated the     |
+   |              | same as passing 'errors'.                   |
    +--------------+---------------------------------------------+
 
    .. versionchanged:: 3.2

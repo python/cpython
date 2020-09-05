@@ -2217,3 +2217,39 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
         "Generator expression must be parenthesized"
     );
 }
+
+
+expr_ty _PyPegen_collect_call_seqs(Parser *p, asdl_seq *a, asdl_seq *b,
+                     int lineno, int col_offset, int end_lineno,
+                     int end_col_offset, PyArena *arena) {
+    Py_ssize_t args_len = asdl_seq_LEN(a);
+    Py_ssize_t total_len = args_len;
+
+    if (b == NULL) {
+        return _Py_Call(_PyPegen_dummy_name(p), a, NULL, lineno, col_offset,
+                        end_lineno, end_col_offset, arena);
+
+    }
+
+    asdl_seq *starreds = _PyPegen_seq_extract_starred_exprs(p, b);
+    asdl_seq *keywords = _PyPegen_seq_delete_starred_exprs(p, b);
+
+    if (starreds) {
+        total_len += asdl_seq_LEN(starreds);
+    }
+
+    asdl_seq *args = _Py_asdl_seq_new(total_len, arena);
+
+    Py_ssize_t i = 0;
+    for (i = 0; i < args_len; i++) {
+        asdl_seq_SET(args, i, asdl_seq_GET(a, i));
+    }
+    for (; i < total_len; i++) {
+        asdl_seq_SET(args, i, asdl_seq_GET(starreds, i - args_len));
+    }
+
+    return _Py_Call(_PyPegen_dummy_name(p), args, keywords, lineno,
+                    col_offset, end_lineno, end_col_offset, arena);
+
+
+}
