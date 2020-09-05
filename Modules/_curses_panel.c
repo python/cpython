@@ -276,7 +276,7 @@ PyCursesPanel_Dealloc(PyCursesPanelObject *po)
     }
     (void)del_panel(po->pan);
     if (po->wo != NULL) {
-        Py_DECREF(po->wo);_curses_panelstate
+        Py_DECREF(po->wo);
         remove_lop(po);
     }
     PyObject_DEL(po);
