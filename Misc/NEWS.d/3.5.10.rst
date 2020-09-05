@@ -1,0 +1,8 @@
+.. bpo: 39603
+.. date: 2020-02-12-14-17-39
+.. nonce: Gt3RSg
+.. release date: 2020-09-05
+.. section: Security
+
+Prevent http header injection by rejecting control characters in
+http.client.putrequest(...).
