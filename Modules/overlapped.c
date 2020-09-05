@@ -1925,30 +1925,29 @@ overlapped_free(void *module)
         if (value == NULL) { \
             return -1; \
         } \
-        if (PyDict_SetItemString(d, #con, value) < 0) { \
+        if (PyModule_AddObject(module, #con, value) < 0 ) { \
             Py_DECREF(value); \
             return -1; \
         } \
-        Py_DECREF(value); \
     } while (0)
 
 static int
 overlapped_exec(PyObject *module)
 {
     /* Ensure WSAStartup() called before initializing function pointers */
-    PyObject *m = PyImport_ImportModule("_socket");
-    if (!m) {
+    PyObject *socket_module = PyImport_ImportModule("_socket");
+    if (!socket_module) {
         return -1;
     }
 
-    Py_DECREF(m);
+    Py_DECREF(socket_module);
 
     if (initialize_function_pointers() < 0)
         return -1;
 
     OverlappedState *st = overlapped_get_state(module);
     st->overlapped_type = (PyTypeObject *)PyType_FromModuleAndSpec(
-        m, &overlapped_type_spec, NULL);
+        module, &overlapped_type_spec, NULL);
     if (st->overlapped_type == NULL) {
         return -1;
     }
@@ -1956,8 +1955,6 @@ overlapped_exec(PyObject *module)
     if (PyModule_AddType(module, st->overlapped_type) < 0) {
         return -1;
     }
-
-    PyObject *d = PyModule_GetDict(module);
 
     WINAPI_CONSTANT(F_DWORD,  ERROR_IO_PENDING);
     WINAPI_CONSTANT(F_DWORD,  ERROR_NETNAME_DELETED);
