@@ -2419,9 +2419,9 @@ To avoid overflow/underflow and to achieve high accuracy giving results
 that are almost always correctly rounded, four techniques are used:
 
 * lossless scaling using a power-of-two scaling factor
-* accurate squaring using Veltkamp-Dekker splitting
-* compensated summation using a variant of the Neumaier algorithm
-* differential correction of the square root
+* accurate squaring using Veltkamp-Dekker splitting [1]
+* compensated summation using a variant of the Neumaier algorithm [2]
+* differential correction of the square root [3]
 
 The usual presentation of the Neumaier summation algorithm has an
 expensive branch depending on which operand has the larger
@@ -2458,7 +2458,7 @@ Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 To minimize loss of information during the accumulation of fractional
 values, each term has a separate accumulator.  This also breaks up
 sequential dependencies in the inner loop so the CPU can maximize
-floating point throughput.  On a 2.6 GHz Haswell, moving from
+floating point throughput. [5]  On a 2.6 GHz Haswell, moving from
 hypot(x,y) to hypot(x,y,z) costs only 5ns.
 
 The square root differential correction is needed because a
@@ -2469,7 +2469,7 @@ The differential correction starts with a value *x* that is
 the difference between the square of *h*, the possibly inaccurately
 rounded square root, and the accurately computed sum of squares.
 The correction is the first order term of the Maclaurin series
-expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2).
+expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2). [4]
 
 Essentially, this differential correction is equivalent to one
 refinement step in Newton's divide-and-average square root
@@ -2479,11 +2479,11 @@ Borges' ALGORITHM 4 and 5.
 
 Without proof for all cases, hypot() cannot claim to be always
 correctly rounded.  However, the accuracy of "h + x / (2.0 * h)" for
-n <= 1000 is at least 100 bits prior to the final rounding.  Also,
-hypot() was tested against a Decimal implementation with prec=300.
+n <= 1000 is at least 100 bits prior to the final rounding step.  [6]
+Also, hypot() was tested against a Decimal implementation with prec=300.
 After 100 million trials no incorrectly rounded examples were found.
 In addition, perfect commutativity (all permutations are equal) was
-verified for 1 billion random inputs with n=5.
+verified for 1 billion random inputs with n=5. [7]
 
 References:
 
@@ -2491,8 +2491,9 @@ References:
 2. Compensated summation:  http://www.ti3.tu-harburg.de/paper/rump/Ru08b.pdf
 3. Square root differential correction:  https://arxiv.org/pdf/1904.09481.pdf
 4. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
-5. https://bugs.python.org/file49435/best_frac.py
-6. https://bugs.python.org/file49448/test_hypot_commutativity.py
+5. https://bugs.python.org/file49439/hypot.png
+6. https://bugs.python.org/file49435/best_frac.py
+7. https://bugs.python.org/file49448/test_hypot_commutativity.py
 
 */
 
