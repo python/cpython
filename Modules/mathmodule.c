@@ -2479,12 +2479,13 @@ This technique is used in Dekker's SQRT2 algorithm and again in
 Borges' ALGORITHM 4 and 5.
 
 Without proof for all cases, hypot() cannot claim to be always
-correctly rounded.  However, the accuracy of "h + x / (2.0 * h)" for
-n <= 1000 is at least 100 bits prior to the final rounding step.  [6]
-Also, hypot() was tested against a Decimal implementation with prec=300.
-After 100 million trials no incorrectly rounded examples were found.
-In addition, perfect commutativity (all permutations are equal) was
-verified for 1 billion random inputs with n=5. [7]
+correctly rounded.  However for n <= 1000, prior to the final addition
+that rounds the overall result, the internal accuracy of "h" together
+with its correction of "x / (2.0 * h)" is at least 100 bits. [6]
+Also, hypot() was tested against a Decimal implementation with
+prec=300.  After 100 million trials, no incorrectly rounded examples
+were found.  In addition, perfect commutativity (all permutations are
+exactly equal) was verified for 1 billion random inputs with n=5. [7]
 
 References:
 
