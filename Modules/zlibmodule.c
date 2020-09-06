@@ -1414,14 +1414,15 @@ zlib_exec(PyObject *mod)
         return -1;
     }
 
-    PyObject *ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
-    if (ZlibError != NULL) {
-        Py_INCREF(ZlibError);
-        if (PyModule_AddObject(mod, "error", ZlibError) < 0) {
-            Py_DECREF(ZlibError);
-            return -1;
-        }
-        state->ZlibError = ZlibError;
+    state->ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
+    if (state->ZlibError == NULL) {
+        return -1;
+    }
+
+    Py_INCREF(state->ZlibError);
+    if (PyModule_AddObject(mod, "error", state->ZlibError) < 0) {
+        Py_DECREF(state->ZlibError);
+        return -1;
     }
 
 #define ZLIB_ADD_INT_MACRO(c)                           \
@@ -1463,19 +1464,23 @@ zlib_exec(PyObject *mod)
     ZLIB_ADD_INT_MACRO(Z_TREES);
 #endif
     PyObject *ver = PyUnicode_FromString(ZLIB_VERSION);
-    if (ver != NULL) {
-        if (PyModule_AddObject(mod, "ZLIB_VERSION", ver) < 0) {
-            Py_DECREF(ver);
-            return -1;
-        }
+    if (ver == NULL) {
+        return -1;
+    }
+
+    if (PyModule_AddObject(mod, "ZLIB_VERSION", ver) < 0) {
+        Py_DECREF(ver);
+        return -1;
     }
 
     ver = PyUnicode_FromString(zlibVersion());
-    if (ver != NULL) {
-        if (PyModule_AddObject(mod, "ZLIB_RUNTIME_VERSION", ver) < 0) {
-            Py_DECREF(ver);
-            return -1;
-        }
+    if (ver == NULL) {
+        return -1;
+    }
+
+    if (PyModule_AddObject(mod, "ZLIB_RUNTIME_VERSION", ver) < 0) {
+        Py_DECREF(ver);
+        return -1;
     }
 
     if (PyModule_AddStringConstant(mod, "__version__", "1.0") < 0) {
