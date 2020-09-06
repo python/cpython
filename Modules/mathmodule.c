@@ -2456,7 +2456,10 @@ Given that csum >= 1.0, we have:
 Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 
 To minimize loss of information during the accumulation of fractional
-values, each term has a separate accumulator.
+values, each term has a separate accumulator.  This also breaks up
+sequential dependencies in the inner loop so the CPU can maximize
+floating point throughput.  On a 2.6 GHz Haswell, moving from
+hypot(x,y) to hypot(x,y,z) costs only 5ns.
 
 The square root differential correction is needed because a
 correctly rounded square root of a correctly rounded sum of
