@@ -74,17 +74,12 @@ opcode_functions[] =  {
     {NULL, NULL, 0, NULL}
 };
 
-static PyModuleDef_Slot opcode_slots[] = {
-    {0, NULL}
-};
-
 static struct PyModuleDef opcodemodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_opcode",
     .m_doc = "Opcode support module.",
     .m_size = 0,
-    .m_methods = opcode_functions,
-    .m_slots = opcode_slots
+    .m_methods = opcode_functions
 };
 
 PyMODINIT_FUNC
