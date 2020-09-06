@@ -544,8 +544,8 @@ class PrettyPrinter:
             else:
                 items = object.items()
             for k, v in items:
-                krepr, kreadable, krecur = self._safe_repr(k, context, maxlevels, level)
-                vrepr, vreadable, vrecur = self._safe_repr(v, context, maxlevels, level)
+                krepr, kreadable, krecur = self.format(k, context, maxlevels, level)
+                vrepr, vreadable, vrecur = self.format(v, context, maxlevels, level)
                 append("%s: %s" % (krepr, vrepr))
                 readable = readable and kreadable and vreadable
                 if krecur or vrecur:
@@ -577,7 +577,7 @@ class PrettyPrinter:
             append = components.append
             level += 1
             for o in object:
-                orepr, oreadable, orecur = self._safe_repr(o, context, maxlevels, level)
+                orepr, oreadable, orecur = self.format(o, context, maxlevels, level)
                 append(orepr)
                 if not oreadable:
                     readable = False

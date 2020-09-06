@@ -466,7 +466,7 @@ AdvancedNamespace(the=0,
         exp1 = "['with space']"
         self.assertEqual(DottedPrettyPrinter().pformat(o1), exp1)
         o2 = ['without.space']
-        exp2 = "['without.space']"  # this is bug bpo-28850
+        exp2 = "[without.space]"
         self.assertEqual(DottedPrettyPrinter().pformat(o2), exp2)
 
     def test_set_reprs(self):
