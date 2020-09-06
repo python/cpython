@@ -1,0 +1,1 @@
+Log detailed attributes of the TarInfo object in `tarfile.addfile()` when debug=3
