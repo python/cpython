@@ -243,7 +243,9 @@ ndarray_dealloc(NDArrayObject *self)
                 ndbuf_pop(self);
         }
     }
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_Del(self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -403,6 +405,7 @@ pack_single(_testbuffer_state *state, char *ptr, PyObject *item, const char *fmt
 
     PyObject *structobj = NULL, *pack_into = NULL, *args = NULL;
     PyObject *format = NULL, *mview = NULL, *zero = NULL;
+    Py_ssize_t i;
 
     format = PyUnicode_FromString(fmt);
     if (format == NULL) {
@@ -446,7 +449,6 @@ pack_single(_testbuffer_state *state, char *ptr, PyObject *item, const char *fmt
     }
     else if ((PyList_Check(item) || PyTuple_Check(item)) &&
              PySequence_Length(item) == nmemb) {
-        Py_ssize_t i;
         for (i = 0; i < nmemb; i++) {
             PyObject *x = PySequence_Fast_GET_ITEM(item, i);
             PyTuple_SET_ITEM(args, 2+i, x);
@@ -465,9 +467,7 @@ pack_single(_testbuffer_state *state, char *ptr, PyObject *item, const char *fmt
         ret = 0;
     }
 
-
 args_out:
-    Py_ssize_t i;
     for (i = 0; i < 2+nmemb; i++)
         Py_XINCREF(PyTuple_GET_ITEM(args, i));
     Py_XDECREF(args);
@@ -2751,7 +2751,9 @@ staticarray_init(PyObject *self, PyObject *args, PyObject *kwds)
 static void
 staticarray_dealloc(StaticArrayObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_Del(self);
+    Py_DECREF(tp);
 }
 
 /* Return a buffer for a PyBUF_FULL_RO request. Flags are not checked,
@@ -2797,6 +2799,30 @@ static struct PyMethodDef _testbuffer_functions[] = {
     {"cmp_contig", cmp_contig, METH_VARARGS, NULL},
     {NULL, NULL}
 };
+
+static int
+_testbuffer_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    _testbuffer_state *state = _testbuffer_get_state(module);
+    Py_VISIT(state->ndarray_type);
+    Py_VISIT(state->staticarray_type);
+    return 0;
+}
+
+static int
+_testbuffer_clear(PyObject *module)
+{
+    _testbuffer_state *state = _testbuffer_get_state(module);
+    Py_CLEAR(state->ndarray_type);
+    Py_CLEAR(state->staticarray_type);
+    return 0;
+}
+
+static void
+_testbuffer_free(void *module)
+{
+    _testbuffer_clear((PyObject *)module);
+}
 
 static int
 _testbuffer_exec(PyObject *mod)
@@ -2882,7 +2908,10 @@ static struct PyModuleDef _testbuffermodule = {
     .m_name = "_testbuffer",
     .m_size = 0,
     .m_methods = _testbuffer_functions,
-    .m_slots = _testbuffer_slots
+    .m_slots = _testbuffer_slots,
+    .m_traverse = _testbuffer_traverse,
+    .m_clear = _testbuffer_clear,
+    .m_free = _testbuffer_free
 };
 
 PyMODINIT_FUNC
