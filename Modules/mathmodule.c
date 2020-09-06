@@ -2477,12 +2477,22 @@ algorithm, effectively doubling the number of accurate bits.
 This technique is used in Dekker's SQRT2 algorithm and again in
 Borges' ALGORITHM 4 and 5.
 
+Without proof for all cases, hypot() cannot claim to be always
+correctly rounded.  However, the accuracy of "h + x / (2.0 * h)" for
+n <= 1000 is at least 100 bits prior to the final rounding.  Also,
+hypot() was tested against a Decimal implementation with prec=300.
+After 100 million trials no incorrectly rounded examples were found.
+In addition, perfect commutativity (all permutations are equal) was
+verified for 1 billion random inputs with n=5.
+
 References:
 
 1. Veltkamp-Dekker splitting: http://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
 2. Compensated summation:  http://www.ti3.tu-harburg.de/paper/rump/Ru08b.pdf
 3. Square root differential correction:  https://arxiv.org/pdf/1904.09481.pdf
 4. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+5. https://bugs.python.org/file49435/best_frac.py
+6. https://bugs.python.org/file49448/test_hypot_commutativity.py
 
 */
 
