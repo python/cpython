@@ -647,7 +647,7 @@ static PyMethodDef PyCurses_methods[] = {
 static int
 _curses_exec(PyObject *m)
 {
-    _curses_panel_state *state = get_curses_panelstate(m);
+    _curses_panelstate *state = get_curses_panelstate(m);
     /* Initialize object type */
     state->PyCursesPanel_Type = PyType_FromModuleAndSpec(
         m, &PyCursesPanel_Type_spec, NULL);
