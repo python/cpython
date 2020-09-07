@@ -32,7 +32,29 @@ PyDoc_STRVAR(_pickle_Pickler_dump__doc__,
 "Write a pickled representation of the given object to the open file.");
 
 #define _PICKLE_PICKLER_DUMP_METHODDEF    \
-    {"dump", (PyCFunction)_pickle_Pickler_dump, METH_O, _pickle_Pickler_dump__doc__},
+    {"dump", (PyCFunction)(void(*)(void))_pickle_Pickler_dump, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _pickle_Pickler_dump__doc__},
+
+static PyObject *
+_pickle_Pickler_dump_impl(PicklerObject *self, PyTypeObject *cls,
+                          PyObject *obj);
+
+static PyObject *
+_pickle_Pickler_dump(PicklerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {"O:dump", _keywords, 0};
+    PyObject *obj;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &obj)) {
+        goto exit;
+    }
+    return_value = _pickle_Pickler_dump_impl(self, cls, obj);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_pickle_Pickler___sizeof____doc__,
 "__sizeof__($self, /)\n"
@@ -213,15 +235,26 @@ PyDoc_STRVAR(_pickle_Unpickler_load__doc__,
 "specified therein.");
 
 #define _PICKLE_UNPICKLER_LOAD_METHODDEF    \
-    {"load", (PyCFunction)_pickle_Unpickler_load, METH_NOARGS, _pickle_Unpickler_load__doc__},
+    {"load", (PyCFunction)(void(*)(void))_pickle_Unpickler_load, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _pickle_Unpickler_load__doc__},
 
 static PyObject *
-_pickle_Unpickler_load_impl(UnpicklerObject *self);
+_pickle_Unpickler_load_impl(UnpicklerObject *self, PyTypeObject *cls);
 
 static PyObject *
-_pickle_Unpickler_load(UnpicklerObject *self, PyObject *Py_UNUSED(ignored))
+_pickle_Unpickler_load(UnpicklerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _pickle_Unpickler_load_impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":load", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = _pickle_Unpickler_load_impl(self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_pickle_Unpickler_find_class__doc__,
@@ -238,26 +271,27 @@ PyDoc_STRVAR(_pickle_Unpickler_find_class__doc__,
 "needed.  Both arguments passed are str objects.");
 
 #define _PICKLE_UNPICKLER_FIND_CLASS_METHODDEF    \
-    {"find_class", (PyCFunction)(void(*)(void))_pickle_Unpickler_find_class, METH_FASTCALL, _pickle_Unpickler_find_class__doc__},
+    {"find_class", (PyCFunction)(void(*)(void))_pickle_Unpickler_find_class, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _pickle_Unpickler_find_class__doc__},
 
 static PyObject *
-_pickle_Unpickler_find_class_impl(UnpicklerObject *self,
+_pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyTypeObject *cls,
                                   PyObject *module_name,
                                   PyObject *global_name);
 
 static PyObject *
-_pickle_Unpickler_find_class(UnpicklerObject *self, PyObject *const *args, Py_ssize_t nargs)
+_pickle_Unpickler_find_class(UnpicklerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", NULL};
+    static _PyArg_Parser _parser = {"OO:find_class", _keywords, 0};
     PyObject *module_name;
     PyObject *global_name;
 
-    if (!_PyArg_CheckPositional("find_class", nargs, 2, 2)) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &module_name, &global_name)) {
         goto exit;
     }
-    module_name = args[0];
-    global_name = args[1];
-    return_value = _pickle_Unpickler_find_class_impl(self, module_name, global_name);
+    return_value = _pickle_Unpickler_find_class_impl(self, cls, module_name, global_name);
 
 exit:
     return return_value;
@@ -836,4 +870,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=324aad69644beda2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e58005bd799a4dae input=a9049054013a1b77]*/
