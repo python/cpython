@@ -18,7 +18,7 @@ static const char PyCursesVersion[] = "2.1";
 
 typedef struct {
     PyObject *PyCursesError;
-    PyObject *PyCursesPanel_Type;
+    PyTypeObject *PyCursesPanel_Type;
 } _curses_panelstate;
 
 static inline _curses_panelstate*
@@ -247,7 +247,7 @@ PyCursesPanel_New(PyObject *module, PANEL *pan, PyCursesWindowObject *wo)
     _curses_panelstate *state = get_curses_panelstate(module);
 
     PyCursesPanelObject *po = PyObject_New(PyCursesPanelObject,
-                      (PyTypeObject *)(state->PyCursesPanel_Type));
+                                           state->PyCursesPanel_Type);
     if (po == NULL) {
         return NULL;
     }
