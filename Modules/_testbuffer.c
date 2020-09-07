@@ -19,6 +19,7 @@ static PyObject *simple_format = NULL;
 #define FIX_FORMAT(fmt) (fmt == NULL ? "B" : fmt)
 
 typedef struct {
+    PyTypeObject *ndarray_type;
     PyTypeObject *staticarray_type;
 } _testbuffer_state;
 
@@ -33,9 +34,6 @@ _testbuffer_get_state(PyObject *module)
 /**************************************************************************/
 /*                             NDArray Object                             */
 /**************************************************************************/
-
-static PyTypeObject NDArray_Type;
-#define NDArray_Check(v) Py_IS_TYPE(v, &NDArray_Type)
 
 #define CHECK_LIST_OR_TUPLE(v) \
     if (!PyList_Check(v) && !PyTuple_Check(v)) { \
@@ -247,7 +245,10 @@ ndarray_dealloc(NDArrayObject *self)
                 ndbuf_pop(self);
         }
     }
+
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_Del(self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -1967,21 +1968,6 @@ error:
     return NULL;
 }
 
-
-static PyMappingMethods ndarray_as_mapping = {
-    NULL,                                 /* mp_length */
-    (binaryfunc)ndarray_subscript,        /* mp_subscript */
-    (objobjargproc)ndarray_ass_subscript  /* mp_ass_subscript */
-};
-
-static PySequenceMethods ndarray_as_sequence = {
-        0,                                /* sq_length */
-        0,                                /* sq_concat */
-        0,                                /* sq_repeat */
-        (ssizeargfunc)ndarray_item,       /* sq_item */
-};
-
-
 /**************************************************************************/
 /*                                 getters                                */
 /**************************************************************************/
@@ -2242,6 +2228,11 @@ static char *infobuf = NULL;
 static PyObject *
 ndarray_memoryview_from_buffer(PyObject *self, PyObject *dummy)
 {
+    _testbuffer_state *state = PyType_GetModuleState(Py_TYPE(self));
+    if (state == NULL) {
+        return NULL;
+    }
+    
     const NDArrayObject *nd = (NDArrayObject *)self;
     const Py_buffer *view = &nd->head->base;
     const ndbuf_t *ndbuf;
@@ -2254,7 +2245,7 @@ ndarray_memoryview_from_buffer(PyObject *self, PyObject *dummy)
 
     if (!ND_IS_CONSUMER(nd))
         ndbuf = nd->head; /* self is ndarray/original exporter */
-    else if (NDArray_Check(view->obj) && !ND_IS_CONSUMER(view->obj))
+    else if (Py_IS_TYPE(view->obj, state->ndarray_type) && !ND_IS_CONSUMER(view->obj))
         /* self is ndarray and consumer from ndarray/original exporter */
         ndbuf = ((NDArrayObject *)view->obj)->head;
     else {
@@ -2575,7 +2566,7 @@ result:
 }
 
 static PyObject *
-is_contiguous(PyObject *self, PyObject *args)
+is_contiguous(PyObject *module, PyObject *args)
 {
     PyObject *obj;
     PyObject *order;
@@ -2592,7 +2583,12 @@ is_contiguous(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (NDArray_Check(obj)) {
+    _testbuffer_state *state = _testbuffer_get_state(module);
+    if (state == NULL) {
+        return NULL;
+    }
+
+    if (Py_IS_TYPE(obj, state->ndarray_type)) {
         /* Skip the buffer protocol to check simple etc. buffers directly. */
         base = &((NDArrayObject *)obj)->head->base;
         ret = PyBuffer_IsContiguous(base, ord) ? Py_True : Py_False;
@@ -2651,45 +2647,27 @@ static PyMethodDef ndarray_methods [] =
     {NULL}
 };
 
-static PyTypeObject NDArray_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "ndarray",                   /* Name of this type */
-    sizeof(NDArrayObject),       /* Basic object size */
-    0,                           /* Item size for varobject */
-    (destructor)ndarray_dealloc, /* tp_dealloc */
-    0,                           /* tp_vectorcall_offset */
-    0,                           /* tp_getattr */
-    0,                           /* tp_setattr */
-    0,                           /* tp_as_async */
-    0,                           /* tp_repr */
-    0,                           /* tp_as_number */
-    &ndarray_as_sequence,        /* tp_as_sequence */
-    &ndarray_as_mapping,         /* tp_as_mapping */
-    (hashfunc)ndarray_hash,      /* tp_hash */
-    0,                           /* tp_call */
-    0,                           /* tp_str */
-    PyObject_GenericGetAttr,     /* tp_getattro */
-    0,                           /* tp_setattro */
-    &ndarray_as_buffer,          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,          /* tp_flags */
-    0,                           /* tp_doc */
-    0,                           /* tp_traverse */
-    0,                           /* tp_clear */
-    0,                           /* tp_richcompare */
-    0,                           /* tp_weaklistoffset */
-    0,                           /* tp_iter */
-    0,                           /* tp_iternext */
-    ndarray_methods,             /* tp_methods */
-    0,                           /* tp_members */
-    ndarray_getset,              /* tp_getset */
-    0,                           /* tp_base */
-    0,                           /* tp_dict */
-    0,                           /* tp_descr_get */
-    0,                           /* tp_descr_set */
-    0,                           /* tp_dictoffset */
-    ndarray_init,                /* tp_init */
-    0,                           /* tp_alloc */
-    ndarray_new,                 /* tp_new */
+static PyType_Slot _testbuffer_ndarray_type_slots[] = {
+    {Py_tp_dealloc, ndarray_dealloc},
+    {Py_tp_hash, ndarray_hash},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_methods, ndarray_methods},
+    {Py_tp_getset, ndarray_getset},
+    {Py_tp_init, ndarray_init},
+    {Py_tp_new, ndarray_new},
+    {Py_sq_item, ndarray_item},
+    {Py_mp_subscript, ndarray_subscript},
+    {Py_mp_ass_subscript, ndarray_ass_subscript},
+    {Py_bf_getbuffer, ndarray_getbuf},
+    {Py_bf_releasebuffer, ndarray_releasebuf},
+    {0,0}
+};
+
+static PyType_Spec ndarray_type_spec = {
+    .name = "ndarray",
+    .basicsize = sizeof(NDArrayObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = _testbuffer_ndarray_type_slots
 };
 
 /**************************************************************************/
@@ -2796,6 +2774,7 @@ static int
 _testbuffer_traverse(PyObject *module, visitproc visit, void *arg)
 {
     _testbuffer_state *state = _testbuffer_get_state(module);
+    Py_VISIT(state->ndarray_type);
     Py_VISIT(state->staticarray_type);
     return 0;
 }
@@ -2804,6 +2783,7 @@ static int
 _testbuffer_clear(PyObject *module)
 {
     _testbuffer_state *state = _testbuffer_get_state(module);
+    Py_CLEAR(state->ndarray_type);
     Py_CLEAR(state->staticarray_type);
     return 0;
 }
@@ -2834,11 +2814,13 @@ PyInit__testbuffer(void)
     if (m == NULL)
         return NULL;
 
-    Py_SET_TYPE(&NDArray_Type, &PyType_Type);
-    Py_INCREF(&NDArray_Type);
-    PyModule_AddObject(m, "ndarray", (PyObject *)&NDArray_Type);
-
     _testbuffer_state *state = _testbuffer_get_state(m);
+    state->ndarray_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        m, &ndarray_type_spec, NULL);
+    if (PyModule_AddType(m, state->ndarray_type) < 0) {
+        return NULL;
+    }
+
     state->staticarray_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &staticarray_type_spec, NULL);
     if (PyModule_AddType(m, state->staticarray_type) < 0) {
