@@ -676,7 +676,7 @@ _curses_exec(PyObject *mod)
 
     /* Make the version available */
     PyObject *v = PyUnicode_FromString(PyCursesVersion);
-    if (v == null) {
+    if (v == NULL) {
         return -1;
     }
 
