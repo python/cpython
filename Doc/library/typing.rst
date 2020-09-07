@@ -818,7 +818,7 @@ These are not used in annotations. They are building blocks for creating generic
 
     Type variables exist primarily for the benefit of static type
     checkers.  They serve as the parameters for generic types as well
-    as for generic function definitions.  See class Generic for more
+    as for generic function definitions.  See :class:`Generic` for more
     information on generic types.  Generic functions work as follows::
 
        def repeat(x: T, n: int) -> Sequence[T]:
