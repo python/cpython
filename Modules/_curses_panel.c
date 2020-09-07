@@ -513,11 +513,10 @@ static PyType_Slot PyCursesPanel_Type_slots[] = {
 };
 
 static PyType_Spec PyCursesPanel_Type_spec = {
-    "_curses_panel.panel",
-    sizeof(PyCursesPanelObject),
-    0,
-    Py_TPFLAGS_DEFAULT,
-    PyCursesPanel_Type_slots
+    .name = "_curses_panel.panel",
+    .basicsize = sizeof(PyCursesPanelObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = PyCursesPanel_Type_slots
 };
 
 /* Wrapper for panel_above(NULL). This function returns the bottom
@@ -649,7 +648,7 @@ _curses_exec(PyObject *m)
 {
     _curses_panelstate *state = get_curses_panelstate(m);
     /* Initialize object type */
-    state->PyCursesPanel_Type = PyType_FromModuleAndSpec(
+    state->PyCursesPanel_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &PyCursesPanel_Type_spec, NULL);
     if (state->PyCursesPanel_Type == NULL) {
         return -1;
