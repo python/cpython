@@ -557,7 +557,6 @@ _curses_panel_bottom_panel_impl(PyObject *module)
 /*[clinic input]
 _curses_panel.new_panel
 
-    cls: defining_class
     win: object(type="PyCursesWindowObject *", subclass_of="&PyCursesWindow_Type")
     /
 
@@ -565,11 +564,10 @@ Return a panel object, associating it with the given window win.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_panel_new_panel_impl(PyObject *module, PyTypeObject *cls,
-                             PyCursesWindowObject *win)
-/*[clinic end generated code: output=367de29657788b50 input=5814b695dc719da1]*/
+_curses_panel_new_panel_impl(PyObject *module, PyCursesWindowObject *win)
+/*[clinic end generated code: output=45e948e0176a9bd2 input=74d4754e0ebe4800]*/
 {
-    _curses_panelstate *state = PyType_GetModuleState(cls);
+    _curses_panelstate *state = get_curses_panelstate(module);
 
     PANEL *pan = new_panel(win->win);
     if (pan == NULL) {

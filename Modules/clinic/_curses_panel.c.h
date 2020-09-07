@@ -342,25 +342,23 @@ PyDoc_STRVAR(_curses_panel_new_panel__doc__,
 "Return a panel object, associating it with the given window win.");
 
 #define _CURSES_PANEL_NEW_PANEL_METHODDEF    \
-    {"new_panel", (PyCFunction)(void(*)(void))_curses_panel_new_panel, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _curses_panel_new_panel__doc__},
+    {"new_panel", (PyCFunction)_curses_panel_new_panel, METH_O, _curses_panel_new_panel__doc__},
 
 static PyObject *
-_curses_panel_new_panel_impl(PyObject *module, PyTypeObject *cls,
-                             PyCursesWindowObject *win);
+_curses_panel_new_panel_impl(PyObject *module, PyCursesWindowObject *win);
 
 static PyObject *
-_curses_panel_new_panel(PyObject *module, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_curses_panel_new_panel(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {"O!:new_panel", _keywords, 0};
     PyCursesWindowObject *win;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &PyCursesWindow_Type, &win)) {
+    if (!PyObject_TypeCheck(arg, &PyCursesWindow_Type)) {
+        _PyArg_BadArgument("new_panel", "argument", (&PyCursesWindow_Type)->tp_name, arg);
         goto exit;
     }
-    return_value = _curses_panel_new_panel_impl(module, cls, win);
+    win = (PyCursesWindowObject *)arg;
+    return_value = _curses_panel_new_panel_impl(module, win);
 
 exit:
     return return_value;
@@ -403,4 +401,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=17020aadebbac145 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3081ef24e5560cb0 input=a9049054013a1b77]*/
