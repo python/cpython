@@ -441,7 +441,7 @@ def isabstract(object):
                 return True
     return False
 
-def _getmembers(object, predicate=None, getter=None):
+def _getmembers(object, predicate, getter):
     """Return all members of an object as (name, value) pairs sorted by name.
     Optionally, only return members that satisfy a given predicate."""
     if isclass(object):
