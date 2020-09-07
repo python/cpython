@@ -1,0 +1,1 @@
+Fix the :mod:`tarfile` module to write only basename of TAR file to GZIP compression header.
