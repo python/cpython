@@ -340,8 +340,6 @@ class LogRecord(object):
                     self.processName = mp.current_process().name
                 except Exception: #pragma: no cover
                     pass
-            if self.processName is None and hasattr(os, 'getpid'):
-                self.processName = f'PID{os.getpid()}'
         if logProcesses and hasattr(os, 'getpid'):
             self.process = os.getpid()
         else:

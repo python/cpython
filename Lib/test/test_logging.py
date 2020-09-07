@@ -4366,7 +4366,6 @@ class LogRecordTest(BaseTest):
         results = {'processName'  : name,
                    'r1.processName': r1.processName,
                    'r2.processName': r2.processName,
-                   'PID' : os.getpid(),
                   }
         if conn:
             conn.send(results)
@@ -4379,7 +4378,7 @@ class LogRecordTest(BaseTest):
 
         results = self._extract_logrecord_process_name()
         self.assertEqual(results['processName'], results['r1.processName'])
-        self.assertEqual(f"PID{results['PID']}", results['r2.processName'])
+        self.assertEqual(None, results['r2.processName'])
 
         import multiprocessing
         parent_conn, child_conn = multiprocessing.Pipe()
@@ -4390,7 +4389,7 @@ class LogRecordTest(BaseTest):
         p.start()
         results = parent_conn.recv()
         self.assertEqual(results['processName'], results['r1.processName'])
-        self.assertEqual(f"PID{results['PID']}", results['r2.processName'])
+        self.assertEqual(None, results['r2.processName'])
         p.join()
 
     def test_optional(self):
