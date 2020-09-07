@@ -1942,8 +1942,9 @@ overlapped_exec(PyObject *module)
 
     Py_DECREF(socket_module);
 
-    if (initialize_function_pointers() < 0)
+    if (initialize_function_pointers() < 0) {
         return -1;
+    }
 
     OverlappedState *st = overlapped_get_state(module);
     st->overlapped_type = (PyTypeObject *)PyType_FromModuleAndSpec(
