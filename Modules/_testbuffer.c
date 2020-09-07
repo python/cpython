@@ -18,6 +18,17 @@ static PyObject *simple_format = NULL;
 #define SIMPLE_FORMAT(fmt) (fmt == NULL || strcmp(fmt, "B") == 0)
 #define FIX_FORMAT(fmt) (fmt == NULL ? "B" : fmt)
 
+typedef struct {
+    PyTypeObject *staticarray_type;
+} _testbuffer_state;
+
+static inline _testbuffer_state*
+_testbuffer_get_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_testbuffer_state *)state;
+}
 
 /**************************************************************************/
 /*                             NDArray Object                             */
@@ -2685,8 +2696,6 @@ static PyTypeObject NDArray_Type = {
 /*                          StaticArray Object                            */
 /**************************************************************************/
 
-static PyTypeObject StaticArray_Type;
-
 typedef struct {
     PyObject_HEAD
     int legacy_mode; /* if true, use the view.obj==NULL hack */
@@ -2712,7 +2721,7 @@ static Py_buffer static_buffer = {
 static PyObject *
 staticarray_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    return (PyObject *)PyObject_New(StaticArrayObject, &StaticArray_Type);
+    return (PyObject *)PyObject_New(StaticArrayObject, type);
 }
 
 static int
@@ -2734,7 +2743,9 @@ staticarray_init(PyObject *self, PyObject *args, PyObject *kwds)
 static void
 staticarray_dealloc(StaticArrayObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_Del(self);
+    Py_DECREF(tp);
 }
 
 /* Return a buffer for a PyBUF_FULL_RO request. Flags are not checked,
@@ -2755,52 +2766,20 @@ staticarray_getbuf(StaticArrayObject *self, Py_buffer *view, int flags)
     return 0;
 }
 
-static PyBufferProcs staticarray_as_buffer = {
-    (getbufferproc)staticarray_getbuf, /* bf_getbuffer */
-    NULL,                              /* bf_releasebuffer */
+static PyType_Slot _testbuffer_staticarray_type_slots[] = {
+    {Py_tp_dealloc, staticarray_dealloc},
+    {Py_tp_init, staticarray_init},
+    {Py_tp_new, staticarray_new},
+    {Py_bf_getbuffer, staticarray_getbuf},
+    {0,0}
 };
 
-static PyTypeObject StaticArray_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "staticarray",                   /* Name of this type */
-    sizeof(StaticArrayObject),       /* Basic object size */
-    0,                               /* Item size for varobject */
-    (destructor)staticarray_dealloc, /* tp_dealloc */
-    0,                               /* tp_vectorcall_offset */
-    0,                               /* tp_getattr */
-    0,                               /* tp_setattr */
-    0,                               /* tp_as_async */
-    0,                               /* tp_repr */
-    0,                               /* tp_as_number */
-    0,                               /* tp_as_sequence */
-    0,                               /* tp_as_mapping */
-    0,                               /* tp_hash */
-    0,                               /* tp_call */
-    0,                               /* tp_str */
-    0,                               /* tp_getattro */
-    0,                               /* tp_setattro */
-    &staticarray_as_buffer,          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,              /* tp_flags */
-    0,                               /* tp_doc */
-    0,                               /* tp_traverse */
-    0,                               /* tp_clear */
-    0,                               /* tp_richcompare */
-    0,                               /* tp_weaklistoffset */
-    0,                               /* tp_iter */
-    0,                               /* tp_iternext */
-    0,                               /* tp_methods */
-    0,                               /* tp_members */
-    0,                               /* tp_getset */
-    0,                               /* tp_base */
-    0,                               /* tp_dict */
-    0,                               /* tp_descr_get */
-    0,                               /* tp_descr_set */
-    0,                               /* tp_dictoffset */
-    staticarray_init,                /* tp_init */
-    0,                               /* tp_alloc */
-    staticarray_new,                 /* tp_new */
-};
-
+static PyType_Spec staticarray_type_spec = {
+    .name = "staticarray",
+    .basicsize = sizeof(StaticArrayObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = _testbuffer_staticarray_type_slots
+ };
 
 static struct PyMethodDef _testbuffer_functions[] = {
     {"slice_indices", slice_indices, METH_VARARGS, NULL},
@@ -2813,16 +2792,36 @@ static struct PyMethodDef _testbuffer_functions[] = {
     {NULL, NULL}
 };
 
+static int
+_testbuffer_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    _testbuffer_state *state = _testbuffer_get_state(module);
+    Py_VISIT(state->staticarray_type);
+    return 0;
+}
+
+static int
+_testbuffer_clear(PyObject *module)
+{
+    _testbuffer_state *state = _testbuffer_get_state(module);
+    Py_CLEAR(state->staticarray_type);
+    return 0;
+}
+
+static void
+_testbuffer_free(void *module)
+{
+    _testbuffer_clear((PyObject *)module);
+}
+
 static struct PyModuleDef _testbuffermodule = {
     PyModuleDef_HEAD_INIT,
-    "_testbuffer",
-    NULL,
-    -1,
-    _testbuffer_functions,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_testbuffer",
+    .m_size = sizeof(_testbuffer_state),
+    .m_methods = _testbuffer_functions,
+    .m_traverse = _testbuffer_traverse,
+    .m_clear = _testbuffer_clear,
+    .m_free = _testbuffer_free
 };
 
 
@@ -2839,9 +2838,12 @@ PyInit__testbuffer(void)
     Py_INCREF(&NDArray_Type);
     PyModule_AddObject(m, "ndarray", (PyObject *)&NDArray_Type);
 
-    Py_SET_TYPE(&StaticArray_Type, &PyType_Type);
-    Py_INCREF(&StaticArray_Type);
-    PyModule_AddObject(m, "staticarray", (PyObject *)&StaticArray_Type);
+    _testbuffer_state *state = _testbuffer_get_state(m);
+    state->staticarray_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        m, &staticarray_type_spec, NULL);
+    if (PyModule_AddType(m, state->staticarray_type) < 0) {
+        return NULL;
+    }
 
     structmodule = PyImport_ImportModule("struct");
     if (structmodule == NULL)
