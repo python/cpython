@@ -1,1 +1,0 @@
-Update :mod:`ensurepip` to install pip 20.2.1 and setuptools 49.2.1.
