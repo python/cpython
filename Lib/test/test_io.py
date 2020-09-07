@@ -922,7 +922,7 @@ class IOTest(unittest.TestCase):
                 self.assertEqual(f.read(), "egg\n")
 
         check_path_succeeds(FakePath(support.TESTFN))
-        check_path_succeeds(FakePath(support.TESTFN.encode('utf-8')))
+        check_path_succeeds(FakePath(os.fsencode(support.TESTFN)))
 
         with self.open(support.TESTFN, "w") as f:
             bad_path = FakePath(f.fileno())
