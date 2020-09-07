@@ -1465,7 +1465,7 @@ config_read_complex_options(PyConfig *config)
         }
     }
 
-    if (config_get_xoption(config, L"noopt")) {
+    if (config_get_env(config, "PYTHONNOOPT") || config_get_xoption(config, L"noopt")) {
         config->optimize = 0;
     }
     else if (config->optimize < 0) {
