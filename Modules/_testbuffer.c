@@ -2906,7 +2906,7 @@ static PyModuleDef_Slot _testbuffer_slots[] = {
 static struct PyModuleDef _testbuffermodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_testbuffer",
-    .m_size = 0,
+    .m_size = sizeof(_testbuffer_state),
     .m_methods = _testbuffer_functions,
     .m_slots = _testbuffer_slots,
     .m_traverse = _testbuffer_traverse,
