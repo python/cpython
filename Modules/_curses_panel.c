@@ -19,20 +19,20 @@ static const char PyCursesVersion[] = "2.1";
 typedef struct {
     PyObject *PyCursesError;
     PyTypeObject *PyCursesPanel_Type;
-} _curses_panelstate;
+} _curses_panel_state;
 
-static inline _curses_panelstate *
-get_curses_panelstate(PyObject *module)
+static inline _curses_panel_state *
+get_curses_panel_state(PyObject *module)
 {
     void *state = PyModule_GetState(module);
     assert(state != NULL);
-    return (_curses_panelstate *)state;
+    return (_curses_panel_state *)state;
 }
 
 static int
 _curses_panel_clear(PyObject *mod)
 {
-    _curses_panelstate *state = get_curses_panelstate(mod);
+    _curses_panel_state *state = get_curses_panel_state(mod);
     Py_CLEAR(state->PyCursesError);
     Py_CLEAR(state->PyCursesPanel_Type);
     return 0;
@@ -42,7 +42,7 @@ static int
 _curses_panel_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(mod));
-    _curses_panelstate *state = get_curses_panelstate(mod);
+    _curses_panel_state *state = get_curses_panel_state(mod);
     Py_VISIT(state->PyCursesError);
     Py_VISIT(state->PyCursesPanel_Type);
     return 0;
@@ -62,7 +62,7 @@ _curses_panel_free(void *mod)
  */
 
 static PyObject *
-PyCursesCheckERR(_curses_panelstate *state, int code, const char *fname)
+PyCursesCheckERR(_curses_panel_state *state, int code, const char *fname)
 {
     if (code != ERR) {
         Py_RETURN_NONE;
@@ -189,7 +189,7 @@ static PyObject *
 _curses_panel_panel_bottom_impl(PyCursesPanelObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=8ec7fbbc08554021 input=6b7d2c0578b5a1c4]*/
 {
-    _curses_panelstate *state = PyType_GetModuleState(cls);
+    _curses_panel_state *state = PyType_GetModuleState(cls);
     return PyCursesCheckERR(state, bottom_panel(self->pan), "bottom");
 }
 
@@ -207,7 +207,7 @@ static PyObject *
 _curses_panel_panel_hide_impl(PyCursesPanelObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=cc6ab7203cdc1450 input=1bfc741f473e6055]*/
 {
-    _curses_panelstate *state = PyType_GetModuleState(cls);
+    _curses_panel_state *state = PyType_GetModuleState(cls);
     return PyCursesCheckERR(state, hide_panel(self->pan), "hide");
 }
 
@@ -223,7 +223,7 @@ static PyObject *
 _curses_panel_panel_show_impl(PyCursesPanelObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=dc3421de375f0409 input=8122e80151cb4379]*/
 {
-    _curses_panelstate *state = PyType_GetModuleState(cls);
+    _curses_panel_state *state = PyType_GetModuleState(cls);
     return PyCursesCheckERR(state, show_panel(self->pan), "show");
 }
 
@@ -239,14 +239,14 @@ static PyObject *
 _curses_panel_panel_top_impl(PyCursesPanelObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=10a072e511e873f7 input=1f372d597dda3379]*/
 {
-    _curses_panelstate *state = PyType_GetModuleState(cls);
+    _curses_panel_state *state = PyType_GetModuleState(cls);
     return PyCursesCheckERR(state, top_panel(self->pan), "top");
 }
 
 /* Allocation and deallocation of Panel Objects */
 
 static PyObject *
-PyCursesPanel_New(_curses_panelstate *state, PANEL *pan,
+PyCursesPanel_New(_curses_panel_state *state, PANEL *pan,
                   PyCursesWindowObject *wo)
 {
     PyCursesPanelObject *po = PyObject_New(PyCursesPanelObject,
@@ -380,7 +380,7 @@ _curses_panel_panel_move_impl(PyCursesPanelObject *self, PyTypeObject *cls,
                               int y, int x)
 /*[clinic end generated code: output=ce546c93e56867da input=60a0e7912ff99849]*/
 {
-    _curses_panelstate *state = PyType_GetModuleState(cls);
+    _curses_panel_state *state = PyType_GetModuleState(cls);
     return PyCursesCheckERR(state, move_panel(self->pan, y, x), "move_panel");
 }
 
@@ -414,7 +414,7 @@ _curses_panel_panel_replace_impl(PyCursesPanelObject *self,
                                  PyCursesWindowObject *win)
 /*[clinic end generated code: output=c71f95c212d58ae7 input=dbec7180ece41ff5]*/
 {
-    _curses_panelstate *state = PyType_GetModuleState(cls);
+    _curses_panel_state *state = PyType_GetModuleState(cls);
 
     PyCursesPanelObject *po = find_po(self->pan);
     if (po == NULL) {
@@ -458,7 +458,7 @@ _curses_panel_panel_set_userptr_impl(PyCursesPanelObject *self,
     }
     Py_XDECREF(oldobj);
 
-    _curses_panelstate *state = PyType_GetModuleState(cls);
+    _curses_panel_state *state = PyType_GetModuleState(cls);
     return PyCursesCheckERR(state, rc, "set_panel_userptr");
 }
 
@@ -475,7 +475,7 @@ _curses_panel_panel_userptr_impl(PyCursesPanelObject *self,
                                  PyTypeObject *cls)
 /*[clinic end generated code: output=eea6e6f39ffc0179 input=f22ca4f115e30a80]*/
 {
-    _curses_panelstate *state = PyType_GetModuleState(cls);
+    _curses_panel_state *state = PyType_GetModuleState(cls);
 
     PyCursesInitialised;
     PyObject *obj = (PyObject *) panel_userptr(self->pan);
@@ -570,7 +570,7 @@ static PyObject *
 _curses_panel_new_panel_impl(PyObject *module, PyCursesWindowObject *win)
 /*[clinic end generated code: output=45e948e0176a9bd2 input=74d4754e0ebe4800]*/
 {
-    _curses_panelstate *state = get_curses_panelstate(module);
+    _curses_panel_state *state = get_curses_panel_state(module);
 
     PANEL *pan = new_panel(win->win);
     if (pan == NULL) {
@@ -645,9 +645,9 @@ static PyMethodDef PyCurses_methods[] = {
 
 /* Initialization function for the module */
 static int
-_curses_exec(PyObject *mod)
+_curses_panel_exec(PyObject *mod)
 {
-    _curses_panelstate *state = get_curses_panelstate(mod);
+    _curses_panel_state *state = get_curses_panel_state(mod);
     /* Initialize object type */
     state->PyCursesPanel_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
         mod, &PyCursesPanel_Type_spec, NULL);
@@ -696,14 +696,14 @@ _curses_exec(PyObject *mod)
 }
 
 static PyModuleDef_Slot _curses_slots[] = {
-    {Py_mod_exec, _curses_exec},
+    {Py_mod_exec, _curses_panel_exec},
     {0, NULL}
 };
 
 static struct PyModuleDef _curses_panelmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_curses_panel",
-    .m_size = sizeof(_curses_panelstate),
+    .m_size = sizeof(_curses_panel_state),
     .m_methods = PyCurses_methods,
     .m_slots = _curses_slots,
     .m_traverse = _curses_panel_traverse,
