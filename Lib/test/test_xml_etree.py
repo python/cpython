@@ -2852,8 +2852,12 @@ class ElementFindTest(unittest.TestCase):
             ['tag'] * 3)
         self.assertEqual(summarize_list(e.findall('.//tag[@class="a"]')),
             ['tag'])
+        self.assertEqual(summarize_list(e.findall('.//tag[@class!="a"]')),
+            ['tag'] * 2)
         self.assertEqual(summarize_list(e.findall('.//tag[@class="b"]')),
             ['tag'] * 2)
+        self.assertEqual(summarize_list(e.findall('.//tag[@class!="b"]')),
+            ['tag'])
         self.assertEqual(summarize_list(e.findall('.//tag[@id]')),
             ['tag'])
         self.assertEqual(summarize_list(e.findall('.//section[tag]')),
@@ -2875,6 +2879,19 @@ class ElementFindTest(unittest.TestCase):
         self.assertEqual(summarize_list(e.findall(".//section[ tag = 'subtext' ]")),
             ['section'])
 
+        # Negations of above tests. They match nothing because the sole section
+        # tag has subtext.
+        self.assertEqual(summarize_list(e.findall(".//section[tag!='subtext']")),
+            [])
+        self.assertEqual(summarize_list(e.findall(".//section[tag !='subtext']")),
+            [])
+        self.assertEqual(summarize_list(e.findall(".//section[tag!= 'subtext']")),
+            [])
+        self.assertEqual(summarize_list(e.findall(".//section[tag != 'subtext']")),
+            [])
+        self.assertEqual(summarize_list(e.findall(".//section[ tag != 'subtext' ]")),
+            [])
+
         self.assertEqual(summarize_list(e.findall(".//tag[.='subtext']")),
                          ['tag'])
         self.assertEqual(summarize_list(e.findall(".//tag[. ='subtext']")),
@@ -2889,6 +2906,24 @@ class ElementFindTest(unittest.TestCase):
                          [])
         self.assertEqual(summarize_list(e.findall(".//tag[.= ' subtext']")),
                          [])
+
+        # Negations of above tests.
+        #   Matches everything but the tag containing subtext
+        self.assertEqual(summarize_list(e.findall(".//tag[.!='subtext']")),
+                         ['tag'] * 3)
+        self.assertEqual(summarize_list(e.findall(".//tag[. !='subtext']")),
+                         ['tag'] * 3)
+        self.assertEqual(summarize_list(e.findall('.//tag[.!= "subtext"]')),
+                         ['tag'] * 3)
+        self.assertEqual(summarize_list(e.findall('.//tag[ . != "subtext" ]')),
+                         ['tag'] * 3)
+        self.assertEqual(summarize_list(e.findall(".//tag[. != 'subtext']")),
+                         ['tag'] * 3)
+        # Matches all tags.
+        self.assertEqual(summarize_list(e.findall(".//tag[. != 'subtext ']")),
+                         ['tag'] * 4)
+        self.assertEqual(summarize_list(e.findall(".//tag[.!= ' subtext']")),
+                         ['tag'] * 4)
 
         # duplicate section => 2x tag matches
         e[1] = e[2]
