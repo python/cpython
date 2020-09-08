@@ -60,7 +60,7 @@ typedef struct
 } pysqlite_Cache;
 
 extern PyTypeObject pysqlite_NodeType;
-extern PyTypeObject pysqlite_CacheType;
+extern PyTypeObject *pysqlite_CacheType;
 
 int pysqlite_node_init(pysqlite_Node* self, PyObject* args, PyObject* kwargs);
 void pysqlite_node_dealloc(pysqlite_Node* self);
