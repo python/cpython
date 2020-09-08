@@ -263,7 +263,7 @@ def _tp_cache(func):
 
 
 def _eval_type(t, globalns, localns):
-    """Evaluate all forward reverences in the given type t.
+    """Evaluate all forward references in the given type t.
     For use of globalns and localns see the docstring for get_type_hints().
     """
     if isinstance(t, ForwardRef):
