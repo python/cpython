@@ -151,8 +151,6 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_SHARED_CACHE)
-
 PyDoc_STRVAR(pysqlite_enable_shared_cache__doc__,
 "enable_shared_cache($module, enable, /)\n"
 "--\n"
@@ -182,8 +180,6 @@ pysqlite_enable_shared_cache(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-
-#endif /* defined(HAVE_SHARED_CACHE) */
 
 PyDoc_STRVAR(pysqlite_register_adapter__doc__,
 "register_adapter($module, type, caster, /)\n"
@@ -321,8 +317,4 @@ skip_optional:
 exit:
     return return_value;
 }
-
-#ifndef PYSQLITE_ENABLE_SHARED_CACHE_METHODDEF
-    #define PYSQLITE_ENABLE_SHARED_CACHE_METHODDEF
-#endif /* !defined(PYSQLITE_ENABLE_SHARED_CACHE_METHODDEF) */
-/*[clinic end generated code: output=5e0bb0b26046264e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=79068baf73b272f8 input=a9049054013a1b77]*/

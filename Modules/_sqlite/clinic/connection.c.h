@@ -369,7 +369,7 @@ PyDoc_STRVAR(pysqlite_connection_set_trace_callback__doc__,
 #define PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF    \
     {"set_trace_callback", (PyCFunction)pysqlite_connection_set_trace_callback, METH_O, pysqlite_connection_set_trace_callback__doc__},
 
-#if defined(HAVE_LOAD_EXTENSION)
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
 
 PyDoc_STRVAR(pysqlite_connection_enable_load_extension__doc__,
 "enable_load_extension($self, enable, /)\n"
@@ -400,9 +400,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_LOAD_EXTENSION) */
+#endif /* !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
-#if defined(HAVE_LOAD_EXTENSION)
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
 
 PyDoc_STRVAR(pysqlite_connection_load_extension__doc__,
 "load_extension($self, name, /)\n"
@@ -442,7 +442,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_LOAD_EXTENSION) */
+#endif /* !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 PyDoc_STRVAR(pysqlite_connection_execute__doc__,
 "execute($self, sql, /, parameters=<unrepresentable>)\n"
@@ -575,8 +575,6 @@ pysqlite_connection_iterdump(pysqlite_Connection *self, PyObject *Py_UNUSED(igno
     return pysqlite_connection_iterdump_impl(self);
 }
 
-#if defined(HAVE_BACKUP_API)
-
 PyDoc_STRVAR(pysqlite_connection_backup__doc__,
 "backup($self, /, target=<unrepresentable>, *, pages=-1, progress=None,\n"
 "       name=\'main\', sleep=0.25)\n"
@@ -676,8 +674,6 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-
-#endif /* defined(HAVE_BACKUP_API) */
 
 PyDoc_STRVAR(pysqlite_connection_create_collation__doc__,
 "create_collation($self, name, callback, /)\n"
@@ -779,8 +775,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-
-#ifndef PYSQLITE_CONNECTION_BACKUP_METHODDEF
-    #define PYSQLITE_CONNECTION_BACKUP_METHODDEF
-#endif /* !defined(PYSQLITE_CONNECTION_BACKUP_METHODDEF) */
-/*[clinic end generated code: output=d1fb1f48710a3cd4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=578e5f247210bbdf input=a9049054013a1b77]*/
