@@ -82,7 +82,7 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
     }
 
     if (factory == NULL) {
-        factory = (PyObject*)&pysqlite_ConnectionType;
+        factory = (PyObject*)pysqlite_ConnectionType;
     }
 
     if (PySys_Audit("sqlite3.connect", "O", database) < 0) {

@@ -237,6 +237,7 @@ void pysqlite_connection_dealloc(pysqlite_Connection* self)
     Py_XDECREF(self->statements);
     Py_XDECREF(self->cursors);
     Py_TYPE(self)->tp_free((PyObject*)self);
+    //Py_DECREF(pysqlite_ConnectionType); FIXME
 }
 
 /*
@@ -1494,7 +1495,7 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
     static char *keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|$iOsO:backup", keywords,
-                                     &pysqlite_ConnectionType, &target,
+                                     pysqlite_ConnectionType, &target,
                                      &pages, &progress, &name, &sleep_obj)) {
         return NULL;
     }
@@ -1831,50 +1832,31 @@ static struct PyMemberDef connection_members[] =
     {NULL}
 };
 
-PyTypeObject pysqlite_ConnectionType = {
-        PyVarObject_HEAD_INIT(NULL, 0)
-        MODULE_NAME ".Connection",                      /* tp_name */
-        sizeof(pysqlite_Connection),                    /* tp_basicsize */
-        0,                                              /* tp_itemsize */
-        (destructor)pysqlite_connection_dealloc,        /* tp_dealloc */
-        0,                                              /* tp_vectorcall_offset */
-        0,                                              /* tp_getattr */
-        0,                                              /* tp_setattr */
-        0,                                              /* tp_as_async */
-        0,                                              /* tp_repr */
-        0,                                              /* tp_as_number */
-        0,                                              /* tp_as_sequence */
-        0,                                              /* tp_as_mapping */
-        0,                                              /* tp_hash */
-        (ternaryfunc)pysqlite_connection_call,          /* tp_call */
-        0,                                              /* tp_str */
-        0,                                              /* tp_getattro */
-        0,                                              /* tp_setattro */
-        0,                                              /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE,         /* tp_flags */
-        connection_doc,                                 /* tp_doc */
-        0,                                              /* tp_traverse */
-        0,                                              /* tp_clear */
-        0,                                              /* tp_richcompare */
-        0,                                              /* tp_weaklistoffset */
-        0,                                              /* tp_iter */
-        0,                                              /* tp_iternext */
-        connection_methods,                             /* tp_methods */
-        connection_members,                             /* tp_members */
-        connection_getset,                              /* tp_getset */
-        0,                                              /* tp_base */
-        0,                                              /* tp_dict */
-        0,                                              /* tp_descr_get */
-        0,                                              /* tp_descr_set */
-        0,                                              /* tp_dictoffset */
-        (initproc)pysqlite_connection_init,             /* tp_init */
-        0,                                              /* tp_alloc */
-        0,                                              /* tp_new */
-        0                                               /* tp_free */
+static PyType_Slot pysqlite_ConnectionType_slots[] = {
+    {Py_tp_dealloc, pysqlite_connection_dealloc},
+    {Py_tp_doc, (void *)connection_doc},
+    {Py_tp_methods, connection_methods},
+    {Py_tp_members, connection_members},
+    {Py_tp_getset, connection_getset},
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_init, pysqlite_connection_init},
+    {Py_tp_call, pysqlite_connection_call},
+    {0, NULL},
 };
+
+static PyType_Spec pysqlite_ConnectionType_spec = {
+    .name = MODULE_NAME ".Connection",
+    .basicsize = sizeof(pysqlite_Connection),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HEAPTYPE,
+    .slots = pysqlite_ConnectionType_slots,
+};
+PyTypeObject *pysqlite_ConnectionType = NULL;
 
 extern int pysqlite_connection_setup_types(void)
 {
-    pysqlite_ConnectionType.tp_new = PyType_GenericNew;
-    return PyType_Ready(&pysqlite_ConnectionType);
+    pysqlite_ConnectionType = (PyTypeObject *)PyType_FromSpec(&pysqlite_ConnectionType_spec);
+    if (pysqlite_ConnectionType == NULL) {
+        return -1;
+    }
+    return 0;
 }

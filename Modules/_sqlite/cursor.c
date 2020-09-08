@@ -33,7 +33,7 @@ static int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject*
 {
     pysqlite_Connection* connection;
 
-    if (!PyArg_ParseTuple(args, "O!", &pysqlite_ConnectionType, &connection))
+    if (!PyArg_ParseTuple(args, "O!", pysqlite_ConnectionType, &connection))
     {
         return -1;
     }
