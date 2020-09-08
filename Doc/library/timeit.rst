@@ -214,7 +214,7 @@ Where the following options are understood:
 
 .. cmdoption:: -n N, --number=N
 
-   how many times to execute 'statement'
+   how many times to execute 'statement' (default 100000)
 
 .. cmdoption:: -r N, --repeat=N
 
@@ -234,6 +234,7 @@ Where the following options are understood:
 .. cmdoption:: -u, --unit=U
 
     specify a time unit for timer output; can select nsec, usec, msec, or sec
+    (default usec)
 
    .. versionadded:: 3.5
 
