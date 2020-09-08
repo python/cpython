@@ -1,0 +1,312 @@
+.. bpo: 41654
+.. date: 2020-08-30-20-38-33
+.. nonce: HtnhAM
+.. release date: 2020-09-07
+.. section: Core and Builtins
+
+Fix a crash that occurred when destroying subclasses of
+:class:`MemoryError`. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 41533
+.. date: 2020-08-12-20-29-57
+.. nonce: 4pcVAc
+.. section: Core and Builtins
+
+Free the stack allocated in ``va_build_stack`` if ``do_mkstack`` fails and
+the stack is not a ``small_stack``.
+
+..
+
+.. bpo: 38156
+.. date: 2020-07-20-17-01-17
+.. nonce: ptcdRy
+.. section: Core and Builtins
+
+Handle interrupts that come after EOF correctly in ``PyOS_StdioReadline``.
+
+..
+
+.. bpo: 41696
+.. date: 2020-09-03-01-35-32
+.. nonce: zkYGre
+.. section: Library
+
+Fix handling of debug mode in :func:`asyncio.run`. This allows setting
+``PYTHONASYNCIODEBUG`` or ``-X dev`` to enable asyncio debug mode when using
+:func:`asyncio.run`.
+
+..
+
+.. bpo: 39010
+.. date: 2020-08-30-10-24-26
+.. nonce: _mzXJW
+.. section: Library
+
+Restarting a ``ProactorEventLoop`` on Windows no longer logs spurious
+``ConnectionResetErrors``.
+
+..
+
+.. bpo: 41609
+.. date: 2020-08-21-15-51-15
+.. nonce: JmiUKG
+.. section: Library
+
+The pdb whatis command correctly reports instance methods as 'Method' rather
+than 'Function'.
+
+..
+
+.. bpo: 32751
+.. date: 2020-08-15-15-50-12
+.. nonce: 85je5X
+.. section: Library
+
+When cancelling the task due to a timeout, :meth:`asyncio.wait_for` will now
+wait until the cancellation is complete also in the case when *timeout* is
+<= 0, like it does with positive timeouts.
+
+..
+
+.. bpo: 37658
+.. date: 2020-08-15-15-21-40
+.. nonce: f9nivB
+.. section: Library
+
+:meth:`asyncio.wait_for` now properly handles races between cancellation of
+itself and the completion of the wrapped awaitable.
+
+..
+
+.. bpo: 40782
+.. date: 2020-08-13-08-07-25
+.. nonce: aGZqmB
+.. section: Library
+
+Change the method asyncio.AbstractEventLoop.run_in_executor to not be a
+coroutine.
+
+..
+
+.. bpo: 41520
+.. date: 2020-08-12-13-25-16
+.. nonce: BEUWa4
+.. section: Library
+
+Fix :mod:`codeop` regression that prevented turning compile warnings into
+errors.
+
+..
+
+.. bpo: 41503
+.. date: 2020-08-07-15-18-16
+.. nonce: IYftcu
+.. section: Library
+
+Fixed a race between setTarget and flush in logging.handlers.MemoryHandler.
+
+..
+
+.. bpo: 41497
+.. date: 2020-08-07-06-06-29
+.. nonce: aBtsWz
+.. section: Library
+
+Fix potential UnicodeDecodeError in dis module.
+
+..
+
+.. bpo: 41490
+.. date: 2020-08-05-23-16-39
+.. nonce: 6z47A_
+.. section: Library
+
+Update :mod:`ensurepip` to install pip 20.2.1 and setuptools 49.2.1.
+
+..
+
+.. bpo: 41467
+.. date: 2020-08-04-00-20-30
+.. nonce: Z8DgTL
+.. section: Library
+
+On Windows, fix asyncio ``recv_into()`` return value when the socket/pipe is
+closed (:exc:`BrokenPipeError`): return ``0`` rather than an empty byte
+string (``b''``).
+
+..
+
+.. bpo: 41425
+.. date: 2020-08-03-01-59-48
+.. nonce: KJo6zF
+.. section: Library
+
+Make tkinter doc example runnable.
+
+..
+
+.. bpo: 41384
+.. date: 2020-07-26-21-18-43
+.. nonce: MlzIgV
+.. section: Library
+
+Raise TclError instead of TypeError when an unknown option is passed to
+tkinter.OptionMenu.
+
+..
+
+.. bpo: 38731
+.. date: 2020-07-25-23-18-51
+.. nonce: Am4wp2
+.. section: Library
+
+Fix :exc:`NameError` in command-line interface of :mod:`py_compile`.
+
+..
+
+.. bpo: 41364
+.. date: 2020-07-21-21-45-55
+.. nonce: 5O-k7A
+.. section: Library
+
+Reduce import overhead of :mod:`uuid`.
+
+..
+
+.. bpo: 41344
+.. date: 2020-07-20-13-27-48
+.. nonce: iKipNd
+.. section: Library
+
+Prevent creating :class:`shared_memory.SharedMemory` objects with
+:code:`size=0`.
+
+..
+
+.. bpo: 40726
+.. date: 2020-05-22-12-45-58
+.. nonce: 7oBdMw
+.. section: Library
+
+Handle cases where the ``end_lineno`` is ``None`` on
+:func:`ast.increment_lineno`.
+
+..
+
+.. bpo: 31122
+.. date: 2020-03-11-07-44-06
+.. nonce: zIQ80l
+.. section: Library
+
+ssl.wrap_socket() now raises ssl.SSLEOFError rather than OSError when peer
+closes connection during TLS negotiation
+
+..
+
+.. bpo: 33660
+.. date: 2018-06-12-23-30-41
+.. nonce: AdDn5Z
+.. section: Library
+
+Fix pathlib.PosixPath to resolve a relative path located on the root
+directory properly.
+
+..
+
+.. bpo: 41624
+.. date: 2020-08-25-15-11-23
+.. nonce: ddjJlN
+.. section: Documentation
+
+Fix the signature of :class:`typing.Coroutine`.
+
+..
+
+.. bpo: 40204
+.. date: 2020-08-12-18-35-40
+.. nonce: C8A_pe
+.. section: Documentation
+
+Enable Sphinx 3.2 ``c_allow_pre_v3`` option and disable
+``c_warn_on_allowed_pre_v3`` option to make the documentation compatible
+with Sphinx 2 and Sphinx 3.
+
+..
+
+.. bpo: 41045
+.. date: 2020-07-27-20-46-17
+.. nonce: GFF6Ul
+.. section: Documentation
+
+Add documentation for debug feature of f-strings.
+
+..
+
+.. bpo: 41314
+.. date: 2020-07-25-14-20-00
+.. nonce: yrjko0
+.. section: Documentation
+
+Changed the release when ``from __future__ import annotations`` becomes the
+default from ``4.0`` to ``3.10`` (following a change in PEP 563).
+
+..
+
+.. bpo: 39883
+.. date: 2020-03-07-03-53-39
+.. nonce: 1tnb4-
+.. section: Documentation
+
+Make code, examples, and recipes in the Python documentation be licensed
+under the more permissive BSD0 license in addition to the existing Python
+2.0 license.
+
+..
+
+.. bpo: 41492
+.. date: 2020-08-06-16-59-10
+.. nonce: 2FQ9cM
+.. section: Windows
+
+Fixes the description that appears in UAC prompts.
+
+..
+
+.. bpo: 40741
+.. date: 2020-07-20-23-26-26
+.. nonce: C9sc_d
+.. section: Windows
+
+Update Windows release to include SQLite 3.32.3.
+
+..
+
+.. bpo: 41468
+.. date: 2020-08-09-13-42-55
+.. nonce: zkP0_Y
+.. section: IDLE
+
+Improve IDLE run crash error message (which users should never see).
+
+..
+
+.. bpo: 41373
+.. date: 2020-07-24-17-49-58
+.. nonce: YQIPu_
+.. section: IDLE
+
+Save files loaded with no line ending, as when blank, or different line
+endings, by setting its line ending to the system default. Fix regression in
+3.8.4 and 3.9.0b4.
+
+..
+
+.. bpo: 41524
+.. date: 2020-08-12-17-09-06
+.. nonce: u6Xfr2
+.. section: C API
+
+Fix bug in PyOS_mystrnicmp and PyOS_mystricmp that incremented pointers
+beyond the end of a string.
