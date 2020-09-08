@@ -545,7 +545,7 @@ def get_config_vars(*args):
             # sys.abiflags may not be defined on all platforms.
             _CONFIG_VARS['abiflags'] = ''
         try:
-            _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
+            _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '_')
         except AttributeError:
             _CONFIG_VARS['py_version_nodot_plat'] = ''
 
