@@ -4381,9 +4381,9 @@ class LogRecordTest(BaseTest):
         # logMultiprocessing is True by default
         self.assertEqual(logging.logMultiprocessing, True)
 
-        # logMultiprocessing == True:
         LOG_MULTI_PROCESSING = True
-        # In the main process, processName is always 'MainProcess'
+        # When logMultiprocessing == True:
+        # In the main process processName = 'MainProcess'
         r = logging.makeLogRecord({})
         self.assertEqual(r.processName, 'MainProcess')
 
@@ -4409,7 +4409,7 @@ class LogRecordTest(BaseTest):
 
 
         LOG_MULTI_PROCESSING = False
-        # When logMultiprocessing is set to False, processName is always None
+        # When logMultiprocessing == False, processName is always None
         prev_logMultiprocessing = logging.logMultiprocessing
         logging.logMultiprocessing = LOG_MULTI_PROCESSING
         try:
