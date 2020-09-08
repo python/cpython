@@ -328,8 +328,10 @@ class LogRecord(object):
         else: # pragma: no cover
             self.thread = None
             self.threadName = None
-        self.processName = None
-        if logMultiprocessing:
+        if not logMultiprocessing: # pragma: no cover
+            self.processName = None
+        else:
+            self.processName = 'MainProcess'
             mp = sys.modules.get('multiprocessing')
             if mp is not None:
                 # Errors may occur if multiprocessing has not finished loading
