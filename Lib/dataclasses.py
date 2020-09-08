@@ -7,7 +7,7 @@ import keyword
 import builtins
 import functools
 import _thread
-from types import GenericAlias
+from types import FunctionType, GenericAlias
 
 
 __all__ = ['dataclass',
@@ -753,6 +753,8 @@ def _get_field(cls, a_name, a_type):
 def _set_new_attribute(cls, name, value):
     # Never overwrites an existing attribute.  Returns True if the
     # attribute already exists.
+    if isinstance(value, FunctionType):
+        value.__qualname__ = f"{cls.__qualname__}.{value.__name__}"
     if name in cls.__dict__:
         return True
     setattr(cls, name, value)

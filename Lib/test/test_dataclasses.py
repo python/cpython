@@ -1934,6 +1934,18 @@ class TestCase(unittest.TestCase):
                     self.assertEqual(new_sample.x, another_new_sample.x)
                     self.assertEqual(sample.y, another_new_sample.y)
 
+    def test_dataclasses_qualnames(self):
+        @dataclass
+        class A:
+            x: int
+            y: int
+
+        self.assertEqual(A.__init__.__name__, "__init__")
+        self.assertEqual(A.__init__.__qualname__, "TestCase.test_dataclasses_qualnames.<locals>.A.__init__")
+
+        with self.assertRaisesRegex(TypeError, r"A.__init__\(\) missing"):
+            A()
+
 
 class TestFieldNoAnnotation(unittest.TestCase):
     def test_field_without_annotation(self):

@@ -1,0 +1,2 @@
+Ensure all methods from a :func:`dataclasses.dataclass` uses the
+``__qualname__`` of the class they belong. Patch by Batuhan Taskaya.
