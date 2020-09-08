@@ -51,6 +51,19 @@ typedef struct {
 
 #include "clinic/sha256module.c.h"
 
+typedef struct {
+    PyTypeObject* sha224_type;
+    PyTypeObject* sha256_type;
+} _sha256_state;
+
+static inline _sha256_state*
+_sha256_get_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_sha256_state *)state;
+}
+
 /* When run on a little-endian CPU we need to perform byte reversal on an
    array of longwords. */
 
@@ -365,20 +378,17 @@ sha_final(unsigned char digest[SHA_DIGESTSIZE], SHAobject *sha_info)
  * ------------------------------------------------------------------------
  */
 
-static PyTypeObject SHA224type;
-static PyTypeObject SHA256type;
-
 
 static SHAobject *
-newSHA224object(void)
+newSHA224object(_sha256_state *state)
 {
-    return (SHAobject *)PyObject_New(SHAobject, &SHA224type);
+    return (SHAobject *)PyObject_New(SHAobject, state->sha224_type);
 }
 
 static SHAobject *
-newSHA256object(void)
+newSHA256object(_sha256_state *state)
 {
-    return (SHAobject *)PyObject_New(SHAobject, &SHA256type);
+    return (SHAobject *)PyObject_New(SHAobject, state->sha256_type);
 }
 
 /* Internal methods for a hash object */
@@ -386,7 +396,9 @@ newSHA256object(void)
 static void
 SHA_dealloc(PyObject *ptr)
 {
+    PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_Del(ptr);
+    Py_DECREF(tp);
 }
 
 
@@ -395,21 +407,25 @@ SHA_dealloc(PyObject *ptr)
 /*[clinic input]
 SHA256Type.copy
 
+    cls:defining_class
+
 Return a copy of the hash object.
 [clinic start generated code]*/
 
 static PyObject *
-SHA256Type_copy_impl(SHAobject *self)
-/*[clinic end generated code: output=1a8bbd66a0c9c168 input=f58840a618d4f2a7]*/
+SHA256Type_copy_impl(SHAobject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=9273f92c382be12f input=3137146fcb88e212]*/
 {
     SHAobject *newobj;
-
-    if (Py_IS_TYPE(self, &SHA256type)) {
-        if ( (newobj = newSHA256object())==NULL)
+    _sha256_state *state = PyType_GetModuleState(cls);
+    if (Py_IS_TYPE(self, state->sha256_type)) {
+        if ( (newobj = newSHA256object(state)) == NULL) {
             return NULL;
+        }
     } else {
-        if ( (newobj = newSHA224object())==NULL)
+        if ( (newobj = newSHA224object(state))==NULL) {
             return NULL;
+        }
     }
 
     SHAcopy(self, newobj);
@@ -517,74 +533,27 @@ static PyMemberDef SHA_members[] = {
     {NULL}  /* Sentinel */
 };
 
-static PyTypeObject SHA224type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_sha256.sha224",   /*tp_name*/
-    sizeof(SHAobject),  /*tp_basicsize*/
-    0,                  /*tp_itemsize*/
-    /* methods */
-    SHA_dealloc,        /*tp_dealloc*/
-    0,                  /*tp_vectorcall_offset*/
-    0,                  /*tp_getattr*/
-    0,                  /*tp_setattr*/
-    0,                  /*tp_as_async*/
-    0,                  /*tp_repr*/
-    0,                  /*tp_as_number*/
-    0,                  /*tp_as_sequence*/
-    0,                  /*tp_as_mapping*/
-    0,                  /*tp_hash*/
-    0,                  /*tp_call*/
-    0,                  /*tp_str*/
-    0,                  /*tp_getattro*/
-    0,                  /*tp_setattro*/
-    0,                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT, /*tp_flags*/
-    0,                  /*tp_doc*/
-    0,                  /*tp_traverse*/
-    0,                  /*tp_clear*/
-    0,                  /*tp_richcompare*/
-    0,                  /*tp_weaklistoffset*/
-    0,                  /*tp_iter*/
-    0,                  /*tp_iternext*/
-    SHA_methods,        /* tp_methods */
-    SHA_members,        /* tp_members */
-    SHA_getseters,      /* tp_getset */
+static PyType_Slot sha256_types_slots[] = {
+    {Py_tp_dealloc, SHA_dealloc},
+    {Py_tp_methods, SHA_methods},
+    {Py_tp_members, SHA_members},
+    {Py_tp_getset, SHA_getseters},
+    {0,0}
 };
 
-static PyTypeObject SHA256type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_sha256.sha256",   /*tp_name*/
-    sizeof(SHAobject),  /*tp_basicsize*/
-    0,                  /*tp_itemsize*/
-    /* methods */
-    SHA_dealloc,        /*tp_dealloc*/
-    0,                  /*tp_vectorcall_offset*/
-    0,                  /*tp_getattr*/
-    0,                  /*tp_setattr*/
-    0,                  /*tp_as_async*/
-    0,                  /*tp_repr*/
-    0,                  /*tp_as_number*/
-    0,                  /*tp_as_sequence*/
-    0,                  /*tp_as_mapping*/
-    0,                  /*tp_hash*/
-    0,                  /*tp_call*/
-    0,                  /*tp_str*/
-    0,                  /*tp_getattro*/
-    0,                  /*tp_setattro*/
-    0,                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT, /*tp_flags*/
-    0,                  /*tp_doc*/
-    0,                  /*tp_traverse*/
-    0,                  /*tp_clear*/
-    0,                  /*tp_richcompare*/
-    0,                  /*tp_weaklistoffset*/
-    0,                  /*tp_iter*/
-    0,                  /*tp_iternext*/
-    SHA_methods,        /* tp_methods */
-    SHA_members,        /* tp_members */
-    SHA_getseters,      /* tp_getset */
+static PyType_Spec sha224_type_spec = {
+    .name = "_sha256.sha224",
+    .basicsize = sizeof(SHAobject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = sha256_types_slots
 };
 
+static PyType_Spec sha256_type_spec = {
+    .name = "_sha256.sha256",
+    .basicsize = sizeof(SHAobject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = sha256_types_slots
+};
 
 /* The single module-level function: new() */
 
@@ -602,15 +571,19 @@ static PyObject *
 _sha256_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
 /*[clinic end generated code: output=a1de327e8e1185cf input=9be86301aeb14ea5]*/
 {
-    SHAobject *new;
     Py_buffer buf;
 
-    if (string)
+    if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
+    }
 
-    if ((new = newSHA256object()) == NULL) {
-        if (string)
+    _sha256_state *state = PyModule_GetState(module);
+
+    SHAobject *new;
+    if ((new = newSHA256object(state)) == NULL) {
+        if (string) {
             PyBuffer_Release(&buf);
+        }
         return NULL;
     }
 
@@ -618,8 +591,9 @@ _sha256_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
 
     if (PyErr_Occurred()) {
         Py_DECREF(new);
-        if (string)
+        if (string) {
             PyBuffer_Release(&buf);
+        }
         return NULL;
     }
     if (string) {
@@ -644,15 +618,17 @@ static PyObject *
 _sha256_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
 /*[clinic end generated code: output=08be6b36569bc69c input=9fcfb46e460860ac]*/
 {
-    SHAobject *new;
     Py_buffer buf;
-
-    if (string)
+    if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
+    }
 
-    if ((new = newSHA224object()) == NULL) {
-        if (string)
+    _sha256_state *state = PyModule_GetState(module);
+    SHAobject *new;
+    if ((new = newSHA224object(state)) == NULL) {
+        if (string) {
             PyBuffer_Release(&buf);
+        }
         return NULL;
     }
 
@@ -660,8 +636,9 @@ _sha256_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
 
     if (PyErr_Occurred()) {
         Py_DECREF(new);
-        if (string)
+        if (string) {
             PyBuffer_Release(&buf);
+        }
         return NULL;
     }
     if (string) {
@@ -681,25 +658,56 @@ static struct PyMethodDef SHA_functions[] = {
     {NULL,      NULL}            /* Sentinel */
 };
 
+static int
+_sha256_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    _sha256_state *state = _sha256_get_state(module);
+    Py_VISIT(state->sha224_type);
+    Py_VISIT(state->sha256_type);
+    return 0;
+}
+
+static int
+_sha256_clear(PyObject *module)
+{
+    _sha256_state *state = _sha256_get_state(module);
+    Py_CLEAR(state->sha224_type);
+    Py_CLEAR(state->sha256_type);
+    return 0;
+}
+
+static void
+_sha256_free(void *module)
+{
+    _sha256_clear((PyObject *)module);
+}
+
 static int sha256_exec(PyObject *module)
 {
-    Py_SET_TYPE(&SHA224type, &PyType_Type);
-    if (PyType_Ready(&SHA224type) < 0) {
-        return -1;
-    }
-    Py_SET_TYPE(&SHA256type, &PyType_Type);
-    if (PyType_Ready(&SHA256type) < 0) {
+    _sha256_state *state = _sha256_get_state(module);
+
+    state->sha224_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        module, &sha224_type_spec, NULL);
+
+    if (state->sha224_type == NULL) {
         return -1;
     }
 
-    Py_INCREF((PyObject *)&SHA224type);
-    if (PyModule_AddObject(module, "SHA224Type", (PyObject *)&SHA224type) < 0) {
-        Py_DECREF((PyObject *)&SHA224type);
+    state->sha256_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        module, &sha256_type_spec, NULL);
+
+    if (state->sha256_type == NULL) {
         return -1;
     }
-    Py_INCREF((PyObject *)&SHA256type);
-    if (PyModule_AddObject(module, "SHA256Type", (PyObject *)&SHA256type) < 0) {
-        Py_DECREF((PyObject *)&SHA256type);
+
+    Py_INCREF((PyObject *)state->sha224_type);
+    if (PyModule_AddObject(module, "SHA224Type", (PyObject *)state->sha224_type) < 0) {
+        Py_DECREF((PyObject *)state->sha224_type);
+        return -1;
+    }
+    Py_INCREF((PyObject *)state->sha256_type);
+    if (PyModule_AddObject(module, "SHA256Type", (PyObject *)state->sha256_type) < 0) {
+        Py_DECREF((PyObject *)state->sha256_type);
         return -1;
     }
     return 0;
@@ -713,8 +721,12 @@ static PyModuleDef_Slot _sha256_slots[] = {
 static struct PyModuleDef _sha256module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_sha256",
+    .m_size = sizeof(_sha256_state),
     .m_methods = SHA_functions,
     .m_slots = _sha256_slots,
+    .m_traverse = _sha256_traverse,
+    .m_clear = _sha256_clear,
+    .m_free = _sha256_free
 };
 
 /* Initialize this module. */
