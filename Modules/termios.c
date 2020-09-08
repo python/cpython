@@ -77,7 +77,7 @@ indexing in the cc array must be done using the symbolic constants defined\n\
 in this module.");
 
 static PyObject *
-termios_tcgetattr(PyObject *self, PyObject *args)
+termios_tcgetattr(PyObject *module, PyObject *args)
 {
     int fd;
     if (!PyArg_ParseTuple(args, "O&:tcgetattr",
@@ -85,7 +85,7 @@ termios_tcgetattr(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    termiosmodulestate *state = PyModule_GetState(self);
+    termiosmodulestate *state = PyModule_GetState(module);
     struct termios mode;
     if (tcgetattr(fd, &mode) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
@@ -155,7 +155,7 @@ queued output, or termios.TCSAFLUSH to change after transmitting all\n\
 queued output and discarding all queued input. ");
 
 static PyObject *
-termios_tcsetattr(PyObject *self, PyObject *args)
+termios_tcsetattr(PyObject *module, PyObject *args)
 {
     int fd, when;
     PyObject *term;
@@ -171,7 +171,7 @@ termios_tcsetattr(PyObject *self, PyObject *args)
     }
 
     /* Get the old mode, in case there are any hidden fields... */
-    termiosmodulestate *state = PyModule_GetState(self);
+    termiosmodulestate *state = PyModule_GetState(module);
     struct termios mode;
     if (tcgetattr(fd, &mode) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
@@ -229,7 +229,7 @@ A zero duration sends a break for 0.25-0.5 seconds; a nonzero duration\n\
 has a system dependent meaning.");
 
 static PyObject *
-termios_tcsendbreak(PyObject *self, PyObject *args)
+termios_tcsendbreak(PyObject *module, PyObject *args)
 {
     int fd, duration;
     if (!PyArg_ParseTuple(args, "O&i:tcsendbreak",
@@ -237,7 +237,7 @@ termios_tcsendbreak(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    termiosmodulestate *state = PyModule_GetState(self);
+    termiosmodulestate *state = PyModule_GetState(module);
     if (tcsendbreak(fd, duration) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
@@ -251,7 +251,7 @@ PyDoc_STRVAR(termios_tcdrain__doc__,
 Wait until all output written to file descriptor fd has been transmitted.");
 
 static PyObject *
-termios_tcdrain(PyObject *self, PyObject *args)
+termios_tcdrain(PyObject *module, PyObject *args)
 {
     int fd;
     if (!PyArg_ParseTuple(args, "O&:tcdrain",
@@ -259,7 +259,7 @@ termios_tcdrain(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    termiosmodulestate *state = PyModule_GetState(self);
+    termiosmodulestate *state = PyModule_GetState(module);
     if (tcdrain(fd) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
@@ -276,7 +276,7 @@ queue, termios.TCOFLUSH for the output queue, or termios.TCIOFLUSH for\n\
 both queues. ");
 
 static PyObject *
-termios_tcflush(PyObject *self, PyObject *args)
+termios_tcflush(PyObject *module, PyObject *args)
 {
     int fd, queue;
     if (!PyArg_ParseTuple(args, "O&i:tcflush",
@@ -284,7 +284,7 @@ termios_tcflush(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    termiosmodulestate *state = PyModule_GetState(self);
+    termiosmodulestate *state = PyModule_GetState(module);
     if (tcflush(fd, queue) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
@@ -301,7 +301,7 @@ termios.TCOON to restart output, termios.TCIOFF to suspend input,\n\
 or termios.TCION to restart input.");
 
 static PyObject *
-termios_tcflow(PyObject *self, PyObject *args)
+termios_tcflow(PyObject *module, PyObject *args)
 {
     int fd, action;
     if (!PyArg_ParseTuple(args, "O&i:tcflow",
@@ -309,7 +309,7 @@ termios_tcflow(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    termiosmodulestate *state = PyModule_GetState(self);
+    termiosmodulestate *state = PyModule_GetState(module);
     if (tcflow(fd, action) == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
     }
@@ -1022,10 +1022,16 @@ termios_exec(PyObject *mod)
         return -1;
     }
     Py_INCREF(state->TermiosError);
-    PyModule_AddObject(mod, "error", state->TermiosError);
+    if (PyModule_AddObject(mod, "error", state->TermiosError) < 0) {
+        Py_DECREF(state->TermiosError);
+        return -1;
+    }
 
     while (constant->name != NULL) {
-        PyModule_AddIntConstant(mod, constant->name, constant->value);
+        if (PyModule_AddIntConstant(
+            mod, constant->name, constant->value) < 0) {
+            return -1;
+        }
         ++constant;
     }
     return 0;
