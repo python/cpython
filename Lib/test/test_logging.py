@@ -4355,16 +4355,16 @@ class LogRecordTest(BaseTest):
         h.close()
 
     @staticmethod # pickled as target of child process in the following test
-    def _extract_logrecord_process_name(logMultiprocessing, conn=None):
+    def _extract_logrecord_process_name(key, logMultiprocessing, conn=None):
         prev_logMultiprocessing = logging.logMultiprocessing
         logging.logMultiprocessing = logMultiprocessing
         try:
             import multiprocessing as mp
             name = mp.current_process().name
 
-            r1 = logging.makeLogRecord({'msg': 'msg1'})
+            r1 = logging.makeLogRecord({'msg': f'msg1_{key}'})
             del sys.modules['multiprocessing']
-            r2 = logging.makeLogRecord({'msg': 'msg2'})
+            r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
 
             results = {'processName'  : name,
                        'r1.processName': r1.processName,
@@ -4378,60 +4378,40 @@ class LogRecordTest(BaseTest):
             return results
 
     def test_multiprocessing(self):
-        # logMultiprocessing is True by default
-        self.assertEqual(logging.logMultiprocessing, True)
-
-        LOG_MULTI_PROCESSING = True
-        # When logMultiprocessing == True:
-        # In the main process processName = 'MainProcess'
-        r = logging.makeLogRecord({})
-        self.assertEqual(r.processName, 'MainProcess')
-
-        results = self._extract_logrecord_process_name(LOG_MULTI_PROCESSING)
-        self.assertEqual('MainProcess', results['processName'])
-        self.assertEqual('MainProcess', results['r1.processName'])
-        self.assertEqual('MainProcess', results['r2.processName'])
-
-        # In other processes, processName is correct when multiprocessing in imported,
-        # but it is (incorrectly) defaulted to 'MainProcess' otherwise (bpo-38762).
-        import multiprocessing
-        parent_conn, child_conn = multiprocessing.Pipe()
-        p = multiprocessing.Process(
-            target=self._extract_logrecord_process_name,
-            args=(LOG_MULTI_PROCESSING, child_conn,)
-        )
-        p.start()
-        results = parent_conn.recv()
-        self.assertNotEqual('MainProcess', results['processName'])
-        self.assertEqual(results['processName'], results['r1.processName'])
-        self.assertEqual('MainProcess', results['r2.processName'])
-        p.join()
-
-
-        LOG_MULTI_PROCESSING = False
-        # When logMultiprocessing == False, processName is always None
-        prev_logMultiprocessing = logging.logMultiprocessing
-        logging.logMultiprocessing = LOG_MULTI_PROCESSING
+        multiprocessing_imported = 'multiprocessing' in sys.modules
         try:
-            results = self._extract_logrecord_process_name(LOG_MULTI_PROCESSING)
-            self.assertEqual('MainProcess', results['processName'])
-            self.assertEqual(None, results['r1.processName'])
-            self.assertEqual(None, results['r2.processName'])
-        finally:
-            logging.logMultiprocessing = prev_logMultiprocessing
+            # logMultiprocessing is True by default
+            self.assertEqual(logging.logMultiprocessing, True)
 
-        import multiprocessing
-        parent_conn, child_conn = multiprocessing.Pipe()
-        p = multiprocessing.Process(
-            target=self._extract_logrecord_process_name,
-            args=(LOG_MULTI_PROCESSING, child_conn,)
-        )
-        p.start()
-        results = parent_conn.recv()
-        self.assertNotEqual('MainProcess', results['processName'])
-        self.assertEqual(None, results['r1.processName'])
-        self.assertEqual(None, results['r2.processName'])
-        p.join()
+            LOG_MULTI_PROCESSING = True
+            # When logMultiprocessing == True:
+            # In the main process processName = 'MainProcess'
+            r = logging.makeLogRecord({})
+            self.assertEqual(r.processName, 'MainProcess')
+
+            results = self._extract_logrecord_process_name(1, LOG_MULTI_PROCESSING)
+            self.assertEqual('MainProcess', results['processName'])
+            self.assertEqual('MainProcess', results['r1.processName'])
+            self.assertEqual('MainProcess', results['r2.processName'])
+
+            # In other processes, processName is correct when multiprocessing in imported,
+            # but it is (incorrectly) defaulted to 'MainProcess' otherwise (bpo-38762).
+            import multiprocessing
+            parent_conn, child_conn = multiprocessing.Pipe()
+            p = multiprocessing.Process(
+                target=self._extract_logrecord_process_name,
+                args=(2, LOG_MULTI_PROCESSING, child_conn,)
+            )
+            p.start()
+            results = parent_conn.recv()
+            self.assertNotEqual('MainProcess', results['processName'])
+            self.assertEqual(results['processName'], results['r1.processName'])
+            self.assertEqual('MainProcess', results['r2.processName'])
+            p.join()
+
+        finally:
+            if multiprocessing_imported:
+                import multiprocessing
 
 
     def test_optional(self):
