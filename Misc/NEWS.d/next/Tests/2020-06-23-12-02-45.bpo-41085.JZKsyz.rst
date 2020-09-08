@@ -1,0 +1,2 @@
+Fix integer overflow in the :meth:`array.array.index` method on 64-bit Windows
+for index larger than ``2**31``.

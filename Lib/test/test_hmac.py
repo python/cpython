@@ -8,12 +8,16 @@ import warnings
 
 from test.support import hashlib_helper
 
+from _operator import _compare_digest as operator_compare_digest
+
 try:
     from _hashlib import HMAC as C_HMAC
     from _hashlib import hmac_new as c_hmac_new
+    from _hashlib import compare_digest as openssl_compare_digest
 except ImportError:
     C_HMAC = None
     c_hmac_new = None
+    openssl_compare_digest = None
 
 
 def ignore_warning(func):
@@ -505,87 +509,101 @@ class CopyTestCase(unittest.TestCase):
 
 class CompareDigestTestCase(unittest.TestCase):
 
-    def test_compare_digest(self):
+    def test_hmac_compare_digest(self):
+        self._test_compare_digest(hmac.compare_digest)
+        if openssl_compare_digest is not None:
+            self.assertIs(hmac.compare_digest, openssl_compare_digest)
+        else:
+            self.assertIs(hmac.compare_digest, operator_compare_digest)
+
+    def test_operator_compare_digest(self):
+        self._test_compare_digest(operator_compare_digest)
+
+    @unittest.skipIf(openssl_compare_digest is None, "test requires _hashlib")
+    def test_openssl_compare_digest(self):
+        self._test_compare_digest(openssl_compare_digest)
+
+    def _test_compare_digest(self, compare_digest):
         # Testing input type exception handling
         a, b = 100, 200
-        self.assertRaises(TypeError, hmac.compare_digest, a, b)
+        self.assertRaises(TypeError, compare_digest, a, b)
         a, b = 100, b"foobar"
-        self.assertRaises(TypeError, hmac.compare_digest, a, b)
+        self.assertRaises(TypeError, compare_digest, a, b)
         a, b = b"foobar", 200
-        self.assertRaises(TypeError, hmac.compare_digest, a, b)
+        self.assertRaises(TypeError, compare_digest, a, b)
         a, b = "foobar", b"foobar"
-        self.assertRaises(TypeError, hmac.compare_digest, a, b)
+        self.assertRaises(TypeError, compare_digest, a, b)
         a, b = b"foobar", "foobar"
-        self.assertRaises(TypeError, hmac.compare_digest, a, b)
+        self.assertRaises(TypeError, compare_digest, a, b)
 
         # Testing bytes of different lengths
         a, b = b"foobar", b"foo"
-        self.assertFalse(hmac.compare_digest(a, b))
+        self.assertFalse(compare_digest(a, b))
         a, b = b"\xde\xad\xbe\xef", b"\xde\xad"
-        self.assertFalse(hmac.compare_digest(a, b))
+        self.assertFalse(compare_digest(a, b))
 
         # Testing bytes of same lengths, different values
         a, b = b"foobar", b"foobaz"
-        self.assertFalse(hmac.compare_digest(a, b))
+        self.assertFalse(compare_digest(a, b))
         a, b = b"\xde\xad\xbe\xef", b"\xab\xad\x1d\xea"
-        self.assertFalse(hmac.compare_digest(a, b))
+        self.assertFalse(compare_digest(a, b))
 
         # Testing bytes of same lengths, same values
         a, b = b"foobar", b"foobar"
-        self.assertTrue(hmac.compare_digest(a, b))
+        self.assertTrue(compare_digest(a, b))
         a, b = b"\xde\xad\xbe\xef", b"\xde\xad\xbe\xef"
-        self.assertTrue(hmac.compare_digest(a, b))
+        self.assertTrue(compare_digest(a, b))
 
         # Testing bytearrays of same lengths, same values
         a, b = bytearray(b"foobar"), bytearray(b"foobar")
-        self.assertTrue(hmac.compare_digest(a, b))
+        self.assertTrue(compare_digest(a, b))
 
         # Testing bytearrays of different lengths
         a, b = bytearray(b"foobar"), bytearray(b"foo")
-        self.assertFalse(hmac.compare_digest(a, b))
+        self.assertFalse(compare_digest(a, b))
 
         # Testing bytearrays of same lengths, different values
         a, b = bytearray(b"foobar"), bytearray(b"foobaz")
-        self.assertFalse(hmac.compare_digest(a, b))
+        self.assertFalse(compare_digest(a, b))
 
         # Testing byte and bytearray of same lengths, same values
         a, b = bytearray(b"foobar"), b"foobar"
-        self.assertTrue(hmac.compare_digest(a, b))
-        self.assertTrue(hmac.compare_digest(b, a))
+        self.assertTrue(compare_digest(a, b))
+        self.assertTrue(compare_digest(b, a))
 
         # Testing byte bytearray of different lengths
         a, b = bytearray(b"foobar"), b"foo"
-        self.assertFalse(hmac.compare_digest(a, b))
-        self.assertFalse(hmac.compare_digest(b, a))
+        self.assertFalse(compare_digest(a, b))
+        self.assertFalse(compare_digest(b, a))
 
         # Testing byte and bytearray of same lengths, different values
         a, b = bytearray(b"foobar"), b"foobaz"
-        self.assertFalse(hmac.compare_digest(a, b))
-        self.assertFalse(hmac.compare_digest(b, a))
+        self.assertFalse(compare_digest(a, b))
+        self.assertFalse(compare_digest(b, a))
 
         # Testing str of same lengths
         a, b = "foobar", "foobar"
-        self.assertTrue(hmac.compare_digest(a, b))
+        self.assertTrue(compare_digest(a, b))
 
         # Testing str of different lengths
         a, b = "foo", "foobar"
-        self.assertFalse(hmac.compare_digest(a, b))
+        self.assertFalse(compare_digest(a, b))
 
         # Testing bytes of same lengths, different values
         a, b = "foobar", "foobaz"
-        self.assertFalse(hmac.compare_digest(a, b))
+        self.assertFalse(compare_digest(a, b))
 
         # Testing error cases
         a, b = "foobar", b"foobar"
-        self.assertRaises(TypeError, hmac.compare_digest, a, b)
+        self.assertRaises(TypeError, compare_digest, a, b)
         a, b = b"foobar", "foobar"
-        self.assertRaises(TypeError, hmac.compare_digest, a, b)
+        self.assertRaises(TypeError, compare_digest, a, b)
         a, b = b"foobar", 1
-        self.assertRaises(TypeError, hmac.compare_digest, a, b)
+        self.assertRaises(TypeError, compare_digest, a, b)
         a, b = 100, 200
-        self.assertRaises(TypeError, hmac.compare_digest, a, b)
+        self.assertRaises(TypeError, compare_digest, a, b)
         a, b = "fooä", "fooä"
-        self.assertRaises(TypeError, hmac.compare_digest, a, b)
+        self.assertRaises(TypeError, compare_digest, a, b)
 
         # subclasses are supported by ignore __eq__
         class mystr(str):
@@ -593,22 +611,22 @@ class CompareDigestTestCase(unittest.TestCase):
                 return False
 
         a, b = mystr("foobar"), mystr("foobar")
-        self.assertTrue(hmac.compare_digest(a, b))
+        self.assertTrue(compare_digest(a, b))
         a, b = mystr("foobar"), "foobar"
-        self.assertTrue(hmac.compare_digest(a, b))
+        self.assertTrue(compare_digest(a, b))
         a, b = mystr("foobar"), mystr("foobaz")
-        self.assertFalse(hmac.compare_digest(a, b))
+        self.assertFalse(compare_digest(a, b))
 
         class mybytes(bytes):
             def __eq__(self, other):
                 return False
 
         a, b = mybytes(b"foobar"), mybytes(b"foobar")
-        self.assertTrue(hmac.compare_digest(a, b))
+        self.assertTrue(compare_digest(a, b))
         a, b = mybytes(b"foobar"), b"foobar"
-        self.assertTrue(hmac.compare_digest(a, b))
+        self.assertTrue(compare_digest(a, b))
         a, b = mybytes(b"foobar"), mybytes(b"foobaz")
-        self.assertFalse(hmac.compare_digest(a, b))
+        self.assertFalse(compare_digest(a, b))
 
 
 if __name__ == "__main__":

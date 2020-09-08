@@ -1079,7 +1079,6 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *modulename = NULL;
-    PyObject *classname = NULL;
     PyObject *mydict = NULL;
     PyObject *bases = NULL;
     PyObject *result = NULL;
@@ -1125,7 +1124,6 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
   failure:
     Py_XDECREF(bases);
     Py_XDECREF(mydict);
-    Py_XDECREF(classname);
     Py_XDECREF(modulename);
     return result;
 }
@@ -1426,7 +1424,7 @@ void
 _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    assert(tstate != NULL);
+    _Py_EnsureTstateNotNULL(tstate);
 
     PyObject *err_msg = NULL;
     PyObject *exc_type, *exc_value, *exc_tb;
@@ -1648,16 +1646,18 @@ err_programtext(PyThreadState *tstate, FILE *fp, int lineno)
 {
     int i;
     char linebuf[1000];
-
-    if (fp == NULL)
+    if (fp == NULL) {
         return NULL;
+    }
+
     for (i = 0; i < lineno; i++) {
         char *pLastChar = &linebuf[sizeof(linebuf) - 2];
         do {
             *pLastChar = '\0';
             if (Py_UniversalNewlineFgets(linebuf, sizeof linebuf,
-                                         fp, NULL) == NULL)
-                break;
+                                         fp, NULL) == NULL) {
+                goto after_loop;
+            }
             /* fgets read *something*; if it didn't get as
                far as pLastChar, it must have found a newline
                or hit the end of the file; if pLastChar is \n,
@@ -1665,6 +1665,8 @@ err_programtext(PyThreadState *tstate, FILE *fp, int lineno)
                yet seen a newline, so must continue */
         } while (*pLastChar != '\0' && *pLastChar != '\n');
     }
+
+after_loop:
     fclose(fp);
     if (i == lineno) {
         PyObject *res;

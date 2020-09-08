@@ -8,6 +8,7 @@
 #define _PY_DATETIME_IMPL
 
 #include "Python.h"
+#include "pycore_object.h"        // _PyObject_Init()
 #include "datetime.h"
 #include "structmember.h"         // PyMemberDef
 
@@ -638,30 +639,24 @@ normalize_datetime(int *year, int *month, int *day,
 static PyObject *
 time_alloc(PyTypeObject *type, Py_ssize_t aware)
 {
-    PyObject *self;
-
-    self = (PyObject *)
-        PyObject_MALLOC(aware ?
-                        sizeof(PyDateTime_Time) :
-                sizeof(_PyDateTime_BaseTime));
-    if (self == NULL)
-        return (PyObject *)PyErr_NoMemory();
-    (void)PyObject_INIT(self, type);
+    size_t size = aware ? sizeof(PyDateTime_Time) : sizeof(_PyDateTime_BaseTime);
+    PyObject *self = (PyObject *)PyObject_Malloc(size);
+    if (self == NULL) {
+        return PyErr_NoMemory();
+    }
+    _PyObject_Init(self, type);
     return self;
 }
 
 static PyObject *
 datetime_alloc(PyTypeObject *type, Py_ssize_t aware)
 {
-    PyObject *self;
-
-    self = (PyObject *)
-        PyObject_MALLOC(aware ?
-                        sizeof(PyDateTime_DateTime) :
-                sizeof(_PyDateTime_BaseDateTime));
-    if (self == NULL)
-        return (PyObject *)PyErr_NoMemory();
-    (void)PyObject_INIT(self, type);
+    size_t size = aware ? sizeof(PyDateTime_DateTime) : sizeof(_PyDateTime_BaseDateTime);
+    PyObject *self = (PyObject *)PyObject_Malloc(size);
+    if (self == NULL) {
+        return PyErr_NoMemory();
+    }
+    _PyObject_Init(self, type);
     return self;
 }
 
@@ -3325,7 +3320,7 @@ static PyTypeObject PyDateTime_IsoCalendarDateType = {
     .tp_doc = iso_calendar_date__doc__,
     .tp_methods = iso_calendar_date_methods,
     .tp_getset = iso_calendar_date_getset,
-    .tp_base = &PyTuple_Type,
+    // .tp_base = &PyTuple_Type,  // filled in PyInit__datetime
     .tp_new = iso_calendar_date_new,
 };
 
@@ -4079,7 +4074,7 @@ static PyTypeObject PyDateTime_TimeZoneType = {
     timezone_methods,                 /* tp_methods */
     0,                                /* tp_members */
     0,                                /* tp_getset */
-    &PyDateTime_TZInfoType,           /* tp_base */
+    0,                                /* tp_base; filled in PyInit__datetime */
     0,                                /* tp_dict */
     0,                                /* tp_descr_get */
     0,                                /* tp_descr_set */
@@ -6458,7 +6453,8 @@ static PyTypeObject PyDateTime_DateTimeType = {
     datetime_methods,                           /* tp_methods */
     0,                                          /* tp_members */
     datetime_getset,                            /* tp_getset */
-    &PyDateTime_DateType,                       /* tp_base */
+    0,                                          /* tp_base; filled in
+                                                   PyInit__datetime */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
@@ -6524,6 +6520,12 @@ PyInit__datetime(void)
     if (m == NULL)
         return NULL;
 
+    // `&...` is not a constant expression according to a strict reading
+    // of C standards. Fill tp_base at run-time rather than statically.
+    // See https://bugs.python.org/issue40777
+    PyDateTime_IsoCalendarDateType.tp_base = &PyTuple_Type;
+    PyDateTime_TimeZoneType.tp_base = &PyDateTime_TZInfoType;
+    PyDateTime_DateTimeType.tp_base = &PyDateTime_DateType;
 
     PyTypeObject *types[] = {
         &PyDateTime_DateType,

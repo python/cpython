@@ -1,0 +1,7 @@
+Fix configure error when building on macOS 11.
+Note that the current Python release was released
+shortly after the first developer preview of macOS
+11 (Big Sur); there are other known issues with
+building and running on the developer preview.
+Big Sur is expected to be fully supported in a
+future bugfix release of Python 3.8.x and with 3.9.0.

@@ -646,7 +646,8 @@ loop on every invocation:
 (Contributed by Yury Selivanov in :issue:`37028`.)
 
 The exception :class:`asyncio.CancelledError` now inherits from
-:class:`BaseException` rather than :class:`Exception`.
+:class:`BaseException` rather than :class:`Exception` and no longer inherits
+from :class:`concurrent.futures.CancelledError`.
 (Contributed by Yury Selivanov in :issue:`32528`.)
 
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
@@ -1692,7 +1693,7 @@ Deprecated
   :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
   parameter of functions :func:`~gettext.translation` and
   :func:`~gettext.install` are also deprecated, since they are only used for
-  for the ``l*gettext()`` functions.
+  the ``l*gettext()`` functions.
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
 * The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
@@ -1951,7 +1952,8 @@ Changes in the Python API
   (Contributed by Anthony Sottile in :issue:`36264`.)
 
 * The exception :class:`asyncio.CancelledError` now inherits from
-  :class:`BaseException` rather than :class:`Exception`.
+  :class:`BaseException` rather than :class:`Exception` and no longer inherits
+  from :class:`concurrent.futures.CancelledError`.
   (Contributed by Yury Selivanov in :issue:`32528`.)
 
 * The function :func:`asyncio.wait_for` now correctly waits for cancellation

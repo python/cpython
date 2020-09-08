@@ -32,8 +32,12 @@
 #  include <windows.h>
 #endif
 
+#ifdef __VXWORKS__
+#  include "pycore_bitutils.h"    // _Py_popcount32()
+#endif
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_import.h"        // _PyImport_ReInitLock()
+#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS
@@ -461,15 +465,45 @@ PyOS_AfterFork_Parent(void)
 void
 PyOS_AfterFork_Child(void)
 {
+    PyStatus status;
     _PyRuntimeState *runtime = &_PyRuntime;
-    _PyGILState_Reinit(runtime);
-    _PyEval_ReInitThreads(runtime);
-    _PyImport_ReInitLock();
-    _PySignal_AfterFork();
-    _PyRuntimeState_ReInitThreads(runtime);
-    _PyInterpreterState_DeleteExceptMain(runtime);
 
-    run_at_forkers(_PyInterpreterState_GET()->after_forkers_child, 0);
+    status = _PyGILState_Reinit(runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureTstateNotNULL(tstate);
+
+    status = _PyEval_ReInitThreads(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
+
+    status = _PyImport_ReInitLock();
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
+
+    _PySignal_AfterFork();
+
+    status = _PyRuntimeState_ReInitThreads(runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
+
+    status = _PyInterpreterState_DeleteExceptMain(runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
+    assert(_PyThreadState_GET() == tstate);
+
+    run_at_forkers(tstate->interp->after_forkers_child, 0);
+    return;
+
+fatal_error:
+    Py_ExitStatusException(status);
 }
 
 static int
@@ -531,7 +565,7 @@ _Py_Uid_Converter(PyObject *obj, void *p)
     long result;
     unsigned long uresult;
 
-    index = PyNumber_Index(obj);
+    index = _PyNumber_Index(obj);
     if (index == NULL) {
         PyErr_Format(PyExc_TypeError,
                      "uid should be integer, not %.200s",
@@ -637,7 +671,7 @@ _Py_Gid_Converter(PyObject *obj, void *p)
     long result;
     unsigned long uresult;
 
-    index = PyNumber_Index(obj);
+    index = _PyNumber_Index(obj);
     if (index == NULL) {
         PyErr_Format(PyExc_TypeError,
                      "gid should be integer, not %.200s",
@@ -771,7 +805,7 @@ _fd_converter(PyObject *o, int *p)
     int overflow;
     long long_value;
 
-    PyObject *index = PyNumber_Index(o);
+    PyObject *index = _PyNumber_Index(o);
     if (index == NULL) {
         return 0;
     }
@@ -957,6 +991,11 @@ typedef struct {
 static void
 path_cleanup(path_t *path)
 {
+#if !USE_UNICODE_WCHAR_CACHE
+    wchar_t *wide = (wchar_t *)path->wide;
+    path->wide = NULL;
+    PyMem_Free(wide);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     Py_CLEAR(path->object);
     Py_CLEAR(path->cleanup);
 }
@@ -971,7 +1010,7 @@ path_converter(PyObject *o, void *p)
     const char *narrow;
 #ifdef MS_WINDOWS
     PyObject *wo = NULL;
-    const wchar_t *wide;
+    wchar_t *wide = NULL;
 #endif
 
 #define FORMAT_EXCEPTION(exc, fmt) \
@@ -1044,7 +1083,14 @@ path_converter(PyObject *o, void *p)
 
     if (is_unicode) {
 #ifdef MS_WINDOWS
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         wide = PyUnicode_AsUnicodeAndSize(o, &length);
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+        wide = PyUnicode_AsWideCharString(o, &length);
+#endif /* USE_UNICODE_WCHAR_CACHE */
         if (!wide) {
             goto error_exit;
         }
@@ -1060,6 +1106,9 @@ path_converter(PyObject *o, void *p)
         path->wide = wide;
         path->narrow = FALSE;
         path->fd = -1;
+#if !USE_UNICODE_WCHAR_CACHE
+        wide = NULL;
+#endif /* USE_UNICODE_WCHAR_CACHE */
         goto success_exit;
 #else
         if (!PyUnicode_FSConverter(o, &bytes)) {
@@ -1135,7 +1184,15 @@ path_converter(PyObject *o, void *p)
         goto error_exit;
     }
 
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     wide = PyUnicode_AsUnicodeAndSize(wo, &length);
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+    wide = PyUnicode_AsWideCharString(wo, &length);
+    Py_DECREF(wo);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     if (!wide) {
         goto error_exit;
     }
@@ -1149,8 +1206,12 @@ path_converter(PyObject *o, void *p)
     }
     path->wide = wide;
     path->narrow = TRUE;
-    path->cleanup = wo;
     Py_DECREF(bytes);
+#if USE_UNICODE_WCHAR_CACHE
+    path->cleanup = wo;
+#else /* USE_UNICODE_WCHAR_CACHE */
+    wide = NULL;
+#endif /* USE_UNICODE_WCHAR_CACHE */
 #else
     path->wide = NULL;
     path->narrow = narrow;
@@ -1174,7 +1235,11 @@ path_converter(PyObject *o, void *p)
     Py_XDECREF(o);
     Py_XDECREF(bytes);
 #ifdef MS_WINDOWS
+#if USE_UNICODE_WCHAR_CACHE
     Py_XDECREF(wo);
+#else /* USE_UNICODE_WCHAR_CACHE */
+    PyMem_Free(wide);
+#endif /* USE_UNICODE_WCHAR_CACHE */
 #endif
     return 0;
 }
@@ -9453,6 +9518,25 @@ done:
     if (!Py_off_t_converter(offobj, &offset))
         return NULL;
 
+#if defined(__sun) && defined(__SVR4)
+    // On Solaris, sendfile raises EINVAL rather than returning 0
+    // when the offset is equal or bigger than the in_fd size.
+    int res;
+    struct stat st;
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        res = fstat(in_fd, &st);
+        Py_END_ALLOW_THREADS
+    } while (res != 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    if (ret < 0)
+        return (!async_err) ? posix_error() : NULL;
+
+    if (offset >= st.st_size) {
+        return Py_BuildValue("i", 0);
+    }
+#endif
+
     do {
         Py_BEGIN_ALLOW_THREADS
         ret = sendfile(out_fd, in_fd, &offset, count);
@@ -9778,6 +9862,7 @@ The flags argument contains a bitwise OR of zero or more of the following flags:
 
 - RWF_DSYNC
 - RWF_SYNC
+- RWF_APPEND
 
 Using non-zero flags requires Linux 4.7 or newer.
 [clinic start generated code]*/
@@ -9785,7 +9870,7 @@ Using non-zero flags requires Linux 4.7 or newer.
 static Py_ssize_t
 os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                 int flags)
-/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=803dc5ddbf0cfd3b]*/
+/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=35358c327e1a2a8e]*/
 {
     Py_ssize_t cnt;
     Py_ssize_t result;
@@ -10956,7 +11041,7 @@ conv_path_confname(PyObject *arg, int *valuep)
 /*[clinic input]
 os.fpathconf -> long
 
-    fd: int
+    fd: fildes
     name: path_confname
     /
 
@@ -10967,7 +11052,7 @@ If there is no limit, return -1.
 
 static long
 os_fpathconf_impl(PyObject *module, int fd, int name)
-/*[clinic end generated code: output=d5b7042425fc3e21 input=5942a024d3777810]*/
+/*[clinic end generated code: output=d5b7042425fc3e21 input=5b8d2471cfaae186]*/
 {
     long limit;
 
@@ -12544,6 +12629,8 @@ os_cpu_count_impl(PyObject *module)
     ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
     ncpu = sysconf(_SC_NPROCESSORS_ONLN);
+#elif defined(__VXWORKS__)
+    ncpu = _Py_popcount32(vxCpuEnabledGet());
 #elif defined(__DragonFly__) || \
       defined(__OpenBSD__)   || \
       defined(__FreeBSD__)   || \
@@ -12792,7 +12879,15 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
 #ifdef MS_WINDOWS
     if (!PyUnicode_FSDecoder(self->path, &ub))
         return NULL;
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     const wchar_t *path = PyUnicode_AsUnicode(ub);
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+    wchar_t *path = PyUnicode_AsWideCharString(ub, NULL);
+    Py_DECREF(ub);
+#endif /* USE_UNICODE_WCHAR_CACHE */
 #else /* POSIX */
     if (!PyUnicode_FSConverter(self->path, &ub))
         return NULL;
@@ -12802,6 +12897,7 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
         result = fstatat(self->dir_fd, path, &st,
                          follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
 #else
+        Py_DECREF(ub);
         PyErr_SetString(PyExc_NotImplementedError, "can't fetch stat");
         return NULL;
 #endif /* HAVE_FSTATAT */
@@ -12814,7 +12910,11 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
         else
             result = LSTAT(path, &st);
     }
+#if defined(MS_WINDOWS) && !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free(path);
+#else /* USE_UNICODE_WCHAR_CACHE */
     Py_DECREF(ub);
+#endif /* USE_UNICODE_WCHAR_CACHE */
 
     if (result != 0)
         return path_object_error(self->path);
@@ -13003,15 +13103,24 @@ os_DirEntry_inode_impl(DirEntry *self)
 #ifdef MS_WINDOWS
     if (!self->got_file_index) {
         PyObject *unicode;
-        const wchar_t *path;
         STRUCT_STAT stat;
         int result;
 
         if (!PyUnicode_FSDecoder(self->path, &unicode))
             return NULL;
-        path = PyUnicode_AsUnicode(unicode);
+#if USE_UNICODE_WCHAR_CACHE
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+        const wchar_t *path = PyUnicode_AsUnicode(unicode);
         result = LSTAT(path, &stat);
         Py_DECREF(unicode);
+_Py_COMP_DIAG_POP
+#else /* USE_UNICODE_WCHAR_CACHE */
+        wchar_t *path = PyUnicode_AsWideCharString(unicode, NULL);
+        Py_DECREF(unicode);
+        result = LSTAT(path, &stat);
+        PyMem_Free(path);
+#endif /* USE_UNICODE_WCHAR_CACHE */
 
         if (result != 0)
             return path_object_error(self->path);
@@ -13565,10 +13674,9 @@ os_scandir_impl(PyObject *module, path_t *path)
     iterator->dirp = NULL;
 #endif
 
-    memcpy(&iterator->path, path, sizeof(path_t));
     /* Move the ownership to iterator->path */
-    path->object = NULL;
-    path->cleanup = NULL;
+    memcpy(&iterator->path, path, sizeof(path_t));
+    memset(path, 0, sizeof(path_t));
 
 #ifdef MS_WINDOWS
     iterator->first_time = 1;
@@ -13590,9 +13698,9 @@ os_scandir_impl(PyObject *module, path_t *path)
 #else /* POSIX */
     errno = 0;
 #ifdef HAVE_FDOPENDIR
-    if (path->fd != -1) {
+    if (iterator->path.fd != -1) {
         /* closedir() closes the FD, so we duplicate it */
-        fd = _Py_dup(path->fd);
+        fd = _Py_dup(iterator->path.fd);
         if (fd == -1)
             goto error;
 
@@ -13903,11 +14011,6 @@ static PyObject *
 os_waitstatus_to_exitcode_impl(PyObject *module, PyObject *status_obj)
 /*[clinic end generated code: output=db50b1b0ba3c7153 input=7fe2d7fdaea3db42]*/
 {
-    if (PyFloat_Check(status_obj)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        return NULL;
-    }
 #ifndef MS_WINDOWS
     int status = _PyLong_AsInt(status_obj);
     if (status == -1 && PyErr_Occurred()) {
@@ -14513,6 +14616,9 @@ all_ins(PyObject *m)
 #endif
 #ifdef RWF_NOWAIT
     if (PyModule_AddIntConstant(m, "RWF_NOWAIT", RWF_NOWAIT)) return -1;
+#endif
+#ifdef RWF_APPEND
+    if (PyModule_AddIntConstant(m, "RWF_APPEND", RWF_APPEND)) return -1;
 #endif
 
 /* constants for posix_spawn */

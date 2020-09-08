@@ -1,0 +1,3 @@
+:exc:`~sqlite3.ProgrammingError` message for absent parameter in :mod:`sqlite3`
+contains now the name of the parameter instead of its index when parameters
+are supplied as a dict.

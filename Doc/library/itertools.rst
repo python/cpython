@@ -199,9 +199,9 @@ loops that truncate the stream.
 
    Return *r* length subsequences of elements from the input *iterable*.
 
-   Combinations are emitted in lexicographic sort order.  So, if the
-   input *iterable* is sorted, the combination tuples will be produced
-   in sorted order.
+   The combination tuples are emitted in lexicographic ordering according to
+   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the combination tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
    value.  So if the input elements are unique, there will be no repeat
@@ -248,9 +248,9 @@ loops that truncate the stream.
    Return *r* length subsequences of elements from the input *iterable*
    allowing individual elements to be repeated more than once.
 
-   Combinations are emitted in lexicographic sort order.  So, if the
-   input *iterable* is sorted, the combination tuples will be produced
-   in sorted order.
+   The combination tuples are emitted in lexicographic ordering according to
+   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the combination tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
    value.  So if the input elements are unique, the generated combinations
@@ -484,9 +484,9 @@ loops that truncate the stream.
    of the *iterable* and all possible full-length permutations
    are generated.
 
-   Permutations are emitted in lexicographic sort order.  So, if the
-   input *iterable* is sorted, the permutation tuples will be produced
-   in sorted order.
+   The permutation tuples are emitted in lexicographic ordering according to
+   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the combination tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
    value.  So if the input elements are unique, there will be no repeat
@@ -563,6 +563,9 @@ loops that truncate the stream.
            for prod in result:
                yield tuple(prod)
 
+   Before :func:`product` runs, it completely consumes the input iterables,
+   keeping pools of values in memory to generate the products.  Accordingly,
+   it only useful with finite inputs.
 
 .. function:: repeat(object[, times])
 

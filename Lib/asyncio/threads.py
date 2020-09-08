@@ -17,7 +17,7 @@ async def to_thread(func, /, *args, **kwargs):
     allowing context variables from the main thread to be accessed in the
     separate thread.
 
-    Return an asyncio.Future which represents the eventual result of *func*.
+    Return a coroutine that can be awaited to get the eventual result of *func*.
     """
     loop = events.get_running_loop()
     ctx = contextvars.copy_context()

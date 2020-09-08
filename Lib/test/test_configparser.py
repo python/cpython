@@ -8,6 +8,7 @@ import unittest
 import warnings
 
 from test import support
+from test.support import os_helper
 
 
 class SortedDict(collections.UserDict):
@@ -1063,17 +1064,17 @@ class MultilineValuesTestCase(BasicTestCase, unittest.TestCase):
             cf.add_section(s)
             for j in range(10):
                 cf.set(s, 'lovely_spam{}'.format(j), self.wonderful_spam)
-        with open(support.TESTFN, 'w') as f:
+        with open(os_helper.TESTFN, 'w') as f:
             cf.write(f)
 
     def tearDown(self):
-        os.unlink(support.TESTFN)
+        os.unlink(os_helper.TESTFN)
 
     def test_dominating_multiline_values(self):
         # We're reading from file because this is where the code changed
         # during performance updates in Python 3.2
         cf_from_file = self.newconfig()
-        with open(support.TESTFN) as f:
+        with open(os_helper.TESTFN) as f:
             cf_from_file.read_file(f)
         self.assertEqual(cf_from_file.get('section8', 'lovely_spam4'),
                          self.wonderful_spam.replace('\t\n', '\n'))
@@ -2127,8 +2128,7 @@ class BlatantOverrideConvertersTestCase(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {"Error"}
-        support.check__all__(self, configparser, blacklist=blacklist)
+        support.check__all__(self, configparser, not_exported={"Error"})
 
 
 if __name__ == '__main__':

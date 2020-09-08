@@ -1,0 +1,1 @@
+Add a new :data:`os.RWF_APPEND` flag for :func:`os.pwritev`.

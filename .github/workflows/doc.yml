@@ -25,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Register Sphinx problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/sphinx.json"
     - name: 'Install Dependencies'
       run: sudo ./.github/workflows/posix-deps-apt.sh && sudo apt-get install wamerican
     - name: 'Configure CPython'
@@ -34,7 +36,7 @@ jobs:
     - name: 'Install build dependencies'
       run: make -C Doc/ PYTHON=../python venv
     - name: 'Build documentation'
-      run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest suspicious html
+      run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going -j4" doctest suspicious html
     - name: 'Upload'
       uses: actions/upload-artifact@v1
       with:

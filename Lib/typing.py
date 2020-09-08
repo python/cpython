@@ -244,14 +244,16 @@ def _tp_cache(func):
     return inner
 
 
-def _eval_type(t, globalns, localns):
+def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     """Evaluate all forward reverences in the given type t.
     For use of globalns and localns see the docstring for get_type_hints().
+    recursive_guard is used to prevent prevent infinite recursion
+    with recursive ForwardRef.
     """
     if isinstance(t, ForwardRef):
-        return t._evaluate(globalns, localns)
+        return t._evaluate(globalns, localns, recursive_guard)
     if isinstance(t, (_GenericAlias, GenericAlias)):
-        ev_args = tuple(_eval_type(a, globalns, localns) for a in t.__args__)
+        ev_args = tuple(_eval_type(a, globalns, localns, recursive_guard) for a in t.__args__)
         if ev_args == t.__args__:
             return t
         if isinstance(t, GenericAlias):
@@ -477,7 +479,9 @@ class ForwardRef(_Final, _root=True):
         self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
 
-    def _evaluate(self, globalns, localns):
+    def _evaluate(self, globalns, localns, recursive_guard):
+        if self.__forward_arg__ in recursive_guard:
+            return self
         if not self.__forward_evaluated__ or localns is not globalns:
             if globalns is None and localns is None:
                 globalns = localns = {}
@@ -485,10 +489,14 @@ class ForwardRef(_Final, _root=True):
                 globalns = localns
             elif localns is None:
                 localns = globalns
-            self.__forward_value__ = _type_check(
+            type_ =_type_check(
                 eval(self.__forward_code__, globalns, localns),
                 "Forward references must evaluate to types.",
-                is_argument=self.__forward_is_argument__)
+                is_argument=self.__forward_is_argument__,
+            )
+            self.__forward_value__ = _eval_type(
+                type_, globalns, localns, recursive_guard | {self.__forward_arg__}
+            )
             self.__forward_evaluated__ = True
         return self.__forward_value__
 
@@ -894,16 +902,6 @@ class Generic:
     __slots__ = ()
     _is_protocol = False
 
-    def __new__(cls, *args, **kwds):
-        if cls in (Generic, Protocol):
-            raise TypeError(f"Type {cls.__name__} cannot be instantiated; "
-                            "it can be used only as a base class")
-        if super().__new__ is object.__new__ and cls.__init__ is not object.__init__:
-            obj = super().__new__(cls)
-        else:
-            obj = super().__new__(cls, *args, **kwds)
-        return obj
-
     @_tp_cache
     def __class_getitem__(cls, params):
         if not isinstance(params, tuple):
@@ -1023,7 +1021,7 @@ def _allow_reckless_class_cheks():
         return True
 
 
-_PROTO_WHITELIST = {
+_PROTO_ALLOWLIST = {
     'collections.abc': [
         'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
         'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
@@ -1142,8 +1140,8 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         # ... otherwise check consistency of bases, and prohibit instantiation.
         for base in cls.__bases__:
             if not (base in (object, Generic) or
-                    base.__module__ in _PROTO_WHITELIST and
-                    base.__name__ in _PROTO_WHITELIST[base.__module__] or
+                    base.__module__ in _PROTO_ALLOWLIST and
+                    base.__name__ in _PROTO_ALLOWLIST[base.__module__] or
                     issubclass(base, Generic) and base._is_protocol):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)

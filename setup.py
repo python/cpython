@@ -8,7 +8,7 @@ import os
 import re
 import sys
 import sysconfig
-from glob import glob
+from glob import glob, escape
 
 
 try:
@@ -401,7 +401,7 @@ class PyBuildExt(build_ext):
 
         # Python header files
         headers = [sysconfig.get_config_h_filename()]
-        headers += glob(os.path.join(sysconfig.get_path('include'), "*.h"))
+        headers += glob(os.path.join(escape(sysconfig.get_path('include')), "*.h"))
 
         for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
@@ -853,7 +853,8 @@ class PyBuildExt(build_ext):
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
         self.add(Extension('_datetime', ['_datetimemodule.c'],
-                           libraries=['m']))
+                           libraries=['m'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # zoneinfo module
         self.add(Extension('_zoneinfo', ['_zoneinfo.c'])),
         # random number generator implemented in C
@@ -862,7 +863,8 @@ class PyBuildExt(build_ext):
         # bisect
         self.add(Extension("_bisect", ["_bisectmodule.c"]))
         # heapq
-        self.add(Extension("_heapq", ["_heapqmodule.c"]))
+        self.add(Extension("_heapq", ["_heapqmodule.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # C-optimized pickle replacement
         self.add(Extension("_pickle", ["_pickle.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
@@ -916,9 +918,6 @@ class PyBuildExt(build_ext):
 
         # select(2); not on ancient System V
         self.add(Extension('select', ['selectmodule.c']))
-
-        # Fred Drake's interface to the Python parser
-        self.add(Extension('parser', ['parsermodule.c']))
 
         # Memory-mapped files (also works on Win32).
         self.add(Extension('mmap', ['mmapmodule.c']))
@@ -1453,7 +1452,6 @@ class PyBuildExt(build_ext):
         sqlite_setup_debug = False   # verbose debug prints from this script?
 
         # We hunt for #define SQLITE_VERSION "n.n.n"
-        # We need to find >= sqlite version 3.3.9, for sqlite3_prepare_v2
         sqlite_incdir = sqlite_libdir = None
         sqlite_inc_paths = [ '/usr/include',
                              '/usr/include/sqlite',
@@ -1464,7 +1462,8 @@ class PyBuildExt(build_ext):
                              ]
         if CROSS_COMPILING:
             sqlite_inc_paths = []
-        MIN_SQLITE_VERSION_NUMBER = (3, 7, 2)
+        # We need to find >= sqlite version 3.7.3, for sqlite3_create_function_v2()
+        MIN_SQLITE_VERSION_NUMBER = (3, 7, 3)
         MIN_SQLITE_VERSION = ".".join([str(x)
                                     for x in MIN_SQLITE_VERSION_NUMBER])
 
@@ -2433,7 +2432,7 @@ class PyBuildExt(build_ext):
 
         if "blake2" in configured:
             blake2_deps = glob(
-                os.path.join(self.srcdir, 'Modules/_blake2/impl/*')
+                os.path.join(escape(self.srcdir), 'Modules/_blake2/impl/*')
             )
             blake2_deps.append('hashlib.h')
             self.add(Extension(
@@ -2448,7 +2447,7 @@ class PyBuildExt(build_ext):
 
         if "sha3" in configured:
             sha3_deps = glob(
-                os.path.join(self.srcdir, 'Modules/_sha3/kcp/*')
+                os.path.join(escape(self.srcdir), 'Modules/_sha3/kcp/*')
             )
             sha3_deps.append('hashlib.h')
             self.add(Extension(

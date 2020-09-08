@@ -12,6 +12,8 @@ import os
 import os.path
 from pathlib import Path, PurePath
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 import unittest
 import sys
 import tempfile
@@ -55,8 +57,8 @@ _extension_details()
 def import_importlib(module_name):
     """Import a module from importlib both w/ and w/o _frozen_importlib."""
     fresh = ('importlib',) if '.' in module_name else ()
-    frozen = support.import_fresh_module(module_name)
-    source = support.import_fresh_module(module_name, fresh=fresh,
+    frozen = import_helper.import_fresh_module(module_name)
+    source = import_helper.import_fresh_module(module_name, fresh=fresh,
                                          blocked=('_frozen_importlib', '_frozen_importlib_external'))
     return {'Frozen': frozen, 'Source': source}
 
@@ -158,9 +160,9 @@ def uncache(*names):
 @contextlib.contextmanager
 def temp_module(name, content='', *, pkg=False):
     conflicts = [n for n in sys.modules if n.partition('.')[0] == name]
-    with support.temp_cwd(None) as cwd:
+    with os_helper.temp_cwd(None) as cwd:
         with uncache(name, *conflicts):
-            with support.DirsOnSysPath(cwd):
+            with import_helper.DirsOnSysPath(cwd):
                 invalidate_caches()
 
                 location = os.path.join(cwd, name)
@@ -396,7 +398,7 @@ def create_modules(*names):
             state_manager.__exit__(None, None, None)
         if uncache_manager is not None:
             uncache_manager.__exit__(None, None, None)
-        support.rmtree(temp_dir)
+        os_helper.rmtree(temp_dir)
 
 
 def mock_path_hook(*entries, importer):
@@ -572,8 +574,8 @@ class ZipSetupBase:
             pass
 
     def setUp(self):
-        modules = support.modules_setup()
-        self.addCleanup(support.modules_cleanup, *modules)
+        modules = import_helper.modules_setup()
+        self.addCleanup(import_helper.modules_cleanup, *modules)
 
 
 class ZipSetup(ZipSetupBase):

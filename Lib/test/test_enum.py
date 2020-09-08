@@ -10,6 +10,7 @@ from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from test.support import ALWAYS_EQ
+from test.support import threading_helper
 from datetime import timedelta
 
 
@@ -2333,7 +2334,7 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(Color.ALL.value, 7)
         self.assertEqual(str(Color.BLUE), 'blue')
 
-    @support.reap_threads
+    @threading_helper.reap_threads
     def test_unique_composite(self):
         # override __eq__ to be identity only
         class TestFlag(Flag):
@@ -2363,7 +2364,7 @@ class TestFlag(unittest.TestCase):
                 threading.Thread(target=cycle_enum)
                 for _ in range(8)
                 ]
-        with support.start_threads(threads):
+        with threading_helper.start_threads(threads):
             pass
         # check that only 248 members were created
         self.assertFalse(
@@ -2751,7 +2752,7 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(Color.ALL.value, 7)
         self.assertEqual(str(Color.BLUE), 'blue')
 
-    @support.reap_threads
+    @threading_helper.reap_threads
     def test_unique_composite(self):
         # override __eq__ to be identity only
         class TestFlag(IntFlag):
@@ -2781,7 +2782,7 @@ class TestIntFlag(unittest.TestCase):
                 threading.Thread(target=cycle_enum)
                 for _ in range(8)
                 ]
-        with support.start_threads(threads):
+        with threading_helper.start_threads(threads):
             pass
         # check that only 248 members were created
         self.assertFalse(

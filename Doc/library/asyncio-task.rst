@@ -387,6 +387,14 @@ Running Tasks Concurrently
       #     Task C: Compute factorial(4)...
       #     Task C: factorial(4) = 24
 
+   .. note::
+      If *return_exceptions* is False, cancelling gather() after it
+      has been marked done won't cancel any submitted awaitables.
+      For instance, gather can be marked done after propagating an
+      exception to the caller, therefore, calling ``gather.cancel()``
+      after catching an exception (raised by one of the awaitables) from
+      gather won't cancel any other awaitables.
+
    .. versionchanged:: 3.7
       If the *gather* itself is cancelled, the cancellation is
       propagated regardless of *return_exceptions*.
@@ -585,9 +593,9 @@ Waiting Primitives
 .. function:: as_completed(aws, \*, loop=None, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently.  Return an iterator of :class:`Future` objects.
-   Each Future object returned represents the earliest result
-   from the set of the remaining awaitables.
+   set concurrently.  Return an iterator of coroutines.
+   Each coroutine returned can be awaited to get the earliest next
+   result from the set of the remaining awaitables.
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
@@ -597,8 +605,8 @@ Waiting Primitives
 
    Example::
 
-       for f in as_completed(aws):
-           earliest_result = await f
+       for coro in as_completed(aws):
+           earliest_result = await coro
            # ...
 
 
@@ -614,8 +622,7 @@ Running in Threads
    allowing context variables from the event loop thread to be accessed in the
    separate thread.
 
-   Return an :class:`asyncio.Future` which represents the eventual result of
-   *func*.
+   Return a coroutine that can be awaited to get the eventual result of *func*.
 
    This coroutine function is primarily intended to be used for executing
    IO-bound functions/methods that would otherwise block the event loop if
@@ -962,31 +969,6 @@ Task Object
       in the :func:`repr` output of a task object.
 
       .. versionadded:: 3.8
-
-   .. classmethod:: all_tasks(loop=None)
-
-      Return a set of all tasks for an event loop.
-
-      By default all tasks for the current event loop are returned.
-      If *loop* is ``None``, the :func:`get_event_loop` function
-      is used to get the current loop.
-
-      .. deprecated-removed:: 3.7 3.9
-
-         Do not call this as a task method. Use the :func:`asyncio.all_tasks`
-         function instead.
-
-   .. classmethod:: current_task(loop=None)
-
-      Return the currently running task or ``None``.
-
-      If *loop* is ``None``, the :func:`get_event_loop` function
-      is used to get the current loop.
-
-      .. deprecated-removed:: 3.7 3.9
-
-         Do not call this as a task method.  Use the
-         :func:`asyncio.current_task` function instead.
 
 
 .. _asyncio_generator_based_coro:
