@@ -43,7 +43,7 @@ typedef struct
     PyObject* in_weakreflist; /* List of weak references */
 } pysqlite_Statement;
 
-extern PyTypeObject pysqlite_StatementType;
+extern PyTypeObject *pysqlite_StatementType;
 
 int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* connection, PyObject* sql);
 void pysqlite_statement_dealloc(pysqlite_Statement* self);
