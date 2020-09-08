@@ -1,2 +1,3 @@
-Ensure all methods from a :func:`dataclasses.dataclass` uses the
-``__qualname__`` of the class they belong. Patch by Batuhan Taskaya.
+Ensure all methods belonging to :func:`dataclasses.dataclass` objects
+now have the proper ``__qualname__`` attribute referring to the class
+they belong. Patch by Batuhan Taskaya.
