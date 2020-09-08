@@ -59,7 +59,7 @@ typedef struct
     int decref_factory;
 } pysqlite_Cache;
 
-extern PyTypeObject pysqlite_NodeType;
+extern PyTypeObject *pysqlite_NodeType;
 extern PyTypeObject *pysqlite_CacheType;
 
 int pysqlite_node_init(pysqlite_Node* self, PyObject* args, PyObject* kwargs);
