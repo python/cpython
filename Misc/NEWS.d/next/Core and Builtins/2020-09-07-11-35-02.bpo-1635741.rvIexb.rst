@@ -1,0 +1,2 @@
+Port the :mod:`termios` extension module to multi-phase initialization
+(:pep:`489`).
