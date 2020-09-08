@@ -1,2 +1,1 @@
-Convert the :mod:`_sha256` extension module types to heap types
-(:pep:`489`).
+Convert the :mod:`_sha256` extension module types to heap types.
