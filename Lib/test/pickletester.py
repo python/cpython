@@ -21,18 +21,28 @@ try:
 except ImportError:
     _testbuffer = None
 
+from test import support
+from test.support import os_helper
+from test.support import (
+    TestFailed, run_with_locale, no_tracing,
+    _2G, _4G, bigmemtest
+    )
+from test.support.import_helper import forget
+from test.support.os_helper import TESTFN
+from test.support import threading_helper
+from test.support.warnings_helper import save_restore_warnings_filters
+
+from pickle import bytes_types
+
+
+# bpo-41003: Save/restore warnings filters to leave them unchanged.
+# Ignore filters installed by numpy.
 try:
-    import numpy as np
+    with save_restore_warnings_filters():
+        import numpy as np
 except ImportError:
     np = None
 
-from test import support
-from test.support import (
-    TestFailed, TESTFN, run_with_locale, no_tracing,
-    _2G, _4G, bigmemtest, reap_threads, forget,
-    )
-
-from pickle import bytes_types
 
 requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
                                    "test is only meaningful on 32-bit builds")
@@ -1166,6 +1176,24 @@ class AbstractUnpickleTests(unittest.TestCase):
             self.assertIs(type(unpickled), collections.UserDict)
             self.assertEqual(unpickled, collections.UserDict({1: 2}))
 
+    def test_bad_reduce(self):
+        self.assertEqual(self.loads(b'cbuiltins\nint\n)R.'), 0)
+        self.check_unpickling_error(TypeError, b'N)R.')
+        self.check_unpickling_error(TypeError, b'cbuiltins\nint\nNR.')
+
+    def test_bad_newobj(self):
+        error = (pickle.UnpicklingError, TypeError)
+        self.assertEqual(self.loads(b'cbuiltins\nint\n)\x81.'), 0)
+        self.check_unpickling_error(error, b'cbuiltins\nlen\n)\x81.')
+        self.check_unpickling_error(error, b'cbuiltins\nint\nN\x81.')
+
+    def test_bad_newobj_ex(self):
+        error = (pickle.UnpicklingError, TypeError)
+        self.assertEqual(self.loads(b'cbuiltins\nint\n)}\x92.'), 0)
+        self.check_unpickling_error(error, b'cbuiltins\nlen\n)}\x92.')
+        self.check_unpickling_error(error, b'cbuiltins\nint\nN}\x92.')
+        self.check_unpickling_error(error, b'cbuiltins\nint\n)N\x92.')
+
     def test_bad_stack(self):
         badpickles = [
             b'.',                       # STOP
@@ -1350,7 +1378,7 @@ class AbstractUnpickleTests(unittest.TestCase):
         for p in badpickles:
             self.check_unpickling_error(self.truncated_errors, p)
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_unpickle_module_race(self):
         # https://bugs.python.org/issue34572
         locker_module = dedent("""
@@ -3093,7 +3121,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
     def test_load_closed_file(self):
         f = open(TESTFN, "wb")
@@ -3101,7 +3129,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
     def test_load_from_and_dump_to_file(self):
         stream = io.BytesIO()
@@ -3132,7 +3160,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
                 self.assertRaises(TypeError, self.dump, 123, f, proto)
         finally:
             f.close()
-            support.unlink(TESTFN)
+            os_helper.unlink(TESTFN)
 
     def test_incomplete_input(self):
         s = io.BytesIO(b"X''.")

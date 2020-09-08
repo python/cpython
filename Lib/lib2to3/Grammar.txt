@@ -67,8 +67,8 @@ assert_stmt: 'assert' test [',' test]
 
 compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated | async_stmt
 async_stmt: ASYNC (funcdef | with_stmt | for_stmt)
-if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
-while_stmt: 'while' test ':' suite ['else' ':' suite]
+if_stmt: 'if' namedexpr_test ':' suite ('elif' namedexpr_test ':' suite)* ['else' ':' suite]
+while_stmt: 'while' namedexpr_test ':' suite ['else' ':' suite]
 for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
 try_stmt: ('try' ':' suite
            ((except_clause ':' suite)+
@@ -91,6 +91,7 @@ testlist_safe: old_test [(',' old_test)+ [',']]
 old_test: or_test | old_lambdef
 old_lambdef: 'lambda' [varargslist] ':' old_test
 
+namedexpr_test: test [':=' test]
 test: or_test ['if' or_test 'else' test] | lambdef
 or_test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
@@ -111,8 +112,8 @@ atom: ('(' [yield_expr|testlist_gexp] ')' |
        '{' [dictsetmaker] '}' |
        '`' testlist1 '`' |
        NAME | NUMBER | STRING+ | '.' '.' '.')
-listmaker: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
-testlist_gexp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
+listmaker: (namedexpr_test|star_expr) ( comp_for | (',' (namedexpr_test|star_expr))* [','] )
+testlist_gexp: (namedexpr_test|star_expr) ( comp_for | (',' (namedexpr_test|star_expr))* [','] )
 lambdef: 'lambda' [varargslist] ':' test
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']
@@ -137,6 +138,7 @@ arglist: argument (',' argument)* [',']
 # multiple (test comp_for) arguments are blocked; keyword unpackings
 # that precede iterable unpackings are blocked; etc.
 argument: ( test [comp_for] |
+            test ':=' test |
             test '=' test |
             '**' test |
 	        '*' test )

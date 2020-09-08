@@ -1,0 +1,1 @@
+Fix truncate when sending str object with_xxsubinterpreters.channel_send.

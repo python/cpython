@@ -8,9 +8,9 @@
 */
 
 #include "Python.h"
-#include "pycore_tupleobject.h"
-#include "pycore_object.h"
-#include "structmember.h"
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "structmember.h"         // PyMemberDef
 
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
@@ -70,6 +70,9 @@ PyStructSequence_GetItem(PyObject* op, Py_ssize_t i)
 static int
 structseq_traverse(PyStructSequence *obj, visitproc visit, void *arg)
 {
+    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        Py_VISIT(Py_TYPE(obj));
+    }
     Py_ssize_t i, size;
     size = REAL_SIZE(obj);
     for (i = 0; i < size; ++i) {

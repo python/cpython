@@ -1,0 +1,4 @@
+:mod:`ctypes` module: If ctypes fails to convert the result of a callback or
+if a ctypes callback function raises an exception, sys.unraisablehook is now
+called with an exception set. Previously, the error was logged into stderr
+by :c:func:`PyErr_Print`.

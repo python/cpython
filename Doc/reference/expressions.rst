@@ -28,7 +28,7 @@ Arithmetic conversions
 .. index:: pair: arithmetic; conversion
 
 When a description of an arithmetic operator below uses the phrase "the numeric
-arguments are converted to a common type," this means that the operator
+arguments are converted to a common type", this means that the operator
 implementation for built-in types works as follows:
 
 * If either argument is a complex number, the other is converted to complex;
@@ -1422,8 +1422,9 @@ built-in types.
   The not-a-number values ``float('NaN')`` and ``decimal.Decimal('NaN')`` are
   special.  Any ordered comparison of a number to a not-a-number value is false.
   A counter-intuitive implication is that not-a-number values are not equal to
-  themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3``, ``x
-  == x``, ``x != x`` are all false.  This behavior is compliant with IEEE 754.
+  themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3`` and
+  ``x == x`` are all false, while ``x != x`` is true.  This behavior is
+  compliant with IEEE 754.
 
 * ``None`` and ``NotImplemented`` are singletons.  :PEP:`8` advises that
   comparisons for singletons should always be done with ``is`` or ``is not``,
@@ -1649,9 +1650,26 @@ Assignment expressions
 .. productionlist::
    assignment_expression: [`identifier` ":="] `expression`
 
-.. TODO: BPO-39868
+An assignment expression (sometimes also called a "named expression" or
+"walrus") assigns an :token:`expression` to an :token:`identifier`, while also
+returning the value of the :token:`expression`.
 
-See :pep:`572` for more details about assignment expressions.
+One common use case is when handling matched regular expressions:
+
+.. code-block:: python
+
+   if matching := pattern.search(data):
+       do_something(matching)
+
+Or, when processing a file stream in chunks:
+
+.. code-block:: python
+
+   while chunk := file.read(9000):
+       process(chunk)
+
+.. versionadded:: 3.8
+   See :pep:`572` for more details about assignment expressions.
 
 
 .. _if_expr:

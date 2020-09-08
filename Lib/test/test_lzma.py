@@ -9,7 +9,11 @@ from test import support
 import unittest
 
 from test.support import (
-    _4G, TESTFN, import_module, bigmemtest, run_unittest, unlink
+    _4G, bigmemtest, run_unittest
+)
+from test.support.import_helper import import_module
+from test.support.os_helper import (
+    TESTFN, unlink
 )
 
 lzma = import_module("lzma")
@@ -350,7 +354,7 @@ class CompressorDecompressorTestCase(unittest.TestCase):
     def test_decompressor_bigmem(self, size):
         lzd = LZMADecompressor()
         blocksize = 10 * 1024 * 1024
-        block = random.getrandbits(blocksize * 8).to_bytes(blocksize, "little")
+        block = random.randbytes(blocksize)
         try:
             input = block * (size // blocksize + 1)
             cdata = lzma.compress(input)

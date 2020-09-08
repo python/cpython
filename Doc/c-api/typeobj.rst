@@ -1223,10 +1223,24 @@ and :c:type:`PyType_Type` effectively act as defaults.)
        but the instance has no strong reference to the elements inside it, as they
        are allowed to be removed even if the instance is still alive).
 
-
    Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
    :c:func:`local_traverse` to have these specific names; don't name them just
    anything.
+
+   Heap-allocated types (:const:`Py_TPFLAGS_HEAPTYPE`, such as those created
+   with :c:func:`PyType_FromSpec` and similar APIs) hold a reference to their
+   type. Their traversal function must therefore either visit
+   :c:func:`Py_TYPE(self) <Py_TYPE>`, or delegate this responsibility by
+   calling ``tp_traverse`` of another heap-allocated type (such as a
+   heap-allocated superclass).
+   If they do not, the type object may not be garbage-collected.
+
+   .. versionchanged:: 3.9
+
+      Heap-allocated types are expected to visit ``Py_TYPE(self)`` in
+      ``tp_traverse``.  In earlier versions of Python, due to
+      `bug 40217 <https://bugs.python.org/issue40217>`_, doing this
+      may lead to crashes in subclasses.
 
    **Inheritance:**
 
@@ -1334,7 +1348,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    The following macro is defined to ease writing rich comparison functions:
 
-   .. c:function:: PyObject \*Py_RETURN_RICHCOMPARE(VAL_A, VAL_B, int op)
+   .. c:macro:: Py_RETURN_RICHCOMPARE(VAL_A, VAL_B, op)
 
       Return ``Py_True`` or ``Py_False`` from the function, depending on the
       result of a comparison.
@@ -1372,7 +1386,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    than zero and contains the offset in the instance structure of the weak
    reference list head (ignoring the GC header, if present); this offset is used by
    :c:func:`PyObject_ClearWeakRefs` and the :c:func:`PyWeakref_\*` functions.  The
-   instance structure needs to include a field of type :c:type:`PyObject\*` which is
+   instance structure needs to include a field of type :c:type:`PyObject*` which is
    initialized to ``NULL``.
 
    Do not confuse this field with :c:member:`~PyTypeObject.tp_weaklist`; that is the list head for

@@ -2,6 +2,7 @@ import os
 import unittest
 import random
 from test import support
+from test.support import threading_helper
 import _thread as thread
 import time
 import weakref
@@ -32,8 +33,8 @@ class BasicThreadTest(unittest.TestCase):
         self.running = 0
         self.next_ident = 0
 
-        key = support.threading_setup()
-        self.addCleanup(support.threading_cleanup, *key)
+        key = threading_helper.threading_setup()
+        self.addCleanup(threading_helper.threading_cleanup, *key)
 
 
 class ThreadRunningTests(BasicThreadTest):
@@ -58,7 +59,7 @@ class ThreadRunningTests(BasicThreadTest):
                 self.done_mutex.release()
 
     def test_starting_threads(self):
-        with support.wait_threads_exit():
+        with threading_helper.wait_threads_exit():
             # Basic test for thread creation.
             for i in range(NUMTASKS):
                 self.newtask()
@@ -94,7 +95,7 @@ class ThreadRunningTests(BasicThreadTest):
             verbose_print("trying stack_size = (%d)" % tss)
             self.next_ident = 0
             self.created = 0
-            with support.wait_threads_exit():
+            with threading_helper.wait_threads_exit():
                 for i in range(NUMTASKS):
                     self.newtask()
 
@@ -116,7 +117,7 @@ class ThreadRunningTests(BasicThreadTest):
             mut.acquire()
             mut.release()
 
-        with support.wait_threads_exit():
+        with threading_helper.wait_threads_exit():
             thread.start_new_thread(task, ())
             while not started:
                 time.sleep(POLL_SLEEP)
@@ -140,7 +141,7 @@ class ThreadRunningTests(BasicThreadTest):
 
         started = thread.allocate_lock()
         with support.catch_unraisable_exception() as cm:
-            with support.wait_threads_exit():
+            with threading_helper.wait_threads_exit():
                 started.acquire()
                 thread.start_new_thread(task, ())
                 started.acquire()
@@ -180,7 +181,7 @@ class Barrier:
 class BarrierTest(BasicThreadTest):
 
     def test_barrier(self):
-        with support.wait_threads_exit():
+        with threading_helper.wait_threads_exit():
             self.bar = Barrier(NUMTASKS)
             self.running = NUMTASKS
             for i in range(NUMTASKS):
@@ -223,32 +224,33 @@ class TestForkInThread(unittest.TestCase):
         self.read_fd, self.write_fd = os.pipe()
 
     @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork')
-    @support.reap_threads
+    @threading_helper.reap_threads
     def test_forkinthread(self):
-        status = "not set"
+        pid = None
 
-        def thread1():
-            nonlocal status
+        def fork_thread(read_fd, write_fd):
+            nonlocal pid
 
             # fork in a thread
             pid = os.fork()
-            if pid == 0:
-                # child
-                try:
-                    os.close(self.read_fd)
-                    os.write(self.write_fd, b"OK")
-                finally:
-                    os._exit(0)
-            else:
-                # parent
-                os.close(self.write_fd)
-                pid, status = os.waitpid(pid, 0)
+            if pid:
+                # parent process
+                return
 
-        with support.wait_threads_exit():
-            thread.start_new_thread(thread1, ())
-            self.assertEqual(os.read(self.read_fd, 2), b"OK",
-                             "Unable to fork() in thread")
-        self.assertEqual(status, 0)
+            # child process
+            try:
+                os.close(read_fd)
+                os.write(write_fd, b"OK")
+            finally:
+                os._exit(0)
+
+        with threading_helper.wait_threads_exit():
+            thread.start_new_thread(fork_thread, (self.read_fd, self.write_fd))
+            self.assertEqual(os.read(self.read_fd, 2), b"OK")
+            os.close(self.write_fd)
+
+        self.assertIsNotNone(pid)
+        support.wait_process(pid, exitcode=0)
 
     def tearDown(self):
         try:

@@ -1,8 +1,8 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_tupleobject.h"
-#include "structmember.h"
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include <stddef.h>               // offsetof()
 
 /* Itertools module written and maintained
    by Raymond D. Hettinger <python@rcn.com>
@@ -455,8 +455,6 @@ typedef struct {
     PyObject *weakreflist;
 } teeobject;
 
-static PyTypeObject teedataobject_type;
-
 static PyObject *
 teedataobject_newinternal(PyObject *it)
 {
@@ -681,8 +679,6 @@ static PyTypeObject teedataobject_type = {
     PyObject_GC_Del,                            /* tp_free */
 };
 
-
-static PyTypeObject tee_type;
 
 static PyObject *
 tee_next(teeobject *to)
@@ -949,8 +945,6 @@ typedef struct {
     int firstpass;
 } cycleobject;
 
-static PyTypeObject cycle_type;
-
 /*[clinic input]
 @classmethod
 itertools.cycle.__new__
@@ -1005,8 +999,7 @@ cycle_dealloc(cycleobject *lz)
 static int
 cycle_traverse(cycleobject *lz, visitproc visit, void *arg)
 {
-    if (lz->it)
-        Py_VISIT(lz->it);
+    Py_VISIT(lz->it);
     Py_VISIT(lz->saved);
     return 0;
 }
@@ -1146,8 +1139,6 @@ typedef struct {
     PyObject *it;
     long start;
 } dropwhileobject;
-
-static PyTypeObject dropwhile_type;
 
 /*[clinic input]
 @classmethod
@@ -1313,8 +1304,6 @@ typedef struct {
     PyObject *it;
     long stop;
 } takewhileobject;
-
-static PyTypeObject takewhile_type;
 
 /*[clinic input]
 @classmethod
@@ -1734,8 +1723,6 @@ typedef struct {
     PyObject *it;
 } starmapobject;
 
-static PyTypeObject starmap_type;
-
 /*[clinic input]
 @classmethod
 itertools.starmap.__new__
@@ -2040,6 +2027,8 @@ static PyMethodDef chain_methods[] = {
      reduce_doc},
     {"__setstate__",    (PyCFunction)chain_setstate,    METH_O,
      setstate_doc},
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -2452,8 +2441,6 @@ typedef struct {
     int stopped;            /* set to 1 when the iterator is exhausted */
 } combinationsobject;
 
-static PyTypeObject combinations_type;
-
 
 /*[clinic input]
 @classmethod
@@ -2786,8 +2773,6 @@ typedef struct {
     int stopped;            /* set to 1 when the cwr iterator is exhausted */
 } cwrobject;
 
-static PyTypeObject cwr_type;
-
 /*[clinic input]
 @classmethod
 itertools.combinations_with_replacement.__new__
@@ -3110,8 +3095,6 @@ typedef struct {
     Py_ssize_t r;           /* size of result tuple */
     int stopped;            /* set to 1 when the iterator is exhausted */
 } permutationsobject;
-
-static PyTypeObject permutations_type;
 
 /*[clinic input]
 @classmethod
@@ -3472,8 +3455,6 @@ typedef struct {
     PyObject *initial;
 } accumulateobject;
 
-static PyTypeObject accumulate_type;
-
 /*[clinic input]
 @classmethod
 itertools.accumulate.__new__
@@ -3685,8 +3666,6 @@ typedef struct {
     PyObject *selectors;
 } compressobject;
 
-static PyTypeObject compress_type;
-
 /*[clinic input]
 @classmethod
 itertools.compress.__new__
@@ -3844,8 +3823,6 @@ typedef struct {
     PyObject *func;
     PyObject *it;
 } filterfalseobject;
-
-static PyTypeObject filterfalse_type;
 
 /*[clinic input]
 @classmethod
@@ -4016,8 +3993,6 @@ slow_mode:  when cnt == PY_SSIZE_T_MAX, step is not int(1), or cnt is a float.
     Step may be zero -- effectively a slow version of repeat(cnt).
     Either long_cnt or long_step may be a float, Fraction, or Decimal.
 */
-
-static PyTypeObject count_type;
 
 /*[clinic input]
 @classmethod
@@ -4724,21 +4699,13 @@ itertoolsmodule_exec(PyObject *m)
         &groupby_type,
         &_grouper_type,
         &tee_type,
-        &teedataobject_type,
-        NULL
+        &teedataobject_type
     };
 
     Py_SET_TYPE(&teedataobject_type, &PyType_Type);
 
-    for (int i = 0; typelist[i] != NULL; i++) {
-        PyTypeObject *type = typelist[i];
-        if (PyType_Ready(type) < 0) {
-            return -1;
-        }
-        const char *name = _PyType_Name(type);
-        Py_INCREF(type);
-        if (PyModule_AddObject(m, name, (PyObject *)type) < 0) {
-            Py_DECREF(type);
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(typelist); i++) {
+        if (PyModule_AddType(m, typelist[i]) < 0) {
             return -1;
         }
     }

@@ -17,7 +17,7 @@
 
 #include "Python.h"
 #include "ucnhash.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #include <stdbool.h>
 
@@ -496,7 +496,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
     Py_UCS4 *output;
     Py_ssize_t i, o, osize;
     int kind;
-    void *data;
+    const void *data;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
     Py_UCS4 stack[20];
     Py_ssize_t space, isize;
@@ -643,7 +643,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
 {
     PyObject *result;
     int kind;
-    void *data;
+    const void *data;
     Py_UCS4 *output;
     Py_ssize_t i, i1, o, len;
     int f,l,index,index1,comb;
@@ -804,7 +804,7 @@ is_normalized_quickcheck(PyObject *self, PyObject *input,
 
     Py_ssize_t i, len;
     int kind;
-    void *data;
+    const void *data;
     unsigned char prev_combining = 0;
 
     /* The two quickcheck bits at this shift have type QuickcheckResult. */

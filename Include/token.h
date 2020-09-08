@@ -78,6 +78,10 @@ extern "C" {
 #define ISTERMINAL(x)           ((x) < NT_OFFSET)
 #define ISNONTERMINAL(x)        ((x) >= NT_OFFSET)
 #define ISEOF(x)                ((x) == ENDMARKER)
+#define ISWHITESPACE(x)         ((x) == ENDMARKER || \
+                                 (x) == NEWLINE   || \
+                                 (x) == INDENT    || \
+                                 (x) == DEDENT)
 
 
 PyAPI_DATA(const char * const) _PyParser_TokenNames[]; /* Token names */

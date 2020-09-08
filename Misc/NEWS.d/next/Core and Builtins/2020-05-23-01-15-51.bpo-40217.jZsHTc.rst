@@ -1,0 +1,4 @@
+Instances of types created with :c:func:`PyType_FromSpecWithBases` will no
+longer automatically visit their class object when traversing references in
+the garbage collector. The user is expected to manually visit the object's
+class. Patch by Pablo Galindo.

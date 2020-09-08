@@ -11,7 +11,7 @@ import py_compile
 import zipfile
 
 from importlib.util import source_from_cache
-from test.support import make_legacy_pyc
+from test.support.import_helper import make_legacy_pyc
 
 
 # Cached result of the expensive test performed in the function below.

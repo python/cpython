@@ -303,6 +303,19 @@ class TestRawDataManager(TestEmailBase):
         self.assertEqual(m.get_payload(decode=True).decode('utf-8'), content)
         self.assertEqual(m.get_content(), content)
 
+    def test_set_text_plain_null(self):
+        m = self._make_message()
+        content = ''
+        raw_data_manager.set_content(m, content)
+        self.assertEqual(str(m), textwrap.dedent("""\
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: 7bit
+
+
+            """))
+        self.assertEqual(m.get_payload(decode=True).decode('utf-8'), '\n')
+        self.assertEqual(m.get_content(), '\n')
+
     def test_set_text_html(self):
         m = self._make_message()
         content = "<p>Simple message.</p>\n"
@@ -325,6 +338,21 @@ class TestRawDataManager(TestEmailBase):
             Content-Transfer-Encoding: 7bit
 
             Simple message.
+            """))
+        self.assertEqual(m.get_payload(decode=True).decode('utf-8'), content)
+        self.assertEqual(m.get_content(), content)
+
+    def test_set_text_plain_long_line_heuristics(self):
+        m = self._make_message()
+        content = ("Simple but long message that is over 78 characters"
+                   " long to force transfer encoding.\n")
+        raw_data_manager.set_content(m, content)
+        self.assertEqual(str(m), textwrap.dedent("""\
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: quoted-printable
+
+            Simple but long message that is over 78 characters long to =
+            force transfer encoding.
             """))
         self.assertEqual(m.get_payload(decode=True).decode('utf-8'), content)
         self.assertEqual(m.get_content(), content)

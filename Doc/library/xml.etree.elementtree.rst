@@ -15,6 +15,8 @@ for parsing and creating XML data.
 
 .. versionchanged:: 3.3
    This module will use a fast implementation whenever available.
+
+.. deprecated:: 3.3
    The :mod:`xml.etree.cElementTree` module is deprecated.
 
 
@@ -816,15 +818,24 @@ Functions
    loader fails, it can return None or raise an exception.
 
 
-.. function:: xml.etree.ElementInclude.include( elem, loader=None)
+.. function:: xml.etree.ElementInclude.include( elem, loader=None, base_url=None, \
+                                                max_depth=6)
 
    This function expands XInclude directives.  *elem* is the root element.  *loader* is
    an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
    If given, it should be a callable that implements the same interface as
-   :func:`default_loader`.  Returns the expanded resource.  If the parse mode is
+   :func:`default_loader`.  *base_url* is base URL of the original file, to resolve
+   relative include file references.  *max_depth* is the maximum number of recursive
+   inclusions.  Limited to reduce the risk of malicious content explosion. Pass a
+   negative value to disable the limitation.
+
+   Returns the expanded resource.  If the parse mode is
    ``"xml"``, this is an ElementTree instance.  If the parse mode is "text",
    this is a Unicode string.  If the loader fails, it can return None or
    raise an exception.
+
+   .. versionadded:: 3.9
+      The *base_url* and *max_depth* parameters.
 
 
 .. _elementtree-element-objects:

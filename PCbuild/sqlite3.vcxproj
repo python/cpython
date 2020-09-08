@@ -98,7 +98,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(sqlite3Dir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>SQLITE_ENABLE_FTS4;SQLITE_ENABLE_FTS5;SQLITE_API=__declspec(dllexport);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SQLITE_ENABLE_JSON1;SQLITE_ENABLE_FTS4;SQLITE_ENABLE_FTS5;SQLITE_API=__declspec(dllexport);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level1</WarningLevel>
     </ClCompile>
     <ResourceCompile>

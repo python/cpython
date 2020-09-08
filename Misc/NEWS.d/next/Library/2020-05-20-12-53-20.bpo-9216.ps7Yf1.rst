@@ -1,0 +1,3 @@
+func:`hashlib.new` passed ``usedforsecurity`` to OpenSSL EVP constructor
+``_hashlib.new()``. test_hashlib and test_smtplib handle strict security
+policy better.
