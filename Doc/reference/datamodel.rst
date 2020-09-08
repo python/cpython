@@ -141,16 +141,20 @@ Some of the type descriptions below contain a paragraph listing 'special
 attributes.'  These are attributes that provide access to the implementation and
 are not intended for general use.  Their definition may change in the future.
 
-None
-   .. index:: object: None
+NoneType
+   .. index::
+      object: NoneType
+      object: None
 
    This type has a single value.  There is a single object with this value. This
    object is accessed through the built-in name ``None``. It is used to signify the
    absence of a value in many situations, e.g., it is returned from functions that
    don't explicitly return anything. Its truth value is false.
 
-NotImplemented
-   .. index:: object: NotImplemented
+NotImplementedType
+   .. index::
+      object: NotImplementedType
+      object: NotImplemented
 
    This type has a single value.  There is a single object with this value. This
    object is accessed through the built-in name ``NotImplemented``. Numeric methods
@@ -169,8 +173,9 @@ NotImplemented
       It will raise a :exc:`TypeError` in a future version of Python.
 
 
-Ellipsis
+ellipsis
    .. index::
+      object: ellipsis
       object: Ellipsis
       single: ...; ellipsis literal
 
