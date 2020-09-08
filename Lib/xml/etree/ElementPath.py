@@ -264,10 +264,9 @@ def prepare_predicate(next, token):
                     yield elem
         def select_negated(context, result):
             for elem in result:
-                if elem.get(key) is not None and elem.get(key) != value:
+                if (attr_value := elem.get(key)) is not None and attr_value != value:
                     yield elem
-        negate_predicate = '!' in signature
-        return select_negated if negate_predicate else select
+        return select_negated if '!=' in signature else select
     if signature == "-" and not re.match(r"\-?\d+$", predicate[0]):
         # [tag]
         tag = predicate[0]
@@ -290,7 +289,7 @@ def prepare_predicate(next, token):
                             break
             def select_negated(context, result):
                 for elem in result:
-                    for e in elem.findall(tag):
+                    for e in elem.iterfind(tag):
                         if "".join(e.itertext()) != value:
                             yield elem
                             break
@@ -303,8 +302,7 @@ def prepare_predicate(next, token):
                 for elem in result:
                     if "".join(elem.itertext()) != value:
                         yield elem
-        negate_predicate = '!' in signature
-        return select_negated if negate_predicate else select
+        return select_negated if '!=' in signature else select
     if signature == "-" or signature == "-()" or signature == "-()-":
         # [index] or [last()] or [last()-index]
         if signature == "-":
