@@ -652,7 +652,11 @@ class TypesTests(unittest.TestCase):
             (int | str) < (int | bool)
         with self.assertRaises(TypeError):
             (int | str) <= (int | str)
-
+        with self.assertRaises(TypeError):
+            # Check that we don't crash if typing.Union does not have a tuple in __args__
+            x = typing.Union[str, int]
+            x.__args__ = [str, int]
+            (int | str ) == x
 
     def test_or_type_operator_with_TypeVar(self):
         TV = typing.TypeVar('T')
