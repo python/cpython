@@ -2589,7 +2589,7 @@ init_dump_ascii_wstr(const wchar_t *str)
 
     PySys_WriteStderr("'");
     for (; *str != L'\0'; str++) {
-        wchar_t ch = *str;
+        unsigned int ch = (unsigned int)*str;
         if (ch == L'\'') {
             PySys_WriteStderr("\\'");
         } else if (0x20 <= ch && ch < 0x7f) {
