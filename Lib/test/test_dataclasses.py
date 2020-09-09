@@ -1935,13 +1935,25 @@ class TestCase(unittest.TestCase):
                     self.assertEqual(sample.y, another_new_sample.y)
 
     def test_dataclasses_qualnames(self):
-        @dataclass
+        @dataclass(order=True, unsafe_hash=True, frozen=True)
         class A:
             x: int
             y: int
 
         self.assertEqual(A.__init__.__name__, "__init__")
-        self.assertEqual(A.__init__.__qualname__, "TestCase.test_dataclasses_qualnames.<locals>.A.__init__")
+        for function in (
+            '__eq__',
+            '__lt__',
+            '__le__',
+            '__gt__',
+            '__ge__',
+            '__hash__',
+            '__init__',
+            '__repr__',
+            '__setattr__',
+            '__delattr__',
+        ):
+            self.assertEqual(getattr(A, function).__qualname__, f"TestCase.test_dataclasses_qualnames.<locals>.A.{function}")
 
         with self.assertRaisesRegex(TypeError, r"A.__init__\(\) missing"):
             A()
