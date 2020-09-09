@@ -1,0 +1,2 @@
+Port the ``_string`` extension module to the multi-phase initialization API
+(:pep:`489`).

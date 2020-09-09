@@ -1,0 +1,2 @@
+Types created with :c:func:`PyType_FromSpec` now make any signature in their
+``tp_doc`` slot accessible from ``__text_signature__``.

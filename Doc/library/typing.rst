@@ -818,7 +818,7 @@ These are not used in annotations. They are building blocks for creating generic
 
     Type variables exist primarily for the benefit of static type
     checkers.  They serve as the parameters for generic types as well
-    as for generic function definitions.  See class Generic for more
+    as for generic function definitions.  See :class:`Generic` for more
     information on generic types.  Generic functions work as follows::
 
        def repeat(x: T, n: int) -> Sequence[T]:
@@ -1195,7 +1195,7 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: AbstractSet(Sized, Collection[T_co])
 
-    A generic version of :class:`collections.abc.Set`.
+   A generic version of :class:`collections.abc.Set`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Set` now supports ``[]``. See :pep:`585`.
@@ -1224,7 +1224,7 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: Container(Generic[T_co])
 
-    A generic version of :class:`collections.abc.Container`.
+   A generic version of :class:`collections.abc.Container`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Container` now supports ``[]``. See :pep:`585`.
@@ -1245,11 +1245,11 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
 
-    A generic version of :class:`collections.abc.Mapping`.
-    This type can be used as follows::
+   A generic version of :class:`collections.abc.Mapping`.
+   This type can be used as follows::
 
-      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
-          return word_list[word]
+     def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
+         return word_list[word]
 
    .. deprecated:: 3.9
       :class:`collections.abc.Mapping` now supports ``[]``. See :pep:`585`.
@@ -1263,7 +1263,7 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: MutableMapping(Mapping[KT, VT])
 
-    A generic version of :class:`collections.abc.MutableMapping`.
+   A generic version of :class:`collections.abc.MutableMapping`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.MutableMapping` now supports ``[]``. See :pep:`585`.
@@ -1277,14 +1277,14 @@ Corresponding to collections in :mod:`collections.abc`
 
 .. class:: MutableSet(AbstractSet[T])
 
-    A generic version of :class:`collections.abc.MutableSet`.
+   A generic version of :class:`collections.abc.MutableSet`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.MutableSet` now supports ``[]``. See :pep:`585`.
 
 .. class:: Sequence(Reversible[T_co], Collection[T_co])
 
-    A generic version of :class:`collections.abc.Sequence`.
+   A generic version of :class:`collections.abc.Sequence`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Sequence` now supports ``[]``. See :pep:`585`.
@@ -1301,14 +1301,14 @@ Corresponding to other types in :mod:`collections.abc`
 
 .. class:: Iterable(Generic[T_co])
 
-    A generic version of :class:`collections.abc.Iterable`.
+   A generic version of :class:`collections.abc.Iterable`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Iterable` now supports ``[]``. See :pep:`585`.
 
 .. class:: Iterator(Iterable[T_co])
 
-    A generic version of :class:`collections.abc.Iterator`.
+   A generic version of :class:`collections.abc.Iterator`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Iterator` now supports ``[]``. See :pep:`585`.
@@ -1353,7 +1353,7 @@ Corresponding to other types in :mod:`collections.abc`
 
 .. class:: Reversible(Iterable[T_co])
 
-    A generic version of :class:`collections.abc.Reversible`.
+   A generic version of :class:`collections.abc.Reversible`.
 
    .. deprecated:: 3.9
       :class:`collections.abc.Reversible` now supports ``[]``. See :pep:`585`.
@@ -1365,7 +1365,7 @@ Corresponding to other types in :mod:`collections.abc`
 Asynchronous programming
 """"""""""""""""""""""""
 
-.. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
+.. class:: Coroutine(Awaitable[V_co], Generic[T_co, T_contra, V_co])
 
    A generic version of :class:`collections.abc.Coroutine`.
    The variance and order of type variables
