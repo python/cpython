@@ -314,11 +314,6 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
     PyObject *r = NULL;
     int err;
 
-    if (p == Py_Ellipsis) {
-        // The Ellipsis object
-        r = PyUnicode_FromString("...");
-        goto exit;
-    }
     int has_origin = _PyObject_HasAttrId(p, &PyId___origin__);
     if (has_origin < 0) {
         goto exit;
