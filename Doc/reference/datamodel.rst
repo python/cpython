@@ -2404,6 +2404,13 @@ left undefined.
    :ref:`faq-augmented-assignment-tuple-error`), but this behavior is in fact
    part of the data model.
 
+   .. note::
+
+      Due to a bug in the dispatching mechanism for ``**=``, a class that
+      defines :meth:`__ipow__` but returns ``NotImplemented`` would fail to
+      fall back to ``x.__pow__(y)`` and ``y.__rpow__(x)``. This bug is fixed
+      in Python 3.10.
+
 
 .. method:: object.__neg__(self)
             object.__pos__(self)
