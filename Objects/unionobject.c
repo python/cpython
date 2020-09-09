@@ -1,6 +1,6 @@
 // types.Union -- used to represent e.g. Union[int, str], int | str
 #include "Python.h"
-#include "pycore_object.h"
+#include "pycore_unionobject.h"
 #include "structmember.h"
 
 
@@ -155,7 +155,7 @@ union_richcompare(PyObject *a, PyObject *b, int op)
             }
         }
         Py_DECREF(b_args);
-    } else if (type == &Py_UnionType) {
+    } else if (type == &_Py_UnionType) {
         PyObject* args = ((unionobject*) b)->args;
         Py_ssize_t arg_length = PyTuple_GET_SIZE(args);
         for (Py_ssize_t i = 0; i < arg_length; i++) {
@@ -185,7 +185,7 @@ flatten_args(PyObject* args)
     for (Py_ssize_t i = 0; i < arg_length; i++) {
         PyObject *arg = PyTuple_GET_ITEM(args, i);
         PyTypeObject* arg_type = Py_TYPE(arg);
-        if (arg_type == &Py_UnionType) {
+        if (arg_type == &_Py_UnionType) {
             total_args += PyTuple_GET_SIZE(((unionobject*) arg)->args);
         } else {
             total_args++;
@@ -200,7 +200,7 @@ flatten_args(PyObject* args)
     for (Py_ssize_t i = 0; i < arg_length; i++) {
         PyObject *arg = PyTuple_GET_ITEM(args, i);
         PyTypeObject* arg_type = Py_TYPE(arg);
-        if (arg_type == &Py_UnionType) {
+        if (arg_type == &_Py_UnionType) {
             PyObject* nested_args = ((unionobject*)arg)->args;
             int nested_arg_length = PyTuple_GET_SIZE(nested_args);
             for (int j = 0; j < nested_arg_length; j++) {
@@ -287,7 +287,7 @@ is_unionable(PyObject *obj)
         is_special_form(obj) ||
         PyType_Check(obj) ||
         type == &Py_GenericAliasType ||
-        type == &Py_UnionType);
+        type == &_Py_UnionType);
 }
 
 static PyObject *
@@ -297,7 +297,7 @@ type_or(PyTypeObject* self, PyObject* param)
     if (tuple == NULL) {
         return NULL;
     }
-    PyObject *new_union = Py_Union(tuple);
+    PyObject *new_union = _Py_Union(tuple);
     Py_DECREF(tuple);
     return new_union;
 }
@@ -411,7 +411,7 @@ static PyNumberMethods union_as_number = {
         .nb_or = (binaryfunc)type_or, // Add __or__ function
 };
 
-PyTypeObject Py_UnionType = {
+PyTypeObject _Py_UnionType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "types.Union",
     .tp_doc = "Represent a PEP 604 union type\n"
@@ -432,7 +432,7 @@ PyTypeObject Py_UnionType = {
 };
 
 PyObject *
-Py_Union(PyObject *args)
+_Py_Union(PyObject *args)
 {
     assert(PyTuple_CheckExact(args));
 
@@ -455,7 +455,7 @@ Py_Union(PyObject *args)
         }
     }
 
-    result = PyObject_New(unionobject, &Py_UnionType);
+    result = PyObject_New(unionobject, &_Py_UnionType);
     if (result == NULL) {
         return NULL;
     }

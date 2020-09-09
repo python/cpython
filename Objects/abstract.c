@@ -1,6 +1,7 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
+#include "pycore_unionobject.h"      // _Py_UnionType && _Py_Union()
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -2604,7 +2605,7 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
         return -1;
 
     PyTypeObject *type = Py_TYPE(cls);
-    int is_union = (PyType_Check(type) && type == &Py_UnionType);
+    int is_union = (PyType_Check(type) && type == &_Py_UnionType);
     if (!is_union && !check_class(cls,
                             "issubclass() arg 2 must be a class,"
                             " a tuple of classes, or a union.")) {

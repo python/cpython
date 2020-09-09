@@ -573,6 +573,9 @@
     <ClInclude Include="..\Include\internal\pycore_tuple.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_unionobject.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="$(zlibDir)\crc32.h">
       <Filter>Modules\zlib</Filter>
     </ClInclude>

@@ -6,6 +6,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_unionobject.h"   // _Py_Union()
 #include "frameobject.h"
 #include "structmember.h"         // PyMemberDef
 
@@ -3747,7 +3748,7 @@ type_or(PyTypeObject* self, PyObject* param) {
     if (tuple == NULL) {
         return NULL;
     }
-    PyObject *new_union = Py_Union(tuple);
+    PyObject *new_union = _Py_Union(tuple);
     Py_DECREF(tuple);
     return new_union;
 }
