@@ -15,6 +15,8 @@ import typing
 class Example:
     pass
 
+class Forward: ...
+
 class TypesTests(unittest.TestCase):
 
     def test_truth_values(self):
@@ -711,13 +713,6 @@ class TypesTests(unittest.TestCase):
         assert repr(int | None) == "int | None"
         assert repr(int | typing.GenericAlias(list, int)) == "int | list[int]"
 
-class Forward: ...
-# T = typing.TypeVar('T')
-# ForwardAfter = T | 'Forward'
-# ForwardBefore = 'Forward' | T
-# def forward_after(x: ForwardAfter[int]) -> None: ...
-# def forward_before(x: ForwardBefore[int]) -> None: ...
-# class Forward: ...
 class MappingProxyTests(unittest.TestCase):
     mappingproxy = types.MappingProxyType
 
