@@ -1525,7 +1525,7 @@ Use the built-in :func:`super` function::
 
    class Derived(Base):
        def meth(self):
-           super(Derived, self).meth()
+           super().meth()  # calls Base.meth
 
 For version prior to 3.0, you may be using classic classes: For a class
 definition such as ``class Derived(Base): ...`` you can call method ``meth()``
