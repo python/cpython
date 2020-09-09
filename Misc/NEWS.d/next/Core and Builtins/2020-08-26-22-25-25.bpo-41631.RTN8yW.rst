@@ -1,2 +1,2 @@
 If the _ast module is unavailable or replaced with an unexpected object,
-compiling to AST now raises an exception rather than segfaults.
+compiling to AST now raises an exception.
