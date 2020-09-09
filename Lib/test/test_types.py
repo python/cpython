@@ -709,6 +709,7 @@ class TypesTests(unittest.TestCase):
 
     def test_or_type_repr(self):
         assert repr(int | None) == "int | None"
+        assert repr(int | typing.GenericAlias(list, int)) == "int | list[int]"
 
 class Forward: ...
 # T = typing.TypeVar('T')
