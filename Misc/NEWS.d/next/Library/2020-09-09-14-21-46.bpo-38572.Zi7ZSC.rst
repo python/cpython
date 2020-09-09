@@ -1,0 +1,3 @@
+The ``fileno()`` methods of :class:`io.BufferedReader` and
+:class:`io.BufferedWriter` now raise :exc:`io.UnsupportedOperation` if the
+underlying stream does not have a ``fileno`` attribute.

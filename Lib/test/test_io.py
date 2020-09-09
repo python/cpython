@@ -164,6 +164,28 @@ class PyMockRawIO(MockRawIO, pyio.RawIOBase):
     pass
 
 
+class MockRawIOWithoutFileno:
+
+    def readable(self):
+        return True
+
+    def read(self, n=None):
+        return b''
+
+    def seekable(self):
+        return True
+
+    def seek(self, pos, whence):
+        return 0
+
+    def writable(self):
+        return True
+
+
+class CMockRawIOWithoutFileno(MockRawIOWithoutFileno, io.RawIOBase):
+    pass
+
+
 class MisbehavedRawIO(MockRawIO):
     def write(self, b):
         return super().write(b) * 2
@@ -1606,9 +1628,17 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
             bufio.readline()
         self.assertIsInstance(cm.exception.__cause__, TypeError)
 
+    def test_unsupported_underlying_fileno(self):
+        with self.assertRaises(self.UnsupportedOperation):
+            self.tp(CMockRawIOWithoutFileno()).fileno()
+
 
 class PyBufferedReaderTest(BufferedReaderTest):
     tp = pyio.BufferedReader
+
+    def test_unsupported_underlying_fileno(self):
+        with self.assertRaises(self.UnsupportedOperation):
+            self.tp(CMockRawIOWithoutFileno()).fileno()
 
 
 class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
@@ -1952,9 +1982,18 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
         with self.assertRaisesRegex(TypeError, "BufferedWriter"):
             self.tp(io.BytesIO(), 1024, 1024, 1024)
 
+    def test_unsupported_underlying_fileno(self):
+        with self.assertRaises(self.UnsupportedOperation):
+            self.tp(CMockRawIOWithoutFileno()).fileno()
+
 
 class PyBufferedWriterTest(BufferedWriterTest):
     tp = pyio.BufferedWriter
+
+    def test_unsupported_underlying_fileno(self):
+        with self.assertRaises(self.UnsupportedOperation):
+            self.tp(CMockRawIOWithoutFileno()).fileno()
+
 
 class BufferedRWPairTest(unittest.TestCase):
 

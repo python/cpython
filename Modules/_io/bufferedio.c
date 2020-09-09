@@ -596,6 +596,14 @@ static PyObject *
 buffered_fileno(buffered *self, PyObject *Py_UNUSED(ignored))
 {
     CHECK_INITIALIZED(self)
+    PyObject *attr = PyObject_GetAttr(self->raw, _PyIO_str_fileno);
+    if (attr == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return bufferediobase_unsupported("fileno");
+        }
+        return NULL;
+    }
+    Py_DECREF(attr);
     return PyObject_CallMethodNoArgs(self->raw, _PyIO_str_fileno);
 }
 
