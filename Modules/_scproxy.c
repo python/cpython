@@ -238,7 +238,7 @@ static PyModuleDef_Slot _scproxy_slots[] = {
 static struct PyModuleDef _scproxy_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_scproxy",
-    .m_size = -1,
+    .m_size = 0,
     .m_methods = mod_methods,
     .m_slots = _scproxy_slots,
 };
@@ -256,4 +256,3 @@ PyInit__scproxy(void)
 #ifdef __cplusplus
 }
 #endif
-
