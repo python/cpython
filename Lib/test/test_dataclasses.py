@@ -1955,7 +1955,7 @@ class TestCase(unittest.TestCase):
         ):
             self.assertEqual(getattr(A, function).__qualname__, f"TestCase.test_dataclasses_qualnames.<locals>.A.{function}")
 
-        with self.assertRaisesRegex(TypeError, r"A.__init__\(\) missing"):
+        with self.assertRaisesRegex(TypeError, r"A\.__init__\(\) missing"):
             A()
 
 
