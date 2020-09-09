@@ -751,7 +751,7 @@ def _get_field(cls, a_name, a_type):
 
 def _set_qualname(cls, value):
     # Ensure that the functions returned from _create_fn uses the proper
-    # __qualname__ (the class they belong)
+    # __qualname__ (the class they belong to).
     if isinstance(value, FunctionType):
         value.__qualname__ = f"{cls.__qualname__}.{value.__name__}"
     return value
