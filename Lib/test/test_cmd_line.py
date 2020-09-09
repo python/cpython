@@ -46,7 +46,11 @@ class CmdLineTest(unittest.TestCase):
 
     def test_usage(self):
         rc, out, err = assert_python_ok('-h')
-        self.assertIn(b'usage', out)
+        lines = out.splitlines()
+        self.assertIn(b'usage', lines[0])
+        # The first line contains the program name,
+        # but the rest should be ASCII-only
+        b''.join(lines[1:]).decode('ascii')
 
     def test_version(self):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
