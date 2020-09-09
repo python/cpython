@@ -49,8 +49,8 @@ class TestImghdr(unittest.TestCase):
                 self.assertEqual(imghdr.what(stream), expected)
             with open(filename, 'rb') as stream:
                 data = stream.read()
-            self.assertEqual(imghdr.what(None, data), expected)
-            self.assertEqual(imghdr.what(None, bytearray(data)), expected)
+            self.assertEqual(imghdr.what(h=data), expected)
+            self.assertEqual(imghdr.what(h=bytearray(data)), expected)
 
     def test_pathlike_filename(self):
         for filename, expected in TEST_FILES:
@@ -64,7 +64,7 @@ class TestImghdr(unittest.TestCase):
                 return 'ham'
         imghdr.tests.append(test_jumbo)
         self.addCleanup(imghdr.tests.pop)
-        self.assertEqual(imghdr.what(None, b'eggs'), 'ham')
+        self.assertEqual(imghdr.what(h=b'eggs'), 'ham')
 
     def test_file_pos(self):
         with open(TESTFN, 'wb') as stream:
@@ -77,7 +77,7 @@ class TestImghdr(unittest.TestCase):
             self.assertEqual(stream.tell(), pos)
 
     def test_bad_args(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             imghdr.what()
         with self.assertRaises(AttributeError):
             imghdr.what(None)
@@ -108,7 +108,7 @@ class TestImghdr(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     imghdr.what(io.StringIO(data))
                 with self.assertRaises(TypeError):
-                    imghdr.what(None, data)
+                    imghdr.what(h=data)
 
     def test_missing_file(self):
         with self.assertRaises(FileNotFoundError):
