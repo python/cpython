@@ -60,7 +60,7 @@ def compile_c_extension(
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
 
-    # testing pegen requires generating a C extension module, which contains
+    # testing pegen requires generating C extension modules, which contains
     # a copy of the symbols defined in Python-ast.c and needs to be treated
     # as the _ast module. See ast_dump.py.
     extra_compile_args.append("-DAST_SKIP_MODULE_CHECK")
