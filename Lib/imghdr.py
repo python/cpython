@@ -8,10 +8,13 @@ __all__ = ["what"]
 # Recognize image headers #
 #-------------------------#
 
-def what(file, h=None):
+def what(file='', h=None):
     f = None
     try:
         if h is None:
+            if file == '':
+                raise ValueError("You need specify a str or PathLike for file, "
+                                 "or pass a byte stream as h parameter")
             if isinstance(file, (str, PathLike)):
                 f = open(file, 'rb')
                 h = f.read(32)
