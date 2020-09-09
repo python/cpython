@@ -117,7 +117,6 @@ __all__ = [
 # namespace, but excluded from __all__ because they might stomp on
 # legitimate imports of those modules.
 
-
 def _type_check(arg, msg, is_argument=True):
     """Check that the argument is a type, and return it (internal helper).
 
@@ -145,7 +144,7 @@ def _type_check(arg, msg, is_argument=True):
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
-    if isinstance(arg, (type, TypeVar, ForwardRef)):
+    if isinstance(arg, (type, TypeVar, ForwardRef, types.Union)):
         return arg
     if not callable(arg):
         raise TypeError(f"{msg} Got {arg!r:.100}.")
@@ -205,7 +204,7 @@ def _remove_dups_flatten(parameters):
     # Flatten out Union[Union[...], ...].
     params = []
     for p in parameters:
-        if isinstance(p, _UnionGenericAlias):
+        if isinstance(p, (_UnionGenericAlias, types.Union)):
             params.extend(p.__args__)
         elif isinstance(p, tuple) and len(p) > 0 and p[0] is Union:
             params.extend(p[1:])
@@ -586,6 +585,12 @@ class TypeVar(_Final, _Immutable, _root=True):
         if def_mod != 'typing':
             self.__module__ = def_mod
 
+    def __or__(self, right):
+        return Union[self, right]
+
+    def __ror__(self, right):
+        return Union[self, right]
+
     def __repr__(self):
         if self.__covariant__:
             prefix = '+'
@@ -693,6 +698,12 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     def __hash__(self):
         return hash((self.__origin__, self.__args__))
 
+    def __or__(self, right):
+        return Union[self, right]
+
+    def __ror__(self, right):
+        return Union[self, right]
+
     @_tp_cache
     def __getitem__(self, params):
         if self.__origin__ in (Generic, Protocol):
@@ -792,6 +803,11 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
     def __reduce__(self):
         return self._name
 
+    def __or__(self, right):
+        return Union[self, right]
+
+    def __ror__(self, right):
+        return Union[self, right]
 
 class _CallableGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):
@@ -877,6 +893,15 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
             elif args[1] is type(None):
                 return f'typing.Optional[{_type_repr(args[0])}]'
         return super().__repr__()
+
+    def __instancecheck__(self, obj):
+        return self.__subclasscheck__(type(obj))
+
+    def __subclasscheck__(self, cls):
+        for arg in self.__args__:
+            if issubclass(cls, arg):
+                return True
+
 
 
 class Generic:
