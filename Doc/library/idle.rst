@@ -491,7 +491,7 @@ in the settings dialog.  (To prevent auto popups, set the delay to a
 large number of milliseconds, such as 100000000.) For imported module
 names or class or function attributes, type '.'.
 For filenames in the root directory, type :data:`os.sep` or
-data:`os.altsep` immediately after an opening quote.  (On Windows,
+:data:`os.altsep` immediately after an opening quote.  (On Windows,
 one can specify a drive first.)  Move into subdirectories by typing a
 directory name and a separator.
 
