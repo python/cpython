@@ -13,16 +13,18 @@
 # inheritance of base classes.
 #
 # As a result after creating a 'w = StdButtonBox', I can write
-#              w.ok['text'] = 'Who Cares'
-#    or              w.ok['bg'] = w['bg']
+#               w.ok['text'] = 'Who Cares'
+# or            w.ok['bg'] = w['bg']
 # or even       w.ok.invoke()
 # etc.
 #
 # Compare the demo tixwidgets.py to the original Tcl program and you will
 # appreciate the advantages.
 #
+# NOTE: This module is deprecated since Python 3.6.
 
 import os
+import warnings
 import tkinter
 from tkinter import *
 from tkinter import _cnfmerge
@@ -62,6 +64,10 @@ TCL_FILE_EVENTS   = 1 << 3
 TCL_TIMER_EVENTS  = 1 << 4
 TCL_IDLE_EVENTS   = 1 << 5
 TCL_ALL_EVENTS    = 0
+
+# Deprecation warning
+warnings.warn('the tkinter.tix module is deprecated in favour of tkinter.ttk and is set \
+to be removed in the near-future.', DeprecationWarning, stacklevel=2)
 
 # BEWARE - this is implemented by copying some code from the Widget class
 #          in Tkinter (to override Widget initialization) and is therefore
