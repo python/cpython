@@ -1,0 +1,2 @@
+Replaced link to Shipman's Tkinter reference to copy on tkdocs.com,
+replacing archive.org link (original server shut down).
