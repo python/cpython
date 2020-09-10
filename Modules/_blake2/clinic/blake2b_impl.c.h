@@ -247,4 +247,22 @@ _blake2_blake2b_hexdigest(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=10eb47aba77f192d input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_blake2_blake2b___reduce____doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n"
+"Return the digest value as a string of hexadecimal digits.");
+
+#define _BLAKE2_BLAKE2B___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)_blake2_blake2b___reduce__, METH_NOARGS, _blake2_blake2b___reduce____doc__},
+
+static PyObject *
+_blake2_blake2b___reduce___impl(BLAKE2bObject *self);
+
+static PyObject *
+_blake2_blake2b___reduce__(BLAKE2bObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _blake2_blake2b___reduce___impl(self);
+}
+/*[clinic end generated code: output=fb5bd684d682c259 input=a9049054013a1b77]*/

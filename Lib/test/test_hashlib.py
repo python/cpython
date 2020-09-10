@@ -380,6 +380,15 @@ class HashLibTestCase(unittest.TestCase):
         self.check_no_unicode('blake2b')
         self.check_no_unicode('blake2s')
 
+    @requires_blake2
+    @support.cpython_only
+    def test_bug_41052(self):
+        import pickle
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s, b = _blake2.blake2s(), _blake2.blake2b()
+            self.assertRaises(TypeError, s, proto)
+            self.assertRaises(TypeError, b, proto)
+
     @requires_sha3
     def test_no_unicode_sha3(self):
         self.check_no_unicode('sha3_224')

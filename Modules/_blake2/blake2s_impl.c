@@ -333,12 +333,29 @@ _blake2_blake2s_hexdigest_impl(BLAKE2sObject *self)
     return _Py_strhex((const char *)digest, self->param.digest_length);
 }
 
+/*[clinic input]
+_blake2.blake2s.__reduce__
+
+Return the digest value as a string of hexadecimal digits.
+[clinic start generated code]*/
+
+static PyObject *
+_blake2_blake2s___reduce___impl(BLAKE2sObject *self)
+/*[clinic end generated code: output=fb085f3da88f0c39 input=49898c2f1ef1ff74]*/
+{
+    PyErr_Format(PyExc_TypeError,
+                 "cannot pickle %s object",
+                 Py_TYPE(self)->tp_name);
+    return NULL;
+}
+
 
 static PyMethodDef py_blake2s_methods[] = {
     _BLAKE2_BLAKE2S_COPY_METHODDEF
     _BLAKE2_BLAKE2S_DIGEST_METHODDEF
     _BLAKE2_BLAKE2S_HEXDIGEST_METHODDEF
     _BLAKE2_BLAKE2S_UPDATE_METHODDEF
+    _BLAKE2_BLAKE2S___REDUCE___METHODDEF
     {NULL, NULL}
 };
 
