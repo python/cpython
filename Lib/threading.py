@@ -745,8 +745,7 @@ class BrokenBarrierError(RuntimeError):
 
 
 # Helper to generate new thread names
-_counter = _count().__next__
-_counter() # Consume 0 so first non-main thread has id 1.
+_counter = _count(1).__next__
 def _newname(template="Thread-%d"):
     return template % _counter()
 
