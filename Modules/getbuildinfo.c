@@ -5,7 +5,7 @@
 #endif
 
 #ifndef DATE
-#ifdef __DATE__
+#if defined(__DATE__) && !defined(OMIT_BUILD_TIMESTAMP)
 #define DATE __DATE__
 #else
 #define DATE "xx/xx/xx"
@@ -13,7 +13,7 @@
 #endif
 
 #ifndef TIME
-#ifdef __TIME__
+#if defined(__TIME__) && !defined(OMIT_BUILD_TIMESTAMP)
 #define TIME __TIME__
 #else
 #define TIME "xx:xx:xx"
