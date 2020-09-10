@@ -43,6 +43,7 @@ codecs_unregister(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "O:codecs_unregister",
                           &search_function)) {
+        return NULL;
     }
     if (search_function == NULL) {
         return NULL;
