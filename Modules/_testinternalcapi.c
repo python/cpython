@@ -12,10 +12,11 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_bitutils.h"     // _Py_bswap32()
-#include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
-#include "pycore_hashtable.h"    // _Py_hashtable_new()
-#include "pycore_gc.h"           // PyGC_Head
+#include "pycore_bitutils.h"        // _Py_bswap32()
+#include "pycore_initconfig.h"      // _Py_GetConfigsAsDict()
+#include "pycore_hashtable.h"       // _Py_hashtable_new()
+#include "pycore_gc.h"              // PyGC_Head
+#include "internal/pycore_interp.h" // PyInterpreterState_Get()
 
 
 static PyObject *
@@ -32,6 +33,37 @@ get_recursion_depth(PyObject *self, PyObject *Py_UNUSED(args))
 
     /* subtract one to ignore the frame of the get_recursion_depth() call */
     return PyLong_FromLong(tstate->recursion_depth - 1);
+}
+
+
+static PyObject*
+codecs_unregister(PyObject *self, PyObject *args)
+{
+    PyObject *search_function;
+
+    if (!PyArg_ParseTuple(args, "O:codecs_unregister",
+                          &search_function)) {
+    }
+    if (search_function == NULL) {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if (interp->codec_search_path == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t n = PyList_Size(interp->codec_search_path);
+    PyObject *list = PyList_New(0);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = PyList_GetItem(interp->codec_search_path, i);
+        if (item != search_function) {
+            PyList_Append(list, item);
+        }
+    }
+    Py_SETREF(interp->codec_search_path, list);
+
+    Py_RETURN_NONE;
 }
 
 
@@ -234,6 +266,7 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
 static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
+    {"codecs_unregister", codecs_unregister, METH_VARARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
