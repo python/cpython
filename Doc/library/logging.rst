@@ -529,8 +529,7 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
 :ref:`logrecord-attributes`.
 
 
-.. class:: Formatter(fmt=None, datefmt=None, style='%', validate=True, *,
-   defaults=None)
+.. class:: Formatter(fmt=None, datefmt=None, style='%', validate=True, *, defaults=None)
 
    Returns a new instance of the :class:`Formatter` class.  The instance is
    initialized with a format string for the message as a whole, as well as a
