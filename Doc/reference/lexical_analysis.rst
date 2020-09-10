@@ -702,7 +702,7 @@ defaults to the :func:`str` of the expression unless a conversion ``'!r'`` is
 declared.
 
 .. versionadded:: 3.8
-   The equal sign ``'='`` was added in Python 3.8.
+   The equal sign ``'='``.
 
 If a conversion is specified, the result of evaluating the expression
 is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
