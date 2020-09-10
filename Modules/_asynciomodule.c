@@ -2628,7 +2628,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
     int clear_exc = 0;
     PyObject *result = NULL;
     PyObject *coro;
-    PyObject *o;
+    PyObject *o = NULL;
 
     if (task->task_state != STATE_PENDING) {
         PyErr_Format(asyncio_InvalidStateError,
@@ -2679,9 +2679,10 @@ task_step_impl(TaskObj *task, PyObject *exc)
         return NULL;
     }
 
+    int is_return_value = 0;
     if (exc == NULL) {
         if (PyGen_CheckExact(coro) || PyCoro_CheckExact(coro)) {
-            result = _PyGen_Send((PyGenObject*)coro, Py_None);
+            result = _PyGen_SendNoStopIteration((PyGenObject*)coro, Py_None, &is_return_value);
         }
         else {
             result = _PyObject_CallMethodIdOneArg(coro, &PyId_send, Py_None);
@@ -2695,10 +2696,13 @@ task_step_impl(TaskObj *task, PyObject *exc)
         }
     }
 
-    if (result == NULL) {
+    if (is_return_value || result == NULL) {
         PyObject *et, *ev, *tb;
 
-        if (_PyGen_FetchStopIterationValue(&o) == 0) {
+        if (is_return_value) {
+            o = result;
+        }
+        if (o || (_PyGen_FetchStopIterationValue(&o) == 0)) {
             /* The error is StopIteration and that means that
                the underlying coroutine has resolved */
 

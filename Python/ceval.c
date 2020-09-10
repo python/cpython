@@ -2224,8 +2224,9 @@ main_loop:
             PyObject *v = POP();
             PyObject *receiver = TOP();
             int err;
+            int is_return_value = 0;
             if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) {
-                retval = _PyGen_Send((PyGenObject *)receiver, v);
+                retval = _PyGen_SendNoStopIteration((PyGenObject *)receiver, v, &is_return_value);
             } else {
                 _Py_IDENTIFIER(send);
                 if (v == Py_None)
@@ -2234,14 +2235,20 @@ main_loop:
                     retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
             }
             Py_DECREF(v);
-            if (retval == NULL) {
+            if (is_return_value || retval == NULL) {
                 PyObject *val;
-                if (tstate->c_tracefunc != NULL
-                        && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
-                err = _PyGen_FetchStopIterationValue(&val);
-                if (err < 0)
-                    goto error;
+                if (is_return_value) {
+                    val = retval;
+                    retval = NULL;
+                }
+                else {
+                    if (tstate->c_tracefunc != NULL
+                            && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
+                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
+                    err = _PyGen_FetchStopIterationValue(&val);
+                    if (err < 0)
+                        goto error;
+                }
                 Py_DECREF(receiver);
                 SET_TOP(val);
                 DISPATCH();

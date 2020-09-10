@@ -45,6 +45,8 @@ PyAPI_FUNC(PyObject *) _PyGen_Send(PyGenObject *, PyObject *);
 PyObject *_PyGen_yf(PyGenObject *);
 PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
 
+PyAPI_FUNC(PyObject*) _PyGen_SendNoStopIteration(PyGenObject *, PyObject *, int*);
+
 #ifndef Py_LIMITED_API
 typedef struct {
     _PyGenObject_HEAD(cr)
