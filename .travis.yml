@@ -76,6 +76,10 @@ matrix:
         - make -j4
         - make -C Doc/ PYTHON=../python venv
       script:
+        ./python --version
+        echo "SPHINX"
+        sphinx-build --version || true
+        echo "SPHINX--"
         xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest
     - name: "Test code coverage (Python)"
       os: linux

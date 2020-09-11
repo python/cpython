@@ -68,6 +68,21 @@ build:
 		echo ""; \
 		exit 1; \
 	fi
+
+	echo "PYTHON=$(PYTHON)"
+	$(PYTHON) --version
+	echo
+
+	echo "SPHINXBUILD=$(SPHINXBUILD)"
+	$(SPHINXBUILD) --version
+	echo
+
+	echo "VENVDIR=$(VENVDIR)"
+	$(VENVDIR)/bin/python --version
+	head -n1 $(VENVDIR)/bin/sphinx-build
+	$(VENVDIR)/bin/sphinx-build --version
+	echo
+
 	$(SPHINXBUILD) $(ALLSPHINXOPTS)
 	@echo
 
