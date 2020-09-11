@@ -1,0 +1,1 @@
+Remove RemovedInSphinx40Warning when building sphinx. Patch by Dong-hee Na.
