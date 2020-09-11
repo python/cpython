@@ -24,6 +24,7 @@ branches:
     - master
     - /^\d\.\d+$/
     - buildbot-custom
+    - ezeeyahoo-patch-1
 
 matrix:
   fast_finish: true
@@ -127,7 +128,37 @@ matrix:
       after_script:  # Probably should be after_success once test suite updated to run under coverage.py.
         - make pythoninfo
         - bash <(curl -s https://codecov.io/bash) -y .github/codecov.yml
-
+        
+    #PPC64LE
+    - name: "CPython tests"
+      arch: ppc64le
+      os: linux
+      language: c
+      compiler: clang
+      # gcc also works, but to keep the # of concurrent builds down, we use one C
+      # compiler here and the other to run the coverage build. Clang is preferred
+      # in this instance for its better error messages.
+      env: TESTING=cpython
+      addons:
+        apt:
+          packages:
+            - gdb
+            - xvfb
+    - name: "Documentation build"
+      os: linux
+      arch: ppc64le
+      language: python
+      # Build the docs against a stable version of Python so code bugs don't hold up doc-related PRs.
+      python: 3.6
+      env: TESTING=docs
+      before_script:
+        - cd Doc
+        # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
+        # (Updating the version is fine as long as no warnings are raised by doing so.)
+        # The theme used by the docs is stored separately, so we need to install that as well.
+        - python -m pip install sphinx==2.2.0 blurb python-docs-theme
+      script:
+        - make check suspicious html SPHINXOPTS="-q -W -j4"
 
 before_install:
   - set -e
@@ -172,8 +203,19 @@ install:
 before_script:
   # -Og is much faster than -O0
   - CFLAGS="${CFLAGS} -Og" ./configure --with-pydebug
-  - eval "$(pyenv init -)"
-  - pyenv global 3.8
+  # Pyenv is not available with PPC64LE image on Travis. Hence, fix:-
+  - |
+    if [[ "$TRAVIS_CPU_ARCH" == "ppc64le" ]]; then
+      git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+      export PYENV_ROOT="$HOME/.pyenv"
+      export PATH="$PYENV_ROOT/bin:$PATH"
+      eval "$(pyenv init -)"
+      pyenv install 3.8.5
+      pyenv global 3.8.5
+    else
+      eval "$(pyenv init -)"
+      pyenv global 3.8
+    fi
   - PYTHON_FOR_REGEN=python3.8 make -j4 regen-all
   - changes=`git status --porcelain`
   - |
