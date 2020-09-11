@@ -56,7 +56,12 @@ matrix:
         # The theme used by the docs is stored separately, so we need to install that as well.
         - python -m pip install sphinx==2.2.0 blurb python-docs-theme
       script:
-        - make check suspicious html SPHINXOPTS="-q -W -j4"
+        - python -m pip freeze
+        - blurb help
+        - sphinx-build --version
+        - make check SPHINXOPTS="-q -W -j4"
+        - make suspicious SPHINXOPTS="-q -W -j4"
+        - make html SPHINXOPTS="-q -W -j4"
     - name: "Documentation tests"
       os: linux
       language: c
