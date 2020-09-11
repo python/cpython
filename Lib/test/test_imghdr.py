@@ -83,7 +83,7 @@ class TestImghdr(unittest.TestCase):
             imghdr.what(None)
         with self.assertRaises(TypeError):
             imghdr.what(self.testfile, 1)
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(BytesWarning):
             imghdr.what(os.fsencode(self.testfile))
         with open(self.testfile, 'rb') as f:
             with self.assertRaises(AttributeError):
