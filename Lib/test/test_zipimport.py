@@ -240,12 +240,9 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         badmagic_pyc = bytearray(test_pyc)
         badmagic_pyc[0] ^= 0x04  # flip an arbitrary bit
         files = {TESTMOD + pyc_ext: (NOW, badmagic_pyc)}
-        try:
+        expected_msg = 'bad magic number'
+        with self.assertRaisesRegex(zipimport.ZipImportError, expected_msg):
             self.doTest(".py", files, TESTMOD)
-        except ImportError:
-            pass
-        else:
-            self.fail("expected ImportError; import from bad pyc")
 
     def testBadMTime(self):
         badtime_pyc = bytearray(test_pyc)

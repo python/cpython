@@ -613,20 +613,15 @@ def _eq_mtime(t1, t2):
 
 
 # Given the contents of a .py[co] file, unmarshal the data
-# and return the code object. Return None if it the magic word doesn't
-# match, or if the recorded .py[co] metadata does not match the source,
-# (we do this instead of raising an exception as we fall back
-# to .py if available and we don't want to mask other errors).
+# and return the code object. Raises ImportError it the magic word doesn't
+# match, or if the recorded .py[co] metadata does not match the source.
 def _unmarshal_code(self, pathname, fullpath, fullname, data):
     exc_details = {
         'name': fullname,
         'path': fullpath,
     }
 
-    try:
-        flags = _bootstrap_external._classify_pyc(data, fullname, exc_details)
-    except ImportError:
-        return None
+    flags = _bootstrap_external._classify_pyc(data, fullname, exc_details)
 
     hash_based = flags & 0b1 != 0
     if hash_based:
@@ -640,11 +635,8 @@ def _unmarshal_code(self, pathname, fullpath, fullname, data):
                     source_bytes,
                 )
 
-                try:
-                    _bootstrap_external._validate_hash_pyc(
-                        data, source_hash, fullname, exc_details)
-                except ImportError:
-                    return None
+                _bootstrap_external._validate_hash_pyc(
+                    data, source_hash, fullname, exc_details)
     else:
         source_mtime, source_size = \
             _get_mtime_and_size_of_source(self, fullpath)
@@ -730,6 +722,7 @@ def _get_pyc_source(self, path):
 # 'fullname'.
 def _get_module_code(self, fullname):
     path = _get_module_path(self, fullname)
+    error_msg = None
     for suffix, isbytecode, ispackage in _zip_searchorder:
         fullpath = path + suffix
         _bootstrap._verbose_message('trying {}{}{}', self.archive, path_sep, fullpath, verbosity=2)
@@ -740,8 +733,12 @@ def _get_module_code(self, fullname):
         else:
             modpath = toc_entry[0]
             data = _get_data(self.archive, toc_entry)
+            code = None
             if isbytecode:
-                code = _unmarshal_code(self, modpath, fullpath, fullname, data)
+                try:
+                    code = _unmarshal_code(self, modpath, fullpath, fullname, data)
+                except ImportError as e:
+                    error_msg = e.msg
             else:
                 code = _compile_source(modpath, data)
             if code is None:
@@ -751,4 +748,4 @@ def _get_module_code(self, fullname):
             modpath = toc_entry[0]
             return code, ispackage, modpath
     else:
-        raise ZipImportError(f"can't find module {fullname!r}", name=fullname)
+        raise ZipImportError(error_msg or f"can't find module {fullname!r}", name=fullname)
