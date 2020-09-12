@@ -185,7 +185,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         """get_code(fullname) -> code object.
 
         Return the code object for the specified module. Raise ZipImportError
-        if the module couldn't be found.
+        if the module couldn't be imported.
         """
         code, ispackage, modpath = _get_module_code(self, fullname)
         return code
@@ -215,7 +215,8 @@ class zipimporter(_bootstrap_external._LoaderBasics):
     def get_filename(self, fullname):
         """get_filename(fullname) -> filename string.
 
-        Return the filename for the specified module.
+        Return the filename for the specified module or raise ZipImportError
+        if it couldn't be imported.
         """
         # Deciding the filename requires working out where the code
         # would come from if the module was actually loaded
@@ -267,7 +268,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
 
         Load the module specified by 'fullname'. 'fullname' must be the
         fully qualified (dotted) module name. It returns the imported
-        module, or raises ZipImportError if it wasn't found.
+        module, or raises ZipImportError if it could not be imported.
 
         Deprecated since Python 3.10. Use exec_module() instead.
         """

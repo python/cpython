@@ -121,7 +121,7 @@ zipimporter Objects
    .. method:: get_code(fullname)
 
       Return the code object for the specified module. Raise
-      :exc:`ZipImportError` if the module couldn't be found.
+      :exc:`ZipImportError` if the module couldn't be imported.
 
 
    .. method:: get_data(pathname)
@@ -137,7 +137,7 @@ zipimporter Objects
 
       Return the value ``__file__`` would be set to if the specified module
       was imported. Raise :exc:`ZipImportError` if the module couldn't be
-      found.
+      imported.
 
       .. versionadded:: 3.1
 
@@ -159,13 +159,12 @@ zipimporter Objects
    .. method:: load_module(fullname)
 
       Load the module specified by *fullname*. *fullname* must be the fully
-      qualified (dotted) module name. It returns the imported module, or raises
-      :exc:`ZipImportError` if it wasn't found.
+      qualified (dotted) module name. Returns the imported module on success,
+      raises :exc:`ZipImportError` on failure.
 
       .. deprecated:: 3.10
 
          Use :meth:`exec_module` instead.
-
 
    .. attribute:: archive
 
