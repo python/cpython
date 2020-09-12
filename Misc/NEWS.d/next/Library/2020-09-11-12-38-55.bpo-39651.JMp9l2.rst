@@ -1,0 +1,3 @@
+Fix a race condition in the ``call_soon_threadsafe()`` method of
+``asyncio.ProactorEventLoop``: do nothing if the self-pipe socket has been
+closed.
