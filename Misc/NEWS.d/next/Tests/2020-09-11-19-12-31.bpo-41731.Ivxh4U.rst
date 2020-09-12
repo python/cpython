@@ -1,0 +1,1 @@
+Make test_cmd_line_script pass with option '-vv'.

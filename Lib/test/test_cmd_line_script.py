@@ -145,7 +145,7 @@ class CmdLineTest(unittest.TestCase):
             *run_args, __isolated=False, __cwd=cwd, **env_vars
         )
         if verbose > 1:
-            print('Output from test script %r:' % script_exec_args)
+            print(f'Output from test script {script_exec_args!r:}')
             print(repr(err))
             print('Expected output: %r' % expected_msg)
         self.assertIn(expected_msg.encode('utf-8'), err)
