@@ -14,11 +14,11 @@ class MiscSourceEncodingTest(unittest.TestCase):
 
     def test_pep263(self):
         self.assertEqual(
-            "√∞√â√î√è√é".encode("utf-8"),
+            "…‘œŒ".encode("utf-8"),
             b'\xd0\x9f\xd0\xb8\xd1\x82\xd0\xbe\xd0\xbd'
         )
         self.assertEqual(
-            "\√∞".encode("utf-8"),
+            "\".encode("utf-8"),
             b'\\\xd0\x9f'
         )
 
@@ -235,7 +235,7 @@ class EncodingsTest(unittest.TestCase):
         """
         import encodings
 
-        out = encodings.normalize_encoding("–∫–æ–∏-8")
+        out = encodings.normalize_encoding("øøø-8")
         self.assertEqual(out, '8')
 
 
