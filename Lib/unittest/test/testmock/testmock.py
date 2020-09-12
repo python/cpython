@@ -38,6 +38,16 @@ class Something(object):
     def smeth(a, b, c, d=None): pass
 
 
+class SomethingElse(object):
+    def __init__(self):
+        self._instance = None
+
+    @property
+    def instance(self):
+        if not self._instance:
+            self._instance = 'object'
+
+
 class Typos():
     autospect = None
     auto_spec = None
@@ -2248,6 +2258,12 @@ class MockTest(unittest.TestCase):
         with patch.multiple(
             f'{__name__}.Typos', autospect=True, set_spec=True, auto_spec=True):
             pass
+
+    def test_property_not_called_with_spec_mock(self):
+        obj = SomethingElse()
+        self.assertIsNone(obj._instance)
+        mock = Mock(spec=obj)
+        self.assertIsNone(obj._instance)
 
 
 if __name__ == '__main__':

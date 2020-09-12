@@ -494,7 +494,7 @@ class NonCallableMock(Base):
         _spec_asyncs = []
 
         for attr in dir(spec):
-            if iscoroutinefunction(getattr(spec, attr, None)):
+            if iscoroutinefunction(inspect.getattr_static(spec, attr, None)):
                 _spec_asyncs.append(attr)
 
         if spec is not None and not _is_list(spec):
