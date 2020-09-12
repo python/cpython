@@ -683,13 +683,13 @@ static int prepare_script_environment(HINSTANCE hPython)
     DECLPROC(hPython, PyObject *, PyImport_ImportModule, (char *));
     DECLPROC(hPython, int, PyObject_SetAttrString, (PyObject *, char *, PyObject *));
     DECLPROC(hPython, PyObject *, PyObject_GetAttrString, (PyObject *, char *));
-    DECLPROC(hPython, PyObject *, PyCFunction_New, (PyMethodDef *, PyObject *));
+    DECLPROC(hPython, PyObject *, PyCFunction_NewEx, (PyMethodDef *, PyObject *, PyObject *));
     DECLPROC(hPython, PyObject *, Py_BuildValue, (char *, ...));
     DECLPROC(hPython, int, PyArg_ParseTuple, (PyObject *, char *, ...));
     DECLPROC(hPython, PyObject *, PyErr_Format, (PyObject *, char *));
     DECLPROC(hPython, PyObject *, PyLong_FromVoidPtr, (void *));
     if (!PyImport_ImportModule || !PyObject_GetAttrString ||
-        !PyObject_SetAttrString || !PyCFunction_New)
+        !PyObject_SetAttrString || !PyCFunction_NewEx)
         return 1;
     if (!Py_BuildValue || !PyArg_ParseTuple || !PyErr_Format)
         return 1;
@@ -701,7 +701,7 @@ static int prepare_script_environment(HINSTANCE hPython)
         g_PyExc_OSError = PyObject_GetAttrString(mod, "OSError");
         for (i = 0; i < DIM(meth); ++i) {
             PyObject_SetAttrString(mod, meth[i].ml_name,
-                                   PyCFunction_New(&meth[i], NULL));
+                                   PyCFunction_NewEx(&meth[i], NULL, NULL));
         }
     }
     g_Py_BuildValue = Py_BuildValue;
@@ -732,7 +732,7 @@ do_run_installscript(HINSTANCE hPython, char *pathname, int argc, char **argv)
     DECLPROC(hPython, int, PyRun_SimpleString, (char *));
     DECLPROC(hPython, int, Py_FinalizeEx, (void));
     DECLPROC(hPython, PyObject *, Py_BuildValue, (char *, ...));
-    DECLPROC(hPython, PyObject *, PyCFunction_New,
+    DECLPROC(hPython, PyObject *, PyCFunction_NewEx,
              (PyMethodDef *, PyObject *));
     DECLPROC(hPython, int, PyArg_ParseTuple, (PyObject *, char *, ...));
     DECLPROC(hPython, PyObject *, PyErr_Format, (PyObject *, char *));
@@ -744,7 +744,7 @@ do_run_installscript(HINSTANCE hPython, char *pathname, int argc, char **argv)
     if (!Py_BuildValue || !PyArg_ParseTuple || !PyErr_Format)
         return 1;
 
-    if (!PyCFunction_New || !PyArg_ParseTuple || !PyErr_Format)
+    if (!PyCFunction_NewEx)
         return 1;
 
     if (pathname == NULL || pathname[0] == '\0')
