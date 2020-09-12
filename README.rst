@@ -1,9 +1,9 @@
 This is Python version 3.10.0 alpha 0
 =====================================
 
-.. image:: https://travis-ci.org/python/cpython.svg?branch=master
+.. image:: https://travis-ci.com/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
-   :target: https://travis-ci.org/python/cpython
+   :target: https://travis-ci.com/python/cpython
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
    :alt: CPython build status on GitHub Actions
@@ -259,8 +259,9 @@ rights reserved.
 
 Copyright (c) 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
 
-See the file "LICENSE" for information on the history of this software, terms &
-conditions for usage, and a DISCLAIMER OF ALL WARRANTIES.
+See the `LICENSE <https://github.com/python/cpython/blob/master/LICENSE>`_ for
+information on the history of this software, terms & conditions for usage, and a
+DISCLAIMER OF ALL WARRANTIES.
 
 This Python distribution contains *no* GNU General Public License (GPL) code,
 so it may be used in proprietary projects.  There are interfaces to some GNU

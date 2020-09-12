@@ -35,12 +35,6 @@ for Windows Extensions <https://sourceforge.net/projects/pywin32/>`__ project an
 as a part of the ActivePython distribution (see
 https://www.activestate.com/activepython\ ).
 
-`Boa Constructor <http://boa-constructor.sourceforge.net/>`_ is an IDE and GUI
-builder that uses wxWidgets.  It offers visual frame creation and manipulation,
-an object inspector, many views on the source like object browsers, inheritance
-hierarchies, doc string generated html documentation, an advanced debugger,
-integrated help, and Zope support.
-
 `Eric <http://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
 and the Scintilla editing component.
 
@@ -57,22 +51,14 @@ They include:
 * PyCharm (https://www.jetbrains.com/pycharm/)
 
 
-Is there a tool to help find bugs or perform static analysis?
+Are there tools to help find bugs or perform static analysis?
 -------------------------------------------------------------
 
 Yes.
 
-PyChecker is a static analysis tool that finds bugs in Python source code and
-warns about code complexity and style.  You can get PyChecker from
-http://pychecker.sourceforge.net/.
-
-`Pylint <https://www.pylint.org/>`_ is another tool that checks
-if a module satisfies a coding standard, and also makes it possible to write
-plug-ins to add a custom feature.  In addition to the bug checking that
-PyChecker performs, Pylint offers some additional features such as checking line
-length, whether variable names are well-formed according to your coding
-standard, whether declared interfaces are fully implemented, and more.
-https://docs.pylint.org/ provides a full list of Pylint's features.
+`Pylint <https://www.pylint.org/>`_ and
+`Pyflakes <https://github.com/PyCQA/pyflakes>`_ do basic checking that will
+help you catch bugs sooner.
 
 Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
 `Pyre <https://pyre-check.org/>`_, and
