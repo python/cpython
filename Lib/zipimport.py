@@ -722,7 +722,7 @@ def _get_pyc_source(self, path):
 # 'fullname'.
 def _get_module_code(self, fullname):
     path = _get_module_path(self, fullname)
-    error_msg = None
+    import_error = None
     for suffix, isbytecode, ispackage in _zip_searchorder:
         fullpath = path + suffix
         _bootstrap._verbose_message('trying {}{}{}', self.archive, path_sep, fullpath, verbosity=2)
@@ -737,8 +737,8 @@ def _get_module_code(self, fullname):
             if isbytecode:
                 try:
                     code = _unmarshal_code(self, modpath, fullpath, fullname, data)
-                except ImportError as e:
-                    error_msg = e.msg
+                except ImportError as exc:
+                    import_error = exc
             else:
                 code = _compile_source(modpath, data)
             if code is None:
@@ -748,4 +748,8 @@ def _get_module_code(self, fullname):
             modpath = toc_entry[0]
             return code, ispackage, modpath
     else:
-        raise ZipImportError(error_msg or f"can't find module {fullname!r}", name=fullname)
+        if import_error:
+            msg = f"module load failed: {import_error.msg}"
+            raise ZipImportError(msg, name=fullname) from import_error
+        else:
+            raise ZipImportError(f"can't find module {fullname!r}", name=fullname)
