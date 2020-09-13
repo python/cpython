@@ -53,6 +53,7 @@ Shift + Right == +25
 """
 
 from tkinter import *
+from Lib.pygb import *
 
 STOP = 'Stop'
 WRAP = 'Wrap Around'
@@ -260,6 +261,13 @@ class DetailsViewer:
                 blue = 255
         self.__sb.update_views(red, green, blue)
         self.__root.update_idletasks()
+
+    def update_yourselfC(self, color):
+        if isinstance(color, Color) == False:
+            raise TypeError("This type is not 'Color'!")
+        color.fix()
+        self.update_yourself(color.R, color.G, color.B)
+        pass
 
     def update_yourself(self, red, green, blue):
         self.__red = red

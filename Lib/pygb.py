@@ -1,7 +1,9 @@
 """pygb.py - The RGB-ARGB and color library"""
 
+# Constants.
 MAXRGB = 255 # Maximum value of rgb.
 MINRGB = 0 # Minimum value of rgb.
+
 
 class Color:
     # Members.

@@ -23,6 +23,7 @@ color formats, and for calculating other color values.
 import sys
 import re
 from types import *
+from Lib.pygb import *
 
 class BadColor(Exception):
     pass
@@ -96,6 +97,13 @@ class ColorDB:
             return self.__byname[name]
         except KeyError:
             raise BadColor(name) from None
+
+    def nearestC(self, color):
+        if isinstance(color, Color) == False:
+            raise TypeError("This type is not 'Color'!")
+        color.fix()
+        return self.nearest(color.R, color.G, color.B)
+        pass
 
     def nearest(self, red, green, blue):
         """Return the name of color nearest (red, green, blue)"""
