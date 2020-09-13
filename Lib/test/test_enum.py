@@ -419,6 +419,11 @@ class TestEnum(unittest.TestCase):
                 green = 2
                 blue = 3
 
+    def test_reserved__sunder_(self):
+        with self.assertRaisesRegex(ValueError, '_sunder_ names, such as '
+                                    '"_bad_", are reserved'):
+            class Bad(Enum):
+                _bad_ = 1
 
     def test_enum_with_value_name(self):
         class Huh(Enum):
