@@ -77,7 +77,7 @@ class TestImghdr(unittest.TestCase):
             self.assertEqual(stream.tell(), pos)
 
     def test_bad_args(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             imghdr.what()
         with self.assertRaises(AttributeError):
             imghdr.what(None)
