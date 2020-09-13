@@ -2679,10 +2679,10 @@ task_step_impl(TaskObj *task, PyObject *exc)
         return NULL;
     }
 
-    int is_return_value = 0;
+    PyGenSendStatus gen_status = PYGEN_ERROR;
     if (exc == NULL) {
         if (PyGen_CheckExact(coro) || PyCoro_CheckExact(coro)) {
-            result = _PyGen_SendNoStopIteration((PyGenObject*)coro, Py_None, &is_return_value);
+            gen_status = _PyGen_Send_NameTBD((PyGenObject*)coro, Py_None, &result);
         }
         else {
             result = _PyObject_CallMethodIdOneArg(coro, &PyId_send, Py_None);
@@ -2696,10 +2696,10 @@ task_step_impl(TaskObj *task, PyObject *exc)
         }
     }
 
-    if (is_return_value || result == NULL) {
+    if ((gen_status == PYGEN_RETURN) || result == NULL) {
         PyObject *et, *ev, *tb;
 
-        if (is_return_value) {
+        if (result != NULL) {
             o = result;
         }
         if (o || (_PyGen_FetchStopIterationValue(&o) == 0)) {

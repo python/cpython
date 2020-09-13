@@ -142,6 +142,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing, int *is_retur
     PyThreadState *tstate = _PyThreadState_GET();
     PyFrameObject *f = gen->gi_frame;
     PyObject *result;
+
     if (f != NULL && _PyFrame_IsExecuting(f)) {
         const char *msg = "generator already executing";
         if (PyCoro_CheckExact(gen)) {
@@ -169,6 +170,10 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing, int *is_retur
                 PyErr_SetNone(PyExc_StopAsyncIteration);
             }
             else {
+                if (is_return_value != NULL) {
+                    *is_return_value = 1;
+                    Py_RETURN_NONE;
+                }
                 PyErr_SetNone(PyExc_StopIteration);
             }
         }
@@ -224,22 +229,31 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing, int *is_retur
 
     /* If the generator just returned (as opposed to yielding), signal
      * that the generator is exhausted. */
-    if (result && _PyFrameHasCompleted(f)) {
+    if (result &&  _PyFrameHasCompleted(f)) {
         if (result == Py_None) {
             /* Delay exception instantiation if we can */
             if (PyAsyncGen_CheckExact(gen)) {
                 PyErr_SetNone(PyExc_StopAsyncIteration);
+                Py_CLEAR(result);
             }
             else if (arg) {
-                /* Set exception if not called by gen_iternext() */
-                PyErr_SetNone(PyExc_StopIteration);
+                if (is_return_value != NULL) {
+                    *is_return_value = 1;
+                }
+                else {
+                    /* Set exception if not called by gen_iternext() */
+                    PyErr_SetNone(PyExc_StopIteration);
+                    Py_CLEAR(result);
+                }
             }
-            Py_CLEAR(result);
+            else {
+                Py_CLEAR(result);
+            }
         }
         else {
             /* Async generators cannot return anything but None */
             assert(!PyAsyncGen_CheckExact(gen));
-            if (is_return_value) {
+            if (is_return_value != NULL) {
                 *is_return_value = 1;
             }
             else {
@@ -291,12 +305,16 @@ _PyGen_Send(PyGenObject *gen, PyObject *arg)
     return gen_send_ex(gen, arg, 0, 0, NULL);
 }
 
-PyObject *
-_PyGen_SendNoStopIteration(PyGenObject *gen, PyObject *arg, int *is_return_value)
+PyGenSendStatus
+_PyGen_Send_NameTBD(PyGenObject *gen, PyObject *arg, PyObject **result)
 {
-    assert(is_return_value != NULL);
-    *is_return_value = 0;
-    return gen_send_ex(gen, arg, 0, 0, is_return_value);
+    assert(result != NULL);
+
+    int is_return_value = 0;
+    if ((*result = gen_send_ex(gen, arg, 0, 0, &is_return_value)) == NULL) {
+        return PYGEN_ERROR;
+    }
+    return is_return_value ? PYGEN_RETURN : PYGEN_NEXT;
 }
 
 PyDoc_STRVAR(close_doc,

@@ -1144,6 +1144,7 @@ class IssuesTestCase(BaseTestCase):
                     break_in_func('test_subgen', TEST_MODULE_FNAME),
                 ('None', 2, 'tfunc_import'),                  ('continue', ),
                 ('line', 3, 'test_subgen', ({1:1}, [])),      ('return', ),
+                ('exception', 7, 'test_gen', StopIteration),  ('return', ),
                 ('exception', 11, 'main', StopIteration),     ('step', ),
                 ('line', 13, 'main'),                         ('quit', ),
 
