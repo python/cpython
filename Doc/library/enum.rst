@@ -19,6 +19,11 @@ An enumeration is a set of symbolic names (members) bound to unique,
 constant values.  Within an enumeration, the members can be compared
 by identity, and the enumeration itself can be iterated over.
 
+.. note:: Case of Enum Members
+
+    Because Enums are used to represent constants we will be using
+    UPPER_CASE names in our examples.
+
 
 Module Contents
 ---------------
