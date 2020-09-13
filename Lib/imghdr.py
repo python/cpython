@@ -13,7 +13,7 @@ def what(file='', h=None):
     try:
         if h is None:
             if file == '':
-                raise ValueError("You need specify a str or PathLike for file, "
+                raise TypeError("You need specify a str or PathLike for file, "
                                  "or pass a byte stream as h parameter")
             if isinstance(file, (str, PathLike)):
                 f = open(file, 'rb')
