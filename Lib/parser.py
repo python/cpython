@@ -1,4 +1,4 @@
-"""parse.py - The convert library"""
+"""parser.py - The convert library"""
 
 from Lib.pygb import *
 
