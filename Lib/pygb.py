@@ -1,7 +1,5 @@
 """pygb.py - The RGB-ARGB and color library"""
 
-from Lib.parser import *
-
 MAXRGB = 255 # Maximum value of rgb.
 MINRGB = 0 # Minimum value of rgb.
 
@@ -23,6 +21,8 @@ class Color:
 
     # Fix color values.
     def fix(self):
+        from Lib.parser import tryParseInt
+
         self.A = tryParseInt(self.A)
         self.A = MAXRGB if self.A is None else self.A
         self.A = MAXRGB if self.A > MAXRGB else self.A
@@ -72,6 +72,13 @@ class Color:
     def strcode(self):
         self.fix()
         return f"{self.A}, {self.R}, {self.G}, {self.B}"
+        pass
+
+    # Set the shell foreground color.
+    def applyShell(self):
+        from Lib.parser import toSHCCode
+        from sys import stdout
+        stdout.write(toSHCCode(self))
         pass
     pass
 
