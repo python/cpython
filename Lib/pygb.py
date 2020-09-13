@@ -54,6 +54,8 @@ class Color:
 
     # Set color by another color object.
     def setBy(self, color) -> None:
+        if isinstance(color, Color) == False:
+            raise TypeError("This type is not 'Color'!")
         self.A = color.A
         self.R = color.R
         self.G = color.G
@@ -66,4 +68,3 @@ class Color:
         return f"{self.A}, {self.R}, {self.G}, {self.B}"
         pass
     pass
-    
