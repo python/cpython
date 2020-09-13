@@ -210,7 +210,7 @@ iteration of the loop::
     ...     if num % 2 == 0:
     ...         print("Found an even number", num)
     ...         continue
-    ...     print("Found a number", num)
+    ...     print("Found an odd number", num)
     Found an even number 2
     Found a number 3
     Found an even number 4
