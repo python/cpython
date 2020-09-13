@@ -21,8 +21,9 @@ by identity, and the enumeration itself can be iterated over.
 
 .. note:: Case of Enum Members
 
-    Because Enums are used to represent constants we will be using
-    UPPER_CASE names in our examples.
+    Because Enums are used to represent constants we recommend using
+    UPPER_CASE names for enum members, and will be using that style
+    in our examples.
 
 
 Module Contents
