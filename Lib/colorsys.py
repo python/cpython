@@ -16,6 +16,8 @@ HLS: Hue, Luminance, Saturation
 HSV: Hue, Saturation, Value
 """
 
+from Lib.pygb import *
+
 # References:
 # http://en.wikipedia.org/wiki/YIQ
 # http://en.wikipedia.org/wiki/HLS_color_space
@@ -36,6 +38,13 @@ TWO_THIRD = 2.0/3.0
 #
 # There are a great many versions of the constants used in these formulae.
 # The ones in this library uses constants from the FCC version of NTSC.
+
+def color_to_yiq(color):
+    if isinstance(color, Color) == False:
+        raise TypeError("This type is not 'Color'!")
+    color.fix()
+    return rgb_to_yiq(color.R, color.G, color.B)
+    pass
 
 def rgb_to_yiq(r, g, b):
     y = 0.30*r + 0.59*g + 0.11*b
@@ -71,6 +80,13 @@ def yiq_to_rgb(y, i, q):
 # H: position in the spectrum
 # L: color lightness
 # S: color saturation
+
+def color_to_hls(color):
+    if isinstance(color, Color) == False:
+        raise TypeError("This type is not 'Color'!")
+    color.fix()
+    return rgb_to_hls(color.R, color.G, color.B)
+    pass
 
 def rgb_to_hls(r, g, b):
     maxc = max(r, g, b)
@@ -120,6 +136,13 @@ def _v(m1, m2, hue):
 # H: position in the spectrum
 # S: color saturation ("purity")
 # V: color brightness
+
+def color_to_hsv(color):
+    if isinstance(color, Color) == False:
+        raise TypeError("This type is not 'Color'!")
+    color.fix()
+    return rgb_to_hsv(color.R, color.G, color.B)
+    pass
 
 def rgb_to_hsv(r, g, b):
     maxc = max(r, g, b)
