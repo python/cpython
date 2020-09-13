@@ -3,12 +3,12 @@
 from Lib.pygb import *
 
 # Returns int from value.
-def parseInt(val) -> int:
+def parseInt(val):
     return int(val)
     pass
 
 # Returns int if parse is success, returns None if not.
-def tryParseInt(val) -> object:
+def tryParseInt(val):
     try:
         return int(val)
         pass
@@ -18,12 +18,12 @@ def tryParseInt(val) -> object:
     pass
 
 # Returns float from value.
-def parseFloat(val) -> float:
+def parseFloat(val):
     return float(val)
     pass
 
 # Returns float if parse is success, returns None if not.
-def tryParseFloat(val) -> object:
+def tryParseFloat(val):
     try:
         return float(val)
         pass
@@ -33,7 +33,7 @@ def tryParseFloat(val) -> object:
     pass
 
 # Parse color from strcode.
-def parseColor(strcode = "255") -> Color:
+def parseColor(strcode = "255"):
     strcode = "255" if strcode is None or strcode == "" else strcode
     parts = strcode.split(",")
     count = parts.__len__()
@@ -60,4 +60,11 @@ def parseColor(strcode = "255") -> Color:
         color.B = B
         pass
     return color
+    pass
+
+# Returns as shell color code by color object.
+def toSHCCode(color):
+    if isinstance(color, Color) == False:
+        raise TypeError("This type is not 'Color'!")
+    return f'\033[38;2;{color.R};{color.G};{color.B}m'
     pass

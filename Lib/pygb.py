@@ -14,7 +14,7 @@ class Color:
     B = MINRGB # Blue.
 
     # Constructor.
-    def __init__(self, A = MAXRGB, R = MINRGB, G = MINRGB, B = MINRGB) -> None:
+    def __init__(self, A = MAXRGB, R = MINRGB, G = MINRGB, B = MINRGB):
         self.A = A
         self.R = R
         self.G = G
@@ -22,7 +22,7 @@ class Color:
         pass
 
     # Fix color values.
-    def fix(self) -> None:
+    def fix(self):
         self.A = tryParseInt(self.A)
         self.A = MAXRGB if self.A is None else self.A
         self.A = MAXRGB if self.A > MAXRGB else self.A
@@ -53,13 +53,13 @@ class Color:
         pass
 
     # Reverse color with alpha.
-    def reverseWA(self) -> None:
+    def reverseWA(self):
         self.reverse()
         self.A = MAXRGB - self.A
         pass
 
     # Set color by another color object.
-    def setBy(self, color) -> None:
+    def setBy(self, color):
         if isinstance(color, Color) == False:
             raise TypeError("This type is not 'Color'!")
         self.A = color.A
@@ -69,14 +69,14 @@ class Color:
         pass
 
     # Returns string color code.
-    def strcode(self) -> str:
+    def strcode(self):
         self.fix()
         return f"{self.A}, {self.R}, {self.G}, {self.B}"
         pass
     pass
 
 # Returns color by name.
-def colorByName(name = "white") -> Color:
+def colorByName(name = "white"):
     A = MAXRGB
     R = MINRGB
     G = MINRGB
