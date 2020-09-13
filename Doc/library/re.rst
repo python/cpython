@@ -1075,14 +1075,14 @@ attributes:
 
 .. method:: Pattern.findall(string[, pos[, endpos]])
 
-   Similar to the :func:`findall` function, using the compiled pattern, but
+   Similar to the :func:`finditer` function, using the compiled pattern, but
    also accepts optional *pos* and *endpos* parameters that limit the search
    region like for :meth:`search`.
 
 
 .. method:: Pattern.finditer(string[, pos[, endpos]])
 
-   Similar to the :func:`finditer` function, using the compiled pattern, but
+   Similar to the :func:`findall` function, using the compiled pattern, but
    also accepts optional *pos* and *endpos* parameters that limit the search
    region like for :meth:`search`.
 
