@@ -481,6 +481,11 @@ Trigonometric functions
       Added support for n-dimensional points. Formerly, only the two
       dimensional case was supported.
 
+   .. versionchanged:: 3.10
+      Improved the algorithm's accuracy so that the maximum error is
+      under 1 ulp (unit in the last place).  More typically, the result
+      is almost always correctly rounded to within 1/2 ulp.
+
 
 .. function:: sin(x)
 
