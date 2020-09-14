@@ -1189,11 +1189,10 @@ insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
 }
 
 static int
-insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
+insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value, int empty)
 {
     PyObject *old_value = NULL;
     PyDictKeyEntry *ep;
-    int empty = mp->ma_used == 0;
     PyDictKeysObject *keys = mp->ma_keys;
     Py_ssize_t ix;
 
@@ -2459,7 +2458,7 @@ dict_update_arg(PyObject *self, PyObject *arg)
 }
 
 static int
-dict_merge_init(PyObject *a, PyObject *b)
+dict_merge_init(PyObject *a, PyObject *b, int empty)
 {
     PyDictObject *mp;
     Py_ssize_t i, n;
@@ -2544,7 +2543,7 @@ dict_merge_init(PyObject *a, PyObject *b)
                 int err = 0;
                 Py_INCREF(key);
                 Py_INCREF(value);
-                err = insertdict_init(mp, key, hash, value);
+                err = insertdict_init(mp, key, hash, value, empty);
                 Py_DECREF(value);
                 Py_DECREF(key);
                 if (err != 0)
@@ -2605,10 +2604,10 @@ dict_merge_init(PyObject *a, PyObject *b)
 
 /* Single-arg dict update; used by dict_update_common and operators. */
 static int
-dict_update_arg_init(PyObject *self, PyObject *arg)
+dict_update_arg_init(PyObject *self, PyObject *arg, int empty)
 {
     if (PyDict_CheckExact(arg)) {
-        return dict_merge_init(self, arg);
+        return dict_merge_init(self, arg, empty);
     }
     _Py_IDENTIFIER(keys);
     PyObject *func;
@@ -2617,7 +2616,7 @@ dict_update_arg_init(PyObject *self, PyObject *arg)
     }
     if (func != NULL) {
         Py_DECREF(func);
-        return dict_merge_init(self, arg);
+        return dict_merge_init(self, arg, empty);
     }
     return PyDict_MergeFromSeq2(self, arg, 1);
 }
@@ -2649,16 +2648,18 @@ dict_update_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *arg = NULL;
     int result = 0;
+    int empty = 1;
     if (!PyArg_UnpackTuple(args, __func__, 0, 1, &arg)) {
         result = -1;
     }
     else if (arg != NULL) {
-        result = dict_update_arg_init(self, arg);
+        result = dict_update_arg_init(self, arg, 1);
+        empty = 0;
     }
 
     if (result == 0 && kwds != NULL) {
         if (PyArg_ValidateKeywordArguments(kwds))
-            result = dict_merge_init(self, kwds);
+            result = dict_merge_init(self, kwds, empty);
         else
             result = -1;
     }
@@ -3697,7 +3698,6 @@ static int
 dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     return dict_update_init(self, args, kwds);
-    // return dict_update_common(self, args, kwds, "dict");
 }
 
 static PyObject *
