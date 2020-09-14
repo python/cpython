@@ -508,7 +508,7 @@ Background, details, hints, tips and caveats
 --------------------------------------------
 
 The C standard defines the locale as a program-wide property that may be
-relatively expensive to change.  On top of that, some implementation are broken
+relatively expensive to change.  On top of that, some implementations are broken
 in such a way that frequent locale changes may cause core dumps.  This makes the
 locale somewhat painful to use correctly.
 
