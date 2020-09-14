@@ -1435,19 +1435,19 @@ _PyPegen_alias_for_star(Parser *p)
 }
 
 /* Creates a new asdl_seq* with the identifiers of all the names in seq */
-asdl_seq *
-_PyPegen_map_names_to_ids(Parser *p, asdl_seq *seq)
+asdl_identifier_seq *
+_PyPegen_map_names_to_ids(Parser *p, asdl_expr_seq *seq)
 {
     Py_ssize_t len = asdl_seq_LEN(seq);
     assert(len > 0);
 
-    asdl_seq *new_seq = (asdl_seq*)_Py_asdl_generic_seq_new(len, p->arena);
+    asdl_identifier_seq *new_seq = _Py_asdl_identifier_seq_new(len, p->arena);
     if (!new_seq) {
         return NULL;
     }
     for (Py_ssize_t i = 0; i < len; i++) {
-        expr_ty e = asdl_seq_GET_UNTYPED(seq, i);
-        asdl_seq_SET_UNTYPED(new_seq, i, e->v.Name.id);
+        expr_ty e = asdl_seq_GET(seq, i);
+        asdl_seq_SET(new_seq, i, e->v.Name.id);
     }
     return new_seq;
 }
@@ -1483,39 +1483,39 @@ _PyPegen_get_cmpops(Parser *p, asdl_seq *seq)
     return new_seq;
 }
 
-asdl_seq *
+asdl_expr_seq *
 _PyPegen_get_exprs(Parser *p, asdl_seq *seq)
 {
     Py_ssize_t len = asdl_seq_LEN(seq);
     assert(len > 0);
 
-    asdl_seq *new_seq = (asdl_seq*)_Py_asdl_generic_seq_new(len, p->arena);
+    asdl_expr_seq *new_seq = _Py_asdl_expr_seq_new(len, p->arena);
     if (!new_seq) {
         return NULL;
     }
     for (Py_ssize_t i = 0; i < len; i++) {
         CmpopExprPair *pair = asdl_seq_GET_UNTYPED(seq, i);
-        asdl_seq_SET_UNTYPED(new_seq, i, pair->expr);
+        asdl_seq_SET(new_seq, i, pair->expr);
     }
     return new_seq;
 }
 
 /* Creates an asdl_seq* where all the elements have been changed to have ctx as context */
-static asdl_seq *
-_set_seq_context(Parser *p, asdl_seq *seq, expr_context_ty ctx)
+static asdl_expr_seq *
+_set_seq_context(Parser *p, asdl_expr_seq *seq, expr_context_ty ctx)
 {
     Py_ssize_t len = asdl_seq_LEN(seq);
     if (len == 0) {
         return NULL;
     }
 
-    asdl_seq *new_seq = (asdl_seq*)_Py_asdl_generic_seq_new(len, p->arena);
+    asdl_expr_seq *new_seq = _Py_asdl_expr_seq_new(len, p->arena);
     if (!new_seq) {
         return NULL;
     }
     for (Py_ssize_t i = 0; i < len; i++) {
-        expr_ty e = asdl_seq_GET_UNTYPED(seq, i);
-        asdl_seq_SET_UNTYPED(new_seq, i, _PyPegen_set_expr_context(p, e, ctx));
+        expr_ty e = asdl_seq_GET(seq, i);
+        asdl_seq_SET(new_seq, i, _PyPegen_set_expr_context(p, e, ctx));
     }
     return new_seq;
 }
@@ -1530,7 +1530,7 @@ static expr_ty
 _set_tuple_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
     return _Py_Tuple(
-            (asdl_expr_seq*)_set_seq_context(p, (asdl_seq*)e->v.Tuple.elts, ctx),
+            _set_seq_context(p, e->v.Tuple.elts, ctx),
             ctx,
             EXTRA_EXPR(e, e));
 }
@@ -1539,7 +1539,7 @@ static expr_ty
 _set_list_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
     return _Py_List(
-            (asdl_expr_seq*)_set_seq_context(p, (asdl_seq*)e->v.List.elts, ctx),
+            _set_seq_context(p, e->v.List.elts, ctx),
             ctx,
             EXTRA_EXPR(e, e));
 }
@@ -1608,33 +1608,33 @@ _PyPegen_key_value_pair(Parser *p, expr_ty key, expr_ty value)
 }
 
 /* Extracts all keys from an asdl_seq* of KeyValuePair*'s */
-asdl_seq *
+asdl_expr_seq *
 _PyPegen_get_keys(Parser *p, asdl_seq *seq)
 {
     Py_ssize_t len = asdl_seq_LEN(seq);
-    asdl_seq *new_seq = (asdl_seq*)_Py_asdl_generic_seq_new(len, p->arena);
+    asdl_expr_seq *new_seq = _Py_asdl_expr_seq_new(len, p->arena);
     if (!new_seq) {
         return NULL;
     }
     for (Py_ssize_t i = 0; i < len; i++) {
         KeyValuePair *pair = asdl_seq_GET_UNTYPED(seq, i);
-        asdl_seq_SET_UNTYPED(new_seq, i, pair->key);
+        asdl_seq_SET(new_seq, i, pair->key);
     }
     return new_seq;
 }
 
 /* Extracts all values from an asdl_seq* of KeyValuePair*'s */
-asdl_seq *
+asdl_expr_seq *
 _PyPegen_get_values(Parser *p, asdl_seq *seq)
 {
     Py_ssize_t len = asdl_seq_LEN(seq);
-    asdl_seq *new_seq = (asdl_seq*)_Py_asdl_generic_seq_new(len, p->arena);
+    asdl_expr_seq *new_seq = _Py_asdl_expr_seq_new(len, p->arena);
     if (!new_seq) {
         return NULL;
     }
     for (Py_ssize_t i = 0; i < len; i++) {
         KeyValuePair *pair = asdl_seq_GET_UNTYPED(seq, i);
-        asdl_seq_SET_UNTYPED(new_seq, i, pair->value);
+        asdl_seq_SET(new_seq, i, pair->value);
     }
     return new_seq;
 }

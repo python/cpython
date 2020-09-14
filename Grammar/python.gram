@@ -34,16 +34,16 @@ func_type[mod_ty]: '(' a=[type_expressions] ')' '->' b=expression NEWLINE* ENDMA
 fstring[expr_ty]: star_expressions
 
 # type_expressions allow */** but ignore them
-type_expressions[asdl_seq*]:
+type_expressions[asdl_expr_seq*]:
     | a=','.expression+ ',' '*' b=expression ',' '**' c=expression {
-        _PyPegen_seq_append_to_end(p, CHECK(_PyPegen_seq_append_to_end(p, a, b)), c) }
-    | a=','.expression+ ',' '*' b=expression { _PyPegen_seq_append_to_end(p, a, b) }
-    | a=','.expression+ ',' '**' b=expression { _PyPegen_seq_append_to_end(p, a, b) }
+        (asdl_expr_seq*)_PyPegen_seq_append_to_end(p, CHECK(_PyPegen_seq_append_to_end(p, a, b)), c) }
+    | a=','.expression+ ',' '*' b=expression { (asdl_expr_seq*)_PyPegen_seq_append_to_end(p, a, b) }
+    | a=','.expression+ ',' '**' b=expression { (asdl_expr_seq*)_PyPegen_seq_append_to_end(p, a, b) }
     | '*' a=expression ',' '**' b=expression {
-        _PyPegen_seq_append_to_end(p, CHECK(_PyPegen_singleton_seq(p, a)), b) }
-    | '*' a=expression { _PyPegen_singleton_seq(p, a) }
-    | '**' a=expression { _PyPegen_singleton_seq(p, a) }
-    | ','.expression+
+        (asdl_expr_seq*)_PyPegen_seq_append_to_end(p, CHECK(_PyPegen_singleton_seq(p, a)), b) }
+    | '*' a=expression { (asdl_expr_seq*)_PyPegen_singleton_seq(p, a) }
+    | '**' a=expression { (asdl_expr_seq*)_PyPegen_singleton_seq(p, a) }
+    | a[asdl_expr_seq*]=','.expression+ {a}
 
 statements[asdl_stmt_seq*]: a=statement+ { (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a) }
 statement[asdl_stmt_seq*]: a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } | a[asdl_stmt_seq*]=simple_stmt { a }
@@ -112,9 +112,9 @@ augassign[AugOperator*]:
     | '**=' { _PyPegen_augoperator(p, Pow) }
     | '//=' { _PyPegen_augoperator(p, FloorDiv) }
 
-global_stmt[stmt_ty]: 'global' a=','.NAME+ {
+global_stmt[stmt_ty]: 'global' a[asdl_expr_seq*]=','.NAME+ {
     _Py_Global(CHECK(_PyPegen_map_names_to_ids(p, a)), EXTRA) }
-nonlocal_stmt[stmt_ty]: 'nonlocal' a=','.NAME+ {
+nonlocal_stmt[stmt_ty]: 'nonlocal' a[asdl_expr_seq*]=','.NAME+ {
     _Py_Nonlocal(CHECK(_PyPegen_map_names_to_ids(p, a)), EXTRA) }
 
 yield_stmt[stmt_ty]: y=yield_expr { _Py_Expr(y, EXTRA) }
@@ -311,7 +311,7 @@ star_expression[expr_ty] (memo):
     | '*' a=bitwise_or { _Py_Starred(a, Load, EXTRA) }
     | expression
 
-star_named_expressions[asdl_seq*]: a=','.star_named_expression+ [','] { a }
+star_named_expressions[asdl_expr_seq*]: a[asdl_expr_seq*]=','.star_named_expression+ [','] { a }
 star_named_expression[expr_ty]:
     | '*' a=bitwise_or { _Py_Starred(a, Load, EXTRA) }
     | named_expression
@@ -562,7 +562,7 @@ star_targets[expr_ty]:
     | a=star_target !',' { a }
     | a=star_target b=(',' c=star_target { c })* [','] {
         _Py_Tuple(CHECK(_PyPegen_seq_insert_in_front(p, a, b)), Store, EXTRA) }
-star_targets_seq[asdl_seq*]: a=','.star_target+ [','] { a }
+star_targets_seq[asdl_expr_seq*]: a[asdl_expr_seq*]=','.star_target+ [','] { a }
 star_target[expr_ty] (memo):
     | '*' a=(!'*' star_target) {
         _Py_Starred(CHECK(_PyPegen_set_expr_context(p, a, Store)), Store, EXTRA) }
@@ -594,7 +594,7 @@ del_t_atom[expr_ty]:
     | '(' a=[del_targets] ')' { _Py_Tuple(a, Del, EXTRA) }
     | '[' a=[del_targets] ']' { _Py_List(a, Del, EXTRA) }
 
-targets[asdl_seq*]: a=','.target+ [','] { a }
+targets[asdl_expr_seq*]: a[asdl_expr_seq*]=','.target+ [','] { a }
 target[expr_ty] (memo):
     | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Store, EXTRA) }
     | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }

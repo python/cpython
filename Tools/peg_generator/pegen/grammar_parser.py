@@ -422,7 +422,7 @@ class GeneratedParser(Parser):
             and
             (item := self.item())
         ):
-            return NamedItem ( name . string , item , type . string + "*" )
+            return NamedItem ( name . string , item , f"{type.string}*" )
         self.reset(mark)
         if cut: return None
         cut = False
