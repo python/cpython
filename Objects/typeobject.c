@@ -6,6 +6,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_unionobject.h"   // _Py_Union()
 #include "frameobject.h"
 #include "structmember.h"         // PyMemberDef
 
@@ -3753,6 +3754,21 @@ type_is_gc(PyTypeObject *type)
     return type->tp_flags & Py_TPFLAGS_HEAPTYPE;
 }
 
+static PyObject *
+type_or(PyTypeObject* self, PyObject* param) {
+    PyObject *tuple = PyTuple_Pack(2, self, param);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    PyObject *new_union = _Py_Union(tuple);
+    Py_DECREF(tuple);
+    return new_union;
+}
+
+static PyNumberMethods type_as_number = {
+        .nb_or = (binaryfunc)type_or, // Add __or__ function
+};
+
 PyTypeObject PyType_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "type",                                     /* tp_name */
@@ -3764,7 +3780,7 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
     (reprfunc)type_repr,                        /* tp_repr */
-    0,                                          /* tp_as_number */
+    &type_as_number,                            /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
@@ -5598,7 +5614,6 @@ PyType_Ready(PyTypeObject *type)
             add_subclass((PyTypeObject *)b, type) < 0)
             goto error;
     }
-
     /* All done -- set the ready flag */
     type->tp_flags =
         (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;

@@ -9521,14 +9521,13 @@ done:
 #if defined(__sun) && defined(__SVR4)
     // On Solaris, sendfile raises EINVAL rather than returning 0
     // when the offset is equal or bigger than the in_fd size.
-    int res;
     struct stat st;
 
     do {
         Py_BEGIN_ALLOW_THREADS
-        res = fstat(in_fd, &st);
+        ret = fstat(in_fd, &st);
         Py_END_ALLOW_THREADS
-    } while (res != 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    } while (ret != 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     if (ret < 0)
         return (!async_err) ? posix_error() : NULL;
 
