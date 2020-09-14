@@ -787,7 +787,7 @@ An example of a coroutine function::
         await some_coroutine()
 
 .. versionchanged:: 3.7
-   ``await`` and ``async`` are now keywords, previously they were only
+   ``await`` and ``async`` are now keywords; previously they were only
    treated as such inside the body of a coroutine function.
 
 .. index:: statement: async for
