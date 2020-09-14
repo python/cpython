@@ -807,7 +807,7 @@ class MathTests(unittest.TestCase):
         # Verify improvemed accuracy in cases that used to have errors.
         hypot = math.hypot
 
-        for x, y, z in [
+        for hx, hy, hz in [
             # Cases with a 1 ulp error in Python 3.7 compiled with Clang
             ('0x1.10e89518dca48p+29', '0x1.1970f7565b7efp+30', '0x1.38c6b597220c2p+30'),
             ('0x1.10106eb4b44a2p+29', '0x1.ef0596cdc97f8p+29', '0x1.1a6def4b2d09fp+30'),
@@ -844,8 +844,8 @@ class MathTests(unittest.TestCase):
             ('0x1.282bdb82f17f3p+30', '0x1.640ba4c4eed3ap+30', '0x1.cf204bb58312dp+30'),
             ('0x1.89d8c423ea0c6p+29', '0x1.d35dcfe902bc3p+29', '0x1.3197a22482281p+30'),
         ]:
-            with self.subTest(x=x, y=y, z=z):
-                x, y, z = map(float.fromhex, (x, y, z))
+            with self.subTest(hx=hx, hy=hy, hz=hz):
+                x, y, z = map(float.fromhex, (hx, hy, hz))
                 self.assertEqual(hypot(x, y), z)
 
     def testDist(self):
