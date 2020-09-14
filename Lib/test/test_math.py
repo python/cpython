@@ -803,6 +803,51 @@ class MathTests(unittest.TestCase):
             scale = FLOAT_MIN / 2.0 ** exp
             self.assertEqual(math.hypot(4*scale, 3*scale), 5*scale)
 
+    def testHypotAccuracy(self):
+        # Verify improvemed accuracy in cases that used to have errors.
+        hypot = math.hypot
+
+        for x, y, z in [
+            # Cases with a 1 ulp error in Python 3.7 compiled with Clang
+            ('0x1.10e89518dca48p+29', '0x1.1970f7565b7efp+30', '0x1.38c6b597220c2p+30'),
+            ('0x1.10106eb4b44a2p+29', '0x1.ef0596cdc97f8p+29', '0x1.1a6def4b2d09fp+30'),
+            ('0x1.459c058e20bb7p+30', '0x1.993ca009b9178p+29', '0x1.8090a1a3570bfp+30'),
+            ('0x1.378371ae67c0cp+30', '0x1.fbe6619854b4cp+29', '0x1.91e8d27dde4ffp+30'),
+            ('0x1.f4cd0574fb97ap+29', '0x1.50fe31669340ep+30', '0x1.a3d6bbac344c9p+30'),
+            ('0x1.494b2cdd3d446p+29', '0x1.212a5367b4c7cp+29', '0x1.b63c72aea6e56p+29'),
+            ('0x1.f84e649f1e46dp+29', '0x1.1fa56bef8eec4p+30', '0x1.7e851bb9d7fddp+30'),
+            ('0x1.2e817edd3d6fap+30', '0x1.eb0814f1e9602p+29', '0x1.85997a108af72p+30'),
+            ('0x1.0d3a6e3d04245p+29', '0x1.32a62fea52352p+30', '0x1.4ee5200af5bc7p+30'),
+            ('0x1.888e19611bfc5p+29', '0x1.52b8e70b24353p+29', '0x1.033ec4887f851p+30'),
+
+            # Cases with 2 ulp error in Python 3.8
+            ('0x1.538816d48a13fp+29', '0x1.7967c5ca43e16p+29', '0x1.fba86a32035f8p+29'),
+            ('0x1.57b47b7234530p+29', '0x1.74e2c7040e772p+29', '0x1.fb204f152682ep+29'),
+            ('0x1.821b685e9b168p+30', '0x1.677dc1c1e3dc6p+29', '0x1.a9e54cd3c0c5ep+30'),
+            ('0x1.9e8247f67097bp+29', '0x1.24bd2dc4f4baep+29', '0x1.fb7547955f497p+29'),
+            ('0x1.b73b59e0cb5f9p+29', '0x1.da899ab784a97p+28', '0x1.f338706dbb681p+29'),
+            ('0x1.94a8d2842a7cfp+30', '0x1.326a51d4d8d8ap+30', '0x1.fb9506c46830fp+30'),
+            ('0x1.e930b9cd99035p+29', '0x1.5a1030e18dff9p+30', '0x1.a7c6cc1ed3fcdp+30'),
+            ('0x1.1592bbb0e4690p+29', '0x1.a9c337b33fb9ap+29', '0x1.fc40a5bc45ccbp+29'),
+            ('0x1.1243a50751fd4p+29', '0x1.a5a10175622d9p+29', '0x1.f6fba11cd3ba4p+29'),
+            ('0x1.57a8596e74722p+30', '0x1.42d1af9d04da9p+30', '0x1.d780208bb9317p+30'),
+
+            # Cases with 1 ulp error in version fff3c28052e6b0750d6218e00acacd2fded4991a
+            ('0x1.ee7dbd9565899p+29', '0x1.7ab4d6fc6e4b4p+29', '0x1.376c969e411d2p+30'),
+            ('0x1.5c6bfbec5c4dcp+30', '0x1.02511184b4970p+30', '0x1.b1bbed85946ccp+30'),
+            ('0x1.59dcebba995cap+30', '0x1.50ca7e7c38854p+29', '0x1.80adecf719d91p+30'),
+            ('0x1.768cdd94cf5aap+29', '0x1.9cfdc5571d38ep+29', '0x1.16c4fcef84d87p+30'),
+            ('0x1.dcf137d60262ep+29', '0x1.1101621990b3ep+30', '0x1.6a7df1dbe28a3p+30'),
+            ('0x1.3a2d006e288b0p+30', '0x1.e9a240914326cp+29', '0x1.8e4c6e2883aa4p+30'),
+            ('0x1.62a32f7f53c61p+29', '0x1.47eb6cd72684fp+29', '0x1.e302a6672a046p+29'),
+            ('0x1.d3bcb60748ef2p+29', '0x1.3f13c4056312cp+30', '0x1.8b9b5a4615c34p+30'),
+            ('0x1.282bdb82f17f3p+30', '0x1.640ba4c4eed3ap+30', '0x1.cf204bb58312dp+30'),
+            ('0x1.89d8c423ea0c6p+29', '0x1.d35dcfe902bc3p+29', '0x1.3197a22482281p+30'),
+        ]:
+            with self.subTest(x=x, y=y, z=z):
+                x, y, z = map(float.fromhex, (x, y, z))
+                self.assertEqual(hypot(x, y), z)
+
     def testDist(self):
         from decimal import Decimal as D
         from fractions import Fraction as F
