@@ -15632,7 +15632,7 @@ _loop0_1_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_1_type, _seq);
     D(p->level--);
@@ -15698,7 +15698,7 @@ _loop0_2_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_2_type, _seq);
     D(p->level--);
@@ -15773,7 +15773,7 @@ _loop0_4_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_4_type, _seq);
     D(p->level--);
@@ -15887,7 +15887,7 @@ _loop0_6_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_6_type, _seq);
     D(p->level--);
@@ -16001,7 +16001,7 @@ _loop0_8_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_8_type, _seq);
     D(p->level--);
@@ -16115,7 +16115,7 @@ _loop0_10_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_10_type, _seq);
     D(p->level--);
@@ -16225,7 +16225,7 @@ _loop1_11_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_11_type, _seq);
     D(p->level--);
@@ -16300,7 +16300,7 @@ _loop0_13_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_13_type, _seq);
     D(p->level--);
@@ -16858,7 +16858,7 @@ _loop1_22_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_22_type, _seq);
     D(p->level--);
@@ -17043,7 +17043,7 @@ _loop0_26_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_26_type, _seq);
     D(p->level--);
@@ -17157,7 +17157,7 @@ _loop0_28_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_28_type, _seq);
     D(p->level--);
@@ -17361,7 +17361,7 @@ _loop0_31_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_31_type, _seq);
     D(p->level--);
@@ -17432,7 +17432,7 @@ _loop1_32_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_32_type, _seq);
     D(p->level--);
@@ -17507,7 +17507,7 @@ _loop0_34_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_34_type, _seq);
     D(p->level--);
@@ -17665,7 +17665,7 @@ _loop0_37_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_37_type, _seq);
     D(p->level--);
@@ -17823,7 +17823,7 @@ _loop0_40_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_40_type, _seq);
     D(p->level--);
@@ -17937,7 +17937,7 @@ _loop0_42_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_42_type, _seq);
     D(p->level--);
@@ -18051,7 +18051,7 @@ _loop0_44_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_44_type, _seq);
     D(p->level--);
@@ -18165,7 +18165,7 @@ _loop0_46_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_46_type, _seq);
     D(p->level--);
@@ -18349,7 +18349,7 @@ _loop1_48_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_48_type, _seq);
     D(p->level--);
@@ -18630,7 +18630,7 @@ _loop0_54_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_54_type, _seq);
     D(p->level--);
@@ -18696,7 +18696,7 @@ _loop0_55_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_55_type, _seq);
     D(p->level--);
@@ -18762,7 +18762,7 @@ _loop0_56_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_56_type, _seq);
     D(p->level--);
@@ -18833,7 +18833,7 @@ _loop1_57_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_57_type, _seq);
     D(p->level--);
@@ -18899,7 +18899,7 @@ _loop0_58_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_58_type, _seq);
     D(p->level--);
@@ -18970,7 +18970,7 @@ _loop1_59_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_59_type, _seq);
     D(p->level--);
@@ -19041,7 +19041,7 @@ _loop1_60_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_60_type, _seq);
     D(p->level--);
@@ -19112,7 +19112,7 @@ _loop1_61_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_61_type, _seq);
     D(p->level--);
@@ -19178,7 +19178,7 @@ _loop0_62_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_62_type, _seq);
     D(p->level--);
@@ -19249,7 +19249,7 @@ _loop1_63_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_63_type, _seq);
     D(p->level--);
@@ -19315,7 +19315,7 @@ _loop0_64_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_64_type, _seq);
     D(p->level--);
@@ -19386,7 +19386,7 @@ _loop1_65_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_65_type, _seq);
     D(p->level--);
@@ -19452,7 +19452,7 @@ _loop0_66_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_66_type, _seq);
     D(p->level--);
@@ -19523,7 +19523,7 @@ _loop1_67_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_67_type, _seq);
     D(p->level--);
@@ -19594,7 +19594,7 @@ _loop1_68_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_68_type, _seq);
     D(p->level--);
@@ -19716,7 +19716,7 @@ _loop0_71_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_71_type, _seq);
     D(p->level--);
@@ -19826,7 +19826,7 @@ _loop1_72_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_72_type, _seq);
     D(p->level--);
@@ -19901,7 +19901,7 @@ _loop0_74_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_74_type, _seq);
     D(p->level--);
@@ -20011,7 +20011,7 @@ _loop1_75_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_75_type, _seq);
     D(p->level--);
@@ -20077,7 +20077,7 @@ _loop0_76_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_76_type, _seq);
     D(p->level--);
@@ -20143,7 +20143,7 @@ _loop0_77_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_77_type, _seq);
     D(p->level--);
@@ -20209,7 +20209,7 @@ _loop0_78_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_78_type, _seq);
     D(p->level--);
@@ -20280,7 +20280,7 @@ _loop1_79_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_79_type, _seq);
     D(p->level--);
@@ -20346,7 +20346,7 @@ _loop0_80_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_80_type, _seq);
     D(p->level--);
@@ -20417,7 +20417,7 @@ _loop1_81_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_81_type, _seq);
     D(p->level--);
@@ -20488,7 +20488,7 @@ _loop1_82_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_82_type, _seq);
     D(p->level--);
@@ -20559,7 +20559,7 @@ _loop1_83_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_83_type, _seq);
     D(p->level--);
@@ -20625,7 +20625,7 @@ _loop0_84_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_84_type, _seq);
     D(p->level--);
@@ -20696,7 +20696,7 @@ _loop1_85_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_85_type, _seq);
     D(p->level--);
@@ -20762,7 +20762,7 @@ _loop0_86_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_86_type, _seq);
     D(p->level--);
@@ -20833,7 +20833,7 @@ _loop1_87_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_87_type, _seq);
     D(p->level--);
@@ -20899,7 +20899,7 @@ _loop0_88_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_88_type, _seq);
     D(p->level--);
@@ -20970,7 +20970,7 @@ _loop1_89_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_89_type, _seq);
     D(p->level--);
@@ -21041,7 +21041,7 @@ _loop1_90_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_90_type, _seq);
     D(p->level--);
@@ -21112,7 +21112,7 @@ _loop1_91_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_91_type, _seq);
     D(p->level--);
@@ -21183,7 +21183,7 @@ _loop1_92_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_92_type, _seq);
     D(p->level--);
@@ -21299,7 +21299,7 @@ _loop0_95_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_95_type, _seq);
     D(p->level--);
@@ -21675,7 +21675,7 @@ _loop1_100_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_100_type, _seq);
     D(p->level--);
@@ -21852,7 +21852,7 @@ _loop0_104_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_104_type, _seq);
     D(p->level--);
@@ -21962,7 +21962,7 @@ _loop1_105_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_105_type, _seq);
     D(p->level--);
@@ -22028,7 +22028,7 @@ _loop0_106_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_106_type, _seq);
     D(p->level--);
@@ -22094,7 +22094,7 @@ _loop0_107_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_107_type, _seq);
     D(p->level--);
@@ -22169,7 +22169,7 @@ _loop0_109_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_109_type, _seq);
     D(p->level--);
@@ -22327,7 +22327,7 @@ _loop0_112_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_112_type, _seq);
     D(p->level--);
@@ -22441,7 +22441,7 @@ _loop0_114_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_114_type, _seq);
     D(p->level--);
@@ -22555,7 +22555,7 @@ _loop0_116_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_116_type, _seq);
     D(p->level--);
@@ -22669,7 +22669,7 @@ _loop0_118_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_118_type, _seq);
     D(p->level--);
@@ -22774,7 +22774,7 @@ _loop0_119_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_119_type, _seq);
     D(p->level--);
@@ -22849,7 +22849,7 @@ _loop0_121_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_121_type, _seq);
     D(p->level--);
@@ -23001,7 +23001,7 @@ _loop0_124_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_124_type, _seq);
     D(p->level--);
@@ -23115,7 +23115,7 @@ _loop0_126_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_126_type, _seq);
     D(p->level--);
@@ -23278,7 +23278,7 @@ _loop0_128_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_128_type, _seq);
     D(p->level--);
@@ -23344,7 +23344,7 @@ _loop0_129_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_129_type, _seq);
     D(p->level--);
@@ -23410,7 +23410,7 @@ _loop0_130_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_130_type, _seq);
     D(p->level--);
@@ -23605,7 +23605,7 @@ _loop0_133_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_133_type, _seq);
     D(p->level--);
@@ -23726,7 +23726,7 @@ _loop0_135_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop0_135_type, _seq);
     D(p->level--);
@@ -24612,7 +24612,7 @@ _loop1_153_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_153_type, _seq);
     D(p->level--);
@@ -24683,7 +24683,7 @@ _loop1_154_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);
+    for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);
     PyMem_Free(_children);
     _PyPegen_insert_memo(p, _start_mark, _loop1_154_type, _seq);
     D(p->level--);

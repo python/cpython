@@ -576,7 +576,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print("}")
             self.print("asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);")
             self.out_of_memory_return(f"!_seq", cleanup_code="PyMem_Free(_children);")
-            self.print("for (int i = 0; i < _n; i++) asdl_seq_SET_GENERIC(_seq, i, _children[i]);")
+            self.print("for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);")
             self.print("PyMem_Free(_children);")
             if node.name:
                 self.print(f"_PyPegen_insert_memo(p, _start_mark, {node.name}_type, _seq);")
