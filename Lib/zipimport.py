@@ -750,7 +750,7 @@ def _get_module_code(self, fullname):
             return code, ispackage, modpath
     else:
         if import_error:
-            msg = f"module load failed: {import_error.msg}"
+            msg = f"module load failed: {import_error}"
             raise ZipImportError(msg, name=fullname) from import_error
         else:
             raise ZipImportError(f"can't find module {fullname!r}", name=fullname)
