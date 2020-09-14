@@ -1241,6 +1241,11 @@ insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value
         else {
             ep->me_value = value;
         }
+        mp->ma_used++;
+        keys->dk_usable--;
+        keys->dk_nentries++;
+        assert(mp->ma_keys->dk_usable >= 0);
+        ASSERT_CONSISTENT(mp);
         return 0;
     }
 
