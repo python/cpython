@@ -804,7 +804,11 @@ class MathTests(unittest.TestCase):
             self.assertEqual(math.hypot(4*scale, 3*scale), 5*scale)
 
     def testHypotAccuracy(self):
-        # Verify improvemed accuracy in cases that used to have errors.
+        # Verify improved accuracy in cases that were known to be inaccurate.
+        #
+        # Expected results were determined using decimal with prec=300:
+        # float((Decimal(x)**2 + Decimal(y)**2).sqrt()).hex()
+
         hypot = math.hypot
 
         for hx, hy, hz in [
