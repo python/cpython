@@ -2429,7 +2429,7 @@ magnitude.  We avoid this cost by arranging the calculation so that
 fabs(csum) is always as large as fabs(x).
 
 To establish the invariant, *csum* is initialized to 1.0 which is
-always larger than x**2 after scaling or division by *max*.
+always larger than x**2 after scaling or after division by *max*.
 After the loop is finished, the initial 1.0 is subtracted out for a
 net zero effect on the final sum.  Since *csum* will be greater than
 1.0, the subtraction of 1.0 will not cause fractional digits to be
@@ -2458,7 +2458,7 @@ Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 To minimize loss of information during the accumulation of fractional
 values, each term has a separate accumulator.  This also breaks up
 sequential dependencies in the inner loop so the CPU can maximize
-floating point throughput. [5] On a 2.6 GHz Haswell, adding one
+floating point throughput. [4]  On a 2.6 GHz Haswell, adding one
 dimension has an incremental cost of only 5ns -- for example when
 moving from hypot(x,y) to hypot(x,y,z).
 
@@ -2470,7 +2470,7 @@ The differential correction starts with a value *x* that is
 the difference between the square of *h*, the possibly inaccurately
 rounded square root, and the accurately computed sum of squares.
 The correction is the first order term of the Maclaurin series
-expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2). [4]
+expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2). [5]
 
 Essentially, this differential correction is equivalent to one
 refinement step in Newton's divide-and-average square root
@@ -2492,10 +2492,10 @@ References:
 1. Veltkamp-Dekker splitting: http://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
 2. Compensated summation:  http://www.ti3.tu-harburg.de/paper/rump/Ru08b.pdf
 3. Square root differential correction:  https://arxiv.org/pdf/1904.09481.pdf
-4. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
-5. https://bugs.python.org/file49439/hypot.png
-6. https://bugs.python.org/file49435/best_frac.py
-7. https://bugs.python.org/file49448/test_hypot_commutativity.py
+4. Data dependency graph:  https://bugs.python.org/file49439/hypot.png
+5. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+6. Analysis of internal accuracy:  https://bugs.python.org/file49435/best_frac.py
+7. Commutativity test:  https://bugs.python.org/file49448/test_hypot_commutativity.py
 
 */
 
