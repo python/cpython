@@ -1,0 +1,1 @@
+I think it would be useful to have a Color class in Python. Thus, it can become a standard and additional libraries may not be needed for many operations. Many libraries can be built around this Color class and can pave the way for many innovations. It can be a good advantage, especially in the GUI area, that beautiful libraries have a common data type. Thanks!
