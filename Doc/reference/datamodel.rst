@@ -2376,7 +2376,7 @@ left undefined.
 
    .. note::
 
-      If the right operand's type is a subclass of the left operand's type and that
+      If the right operand's type is a strict subclass of the left operand's type and that
       subclass provides the reflected method for the operation, this method will be
       called before the left operand's non-reflected method.  This behavior allows
       subclasses to override their ancestors' operations.
