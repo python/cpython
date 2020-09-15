@@ -496,24 +496,24 @@ ga_dir(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     }
 
-    int contains = 0;
     PyObject *dir_entry = NULL;
     for (const char * const *p = attr_exceptions; ; p++) {
         if (*p == NULL) {
             break;
         }
         else {
-            PyObject *dir_entry = PyUnicode_FromString(*p);
+            dir_entry = PyUnicode_FromString(*p);
             if (dir_entry == NULL) {
                 goto error;
-            } else if ((contains = PySequence_Contains(dir, dir_entry)) < 0) {
+            }
+            int contains = PySequence_Contains(dir, dir_entry);
+            if (contains < 0) {
+                goto error;
+            } else if (contains == 0 && PyList_Append(dir, dir_entry) < 0) {
                 goto error;
             }
 
-            if (contains == 0 && PyList_Append(dir, dir_entry) < 0) {
-                goto error;
-            }
-            Py_DECREF(dir_entry);
+            Py_CLEAR(dir_entry);
         }
     }
     return dir;
