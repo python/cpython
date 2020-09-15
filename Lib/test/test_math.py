@@ -611,7 +611,7 @@ class MathTests(unittest.TestCase):
         def msum(iterable):
             """Full precision summation.  Compute sum(iterable) without any
             intermediate accumulation of error.  Based on the 'lsum' function
-            at http://code.activestate.com/recipes/393090/
+            at https://github.com/ActiveState/code/tree/master/recipes/Python/393090_Binary_floating_point_summatiaccurate_full/recipe-393090.py
 
             """
             tmant, texp = 0, 0
