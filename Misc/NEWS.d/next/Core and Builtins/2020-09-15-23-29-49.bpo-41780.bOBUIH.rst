@@ -1,0 +1,2 @@
+Fix :meth:`__dir__` of :class:`types.GenericAlias`. Patch by Batuhan
+Taskaya.
