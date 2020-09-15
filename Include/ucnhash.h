@@ -27,6 +27,8 @@ typedef struct {
     int (*getcode)(PyObject *self, const char* name, int namelen, Py_UCS4* code,
                    int with_named_seq);
 
+    PyObject *module;
+
 } _PyUnicode_Name_CAPI;
 
 #ifdef __cplusplus

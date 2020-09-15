@@ -28,6 +28,7 @@ _Py_IDENTIFIER(NFKD);
 
 typedef struct {
     PyTypeObject *ucd_type;
+    _PyUnicode_Name_CAPI capsule_api;
 } unicodedata_state;
 
 static inline unicodedata_state*
@@ -1461,10 +1462,11 @@ _getucname_internal(unicodedata_state *state, PyObject *self, Py_UCS4 code,
 }
 
 static int 
-_getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
+_getucname(PyObject *module, Py_UCS4 code, char* buffer, int buflen,
           int with_alias_and_seq)
 {
-    return _getucname_internal(NULL, self, code, buffer, buflen,
+    unicodedata_state *state = unicodedata_get_state(module);
+    return _getucname_internal(state, module, code, buffer, buflen,
                                with_alias_and_seq);
 }
 
@@ -1601,18 +1603,12 @@ _getcode_internal(unicodedata_state *state, PyObject* self, const char* name,
 }
 
 static int
-_getcode(PyObject* self, const char* name,
+_getcode(PyObject* module, const char* name,
          int namelen, Py_UCS4* code, int with_named_seq)
 {
-    return _getcode_internal(NULL, self, name, namelen, code, with_named_seq);
+    unicodedata_state *state = unicodedata_get_state(module);
+    return _getcode_internal(state, module, name, namelen, code, with_named_seq);
 }
-
-static const _PyUnicode_Name_CAPI hashAPI =
-{
-    sizeof(_PyUnicode_Name_CAPI),
-    _getucname,
-    _getcode
-};
 
 static PyObject *
 unicodedata_UCD_name_internal(PyObject *self, unicodedata_state *state,
@@ -1843,16 +1839,17 @@ unicodedata_free(void *module)
     unicodedata_clear((PyObject *)module);
 }
 
-static int unicodedata_exec(PyObject *m)
+static int unicodedata_exec(PyObject *mod)
 {
-    unicodedata_state *state = unicodedata_get_state(m);
+    unicodedata_state *state = unicodedata_get_state(mod);
     state->ucd_type = (PyTypeObject *)PyType_FromModuleAndSpec(
-        m, &unicodedata_ucd_type_spec, NULL);
+        mod, &unicodedata_ucd_type_spec, NULL);
     if (state->ucd_type == NULL) {
         return -1;
     }
 
-    if (PyModule_AddStringConstant(m, "unidata_version", UNIDATA_VERSION) < 0) {
+    if (PyModule_AddStringConstant(mod, "unidata_version", 
+                                   UNIDATA_VERSION) < 0) {
         return -1;
     }
 
@@ -1862,17 +1859,23 @@ static int unicodedata_exec(PyObject *m)
     if (v == NULL) {
         return -1;
     }
-    if (PyModule_AddObject(m, "ucd_3_2_0", v) < 0) {
+    if (PyModule_AddObject(mod, "ucd_3_2_0", v) < 0) {
         Py_DECREF(v);
         return -1;
     }
 
+    state->capsule_api.size = sizeof(_PyUnicode_Name_CAPI);
+    state->capsule_api.getname = _getucname;
+    state->capsule_api.getcode = _getcode;
+    state->capsule_api.module = mod;
+
     /* Export C API */
-    v = PyCapsule_New((void *)&hashAPI, PyUnicodeData_CAPSULE_NAME, NULL);
+    v = PyCapsule_New((void *)&state->capsule_api,
+                      PyUnicodeData_CAPSULE_NAME, NULL);
     if (v == NULL) {
         return -1;
     }
-    if (PyModule_AddObject(m, "ucnhash_CAPI", v) < 0) {
+    if (PyModule_AddObject(mod, "ucnhash_CAPI", v) < 0) {
         Py_DECREF(v);
         return -1;
     }
