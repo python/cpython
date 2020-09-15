@@ -1,0 +1,1 @@
+use the correct mix-in data type when constructing Enums

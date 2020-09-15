@@ -560,6 +560,49 @@ class TestEnum(unittest.TestCase):
         self.assertFormatIsValue('{:>20}', Directional.WEST)
         self.assertFormatIsValue('{:<20}', Directional.WEST)
 
+    def test_enum_str_override(self):
+        class MyStrEnum(Enum):
+            def __str__(self):
+                return 'MyStr'
+        class MyMethodEnum(Enum):
+            def hello(self):
+                return 'Hello!  My name is %s' % self.name
+        class Test1Enum(MyMethodEnum, int, MyStrEnum):
+            One = 1
+            Two = 2
+        self.assertEqual(str(Test1Enum.One), 'MyStr')
+        #
+        class Test2Enum(MyStrEnum, MyMethodEnum):
+            One = 1
+            Two = 2
+        self.assertEqual(str(Test2Enum.One), 'MyStr')
+
+    def test_inherited_data_type(self):
+        class HexInt(int):
+            def __repr__(self):
+                return hex(self)
+        class MyEnum(HexInt, enum.Enum):
+            A = 1
+            B = 2
+            C = 3
+        self.assertEqual(repr(MyEnum.A), '<MyEnum.A: 0x1>')
+
+    def test_too_many_data_types(self):
+        with self.assertRaisesRegex(TypeError, 'too many data types'):
+            class Huh(str, int, Enum):
+                One = 1
+
+        class MyStr(str):
+            def hello(self):
+                return 'hello, %s' % self
+        class MyInt(int):
+            def repr(self):
+                return hex(self)
+        with self.assertRaisesRegex(TypeError, 'too many data types'):
+            class Huh(MyStr, MyInt, Enum):
+                One = 1
+
+
     def test_hash(self):
         Season = self.Season
         dates = {}
