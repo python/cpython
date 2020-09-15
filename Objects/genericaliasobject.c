@@ -509,7 +509,8 @@ ga_dir(PyObject *self, PyObject *Py_UNUSED(ignored))
             int contains = PySequence_Contains(dir, dir_entry);
             if (contains < 0) {
                 goto error;
-            } else if (contains == 0 && PyList_Append(dir, dir_entry) < 0) {
+            }
+            if (contains == 0 && PyList_Append(dir, dir_entry) < 0) {
                 goto error;
             }
 
