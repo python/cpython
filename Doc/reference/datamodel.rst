@@ -2772,5 +2772,5 @@ An example of an asynchronous context manager class::
    *blocking* such fallback.
 
 .. [#] For operands of the same type, it is assumed that if the non-reflected method
-   (such as :meth:`__add__`) fails the operation is not supported, which is why the
+   (such as :meth:`__add__`) fails then the operation is not supported, which is why the
    reflected method is not called.
