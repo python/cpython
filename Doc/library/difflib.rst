@@ -18,7 +18,7 @@
 --------------
 
 This module provides classes and functions for comparing sequences. It
-can be used for example, for comparing files, and can produce difference
+can be used for example, for comparing files, and can produce different
 information in various formats, including HTML and context and unified
 diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
