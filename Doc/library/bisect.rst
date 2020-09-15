@@ -60,7 +60,7 @@ The following functions are provided:
 .. seealso::
 
    `SortedCollection recipe
-   <https://code.activestate.com/recipes/577197-sortedcollection/>`_ that uses
+   <https://github.com/ActiveState/code/tree/master/recipes/Python/577197_SortedCollection/recipe-577197.py>`_ that uses
    bisect to build a full-featured collection class with straight-forward search
    methods and support for a key-function.  The keys are precomputed to save
    unnecessary calls to the key function during searches.
