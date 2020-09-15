@@ -560,6 +560,14 @@ class TestEnum(unittest.TestCase):
         self.assertFormatIsValue('{:>20}', Directional.WEST)
         self.assertFormatIsValue('{:<20}', Directional.WEST)
 
+    def test_object_str_override(self):
+        class Colors(Enum):
+            RED, GREEN, BLUE = 1, 2, 3
+            def __repr__(self):
+                return "test.%s" % (self._name_, )
+            __str__ = object.__str__
+        self.assertEqual(str(Colors.RED), 'test.RED')
+
     def test_enum_str_override(self):
         class MyStrEnum(Enum):
             def __str__(self):
@@ -601,7 +609,6 @@ class TestEnum(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'too many data types'):
             class Huh(MyStr, MyInt, Enum):
                 One = 1
-
 
     def test_hash(self):
         Season = self.Season
