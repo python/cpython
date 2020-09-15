@@ -1,7 +1,9 @@
 import ast
+import builtins
 import dis
 import os
 import sys
+import types
 import unittest
 import warnings
 import weakref
@@ -1943,6 +1945,88 @@ class NodeVisitorTests(unittest.TestCase):
             'visit_NameConstant is deprecated; add visit_Constant',
             'visit_Ellipsis is deprecated; add visit_Constant',
         ])
+
+
+@support.cpython_only
+class ModuleStateTests(unittest.TestCase):
+    # bpo-41194, bpo-41261, bpo-41631: The _ast module uses a global state.
+
+    def check_ast_module(self):
+        # Check that the _ast module still works as expected
+        code = 'x + 1'
+        filename = '<string>'
+        mode = 'eval'
+
+        # Create _ast.AST subclasses instances
+        ast_tree = compile(code, filename, mode, flags=ast.PyCF_ONLY_AST)
+
+        # Call PyAST_Check()
+        code = compile(ast_tree, filename, mode)
+        self.assertIsInstance(code, types.CodeType)
+
+    def test_reload_module(self):
+        # bpo-41194: Importing the _ast module twice must not crash.
+        with support.swap_item(sys.modules, '_ast', None):
+            del sys.modules['_ast']
+            import _ast as ast1
+
+            del sys.modules['_ast']
+            import _ast as ast2
+
+            self.check_ast_module()
+
+        # Unloading the two _ast module instances must not crash.
+        del ast1
+        del ast2
+        support.gc_collect()
+
+        self.check_ast_module()
+
+    def test_sys_modules(self):
+        # bpo-41631: Test reproducing a Mercurial crash when PyAST_Check()
+        # imported the _ast module internally.
+        lazy_mod = object()
+
+        def my_import(name, *args, **kw):
+            sys.modules[name] = lazy_mod
+            return lazy_mod
+
+        with support.swap_item(sys.modules, '_ast', None):
+            del sys.modules['_ast']
+
+            with support.swap_attr(builtins, '__import__', my_import):
+                # Test that compile() does not import the _ast module
+                self.check_ast_module()
+                self.assertNotIn('_ast', sys.modules)
+
+                # Sanity check of the test itself
+                import _ast
+                self.assertIs(_ast, lazy_mod)
+
+    def test_subinterpreter(self):
+        # bpo-41631: Importing and using the _ast module in a subinterpreter
+        # must not crash.
+        code = dedent('''
+            import _ast
+            import ast
+            import gc
+            import sys
+            import types
+
+            # Create _ast.AST subclasses instances and call PyAST_Check()
+            ast_tree = compile('x+1', '<string>', 'eval',
+                               flags=ast.PyCF_ONLY_AST)
+            code = compile(ast_tree, 'string', 'eval')
+            if not isinstance(code, types.CodeType):
+                raise AssertionError
+
+            # Unloading the _ast module must not crash.
+            del ast, _ast
+            del sys.modules['ast'], sys.modules['_ast']
+            gc.collect()
+        ''')
+        res = support.run_in_subinterp(code)
+        self.assertEqual(res, 0)
 
 
 def main():

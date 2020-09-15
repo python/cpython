@@ -1259,6 +1259,12 @@ flush_std_files(void)
 static void
 finalize_interp_types(PyThreadState *tstate)
 {
+    // The _ast module state is shared by all interpreters.
+    // The state must only be cleared by the main interpreter.
+    if (_Py_IsMainInterpreter(tstate)) {
+        _PyAST_Fini(tstate);
+    }
+
     _PyExc_Fini(tstate);
     _PyFrame_Fini(tstate);
     _PyAsyncGen_Fini(tstate);
