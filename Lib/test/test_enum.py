@@ -420,8 +420,10 @@ class TestEnum(unittest.TestCase):
                 blue = 3
 
     def test_reserved__sunder_(self):
-        with self.assertRaisesRegex(ValueError, '_sunder_ names, such as '
-                                    '"_bad_", are reserved'):
+        with self.assertRaisesRegex(
+                ValueError,
+                '_sunder_ names, such as "_bad_", are reserved',
+            ):
             class Bad(Enum):
                 _bad_ = 1
 
@@ -1136,9 +1138,11 @@ class TestEnum(unittest.TestCase):
                 return self._intname
             def __repr__(self):
                 # repr() is updated to include the name and type info
-                return "{}({!r}, {})".format(type(self).__name__,
-                                             self.__name__,
-                                             int.__repr__(self))
+                return "{}({!r}, {})".format(
+                        type(self).__name__,
+                        self.__name__,
+                        int.__repr__(self),
+                        )
             def __str__(self):
                 # str() is unchanged, even if it relies on the repr() fallback
                 base = int
@@ -1153,7 +1157,8 @@ class TestEnum(unittest.TestCase):
                 if isinstance(self, NamedInt) and isinstance(other, NamedInt):
                     return NamedInt(
                         '({0} + {1})'.format(self.__name__, other.__name__),
-                        temp )
+                        temp,
+                        )
                 else:
                     return temp
 
@@ -1193,9 +1198,11 @@ class TestEnum(unittest.TestCase):
                 return self._intname
             def __repr__(self):
                 # repr() is updated to include the name and type info
-                return "{}({!r}, {})".format(type(self).__name__,
-                                             self.__name__,
-                                             int.__repr__(self))
+                return "{}({!r}, {})".format(
+                        type(self).__name__,
+                        self.__name__,
+                        int.__repr__(self),
+                        )
             def __str__(self):
                 # str() is unchanged, even if it relies on the repr() fallback
                 base = int
@@ -1210,7 +1217,8 @@ class TestEnum(unittest.TestCase):
                 if isinstance(self, NamedInt) and isinstance(other, NamedInt):
                     return NamedInt(
                         '({0} + {1})'.format(self.__name__, other.__name__),
-                        temp )
+                        temp,
+                        )
                 else:
                     return temp
 
@@ -1250,9 +1258,11 @@ class TestEnum(unittest.TestCase):
                 return self._intname
             def __repr__(self):
                 # repr() is updated to include the name and type info
-                return "{}({!r}, {})".format(type(self).__name__,
-                                             self.__name__,
-                                             int.__repr__(self))
+                return "{}({!r}, {})".format(
+                        type(self).__name__,
+                        self.__name__,
+                        int.__repr__(self),
+                        )
             def __str__(self):
                 # str() is unchanged, even if it relies on the repr() fallback
                 base = int
@@ -1267,7 +1277,8 @@ class TestEnum(unittest.TestCase):
                 if isinstance(self, NamedInt) and isinstance(other, NamedInt):
                     return NamedInt(
                         '({0} + {1})'.format(self.__name__, other.__name__),
-                        temp )
+                        temp,
+                        )
                 else:
                     return temp
 
@@ -1307,9 +1318,11 @@ class TestEnum(unittest.TestCase):
                 return self._intname
             def __repr__(self):
                 # repr() is updated to include the name and type info
-                return "{}({!r}, {})".format(type(self).__name__,
-                                             self.__name__,
-                                             int.__repr__(self))
+                return "{}({!r}, {})".format(
+                        type(self).__name__,
+                        self.__name__,
+                        int.__repr__(self),
+                        )
             def __str__(self):
                 # str() is unchanged, even if it relies on the repr() fallback
                 base = int
@@ -1324,7 +1337,8 @@ class TestEnum(unittest.TestCase):
                 if isinstance(self, NamedInt) and isinstance(other, NamedInt):
                     return NamedInt(
                         '({0} + {1})'.format(self.__name__, other.__name__),
-                        temp )
+                        temp,
+                        )
                 else:
                     return temp
 
@@ -1332,7 +1346,6 @@ class TestEnum(unittest.TestCase):
             __qualname__ = 'NEI'      # needed for pickle protocol 4
             x = ('the-x', 1)
             y = ('the-y', 2)
-
 
         self.assertIs(NEI.__new__, Enum.__new__)
         self.assertEqual(repr(NEI.x + NEI.y), "NamedInt('(the-x + the-y)', 3)")
@@ -1362,9 +1375,11 @@ class TestEnum(unittest.TestCase):
                 return self._intname
             def __repr__(self):
                 # repr() is updated to include the name and type info
-                return "{}({!r}, {})".format(type(self).__name__,
-                                             self.__name__,
-                                             int.__repr__(self))
+                return "{}({!r}, {})".format(
+                        type(self).__name__,
+                        self.__name__,
+                        int.__repr__(self),
+                        )
             def __str__(self):
                 # str() is unchanged, even if it relies on the repr() fallback
                 base = int
@@ -1415,9 +1430,11 @@ class TestEnum(unittest.TestCase):
                 return self._intname
             def __repr__(self):
                 # repr() is updated to include the name and type info
-                return "{}({!r}, {})".format(type(self).__name__,
-                                             self.__name__,
-                                             int.__repr__(self))
+                return "{}({!r}, {})".format(
+                        type(self).__name__,
+                        self.__name__,
+                        int.__repr__(self),
+                        )
             def __str__(self):
                 # str() is unchanged, even if it relies on the repr() fallback
                 base = int
@@ -1432,7 +1449,8 @@ class TestEnum(unittest.TestCase):
                 if isinstance(self, NamedInt) and isinstance(other, NamedInt):
                     return NamedInt(
                         '({0} + {1})'.format(self.__name__, other.__name__),
-                        temp )
+                        temp,
+                        )
                 else:
                     return temp
 
