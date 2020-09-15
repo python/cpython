@@ -1089,11 +1089,9 @@ static PyModuleDef_Slot astmodule_slots[] = {
 static struct PyModuleDef _astmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_ast",
-    .m_size = sizeof(astmodulestate),
+    // The _ast module uses a global state (global_ast_state).
+    .m_size = 0,
     .m_slots = astmodule_slots,
-    .m_traverse = astmodule_traverse,
-    .m_clear = astmodule_clear,
-    .m_free = astmodule_free,
 };
 
 PyMODINIT_FUNC
@@ -1374,59 +1372,40 @@ def generate_module_def(f, mod):
         f.write('    PyObject *' + s + ';\n')
     f.write('} astmodulestate;\n\n')
     f.write("""
-static astmodulestate*
-get_ast_state(PyObject *module)
-{
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (astmodulestate*)state;
-}
+// Forward declaration
+static int init_types(astmodulestate *state);
+
+// bpo-41194, bpo-41261, bpo-41631: The _ast module uses a global state.
+static astmodulestate global_ast_state = {0};
 
 static astmodulestate*
 get_global_ast_state(void)
 {
-    _Py_IDENTIFIER(_ast);
-    PyObject *name = _PyUnicode_FromId(&PyId__ast);  // borrowed reference
-    if (name == NULL) {
+    astmodulestate* state = &global_ast_state;
+    if (!init_types(state)) {
         return NULL;
     }
-    PyObject *module = PyImport_GetModule(name);
-    if (module == NULL) {
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        module = PyImport_Import(name);
-        if (module == NULL) {
-            return NULL;
-        }
-    }
-    astmodulestate *state = get_ast_state(module);
-    Py_DECREF(module);
     return state;
 }
 
-static int astmodule_clear(PyObject *module)
+static astmodulestate*
+get_ast_state(PyObject* Py_UNUSED(module))
 {
-    astmodulestate *state = get_ast_state(module);
+    astmodulestate* state = get_global_ast_state();
+    // get_ast_state() must only be called after _ast module is imported,
+    // and astmodule_exec() calls init_types()
+    assert(state != NULL);
+    return state;
+}
+
+void _PyAST_Fini(PyThreadState *tstate)
+{
+    astmodulestate* state = &global_ast_state;
 """)
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
     f.write("""
-    return 0;
-}
-
-static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
-{
-    astmodulestate *state = get_ast_state(module);
-""")
-    for s in module_state:
-        f.write("    Py_VISIT(state->" + s + ');\n')
-    f.write("""
-    return 0;
-}
-
-static void astmodule_free(void* module) {
-    astmodule_clear((PyObject*)module);
+    state->initialized = 0;
 }
 
 """)
