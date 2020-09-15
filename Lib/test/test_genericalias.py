@@ -287,6 +287,11 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(a.__args__, (list[T], tuple[T, ...]))
         self.assertEqual(a.__parameters__, (T,))
 
+    def test_dir(self):
+        dir_of_gen_alias = set(dir(list[int]))
+        self.assertTrue(dir_of_gen_alias.issuperset(dir(list)))
+        for generic_alias_property in ("__origin__", "__args__", "__parameters__"):
+            self.assertIn(generic_alias_property, dir_of_gen_alias)
 
 if __name__ == "__main__":
     unittest.main()
