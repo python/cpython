@@ -1,1 +1,1 @@
-Instantiating enum with invalid value results in ValueError twice
+fix default `_missing_` so a duplicate `ValueError` is not set as the `__context__` of the original `ValueError`
