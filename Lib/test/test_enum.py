@@ -2350,6 +2350,12 @@ class TestFlag(unittest.TestCase):
         self.assertFalse(W in RX)
         self.assertFalse(X in RW)
 
+    def test_member_iter(self):
+        Color = self.Color
+        self.assertEqual(list(Color.PURPLE), [Color.BLUE, Color.RED])
+        self.assertEqual(list(Color.BLUE), [Color.BLUE])
+        self.assertEqual(list(Color.GREEN), [Color.GREEN])
+
     def test_auto_number(self):
         class Color(Flag):
             red = auto()
@@ -2804,6 +2810,12 @@ class TestIntFlag(unittest.TestCase):
         self.assertFalse(X in RW)
         with self.assertRaises(TypeError):
             self.assertFalse('test' in RW)
+
+    def test_member_iter(self):
+        Color = self.Color
+        self.assertEqual(list(Color.PURPLE), [Color.BLUE, Color.RED])
+        self.assertEqual(list(Color.BLUE), [Color.BLUE])
+        self.assertEqual(list(Color.GREEN), [Color.GREEN])
 
     def test_bool(self):
         Perm = self.Perm
