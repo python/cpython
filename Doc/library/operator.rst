@@ -249,6 +249,7 @@ Operations which work with sequences (some of them with mappings too) include:
    finally return the default value.
 
    .. versionadded:: 3.4
+      Originally specified by :pep:`424`.
 
 The :mod:`operator` module also defines tools for generalized attribute and item
 lookups.  These are useful for making fast field extractors as arguments for
