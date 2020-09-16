@@ -14,9 +14,9 @@
 
 #define MAXLEVEL 200    /* Max parentheses level */
 
-static int validate_stmts(asdl_seq *);
-static int validate_exprs(asdl_seq *, expr_context_ty, int);
-static int validate_nonempty_seq(asdl_seq *, const char *, const char *);
+static int validate_stmts(asdl_stmt_seq *);
+static int validate_exprs(asdl_expr_seq*, expr_context_ty, int);
+static int _validate_nonempty_seq(asdl_seq *, const char *, const char *);
 static int validate_stmt(stmt_ty);
 static int validate_expr(expr_ty, expr_context_ty);
 
@@ -40,7 +40,7 @@ validate_name(PyObject *name)
 }
 
 static int
-validate_comprehension(asdl_seq *gens)
+validate_comprehension(asdl_comprehension_seq *gens)
 {
     Py_ssize_t i;
     if (!asdl_seq_LEN(gens)) {
@@ -58,7 +58,7 @@ validate_comprehension(asdl_seq *gens)
 }
 
 static int
-validate_keywords(asdl_seq *keywords)
+validate_keywords(asdl_keyword_seq *keywords)
 {
     Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(keywords); i++)
@@ -68,7 +68,7 @@ validate_keywords(asdl_seq *keywords)
 }
 
 static int
-validate_args(asdl_seq *args)
+validate_args(asdl_arg_seq *args)
 {
     Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(args); i++) {
@@ -324,23 +324,24 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
 }
 
 static int
-validate_nonempty_seq(asdl_seq *seq, const char *what, const char *owner)
+_validate_nonempty_seq(asdl_seq *seq, const char *what, const char *owner)
 {
     if (asdl_seq_LEN(seq))
         return 1;
     PyErr_Format(PyExc_ValueError, "empty %s on %s", what, owner);
     return 0;
 }
+#define validate_nonempty_seq(seq, what, owner) _validate_nonempty_seq((asdl_seq*)seq, what, owner)
 
 static int
-validate_assignlist(asdl_seq *targets, expr_context_ty ctx)
+validate_assignlist(asdl_expr_seq *targets, expr_context_ty ctx)
 {
     return validate_nonempty_seq(targets, "targets", ctx == Del ? "Delete" : "Assign") &&
         validate_exprs(targets, ctx, 0);
 }
 
 static int
-validate_body(asdl_seq *body, const char *owner)
+validate_body(asdl_stmt_seq *body, const char *owner)
 {
     return validate_nonempty_seq(body, "body", owner) && validate_stmts(body);
 }
@@ -488,7 +489,7 @@ validate_stmt(stmt_ty stmt)
 }
 
 static int
-validate_stmts(asdl_seq *seq)
+validate_stmts(asdl_stmt_seq *seq)
 {
     Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(seq); i++) {
@@ -507,7 +508,7 @@ validate_stmts(asdl_seq *seq)
 }
 
 static int
-validate_exprs(asdl_seq *exprs, expr_context_ty ctx, int null_ok)
+validate_exprs(asdl_expr_seq *exprs, expr_context_ty ctx, int null_ok)
 {
     Py_ssize_t i;
     for (i = 0; i < asdl_seq_LEN(exprs); i++) {
@@ -550,7 +551,7 @@ PyAST_Validate(mod_ty mod)
 }
 
 PyObject *
-_PyAST_GetDocString(asdl_seq *body)
+_PyAST_GetDocString(asdl_stmt_seq *body)
 {
     if (!asdl_seq_LEN(body)) {
         return NULL;

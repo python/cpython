@@ -259,9 +259,10 @@ class Alt:
 
 
 class NamedItem:
-    def __init__(self, name: Optional[str], item: Item):
+    def __init__(self, name: Optional[str], item: Item, type: Optional[str] = None):
         self.name = name
         self.item = item
+        self.type = type
         self.nullable = False
 
     def __str__(self) -> str:
