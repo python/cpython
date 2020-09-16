@@ -5443,7 +5443,7 @@ slash_with_default_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ slash_with_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "param_no_default* param_with_default+ '/' ','"));
-            _res = _PyPegen_slash_with_default ( p , a , b );
+            _res = _PyPegen_slash_with_default ( p , ( asdl_arg_seq * ) a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -5475,7 +5475,7 @@ slash_with_default_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ slash_with_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "param_no_default* param_with_default+ '/' &')'"));
-            _res = _PyPegen_slash_with_default ( p , a , b );
+            _res = _PyPegen_slash_with_default ( p , ( asdl_arg_seq * ) a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -7511,7 +7511,7 @@ lambda_slash_with_default_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ lambda_slash_with_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default* lambda_param_with_default+ '/' ','"));
-            _res = _PyPegen_slash_with_default ( p , a , b );
+            _res = _PyPegen_slash_with_default ( p , ( asdl_arg_seq * ) a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -7543,7 +7543,7 @@ lambda_slash_with_default_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ lambda_slash_with_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "lambda_param_no_default* lambda_param_with_default+ '/' &':'"));
-            _res = _PyPegen_slash_with_default ( p , a , b );
+            _res = _PyPegen_slash_with_default ( p , ( asdl_arg_seq * ) a , b );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);

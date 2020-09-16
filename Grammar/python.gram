@@ -245,8 +245,8 @@ slash_no_default[asdl_arg_seq*]:
     | a[asdl_arg_seq*]=param_no_default+ '/' ',' { a }
     | a[asdl_arg_seq*]=param_no_default+ '/' &')' { a }
 slash_with_default[SlashWithDefault*]:
-    | a=param_no_default* b=param_with_default+ '/' ',' { _PyPegen_slash_with_default(p, a, b) }
-    | a=param_no_default* b=param_with_default+ '/' &')' { _PyPegen_slash_with_default(p, a, b) }
+    | a=param_no_default* b=param_with_default+ '/' ',' { _PyPegen_slash_with_default(p, (asdl_arg_seq *)a, b) }
+    | a=param_no_default* b=param_with_default+ '/' &')' { _PyPegen_slash_with_default(p, (asdl_arg_seq *)a, b) }
 
 star_etc[StarEtc*]:
     | '*' a=param_no_default b=param_maybe_default* c=[kwds] {
@@ -357,8 +357,8 @@ lambda_slash_no_default[asdl_arg_seq*]:
     | a[asdl_arg_seq*]=lambda_param_no_default+ '/' ',' { a }
     | a[asdl_arg_seq*]=lambda_param_no_default+ '/' &':' { a }
 lambda_slash_with_default[SlashWithDefault*]:
-    | a=lambda_param_no_default* b=lambda_param_with_default+ '/' ',' { _PyPegen_slash_with_default(p, a, b) }
-    | a=lambda_param_no_default* b=lambda_param_with_default+ '/' &':' { _PyPegen_slash_with_default(p, a, b) }
+    | a=lambda_param_no_default* b=lambda_param_with_default+ '/' ',' { _PyPegen_slash_with_default(p, (asdl_arg_seq *)a, b) }
+    | a=lambda_param_no_default* b=lambda_param_with_default+ '/' &':' { _PyPegen_slash_with_default(p, (asdl_arg_seq *)a, b) }
 
 lambda_star_etc[StarEtc*]:
     | '*' a=lambda_param_no_default b=lambda_param_maybe_default* c=[lambda_kwds] {
