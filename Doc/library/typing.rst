@@ -1658,6 +1658,20 @@ Introspection helpers
 
    .. versionadded:: 3.8
 
+.. function:: is_typeddict(tp)
+
+   Check if an annotation is a TypedDict class.
+
+   For example::
+        class Film(TypedDict):
+            title: str
+            year: int
+
+        is_typeddict(Film)  # => True
+        is_typeddict(Union[list, str])  # => False
+
+   .. versionadded:: 3.10
+
 .. class:: ForwardRef
 
    A class used for internal typing representation of string forward references.
