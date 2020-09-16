@@ -7,19 +7,20 @@
 --------------
 
 ``'__main__'`` is the name of the environment where top-level code is run. A
-module's ``__name__`` is set equal to ``'__main__'`` when the module is run
-from the file system, from standard input or from the module namespace (with
-the :option:`-m` command line switch or the :func:`runpy.run_module` function),
-but not when it is imported.
+module's ``__name__`` is set equal to ``'__main__'`` when the module is
+initialized from an interactive prompt, from standard input, from a file
+argument, from a :option:`-c` argument or from a :option:`-m` argument, but
+not when it is initialized from an import statement.
 
 A module can discover whether or not it is running in the main environment by
 checking its own ``__name__``, which allows a common idiom for conditionally
-executing code in a module when it is not imported::
+executing code when the module is not initialized from an import statement::
 
-   # Execute only if the module is not imported.
-   if __name__ == "__main__":
-       main()
+    if __name__ == '__main__':
+        # Execute when the module is not initialized from an import statement.
+        main()
 
 For a package, the same effect can be achieved by including a __main__.py
-module, the contents of which will be executed when the package is run from the
-file system or from the module namespace, but not when it is imported.
+module, the contents of which will be executed when the package is initialized
+from a file argument or from a :option:`-m` argument, but not when it is
+initialized from an import statement.
