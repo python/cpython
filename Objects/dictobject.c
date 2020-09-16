@@ -1153,41 +1153,6 @@ Fail:
     return -1;
 }
 
-// Same to insertdict but specialized for ma_keys = Py_EMPTY_KEYS.
-static int
-insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
-                    PyObject *value)
-{
-    assert(mp->ma_keys == Py_EMPTY_KEYS);
-
-    PyDictKeysObject *newkeys = new_keys_object(PyDict_MINSIZE);
-    if (newkeys == NULL) {
-        return -1;
-    }
-    if (!PyUnicode_CheckExact(key)) {
-        newkeys->dk_lookup = lookdict;
-    }
-    dictkeys_decref(Py_EMPTY_KEYS);
-    mp->ma_keys = newkeys;
-    mp->ma_values = NULL;
-
-    Py_INCREF(key);
-    Py_INCREF(value);
-    MAINTAIN_TRACKING(mp, key, value);
-
-    size_t hashpos = (size_t)hash & (PyDict_MINSIZE-1);
-    PyDictKeyEntry *ep = DK_ENTRIES(mp->ma_keys);
-    dictkeys_set_index(mp->ma_keys, hashpos, 0);
-    ep->me_key = key;
-    ep->me_hash = hash;
-    ep->me_value = value;
-    mp->ma_used++;
-    mp->ma_version_tag = DICT_NEXT_VERSION();
-    mp->ma_keys->dk_usable--;
-    mp->ma_keys->dk_nentries++;
-    return 0;
-}
-
 static int
 insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value, int empty)
 {
@@ -1257,6 +1222,41 @@ Fail:
     Py_DECREF(value);
     Py_DECREF(key);
     return -1;
+}
+
+// Same to insertdict but specialized for ma_keys = Py_EMPTY_KEYS.
+static int
+insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
+                    PyObject *value)
+{
+    assert(mp->ma_keys == Py_EMPTY_KEYS);
+
+    PyDictKeysObject *newkeys = new_keys_object(PyDict_MINSIZE);
+    if (newkeys == NULL) {
+        return -1;
+    }
+    if (!PyUnicode_CheckExact(key)) {
+        newkeys->dk_lookup = lookdict;
+    }
+    dictkeys_decref(Py_EMPTY_KEYS);
+    mp->ma_keys = newkeys;
+    mp->ma_values = NULL;
+
+    Py_INCREF(key);
+    Py_INCREF(value);
+    MAINTAIN_TRACKING(mp, key, value);
+
+    size_t hashpos = (size_t)hash & (PyDict_MINSIZE-1);
+    PyDictKeyEntry *ep = DK_ENTRIES(mp->ma_keys);
+    dictkeys_set_index(mp->ma_keys, hashpos, 0);
+    ep->me_key = key;
+    ep->me_hash = hash;
+    ep->me_value = value;
+    mp->ma_used++;
+    mp->ma_version_tag = DICT_NEXT_VERSION();
+    mp->ma_keys->dk_usable--;
+    mp->ma_keys->dk_nentries++;
+    return 0;
 }
 
 /*
@@ -2548,108 +2548,6 @@ Return:
 }
 
 static int
-dict_merge_from_seq2(PyObject *d, PyObject *seq2)
-{
-    PyObject *item;     /* seq2[i] */
-    PyObject *fast;     /* item as a 2-tuple or 2-list */
-
-    assert(d != NULL);
-    assert(PyDict_Check(d));
-    assert(seq2 != NULL);
-    
-    // iter(seq2)
-    PyObject *it = PyObject_GetIter(seq2);
-    if (it == NULL)
-        return -1;
-
-    PyObject *key, *value;
-    Py_ssize_t n;
-    int res;
-    
-    for (Py_ssize_t i = 0; ; i++) {
-        fast = NULL;
-        item = PyIter_Next(it);
-        if (item == NULL) {
-            if (PyErr_Occurred())
-                goto Fail;
-            break;
-        }
-
-        /* Convert item to sequence, and verify length 2. */
-        fast = PySequence_Fast(item, "");
-        if (fast == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError))
-                PyErr_Format(PyExc_TypeError,
-                    "cannot convert dictionary update "
-                    "sequence element #%zd to a sequence",
-                    i);
-            goto Fail;
-        }
-        n = PySequence_Fast_GET_SIZE(fast);
-        if (n != 2) {
-            PyErr_Format(PyExc_ValueError,
-                         "dictionary update sequence element #%zd "
-                         "has length %zd; 2 is required",
-                         i, n);
-            goto Fail;
-        }
-
-        /* Update/merge with this (key, value) pair. */
-        key = PySequence_Fast_GET_ITEM(fast, 0);
-        value = PySequence_Fast_GET_ITEM(fast, 1);
-        Py_INCREF(key);
-        Py_INCREF(value);
-        if (dict_set_item(d, key, value) < 0) {
-            Py_DECREF(key);
-            Py_DECREF(value);
-            goto Fail;
-        }
-        else if (dict_get_item_with_error(d, key) == NULL) {
-            if (PyErr_Occurred() || dict_set_item(d, key, value) < 0) {
-                Py_DECREF(key);
-                Py_DECREF(value);
-                goto Fail;
-            }
-        }
-
-        Py_DECREF(key);
-        Py_DECREF(value);
-        Py_DECREF(fast);
-        Py_DECREF(item);
-    }
-
-    res = 0;
-    ASSERT_CONSISTENT(d);
-    goto Return;
-Fail:
-    Py_XDECREF(item);
-    Py_XDECREF(fast);
-    res = -1;
-Return:
-    Py_DECREF(it);
-    return res;
-}
-
-/* Single-arg dict update; used by dict_update_common and operators. */
-static int
-dict_update_arg(PyObject *self, PyObject *arg)
-{
-    if (PyDict_CheckExact(arg)) {
-        return PyDict_Merge(self, arg, 1);
-    }
-    _Py_IDENTIFIER(keys);
-    PyObject *func;
-    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
-        return -1;
-    }
-    if (func != NULL) {
-        Py_DECREF(func);
-        return PyDict_Merge(self, arg, 1);
-    }
-    return PyDict_MergeFromSeq2(self, arg, 1);
-}
-
-static int
 dict_merge(PyObject *a, PyObject *b, int override)
 {
     PyDictObject *mp;
@@ -2974,6 +2872,24 @@ dict_merge_init(PyObject *a, PyObject *b, int empty)
 
 /* Single-arg dict update; used by dict_update_common and operators. */
 static int
+dict_update_arg(PyObject *self, PyObject *arg)
+{
+    if (PyDict_CheckExact(arg)) {
+        return PyDict_Merge(self, arg, 1);
+    }
+    _Py_IDENTIFIER(keys);
+    PyObject *func;
+    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+        return -1;
+    }
+    if (func != NULL) {
+        Py_DECREF(func);
+        return PyDict_Merge(self, arg, 1);
+    }
+    return PyDict_MergeFromSeq2(self, arg, 1);
+}
+
+static int
 dict_update_arg_init(PyObject *self, PyObject *arg)
 {
     if (PyDict_CheckExact(arg)) {
@@ -2988,7 +2904,7 @@ dict_update_arg_init(PyObject *self, PyObject *arg)
         Py_DECREF(func);
         return dict_merge_init(self, arg, 1);
     }
-    return dict_merge_from_seq2(self, arg);
+    return PyDict_MergeFromSeq2(self, arg, 1);
 }
 
 static int
