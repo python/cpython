@@ -42,3 +42,11 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
    with ``__name__`` and ``__qualname__`` set to *name* and *qualname*.
    A reference to *frame* is stolen by this function.  The *frame* argument
    must not be ``NULL``.
+
+.. c:function:: int PyGen_Send(PyGenObject *gen, PyObject *arg, PyObject **presult)
+
+   Sends the *arg* value into the generator *gen*. Returns:
+
+   - 0 (``PYGEN_RETURN``) if generator returns. Return value is returned via *presult*.
+   - 1 (``PYGEN_NEXT``) if generator yields. Yielded value is returned via *presult*.
+   - -1 (``PYGEN_ERROR``) if generator has raised and exception. *presult* is set to ``NULL``.
