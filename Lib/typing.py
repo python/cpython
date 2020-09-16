@@ -103,6 +103,7 @@ __all__ = [
     'get_args',
     'get_origin',
     'get_type_hints',
+    'is_typeddict',
     'NewType',
     'no_type_check',
     'no_type_check_decorator',
@@ -1477,6 +1478,20 @@ def get_args(tp):
     if isinstance(tp, GenericAlias):
         return tp.__args__
     return ()
+
+
+def is_typeddict(tp):
+    """Check if an annotation is a TypedDict class
+
+    For example::
+        class Film(TypedDict):
+            title: str
+            year: int
+
+        is_typeddict(Film)  # => True
+        is_typeddict(Union[list, str])  # => False
+    """
+    return isinstance(tp, _TypedDictMeta)
 
 
 def no_type_check(arg):
