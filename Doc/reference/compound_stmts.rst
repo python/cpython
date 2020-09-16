@@ -44,7 +44,8 @@ executed::
 
 Summarizing:
 
-.. productionlist::
+
+.. productionlist:: compound-statement
    compound_stmt: `if_stmt`
                 : | `while_stmt`
                 : | `for_stmt`
@@ -89,7 +90,7 @@ The :keyword:`!if` statement
 
 The :keyword:`if` statement is used for conditional execution:
 
-.. productionlist::
+.. productionlist:: compound-statement
    if_stmt: "if" `assignment_expression` ":" `suite`
           : ("elif" `assignment_expression` ":" `suite`)*
           : ["else" ":" `suite`]
@@ -115,7 +116,7 @@ The :keyword:`!while` statement
 The :keyword:`while` statement is used for repeated execution as long as an
 expression is true:
 
-.. productionlist::
+.. productionlist:: compound-statement
    while_stmt: "while" `assignment_expression` ":" `suite`
              : ["else" ":" `suite`]
 
@@ -151,7 +152,7 @@ The :keyword:`!for` statement
 The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
 
-.. productionlist::
+.. productionlist:: compound-statement
    for_stmt: "for" `target_list` "in" `expression_list` ":" `suite`
            : ["else" ":" `suite`]
 
@@ -234,7 +235,7 @@ The :keyword:`!try` statement
 The :keyword:`try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
-.. productionlist::
+.. productionlist:: compound-statement
    try_stmt: `try1_stmt` | `try2_stmt`
    try1_stmt: "try" ":" `suite`
             : ("except" [`expression` ["as" `identifier`]] ":" `suite`)+
@@ -390,7 +391,7 @@ methods defined by a context manager (see section :ref:`context-managers`).
 This allows common :keyword:`try`...\ :keyword:`except`...\ :keyword:`finally`
 usage patterns to be encapsulated for convenient reuse.
 
-.. productionlist::
+.. productionlist:: compound-statement
    with_stmt: "with" `with_item` ("," `with_item`)* ":" `suite`
    with_item: `expression` ["as" `target`]
 
@@ -503,7 +504,7 @@ Function definitions
 A function definition defines a user-defined function object (see section
 :ref:`types`):
 
-.. productionlist::
+.. productionlist:: compound-statement
    funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")"
           : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
@@ -670,7 +671,7 @@ Class definitions
 
 A class definition defines a class object (see section :ref:`types`):
 
-.. productionlist::
+.. productionlist:: compound-statement
    classdef: [`decorators`] "class" `classname` [`inheritance`] ":" `suite`
    inheritance: "(" [`argument_list`] ")"
    classname: `identifier`
@@ -762,7 +763,7 @@ Coroutines
 Coroutine function definition
 -----------------------------
 
-.. productionlist::
+.. productionlist:: compound-statement
    async_funcdef: [`decorators`] "async" "def" `funcname` "(" [`parameter_list`] ")"
                 : ["->" `expression`] ":" `suite`
 
@@ -795,7 +796,7 @@ An example of a coroutine function::
 The :keyword:`!async for` statement
 -----------------------------------
 
-.. productionlist::
+.. productionlist:: compound-statement
    async_for_stmt: "async" `for_stmt`
 
 An :term:`asynchronous iterable` is able to call asynchronous code in its
@@ -840,7 +841,7 @@ body of a coroutine function.
 The :keyword:`!async with` statement
 ------------------------------------
 
-.. productionlist::
+.. productionlist:: compound-statement
    async_with_stmt: "async" `with_stmt`
 
 An :term:`asynchronous context manager` is a :term:`context manager` that is
