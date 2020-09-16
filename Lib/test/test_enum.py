@@ -1845,6 +1845,18 @@ class TestEnum(unittest.TestCase):
             third = auto()
         self.assertEqual([Dupes.first, Dupes.second, Dupes.third], list(Dupes))
 
+    def test_default_missing(self):
+        class Color(Enum):
+            RED = 1
+            GREEN = 2
+            BLUE = 3
+        try:
+            Color(7)
+        except ValueError as exc:
+            self.assertTrue(exc.__context__ is None)
+        else:
+            raise Exception('Exception not raised.')
+
     def test_missing(self):
         class Color(Enum):
             red = 1
@@ -1863,7 +1875,12 @@ class TestEnum(unittest.TestCase):
                     # trigger not found
                     return None
         self.assertIs(Color('three'), Color.blue)
-        self.assertRaises(ValueError, Color, 7)
+        try:
+            Color(7)
+        except ValueError as exc:
+            self.assertTrue(exc.__context__ is None)
+        else:
+            raise Exception('Exception not raised.')
         try:
             Color('bad return')
         except TypeError as exc:
