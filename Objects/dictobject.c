@@ -1199,10 +1199,6 @@ insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value
     Py_INCREF(key);
     Py_INCREF(value);
     MAINTAIN_TRACKING(mp, key, value);
-    if (mp->ma_values != NULL && !PyUnicode_CheckExact(key)) {
-        if (insertion_resize(mp) < 0)
-            goto Fail;
-    }
     
     if (! empty) {
         ix = keys->dk_lookup(mp, key, hash, &old_value);
@@ -1210,17 +1206,6 @@ insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value
             goto Fail;
 
         assert(PyUnicode_CheckExact(key) || keys->dk_lookup == lookdict);
-
-        /* When insertion order is different from shared key, we can't share
-         * the key anymore.  Convert this instance to combine table.
-         */
-        if (_PyDict_HasSplitTable(mp) &&
-            ((ix >= 0 && old_value == NULL && mp->ma_used != ix) ||
-             (ix == DKIX_EMPTY && mp->ma_used != keys->dk_nentries))) {
-            if (insertion_resize(mp) < 0)
-                goto Fail;
-            ix = DKIX_EMPTY;
-        }
         
         empty = (ix == DKIX_EMPTY);
     }
@@ -1523,7 +1508,7 @@ PyDict_GetItem(PyObject *op, PyObject *key)
     return value;
 }
 
-/* Same as PyDict_GetItemWithError() but with hash supplied by caller.
+/* Same as dict_get_item_with_error() but with hash supplied by caller.
    This returns NULL *with* an exception set if an exception occurred.
    It returns NULL *without* an exception set if the key wasn't present.
 */
@@ -1550,18 +1535,15 @@ _PyDict_GetItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
    This returns NULL *with* an exception set if an exception occurred.
    It returns NULL *without* an exception set if the key wasn't present.
 */
-PyObject *
-PyDict_GetItemWithError(PyObject *op, PyObject *key)
+static PyObject *
+dict_get_item_with_error(PyObject *op, PyObject *key)
 {
     Py_ssize_t ix;
     Py_hash_t hash;
     PyDictObject*mp = (PyDictObject *)op;
     PyObject *value;
 
-    if (!PyDict_Check(op)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
+    assert(PyDict_Check(op));
     if (!PyUnicode_CheckExact(key) ||
         (hash = ((PyASCIIObject *) key)->hash) == -1)
     {
@@ -1575,6 +1557,12 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
     if (ix < 0)
         return NULL;
     return value;
+}
+
+PyObject *
+PyDict_GetItemWithError(PyObject *op, PyObject *key)
+{
+    return dict_get_item_with_error(op, key);
 }
 
 PyObject *
@@ -1597,7 +1585,7 @@ _PyDict_GetItemStringWithError(PyObject *v, const char *key)
     if (kv == NULL) {
         return NULL;
     }
-    rv = PyDict_GetItemWithError(v, kv);
+    rv = dict_get_item_with_error(v, kv);
     Py_DECREF(kv);
     return rv;
 }
@@ -1644,18 +1632,14 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
  * and occasionally replace a value -- but you can't insert new keys or
  * remove them.
  */
-int
-PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
+static int
+dict_set_item(PyObject *op, PyObject *key, PyObject *value)
 {
-    PyDictObject *mp;
     Py_hash_t hash;
-    if (!PyDict_Check(op)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
+    assert(PyDict_Check(op));
     assert(key);
     assert(value);
-    mp = (PyDictObject *)op;
+    PyDictObject *mp = (PyDictObject *)op;
     if (!PyUnicode_CheckExact(key) ||
         (hash = ((PyASCIIObject *) key)->hash) == -1)
     {
@@ -1669,6 +1653,37 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
     }
     /* insertdict() handles any resizing that might be necessary */
     return insertdict(mp, key, hash, value);
+}
+
+/* CAUTION: PyDict_SetItem() must guarantee that it won't resize the
+ * dictionary if it's merely replacing the value for an existing key.
+ * This means that it's safe to loop over a dictionary with PyDict_Next()
+ * and occasionally replace a value -- but you can't insert new keys or
+ * remove them.
+ */
+static int
+dict_set_item_init(PyObject *op, PyObject *key, PyObject *value, int empty)
+{
+    Py_hash_t hash;
+    assert(PyDict_Check(op));
+    assert(key);
+    assert(value);
+    PyDictObject *mp = (PyDictObject *)op;
+    if (!PyUnicode_CheckExact(key) ||
+        (hash = ((PyASCIIObject *) key)->hash) == -1)
+    {
+        hash = PyObject_Hash(key);
+        if (hash == -1)
+            return -1;
+    }
+    
+    return insertdict_init(mp, key, hash, value, empty);
+}
+
+int
+PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
+{
+    return dict_set_item(op, key, value);
 }
 
 int
@@ -2073,7 +2088,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
 
     if (PyDict_CheckExact(d)) {
         while ((key = PyIter_Next(it)) != NULL) {
-            status = PyDict_SetItem(d, key, value);
+            status = dict_set_item(d, key, value);
             Py_DECREF(key);
             if (status < 0)
                 goto Fail;
@@ -2270,7 +2285,7 @@ dict_ass_sub(PyDictObject *mp, PyObject *v, PyObject *w)
     if (w == NULL)
         return PyDict_DelItem((PyObject *)mp, v);
     else
-        return PyDict_SetItem((PyObject *)mp, v, w);
+        return dict_set_item((PyObject *)mp, v, w);
 }
 
 static PyMappingMethods dict_as_mapping = {
@@ -2443,246 +2458,6 @@ dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
 
-/* Single-arg dict update; used by dict_update_common and operators. */
-static int
-dict_update_arg(PyObject *self, PyObject *arg)
-{
-    if (PyDict_CheckExact(arg)) {
-        return PyDict_Merge(self, arg, 1);
-    }
-    _Py_IDENTIFIER(keys);
-    PyObject *func;
-    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
-        return -1;
-    }
-    if (func != NULL) {
-        Py_DECREF(func);
-        return PyDict_Merge(self, arg, 1);
-    }
-    return PyDict_MergeFromSeq2(self, arg, 1);
-}
-
-static int
-dict_merge_init(PyObject *a, PyObject *b, int empty)
-{
-    PyDictObject *mp;
-    Py_ssize_t i, n;
-    PyDictKeyEntry *entry, *ep0;
-
-    /* We accept for the argument either a concrete dictionary object,
-     * or an abstract "mapping" object.  For the former, we can do
-     * things quite efficiently.  For the latter, we only require that
-     * PyMapping_Keys() and PyObject_GetItem() be supported.
-     */
-    assert(a != NULL);
-    assert(PyDict_Check(a));
-    assert(b != NULL);
-    
-    mp = (PyDictObject*)a;
-    if (PyDict_Check(b) && (Py_TYPE(b)->tp_iter == (getiterfunc)dict_iter)) {
-        const PyDictObject *other = (PyDictObject*)b;
-        if (other == mp || other->ma_used == 0)
-            /* a.update(a) or a.update({}); nothing to do */
-            return 0;
-        if (mp->ma_used == 0) {
-            PyDictKeysObject *okeys = other->ma_keys;
-
-            // If other is clean, combined, and just allocated, just clone it.
-            if (other->ma_values == NULL &&
-                    other->ma_used == okeys->dk_nentries &&
-                    (okeys->dk_size == PyDict_MINSIZE ||
-                     USABLE_FRACTION(okeys->dk_size/2) < other->ma_used)) {
-                PyDictKeysObject *keys = clone_combined_dict_keys(other);
-                if (keys == NULL) {
-                    return -1;
-                }
-
-                dictkeys_decref(mp->ma_keys);
-                mp->ma_keys = keys;
-                if (mp->ma_values != NULL) {
-                    if (mp->ma_values != empty_values) {
-                        free_values(mp->ma_values);
-                    }
-                    mp->ma_values = NULL;
-                }
-
-                mp->ma_used = other->ma_used;
-                mp->ma_version_tag = DICT_NEXT_VERSION();
-                ASSERT_CONSISTENT(mp);
-
-                if (_PyObject_GC_IS_TRACKED(other) && !_PyObject_GC_IS_TRACKED(mp)) {
-                    /* Maintain tracking. */
-                    _PyObject_GC_TRACK(mp);
-                }
-
-                return 0;
-            }
-        }
-        /* Do one big resize at the start, rather than
-         * incrementally resizing as we insert new items.  Expect
-         * that there will be no (or few) overlapping keys.
-         */
-        if (USABLE_FRACTION(mp->ma_keys->dk_size) < other->ma_used) {
-            if (dictresize(mp, estimate_keysize(mp->ma_used + other->ma_used))) {
-               return -1;
-            }
-        }
-        
-        ep0 = DK_ENTRIES(other->ma_keys);
-        PyObject *key;
-        PyObject *value;
-        Py_hash_t hash;
-        
-        const int is_other_split = other->ma_values != NULL;
-        
-        for (i = 0, n = other->ma_keys->dk_nentries; i < n; i++) {
-            entry = &ep0[i];
-            key = entry->me_key;
-            hash = entry->me_hash;
-            if (is_other_split)
-                value = other->ma_values[i];
-            else
-                value = entry->me_value;
-
-            if (value != NULL) {
-                int err = 0;
-                Py_INCREF(key);
-                Py_INCREF(value);
-                err = insertdict_init(mp, key, hash, value, empty);
-                Py_DECREF(value);
-                Py_DECREF(key);
-                if (err != 0)
-                    return -1;
-
-                if (n != other->ma_keys->dk_nentries) {
-                    PyErr_SetString(PyExc_RuntimeError,
-                                    "dict mutated during update");
-                    return -1;
-                }
-            }
-        }
-        mp->ma_version_tag = DICT_NEXT_VERSION();
-    }
-    else {
-        /* Do it the generic, slower way */
-        PyObject *keys = PyMapping_Keys(b);
-        PyObject *iter;
-        PyObject *key, *value;
-        int status;
-
-        if (keys == NULL)
-            /* Docstring says this is equivalent to E.keys() so
-             * if E doesn't have a .keys() method we want
-             * AttributeError to percolate up.  Might as well
-             * do the same for any other error.
-             */
-            return -1;
-
-        iter = PyObject_GetIter(keys);
-        Py_DECREF(keys);
-        if (iter == NULL)
-            return -1;
-
-        for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
-            value = PyObject_GetItem(b, key);
-            if (value == NULL) {
-                Py_DECREF(iter);
-                Py_DECREF(key);
-                return -1;
-            }
-            status = PyDict_SetItem(a, key, value);
-            Py_DECREF(key);
-            Py_DECREF(value);
-            if (status < 0) {
-                Py_DECREF(iter);
-                return -1;
-            }
-        }
-        Py_DECREF(iter);
-        if (PyErr_Occurred())
-            /* Iterator completed, via error */
-            return -1;
-    }
-    ASSERT_CONSISTENT(a);
-    return 0;
-}
-
-/* Single-arg dict update; used by dict_update_common and operators. */
-static int
-dict_update_arg_init(PyObject *self, PyObject *arg, int empty)
-{
-    if (PyDict_CheckExact(arg)) {
-        return dict_merge_init(self, arg, empty);
-    }
-    _Py_IDENTIFIER(keys);
-    PyObject *func;
-    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
-        return -1;
-    }
-    if (func != NULL) {
-        Py_DECREF(func);
-        return dict_merge_init(self, arg, empty);
-    }
-    return PyDict_MergeFromSeq2(self, arg, 1);
-}
-
-static int
-dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
-                   const char *methname)
-{
-    PyObject *arg = NULL;
-    int result = 0;
-    if (!PyArg_UnpackTuple(args, methname, 0, 1, &arg)) {
-        result = -1;
-    }
-    else if (arg != NULL) {
-        result = dict_update_arg(self, arg);
-    }
-
-    if (result == 0 && kwds != NULL) {
-        if (PyArg_ValidateKeywordArguments(kwds))
-            result = PyDict_Merge(self, kwds, 1);
-        else
-            result = -1;
-    }
-    return result;
-}
-
-static int
-dict_update_init(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    PyObject *arg = NULL;
-    int result = 0;
-    int empty = 1;
-    if (!PyArg_UnpackTuple(args, __func__, 0, 1, &arg)) {
-        result = -1;
-    }
-    else if (arg != NULL) {
-        result = dict_update_arg_init(self, arg, 1);
-        empty = 0;
-    }
-
-    if (result == 0 && kwds != NULL) {
-        if (PyArg_ValidateKeywordArguments(kwds))
-            result = dict_merge_init(self, kwds, empty);
-        else
-            result = -1;
-    }
-    return result;
-}
-
-/* Note: dict.update() uses the METH_VARARGS|METH_KEYWORDS calling convention.
-   Using METH_FASTCALL|METH_KEYWORDS would make dict.update(**dict2) calls
-   slower, see the issue #29312. */
-static PyObject *
-dict_update(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    if (dict_update_common(self, args, kwds, "update") != -1) {
-        Py_RETURN_NONE;
-    }
-    return NULL;
-}
-
 /* Update unconditionally replaces existing items.
    Merge has a 3rd argument 'override'; if set, it acts like Update,
    otherwise it leaves existing items unchanged.
@@ -2692,6 +2467,89 @@ dict_update(PyObject *self, PyObject *args, PyObject *kwds)
    PyDict_MergeFromSeq2 updates/merges from any iterable object
    producing iterable objects of length 2.
 */
+
+static int
+dict_merge_from_seq2(PyObject *d, PyObject *seq2)
+{
+    PyObject *item;     /* seq2[i] */
+    PyObject *fast;     /* item as a 2-tuple or 2-list */
+
+    assert(d != NULL);
+    assert(PyDict_Check(d));
+    assert(seq2 != NULL);
+    
+    // iter(seq2)
+    PyObject *it = PyObject_GetIter(seq2);
+    if (it == NULL)
+        return -1;
+
+    PyObject *key, *value;
+    Py_ssize_t n;
+    int res;
+    
+    for (Py_ssize_t i = 0; ; i++) {
+        fast = NULL;
+        item = PyIter_Next(it);
+        if (item == NULL) {
+            if (PyErr_Occurred())
+                goto Fail;
+            break;
+        }
+
+        /* Convert item to sequence, and verify length 2. */
+        fast = PySequence_Fast(item, "");
+        if (fast == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError))
+                PyErr_Format(PyExc_TypeError,
+                    "cannot convert dictionary update "
+                    "sequence element #%zd to a sequence",
+                    i);
+            goto Fail;
+        }
+        n = PySequence_Fast_GET_SIZE(fast);
+        if (n != 2) {
+            PyErr_Format(PyExc_ValueError,
+                         "dictionary update sequence element #%zd "
+                         "has length %zd; 2 is required",
+                         i, n);
+            goto Fail;
+        }
+
+        /* Update/merge with this (key, value) pair. */
+        key = PySequence_Fast_GET_ITEM(fast, 0);
+        value = PySequence_Fast_GET_ITEM(fast, 1);
+        Py_INCREF(key);
+        Py_INCREF(value);
+        if (dict_set_item(d, key, value) < 0) {
+            Py_DECREF(key);
+            Py_DECREF(value);
+            goto Fail;
+        }
+        else if (dict_get_item_with_error(d, key) == NULL) {
+            if (PyErr_Occurred() || dict_set_item(d, key, value) < 0) {
+                Py_DECREF(key);
+                Py_DECREF(value);
+                goto Fail;
+            }
+        }
+
+        Py_DECREF(key);
+        Py_DECREF(value);
+        Py_DECREF(fast);
+        Py_DECREF(item);
+    }
+
+    res = 0;
+    ASSERT_CONSISTENT(d);
+    goto Return;
+Fail:
+    Py_XDECREF(item);
+    Py_XDECREF(fast);
+    res = -1;
+Return:
+    Py_DECREF(it);
+    return res;
+}
 
 int
 PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
@@ -2746,14 +2604,14 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
         Py_INCREF(key);
         Py_INCREF(value);
         if (override) {
-            if (PyDict_SetItem(d, key, value) < 0) {
+            if (dict_set_item(d, key, value) < 0) {
                 Py_DECREF(key);
                 Py_DECREF(value);
                 goto Fail;
             }
         }
-        else if (PyDict_GetItemWithError(d, key) == NULL) {
-            if (PyErr_Occurred() || PyDict_SetItem(d, key, value) < 0) {
+        else if (dict_get_item_with_error(d, key) == NULL) {
+            if (PyErr_Occurred() || dict_set_item(d, key, value) < 0) {
                 Py_DECREF(key);
                 Py_DECREF(value);
                 goto Fail;
@@ -2776,6 +2634,25 @@ Fail:
 Return:
     Py_DECREF(it);
     return Py_SAFE_DOWNCAST(i, Py_ssize_t, int);
+}
+
+/* Single-arg dict update; used by dict_update_common and operators. */
+static int
+dict_update_arg(PyObject *self, PyObject *arg)
+{
+    if (PyDict_CheckExact(arg)) {
+        return PyDict_Merge(self, arg, 1);
+    }
+    _Py_IDENTIFIER(keys);
+    PyObject *func;
+    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+        return -1;
+    }
+    if (func != NULL) {
+        Py_DECREF(func);
+        return PyDict_Merge(self, arg, 1);
+    }
+    return PyDict_MergeFromSeq2(self, arg, 1);
 }
 
 static int
@@ -2917,7 +2794,7 @@ dict_merge(PyObject *a, PyObject *b, int override)
 
         for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
             if (override != 1) {
-                if (PyDict_GetItemWithError(a, key) != NULL) {
+                if (dict_get_item_with_error(a, key) != NULL) {
                     if (override != 0) {
                         _PyErr_SetKeyError(key);
                         Py_DECREF(key);
@@ -2939,7 +2816,7 @@ dict_merge(PyObject *a, PyObject *b, int override)
                 Py_DECREF(key);
                 return -1;
             }
-            status = PyDict_SetItem(a, key, value);
+            status = dict_set_item(a, key, value);
             Py_DECREF(key);
             Py_DECREF(value);
             if (status < 0) {
@@ -2954,6 +2831,239 @@ dict_merge(PyObject *a, PyObject *b, int override)
     }
     ASSERT_CONSISTENT(a);
     return 0;
+}
+
+static int
+dict_merge_init(PyObject *a, PyObject *b, int empty)
+{
+    /* We accept for the argument either a concrete dictionary object,
+     * or an abstract "mapping" object.  For the former, we can do
+     * things quite efficiently.  For the latter, we only require that
+     * PyMapping_Keys() and PyObject_GetItem() be supported.
+     */
+    assert(a != NULL);
+    assert(PyDict_Check(a));
+    assert(b != NULL);
+    
+    PyDictObject *mp = (PyDictObject*)a;
+    if (PyDict_Check(b) && (Py_TYPE(b)->tp_iter == (getiterfunc)dict_iter)) {
+        const PyDictObject *other = (PyDictObject*)b;
+        const Py_ssize_t other_size = other->ma_used;
+        
+        if (other == mp || other_size == 0)
+            /* a.update(a) or a.update({}); nothing to do */
+            return 0;
+        if (mp->ma_used == 0) {
+            PyDictKeysObject *okeys = other->ma_keys;
+
+            // If other is clean, combined, and just allocated, just clone it.
+            if (other->ma_values == NULL &&
+                    other_size == okeys->dk_nentries &&
+                    (okeys->dk_size == PyDict_MINSIZE ||
+                     USABLE_FRACTION(okeys->dk_size/2) < other_size)) {
+                PyDictKeysObject *keys = clone_combined_dict_keys(other);
+                if (keys == NULL) {
+                    return -1;
+                }
+
+                dictkeys_decref(mp->ma_keys);
+                mp->ma_keys = keys;
+                if (mp->ma_values != NULL) {
+                    if (mp->ma_values != empty_values) {
+                        free_values(mp->ma_values);
+                    }
+                    mp->ma_values = NULL;
+                }
+
+                mp->ma_used = other_size;
+                mp->ma_version_tag = DICT_NEXT_VERSION();
+                ASSERT_CONSISTENT(mp);
+
+                if (_PyObject_GC_IS_TRACKED(other) && !_PyObject_GC_IS_TRACKED(mp)) {
+                    /* Maintain tracking. */
+                    _PyObject_GC_TRACK(mp);
+                }
+
+                return 0;
+            }
+        }
+        
+        /* Do one big resize at the start, rather than
+         * incrementally resizing as we insert new items.  Expect
+         * that there will be no (or few) overlapping keys.
+         */
+        if (mp->ma_keys->dk_usable < other_size) {
+            if (dictresize(mp, estimate_keysize(mp->ma_used + other_size))) {
+               return -1;
+            }
+        }
+        
+        PyDictKeyEntry *entry;
+        PyDictKeyEntry *ep0 = DK_ENTRIES(other->ma_keys);
+        PyObject *key;
+        PyObject *value;
+        Py_hash_t hash;
+        int err;
+        
+        const int is_other_split = other->ma_values != NULL;
+        
+        for (Py_ssize_t i = 0, n = other->ma_keys->dk_nentries; i < n; i++) {
+            entry = &ep0[i];
+            key = entry->me_key;
+            hash = entry->me_hash;
+            if (is_other_split)
+                value = other->ma_values[i];
+            else
+                value = entry->me_value;
+
+            if (value != NULL) {
+                Py_INCREF(key);
+                Py_INCREF(value);
+                err = insertdict_init(mp, key, hash, value, empty);
+                Py_DECREF(value);
+                Py_DECREF(key);
+                if (err != 0)
+                    return -1;
+
+                if (n != other->ma_keys->dk_nentries) {
+                    PyErr_SetString(PyExc_RuntimeError,
+                                    "dict mutated during update");
+                    return -1;
+                }
+            }
+        }
+        mp->ma_version_tag = DICT_NEXT_VERSION();
+    }
+    else {
+        /* Do it the generic, slower way */
+        PyObject *keys = PyMapping_Keys(b);
+        PyObject *iter;
+        PyObject *key, *value;
+        int status;
+
+        if (keys == NULL)
+            /* Docstring says this is equivalent to E.keys() so
+             * if E doesn't have a .keys() method we want
+             * AttributeError to percolate up.  Might as well
+             * do the same for any other error.
+             */
+            return -1;
+
+        iter = PyObject_GetIter(keys);
+        Py_DECREF(keys);
+        if (iter == NULL)
+            return -1;
+
+        for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
+            value = PyObject_GetItem(b, key);
+            if (value == NULL) {
+                Py_DECREF(iter);
+                Py_DECREF(key);
+                return -1;
+            }
+            status = dict_set_item(a, key, value);
+            Py_DECREF(key);
+            Py_DECREF(value);
+            if (status < 0) {
+                Py_DECREF(iter);
+                return -1;
+            }
+        }
+        Py_DECREF(iter);
+        if (PyErr_Occurred())
+            /* Iterator completed, via error */
+            return -1;
+    }
+    ASSERT_CONSISTENT(a);
+    return 0;
+}
+
+/* Single-arg dict update; used by dict_update_common and operators. */
+static int
+dict_update_arg_init(PyObject *self, PyObject *arg)
+{
+    if (PyDict_CheckExact(arg)) {
+        return dict_merge_init(self, arg, 1);
+    }
+    _Py_IDENTIFIER(keys);
+    PyObject *func;
+    if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+        return -1;
+    }
+    if (func != NULL) {
+        Py_DECREF(func);
+        return dict_merge_init(self, arg, 1);
+    }
+    return dict_merge_from_seq2(self, arg);
+}
+
+static int
+dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
+                   const char *methname)
+{
+    PyObject *arg = NULL;
+    int result = 0;
+    if (!PyArg_UnpackTuple(args, methname, 0, 1, &arg)) {
+        result = -1;
+    }
+    else if (arg != NULL) {
+        result = dict_update_arg(self, arg);
+    }
+
+    if (result == 0 && kwds != NULL) {
+        if (PyArg_ValidateKeywordArguments(kwds))
+            result = PyDict_Merge(self, kwds, 1);
+        else
+            result = -1;
+    }
+    return result;
+}
+
+static int
+dict_update_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *arg = NULL;
+    int result = 0;
+    int empty = 1;
+    if (! PyArg_UnpackTuple(args, __func__, 0, 1, &arg)) {
+        return -1;
+    }
+    
+    if (arg != NULL) {
+        result = dict_update_arg_init(self, arg);
+        empty = 0;
+    }
+
+    if (result == 0 && kwds != NULL) {
+        if (PyArg_ValidateKeywordArguments(kwds)) {
+            const Py_ssize_t kwds_size = ((PyDictObject*) kwds)->ma_used;
+            PyDictObject *mp = (PyDictObject *)self;
+            
+            // Do one big resize
+            if (mp->ma_keys->dk_usable < kwds_size) {
+                if (dictresize(mp, estimate_keysize(mp->ma_used + kwds_size))) {
+                   return -1;
+                }
+            }
+            result = dict_merge_init(self, kwds, empty);
+        }
+        else {
+            result = -1;
+        }
+    }
+    return result;
+}
+
+/* Note: dict.update() uses the METH_VARARGS|METH_KEYWORDS calling convention.
+   Using METH_FASTCALL|METH_KEYWORDS would make dict.update(**dict2) calls
+   slower, see the issue #29312. */
+static PyObject *
+dict_update(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    if (dict_update_common(self, args, kwds, "update") != -1) {
+        Py_RETURN_NONE;
+    }
+    return NULL;
 }
 
 int
@@ -3675,14 +3785,11 @@ static PyNumberMethods dict_as_number = {
 static PyObject *
 dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *self;
-    PyDictObject *d;
-
     assert(type != NULL && type->tp_alloc != NULL);
-    self = type->tp_alloc(type, 0);
+    PyObject *self = type->tp_alloc(type, 0);
     if (self == NULL)
         return NULL;
-    d = (PyDictObject *)self;
+    PyDictObject *d = (PyDictObject *)self;
 
     /* The object has been implicitly tracked by tp_alloc */
     if (type == &PyDict_Type) {
@@ -3691,6 +3798,9 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     d->ma_used = 0;
     d->ma_version_tag = DICT_NEXT_VERSION();
+    // can't remove it and do one big resize, or 
+    // python -E -S -m sysconfig --generate-posix-vars
+    // generate a segfault
     dictkeys_incref(Py_EMPTY_KEYS);
     d->ma_keys = Py_EMPTY_KEYS;
     d->ma_values = empty_values;
@@ -3710,30 +3820,54 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
     assert(PyType_Check(type));
+    
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    if (!_PyArg_CheckPositional("dict", nargs, 0, 1)) {
+    
+    if (!_PyArg_CheckPositional(__func__, nargs, 0, 1)) {
         return NULL;
     }
-
+    
     PyObject *self = dict_new((PyTypeObject *)type, NULL, NULL);
+    
     if (self == NULL) {
         return NULL;
     }
+    
+    int empty = 1;
+    
     if (nargs == 1) {
-        if (dict_update_arg(self, args[0]) < 0) {
+        if (dict_update_arg_init(self, args[0]) < 0) {
             Py_DECREF(self);
             return NULL;
         }
+        
+        empty = 0;
         args++;
     }
+    
+    Py_ssize_t kw_size = (kwnames == NULL
+        ? 0
+        : PyTuple_GET_SIZE(kwnames)
+    );
+    
     if (kwnames != NULL) {
-        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwnames); i++) {
-            if (PyDict_SetItem(self, PyTuple_GET_ITEM(kwnames, i), args[i]) < 0) {
+        PyDictObject *mp = (PyDictObject *)self;
+        
+        if (mp->ma_keys->dk_usable < kw_size) {
+            if (dictresize(mp, estimate_keysize(mp->ma_used + kw_size))) {
+                Py_DECREF(self);
+                return NULL;
+            }
+        }
+        
+        for (Py_ssize_t i = 0; i < kw_size; i++) {
+            if (dict_set_item_init(self, PyTuple_GET_ITEM(kwnames, i), args[i], empty) < 0) {
                 Py_DECREF(self);
                 return NULL;
             }
         }
     }
+    
     return self;
 }
 
@@ -3833,7 +3967,7 @@ _PyDict_SetItemId(PyObject *v, struct _Py_Identifier *key, PyObject *item)
     kv = _PyUnicode_FromId(key); /* borrowed */
     if (kv == NULL)
         return -1;
-    return PyDict_SetItem(v, kv, item);
+    return dict_set_item(v, kv, item);
 }
 
 int
@@ -3845,7 +3979,7 @@ PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
     if (kv == NULL)
         return -1;
     PyUnicode_InternInPlace(&kv); /* XXX Should we really? */
-    err = PyDict_SetItem(v, kv, item);
+    err = dict_set_item(v, kv, item);
     Py_DECREF(kv);
     return err;
 }
@@ -5027,7 +5161,7 @@ dictitems_contains(_PyDictViewObject *dv, PyObject *obj)
         return 0;
     key = PyTuple_GET_ITEM(obj, 0);
     value = PyTuple_GET_ITEM(obj, 1);
-    found = PyDict_GetItemWithError((PyObject *)dv->dv_dict, key);
+    found = dict_get_item_with_error((PyObject *)dv->dv_dict, key);
     if (found == NULL) {
         if (PyErr_Occurred())
             return -1;
@@ -5262,11 +5396,11 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
         }
         else {
             int was_shared = (cached == ((PyDictObject *)dict)->ma_keys);
-            res = PyDict_SetItem(dict, key, value);
+            res = dict_set_item(dict, key, value);
             if (was_shared &&
                     (cached = CACHED_KEYS(tp)) != NULL &&
                     cached != ((PyDictObject *)dict)->ma_keys) {
-                /* PyDict_SetItem() may call dictresize and convert split table
+                /* dict_set_item() may call dictresize and convert split table
                  * into combined table.  In such case, convert it to split
                  * table again and update type's shared key only when this is
                  * the only dict sharing key with the type.
@@ -5302,7 +5436,7 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
         if (value == NULL) {
             res = PyDict_DelItem(dict, key);
         } else {
-            res = PyDict_SetItem(dict, key, value);
+            res = dict_set_item(dict, key, value);
         }
     }
     return res;
