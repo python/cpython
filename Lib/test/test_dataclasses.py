@@ -3335,20 +3335,17 @@ class TestReplace(unittest.TestCase):
 class TestMatchArgs(unittest.TestCase):
     def test_match_args(self):
         @dataclass
-        class B:
-            x: int
-
-        o = B(4)
-        self.assertEqual(o.__match_args__, ('x',))
+        class C:
+            a: int
+        self.assertEqual(C(42).__match_args__, ('a',))
 
     def test_explicit_match_args(self):
+        ma = []
         @dataclass
-        class B:
-            x: int
-            __match_args__ = []
-
-        o = B(4)
-        self.assertEqual(o.__match_args__, [])
+        class C:
+            a: int
+            __match_args__ = ma
+        self.assertIs(C(42).__match_args__, ma)
 
 if __name__ == '__main__':
     unittest.main()

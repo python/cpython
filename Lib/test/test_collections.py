@@ -667,7 +667,7 @@ class TestNamedTuple(unittest.TestCase):
 
     def test_match_args(self):
         Point = namedtuple('Point', 'x y')
-        self.assertEqual(Point.__match_args__, ('x', 'y'))               # matches a real tuple
+        self.assertEqual(Point.__match_args__, ('x', 'y'))
 
 
 ################################################################################

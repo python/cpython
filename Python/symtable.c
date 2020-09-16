@@ -1787,7 +1787,6 @@ symtable_visit_withitem(struct symtable *st, withitem_ty item)
     return 1;
 }
 
-
 static int
 symtable_visit_match_case(struct symtable *st, match_case_ty m)
 {

@@ -1520,7 +1520,7 @@ class _Unparser(NodeVisitor):
         if node.guard:
             self.write(" if ")
             self.traverse(node.guard)
-        with  self.block():
+        with self.block():
             self.traverse(node.body)
 
 def unparse(ast_obj):
