@@ -1655,12 +1655,6 @@ dict_set_item(PyObject *op, PyObject *key, PyObject *value)
     return insertdict(mp, key, hash, value);
 }
 
-/* CAUTION: PyDict_SetItem() must guarantee that it won't resize the
- * dictionary if it's merely replacing the value for an existing key.
- * This means that it's safe to loop over a dictionary with PyDict_Next()
- * and occasionally replace a value -- but you can't insert new keys or
- * remove them.
- */
 static int
 dict_set_item_init(PyObject *op, PyObject *key, PyObject *value, int empty)
 {
@@ -2468,89 +2462,6 @@ dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
    producing iterable objects of length 2.
 */
 
-static int
-dict_merge_from_seq2(PyObject *d, PyObject *seq2)
-{
-    PyObject *item;     /* seq2[i] */
-    PyObject *fast;     /* item as a 2-tuple or 2-list */
-
-    assert(d != NULL);
-    assert(PyDict_Check(d));
-    assert(seq2 != NULL);
-    
-    // iter(seq2)
-    PyObject *it = PyObject_GetIter(seq2);
-    if (it == NULL)
-        return -1;
-
-    PyObject *key, *value;
-    Py_ssize_t n;
-    int res;
-    
-    for (Py_ssize_t i = 0; ; i++) {
-        fast = NULL;
-        item = PyIter_Next(it);
-        if (item == NULL) {
-            if (PyErr_Occurred())
-                goto Fail;
-            break;
-        }
-
-        /* Convert item to sequence, and verify length 2. */
-        fast = PySequence_Fast(item, "");
-        if (fast == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError))
-                PyErr_Format(PyExc_TypeError,
-                    "cannot convert dictionary update "
-                    "sequence element #%zd to a sequence",
-                    i);
-            goto Fail;
-        }
-        n = PySequence_Fast_GET_SIZE(fast);
-        if (n != 2) {
-            PyErr_Format(PyExc_ValueError,
-                         "dictionary update sequence element #%zd "
-                         "has length %zd; 2 is required",
-                         i, n);
-            goto Fail;
-        }
-
-        /* Update/merge with this (key, value) pair. */
-        key = PySequence_Fast_GET_ITEM(fast, 0);
-        value = PySequence_Fast_GET_ITEM(fast, 1);
-        Py_INCREF(key);
-        Py_INCREF(value);
-        if (dict_set_item(d, key, value) < 0) {
-            Py_DECREF(key);
-            Py_DECREF(value);
-            goto Fail;
-        }
-        else if (dict_get_item_with_error(d, key) == NULL) {
-            if (PyErr_Occurred() || dict_set_item(d, key, value) < 0) {
-                Py_DECREF(key);
-                Py_DECREF(value);
-                goto Fail;
-            }
-        }
-
-        Py_DECREF(key);
-        Py_DECREF(value);
-        Py_DECREF(fast);
-        Py_DECREF(item);
-    }
-
-    res = 0;
-    ASSERT_CONSISTENT(d);
-    goto Return;
-Fail:
-    Py_XDECREF(item);
-    Py_XDECREF(fast);
-    res = -1;
-Return:
-    Py_DECREF(it);
-    return res;
-}
-
 int
 PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
 {
@@ -2634,6 +2545,89 @@ Fail:
 Return:
     Py_DECREF(it);
     return Py_SAFE_DOWNCAST(i, Py_ssize_t, int);
+}
+
+static int
+dict_merge_from_seq2(PyObject *d, PyObject *seq2)
+{
+    PyObject *item;     /* seq2[i] */
+    PyObject *fast;     /* item as a 2-tuple or 2-list */
+
+    assert(d != NULL);
+    assert(PyDict_Check(d));
+    assert(seq2 != NULL);
+    
+    // iter(seq2)
+    PyObject *it = PyObject_GetIter(seq2);
+    if (it == NULL)
+        return -1;
+
+    PyObject *key, *value;
+    Py_ssize_t n;
+    int res;
+    
+    for (Py_ssize_t i = 0; ; i++) {
+        fast = NULL;
+        item = PyIter_Next(it);
+        if (item == NULL) {
+            if (PyErr_Occurred())
+                goto Fail;
+            break;
+        }
+
+        /* Convert item to sequence, and verify length 2. */
+        fast = PySequence_Fast(item, "");
+        if (fast == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError))
+                PyErr_Format(PyExc_TypeError,
+                    "cannot convert dictionary update "
+                    "sequence element #%zd to a sequence",
+                    i);
+            goto Fail;
+        }
+        n = PySequence_Fast_GET_SIZE(fast);
+        if (n != 2) {
+            PyErr_Format(PyExc_ValueError,
+                         "dictionary update sequence element #%zd "
+                         "has length %zd; 2 is required",
+                         i, n);
+            goto Fail;
+        }
+
+        /* Update/merge with this (key, value) pair. */
+        key = PySequence_Fast_GET_ITEM(fast, 0);
+        value = PySequence_Fast_GET_ITEM(fast, 1);
+        Py_INCREF(key);
+        Py_INCREF(value);
+        if (dict_set_item(d, key, value) < 0) {
+            Py_DECREF(key);
+            Py_DECREF(value);
+            goto Fail;
+        }
+        else if (dict_get_item_with_error(d, key) == NULL) {
+            if (PyErr_Occurred() || dict_set_item(d, key, value) < 0) {
+                Py_DECREF(key);
+                Py_DECREF(value);
+                goto Fail;
+            }
+        }
+
+        Py_DECREF(key);
+        Py_DECREF(value);
+        Py_DECREF(fast);
+        Py_DECREF(item);
+    }
+
+    res = 0;
+    ASSERT_CONSISTENT(d);
+    goto Return;
+Fail:
+    Py_XDECREF(item);
+    Py_XDECREF(fast);
+    res = -1;
+Return:
+    Py_DECREF(it);
+    return res;
 }
 
 /* Single-arg dict update; used by dict_update_common and operators. */
@@ -3798,9 +3792,6 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     d->ma_used = 0;
     d->ma_version_tag = DICT_NEXT_VERSION();
-    // can't remove it and do one big resize, or 
-    // python -E -S -m sysconfig --generate-posix-vars
-    // generate a segfault
     dictkeys_incref(Py_EMPTY_KEYS);
     d->ma_keys = Py_EMPTY_KEYS;
     d->ma_values = empty_values;
