@@ -1,0 +1,1 @@
+unittest.mock speccing no longer calls class properties
