@@ -1,0 +1,2 @@
+The :mod:`ast` module internal state is now per interpreter. Patch by Victor
+Stinner.
