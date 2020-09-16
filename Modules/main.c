@@ -288,6 +288,9 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
         return pymain_exit_err_print();
     }
     result = PyObject_Call(runmodule, runargs, NULL);
+    if (!result && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
+        _Py_UnhandledKeyboardInterrupt = 1;
+    }
     Py_DECREF(runpy);
     Py_DECREF(runmodule);
     Py_DECREF(module);
