@@ -629,7 +629,7 @@ class Enum(metaclass=EnumMeta):
 
     @classmethod
     def _missing_(cls, value):
-        raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+        return None
 
     def __repr__(self):
         return "<%s.%s: %r>" % (
