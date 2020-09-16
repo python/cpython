@@ -476,8 +476,8 @@ class EnumMeta(type):
     def _check_for_existing_members(class_name, bases):
         for chain in bases:
             for base in chain.__mro__:
-                    if issubclass(base, Enum) and base._member_names_:
-                        raise TypeError("%s: cannot extend enumeration %r" % (class_name, base.__name__))
+                if issubclass(base, Enum) and base._member_names_:
+                    raise TypeError("%s: cannot extend enumeration %r" % (class_name, base.__name__))
 
     @staticmethod
     def _get_mixins_(class_name, bases):
