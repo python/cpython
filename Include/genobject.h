@@ -45,13 +45,11 @@ PyAPI_FUNC(PyObject *) _PyGen_Send(PyGenObject *, PyObject *);
 PyObject *_PyGen_yf(PyGenObject *);
 PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
 
-typedef enum {
-    PYGEN_RETURN,
-    PYGEN_ERROR,
-    PYGEN_NEXT
-} PyGenSendStatus;
+#define PYGEN_RETURN 0
+#define PYGEN_ERROR -1
+#define PYGEN_NEXT 1
 
-PyAPI_FUNC(PyGenSendStatus) _PyGen_Send_NameTBD(PyGenObject *, PyObject *, PyObject **);
+PyAPI_FUNC(int) PyIter_Send(PyGenObject *, PyObject *, PyObject **);
 
 #ifndef Py_LIMITED_API
 typedef struct {

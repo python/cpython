@@ -2679,10 +2679,10 @@ task_step_impl(TaskObj *task, PyObject *exc)
         return NULL;
     }
 
-    PyGenSendStatus gen_status = PYGEN_ERROR;
+    int gen_status = PYGEN_ERROR;
     if (exc == NULL) {
         if (PyGen_CheckExact(coro) || PyCoro_CheckExact(coro)) {
-            gen_status = _PyGen_Send_NameTBD((PyGenObject*)coro, Py_None, &result);
+            gen_status = PyIter_Send((PyGenObject*)coro, Py_None, &result);
         }
         else {
             result = _PyObject_CallMethodIdOneArg(coro, &PyId_send, Py_None);

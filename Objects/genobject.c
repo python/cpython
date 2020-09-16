@@ -305,8 +305,8 @@ _PyGen_Send(PyGenObject *gen, PyObject *arg)
     return gen_send_ex(gen, arg, 0, 0, NULL);
 }
 
-PyGenSendStatus
-_PyGen_Send_NameTBD(PyGenObject *gen, PyObject *arg, PyObject **result)
+int
+PyIter_Send(PyGenObject *gen, PyObject *arg, PyObject **result)
 {
     assert(result != NULL);
 
