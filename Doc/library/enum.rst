@@ -656,6 +656,13 @@ be combined with them::
     >>> Perm.X | 8
     <Perm.8|X: 9>
 
+:class:`IntFlag` members can also be iterated over::
+
+    >>> list(RW)
+    [<Perm.R: 4>, <Perm.W: 2>]
+
+.. versionadded:: 3.10
+
 
 Flag
 ^^^^
@@ -708,6 +715,14 @@ value::
     <Color.BLACK: 0>
     >>> bool(Color.BLACK)
     False
+
+:class:`Flag` members can also be iterated over::
+
+    >>> purple = Color.RED | Color.BLUE
+    >>> list(purple)
+    [<Color.BLUE: 2>, <Color.RED: 1>]
+
+.. versionadded:: 3.10
 
 .. note::
 
