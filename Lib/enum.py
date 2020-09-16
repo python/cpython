@@ -753,6 +753,10 @@ class Flag(Enum):
                     type(other).__qualname__, self.__class__.__qualname__))
         return other._value_ & self._value_ == other._value_
 
+    def __iter__(self):
+        members, extra_flags = _decompose(self.__class__, self.value)
+        return (m for m in members if m._value_ != 0)
+
     def __repr__(self):
         cls = self.__class__
         if self._name_ is not None:
