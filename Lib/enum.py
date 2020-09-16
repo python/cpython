@@ -124,10 +124,12 @@ class EnumMeta(type):
     """Metaclass for Enum"""
     @classmethod
     def __prepare__(metacls, cls, bases):
+        # check that previous enum members do not exist
+        metacls._check_for_existing_members(cls, bases)
         # create the namespace dict
         enum_dict = _EnumDict()
         # inherit previous flags and _generate_next_value_ function
-        member_type, first_enum = metacls._get_mixins_(bases)
+        member_type, first_enum = metacls._get_mixins_(cls, bases)
         if first_enum is not None:
             enum_dict['_generate_next_value_'] = getattr(first_enum, '_generate_next_value_', None)
         return enum_dict
@@ -143,7 +145,7 @@ class EnumMeta(type):
         ignore = classdict['_ignore_']
         for key in ignore:
             classdict.pop(key, None)
-        member_type, first_enum = metacls._get_mixins_(bases)
+        member_type, first_enum = metacls._get_mixins_(cls, bases)
         __new__, save_new, use_args = metacls._find_new_(classdict, member_type,
                                                         first_enum)
 
@@ -402,7 +404,7 @@ class EnumMeta(type):
         """
         metacls = cls.__class__
         bases = (cls, ) if type is None else (type, cls)
-        _, first_enum = cls._get_mixins_(bases)
+        _, first_enum = cls._get_mixins_(cls, bases)
         classdict = metacls.__prepare__(class_name, bases)
 
         # special processing needed for names?
@@ -475,7 +477,14 @@ class EnumMeta(type):
         return cls
 
     @staticmethod
-    def _get_mixins_(bases):
+    def _check_for_existing_members(class_name, bases):
+        for chain in bases:
+            for base in chain.__mro__:
+                if issubclass(base, Enum) and base._member_names_:
+                    raise TypeError("%s: cannot extend enumeration %r" % (class_name, base.__name__))
+
+    @staticmethod
+    def _get_mixins_(class_name, bases):
         """Returns the type for creating enum members, and the first inherited
         enum class.
 
@@ -500,7 +509,7 @@ class EnumMeta(type):
                     elif not issubclass(base, Enum):
                         candidate = base
             if len(data_types) > 1:
-                raise TypeError('too many data types: %r' % data_types)
+                raise TypeError('%r: too many data types: %r' % (class_name, data_types))
             elif data_types:
                 return data_types[0]
             else:
