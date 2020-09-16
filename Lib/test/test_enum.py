@@ -1871,7 +1871,7 @@ class TestEnum(unittest.TestCase):
         try:
             Color('error out')
         except ZeroDivisionError as exc:
-            self.assertTrue(not exc.__context__)
+            self.assertTrue(isinstance(exc.__context__, ValueError))
         else:
             raise Exception('Exception not raised.')
 
