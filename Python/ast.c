@@ -21,7 +21,7 @@ static int validate_stmt(stmt_ty);
 static int validate_expr(expr_ty, expr_context_ty);
 
 static int
-validate_name(PyObject *name)
+validate_name(const char* owner, PyObject *name)
 {
     assert(PyUnicode_Check(name));
     static const char * const forbidden[] = {
@@ -32,7 +32,8 @@ validate_name(PyObject *name)
     };
     for (int i = 0; forbidden[i] != NULL; i++) {
         if (_PyUnicode_EqualToASCIIString(name, forbidden[i])) {
-            PyErr_Format(PyExc_ValueError, "Name node can't be used with '%s' constant", forbidden[i]);
+            PyErr_Format(PyExc_ValueError, "'%s' node can't be used with '%s' constant",
+                         owner, forbidden[i]);
             return 0;
         }
     }
@@ -191,7 +192,7 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         actual_ctx = exp->v.Starred.ctx;
         break;
     case Name_kind:
-        if (!validate_name(exp->v.Name.id)) {
+        if (!validate_name("Name", exp->v.Name.id)) {
             return 0;
         }
         actual_ctx = exp->v.Name.ctx;
@@ -333,6 +334,23 @@ validate_nonempty_seq(asdl_seq *seq, const char *what, const char *owner)
 }
 
 static int
+validate_import_names(asdl_seq *seq, const char *what, const char *owner)
+{
+    if (!validate_nonempty_seq(seq, what, owner)) {
+        return 0;
+    }
+    Py_ssize_t i, n = asdl_seq_LEN(seq);
+    for (i = 0; i < n; i++) {
+        alias_ty alias = (alias_ty)asdl_seq_GET(seq, i);
+        if (!validate_name(owner, alias->name) ||
+            (alias->asname && !validate_name(owner, alias->asname))) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
 validate_assignlist(asdl_seq *targets, expr_context_ty ctx)
 {
     return validate_nonempty_seq(targets, "targets", ctx == Del ? "Delete" : "Assign") &&
@@ -352,12 +370,14 @@ validate_stmt(stmt_ty stmt)
     switch (stmt->kind) {
     case FunctionDef_kind:
         return validate_body(stmt->v.FunctionDef.body, "FunctionDef") &&
+            validate_name("FunctionDef", stmt->v.FunctionDef.name) &&
             validate_arguments(stmt->v.FunctionDef.args) &&
             validate_exprs(stmt->v.FunctionDef.decorator_list, Load, 0) &&
             (!stmt->v.FunctionDef.returns ||
              validate_expr(stmt->v.FunctionDef.returns, Load));
     case ClassDef_kind:
         return validate_body(stmt->v.ClassDef.body, "ClassDef") &&
+            validate_name("ClassDef", stmt->v.ClassDef.name) &&
             validate_exprs(stmt->v.ClassDef.bases, Load, 0) &&
             validate_keywords(stmt->v.ClassDef.keywords) &&
             validate_exprs(stmt->v.ClassDef.decorator_list, Load, 0);
@@ -447,6 +467,8 @@ validate_stmt(stmt_ty stmt)
             excepthandler_ty handler = asdl_seq_GET(stmt->v.Try.handlers, i);
             if ((handler->v.ExceptHandler.type &&
                  !validate_expr(handler->v.ExceptHandler.type, Load)) ||
+                (handler->v.ExceptHandler.name &&
+                 !validate_name("ExceptHandler", handler->v.ExceptHandler.name)) ||
                 !validate_body(handler->v.ExceptHandler.body, "ExceptHandler"))
                 return 0;
         }
@@ -458,13 +480,13 @@ validate_stmt(stmt_ty stmt)
         return validate_expr(stmt->v.Assert.test, Load) &&
             (!stmt->v.Assert.msg || validate_expr(stmt->v.Assert.msg, Load));
     case Import_kind:
-        return validate_nonempty_seq(stmt->v.Import.names, "names", "Import");
+        return validate_import_names(stmt->v.Import.names, "names", "Import");
     case ImportFrom_kind:
         if (stmt->v.ImportFrom.level < 0) {
             PyErr_SetString(PyExc_ValueError, "Negative ImportFrom level");
             return 0;
         }
-        return validate_nonempty_seq(stmt->v.ImportFrom.names, "names", "ImportFrom");
+        return validate_import_names(stmt->v.ImportFrom.names, "names", "ImportFrom");
     case Global_kind:
         return validate_nonempty_seq(stmt->v.Global.names, "names", "Global");
     case Nonlocal_kind:
@@ -473,6 +495,7 @@ validate_stmt(stmt_ty stmt)
         return validate_expr(stmt->v.Expr.value, Load);
     case AsyncFunctionDef_kind:
         return validate_body(stmt->v.AsyncFunctionDef.body, "AsyncFunctionDef") &&
+            validate_name("AsyncFunctionDef", stmt->v.AsyncFunctionDef.name) &&
             validate_arguments(stmt->v.AsyncFunctionDef.args) &&
             validate_exprs(stmt->v.AsyncFunctionDef.decorator_list, Load, 0) &&
             (!stmt->v.AsyncFunctionDef.returns ||
