@@ -2768,7 +2768,6 @@ compiler_if(struct compiler *c, stmt_ty s)
     return 1;
 }
 
-
 static int
 compiler_for(struct compiler *c, stmt_ty s)
 {
