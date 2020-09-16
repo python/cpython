@@ -117,7 +117,7 @@ static int
 append_ast_boolop(_PyUnicodeWriter *writer, expr_ty e, int level)
 {
     Py_ssize_t i, value_count;
-    asdl_seq *values;
+    asdl_expr_seq *values;
     const char *op = (e->v.BoolOp.op == And) ? " and " : " or ";
     int pr = (e->v.BoolOp.op == And) ? PR_AND : PR_OR;
 
@@ -398,7 +398,7 @@ append_ast_comprehension(_PyUnicodeWriter *writer, comprehension_ty gen)
 }
 
 static int
-append_ast_comprehensions(_PyUnicodeWriter *writer, asdl_seq *comprehensions)
+append_ast_comprehensions(_PyUnicodeWriter *writer, asdl_comprehension_seq *comprehensions)
 {
     Py_ssize_t i, gen_count;
     gen_count = asdl_seq_LEN(comprehensions);
@@ -453,7 +453,7 @@ append_ast_compare(_PyUnicodeWriter *writer, expr_ty e, int level)
 {
     const char *op;
     Py_ssize_t i, comparator_count;
-    asdl_seq *comparators;
+    asdl_expr_seq *comparators;
     asdl_int_seq *ops;
 
     APPEND_STR_IF(level > PR_CMP, "(");
@@ -612,7 +612,7 @@ append_fstring_element(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 /* Build body separately to enable wrapping the entire stream of Strs,
    Constants and FormattedValues in one opening and one closing quote. */
 static PyObject *
-build_fstring_body(asdl_seq *values, bool is_format_spec)
+build_fstring_body(asdl_expr_seq *values, bool is_format_spec)
 {
     Py_ssize_t i, value_count;
     _PyUnicodeWriter body_writer;

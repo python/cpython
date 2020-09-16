@@ -1162,8 +1162,8 @@ keyword argument to :meth:`~ArgumentParser.add_argument`::
    >>> parser.parse_args(['--foo', 'BAR'])
    Namespace(foo='BAR')
    >>> parser.parse_args([])
-   usage: argparse.py [-h] [--foo FOO]
-   argparse.py: error: option --foo is required
+   usage: [-h] --foo FOO
+   : error: the following arguments are required: --foo
 
 As the example shows, if an option is marked as ``required``,
 :meth:`~ArgumentParser.parse_args` will report an error if that option is not

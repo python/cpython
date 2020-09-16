@@ -18,7 +18,8 @@ application using SQLite and then port the code to a larger database such as
 PostgreSQL or Oracle.
 
 The sqlite3 module was written by Gerhard Häring.  It provides a SQL interface
-compliant with the DB-API 2.0 specification described by :pep:`249`.
+compliant with the DB-API 2.0 specification described by :pep:`249`, and
+requires SQLite 3.7.3 or newer.
 
 To use the module, you must first create a :class:`Connection` object that
 represents the database.  Here the data will be stored in the
@@ -591,8 +592,6 @@ Connection Objects
          dest = sqlite3.connect(':memory:')
          source.backup(dest)
 
-      Availability: SQLite 3.6.11 or higher
-
       .. versionadded:: 3.7
 
 
@@ -700,9 +699,6 @@ Cursor Objects
       last operation is not determinable by the interface". This includes ``SELECT``
       statements because we cannot determine the number of rows a query produced
       until all rows were fetched.
-
-      With SQLite versions before 3.6.5, :attr:`rowcount` is set to 0 if
-      you make a ``DELETE FROM table`` without any condition.
 
    .. attribute:: lastrowid
 

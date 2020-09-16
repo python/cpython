@@ -2419,9 +2419,9 @@ To avoid overflow/underflow and to achieve high accuracy giving results
 that are almost always correctly rounded, four techniques are used:
 
 * lossless scaling using a power-of-two scaling factor
-* accurate squaring using Veltkamp-Dekker splitting
-* compensated summation using a variant of the Neumaier algorithm
-* differential correction of the square root
+* accurate squaring using Veltkamp-Dekker splitting [1]
+* compensated summation using a variant of the Neumaier algorithm [2]
+* differential correction of the square root [3]
 
 The usual presentation of the Neumaier summation algorithm has an
 expensive branch depending on which operand has the larger
@@ -2429,7 +2429,7 @@ magnitude.  We avoid this cost by arranging the calculation so that
 fabs(csum) is always as large as fabs(x).
 
 To establish the invariant, *csum* is initialized to 1.0 which is
-always larger than x**2 after scaling or division by *max*.
+always larger than x**2 after scaling or after division by *max*.
 After the loop is finished, the initial 1.0 is subtracted out for a
 net zero effect on the final sum.  Since *csum* will be greater than
 1.0, the subtraction of 1.0 will not cause fractional digits to be
@@ -2440,12 +2440,27 @@ addend should be in the range: 0.5 <= |x| <= 1.0.  Accordingly,
 scaling or division by *max* should not be skipped even if not
 otherwise needed to prevent overflow or loss of precision.
 
-The assertion that hi*hi >= 1.0 is a bit subtle.  Each vector element
+The assertion that hi*hi <= 1.0 is a bit subtle.  Each vector element
 gets scaled to a magnitude below 1.0.  The Veltkamp-Dekker splitting
 algorithm gives a *hi* value that is correctly rounded to half
 precision.  When a value at or below 1.0 is correctly rounded, it
 never goes above 1.0.  And when values at or below 1.0 are squared,
 they remain at or below 1.0, thus preserving the summation invariant.
+
+Another interesting assertion is that csum+lo*lo == csum. In the loop,
+each scaled vector element has a magnitude less than 1.0.  After the
+Veltkamp split, *lo* has a maximum value of 2**-27.  So the maximum
+value of *lo* squared is 2**-54.  The value of ulp(1.0)/2.0 is 2**-53.
+Given that csum >= 1.0, we have:
+    lo**2 <= 2**-54 < 2**-53 == 1/2*ulp(1.0) <= ulp(csum)/2
+Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
+
+To minimize loss of information during the accumulation of fractional
+values, each term has a separate accumulator.  This also breaks up
+sequential dependencies in the inner loop so the CPU can maximize
+floating point throughput. [4]  On a 2.6 GHz Haswell, adding one
+dimension has an incremental cost of only 5ns -- for example when
+moving from hypot(x,y) to hypot(x,y,z).
 
 The square root differential correction is needed because a
 correctly rounded square root of a correctly rounded sum of
@@ -2455,19 +2470,32 @@ The differential correction starts with a value *x* that is
 the difference between the square of *h*, the possibly inaccurately
 rounded square root, and the accurately computed sum of squares.
 The correction is the first order term of the Maclaurin series
-expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2).
+expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2). [5]
 
 Essentially, this differential correction is equivalent to one
-refinement step in the Newton divide-and-average square root
+refinement step in Newton's divide-and-average square root
 algorithm, effectively doubling the number of accurate bits.
 This technique is used in Dekker's SQRT2 algorithm and again in
 Borges' ALGORITHM 4 and 5.
+
+Without proof for all cases, hypot() cannot claim to be always
+correctly rounded.  However for n <= 1000, prior to the final addition
+that rounds the overall result, the internal accuracy of "h" together
+with its correction of "x / (2.0 * h)" is at least 100 bits. [6]
+Also, hypot() was tested against a Decimal implementation with
+prec=300.  After 100 million trials, no incorrectly rounded examples
+were found.  In addition, perfect commutativity (all permutations are
+exactly equal) was verified for 1 billion random inputs with n=5. [7]
 
 References:
 
 1. Veltkamp-Dekker splitting: http://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
 2. Compensated summation:  http://www.ti3.tu-harburg.de/paper/rump/Ru08b.pdf
-3. Square root diffential correction:  https://arxiv.org/pdf/1904.09481.pdf
+3. Square root differential correction:  https://arxiv.org/pdf/1904.09481.pdf
+4. Data dependency graph:  https://bugs.python.org/file49439/hypot.png
+5. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+6. Analysis of internal accuracy:  https://bugs.python.org/file49435/best_frac.py
+7. Commutativity test:  https://bugs.python.org/file49448/test_hypot_commutativity.py
 
 */
 
@@ -2475,7 +2503,7 @@ static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
     const double T27 = 134217729.0;     /* ldexp(1.0, 27)+1.0) */
-    double x, csum = 1.0, oldcsum, frac = 0.0, scale;
+    double x, csum = 1.0, oldcsum, scale, frac=0.0, frac_mid=0.0, frac_lo=0.0;
     double t, hi, lo, h;
     int max_e;
     Py_ssize_t i;
@@ -2517,14 +2545,12 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             assert(fabs(csum) >= fabs(x));
             oldcsum = csum;
             csum += x;
-            frac += (oldcsum - csum) + x;
+            frac_mid += (oldcsum - csum) + x;
 
-            x = lo * lo;
-            assert(fabs(csum) >= fabs(x));
-            oldcsum = csum;
-            csum += x;
-            frac += (oldcsum - csum) + x;
+            assert(csum + lo * lo == csum);
+            frac_lo += lo * lo;
         }
+        frac += frac_lo + frac_mid;
         h = sqrt(csum - 1.0 + frac);
 
         x = h;
