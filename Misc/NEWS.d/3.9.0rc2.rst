@@ -1,0 +1,360 @@
+.. bpo: 41780
+.. date: 2020-09-15-23-29-49
+.. nonce: bOBUIH
+.. release date: 2020-09-16
+.. section: Core and Builtins
+
+Fix :meth:`__dir__` of :class:`types.GenericAlias`. Patch by Batuhan
+Taskaya.
+
+..
+
+.. bpo: 41690
+.. date: 2020-09-02-12-00-57
+.. nonce: Ny-Sfy
+.. section: Core and Builtins
+
+Fix a possible stack overflow in the parser when parsing functions and
+classes with a huge ammount of arguments. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 41681
+.. date: 2020-08-31-17-49-02
+.. nonce: 3-VJiH
+.. section: Core and Builtins
+
+Fixes the wrong error description in the error raised by using 2 `,` in
+format string in f-string and :meth:`str.format`.
+
+..
+
+.. bpo: 41654
+.. date: 2020-08-30-20-38-33
+.. nonce: HtnhAM
+.. section: Core and Builtins
+
+Fix a crash that occurred when destroying subclasses of
+:class:`MemoryError`. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 41631
+.. date: 2020-08-26-11-23-31
+.. nonce: 3jZcd9
+.. section: Core and Builtins
+
+The ``_ast`` module uses again a global state. Using a module state per
+module instance is causing subtle practical problems. For example, the
+Mercurial project replaces the ``__import__()`` function to implement lazy
+import, whereas Python expected that ``import _ast`` always return a fully
+initialized ``_ast`` module.
+
+..
+
+.. bpo: 41533
+.. date: 2020-08-12-20-29-57
+.. nonce: 4pcVAc
+.. section: Core and Builtins
+
+Free the stack allocated in ``va_build_stack`` if ``do_mkstack`` fails and
+the stack is not a ``small_stack``.
+
+..
+
+.. bpo: 41531
+.. date: 2020-08-12-19-32-15
+.. nonce: WgPzjT
+.. section: Core and Builtins
+
+Fix a bug that was dropping keys when compiling dict literals with more than
+0xFFFF elements. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 41525
+.. date: 2020-08-12-07-35-07
+.. nonce: d9q3XL
+.. section: Core and Builtins
+
+The output of ``python --help`` contains now only ASCII characters.
+
+..
+
+.. bpo: 29590
+.. date: 2020-05-03-22-26-00
+.. nonce: aRz3l7
+.. section: Core and Builtins
+
+Make the stack trace correct after calling :meth:`generator.throw` on a
+generator that has yielded from a ``yield from``.
+
+..
+
+.. bpo: 41517
+.. date: 2020-09-15-22-43-30
+.. nonce: sLBH7g
+.. section: Library
+
+fix bug allowing Enums to be extended via multiple inheritance
+
+..
+
+.. bpo: 39587
+.. date: 2020-09-15-14-56-13
+.. nonce: 69xzuh
+.. section: Library
+
+use the correct mix-in data type when constructing Enums
+
+..
+
+.. bpo: 41789
+.. date: 2020-09-14-19-27-46
+.. nonce: pI_uZQ
+.. section: Library
+
+Honor `object` overrides in `Enum` class creation (specifically, `__str__`,
+`__repr__`, `__format__`, and `__reduce_ex__`).
+
+..
+
+.. bpo: 39651
+.. date: 2020-09-11-12-38-55
+.. nonce: JMp9l2
+.. section: Library
+
+Fix a race condition in the ``call_soon_threadsafe()`` method of
+``asyncio.ProactorEventLoop``: do nothing if the self-pipe socket has been
+closed.
+
+..
+
+.. bpo: 41720
+.. date: 2020-09-04-20-45-38
+.. nonce: PW9MzZ
+.. section: Library
+
+Fixed :meth:`turtle.Vec2D.__rmul__` for arguments which are not int or
+float.
+
+..
+
+.. bpo: 41696
+.. date: 2020-09-03-01-35-32
+.. nonce: zkYGre
+.. section: Library
+
+Fix handling of debug mode in :func:`asyncio.run`. This allows setting
+``PYTHONASYNCIODEBUG`` or ``-X dev`` to enable asyncio debug mode when using
+:func:`asyncio.run`.
+
+..
+
+.. bpo: 41687
+.. date: 2020-09-01-15-57-51
+.. nonce: m1b1KA
+.. section: Library
+
+Fix implementation of sendfile to be compatible with Solaris.
+
+..
+
+.. bpo: 39010
+.. date: 2020-08-30-10-24-26
+.. nonce: _mzXJW
+.. section: Library
+
+Restarting a ``ProactorEventLoop`` on Windows no longer logs spurious
+``ConnectionResetErrors``.
+
+..
+
+.. bpo: 41609
+.. date: 2020-08-21-15-51-15
+.. nonce: JmiUKG
+.. section: Library
+
+The pdb whatis command correctly reports instance methods as 'Method' rather
+than 'Function'.
+
+..
+
+.. bpo: 32751
+.. date: 2020-08-15-15-50-12
+.. nonce: 85je5X
+.. section: Library
+
+When cancelling the task due to a timeout, :meth:`asyncio.wait_for` will now
+wait until the cancellation is complete also in the case when *timeout* is
+<= 0, like it does with positive timeouts.
+
+..
+
+.. bpo: 37658
+.. date: 2020-08-15-15-21-40
+.. nonce: f9nivB
+.. section: Library
+
+:meth:`asyncio.wait_for` now properly handles races between cancellation of
+itself and the completion of the wrapped awaitable.
+
+..
+
+.. bpo: 40782
+.. date: 2020-08-13-08-07-25
+.. nonce: aGZqmB
+.. section: Library
+
+Change the method asyncio.AbstractEventLoop.run_in_executor to not be a
+coroutine.
+
+..
+
+.. bpo: 41520
+.. date: 2020-08-12-13-25-16
+.. nonce: BEUWa4
+.. section: Library
+
+Fix :mod:`codeop` regression that prevented turning compile warnings into
+errors.
+
+..
+
+.. bpo: 41503
+.. date: 2020-08-07-15-18-16
+.. nonce: IYftcu
+.. section: Library
+
+Fixed a race between setTarget and flush in logging.handlers.MemoryHandler.
+
+..
+
+.. bpo: 41344
+.. date: 2020-07-20-13-27-48
+.. nonce: iKipNd
+.. section: Library
+
+Prevent creating :class:`shared_memory.SharedMemory` objects with
+:code:`size=0`.
+
+..
+
+.. bpo: 41025
+.. date: 2020-06-18-10-34-59
+.. nonce: elf_nz
+.. section: Library
+
+Fixed an issue preventing the C implementation of :class:`zoneinfo.ZoneInfo`
+from being subclassed.
+
+..
+
+.. bpo: 31122
+.. date: 2020-03-11-07-44-06
+.. nonce: zIQ80l
+.. section: Library
+
+ssl.wrap_socket() now raises ssl.SSLEOFError rather than OSError when peer
+closes connection during TLS negotiation
+
+..
+
+.. bpo: 33660
+.. date: 2018-06-12-23-30-41
+.. nonce: AdDn5Z
+.. section: Library
+
+Fix pathlib.PosixPath to resolve a relative path located on the root
+directory properly.
+
+..
+
+.. bpo: 37149
+.. date: 2020-09-10-07-48-02
+.. nonce: VD0rCv
+.. section: Documentation
+
+Change Shipman tkinter doc link from archive.org to TkDocs. (The doc has
+been removed from the NMT server.)  The new link responds much faster and
+includes a short explanatory note.
+
+..
+
+.. bpo: 41624
+.. date: 2020-08-25-15-11-23
+.. nonce: ddjJlN
+.. section: Documentation
+
+Fix the signature of :class:`typing.Coroutine`.
+
+..
+
+.. bpo: 40204
+.. date: 2020-08-12-18-35-40
+.. nonce: C8A_pe
+.. section: Documentation
+
+Enable Sphinx 3.2 ``c_allow_pre_v3`` option and disable
+``c_warn_on_allowed_pre_v3`` option to make the documentation compatible
+with Sphinx 2 and Sphinx 3.
+
+..
+
+.. bpo: 40979
+.. date: 2020-07-21-15-23-30
+.. nonce: pLA8rO
+.. section: Documentation
+
+Refactored typing.rst, arranging more than 70 classes, functions, and
+decorators into new sub-sections.
+
+..
+
+.. bpo: 39883
+.. date: 2020-03-07-03-53-39
+.. nonce: 1tnb4-
+.. section: Documentation
+
+Make code, examples, and recipes in the Python documentation be licensed
+under the more permissive BSD0 license in addition to the existing Python
+2.0 license.
+
+..
+
+.. bpo: 41731
+.. date: 2020-09-11-19-12-31
+.. nonce: Ivxh4U
+.. section: Tests
+
+Make test_cmd_line_script pass with option '-vv'.
+
+..
+
+.. bpo: 41617
+.. date: 2020-08-24-18-34-01
+.. nonce: sKKXz7
+.. section: Build
+
+Fix ``pycore_byteswap.h`` header file to support old clang versions:
+``__builtin_bswap16()`` is not available in LLVM clang 3.0.
+
+..
+
+.. bpo: 41526
+.. date: 2020-08-13-22-40-58
+.. nonce: -i2bwb
+.. section: Windows
+
+Fixed layout of final page of the installer by removing the special thanks
+to Mark Hammond (with his permission).
+
+..
+
+.. bpo: 41524
+.. date: 2020-08-12-17-09-06
+.. nonce: u6Xfr2
+.. section: C API
+
+Fix bug in PyOS_mystrnicmp and PyOS_mystricmp that incremented pointers
+beyond the end of a string.
