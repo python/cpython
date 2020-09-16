@@ -550,11 +550,12 @@ class TestPatma(unittest.TestCase):
 
     def test_patma_059(self):
         x = 0
+        y = None
         match x:
             case False:
                 y = 0
         self.assertEqual(x, 0)
-        self.assertEqual(y, 0)
+        self.assertEqual(y, None)
 
     def test_patma_060(self):
         x = 0
@@ -2604,6 +2605,38 @@ class TestPatma(unittest.TestCase):
                 y = 0
         self.assertEqual(x, 0)
         self.assertEqual(y, 0)
+
+    def test_patma_257(self):
+        x = 0
+        match x:
+            case False:
+                y = 1
+            case 0:
+                y = 2
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 2)
+
+    def test_patma_258(self):
+        x = 1
+        match x:
+            case True:
+                y = 1
+            case 1:
+                y = 2
+        self.assertEqual(x, 1)
+        self.assertEqual(y, 2)
+
+    def test_patma_259(self):
+        class Eq:
+            def __eq__(self, other):
+                return True
+        x = eq = Eq()
+        y = None
+        match x:
+            case None:
+                y = 1
+        self.assertIs(x, eq)
+        self.assertEqual(y, None)
 
     # TODO: Better use of assertIs
     # TODO: Don't check side-effecty assignments

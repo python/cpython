@@ -5665,7 +5665,13 @@ compiler_pattern_constant(struct compiler *c, expr_ty p, pattern_context *pc)
     assert(p->kind == Constant_kind);
     ADDOP(c, DUP_TOP);
     CHECK(pattern_load_constant(c, p, pc));
-    ADDOP_COMPARE(c, Eq);
+    PyObject *v = p->v.Constant.value;
+    if (v == Py_None || PyBool_Check(v)) {
+        ADDOP_COMPARE(c, Is);
+    }
+    else {
+        ADDOP_COMPARE(c, Eq);
+    }
     return 1;
 }
 
