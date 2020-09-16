@@ -138,6 +138,12 @@ py_compile
 Added ``--quiet`` option to command-line interface of :mod:`py_compile`.
 (Contributed by Gregory Schevchenko in :issue:`38731`.)
 
+ssl
+---
+
+Add a *timeout* parameter to the :func:`ssl.get_server_certificate` function.
+(Contributed by Zackery Spytz in :issue:`31870`.)
+
 sys
 ---
 
