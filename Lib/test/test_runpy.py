@@ -781,10 +781,10 @@ class TestExit(unittest.TestCase):
             )
             super().run(*args, **kwargs)
 
-    def assertSigInt(self, *args, expected_code=EXPECTED_CODE, **kwargs):
+    def assertSigInt(self, *args, **kwargs):
         proc = subprocess.run(*args, **kwargs, text=True, stderr=subprocess.PIPE)
         self.assertTrue(proc.stderr.endswith("\nKeyboardInterrupt\n"))
-        self.assertEqual(proc.returncode, expected_code)
+        self.assertEqual(proc.returncode, self.EXPECTED_CODE)
 
     def test_pymain_run_file(self):
         self.assertSigInt([sys.executable, self.ham])
@@ -829,11 +829,7 @@ class TestExit(unittest.TestCase):
 
     def test_pymain_run_module(self):
         ham = self.ham
-        self.assertSigInt(
-            [sys.executable, "-m", ham.stem],
-            cwd=ham.parent,
-            expected_code=1,  # TODO: should be self.EXPECTED_CODE
-        )
+        self.assertSigInt([sys.executable, "-m", ham.stem], cwd=ham.parent)
 
 
 if __name__ == "__main__":
