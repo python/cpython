@@ -566,8 +566,6 @@ static int statsForEntry(rotating_node_t *node, void *arg)
 /*[clinic input]
 _lsprof.Profiler.getstats
 
-    cls: defining_class
-
 list of profiler_entry objects.
 
 getstats() -> list of profiler_entry objects
@@ -594,8 +592,8 @@ profiler_subentry objects:
 [clinic start generated code]*/
 
 static PyObject *
-_lsprof_Profiler_getstats_impl(ProfilerObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=1806ef720019ee03 input=445e193ef4522902]*/
+_lsprof_Profiler_getstats_impl(ProfilerObject *self)
+/*[clinic end generated code: output=9461b451e9ef0f24 input=ade04fa384ce450a]*/
 {
     statscollector_t collect;
     if (pending_exception(self)) {
