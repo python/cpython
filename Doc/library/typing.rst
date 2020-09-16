@@ -1660,7 +1660,7 @@ Introspection helpers
 
 .. function:: is_typeddict(tp)
 
-   Check if an annotation is a TypedDict class.
+   Check if a type is a :class:`TypedDict`.
 
    For example::
         class Film(TypedDict):
