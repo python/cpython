@@ -1837,6 +1837,17 @@ class TestEnum(unittest.TestCase):
                 def _generate_next_value_(name, start, count, last):
                     return name
 
+    def test_auto_order_wierd(self):
+        weird_auto = auto()
+        weird_auto.value = 'pathological case'
+        class Color(Enum):
+            red = weird_auto
+            def _generate_next_value_(name, start, count, last):
+                return name
+            blue = auto()
+        self.assertEqual(list(Color), [Color.red, Color.blue])
+        self.assertEqual(Color.red.value, 'pathological case')
+        self.assertEqual(Color.blue.value, 'blue')
 
     def test_duplicate_auto(self):
         class Dupes(Enum):
