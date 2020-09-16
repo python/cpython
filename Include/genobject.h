@@ -49,7 +49,7 @@ PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
 #define PYGEN_ERROR -1
 #define PYGEN_NEXT 1
 
-PyAPI_FUNC(int) PyIter_Send(PyGenObject *, PyObject *, PyObject **);
+PyAPI_FUNC(int) PyGen_Send(PyGenObject *, PyObject *, PyObject **);
 
 #ifndef Py_LIMITED_API
 typedef struct {

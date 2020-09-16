@@ -2226,7 +2226,7 @@ main_loop:
             int is_gen_or_coro = PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver);
             int gen_status;
             if (tstate->c_tracefunc == NULL && is_gen_or_coro) {
-                gen_status = PyIter_Send((PyGenObject *)receiver, v, &retval);
+                gen_status = PyGen_Send((PyGenObject *)receiver, v, &retval);
             } else {
                 if (is_gen_or_coro) {
                     retval = _PyGen_Send((PyGenObject *)receiver, v);

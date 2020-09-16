@@ -2621,6 +2621,18 @@ task_set_error_soon(TaskObj *task, PyObject *et, const char *format, ...)
     Py_RETURN_NONE;
 }
 
+static inline int
+gen_status_from_result(PyObject **result)
+{
+    if (*result != NULL) {
+        return PYGEN_NEXT;
+    }
+    if (_PyGen_FetchStopIterationValue(result) == 0) {
+        return PYGEN_RETURN;
+    }
+    return PYGEN_ERROR;
+}
+
 static PyObject *
 task_step_impl(TaskObj *task, PyObject *exc)
 {
@@ -2628,7 +2640,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
     int clear_exc = 0;
     PyObject *result = NULL;
     PyObject *coro;
-    PyObject *o = NULL;
+    PyObject *o;
 
     if (task->task_state != STATE_PENDING) {
         PyErr_Format(asyncio_InvalidStateError,
@@ -2682,27 +2694,26 @@ task_step_impl(TaskObj *task, PyObject *exc)
     int gen_status = PYGEN_ERROR;
     if (exc == NULL) {
         if (PyGen_CheckExact(coro) || PyCoro_CheckExact(coro)) {
-            gen_status = PyIter_Send((PyGenObject*)coro, Py_None, &result);
+            gen_status = PyGen_Send((PyGenObject*)coro, Py_None, &result);
         }
         else {
             result = _PyObject_CallMethodIdOneArg(coro, &PyId_send, Py_None);
+            gen_status = gen_status_from_result(&result);
         }
     }
     else {
         result = _PyObject_CallMethodIdOneArg(coro, &PyId_throw, exc);
+        gen_status = gen_status_from_result(&result);
         if (clear_exc) {
             /* We created 'exc' during this call */
             Py_DECREF(exc);
         }
     }
 
-    if ((gen_status == PYGEN_RETURN) || result == NULL) {
+    if (gen_status <= 0) {
         PyObject *et, *ev, *tb;
 
         if (result != NULL) {
-            o = result;
-        }
-        if (o || (_PyGen_FetchStopIterationValue(&o) == 0)) {
             /* The error is StopIteration and that means that
                the underlying coroutine has resolved */
 
@@ -2713,10 +2724,10 @@ task_step_impl(TaskObj *task, PyObject *exc)
                 res = future_cancel((FutureObj*)task, task->task_cancel_msg);
             }
             else {
-                res = future_set_result((FutureObj*)task, o);
+                res = future_set_result((FutureObj*)task, result);
             }
 
-            Py_DECREF(o);
+            Py_DECREF(result);
 
             if (res == NULL) {
                 return NULL;
