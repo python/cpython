@@ -43,7 +43,7 @@ class PEGLexer(RegexLexer):
             (r"'\W+?'", Text),
             (r'"\W+?"', Text),
         ],
-        "variables": [(_name + _text_ws + "(=)", bygroups(None, None, None),),],
+        "variables": [(_name + _text_ws + r"(\[.*\])?" + _text_ws + "(=)", bygroups(None, None, None, None, None),),],
         "invalids": [
             (r"^(\s+\|\s+invalid_\w+\s*\n)", bygroups(None)),
             (r"^(\s+\|\s+incorrect_\w+\s*\n)", bygroups(None)),
