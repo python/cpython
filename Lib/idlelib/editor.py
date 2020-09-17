@@ -68,6 +68,7 @@ class EditorWindow(object):
 
     allow_code_context = True
     allow_line_numbers = True
+    user_input_insert_tags = None
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
         # Delay import: runscript imports pyshell imports EditorWindow.
@@ -1331,7 +1332,7 @@ class EditorWindow(object):
         text.undo_block_start()
         text.delete("insert-%dc" % ncharsdeleted, "insert")
         if have < want:
-            text.insert("insert", ' ' * (want - have))
+            text.insert("insert", ' ' * (want - have), self.user_input_insert_tags)
         text.undo_block_stop()
         return "break"
 
@@ -1364,7 +1365,7 @@ class EditorWindow(object):
                     effective = len(prefix.expandtabs(self.tabwidth))
                     n = self.indentwidth
                     pad = ' ' * (n - effective % n)
-                text.insert("insert", pad)
+                text.insert("insert", pad, self.user_input_insert_tags)
             text.see("insert")
             return "break"
         finally:
@@ -1395,7 +1396,7 @@ class EditorWindow(object):
             if i == n:
                 # The cursor is in or at leading indentation in a continuation
                 # line; just inject an empty line at the start.
-                text.insert("insert linestart", '\n')
+                text.insert("insert linestart", '\n', self.user_input_insert_tags)
                 return "break"
             indent = line[:i]
 
@@ -1412,7 +1413,7 @@ class EditorWindow(object):
                 text.delete("insert")
 
             # Insert new line.
-            text.insert("insert", '\n')
+            text.insert("insert", '\n', self.user_input_insert_tags)
 
             # Adjust indentation for continuations and block open/close.
             # First need to find the last statement.
@@ -1448,7 +1449,7 @@ class EditorWindow(object):
                 elif c == pyparse.C_STRING_NEXT_LINES:
                     # Inside a string which started before this line;
                     # just mimic the current indent.
-                    text.insert("insert", indent)
+                    text.insert("insert", indent, self.user_input_insert_tags)
                 elif c == pyparse.C_BRACKET:
                     # Line up with the first (if any) element of the
                     # last open bracket structure; else indent one
@@ -1462,7 +1463,7 @@ class EditorWindow(object):
                     # beyond leftmost =; else to beyond first chunk of
                     # non-whitespace on initial line.
                     if y.get_num_lines_in_stmt() > 1:
-                        text.insert("insert", indent)
+                        text.insert("insert", indent, self.user_input_insert_tags)
                     else:
                         self.reindent_to(y.compute_backslash_indent())
                 else:
@@ -1473,7 +1474,7 @@ class EditorWindow(object):
             # indentation of initial line of closest preceding
             # interesting statement.
             indent = y.get_base_indent_string()
-            text.insert("insert", indent)
+            text.insert("insert", indent, self.user_input_insert_tags)
             if y.is_block_opener():
                 self.smart_indent_event(event)
             elif indent and y.is_block_closer():
@@ -1520,7 +1521,7 @@ class EditorWindow(object):
         if text.compare("insert linestart", "!=", "insert"):
             text.delete("insert linestart", "insert")
         if column:
-            text.insert("insert", self._make_blanks(column))
+            text.insert("insert", self._make_blanks(column), self.user_input_insert_tags)
         text.undo_block_stop()
 
     # Guess indentwidth from text content.
