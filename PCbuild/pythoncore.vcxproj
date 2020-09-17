@@ -196,6 +196,7 @@
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h" />
     <ClInclude Include="..\Include\internal\pycore_traceback.h" />
     <ClInclude Include="..\Include\internal\pycore_tuple.h" />
+    <ClInclude Include="..\Include\internal\pycore_unionobject.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
     <ClInclude Include="..\Include\interpreteridobject.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
@@ -412,6 +413,7 @@
     <ClCompile Include="..\Objects\typeobject.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
+    <ClCompile Include="..\Objects\unionobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
     <ClCompile Include="..\Parser\myreadline.c" />
     <ClCompile Include="..\Parser\tokenizer.c" />
@@ -460,7 +462,6 @@
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
-    <ClCompile Include="..\Python\peephole.c" />
     <ClCompile Include="..\Python\preconfig.c" />
     <ClCompile Include="..\Python\pyarena.c" />
     <ClCompile Include="..\Python\pyctype.c" />

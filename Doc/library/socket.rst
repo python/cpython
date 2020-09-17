@@ -1695,7 +1695,9 @@ to sockets.
 
 .. method:: socket.setsockopt(level, optname, value: int)
 .. method:: socket.setsockopt(level, optname, value: buffer)
+   :noindex:
 .. method:: socket.setsockopt(level, optname, None, optlen: int)
+   :noindex:
 
    .. index:: module: struct
 

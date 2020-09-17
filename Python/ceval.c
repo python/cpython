@@ -1349,10 +1349,15 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         assert(f->f_lasti % sizeof(_Py_CODEUNIT) == 0);
         next_instr += f->f_lasti / sizeof(_Py_CODEUNIT) + 1;
     }
-    stack_pointer = f->f_stacktop;
-    assert(stack_pointer != NULL);
-    f->f_stacktop = NULL;       /* remains NULL unless yield suspends frame */
-    f->f_executing = 1;
+    stack_pointer = f->f_valuestack + f->f_stackdepth;
+    /* Set f->f_stackdepth to -1.
+     * Update when returning or calling trace function.
+       Having f_stackdepth <= 0 ensures that invalid
+       values are not visible to the cycle GC.
+       We choose -1 rather than 0 to assist debugging.
+     */
+    f->f_stackdepth = -1;
+    f->f_state = FRAME_EXECUTING;
 
     if (co->co_opcache_flag < OPCACHE_MIN_RUNS) {
         co->co_opcache_flag++;
@@ -1440,7 +1445,7 @@ main_loop:
             int err;
             /* see maybe_call_line_trace
                for expository comments */
-            f->f_stacktop = stack_pointer;
+            f->f_stackdepth = stack_pointer-f->f_valuestack;
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
@@ -1448,10 +1453,8 @@ main_loop:
                                         &instr_lb, &instr_ub, &instr_prev);
             /* Reload possibly changed frame fields */
             JUMPTO(f->f_lasti);
-            if (f->f_stacktop != NULL) {
-                stack_pointer = f->f_stacktop;
-                f->f_stacktop = NULL;
-            }
+            stack_pointer = f->f_valuestack+f->f_stackdepth;
+            f->f_stackdepth = -1;
             if (err)
                 /* trace function raised an exception */
                 goto error;
@@ -2076,6 +2079,8 @@ main_loop:
             retval = POP();
             assert(f->f_iblock == 0);
             assert(EMPTY());
+            f->f_state = FRAME_RETURNED;
+            f->f_stackdepth = 0;
             goto exiting;
         }
 
@@ -2242,10 +2247,11 @@ main_loop:
                 DISPATCH();
             }
             /* receiver remains on stack, retval is value to be yielded */
-            f->f_stacktop = stack_pointer;
             /* and repeat... */
             assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
+            f->f_state = FRAME_SUSPENDED;
+            f->f_stackdepth = stack_pointer-f->f_valuestack;
             goto exiting;
         }
 
@@ -2261,8 +2267,8 @@ main_loop:
                 }
                 retval = w;
             }
-
-            f->f_stacktop = stack_pointer;
+            f->f_state = FRAME_SUSPENDED;
+            f->f_stackdepth = stack_pointer-f->f_valuestack;
             goto exiting;
         }
 
@@ -3762,11 +3768,15 @@ error:
         /* Log traceback info. */
         PyTraceBack_Here(f);
 
-        if (tstate->c_tracefunc != NULL)
+        if (tstate->c_tracefunc != NULL) {
+            /* Make sure state is set to FRAME_EXECUTING for tracing */
+            assert(f->f_state == FRAME_EXECUTING);
+            f->f_state = FRAME_UNWINDING;
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
                            tstate, f);
-
+        }
 exception_unwind:
+        f->f_state = FRAME_UNWINDING;
         /* Unwind stacks if an exception occurred */
         while (f->f_iblock > 0) {
             /* Pop the current block. */
@@ -3825,6 +3835,7 @@ exception_unwind:
                     }
                 }
                 /* Resume normal execution */
+                f->f_state = FRAME_EXECUTING;
                 goto main_loop;
             }
         } /* unwind stack */
@@ -3841,7 +3852,8 @@ exception_unwind:
         PyObject *o = POP();
         Py_XDECREF(o);
     }
-
+    f->f_stackdepth = 0;
+    f->f_state = FRAME_RAISED;
 exiting:
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
@@ -3863,7 +3875,6 @@ exit_eval_frame:
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(f);
     _Py_LeaveRecursiveCall(tstate);
-    f->f_executing = 0;
     tstate->frame = f->f_back;
 
     return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);

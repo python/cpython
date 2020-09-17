@@ -1,10 +1,11 @@
 import sys
 import unittest
-from test import support
+from test.support import import_helper
 from collections import UserList
 
-py_bisect = support.import_fresh_module('bisect', blocked=['_bisect'])
-c_bisect = support.import_fresh_module('bisect', fresh=['_bisect'])
+
+py_bisect = import_helper.import_fresh_module('bisect', blocked=['_bisect'])
+c_bisect = import_helper.import_fresh_module('bisect', fresh=['_bisect'])
 
 class Range(object):
     """A trivial range()-like object that has an insert() method."""

@@ -1,0 +1,1 @@
+Improve post-install message to direct people to the "py" command.

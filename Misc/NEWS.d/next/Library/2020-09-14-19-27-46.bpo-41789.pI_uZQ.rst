@@ -1,0 +1,2 @@
+Honor `object` overrides in `Enum` class creation (specifically, `__str__`,
+`__repr__`, `__format__`, and `__reduce_ex__`).

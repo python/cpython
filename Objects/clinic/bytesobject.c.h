@@ -809,4 +809,73 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dc1bc13e6990e452 input=a9049054013a1b77]*/
+
+static PyObject *
+bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
+               const char *errors);
+
+static PyObject *
+bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"source", "encoding", "errors", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "bytes", 0};
+    PyObject *argsbuf[3];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    PyObject *x = NULL;
+    const char *encoding = NULL;
+    const char *errors = NULL;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 3, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        x = fastargs[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[1]) {
+        if (!PyUnicode_Check(fastargs[1])) {
+            _PyArg_BadArgument("bytes", "argument 'encoding'", "str", fastargs[1]);
+            goto exit;
+        }
+        Py_ssize_t encoding_length;
+        encoding = PyUnicode_AsUTF8AndSize(fastargs[1], &encoding_length);
+        if (encoding == NULL) {
+            goto exit;
+        }
+        if (strlen(encoding) != (size_t)encoding_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (!PyUnicode_Check(fastargs[2])) {
+        _PyArg_BadArgument("bytes", "argument 'errors'", "str", fastargs[2]);
+        goto exit;
+    }
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(fastargs[2], &errors_length);
+    if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = bytes_new_impl(type, x, encoding, errors);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=6101b417d6a6a717 input=a9049054013a1b77]*/

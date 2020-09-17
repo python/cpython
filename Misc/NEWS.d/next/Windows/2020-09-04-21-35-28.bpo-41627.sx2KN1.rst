@@ -1,0 +1,2 @@
+The user site directory for 32-bit now includes a ``-32`` suffix to
+distinguish it from the 64-bit interpreter's directory.
