@@ -132,6 +132,19 @@ class RegressionTests(unittest.TestCase):
         con.execute("insert into foo(bar) values (5)")
         con.execute(SELECT)
 
+    def CheckBindMutatingList(self):
+        # Issue41662: Crash when mutate a list of parameters during iteration.
+        class X:
+            def __conform__(self, protocol):
+                parameters.clear()
+                return "..."
+        parameters = [X(), 0]
+        con = sqlite.connect(":memory:",detect_types=sqlite.PARSE_DECLTYPES)
+        con.execute("create table foo(bar X, baz integer)")
+        # Should not crash
+        with self.assertRaises(IndexError):
+            con.execute("insert into foo(bar, baz) values (?, ?)", parameters)
+
     def CheckErrorMsgDecodeError(self):
         # When porting the module to Python 3.0, the error message about
         # decoding errors disappeared. This verifies they're back again.
