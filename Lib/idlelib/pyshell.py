@@ -54,6 +54,7 @@ from idlelib import debugger_r
 from idlelib.editor import EditorWindow, fixwordbreaks
 from idlelib.filelist import FileList
 from idlelib.outwin import OutputWindow
+from idlelib import replace
 from idlelib import rpc
 from idlelib.run import idle_formatwarning, StdInputFile, StdOutputFile
 from idlelib.undo import UndoDelegator
@@ -968,6 +969,10 @@ class PyShell(OutputWindow):
         # During __init__, update_colors() is called before the sidebar is created.
         if self.shell_sidebar is not None:
             self.shell_sidebar.update_colors()
+
+    def replace_event(self, event):
+        replace.replace(self.text, insert_tags="stdin")
+        return "break"
 
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(shell_only=True)
