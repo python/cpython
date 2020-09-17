@@ -191,11 +191,11 @@ def _checkLevel(level):
         rv = level
     elif str(level) == level:
         if level not in _nameToLevel:
-            raise ValueError(f"Unknown level: {repr(level)}")
+            raise ValueError("Unknown level: %r" % level)
         rv = _nameToLevel[level]
     else:
-        raise TypeError("Level not an integer or a valid string: "
-                        f"{repr(level)}")
+        raise TypeError("Level not an integer or a valid string: %r"
+                        % (level,))
     return rv
 
 #---------------------------------------------------------------------------
