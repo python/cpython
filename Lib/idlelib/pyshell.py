@@ -840,6 +840,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
 
 class PyShell(OutputWindow):
+    from idlelib.squeezer import Squeezer
 
     shell_title = "Python " + python_version() + " Shell"
 
@@ -905,9 +906,9 @@ class PyShell(OutputWindow):
         if use_subprocess:
             text.bind("<<view-restart>>", self.view_restart_mark)
             text.bind("<<restart-shell>>", self.restart_shell)
-        squeezer = self.Squeezer(self)
+        self.squeezer = self.Squeezer(self)
         text.bind("<<squeeze-current-text>>",
-                  squeezer.squeeze_current_text_event)
+                  self.squeeze_current_text_event)
 
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
@@ -1388,6 +1389,13 @@ class PyShell(OutputWindow):
         if self.text.compare('insert','<','iomark'):
             return 'disabled'
         return super().rmenu_check_paste()
+
+    def squeeze_current_text_event(self, event=None):
+        self.squeezer.squeeze_current_text()
+        self.shell_sidebar.update_sidebar()
+
+    def on_squeezed_expand(self, index, text, tags):
+        self.shell_sidebar.update_sidebar()
 
 
 def fix_x11_paste(root):
