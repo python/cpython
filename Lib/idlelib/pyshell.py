@@ -879,6 +879,8 @@ class PyShell(OutputWindow):
             root.withdraw()
             flist = PyShellFileList(root)
 
+        self.shell_sidebar = None  # initialized below
+
         OutputWindow.__init__(self, flist, None, None)
 
         self.usetabs = True
@@ -956,10 +958,16 @@ class PyShell(OutputWindow):
         return tag_colors
 
     def ResetFont(self):
+        super().ResetFont()
         # Update the sidebar widget, since its width affects
         # the width of the text widget.
         self.shell_sidebar.update_font()
-        super().ResetFont()
+
+    def update_colors(self):
+        super().update_colors()
+        # During __init__, update_colors() is called before the sidebar is created.
+        if self.shell_sidebar is not None:
+            self.shell_sidebar.update_colors()
 
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(shell_only=True)
