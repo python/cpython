@@ -463,9 +463,10 @@ class ShellSidebar:
 
     def update_colors(self):
         """Update the sidebar text colors, usually after config changes."""
-        colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'linenumber')
-        self._update_colors(foreground=colors['foreground'],
-                            background=colors['background'])
+        linenumbers_colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'linenumber')
+        prompt_colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'console')
+        self._update_colors(foreground=prompt_colors['foreground'],
+                            background=linenumbers_colors['background'])
 
     def _update_colors(self, foreground, background):
         self.colors = (foreground, background)
