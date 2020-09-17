@@ -1,0 +1,1 @@
+Fixed crash when mutate list of parameters during iteration in :mod:`sqlite3`.
