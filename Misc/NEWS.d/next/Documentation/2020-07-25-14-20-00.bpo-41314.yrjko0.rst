@@ -1,0 +1,1 @@
+Changed the release when ``from __future__ import annotations`` becomes the default from ``4.0`` to ``3.10`` (following a change in PEP 563).

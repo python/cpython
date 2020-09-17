@@ -6,6 +6,7 @@ import sys
 import unittest
 
 from test import support
+from test.support import os_helper
 from platform import win32_edition
 
 
@@ -60,7 +61,7 @@ class MimeTypesTestCase(unittest.TestCase):
         # Unreadable file returns None
         self.assertIsNone(mimetypes.read_mime_types("non-existent"))
 
-        with support.temp_dir() as directory:
+        with os_helper.temp_dir() as directory:
             data = "x-application/x-unittest pyunit\n"
             file = pathlib.Path(directory, "sample.mimetype")
             file.write_text(data)
@@ -70,7 +71,7 @@ class MimeTypesTestCase(unittest.TestCase):
         # bpo-41048: read_mime_types should read the rule file with 'utf-8' encoding.
         # Not with locale encoding. _bootlocale has been imported because io.open(...)
         # uses it.
-        with support.temp_dir() as directory:
+        with os_helper.temp_dir() as directory:
             data = "application/no-mans-land  Fran\u00E7ais"
             file = pathlib.Path(directory, "sample.mimetype")
             file.write_text(data, encoding='utf-8')

@@ -446,6 +446,12 @@ class SendfileMixin(SendfileBase):
         self.assertEqual(srv_proto.data, self.DATA)
         self.assertEqual(self.file.tell(), len(self.DATA))
 
+    # On Solaris, lowering SO_RCVBUF on a TCP connection after it has been
+    # established has no effect. Due to its age, this bug affects both Oracle
+    # Solaris as well as all other OpenSolaris forks (unless they fixed it
+    # themselves).
+    @unittest.skipIf(sys.platform.startswith('sunos'),
+                     "Doesn't work on Solaris")
     def test_sendfile_close_peer_in_the_middle_of_receiving(self):
         srv_proto, cli_proto = self.prepare_sendfile(close_after=1024)
         with self.assertRaises(ConnectionError):

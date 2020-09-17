@@ -1,0 +1,3 @@
+On Windows, fix asyncio ``recv_into()`` return value when the socket/pipe is
+closed (:exc:`BrokenPipeError`): return ``0`` rather than an empty byte
+string (``b''``).

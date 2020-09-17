@@ -25,7 +25,7 @@ import threading
 import unittest
 import sqlite3 as sqlite
 
-from test.support import TESTFN, unlink
+from test.support.os_helper import TESTFN, unlink
 
 
 class ModuleTests(unittest.TestCase):
@@ -185,12 +185,6 @@ class ConnectionTests(unittest.TestCase):
             with self.assertRaises(sqlite.OperationalError):
                 cx.execute('insert into test(id) values(1)')
 
-    @unittest.skipIf(sqlite.sqlite_version_info >= (3, 3, 1),
-                     'needs sqlite versions older than 3.3.1')
-    def CheckSameThreadErrorOnOldVersion(self):
-        with self.assertRaises(sqlite.NotSupportedError) as cm:
-            sqlite.connect(':memory:', check_same_thread=False)
-        self.assertEqual(str(cm.exception), 'shared connections not available')
 
 class CursorTests(unittest.TestCase):
     def setUp(self):
@@ -276,7 +270,7 @@ class CursorTests(unittest.TestCase):
         self.assertEqual(row[0], "foo")
 
     def CheckExecuteParamSequence(self):
-        class L(object):
+        class L:
             def __len__(self):
                 return 1
             def __getitem__(self, x):
@@ -287,6 +281,18 @@ class CursorTests(unittest.TestCase):
         self.cu.execute("select name from test where name=?", L())
         row = self.cu.fetchone()
         self.assertEqual(row[0], "foo")
+
+    def CheckExecuteParamSequenceBadLen(self):
+        # Issue41662: Error in __len__() was overridden with ProgrammingError.
+        class L:
+            def __len__(self):
+                1/0
+            def __getitem__(slf, x):
+                raise AssertionError
+
+        self.cu.execute("insert into test(name) values ('foo')")
+        with self.assertRaises(ZeroDivisionError):
+            self.cu.execute("select name from test where name=?", L())
 
     def CheckExecuteDictMapping(self):
         self.cu.execute("insert into test(name) values ('foo')")

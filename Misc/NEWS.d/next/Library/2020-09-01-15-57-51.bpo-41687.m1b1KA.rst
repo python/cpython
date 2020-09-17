@@ -1,0 +1,1 @@
+Fix implementation of sendfile to be compatible with Solaris.

@@ -394,7 +394,8 @@ since it is impossible to detect the termination of alien threads.
 
 .. impl-detail::
 
-   In CPython, due to the :term:`Global Interpreter Lock`, only one thread
+   In CPython, due to the :term:`Global Interpreter Lock
+   <global interpreter lock>`, only one thread
    can execute Python code at once (even though certain performance-oriented
    libraries might overcome this limitation).
    If you want your application to make better use of the computational

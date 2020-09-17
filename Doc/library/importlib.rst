@@ -1073,7 +1073,7 @@ find and load modules.
 
 .. class:: WindowsRegistryFinder
 
-   :term:`Finder` for modules declared in the Windows registry.  This class
+   :term:`Finder <finder>` for modules declared in the Windows registry.  This class
    implements the :class:`importlib.abc.MetaPathFinder` ABC.
 
    Only class methods are defined by this class to alleviate the need for
@@ -1088,7 +1088,7 @@ find and load modules.
 
 .. class:: PathFinder
 
-   A :term:`Finder` for :data:`sys.path` and package ``__path__`` attributes.
+   A :term:`Finder <finder>` for :data:`sys.path` and package ``__path__`` attributes.
    This class implements the :class:`importlib.abc.MetaPathFinder` ABC.
 
    Only class methods are defined by this class to alleviate the need for

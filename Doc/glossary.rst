@@ -587,7 +587,7 @@ Glossary
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
       with an :meth:`__iter__` method or with a :meth:`__getitem__` method
-      that implements :term:`Sequence` semantics.
+      that implements :term:`Sequence <sequence>` semantics.
 
       Iterables can be
       used in a :keyword:`for` loop and in many other places where a sequence is

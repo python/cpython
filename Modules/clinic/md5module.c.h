@@ -9,15 +9,26 @@ PyDoc_STRVAR(MD5Type_copy__doc__,
 "Return a copy of the hash object.");
 
 #define MD5TYPE_COPY_METHODDEF    \
-    {"copy", (PyCFunction)MD5Type_copy, METH_NOARGS, MD5Type_copy__doc__},
+    {"copy", (PyCFunction)(void(*)(void))MD5Type_copy, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, MD5Type_copy__doc__},
 
 static PyObject *
-MD5Type_copy_impl(MD5object *self);
+MD5Type_copy_impl(MD5object *self, PyTypeObject *cls);
 
 static PyObject *
-MD5Type_copy(MD5object *self, PyObject *Py_UNUSED(ignored))
+MD5Type_copy(MD5object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return MD5Type_copy_impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":copy", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = MD5Type_copy_impl(self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(MD5Type_digest__doc__,
@@ -115,4 +126,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dbe3abc60086f3ef input=a9049054013a1b77]*/
+/*[clinic end generated code: output=53ff7f22dbaaea36 input=a9049054013a1b77]*/
