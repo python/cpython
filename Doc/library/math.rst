@@ -123,7 +123,7 @@ Number-theoretic and representation functions
 
    For further discussion and two alternative approaches, see the `ASPN cookbook
    recipes for accurate floating point summation
-   <https://code.activestate.com/recipes/393090/>`_\.
+   <https://github.com/ActiveState/code/tree/master/recipes/Python/393090_Binary_floating_point_summatiaccurate_full/recipe-393090.py>`_\.
 
 
 .. function:: gcd(*integers)
@@ -480,6 +480,11 @@ Trigonometric functions
    .. versionchanged:: 3.8
       Added support for n-dimensional points. Formerly, only the two
       dimensional case was supported.
+
+   .. versionchanged:: 3.10
+      Improved the algorithm's accuracy so that the maximum error is
+      under 1 ulp (unit in the last place).  More typically, the result
+      is almost always correctly rounded to within 1/2 ulp.
 
 
 .. function:: sin(x)

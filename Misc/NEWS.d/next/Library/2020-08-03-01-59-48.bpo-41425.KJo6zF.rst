@@ -1,0 +1,1 @@
+Make tkinter doc example runnable.

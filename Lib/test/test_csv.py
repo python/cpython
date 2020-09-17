@@ -10,6 +10,7 @@ import csv
 import gc
 import pickle
 from test import support
+from test.support import warnings_helper
 from itertools import permutations
 from textwrap import dedent
 from collections import OrderedDict
@@ -251,6 +252,7 @@ class Test_Csv(unittest.TestCase):
 
     @support.cpython_only
     @support.requires_legacy_unicode_capi
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_writerows_legacy_strings(self):
         import _testcapi
         c = _testcapi.unicode_legacy_string('a')
