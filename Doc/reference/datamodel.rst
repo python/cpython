@@ -2363,11 +2363,13 @@ left undefined.
    These methods are called to implement the binary arithmetic operations
    (``+``, ``-``, ``*``, ``@``, ``/``, ``//``, ``%``, :func:`divmod`,
    :func:`pow`, ``**``, ``<<``, ``>>``, ``&``, ``^``, ``|``) with reflected
-   (swapped) operands.  These functions are only called if the left operand does
-   not support the corresponding operation [#]_ and the operands are of different
-   types. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
+   (swapped) operands.  These functions are only called if the operands
+   are of different types, when the left operand does not support the corresponding
+   operation [#]_ or the right operand's class is derived from the left operand's
+   class. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
    an instance of a class that has an :meth:`__rsub__` method, ``y.__rsub__(x)``
-   is called if ``x.__sub__(y)`` returns *NotImplemented*.
+   is called if ``x.__sub__(y)`` returns *NotImplemented* or ``type(y)`` is a
+   subclass of ``type(x)``.
 
    .. index:: builtin: pow
 
@@ -2376,10 +2378,9 @@ left undefined.
 
    .. note::
 
-      If the right operand's type is a strict subclass of the left operand's type and that
-      subclass provides the reflected method for the operation, this method will be
-      called before the left operand's non-reflected method.  This behavior allows
-      subclasses to override their ancestors' operations.
+      If the right operand's type is a subclass of the left operand's type, the
+      reflected method having precedence allows subclasses to override their
+      ancestors' operations.
 
 
 .. method:: object.__iadd__(self, other)
