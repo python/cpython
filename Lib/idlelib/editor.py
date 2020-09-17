@@ -1322,8 +1322,6 @@ class EditorWindow(object):
         # Debug prompt is multilined....
         ncharsdeleted = 0
         while 1:
-            if chars == self.prompt_last_line:  # '' unless PyShell
-                break
             chars = chars[:-1]
             ncharsdeleted = ncharsdeleted + 1
             have = len(chars.expandtabs(tabwidth))
@@ -1402,7 +1400,7 @@ class EditorWindow(object):
 
             # Strip whitespace before insert point unless it's in the prompt.
             i = 0
-            while line and line[-1] in " \t" and line != self.prompt_last_line:
+            while line and line[-1] in " \t":
                 line = line[:-1]
                 i += 1
             if i:
