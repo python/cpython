@@ -9,7 +9,8 @@ from .util import classonly, _NTBase
 
 UNKNOWN = '???'
 
-NAME_RE = re.compile(r'^([a-zA-Z]|_\w*[a-zA-Z]\w*|[a-zA-Z]\w*)$')
+# Does not start with digit and contains at least one letter.
+NAME_RE = re.compile(r'(?!\d)(?=.*?[A-Za-z])\w+', re.ASCII)
 
 
 class ID(_NTBase, namedtuple('ID', 'filename funcname name')):
@@ -50,17 +51,16 @@ class ID(_NTBase, namedtuple('ID', 'filename funcname name')):
         """Fail if the object is invalid (i.e. init with bad data)."""
         if not self.name:
             raise TypeError('missing name')
-        else:
-            if not NAME_RE.match(self.name):
-                raise ValueError(
-                        f'name must be an identifier, got {self.name!r}')
+        if not NAME_RE.fullmatch(self.name):
+            raise ValueError(
+                    f'name must be an identifier, got {self.name!r}')
 
         # Symbols from a binary might not have filename/funcname info.
 
         if self.funcname:
             if not self.filename:
                 raise TypeError('missing filename')
-            if not NAME_RE.match(self.funcname) and self.funcname != UNKNOWN:
+            if not NAME_RE.fullmatch(self.funcname) and self.funcname != UNKNOWN:
                 raise ValueError(
                         f'name must be an identifier, got {self.funcname!r}')
 
