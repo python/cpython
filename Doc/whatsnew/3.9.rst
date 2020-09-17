@@ -887,6 +887,12 @@ Removed
   :func:`asyncio.current_task` and :func:`asyncio.all_tasks` instead.
   (Contributed by Rémi Lapeyre in :issue:`40967`)
 
+* The ``unescape()`` method in the :class:`html.parser.HTMLParser` class
+  has been removed (it was deprecated since Python 3.4).  :func:`html.unescape`
+  should be used for converting character references to the corresponding
+  unicode characters.
+
+
 Porting to Python 3.9
 =====================
 
