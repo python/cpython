@@ -81,8 +81,8 @@ Dictionary Objects
 .. c:function:: int PyDict_DelItem(PyObject *p, PyObject *key)
 
    Remove the entry in dictionary *p* with key *key*. *key* must be hashable;
-   if it isn't, :exc:`TypeError` is raised.  Return ``0`` on success or ``-1``
-   on failure.
+   if it isn't, :exc:`TypeError` is raised, if key is not in the dictionary,
+   :exc:`KeyError` is raised. Return ``0`` on success or ``-1`` on failure.
 
 
 .. c:function:: int PyDict_DelItemString(PyObject *p, const char *key)
