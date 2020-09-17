@@ -429,11 +429,10 @@ class ShellSidebar:
             if lineinfo is None:
                 break
             y = lineinfo[1]
-            is_prompt = "console" in text_tagnames(f"{index} linestart -1c")
-            is_input = "stdin" in text_tagnames(f"{index} lineend -1c")
+            prev_newline_tagnames = text_tagnames(f"{index} linestart -1c")
             prompt = (
-                '>>>' if is_prompt else
-                '...' if is_input else
+                '>>>' if "console" in prev_newline_tagnames else
+                '...' if "stdin" in prev_newline_tagnames else
                 '   '
             )
             canvas.create_text(2, y, anchor=tk.NW, text=prompt,

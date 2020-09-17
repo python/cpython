@@ -1264,7 +1264,6 @@ class PyShell(OutputWindow):
             self.text.see("insert")
         else:
             self.newline_and_indent_event(event)
-        self.text.tag_add("stdin", "iomark", "end-1c")
         self.text.update_idletasks()
         if self.reading:
             self.top.quit() # Break out of recursive mainloop()
@@ -1299,22 +1298,15 @@ class PyShell(OutputWindow):
             self.text.undo_block_stop()
 
     def runit(self):
+        index_before = self.text.index("end-2c")
         line = self.text.get("iomark", "end-1c")
         # Strip off last newline and surrounding whitespace.
         # (To allow you to hit return twice to end a statement.)
-        i = len(line)
-        while i > 0 and line[i-1] in " \t":
-            i = i-1
-        if i > 0 and line[i-1] == "\n":
-            i = i-1
-        while i > 0 and line[i-1] in " \t":
-            i = i-1
-        line = line[:i]
+        line = re.sub(r"[ \t]*\n?[ \t]*$", "", line)
         input_is_incomplete = self.interp.runsource(line)
-        # If the input is a complete statement, the sidebar updates will be
-        # handled elsewhere.
-        if input_is_incomplete:
-            self.shell_sidebar.update_sidebar()
+        if not input_is_incomplete:
+            if self.user_input_insert_tags:
+                self.text.tag_remove(self.user_input_insert_tags, index_before)
 
     def open_stack_viewer(self, event=None):
         if self.interp.rpcclt:
