@@ -59,7 +59,8 @@ A small number of constants live in the built-in namespace.  They are:
 .. index:: single: ...; ellipsis literal
 .. data:: Ellipsis
 
-   The same as the ellipsis literal "``...``".  Special value used mostly in conjunction
+   The same as the ellipsis literal "``...``" and sole value of the type
+   :data:`types.EllipsisType`. Special value used mostly in conjunction
    with extended slicing syntax for user-defined container data types.
 
 

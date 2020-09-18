@@ -236,6 +236,13 @@ Standard names are defined for the following types:
          Defaults to ``None``. Previously the attribute was optional.
 
 
+.. data:: EllipsisType
+
+   The type of :data:`Ellipsis`.
+
+   .. versionadded:: 3.10
+
+
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
    The type of traceback objects such as found in ``sys.exc_info()[2]``.
