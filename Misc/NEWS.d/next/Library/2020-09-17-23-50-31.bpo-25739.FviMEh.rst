@@ -1,0 +1,1 @@
+Add ``PAYLOAD_TOO_LARGE`` and ``URI_TOO_LONG`` to :class:`http.HTTPStatus`.
