@@ -1617,10 +1617,14 @@ The text categories are specified with regular expressions.  The technique is
 to combine those into a single master regular expression and to loop over
 successive matches::
 
-    import collections
+    from typing import NamedTuple
     import re
 
-    Token = collections.namedtuple('Token', ['type', 'value', 'line', 'column'])
+    class Token(NamedTuple):
+        type: str
+        value: str
+        line: int
+        column: int
 
     def tokenize(code):
         keywords = {'IF', 'THEN', 'ENDIF', 'FOR', 'NEXT', 'GOSUB', 'RETURN'}

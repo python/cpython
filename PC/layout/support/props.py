@@ -29,8 +29,7 @@ PROPS_DATA["PYTHON_TARGET"] = "_GetPythonRuntimeFilesDependsOn{}{}_{}".format(
 PROPS_TEMPLATE = r"""<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="$(Platform) == '{PYTHON_PLATFORM}'">
-    <PythonHome Condition="$(Configuration) == 'Debug'">$([msbuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), "python_d.exe")</PythonHome>
-    <PythonHome Condition="$(PythonHome) == ''">$([msbuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), "python.exe")</PythonHome>
+    <PythonHome Condition="$(PythonHome) == ''">$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)\..\..\tools"))</PythonHome>
     <PythonInclude>$(PythonHome)\include</PythonInclude>
     <PythonLibs>$(PythonHome)\libs</PythonLibs>
     <PythonTag>{PYTHON_TAG}</PythonTag>

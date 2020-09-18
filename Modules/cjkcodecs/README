@@ -1,8 +1,6 @@
 To generate or modify mapping headers
 -------------------------------------
-Mapping headers are imported from CJKCodecs as pre-generated form.
-If you need to tweak or add something on it, please look at tools/
-subdirectory of CJKCodecs' distribution.
+Mapping headers are generated from Tools/unicode/genmap_*.py
 
 
 

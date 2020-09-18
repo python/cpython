@@ -13,6 +13,7 @@ Functions:
 import os
 import stat
 from itertools import filterfalse
+from types import GenericAlias
 
 __all__ = ['clear_cache', 'cmp', 'dircmp', 'cmpfiles', 'DEFAULT_IGNORES']
 
@@ -246,6 +247,9 @@ class dircmp:
             raise AttributeError(attr)
         self.methodmap[attr](self)
         return getattr(self, attr)
+
+    __class_getitem__ = classmethod(GenericAlias)
+
 
 def cmpfiles(a, b, common, shallow=True):
     """Compare common files in two directories.

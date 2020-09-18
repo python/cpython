@@ -372,11 +372,6 @@ sys_setrecursionlimit(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_limit;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     new_limit = _PyLong_AsInt(arg);
     if (new_limit == -1 && PyErr_Occurred()) {
         goto exit;
@@ -415,11 +410,6 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     depth = _PyLong_AsInt(args[0]);
@@ -590,11 +580,6 @@ sys_setdlopenflags(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_val;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     new_val = _PyLong_AsInt(arg);
     if (new_val == -1 && PyErr_Occurred()) {
         goto exit;
@@ -650,11 +635,6 @@ sys_mdebug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     flag = _PyLong_AsInt(arg);
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
@@ -758,27 +738,6 @@ exit:
     return return_value;
 }
 
-#if defined(COUNT_ALLOCS)
-
-PyDoc_STRVAR(sys_getcounts__doc__,
-"getcounts($module, /)\n"
-"--\n"
-"\n");
-
-#define SYS_GETCOUNTS_METHODDEF    \
-    {"getcounts", (PyCFunction)sys_getcounts, METH_NOARGS, sys_getcounts__doc__},
-
-static PyObject *
-sys_getcounts_impl(PyObject *module);
-
-static PyObject *
-sys_getcounts(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys_getcounts_impl(module);
-}
-
-#endif /* defined(COUNT_ALLOCS) */
-
 PyDoc_STRVAR(sys__getframe__doc__,
 "_getframe($module, depth=0, /)\n"
 "--\n"
@@ -810,11 +769,6 @@ sys__getframe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (nargs < 1) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     depth = _PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
@@ -988,11 +942,7 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define SYS_GETTOTALREFCOUNT_METHODDEF
 #endif /* !defined(SYS_GETTOTALREFCOUNT_METHODDEF) */
 
-#ifndef SYS_GETCOUNTS_METHODDEF
-    #define SYS_GETCOUNTS_METHODDEF
-#endif /* !defined(SYS_GETCOUNTS_METHODDEF) */
-
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=decd687b7631de4b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=87baa3357293ea65 input=a9049054013a1b77]*/

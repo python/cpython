@@ -67,6 +67,8 @@ Directory and files operations
    a new symbolic link will be created instead of copying the
    file *src* points to.
 
+   .. audit-event:: shutil.copyfile src,dst shutil.copyfile
+
    .. versionchanged:: 3.3
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
       Added *follow_symlinks* argument.
@@ -100,6 +102,8 @@ Directory and files operations
    platform; please see :func:`copystat` for more information.  If
    :func:`copymode` cannot modify symbolic links on the local platform, and it
    is asked to do so, it will do nothing and return.
+
+   .. audit-event:: shutil.copymode src,dst shutil.copymode
 
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument.
@@ -146,15 +150,17 @@ Directory and files operations
       Please see :data:`os.supports_follow_symlinks`
       for more information.
 
+   .. audit-event:: shutil.copystat src,dst shutil.copystat
+
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument and support for Linux extended attributes.
 
 .. function:: copy(src, dst, *, follow_symlinks=True)
 
    Copies the file *src* to the file or directory *dst*.  *src* and *dst*
-   should be strings.  If *dst* specifies a directory, the file will be
-   copied into *dst* using the base filename from *src*.  Returns the
-   path to the newly created file.
+   should be :term:`path-like objects <path-like object>` or strings.  If
+   *dst* specifies a directory, the file will be copied into *dst* using the
+   base filename from *src*.  Returns the path to the newly created file.
 
    If *follow_symlinks* is false, and *src* is a symbolic link,
    *dst* will be created as a symbolic link.  If *follow_symlinks*
@@ -166,6 +172,10 @@ Directory and files operations
    file's creation and modification times, is not preserved.
    To preserve all file metadata from the original, use
    :func:`~shutil.copy2` instead.
+
+   .. audit-event:: shutil.copyfile src,dst shutil.copy
+
+   .. audit-event:: shutil.copymode src,dst shutil.copy
 
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument.
@@ -193,6 +203,10 @@ Directory and files operations
    :func:`copy2` uses :func:`copystat` to copy the file metadata.
    Please see :func:`copystat` for more information
    about platform support for modifying symbolic link metadata.
+
+   .. audit-event:: shutil.copyfile src,dst shutil.copy2
+
+   .. audit-event:: shutil.copystat src,dst shutil.copy2
 
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument, try to copy extended
@@ -342,6 +356,8 @@ Directory and files operations
    *copy_function* allows the move to succeed when it is not possible to also
    copy the metadata, at the expense of not copying any of the metadata.
 
+   .. audit-event:: shutil.move src,dst shutil.move
+
    .. versionchanged:: 3.3
       Added explicit symlink handling for foreign filesystems, thus adapting
       it to the behavior of GNU's :program:`mv`.
@@ -380,6 +396,8 @@ Directory and files operations
    least one argument is required.
 
    See also :func:`os.chown`, the underlying function.
+
+   .. audit-event:: shutil.chown path,user,group shutil.chown
 
    .. availability:: Unix.
 
@@ -552,12 +570,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    available), or "xztar" (if the :mod:`lzma` module is available).
 
    *root_dir* is a directory that will be the root directory of the
-   archive; for example, we typically chdir into *root_dir* before creating the
-   archive.
+   archive, all paths in the archive will be relative to it; for example,
+   we typically chdir into *root_dir* before creating the archive.
 
    *base_dir* is the directory where we start archiving from;
    i.e. *base_dir* will be the common prefix of all files and
-   directories in the archive.
+   directories in the archive.  *base_dir* must be given relative
+   to *root_dir*.  See :ref:`shutil-archiving-example-with-basedir` for how to
+   use *base_dir* and *root_dir* together.
 
    *root_dir* and *base_dir* both default to the current directory.
 
@@ -632,6 +652,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    registered for that extension.  In case none is found,
    a :exc:`ValueError` is raised.
 
+   .. audit-event:: shutil.unpack_archive filename,extract_dir,format shutil.unpack_archive
+
    .. versionchanged:: 3.7
       Accepts a :term:`path-like object` for *filename* and *extract_dir*.
 
@@ -705,6 +727,48 @@ The resulting archive contains:
     -rw------- tarek/staff    1675 2008-06-09 13:26:54 ./id_rsa
     -rw-r--r-- tarek/staff     397 2008-06-09 13:26:54 ./id_rsa.pub
     -rw-r--r-- tarek/staff   37192 2010-02-06 18:23:10 ./known_hosts
+
+
+.. _shutil-archiving-example-with-basedir:
+
+Archiving example with *base_dir*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In this example, similar to the `one above <shutil-archiving-example_>`_,
+we show how to use :func:`make_archive`, but this time with the usage of
+*base_dir*.  We now have the following directory structure:
+
+.. code-block:: shell-session
+
+    $ tree tmp
+    tmp
+    └── root
+        └── structure
+            ├── content
+                └── please_add.txt
+            └── do_not_add.txt
+
+In the final archive, :file:`please_add.txt` should be included, but
+:file:`do_not_add.txt` should not.  Therefore we use the following::
+
+    >>> from shutil import make_archive
+    >>> import os
+    >>> archive_name = os.path.expanduser(os.path.join('~', 'myarchive'))
+    >>> make_archive(
+    ...     archive_name,
+    ...     'tar',
+    ...     root_dir='tmp/root',
+    ...     base_dir='structure/content',
+    ... )
+    '/Users/tarek/my_archive.tar'
+
+Listing the files in the resulting archive gives us:
+
+.. code-block:: shell-session
+
+    $ python -m tarfile -l /Users/tarek/myarchive.tar
+    structure/content/
+    structure/content/please_add.txt
 
 
 Querying the size of the output terminal

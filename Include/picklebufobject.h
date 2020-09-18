@@ -12,7 +12,7 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyPickleBuffer_Type;
 
-#define PyPickleBuffer_Check(op) (Py_TYPE(op) == &PyPickleBuffer_Type)
+#define PyPickleBuffer_Check(op) Py_IS_TYPE(op, &PyPickleBuffer_Type)
 
 /* Create a PickleBuffer redirecting to the given buffer-enabled object */
 PyAPI_FUNC(PyObject *) PyPickleBuffer_FromObject(PyObject *);

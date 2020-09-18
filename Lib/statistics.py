@@ -163,7 +163,7 @@ def _sum(data, start=0):
     T = _coerce(int, type(start))
     for typ, values in groupby(data, type):
         T = _coerce(T, typ)  # or raise TypeError
-        for n,d in map(_exact_ratio, values):
+        for n, d in map(_exact_ratio, values):
             count += 1
             partials[d] = partials_get(d, 0) + n
     if None in partials:
@@ -261,7 +261,7 @@ def _convert(value, T):
         return T(value)
     except TypeError:
         if issubclass(T, Decimal):
-            return T(value.numerator)/T(value.denominator)
+            return T(value.numerator) / T(value.denominator)
         else:
             raise
 
@@ -277,8 +277,8 @@ def _find_lteq(a, x):
 def _find_rteq(a, l, x):
     'Locate the rightmost value exactly equal to x'
     i = bisect_right(a, x, lo=l)
-    if i != (len(a)+1) and a[i-1] == x:
-        return i-1
+    if i != (len(a) + 1) and a[i - 1] == x:
+        return i - 1
     raise ValueError
 
 
@@ -315,7 +315,7 @@ def mean(data):
         raise StatisticsError('mean requires at least one data point')
     T, total, count = _sum(data)
     assert count == n
-    return _convert(total/n, T)
+    return _convert(total / n, T)
 
 
 def fmean(data):
@@ -403,11 +403,11 @@ def harmonic_mean(data):
         else:
             raise TypeError('unsupported type')
     try:
-        T, total, count = _sum(1/x for x in _fail_neg(data, errmsg))
+        T, total, count = _sum(1 / x for x in _fail_neg(data, errmsg))
     except ZeroDivisionError:
         return 0
     assert count == n
-    return _convert(n/total, T)
+    return _convert(n / total, T)
 
 
 # FIXME: investigate ways to calculate medians without sorting? Quickselect?
@@ -428,11 +428,11 @@ def median(data):
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    if n%2 == 1:
-        return data[n//2]
+    if n % 2 == 1:
+        return data[n // 2]
     else:
-        i = n//2
-        return (data[i - 1] + data[i])/2
+        i = n // 2
+        return (data[i - 1] + data[i]) / 2
 
 
 def median_low(data):
@@ -451,10 +451,10 @@ def median_low(data):
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    if n%2 == 1:
-        return data[n//2]
+    if n % 2 == 1:
+        return data[n // 2]
     else:
-        return data[n//2 - 1]
+        return data[n // 2 - 1]
 
 
 def median_high(data):
@@ -473,7 +473,7 @@ def median_high(data):
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    return data[n//2]
+    return data[n // 2]
 
 
 def median_grouped(data, interval=1):
@@ -510,15 +510,15 @@ def median_grouped(data, interval=1):
         return data[0]
     # Find the value at the midpoint. Remember this corresponds to the
     # centre of the class interval.
-    x = data[n//2]
+    x = data[n // 2]
     for obj in (x, interval):
         if isinstance(obj, (str, bytes)):
             raise TypeError('expected number but got %r' % obj)
     try:
-        L = x - interval/2  # The lower limit of the median interval.
+        L = x - interval / 2  # The lower limit of the median interval.
     except TypeError:
         # Mixed type. For now we just coerce to float.
-        L = float(x) - float(interval)/2
+        L = float(x) - float(interval) / 2
 
     # Uses bisection search to search for x in data with log(n) time complexity
     # Find the position of leftmost occurrence of x in data
@@ -528,7 +528,7 @@ def median_grouped(data, interval=1):
     l2 = _find_rteq(data, l1, x)
     cf = l1
     f = l2 - l1 + 1
-    return L + interval*(n/2 - cf)/f
+    return L + interval * (n / 2 - cf) / f
 
 
 def mode(data):
@@ -554,8 +554,7 @@ def mode(data):
     If *data* is empty, ``mode``, raises StatisticsError.
 
     """
-    data = iter(data)
-    pairs = Counter(data).most_common(1)
+    pairs = Counter(iter(data)).most_common(1)
     try:
         return pairs[0][0]
     except IndexError:
@@ -597,7 +596,7 @@ def multimode(data):
 # For sample data where there is a positive probability for values
 # beyond the range of the data, the R6 exclusive method is a
 # reasonable choice.  Consider a random sample of nine values from a
-# population with a uniform distribution from 0.0 to 100.0.  The
+# population with a uniform distribution from 0.0 to 1.0.  The
 # distribution of the third ranked sample point is described by
 # betavariate(alpha=3, beta=7) which has mode=0.250, median=0.286, and
 # mean=0.300.  Only the latter (which corresponds with R6) gives the
@@ -643,9 +642,8 @@ def quantiles(data, *, n=4, method='exclusive'):
         m = ld - 1
         result = []
         for i in range(1, n):
-            j = i * m // n
-            delta = i*m - j*n
-            interpolated = (data[j] * (n - delta) + data[j+1] * delta) / n
+            j, delta = divmod(i * m, n)
+            interpolated = (data[j] * (n - delta) + data[j + 1] * delta) / n
             result.append(interpolated)
         return result
     if method == 'exclusive':
@@ -655,7 +653,7 @@ def quantiles(data, *, n=4, method='exclusive'):
             j = i * m // n                               # rescale i to m/n
             j = 1 if j < 1 else ld-1 if j > ld-1 else j  # clamp to 1 .. ld-1
             delta = i*m - j*n                            # exact integer math
-            interpolated = (data[j-1] * (n - delta) + data[j] * delta) / n
+            interpolated = (data[j - 1] * (n - delta) + data[j] * delta) / n
             result.append(interpolated)
         return result
     raise ValueError(f'Unknown method: {method!r}')
@@ -682,14 +680,16 @@ def _ss(data, c=None):
     calculated from ``c`` as given. Use the second case with care, as it can
     lead to garbage results.
     """
-    if c is None:
-        c = mean(data)
+    if c is not None:
+        T, total, count = _sum((x-c)**2 for x in data)
+        return (T, total)
+    c = mean(data)
     T, total, count = _sum((x-c)**2 for x in data)
     # The following sum should mathematically equal zero, but due to rounding
     # error may not.
-    U, total2, count2 = _sum((x-c) for x in data)
+    U, total2, count2 = _sum((x - c) for x in data)
     assert T == U and count == count2
-    total -=  total2**2/len(data)
+    total -= total2 ** 2 / len(data)
     assert not total < 0, 'negative sum of square deviations: %f' % total
     return (T, total)
 
@@ -738,7 +738,7 @@ def variance(data, xbar=None):
     if n < 2:
         raise StatisticsError('variance requires at least two data points')
     T, ss = _ss(data, xbar)
-    return _convert(ss/(n-1), T)
+    return _convert(ss / (n - 1), T)
 
 
 def pvariance(data, mu=None):
@@ -782,7 +782,7 @@ def pvariance(data, mu=None):
     if n < 1:
         raise StatisticsError('pvariance requires at least one data point')
     T, ss = _ss(data, mu)
-    return _convert(ss/n, T)
+    return _convert(ss / n, T)
 
 
 def stdev(data, xbar=None):
@@ -894,6 +894,13 @@ def _normal_dist_inv_cdf(p, mu, sigma):
     return mu + (x * sigma)
 
 
+# If available, use C implementation
+try:
+    from _statistics import _normal_dist_inv_cdf
+except ImportError:
+    pass
+
+
 class NormalDist:
     "Normal distribution of a random variable"
     # https://en.wikipedia.org/wiki/Normal_distribution
@@ -984,7 +991,7 @@ class NormalDist:
         if not isinstance(other, NormalDist):
             raise TypeError('Expected another NormalDist instance')
         X, Y = self, other
-        if (Y._sigma, Y._mu) < (X._sigma, X._mu):   # sort to assure commutativity
+        if (Y._sigma, Y._mu) < (X._sigma, X._mu):  # sort to assure commutativity
             X, Y = Y, X
         X_var, Y_var = X.variance, Y.variance
         if not X_var or not Y_var:
@@ -998,6 +1005,17 @@ class NormalDist:
         x1 = (a + b) / dv
         x2 = (a - b) / dv
         return 1.0 - (fabs(Y.cdf(x1) - X.cdf(x1)) + fabs(Y.cdf(x2) - X.cdf(x2)))
+
+    def zscore(self, x):
+        """Compute the Standard Score.  (x - mean) / stdev
+
+        Describes *x* in terms of the number of standard deviations
+        above or below the mean of the normal distribution.
+        """
+        # https://www.statisticshowto.com/probability-and-statistics/z-score/
+        if not self._sigma:
+            raise StatisticsError('zscore() not defined when sigma is zero')
+        return (x - self._mu) / self._sigma
 
     @property
     def mean(self):
@@ -1100,79 +1118,3 @@ class NormalDist:
 
     def __repr__(self):
         return f'{type(self).__name__}(mu={self._mu!r}, sigma={self._sigma!r})'
-
-# If available, use C implementation
-try:
-    from _statistics import _normal_dist_inv_cdf
-except ImportError:
-    pass
-
-
-if __name__ == '__main__':
-
-    # Show math operations computed analytically in comparsion
-    # to a monte carlo simulation of the same operations
-
-    from math import isclose
-    from operator import add, sub, mul, truediv
-    from itertools import repeat
-    import doctest
-
-    g1 = NormalDist(10, 20)
-    g2 = NormalDist(-5, 25)
-
-    # Test scaling by a constant
-    assert (g1 * 5 / 5).mean == g1.mean
-    assert (g1 * 5 / 5).stdev == g1.stdev
-
-    n = 100_000
-    G1 = g1.samples(n)
-    G2 = g2.samples(n)
-
-    for func in (add, sub):
-        print(f'\nTest {func.__name__} with another NormalDist:')
-        print(func(g1, g2))
-        print(NormalDist.from_samples(map(func, G1, G2)))
-
-    const = 11
-    for func in (add, sub, mul, truediv):
-        print(f'\nTest {func.__name__} with a constant:')
-        print(func(g1, const))
-        print(NormalDist.from_samples(map(func, G1, repeat(const))))
-
-    const = 19
-    for func in (add, sub, mul):
-        print(f'\nTest constant with {func.__name__}:')
-        print(func(const, g1))
-        print(NormalDist.from_samples(map(func, repeat(const), G1)))
-
-    def assert_close(G1, G2):
-        assert isclose(G1.mean, G1.mean, rel_tol=0.01), (G1, G2)
-        assert isclose(G1.stdev, G2.stdev, rel_tol=0.01), (G1, G2)
-
-    X = NormalDist(-105, 73)
-    Y = NormalDist(31, 47)
-    s = 32.75
-    n = 100_000
-
-    S = NormalDist.from_samples([x + s for x in X.samples(n)])
-    assert_close(X + s, S)
-
-    S = NormalDist.from_samples([x - s for x in X.samples(n)])
-    assert_close(X - s, S)
-
-    S = NormalDist.from_samples([x * s for x in X.samples(n)])
-    assert_close(X * s, S)
-
-    S = NormalDist.from_samples([x / s for x in X.samples(n)])
-    assert_close(X / s, S)
-
-    S = NormalDist.from_samples([x + y for x, y in zip(X.samples(n),
-                                                       Y.samples(n))])
-    assert_close(X + Y, S)
-
-    S = NormalDist.from_samples([x - y for x, y in zip(X.samples(n),
-                                                       Y.samples(n))])
-    assert_close(X - Y, S)
-
-    print(doctest.testmod())

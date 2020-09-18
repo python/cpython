@@ -1,0 +1,2 @@
+On Windows, ``#include "pyerrors.h"`` no longer defines ``snprintf`` and
+``vsnprintf`` macros.

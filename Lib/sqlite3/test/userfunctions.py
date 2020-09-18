@@ -1,8 +1,7 @@
-#-*- coding: iso-8859-1 -*-
 # pysqlite2/test/userfunctions.py: tests for user-defined functions and
 #                                  aggregates.
 #
-# Copyright (C) 2005-2007 Gerhard Häring <gh@ghaering.de>
+# Copyright (C) 2005-2007 Gerhard HÃ¤ring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -158,6 +157,7 @@ class FunctionTests(unittest.TestCase):
         self.con.create_function("isblob", 1, func_isblob)
         self.con.create_function("islonglong", 1, func_islonglong)
         self.con.create_function("spam", -1, func)
+        self.con.execute("create table test(t text)")
 
     def tearDown(self):
         self.con.close()
@@ -276,18 +276,36 @@ class FunctionTests(unittest.TestCase):
         val = cur.fetchone()[0]
         self.assertEqual(val, 2)
 
+    # Regarding deterministic functions:
+    #
+    # Between 3.8.3 and 3.15.0, deterministic functions were only used to
+    # optimize inner loops, so for those versions we can only test if the
+    # sqlite machinery has factored out a call or not. From 3.15.0 and onward,
+    # deterministic functions were permitted in WHERE clauses of partial
+    # indices, which allows testing based on syntax, iso. the query optimizer.
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "Requires SQLite 3.8.3 or higher")
     def CheckFuncNonDeterministic(self):
         mock = unittest.mock.Mock(return_value=None)
-        self.con.create_function("deterministic", 0, mock, deterministic=False)
-        self.con.execute("select deterministic() = deterministic()")
-        self.assertEqual(mock.call_count, 2)
+        self.con.create_function("nondeterministic", 0, mock, deterministic=False)
+        if sqlite.sqlite_version_info < (3, 15, 0):
+            self.con.execute("select nondeterministic() = nondeterministic()")
+            self.assertEqual(mock.call_count, 2)
+        else:
+            with self.assertRaises(sqlite.OperationalError):
+                self.con.execute("create index t on test(t) where nondeterministic() is not null")
 
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "deterministic parameter not supported")
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "Requires SQLite 3.8.3 or higher")
     def CheckFuncDeterministic(self):
         mock = unittest.mock.Mock(return_value=None)
         self.con.create_function("deterministic", 0, mock, deterministic=True)
-        self.con.execute("select deterministic() = deterministic()")
-        self.assertEqual(mock.call_count, 1)
+        if sqlite.sqlite_version_info < (3, 15, 0):
+            self.con.execute("select deterministic() = deterministic()")
+            self.assertEqual(mock.call_count, 1)
+        else:
+            try:
+                self.con.execute("create index t on test(t) where deterministic() is not null")
+            except sqlite.OperationalError:
+                self.fail("Unexpected failure while creating partial index")
 
     @unittest.skipIf(sqlite.sqlite_version_info >= (3, 8, 3), "SQLite < 3.8.3 needed")
     def CheckFuncDeterministicNotSupported(self):

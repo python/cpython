@@ -286,16 +286,12 @@ Set implementation specific option. The following options are available:
         traceback of a trace. Use -X tracemalloc=NFRAME to start tracing with a
         traceback limit of NFRAME frames
 
-    -X showalloccount: output the total count of allocated objects for each
-        type when the program finishes. This only works when Python was built with
-        COUNT_ALLOCS defined
-
     -X importtime: show how long each import takes. It shows module name,
         cumulative time (including nested imports) and self time (excluding
         nested imports). Note that its output may be broken in multi-threaded
         application. Typical usage is python3 -X importtime -c 'import asyncio'
 
-    -X dev: enable CPython’s “development mode”, introducing additional runtime
+    -X dev: enable CPython's "development mode", introducing additional runtime
         checks which are too expensive to be enabled by default. It will not be
         more verbose than the default if the code is correct: new warnings are
         only emitted when an issue is detected. Effect of the developer mode:
@@ -417,6 +413,8 @@ inserted in the path in front of $PYTHONPATH.
 The search path can be manipulated from within a Python program as the
 variable
 .IR sys.path .
+.IP PYTHONPLATLIBDIR
+Override sys.platlibdir.
 .IP PYTHONSTARTUP
 If this is the name of a readable file, the Python commands in that
 file are executed before the first prompt is displayed in interactive

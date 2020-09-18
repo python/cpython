@@ -9,7 +9,7 @@ import py_compile
 import stat
 import sys
 import tempfile
-from test.support import make_legacy_pyc
+from test.support.import_helper import make_legacy_pyc
 import unittest
 import warnings
 

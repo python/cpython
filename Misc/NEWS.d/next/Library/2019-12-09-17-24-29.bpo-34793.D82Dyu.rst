@@ -1,3 +1,0 @@
-Remove support for ``with (await asyncio.lock):`` and ``with (yield from
-asyncio.lock):``.  The same is correct for ``asyncio.Condition`` and
-``asyncio.Semaphore``.

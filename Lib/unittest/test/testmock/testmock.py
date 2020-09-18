@@ -716,12 +716,16 @@ class MockTest(unittest.TestCase):
 
 
     def test_magic_method_wraps_dict(self):
+        # bpo-25597: MagicMock with wrap doesn't call wrapped object's
+        # method for magic methods with default values.
         data = {'foo': 'bar'}
 
         wrapped_dict = MagicMock(wraps=data)
         self.assertEqual(wrapped_dict.get('foo'), 'bar')
-        self.assertEqual(wrapped_dict['foo'], 'bar')
-        self.assertTrue('foo' in wrapped_dict)
+        # Accessing key gives a MagicMock
+        self.assertIsInstance(wrapped_dict['foo'], MagicMock)
+        # __contains__ method has a default value of False
+        self.assertFalse('foo' in wrapped_dict)
 
         # return_value is non-sentinel and takes precedence over wrapped value.
         wrapped_dict.get.return_value = 'return_value'
@@ -732,14 +736,13 @@ class MockTest(unittest.TestCase):
         self.assertEqual(wrapped_dict.get('foo'), 'bar')
 
         self.assertEqual(wrapped_dict.get('baz'), None)
-        with self.assertRaises(KeyError):
-            wrapped_dict['baz']
+        self.assertIsInstance(wrapped_dict['baz'], MagicMock)
         self.assertFalse('bar' in wrapped_dict)
 
         data['baz'] = 'spam'
         self.assertEqual(wrapped_dict.get('baz'), 'spam')
-        self.assertEqual(wrapped_dict['baz'], 'spam')
-        self.assertTrue('baz' in wrapped_dict)
+        self.assertIsInstance(wrapped_dict['baz'], MagicMock)
+        self.assertFalse('bar' in wrapped_dict)
 
         del data['baz']
         self.assertEqual(wrapped_dict.get('baz'), None)
@@ -759,6 +762,7 @@ class MockTest(unittest.TestCase):
         klass = MagicMock(wraps=Foo)
         obj = klass()
         self.assertEqual(obj.__getitem__(2), 2)
+        self.assertEqual(obj[2], 2)
         self.assertEqual(obj.__custom_method__(), "foo")
 
 

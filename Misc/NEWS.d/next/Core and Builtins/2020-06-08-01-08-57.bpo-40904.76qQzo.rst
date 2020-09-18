@@ -1,0 +1,2 @@
+Fix possible segfault in the new PEG parser when parsing f-string containing
+yield statements with no value (:code:`f"{yield}"`). Patch by Pablo Galindo

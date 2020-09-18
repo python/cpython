@@ -38,11 +38,6 @@ fcntl_fcntl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!conv_descriptor(args[0], &fd)) {
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     code = _PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
@@ -113,11 +108,6 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!conv_descriptor(args[0], &fd)) {
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     code = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
     if (code == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
@@ -166,11 +156,6 @@ fcntl_flock(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!conv_descriptor(args[0], &fd)) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     code = _PyLong_AsInt(args[1]);
@@ -233,11 +218,6 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!conv_descriptor(args[0], &fd)) {
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     code = _PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
@@ -253,11 +233,6 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 5) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[4])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     whence = _PyLong_AsInt(args[4]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
@@ -268,4 +243,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e912d25e28362c52 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=91c2295402509595 input=a9049054013a1b77]*/

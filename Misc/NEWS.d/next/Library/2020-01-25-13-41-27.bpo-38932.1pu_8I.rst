@@ -1,1 +1,0 @@
-Mock fully resets child objects on reset_mock(). Patch by Vegard Stikbakke

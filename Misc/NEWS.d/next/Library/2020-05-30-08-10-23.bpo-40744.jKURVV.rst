@@ -1,0 +1,4 @@
+The :mod:`sqlite3` module uses SQLite API functions that require SQLite
+v3.7.3 or higher.  This patch removes support for older SQLite versions, and
+explicitly requires SQLite 3.7.3 both at build, compile and runtime.  Patch by
+Sergey Fedoseev and Erlend E. Aasland.

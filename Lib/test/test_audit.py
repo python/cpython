@@ -5,6 +5,9 @@ import subprocess
 import sys
 import unittest
 from test import support
+from test.support import import_helper
+from test.support import os_helper
+
 
 if not hasattr(sys, "addaudithook") or not hasattr(sys, "audit"):
     raise unittest.SkipTest("test only relevant when sys.audit is available")
@@ -51,24 +54,8 @@ class AuditTest(unittest.TestCase):
     def test_block_add_hook_baseexception(self):
         self.do_test("test_block_add_hook_baseexception")
 
-    def test_finalize_hooks(self):
-        returncode, events, stderr = self.run_python("test_finalize_hooks")
-        if stderr:
-            print(stderr, file=sys.stderr)
-        if returncode:
-            self.fail(stderr)
-
-        firstId = events[0][2]
-        self.assertSequenceEqual(
-            [
-                ("Created", " ", firstId),
-                ("cpython._PySys_ClearAuditHooks", " ", firstId),
-            ],
-            events,
-        )
-
     def test_pickle(self):
-        support.import_module("pickle")
+        import_helper.import_module("pickle")
 
         self.do_test("test_pickle")
 
@@ -76,7 +63,7 @@ class AuditTest(unittest.TestCase):
         self.do_test("test_monkeypatch")
 
     def test_open(self):
-        self.do_test("test_open", support.TESTFN)
+        self.do_test("test_open", os_helper.TESTFN)
 
     def test_cantrace(self):
         self.do_test("test_cantrace")
@@ -105,7 +92,7 @@ class AuditTest(unittest.TestCase):
         )
 
     def test_winreg(self):
-        support.import_module("winreg")
+        import_helper.import_module("winreg")
         returncode, events, stderr = self.run_python("test_winreg")
         if returncode:
             self.fail(stderr)
@@ -118,6 +105,18 @@ class AuditTest(unittest.TestCase):
         self.assertSequenceEqual(["winreg.EnumKey", " ", f"{expected} 10000"], events[3])
         self.assertSequenceEqual(["winreg.PyHKEY.Detach", " ", expected], events[4])
 
+    def test_socket(self):
+        import_helper.import_module("socket")
+        returncode, events, stderr = self.run_python("test_socket")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        self.assertEqual(events[0][0], "socket.gethostname")
+        self.assertEqual(events[1][0], "socket.__new__")
+        self.assertEqual(events[2][0], "socket.bind")
+        self.assertTrue(events[2][2].endswith("('127.0.0.1', 8080)"))
 
 if __name__ == "__main__":
     unittest.main()

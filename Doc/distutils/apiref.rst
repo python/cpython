@@ -1855,6 +1855,9 @@ Subclasses of :class:`Command` must define the following methods.
 
 .. class:: bdist_msi
 
+.. deprecated:: 3.9
+   Use bdist_wheel (wheel packages) instead.
+
    Builds a `Windows Installer`_ (.msi) binary package.
 
    .. _Windows Installer: https://msdn.microsoft.com/en-us/library/cc185688(VS.85).aspx

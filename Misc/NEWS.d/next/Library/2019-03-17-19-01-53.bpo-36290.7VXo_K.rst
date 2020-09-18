@@ -1,0 +1,2 @@
+AST nodes are now raising :exc:`TypeError` on conflicting keyword arguments.
+Patch contributed by Rémi Lapeyre.

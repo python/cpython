@@ -3,6 +3,7 @@
 import functools
 import unittest
 from test import support
+from test.support import socket_helper
 
 # This requires the 'network' resource as given on the regrtest command line.
 skip_expected = not support.is_resource_enabled('network')
@@ -19,7 +20,7 @@ def resolve_address(host, port):
     We must perform name resolution before timeout tests, otherwise it will be
     performed by connect().
     """
-    with support.transient_internet(host):
+    with socket_helper.transient_internet(host):
         return socket.getaddrinfo(host, port, socket.AF_INET,
                                   socket.SOCK_STREAM)[0][4]
 
@@ -110,7 +111,7 @@ class TimeoutTestCase(unittest.TestCase):
     # solution.
     fuzz = 2.0
 
-    localhost = support.HOST
+    localhost = socket_helper.HOST
 
     def setUp(self):
         raise NotImplementedError()
@@ -229,25 +230,25 @@ class TCPTimeoutTestCase(TimeoutTestCase):
 
         # All that hard work just to test if connect times out in 0.001s ;-)
         self.addr_remote = blackhole
-        with support.transient_internet(self.addr_remote[0]):
+        with socket_helper.transient_internet(self.addr_remote[0]):
             self._sock_operation(1, 0.001, 'connect', self.addr_remote)
 
     def testRecvTimeout(self):
         # Test recv() timeout
-        with support.transient_internet(self.addr_remote[0]):
+        with socket_helper.transient_internet(self.addr_remote[0]):
             self.sock.connect(self.addr_remote)
             self._sock_operation(1, 1.5, 'recv', 1024)
 
     def testAcceptTimeout(self):
         # Test accept() timeout
-        support.bind_port(self.sock, self.localhost)
+        socket_helper.bind_port(self.sock, self.localhost)
         self.sock.listen()
         self._sock_operation(1, 1.5, 'accept')
 
     def testSend(self):
         # Test send() timeout
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serv:
-            support.bind_port(serv, self.localhost)
+            socket_helper.bind_port(serv, self.localhost)
             serv.listen()
             self.sock.connect(serv.getsockname())
             # Send a lot of data in order to bypass buffering in the TCP stack.
@@ -256,7 +257,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
     def testSendto(self):
         # Test sendto() timeout
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serv:
-            support.bind_port(serv, self.localhost)
+            socket_helper.bind_port(serv, self.localhost)
             serv.listen()
             self.sock.connect(serv.getsockname())
             # The address argument is ignored since we already connected.
@@ -266,7 +267,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
     def testSendall(self):
         # Test sendall() timeout
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serv:
-            support.bind_port(serv, self.localhost)
+            socket_helper.bind_port(serv, self.localhost)
             serv.listen()
             self.sock.connect(serv.getsockname())
             # Send a lot of data in order to bypass buffering in the TCP stack.
@@ -285,7 +286,7 @@ class UDPTimeoutTestCase(TimeoutTestCase):
     def testRecvfromTimeout(self):
         # Test recvfrom() timeout
         # Prevent "Address already in use" socket exceptions
-        support.bind_port(self.sock, self.localhost)
+        socket_helper.bind_port(self.sock, self.localhost)
         self._sock_operation(1, 1.5, 'recvfrom', 1024)
 
 

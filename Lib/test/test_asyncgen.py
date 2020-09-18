@@ -2,7 +2,7 @@ import inspect
 import types
 import unittest
 
-from test.support import import_module
+from test.support.import_helper import import_module
 asyncio = import_module("asyncio")
 
 
@@ -1128,7 +1128,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         self.assertEqual([], messages)
 
-    def test_async_gen_await_anext_twice(self):
+    def test_async_gen_await_same_anext_coro_twice(self):
         async def async_iterate():
             yield 1
             yield 2
@@ -1147,7 +1147,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         self.loop.run_until_complete(run())
 
-    def test_async_gen_await_aclose_twice(self):
+    def test_async_gen_await_same_aclose_coro_twice(self):
         async def async_iterate():
             yield 1
             yield 2
@@ -1161,6 +1161,47 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                     r"cannot reuse already awaited aclose\(\)/athrow\(\)"
             ):
                 await nxt
+
+        self.loop.run_until_complete(run())
+
+    def test_async_gen_aclose_twice_with_different_coros(self):
+        # Regression test for https://bugs.python.org/issue39606
+        async def async_iterate():
+            yield 1
+            yield 2
+
+        async def run():
+            it = async_iterate()
+            await it.aclose()
+            await it.aclose()
+
+        self.loop.run_until_complete(run())
+
+    def test_async_gen_aclose_after_exhaustion(self):
+        # Regression test for https://bugs.python.org/issue39606
+        async def async_iterate():
+            yield 1
+            yield 2
+
+        async def run():
+            it = async_iterate()
+            async for _ in it:
+                pass
+            await it.aclose()
+
+        self.loop.run_until_complete(run())
+
+    def test_async_gen_aclose_compatible_with_get_stack(self):
+        async def async_generator():
+            yield object()
+
+        async def run():
+            ag = async_generator()
+            asyncio.create_task(ag.aclose())
+            tasks = asyncio.all_tasks()
+            for task in tasks:
+                # No AttributeError raised
+                task.get_stack()
 
         self.loop.run_until_complete(run())
 

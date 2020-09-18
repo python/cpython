@@ -100,11 +100,6 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int k;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     k = _PyLong_AsInt(arg);
     if (k == -1 && PyErr_Occurred()) {
         goto exit;
@@ -114,4 +109,21 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a7feb0c9c8d1b627 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_random_Random___reduce____doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n");
+
+#define _RANDOM_RANDOM___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)_random_Random___reduce__, METH_NOARGS, _random_Random___reduce____doc__},
+
+static PyObject *
+_random_Random___reduce___impl(RandomObject *self);
+
+static PyObject *
+_random_Random___reduce__(RandomObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _random_Random___reduce___impl(self);
+}
+/*[clinic end generated code: output=450f0961c2c92389 input=a9049054013a1b77]*/
