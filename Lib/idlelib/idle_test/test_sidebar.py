@@ -1,4 +1,7 @@
 """Test sidebar, coverage 93%"""
+from textwrap import dedent
+from time import sleep
+
 import idlelib.sidebar
 from itertools import chain
 import unittest
@@ -7,7 +10,12 @@ from test.support import requires
 import tkinter as tk
 
 from idlelib.delegator import Delegator
+from idlelib.editor import fixwordbreaks
+from idlelib import macosx
 from idlelib.percolator import Percolator
+import idlelib.pyshell
+from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
+from idlelib.run import fix_scaling
 
 
 class Dummy_editwin:
@@ -353,7 +361,7 @@ class LineNumbersTest(unittest.TestCase):
         ln.hide_sidebar()
 
         self.highlight_cfg = test_colors
-        # Nothing breaks with inactive code context.
+        # Nothing breaks with inactive line numbers.
         ln.update_colors()
 
         # Show line numbers, previous colors change is immediately effective.
@@ -368,6 +376,148 @@ class LineNumbersTest(unittest.TestCase):
         self.highlight_cfg = orig_colors
         ln.update_colors()
         assert_colors_are_equal(orig_colors)
+
+
+class TestShellSidebar(unittest.TestCase):
+    root: tk.Tk = None
+    shell: PyShell = None
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+
+        idlelib.pyshell.use_subprocess = True
+
+        cls.root = root = tk.Tk()
+
+        fix_scaling(root)
+        fixwordbreaks(root)
+        fix_x11_paste(root)
+
+        cls.flist = flist = PyShellFileList(root)
+        macosx.setupApp(root, flist)
+        root.update_idletasks()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.root.update_idletasks()
+        cls.root.destroy()
+
+    def setUp(self):
+        self.shell = self.flist.open_shell()
+        self.root.update_idletasks()
+
+    def tearDown(self):
+        self.shell.close()
+
+    def get_sidebar_lines(self):
+        canvas = self.shell.shell_sidebar.canvas
+        sleep(0.1)
+        self.root.update()
+        texts = list(canvas.find(tk.ALL))
+        texts.sort(key=lambda text: canvas.bbox(text)[1])
+        return [canvas.itemcget(text, 'text') for text in texts]
+
+    def assertSidebarLinesEndWith(self, expected_lines):
+        self.assertEqual(
+            self.get_sidebar_lines()[-len(expected_lines):],
+            expected_lines,
+        )
+
+    def getShellLineYCoords(self):
+        text = self.shell.text
+        y_coords = []
+        index = text.index("@0,0")
+        while True:
+            lineinfo = text.dlineinfo(index)
+            if lineinfo is None:
+                break
+            y_coords.append(lineinfo[1])
+            index = text.index(f"{index} +1line")
+        return y_coords
+
+    def getSidebarLineYCoords(self):
+        canvas = self.shell.shell_sidebar.canvas
+        texts = list(canvas.find(tk.ALL))
+        texts.sort(key=lambda text: canvas.bbox(text)[1])
+        return [canvas.bbox(text)[1] for text in texts]
+
+    def assertSidebarLinesSynced(self):
+        self.assertEqual(
+            self.getSidebarLineYCoords(),
+            self.getShellLineYCoords(),
+        )
+
+    def doInput(self, input):
+        root = self.root
+        shell = self.shell
+        text = shell.text
+        for line_index, line in enumerate(input.split('\n')):
+            if line_index > 0:
+                text.event_generate('<Key-Return>')
+                text.event_generate('<KeyRelease-Return>')
+                sleep(0.1)
+                root.update()
+            for char in line:
+                text.event_generate(char)
+
+    def testInitialState(self):
+        sidebar_lines = self.get_sidebar_lines()
+        self.assertEqual(
+            sidebar_lines,
+            ['   '] * (len(sidebar_lines) - 1) + ['>>>'],
+        )
+
+    def testSingleEmptyInput(self):
+        self.doInput('\n')
+        self.assertSidebarLinesEndWith(['>>>', '>>>'])
+
+    def testSingleLineCommand(self):
+        self.doInput('1\n')
+        self.assertSidebarLinesEndWith(['>>>', '   ', '>>>'])
+
+    def testMultiLineCommand(self):
+        # note: block statements are not indented because IDLE auto-indents
+        self.doInput(dedent('''\
+            if True:
+            print(1)
+
+            '''))
+        self.assertSidebarLinesEndWith([
+            '>>>',
+            '...',
+            '...',
+            '...',
+            '   ',
+            '>>>',
+        ])
+
+    def testSingleLongLineWraps(self):
+        self.doInput('1' * 200 + '\n')
+        self.assertSidebarLinesEndWith(['>>>', '   ', '>>>'])
+        self.assertSidebarLinesSynced()
+
+    def testSqueezeSingleLineCommand(self):
+        root = self.root
+        shell = self.shell
+        text = shell.text
+
+        self.doInput('1\n')
+        self.assertSidebarLinesEndWith(['>>>', '   ', '>>>'])
+
+        line = int(shell.text.index('insert -1line').split('.')[0])
+        text.mark_set('insert', f"{line}.0")
+        text.event_generate('<<squeeze-current-text>>')
+        sleep(0.1)
+        root.update()
+        self.assertSidebarLinesEndWith(['>>>', '   ', '>>>'])
+        self.assertSidebarLinesSynced()
+
+        shell.squeezer.expandingbuttons[0].expand()
+        sleep(0.1)
+        root.update()
+        self.assertSidebarLinesEndWith(['>>>', '   ', '>>>'])
+        self.assertSidebarLinesSynced()
 
 
 if __name__ == '__main__':
