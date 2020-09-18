@@ -581,7 +581,7 @@ are always available.  They are listed here in alphabetical order.
    input must conform to the following grammar after leading and trailing
    whitespace characters are removed:
 
-   .. productionlist::
+   .. productionlist:: float
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
