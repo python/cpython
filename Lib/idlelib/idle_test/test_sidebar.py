@@ -400,15 +400,32 @@ class TestShellSidebar(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        if cls.shell is not None:
+            cls.shell.executing = False
+            cls.shell.close()
+            cls.shell = None
+        cls.flist = None
         cls.root.update_idletasks()
         cls.root.destroy()
+        cls.root = None
+
+    @classmethod
+    def init_shell(cls):
+        cls.shell = cls.flist.open_shell()
+        cls.root.update()
+        cls.n_preface_lines = int(cls.shell.text.index('end-1c').split('.')[0]) - 1
+
+    @classmethod
+    def reset_shell(cls):
+        cls.shell.per.bottom.delete(f'{cls.n_preface_lines+1}.0', 'end-1c')
+        cls.shell.shell_sidebar.update_sidebar()
+        cls.root.update()
 
     def setUp(self):
-        self.shell = self.flist.open_shell()
-        self.root.update_idletasks()
-
-    def tearDown(self):
-        self.shell.close()
+        if self.shell is None:
+            self.init_shell()
+        else:
+            self.reset_shell()
 
     def get_sidebar_lines(self):
         canvas = self.shell.shell_sidebar.canvas
@@ -449,17 +466,16 @@ class TestShellSidebar(unittest.TestCase):
         )
 
     def doInput(self, input):
-        root = self.root
         shell = self.shell
         text = shell.text
         for line_index, line in enumerate(input.split('\n')):
             if line_index > 0:
                 text.event_generate('<Key-Return>')
                 text.event_generate('<KeyRelease-Return>')
-                sleep(0.1)
-                root.update()
             for char in line:
                 text.event_generate(char)
+        sleep(0.1)
+        self.root.update()
 
     def testInitialState(self):
         sidebar_lines = self.get_sidebar_lines()
@@ -467,6 +483,7 @@ class TestShellSidebar(unittest.TestCase):
             sidebar_lines,
             ['   '] * (len(sidebar_lines) - 1) + ['>>>'],
         )
+        self.assertSidebarLinesSynced()
 
     def testSingleEmptyInput(self):
         self.doInput('\n')
