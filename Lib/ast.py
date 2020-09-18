@@ -24,6 +24,7 @@
     :copyright: Copyright 2008 by Armin Ronacher.
     :license: Python License.
 """
+import types
 import sys
 from _ast import *
 from contextlib import contextmanager, nullcontext
@@ -572,7 +573,7 @@ _const_types = {
     Str: (str,),
     Bytes: (bytes,),
     NameConstant: (type(None), bool),
-    Ellipsis: (type(...),),
+    Ellipsis: (types.EllipsisType,),
 }
 _const_types_not = {
     Num: (bool,),
@@ -586,7 +587,7 @@ _const_node_type_names = {
     complex: 'Num',
     str: 'Str',
     bytes: 'Bytes',
-    type(...): 'Ellipsis',
+    types.EllipsisType: 'Ellipsis',
 }
 
 class slice(AST):

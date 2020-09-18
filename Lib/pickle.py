@@ -23,7 +23,7 @@ Misc variables:
 
 """
 
-from types import FunctionType
+from types import FunctionType, EllipsisType
 from copyreg import dispatch_table
 from copyreg import _extension_registry, _inverted_registry, _extension_cache
 from itertools import islice
@@ -1121,7 +1121,7 @@ class _Pickler:
             return self.save_reduce(type, (None,), obj=obj)
         elif obj is type(NotImplemented):
             return self.save_reduce(type, (NotImplemented,), obj=obj)
-        elif obj is type(...):
+        elif obj is EllipsisType:
             return self.save_reduce(type, (...,), obj=obj)
         return self.save_global(obj)
 
