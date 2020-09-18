@@ -15,6 +15,11 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
    The C structure used for generator objects.
 
 
+.. c:type:: PySendResult
+
+   The enum value used to represent different results of :c:func:`PyGen_Send`
+
+
 .. c:var:: PyTypeObject PyGen_Type
 
    The type object corresponding to generator objects.
@@ -43,10 +48,10 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
    A reference to *frame* is stolen by this function.  The *frame* argument
    must not be ``NULL``.
 
-.. c:function:: int PyGen_Send(PyGenObject *gen, PyObject *arg, PyObject **presult)
+.. c:function:: PySendResult PyGen_Send(PyGenObject *gen, PyObject *arg, PyObject **presult)
 
    Sends the *arg* value into the generator *gen*. Returns:
 
-   - 0 (``PYGEN_RETURN``) if generator returns. Return value is returned via *presult*.
-   - 1 (``PYGEN_NEXT``) if generator yields. Yielded value is returned via *presult*.
-   - -1 (``PYGEN_ERROR``) if generator has raised and exception. *presult* is set to ``NULL``.
+   - ``PYGEN_RETURN`` if generator returns. Return value is returned via *presult*.
+   - ``PYGEN_NEXT`` if generator yields. Yielded value is returned via *presult*.
+   - ``PYGEN_ERROR`` if generator has raised and exception. *presult* is set to ``NULL``.

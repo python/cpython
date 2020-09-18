@@ -2710,7 +2710,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
         }
     }
 
-    if (gen_status <= 0) {
+    if (gen_status == PYGEN_RETURN || gen_status == PYGEN_ERROR) {
         PyObject *et, *ev, *tb;
 
         if (result != NULL) {

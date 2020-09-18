@@ -305,7 +305,7 @@ _PyGen_Send(PyGenObject *gen, PyObject *arg)
     return gen_send_ex(gen, arg, 0, 0, NULL);
 }
 
-int
+PySendResult
 PyGen_Send(PyGenObject *gen, PyObject *arg, PyObject **result)
 {
     assert(result != NULL);
