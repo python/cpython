@@ -387,7 +387,7 @@ and off individually.  They are described here in more detail.
 
 .. 2to3fixer:: renames
 
-   Changes :data:`sys.maxint` to :data:`sys.maxsize`.
+   Changes :data:`sys.maxint` to :data:`sys.maxsize` and :data:`email.Message` to :data:`email.message`.
 
 .. 2to3fixer:: repr
 

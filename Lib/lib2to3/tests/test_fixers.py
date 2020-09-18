@@ -2807,6 +2807,7 @@ class Test_renames(FixerTestCase):
     fixer = "renames"
 
     modules = {"sys":  ("maxint", "maxsize"),
+               "email": ("Message", "message"),
               }
 
     def test_import_from(self):
