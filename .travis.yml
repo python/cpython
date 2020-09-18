@@ -51,10 +51,7 @@ matrix:
       env: TESTING=docs
       before_script:
         - cd Doc
-        # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
-        # (Updating the version is fine as long as no warnings are raised by doing so.)
-        # The theme used by the docs is stored separately, so we need to install that as well.
-        - python -m pip install sphinx==2.2.0 blurb python-docs-theme
+        - make venv PYTHON=python
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
     - name: "Documentation tests"
