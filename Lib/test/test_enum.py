@@ -3589,6 +3589,15 @@ class TestIntEnumConvert(unittest.TestCase):
                 ('test.test_enum', '__main__')[__name__=='__main__'],
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
+    def test_convert_repr_and_str(self):
+
+        module = ('test.test_enum', '__main__')[__name__=='__main__']
+        test_type = enum.IntEnum._convert_(
+                'UnittestConvert',
+                module,
+                filter=lambda x: x.startswith('CONVERT_TEST_'))
+        self.assertEqual(repr(test_type.CONVERT_TEST_NAME_A), '%s.CONVERT_TEST_NAME_A' % module)
+        self.assertEqual(str(test_type.CONVERT_TEST_NAME_A), '%s.CONVERT_TEST_NAME_A' % module)
 
 if __name__ == '__main__':
     unittest.main()

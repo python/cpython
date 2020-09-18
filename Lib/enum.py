@@ -6,9 +6,13 @@ from builtins import property as _bltin_property, bin as _bltin_bin
 __all__ = [
         'EnumMeta',
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag',
+<<<<<<< HEAD
         'auto', 'unique',
         'property',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
+=======
+        'auto', 'unique', 'global_flag_repr', 'global_int_repr',
+>>>>>>> add new repr and str for converted Int-Enums/Flags
         ]
 
 
@@ -776,6 +780,11 @@ class EnumMeta(type):
             members.sort(key=lambda t: t[0])
         cls = cls(name, members, module=module, boundary=boundary or KEEP)
         cls.__reduce_ex__ = _reduce_ex_by_name
+        if issubclass(cls, Flag):
+            cls.__repr__ = global_flag_repr
+        elif issubclass(cls, int):
+            cls.__repr__ = global_int_repr
+        cls.__str__ = object.__str__
         module_globals.update(cls.__members__)
         module_globals[name] = cls
         return cls
@@ -1329,3 +1338,21 @@ def _power_of_two(value):
     if value < 1:
         return False
     return value == 2 ** _high_bit(value)
+def global_int_repr(self):
+    return '%s.%s' % (self.__class__.__module__, self.name)
+
+def global_flag_repr(self):
+    module = self.__class__.__module__
+    if self._name_ is not None:
+        return '%s.%s' % (module, self.name)
+    members, extra_flags = _decompose(self.__class__, self.value)
+    members = ['%s.%s' % (module, m.name) for m in members]
+    if extra_flags:
+        members.append(hex(extra_flags))
+    res = '|'.join(members)
+    if negative:
+        if len(members) > 1:
+            res = f'~({res})'
+        else:
+            res = f'~{res}'
+    return res
