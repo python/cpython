@@ -440,7 +440,7 @@ Opening network connections
      and *local_addr* should be specified.
 
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
-     to bind the socket to locally.  The *local_host* and *local_port*
+     to bind the socket locally.  The *local_host* and *local_port*
      are looked up using ``getaddrinfo()``, similarly to *host* and *port*.
 
    * *ssl_handshake_timeout* is (for a TLS connection) the time in seconds
@@ -518,7 +518,7 @@ Opening network connections
    Other arguments:
 
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
-     to bind the socket to locally.  The *local_host* and *local_port*
+     to bind the socket locally.  The *local_host* and *local_port*
      are looked up using :meth:`getaddrinfo`.
 
    * *remote_addr*, if given, is a ``(remote_host, remote_port)`` tuple used
