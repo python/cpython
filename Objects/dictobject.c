@@ -3004,13 +3004,8 @@ dict_copy(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
 PyObject *
 PyDict_Copy(PyObject *o)
 {
-    PyObject *copy;
-    Py_ssize_t i, n;
-
-    if (o == NULL || !PyDict_Check(o)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
+    assert(o != NULL);
+    assert(PyDict_Check(o));
 
     const PyDictObject *mp = (PyDictObject *)o;
     if (mp->ma_used == 0) {
@@ -3035,7 +3030,7 @@ PyDict_Copy(PyObject *o)
         split_copy->ma_used = mp->ma_used;
         split_copy->ma_version_tag = DICT_NEXT_VERSION();
         dictkeys_incref(mp->ma_keys);
-        for (i = 0, n = size; i < n; i++) {
+        for (Py_ssize_t i = 0, n = size; i < n; i++) {
             PyObject *value = mp->ma_values[i];
             Py_XINCREF(value);
             split_copy->ma_values[i] = value;
@@ -3084,10 +3079,10 @@ PyDict_Copy(PyObject *o)
         return (PyObject *)new;
     }
 
-    copy = PyDict_New();
+    PyObject *copy = PyDict_New();
     if (copy == NULL)
         return NULL;
-    if (dict_merge(copy, o, 1) == 0)
+    if (dict_merge_init(copy, o, 1) == 0)
         return copy;
     Py_DECREF(copy);
     return NULL;
@@ -3560,10 +3555,13 @@ dict_or(PyObject *self, PyObject *other)
     if (!PyDict_Check(self) || !PyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
+    
     PyObject *new = PyDict_Copy(self);
+    
     if (new == NULL) {
         return NULL;
     }
+    
     if (dict_update_arg(new, other)) {
         Py_DECREF(new);
         return NULL;
