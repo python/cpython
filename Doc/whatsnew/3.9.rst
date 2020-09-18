@@ -708,6 +708,11 @@ Deprecated
   users can leverage the Abstract Syntax Tree (AST) generation and compilation
   stage, using the :mod:`ast` module.
 
+* The Public C API functions :c:func:`PyParser_SimpleParseStringFlags`,
+  :c:func:`PyParser_SimpleParseStringFlagsFilename`,
+  :c:func:`PyParser_SimpleParseFileFlags` and :c:func:`PyNode_Compile`
+  are deprecated and will be removed in Python 3.10 together with the old parser.
+
 * Using :data:`NotImplemented` in a boolean context has been deprecated,
   as it is almost exclusively the result of incorrect rich comparator
   implementations. It will be made a :exc:`TypeError` in a future version
