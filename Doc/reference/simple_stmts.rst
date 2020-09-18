@@ -11,7 +11,7 @@ A simple statement is comprised within a single logical line. Several simple
 statements may occur on a single line separated by semicolons.  The syntax for
 simple statements is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    simple_stmt: `expression_stmt`
               : | `assert_stmt`
               : | `assignment_stmt`
@@ -46,7 +46,7 @@ result; in Python, procedures return the value ``None``).  Other uses of
 expression statements are allowed and occasionally useful.  The syntax for an
 expression statement is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    expression_stmt: `starred_expression`
 
 An expression statement evaluates the expression list (which may be a single
@@ -82,7 +82,7 @@ Assignment statements
 Assignment statements are used to (re)bind names to values and to modify
 attributes or items of mutable objects:
 
-.. productionlist::
+.. productionlist:: python-grammar
    assignment_stmt: (`target_list` "=")+ (`starred_expression` | `yield_expression`)
    target_list: `target` ("," `target`)* [","]
    target: `identifier`
@@ -280,7 +280,7 @@ Augmented assignment statements
 Augmented assignment is the combination, in a single statement, of a binary
 operation and an assignment statement:
 
-.. productionlist::
+.. productionlist:: python-grammar
    augmented_assignment_stmt: `augtarget` `augop` (`expression_list` | `yield_expression`)
    augtarget: `identifier` | `attributeref` | `subscription` | `slicing`
    augop: "+=" | "-=" | "*=" | "@=" | "/=" | "//=" | "%=" | "**="
@@ -328,7 +328,7 @@ Annotated assignment statements
 :term:`Annotation <variable annotation>` assignment is the combination, in a single
 statement, of a variable or attribute annotation and an optional assignment statement:
 
-.. productionlist::
+.. productionlist:: python-grammar
    annotated_assignment_stmt: `augtarget` ":" `expression`
                             : ["=" (`starred_expression` | `yield_expression`)]
 
@@ -385,7 +385,7 @@ The :keyword:`!assert` statement
 Assert statements are a convenient way to insert debugging assertions into a
 program:
 
-.. productionlist::
+.. productionlist:: python-grammar
    assert_stmt: "assert" `expression` ["," `expression`]
 
 The simple form, ``assert expression``, is equivalent to ::
@@ -425,7 +425,7 @@ The :keyword:`!pass` statement
    pair: null; operation
            pair: null; operation
 
-.. productionlist::
+.. productionlist:: python-grammar
    pass_stmt: "pass"
 
 :keyword:`pass` is a null operation --- when it is executed, nothing happens.
@@ -447,7 +447,7 @@ The :keyword:`!del` statement
    pair: deletion; target
    triple: deletion; target; list
 
-.. productionlist::
+.. productionlist:: python-grammar
    del_stmt: "del" `target_list`
 
 Deletion is recursively defined very similar to the way assignment is defined.
@@ -486,7 +486,7 @@ The :keyword:`!return` statement
    pair: function; definition
    pair: class; definition
 
-.. productionlist::
+.. productionlist:: python-grammar
    return_stmt: "return" [`expression_list`]
 
 :keyword:`return` may only occur syntactically nested in a function definition,
@@ -525,7 +525,7 @@ The :keyword:`!yield` statement
    single: function; generator
    exception: StopIteration
 
-.. productionlist::
+.. productionlist:: python-grammar
    yield_stmt: `yield_expression`
 
 A :keyword:`yield` statement is semantically equivalent to a :ref:`yield
@@ -560,7 +560,7 @@ The :keyword:`!raise` statement
    pair: raising; exception
    single: __traceback__ (exception attribute)
 
-.. productionlist::
+.. productionlist:: python-grammar
    raise_stmt: "raise" [`expression` ["from" `expression`]]
 
 If no expressions are present, :keyword:`raise` re-raises the last exception
@@ -663,7 +663,7 @@ The :keyword:`!break` statement
    statement: while
    pair: loop; statement
 
-.. productionlist::
+.. productionlist:: python-grammar
    break_stmt: "break"
 
 :keyword:`break` may only occur syntactically nested in a :keyword:`for` or
@@ -698,7 +698,7 @@ The :keyword:`!continue` statement
    pair: loop; statement
    keyword: finally
 
-.. productionlist::
+.. productionlist:: python-grammar
    continue_stmt: "continue"
 
 :keyword:`continue` may only occur syntactically nested in a :keyword:`for` or
@@ -725,7 +725,7 @@ The :keyword:`!import` statement
    exception: ImportError
    single: , (comma); import statement
 
-.. productionlist::
+.. productionlist:: python-grammar
    import_stmt: "import" `module` ["as" `identifier`] ("," `module` ["as" `identifier`])*
               : | "from" `relative_module` "import" `identifier` ["as" `identifier`]
               : ("," `identifier` ["as" `identifier`])*
@@ -859,7 +859,7 @@ that introduce incompatible changes to the language.  It allows use of the new
 features on a per-module basis before the release in which the feature becomes
 standard.
 
-.. productionlist:: *
+.. productionlist:: python-grammar
    future_stmt: "from" "__future__" "import" `feature` ["as" `identifier`]
               : ("," `feature` ["as" `identifier`])*
               : | "from" "__future__" "import" "(" `feature` ["as" `identifier`]
@@ -937,7 +937,7 @@ The :keyword:`!global` statement
    triple: global; name; binding
    single: , (comma); identifier list
 
-.. productionlist::
+.. productionlist:: python-grammar
    global_stmt: "global" `identifier` ("," `identifier`)*
 
 The :keyword:`global` statement is a declaration which holds for the entire
@@ -982,7 +982,7 @@ The :keyword:`!nonlocal` statement
 .. index:: statement: nonlocal
    single: , (comma); identifier list
 
-.. productionlist::
+.. productionlist:: python-grammar
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
 .. XXX add when implemented
