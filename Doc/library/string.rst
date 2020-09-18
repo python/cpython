@@ -205,7 +205,7 @@ literal text, it can be escaped by doubling: ``{{`` and ``}}``.
 
 The grammar for a replacement field is as follows:
 
-   .. productionlist:: sf
+   .. productionlist:: format-string
       replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
       field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
       arg_name: [`identifier` | `digit`+]
@@ -308,7 +308,7 @@ non-empty format specification typically modifies the result.
 
 The general form of a *standard format specifier* is:
 
-.. productionlist::
+.. productionlist:: format-spec
    format_spec: [[`fill`]`align`][`sign`][#][0][`width`][`grouping_option`][.`precision`][`type`]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
