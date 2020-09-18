@@ -17,7 +17,7 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
 
 .. c:type:: PySendResult
 
-   The enum value used to represent different results of :c:func:`PyGen_Send`
+   The enum value used to represent different results of :c:func:`PyGen_Send`.
 
 
 .. c:var:: PyTypeObject PyGen_Type
@@ -50,7 +50,9 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
 
 .. c:function:: PySendResult PyGen_Send(PyGenObject *gen, PyObject *arg, PyObject **presult)
 
-   Sends the *arg* value into the generator *gen*. Returns:
+   Sends the *arg* value into the generator *gen*. Coroutine objects
+   are also allowed to be as the *gen* argument but they need to be
+   explicitly casted to PyGenObject*. Returns:
 
    - ``PYGEN_RETURN`` if generator returns. Return value is returned via *presult*.
    - ``PYGEN_NEXT`` if generator yields. Yielded value is returned via *presult*.

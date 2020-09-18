@@ -51,7 +51,7 @@ typedef enum {
     PYGEN_NEXT = 1,
 } PySendResult;
 
-/* Sends the value into the generator. Returns:
+/* Sends the value into the generator or the coroutine. Returns:
    - PYGEN_RETURN (0) if generator has returned.
      'result' parameter is filled with return value
    - PYGEN_ERROR (-1) if exception was raised.

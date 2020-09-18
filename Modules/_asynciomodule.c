@@ -2630,6 +2630,8 @@ gen_status_from_result(PyObject **result)
     if (_PyGen_FetchStopIterationValue(result) == 0) {
         return PYGEN_RETURN;
     }
+
+    assert(PyErr_Occurred());
     return PYGEN_ERROR;
 }
 
