@@ -142,18 +142,18 @@ configuration while the previously existing keys are retained.
 
 .. doctest::
 
-   >>> config = configparser.ConfigParser()
-   >>> config.read('example.ini')
+   >>> another_config = configparser.ConfigParser()
+   >>> another_config.read('example.ini')
    ['example.ini']
-   >>> config['topsecret.server.com']['Port']
+   >>> another_config['topsecret.server.com']['Port']
    '50022'
-   >>> config.read_string("[topsecret.server.com]\nPort=48484")
-   >>> config['topsecret.server.com']['Port']
+   >>> another_config.read_string("[topsecret.server.com]\nPort=48484")
+   >>> another_config['topsecret.server.com']['Port']
    '48484'
-   >>> config.read_dict({"topsecret.server.com": {"Port": 21212}})
-   >>> config['topsecret.server.com']['Port']
+   >>> another_config.read_dict({"topsecret.server.com": {"Port": 21212}})
+   >>> another_config['topsecret.server.com']['Port']
    '21212'
-   >>> config['topsecret.server.com']['ForwardX11']
+   >>> another_config['topsecret.server.com']['ForwardX11']
    'no'
 
 This behaviour is equivalent to a :meth:`ConfigParser.read` call with several
