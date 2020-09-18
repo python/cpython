@@ -887,7 +887,7 @@ Removed
   deprecated since 2006, and only returning ``False`` when it's called.
   (Contributed by Batuhan Taskaya in :issue:`40208`)
 
-* The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks` have
+* The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks`
   have been removed. They were deprecated since Python 3.7 and you can use
   :func:`asyncio.current_task` and :func:`asyncio.all_tasks` instead.
   (Contributed by Rémi Lapeyre in :issue:`40967`)

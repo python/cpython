@@ -1,2 +1,2 @@
 Stop codeop._maybe_compile, used by code.InteractiveInterpreter (and IDLE).
-from from emitting each warning three times.
+from emitting each warning three times.
