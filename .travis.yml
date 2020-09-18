@@ -24,7 +24,6 @@ branches:
     - master
     - /^\d\.\d+$/
     - buildbot-custom
-    - ezeeyahoo-patch-1
 
 matrix:
   fast_finish: true
