@@ -2369,18 +2369,12 @@ left undefined.
    class. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
    an instance of a class that has an :meth:`__rsub__` method, ``y.__rsub__(x)``
    is called if ``x.__sub__(y)`` returns *NotImplemented* or ``type(y)`` is a
-   subclass of ``type(x)``.
+   subclass of ``type(x)``. [#]_
 
    .. index:: builtin: pow
 
    Note that ternary :func:`pow` will not try calling :meth:`__rpow__` (the
    coercion rules would become too complicated).
-
-   .. note::
-
-      If the right operand's type is a subclass of the left operand's type, the
-      reflected method having precedence allows subclasses to override their
-      ancestors' operations.
 
 
 .. method:: object.__iadd__(self, other)
@@ -2775,3 +2769,7 @@ An example of an asynchronous context manager class::
 .. [#] For operands of the same type, it is assumed that if the non-reflected method
    (such as :meth:`__add__`) fails then the operation is not supported, which is why the
    reflected method is not called.
+
+.. [#] If the right operand's type is a subclass of the left operand's type, the
+   reflected method having precedence allows subclasses to override their ancestors'
+   operations.
