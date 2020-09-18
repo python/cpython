@@ -713,6 +713,10 @@ class TypesTests(unittest.TestCase):
         assert repr(int | None) == "int | None"
         assert repr(int | typing.GenericAlias(list, int)) == "int | list[int]"
 
+    def test_ellipsis_type(self):
+        self.assertIsInstance(Ellipsis, types.EllipsisType)
+
+
 class MappingProxyTests(unittest.TestCase):
     mappingproxy = types.MappingProxyType
 
