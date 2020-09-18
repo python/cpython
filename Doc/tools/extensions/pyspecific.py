@@ -33,13 +33,9 @@ from sphinx.writers.text import TextWriter, TextTranslator
 from sphinx.writers.latex import LaTeXTranslator
 
 try:
-    from sphinx.domains.python import PyMethod
+    from sphinx.domains.python import PyFunction, PyMethod
 except ImportError:
     from sphinx.domains.python import PyClassmember as PyMethod
-
-try:
-    from sphinx.domains.python import PyFunction
-except ImportError:
     from sphinx.domains.python import PyModulelevel as PyFunction
 
 # Support for checking for suspicious markup
