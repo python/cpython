@@ -145,6 +145,13 @@ Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
 
+unittest
+--------
+
+Add new method :meth:`~unittest.TestCase.assertNoLogs` to complement the
+existing :meth:`~unittest.TestCase.assertLogs`. (Contributed by Kit Yan Choi
+in :issue:`39385`.)
+
 xml
 ---
 
