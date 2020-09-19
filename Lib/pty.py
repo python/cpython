@@ -165,10 +165,14 @@ def _setwinsz(fd):
     try:
         from struct import pack
         from fcntl import ioctl
-        strct = pack('HHHH', 0, 0, 0, 0)
+    except ImportError:
+        return
+    
+    strct = pack('HHHH', 0, 0, 0, 0)
+    try:    
         winsz = ioctl(STDIN_FILENO, tty.TIOCGWINSZ, strct)
         ioctl(fd, tty.TIOCSWINSZ, winsz)
-    except (ImportError, AttributeError, OSError):
+    except (AttributeError, OSError):
         pass
 
 def spawn(argv, master_read=_read, stdin_read=_read):
