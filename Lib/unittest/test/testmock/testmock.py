@@ -46,7 +46,8 @@ class SomethingElse(object):
     def instance(self):
         if not self._instance:
             self._instance = 'object'
-
+        return self._instance
+            
 
 class Typos():
     autospect = None
