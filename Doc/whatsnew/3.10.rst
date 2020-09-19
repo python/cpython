@@ -49,6 +49,8 @@ This article explains the new features in Python 3.10, compared to 3.9.
 
 For full details, see the :ref:`changelog <changelog>`.
 
+.. note:: XXX TkDND is a new optional dependency for Python 3.10.
+
 .. note::
 
    Prerelease users should be aware that this document is currently in draft
@@ -145,13 +147,18 @@ Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
 
+tkinter
+-------
+
+XXX brief summary of new TkDND bindings in tkinter module
+(Contributed by Elisha Paine in :issue:`40893`.)
+
 xml
 ---
 
 Add a :class:`~xml.sax.handler.LexicalHandler` class to the
 :mod:`xml.sax.handler` module.
 (Contributed by Jonathan Gossage and Zackery Spytz in :issue:`35018`.)
-
 
 Optimizations
 =============

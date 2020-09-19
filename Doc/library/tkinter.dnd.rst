@@ -1,16 +1,18 @@
-:mod:`tkinter.dnd` --- Drag and drop support
-============================================
+:mod:`tkinter.dnd` --- Deprecated drag and drop support
+=======================================================
 
 .. module:: tkinter.dnd
    :platform: Tk
    :synopsis: Tkinter drag-and-drop interface
+   :deprecated:
 
 **Source code:** :source:`Lib/tkinter/dnd.py`
 
---------------
+.. deprecated:: 3.10
+   The :mod:`tkinter.dnd` module is deprecated in favour of the TkDND bindings
+   in the main :mod:`tkinter` module.
 
-.. note:: This is experimental and due to be deprecated when it is replaced
-   with the Tk DND.
+--------------
 
 The :mod:`tkinter.dnd` module provides drag-and-drop support for objects within
 a single application, within the same window or between windows. To enable an

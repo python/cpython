@@ -100,6 +100,12 @@ active; it will never call dnd_commit().
 """
 
 import tkinter
+import warnings
+
+warnings.warn("the tkinter.dnd module is deprecated in favour of the TkDND "
+              "bindings found in the main tkinter module (see the "
+              "documentation)",
+              DeprecationWarning, stacklevel=2)
 
 __all__ = ["dnd_start", "DndHandler"]
 

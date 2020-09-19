@@ -1,0 +1,1 @@
+Added TkDND bindings to the main :mod:`tkinter` module
