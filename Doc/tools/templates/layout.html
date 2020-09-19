@@ -16,9 +16,9 @@
       {%- if switchers is defined %}
       <span class="language_switcher_placeholder">{{ language or 'en' }}</span>
       <span class="version_switcher_placeholder">{{ release }}</span>
-      <a href="{{ pathto('index') }}">{% trans %}Documentation {% endtrans %}</a>{{ reldelim1 }}
+      <a href="/3/{{ pathto('index') }}">{% trans %}Documentation {% endtrans %}</a>{{ reldelim1 }}
       {%- else %}
-      <a href="{{ pathto('index') }}">{{ shorttitle }}</a>{{ reldelim1 }}
+      <a href="/3/{{ pathto('index') }}">{{ shorttitle }}</a>{{ reldelim1 }}
       {%- endif %}
     </li>
 {% endblock %}
