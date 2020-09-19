@@ -2616,6 +2616,17 @@ are awaitable.
    :term:`awaitable` objects.  For instance, :class:`asyncio.Future` implements
    this method to be compatible with the :keyword:`await` expression.
 
+   .. note::
+
+      The language doesn't place any restriction on the type or value of the objects
+      yielded by the iterator returned by :meth:`__await__`, as this is specific to
+      the implementation of the event loop that will be managing the :term:`awaitable`
+      object. In the case of :mod:`asyncio`, user code should always be using other
+      :term:`coroutines <coroutine>`, :mod:`asyncio` Tasks, Futures, and other
+      :mod:`asyncio` objects to implement :meth:`__await__`, yielding objects from
+      these, and never yielding objects directly—as the kind of objects that the event
+      loop expects are considered a private implementation detail of :mod:`asyncio`.
+
 .. versionadded:: 3.5
 
 .. seealso:: :pep:`492` for additional information about awaitable objects.
