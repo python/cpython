@@ -233,7 +233,7 @@ single type parameter ``T`` . This also makes ``T`` valid as a type within the
 class body.
 
 The :class:`Generic` base class defines :meth:`__class_getitem__` so that
-``LoggedVar[t]`` is valid as a type::
+``LoggedVar[T]`` is valid as a type::
 
    from typing import Iterable
 
