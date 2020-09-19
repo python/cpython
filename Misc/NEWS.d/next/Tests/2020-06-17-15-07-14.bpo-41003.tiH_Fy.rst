@@ -1,0 +1,3 @@
+Fix ``test_copyreg`` when ``numpy`` is installed: ``test.pickletester`` now
+saves/restores warnings filters when importing ``numpy``, to ignore filters
+installed by ``numpy``.

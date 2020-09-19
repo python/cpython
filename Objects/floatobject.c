@@ -4,8 +4,9 @@
    for any kind of float exception without losing portability. */
 
 #include "Python.h"
-#include "pycore_dtoa.h"
+#include "pycore_dtoa.h"          // _Py_dg_dtoa()
 #include "pycore_interp.h"        // _PyInterpreterState.float_state
+#include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include <ctype.h>
@@ -21,6 +22,15 @@ class float "PyObject *" "&PyFloat_Type"
 #ifndef PyFloat_MAXFREELIST
 #  define PyFloat_MAXFREELIST   100
 #endif
+
+
+static struct _Py_float_state *
+get_float_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->float_state;
+}
+
 
 double
 PyFloat_GetMax(void)
@@ -112,10 +122,13 @@ PyFloat_GetInfo(void)
 PyObject *
 PyFloat_FromDouble(double fval)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_float_state *state = &interp->float_state;
+    struct _Py_float_state *state = get_float_state();
     PyFloatObject *op = state->free_list;
     if (op != NULL) {
+#ifdef Py_DEBUG
+        // PyFloat_FromDouble() must not be called after _PyFloat_Fini()
+        assert(state->numfree != -1);
+#endif
         state->free_list = (PyFloatObject *) Py_TYPE(op);
         state->numfree--;
     }
@@ -125,7 +138,7 @@ PyFloat_FromDouble(double fval)
             return PyErr_NoMemory();
         }
     }
-    (void)PyObject_INIT(op, &PyFloat_Type);
+    _PyObject_Init((PyObject*)op, &PyFloat_Type);
     op->ob_fval = fval;
     return (PyObject *) op;
 }
@@ -217,8 +230,11 @@ static void
 float_dealloc(PyFloatObject *op)
 {
     if (PyFloat_CheckExact(op)) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        struct _Py_float_state *state = &interp->float_state;
+        struct _Py_float_state *state = get_float_state();
+#ifdef Py_DEBUG
+        // float_dealloc() must not be called after _PyFloat_Fini()
+        assert(state->numfree != -1);
+#endif
         if (state->numfree >= PyFloat_MAXFREELIST)  {
             PyObject_FREE(op);
             return;
@@ -227,8 +243,9 @@ float_dealloc(PyFloatObject *op)
         Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
         state->free_list = op;
     }
-    else
+    else {
         Py_TYPE(op)->tp_free((PyObject *)op);
+    }
 }
 
 double
@@ -1984,10 +2001,11 @@ void
 _PyFloat_ClearFreeList(PyThreadState *tstate)
 {
     struct _Py_float_state *state = &tstate->interp->float_state;
-    PyFloatObject *f = state->free_list, *next;
-    for (; f; f = next) {
-        next = (PyFloatObject*) Py_TYPE(f);
+    PyFloatObject *f = state->free_list;
+    while (f != NULL) {
+        PyFloatObject *next = (PyFloatObject*) Py_TYPE(f);
         PyObject_FREE(f);
+        f = next;
     }
     state->free_list = NULL;
     state->numfree = 0;
@@ -1997,14 +2015,17 @@ void
 _PyFloat_Fini(PyThreadState *tstate)
 {
     _PyFloat_ClearFreeList(tstate);
+#ifdef Py_DEBUG
+    struct _Py_float_state *state = &tstate->interp->float_state;
+    state->numfree = -1;
+#endif
 }
 
 /* Print summary info about the state of the optimized allocator */
 void
 _PyFloat_DebugMallocStats(FILE *out)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_float_state *state = &interp->float_state;
+    struct _Py_float_state *state = get_float_state();
     _PyDebugAllocatorStats(out,
                            "free PyFloatObject",
                            state->numfree, sizeof(PyFloatObject));

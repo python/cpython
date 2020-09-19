@@ -66,6 +66,14 @@ static int
 contextvar_del(PyContextVar *var);
 
 
+static struct _Py_context_state *
+get_context_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->context;
+}
+
+
 PyObject *
 _PyContext_NewHamtForTests(void)
 {
@@ -332,9 +340,12 @@ class _contextvars.Context "PyContext *" "&PyContext_Type"
 static inline PyContext *
 _context_alloc(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_context_state *state = &interp->context;
+    struct _Py_context_state *state = get_context_state();
     PyContext *ctx;
+#ifdef Py_DEBUG
+    // _context_alloc() must not be called after _PyContext_Fini()
+    assert(state->numfree != -1);
+#endif
     if (state->numfree) {
         state->numfree--;
         ctx = state->freelist;
@@ -458,8 +469,11 @@ context_tp_dealloc(PyContext *self)
     }
     (void)context_tp_clear(self);
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_context_state *state = &interp->context;
+    struct _Py_context_state *state = get_context_state();
+#ifdef Py_DEBUG
+    // _context_alloc() must not be called after _PyContext_Fini()
+    assert(state->numfree != -1);
+#endif
     if (state->numfree < CONTEXT_FREELIST_MAXLEN) {
         state->numfree++;
         self->ctx_weakreflist = (PyObject *)state->freelist;
@@ -1288,8 +1302,14 @@ _PyContext_ClearFreeList(PyThreadState *tstate)
 void
 _PyContext_Fini(PyThreadState *tstate)
 {
-    Py_CLEAR(_token_missing);
+    if (_Py_IsMainInterpreter(tstate)) {
+        Py_CLEAR(_token_missing);
+    }
     _PyContext_ClearFreeList(tstate);
+#ifdef Py_DEBUG
+    struct _Py_context_state *state = &tstate->interp->context;
+    state->numfree = -1;
+#endif
     _PyHamt_Fini();
 }
 

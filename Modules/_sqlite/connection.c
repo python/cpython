@@ -33,14 +33,8 @@
 #define ACTION_FINALIZE 1
 #define ACTION_RESET 2
 
-#if SQLITE_VERSION_NUMBER >= 3003008
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
-#define HAVE_LOAD_EXTENSION
-#endif
-#endif
-
-#if SQLITE_VERSION_NUMBER >= 3006011
-#define HAVE_BACKUP_API
+#if SQLITE_VERSION_NUMBER >= 3014000
+#define HAVE_TRACE_V2
 #endif
 
 _Py_IDENTIFIER(cursor);
@@ -56,18 +50,6 @@ static const char * const begin_statements[] = {
 static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored));
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 
-
-static void _sqlite3_result_error(sqlite3_context* ctx, const char* errmsg, int len)
-{
-    /* in older SQLite versions, calling sqlite3_result_error in callbacks
-     * triggers a bug in SQLite that leads either to irritating results or
-     * segfaults, depending on the SQLite version */
-#if SQLITE_VERSION_NUMBER >= 3003003
-    sqlite3_result_error(ctx, errmsg, len);
-#else
-    PyErr_SetString(pysqlite_OperationalError, errmsg);
-#endif
-}
 
 int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
 {
@@ -178,10 +160,6 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     self->timeout = timeout;
     (void)sqlite3_busy_timeout(self->db, (int)(timeout*1000));
     self->thread_ident = PyThread_get_thread_ident();
-    if (!check_same_thread && sqlite3_libversion_number() < 3003001) {
-        PyErr_SetString(pysqlite_NotSupportedError, "shared connections not available");
-        return -1;
-    }
     self->check_same_thread = check_same_thread;
 
     self->function_pinboard_trace_callback = NULL;
@@ -616,7 +594,7 @@ void _pysqlite_func_callback(sqlite3_context* context, int argc, sqlite3_value**
         } else {
             PyErr_Clear();
         }
-        _sqlite3_result_error(context, "user-defined function raised exception", -1);
+        sqlite3_result_error(context, "user-defined function raised exception", -1);
     }
 
     PyGILState_Release(threadstate);
@@ -648,7 +626,7 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
             } else {
                 PyErr_Clear();
             }
-            _sqlite3_result_error(context, "user-defined aggregate's '__init__' method raised error", -1);
+            sqlite3_result_error(context, "user-defined aggregate's '__init__' method raised error", -1);
             goto error;
         }
     }
@@ -672,7 +650,7 @@ static void _pysqlite_step_callback(sqlite3_context *context, int argc, sqlite3_
         } else {
             PyErr_Clear();
         }
-        _sqlite3_result_error(context, "user-defined aggregate's 'step' method raised error", -1);
+        sqlite3_result_error(context, "user-defined aggregate's 'step' method raised error", -1);
     }
 
 error:
@@ -689,7 +667,6 @@ void _pysqlite_final_callback(sqlite3_context* context)
     _Py_IDENTIFIER(finalize);
     int ok;
     PyObject *exception, *value, *tb;
-    int restore;
 
     PyGILState_STATE threadstate;
 
@@ -705,7 +682,6 @@ void _pysqlite_final_callback(sqlite3_context* context)
 
     /* Keep the exception (if any) of the last call to step() */
     PyErr_Fetch(&exception, &value, &tb);
-    restore = 1;
 
     function_result = _PyObject_CallMethodIdNoArgs(*aggregate_instance, &PyId_finalize);
 
@@ -722,19 +698,12 @@ void _pysqlite_final_callback(sqlite3_context* context)
         } else {
             PyErr_Clear();
         }
-        _sqlite3_result_error(context, "user-defined aggregate's 'finalize' method raised error", -1);
-#if SQLITE_VERSION_NUMBER < 3003003
-        /* with old SQLite versions, _sqlite3_result_error() sets a new Python
-           exception, so don't restore the previous exception */
-        restore = 0;
-#endif
+        sqlite3_result_error(context, "user-defined aggregate's 'finalize' method raised error", -1);
     }
 
-    if (restore) {
-        /* Restore the exception (if any) of the last call to step(),
-           but clear also the current exception if finalize() failed */
-        PyErr_Restore(exception, value, tb);
-    }
+    /* Restore the exception (if any) of the last call to step(),
+       but clear also the current exception if finalize() failed */
+    PyErr_Restore(exception, value, tb);
 
 error:
     PyGILState_Release(threadstate);
@@ -962,12 +931,28 @@ static int _progress_handler(void* user_arg)
     return rc;
 }
 
+#ifdef HAVE_TRACE_V2
+/*
+ * From https://sqlite.org/c3ref/trace_v2.html:
+ * The integer return value from the callback is currently ignored, though this
+ * may change in future releases. Callback implementations should return zero
+ * to ensure future compatibility.
+ */
+static int _trace_callback(unsigned int type, void* user_arg, void* prepared_statement, void* statement_string)
+#else
 static void _trace_callback(void* user_arg, const char* statement_string)
+#endif
 {
     PyObject *py_statement = NULL;
     PyObject *ret = NULL;
 
     PyGILState_STATE gilstate;
+
+#ifdef HAVE_TRACE_V2
+    if (type != SQLITE_TRACE_STMT) {
+        return 0;
+    }
+#endif
 
     gilstate = PyGILState_Ensure();
     py_statement = PyUnicode_DecodeUTF8(statement_string,
@@ -988,6 +973,9 @@ static void _trace_callback(void* user_arg, const char* statement_string)
     }
 
     PyGILState_Release(gilstate);
+#ifdef HAVE_TRACE_V2
+    return 0;
+#endif
 }
 
 static PyObject* pysqlite_connection_set_authorizer(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
@@ -1046,6 +1034,11 @@ static PyObject* pysqlite_connection_set_progress_handler(pysqlite_Connection* s
     Py_RETURN_NONE;
 }
 
+/*
+ * Ref.
+ * - https://sqlite.org/c3ref/c_trace.html
+ * - https://sqlite.org/c3ref/trace_v2.html
+ */
 static PyObject* pysqlite_connection_set_trace_callback(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
 {
     PyObject* trace_callback;
@@ -1063,10 +1056,18 @@ static PyObject* pysqlite_connection_set_trace_callback(pysqlite_Connection* sel
 
     if (trace_callback == Py_None) {
         /* None clears the trace callback previously set */
+#ifdef HAVE_TRACE_V2
+        sqlite3_trace_v2(self->db, SQLITE_TRACE_STMT, 0, 0);
+#else
         sqlite3_trace(self->db, 0, (void*)0);
+#endif
         Py_XSETREF(self->function_pinboard_trace_callback, NULL);
     } else {
+#ifdef HAVE_TRACE_V2
+        sqlite3_trace_v2(self->db, SQLITE_TRACE_STMT, _trace_callback, trace_callback);
+#else
         sqlite3_trace(self->db, _trace_callback, trace_callback);
+#endif
         Py_INCREF(trace_callback);
         Py_XSETREF(self->function_pinboard_trace_callback, trace_callback);
     }
@@ -1074,7 +1075,7 @@ static PyObject* pysqlite_connection_set_trace_callback(pysqlite_Connection* sel
     Py_RETURN_NONE;
 }
 
-#ifdef HAVE_LOAD_EXTENSION
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
 static PyObject* pysqlite_enable_load_extension(pysqlite_Connection* self, PyObject* args)
 {
     int rc;
@@ -1477,7 +1478,6 @@ finally:
     return retval;
 }
 
-#ifdef HAVE_BACKUP_API
 static PyObject *
 pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *kwds)
 {
@@ -1628,7 +1628,6 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
         return NULL;
     }
 }
-#endif
 
 static PyObject *
 pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
@@ -1780,7 +1779,7 @@ static PyMethodDef connection_methods[] = {
         PyDoc_STR("Creates a new aggregate. Non-standard.")},
     {"set_authorizer", (PyCFunction)(void(*)(void))pysqlite_connection_set_authorizer, METH_VARARGS|METH_KEYWORDS,
         PyDoc_STR("Sets authorizer callback. Non-standard.")},
-    #ifdef HAVE_LOAD_EXTENSION
+    #ifndef SQLITE_OMIT_LOAD_EXTENSION
     {"enable_load_extension", (PyCFunction)pysqlite_enable_load_extension, METH_VARARGS,
         PyDoc_STR("Enable dynamic loading of SQLite extension modules. Non-standard.")},
     {"load_extension", (PyCFunction)pysqlite_load_extension, METH_VARARGS,
@@ -1802,10 +1801,8 @@ static PyMethodDef connection_methods[] = {
         PyDoc_STR("Abort any pending database operation. Non-standard.")},
     {"iterdump", (PyCFunction)pysqlite_connection_iterdump, METH_NOARGS,
         PyDoc_STR("Returns iterator to the dump of the database in an SQL text format. Non-standard.")},
-    #ifdef HAVE_BACKUP_API
     {"backup", (PyCFunction)(void(*)(void))pysqlite_connection_backup, METH_VARARGS | METH_KEYWORDS,
         PyDoc_STR("Makes a backup of the database. Non-standard.")},
-    #endif
     {"__enter__", (PyCFunction)pysqlite_connection_enter, METH_NOARGS,
         PyDoc_STR("For context manager. Non-standard.")},
     {"__exit__", (PyCFunction)pysqlite_connection_exit, METH_VARARGS,

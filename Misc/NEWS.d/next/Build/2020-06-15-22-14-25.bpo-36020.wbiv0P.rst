@@ -1,0 +1,2 @@
+The C99 functions :c:func:`snprintf` and :c:func:`vsnprintf` are now required
+to build Python.
