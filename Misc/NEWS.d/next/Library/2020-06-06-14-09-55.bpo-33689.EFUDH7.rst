@@ -1,0 +1,4 @@
+Ignore empty or whitespace-only lines in .pth files. This matches the
+documentated behavior. Before, empty lines caused the site-packages
+dir to appear multiple times in sys.path.
+By Ido Michael, contributors Malcolm Smith and Tal Einat.

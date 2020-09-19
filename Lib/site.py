@@ -170,6 +170,8 @@ def addpackage(sitedir, name, known_paths):
         for n, line in enumerate(f):
             if line.startswith("#"):
                 continue
+            if line.strip() == "":
+                continue
             try:
                 if line.startswith(("import ", "import\t")):
                     exec(line)
