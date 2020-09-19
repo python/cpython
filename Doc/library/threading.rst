@@ -455,7 +455,7 @@ All methods are executed atomically.
       block until the lock is unlocked, then set it to locked and return ``True``.
 
       When invoked with the *blocking* argument set to ``False``, do not block.
-      If a call with *blocking* set to ``True`` would block, return ``False``
+      If a call with *blocking* set to ``False`` would block, return ``False``
       immediately; otherwise, set the lock to locked and return ``True``.
 
       When invoked with the floating-point *timeout* argument set to a positive
