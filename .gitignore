@@ -21,6 +21,7 @@
 *.profclang?
 *.profraw
 *.dyn
+*.ipynb
 .gdb_history
 .purify
 __pycache__
