@@ -128,7 +128,7 @@ Object Protocol
    .. versionadded:: 3.3
 
 
-.. c:function:: int PyObject_GenericSetDict(PyObject *o, void *context)
+.. c:function:: int PyObject_GenericSetDict(PyObject *o, PyObject *value, void *context)
 
    A generic implementation for the setter of a ``__dict__`` descriptor. This
    implementation does not allow the dictionary to be deleted.
@@ -291,7 +291,7 @@ Object Protocol
    is equivalent to the Python expression ``type(o)``. This function increments the
    reference count of the return value. There's really no reason to use this
    function instead of the common expression ``o->ob_type``, which returns a
-   pointer of type :c:type:`PyTypeObject\*`, except when the incremented reference
+   pointer of type :c:type:`PyTypeObject*`, except when the incremented reference
    count is needed.
 
 
@@ -331,7 +331,8 @@ Object Protocol
 
    Map the object *key* to the value *v*.  Raise an exception and
    return ``-1`` on failure; return ``0`` on success.  This is the
-   equivalent of the Python statement ``o[key] = v``.
+   equivalent of the Python statement ``o[key] = v``.  This function *does
+   not* steal a reference to *v*.
 
 
 .. c:function:: int PyObject_DelItem(PyObject *o, PyObject *key)

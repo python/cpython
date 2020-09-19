@@ -43,6 +43,7 @@ Functions:
 * :c:func:`Py_PreInitializeFromArgs`
 * :c:func:`Py_PreInitializeFromBytesArgs`
 * :c:func:`Py_RunMain`
+* :c:func:`Py_GetArgcArgv`
 
 The preconfiguration (``PyPreConfig`` type) is stored in
 ``_PyRuntime.preconfig`` and the configuration (``PyConfig`` type) is stored in
@@ -196,12 +197,12 @@ PyPreConfig
 
    Function to initialize a preconfiguration:
 
-   .. c:function:: void PyPreConfig_InitIsolatedConfig(PyPreConfig *preconfig)
+   .. c:function:: void PyPreConfig_InitPythonConfig(PyPreConfig *preconfig)
 
       Initialize the preconfiguration with :ref:`Python Configuration
       <init-python-config>`.
 
-   .. c:function:: void PyPreConfig_InitPythonConfig(PyPreConfig *preconfig)
+   .. c:function:: void PyPreConfig_InitIsolatedConfig(PyPreConfig *preconfig)
 
       Initialize the preconfiguration with :ref:`Isolated Configuration
       <init-isolated-conf>`.
@@ -423,6 +424,8 @@ PyConfig
       :c:member:`~PyConfig.argv` is empty, an empty string is added to ensure
       that :data:`sys.argv` always exists and is never empty.
 
+      See also the :c:member:`~PyConfig.orig_argv` member.
+
    .. c:member:: wchar_t* base_exec_prefix
 
       :data:`sys.base_exec_prefix`.
@@ -435,6 +438,14 @@ PyConfig
    .. c:member:: wchar_t* base_prefix
 
       :data:`sys.base_prefix`.
+
+   .. c:member:: wchar_t* platlibdir
+
+      :data:`sys.platlibdir`: platform library directory name, set at configure time
+      by ``--with-platlibdir``, overrideable by the ``PYTHONPLATLIBDIR``
+      environment variable.
+
+      .. versionadded:: 3.9
 
    .. c:member:: int buffered_stdio
 
@@ -466,13 +477,13 @@ PyConfig
 
    .. c:member:: int dev_mode
 
-      Development mode: see :option:`-X dev <-X>`.
+      If non-zero, enable the :ref:`Python Development Mode <devmode>`.
 
    .. c:member:: int dump_refs
 
       If non-zero, dump all objects which are still alive at exit.
 
-      Require a debug build of Python (``Py_REF_DEBUG`` macro must be defined).
+      ``Py_TRACE_REFS`` macro must be defined in build.
 
    .. c:member:: wchar_t* exec_prefix
 
@@ -577,6 +588,23 @@ PyConfig
       * 1: Remove assertions, set ``__debug__`` to ``False``
       * 2: Strip docstrings
 
+   .. c:member:: PyWideStringList orig_argv
+
+      The list of the original command line arguments passed to the Python
+      executable.
+
+      If :c:member:`~PyConfig.orig_argv` list is empty and
+      :c:member:`~PyConfig.argv` is not a list only containing an empty
+      string, :c:func:`PyConfig_Read()` copies :c:member:`~PyConfig.argv` into
+      :c:member:`~PyConfig.orig_argv` before modifying
+      :c:member:`~PyConfig.argv` (if :c:member:`~PyConfig.parse_argv` is
+      non-zero).
+
+      See also the :c:member:`~PyConfig.argv` member and the
+      :c:func:`Py_GetArgcArgv` function.
+
+      .. versionadded:: 3.10
+
    .. c:member:: int parse_argv
 
       If non-zero, parse :c:member:`~PyConfig.argv` the same way the regular
@@ -626,14 +654,6 @@ PyConfig
    .. c:member:: wchar_t* run_module
 
       ``python3 -m MODULE`` argument. Used by :c:func:`Py_RunMain`.
-
-   .. c:member:: int show_alloc_count
-
-      Show allocation counts at exit?
-
-      Set to 1 by :option:`-X showalloccount <-X>` command line option.
-
-      Need a special Python build with ``COUNT_ALLOCS`` macro defined.
 
    .. c:member:: int show_ref_count
 
@@ -702,6 +722,10 @@ arguments are stripped from ``argv``: see :ref:`Command Line Arguments
 The ``xoptions`` options are parsed to set other options: see :option:`-X`
 option.
 
+.. versionchanged:: 3.9
+
+   The ``show_alloc_count`` field has been removed.
+
 
 Initialization with PyConfig
 ----------------------------
@@ -757,7 +781,7 @@ configuration, and then override some parameters::
         PyConfig config;
         PyConfig_InitPythonConfig(&config);
 
-        /* Set the program name before reading the configuraton
+        /* Set the program name before reading the configuration
            (decode byte string from the locale encoding).
 
            Implicitly preinitialize Python. */
@@ -878,6 +902,7 @@ Path Configuration
 * Path configuration inputs:
 
   * :c:member:`PyConfig.home`
+  * :c:member:`PyConfig.platlibdir`
   * :c:member:`PyConfig.pathconfig_warnings`
   * :c:member:`PyConfig.program_name`
   * :c:member:`PyConfig.pythonpath_env`
@@ -969,6 +994,16 @@ customized Python always running in isolated mode using
 :c:func:`Py_RunMain`.
 
 
+Py_GetArgcArgv()
+----------------
+
+.. c:function:: void Py_GetArgcArgv(int *argc, wchar_t ***argv)
+
+   Get the original command line arguments, before Python modified them.
+
+   See also :c:member:`PyConfig.orig_argv` member.
+
+
 Multi-Phase Initialization Private Provisional API
 --------------------------------------------------
 
@@ -998,6 +1033,8 @@ Private provisional API:
 
 * :c:member:`PyConfig._init_main`: if set to 0,
   :c:func:`Py_InitializeFromConfig` stops at the "Core" initialization phase.
+* :c:member:`PyConfig._isolated_interpreter`: if non-zero,
+  disallow threads, subprocesses and fork.
 
 .. c:function:: PyStatus _Py_InitializeMain(void)
 

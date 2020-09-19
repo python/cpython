@@ -47,13 +47,7 @@ class LockTests(test_utils.TestCase):
         self.assertTrue(repr(lock).endswith('[unlocked]>'))
         self.assertTrue(RGX_REPR.match(repr(lock)))
 
-        with self.assertWarns(DeprecationWarning):
-            @asyncio.coroutine
-            def acquire_lock():
-                with self.assertWarns(DeprecationWarning):
-                    yield from lock
-
-        self.loop.run_until_complete(acquire_lock())
+        self.loop.run_until_complete(lock.acquire())
         self.assertTrue(repr(lock).endswith('[locked]>'))
         self.assertTrue(RGX_REPR.match(repr(lock)))
 
@@ -61,18 +55,16 @@ class LockTests(test_utils.TestCase):
         with self.assertWarns(DeprecationWarning):
             lock = asyncio.Lock(loop=self.loop)
 
-
             @asyncio.coroutine
             def acquire_lock():
-                with self.assertWarns(DeprecationWarning):
-                    return (yield from lock)
+                return (yield from lock)
 
-        res = self.loop.run_until_complete(acquire_lock())
+        with self.assertRaisesRegex(
+            TypeError,
+            "object is not iterable"
+        ):
+            self.loop.run_until_complete(acquire_lock())
 
-        self.assertTrue(res)
-        self.assertTrue(lock.locked())
-
-        lock.release()
         self.assertFalse(lock.locked())
 
     def test_lock_by_with_statement(self):
@@ -90,13 +82,13 @@ class LockTests(test_utils.TestCase):
             def test(lock):
                 yield from asyncio.sleep(0.01)
                 self.assertFalse(lock.locked())
-                with self.assertWarns(DeprecationWarning):
-                    with (yield from lock) as _lock:
-                        self.assertIs(_lock, None)
-                        self.assertTrue(lock.locked())
-                        yield from asyncio.sleep(0.01)
-                        self.assertTrue(lock.locked())
-                    self.assertFalse(lock.locked())
+                with self.assertRaisesRegex(
+                    TypeError,
+                    "object is not iterable"
+                ):
+                    with (yield from lock):
+                        pass
+                self.assertFalse(lock.locked())
 
         for primitive in primitives:
             loop.run_until_complete(test(primitive))
@@ -302,52 +294,16 @@ class LockTests(test_utils.TestCase):
         self.assertFalse(lock.locked())
 
     def test_context_manager(self):
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
+        async def f():
+            lock = asyncio.Lock()
+            self.assertFalse(lock.locked())
 
-            @asyncio.coroutine
-            def acquire_lock():
-                with self.assertWarns(DeprecationWarning):
-                    return (yield from lock)
+            async with lock:
+                self.assertTrue(lock.locked())
 
-        with self.loop.run_until_complete(acquire_lock()):
-            self.assertTrue(lock.locked())
+            self.assertFalse(lock.locked())
 
-        self.assertFalse(lock.locked())
-
-    def test_context_manager_cant_reuse(self):
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
-
-            @asyncio.coroutine
-            def acquire_lock():
-                with self.assertWarns(DeprecationWarning):
-                    return (yield from lock)
-
-        # This spells "yield from lock" outside a generator.
-        cm = self.loop.run_until_complete(acquire_lock())
-        with cm:
-            self.assertTrue(lock.locked())
-
-        self.assertFalse(lock.locked())
-
-        with self.assertRaises(AttributeError):
-            with cm:
-                pass
-
-    def test_context_manager_no_yield(self):
-        with self.assertWarns(DeprecationWarning):
-            lock = asyncio.Lock(loop=self.loop)
-
-        try:
-            with lock:
-                self.fail('RuntimeError is not raised in with expression')
-        except RuntimeError as err:
-            self.assertEqual(
-                str(err),
-                '"yield from" should be used as context manager expression')
-
-        self.assertFalse(lock.locked())
+        self.loop.run_until_complete(f())
 
 
 class EventTests(test_utils.TestCase):
@@ -809,33 +765,14 @@ class ConditionTests(test_utils.TestCase):
         self.assertTrue(RGX_REPR.match(repr(cond)))
 
     def test_context_manager(self):
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
+        async def f():
+            cond = asyncio.Condition()
+            self.assertFalse(cond.locked())
+            async with cond:
+                self.assertTrue(cond.locked())
+            self.assertFalse(cond.locked())
 
-        with self.assertWarns(DeprecationWarning):
-            @asyncio.coroutine
-            def acquire_cond():
-                with self.assertWarns(DeprecationWarning):
-                    return (yield from cond)
-
-        with self.loop.run_until_complete(acquire_cond()):
-            self.assertTrue(cond.locked())
-
-        self.assertFalse(cond.locked())
-
-    def test_context_manager_no_yield(self):
-        with self.assertWarns(DeprecationWarning):
-            cond = asyncio.Condition(loop=self.loop)
-
-        try:
-            with cond:
-                self.fail('RuntimeError is not raised in with expression')
-        except RuntimeError as err:
-            self.assertEqual(
-                str(err),
-                '"yield from" should be used as context manager expression')
-
-        self.assertFalse(cond.locked())
+        self.loop.run_until_complete(f())
 
     def test_explicit_lock(self):
         with self.assertWarns(DeprecationWarning):
@@ -920,16 +857,14 @@ class SemaphoreTests(test_utils.TestCase):
         with self.assertWarns(DeprecationWarning):
             @asyncio.coroutine
             def acquire_lock():
-                with self.assertWarns(DeprecationWarning):
-                    return (yield from sem)
+                return (yield from sem)
 
-        res = self.loop.run_until_complete(acquire_lock())
+        with self.assertRaisesRegex(
+            TypeError,
+            "'Semaphore' object is not iterable",
+        ):
+            self.loop.run_until_complete(acquire_lock())
 
-        self.assertTrue(res)
-        self.assertTrue(sem.locked())
-        self.assertEqual(0, sem._value)
-
-        sem.release()
         self.assertFalse(sem.locked())
         self.assertEqual(1, sem._value)
 
@@ -1063,38 +998,6 @@ class SemaphoreTests(test_utils.TestCase):
 
         sem.release()
         self.assertFalse(sem.locked())
-
-    def test_context_manager(self):
-        with self.assertWarns(DeprecationWarning):
-            sem = asyncio.Semaphore(2, loop=self.loop)
-
-            @asyncio.coroutine
-            def acquire_lock():
-                with self.assertWarns(DeprecationWarning):
-                    return (yield from sem)
-
-        with self.loop.run_until_complete(acquire_lock()):
-            self.assertFalse(sem.locked())
-            self.assertEqual(1, sem._value)
-
-            with self.loop.run_until_complete(acquire_lock()):
-                self.assertTrue(sem.locked())
-
-        self.assertEqual(2, sem._value)
-
-    def test_context_manager_no_yield(self):
-        with self.assertWarns(DeprecationWarning):
-            sem = asyncio.Semaphore(2, loop=self.loop)
-
-        try:
-            with sem:
-                self.fail('RuntimeError is not raised in with expression')
-        except RuntimeError as err:
-            self.assertEqual(
-                str(err),
-                '"yield from" should be used as context manager expression')
-
-        self.assertEqual(2, sem._value)
 
 
 if __name__ == '__main__':

@@ -1247,6 +1247,7 @@ static PYC_MAGIC magic_values[] = {
     { 3360, 3379, L"3.6" },
     { 3390, 3399, L"3.7" },
     { 3400, 3419, L"3.8" },
+    { 3420, 3429, L"3.9" },
     { 0 }
 };
 
@@ -1519,7 +1520,7 @@ show_help_text(wchar_t ** argv)
 Python Launcher for Windows Version %ls\n\n", version_text);
     fwprintf(stdout, L"\
 usage:\n\
-%ls [launcher-args] [python-args] script [script-args]\n\n", argv[0]);
+%ls [launcher-args] [python-args] [script [script-args]]\n\n", argv[0]);
     fputws(L"\
 Launcher arguments:\n\n\
 -2     : Launch the latest Python 2.x version\n\
@@ -1535,6 +1536,15 @@ Launcher arguments:\n\n\
     }
     fputws(L"\n-0  --list       : List the available pythons", stdout);
     fputws(L"\n-0p --list-paths : List with paths", stdout);
+    fputws(L"\n\n If no script is specified the specified interpreter is opened.", stdout);
+    fputws(L"\nIf an exact version is not given, using the latest version can be overridden by", stdout);
+    fputws(L"\nany of the following, (in priority order):", stdout);
+    fputws(L"\n An active virtual environment", stdout);
+    fputws(L"\n A shebang line in the script (if present)", stdout);
+    fputws(L"\n With -2 or -3 flag a matching PY_PYTHON2 or PY_PYTHON3 Enviroment variable", stdout);
+    fputws(L"\n A PY_PYTHON Enviroment variable", stdout);
+    fputws(L"\n From [defaults] in py.ini in your %LOCALAPPDATA%\\py.ini", stdout);
+    fputws(L"\n From [defaults] in py.ini beside py.exe (use `where py` to locate)", stdout);
     fputws(L"\n\nThe following help text is from Python:\n\n", stdout);
     fflush(stdout);
 }
@@ -1830,7 +1840,7 @@ process(int argc, wchar_t ** argv)
 
 #if !defined(VENV_REDIRECT)
     /* bpo-35811: The __PYVENV_LAUNCHER__ variable is used to
-     * override sys.executable and locate the original prefix path. 
+     * override sys.executable and locate the original prefix path.
      * However, if it is silently inherited by a non-venv Python
      * process, that process will believe it is running in the venv
      * still. This is the only place where *we* can clear it (that is,

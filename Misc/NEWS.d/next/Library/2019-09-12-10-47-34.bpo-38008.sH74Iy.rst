@@ -1,3 +1,0 @@
-Fix parent class check in protocols to correctly identify the module that
-provides a builtin protocol, instead of assuming they all come from the
-:mod:`collections.abc` module

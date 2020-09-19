@@ -1,0 +1,2 @@
+Fixed reading files with non-ASCII names from ZIP archive directly after
+writing them.

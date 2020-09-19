@@ -11,6 +11,7 @@
 **/*context*                  @1st1
 **/*genobject*                @1st1
 **/*hamt*                     @1st1
+Objects/set*                  @rhettinger
 Objects/dict*                 @methane
 
 # Hashing
@@ -67,8 +68,14 @@ Include/pytime.h              @pganssle @abalkin
 **/*imap*                     @python/email-team
 **/*poplib*                   @python/email-team
 
-# Parser/Pgen
-/Parser/pgen/                 @pablogsal
+# Garbage collector
+/Modules/gcmodule.c           @pablogsal
+/Doc/library/gc.rst           @pablogsal
+
+# Parser
+/Parser/                      @pablogsal @lysnikolaou
+/Tools/peg_generator/         @pablogsal @lysnikolaou
+/Lib/test/test_peg_generator/ @pablogsal @lysnikolaou
 
 # SQLite 3
 **/*sqlite*                   @berkerpeksag
@@ -89,6 +96,7 @@ Include/pytime.h              @pganssle @abalkin
 /Tools/msi/                   @python/windows-team
 /Tools/nuget/                 @python/windows-team
 
+# Misc
 **/*itertools*                @rhettinger
 **/*collections*              @rhettinger
 **/*random*                   @rhettinger
@@ -103,6 +111,15 @@ Include/pytime.h              @pganssle @abalkin
 **/*idlelib*                  @terryjreedy
 
 **/*typing*                   @gvanrossum @ilevkivskyi
+
+**/*asyncore                  @giampaolo
+**/*asynchat                  @giampaolo
+**/*ftplib                    @giampaolo
+**/*shutil                    @giampaolo
+
+**/*enum*                     @ethanfurman
+**/*cgi*                      @ethanfurman
+**/*tarfile*                  @ethanfurman
 
 # macOS
 /Mac/                         @python/macos-team

@@ -1,1 +1,0 @@
-Clarify docstrings of pathlib suffix(es)

@@ -1,2 +1,0 @@
-Fix a bug in the peephole optimizer that was not treating correctly constant
-conditions with binary operators. Patch by Pablo Galindo.

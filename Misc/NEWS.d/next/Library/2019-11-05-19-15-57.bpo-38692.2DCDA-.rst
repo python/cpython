@@ -1,2 +1,0 @@
-Add :class:`asyncio.PidfdChildWatcher`, a Linux-specific child watcher
-implementation that polls process file descriptors.

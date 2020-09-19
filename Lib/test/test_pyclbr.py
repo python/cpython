@@ -247,7 +247,7 @@ class ReadmoduleTests(TestCase):
         # not a package.
         #
         # Issue #14798.
-        self.assertRaises(ImportError, pyclbr.readmodule_ex, 'asyncore.foo')
+        self.assertRaises(ImportError, pyclbr.readmodule_ex, 'asyncio.foo')
 
     def test_module_has_no_spec(self):
         module_name = "doesnotexist"

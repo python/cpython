@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
-    <title>IDLE &#8212; Python 3.9.0a0 documentation</title>
+    <title>IDLE &#8212; Python 3.10.0a0 documentation</title>
     <link rel="stylesheet" href="../_static/pydoctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
 
@@ -17,14 +17,14 @@
     <script type="text/javascript" src="../_static/sidebar.js"></script>
 
     <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 3.9.0a0 documentation"
+          title="Search within Python 3.10.0a0 documentation"
           href="../_static/opensearch.xml"/>
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="copyright" title="Copyright" href="../copyright.html" />
     <link rel="next" title="Other Graphical User Interface Packages" href="othergui.html" />
-    <link rel="prev" title="tkinter.scrolledtext — Scrolled Text Widget" href="tkinter.scrolledtext.html" />
+    <link rel="prev" title="tkinter.tix — Extension widgets for Tk" href="tkinter.tix.html" />
     <link rel="canonical" href="https://docs.python.org/3/library/idle.html" />
 
 
@@ -62,7 +62,7 @@
           <a href="othergui.html" title="Other Graphical User Interface Packages"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="tkinter.scrolledtext.html" title="tkinter.scrolledtext — Scrolled Text Widget"
+          <a href="tkinter.tix.html" title="tkinter.tix — Extension widgets for Tk"
              accesskey="P">previous</a> |</li>
 
     <li><img src="../_static/py.png" alt=""
@@ -71,7 +71,7 @@
 
 
     <li>
-      <a href="../index.html">3.9.0a0 Documentation</a> &#187;
+      <a href="../index.html">3.10.0a0 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -197,9 +197,11 @@ be undone.</p>
 </dd>
 <dt>Replace…</dt><dd><p>Open a search-and-replace dialog.</p>
 </dd>
-<dt>Go to Line</dt><dd><p>Move cursor to the line number requested and make that line visible.</p>
+<dt>Go to Line</dt><dd><p>Move the cursor to the beginning of the line requested and make that
+line visible.  A request past the end of the file goes to the end.
+Clear any selection and update the line and column status.</p>
 </dd>
-<dt>Show Completions</dt><dd><p>Open a scrollable list allowing selection of keywords and attributes. See
+<dt>Show Completions</dt><dd><p>Open a scrollable list allowing selection of existing names. See
 <a class="reference internal" href="#completions"><span class="std std-ref">Completions</span></a> in the Editing and navigation section below.</p>
 </dd>
 <dt>Expand Word</dt><dd><p>Expand a prefix you have typed to match a full word in the same window;
@@ -240,7 +242,8 @@ paragraph will be formatted to less than N columns, where N defaults to 72.</p>
 </dd>
 <dt>Strip trailing whitespace</dt><dd><p>Remove trailing space and other whitespace characters after the last
 non-whitespace character of a line by applying str.rstrip to each line,
-including lines within multiline strings.</p>
+including lines within multiline strings.  Except for Shell windows,
+remove extra newlines at the end of the file.</p>
 </dd>
 </dl>
 </div>
@@ -381,7 +384,8 @@ Context menus have the standard clipboard functions also on the Edit menu.</p>
 </dl>
 <p>Editor windows also have breakpoint functions.  Lines with a breakpoint set are
 specially marked.  Breakpoints only have an effect when running under the
-debugger.  Breakpoints for a file are saved in the user’s .idlerc directory.</p>
+debugger.  Breakpoints for a file are saved in the user’s <code class="docutils literal notranslate"><span class="pre">.idlerc</span></code>
+directory.</p>
 <dl class="simple">
 <dt>Set Breakpoint</dt><dd><p>Set a breakpoint on the current line.</p>
 </dd>
@@ -461,38 +465,47 @@ are restricted to four spaces due to Tcl/Tk limitations.</p>
 </div>
 <div class="section" id="completions">
 <span id="id3"></span><h3>Completions<a class="headerlink" href="#completions" title="Permalink to this headline">¶</a></h3>
-<p>Completions are supplied for functions, classes, and attributes of classes,
-both built-in and user-defined. Completions are also provided for
-filenames.</p>
-<p>The AutoCompleteWindow (ACW) will open after a predefined delay (default is
-two seconds) after a ‘.’ or (in a string) an os.sep is typed. If after one
-of those characters (plus zero or more other characters) a tab is typed
-the ACW will open immediately if a possible continuation is found.</p>
-<p>If there is only one possible completion for the characters entered, a
-<kbd class="kbd docutils literal notranslate">Tab</kbd> will supply that completion without opening the ACW.</p>
-<p>‘Show Completions’ will force open a completions window, by default the
-<kbd class="kbd docutils literal notranslate">C-space</kbd> will open a completions window. In an empty
-string, this will contain the files in the current directory. On a
-blank line, it will contain the built-in and user-defined functions and
-classes in the current namespaces, plus any modules imported. If some
-characters have been entered, the ACW will attempt to be more specific.</p>
-<p>If a string of characters is typed, the ACW selection will jump to the
-entry most closely matching those characters.  Entering a <kbd class="kbd docutils literal notranslate">tab</kbd> will
-cause the longest non-ambiguous match to be entered in the Editor window or
-Shell.  Two <kbd class="kbd docutils literal notranslate">tab</kbd> in a row will supply the current ACW selection, as
-will return or a double click.  Cursor keys, Page Up/Down, mouse selection,
-and the scroll wheel all operate on the ACW.</p>
-<p>“Hidden” attributes can be accessed by typing the beginning of hidden
-name after a ‘.’, e.g. ‘_’. This allows access to modules with
-<code class="docutils literal notranslate"><span class="pre">__all__</span></code> set, or to class-private attributes.</p>
-<p>Completions and the ‘Expand Word’ facility can save a lot of typing!</p>
-<p>Completions are currently limited to those in the namespaces. Names in
-an Editor window which are not via <code class="docutils literal notranslate"><span class="pre">__main__</span></code> and <a class="reference internal" href="sys.html#sys.modules" title="sys.modules"><code class="xref py py-data docutils literal notranslate"><span class="pre">sys.modules</span></code></a> will
-not be found.  Run the module once with your imports to correct this situation.
-Note that IDLE itself places quite a few modules in sys.modules, so
-much can be found by default, e.g. the re module.</p>
-<p>If you don’t like the ACW popping up unbidden, simply make the delay
-longer or disable the extension.</p>
+<p>Completions are supplied, when requested and available, for module
+names, attributes of classes or functions, or filenames.  Each request
+method displays a completion box with existing names.  (See tab
+completions below for an exception.) For any box, change the name
+being completed and the item highlighted in the box by
+typing and deleting characters; by hitting <kbd class="kbd docutils literal notranslate">Up</kbd>, <kbd class="kbd docutils literal notranslate">Down</kbd>,
+<kbd class="kbd docutils literal notranslate">PageUp</kbd>, <kbd class="kbd docutils literal notranslate">PageDown</kbd>, <kbd class="kbd docutils literal notranslate">Home</kbd>, and <kbd class="kbd docutils literal notranslate">End</kbd> keys;
+and by a single click within the box.  Close the box with <kbd class="kbd docutils literal notranslate">Escape</kbd>,
+<kbd class="kbd docutils literal notranslate">Enter</kbd>, and double <kbd class="kbd docutils literal notranslate">Tab</kbd> keys or clicks outside the box.
+A double click within the box selects and closes.</p>
+<p>One way to open a box is to type a key character and wait for a
+predefined interval.  This defaults to 2 seconds; customize it
+in the settings dialog.  (To prevent auto popups, set the delay to a
+large number of milliseconds, such as 100000000.) For imported module
+names or class or function attributes, type ‘.’.
+For filenames in the root directory, type <a class="reference internal" href="os.html#os.sep" title="os.sep"><code class="xref py py-data docutils literal notranslate"><span class="pre">os.sep</span></code></a> or
+<a class="reference internal" href="os.html#os.altsep" title="os.altsep"><code class="xref py py-data docutils literal notranslate"><span class="pre">os.altsep</span></code></a> immediately after an opening quote.  (On Windows,
+one can specify a drive first.)  Move into subdirectories by typing a
+directory name and a separator.</p>
+<p>Instead of waiting, or after a box is closed, open a completion box
+immediately with Show Completions on the Edit menu.  The default hot
+key is <kbd class="kbd docutils literal notranslate">C-space</kbd>.  If one types a prefix for the desired name
+before opening the box, the first match or near miss is made visible.
+The result is the same as if one enters a prefix
+after the box is displayed.  Show Completions after a quote completes
+filenames in the current directory instead of a root directory.</p>
+<p>Hitting <kbd class="kbd docutils literal notranslate">Tab</kbd> after a prefix usually has the same effect as Show
+Completions.  (With no prefix, it indents.)  However, if there is only
+one match to the prefix, that match is immediately added to the editor
+text without opening a box.</p>
+<p>Invoking ‘Show Completions’, or hitting <kbd class="kbd docutils literal notranslate">Tab</kbd> after a prefix,
+outside of a string and without a preceding ‘.’ opens a box with
+keywords, builtin names, and available module-level names.</p>
+<p>When editing code in an editor (as oppose to Shell), increase the
+available module-level names by running your code
+and not restarting the Shell thereafter.  This is especially useful
+after adding imports at the top of a file.  This also increases
+possible attribute completions.</p>
+<p>Completion boxes intially exclude names beginning with ‘_’ or, for
+modules, not included in ‘__all__’.  The hidden names can be accessed
+by typing ‘_’ after ‘.’, either before or after the box is opened.</p>
 </div>
 <div class="section" id="calltips">
 <span id="id4"></span><h3>Calltips<a class="headerlink" href="#calltips" title="Permalink to this headline">¶</a></h3>
@@ -633,17 +646,20 @@ clash, or a single installation might need admin access.  If one undo the
 clash, or cannot or does not want to run as admin, it might be easiest to
 completely remove Python and start over.</p>
 <p>A zombie pythonw.exe process could be a problem.  On Windows, use Task
-Manager to detect and stop one.  Sometimes a restart initiated by a program
-crash or Keyboard Interrupt (control-C) may fail to connect.  Dismissing
-the error box or Restart Shell on the Shell menu may fix a temporary problem.</p>
+Manager to check for one and stop it if there is.  Sometimes a restart
+initiated by a program crash or Keyboard Interrupt (control-C) may fail
+to connect.  Dismissing the error box or using Restart Shell on the Shell
+menu may fix a temporary problem.</p>
 <p>When IDLE first starts, it attempts to read user configuration files in
-~/.idlerc/ (~ is one’s home directory).  If there is a problem, an error
+<code class="docutils literal notranslate"><span class="pre">~/.idlerc/</span></code> (~ is one’s home directory).  If there is a problem, an error
 message should be displayed.  Leaving aside random disk glitches, this can
-be prevented by never editing the files by hand, using the configuration
-dialog, under Options, instead Options.  Once it happens, the solution may
-be to delete one or more of the configuration files.</p>
+be prevented by never editing the files by hand.  Instead, use the
+configuration dialog, under Options.  Once there is an error in a user
+configuration file, the best solution may be to delete it and start over
+with the settings dialog.</p>
 <p>If IDLE quits with no message, and it was not started from a console, try
-starting from a console (<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">idlelib)</span></code> and see if a message appears.</p>
+starting it from a console or terminal (<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">idlelib</span></code>) and see if
+this results in an error message.</p>
 </div>
 <div class="section" id="running-user-code">
 <h3>Running user code<a class="headerlink" href="#running-user-code" title="Permalink to this headline">¶</a></h3>
@@ -790,20 +806,20 @@ the scrollbar, or up and down arrow keys held down.
 Or click the TOC (Table of Contents) button and select a section
 header in the opened box.</p>
 <p>Help menu entry “Python Docs” opens the extensive sources of help,
-including tutorials, available at docs.python.org/x.y, where ‘x.y’
+including tutorials, available at <code class="docutils literal notranslate"><span class="pre">docs.python.org/x.y</span></code>, where ‘x.y’
 is the currently running Python version.  If your system
 has an off-line copy of the docs (this may be an installation option),
 that will be opened instead.</p>
 <p>Selected URLs can be added or removed from the help menu at any time using the
-General tab of the Configure IDLE dialog .</p>
+General tab of the Configure IDLE dialog.</p>
 </div>
 <div class="section" id="setting-preferences">
 <span id="preferences"></span><h3>Setting preferences<a class="headerlink" href="#setting-preferences" title="Permalink to this headline">¶</a></h3>
 <p>The font preferences, highlighting, keys, and general preferences can be
 changed via Configure IDLE on the Option menu.
-Non-default user settings are saved in a .idlerc directory in the user’s
+Non-default user settings are saved in a <code class="docutils literal notranslate"><span class="pre">.idlerc</span></code> directory in the user’s
 home directory.  Problems caused by bad user configuration files are solved
-by editing or deleting one or more of the files in .idlerc.</p>
+by editing or deleting one or more of the files in <code class="docutils literal notranslate"><span class="pre">.idlerc</span></code>.</p>
 <p>On the Font tab, see the text sample for the effect of font face and size
 on multiple characters in multiple languages.  Edit the sample to add
 other characters of personal interest.  Use the sample to select
@@ -886,8 +902,8 @@ also used for testing.</p>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="tkinter.scrolledtext.html"
-                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tkinter.scrolledtext</span></code> — Scrolled Text Widget</a></p>
+  <p class="topless"><a href="tkinter.tix.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tkinter.tix</span></code> — Extension widgets for Tk</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="othergui.html"
                         title="next chapter">Other Graphical User Interface Packages</a></p>
@@ -919,7 +935,7 @@ also used for testing.</p>
           <a href="othergui.html" title="Other Graphical User Interface Packages"
              >next</a> |</li>
         <li class="right" >
-          <a href="tkinter.scrolledtext.html" title="tkinter.scrolledtext — Scrolled Text Widget"
+          <a href="tkinter.tix.html" title="tkinter.tix — Extension widgets for Tk"
              >previous</a> |</li>
 
     <li><img src="../_static/py.png" alt=""
@@ -928,7 +944,7 @@ also used for testing.</p>
 
 
     <li>
-      <a href="../index.html">3.9.0a0 Documentation</a> &#187;
+      <a href="../index.html">3.10.0a0 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -951,7 +967,7 @@ also used for testing.</p>
       </ul>
     </div>
     <div class="footer">
-    &copy; <a href="../copyright.html">Copyright</a> 2001-2019, Python Software Foundation.
+    &copy; <a href="../copyright.html">Copyright</a> 2001-2020, Python Software Foundation.
     <br />
 
     The Python Software Foundation is a non-profit corporation.
@@ -959,11 +975,11 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Sep 01, 2019.
+    Last updated on Sep 09, 2020.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 
-    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 2.1.2.
+    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 2.1.1.
     </div>
 
   </body>

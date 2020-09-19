@@ -1,3 +1,0 @@
-Optimize code context to reduce unneeded background activity.
-Font and highlight changes now occur along with text changes
-instead of after a random delay.

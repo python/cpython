@@ -54,7 +54,6 @@ _unpack_uint32 = _bootstrap_external._unpack_uint32
 # Fully bootstrapped at this point, import whatever you like, circular
 # dependencies and startup overhead minimisation permitting :)
 
-import types
 import warnings
 
 
@@ -136,12 +135,13 @@ def reload(module):
     The module must have been successfully imported before.
 
     """
-    if not module or not isinstance(module, types.ModuleType):
-        raise TypeError("reload() argument must be a module")
     try:
         name = module.__spec__.name
     except AttributeError:
-        name = module.__name__
+        try:
+            name = module.__name__
+        except AttributeError:
+            raise TypeError("reload() argument must be a module")
 
     if sys.modules.get(name) is not module:
         msg = "module {} not in sys.modules"

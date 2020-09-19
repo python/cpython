@@ -1,2 +1,0 @@
-Hide internal asyncio.Stream methods: feed_eof(), feed_data(),
-set_exception() and set_transport().

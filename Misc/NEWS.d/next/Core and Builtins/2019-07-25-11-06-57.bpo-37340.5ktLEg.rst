@@ -1,3 +1,0 @@
-Removed object cache (``free_list``) for bound method objects.  Temporary
-bound method objects are less used than before thanks to the ``LOAD_METHOD``
-opcode and the ``_PyObject_VectorcallMethod`` C API.

@@ -25,16 +25,12 @@ class Popen(object):
         if self.returncode is None:
             try:
                 pid, sts = os.waitpid(self.pid, flag)
-            except OSError as e:
+            except OSError:
                 # Child process not yet created. See #1731717
                 # e.errno == errno.ECHILD == 10
                 return None
             if pid == self.pid:
-                if os.WIFSIGNALED(sts):
-                    self.returncode = -os.WTERMSIG(sts)
-                else:
-                    assert os.WIFEXITED(sts), "Status is {:n}".format(sts)
-                    self.returncode = os.WEXITSTATUS(sts)
+                self.returncode = os.waitstatus_to_exitcode(sts)
         return self.returncode
 
     def wait(self, timeout=None):

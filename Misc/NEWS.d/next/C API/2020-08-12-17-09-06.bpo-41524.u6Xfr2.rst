@@ -1,0 +1,2 @@
+Fix bug in PyOS_mystrnicmp and PyOS_mystricmp that incremented
+pointers beyond the end of a string.

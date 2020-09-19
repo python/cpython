@@ -1,6 +1,7 @@
 import array
 import unittest
-from test.support import import_module, get_attribute
+from test.support import get_attribute
+from test.support.import_helper import import_module
 import os, struct
 fcntl = import_module('fcntl')
 termios = import_module('termios')

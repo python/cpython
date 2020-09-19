@@ -448,7 +448,7 @@ class BaseConfigurator(object):
             value = ConvertingList(value)
             value.configurator = self
         elif not isinstance(value, ConvertingTuple) and\
-                 isinstance(value, tuple):
+                 isinstance(value, tuple) and not hasattr(value, '_fields'):
             value = ConvertingTuple(value)
             value.configurator = self
         elif isinstance(value, str): # str for py3k

@@ -73,7 +73,7 @@ test runner
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
    `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_
-   or  `Hudson <http://hudson-ci.org/>`_.
+   or `Travis-CI <https://travis-ci.com>`_, or `AppVeyor <https://www.appveyor.com/>`_.
 
 
 .. _unittest-minimal-example:
@@ -910,10 +910,10 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertIn(first, second, msg=None)
-               assertNotIn(first, second, msg=None)
+   .. method:: assertIn(member, container, msg=None)
+               assertNotIn(member, container, msg=None)
 
-      Test that *first* is (or is not) in *second*.
+      Test that *member* is (or is not) in *container*.
 
       .. versionadded:: 3.1
 
@@ -949,6 +949,9 @@ Test cases
    +---------------------------------------------------------+--------------------------------------+------------+
    | :meth:`assertLogs(logger, level)                        | The ``with`` block logs on *logger*  | 3.4        |
    | <TestCase.assertLogs>`                                  | with minimum *level*                 |            |
+   +---------------------------------------------------------+--------------------------------------+------------+
+   | :meth:`assertNoLogs(logger, level)                      | The ``with`` block does not log on   | 3.10       |
+   | <TestCase.assertNoLogs>`                                |  *logger* with minimum *level*       |            |
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
@@ -1121,6 +1124,24 @@ Test cases
 
       .. versionadded:: 3.4
 
+   .. method:: assertNoLogs(logger=None, level=None)
+
+      A context manager to test that no messages are logged on
+      the *logger* or one of its children, with at least the given
+      *level*.
+
+      If given, *logger* should be a :class:`logging.Logger` object or a
+      :class:`str` giving the name of a logger.  The default is the root
+      logger, which will catch all messages.
+
+      If given, *level* should be either a numeric logging level or
+      its string equivalent (for example either ``"ERROR"`` or
+      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+
+      Unlike :meth:`assertLogs`, nothing will be returned by the context
+      manager.
+
+      .. versionadded:: 3.10
 
    There are also other methods used to perform more specific checks, such as:
 
@@ -1563,7 +1584,7 @@ Test cases
       if __name__ == "__main__":
           unittest.main()
 
-   After running the test ``events`` would contain ``["setUp", "asyncSetUp", "test_response", "asyncTearDown", "tearDown", "cleanup"]``
+   After running the test, ``events`` would contain ``["setUp", "asyncSetUp", "test_response", "asyncTearDown", "tearDown", "cleanup"]``.
 
 
 .. class:: FunctionTestCase(testFunc, setUp=None, tearDown=None, description=None)

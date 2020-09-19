@@ -44,7 +44,8 @@ executed::
 
 Summarizing:
 
-.. productionlist::
+
+.. productionlist:: python-grammar
    compound_stmt: `if_stmt`
                 : | `while_stmt`
                 : | `for_stmt`
@@ -89,9 +90,9 @@ The :keyword:`!if` statement
 
 The :keyword:`if` statement is used for conditional execution:
 
-.. productionlist::
-   if_stmt: "if" `expression` ":" `suite`
-          : ("elif" `expression` ":" `suite`)*
+.. productionlist:: python-grammar
+   if_stmt: "if" `assignment_expression` ":" `suite`
+          : ("elif" `assignment_expression` ":" `suite`)*
           : ["else" ":" `suite`]
 
 It selects exactly one of the suites by evaluating the expressions one by one
@@ -115,8 +116,8 @@ The :keyword:`!while` statement
 The :keyword:`while` statement is used for repeated execution as long as an
 expression is true:
 
-.. productionlist::
-   while_stmt: "while" `expression` ":" `suite`
+.. productionlist:: python-grammar
+   while_stmt: "while" `assignment_expression` ":" `suite`
              : ["else" ":" `suite`]
 
 This repeatedly tests the expression and, if it is true, executes the first
@@ -151,7 +152,7 @@ The :keyword:`!for` statement
 The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
 
-.. productionlist::
+.. productionlist:: python-grammar
    for_stmt: "for" `target_list` "in" `expression_list` ":" `suite`
            : ["else" ":" `suite`]
 
@@ -234,7 +235,7 @@ The :keyword:`!try` statement
 The :keyword:`try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
-.. productionlist::
+.. productionlist:: python-grammar
    try_stmt: `try1_stmt` | `try2_stmt`
    try1_stmt: "try" ":" `suite`
             : ("except" [`expression` ["as" `identifier`]] ":" `suite`)+
@@ -390,7 +391,7 @@ methods defined by a context manager (see section :ref:`context-managers`).
 This allows common :keyword:`try`...\ :keyword:`except`...\ :keyword:`finally`
 usage patterns to be encapsulated for convenient reuse.
 
-.. productionlist::
+.. productionlist:: python-grammar
    with_stmt: "with" `with_item` ("," `with_item`)* ":" `suite`
    with_item: `expression` ["as" `target`]
 
@@ -398,6 +399,8 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
 
 #. The context expression (the expression given in the :token:`with_item`) is
    evaluated to obtain a context manager.
+
+#. The context manager's :meth:`__enter__` is loaded for later use.
 
 #. The context manager's :meth:`__exit__` is loaded for later use.
 
@@ -430,17 +433,41 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
    value from :meth:`__exit__` is ignored, and execution proceeds at the normal
    location for the kind of exit that was taken.
 
+The following code::
+
+    with EXPRESSION as TARGET:
+        SUITE
+
+is semantically equivalent to::
+
+    manager = (EXPRESSION)
+    enter = type(manager).__enter__
+    exit = type(manager).__exit__
+    value = enter(manager)
+    hit_except = False
+
+    try:
+        TARGET = value
+        SUITE
+    except:
+        hit_except = True
+        if not exit(manager, *sys.exc_info()):
+            raise
+    finally:
+        if not hit_except:
+            exit(manager, None, None, None)
+
 With more than one item, the context managers are processed as if multiple
 :keyword:`with` statements were nested::
 
    with A() as a, B() as b:
-       suite
+       SUITE
 
-is equivalent to ::
+is semantically equivalent to::
 
    with A() as a:
        with B() as b:
-           suite
+           SUITE
 
 .. versionchanged:: 3.1
    Support for multiple context expressions.
@@ -477,11 +504,11 @@ Function definitions
 A function definition defines a user-defined function object (see section
 :ref:`types`):
 
-.. productionlist::
+.. productionlist:: python-grammar
    funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")"
           : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
-   decorator: "@" `dotted_name` ["(" [`argument_list` [","]] ")"] NEWLINE
+   decorator: "@" `assignment_expression` NEWLINE
    dotted_name: `identifier` ("." `identifier`)*
    parameter_list: `defparameter` ("," `defparameter`)* "," "/" ["," [`parameter_list_no_posonly`]]
                  :   | `parameter_list_no_posonly`
@@ -524,6 +551,11 @@ is roughly equivalent to ::
 
 except that the original function is not temporarily bound to the name ``func``.
 
+.. versionchanged:: 3.9
+   Functions may be decorated with any valid :token:`assignment_expression`.
+   Previously, the grammar was much more restrictive; see :pep:`614` for
+   details.
+
 .. index::
    triple: default; parameter; value
    single: argument; function definition
@@ -540,9 +572,9 @@ value --- this is a syntactic restriction that is not expressed by the grammar.
 **Default parameter values are evaluated from left to right when the function
 definition is executed.** This means that the expression is evaluated once, when
 the function is defined, and that the same "pre-computed" value is used for each
-call.  This is especially important to understand when a default parameter is a
+call.  This is especially important to understand when a default parameter value is a
 mutable object, such as a list or a dictionary: if the function modifies the
-object (e.g. by appending an item to a list), the default value is in effect
+object (e.g. by appending an item to a list), the default parameter value is in effect
 modified.  This is generally not what was intended.  A way around this is to use
 ``None`` as the default, and explicitly test for it in the body of the function,
 e.g.::
@@ -639,7 +671,7 @@ Class definitions
 
 A class definition defines a class object (see section :ref:`types`):
 
-.. productionlist::
+.. productionlist:: python-grammar
    classdef: [`decorators`] "class" `classname` [`inheritance`] ":" `suite`
    inheritance: "(" [`argument_list`] ")"
    classname: `identifier`
@@ -691,6 +723,11 @@ is roughly equivalent to ::
 The evaluation rules for the decorator expressions are the same as for function
 decorators.  The result is then bound to the class name.
 
+.. versionchanged:: 3.9
+   Classes may be decorated with any valid :token:`assignment_expression`.
+   Previously, the grammar was much more restrictive; see :pep:`614` for
+   details.
+
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
 method with ``self.name = value``.  Both class and instance attributes are
@@ -726,7 +763,7 @@ Coroutines
 Coroutine function definition
 -----------------------------
 
-.. productionlist::
+.. productionlist:: python-grammar
    async_funcdef: [`decorators`] "async" "def" `funcname` "(" [`parameter_list`] ")"
                 : ["->" `expression`] ":" `suite`
 
@@ -759,7 +796,7 @@ An example of a coroutine function::
 The :keyword:`!async for` statement
 -----------------------------------
 
-.. productionlist::
+.. productionlist:: python-grammar
    async_for_stmt: "async" `for_stmt`
 
 An :term:`asynchronous iterable` is able to call asynchronous code in its
@@ -772,24 +809,25 @@ iterators.
 The following code::
 
     async for TARGET in ITER:
-        BLOCK
+        SUITE
     else:
-        BLOCK2
+        SUITE2
 
 Is semantically equivalent to::
 
     iter = (ITER)
     iter = type(iter).__aiter__(iter)
     running = True
+
     while running:
         try:
             TARGET = await type(iter).__anext__(iter)
         except StopAsyncIteration:
             running = False
         else:
-            BLOCK
+            SUITE
     else:
-        BLOCK2
+        SUITE2
 
 See also :meth:`__aiter__` and :meth:`__anext__` for details.
 
@@ -803,7 +841,7 @@ body of a coroutine function.
 The :keyword:`!async with` statement
 ------------------------------------
 
-.. productionlist::
+.. productionlist:: python-grammar
    async_with_stmt: "async" `with_stmt`
 
 An :term:`asynchronous context manager` is a :term:`context manager` that is
@@ -811,23 +849,27 @@ able to suspend execution in its *enter* and *exit* methods.
 
 The following code::
 
-    async with EXPR as VAR:
-        BLOCK
+    async with EXPRESSION as TARGET:
+        SUITE
 
-Is semantically equivalent to::
+is semantically equivalent to::
 
-    mgr = (EXPR)
-    aexit = type(mgr).__aexit__
-    aenter = type(mgr).__aenter__(mgr)
+    manager = (EXPRESSION)
+    aenter = type(manager).__aenter__
+    aexit = type(manager).__aexit__
+    value = await aenter(manager)
+    hit_except = False
 
-    VAR = await aenter
     try:
-        BLOCK
+        TARGET = value
+        SUITE
     except:
-        if not await aexit(mgr, *sys.exc_info()):
+        hit_except = True
+        if not await aexit(manager, *sys.exc_info()):
             raise
-    else:
-        await aexit(mgr, None, None, None)
+    finally:
+        if not hit_except:
+            await aexit(manager, None, None, None)
 
 See also :meth:`__aenter__` and :meth:`__aexit__` for details.
 

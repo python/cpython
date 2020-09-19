@@ -1,3 +1,0 @@
-test.regrtest now uses process groups in the multiprocessing mode (-jN command
-line option) if process groups are available: if :func:`os.setsid` and
-:func:`os.killpg` functions are available.

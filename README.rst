@@ -1,9 +1,13 @@
-This is Python version 3.9.0 alpha 0
-====================================
+This is Python version 3.10.0 alpha 0
+=====================================
 
-.. image:: https://travis-ci.org/python/cpython.svg?branch=master
+.. image:: https://travis-ci.com/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
-   :target: https://travis-ci.org/python/cpython
+   :target: https://travis-ci.com/python/cpython
+
+.. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
+   :alt: CPython build status on GitHub Actions
+   :target: https://github.com/python/cpython/actions
 
 .. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=master
    :alt: CPython build status on Azure DevOps
@@ -18,7 +22,7 @@ This is Python version 3.9.0 alpha 0
    :target: https://python.zulipchat.com
 
 
-Copyright (c) 2001-2019 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -137,7 +141,7 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.9 <https://docs.python.org/3.9/whatsnew/3.9.html>`_ document.  For a more
+3.10 <https://docs.python.org/3.10/whatsnew/3.10.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
@@ -150,7 +154,7 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.9 <https://docs.python.org/3.9/>`_ is online,
+`Documentation for Python 3.10 <https://docs.python.org/3.10/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -209,8 +213,8 @@ intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.9 with 3.9 being the
-primary version, you would execute ``make install`` in your 3.9 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.10 with 3.10 being the
+primary version, you would execute ``make install`` in your 3.10 build directory
 and ``make altinstall`` in the others.
 
 
@@ -246,7 +250,7 @@ See :pep:`596` for Python 3.9 release details.
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001-2019 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 
@@ -255,8 +259,9 @@ rights reserved.
 
 Copyright (c) 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
 
-See the file "LICENSE" for information on the history of this software, terms &
-conditions for usage, and a DISCLAIMER OF ALL WARRANTIES.
+See the `LICENSE <https://github.com/python/cpython/blob/master/LICENSE>`_ for
+information on the history of this software, terms & conditions for usage, and a
+DISCLAIMER OF ALL WARRANTIES.
 
 This Python distribution contains *no* GNU General Public License (GPL) code,
 so it may be used in proprietary projects.  There are interfaces to some GNU

@@ -34,6 +34,7 @@ from asyncio import futures
 from asyncio import tasks
 from asyncio.log import logger
 from test import support
+from test.support import threading_helper
 
 
 def data_file(filename):
@@ -107,7 +108,7 @@ def run_briefly(loop):
         gen.close()
 
 
-def run_until(loop, pred, timeout=30):
+def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
     deadline = time.monotonic() + timeout
     while not pred():
         if timeout is not None:
@@ -139,7 +140,7 @@ class SilentWSGIRequestHandler(WSGIRequestHandler):
 
 class SilentWSGIServer(WSGIServer):
 
-    request_timeout = 2
+    request_timeout = support.LOOPBACK_TIMEOUT
 
     def get_request(self):
         request, client_addr = super().get_request()
@@ -220,7 +221,7 @@ if hasattr(socket, 'AF_UNIX'):
 
     class UnixWSGIServer(UnixHTTPServer, WSGIServer):
 
-        request_timeout = 2
+        request_timeout = support.LOOPBACK_TIMEOUT
 
         def server_bind(self):
             UnixHTTPServer.server_bind(self)
@@ -546,7 +547,7 @@ class TestCase(unittest.TestCase):
     def setUp(self):
         self._get_running_loop = events._get_running_loop
         events._get_running_loop = lambda: None
-        self._thread_cleanup = support.threading_setup()
+        self._thread_cleanup = threading_helper.threading_setup()
 
     def tearDown(self):
         self.unpatch_get_running_loop()
@@ -558,7 +559,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(sys.exc_info(), (None, None, None))
 
         self.doCleanups()
-        support.threading_cleanup(*self._thread_cleanup)
+        threading_helper.threading_cleanup(*self._thread_cleanup)
         support.reap_children()
 
 

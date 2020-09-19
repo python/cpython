@@ -1,1 +1,0 @@
-Remove implementation-specific behaviour of how venv's Deactivate works.

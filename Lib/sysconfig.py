@@ -20,10 +20,10 @@ __all__ = [
 
 _INSTALL_SCHEMES = {
     'posix_prefix': {
-        'stdlib': '{installed_base}/lib/python{py_version_short}',
-        'platstdlib': '{platbase}/lib/python{py_version_short}',
+        'stdlib': '{installed_base}/{platlibdir}/python{py_version_short}',
+        'platstdlib': '{platbase}/{platlibdir}/python{py_version_short}',
         'purelib': '{base}/lib/python{py_version_short}/site-packages',
-        'platlib': '{platbase}/lib/python{py_version_short}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/python{py_version_short}/site-packages',
         'include':
             '{installed_base}/include/python{py_version_short}{abiflags}',
         'platinclude':
@@ -53,19 +53,19 @@ _INSTALL_SCHEMES = {
         },
     # NOTE: When modifying "purelib" scheme, update site._get_path() too.
     'nt_user': {
-        'stdlib': '{userbase}/Python{py_version_nodot}',
-        'platstdlib': '{userbase}/Python{py_version_nodot}',
-        'purelib': '{userbase}/Python{py_version_nodot}/site-packages',
-        'platlib': '{userbase}/Python{py_version_nodot}/site-packages',
-        'include': '{userbase}/Python{py_version_nodot}/Include',
-        'scripts': '{userbase}/Python{py_version_nodot}/Scripts',
+        'stdlib': '{userbase}/Python{py_version_nodot_plat}',
+        'platstdlib': '{userbase}/Python{py_version_nodot_plat}',
+        'purelib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
+        'platlib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
+        'include': '{userbase}/Python{py_version_nodot_plat}/Include',
+        'scripts': '{userbase}/Python{py_version_nodot_plat}/Scripts',
         'data': '{userbase}',
         },
     'posix_user': {
-        'stdlib': '{userbase}/lib/python{py_version_short}',
-        'platstdlib': '{userbase}/lib/python{py_version_short}',
+        'stdlib': '{userbase}/{platlibdir}/python{py_version_short}',
+        'platstdlib': '{userbase}/{platlibdir}/python{py_version_short}',
         'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
-        'platlib': '{userbase}/lib/python{py_version_short}/site-packages',
+        'platlib': '{userbase}/{platlibdir}/python{py_version_short}/site-packages',
         'include': '{userbase}/include/python{py_version_short}',
         'scripts': '{userbase}/bin',
         'data': '{userbase}',
@@ -84,8 +84,6 @@ _INSTALL_SCHEMES = {
 _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
                 'scripts', 'data')
 
- # FIXME don't rely on sys.version here, its format is an implementation detail
- # of CPython, use sys.version_info or sys.hexversion
 _PY_VERSION = sys.version.split()[0]
 _PY_VERSION_SHORT = '%d.%d' % sys.version_info[:2]
 _PY_VERSION_SHORT_NO_DOT = '%d%d' % sys.version_info[:2]
@@ -151,10 +149,10 @@ if _PYTHON_BUILD:
 def _subst_vars(s, local_vars):
     try:
         return s.format(**local_vars)
-    except KeyError:
+    except KeyError as var:
         try:
             return s.format(**os.environ)
-        except KeyError as var:
+        except KeyError:
             raise AttributeError('{%s}' % var) from None
 
 def _extend_dict(target_dict, other_dict):
@@ -433,6 +431,7 @@ def _init_non_posix(vars):
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
+    vars['TZPATH'] = ''
 
 #
 # public APIs
@@ -539,11 +538,16 @@ def get_config_vars(*args):
         _CONFIG_VARS['installed_platbase'] = _BASE_EXEC_PREFIX
         _CONFIG_VARS['platbase'] = _EXEC_PREFIX
         _CONFIG_VARS['projectbase'] = _PROJECT_BASE
+        _CONFIG_VARS['platlibdir'] = sys.platlibdir
         try:
             _CONFIG_VARS['abiflags'] = sys.abiflags
         except AttributeError:
             # sys.abiflags may not be defined on all platforms.
             _CONFIG_VARS['abiflags'] = ''
+        try:
+            _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
+        except AttributeError:
+            _CONFIG_VARS['py_version_nodot_plat'] = ''
 
         if os.name == 'nt':
             _init_non_posix(_CONFIG_VARS)
@@ -665,7 +669,8 @@ def get_platform():
             machine += ".%s" % bitness[sys.maxsize]
         # fall through to standard osname-release-machine representation
     elif osname[:3] == "aix":
-        return "%s-%s.%s" % (osname, version, release)
+        from _aix_support import aix_platform
+        return aix_platform()
     elif osname[:6] == "cygwin":
         osname = "cygwin"
         import re

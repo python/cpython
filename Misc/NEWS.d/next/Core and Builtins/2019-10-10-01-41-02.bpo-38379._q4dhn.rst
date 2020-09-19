@@ -1,4 +1,0 @@
-When the garbage collector makes a collection in which some objects
-resurrect (they are reachable from outside the isolated cycles after the
-finalizers have been executed), do not block the collection of all objects
-that are still unreachable. Patch by Pablo Galindo and Tim Peters.

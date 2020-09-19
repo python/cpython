@@ -1,4 +1,0 @@
-Fix uuid.getnode() on platforms with '.' as MAC Addr delimiter as well
-fix for MAC Addr format that omits a leading 0 in MAC Addr values.
-Currently, AIX is the only know platform with these settings.
-Patch by Michael Felt.

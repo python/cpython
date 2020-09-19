@@ -1,2 +1,0 @@
-Convert posixmodule.c statically allocated types ``DirEntryType`` and
-``ScandirIteratorType`` to heap-allocated types.

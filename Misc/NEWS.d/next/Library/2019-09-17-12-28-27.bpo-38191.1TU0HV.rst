@@ -1,3 +1,0 @@
-Constructors of :class:`~typing.NamedTuple` and :class:`~typing.TypedDict`
-types now accept arbitrary keyword argument names, including "cls", "self",
-"typename", "_typename", "fields" and "_fields".

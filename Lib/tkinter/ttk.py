@@ -1084,11 +1084,12 @@ class Scale(Widget, tkinter.Scale):
 
         Setting a value for any of the "from", "from_" or "to" options
         generates a <<RangeChanged>> event."""
-        if cnf:
+        retval = Widget.configure(self, cnf, **kw)
+        if not isinstance(cnf, (type(None), str)):
             kw.update(cnf)
-        Widget.configure(self, **kw)
         if any(['from' in kw, 'from_' in kw, 'to' in kw]):
             self.event_generate('<<RangeChanged>>')
+        return retval
 
 
     def get(self, x=None, y=None):

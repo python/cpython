@@ -1,1 +1,0 @@
-Fixes ``ntpath.realpath`` failing on ``sys.executable``.

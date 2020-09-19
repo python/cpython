@@ -3,6 +3,8 @@
 import os
 import re
 import test.support
+from test.support import os_helper
+from test.support import warnings_helper
 import time
 import unittest
 import urllib.request
@@ -123,6 +125,13 @@ class DateTimeTests(unittest.TestCase):
                               "http2time(%s) is not None\n"
                               "http2time(test) %s" % (test, http2time(test)))
 
+    def test_http2time_redos_regression_actually_completes(self):
+        # LOOSE_HTTP_DATE_RE was vulnerable to malicious input which caused catastrophic backtracking (REDoS).
+        # If we regress to cubic complexity, this test will take a very long time to succeed.
+        # If fixed, it should complete within a fraction of a second.
+        http2time("01 Jan 1970{}00:00:00 GMT!".format(" " * 10 ** 5))
+        http2time("01 Jan 1970 00:00:00{}GMT!".format(" " * 10 ** 5))
+
     def test_iso2time(self):
         def parse_date(text):
             return time.gmtime(iso2time(text))[:6]
@@ -179,6 +188,12 @@ class DateTimeTests(unittest.TestCase):
             ]:
             self.assertIsNone(iso2time(test),
                               "iso2time(%r)" % test)
+
+    def test_iso2time_performance_regression(self):
+        # If ISO_DATE_RE regresses to quadratic complexity, this test will take a very long time to succeed.
+        # If fixed, it should complete within a fraction of a second.
+        iso2time('1994-02-03{}14:15:29 -0100!'.format(' '*10**6))
+        iso2time('1994-02-03 14:15:29{}-0100!'.format(' '*10**6))
 
 
 class HeaderTests(unittest.TestCase):
@@ -315,12 +330,12 @@ def _interact(cookiejar, url, set_cookie_hdrs, hdr_name):
 
 class FileCookieJarTests(unittest.TestCase):
     def test_constructor_with_str(self):
-        filename = test.support.TESTFN
+        filename = os_helper.TESTFN
         c = LWPCookieJar(filename)
         self.assertEqual(c.filename, filename)
 
     def test_constructor_with_path_like(self):
-        filename = pathlib.Path(test.support.TESTFN)
+        filename = pathlib.Path(os_helper.TESTFN)
         c = LWPCookieJar(filename)
         self.assertEqual(c.filename, os.fspath(filename))
 
@@ -340,7 +355,7 @@ class FileCookieJarTests(unittest.TestCase):
 
     def test_lwp_valueless_cookie(self):
         # cookies with no value should be saved and loaded consistently
-        filename = test.support.TESTFN
+        filename = os_helper.TESTFN
         c = LWPCookieJar()
         interact_netscape(c, "http://www.acme.com/", 'boo')
         self.assertEqual(c._cookies["www.acme.com"]["/"]["boo"].value, None)
@@ -355,7 +370,7 @@ class FileCookieJarTests(unittest.TestCase):
 
     def test_bad_magic(self):
         # OSErrors (eg. file doesn't exist) are allowed to propagate
-        filename = test.support.TESTFN
+        filename = os_helper.TESTFN
         for cookiejar_class in LWPCookieJar, MozillaCookieJar:
             c = cookiejar_class()
             try:
@@ -462,7 +477,7 @@ class CookieTests(unittest.TestCase):
     def test_missing_value(self):
         # missing = sign in Cookie: header is regarded by Mozilla as a missing
         # name, and by http.cookiejar as a missing value
-        filename = test.support.TESTFN
+        filename = os_helper.TESTFN
         c = MozillaCookieJar(filename)
         interact_netscape(c, "http://www.acme.com/", 'eggs')
         interact_netscape(c, "http://www.acme.com/", '"spam"; path=/foo/')
@@ -586,7 +601,7 @@ class CookieTests(unittest.TestCase):
         c = CookieJar()
         future = time2netscape(time.time()+3600)
 
-        with test.support.check_no_warnings(self):
+        with warnings_helper.check_no_warnings(self):
             headers = [f"Set-Cookie: FOO=BAR; path=/; expires={future}"]
             req = urllib.request.Request("http://www.coyote.com/")
             res = FakeResponse(headers, "http://www.coyote.com/")
@@ -1700,7 +1715,7 @@ class LWPCookieTests(unittest.TestCase):
         self.assertEqual(len(c), 6)
 
         # save and restore
-        filename = test.support.TESTFN
+        filename = os_helper.TESTFN
 
         try:
             c.save(filename, ignore_discard=True)
@@ -1740,7 +1755,7 @@ class LWPCookieTests(unittest.TestCase):
         # Save / load Mozilla/Netscape cookie file format.
         year_plus_one = time.localtime()[0] + 1
 
-        filename = test.support.TESTFN
+        filename = os_helper.TESTFN
 
         c = MozillaCookieJar(filename,
                              policy=DefaultCookiePolicy(rfc2965=True))

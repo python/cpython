@@ -529,7 +529,7 @@ class ClassTests(unittest.TestCase):
             # In debug mode, printed XXX undetected error and
             #  raises AttributeError
             I()
-        except AttributeError as x:
+        except AttributeError:
             pass
         else:
             self.fail("attribute error for I.__init__ got masked")

@@ -204,15 +204,18 @@ class FetchCompletionsTest(unittest.TestCase):
         self.assertLess(set(s), set(b))
         self.assertTrue(all([not x.startswith('_') for x in s]))
 
-        if __main__.__file__ != ac.__file__:
+        if hasattr(__main__, '__file__') and __main__.__file__ != ac.__file__:
             self.assertNotIn('AutoComplete', s)  # See issue 36405.
 
         # Test smalll should respect __all__.
         with patch.dict('__main__.__dict__', {'__all__': ['a', 'b']}):
             s, b = acp.fetch_completions('', ac.ATTRS)
             self.assertEqual(s, ['a', 'b'])
-            self.assertIn('__name__', b)    # From __main__.__dict__
-            self.assertIn('sum', b)         # From __main__.__builtins__.__dict__
+            self.assertIn('__name__', b)  # From __main__.__dict__.
+            self.assertIn('sum', b)       # From __main__.__builtins__.__dict__.
+            self.assertIn('nonlocal', b)  # From keyword.kwlist.
+            pos = b.index('False')        # Test False not included twice.
+            self.assertNotEqual(b[pos+1], 'False')
 
         # Test attributes with name entity.
         mock = Mock()

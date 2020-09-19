@@ -2,7 +2,7 @@
 =======================================================
 
 .. module:: statistics
-   :synopsis: mathematical statistics functions
+   :synopsis: Mathematical statistics functions
 
 .. moduleauthor:: Steven D'Aprano <steve+python@pearwood.info>
 .. sectionauthor:: Steven D'Aprano <steve+python@pearwood.info>
@@ -696,6 +696,16 @@ of applications in statistics.
         Set *n* to 100 for percentiles which gives the 99 cuts points that
         separate the normal distribution into 100 equal sized groups.
 
+    .. method:: NormalDist.zscore(x)
+
+        Compute the
+        `Standard Score <https://www.statisticshowto.com/probability-and-statistics/z-score/>`_
+        describing *x* in terms of the number of standard deviations
+        above or below the mean of the normal distribution:
+        ``(x - mean) / stdev``.
+
+        .. versionadded:: 3.9
+
     Instances of :class:`NormalDist` support addition, subtraction,
     multiplication and division by a constant.  These operations
     are used for translation and scaling.  For example:
@@ -734,10 +744,10 @@ of applications in statistics.
 :class:`NormalDist` readily solves classic probability problems.
 
 For example, given `historical data for SAT exams
-<https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
-are normally distributed with a mean of 1060 and a standard deviation of 192,
-determine the percentage of students with test scores between 1100 and
-1200, after rounding to the nearest whole number:
+<https://nces.ed.gov/programs/digest/d17/tables/dt17_226.40.asp>`_ showing
+that scores are normally distributed with a mean of 1060 and a standard
+deviation of 195, determine the percentage of students with test scores
+between 1100 and 1200, after rounding to the nearest whole number:
 
 .. doctest::
 
@@ -771,6 +781,42 @@ Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
     >>> Z = NormalDist(50, 1.25).samples(n, seed=6582483453)
     >>> quantiles(map(model, X, Y, Z))       # doctest: +SKIP
     [1.4591308524824727, 1.8035946855390597, 2.175091447274739]
+
+Normal distributions can be used to approximate `Binomial
+distributions <http://mathworld.wolfram.com/BinomialDistribution.html>`_
+when the sample size is large and when the probability of a successful
+trial is near 50%.
+
+For example, an open source conference has 750 attendees and two rooms with a
+500 person capacity.  There is a talk about Python and another about Ruby.
+In previous conferences, 65% of the attendees preferred to listen to Python
+talks.  Assuming the population preferences haven't changed, what is the
+probability that the Python room will stay within its capacity limits?
+
+.. doctest::
+
+    >>> n = 750             # Sample size
+    >>> p = 0.65            # Preference for Python
+    >>> q = 1.0 - p         # Preference for Ruby
+    >>> k = 500             # Room capacity
+
+    >>> # Approximation using the cumulative normal distribution
+    >>> from math import sqrt
+    >>> round(NormalDist(mu=n*p, sigma=sqrt(n*p*q)).cdf(k + 0.5), 4)
+    0.8402
+
+    >>> # Solution using the cumulative binomial distribution
+    >>> from math import comb, fsum
+    >>> round(fsum(comb(n, r) * p**r * q**(n-r) for r in range(k+1)), 4)
+    0.8402
+
+    >>> # Approximation using a simulation
+    >>> from random import seed, choices
+    >>> seed(8675309)
+    >>> def trial():
+    ...     return choices(('Python', 'Ruby'), (p, q), k=n).count('Python')
+    >>> mean(trial() <= k for i in range(10_000))
+    0.8398
 
 Normal distributions commonly arise in machine learning problems.
 

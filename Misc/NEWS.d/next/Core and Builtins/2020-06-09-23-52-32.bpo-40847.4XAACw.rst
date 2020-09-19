@@ -1,0 +1,4 @@
+Fix a bug where a line with only a line continuation character is not considered a blank line at tokenizer level.
+In such cases, more than a single `NEWLINE` token was emitted. The old parser was working around the issue,
+but the new parser threw a :exc:`SyntaxError` for valid input due to this. For example, an empty line following
+a line continuation character was interpreted as a :exc:`SyntaxError`. 

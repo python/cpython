@@ -64,8 +64,6 @@ Objects/object.c:_Py_RefTotal                                    Py_ssize_t _Py_
 Objects/tupleobject.c:_Py_fast_tuple_allocs                      Py_ssize_t _Py_fast_tuple_allocs
 Objects/tupleobject.c:_Py_tuple_zero_allocs                      Py_ssize_t _Py_tuple_zero_allocs
 Objects/typeobject.c:next_version_tag                            static unsigned int next_version_tag
-Parser/listnode.c:atbol                                          static int atbol
-Parser/listnode.c:level                                          static int level
 Python/Python-ast.c:init_types():initialized                     static int initialized
 Python/bootstrap_hash.c:urandom_cache                            static struct { int fd; dev_t st_dev; ino_t st_ino; } urandom_cache
 Python/ceval.c:_Py_CheckRecursionLimit                           int _Py_CheckRecursionLimit

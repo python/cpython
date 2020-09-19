@@ -7,7 +7,7 @@ from textwrap import dedent
 
 from test.support.script_helper import assert_python_ok
 from test.test_tools import skip_if_missing, toolsdir
-from test.support import temp_cwd, temp_dir
+from test.support.os_helper import temp_cwd, temp_dir
 
 
 skip_if_missing()

@@ -21,6 +21,7 @@ import signal
 import array
 import queue
 import time
+import types
 import os
 from os import getpid
 
@@ -59,7 +60,7 @@ if view_types[0] is not list:       # only needed in Py3.0
 
 class Token(object):
     '''
-    Type to uniquely indentify a shared object
+    Type to uniquely identify a shared object
     '''
     __slots__ = ('typeid', 'address', 'id')
 
@@ -248,7 +249,7 @@ class Server(object):
                     try:
                         obj, exposed, gettypeid = \
                             self.id_to_local_proxy_obj[ident]
-                    except KeyError as second_ke:
+                    except KeyError:
                         raise ke
 
                 if methodname not in exposed:
@@ -296,7 +297,7 @@ class Server(object):
             try:
                 try:
                     send(msg)
-                except Exception as e:
+                except Exception:
                     send(('#UNSERIALIZABLE', format_exc()))
             except Exception as e:
                 util.info('exception in thread serving %r',
@@ -794,7 +795,7 @@ class BaseProxy(object):
 
     def _callmethod(self, methodname, args=(), kwds={}):
         '''
-        Try to call a method of the referrent and return a copy of the result
+        Try to call a method of the referent and return a copy of the result
         '''
         try:
             conn = self._tls.connection
@@ -1129,6 +1130,8 @@ class ValueProxy(BaseProxy):
         return self._callmethod('set', (value,))
     value = property(get, set)
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 
 BaseListProxy = MakeProxyType('BaseListProxy', (
     '__add__', '__contains__', '__delitem__', '__getitem__', '__len__',
@@ -1262,8 +1265,12 @@ if HAS_SHMEM:
 
         def __init__(self, *args, **kwargs):
             Server.__init__(self, *args, **kwargs)
+            address = self.address
+            # The address of Linux abstract namespaces can be bytes
+            if isinstance(address, bytes):
+                address = os.fsdecode(address)
             self.shared_memory_context = \
-                _SharedMemoryTracker(f"shmm_{self.address}_{getpid()}")
+                _SharedMemoryTracker(f"shm_{address}_{getpid()}")
             util.debug(f"SharedMemoryServer started by pid {getpid()}")
 
         def create(self, c, typeid, /, *args, **kwargs):

@@ -959,6 +959,11 @@ PyGen_NewWithQualName:PyFrameObject*:frame:0:
 PyGen_NewWithQualName:PyObject*:name:0:
 PyGen_NewWithQualName:PyObject*:qualname:0:
 
+PyGen_Send:int:::
+PyGen_Send:PyGenObject*:gen:0:
+PyGen_Send:PyObject*:arg:0:
+PyGen_Send:PyObject**:presult:+1:
+
 PyCoro_CheckExact:int:::
 PyCoro_CheckExact:PyObject*:ob:0:
 
@@ -1204,11 +1209,6 @@ PyLong_FromString:PyObject*::+1:
 PyLong_FromString:const char*:str::
 PyLong_FromString:char**:pend::
 PyLong_FromString:int:base::
-
-PyLong_FromUnicode:PyObject*::+1:
-PyLong_FromUnicode:Py_UNICODE*:u::
-PyLong_FromUnicode:Py_ssize_t:length::
-PyLong_FromUnicode:int:base::
 
 PyLong_FromUnicodeObject:PyObject*::+1:
 PyLong_FromUnicodeObject:PyObject*:u:0:
@@ -1568,21 +1568,6 @@ PyOS_FSPath:PyObject*:path:0:
 PyObject_ASCII:PyObject*::+1:
 PyObject_ASCII:PyObject*:o:0:
 
-PyObject_AsCharBuffer:int:::
-PyObject_AsCharBuffer:PyObject*:obj:0:
-PyObject_AsCharBuffer:const char**:buffer::
-PyObject_AsCharBuffer:Py_ssize_t*:buffer_len::
-
-PyObject_AsReadBuffer:int:::
-PyObject_AsReadBuffer:PyObject*:obj:0:
-PyObject_AsReadBuffer:const void**:buffer::
-PyObject_AsReadBuffer:Py_ssize_t*:buffer_len::
-
-PyObject_AsWriteBuffer:int:::
-PyObject_AsWriteBuffer:PyObject*:obj:0:
-PyObject_AsWriteBuffer:void**:buffer::
-PyObject_AsWriteBuffer:Py_ssize_t*:buffer_len::
-
 PyObject_Bytes:PyObject*::+1:
 PyObject_Bytes:PyObject*:o:0:
 
@@ -1617,9 +1602,6 @@ PyObject_CallObject:PyObject*:args:0:
 
 PyObject_CheckBuffer:int:::
 PyObject_CheckBuffer:PyObject*:obj:0:
-
-PyObject_CheckReadBuffer:int:::
-PyObject_CheckReadBuffer:PyObject*:o:0:
 
 PyObject_DelAttr:int:::
 PyObject_DelAttr:PyObject*:o:0:
@@ -1673,7 +1655,8 @@ PyObject_GenericSetAttr:PyObject*:name:0:
 PyObject_GenericSetAttr:PyObject*:value:+1:
 
 PyObject_GenericSetDict:int:::
-PyObject_GenericSetDict:PyObject*:o:+1:
+PyObject_GenericSetDict:PyObject*:o:0:
+PyObject_GenericSetDict:PyObject*:value:+1:
 PyObject_GenericSetDict:void*:context::
 
 PyObject_GetAttr:PyObject*::+1:
@@ -2305,6 +2288,11 @@ PyType_CheckExact:PyObject*:o:0:
 PyType_FromSpec:PyObject*::+1:
 PyType_FromSpec:PyType_Spec*:spec::
 
+PyType_FromModuleAndSpec:PyObject*::+1:
+PyType_FromModuleAndSpec:PyObject*:module:+1:
+PyType_FromModuleAndSpec:PyType_Spec*:spec::
+PyType_FromModuleAndSpec:PyObject*:bases:0:
+
 PyType_FromSpecWithBases:PyObject*::+1:
 PyType_FromSpecWithBases:PyType_Spec*:spec::
 PyType_FromSpecWithBases:PyObject*:bases:0:
@@ -2440,9 +2428,6 @@ PyUnicode_TransformDecimalToASCII:Py_ssize_t:size::
 PyUnicode_AsUnicodeAndSize:Py_UNICODE*:::
 PyUnicode_AsUnicodeAndSize:PyObject*:unicode:0:
 PyUnicode_AsUnicodeAndSize:Py_ssize_t*:size::
-
-PyUnicode_AsUnicodeCopy:Py_UNICODE*:::
-PyUnicode_AsUnicodeCopy:PyObject*:unicode:0:
 
 PyUnicode_GetSize:Py_ssize_t:::
 PyUnicode_GetSize:PyObject*:unicode:0:
@@ -3044,8 +3029,6 @@ Py_XINCREF:void:::
 Py_XINCREF:PyObject*:o:+1:if o is not NULL
 
 _PyImport_Fini:void:::
-
-_PyImport_Init:void:::
 
 _PyObject_New:PyObject*::+1:
 _PyObject_New:PyTypeObject*:type:0:

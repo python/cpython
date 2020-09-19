@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,10 +27,14 @@
 
 
 #include "mpdecimal.h"
+
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "typearith.h"
+#include <string.h>
+
 #include "mpalloc.h"
+#include "typearith.h"
 
 
 #if defined(_MSC_VER)
@@ -294,4 +298,59 @@ mpd_realloc_dyn(mpd_t *result, mpd_ssize_t nwords, uint32_t *status)
     return 1;
 }
 
+/*
+ * Input: 'result' is a static mpd_t with a static coefficient.
+ * Assumption: 'nwords' >= result->alloc.
+ *
+ * Resize the static coefficient to a larger dynamic one and copy the
+ * existing data.
+ *
+ * On failure the value of 'result' is unchanged.
+ */
+int
+mpd_switch_to_dyn_cxx(mpd_t *result, mpd_ssize_t nwords)
+{
+    assert(nwords >= result->alloc);
 
+    mpd_uint_t *data = mpd_alloc(nwords, sizeof *result->data);
+    if (data == NULL) {
+        return 0;
+    }
+
+    memcpy(data, result->data, result->alloc * (sizeof *result->data));
+    result->data = data;
+    result->alloc = nwords;
+    mpd_set_dynamic_data(result);
+    return 1;
+}
+
+/*
+ * Input: 'result' is a static or a dynamic mpd_t with a dynamic coefficient.
+ * Resize the coefficient to length 'nwords':
+ *   Case nwords > result->alloc:
+ *     If realloc is successful:
+ *       'result' has a larger coefficient but the same value. Return 1.
+ *     Otherwise:
+ *       'result' has a the same coefficient. Return 0.
+ *   Case nwords < result->alloc:
+ *     If realloc is successful:
+ *       'result' has a smaller coefficient. result->len is undefined. Return 1.
+ *     Otherwise (unlikely):
+ *       'result' is unchanged. Reuse the now oversized coefficient. Return 1.
+ */
+int
+mpd_realloc_dyn_cxx(mpd_t *result, mpd_ssize_t nwords)
+{
+    uint8_t err = 0;
+
+    mpd_uint_t *p = mpd_realloc(result->data, nwords, sizeof *result->data, &err);
+    if (!err) {
+        result->data = p;
+        result->alloc = nwords;
+    }
+    else if (nwords > result->alloc) {
+        return 0;
+    }
+
+    return 1;
+}

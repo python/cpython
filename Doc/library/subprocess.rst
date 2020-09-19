@@ -40,7 +40,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   capture_output=False, shell=False, cwd=None, timeout=None, \
                   check=False, encoding=None, errors=None, text=None, env=None, \
-                  universal_newlines=None)
+                  universal_newlines=None, **other_popen_kwargs)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -356,14 +356,20 @@ functions.
    arguments for additional differences from the default behavior.  Unless
    otherwise stated, it is recommended to pass *args* as a sequence.
 
+   An example of passing some arguments to an external program
+   as a sequence is::
+
+     Popen(["/usr/bin/git", "commit", "-m", "Fixes a bug."])
+
    On POSIX, if *args* is a string, the string is interpreted as the name or
    path of the program to execute.  However, this can only be done if not
    passing arguments to the program.
 
    .. note::
 
-      :meth:`shlex.split` can be useful when determining the correct
-      tokenization for *args*, especially in complex cases::
+      It may not be obvious how to break a shell command into a sequence of arguments,
+      especially in complex cases. :meth:`shlex.split` can illustrate how to
+      determine the correct tokenization for *args*::
 
          >>> import shlex, subprocess
          >>> command_line = input()
@@ -630,7 +636,7 @@ functions.
 
       Popen and the other functions in this module that use it raise an
       :ref:`auditing event <auditing>` ``subprocess.Popen`` with arguments
-      ``executable``, ``args``, ``cwd``, ``env``. The value for ``args``
+      ``executable``, ``args``, ``cwd``, and ``env``. The value for ``args``
       may be a single string or a list of strings, depending on platform.
 
    .. versionchanged:: 3.2
@@ -732,10 +738,11 @@ Instances of the :class:`Popen` class have the following methods:
 .. method:: Popen.communicate(input=None, timeout=None)
 
    Interact with process: Send data to stdin.  Read data from stdout and stderr,
-   until end-of-file is reached.  Wait for process to terminate.  The optional
-   *input* argument should be data to be sent to the child process, or
-   ``None``, if no data should be sent to the child.  If streams were opened in
-   text mode, *input* must be a string.  Otherwise, it must be bytes.
+   until end-of-file is reached.  Wait for process to terminate and set the
+   :attr:`~Popen.returncode` attribute.  The optional *input* argument should be
+   data to be sent to the child process, or ``None``, if no data should be sent
+   to the child.  If streams were opened in text mode, *input* must be a string.
+   Otherwise, it must be bytes.
 
    :meth:`communicate` returns a tuple ``(stdout_data, stderr_data)``.
    The data will be strings if streams were opened in text mode; otherwise,
@@ -774,6 +781,8 @@ Instances of the :class:`Popen` class have the following methods:
 
    Sends the signal *signal* to the child.
 
+   Do nothing if the process completed.
+
    .. note::
 
       On Windows, SIGTERM is an alias for :meth:`terminate`. CTRL_C_EVENT and
@@ -783,14 +792,14 @@ Instances of the :class:`Popen` class have the following methods:
 
 .. method:: Popen.terminate()
 
-   Stop the child. On Posix OSs the method sends SIGTERM to the
+   Stop the child. On POSIX OSs the method sends SIGTERM to the
    child. On Windows the Win32 API function :c:func:`TerminateProcess` is called
    to stop the child.
 
 
 .. method:: Popen.kill()
 
-   Kills the child. On Posix OSs the function sends SIGKILL to the child.
+   Kills the child. On POSIX OSs the function sends SIGKILL to the child.
    On Windows :meth:`kill` is an alias for :meth:`terminate`.
 
 
@@ -1077,7 +1086,8 @@ Prior to Python 3.5, these three functions comprised the high level API to
 subprocess. You can now use :func:`run` in many cases, but lots of existing code
 calls these functions.
 
-.. function:: call(args, *, stdin=None, stdout=None, stderr=None, shell=False, cwd=None, timeout=None)
+.. function:: call(args, *, stdin=None, stdout=None, stderr=None, \
+                   shell=False, cwd=None, timeout=None, **other_popen_kwargs)
 
    Run the command described by *args*.  Wait for command to complete, then
    return the :attr:`~Popen.returncode` attribute.
@@ -1103,7 +1113,9 @@ calls these functions.
    .. versionchanged:: 3.3
       *timeout* was added.
 
-.. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, shell=False, cwd=None, timeout=None)
+.. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, \
+                         shell=False, cwd=None, timeout=None, \
+                         **other_popen_kwargs)
 
    Run command with arguments.  Wait for command to complete. If the return
    code was zero then return, otherwise raise :exc:`CalledProcessError`. The
@@ -1134,7 +1146,8 @@ calls these functions.
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
                            cwd=None, encoding=None, errors=None, \
-                           universal_newlines=None, timeout=None, text=None)
+                           universal_newlines=None, timeout=None, text=None, \
+                           **other_popen_kwargs)
 
    Run command with arguments and return its output.
 

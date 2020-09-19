@@ -63,9 +63,15 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(self.spam.get_type(), "function")
         self.assertEqual(self.internal.get_type(), "function")
 
+    def test_id(self):
+        self.assertGreater(self.top.get_id(), 0)
+        self.assertGreater(self.Mine.get_id(), 0)
+        self.assertGreater(self.a_method.get_id(), 0)
+        self.assertGreater(self.spam.get_id(), 0)
+        self.assertGreater(self.internal.get_id(), 0)
+
     def test_optimized(self):
         self.assertFalse(self.top.is_optimized())
-        self.assertFalse(self.top.has_exec())
 
         self.assertTrue(self.spam.is_optimized())
 
@@ -99,6 +105,7 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(self.spam.lookup("bar").is_declared_global())
         self.assertFalse(self.internal.lookup("x").is_global())
         self.assertFalse(self.Mine.lookup("instance_var").is_global())
+        self.assertTrue(self.spam.lookup("bar").is_global())
 
     def test_nonlocal(self):
         self.assertFalse(self.spam.lookup("some_var").is_nonlocal())
@@ -108,7 +115,10 @@ class SymtableTest(unittest.TestCase):
 
     def test_local(self):
         self.assertTrue(self.spam.lookup("x").is_local())
-        self.assertFalse(self.internal.lookup("x").is_local())
+        self.assertFalse(self.spam.lookup("bar").is_local())
+
+    def test_free(self):
+        self.assertTrue(self.internal.lookup("x").is_free())
 
     def test_referenced(self):
         self.assertTrue(self.internal.lookup("x").is_referenced())

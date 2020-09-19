@@ -30,6 +30,8 @@ from io import BytesIO
 
 import unittest
 from test import support
+from test.support import os_helper
+from test.support import threading_helper
 
 
 class NoLogRequestHandler:
@@ -64,8 +66,8 @@ class TestServerThread(threading.Thread):
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self._threads = support.threading_setup()
-        os.environ = support.EnvironmentVarGuard()
+        self._threads = threading_helper.threading_setup()
+        os.environ = os_helper.EnvironmentVarGuard()
         self.server_started = threading.Event()
         self.thread = TestServerThread(self, self.request_handler)
         self.thread.start()
@@ -75,7 +77,7 @@ class BaseTestCase(unittest.TestCase):
         self.thread.stop()
         self.thread = None
         os.environ.__exit__()
-        support.threading_cleanup(*self._threads)
+        threading_helper.threading_cleanup(*self._threads)
 
     def request(self, uri, method='GET', body=None, headers={}):
         self.connection = http.client.HTTPConnection(self.HOST, self.PORT)
@@ -390,13 +392,13 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                      'undecodable name cannot always be decoded on macOS')
     @unittest.skipIf(sys.platform == 'win32',
                      'undecodable name cannot be decoded on win32')
-    @unittest.skipUnless(support.TESTFN_UNDECODABLE,
-                         'need support.TESTFN_UNDECODABLE')
+    @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
+                         'need os_helper.TESTFN_UNDECODABLE')
     def test_undecodable_filename(self):
         enc = sys.getfilesystemencoding()
-        filename = os.fsdecode(support.TESTFN_UNDECODABLE) + '.txt'
+        filename = os.fsdecode(os_helper.TESTFN_UNDECODABLE) + '.txt'
         with open(os.path.join(self.tempdir, filename), 'wb') as f:
-            f.write(support.TESTFN_UNDECODABLE)
+            f.write(os_helper.TESTFN_UNDECODABLE)
         response = self.request(self.base_url + '/')
         if sys.platform == 'darwin':
             # On Mac OS the HFS+ filesystem replaces bytes that aren't valid
@@ -413,7 +415,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                       .encode(enc, 'surrogateescape'), body)
         response = self.request(self.base_url + '/' + quotedname)
         self.check_status_and_reason(response, HTTPStatus.OK,
-                                     data=support.TESTFN_UNDECODABLE)
+                                     data=os_helper.TESTFN_UNDECODABLE)
 
     def test_get(self):
         #constructs the path relative to the root directory of the HTTPServer
@@ -601,18 +603,25 @@ class CGIHTTPServerTestCase(BaseTestCase):
         self.parent_dir = tempfile.mkdtemp()
         self.cgi_dir = os.path.join(self.parent_dir, 'cgi-bin')
         self.cgi_child_dir = os.path.join(self.cgi_dir, 'child-dir')
+        self.sub_dir_1 = os.path.join(self.parent_dir, 'sub')
+        self.sub_dir_2 = os.path.join(self.sub_dir_1, 'dir')
+        self.cgi_dir_in_sub_dir = os.path.join(self.sub_dir_2, 'cgi-bin')
         os.mkdir(self.cgi_dir)
         os.mkdir(self.cgi_child_dir)
+        os.mkdir(self.sub_dir_1)
+        os.mkdir(self.sub_dir_2)
+        os.mkdir(self.cgi_dir_in_sub_dir)
         self.nocgi_path = None
         self.file1_path = None
         self.file2_path = None
         self.file3_path = None
         self.file4_path = None
+        self.file5_path = None
 
         # The shebang line should be pure ASCII: use symlink if possible.
         # See issue #7668.
         self._pythonexe_symlink = None
-        if support.can_symlink():
+        if os_helper.can_symlink():
             self.pythonexe = os.path.join(self.parent_dir, 'python')
             self._pythonexe_symlink = support.PythonSymlink(self.pythonexe).__enter__()
         else:
@@ -652,6 +661,11 @@ class CGIHTTPServerTestCase(BaseTestCase):
             file4.write(cgi_file4 % (self.pythonexe, 'QUERY_STRING'))
         os.chmod(self.file4_path, 0o777)
 
+        self.file5_path = os.path.join(self.cgi_dir_in_sub_dir, 'file5.py')
+        with open(self.file5_path, 'w', encoding='utf-8') as file5:
+            file5.write(cgi_file1 % self.pythonexe)
+        os.chmod(self.file5_path, 0o777)
+
         os.chdir(self.parent_dir)
 
     def tearDown(self):
@@ -669,8 +683,13 @@ class CGIHTTPServerTestCase(BaseTestCase):
                 os.remove(self.file3_path)
             if self.file4_path:
                 os.remove(self.file4_path)
+            if self.file5_path:
+                os.remove(self.file5_path)
             os.rmdir(self.cgi_child_dir)
             os.rmdir(self.cgi_dir)
+            os.rmdir(self.cgi_dir_in_sub_dir)
+            os.rmdir(self.sub_dir_2)
+            os.rmdir(self.sub_dir_1)
             os.rmdir(self.parent_dir)
         finally:
             BaseTestCase.tearDown(self)
@@ -788,6 +807,17 @@ class CGIHTTPServerTestCase(BaseTestCase):
             (b'k=aa%2F%2Fbb&//q//p//=//a//b//' + self.linesep,
              'text/html', HTTPStatus.OK),
             (res.read(), res.getheader('Content-type'), res.status))
+
+    def test_cgi_path_in_sub_directories(self):
+        try:
+            CGIHTTPRequestHandler.cgi_directories.append('/sub/dir/cgi-bin')
+            res = self.request('/sub/dir/cgi-bin/file5.py')
+            self.assertEqual(
+                (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
+                (res.read(), res.getheader('Content-type'), res.status))
+        finally:
+            CGIHTTPRequestHandler.cgi_directories.remove('/sub/dir/cgi-bin')
+
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
@@ -1159,9 +1189,9 @@ class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
     def test_all(self):
         expected = []
-        blacklist = {'executable', 'nobody_uid', 'test'}
+        denylist = {'executable', 'nobody_uid', 'test'}
         for name in dir(server):
-            if name.startswith('_') or name in blacklist:
+            if name.startswith('_') or name in denylist:
                 continue
             module_object = getattr(server, name)
             if getattr(module_object, '__module__', None) == 'http.server':

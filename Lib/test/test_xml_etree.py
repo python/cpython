@@ -24,7 +24,12 @@ import weakref
 from functools import partial
 from itertools import product, islice
 from test import support
-from test.support import TESTFN, findfile, import_fresh_module, gc_collect, swap_attr
+from test.support import os_helper
+from test.support import warnings_helper
+from test.support import findfile, gc_collect, swap_attr
+from test.support.import_helper import import_fresh_module
+from test.support.os_helper import TESTFN
+
 
 # pyET is the pure-Python implementation.
 #
@@ -106,7 +111,7 @@ EXTERNAL_ENTITY_XML = """\
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
         def newtest(*args, **kwargs):
-            with support.check_warnings(*filters, quiet=quiet):
+            with warnings_helper.check_warnings(*filters, quiet=quiet):
                 test(*args, **kwargs)
         functools.update_wrapper(newtest, test)
         return newtest
@@ -123,7 +128,7 @@ class ModuleTest(unittest.TestCase):
 
     def test_all(self):
         names = ("xml.etree.ElementTree", "_elementtree")
-        support.check__all__(self, ET, names, blacklist=("HTML_EMPTY",))
+        support.check__all__(self, ET, names, not_exported=("HTML_EMPTY",))
 
 
 def serialize(elem, to_string=True, encoding='unicode', **options):
@@ -430,13 +435,14 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(ET.tostring(elem),
                 b'<test testa="testval" testb="test1" testc="test2">aa</test>')
 
+        # Test preserving white space chars in attributes
         elem = ET.Element('test')
         elem.set('a', '\r')
         elem.set('b', '\r\n')
         elem.set('c', '\t\n\r ')
-        elem.set('d', '\n\n')
+        elem.set('d', '\n\n\r\r\t\t  ')
         self.assertEqual(ET.tostring(elem),
-                b'<test a="&#10;" b="&#10;" c="&#09;&#10;&#10; " d="&#10;&#10;" />')
+                b'<test a="&#13;" b="&#13;&#10;" c="&#09;&#10;&#13; " d="&#10;&#10;&#13;&#13;&#09;&#09;  " />')
 
     def test_makeelement(self):
         # Test makeelement handling.
@@ -600,7 +606,7 @@ class ElementTreeTest(unittest.TestCase):
             self.assertFalse(f.closed)
         self.assertEqual(str(cm.exception), "unknown event 'bogus'")
 
-        with support.check_no_resource_warning(self):
+        with warnings_helper.check_no_resource_warning(self):
             with self.assertRaises(ValueError) as cm:
                 iterparse(SIMPLE_XMLFILE, events)
             self.assertEqual(str(cm.exception), "unknown event 'bogus'")
@@ -626,13 +632,13 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                 'junk after document element: line 1, column 12')
 
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(os_helper.unlink, TESTFN)
         with open(TESTFN, "wb") as f:
             f.write(b"<document />junk")
         it = iterparse(TESTFN)
         action, elem = next(it)
         self.assertEqual((action, elem.tag), ('end', 'document'))
-        with support.check_no_resource_warning(self):
+        with warnings_helper.check_no_resource_warning(self):
             with self.assertRaises(ET.ParseError) as cm:
                 next(it)
             self.assertEqual(str(cm.exception),
@@ -1668,6 +1674,17 @@ XINCLUDE["default.xml"] = """\
 </document>
 """.format(html.escape(SIMPLE_XMLFILE, True))
 
+XINCLUDE["include_c1_repeated.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive1.xml:</p>
+  <xi:include href="C1.xml"/>
+  <xi:include href="C1.xml"/>
+  <xi:include href="C1.xml"/>
+  <xi:include href="C1.xml"/>
+</document>
+"""
+
 #
 # badly formatted xi:include tags
 
@@ -1687,6 +1704,31 @@ XINCLUDE_BAD["B2.xml"] = """\
     <xi:fallback></xi:fallback>
 </div>
 """
+
+XINCLUDE["Recursive1.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive2.xml:</p>
+  <xi:include href="Recursive2.xml"/>
+</document>
+"""
+
+XINCLUDE["Recursive2.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive3.xml:</p>
+  <xi:include href="Recursive3.xml"/>
+</document>
+"""
+
+XINCLUDE["Recursive3.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive1.xml:</p>
+  <xi:include href="Recursive1.xml"/>
+</document>
+"""
+
 
 class XIncludeTest(unittest.TestCase):
 
@@ -1789,6 +1831,13 @@ class XIncludeTest(unittest.TestCase):
             '  </ns0:include>\n'
             '</div>') # C5
 
+    def test_xinclude_repeated(self):
+        from xml.etree import ElementInclude
+
+        document = self.xinclude_loader("include_c1_repeated.xml")
+        ElementInclude.include(document, self.xinclude_loader)
+        self.assertEqual(1+4*2, len(document.findall(".//p")))
+
     def test_xinclude_failures(self):
         from xml.etree import ElementInclude
 
@@ -1820,6 +1869,45 @@ class XIncludeTest(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                 "xi:fallback tag must be child of xi:include "
                 "('{http://www.w3.org/2001/XInclude}fallback')")
+
+        # Test infinitely recursive includes.
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.FatalIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader)
+        self.assertEqual(str(cm.exception),
+                "recursive include of Recursive2.xml")
+
+        # Test 'max_depth' limitation.
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.FatalIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=None)
+        self.assertEqual(str(cm.exception),
+                "recursive include of Recursive2.xml")
+
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.LimitedRecursiveIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=0)
+        self.assertEqual(str(cm.exception),
+                "maximum xinclude depth reached when including file Recursive2.xml")
+
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.LimitedRecursiveIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=1)
+        self.assertEqual(str(cm.exception),
+                "maximum xinclude depth reached when including file Recursive3.xml")
+
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.LimitedRecursiveIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=2)
+        self.assertEqual(str(cm.exception),
+                "maximum xinclude depth reached when including file Recursive1.xml")
+
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.FatalIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=3)
+        self.assertEqual(str(cm.exception),
+                "recursive include of Recursive2.xml")
+
 
 # --------------------------------------------------------------------
 # reported bugs
@@ -2176,6 +2264,10 @@ class BugsTest(unittest.TestCase):
         text = text.replace('\r\n', ' ')
         text = text[6:-4]
         self.assertEqual(root.get('b'), text)
+
+    def test_39495_treebuilder_start(self):
+        self.assertRaises(TypeError, ET.TreeBuilder().start, "tag")
+        self.assertRaises(TypeError, ET.TreeBuilder().start, "tag", None)
 
 
 
@@ -3554,14 +3646,14 @@ class IOTest(unittest.TestCase):
                      "<tag key=\"åöö&lt;&gt;\" />" % enc).encode(enc))
 
     def test_write_to_filename(self):
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(os_helper.unlink, TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
         tree.write(TESTFN)
         with open(TESTFN, 'rb') as f:
             self.assertEqual(f.read(), b'''<site />''')
 
     def test_write_to_text_file(self):
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(os_helper.unlink, TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
         with open(TESTFN, 'w', encoding='utf-8') as f:
             tree.write(f, encoding='unicode')
@@ -3570,7 +3662,7 @@ class IOTest(unittest.TestCase):
             self.assertEqual(f.read(), b'''<site />''')
 
     def test_write_to_binary_file(self):
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(os_helper.unlink, TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
         with open(TESTFN, 'wb') as f:
             tree.write(f)
@@ -3579,7 +3671,7 @@ class IOTest(unittest.TestCase):
             self.assertEqual(f.read(), b'''<site />''')
 
     def test_write_to_binary_file_with_bom(self):
-        self.addCleanup(support.unlink, TESTFN)
+        self.addCleanup(os_helper.unlink, TESTFN)
         tree = ET.ElementTree(ET.XML('''<site />'''))
         # test BOM writing to buffered file
         with open(TESTFN, 'wb') as f:

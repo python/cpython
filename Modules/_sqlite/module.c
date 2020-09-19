@@ -29,8 +29,8 @@
 #include "microprotocols.h"
 #include "row.h"
 
-#if SQLITE_VERSION_NUMBER >= 3003003
-#define HAVE_SHARED_CACHE
+#if SQLITE_VERSION_NUMBER < 3007003
+#error "SQLite 3.7.3 or higher required"
 #endif
 
 /* static objects at module-level */
@@ -105,7 +105,7 @@ RAM instead of on disk.");
 static PyObject* module_complete(PyObject* self, PyObject* args, PyObject*
         kwargs)
 {
-    static char *kwlist[] = {"statement", NULL, NULL};
+    static char *kwlist[] = {"statement", NULL};
     char* statement;
 
     PyObject* result;
@@ -131,11 +131,10 @@ PyDoc_STRVAR(module_complete_doc,
 \n\
 Checks if a string contains a complete SQL statement. Non-standard.");
 
-#ifdef HAVE_SHARED_CACHE
 static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyObject*
         kwargs)
 {
-    static char *kwlist[] = {"do_enable", NULL, NULL};
+    static char *kwlist[] = {"do_enable", NULL};
     int do_enable;
     int rc;
 
@@ -159,7 +158,6 @@ PyDoc_STRVAR(module_enable_shared_cache_doc,
 \n\
 Enable or disable shared cache mode for the calling thread.\n\
 Experimental/Non-standard.");
-#endif /* HAVE_SHARED_CACHE */
 
 static PyObject* module_register_adapter(PyObject* self, PyObject* args)
 {
@@ -253,10 +251,8 @@ static PyMethodDef module_methods[] = {
      METH_VARARGS | METH_KEYWORDS, module_connect_doc},
     {"complete_statement",  (PyCFunction)(void(*)(void))module_complete,
      METH_VARARGS | METH_KEYWORDS, module_complete_doc},
-#ifdef HAVE_SHARED_CACHE
     {"enable_shared_cache",  (PyCFunction)(void(*)(void))module_enable_shared_cache,
      METH_VARARGS | METH_KEYWORDS, module_enable_shared_cache_doc},
-#endif
     {"register_adapter", (PyCFunction)module_register_adapter,
      METH_VARARGS, module_register_adapter_doc},
     {"register_converter", (PyCFunction)module_register_converter,
@@ -307,29 +303,17 @@ static const IntConstantPair _int_constants[] = {
     {"SQLITE_UPDATE", SQLITE_UPDATE},
     {"SQLITE_ATTACH", SQLITE_ATTACH},
     {"SQLITE_DETACH", SQLITE_DETACH},
-#if SQLITE_VERSION_NUMBER >= 3002001
     {"SQLITE_ALTER_TABLE", SQLITE_ALTER_TABLE},
     {"SQLITE_REINDEX", SQLITE_REINDEX},
-#endif
-#if SQLITE_VERSION_NUMBER >= 3003000
     {"SQLITE_ANALYZE", SQLITE_ANALYZE},
-#endif
-#if SQLITE_VERSION_NUMBER >= 3003007
     {"SQLITE_CREATE_VTABLE", SQLITE_CREATE_VTABLE},
     {"SQLITE_DROP_VTABLE", SQLITE_DROP_VTABLE},
-#endif
-#if SQLITE_VERSION_NUMBER >= 3003008
     {"SQLITE_FUNCTION", SQLITE_FUNCTION},
-#endif
-#if SQLITE_VERSION_NUMBER >= 3006008
     {"SQLITE_SAVEPOINT", SQLITE_SAVEPOINT},
-#endif
 #if SQLITE_VERSION_NUMBER >= 3008003
     {"SQLITE_RECURSIVE", SQLITE_RECURSIVE},
 #endif
-#if SQLITE_VERSION_NUMBER >= 3006011
     {"SQLITE_DONE", SQLITE_DONE},
-#endif
     {(char*)NULL, 0}
 };
 
@@ -346,11 +330,24 @@ static struct PyModuleDef _sqlite3module = {
         NULL
 };
 
+#define ADD_TYPE(module, type)                 \
+do {                                           \
+    if (PyModule_AddType(module, &type) < 0) { \
+        Py_DECREF(module);                     \
+        return NULL;                           \
+    }                                          \
+} while (0)
+
 PyMODINIT_FUNC PyInit__sqlite3(void)
 {
     PyObject *module, *dict;
     PyObject *tmp_obj;
     int i;
+
+    if (sqlite3_libversion_number() < 3007003) {
+        PyErr_SetString(PyExc_ImportError, MODULE_NAME ": SQLite 3.7.3 or higher required");
+        return NULL;
+    }
 
     module = PyModule_Create(&_sqlite3module);
 
@@ -366,14 +363,10 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         return NULL;
     }
 
-    Py_INCREF(&pysqlite_ConnectionType);
-    PyModule_AddObject(module, "Connection", (PyObject*) &pysqlite_ConnectionType);
-    Py_INCREF(&pysqlite_CursorType);
-    PyModule_AddObject(module, "Cursor", (PyObject*) &pysqlite_CursorType);
-    Py_INCREF(&pysqlite_PrepareProtocolType);
-    PyModule_AddObject(module, "PrepareProtocol", (PyObject*) &pysqlite_PrepareProtocolType);
-    Py_INCREF(&pysqlite_RowType);
-    PyModule_AddObject(module, "Row", (PyObject*) &pysqlite_RowType);
+    ADD_TYPE(module, pysqlite_ConnectionType);
+    ADD_TYPE(module, pysqlite_CursorType);
+    ADD_TYPE(module, pysqlite_PrepareProtocolType);
+    ADD_TYPE(module, pysqlite_RowType);
 
     if (!(dict = PyModule_GetDict(module))) {
         goto error;
