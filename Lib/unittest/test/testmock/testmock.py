@@ -2262,10 +2262,10 @@ class MockTest(unittest.TestCase):
 
     def test_property_not_called_with_spec_mock(self):
         obj = SomethingElse()
-        self.assertIsNone(obj._instance)
+        self.assertIsNone(obj._instance, msg='before mock')
         mock = Mock(spec=obj)
-        self.assertIsNone(obj._instance)
-
+        self.assertIsNone(obj._instance, msg='after mock')
+        self.assertEqual(mock.instance, 'instance')
 
 if __name__ == '__main__':
     unittest.main()
