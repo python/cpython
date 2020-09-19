@@ -47,7 +47,7 @@ class SomethingElse(object):
         if not self._instance:
             self._instance = 'object'
         return self._instance
-            
+
 
 class Typos():
     autospect = None
@@ -2265,7 +2265,7 @@ class MockTest(unittest.TestCase):
         self.assertIsNone(obj._instance, msg='before mock')
         mock = Mock(spec=obj)
         self.assertIsNone(obj._instance, msg='after mock')
-        self.assertEqual(mock.instance, 'instance')
+        self.assertEqual('object', obj.instance)
 
 if __name__ == '__main__':
     unittest.main()
