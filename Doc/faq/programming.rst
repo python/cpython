@@ -1518,8 +1518,8 @@ Most :meth:`__setattr__` implementations must modify ``self.__dict__`` to store
 local state for self without causing an infinite recursion.
 
 
-How do I call a method defined in a base class from a derived class that overrides it?
---------------------------------------------------------------------------------------
+How do I call a method defined in a base class from a derived class that extends it?
+------------------------------------------------------------------------------------
 
 Use the built-in :func:`super` function::
 
