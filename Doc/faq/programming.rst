@@ -1529,8 +1529,8 @@ Use the built-in :func:`super` function::
 
 In the example, :func:`super` will automatically determine the instance from
 which it was called (the ``self`` value), look up the :term:`method resolution
-order` (MRO) of the instance type (``Derived``), and return the next in line
-after ``Derived`` in the MRO: ``Base``.
+order` (MRO) with ``type(self).__mro__``, and return the next in line after
+``Derived`` in the MRO: ``Base``.
 
 
 How can I organize my code to make it easier to change the base class?
