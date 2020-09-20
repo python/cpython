@@ -1527,11 +1527,10 @@ Use the built-in :func:`super` function::
        def meth(self):
            super().meth()  # calls Base.meth
 
-For version prior to 3.0, you may be using classic classes: For a class
-definition such as ``class Derived(Base): ...`` you can call method ``meth()``
-defined in ``Base`` (or one of ``Base``'s base classes) as ``Base.meth(self,
-arguments...)``.  Here, ``Base.meth`` is an unbound method, so you need to
-provide the ``self`` argument.
+In the example, :func:`super` will automatically determine the instance from
+which it was called (the ``self`` value), look up the :term:`method resolution
+order` (MRO) of the instance type (``Derived``), and return the next in line
+after ``Derived`` in the MRO: ``Base``.
 
 
 How can I organize my code to make it easier to change the base class?
