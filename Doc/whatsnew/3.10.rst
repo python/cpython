@@ -145,6 +145,12 @@ Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
 
+types
+-----
+
+Reintroduced the :data:`types.EllipsisType` class.
+(Contributed by Bas van Beek in :issue:`41810`.)
+
 unittest
 --------
 

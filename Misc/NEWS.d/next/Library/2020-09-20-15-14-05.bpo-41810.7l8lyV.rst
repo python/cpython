@@ -1,0 +1,1 @@
+:data:`types.EllipsisType` has been reintroduced.
