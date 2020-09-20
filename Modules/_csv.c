@@ -1040,6 +1040,9 @@ join_append_data(WriterObj *self, unsigned int field_kind, const void *field_dat
                     else
                         want_escape = 1;
                 }
+                else if (c == dialect->escapechar) {
+                    want_escape = 1;
+                }
                 if (!want_escape)
                     *quoted = 1;
             }
