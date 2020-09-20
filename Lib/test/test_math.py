@@ -803,7 +803,7 @@ class MathTests(unittest.TestCase):
             scale = FLOAT_MIN / 2.0 ** exp
             self.assertEqual(math.hypot(4*scale, 3*scale), 5*scale)
 
-    @requires_IEEE_754
+    #@requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                      "hypot() loses accuracy on machines with double rounding")
     def testHypotAccuracy(self):
