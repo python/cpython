@@ -1523,6 +1523,10 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *args, PyObject *
         sleep_ms = (int)ms;
     }
 
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
     if (!pysqlite_check_connection((pysqlite_Connection *)target)) {
         return NULL;
     }
