@@ -1,5 +1,5 @@
 import errno
-from http import client
+from http import client, HTTPStatus
 import io
 import itertools
 import os
@@ -519,6 +519,10 @@ class TransferEncodingTest(TestCase):
 
 
 class BasicTest(TestCase):
+    def test_dir_with_added_behavior_on_status(self):
+        # see issue40084
+        self.assertTrue({'description', 'name', 'phrase', 'value'} <= set(dir(HTTPStatus(404))))
+
     def test_status_lines(self):
         # Test HTTP status lines
 
