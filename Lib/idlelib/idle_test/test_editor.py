@@ -381,7 +381,7 @@ class MenubarTest(unittest.TestCase):
     def test_reset_help_menu_entries(self, mock_extrahelp):
         w = self.mock_editwin
         mock_extrahelp.return_value = [('Python', 'https://python.org', '1')]
-        mock_callback = w._EditorWindow__extra_help_callback
+        mock_callback = w._extra_help_callback
 
         # Create help menu.
         help = w.menudict['help'] = tk.Menu(w.menubar, name='help', tearoff=False)
@@ -435,24 +435,18 @@ class MenubarTest(unittest.TestCase):
 
     @mock.patch.object(editor.os, 'startfile')
     @unittest.skipIf(not sys.platform.startswith('win'), 'this is test for windows system')
-    def test__extra_help_callback_windows(self, mock_openfile):
+    def test_extra_help_callback_windows(self, mock_start):
         # os.startfile doesn't exist on other platforms.
         w = self.mock_editwin
-        ehc = partial(w._EditorWindow__extra_help_callback, w)
-
+        w.showerror = mock.Mock()
+        def ehc(source):
+            return Editor._extra_help_callback(w, source)
         ehc('http://python.org')
-        mock_openfile.called_with('http://python.org')
-        ehc('www.python.org')
-        mock_openfile.called_with('www.python.org')
-        # Filename that opens successfully.
-        mock_openfile.return_value = True
-        ehc('/foo/bar/baz/')
-        mock_openfile.called_with('\\foo\\bar\\baz')
+        mock_start.called_with('http://python.org')
         # Filename that doesn't open.
-        mock_openfile.return_value = False
-        with self.assertRaises(OSError):
-            ehc('/foo/bar/baz/')
-        self.assertEqual(w.showerror.title, 'Document Start Failure')
+        mock_start.side_effect = OSError('boom')
+        ehc('/foo/bar/baz/')()
+        self.assertTrue(w.showerror.callargs.kwargs)
 
 
 class BindingsTest(unittest.TestCase):
