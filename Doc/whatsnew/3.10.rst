@@ -149,8 +149,8 @@ types
 -----
 
 Reintroduced the :data:`types.EllipsisType`, :data:`types.NoneType`
-and :data:`types.NotImplementedType` classes, aforementioned types
-now being useable as annotations.
+and :data:`types.NotImplementedType` classes, providing a new set
+of types readily interpretable by type checkers.
 (Contributed by Bas van Beek in :issue:`41810`.)
 
 unittest
