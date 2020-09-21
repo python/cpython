@@ -19,14 +19,15 @@ A small number of constants live in the built-in namespace.  They are:
 
 .. data:: None
 
-   The sole value of the type ``NoneType``.  ``None`` is frequently used to
+   The sole value of the type :data:`types.NoneType`. ``None`` is frequently used to
    represent the absence of a value, as when default arguments are not passed to a
    function. Assignments to ``None`` are illegal and raise a :exc:`SyntaxError`.
 
 
 .. data:: NotImplemented
 
-   Special value which should be returned by the binary special methods
+   Sole value of the type :data:`types.NotImplementedType` and a
+   special value which should be returned by the binary special methods
    (e.g. :meth:`__eq__`, :meth:`__lt__`, :meth:`__add__`, :meth:`__rsub__`,
    etc.) to indicate that the operation is not implemented with respect to
    the other type; may be returned by the in-place binary special methods

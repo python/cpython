@@ -1,1 +1,2 @@
-:data:`types.EllipsisType` has been reintroduced.
+:data:`types.EllipsisType`, :data:`types.EllipsisType` and
+:data:`types.NoneType` have been reintroduced.

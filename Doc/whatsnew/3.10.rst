@@ -148,7 +148,8 @@ arguments passed to the Python executable.
 types
 -----
 
-Reintroduced the :data:`types.EllipsisType` class.
+Reintroduced the :data:`types.EllipsisType`, :data:`types.NoneType`
+and :data:`types.NotImplementedType` classes.
 (Contributed by Bas van Beek in :issue:`41810`.)
 
 unittest

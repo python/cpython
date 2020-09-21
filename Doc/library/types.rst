@@ -103,6 +103,13 @@ If you instantiate any of these types, note that signatures may vary between Pyt
 
 Standard names are defined for the following types:
 
+.. data:: NoneType
+
+   The type of :data:`None`.
+
+   .. versionadded:: 3.10
+
+
 .. data:: FunctionType
           LambdaType
 
@@ -184,6 +191,13 @@ Standard names are defined for the following types:
    For example it is the type of :code:`object().__str__`.
 
    .. versionadded:: 3.7
+
+
+.. data:: NotImplementedType
+
+   The type of :data:`NotImplemented`.
+
+   .. versionadded:: 3.10
 
 
 .. data:: MethodDescriptorType
