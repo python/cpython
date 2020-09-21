@@ -15,18 +15,18 @@ Data members:
 */
 
 #include "Python.h"
-#include "code.h"
-#include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_ceval.h"         // _Py_RecursionLimitLowerWaterMark()
-#include "pycore_initconfig.h"
-#include "pycore_object.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pylifecycle.h"
+#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_object.h"        // _PyObject_IS_GC()
+#include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
+#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_tupleobject.h"
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
+#include "code.h"
+#include "frameobject.h"          // PyFrame_GetBack()
 #include "pydtrace.h"
 #include "osdefs.h"               // DELIM
 #include <locale.h>
@@ -2931,6 +2931,7 @@ _PySys_InitMain(PyThreadState *tstate)
     }
 
     COPY_LIST("argv", config->argv);
+    COPY_LIST("orig_argv", config->orig_argv);
     COPY_LIST("warnoptions", config->warnoptions);
 
     PyObject *xoptions = sys_create_xoptions_dict(config);

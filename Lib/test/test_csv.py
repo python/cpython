@@ -10,9 +10,16 @@ import csv
 import gc
 import pickle
 from test import support
+from test.support import warnings_helper
 from itertools import permutations
 from textwrap import dedent
 from collections import OrderedDict
+
+
+class BadIterable:
+    def __iter__(self):
+        raise OSError
+
 
 class Test_Csv(unittest.TestCase):
     """
@@ -40,9 +47,15 @@ class Test_Csv(unittest.TestCase):
 
     def test_reader_arg_valid(self):
         self._test_arg_valid(csv.reader, [])
+        self.assertRaises(OSError, csv.reader, BadIterable())
 
     def test_writer_arg_valid(self):
         self._test_arg_valid(csv.writer, StringIO())
+        class BadWriter:
+            @property
+            def write(self):
+                raise OSError
+        self.assertRaises(OSError, csv.writer, BadWriter())
 
     def _test_default_attrs(self, ctor, *args):
         obj = ctor(*args)
@@ -141,6 +154,7 @@ class Test_Csv(unittest.TestCase):
         self._write_test([None], '""')
         self._write_error_test(csv.Error, [None], quoting = csv.QUOTE_NONE)
         # Check that exceptions are passed up the chain
+        self._write_error_test(OSError, BadIterable())
         class BadList:
             def __len__(self):
                 return 10;
@@ -188,6 +202,20 @@ class Test_Csv(unittest.TestCase):
                          escapechar='\\', quoting = csv.QUOTE_NONE)
         self._write_test(['a',1,'p,q'], 'a,1,p\\,q',
                          escapechar='\\', quoting = csv.QUOTE_NONE)
+        self._write_test(['\\', 'a'], '\\\\,a',
+                         escapechar='\\', quoting=csv.QUOTE_NONE)
+        self._write_test(['\\', 'a'], '\\\\,a',
+                         escapechar='\\', quoting=csv.QUOTE_MINIMAL)
+        self._write_test(['\\', 'a'], '"\\\\","a"',
+                         escapechar='\\', quoting=csv.QUOTE_ALL)
+        self._write_test(['\\ ', 'a'], '\\\\ ,a',
+                         escapechar='\\', quoting=csv.QUOTE_MINIMAL)
+        self._write_test(['\\,', 'a'], '\\\\\\,,a',
+                         escapechar='\\', quoting=csv.QUOTE_NONE)
+        self._write_test([',\\', 'a'], '",\\\\",a',
+                         escapechar='\\', quoting=csv.QUOTE_MINIMAL)
+        self._write_test(['C\\', '6', '7', 'X"'], 'C\\\\,6,7,"X"""',
+                         escapechar='\\', quoting=csv.QUOTE_MINIMAL)
 
     def test_write_iterable(self):
         self._write_test(iter(['a', 1, 'p,q']), 'a,1,"p,q"')
@@ -230,10 +258,17 @@ class Test_Csv(unittest.TestCase):
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), 'a\r\n""\r\n')
 
+    def test_writerows_errors(self):
+        with TemporaryFile("w+", newline='') as fileobj:
+            writer = csv.writer(fileobj)
+            self.assertRaises(TypeError, writer.writerows, None)
+            self.assertRaises(OSError, writer.writerows, BadIterable())
+
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_writerows_legacy_strings(self):
         import _testcapi
-
         c = _testcapi.unicode_legacy_string('a')
         with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj)
@@ -334,7 +369,6 @@ class Test_Csv(unittest.TestCase):
     def test_roundtrip_quoteed_newlines(self):
         with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj)
-            self.assertRaises(TypeError, writer.writerows, None)
             rows = [['a\nb','b'],['c','x\r\nd']]
             writer.writerows(rows)
             fileobj.seek(0)

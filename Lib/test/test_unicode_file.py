@@ -6,8 +6,10 @@ import sys
 import unicodedata
 
 import unittest
-from test.support import (run_unittest, rmtree, change_cwd,
-    TESTFN_UNICODE, TESTFN_UNENCODABLE, create_empty_file)
+from test.support import run_unittest
+from test.support.os_helper import (rmtree, change_cwd, TESTFN_UNICODE,
+    TESTFN_UNENCODABLE, create_empty_file)
+
 
 if not os.path.supports_unicode_filenames:
     try:

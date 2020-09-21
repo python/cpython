@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import import_helper
 import builtins
 import contextlib
 import copy
@@ -10,8 +11,8 @@ import sys
 import weakref
 from unittest import mock
 
-py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
-c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
+py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
+c_uuid = import_helper.import_fresh_module('uuid', fresh=['_uuid'])
 
 def importable(name):
     try:

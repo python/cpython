@@ -1,0 +1,5 @@
+The ``_ast`` module uses again a global state. Using a module state per module
+instance is causing subtle practical problems. For example, the Mercurial
+project replaces the ``__import__()`` function to implement lazy import,
+whereas Python expected that ``import _ast`` always return a fully initialized
+``_ast`` module.

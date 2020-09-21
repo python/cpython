@@ -10,7 +10,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from test.support import import_module, unlink, temp_dir, TESTFN, verbose
+from test.support import verbose
+from test.support.import_helper import import_module
+from test.support.os_helper import unlink, temp_dir, TESTFN
 from test.support.script_helper import assert_python_ok
 
 # Skip tests if there is no readline module

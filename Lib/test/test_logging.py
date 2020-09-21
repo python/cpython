@@ -42,8 +42,10 @@ import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
+from test.support import warnings_helper
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
@@ -1158,6 +1160,27 @@ class MemoryHandlerTest(BaseTest):
         # assert that no new lines have been added
         self.assert_log_lines(lines)  # no change
 
+    def test_race_between_set_target_and_flush(self):
+        class MockRaceConditionHandler:
+            def __init__(self, mem_hdlr):
+                self.mem_hdlr = mem_hdlr
+
+            def removeTarget(self):
+                self.mem_hdlr.setTarget(None)
+
+            def handle(self, msg):
+                t = threading.Thread(target=self.removeTarget)
+                t.daemon = True
+                t.start()
+
+        target = MockRaceConditionHandler(self.mem_hdlr)
+        self.mem_hdlr.setTarget(target)
+
+        for _ in range(10):
+            time.sleep(0.005)
+            self.mem_logger.info("not flushed")
+            self.mem_logger.warning("flushed")
+
 
 class ExceptionFormatter(logging.Formatter):
     """A special exception formatter."""
@@ -1169,7 +1192,7 @@ class ConfigFileTest(BaseTest):
 
     """Reading logging config from a .ini-style config file."""
 
-    check_no_resource_warning = support.check_no_resource_warning
+    check_no_resource_warning = warnings_helper.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -1756,7 +1779,7 @@ class UnixSocketHandlerTest(SocketHandlerTest):
 
     def tearDown(self):
         SocketHandlerTest.tearDown(self)
-        support.unlink(self.address)
+        os_helper.unlink(self.address)
 
 class DatagramHandlerTest(BaseTest):
 
@@ -1837,7 +1860,7 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
 
     def tearDown(self):
         DatagramHandlerTest.tearDown(self)
-        support.unlink(self.address)
+        os_helper.unlink(self.address)
 
 class SysLogHandlerTest(BaseTest):
 
@@ -1921,7 +1944,7 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
 
     def tearDown(self):
         SysLogHandlerTest.tearDown(self)
-        support.unlink(self.address)
+        os_helper.unlink(self.address)
 
 @unittest.skipUnless(socket_helper.IPV6_ENABLED,
                      'IPv6 support required for this test.')
@@ -2175,7 +2198,7 @@ class ConfigDictTest(BaseTest):
 
     """Reading logging config from a dictionary."""
 
-    check_no_resource_warning = support.check_no_resource_warning
+    check_no_resource_warning = warnings_helper.check_no_resource_warning
     expected_log_pat = r"^(\w+) \+\+ (\w+)$"
 
     # config0 is a standard configuration.
@@ -4331,15 +4354,65 @@ class LogRecordTest(BaseTest):
         r.removeHandler(h)
         h.close()
 
-    def test_multiprocessing(self):
-        r = logging.makeLogRecord({})
-        self.assertEqual(r.processName, 'MainProcess')
+    @staticmethod # pickled as target of child process in the following test
+    def _extract_logrecord_process_name(key, logMultiprocessing, conn=None):
+        prev_logMultiprocessing = logging.logMultiprocessing
+        logging.logMultiprocessing = logMultiprocessing
         try:
             import multiprocessing as mp
+            name = mp.current_process().name
+
+            r1 = logging.makeLogRecord({'msg': f'msg1_{key}'})
+            del sys.modules['multiprocessing']
+            r2 = logging.makeLogRecord({'msg': f'msg2_{key}'})
+
+            results = {'processName'  : name,
+                       'r1.processName': r1.processName,
+                       'r2.processName': r2.processName,
+                      }
+        finally:
+            logging.logMultiprocessing = prev_logMultiprocessing
+        if conn:
+            conn.send(results)
+        else:
+            return results
+
+    def test_multiprocessing(self):
+        multiprocessing_imported = 'multiprocessing' in sys.modules
+        try:
+            # logMultiprocessing is True by default
+            self.assertEqual(logging.logMultiprocessing, True)
+
+            LOG_MULTI_PROCESSING = True
+            # When logMultiprocessing == True:
+            # In the main process processName = 'MainProcess'
             r = logging.makeLogRecord({})
-            self.assertEqual(r.processName, mp.current_process().name)
-        except ImportError:
-            pass
+            self.assertEqual(r.processName, 'MainProcess')
+
+            results = self._extract_logrecord_process_name(1, LOG_MULTI_PROCESSING)
+            self.assertEqual('MainProcess', results['processName'])
+            self.assertEqual('MainProcess', results['r1.processName'])
+            self.assertEqual('MainProcess', results['r2.processName'])
+
+            # In other processes, processName is correct when multiprocessing in imported,
+            # but it is (incorrectly) defaulted to 'MainProcess' otherwise (bpo-38762).
+            import multiprocessing
+            parent_conn, child_conn = multiprocessing.Pipe()
+            p = multiprocessing.Process(
+                target=self._extract_logrecord_process_name,
+                args=(2, LOG_MULTI_PROCESSING, child_conn,)
+            )
+            p.start()
+            results = parent_conn.recv()
+            self.assertNotEqual('MainProcess', results['processName'])
+            self.assertEqual(results['processName'], results['r1.processName'])
+            self.assertEqual('MainProcess', results['r2.processName'])
+            p.join()
+
+        finally:
+            if multiprocessing_imported:
+                import multiprocessing
+
 
     def test_optional(self):
         r = logging.makeLogRecord({})
@@ -5340,12 +5413,12 @@ class NTEventLogHandlerTest(BaseTest):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'logThreads', 'logMultiprocessing',
-                     'logProcesses', 'currentframe',
-                     'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
-                     'Filterer', 'PlaceHolder', 'Manager', 'RootLogger',
-                     'root', 'threading'}
-        support.check__all__(self, logging, blacklist=blacklist)
+        not_exported = {
+            'logThreads', 'logMultiprocessing', 'logProcesses', 'currentframe',
+            'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
+            'Filterer', 'PlaceHolder', 'Manager', 'RootLogger', 'root',
+            'threading'}
+        support.check__all__(self, logging, not_exported=not_exported)
 
 
 # Set the locale to the platform-dependent default.  I have no idea

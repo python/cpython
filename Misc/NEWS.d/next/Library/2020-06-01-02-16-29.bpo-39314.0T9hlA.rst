@@ -1,0 +1,3 @@
+:class:`rlcompleter.Completer` and the standard Python shell now close the
+parenthesis for functions that take no arguments. Patch contributed by Rémi
+Lapeyre.

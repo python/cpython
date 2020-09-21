@@ -1,0 +1,3 @@
+Enable Sphinx 3.2 ``c_allow_pre_v3`` option and disable
+``c_warn_on_allowed_pre_v3`` option to make the documentation compatible
+with Sphinx 2 and Sphinx 3.

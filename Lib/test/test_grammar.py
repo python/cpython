@@ -1,7 +1,8 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
-from test.support import check_syntax_error, check_syntax_warning
+from test.support import check_syntax_error
+from test.support.warnings_helper import check_syntax_warning
 import inspect
 import unittest
 import sys
@@ -276,7 +277,8 @@ class CNS:
 
 class GrammarTests(unittest.TestCase):
 
-    from test.support import check_syntax_error, check_syntax_warning
+    from test.support import check_syntax_error
+    from test.support.warnings_helper import check_syntax_warning
 
     # single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
     # XXX can't test in a script -- this rule is only used when interactive
@@ -582,12 +584,14 @@ class GrammarTests(unittest.TestCase):
         d22v(1, *(2, 3), **{'d': 4})
 
         # keyword argument type tests
-        try:
-            str('x', **{b'foo':1 })
-        except TypeError:
-            pass
-        else:
-            self.fail('Bytes should not work as keyword argument names')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', BytesWarning)
+            try:
+                str('x', **{b'foo':1 })
+            except TypeError:
+                pass
+            else:
+                self.fail('Bytes should not work as keyword argument names')
         # keyword only argument tests
         def pos0key1(*, key): return key
         pos0key1(key=100)

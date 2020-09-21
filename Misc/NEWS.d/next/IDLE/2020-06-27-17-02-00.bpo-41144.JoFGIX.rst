@@ -1,0 +1,1 @@
+Make Open Module open a special module such as os.path.

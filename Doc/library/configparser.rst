@@ -674,97 +674,98 @@ be overridden by subclasses or by attribute assignment.
 
 .. attribute:: ConfigParser.BOOLEAN_STATES
 
-  By default when using :meth:`~ConfigParser.getboolean`, config parsers
-  consider the following values ``True``: ``'1'``, ``'yes'``, ``'true'``,
-  ``'on'`` and the following values ``False``: ``'0'``, ``'no'``, ``'false'``,
-  ``'off'``.  You can override this by specifying a custom dictionary of strings
-  and their Boolean outcomes. For example:
+   By default when using :meth:`~ConfigParser.getboolean`, config parsers
+   consider the following values ``True``: ``'1'``, ``'yes'``, ``'true'``,
+   ``'on'`` and the following values ``False``: ``'0'``, ``'no'``, ``'false'``,
+   ``'off'``.  You can override this by specifying a custom dictionary of strings
+   and their Boolean outcomes. For example:
 
-  .. doctest::
+   .. doctest::
 
-     >>> custom = configparser.ConfigParser()
-     >>> custom['section1'] = {'funky': 'nope'}
-     >>> custom['section1'].getboolean('funky')
-     Traceback (most recent call last):
-     ...
-     ValueError: Not a boolean: nope
-     >>> custom.BOOLEAN_STATES = {'sure': True, 'nope': False}
-     >>> custom['section1'].getboolean('funky')
-     False
+      >>> custom = configparser.ConfigParser()
+      >>> custom['section1'] = {'funky': 'nope'}
+      >>> custom['section1'].getboolean('funky')
+      Traceback (most recent call last):
+      ...
+      ValueError: Not a boolean: nope
+      >>> custom.BOOLEAN_STATES = {'sure': True, 'nope': False}
+      >>> custom['section1'].getboolean('funky')
+      False
 
-  Other typical Boolean pairs include ``accept``/``reject`` or
-  ``enabled``/``disabled``.
+   Other typical Boolean pairs include ``accept``/``reject`` or
+   ``enabled``/``disabled``.
 
 .. method:: ConfigParser.optionxform(option)
+   :noindex:
 
-  This method transforms option names on every read, get, or set
-  operation.  The default converts the name to lowercase.  This also
-  means that when a configuration file gets written, all keys will be
-  lowercase.  Override this method if that's unsuitable.
-  For example:
+   This method transforms option names on every read, get, or set
+   operation.  The default converts the name to lowercase.  This also
+   means that when a configuration file gets written, all keys will be
+   lowercase.  Override this method if that's unsuitable.
+   For example:
 
-  .. doctest::
+   .. doctest::
 
-     >>> config = """
-     ... [Section1]
-     ... Key = Value
-     ...
-     ... [Section2]
-     ... AnotherKey = Value
-     ... """
-     >>> typical = configparser.ConfigParser()
-     >>> typical.read_string(config)
-     >>> list(typical['Section1'].keys())
-     ['key']
-     >>> list(typical['Section2'].keys())
-     ['anotherkey']
-     >>> custom = configparser.RawConfigParser()
-     >>> custom.optionxform = lambda option: option
-     >>> custom.read_string(config)
-     >>> list(custom['Section1'].keys())
-     ['Key']
-     >>> list(custom['Section2'].keys())
-     ['AnotherKey']
+      >>> config = """
+      ... [Section1]
+      ... Key = Value
+      ...
+      ... [Section2]
+      ... AnotherKey = Value
+      ... """
+      >>> typical = configparser.ConfigParser()
+      >>> typical.read_string(config)
+      >>> list(typical['Section1'].keys())
+      ['key']
+      >>> list(typical['Section2'].keys())
+      ['anotherkey']
+      >>> custom = configparser.RawConfigParser()
+      >>> custom.optionxform = lambda option: option
+      >>> custom.read_string(config)
+      >>> list(custom['Section1'].keys())
+      ['Key']
+      >>> list(custom['Section2'].keys())
+      ['AnotherKey']
 
-  .. note::
-     The optionxform function transforms option names to a canonical form.
-     This should be an idempotent function: if the name is already in
-     canonical form, it should be returned unchanged.
+   .. note::
+      The optionxform function transforms option names to a canonical form.
+      This should be an idempotent function: if the name is already in
+      canonical form, it should be returned unchanged.
 
 
 .. attribute:: ConfigParser.SECTCRE
 
-  A compiled regular expression used to parse section headers.  The default
-  matches ``[section]`` to the name ``"section"``.  Whitespace is considered
-  part of the section name, thus ``[  larch  ]`` will be read as a section of
-  name ``"  larch  "``.  Override this attribute if that's unsuitable.  For
-  example:
+   A compiled regular expression used to parse section headers.  The default
+   matches ``[section]`` to the name ``"section"``.  Whitespace is considered
+   part of the section name, thus ``[  larch  ]`` will be read as a section of
+   name ``"  larch  "``.  Override this attribute if that's unsuitable.  For
+   example:
 
-  .. doctest::
+   .. doctest::
 
-     >>> import re
-     >>> config = """
-     ... [Section 1]
-     ... option = value
-     ...
-     ... [  Section 2  ]
-     ... another = val
-     ... """
-     >>> typical = configparser.ConfigParser()
-     >>> typical.read_string(config)
-     >>> typical.sections()
-     ['Section 1', '  Section 2  ']
-     >>> custom = configparser.ConfigParser()
-     >>> custom.SECTCRE = re.compile(r"\[ *(?P<header>[^]]+?) *\]")
-     >>> custom.read_string(config)
-     >>> custom.sections()
-     ['Section 1', 'Section 2']
+      >>> import re
+      >>> config = """
+      ... [Section 1]
+      ... option = value
+      ...
+      ... [  Section 2  ]
+      ... another = val
+      ... """
+      >>> typical = configparser.ConfigParser()
+      >>> typical.read_string(config)
+      >>> typical.sections()
+      ['Section 1', '  Section 2  ']
+      >>> custom = configparser.ConfigParser()
+      >>> custom.SECTCRE = re.compile(r"\[ *(?P<header>[^]]+?) *\]")
+      >>> custom.read_string(config)
+      >>> custom.sections()
+      ['Section 1', 'Section 2']
 
-  .. note::
+   .. note::
 
-     While ConfigParser objects also use an ``OPTCRE`` attribute for recognizing
-     option lines, it's not recommended to override it because that would
-     interfere with constructor options *allow_no_value* and *delimiters*.
+      While ConfigParser objects also use an ``OPTCRE`` attribute for recognizing
+      option lines, it's not recommended to override it because that would
+      interfere with constructor options *allow_no_value* and *delimiters*.
 
 
 Legacy API Examples

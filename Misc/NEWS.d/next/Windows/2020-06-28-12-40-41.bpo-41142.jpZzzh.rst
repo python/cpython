@@ -1,0 +1,2 @@
+:mod:`msilib` now supports creating CAB files with non-ASCII file path and
+adding files with non-ASCII file path to them.

@@ -1,7 +1,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_tupleobject.h"
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include <stddef.h>               // offsetof()
 
 /* Itertools module written and maintained

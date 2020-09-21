@@ -9,10 +9,11 @@
 
 import ast
 import os
+import re
 import types
 import decimal
 import unittest
-from test.support import temp_cwd
+from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure
 
 a_global = 'global variable'
@@ -524,7 +525,7 @@ non-important content
                              # This looks like a nested format spec.
                              ])
 
-        self.assertAllRaise(SyntaxError, "invalid syntax",
+        self.assertAllRaise(SyntaxError, "f-string: invalid syntax",
                             [# Invalid syntax inside a nested spec.
                              "f'{4:{/5}}'",
                              ])
@@ -598,7 +599,7 @@ non-important content
         #  are added around it. But we shouldn't go from an invalid
         #  expression to a valid one. The added parens are just
         #  supposed to allow whitespace (including newlines).
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
+        self.assertAllRaise(SyntaxError, 'f-string: invalid syntax',
                             ["f'{,}'",
                              "f'{,}'",  # this is (,), which is an error
                              ])
@@ -716,7 +717,7 @@ non-important content
 
         # lambda doesn't work without parens, because the colon
         #  makes the parser think it's a format_spec
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
+        self.assertAllRaise(SyntaxError, 'f-string: invalid syntax',
                             ["f'{lambda x:x}'",
                              ])
 
@@ -1055,8 +1056,9 @@ non-important content
             file_path = os.path.join(cwd, 't.py')
             with open(file_path, 'w') as f:
                 f.write('f"{a b}"') # This generates a SyntaxError
-            _, _, stderr = assert_python_failure(file_path)
-        self.assertIn(file_path, stderr.decode('utf-8'))
+            _, _, stderr = assert_python_failure(file_path,
+                                                 PYTHONIOENCODING='ascii')
+        self.assertIn(file_path.encode('ascii', 'backslashreplace'), stderr)
 
     def test_loop(self):
         for i in range(1000):
@@ -1193,6 +1195,29 @@ non-important content
         self.assertEqual(f'{(x:=10)}', '10')
         self.assertEqual(x, 10)
 
+    def test_invalid_syntax_error_message(self):
+        with self.assertRaisesRegex(SyntaxError, "f-string: invalid syntax"):
+            compile("f'{a $ b}'", "?", "exec")
+
+    def test_with_two_commas_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify ',' with ','.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:,,}'
+
+    def test_with_two_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify '_' with '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:__}'
+
+    def test_with_a_commas_and_an_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:,_}'
+
+    def test_with_an_underscore_and_a_comma_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:_,}'
 
 if __name__ == '__main__':
     unittest.main()
