@@ -1,62 +1,5 @@
 #include "Python.h"
-#include "frameobject.h"
 #include "rotatingtree.h"
-
-/*** Selection of a high-precision timer ***/
-
-#ifdef MS_WINDOWS
-
-#include <windows.h>
-
-static long long
-hpTimer(void)
-{
-    LARGE_INTEGER li;
-    QueryPerformanceCounter(&li);
-    return li.QuadPart;
-}
-
-static double
-hpTimerUnit(void)
-{
-    LARGE_INTEGER li;
-    if (QueryPerformanceFrequency(&li))
-        return 1.0 / li.QuadPart;
-    else
-        return 0.000001;  /* unlikely */
-}
-
-#else  /* !MS_WINDOWS */
-
-#ifndef HAVE_GETTIMEOFDAY
-#error "This module requires gettimeofday() on non-Windows platforms!"
-#endif
-
-#include <sys/resource.h>
-#include <sys/times.h>
-
-static long long
-hpTimer(void)
-{
-    struct timeval tv;
-    long long ret;
-#ifdef GETTIMEOFDAY_NO_TZ
-    gettimeofday(&tv);
-#else
-    gettimeofday(&tv, (struct timezone *)NULL);
-#endif
-    ret = tv.tv_sec;
-    ret = ret * 1000000 + tv.tv_usec;
-    return ret;
-}
-
-static double
-hpTimerUnit(void)
-{
-    return 0.000001;
-}
-
-#endif  /* MS_WINDOWS */
 
 /************************************************************/
 /* Written by Brett Rosen and Ted Czotter */
@@ -66,8 +9,8 @@ struct _ProfilerEntry;
 /* represents a function called from another function */
 typedef struct _ProfilerSubEntry {
     rotating_node_t header;
-    long long tt;
-    long long it;
+    _PyTime_t tt;
+    _PyTime_t it;
     long callcount;
     long recursivecallcount;
     long recursionLevel;
@@ -77,8 +20,8 @@ typedef struct _ProfilerSubEntry {
 typedef struct _ProfilerEntry {
     rotating_node_t header;
     PyObject *userObj; /* PyCodeObject, or a descriptive str for builtins */
-    long long tt; /* total time in this entry */
-    long long it; /* inline time in this entry (not in subcalls) */
+    _PyTime_t tt; /* total time in this entry */
+    _PyTime_t it; /* inline time in this entry (not in subcalls) */
     long callcount; /* how many times this was called */
     long recursivecallcount; /* how many times called recursively */
     long recursionLevel;
@@ -86,8 +29,8 @@ typedef struct _ProfilerEntry {
 } ProfilerEntry;
 
 typedef struct _ProfilerContext {
-    long long t0;
-    long long subt;
+    _PyTime_t t0;
+    _PyTime_t subt;
     struct _ProfilerContext *previous;
     ProfilerEntry *ctxEntry;
 } ProfilerContext;
@@ -110,45 +53,50 @@ typedef struct {
 static PyTypeObject PyProfiler_Type;
 
 #define PyProfiler_Check(op) PyObject_TypeCheck(op, &PyProfiler_Type)
-#define PyProfiler_CheckExact(op) (Py_TYPE(op) == &PyProfiler_Type)
+#define PyProfiler_CheckExact(op) Py_IS_TYPE(op, &PyProfiler_Type)
 
 /*** External Timers ***/
 
-#define DOUBLE_TIMER_PRECISION   4294967296.0
-static PyObject *empty_tuple;
-
-static long long CallExternalTimer(ProfilerObject *pObj)
+static _PyTime_t CallExternalTimer(ProfilerObject *pObj)
 {
-    long long result;
-    PyObject *o = PyObject_Call(pObj->externalTimer, empty_tuple, NULL);
+    PyObject *o = _PyObject_CallNoArg(pObj->externalTimer);
     if (o == NULL) {
         PyErr_WriteUnraisable(pObj->externalTimer);
         return 0;
     }
+
+    _PyTime_t result;
+    int err;
     if (pObj->externalTimerUnit > 0.0) {
         /* interpret the result as an integer that will be scaled
            in profiler_getstats() */
-        result = PyLong_AsLongLong(o);
+        err = _PyTime_FromNanosecondsObject(&result, o);
     }
     else {
         /* interpret the result as a double measured in seconds.
-           As the profiler works with long long internally
+           As the profiler works with _PyTime_t internally
            we convert it to a large integer */
-        double val = PyFloat_AsDouble(o);
-        /* error handling delayed to the code below */
-        result = (long long) (val * DOUBLE_TIMER_PRECISION);
+        err = _PyTime_FromSecondsObject(&result, o, _PyTime_ROUND_FLOOR);
     }
     Py_DECREF(o);
-    if (PyErr_Occurred()) {
+    if (err < 0) {
         PyErr_WriteUnraisable(pObj->externalTimer);
         return 0;
     }
     return result;
 }
 
-#define CALL_TIMER(pObj)        ((pObj)->externalTimer ?                \
-                                        CallExternalTimer(pObj) :       \
-                                        hpTimer())
+static inline _PyTime_t
+call_timer(ProfilerObject *pObj)
+{
+    if (pObj->externalTimer != NULL) {
+        return CallExternalTimer(pObj);
+    }
+    else {
+        return _PyTime_GetPerfCounter();
+    }
+}
+
 
 /*** ProfilerObject ***/
 
@@ -332,14 +280,14 @@ initContext(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
         if (subentry)
             ++subentry->recursionLevel;
     }
-    self->t0 = CALL_TIMER(pObj);
+    self->t0 = call_timer(pObj);
 }
 
 static void
 Stop(ProfilerObject *pObj, ProfilerContext *self, ProfilerEntry *entry)
 {
-    long long tt = CALL_TIMER(pObj) - self->t0;
-    long long it = tt - self->subt;
+    _PyTime_t tt = call_timer(pObj) - self->t0;
+    _PyTime_t it = tt - self->subt;
     if (self->previous)
         self->previous->subt += tt;
     pObj->currentProfilerContext = self->previous;
@@ -439,15 +387,22 @@ profiler_callback(PyObject *self, PyFrameObject *frame, int what,
 
     /* the 'frame' of a called function is about to start its execution */
     case PyTrace_CALL:
-        ptrace_enter_call(self, (void *)frame->f_code,
-                                (PyObject *)frame->f_code);
+    {
+        PyCodeObject *code = PyFrame_GetCode(frame);
+        ptrace_enter_call(self, (void *)code, (PyObject *)code);
+        Py_DECREF(code);
         break;
+    }
 
     /* the 'frame' of a called function is about to finish
        (either normally or with an exception) */
     case PyTrace_RETURN:
-        ptrace_leave_call(self, (void *)frame->f_code);
+    {
+        PyCodeObject *code = PyFrame_GetCode(frame);
+        ptrace_leave_call(self, (void *)code);
+        Py_DECREF(code);
         break;
+    }
 
     /* case PyTrace_EXCEPTION:
         If the exception results in the function exiting, a
@@ -629,14 +584,17 @@ static PyObject*
 profiler_getstats(ProfilerObject *pObj, PyObject* noarg)
 {
     statscollector_t collect;
-    if (pending_exception(pObj))
+    if (pending_exception(pObj)) {
         return NULL;
-    if (!pObj->externalTimer)
-        collect.factor = hpTimerUnit();
-    else if (pObj->externalTimerUnit > 0.0)
+    }
+    if (!pObj->externalTimer || pObj->externalTimerUnit == 0.0) {
+        _PyTime_t onesec = _PyTime_FromSeconds(1);
+        collect.factor = (double)1 / onesec;
+    }
+    else {
         collect.factor = pObj->externalTimerUnit;
-    else
-        collect.factor = 1.0 / DOUBLE_TIMER_PRECISION;
+    }
+
     collect.list = PyList_New(0);
     if (collect.list == NULL)
         return NULL;
@@ -688,9 +646,15 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii:enable",
                                      kwlist, &subcalls, &builtins))
         return NULL;
-    if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0)
+    if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0) {
         return NULL;
-    PyEval_SetProfile(profiler_callback, (PyObject*)self);
+    }
+
+    PyThreadState *tstate = PyThreadState_GET();
+    if (_PyEval_SetProfile(tstate, profiler_callback, (PyObject*)self) < 0) {
+        return NULL;
+    }
+
     self->flags |= POF_ENABLED;
     Py_RETURN_NONE;
 }
@@ -720,11 +684,16 @@ Stop collecting profiling information.\n\
 static PyObject*
 profiler_disable(ProfilerObject *self, PyObject* noarg)
 {
-    self->flags &= ~POF_ENABLED;
-    PyEval_SetProfile(NULL, NULL);
-    flush_unmatched(self);
-    if (pending_exception(self))
+    PyThreadState *tstate = PyThreadState_GET();
+    if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
         return NULL;
+    }
+    self->flags &= ~POF_ENABLED;
+
+    flush_unmatched(self);
+    if (pending_exception(self)) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -744,8 +713,13 @@ profiler_clear(ProfilerObject *pObj, PyObject* noarg)
 static void
 profiler_dealloc(ProfilerObject *op)
 {
-    if (op->flags & POF_ENABLED)
-        PyEval_SetProfile(NULL, NULL);
+    if (op->flags & POF_ENABLED) {
+        PyThreadState *tstate = PyThreadState_GET();
+        if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
+            PyErr_WriteUnraisable((PyObject *)op);
+        }
+    }
+
     flush_unmatched(op);
     clearEntries(op);
     Py_XDECREF(op->externalTimer);
@@ -778,7 +752,7 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
 static PyMethodDef profiler_methods[] = {
     {"getstats",    (PyCFunction)profiler_getstats,
                     METH_NOARGS,                        getstats_doc},
-    {"enable",          (PyCFunction)profiler_enable,
+    {"enable",          (PyCFunction)(void(*)(void))profiler_enable,
                     METH_VARARGS | METH_KEYWORDS,       enable_doc},
     {"disable",         (PyCFunction)profiler_disable,
                     METH_NOARGS,                        disable_doc},
@@ -788,11 +762,11 @@ static PyMethodDef profiler_methods[] = {
 };
 
 PyDoc_STRVAR(profiler_doc, "\
-Profiler(custom_timer=None, time_unit=None, subcalls=True, builtins=True)\n\
+Profiler(timer=None, timeunit=None, subcalls=True, builtins=True)\n\
 \n\
     Builds a profiler object using the specified timer function.\n\
     The default timer is a fast built-in one based on real time.\n\
-    For custom timer functions returning integers, time_unit can\n\
+    For custom timer functions returning integers, timeunit can\n\
     be a float specifying a scale (i.e. how long each integer unit\n\
     is, in seconds).\n\
 ");
@@ -803,10 +777,10 @@ static PyTypeObject PyProfiler_Type = {
     sizeof(ProfilerObject),                 /* tp_basicsize */
     0,                                      /* tp_itemsize */
     (destructor)profiler_dealloc,           /* tp_dealloc */
-    0,                                      /* tp_print */
+    0,                                      /* tp_vectorcall_offset */
     0,                                      /* tp_getattr */
     0,                                      /* tp_setattr */
-    0,                                      /* tp_reserved */
+    0,                                      /* tp_as_async */
     0,                                      /* tp_repr */
     0,                                      /* tp_as_number */
     0,                                      /* tp_as_sequence */
@@ -882,7 +856,6 @@ PyInit__lsprof(void)
                        (PyObject*) &StatsEntryType);
     PyModule_AddObject(module, "profiler_subentry",
                        (PyObject*) &StatsSubEntryType);
-    empty_tuple = PyTuple_New(0);
     initialized = 1;
     return module;
 }

@@ -124,12 +124,17 @@ class NumberTestCase(unittest.TestCase):
         class IntLike(object):
             def __int__(self):
                 return 2
-        i = IntLike()
+        d = IntLike()
+        class IndexLike(object):
+            def __index__(self):
+                return 2
+        i = IndexLike()
         # integers cannot be constructed from floats,
         # but from integer-like objects
         for t in signed_types + unsigned_types:
             self.assertRaises(TypeError, t, 3.14)
             self.assertRaises(TypeError, t, f)
+            self.assertRaises(TypeError, t, d)
             self.assertEqual(t(i).value, 2)
 
     def test_sizes(self):
@@ -241,7 +246,7 @@ class c_int_S(_SimpleCData):
 def run_test(rep, msg, func, arg=None):
 ##    items = [None] * rep
     items = range(rep)
-    from time import clock
+    from time import perf_counter as clock
     if arg is not None:
         start = clock()
         for i in items:

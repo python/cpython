@@ -13,11 +13,16 @@
 The :mod:`tkinter` package ("Tk interface") is the standard Python interface to
 the Tk GUI toolkit.  Both Tk and :mod:`tkinter` are available on most Unix
 platforms, as well as on Windows systems.  (Tk itself is not part of Python; it
-is maintained at ActiveState.) You can check that :mod:`tkinter` is properly
-installed on your system by running ``python -m tkinter`` from the command line;
-this should open a window demonstrating a simple Tk interface.
+is maintained at ActiveState.)
+
+Running ``python -m tkinter`` from the command line should open a window
+demonstrating a simple Tk interface, letting you know that :mod:`tkinter` is
+properly installed on your system, and also showing what version of Tcl/Tk is
+installed, so you can read the Tcl/Tk documentation specific to that version.
 
 .. seealso::
+
+   Tkinter documentation:
 
    `Python Tkinter Resources <https://wiki.python.org/moin/TkInter>`_
       The Python Tkinter Topic Guide provides a great deal of information on using Tk
@@ -26,23 +31,38 @@ this should open a window demonstrating a simple Tk interface.
    `TKDocs <http://www.tkdocs.com/>`_
       Extensive tutorial plus friendlier widget pages for some of the widgets.
 
-   `Tkinter reference: a GUI for Python <https://infohost.nmt.edu/tcc/help/pubs/tkinter/web/index.html>`_
+   `Tkinter 8.5 reference: a GUI for Python <https://www.tkdocs.com/shipman/>`_
       On-line reference material.
 
    `Tkinter docs from effbot <http://effbot.org/tkinterbook/>`_
       Online reference for tkinter supported by effbot.org.
 
-   `Tcl/Tk manual <https://www.tcl.tk/man/tcl8.5/>`_
-      Official manual for the latest tcl/tk version.
-
-   `Programming Python <http://learning-python.com/books/about-pp4e.html>`_
+   `Programming Python <http://learning-python.com/about-pp4e.html>`_
       Book by Mark Lutz, has excellent coverage of Tkinter.
 
-   `Modern Tkinter for Busy Python Developers <http://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
-      Book by Mark Rozerman about building attractive and modern graphical user interfaces with Python and Tkinter.
+   `Modern Tkinter for Busy Python Developers <https://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
+      Book by Mark Roseman about building attractive and modern graphical user interfaces with Python and Tkinter.
 
    `Python and Tkinter Programming <https://www.manning.com/books/python-and-tkinter-programming>`_
-      The book by John Grayson (ISBN 1-884777-81-3).
+      Book by John Grayson (ISBN 1-884777-81-3).
+
+   Tcl/Tk documentation:
+
+   `Tk commands <https://www.tcl.tk/man/tcl8.6/TkCmd/contents.htm>`_
+      Most commands are available as :mod:`tkinter` or :mod:`tkinter.ttk` classes.
+      Change '8.6' to match the version of your Tcl/Tk installation.
+
+   `Tcl/Tk recent man pages <https://www.tcl.tk/doc/>`_
+      Recent Tcl/Tk manuals on www.tcl.tk.
+
+   `ActiveState Tcl Home Page <https://tcl.tk>`_
+      The Tk/Tcl development is largely taking place at ActiveState.
+
+   `Tcl and the Tk Toolkit <https://www.amazon.com/exec/obidos/ASIN/020163337X>`_
+      Book by John Ousterhout, the inventor of Tcl.
+
+   `Practical Programming in Tcl and Tk <http://www.beedub.com/book/>`_
+      Brent Welch's encyclopedic book.
 
 
 Tkinter Modules
@@ -89,9 +109,6 @@ Or, more often::
 
 Other modules that provide Tk support include:
 
-:mod:`tkinter.scrolledtext`
-   Text widget with a vertical scroll bar built in.
-
 :mod:`tkinter.colorchooser`
    Dialog to let the user choose a color.
 
@@ -106,6 +123,9 @@ Other modules that provide Tk support include:
 
 :mod:`tkinter.messagebox`
    Access to standard Tk dialog boxes.
+
+:mod:`tkinter.scrolledtext`
+   Text widget with a vertical scroll bar built in.
 
 :mod:`tkinter.simpledialog`
    Basic dialogs and convenience functions.
@@ -154,7 +174,7 @@ background material, while the second half can be taken to the keyboard as a
 handy reference.
 
 When trying to answer questions of the form "how do I do blah", it is often best
-to find out how to do"blah" in straight Tk, and then convert this back into the
+to find out how to do "blah" in straight Tk, and then convert this back into the
 corresponding :mod:`tkinter` call. Python programmers can often guess at the
 correct Python command by looking at the Tk documentation. This means that in
 order to use Tkinter, you will have to know a little bit about Tk. This document
@@ -175,21 +195,6 @@ documentation that exists. Here are some hints:
   place to go when nothing else makes sense.
 
 
-.. seealso::
-
-   `Tcl/Tk 8.6 man pages <https://www.tcl.tk/man/tcl8.6/>`_
-      The Tcl/Tk manual on www.tcl.tk.
-
-   `ActiveState Tcl Home Page <http://tcl.activestate.com/>`_
-      The Tk/Tcl development is largely taking place at ActiveState.
-
-   `Tcl and the Tk Toolkit <http://www.amazon.com/exec/obidos/ASIN/020163337X>`_
-      The book by John Ousterhout, the inventor of Tcl.
-
-   `Practical Programming in Tcl and Tk <http://www.beedub.com/book/>`_
-      Brent Welch's encyclopedic book.
-
-
 A Simple Hello World Program
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -200,6 +205,7 @@ A Simple Hello World Program
     class Application(tk.Frame):
         def __init__(self, master=None):
             super().__init__(master)
+            self.master = master
             self.pack()
             self.create_widgets()
 
@@ -210,7 +216,7 @@ A Simple Hello World Program
             self.hi_there.pack(side="top")
 
             self.quit = tk.Button(self, text="QUIT", fg="red",
-                                  command=root.destroy)
+                                  command=self.master.destroy)
             self.quit.pack(side="bottom")
 
         def say_hi(self):
@@ -256,6 +262,8 @@ To make a widget in Tk, the command is always of the form::
 
 *classCommand*
    denotes which kind of widget to make (a button, a label, a menu...)
+
+.. index:: single: . (dot); in Tkinter
 
 *newPathname*
    is the new name for this widget.  All names in Tk must be unique.  To help
@@ -456,12 +464,11 @@ The Packer
 .. index:: single: packing (widgets)
 
 The packer is one of Tk's geometry-management mechanisms.    Geometry managers
-are used to specify the relative positioning of the positioning of widgets
-within their container - their mutual *master*.  In contrast to the more
-cumbersome *placer* (which is used less commonly, and we do not cover here), the
-packer takes qualitative relationship specification - *above*, *to the left of*,
-*filling*, etc - and works everything out to determine the exact placement
-coordinates for you.
+are used to specify the relative positioning of widgets within their container -
+their mutual *master*.  In contrast to the more cumbersome *placer* (which is
+used less commonly, and we do not cover here), the packer takes qualitative
+relationship specification - *above*, *to the left of*, *filling*, etc - and
+works everything out to determine the exact placement coordinates for you.
 
 The size of any *master* widget is determined by the size of the "slave widgets"
 inside.  The packer is used to control where slave widgets appear inside the
@@ -534,31 +541,35 @@ the variable, with no further intervention on your part.
 
 For example::
 
-   class App(Frame):
-       def __init__(self, master=None):
+   import tkinter as tk
+
+   class App(tk.Frame):
+       def __init__(self, master):
            super().__init__(master)
            self.pack()
 
-           self.entrythingy = Entry()
+           self.entrythingy = tk.Entry()
            self.entrythingy.pack()
 
-           # here is the application variable
-           self.contents = StringVar()
-           # set it to some value
+           # Create the application variable.
+           self.contents = tk.StringVar()
+           # Set it to some value.
            self.contents.set("this is a variable")
-           # tell the entry widget to watch this variable
+           # Tell the entry widget to watch this variable.
            self.entrythingy["textvariable"] = self.contents
 
-           # and here we get a callback when the user hits return.
-           # we will have the program print out the value of the
-           # application variable when the user hits return
+           # Define a callback for when the user hits return.
+           # It prints the current value of the variable.
            self.entrythingy.bind('<Key-Return>',
-                                 self.print_contents)
+                                self.print_contents)
 
        def print_contents(self, event):
-           print("hi. contents of entry is now ---->",
+           print("Hi. The current entry content is:",
                  self.contents.get())
 
+   root = tk.Tk()
+   myapp = App(root)
+   myapp.mainloop()
 
 The Window Manager
 ^^^^^^^^^^^^^^^^^^
@@ -672,9 +683,10 @@ scrollcommand
    This is almost always the :meth:`!set` method of some scrollbar widget, but can
    be any widget method that takes a single argument.
 
-wrap:
+wrap
    Must be one of: ``"none"``, ``"char"``, or ``"word"``.
 
+.. _Bindings-and-Events:
 
 Bindings and Events
 ^^^^^^^^^^^^^^^^^^^
@@ -783,12 +795,13 @@ Menu indexes (menu.invoke(), menu.entryconfig(), etc.)
 Images
 ^^^^^^
 
-Bitmap/Pixelmap images can be created through the subclasses of
-:class:`tkinter.Image`:
+Images of different formats can be created through the corresponding subclass
+of :class:`tkinter.Image`:
 
-* :class:`BitmapImage` can be used for X11 bitmap data.
+* :class:`BitmapImage` for images in XBM format.
 
-* :class:`PhotoImage` can be used for GIF and PPM/PGM color bitmaps.
+* :class:`PhotoImage` for images in PGM, PPM, GIF and PNG formats. The latter
+  is supported starting with Tk 8.6.
 
 Either type of image is created through either the ``file`` or the ``data``
 option (other options are available as well).
@@ -799,6 +812,10 @@ reference to the image. When the last Python reference to the image object is
 deleted, the image data is deleted as well, and Tk will display an empty box
 wherever the image was used.
 
+.. seealso::
+
+    The `Pillow <http://python-pillow.org/>`_ package adds support for
+    formats such as BMP, JPEG, TIFF, and WebP, among others.
 
 .. _tkinter-file-handlers:
 

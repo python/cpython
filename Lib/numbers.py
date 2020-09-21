@@ -35,7 +35,7 @@ class Complex(Number):
     In short, those are: a conversion to complex, .real, .imag, +, -,
     *, /, abs(), .conjugate, ==, and !=.
 
-    If it is given heterogenous arguments, and doesn't have special
+    If it is given heterogeneous arguments, and doesn't have special
     knowledge about them, it should fall back to the builtin complex
     type as described below.
     """

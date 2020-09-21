@@ -24,6 +24,9 @@
 import datetime
 import unittest
 import sqlite3 as sqlite
+import weakref
+import functools
+from test import support
 
 class RegressionTests(unittest.TestCase):
     def setUp(self):
@@ -65,7 +68,7 @@ class RegressionTests(unittest.TestCase):
     def CheckColumnNameWithSpaces(self):
         cur = self.con.cursor()
         cur.execute('select 1 as "foo bar [datetime]"')
-        self.assertEqual(cur.description[0][0], "foo bar")
+        self.assertEqual(cur.description[0][0], "foo bar [datetime]")
 
         cur.execute('select 1 as "foo baz"')
         self.assertEqual(cur.description[0][0], "foo baz")
@@ -84,7 +87,6 @@ class RegressionTests(unittest.TestCase):
             cur.execute("select 1 x union select " + str(i))
         con.close()
 
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 2, 2), 'needs sqlite 3.2.2 or newer')
     def CheckOnConflictRollback(self):
         con = sqlite.connect(":memory:")
         con.execute("create table foo(x, unique(x) on conflict rollback)")
@@ -129,6 +131,19 @@ class RegressionTests(unittest.TestCase):
         con.execute("create table foo(bar integer)")
         con.execute("insert into foo(bar) values (5)")
         con.execute(SELECT)
+
+    def CheckBindMutatingList(self):
+        # Issue41662: Crash when mutate a list of parameters during iteration.
+        class X:
+            def __conform__(self, protocol):
+                parameters.clear()
+                return "..."
+        parameters = [X(), 0]
+        con = sqlite.connect(":memory:",detect_types=sqlite.PARSE_DECLTYPES)
+        con.execute("create table foo(bar X, baz integer)")
+        # Should not crash
+        with self.assertRaises(IndexError):
+            con.execute("insert into foo(bar, baz) values (?, ?)", parameters)
 
     def CheckErrorMsgDecodeError(self):
         # When porting the module to Python 3.0, the error message about
@@ -188,6 +203,9 @@ class RegressionTests(unittest.TestCase):
         cur = Cursor(con)
         with self.assertRaises(sqlite.ProgrammingError):
             cur.execute("select 4+5").fetchall()
+        with self.assertRaisesRegex(sqlite.ProgrammingError,
+                                    r'^Base Cursor\.__init__ not called\.$'):
+            cur.close()
 
     def CheckStrSubclass(self):
         """
@@ -251,30 +269,12 @@ class RegressionTests(unittest.TestCase):
         cur.execute("pragma page_size")
         row = cur.fetchone()
 
-    def CheckSetDict(self):
-        """
-        See http://bugs.python.org/issue7478
-
-        It was possible to successfully register callbacks that could not be
-        hashed. Return codes of PyDict_SetItem were not checked properly.
-        """
-        class NotHashable:
-            def __call__(self, *args, **kw):
-                pass
-            def __hash__(self):
-                raise TypeError()
-        var = NotHashable()
-        self.assertRaises(TypeError, self.con.create_function, var)
-        self.assertRaises(TypeError, self.con.create_aggregate, var)
-        self.assertRaises(TypeError, self.con.set_authorizer, var)
-        self.assertRaises(TypeError, self.con.set_progress_handler, var)
-
     def CheckConnectionCall(self):
         """
         Call a connection with a non-string SQL request: check error handling
         of the statement constructor.
         """
-        self.assertRaises(sqlite.Warning, self.con, 1)
+        self.assertRaises(TypeError, self.con, 1)
 
     def CheckCollation(self):
         def collation_cb(a, b):
@@ -376,10 +376,47 @@ class RegressionTests(unittest.TestCase):
                 counter += 1
         self.assertEqual(counter, 3, "should have returned exactly three rows")
 
+    def CheckBpo31770(self):
+        """
+        The interpreter shouldn't crash in case Cursor.__init__() is called
+        more than once.
+        """
+        def callback(*args):
+            pass
+        con = sqlite.connect(":memory:")
+        cur = sqlite.Cursor(con)
+        ref = weakref.ref(cur, callback)
+        cur.__init__(con)
+        del cur
+        # The interpreter shouldn't crash when ref is collected.
+        del ref
+        support.gc_collect()
+
+    def CheckDelIsolation_levelSegfault(self):
+        with self.assertRaises(AttributeError):
+            del self.con.isolation_level
+
+    def CheckBpo37347(self):
+        class Printer:
+            def log(self, *args):
+                return sqlite.SQLITE_OK
+
+        for method in [self.con.set_trace_callback,
+                       functools.partial(self.con.set_progress_handler, n=1),
+                       self.con.set_authorizer]:
+            printer_instance = Printer()
+            method(printer_instance.log)
+            method(printer_instance.log)
+            self.con.execute("select 1")  # trigger seg fault
+            method(None)
+
+
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
-    return unittest.TestSuite((regression_suite,))
+    return unittest.TestSuite((
+        regression_suite,
+    ))
 
 def test():
     runner = unittest.TextTestRunner()

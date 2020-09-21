@@ -8,7 +8,7 @@
 
 --------------
 
-This module defines utility function to assist in dynamic creation of
+This module defines utility functions to assist in dynamic creation of
 new types.
 
 It also defines names for some object types that are used by the standard
@@ -59,7 +59,7 @@ Dynamic Type Creation
 
       The default value for the ``namespace`` element of the returned
       tuple has changed.  Now an insertion-order-preserving mapping is
-      used when the metaclass does not have a ``__prepare__`` method,
+      used when the metaclass does not have a ``__prepare__`` method.
 
 .. seealso::
 
@@ -68,6 +68,23 @@ Dynamic Type Creation
 
    :pep:`3115` - Metaclasses in Python 3000
       Introduced the ``__prepare__`` namespace hook
+
+.. function:: resolve_bases(bases)
+
+   Resolve MRO entries dynamically as specified by :pep:`560`.
+
+   This function looks for items in *bases* that are not instances of
+   :class:`type`, and returns a tuple where each such object that has
+   an ``__mro_entries__`` method is replaced with an unpacked result of
+   calling this method.  If a *bases* item is an instance of :class:`type`,
+   or it doesn't have an ``__mro_entries__`` method, then it is included in
+   the return tuple unchanged.
+
+   .. versionadded:: 3.7
+
+.. seealso::
+
+   :pep:`560` - Core support for typing module and generic types
 
 
 Standard Interpreter Types
@@ -80,6 +97,9 @@ the types that arise only incidentally during processing such as the
 
 Typical use of these names is for :func:`isinstance` or
 :func:`issubclass` checks.
+
+
+If you instantiate any of these types, note that signatures may vary between Python versions.
 
 Standard names are defined for the following types:
 
@@ -112,11 +132,29 @@ Standard names are defined for the following types:
    .. versionadded:: 3.6
 
 
-.. data:: CodeType
+.. class:: CodeType(**kwargs)
 
    .. index:: builtin: compile
 
    The type for code objects such as returned by :func:`compile`.
+
+   .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags CodeType
+
+   Note that the audited arguments may not match the names or positions
+   required by the initializer.
+
+   .. method:: CodeType.replace(**kwargs)
+
+     Return a copy of the code object with new values for the specified fields.
+
+     .. versionadded:: 3.8
+
+.. data:: CellType
+
+   The type for cell objects: such objects are used as containers for
+   a function's free variables.
+
+   .. versionadded:: 3.8
 
 
 .. data:: MethodType
@@ -151,6 +189,14 @@ Standard names are defined for the following types:
 .. data:: MethodDescriptorType
 
    The type of methods of some built-in data types such as :meth:`str.join`.
+
+   .. versionadded:: 3.7
+
+
+.. data:: ClassMethodDescriptorType
+
+   The type of *unbound* class methods of some built-in data types such as
+   ``dict.__dict__['fromkeys']``.
 
    .. versionadded:: 3.7
 
@@ -190,15 +236,22 @@ Standard names are defined for the following types:
          Defaults to ``None``. Previously the attribute was optional.
 
 
-.. data:: TracebackType
+.. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
    The type of traceback objects such as found in ``sys.exc_info()[2]``.
+
+   See :ref:`the language reference <traceback-objects>` for details of the
+   available attributes and operations, and guidance on creating tracebacks
+   dynamically.
 
 
 .. data:: FrameType
 
    The type of frame objects such as found in ``tb.tb_frame`` if ``tb`` is a
    traceback object.
+
+   See :ref:`the language reference <frame-objects>` for details of the
+   available attributes and operations.
 
 
 .. data:: GetSetDescriptorType
@@ -228,6 +281,11 @@ Standard names are defined for the following types:
    changes.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.9
+
+      Updated to support the new union (``|``) operator from :pep:`584`, which
+      simply delegates to the underlying mapping.
 
    .. describe:: key in proxy
 
@@ -271,6 +329,12 @@ Standard names are defined for the following types:
 
       Return a new view of the underlying mapping's values.
 
+   .. describe:: reversed(proxy)
+
+      Return a reverse iterator over the keys of the underlying mapping.
+
+      .. versionadded:: 3.9
+
 
 Additional Utility Classes and Functions
 ----------------------------------------
@@ -287,12 +351,11 @@ Additional Utility Classes and Functions
    The type is roughly equivalent to the following code::
 
        class SimpleNamespace:
-           def __init__(self, **kwargs):
+           def __init__(self, /, **kwargs):
                self.__dict__.update(kwargs)
 
            def __repr__(self):
-               keys = sorted(self.__dict__)
-               items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
+               items = (f"{k}={v!r}" for k, v in self.__dict__.items())
                return "{}({})".format(type(self).__name__, ", ".join(items))
 
            def __eq__(self, other):
@@ -304,6 +367,9 @@ Additional Utility Classes and Functions
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.9
+      Attribute order in the repr changed from alphabetical to insertion (like
+      ``dict``).
 
 .. function:: DynamicClassAttribute(fget=None, fset=None, fdel=None, doc=None)
 
@@ -315,7 +381,7 @@ Additional Utility Classes and Functions
    class's __getattr__ method; this is done by raising AttributeError.
 
    This allows one to have properties active on an instance, and have virtual
-   attributes on the class with the same name (see Enum for an example).
+   attributes on the class with the same name (see :class:`enum.Enum` for an example).
 
    .. versionadded:: 3.4
 

@@ -38,18 +38,18 @@ echo Unrecognized option: %1
 goto Usage
 
 :Build
-call "%PCBUILD%find_msbuild.bat" %MSBUILD%
+call "%PCBUILD%\find_msbuild.bat" %MSBUILD%
 if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 
-rem call "%PCBUILD%find_python.bat" "%PYTHON%"
+rem call "%PCBUILD%\find_python.bat" "%PYTHON%"
 rem if ERRORLEVEL 1 (echo Cannot locate python.exe on PATH or as PYTHON variable & exit /b 3)
 
-call "%PCBUILD%get_externals.bat" --tkinter-src %ORG_SETTING%
+call "%PCBUILD%\get_externals.bat" --tkinter-src %ORG_SETTING%
 
-%MSBUILD% "%PCBUILD%tcl.vcxproj" /p:Configuration=Release /p:Platform=Win32
-%MSBUILD% "%PCBUILD%tk.vcxproj" /p:Configuration=Release /p:Platform=Win32
-%MSBUILD% "%PCBUILD%tix.vcxproj" /p:Configuration=Release /p:Platform=Win32
+%MSBUILD% "%PCBUILD%\tcl.vcxproj" /p:Configuration=Release /p:Platform=Win32
+%MSBUILD% "%PCBUILD%\tk.vcxproj" /p:Configuration=Release /p:Platform=Win32
+%MSBUILD% "%PCBUILD%\tix.vcxproj" /p:Configuration=Release /p:Platform=Win32
 
-%MSBUILD% "%PCBUILD%tcl.vcxproj" /p:Configuration=Release /p:Platform=x64
-%MSBUILD% "%PCBUILD%tk.vcxproj" /p:Configuration=Release /p:Platform=x64
-%MSBUILD% "%PCBUILD%tix.vcxproj" /p:Configuration=Release /p:Platform=x64
+%MSBUILD% "%PCBUILD%\tcl.vcxproj" /p:Configuration=Release /p:Platform=x64
+%MSBUILD% "%PCBUILD%\tk.vcxproj" /p:Configuration=Release /p:Platform=x64
+%MSBUILD% "%PCBUILD%\tix.vcxproj" /p:Configuration=Release /p:Platform=x64

@@ -75,6 +75,7 @@ class LocaltimeTests(unittest.TestCase):
         t2 = utils.localtime(t1)
         self.assertEqual(t1, t2)
 
+    @test.support.run_with_tz('Europe/Minsk')
     def test_localtime_daylight_true_dst_true(self):
         test.support.patch(self, time, 'daylight', True)
         t0 = datetime.datetime(2012, 3, 12, 1, 1)
@@ -82,6 +83,7 @@ class LocaltimeTests(unittest.TestCase):
         t2 = utils.localtime(t1)
         self.assertEqual(t1, t2)
 
+    @test.support.run_with_tz('Europe/Minsk')
     def test_localtime_daylight_false_dst_true(self):
         test.support.patch(self, time, 'daylight', False)
         t0 = datetime.datetime(2012, 3, 12, 1, 1)

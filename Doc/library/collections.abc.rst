@@ -87,7 +87,8 @@ ABC                        Inherits from          Abstract Methods        Mixin 
                            :class:`Set`                                   ``__iter__``
 :class:`KeysView`          :class:`MappingView`,                          ``__contains__``,
                            :class:`Set`                                   ``__iter__``
-:class:`ValuesView`        :class:`MappingView`                           ``__contains__``, ``__iter__``
+:class:`ValuesView`        :class:`MappingView`,                          ``__contains__``, ``__iter__``
+                           :class:`Collection`
 :class:`Awaitable`                                ``__await__``
 :class:`Coroutine`         :class:`Awaitable`     ``send``, ``throw``     ``close``
 :class:`AsyncIterable`                            ``__aiter__``
@@ -97,17 +98,30 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
 
 .. class:: Container
-           Hashable
-           Sized
-           Callable
 
-   ABCs for classes that provide respectively the methods :meth:`__contains__`,
-   :meth:`__hash__`, :meth:`__len__`, and :meth:`__call__`.
+   ABC for classes that provide the :meth:`__contains__` method.
+
+.. class:: Hashable
+
+   ABC for classes that provide the :meth:`__hash__` method.
+
+.. class:: Sized
+
+   ABC for classes that provide the :meth:`__len__` method.
+
+.. class:: Callable
+
+   ABC for classes that provide the :meth:`__call__` method.
 
 .. class:: Iterable
 
    ABC for classes that provide the :meth:`__iter__` method.
-   See also the definition of :term:`iterable`.
+
+   Checking ``isinstance(obj, Iterable)`` detects classes that are registered
+   as :class:`Iterable` or that have an :meth:`__iter__` method, but it does
+   not detect classes that iterate with the :meth:`__getitem__` method.
+   The only reliable way to determine whether an object is :term:`iterable`
+   is to call ``iter(obj)``.
 
 .. class:: Collection
 
@@ -179,7 +193,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
    expressions.  Custom implementations must provide the :meth:`__await__`
    method.
 
-   :term:`Coroutine` objects and instances of the
+   :term:`Coroutine <coroutine>` objects and instances of the
    :class:`~collections.abc.Coroutine` ABC are all instances of this ABC.
 
    .. note::
@@ -294,7 +308,7 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 
 .. seealso::
 
-   * `OrderedSet recipe <https://code.activestate.com/recipes/576694/>`_ for an
+   * `OrderedSet recipe <https://github.com/ActiveState/code/tree/master/recipes/Python/576694_OrderedSet/recipe-576694.py>`_ for an
      example built on :class:`MutableSet`.
 
    * For more about ABCs, see the :mod:`abc` module and :pep:`3119`.

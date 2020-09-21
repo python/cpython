@@ -14,7 +14,18 @@ sys.path.append(os.path.abspath('includes'))
 # ---------------------
 
 extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
-              'pyspecific', 'c_annotations']
+              'pyspecific', 'c_annotations', 'escape4chm',
+              'asdl_highlight', 'peg_highlight']
+
+
+doctest_global_setup = '''
+try:
+    import _tkinter
+except ImportError:
+    _tkinter = None
+'''
+
+manpages_url = 'https://manpages.debian.org/{path}'
 
 # General substitutions.
 project = 'Python'
@@ -34,20 +45,34 @@ today_fmt = '%B %d, %Y'
 # By default, highlight as Python 3.
 highlight_language = 'python3'
 
-# Require Sphinx 1.2 for build.
-needs_sphinx = '1.2'
+# Minimum version of sphinx required
+needs_sphinx = '1.8'
 
 # Ignore any .rst files in the venv/ directory.
 exclude_patterns = ['venv/*', 'README.rst']
+venvdir = os.getenv('VENVDIR')
+if venvdir is not None:
+    exclude_patterns.append(venvdir + '/*')
 
+# Disable Docutils smartquotes for several translations
+smartquotes_excludes = {
+    'languages': ['ja', 'fr', 'zh_TW', 'zh_CN'], 'builders': ['man', 'text'],
+}
+
+# Avoid a warning with Sphinx >= 2.0
+master_doc = 'contents'
 
 # Options for HTML output
 # -----------------------
 
 # Use our custom theme.
-html_theme = 'pydoctheme'
+html_theme = 'python_docs_theme'
 html_theme_path = ['tools']
-html_theme_options = {'collapsiblesidebar': True}
+html_theme_options = {
+    'collapsiblesidebar': True,
+    'issues_url': 'https://docs.python.org/3/bugs.html',
+    'root_include_title': False   # We use the version switcher instead.
+}
 
 # Short title used e.g. for <title> HTML tags.
 html_short_title = '%s Documentation' % release
@@ -89,24 +114,28 @@ html_split_index = True
 # Options for LaTeX output
 # ------------------------
 
+latex_engine = 'xelatex'
+
 # Get LaTeX to handle Unicode correctly
-latex_elements = {'inputenc': r'\usepackage[utf8x]{inputenc}', 'utf8extra': ''}
+latex_elements = {
+}
 
 # Additional stuff for the LaTeX preamble.
 latex_elements['preamble'] = r'''
 \authoraddress{
-  \strong{Python Software Foundation}\\
-  Email: \email{docs@python.org}
+  \sphinxstrong{Python Software Foundation}\\
+  Email: \sphinxemail{docs@python.org}
 }
 \let\Verbatim=\OriginalVerbatim
 \let\endVerbatim=\endOriginalVerbatim
+\setcounter{tocdepth}{2}
 '''
 
 # The paper size ('letter' or 'a4').
 latex_elements['papersize'] = 'a4'
 
 # The font size ('10pt', '11pt' or '12pt').
-latex_elements['font_size'] = '10pt'
+latex_elements['pointsize'] = '10pt'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
@@ -199,3 +228,13 @@ linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+',
 
 # Relative filename of the reference count data file.
 refcount_file = 'data/refcounts.dat'
+
+# Sphinx 2 and Sphinx 3 compatibility
+# -----------------------------------
+
+# bpo-40204: Allow Sphinx 2 syntax in the C domain
+c_allow_pre_v3 = True
+
+# bpo-40204: Disable warnings on Sphinx 2 syntax of the C domain since the
+# documentation is built with -W (warnings treated as errors).
+c_warn_on_allowed_pre_v3 = False

@@ -12,7 +12,6 @@ __author__ = "Guido van Rossum <guido@python.org>"
 
 # Python imports
 import io
-import os
 
 # Fairly local imports
 from .pgen2 import driver, literals, token, tokenize, parse, grammar
@@ -20,10 +19,6 @@ from .pgen2 import driver, literals, token, tokenize, parse, grammar
 # Really local imports
 from . import pytree
 from . import pygram
-
-# The pattern grammar file
-_PATTERN_GRAMMAR_FILE = os.path.join(os.path.dirname(__file__),
-                                     "PatternGrammar.txt")
 
 
 class PatternSyntaxError(Exception):
@@ -42,13 +37,17 @@ def tokenize_wrapper(input):
 
 class PatternCompiler(object):
 
-    def __init__(self, grammar_file=_PATTERN_GRAMMAR_FILE):
+    def __init__(self, grammar_file=None):
         """Initializer.
 
         Takes an optional alternative filename for the pattern grammar.
         """
-        self.grammar = driver.load_grammar(grammar_file)
-        self.syms = pygram.Symbols(self.grammar)
+        if grammar_file is None:
+            self.grammar = pygram.pattern_grammar
+            self.syms = pygram.pattern_symbols
+        else:
+            self.grammar = driver.load_grammar(grammar_file)
+            self.syms = pygram.Symbols(self.grammar)
         self.pygrammar = pygram.python_grammar
         self.pysyms = pygram.python_symbols
         self.driver = driver.Driver(self.grammar, convert=pattern_convert)

@@ -52,39 +52,37 @@ typedef struct {
     Py_ssize_t mark[1];
 } MatchObject;
 
-typedef unsigned int (*SRE_TOLOWER_HOOK)(unsigned int ch);
-
 typedef struct SRE_REPEAT_T {
     Py_ssize_t count;
-    SRE_CODE* pattern; /* points to REPEAT operator arguments */
-    void* last_ptr; /* helper to check for infinite loops */
+    const SRE_CODE* pattern; /* points to REPEAT operator arguments */
+    const void* last_ptr; /* helper to check for infinite loops */
     struct SRE_REPEAT_T *prev; /* points to previous repeat context */
 } SRE_REPEAT;
 
 typedef struct {
     /* string pointers */
-    void* ptr; /* current position (also end of current slice) */
-    void* beginning; /* start of original string */
-    void* start; /* start of current slice */
-    void* end; /* end of original string */
+    const void* ptr; /* current position (also end of current slice) */
+    const void* beginning; /* start of original string */
+    const void* start; /* start of current slice */
+    const void* end; /* end of original string */
     /* attributes for the match object */
     PyObject* string;
+    Py_buffer buffer;
     Py_ssize_t pos, endpos;
     int isbytes;
     int charsize; /* character size */
     /* registers */
     Py_ssize_t lastindex;
     Py_ssize_t lastmark;
-    void** mark;
+    const void** mark;
+    int match_all;
+    int must_advance;
     /* dynamically allocated stuff */
     char* data_stack;
     size_t data_stack_size;
     size_t data_stack_base;
-    Py_buffer buffer;
     /* current repeat context */
     SRE_REPEAT *repeat;
-    /* hooks */
-    SRE_TOLOWER_HOOK lower, upper;
 } SRE_STATE;
 
 typedef struct {

@@ -11,7 +11,8 @@ active threads survive in the child after a fork(); this is an error.
 
 import os, sys, time, unittest
 import threading
-import test.support as support
+from test import support
+from test.support import threading_helper
 
 
 LONGSLEEP = 2
@@ -21,7 +22,7 @@ NUM_THREADS = 4
 class ForkWait(unittest.TestCase):
 
     def setUp(self):
-        self._threading_key = support.threading_setup()
+        self._threading_key = threading_helper.threading_setup()
         self.alive = {}
         self.stop = 0
         self.threads = []
@@ -33,7 +34,7 @@ class ForkWait(unittest.TestCase):
             thread.join()
         thread = None
         self.threads.clear()
-        support.threading_cleanup(*self._threading_key)
+        threading_helper.threading_cleanup(*self._threading_key)
 
     def f(self, id):
         while not self.stop:
@@ -43,17 +44,8 @@ class ForkWait(unittest.TestCase):
             except OSError:
                 pass
 
-    def wait_impl(self, cpid):
-        for i in range(10):
-            # waitpid() shouldn't hang, but some of the buildbots seem to hang
-            # in the forking tests.  This is an attempt to fix the problem.
-            spid, status = os.waitpid(cpid, os.WNOHANG)
-            if spid == cpid:
-                break
-            time.sleep(2 * SHORTSLEEP)
-
-        self.assertEqual(spid, cpid)
-        self.assertEqual(status, 0, "cause = %d, exit = %d" % (status&0xff, status>>8))
+    def wait_impl(self, cpid, *, exitcode):
+        support.wait_process(cpid, exitcode=exitcode)
 
     def test_wait(self):
         for i in range(NUM_THREADS):
@@ -62,7 +54,7 @@ class ForkWait(unittest.TestCase):
             self.threads.append(thread)
 
         # busy-loop to wait for threads
-        deadline = time.monotonic() + 10.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
         while len(self.alive) < NUM_THREADS:
             time.sleep(0.1)
             if deadline < time.monotonic():
@@ -88,4 +80,4 @@ class ForkWait(unittest.TestCase):
             os._exit(n)
         else:
             # Parent
-            self.wait_impl(cpid)
+            self.wait_impl(cpid, exitcode=0)

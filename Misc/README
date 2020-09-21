@@ -22,6 +22,7 @@ README.AIX              Information about using Python on AIX
 README.coverity         Information about running Coverity's Prevent on Python
 README.valgrind         Information for Valgrind users, see valgrind-python.supp
 SpecialBuilds.txt       Describes extra symbols you can set for debug builds
-svnmap.txt              Map of old SVN revs and branches to hg changeset ids
+svnmap.txt              Map of old SVN revs and branches to hg changeset ids,
+                        help history-digging
 valgrind-python.supp    Valgrind suppression file, see README.valgrind
 vgrindefs               Python configuration for vgrind (a generic pretty printer)

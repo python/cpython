@@ -67,7 +67,7 @@ The rest of the line provides detail based on the type of exception and what
 caused it.
 
 The preceding part of the error message shows the context where the exception
-happened, in the form of a stack traceback. In general it contains a stack
+occurred, in the form of a stack traceback. In general it contains a stack
 traceback listing source lines; however, it will not display lines read from
 standard input.
 
@@ -114,7 +114,7 @@ The :keyword:`try` statement works as follows.
 A :keyword:`try` statement may have more than one except clause, to specify
 handlers for different exceptions.  At most one handler will be executed.
 Handlers only handle exceptions that occur in the corresponding try clause, not
-in other handlers of the same :keyword:`try` statement.  An except clause may
+in other handlers of the same :keyword:`!try` statement.  An except clause may
 name multiple exceptions as a parenthesized tuple, for example::
 
    ... except (RuntimeError, TypeError, NameError):
@@ -180,10 +180,10 @@ example::
            print(arg, 'has', len(f.readlines()), 'lines')
            f.close()
 
-The use of the :keyword:`else` clause is better than adding additional code to
+The use of the :keyword:`!else` clause is better than adding additional code to
 the :keyword:`try` clause because it avoids accidentally catching an exception
-that wasn't raised by the code being protected by the :keyword:`try` ...
-:keyword:`except` statement.
+that wasn't raised by the code being protected by the :keyword:`!try` ...
+:keyword:`!except` statement.
 
 When an exception occurs, it may have an associated value, also known as the
 exception's *argument*. The presence and type of the argument depend on the
@@ -267,6 +267,53 @@ re-raise the exception::
    NameError: HiThere
 
 
+.. _tut-exception-chaining:
+
+Exception Chaining
+==================
+
+The :keyword:`raise` statement allows an optional :keyword:`from` which enables
+chaining exceptions by setting the ``__cause__`` attribute of the raised
+exception. For example::
+
+    raise RuntimeError from OSError
+
+This can be useful when you are transforming exceptions. For example::
+
+    >>> def func():
+    ...    raise IOError
+    ...
+    >>> try:
+    ...     func()
+    ... except IOError as exc:
+    ...     raise RuntimeError('Failed to open database') from exc
+    ...
+    Traceback (most recent call last):
+      File "<stdin>", line 2, in <module>
+      File "<stdin>", line 2, in func
+    OSError
+    <BLANKLINE>
+    The above exception was the direct cause of the following exception:
+    <BLANKLINE>
+    Traceback (most recent call last):
+      File "<stdin>", line 4, in <module>
+    RuntimeError
+
+The expression following the :keyword:`from` must be either an exception or
+``None``. Exception chaining happens automatically when an exception is raised
+inside an exception handler or :keyword:`finally` section. Exception chaining
+can be disabled by using ``from None`` idiom:
+
+    >>> try:
+    ...     open('database.sqlite')
+    ... except IOError:
+    ...     raise RuntimeError from None
+    ...
+    Traceback (most recent call last):
+      File "<stdin>", line 4, in <module>
+    RuntimeError
+
+
 .. _tut-userexceptions:
 
 User-defined Exceptions
@@ -314,7 +361,7 @@ to create specific exception classes for different error conditions::
            self.next = next
            self.message = message
 
-Most exceptions are defined with names that end in "Error," similar to the
+Most exceptions are defined with names that end in "Error", similar to the
 naming of the standard exceptions.
 
 Many standard modules define their own exceptions to report errors that may
@@ -341,15 +388,46 @@ example::
      File "<stdin>", line 2, in <module>
    KeyboardInterrupt
 
-A *finally clause* is always executed before leaving the :keyword:`try`
-statement, whether an exception has occurred or not. When an exception has
-occurred in the :keyword:`try` clause and has not been handled by an
-:keyword:`except` clause (or it has occurred in an :keyword:`except` or
-:keyword:`else` clause), it is re-raised after the :keyword:`finally` clause has
-been executed.  The :keyword:`finally` clause is also executed "on the way out"
-when any other clause of the :keyword:`try` statement is left via a
-:keyword:`break`, :keyword:`continue` or :keyword:`return` statement.  A more
-complicated example::
+If a :keyword:`finally` clause is present, the :keyword:`!finally`
+clause will execute as the last task before the :keyword:`try`
+statement completes. The :keyword:`!finally` clause runs whether or
+not the :keyword:`!try` statement produces an exception. The following
+points discuss more complex cases when an exception occurs:
+
+* If an exception occurs during execution of the :keyword:`!try`
+  clause, the exception may be handled by an :keyword:`except`
+  clause. If the exception is not handled by an :keyword:`!except`
+  clause, the exception is re-raised after the :keyword:`!finally`
+  clause has been executed.
+
+* An exception could occur during execution of an :keyword:`!except`
+  or :keyword:`!else` clause. Again, the exception is re-raised after
+  the :keyword:`!finally` clause has been executed.
+
+* If the :keyword:`!try` statement reaches a :keyword:`break`,
+  :keyword:`continue` or :keyword:`return` statement, the
+  :keyword:`!finally` clause will execute just prior to the
+  :keyword:`!break`, :keyword:`!continue` or :keyword:`!return`
+  statement's execution.
+
+* If a :keyword:`!finally` clause includes a :keyword:`!return`
+  statement, the returned value will be the one from the
+  :keyword:`!finally` clause's :keyword:`!return` statement, not the
+  value from the :keyword:`!try` clause's :keyword:`!return`
+  statement.
+
+For example::
+
+   >>> def bool_return():
+   ...     try:
+   ...         return True
+   ...     finally:
+   ...         return False
+   ...
+   >>> bool_return()
+   False
+
+A more complicated example::
 
    >>> def divide(x, y):
    ...     try:
@@ -376,7 +454,7 @@ complicated example::
 
 As you can see, the :keyword:`finally` clause is executed in any event.  The
 :exc:`TypeError` raised by dividing two strings is not handled by the
-:keyword:`except` clause and therefore re-raised after the :keyword:`finally`
+:keyword:`except` clause and therefore re-raised after the :keyword:`!finally`
 clause has been executed.
 
 In real world applications, the :keyword:`finally` clause is useful for

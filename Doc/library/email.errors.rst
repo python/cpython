@@ -99,7 +99,7 @@ All defect classes are subclassed from :class:`email.errors.MessageDefect`.
 * :class:`MultipartInvariantViolationDefect` -- A message claimed to be a
   :mimetype:`multipart`, but no subparts were found.  Note that when a message
   has this defect, its :meth:`~email.message.Message.is_multipart` method may
-  return false even though its content type claims to be :mimetype:`multipart`.
+  return ``False`` even though its content type claims to be :mimetype:`multipart`.
 
 * :class:`InvalidBase64PaddingDefect` -- When decoding a block of base64
   encoded bytes, the padding was not correct.  Enough padding is added to
@@ -108,3 +108,7 @@ All defect classes are subclassed from :class:`email.errors.MessageDefect`.
 * :class:`InvalidBase64CharactersDefect` -- When decoding a block of base64
   encoded bytes, characters outside the base64 alphabet were encountered.
   The characters are ignored, but the resulting decoded bytes may be invalid.
+
+* :class:`InvalidBase64LengthDefect` -- When decoding a block of base64 encoded
+  bytes, the number of non-padding base64 characters was invalid (1 more than
+  a multiple of 4).  The encoded block was kept as-is.

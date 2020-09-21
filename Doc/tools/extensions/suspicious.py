@@ -48,6 +48,7 @@ import sys
 
 from docutils import nodes
 from sphinx.builders import Builder
+import sphinx.util
 
 detect_all = re.compile(r'''
     ::(?=[^=])|            # two :: (but NOT ::=)
@@ -85,6 +86,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
     Checks for possibly invalid markup that may leak into the output.
     """
     name = 'suspicious'
+    logger = sphinx.util.logging.getLogger("CheckSuspiciousMarkupBuilder")
 
     def init(self):
         # create output file
@@ -113,10 +115,12 @@ class CheckSuspiciousMarkupBuilder(Builder):
     def finish(self):
         unused_rules = [rule for rule in self.rules if not rule.used]
         if unused_rules:
-            self.warn('Found %s/%s unused rules:' %
-                      (len(unused_rules), len(self.rules)))
-            for rule in unused_rules:
-                self.info(repr(rule))
+            self.logger.warning(
+                'Found %s/%s unused rules: %s' % (
+                    len(unused_rules), len(self.rules),
+                    ''.join(repr(rule) for rule in unused_rules),
+                )
+            )
         return
 
     def check_issue(self, line, lineno, issue):
@@ -146,18 +150,18 @@ class CheckSuspiciousMarkupBuilder(Builder):
         return False
 
     def report_issue(self, text, lineno, issue):
-        if not self.any_issue: self.info()
         self.any_issue = True
         self.write_log_entry(lineno, issue, text)
         if py3:
-            self.warn('[%s:%d] "%s" found in "%-.120s"' %
-                      (self.docname, lineno, issue, text))
+            self.logger.warning('[%s:%d] "%s" found in "%-.120s"' %
+                                (self.docname, lineno, issue, text))
         else:
-            self.warn('[%s:%d] "%s" found in "%-.120s"' % (
-                self.docname.encode(sys.getdefaultencoding(),'replace'),
-                lineno,
-                issue.encode(sys.getdefaultencoding(),'replace'),
-                text.strip().encode(sys.getdefaultencoding(),'replace')))
+            self.logger.warning(
+                '[%s:%d] "%s" found in "%-.120s"' % (
+                    self.docname.encode(sys.getdefaultencoding(),'replace'),
+                    lineno,
+                    issue.encode(sys.getdefaultencoding(),'replace'),
+                    text.strip().encode(sys.getdefaultencoding(),'replace')))
         self.app.statuscode = 1
 
     def write_log_entry(self, lineno, issue, text):
@@ -181,7 +185,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
         A csv file, with exactly the same format as suspicious.csv
         Fields: document name (normalized), line number, issue, surrounding text
         """
-        self.info("loading ignore rules... ", nonl=1)
+        self.logger.info("loading ignore rules... ", nonl=1)
         self.rules = rules = []
         try:
             if py3:
@@ -206,7 +210,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
             rule = Rule(docname, lineno, issue, text)
             rules.append(rule)
         f.close()
-        self.info('done, %d rules loaded' % len(self.rules))
+        self.logger.info('done, %d rules loaded' % len(self.rules))
 
 
 def get_lineno(node):

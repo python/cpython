@@ -1,4 +1,5 @@
-from test.support import verbose, import_module, reap_children
+from test.support import verbose, reap_children
+from test.support.import_helper import import_module
 
 # Skip these tests if termios is not available
 import_module('termios')
@@ -10,6 +11,7 @@ import sys
 import select
 import signal
 import socket
+import io # readline
 import unittest
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
@@ -22,6 +24,16 @@ else:
     def debug(msg):
         pass
 
+
+# Note that os.read() is nondeterministic so we need to be very careful
+# to make the test suite deterministic.  A normal call to os.read() may
+# give us less than expected.
+#
+# Beware, on my Linux system, if I put 'foo\n' into a terminal fd, I get
+# back 'foo\r\n' at the other end.  The behavior depends on the termios
+# setting.  The newline translation may be OS-specific.  To make the
+# test suite deterministic and OS-independent, the functions _readline
+# and normalize_output can be used.
 
 def normalize_output(data):
     # Some operating systems do conversions on newline.  We could possibly fix
@@ -43,21 +55,38 @@ def normalize_output(data):
 
     return data
 
+def _readline(fd):
+    """Read one line.  May block forever if no newline is read."""
+    reader = io.FileIO(fd, mode='rb', closefd=False)
+    return reader.readline()
+
+
 
 # Marginal testing of pty suite. Cannot do extensive 'do or fail' testing
 # because pty code is not too portable.
 # XXX(nnorwitz):  these tests leak fds when there is an error.
 class PtyTest(unittest.TestCase):
     def setUp(self):
-        # isatty() and close() can hang on some platforms.  Set an alarm
-        # before running the test to make sure we don't hang forever.
         old_alarm = signal.signal(signal.SIGALRM, self.handle_sig)
         self.addCleanup(signal.signal, signal.SIGALRM, old_alarm)
+
+        old_sighup = signal.signal(signal.SIGHUP, self.handle_sighup)
+        self.addCleanup(signal.signal, signal.SIGHUP, old_sighup)
+
+        # isatty() and close() can hang on some platforms. Set an alarm
+        # before running the test to make sure we don't hang forever.
         self.addCleanup(signal.alarm, 0)
         signal.alarm(10)
 
     def handle_sig(self, sig, frame):
         self.fail("isatty hung")
+
+    @staticmethod
+    def handle_sighup(signum, frame):
+        # bpo-38547: if the process is the session leader, os.close(master_fd)
+        # of "master_fd, slave_name = pty.master_open()" raises SIGHUP
+        # signal: just ignore the signal.
+        pass
 
     def test_basic(self):
         try:
@@ -94,19 +123,21 @@ class PtyTest(unittest.TestCase):
 
         debug("Writing to slave_fd")
         os.write(slave_fd, TEST_STRING_1)
-        s1 = os.read(master_fd, 1024)
+        s1 = _readline(master_fd)
         self.assertEqual(b'I wish to buy a fish license.\n',
                          normalize_output(s1))
 
         debug("Writing chunked output")
         os.write(slave_fd, TEST_STRING_2[:5])
         os.write(slave_fd, TEST_STRING_2[5:])
-        s2 = os.read(master_fd, 1024)
+        s2 = _readline(master_fd)
         self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
 
         os.close(slave_fd)
+        # closing master_fd can raise a SIGHUP if the process is
+        # the session leader: we installed a SIGHUP signal handler
+        # to ignore this signal.
         os.close(master_fd)
-
 
     def test_fork(self):
         debug("calling pty.fork()")
@@ -170,8 +201,8 @@ class PtyTest(unittest.TestCase):
             ##    raise TestFailed("Unexpected output from child: %r" % line)
 
             (pid, status) = os.waitpid(pid, 0)
-            res = status >> 8
-            debug("Child (%d) exited with status %d (%d)." % (pid, res, status))
+            res = os.waitstatus_to_exitcode(status)
+            debug("Child (%d) exited with code %d (status %d)." % (pid, res, status))
             if res == 1:
                 self.fail("Child raised an unexpected exception in os.setsid()")
             elif res == 2:

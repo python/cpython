@@ -20,10 +20,10 @@ tree but are maintained separately and are available from
 
 * `Sphinx <https://pypi.org/project/Sphinx/>`_
 * `blurb <https://pypi.org/project/blurb/>`_
+* `python-docs-theme <https://pypi.org/project/python-docs-theme/>`_
 
 The easiest way to install these tools is to create a virtual environment and
 install the tools into there.
-
 
 Using make
 ----------
@@ -33,7 +33,7 @@ To get started on UNIX, you can create a virtual environment with the command ::
   make venv
 
 That will install all the tools necessary to build the documentation. Assuming
-the virtual environment was created in the ``env`` directory (the default;
+the virtual environment was created in the ``venv`` directory (the default;
 configurable with the VENVDIR variable), you can run the following command to
 build the HTML output files::
 
@@ -112,6 +112,15 @@ Then, from the ``Doc`` directory, run ::
 
 where ``<builder>`` is one of html, text, latex, or htmlhelp (for explanations
 see the make targets above).
+
+Deprecation header
+==================
+
+You can define the ``outdated`` variable in ``html_context`` to show a
+red banner on each page redirecting to the "latest" version.
+
+The link points to the same page on ``/3/``, sadly for the moment the
+language is lost during the process.
 
 
 Contributing

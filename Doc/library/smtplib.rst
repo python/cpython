@@ -41,12 +41,12 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    the OS default behavior will be used.
 
    For normal use, you should only require the initialization/connect,
-   :meth:`sendmail`, and :meth:`~smtplib.quit` methods.
+   :meth:`sendmail`, and :meth:`SMTP.quit` methods.
    An example is included below.
 
    The :class:`SMTP` class supports the :keyword:`with` statement.  When used
    like this, the SMTP ``QUIT`` command is issued automatically when the
-   :keyword:`with` statement exits.  E.g.::
+   :keyword:`!with` statement exits.  E.g.::
 
     >>> from smtplib import SMTP
     >>> with SMTP("domain.org") as smtp:
@@ -54,6 +54,12 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
     ...
     (250, b'Ok')
     >>>
+
+   .. audit-event:: smtplib.send self,data smtplib.SMTP
+
+      All commands will raise an :ref:`auditing event <auditing>`
+      ``smtplib.SMTP.send`` with arguments ``self`` and ``data``,
+      where ``data`` is the bytes about to be sent to the remote host.
 
    .. versionchanged:: 3.3
       Support for the :keyword:`with` statement was added.
@@ -64,6 +70,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    .. versionadded:: 3.5
       The SMTPUTF8 extension (:rfc:`6531`) is now supported.
 
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket
 
 .. class:: SMTP_SSL(host='', port=0, local_hostname=None, keyfile=None, \
                     certfile=None [, timeout], context=None, \
@@ -102,8 +111,12 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
        :func:`ssl.create_default_context` select the system's trusted CA
        certificates for you.
 
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket
 
-.. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, source_address=None)
+.. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None,
+                source_address=None[, timeout])
 
    The LMTP protocol, which is very similar to ESMTP, is heavily based on the
    standard SMTP client. It's common to use Unix sockets for LMTP, so our
@@ -115,6 +128,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    Authentication is supported, using the regular SMTP mechanism. When using a
    Unix socket, LMTP generally don't support or require any authentication, but
    your mileage might vary.
+
+   .. versionchanged:: 3.9
+      The optional *timeout* parameter was added.
 
 
 A nice selection of exceptions is defined as well:
@@ -242,6 +258,8 @@ An :class:`SMTP` instance has the following methods:
    2-tuple of the response code and message sent by the server in its
    connection response.
 
+   .. audit-event:: smtplib.connect self,host,port smtplib.SMTP.connect
+
 
 .. method:: SMTP.helo(name='')
 
@@ -261,9 +279,10 @@ An :class:`SMTP` instance has the following methods:
    response for ESMTP option and store them for use by :meth:`has_extn`.
    Also sets several informational attributes: the message returned by
    the server is stored as the :attr:`ehlo_resp` attribute, :attr:`does_esmtp`
-   is set to true or false depending on whether the server supports ESMTP, and
-   :attr:`esmtp_features` will be a dictionary containing the names of the
-   SMTP service extensions this server supports, and their parameters (if any).
+   is set to ``True`` or ``False`` depending on whether the server supports
+   ESMTP, and :attr:`esmtp_features` will be a dictionary containing the names
+   of the SMTP service extensions this server supports, and their parameters
+   (if any).
 
    Unless you wish to use :meth:`has_extn` before sending mail, it should not be
    necessary to call this method explicitly.  It will be implicitly called by
@@ -271,7 +290,7 @@ An :class:`SMTP` instance has the following methods:
 
 .. method:: SMTP.ehlo_or_helo_if_needed()
 
-   This method call :meth:`ehlo` and or :meth:`helo` if there has been no
+   This method calls :meth:`ehlo` and/or :meth:`helo` if there has been no
    previous ``EHLO`` or ``HELO`` command this session.  It tries ESMTP ``EHLO``
    first.
 
@@ -346,7 +365,7 @@ An :class:`SMTP` instance has the following methods:
 
    If optional keyword argument *initial_response_ok* is true,
    ``authobject()`` will be called first with no argument.  It can return the
-   :rfc:`4954` "initial response" bytes which will be encoded and sent with
+   :rfc:`4954` "initial response" ASCII ``str`` which will be encoded and sent with
    the ``AUTH`` command as below.  If the ``authobject()`` does not support an
    initial response (e.g. because it requires a challenge), it should return
    ``None`` when called with ``challenge=None``.  If *initial_response_ok* is
@@ -355,7 +374,7 @@ An :class:`SMTP` instance has the following methods:
    If the initial response check returns ``None``, or if *initial_response_ok* is
    false, ``authobject()`` will be called to process the server's challenge
    response; the *challenge* argument it is passed will be a ``bytes``.  It
-   should return ``bytes`` *data* that will be base64 encoded and sent to the
+   should return ASCII ``str`` *data* that will be base64 encoded and sent to the
    server.
 
    The ``SMTP`` class provides ``authobjects`` for the ``CRAM-MD5``, ``PLAIN``,
@@ -379,15 +398,22 @@ An :class:`SMTP` instance has the following methods:
    commands that follow will be encrypted.  You should then call :meth:`ehlo`
    again.
 
-   If *keyfile* and *certfile* are provided, these are passed to the :mod:`socket`
-   module's :func:`ssl` function.
+   If *keyfile* and *certfile* are provided, they are used to create an
+   :class:`ssl.SSLContext`.
 
-   Optional *context* parameter is a :class:`ssl.SSLContext` object; This is
+   Optional *context* parameter is an :class:`ssl.SSLContext` object; This is
    an alternative to using a keyfile and a certfile and if specified both
    *keyfile* and *certfile* should be ``None``.
 
    If there has been no previous ``EHLO`` or ``HELO`` command this session,
    this method tries ESMTP ``EHLO`` first.
+
+   .. deprecated:: 3.6
+
+       *keyfile* and *certfile* are deprecated in favor of *context*.
+       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
+       :func:`ssl.create_default_context` select the system's trusted CA
+       certificates for you.
 
    :exc:`SMTPHeloError`
       The server didn't reply properly to the ``HELO`` greeting.
@@ -412,7 +438,7 @@ An :class:`SMTP` instance has the following methods:
       :exc:`SMTPException`.
 
 
-.. method:: SMTP.sendmail(from_addr, to_addrs, msg, mail_options=[], rcpt_options=[])
+.. method:: SMTP.sendmail(from_addr, to_addrs, msg, mail_options=(), rcpt_options=())
 
    Send mail.  The required arguments are an :rfc:`822` from-address string, a list
    of :rfc:`822` to-address strings (a bare string will be treated as a list with 1
@@ -484,7 +510,7 @@ An :class:`SMTP` instance has the following methods:
 
 
 .. method:: SMTP.send_message(msg, from_addr=None, to_addrs=None, \
-                              mail_options=[], rcpt_options=[])
+                              mail_options=(), rcpt_options=())
 
    This is a convenience method for calling :meth:`sendmail` with the message
    represented by an :class:`email.message.Message` object.  The arguments have

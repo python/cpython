@@ -5,7 +5,7 @@ import sys, inspect
 # line 5
 
 # line 7
-def spam(a, b, c, d=3, e=4, f=5, *g, **h):
+def spam(a, /, b, c, d=3, e=4, f=5, *g, **h):
     eggs(b + d, c + f)
 
 # line 11
@@ -74,3 +74,20 @@ class FesteringGob(MalodorousPervert, ParrotDroppings):
 
 async def lobbest(grenade):
     pass
+
+currentframe = inspect.currentframe()
+try:
+    raise Exception()
+except:
+    tb = sys.exc_info()[2]
+
+class Callable:
+    def __call__(self, *args):
+        return args
+
+    def as_method_of(self, obj):
+        from types import MethodType
+        return MethodType(self, obj)
+
+custom_method = Callable().as_method_of(42)
+del Callable

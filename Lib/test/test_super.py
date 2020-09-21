@@ -1,8 +1,6 @@
 """Unit tests for zero-argument super() & related machinery."""
 
 import unittest
-import warnings
-from test.support import check_warnings
 
 
 class A:
@@ -173,14 +171,10 @@ class TestSuper(unittest.TestCase):
                 test_namespace = namespace
                 return None
 
-        # This case shouldn't trigger the __classcell__ deprecation warning
-        with check_warnings() as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            class A(metaclass=Meta):
-                @staticmethod
-                def f():
-                    return __class__
-        self.assertEqual(w.warnings, [])
+        class A(metaclass=Meta):
+            @staticmethod
+            def f():
+                return __class__
 
         self.assertIs(A, None)
 
@@ -244,37 +238,19 @@ class TestSuper(unittest.TestCase):
                 namespace.pop('__classcell__', None)
                 return super().__new__(cls, name, bases, namespace)
 
-        # The default case should continue to work without any warnings
-        with check_warnings() as w:
-            warnings.simplefilter("always", DeprecationWarning)
-            class WithoutClassRef(metaclass=Meta):
-                pass
-        self.assertEqual(w.warnings, [])
+        # The default case should continue to work without any errors
+        class WithoutClassRef(metaclass=Meta):
+            pass
 
         # With zero-arg super() or an explicit __class__ reference, we expect
-        # __build_class__ to emit a DeprecationWarning complaining that
+        # __build_class__ to raise a RuntimeError complaining that
         # __class__ was not set, and asking if __classcell__ was propagated
         # to type.__new__.
-        # In Python 3.7, that warning will become a RuntimeError.
-        expected_warning = (
-            '__class__ not set.*__classcell__ propagated',
-            DeprecationWarning
-        )
-        with check_warnings(expected_warning):
-            warnings.simplefilter("always", DeprecationWarning)
+        expected_error = '__class__ not set.*__classcell__ propagated'
+        with self.assertRaisesRegex(RuntimeError, expected_error):
             class WithClassRef(metaclass=Meta):
                 def f(self):
                     return __class__
-        # Check __class__ still gets set despite the warning
-        self.assertIs(WithClassRef().f(), WithClassRef)
-
-        # Check the warning is turned into an error as expected
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            with self.assertRaises(DeprecationWarning):
-                class WithClassRef(metaclass=Meta):
-                    def f(self):
-                        return __class__
 
     def test___classcell___overwrite(self):
         # See issue #23722

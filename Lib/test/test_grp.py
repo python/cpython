@@ -1,9 +1,10 @@
 """Test script for the grp module."""
 
 import unittest
-from test import support
+from test.support import import_helper
 
-grp = support.import_module('grp')
+
+grp = import_helper.import_module('grp')
 
 class GroupDatabaseTestCase(unittest.TestCase):
 
@@ -100,8 +101,8 @@ class GroupDatabaseTestCase(unittest.TestCase):
             self.skipTest('no groups')
         # Choose an existent gid.
         gid = entries[0][2]
-        self.assertWarns(DeprecationWarning, grp.getgrgid, float(gid))
-        self.assertWarns(DeprecationWarning, grp.getgrgid, str(gid))
+        self.assertRaises(TypeError, grp.getgrgid, float(gid))
+        self.assertRaises(TypeError, grp.getgrgid, str(gid))
 
 
 if __name__ == "__main__":

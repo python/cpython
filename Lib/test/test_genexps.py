@@ -15,6 +15,22 @@ Test nesting with the inner expression dependent on the outer
     >>> list((i,j) for i in range(4) for j in range(i) )
     [(1, 0), (2, 0), (2, 1), (3, 0), (3, 1), (3, 2)]
 
+Test the idiom for temporary variable assignment in comprehensions.
+
+    >>> list((j*j for i in range(4) for j in [i+1]))
+    [1, 4, 9, 16]
+    >>> list((j*k for i in range(4) for j in [i+1] for k in [j+1]))
+    [2, 6, 12, 20]
+    >>> list((j*k for i in range(4) for j, k in [(i+1, i+2)]))
+    [2, 6, 12, 20]
+
+Not assignment
+
+    >>> list((i*i for i in [*range(4)]))
+    [0, 1, 4, 9]
+    >>> list((i*i for i in (*range(4),)))
+    [0, 1, 4, 9]
+
 Make sure the induction variable is not exposed
 
     >>> i = 20
@@ -137,12 +153,12 @@ Verify that syntax error's are raised for genexps used as lvalues
     >>> (y for y in (1,2)) = 10
     Traceback (most recent call last):
        ...
-    SyntaxError: can't assign to generator expression
+    SyntaxError: cannot assign to generator expression
 
     >>> (y for y in (1,2)) += 10
     Traceback (most recent call last):
        ...
-    SyntaxError: can't assign to generator expression
+    SyntaxError: 'generator expression' is an illegal expression for augmented assignment
 
 
 ########### Tests borrowed from or inspired by test_generators.py ############

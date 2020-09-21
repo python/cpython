@@ -24,7 +24,7 @@ Concepts
 Let's show the sort of functionality that we are going to explore in this
 introductory tutorial by making use of the :command:`ls` command:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ ls
    cpython  devguide  prog.py  pypy  rm-unused-function.patch
@@ -77,7 +77,7 @@ Let us start with a very simple example which does (almost) nothing::
 
 Following is a result of running the code:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py
    $ python3 prog.py --help
@@ -119,7 +119,7 @@ An example::
 
 And running the code:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py
    usage: prog.py [-h] echo
@@ -164,7 +164,7 @@ by reading the source code. So, let's make it a bit more useful::
 
 And we get:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py -h
    usage: prog.py [-h] echo
@@ -185,7 +185,7 @@ Now, how about doing something even more useful::
 
 Following is a result of running the code:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py 4
    Traceback (most recent call last):
@@ -206,7 +206,7 @@ give it as strings, unless we tell it otherwise. So, let's tell
 
 Following is a result of running the code:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py 4
    16
@@ -233,7 +233,7 @@ have a look on how to add optional ones::
 
 And the output:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py --verbosity 1
    verbosity turned on
@@ -279,7 +279,7 @@ Let's modify the code accordingly::
 
 And the output:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py --verbose
    verbosity turned on
@@ -325,7 +325,7 @@ versions of the options. It's quite simple::
 
 And here goes:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py -v
    verbosity turned on
@@ -353,13 +353,13 @@ Our program keeps growing in complexity::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbose:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    else:
        print(answer)
 
 And now the output:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py
    usage: prog.py [-h] [-v] square
@@ -387,15 +387,15 @@ multiple verbosity values, and actually get to use them::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity == 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
 And the output:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py 4
    16
@@ -421,15 +421,15 @@ Let's fix it by restricting the values the ``--verbosity`` option can accept::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity == 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
 And the output:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py 4 -v 3
    usage: prog.py [-h] [-v {0,1,2}] square
@@ -461,16 +461,16 @@ verbosity argument (check the output of ``python --help``)::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity == 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity == 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
 We have introduced another action, "count",
 to count the number of occurrences of a specific optional arguments:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py 4
    16
@@ -529,15 +529,15 @@ Let's fix::
 
    # bugfix: replace == with >=
    if args.verbosity >= 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity >= 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
 And this is what it gives:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py 4 -vvv
    the square of 4 equals 16
@@ -566,9 +566,9 @@ Let's fix that bug::
    args = parser.parse_args()
    answer = args.square**2
    if args.verbosity >= 2:
-       print("the square of {} equals {}".format(args.square, answer))
+       print(f"the square of {args.square} equals {answer}")
    elif args.verbosity >= 1:
-       print("{}^2 == {}".format(args.square, answer))
+       print(f"{args.square}^2 == {answer}")
    else:
        print(answer)
 
@@ -581,7 +581,7 @@ it gets the ``None`` value, and that cannot be compared to an int value
 
 And:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py 4
    16
@@ -606,15 +606,15 @@ not just squares::
    args = parser.parse_args()
    answer = args.x**args.y
    if args.verbosity >= 2:
-       print("{} to the power {} equals {}".format(args.x, args.y, answer))
+       print(f"{args.x} to the power {args.y} equals {answer}")
    elif args.verbosity >= 1:
-       print("{}^{} == {}".format(args.x, args.y, answer))
+       print(f"{args.x}^{args.y} == {answer}")
    else:
        print(answer)
 
 Output:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py
    usage: prog.py [-h] [-v] x y
@@ -645,14 +645,14 @@ to display *more* text instead::
    args = parser.parse_args()
    answer = args.x**args.y
    if args.verbosity >= 2:
-       print("Running '{}'".format(__file__))
+       print(f"Running '{__file__}'")
    if args.verbosity >= 1:
-       print("{}^{} == ".format(args.x, args.y), end="")
+       print(f"{args.x}^{args.y} == ", end="")
    print(answer)
 
 Output:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py 4 2
    16
@@ -688,14 +688,14 @@ which will be the opposite of the ``--verbose`` one::
    if args.quiet:
        print(answer)
    elif args.verbose:
-       print("{} to the power {} equals {}".format(args.x, args.y, answer))
+       print(f"{args.x} to the power {args.y} equals {answer}")
    else:
-       print("{}^{} == {}".format(args.x, args.y, answer))
+       print(f"{args.x}^{args.y} == {answer}")
 
 Our program is now simpler, and we've lost some functionality for the sake of
 demonstration. Anyways, here's the output:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py 4 2
    4^2 == 16
@@ -739,7 +739,7 @@ Note that slight difference in the usage text. Note the ``[-v | -q]``,
 which tells us that we can either use ``-v`` or ``-q``,
 but not both at the same time:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 prog.py --help
    usage: prog.py [-h] [-v | -q] x y

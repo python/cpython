@@ -20,7 +20,7 @@ Files required for the Python _decimal module
     context.c        ->  Context functions.
     io.{c,h}         ->  Conversions between mpd_t and ASCII strings,
                          mpd_t formatting (allows UTF-8 fill character).
-    memory.{c,h}     ->  Allocation handlers with overflow detection
+    mpalloc.{c,h}    ->  Allocation handlers with overflow detection
                          and functions for switching between static
                          and dynamic mpd_t.
     mpdecimal.{c,h}  ->  All (quiet) functions of the specification.
@@ -30,7 +30,6 @@ Files required for the Python _decimal module
     Visual Studio only:
     ~~~~~~~~~~~~~~~~~~~
       vccompat.h    ->  snprintf <==> sprintf_s and similar things.
-      vcstdint.h    ->  stdint.h (included in VS 2010 but not in VS 2008).
       vcdiv64.asm   ->  Double word division used in typearith.h. VS 2008 does
                         not allow inline asm for x64. Also, it does not provide
                         an intrinsic for double word division.

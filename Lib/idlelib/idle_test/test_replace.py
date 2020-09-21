@@ -1,13 +1,14 @@
-"""Unittest for idlelib.replace.py"""
+"Test replace, coverage 78%."
+
+from idlelib.replace import ReplaceDialog
+import unittest
 from test.support import requires
 requires('gui')
-
-import unittest
-from unittest.mock import Mock
 from tkinter import Tk, Text
+
+from unittest.mock import Mock
 from idlelib.idle_test.mock_tk import Mbox
 import idlelib.searchengine as se
-from idlelib.replace import ReplaceDialog
 
 orig_mbox = se.tkMessageBox
 showerror = Mbox.showerror
@@ -74,14 +75,14 @@ class ReplaceDialogTest(unittest.TestCase):
         replace()
         equal(text.get('1.8', '1.12'), 'asdf')
 
-        # dont "match word" case
+        # don't "match word" case
         text.mark_set('insert', '1.0')
         pv.set('is')
         rv.set('hello')
         replace()
         equal(text.get('1.2', '1.7'), 'hello')
 
-        # dont "match case" case
+        # don't "match case" case
         pv.set('string')
         rv.set('world')
         replace()

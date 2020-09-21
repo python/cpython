@@ -73,6 +73,9 @@ class InvalidBase64PaddingDefect(MessageDefect):
 class InvalidBase64CharactersDefect(MessageDefect):
     """base64 encoded sequence had characters not in base64 alphabet"""
 
+class InvalidBase64LengthDefect(MessageDefect):
+    """base64 encoded sequence had invalid length (1 mod 4)"""
+
 # These errors are specific to header parsing.
 
 class HeaderDefect(MessageDefect):

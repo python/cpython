@@ -22,7 +22,7 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'B'``   | unsigned char      | int               | 1                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'u'``   | Py_UNICODE         | Unicode character | 2                     | \(1)  |
+| ``'u'``   | wchar_t            | Unicode character | 2                     | \(1)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'h'``   | signed short       | int               | 2                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
@@ -36,9 +36,9 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'L'``   | unsigned long      | int               | 4                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'q'``   | signed long long   | int               | 8                     | \(2)  |
+| ``'q'``   | signed long long   | int               | 8                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'Q'``   | unsigned long long | int               | 8                     | \(2)  |
+| ``'Q'``   | unsigned long long | int               | 8                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'f'``   | float              | float             | 4                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
@@ -48,21 +48,15 @@ defined:
 Notes:
 
 (1)
-   The ``'u'`` type code corresponds to Python's obsolete unicode character
-   (:c:type:`Py_UNICODE` which is :c:type:`wchar_t`). Depending on the
-   platform, it can be 16 bits or 32 bits.
+   It can be 16 bits or 32 bits depending on the platform.
 
-   ``'u'`` will be removed together with the rest of the :c:type:`Py_UNICODE`
-   API.
+   .. versionchanged:: 3.9
+      ``array('u')`` now uses ``wchar_t`` as C type instead of deprecated
+      ``Py_UNICODE``. This change doesn't affect to its behavior because
+      ``Py_UNICODE`` is alias of ``wchar_t`` since Python 3.3.
 
    .. deprecated-removed:: 3.3 4.0
 
-(2)
-   The ``'q'`` and ``'Q'`` type codes are available only if
-   the platform C compiler used to build Python supports C :c:type:`long long`,
-   or, on Windows, :c:type:`__int64`.
-
-   .. versionadded:: 3.3
 
 The actual representation of values is determined by the machine architecture
 (strictly speaking, by the C implementation).  The actual size can be accessed
@@ -83,6 +77,7 @@ The module defines the following type:
    to add initial items to the array.  Otherwise, the iterable initializer is
    passed to the :meth:`extend` method.
 
+   .. audit-event:: array.__new__ typecode,initializer array.array
 
 .. data:: typecodes
 
@@ -175,11 +170,6 @@ The following data items and methods are also supported:
    a.append(x)`` except that if there is a type error, the array is unchanged.
 
 
-.. method:: array.fromstring()
-
-   Deprecated alias for :meth:`frombytes`.
-
-
 .. method:: array.fromunicode(s)
 
    Extends this array with data from the given unicode string.  The array must
@@ -235,11 +225,6 @@ The following data items and methods are also supported:
 .. method:: array.tolist()
 
    Convert the array to an ordinary list with the same items.
-
-
-.. method:: array.tostring()
-
-   Deprecated alias for :meth:`tobytes`.
 
 
 .. method:: array.tounicode()

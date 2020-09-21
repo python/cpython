@@ -1,5 +1,5 @@
 .. bpo: 28128
-.. date: 9445
+.. date: 9744
 .. nonce: Lc2sFu
 .. release date: 2016-10-31
 .. section: Core and Builtins
@@ -11,7 +11,7 @@ and Eric Smith.
 ..
 
 .. bpo: 28509
-.. date: 9444
+.. date: 9743
 .. nonce: _Fa4Uq
 .. section: Core and Builtins
 
@@ -20,7 +20,7 @@ dict.update() no longer allocate unnecessary large memory.
 ..
 
 .. bpo: 28426
-.. date: 9443
+.. date: 9742
 .. nonce: E_quyK
 .. section: Core and Builtins
 
@@ -29,7 +29,7 @@ Fixed potential crash in PyUnicode_AsDecodedObject() in debug build.
 ..
 
 .. bpo: 28517
-.. date: 9442
+.. date: 9741
 .. nonce: ExPkm9
 .. section: Core and Builtins
 
@@ -39,7 +39,7 @@ unreachable code.
 ..
 
 .. bpo: 28214
-.. date: 9441
+.. date: 9740
 .. nonce: 6ECJox
 .. section: Core and Builtins
 
@@ -48,7 +48,7 @@ Improved exception reporting for problematic __set_name__ attributes.
 ..
 
 .. bpo: 23782
-.. date: 9440
+.. date: 9739
 .. nonce: lonDzj
 .. section: Core and Builtins
 
@@ -58,7 +58,7 @@ PyTraceBack_Here().
 ..
 
 .. bpo: 28471
-.. date: 9439
+.. date: 9738
 .. nonce: Vd5pv7
 .. section: Core and Builtins
 
@@ -67,17 +67,8 @@ socket.setblocking.
 
 ..
 
-.. bpo: 26128
-.. date: 9438
-.. nonce: IEF1cf
-.. section: Library
-
-Added keyword-only arguments support for subprocess.STARTUPINFO
-
-..
-
 .. bpo: 27517
-.. date: 9437
+.. date: 9737
 .. nonce: 1CYM8A
 .. section: Library
 
@@ -87,7 +78,7 @@ data twice.  Patch by Benjamin Fogle.
 ..
 
 .. bpo: 28549
-.. date: 9436
+.. date: 9736
 .. nonce: ShnM2y
 .. section: Library
 
@@ -96,7 +87,7 @@ Fixed segfault in curses's addch() with ncurses6.
 ..
 
 .. bpo: 28449
-.. date: 9435
+.. date: 9735
 .. nonce: 5JK6ES
 .. section: Library
 
@@ -107,7 +98,7 @@ compression before trying to open it without compression.  Otherwise it had
 ..
 
 .. bpo: 23262
-.. date: 9434
+.. date: 9734
 .. nonce: 6EVB7N
 .. section: Library
 
@@ -117,7 +108,7 @@ on patch by Oleg Broytman.
 ..
 
 .. bpo: 27939
-.. date: 9433
+.. date: 9733
 .. nonce: mTfADV
 .. section: Library
 
@@ -128,7 +119,7 @@ works if float value is set to underlying Tk variable.
 ..
 
 .. bpo: 18844
-.. date: 9432
+.. date: 9732
 .. nonce: oif1-H
 .. section: Library
 
@@ -138,7 +129,7 @@ same result sequences.
 ..
 
 .. bpo: 28255
-.. date: 9431
+.. date: 9731
 .. nonce: _ZH4wm
 .. section: Library
 
@@ -148,7 +139,7 @@ new line after printing a month's calendar.  Patch by Xiang Zhang.
 ..
 
 .. bpo: 20491
-.. date: 9430
+.. date: 9730
 .. nonce: ObgnQ2
 .. section: Library
 
@@ -158,7 +149,7 @@ patch by Kaarle Ritvanen.
 ..
 
 .. bpo: 28353
-.. date: 9429
+.. date: 9729
 .. nonce: sKGbLL
 .. section: Library
 
@@ -167,7 +158,7 @@ os.fwalk() no longer fails on broken links.
 ..
 
 .. bpo: 28430
-.. date: 9428
+.. date: 9728
 .. nonce: 4MiEYT
 .. section: Library
 
@@ -177,7 +168,7 @@ is passed to it.send(val).
 ..
 
 .. bpo: 27025
-.. date: 9427
+.. date: 9727
 .. nonce: foAViS
 .. section: Library
 
@@ -187,7 +178,7 @@ readability.
 ..
 
 .. bpo: 25464
-.. date: 9426
+.. date: 9726
 .. nonce: HDUTCu
 .. section: Library
 
@@ -197,7 +188,7 @@ Tix library bug.
 ..
 
 .. bpo: 28488
-.. date: 9425
+.. date: 9725
 .. nonce: TgO112
 .. section: Library
 
@@ -206,7 +197,7 @@ shutil.make_archive() no longer adds entry "./" to ZIP archive.
 ..
 
 .. bpo: 25953
-.. date: 9424
+.. date: 9724
 .. nonce: EKKJAQ
 .. section: Library
 
@@ -218,7 +209,7 @@ position of the reference. Based on patch by SilentGhost.
 ..
 
 .. bpo: 18219
-.. date: 9423
+.. date: 9723
 .. nonce: 1ANQN1
 .. section: Library
 
@@ -228,7 +219,7 @@ Wijaya.
 ..
 
 .. bpo: 28448
-.. date: 9422
+.. date: 9722
 .. nonce: 5bduWe
 .. section: Library
 
@@ -237,7 +228,7 @@ Fix C implemented asyncio.Future didn't work on Windows.
 ..
 
 .. bpo: 28480
-.. date: 9421
+.. date: 9721
 .. nonce: 9lHw6m
 .. section: Library
 
@@ -246,7 +237,7 @@ Fix error building socket module when multithreading is disabled.
 ..
 
 .. bpo: 24452
-.. date: 9420
+.. date: 9720
 .. nonce: m9Kyg3
 .. section: Library
 
@@ -255,7 +246,7 @@ Make webbrowser support Chrome on Mac OS X.
 ..
 
 .. bpo: 20766
-.. date: 9419
+.. date: 9719
 .. nonce: 4kvCzx
 .. section: Library
 
@@ -264,7 +255,7 @@ Fix references leaked by pdb in the handling of SIGINT handlers.
 ..
 
 .. bpo: 28492
-.. date: 9418
+.. date: 9718
 .. nonce: pFRLQE
 .. section: Library
 
@@ -273,7 +264,7 @@ Fix how StopIteration exception is raised in _asyncio.Future.
 ..
 
 .. bpo: 28500
-.. date: 9417
+.. date: 9717
 .. nonce: NINKzZ
 .. section: Library
 
@@ -282,7 +273,7 @@ Fix asyncio to handle async gens GC from another thread.
 ..
 
 .. bpo: 26923
-.. date: 9416
+.. date: 9716
 .. nonce: 8dh3AV
 .. section: Library
 
@@ -292,7 +283,7 @@ Patch by Johannes Ebke.
 ..
 
 .. bpo: 26796
-.. date: 9415
+.. date: 9715
 .. nonce: TZyAfJ
 .. section: Library
 
@@ -302,7 +293,7 @@ Initial patch by Hans Lawrenz.
 ..
 
 .. bpo: 28544
-.. date: 9414
+.. date: 9714
 .. nonce: KD1oFP
 .. section: Library
 
@@ -311,7 +302,7 @@ Implement asyncio.Task in C.
 ..
 
 .. bpo: 28522
-.. date: 9413
+.. date: 9713
 .. nonce: XHMQa7
 .. section: Windows
 
@@ -320,7 +311,7 @@ Fixes mishandled buffer reallocation in getpathp.c
 ..
 
 .. bpo: 28444
-.. date: 9412
+.. date: 9712
 .. nonce: zkc9nT
 .. section: Build
 
@@ -329,7 +320,7 @@ Fix missing extensions modules when cross compiling.
 ..
 
 .. bpo: 28208
-.. date: 9411
+.. date: 9711
 .. nonce: DtoP1i
 .. section: Build
 
@@ -338,7 +329,7 @@ Update Windows build and OS X installers to use SQLite 3.14.2.
 ..
 
 .. bpo: 28248
-.. date: 9410
+.. date: 9710
 .. nonce: KY_-en
 .. section: Build
 
@@ -347,7 +338,7 @@ Update Windows build and OS X installers to use OpenSSL 1.0.2j.
 ..
 
 .. bpo: 26944
-.. date: 9409
+.. date: 9709
 .. nonce: ChZ_BO
 .. section: Tests
 
@@ -357,7 +348,7 @@ effective gid.
 ..
 
 .. bpo: 28409
-.. date: 9408
+.. date: 9708
 .. nonce: Q2IlxJ
 .. section: Tests
 

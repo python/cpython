@@ -17,12 +17,12 @@
 
 This module provides access to the Unicode Character Database (UCD) which
 defines character properties for all Unicode characters. The data contained in
-this database is compiled from the `UCD version 10.0.0
-<http://www.unicode.org/Public/10.0.0/ucd>`_.
+this database is compiled from the `UCD version 13.0.0
+<https://www.unicode.org/Public/13.0.0/ucd>`_.
 
 The module uses the same names and symbols as defined by Unicode
 Standard Annex #44, `"Unicode Character Database"
-<http://www.unicode.org/reports/tr44/tr44-6.html>`_.  It defines the
+<https://www.unicode.org/reports/tr44/>`_.  It defines the
 following functions:
 
 
@@ -133,6 +133,13 @@ following functions:
    a human reader, if one has combining characters and the other
    doesn't, they may not compare equal.
 
+.. function:: is_normalized(form, unistr)
+
+   Return whether the Unicode string *unistr* is in the normal form *form*. Valid
+   values for *form* are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
+
+   .. versionadded:: 3.8
+
 
 In addition, the module exposes the following constant:
 
@@ -168,6 +175,6 @@ Examples:
 
 .. rubric:: Footnotes
 
-.. [#] http://www.unicode.org/Public/10.0.0/ucd/NameAliases.txt
+.. [#] https://www.unicode.org/Public/13.0.0/ucd/NameAliases.txt
 
-.. [#] http://www.unicode.org/Public/10.0.0/ucd/NamedSequences.txt
+.. [#] https://www.unicode.org/Public/13.0.0/ucd/NamedSequences.txt

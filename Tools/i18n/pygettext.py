@@ -232,6 +232,10 @@ def escape_nonascii(s, encoding):
     return ''.join(escapes[b] for b in s.encode(encoding))
 
 
+def is_literal_string(s):
+    return s[0] in '\'"' or (s[0] in 'rRuU' and s[1] in '\'"')
+
+
 def safe_eval(s):
     # unwrap quotes, safely
     return eval(s, {'__builtins__':{}}, {})
@@ -259,24 +263,6 @@ def containsAny(str, set):
     return 1 in [c in str for c in set]
 
 
-def _visit_pyfiles(list, dirname, names):
-    """Helper for getFilesForName()."""
-    # get extension for python source files
-    if '_py_ext' not in globals():
-        global _py_ext
-        _py_ext = importlib.machinery.SOURCE_SUFFIXES[0]
-
-    # don't recurse into CVS directories
-    if 'CVS' in names:
-        names.remove('CVS')
-
-    # add all *.py files to list
-    list.extend(
-        [os.path.join(dirname, file) for file in names
-         if os.path.splitext(file)[1] == _py_ext]
-        )
-
-
 def getFilesForName(name):
     """Get a list of module files for a filename, a module or package name,
     or a directory.
@@ -302,7 +288,17 @@ def getFilesForName(name):
     if os.path.isdir(name):
         # find all python files in directory
         list = []
-        os.walk(name, _visit_pyfiles, list)
+        # get extension for python source files
+        _py_ext = importlib.machinery.SOURCE_SUFFIXES[0]
+        for root, dirs, files in os.walk(name):
+            # don't recurse into CVS directories
+            if 'CVS' in dirs:
+                dirs.remove('CVS')
+            # add all *.py files to list
+            list.extend(
+                [os.path.join(root, file) for file in files
+                 if os.path.splitext(file)[1] == _py_ext]
+                )
         return list
     elif os.path.exists(name):
         # a single file
@@ -320,12 +316,13 @@ class TokenEater:
         self.__lineno = -1
         self.__freshmodule = 1
         self.__curfile = None
+        self.__enclosurecount = 0
 
     def __call__(self, ttype, tstring, stup, etup, line):
         # dispatch
 ##        import token
-##        print >> sys.stderr, 'ttype:', token.tok_name[ttype], \
-##              'tstring:', tstring
+##        print('ttype:', token.tok_name[ttype], 'tstring:', tstring,
+##              file=sys.stderr)
         self.__state(ttype, tstring, stup[0])
 
     def __waiting(self, ttype, tstring, lineno):
@@ -334,13 +331,13 @@ class TokenEater:
         if opts.docstrings and not opts.nodocstrings.get(self.__curfile):
             # module docstring?
             if self.__freshmodule:
-                if ttype == tokenize.STRING:
+                if ttype == tokenize.STRING and is_literal_string(tstring):
                     self.__addentry(safe_eval(tstring), lineno, isdocstring=1)
                     self.__freshmodule = 0
                 elif ttype not in (tokenize.COMMENT, tokenize.NL):
                     self.__freshmodule = 0
                 return
-            # class docstring?
+            # class or func/method docstring?
             if ttype == tokenize.NAME and tstring in ('class', 'def'):
                 self.__state = self.__suiteseen
                 return
@@ -348,13 +345,19 @@ class TokenEater:
             self.__state = self.__keywordseen
 
     def __suiteseen(self, ttype, tstring, lineno):
-        # ignore anything until we see the colon
-        if ttype == tokenize.OP and tstring == ':':
-            self.__state = self.__suitedocstring
+        # skip over any enclosure pairs until we see the colon
+        if ttype == tokenize.OP:
+            if tstring == ':' and self.__enclosurecount == 0:
+                # we see a colon and we're not in an enclosure: end of def
+                self.__state = self.__suitedocstring
+            elif tstring in '([{':
+                self.__enclosurecount += 1
+            elif tstring in ')]}':
+                self.__enclosurecount -= 1
 
     def __suitedocstring(self, ttype, tstring, lineno):
         # ignore any intervening noise
-        if ttype == tokenize.STRING:
+        if ttype == tokenize.STRING and is_literal_string(tstring):
             self.__addentry(safe_eval(tstring), lineno, isdocstring=1)
             self.__state = self.__waiting
         elif ttype not in (tokenize.NEWLINE, tokenize.INDENT,
@@ -379,7 +382,7 @@ class TokenEater:
             if self.__data:
                 self.__addentry(EMPTYSTRING.join(self.__data))
             self.__state = self.__waiting
-        elif ttype == tokenize.STRING:
+        elif ttype == tokenize.STRING and is_literal_string(tstring):
             self.__data.append(safe_eval(tstring))
         elif ttype not in [tokenize.COMMENT, token.INDENT, token.DEDENT,
                            token.NEWLINE, tokenize.NL]:
@@ -558,9 +561,8 @@ def main():
     # initialize list of strings to exclude
     if options.excludefilename:
         try:
-            fp = open(options.excludefilename)
-            options.toexclude = fp.readlines()
-            fp.close()
+            with open(options.excludefilename) as fp:
+                options.toexclude = fp.readlines()
         except IOError:
             print(_(
                 "Can't read --exclude-file: %s") % options.excludefilename, file=sys.stderr)

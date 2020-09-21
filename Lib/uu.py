@@ -73,6 +73,13 @@ def encode(in_file, out_file, name=None, mode=None, *, backtick=False):
             name = '-'
         if mode is None:
             mode = 0o666
+
+        #
+        # Remove newline chars from name
+        #
+        name = name.replace('\n','\\n')
+        name = name.replace('\r','\\r')
+
         #
         # Write the data
         #
@@ -133,10 +140,7 @@ def decode(in_file, out_file=None, mode=None, quiet=False):
             out_file = sys.stdout.buffer
         elif isinstance(out_file, str):
             fp = open(out_file, 'wb')
-            try:
-                os.path.chmod(out_file, mode)
-            except AttributeError:
-                pass
+            os.chmod(out_file, mode)
             out_file = fp
             opened_files.append(out_file)
         #
