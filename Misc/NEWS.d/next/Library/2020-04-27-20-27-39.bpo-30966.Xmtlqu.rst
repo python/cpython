@@ -1,2 +1,0 @@
-``Process.shutdown(wait=True)`` of :mod:`concurrent.futures` now closes
-explicitly the result queue.

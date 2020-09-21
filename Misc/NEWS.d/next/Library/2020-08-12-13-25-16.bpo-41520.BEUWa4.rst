@@ -1,0 +1,1 @@
+Fix :mod:`codeop` regression that prevented turning compile warnings into errors.

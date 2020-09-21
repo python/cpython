@@ -1,0 +1,1 @@
+Port :mod:`_lzma` to multiphase initialization.

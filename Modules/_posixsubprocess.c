@@ -893,6 +893,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     if (_enable_gc(need_to_reenable_gc, gc_module)) {
         pid = -1;
     }
+    PyMem_RawFree(groups);
     Py_XDECREF(preexec_fn_args_tuple);
     Py_XDECREF(gc_module);
 

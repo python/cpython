@@ -1,2 +1,0 @@
-Add PyCFunction_CheckExact() macro for exact type checks now that we allow subtypes of PyCFunction,
-as well as PyCMethod_CheckExact() and PyCMethod_Check() for the new PyCMethod subtype.

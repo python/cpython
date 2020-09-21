@@ -1,0 +1,2 @@
+Fixes the wrong error description in the error raised by using 2 `,` in
+format string in f-string and :meth:`str.format`.

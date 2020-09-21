@@ -1,0 +1,2 @@
+The "hackcheck" that prevents sneaking around a type's __setattr__() by calling the
+superclass method was rewritten to allow C implemented heap types.

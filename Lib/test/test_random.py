@@ -5,6 +5,8 @@ import os
 import time
 import pickle
 import warnings
+import test.support
+
 from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
 from test import support
@@ -371,6 +373,14 @@ class TestBasicOps:
             newgen = pickle.loads(state)
             restoredseq = [newgen.random() for i in range(10)]
             self.assertEqual(origseq, restoredseq)
+
+    @test.support.cpython_only
+    def test_bug_41052(self):
+        # _random.Random should not be allowed to serialization
+        import _random
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            r = _random.Random()
+            self.assertRaises(TypeError, pickle.dumps, r, proto)
 
     def test_bug_1727780(self):
         # verify that version-2-pickles can be loaded

@@ -15,18 +15,18 @@ Data members:
 */
 
 #include "Python.h"
-#include "code.h"
-#include "frameobject.h"          // PyFrame_GetBack()
 #include "pycore_ceval.h"         // _Py_RecursionLimitLowerWaterMark()
-#include "pycore_initconfig.h"
-#include "pycore_object.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pylifecycle.h"
+#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_object.h"        // _PyObject_IS_GC()
+#include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
+#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_tupleobject.h"
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
+#include "code.h"
+#include "frameobject.h"          // PyFrame_GetBack()
 #include "pydtrace.h"
 #include "osdefs.h"               // DELIM
 #include <locale.h>
@@ -457,7 +457,7 @@ static PyObject *
 sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    assert(tstate != NULL);
+    _Py_EnsureTstateNotNULL(tstate);
 
     if (argc == 0) {
         _PyErr_SetString(tstate, PyExc_TypeError,
@@ -2922,13 +2922,7 @@ _PySys_InitMain(PyThreadState *tstate)
     SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
     SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
     SET_SYS_FROM_WSTR("base_exec_prefix", config->base_exec_prefix);
-    {
-        PyObject *str = PyUnicode_FromString(PLATLIBDIR);
-        if (str == NULL) {
-            return -1;
-        }
-        SET_SYS_FROM_STRING("platlibdir", str);
-    }
+    SET_SYS_FROM_WSTR("platlibdir", config->platlibdir);
 
     if (config->pycache_prefix != NULL) {
         SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);
@@ -2937,6 +2931,7 @@ _PySys_InitMain(PyThreadState *tstate)
     }
 
     COPY_LIST("argv", config->argv);
+    COPY_LIST("orig_argv", config->orig_argv);
     COPY_LIST("warnoptions", config->warnoptions);
 
     PyObject *xoptions = sys_create_xoptions_dict(config);

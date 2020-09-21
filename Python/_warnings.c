@@ -32,14 +32,14 @@ _Py_IDENTIFIER(__name__);
 static WarningsState *
 warnings_get_state(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate == NULL) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                          "warnings_get_state: could not identify "
-                          "current interpreter");
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "warnings_get_state: could not identify "
+                        "current interpreter");
         return NULL;
     }
-    return &tstate->interp->warnings;
+    return &interp->warnings;
 }
 
 /* Clear the given warnings module state. */

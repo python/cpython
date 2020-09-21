@@ -502,14 +502,10 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.factorial, -10**100)
 
     def testFactorialNonIntegers(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(math.factorial(5.0), 120)
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(ValueError, math.factorial, 5.2)
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(ValueError, math.factorial, -1.0)
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(ValueError, math.factorial, -1e100)
+        self.assertRaises(TypeError, math.factorial, 5.0)
+        self.assertRaises(TypeError, math.factorial, 5.2)
+        self.assertRaises(TypeError, math.factorial, -1.0)
+        self.assertRaises(TypeError, math.factorial, -1e100)
         self.assertRaises(TypeError, math.factorial, decimal.Decimal('5'))
         self.assertRaises(TypeError, math.factorial, decimal.Decimal('5.2'))
         self.assertRaises(TypeError, math.factorial, "5")
@@ -520,8 +516,7 @@ class MathTests(unittest.TestCase):
         # Currently raises OverflowError for inputs that are too large
         # to fit into a C long.
         self.assertRaises(OverflowError, math.factorial, 10**100)
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(OverflowError, math.factorial, 1e100)
+        self.assertRaises(TypeError, math.factorial, 1e100)
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
@@ -616,7 +611,7 @@ class MathTests(unittest.TestCase):
         def msum(iterable):
             """Full precision summation.  Compute sum(iterable) without any
             intermediate accumulation of error.  Based on the 'lsum' function
-            at http://code.activestate.com/recipes/393090/
+            at https://github.com/ActiveState/code/tree/master/recipes/Python/393090_Binary_floating_point_summatiaccurate_full/recipe-393090.py
 
             """
             tmant, texp = 0, 0
@@ -800,7 +795,8 @@ class MathTests(unittest.TestCase):
         # Verify scaling for extremely large values
         fourthmax = FLOAT_MAX / 4.0
         for n in range(32):
-            self.assertEqual(hypot(*([fourthmax]*n)), fourthmax * math.sqrt(n))
+            self.assertTrue(math.isclose(hypot(*([fourthmax]*n)),
+                                         fourthmax * math.sqrt(n)))
 
         # Verify scaling for extremely small values
         for exp in range(32):
@@ -909,8 +905,8 @@ class MathTests(unittest.TestCase):
         for n in range(32):
             p = (fourthmax,) * n
             q = (0.0,) * n
-            self.assertEqual(dist(p, q), fourthmax * math.sqrt(n))
-            self.assertEqual(dist(q, p), fourthmax * math.sqrt(n))
+            self.assertTrue(math.isclose(dist(p, q), fourthmax * math.sqrt(n)))
+            self.assertTrue(math.isclose(dist(q, p), fourthmax * math.sqrt(n)))
 
         # Verify scaling for extremely small values
         for exp in range(32):

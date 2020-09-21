@@ -1,0 +1,1 @@
+Avoid infinite loop when reading specially crafted TAR files using the tarfile module (CVE-2019-20907).

@@ -172,7 +172,7 @@ Positional and keyword arguments can be arbitrarily combined::
 If you have a really long format string that you don't want to split up, it
 would be nice if you could reference the variables to be formatted by name
 instead of by position.  This can be done by simply passing the dict and using
-square brackets ``'[]'`` to access the keys ::
+square brackets ``'[]'`` to access the keys. ::
 
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
    >>> print('Jack: {0[Jack]:d}; Sjoerd: {0[Sjoerd]:d}; '
@@ -257,10 +257,10 @@ left with zeros.  It understands about plus and minus signs::
 Old string formatting
 ---------------------
 
-The ``%`` operator can also be used for string formatting. It interprets the
-left argument much like a :c:func:`sprintf`\ -style format string to be applied
-to the right argument, and returns the string resulting from this formatting
-operation. For example::
+The % operator (modulo) can also be used for string formatting. Given ``'string'
+% values``, instances of ``%`` in ``string`` are replaced with zero or more
+elements of ``values``. This operation is commonly known as string
+interpolation. For example::
 
    >>> import math
    >>> print('The value of pi is approximately %5.3f.' % math.pi)

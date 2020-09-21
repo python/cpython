@@ -120,7 +120,7 @@ PyAPI_FUNC(PyStatus) _PyRuntimeState_Init(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyRuntimeState_Fini(_PyRuntimeState *runtime);
 
 #ifdef HAVE_FORK
-PyAPI_FUNC(void) _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime);
+extern PyStatus _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime);
 #endif
 
 /* Initialize _PyRuntimeState.

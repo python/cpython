@@ -1,8 +1,6 @@
 #include "Python.h"
 #include "Python-ast.h"
-#include "node.h"
 #include "token.h"
-#include "graminit.h"
 #include "code.h"
 #include "symtable.h"
 #include "ast.h"
@@ -15,11 +13,10 @@ static int
 future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
 {
     int i;
-    asdl_seq *names;
 
     assert(s->kind == ImportFrom_kind);
 
-    names = s->v.ImportFrom.names;
+    asdl_alias_seq *names = s->v.ImportFrom.names;
     for (i = 0; i < asdl_seq_LEN(names); i++) {
         alias_ty name = (alias_ty)asdl_seq_GET(names, i);
         const char *feature = PyUnicode_AsUTF8(name->name);

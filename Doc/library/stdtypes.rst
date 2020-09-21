@@ -434,12 +434,10 @@ Notes:
    Negative shift counts are illegal and cause a :exc:`ValueError` to be raised.
 
 (2)
-   A left shift by *n* bits is equivalent to multiplication by ``pow(2, n)``
-   without overflow check.
+   A left shift by *n* bits is equivalent to multiplication by ``pow(2, n)``.
 
 (3)
-   A right shift by *n* bits is equivalent to division by ``pow(2, n)`` without
-   overflow check.
+   A right shift by *n* bits is equivalent to floor division by ``pow(2, n)``.
 
 (4)
    Performing these calculations with at least one extra sign extension bit in
@@ -479,6 +477,27 @@ class`. In addition, it provides a few more methods:
             return len(s)       # len('100101') --> 6
 
     .. versionadded:: 3.1
+
+.. method:: int.bit_count()
+
+    Return the number of ones in the binary representation of the absolute
+    value of the integer. This is also known as the population count.
+    Example::
+
+        >>> n = 19
+        >>> bin(n)
+        '0b10011'
+        >>> n.bit_count()
+        3
+        >>> (-n).bit_count()
+        3
+
+    Equivalent to::
+
+        def bit_count(self):
+            return bin(self).count("1")
+
+    .. versionadded:: 3.10
 
 .. method:: int.to_bytes(length, byteorder, \*, signed=False)
 
@@ -1385,7 +1404,7 @@ objects that compare equal might have different :attr:`~range.start`,
 
 .. seealso::
 
-   * The `linspace recipe <http://code.activestate.com/recipes/579000/>`_
+   * The `linspace recipe <https://github.com/ActiveState/code/tree/master/recipes/Python/579000_Equallyspaced_numbers_linspace/recipe-579000.py>`_
      shows how to implement a lazy version of range suitable for floating
      point applications.
 
@@ -1547,33 +1566,6 @@ expression support in the :mod:`re` module).
    Return the number of non-overlapping occurrences of substring *sub* in the
    range [*start*, *end*].  Optional arguments *start* and *end* are
    interpreted as in slice notation.
-
-
-.. method:: str.removeprefix(prefix, /)
-
-   If the string starts with the *prefix* string, return
-   ``string[len(prefix):]``. Otherwise, return a copy of the original
-   string::
-
-      >>> 'TestHook'.removeprefix('Test')
-      'Hook'
-      >>> 'BaseTestCase'.removeprefix('Test')
-      'BaseTestCase'
-
-   .. versionadded:: 3.9
-
-.. method:: str.removesuffix(suffix, /)
-
-   If the string ends with the *suffix* string and that *suffix* is not empty,
-   return ``string[:-len(suffix)]``. Otherwise, return a copy of the
-   original string::
-
-      >>> 'MiscTests'.removesuffix('Tests')
-      'Misc'
-      >>> 'TmpDirMixin'.removesuffix('Tests')
-      'TmpDirMixin'
-
-   .. versionadded:: 3.9
 
 
 .. method:: str.encode(encoding="utf-8", errors="strict")
@@ -1888,6 +1880,34 @@ expression support in the :mod:`re` module).
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
    the string itself, followed by two empty strings.
+
+
+.. method:: str.removeprefix(prefix, /)
+
+   If the string starts with the *prefix* string, return
+   ``string[len(prefix):]``. Otherwise, return a copy of the original
+   string::
+
+      >>> 'TestHook'.removeprefix('Test')
+      'Hook'
+      >>> 'BaseTestCase'.removeprefix('Test')
+      'BaseTestCase'
+
+   .. versionadded:: 3.9
+
+
+.. method:: str.removesuffix(suffix, /)
+
+   If the string ends with the *suffix* string and that *suffix* is not empty,
+   return ``string[:-len(suffix)]``. Otherwise, return a copy of the
+   original string::
+
+      >>> 'MiscTests'.removesuffix('Tests')
+      'Misc'
+      >>> 'TmpDirMixin'.removesuffix('Tests')
+      'TmpDirMixin'
+
+   .. versionadded:: 3.9
 
 
 .. method:: str.replace(old, new[, count])
@@ -4186,7 +4206,7 @@ The constructors for both classes work the same:
 
 
    Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
-   :meth:`difference`, and :meth:`symmetric_difference`, :meth:`issubset`, and
+   :meth:`difference`, :meth:`symmetric_difference`, :meth:`issubset`, and
    :meth:`issuperset` methods will accept any iterable as an argument.  In
    contrast, their operator based counterparts require their arguments to be
    sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
@@ -4603,6 +4623,12 @@ support membership tests:
    .. versionchanged:: 3.8
       Dictionary views are now reversible.
 
+.. describe:: dictview.mapping
+
+   Return a :class:`types.MappingProxyType` that wraps the original
+   dictionary to which the view refers.
+
+   .. versionadded:: 3.10
 
 Keys views are set-like since their entries are unique and hashable.  If all
 values are hashable, so that ``(key, value)`` pairs are unique and hashable,
@@ -4641,6 +4667,12 @@ An example of dictionary view usage::
    {'bacon'}
    >>> keys ^ {'sausage', 'juice'}
    {'juice', 'sausage', 'bacon', 'spam'}
+
+   >>> # get back a read-only proxy for the original dictionary
+   >>> values.mapping
+   mappingproxy({'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500})
+   >>> values.mapping['spam']
+   500
 
 
 .. _typecontextmanager:

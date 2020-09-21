@@ -1,0 +1,1 @@
+Fix :meth:`IMAP4.noop()` when debug mode is enabled (ex: ``imaplib.Debug = 3``).
