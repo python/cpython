@@ -216,6 +216,18 @@ class TestEnum(unittest.TestCase):
                 set(['__class__', '__doc__', '__module__', 'name', 'value', 'invisible']),
                 )
 
+    def test_dir_on_sub_with_behavior_including_instance_dict_on_super(self):
+        # see issue40084
+        class SuperEnum(IntEnum):
+            def __new__(cls, value, description=""):
+                obj = int.__new__(cls, value)
+                obj._value_ = value
+                obj.description = description
+                return obj
+        class SubEnum(SuperEnum):
+            sample = 5
+        self.assertTrue({'description'} <= set(dir(SubEnum.sample)))
+
     def test_enum_in_enum_out(self):
         Season = self.Season
         self.assertIs(Season(Season.WINTER), Season.WINTER)
