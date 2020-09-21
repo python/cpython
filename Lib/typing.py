@@ -121,7 +121,7 @@ __all__ = [
 def _type_check(arg, msg, is_argument=True):
     """Check that the argument is a type, and return it (internal helper).
 
-    As a special case, accept None and return types.NoneType instead. Also wrap strings
+    As a special case, accept None and return type(None) instead. Also wrap strings
     into ForwardRef instances. Consider several corner cases, for example plain
     special forms like Union are not valid, while Union[int, str] is OK, etc.
     The msg argument is a human-readable error message, e.g::
@@ -135,7 +135,7 @@ def _type_check(arg, msg, is_argument=True):
         invalid_generic_forms = invalid_generic_forms + (ClassVar, Final)
 
     if arg is None:
-        return types.NoneType
+        return type(None)
     if isinstance(arg, str):
         return ForwardRef(arg)
     if (isinstance(arg, _GenericAlias) and
@@ -392,7 +392,7 @@ def Union(self, parameters):
     To define a union, use e.g. Union[int, str].  Details:
     - The arguments must be types and there must be at least one.
     - None as an argument is a special case and is replaced by
-      types.NoneType.
+      type(None).
     - Unions of unions are flattened, e.g.::
 
         Union[Union[int, str], float] == Union[int, str, float]
@@ -430,7 +430,7 @@ def Optional(self, parameters):
     Optional[X] is equivalent to Union[X, None].
     """
     arg = _type_check(parameters, f"{self} requires a single type.")
-    return Union[arg, types.NoneType]
+    return Union[arg, type(None)]
 
 @_SpecialForm
 def Literal(self, parameters):
@@ -889,9 +889,9 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):
         args = self.__args__
         if len(args) == 2:
-            if args[0] is types.NoneType:
+            if args[0] is type(None):
                 return f'typing.Optional[{_type_repr(args[1])}]'
-            elif args[1] is types.NoneType:
+            elif args[1] is type(None):
                 return f'typing.Optional[{_type_repr(args[0])}]'
         return super().__repr__()
 
@@ -1374,7 +1374,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             ann = base.__dict__.get('__annotations__', {})
             for name, value in ann.items():
                 if value is None:
-                    value = types.NoneType
+                    value = type(None)
                 if isinstance(value, str):
                     value = ForwardRef(value, is_argument=False)
                 value = _eval_type(value, base_globals, localns)
@@ -1406,7 +1406,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     hints = dict(hints)
     for name, value in hints.items():
         if value is None:
-            value = types.NoneType
+            value = type(None)
         if isinstance(value, str):
             value = ForwardRef(value)
         value = _eval_type(value, globalns, localns)

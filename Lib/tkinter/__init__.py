@@ -102,7 +102,7 @@ def _cnfmerge(cnfs):
     """Internal function."""
     if isinstance(cnfs, dict):
         return cnfs
-    elif isinstance(cnfs, (types.NoneType, str)):
+    elif isinstance(cnfs, (type(None), str)):
         return cnfs
     else:
         cnf = {}

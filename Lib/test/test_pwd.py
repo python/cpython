@@ -1,6 +1,5 @@
 import sys
 import unittest
-import types
 from test.support import import_helper
 
 pwd = import_helper.import_module('pwd')
@@ -22,7 +21,7 @@ class PwdTest(unittest.TestCase):
             self.assertEqual(e[3], e.pw_gid)
             self.assertIsInstance(e.pw_gid, int)
             self.assertEqual(e[4], e.pw_gecos)
-            self.assertIn(type(e.pw_gecos), (str, types.NoneType))
+            self.assertIn(type(e.pw_gecos), (str, type(None)))
             self.assertEqual(e[5], e.pw_dir)
             self.assertIsInstance(e.pw_dir, str)
             self.assertEqual(e[6], e.pw_shell)

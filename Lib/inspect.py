@@ -2034,7 +2034,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             except NameError:
                 raise RuntimeError()
 
-        if isinstance(value, (str, int, float, bytes, bool, types.NoneType)):
+        if isinstance(value, (str, int, float, bytes, bool, type(None))):
             return ast.Constant(value)
         raise RuntimeError()
 

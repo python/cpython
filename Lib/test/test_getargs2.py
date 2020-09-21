@@ -2,7 +2,6 @@ import unittest
 import math
 import string
 import sys
-import types
 from test import support
 from test.support import import_helper
 # Skip this test if the _testcapi module isn't available.
@@ -568,11 +567,11 @@ class Tuple_TestCase(unittest.TestCase):
 
         ret = get_args()
         self.assertIn(ret, ((), None))
-        self.assertIn(type(ret), (tuple, types.NoneType))
+        self.assertIn(type(ret), (tuple, type(None)))
 
         ret = get_args(*())
         self.assertIn(ret, ((), None))
-        self.assertIn(type(ret), (tuple, types.NoneType))
+        self.assertIn(type(ret), (tuple, type(None)))
 
     def test_tuple(self):
         from _testcapi import getargs_tuple
@@ -606,11 +605,11 @@ class Keywords_TestCase(unittest.TestCase):
 
         ret = get_kwargs()
         self.assertIn(ret, ({}, None))
-        self.assertIn(type(ret), (dict, types.NoneType))
+        self.assertIn(type(ret), (dict, type(None)))
 
         ret = get_kwargs(**{})
         self.assertIn(ret, ({}, None))
-        self.assertIn(type(ret), (dict, types.NoneType))
+        self.assertIn(type(ret), (dict, type(None)))
 
     def test_positional_args(self):
         # using all positional args

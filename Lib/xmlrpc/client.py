@@ -138,7 +138,6 @@ import urllib.parse
 from xml.parsers import expat
 import errno
 from io import BytesIO
-import types
 try:
     import gzip
 except ImportError:
@@ -534,7 +533,7 @@ class Marshaller:
         if not self.allow_none:
             raise TypeError("cannot marshal None unless allow_none is enabled")
         write("<value><nil/></value>")
-    dispatch[types.NoneType] = dump_nil
+    dispatch[type(None)] = dump_nil
 
     def dump_bool(self, value, write):
         write("<value><boolean>")

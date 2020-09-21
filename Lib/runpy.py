@@ -261,7 +261,7 @@ def run_path(path_name, init_globals=None, run_name=None):
     if type(importer).__module__ == 'imp':
         if type(importer).__name__ == 'NullImporter':
             is_NullImporter = True
-    if isinstance(importer, types.NoneType) or is_NullImporter:
+    if isinstance(importer, type(None)) or is_NullImporter:
         # Not a valid sys.path entry, so run the code directly
         # execfile() doesn't help as we want to allow compiled files
         code, fname = _get_code_from_file(run_name, path_name)

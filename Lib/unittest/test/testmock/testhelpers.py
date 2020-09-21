@@ -863,7 +863,7 @@ class SpecSignatureTest(unittest.TestCase):
 
         mock = create_autospec(Foo)
         none = mock.bar
-        self.assertNotIsInstance(none, types.NoneType)
+        self.assertNotIsInstance(none, type(None))
 
         none.foo()
         none.foo.assert_called_once_with()

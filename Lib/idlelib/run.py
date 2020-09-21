@@ -15,7 +15,6 @@ import traceback
 import _thread as thread
 import threading
 import warnings
-import types
 
 from idlelib import autocomplete  # AutoComplete, fetch_encodings
 from idlelib import calltip  # Calltip
@@ -559,7 +558,7 @@ class Executive(object):
         except SystemExit as e:
             if e.args:  # SystemExit called with an argument.
                 ob = e.args[0]
-                if not isinstance(ob, (types.NoneType, int)):
+                if not isinstance(ob, (type(None), int)):
                     print('SystemExit: ' + str(ob), file=sys.stderr)
             # Return to the interactive prompt.
         except:

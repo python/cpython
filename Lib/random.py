@@ -55,7 +55,6 @@ from itertools import accumulate as _accumulate, repeat as _repeat
 from bisect import bisect as _bisect
 import os as _os
 import _random
-import types
 
 try:
     # hashlib is pretty heavy to load, try lean internal module first
@@ -155,7 +154,7 @@ class Random(_random.Random):
             a += _sha512(a).digest()
             a = int.from_bytes(a, 'big')
 
-        elif not isinstance(a, (types.NoneType, int, float, str, bytes, bytearray)):
+        elif not isinstance(a, (type(None), int, float, str, bytes, bytearray)):
             _warn('Seeding based on hashing is deprecated\n'
                   'since Python 3.9 and will be removed in a subsequent '
                   'version. The only \n'
