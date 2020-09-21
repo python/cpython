@@ -411,7 +411,7 @@ to be explicitly marked to support them, which is unpythonic and unlike
 what one would normally do in idiomatic dynamically typed Python code.
 For example, this conforms to the :pep:`484`::
 
-   from collections.abc import Iterable, Iterator, Sized
+   from collections.abc import Sized, Iterable, Iterator
 
    class Bucket(Sized, Iterable[int]):
        ...
