@@ -708,6 +708,11 @@ Deprecated
   users can leverage the Abstract Syntax Tree (AST) generation and compilation
   stage, using the :mod:`ast` module.
 
+* The Public C API functions :c:func:`PyParser_SimpleParseStringFlags`,
+  :c:func:`PyParser_SimpleParseStringFlagsFilename`,
+  :c:func:`PyParser_SimpleParseFileFlags` and :c:func:`PyNode_Compile`
+  are deprecated and will be removed in Python 3.10 together with the old parser.
+
 * Using :data:`NotImplemented` in a boolean context has been deprecated,
   as it is almost exclusively the result of incorrect rich comparator
   implementations. It will be made a :exc:`TypeError` in a future version
@@ -882,10 +887,16 @@ Removed
   deprecated since 2006, and only returning ``False`` when it's called.
   (Contributed by Batuhan Taskaya in :issue:`40208`)
 
-* The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks` have
+* The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks`
   have been removed. They were deprecated since Python 3.7 and you can use
   :func:`asyncio.current_task` and :func:`asyncio.all_tasks` instead.
   (Contributed by Rémi Lapeyre in :issue:`40967`)
+
+* The ``unescape()`` method in the :class:`html.parser.HTMLParser` class
+  has been removed (it was deprecated since Python 3.4).  :func:`html.unescape`
+  should be used for converting character references to the corresponding
+  unicode characters.
+
 
 Porting to Python 3.9
 =====================
@@ -1023,6 +1034,13 @@ C API Changes
 
 New Features
 ------------
+
+* :pep:`573`: Add :c:func:`PyType_FromModuleAndSpec` to associate
+  a module with a class; :c:func:`PyType_GetModule` and
+  :c:func:`PyType_GetModuleState` to retrieve the module and its state; and
+  :c:data:`PyCMethod` and :c:data:`METH_METHOD` to allow a method to
+  access the class it was defined in.
+  (Contributed by Marcel Plch and Petr Viktorin in :issue:`38787`.)
 
 * Add :c:func:`PyFrame_GetCode` function: get a frame code.
   Add :c:func:`PyFrame_GetBack` function: get the frame next outer frame.

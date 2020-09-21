@@ -8,9 +8,10 @@ import unittest
 import socket
 import shutil
 import threading
-from test.support import TESTFN, requires, unlink, bigmemtest
+from test.support import requires, bigmemtest
 from test.support import SHORT_TIMEOUT
 from test.support import socket_helper
+from test.support.os_helper import TESTFN, unlink
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
 

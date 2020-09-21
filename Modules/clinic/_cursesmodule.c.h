@@ -1967,32 +1967,16 @@ PyDoc_STRVAR(_curses_color_content__doc__,
     {"color_content", (PyCFunction)_curses_color_content, METH_O, _curses_color_content__doc__},
 
 static PyObject *
-_curses_color_content_impl(PyObject *module, short color_number);
+_curses_color_content_impl(PyObject *module, int color_number);
 
 static PyObject *
 _curses_color_content(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    short color_number;
+    int color_number;
 
-    {
-        long ival = PyLong_AsLong(arg);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            goto exit;
-        }
-        else if (ival > SHRT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
-            goto exit;
-        }
-        else {
-            color_number = (short) ival;
-        }
+    if (!color_converter(arg, &color_number)) {
+        goto exit;
     }
     return_value = _curses_color_content_impl(module, color_number);
 
@@ -2016,32 +2000,16 @@ PyDoc_STRVAR(_curses_color_pair__doc__,
     {"color_pair", (PyCFunction)_curses_color_pair, METH_O, _curses_color_pair__doc__},
 
 static PyObject *
-_curses_color_pair_impl(PyObject *module, short color_number);
+_curses_color_pair_impl(PyObject *module, int color_number);
 
 static PyObject *
 _curses_color_pair(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    short color_number;
+    int color_number;
 
-    {
-        long ival = PyLong_AsLong(arg);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            goto exit;
-        }
-        else if (ival > SHRT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
-            goto exit;
-        }
-        else {
-            color_number = (short) ival;
-        }
+    if (!color_converter(arg, &color_number)) {
+        goto exit;
     }
     return_value = _curses_color_pair_impl(module, color_number);
 
@@ -2590,14 +2558,14 @@ PyDoc_STRVAR(_curses_init_color__doc__,
     {"init_color", (PyCFunction)(void(*)(void))_curses_init_color, METH_FASTCALL, _curses_init_color__doc__},
 
 static PyObject *
-_curses_init_color_impl(PyObject *module, short color_number, short r,
-                        short g, short b);
+_curses_init_color_impl(PyObject *module, int color_number, short r, short g,
+                        short b);
 
 static PyObject *
 _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    short color_number;
+    int color_number;
     short r;
     short g;
     short b;
@@ -2605,81 +2573,17 @@ _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("init_color", nargs, 4, 4)) {
         goto exit;
     }
-    {
-        long ival = PyLong_AsLong(args[0]);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            goto exit;
-        }
-        else if (ival > SHRT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
-            goto exit;
-        }
-        else {
-            color_number = (short) ival;
-        }
+    if (!color_converter(args[0], &color_number)) {
+        goto exit;
     }
-    {
-        long ival = PyLong_AsLong(args[1]);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            goto exit;
-        }
-        else if (ival > SHRT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
-            goto exit;
-        }
-        else {
-            r = (short) ival;
-        }
+    if (!component_converter(args[1], &r)) {
+        goto exit;
     }
-    {
-        long ival = PyLong_AsLong(args[2]);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            goto exit;
-        }
-        else if (ival > SHRT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
-            goto exit;
-        }
-        else {
-            g = (short) ival;
-        }
+    if (!component_converter(args[2], &g)) {
+        goto exit;
     }
-    {
-        long ival = PyLong_AsLong(args[3]);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            goto exit;
-        }
-        else if (ival > SHRT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
-            goto exit;
-        }
-        else {
-            b = (short) ival;
-        }
+    if (!component_converter(args[3], &b)) {
+        goto exit;
     }
     return_value = _curses_init_color_impl(module, color_number, r, g, b);
 
@@ -2707,76 +2611,27 @@ PyDoc_STRVAR(_curses_init_pair__doc__,
     {"init_pair", (PyCFunction)(void(*)(void))_curses_init_pair, METH_FASTCALL, _curses_init_pair__doc__},
 
 static PyObject *
-_curses_init_pair_impl(PyObject *module, short pair_number, short fg,
-                       short bg);
+_curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg);
 
 static PyObject *
 _curses_init_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    short pair_number;
-    short fg;
-    short bg;
+    int pair_number;
+    int fg;
+    int bg;
 
     if (!_PyArg_CheckPositional("init_pair", nargs, 3, 3)) {
         goto exit;
     }
-    {
-        long ival = PyLong_AsLong(args[0]);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            goto exit;
-        }
-        else if (ival > SHRT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
-            goto exit;
-        }
-        else {
-            pair_number = (short) ival;
-        }
+    if (!pair_converter(args[0], &pair_number)) {
+        goto exit;
     }
-    {
-        long ival = PyLong_AsLong(args[1]);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            goto exit;
-        }
-        else if (ival > SHRT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
-            goto exit;
-        }
-        else {
-            fg = (short) ival;
-        }
+    if (!color_converter(args[1], &fg)) {
+        goto exit;
     }
-    {
-        long ival = PyLong_AsLong(args[2]);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            goto exit;
-        }
-        else if (ival > SHRT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
-            goto exit;
-        }
-        else {
-            bg = (short) ival;
-        }
+    if (!color_converter(args[2], &bg)) {
+        goto exit;
     }
     return_value = _curses_init_pair_impl(module, pair_number, fg, bg);
 
@@ -3554,32 +3409,16 @@ PyDoc_STRVAR(_curses_pair_content__doc__,
     {"pair_content", (PyCFunction)_curses_pair_content, METH_O, _curses_pair_content__doc__},
 
 static PyObject *
-_curses_pair_content_impl(PyObject *module, short pair_number);
+_curses_pair_content_impl(PyObject *module, int pair_number);
 
 static PyObject *
 _curses_pair_content(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    short pair_number;
+    int pair_number;
 
-    {
-        long ival = PyLong_AsLong(arg);
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        else if (ival < SHRT_MIN) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is less than minimum");
-            goto exit;
-        }
-        else if (ival > SHRT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "signed short integer is greater than maximum");
-            goto exit;
-        }
-        else {
-            pair_number = (short) ival;
-        }
+    if (!pair_converter(arg, &pair_number)) {
+        goto exit;
     }
     return_value = _curses_pair_content_impl(module, pair_number);
 
@@ -4337,6 +4176,27 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* !defined(STRICT_SYSV_CURSES) */
 
+PyDoc_STRVAR(_curses_has_extended_color_support__doc__,
+"has_extended_color_support($module, /)\n"
+"--\n"
+"\n"
+"Return True if the module supports extended colors; otherwise, return False.\n"
+"\n"
+"Extended color support allows more than 256 color-pairs for terminals\n"
+"that support more than 16 colors (e.g. xterm-256color).");
+
+#define _CURSES_HAS_EXTENDED_COLOR_SUPPORT_METHODDEF    \
+    {"has_extended_color_support", (PyCFunction)_curses_has_extended_color_support, METH_NOARGS, _curses_has_extended_color_support__doc__},
+
+static PyObject *
+_curses_has_extended_color_support_impl(PyObject *module);
+
+static PyObject *
+_curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_has_extended_color_support_impl(module);
+}
+
 #ifndef _CURSES_WINDOW_ENCLOSE_METHODDEF
     #define _CURSES_WINDOW_ENCLOSE_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_ENCLOSE_METHODDEF) */
@@ -4428,4 +4288,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=478d93f7692385eb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=38b2531d17f119e1 input=a9049054013a1b77]*/

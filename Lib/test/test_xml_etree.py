@@ -111,7 +111,7 @@ EXTERNAL_ENTITY_XML = """\
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
         def newtest(*args, **kwargs):
-            with support.check_warnings(*filters, quiet=quiet):
+            with warnings_helper.check_warnings(*filters, quiet=quiet):
                 test(*args, **kwargs)
         functools.update_wrapper(newtest, test)
         return newtest
@@ -128,7 +128,7 @@ class ModuleTest(unittest.TestCase):
 
     def test_all(self):
         names = ("xml.etree.ElementTree", "_elementtree")
-        support.check__all__(self, ET, names, blacklist=("HTML_EMPTY",))
+        support.check__all__(self, ET, names, not_exported=("HTML_EMPTY",))
 
 
 def serialize(elem, to_string=True, encoding='unicode', **options):

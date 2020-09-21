@@ -1,0 +1,2 @@
+No longer override exceptions raised in ``__len__()`` of a sequence of
+parameters in :mod:`sqlite3` with :exc:`~sqlite3.ProgrammingError`.
