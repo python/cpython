@@ -619,8 +619,8 @@ an incorrect member::
     ...     NORTH = 'north',    # notice the trailing comma
     ...     SOUTH = 'south'
 
-Before :class:`StrEnum`, `Directions.NORTH` would have been a :class:`tuple`:
-`assert Directions.NORTH == "('north',))"`
+Before :class:`StrEnum`, `Directions.NORTH` would have been a :class:`tuple`,
+`('north',)`.
 
 .. versionadded:: 3.10
 
