@@ -444,7 +444,6 @@ class EditorWindow(object):
         ("help", "_Help"),
     ]
 
-
     def createmenubar(self):
         """Populate the menu bar widget for the editor window.
 
@@ -944,12 +943,12 @@ class EditorWindow(object):
         if help_list:
             helpmenu.add_separator()
             for entry in help_list:
-                cmd = self.__extra_help_callback(entry[1])
+                cmd = self._extra_help_callback(entry[1])
                 helpmenu.add_command(label=entry[0], command=cmd)
         # And update the menu dictionary.
         self.menudict['help'] = helpmenu
 
-    def __extra_help_callback(self, helpfile):
+    def _extra_help_callback(self, helpfile):
         """Create a callback with the helpfile value frozen at definition time.
 
         Args:
