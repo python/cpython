@@ -50,7 +50,14 @@ typedef struct {
 #define POF_BUILTINS    0x004
 #define POF_NOMEMORY    0x100
 
+/*[clinic input]
+module _lsprof
+class _lsprof.Profiler "ProfilerObject *" "&ProfilerType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e349ac952152f336]*/
 static PyTypeObject PyProfiler_Type;
+
+#include "clinic/_lsprof.c.h"
 
 #define PyProfiler_Check(op) PyObject_TypeCheck(op, &PyProfiler_Type)
 #define PyProfiler_CheckExact(op) Py_IS_TYPE(op, &PyProfiler_Type)
@@ -556,49 +563,54 @@ static int statsForEntry(rotating_node_t *node, void *arg)
     return err;
 }
 
-PyDoc_STRVAR(getstats_doc, "\
-getstats() -> list of profiler_entry objects\n\
-\n\
-Return all information collected by the profiler.\n\
-Each profiler_entry is a tuple-like object with the\n\
-following attributes:\n\
-\n\
-    code          code object\n\
-    callcount     how many times this was called\n\
-    reccallcount  how many times called recursively\n\
-    totaltime     total time in this entry\n\
-    inlinetime    inline time in this entry (not in subcalls)\n\
-    calls         details of the calls\n\
-\n\
-The calls attribute is either None or a list of\n\
-profiler_subentry objects:\n\
-\n\
-    code          called code object\n\
-    callcount     how many times this is called\n\
-    reccallcount  how many times this is called recursively\n\
-    totaltime     total time spent in this call\n\
-    inlinetime    inline time (not in further subcalls)\n\
-");
+/*[clinic input]
+_lsprof.Profiler.getstats
 
-static PyObject*
-profiler_getstats(ProfilerObject *pObj, PyObject* noarg)
+list of profiler_entry objects.
+
+getstats() -> list of profiler_entry objects
+
+Return all information collected by the profiler.
+Each profiler_entry is a tuple-like object with the
+following attributes:
+
+    code          code object
+    callcount     how many times this was called
+    reccallcount  how many times called recursively
+    totaltime     total time in this entry
+    inlinetime    inline time in this entry (not in subcalls)
+    calls         details of the calls
+
+The calls attribute is either None or a list of
+profiler_subentry objects:
+
+    code          called code object
+    callcount     how many times this is called
+    reccallcount  how many times this is called recursively
+    totaltime     total time spent in this call
+    inlinetime    inline time (not in further subcalls)
+[clinic start generated code]*/
+
+static PyObject *
+_lsprof_Profiler_getstats_impl(ProfilerObject *self)
+/*[clinic end generated code: output=9461b451e9ef0f24 input=ade04fa384ce450a]*/
 {
     statscollector_t collect;
-    if (pending_exception(pObj)) {
+    if (pending_exception(self)) {
         return NULL;
     }
-    if (!pObj->externalTimer || pObj->externalTimerUnit == 0.0) {
+    if (!self->externalTimer || self->externalTimerUnit == 0.0) {
         _PyTime_t onesec = _PyTime_FromSeconds(1);
         collect.factor = (double)1 / onesec;
     }
     else {
-        collect.factor = pObj->externalTimerUnit;
+        collect.factor = self->externalTimerUnit;
     }
 
     collect.list = PyList_New(0);
     if (collect.list == NULL)
         return NULL;
-    if (RotatingTree_Enum(pObj->profilerEntries, statsForEntry, &collect)
+    if (RotatingTree_Enum(self->profilerEntries, statsForEntry, &collect)
         != 0) {
         Py_DECREF(collect.list);
         return NULL;
@@ -750,8 +762,7 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
 }
 
 static PyMethodDef profiler_methods[] = {
-    {"getstats",    (PyCFunction)profiler_getstats,
-                    METH_NOARGS,                        getstats_doc},
+    _LSPROF_PROFILER_GETSTATS_METHODDEF
     {"enable",          (PyCFunction)(void(*)(void))profiler_enable,
                     METH_VARARGS | METH_KEYWORDS,       enable_doc},
     {"disable",         (PyCFunction)profiler_disable,
