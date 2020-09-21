@@ -7,7 +7,7 @@ import sys
 from test.support import requires
 import unittest
 from unittest import mock
-from tkinter import Tk
+import tkinter as tk
 from idlelib.multicall import MultiCallCreator
 from idlelib.idle_test.mock_idle import Func
 
@@ -47,7 +47,7 @@ class EditorWindowTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         requires('gui')
-        cls.root = Tk()
+        cls.root = tk.Tk()
         cls.root.withdraw()
 
     @classmethod
