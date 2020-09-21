@@ -1153,8 +1153,12 @@ Fail:
     return -1;
 }
 
-// Same to insertdict but specialized for inserting without resizing, 
-// because done before
+// Same to insertdict but specialized for inserting without resizing and for 
+// dict that are populated in a loop and was empty before (see the empty arg).
+// Note that resizing must be done before calling this function. If not 
+// possible, use insertdict(). Furthermore, ma_version_tag is left unchanged, 
+// you have to change it after calling this function (probably at the end of 
+// a loop)
 static int
 insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value, int empty)
 {
@@ -3576,6 +3580,8 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
                 return NULL;
             }
         }
+        
+        mp->ma_version_tag = DICT_NEXT_VERSION();
     }
     
     return self;
