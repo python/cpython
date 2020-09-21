@@ -859,9 +859,9 @@ class MathTests(unittest.TestCase):
             ('0x1.282bdb82f17f3p+30', '0x1.640ba4c4eed3ap+30'),
             ('0x1.89d8c423ea0c6p+29', '0x1.d35dcfe902bc3p+29'),
         ]:
-            with self.subTest(hx=hx, hy=hy):
-                x = float.fromhex(hx)
-                y = float.fromhex(hy)
+            x = float.fromhex(hx)
+            y = float.fromhex(hy)
+            with self.subTest(hx=hx, hy=hy, x=x, y=y):
                 with decimal.localcontext(high_precision):
                     z = float((Decimal(x)**2 + Decimal(y)**2).sqrt())
                 self.assertEqual(hypot(x, y), z)
