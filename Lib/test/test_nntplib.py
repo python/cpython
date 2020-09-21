@@ -9,6 +9,7 @@ import nntplib
 import os.path
 import re
 import threading
+import types
 
 from test import support
 from test.support import socket_helper
@@ -126,7 +127,7 @@ class NetworkedNNTPTestsMixin:
              "references", ":bytes", ":lines"}
             )
         for v in art_dict.values():
-            self.assertIsInstance(v, (str, type(None)))
+            self.assertIsInstance(v, (str, types.NoneType))
 
     def test_xover(self):
         resp, count, first, last, name = self.server.group(self.GROUP_NAME)

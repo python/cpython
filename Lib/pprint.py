@@ -591,7 +591,7 @@ def _safe_repr(object, context, maxlevels, level, sort_dicts):
     return rep, (rep and not rep.startswith('<')), False
 
 _builtin_scalars = frozenset({str, bytes, bytearray, int, float, complex,
-                              bool, type(None)})
+                              bool, _types.NoneType})
 
 def _recursion(object):
     return ("<Recursion on %s with id=%s>"

@@ -21,6 +21,7 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import types
 import unittest
 import unittest.mock
 import sqlite3 as sqlite
@@ -49,7 +50,7 @@ def func_isint(v):
 def func_isfloat(v):
     return type(v) is float
 def func_isnone(v):
-    return type(v) is type(None)
+    return type(v) is types.NoneType
 def func_isblob(v):
     return isinstance(v, (bytes, memoryview))
 def func_islonglong(v):
@@ -107,7 +108,7 @@ class AggrCheckType:
         self.val = None
 
     def step(self, whichType, val):
-        theType = {"str": str, "int": int, "float": float, "None": type(None),
+        theType = {"str": str, "int": int, "float": float, "None": types.NoneType,
                    "blob": bytes}
         self.val = int(theType[whichType] is type(val))
 
@@ -119,7 +120,7 @@ class AggrCheckTypes:
         self.val = 0
 
     def step(self, whichType, *vals):
-        theType = {"str": str, "int": int, "float": float, "None": type(None),
+        theType = {"str": str, "int": int, "float": float, "None": types.NoneType,
                    "blob": bytes}
         for val in vals:
             self.val += int(theType[whichType] is type(val))
@@ -211,7 +212,7 @@ class FunctionTests(unittest.TestCase):
         cur = self.con.cursor()
         cur.execute("select returnnull()")
         val = cur.fetchone()[0]
-        self.assertEqual(type(val), type(None))
+        self.assertEqual(type(val), types.NoneType)
         self.assertEqual(val, None)
 
     def CheckFuncReturnBlob(self):

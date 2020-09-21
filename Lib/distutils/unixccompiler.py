@@ -13,7 +13,7 @@ the "typical" Unix-style command-line C compiler:
   * link shared library handled by 'cc -shared'
 """
 
-import os, sys, re
+import os, sys, re, types
 
 from distutils import sysconfig
 from distutils.dep_util import newer
@@ -157,7 +157,7 @@ class UnixCCompiler(CCompiler):
 
         lib_opts = gen_lib_options(self, library_dirs, runtime_library_dirs,
                                    libraries)
-        if not isinstance(output_dir, (str, type(None))):
+        if not isinstance(output_dir, (str, types.NoneType)):
             raise TypeError("'output_dir' must be a string or None")
         if output_dir is not None:
             output_filename = os.path.join(output_dir, output_filename)

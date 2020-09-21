@@ -8,6 +8,7 @@ import pickle
 import inspect
 import builtins
 import unittest
+import types
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
 from typing import get_type_hints
@@ -2026,7 +2027,7 @@ class TestDocString(unittest.TestCase):
     def test_docstring_one_field_with_default_none(self):
         @dataclass
         class C:
-            x: Union[int, type(None)] = None
+            x: Union[int, types.NoneType] = None
 
         self.assertDocStrEqual(C.__doc__, "C(x:Optional[int]=None)")
 
@@ -2955,7 +2956,7 @@ class TestStringAnnotations(unittest.TestCase):
         self.assertEqual(
             get_type_hints(dataclass_textanno.Bar.__init__),
             {'foo': dataclass_textanno.Foo,
-             'return': type(None)})
+             'return': types.NoneType})
 
 
 class TestMakeDataclass(unittest.TestCase):

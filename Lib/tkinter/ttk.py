@@ -25,6 +25,7 @@ __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            # functions
            "tclobjs_to_py", "setup_master"]
 
+import types
 import tkinter
 from tkinter import _flatten, _join, _stringify, _splitdict
 
@@ -1085,7 +1086,7 @@ class Scale(Widget, tkinter.Scale):
         Setting a value for any of the "from", "from_" or "to" options
         generates a <<RangeChanged>> event."""
         retval = Widget.configure(self, cnf, **kw)
-        if not isinstance(cnf, (type(None), str)):
+        if not isinstance(cnf, (types.NoneType, str)):
             kw.update(cnf)
         if any(['from' in kw, 'from_' in kw, 'to' in kw]):
             self.event_generate('<<RangeChanged>>')

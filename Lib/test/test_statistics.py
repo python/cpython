@@ -14,6 +14,7 @@ import pickle
 import random
 import sys
 import unittest
+import types
 from test import support
 from test.support import import_helper
 
@@ -937,7 +938,7 @@ class CoerceTest(unittest.TestCase):
         self.check_type_coercions(float)
 
     def test_non_numeric_types(self):
-        for bad_type in (str, list, type(None), tuple, dict):
+        for bad_type in (str, list, types.NoneType, tuple, dict):
             for good_type in (int, float, Fraction, Decimal):
                 self.assertCoerceRaises(good_type, bad_type)
 

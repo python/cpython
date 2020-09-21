@@ -25,6 +25,7 @@ import weakref
 import platform
 import sysconfig
 import functools
+import types
 try:
     import ctypes
 except ImportError:
@@ -971,7 +972,7 @@ class BasicSocketTests(unittest.TestCase):
                 self.assertIsInstance(obj.nid, int)
                 self.assertIsInstance(obj.shortname, str)
                 self.assertIsInstance(obj.longname, str)
-                self.assertIsInstance(obj.oid, (str, type(None)))
+                self.assertIsInstance(obj.oid, (str, types.NoneType))
 
         val = ssl._ASN1Object.fromname('TLS Web Server Authentication')
         self.assertEqual(val, expected)

@@ -15,6 +15,7 @@ import io
 import pickle
 import re
 import sys
+import types
 
 __all__ = ['dis', 'genops', 'optimize']
 
@@ -1017,7 +1018,7 @@ pyunicode = StackObject(
 
 pynone = StackObject(
     name="None",
-    obtype=type(None),
+    obtype=types.NoneType,
     doc="The Python None object.")
 
 pytuple = StackObject(

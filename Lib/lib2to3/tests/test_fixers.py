@@ -3276,10 +3276,6 @@ class Test_types(FixerTestCase):
         a = """int"""
         self.check(b, a)
 
-        b = """types.NoneType"""
-        a = """type(None)"""
-        self.check(b, a)
-
         b = "types.StringTypes"
         a = "(str,)"
         self.check(b, a)

@@ -572,7 +572,7 @@ _const_types = {
     Num: (int, float, complex),
     Str: (str,),
     Bytes: (bytes,),
-    NameConstant: (type(None), bool),
+    NameConstant: (types.NoneType, bool),
     Ellipsis: (types.EllipsisType,),
 }
 _const_types_not = {
@@ -581,7 +581,7 @@ _const_types_not = {
 
 _const_node_type_names = {
     bool: 'NameConstant',  # should be before int
-    type(None): 'NameConstant',
+    types.NoneType: 'NameConstant',
     int: 'Num',
     float: 'Num',
     complex: 'Num',

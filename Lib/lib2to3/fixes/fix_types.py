@@ -36,8 +36,6 @@ _TYPE_MAPPING = {
         'ListType': 'list',
         'LongType': 'int',
         'ObjectType' : 'object',
-        'NoneType': 'type(None)',
-        'NotImplementedType' : 'type(NotImplemented)',
         'SliceType' : 'slice',
         'StringType': 'bytes', # XXX ?
         'StringTypes' : '(str,)', # XXX ?

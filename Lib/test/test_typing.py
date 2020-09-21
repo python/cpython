@@ -2845,7 +2845,7 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(gth(ann_module.S), {'x': str, 'y': str})
         self.assertEqual(gth(ann_module.foo), {'x': int})
         self.assertEqual(gth(NoneAndForward),
-                         {'parent': NoneAndForward, 'meaning': type(None)})
+                         {'parent': NoneAndForward, 'meaning': types.NoneType})
         self.assertEqual(gth(HasForeignBaseClass),
                          {'some_xrepr': XRepr, 'other_a': mod_generics_cache.A,
                           'some_b': mod_generics_cache.B})
@@ -2885,7 +2885,7 @@ class GetTypeHintTests(BaseTestCase):
         testf.__annotations__['x'] = 'int'
         self.assertEqual(gth(testf), {'x': int})
         def testg(x: None): ...
-        self.assertEqual(gth(testg), {'x': type(None)})
+        self.assertEqual(gth(testg), {'x': types.NoneType})
 
     def test_get_type_hints_for_object_with_annotations(self):
         class A: ...

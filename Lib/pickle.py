@@ -23,7 +23,7 @@ Misc variables:
 
 """
 
-from types import FunctionType, EllipsisType
+import types
 from copyreg import dispatch_table
 from copyreg import _extension_registry, _inverted_registry, _extension_cache
 from itertools import islice
@@ -737,7 +737,7 @@ class _Pickler:
 
     def save_none(self, obj):
         self.write(NONE)
-    dispatch[type(None)] = save_none
+    dispatch[types.NoneType] = save_none
 
     def save_bool(self, obj):
         if self.proto >= 2:
@@ -1117,15 +1117,15 @@ class _Pickler:
         self.memoize(obj)
 
     def save_type(self, obj):
-        if obj is type(None):
+        if obj is types.NoneType:
             return self.save_reduce(type, (None,), obj=obj)
-        elif obj is type(NotImplemented):
+        elif obj is types.NotImplementedType:
             return self.save_reduce(type, (NotImplemented,), obj=obj)
-        elif obj is EllipsisType:
+        elif obj is types.EllipsisType:
             return self.save_reduce(type, (...,), obj=obj)
         return self.save_global(obj)
 
-    dispatch[FunctionType] = save_global
+    dispatch[types.FunctionType] = save_global
     dispatch[type] = save_type
 
 

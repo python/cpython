@@ -3260,7 +3260,7 @@ order (MRO) for bases """
         cant(2, bool)
         o = object()
         cant(o, type(1))
-        cant(o, type(None))
+        cant(o, types.NoneType)
         del o
         class G(object):
             __slots__ = ["a", "b"]
@@ -4000,35 +4000,35 @@ order (MRO) for bases """
 
     def test_unsubclassable_types(self):
         with self.assertRaises(TypeError):
-            class X(type(None)):
+            class X(types.NoneType):
                 pass
         with self.assertRaises(TypeError):
-            class X(object, type(None)):
+            class X(object, types.NoneType):
                 pass
         with self.assertRaises(TypeError):
-            class X(type(None), object):
+            class X(types.NoneType, object):
                 pass
         class O(object):
             pass
         with self.assertRaises(TypeError):
-            class X(O, type(None)):
+            class X(O, types.NoneType):
                 pass
         with self.assertRaises(TypeError):
-            class X(type(None), O):
+            class X(types.NoneType, O):
                 pass
 
         class X(object):
             pass
         with self.assertRaises(TypeError):
-            X.__bases__ = type(None),
+            X.__bases__ = types.NoneType,
         with self.assertRaises(TypeError):
-            X.__bases__ = object, type(None)
+            X.__bases__ = object, types.NoneType
         with self.assertRaises(TypeError):
-            X.__bases__ = type(None), object
+            X.__bases__ = types.NoneType, object
         with self.assertRaises(TypeError):
-            X.__bases__ = O, type(None)
+            X.__bases__ = O, types.NoneType
         with self.assertRaises(TypeError):
-            X.__bases__ = type(None), O
+            X.__bases__ = types.NoneType, O
 
     def test_mutable_bases_with_failing_mro(self):
         # Testing mutable bases with failing mro...
