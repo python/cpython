@@ -26,10 +26,10 @@ from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType
 from operator import neg
 from test import support
-from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink,
-    maybe_get_event_loop_policy)
+from test.support import (swap_attr, maybe_get_event_loop_policy)
+from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
+from test.support.warnings_helper import check_warnings
 from unittest.mock import MagicMock, patch
 try:
     import pty, signal

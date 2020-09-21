@@ -6,6 +6,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_unionobject.h"   // _Py_Union()
 #include "frameobject.h"
 #include "structmember.h"         // PyMemberDef
 
@@ -3018,15 +3019,14 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         else if (slot->slot == Py_tp_doc) {
             /* For the docstring slot, which usually points to a static string
                literal, we need to make a copy */
-            const char *old_doc = _PyType_DocWithoutSignature(type->tp_name, slot->pfunc);
-            size_t len = strlen(old_doc)+1;
+            size_t len = strlen(slot->pfunc)+1;
             char *tp_doc = PyObject_MALLOC(len);
             if (tp_doc == NULL) {
                 type->tp_doc = NULL;
                 PyErr_NoMemory();
                 goto fail;
             }
-            memcpy(tp_doc, old_doc, len);
+            memcpy(tp_doc, slot->pfunc, len);
             type->tp_doc = tp_doc;
         }
         else if (slot->slot == Py_tp_members) {
@@ -3056,6 +3056,16 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 
     if (type->tp_dictoffset) {
         res->ht_cached_keys = _PyDict_NewKeysForClass();
+    }
+
+    if (type->tp_doc) {
+        PyObject *__doc__ = PyUnicode_FromString(_PyType_DocWithoutSignature(type->tp_name, type->tp_doc));
+        if (!__doc__)
+            goto fail;
+        int ret = _PyDict_SetItemId(type->tp_dict, &PyId___doc__, __doc__);
+        Py_DECREF(__doc__);
+        if (ret < 0)
+            goto fail;
     }
 
     if (weaklistoffset) {
@@ -3744,6 +3754,21 @@ type_is_gc(PyTypeObject *type)
     return type->tp_flags & Py_TPFLAGS_HEAPTYPE;
 }
 
+static PyObject *
+type_or(PyTypeObject* self, PyObject* param) {
+    PyObject *tuple = PyTuple_Pack(2, self, param);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    PyObject *new_union = _Py_Union(tuple);
+    Py_DECREF(tuple);
+    return new_union;
+}
+
+static PyNumberMethods type_as_number = {
+        .nb_or = (binaryfunc)type_or, // Add __or__ function
+};
+
 PyTypeObject PyType_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "type",                                     /* tp_name */
@@ -3755,7 +3780,7 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
     (reprfunc)type_repr,                        /* tp_repr */
-    0,                                          /* tp_as_number */
+    &type_as_number,                            /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
@@ -4171,10 +4196,10 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
        In theory the proper fix would be to identify which classes rely on
        this invariant and somehow disallow __class__ assignment only for them,
        perhaps via some mechanism like a new Py_TPFLAGS_IMMUTABLE flag (a
-       "blacklisting" approach). But in practice, since this problem wasn't
+       "denylisting" approach). But in practice, since this problem wasn't
        noticed late in the 3.5 RC cycle, we're taking the conservative
        approach and reinstating the same HEAPTYPE->HEAPTYPE check that we used
-       to have, plus a "whitelist". For now, the whitelist consists only of
+       to have, plus an "allowlist". For now, the allowlist consists only of
        ModuleType subtypes, since those are the cases that motivated the patch
        in the first place -- see https://bugs.python.org/issue22986 -- and
        since module objects are mutable we can be sure that they are
@@ -5589,7 +5614,6 @@ PyType_Ready(PyTypeObject *type)
             add_subclass((PyTypeObject *)b, type) < 0)
             goto error;
     }
-
     /* All done -- set the ready flag */
     type->tp_flags =
         (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;

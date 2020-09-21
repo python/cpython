@@ -229,7 +229,7 @@ coroutine of an asynchronous generator.
 
 ..
 
-.. bpo: 32949
+.. bpo: 33387
 .. date: 2018-03-13-14-46-03
 .. nonce: v821M7
 .. section: Core and Builtins

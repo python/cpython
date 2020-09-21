@@ -329,7 +329,10 @@ class _PosixFlavour(_Flavour):
                     # parent dir
                     path, _, _ = path.rpartition(sep)
                     continue
-                newpath = path + sep + name
+                if path.endswith(sep):
+                    newpath = path + name
+                else:
+                    newpath = path + sep + name
                 if newpath in seen:
                     # Already seen this path
                     path = seen[newpath]

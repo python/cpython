@@ -38,7 +38,7 @@ from email import base64mime
 from email import quoprimime
 
 from test.support import threading_helper
-from test.support import unlink
+from test.support.os_helper import unlink
 from test.test_email import openfile, TestEmailBase
 
 # These imports are documented to work, but we are testing them using a

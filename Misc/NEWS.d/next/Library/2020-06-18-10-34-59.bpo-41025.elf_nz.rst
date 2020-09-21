@@ -1,0 +1,2 @@
+Fixed an issue preventing the C implementation of :class:`zoneinfo.ZoneInfo`
+from being subclassed.

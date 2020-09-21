@@ -16,6 +16,7 @@ from typing import Generic, ClassVar, Final, final, Protocol
 from typing import cast, runtime_checkable
 from typing import get_type_hints
 from typing import get_origin, get_args
+from typing import is_typeddict
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
 from typing import NewType
@@ -245,8 +246,6 @@ class UnionTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(Union, int)
         with self.assertRaises(TypeError):
-            issubclass(int, Union[int, str])
-        with self.assertRaises(TypeError):
             issubclass(Union[int, str], int)
 
     def test_union_any(self):
@@ -346,10 +345,6 @@ class UnionTests(BaseTestCase):
     def test_empty(self):
         with self.assertRaises(TypeError):
             Union[()]
-
-    def test_union_instance_type_error(self):
-        with self.assertRaises(TypeError):
-            isinstance(42, Union[int, str])
 
     def test_no_eval_union(self):
         u = Union[int, str]
@@ -1387,7 +1382,7 @@ class ProtocolTests(BaseTestCase):
         self.assertIsSubclass(B, Custom)
         self.assertNotIsSubclass(A, Custom)
 
-    def test_builtin_protocol_whitelist(self):
+    def test_builtin_protocol_allowlist(self):
         with self.assertRaises(TypeError):
             class CustomProtocol(TestCase, Protocol):
                 pass
@@ -3905,6 +3900,12 @@ class TypedDictTests(BaseTestCase):
             'tail': bool,
             'voice': str,
         }
+
+    def test_is_typeddict(self):
+        assert is_typeddict(Point2D) is True
+        assert is_typeddict(Union[str, int]) is False
+        # classes, not instances
+        assert is_typeddict(Point2D()) is False
 
 
 class IOTests(BaseTestCase):

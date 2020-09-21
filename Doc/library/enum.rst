@@ -19,6 +19,12 @@ An enumeration is a set of symbolic names (members) bound to unique,
 constant values.  Within an enumeration, the members can be compared
 by identity, and the enumeration itself can be iterated over.
 
+.. note:: Case of Enum Members
+
+    Because Enums are used to represent constants we recommend using
+    UPPER_CASE names for enum members, and will be using that style
+    in our examples.
+
 
 Module Contents
 ---------------
@@ -50,6 +56,7 @@ helper, :class:`auto`.
     the bitwise operations without losing their :class:`Flag` membership.
 
 .. function:: unique
+   :noindex:
 
     Enum class decorator that ensures only one name is bound to any one value.
 
@@ -649,6 +656,13 @@ be combined with them::
     >>> Perm.X | 8
     <Perm.8|X: 9>
 
+:class:`IntFlag` members can also be iterated over::
+
+    >>> list(RW)
+    [<Perm.R: 4>, <Perm.W: 2>]
+
+.. versionadded:: 3.10
+
 
 Flag
 ^^^^
@@ -701,6 +715,14 @@ value::
     <Color.BLACK: 0>
     >>> bool(Color.BLACK)
     False
+
+:class:`Flag` members can also be iterated over::
+
+    >>> purple = Color.RED | Color.BLUE
+    >>> list(purple)
+    [<Color.BLUE: 2>, <Color.RED: 1>]
+
+.. versionadded:: 3.10
 
 .. note::
 

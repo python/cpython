@@ -100,6 +100,19 @@ typedef struct {
     };
 } OverlappedObject;
 
+typedef struct {
+    PyTypeObject *overlapped_type;
+} OverlappedState;
+
+static inline OverlappedState*
+overlapped_get_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (OverlappedState *)state;
+}
+
+
 /*
  * Map Windows error codes to subclasses of OSError
  */
@@ -706,8 +719,11 @@ Overlapped_dealloc(OverlappedObject *self)
     }
 
     Overlapped_clear(self);
-    PyObject_Del(self);
     SetLastError(olderr);
+
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_Del(self);
+    Py_DECREF(tp);
 }
 
 
@@ -1846,45 +1862,22 @@ static PyGetSetDef Overlapped_getsets[] = {
     {NULL},
 };
 
-PyTypeObject OverlappedType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    /* tp_name           */ "_overlapped.Overlapped",
-    /* tp_basicsize      */ sizeof(OverlappedObject),
-    /* tp_itemsize       */ 0,
-    /* tp_dealloc        */ (destructor) Overlapped_dealloc,
-    /* tp_vectorcall_offset */ 0,
-    /* tp_getattr        */ 0,
-    /* tp_setattr        */ 0,
-    /* tp_as_async       */ 0,
-    /* tp_repr           */ 0,
-    /* tp_as_number      */ 0,
-    /* tp_as_sequence    */ 0,
-    /* tp_as_mapping     */ 0,
-    /* tp_hash           */ 0,
-    /* tp_call           */ 0,
-    /* tp_str            */ 0,
-    /* tp_getattro       */ 0,
-    /* tp_setattro       */ 0,
-    /* tp_as_buffer      */ 0,
-    /* tp_flags          */ Py_TPFLAGS_DEFAULT,
-    /* tp_doc            */ _overlapped_Overlapped__doc__,
-    /* tp_traverse       */ (traverseproc)Overlapped_traverse,
-    /* tp_clear          */ 0,
-    /* tp_richcompare    */ 0,
-    /* tp_weaklistoffset */ 0,
-    /* tp_iter           */ 0,
-    /* tp_iternext       */ 0,
-    /* tp_methods        */ Overlapped_methods,
-    /* tp_members        */ Overlapped_members,
-    /* tp_getset         */ Overlapped_getsets,
-    /* tp_base           */ 0,
-    /* tp_dict           */ 0,
-    /* tp_descr_get      */ 0,
-    /* tp_descr_set      */ 0,
-    /* tp_dictoffset     */ 0,
-    /* tp_init           */ 0,
-    /* tp_alloc          */ 0,
-    /* tp_new            */ _overlapped_Overlapped,
+static PyType_Slot overlapped_type_slots[] = {
+    {Py_tp_dealloc, Overlapped_dealloc},
+    {Py_tp_doc, (char *)_overlapped_Overlapped__doc__},
+    {Py_tp_traverse, Overlapped_traverse},
+    {Py_tp_methods, Overlapped_methods},
+    {Py_tp_members, Overlapped_members},
+    {Py_tp_getset, Overlapped_getsets},
+    {Py_tp_new, _overlapped_Overlapped},
+    {0,0}
+};
+
+static PyType_Spec overlapped_type_spec = {
+    .name = "_overlapped.Overlapped",
+    .basicsize = sizeof(OverlappedObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = overlapped_type_slots
 };
 
 static PyMethodDef overlapped_functions[] = {
@@ -1904,41 +1897,65 @@ static PyMethodDef overlapped_functions[] = {
     {NULL}
 };
 
-static struct PyModuleDef overlapped_module = {
-    PyModuleDef_HEAD_INIT,
-    "_overlapped",
-    NULL,
-    -1,
-    overlapped_functions,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
+static int
+overlapped_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    OverlappedState *state = overlapped_get_state(module);
+    Py_VISIT(state->overlapped_type);
+    return 0;
+}
+
+static int
+overlapped_clear(PyObject *module)
+{
+    OverlappedState *state = overlapped_get_state(module);
+    Py_CLEAR(state->overlapped_type);
+    return 0;
+}
+
+static void
+overlapped_free(void *module)
+{
+    overlapped_clear((PyObject *)module);
+}
 
 #define WINAPI_CONSTANT(fmt, con) \
-    PyDict_SetItemString(d, #con, Py_BuildValue(fmt, con))
+    do { \
+        PyObject *value = Py_BuildValue(fmt, con); \
+        if (value == NULL) { \
+            return -1; \
+        } \
+        if (PyModule_AddObject(module, #con, value) < 0 ) { \
+            Py_DECREF(value); \
+            return -1; \
+        } \
+    } while (0)
 
-PyMODINIT_FUNC
-PyInit__overlapped(void)
+static int
+overlapped_exec(PyObject *module)
 {
-    PyObject *m, *d;
-
     /* Ensure WSAStartup() called before initializing function pointers */
-    m = PyImport_ImportModule("_socket");
-    if (!m)
-        return NULL;
-    Py_DECREF(m);
-
-    if (initialize_function_pointers() < 0)
-        return NULL;
-
-    m = PyModule_Create(&overlapped_module);
-    if (PyModule_AddType(m, &OverlappedType) < 0) {
-        return NULL;
+    PyObject *socket_module = PyImport_ImportModule("_socket");
+    if (!socket_module) {
+        return -1;
     }
 
-    d = PyModule_GetDict(m);
+    Py_DECREF(socket_module);
+
+    if (initialize_function_pointers() < 0) {
+        return -1;
+    }
+
+    OverlappedState *st = overlapped_get_state(module);
+    st->overlapped_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        module, &overlapped_type_spec, NULL);
+    if (st->overlapped_type == NULL) {
+        return -1;
+    }
+
+    if (PyModule_AddType(module, st->overlapped_type) < 0) {
+        return -1;
+    }
 
     WINAPI_CONSTANT(F_DWORD,  ERROR_IO_PENDING);
     WINAPI_CONSTANT(F_DWORD,  ERROR_NETNAME_DELETED);
@@ -1952,5 +1969,27 @@ PyInit__overlapped(void)
     WINAPI_CONSTANT(F_DWORD,  SO_UPDATE_CONNECT_CONTEXT);
     WINAPI_CONSTANT(F_DWORD,  TF_REUSE_SOCKET);
 
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot overlapped_slots[] = {
+    {Py_mod_exec, overlapped_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef overlapped_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_overlapped",
+    .m_size = sizeof(OverlappedState),
+    .m_methods = overlapped_functions,
+    .m_slots = overlapped_slots,
+    .m_traverse = overlapped_traverse,
+    .m_clear = overlapped_clear,
+    .m_free = overlapped_free
+};
+
+PyMODINIT_FUNC
+PyInit__overlapped(void)
+{
+    return PyModuleDef_Init(&overlapped_module);
 }

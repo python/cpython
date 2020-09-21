@@ -573,8 +573,7 @@ whether an instance or a class implements a particular ABC.  The
 :class:`~collections.abc.MutableMapping`.
 
 For Python, many of the advantages of interface specifications can be obtained
-by an appropriate test discipline for components.  There is also a tool,
-PyChecker, which can be used to find problems due to subclassing.
+by an appropriate test discipline for components.
 
 A good test suite for a module can both provide a regression test and serve as a
 module interface specification and a set of examples.  Many Python modules can

@@ -121,7 +121,7 @@
           if ts.is_active():
               ...
 
-      if possible to simply do::
+      it is possible to simply do::
 
           if ts:
               ...

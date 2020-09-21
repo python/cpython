@@ -12,7 +12,7 @@ from asyncio.proactor_events import _ProactorSocketTransport
 from asyncio.proactor_events import _ProactorWritePipeTransport
 from asyncio.proactor_events import _ProactorDuplexPipeTransport
 from asyncio.proactor_events import _ProactorDatagramTransport
-from test import support
+from test.support import os_helper
 from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 
@@ -753,6 +753,7 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
 
     def test_loop_self_reading_fut(self):
         fut = mock.Mock()
+        self.loop._self_reading_future = fut
         self.loop._loop_self_reading(fut)
         self.assertTrue(fut.result.called)
         self.proactor.recv.assert_called_with(self.ssock, 4096)
@@ -935,20 +936,20 @@ class ProactorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open(support.TESTFN, 'wb') as fp:
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        support.unlink(support.TESTFN)
+        os_helper.unlink(os_helper.TESTFN)
         super().tearDownClass()
 
     def setUp(self):
         self.loop = asyncio.ProactorEventLoop()
         self.set_event_loop(self.loop)
         self.addCleanup(self.loop.close)
-        self.file = open(support.TESTFN, 'rb')
+        self.file = open(os_helper.TESTFN, 'rb')
         self.addCleanup(self.file.close)
         super().setUp()
 
