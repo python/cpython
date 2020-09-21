@@ -528,6 +528,24 @@ Glossary
       An Integrated Development Environment for Python.  IDLE is a basic editor
       and interpreter environment which ships with the standard distribution of
       Python.
+      
+   Escape
+      In computing and telecommunication, an escape character is a character that 
+      invokes an alternative interpretation on the following characters in a character
+      sequence. An escape character is a particular case of metacharacters.
+      
+      \' single quote
+      \" double quote
+      \\ backslash
+      \n new line
+      \r carriage return
+      \t tab
+      \b backspace
+      \f form feed
+      \v vertical tab (Internet Explorer 9 and older treats '\v as 'v instead of a vertical tab ('\x0B). If cross-browser compatibility is a concern, use \x0B instead of \v.)
+      \0 null character (U+0000 NULL) (only if the next character is not a decimal digit; else it is an octal escape sequence)
+      \xFF character represented by the hexadecimal byte "FF"
+      Note that the \v and \0 escapes are not allowed in JSON strings.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
