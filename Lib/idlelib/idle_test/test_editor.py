@@ -136,7 +136,7 @@ class IndentAndNewlineTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         requires('gui')
-        cls.root = Tk()
+        cls.root = tk.Tk()
         cls.root.withdraw()
         cls.window = Editor(root=cls.root)
         cls.window.indentwidth = 2
@@ -227,7 +227,7 @@ class RMenuTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         requires('gui')
-        cls.root = Tk()
+        cls.root = tk.Tk()
         cls.root.withdraw()
         cls.window = Editor(root=cls.root)
 
