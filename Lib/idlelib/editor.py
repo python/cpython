@@ -434,6 +434,26 @@ class EditorWindow(object):
         self.status_bar.set_label('column', 'Col: %s' % column)
         self.status_bar.set_label('line', 'Ln: %s' % line)
 
+
+    """ Menu definitions and functions.
+    * self.menubar - the always visible horizontal menu bar.
+    * mainmenu.menudefs - a list of tuples, one for each menubar item.
+      Each tuple pairs a lower-case name and list of dropdown items.
+      Each item is a name, virtual event pair or None for separator.
+    * mainmenu.default_keydefs - maps events to keys.
+    * text.keydefs - same.
+    * cls.menu_specs - menubar name, titlecase display form pairs
+      with Alt-hotkey indicator.  A subset of menudefs items.
+    * self.menudict - map menu name to dropdown menu.
+    * self.recent_files_menu - 2nd level cascade in the file cascade.
+    * self.wmenu_end - set in __init__ (purpose unclear).
+
+    createmenubar, postwindowsmenu, update_menu_label, update_menu_state,
+    ApplyKeybings (2nd part), reset_help_menu_entries,
+    _extra_help_callback, update_recent_files_list,
+    apply_bindings, fill_menus, (other functions?)
+    """
+
     menu_specs = [
         ("file", "_File"),
         ("edit", "_Edit"),
@@ -480,7 +500,10 @@ class EditorWindow(object):
         self.reset_help_menu_entries()
 
     def postwindowsmenu(self):
-        # Only called when Window menu exists
+        """Callback to register window.
+
+        Only called when Window menu exists.
+        """
         menu = self.menudict['window']
         end = menu.index("end")
         if end is None:
@@ -863,12 +886,9 @@ class EditorWindow(object):
     def RemoveKeybindings(self):
         """Remove the virtual, configurable keybindings.
 
-        This should be called before the keybindings are applied
-        in ApplyKeyBindings() otherwise the old bindings will still exist.
-        Note: this does not remove the Tk/Tcl keybindings attached to
-        Text widgets by default.
+        Leaves the default Tk Text keybindings.
         """
-        # Called from configdialog.py
+        # Called from configdialog.deactivate_current_config.
         self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
         for event, keylist in keydefs.items():
             self.text.event_delete(event, *keylist)
@@ -881,19 +901,17 @@ class EditorWindow(object):
     def ApplyKeybindings(self):
         """Apply the virtual, configurable keybindings.
 
-        The binding events are attached to self.text.  Also, the
-        menu accelerator keys are updated to match the current
-        configuration.
+        Alse update hotkeys to current keyset.
         """
-        # Called from configdialog.py
+        # Called from configdialog.activate_config_changes.
         self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
         self.apply_bindings()
         for extensionName in self.get_standard_extension_names():
             xkeydefs = idleConf.GetExtensionBindings(extensionName)
             if xkeydefs:
                 self.apply_bindings(xkeydefs)
+
         # Update menu accelerators.
-        # XXX - split into its own function and call it from here?
         menuEventDict = {}
         for menu in self.mainmenu.menudefs:
             menuEventDict[menu[0]] = {}
@@ -928,11 +946,7 @@ class EditorWindow(object):
                                                   type='int')
 
     def reset_help_menu_entries(self):
-        """Update the additional help entries on the Help menu.
-
-        First the existing additional help entries are removed from
-        the help menu, then the new help entries are added from idleConf.
-        """
+        """Update the additional help entries on the Help menu."""
         help_list = idleConf.GetAllExtraHelpSourcesList()
         helpmenu = self.menudict['help']
         # First delete the extra help entries, if any.
@@ -948,16 +962,9 @@ class EditorWindow(object):
         # And update the menu dictionary.
         self.menudict['help'] = helpmenu
 
-    def _extra_help_callback(self, helpfile):
-        """Create a callback with the helpfile value frozen at definition time.
-
-        Args:
-            helpfile: Filename or website to open.
-
-        Returns:
-            Function to open the helpfile.
-        """
-        def display_extra_help(helpfile=helpfile):
+    def _extra_help_callback(self, resource):
+        """Return a callback that loads resource (file or web page)."""
+        def display_extra_help(helpfile=resource):
             if not helpfile.startswith(('www', 'http')):
                 helpfile = os.path.normpath(helpfile)
             if sys.platform[:3] == 'win':
@@ -1120,8 +1127,6 @@ class EditorWindow(object):
         if self.color:
             self.color.close()
             self.color = None
-        # Allow code context to close its text.after calls.
-        self.text.unbind('<<toggle-code-context>>')
         self.text = None
         self.tkinter_vars = None
         self.per.close()
@@ -1185,11 +1190,7 @@ class EditorWindow(object):
                     self.text.bind(vevent, getattr(ins, methodname))
 
     def apply_bindings(self, keydefs=None):
-        """Add the event bindings in keydefs to self.text.
-
-        Args:
-            keydefs: Virtual events and keybinding definitions.
-        """
+        """Add events with keys to self.text."""
         if keydefs is None:
             keydefs = self.mainmenu.default_keydefs
         text = self.text
@@ -1199,28 +1200,10 @@ class EditorWindow(object):
                 text.event_add(event, *keylist)
 
     def fill_menus(self, menudefs=None, keydefs=None):
-        """Add appropriate entries to the menus and submenus.
+        """Fill in dropdown menus used by this window.
 
-        The default menudefs and keydefs are loaded from idlelib.mainmenu.
-        Menus that are absent or None in self.menudict are ignored.  The
-        default menu type created for submenus from menudefs is `command`.
-        A submenu item of None results in a `separator` menu type.
-        A submenu name beginning with ! represents a `checkbutton` type.
-
-        The menus are stored in self.menudict.
-
-        Args:
-            menudefs: Menu and submenu names, underlines (shortcuts),
-                and events which is a list of tuples of the form:
-                [(menu1, [(submenu1a, '<<virtual event>>'),
-                          (submenu1b, '<<virtual event>>'), ...]),
-                 (menu2, [(submenu2a, '<<virtual event>>'),
-                          (submenu2b, '<<virtual event>>'), ...]),
-                ]
-            keydefs: Virtual events and keybinding definitions.  Used for
-                the 'accelerator' text on the menu.  Stored as a
-                dictionary of
-                {'<<virtual event>>': ['<binding1>', '<binding2>'],}
+        Items whose name begins with '!' become checkbuttons.
+        Other names indicate commands.  None becomes a separator.
         """
         if menudefs is None:
             menudefs = self.mainmenu.menudefs
@@ -1233,7 +1216,7 @@ class EditorWindow(object):
             if not menu:
                 continue
             for entry in entrylist:
-                if not entry:
+                if entry is None:
                     menu.add_separator()
                 else:
                     label, eventname = entry
@@ -1269,22 +1252,13 @@ class EditorWindow(object):
         else:
             raise NameError(name)
 
-    def get_var_obj(self, name, vartype=None):
+    def get_var_obj(self, eventname, vartype=None):
         """Return a tkinter variable instance for the event.
-
-        Cache vars in self.tkinter_vars as {name: Var instance}.
-
-        Args:
-            name: Event name.
-            vartype: Tkinter Var type.
-
-        Returns:
-            Tkinter Var instance.
         """
-        var = self.tkinter_vars.get(name)
+        var = self.tkinter_vars.get(eventname)
         if not var and vartype:
-            # create a Tkinter variable object with self.text as master:
-            self.tkinter_vars[name] = var = vartype(self.text)
+            # Create a Tkinter variable object.
+            self.tkinter_vars[eventname] = var = vartype(self.text)
         return var
 
     # Tk implementations of "virtual text methods" -- each platform
