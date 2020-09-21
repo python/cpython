@@ -163,6 +163,32 @@ class TypeDefVisitor(EmitVisitor):
         self.emit(s, depth)
         self.emit("", depth)
 
+class SequenceDefVisitor(EmitVisitor):
+    def visitModule(self, mod):
+        for dfn in mod.dfns:
+            self.visit(dfn)
+
+    def visitType(self, type, depth=0):
+        self.visit(type.value, type.name, depth)
+
+    def visitSum(self, sum, name, depth):
+        if is_simple(sum):
+            return
+        self.emit_sequence_constructor(name, depth)
+
+    def emit_sequence_constructor(self, name,depth):
+        ctype = get_c_type(name)
+        self.emit("""\
+typedef struct {
+    _ASDL_SEQ_HEAD
+    %(ctype)s typed_elements[1];
+} asdl_%(name)s_seq;""" % locals(), reflow=False, depth=depth)
+        self.emit("", depth)
+        self.emit("asdl_%(name)s_seq *_Py_asdl_%(name)s_seq_new(Py_ssize_t size, PyArena *arena);" % locals(), depth)
+        self.emit("", depth)
+
+    def visitProduct(self, product, name, depth):
+        self.emit_sequence_constructor(name, depth)
 
 class StructVisitor(EmitVisitor):
     """Visitor to generate typedefs for AST."""
@@ -219,7 +245,8 @@ class StructVisitor(EmitVisitor):
             if field.type == 'cmpop':
                 self.emit("asdl_int_seq *%(name)s;" % locals(), depth)
             else:
-                self.emit("asdl_seq *%(name)s;" % locals(), depth)
+                _type = field.type
+                self.emit("asdl_%(_type)s_seq *%(name)s;" % locals(), depth)
         else:
             self.emit("%(ctype)s %(name)s;" % locals(), depth)
 
@@ -274,7 +301,7 @@ class PrototypeVisitor(EmitVisitor):
                 if f.type == 'cmpop':
                     ctype = "asdl_int_seq *"
                 else:
-                    ctype = "asdl_seq *"
+                    ctype = f"asdl_{f.type}_seq *"
             else:
                 ctype = get_c_type(f.type)
             args.append((ctype, name, f.opt or f.seq))
@@ -507,7 +534,8 @@ class Obj2ModVisitor(PickleVisitor):
             if self.isSimpleType(field):
                 self.emit("asdl_int_seq* %s;" % field.name, depth)
             else:
-                self.emit("asdl_seq* %s;" % field.name, depth)
+                _type = field.type
+                self.emit(f"asdl_{field.type}_seq* {field.name};", depth)
         else:
             ctype = get_c_type(field.type)
             self.emit("%s %s;" % (ctype, field.name), depth)
@@ -562,7 +590,7 @@ class Obj2ModVisitor(PickleVisitor):
             if self.isSimpleType(field):
                 self.emit("%s = _Py_asdl_int_seq_new(len, arena);" % field.name, depth+1)
             else:
-                self.emit("%s = _Py_asdl_seq_new(len, arena);" % field.name, depth+1)
+                self.emit("%s = _Py_asdl_%s_seq_new(len, arena);" % (field.name, field.type), depth+1)
             self.emit("if (%s == NULL) goto failed;" % field.name, depth+1)
             self.emit("for (i = 0; i < len; i++) {", depth+1)
             self.emit("%s val;" % ctype, depth+2)
@@ -599,6 +627,24 @@ class MarshalPrototypeVisitor(PickleVisitor):
 
     visitProduct = visitSum = prototype
 
+
+class SequenceConstructorVisitor(EmitVisitor):
+    def visitModule(self, mod):
+        for dfn in mod.dfns:
+            self.visit(dfn)
+
+    def visitType(self, type):
+        self.visit(type.value, type.name)
+
+    def visitProduct(self, prod, name):
+        self.emit_sequence_constructor(name, get_c_type(name))
+
+    def visitSum(self, sum, name):
+        if not is_simple(sum):
+            self.emit_sequence_constructor(name, get_c_type(name))
+
+    def emit_sequence_constructor(self, name, type):
+        self.emit(f"GENERATE_ASDL_SEQ_CONSTRUCTOR({name}, {type})", depth=0)
 
 class PyTypesDeclareVisitor(PickleVisitor):
 
@@ -646,6 +692,7 @@ class PyTypesDeclareVisitor(PickleVisitor):
             for t in cons.fields:
                 self.emit('"%s",' % t.name, 1)
             self.emit("};",0)
+
 
 class PyTypesVisitor(PickleVisitor):
 
@@ -874,7 +921,7 @@ static PyObject* ast2obj_list(astmodulestate *state, asdl_seq *seq, PyObject* (*
     if (!result)
         return NULL;
     for (i = 0; i < n; i++) {
-        value = func(state, asdl_seq_GET(seq, i));
+        value = func(state, asdl_seq_GET_UNTYPED(seq, i));
         if (!value) {
             Py_DECREF(result);
             return NULL;
@@ -1089,11 +1136,9 @@ static PyModuleDef_Slot astmodule_slots[] = {
 static struct PyModuleDef _astmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_ast",
-    .m_size = sizeof(astmodulestate),
+    // The _ast module uses a global state (global_ast_state).
+    .m_size = 0,
     .m_slots = astmodule_slots,
-    .m_traverse = astmodule_traverse,
-    .m_clear = astmodule_clear,
-    .m_free = astmodule_free,
 };
 
 PyMODINIT_FUNC
@@ -1266,7 +1311,7 @@ class ObjVisitor(PickleVisitor):
                           depth+2, reflow=False)
                 self.emit("}", depth)
             else:
-                self.emit("value = ast2obj_list(state, %s, ast2obj_%s);" % (value, field.type), depth)
+                self.emit("value = ast2obj_list(state, (asdl_seq*)%s, ast2obj_%s);" % (value, field.type), depth)
         else:
             ctype = get_c_type(field.type)
             self.emit("value = ast2obj_%s(state, %s);" % (field.type, value), depth, reflow=False)
@@ -1374,59 +1419,40 @@ def generate_module_def(f, mod):
         f.write('    PyObject *' + s + ';\n')
     f.write('} astmodulestate;\n\n')
     f.write("""
-static astmodulestate*
-get_ast_state(PyObject *module)
-{
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (astmodulestate*)state;
-}
+// Forward declaration
+static int init_types(astmodulestate *state);
+
+// bpo-41194, bpo-41261, bpo-41631: The _ast module uses a global state.
+static astmodulestate global_ast_state = {0};
 
 static astmodulestate*
 get_global_ast_state(void)
 {
-    _Py_IDENTIFIER(_ast);
-    PyObject *name = _PyUnicode_FromId(&PyId__ast);  // borrowed reference
-    if (name == NULL) {
+    astmodulestate* state = &global_ast_state;
+    if (!init_types(state)) {
         return NULL;
     }
-    PyObject *module = PyImport_GetModule(name);
-    if (module == NULL) {
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        module = PyImport_Import(name);
-        if (module == NULL) {
-            return NULL;
-        }
-    }
-    astmodulestate *state = get_ast_state(module);
-    Py_DECREF(module);
     return state;
 }
 
-static int astmodule_clear(PyObject *module)
+static astmodulestate*
+get_ast_state(PyObject* Py_UNUSED(module))
 {
-    astmodulestate *state = get_ast_state(module);
+    astmodulestate* state = get_global_ast_state();
+    // get_ast_state() must only be called after _ast module is imported,
+    // and astmodule_exec() calls init_types()
+    assert(state != NULL);
+    return state;
+}
+
+void _PyAST_Fini(PyThreadState *tstate)
+{
+    astmodulestate* state = &global_ast_state;
 """)
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
     f.write("""
-    return 0;
-}
-
-static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
-{
-    astmodulestate *state = get_ast_state(module);
-""")
-    for s in module_state:
-        f.write("    Py_VISIT(state->" + s + ');\n')
-    f.write("""
-    return 0;
-}
-
-static void astmodule_free(void* module) {
-    astmodule_clear((PyObject*)module);
+    state->initialized = 0;
 }
 
 """)
@@ -1452,6 +1478,7 @@ def write_header(f, mod):
     f.write('#undef Yield   /* undefine macro conflicting with <winbase.h> */\n')
     f.write('\n')
     c = ChainOfVisitors(TypeDefVisitor(f),
+                        SequenceDefVisitor(f),
                         StructVisitor(f))
     c.visit(mod)
     f.write("// Note: these macros affect function definitions, not only call sites.\n")
@@ -1478,6 +1505,7 @@ def write_source(f, mod):
     generate_module_def(f, mod)
 
     v = ChainOfVisitors(
+        SequenceConstructorVisitor(f),
         PyTypesDeclareVisitor(f),
         PyTypesVisitor(f),
         Obj2ModPrototypeVisitor(f),

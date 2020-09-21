@@ -18,7 +18,7 @@ def strongly_connected_components(
       exactly once; vertices not part of a SCC are returned as
       singleton sets.
 
-    From http://code.activestate.com/recipes/578507/.
+    From https://github.com/ActiveState/code/tree/master/recipes/Python/578507_Strongly_connected_components_directed/recipe-578507.py.
     """
     identified: Set[str] = set()
     stack: List[str] = []
@@ -81,7 +81,7 @@ def topsort(
         {B, C}
         {A}
 
-    From http://code.activestate.com/recipes/577413/.
+    From https://github.com/ActiveState/code/tree/master/recipes/Python/577413_Topological_Sort/recipe-577413.py.
     """
     # TODO: Use a faster algorithm?
     for k, v in data.items():
