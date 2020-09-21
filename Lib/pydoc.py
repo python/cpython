@@ -1672,13 +1672,14 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
         output=None, follow_wrapped=True):
     """Display text documentation, given an object or a path to an object."""
     try:
-        if not follow_wrapped:
-            thing = inspect.unwrap(thing, stop=lambda func: getattr(func, '__doc__', None)
+        if follow_wrapped:
+            thing = inspect.unwrap(thing,
+                                   stop=(lambda func: not hasattr(func, '__doc__')))
         if output is None:
             pager(render_doc(thing, title, forceload))
         else:
             output.write(render_doc(thing, title, forceload, plaintext))
-    except (ImportError, ErrorDuringImport) as value:
+    except (ImportError, ErrorDuringImport, ValueError) as value:
         print(value)
 
 def writedoc(thing, forceload=0):
@@ -1894,7 +1895,7 @@ class Helper:
                                      self.__class__.__qualname__)
 
     _GoInteractive = object()
-    def __call__(self, request=_GoInteractive, follow_wrapped=False):
+    def __call__(self, request=_GoInteractive, follow_wrapped=True):
         if request is not self._GoInteractive:
             self.help(request, follow_wrapped=follow_wrapped)
         else:
