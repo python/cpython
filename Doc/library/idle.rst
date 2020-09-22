@@ -531,24 +531,24 @@ A calltip is shown automatically when one types :kbd:`(` after the name
 of an *accessible* function.  A function name expression may include
 dots and subscripts.  A calltip remains until it is clicked, the cursor
 is moved out of the argument area, or :kbd:`)` is typed.  Whenever the
-cursor is in the argument part of a definition, select Edit and Show
-calltip on the menu or enter its shortcut to display a calltip.
+cursor is in the argument part of a definition, select Edit and "Show
+Call Tip" on the menu or enter its shortcut to display a calltip.
 
-A calltip consists of the function's signature and the docstring up to
-the first blank line or the fifth non-blank line.  (Some builtin
+The calltip consists of the function's signature and docstring up to
+the latter's first blank line or the fifth non-blank line.  (Some builtin
 functions lack an accessible signature.)  A '/' or '*' in the signature
 indicates that the preceding or following arguments are passed by
 position or name (keyword) only.  Details are subject to change.
 
-In Shell, the *accessible* functions depends on what modules have been
+In Shell, the accessible functions depends on what modules have been
 imported into the user process, including those imported by Idle itself,
 and which definitions have been run, all since the last restart.
 
 For example, restart the Shell and enter ``itertools.count(``.  A calltip
 appears because Idle imports itertools into the user process for its own
 use.  (This could change.)  Enter ``turtle.write(`` and nothing appears.
-Idle does not itself import turtle.  The menu entry and shortcut do
-nothing either.  Enter ``import turtle``.  Thereafter, ``turtle.write(``
+Idle does not itself import turtle.  The menu entry and shortcut also do
+nothing.  Enter ``import turtle``.  Thereafter, ``turtle.write(``
 will display a calltip.
 
 In an editor, import statements have no effect until one runs the file.
