@@ -120,6 +120,11 @@ Other Language Changes
   is rejected when the global is used in the :keyword:`else` block.
   (Contributed by Irit Katriel in :gh:`111123`.)
 
+* Many functions now emit a warning if a boolean value is passed as
+  a file descriptor argument.
+  This can help catch some errors earlier.
+  (Contributed by Serhiy Storchaka in :gh:`82626`.)
+
 New Modules
 ===========
 
