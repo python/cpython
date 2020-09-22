@@ -1,1 +1,1 @@
-add tests for sigint handling in runpy
+Add tests for SIGINT handling in the runpy module.
