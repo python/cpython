@@ -144,7 +144,7 @@ def _splitdict(tk, v, cut_minus=True, conv=None):
     return dict
 
 
-class EventType(enum.StrEnum):
+class EventType(str, enum.Enum):
     KeyPress = '2'
     Key = KeyPress
     KeyRelease = '3'
