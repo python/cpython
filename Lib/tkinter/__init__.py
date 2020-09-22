@@ -144,12 +144,12 @@ def _splitdict(tk, v, cut_minus=True, conv=None):
     return dict
 
 
-class EventType(str, enum.Enum):
+class EventType(enum.StrEnum):
     KeyPress = '2'
-    Key = KeyPress,
+    Key = KeyPress
     KeyRelease = '3'
     ButtonPress = '4'
-    Button = ButtonPress,
+    Button = ButtonPress
     ButtonRelease = '5'
     Motion = '6'
     Enter = '7'
@@ -180,10 +180,10 @@ class EventType(str, enum.Enum):
     Colormap = '32'
     ClientMessage = '33'    # undocumented
     Mapping = '34'          # undocumented
-    VirtualEvent = '35',    # undocumented
-    Activate = '36',
-    Deactivate = '37',
-    MouseWheel = '38',
+    VirtualEvent = '35'     # undocumented
+    Activate = '36'
+    Deactivate = '37'
+    MouseWheel = '38'
 
     def __str__(self):
         return self.name
