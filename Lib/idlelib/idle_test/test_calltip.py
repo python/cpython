@@ -61,18 +61,16 @@ class Get_argspecTest(unittest.TestCase):
 
         if List.__doc__ is not None:
             tiptest(List,
-                    f'(iterable=(), /){calltip._argument_positional}'
+                    f'(iterable=(), /)'
                     f'\n{List.__doc__}')
         tiptest(list.__new__,
               '(*args, **kwargs)\n'
               'Create and return a new object.  '
               'See help(type) for accurate signature.')
         tiptest(list.__init__,
-              '(self, /, *args, **kwargs)'
-              + calltip._argument_positional + '\n' +
+              '(self, /, *args, **kwargs)\n'
               'Initialize self.  See help(type(self)) for accurate signature.')
-        append_doc = (calltip._argument_positional
-                      + "\nAppend object to the end of the list.")
+        append_doc = "\nAppend object to the end of the list."
         tiptest(list.append, '(self, object, /)' + append_doc)
         tiptest(List.append, '(self, object, /)' + append_doc)
         tiptest([].append, '(object, /)' + append_doc)
