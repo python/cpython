@@ -141,7 +141,7 @@ static inline PyTypeObject* _Py_TYPE(const PyObject *ob) {
 
 
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
-    return ob->ob_type == type;
+    return Py_TYPE(ob) == type;
 }
 #define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
 
