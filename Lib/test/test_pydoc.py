@@ -647,6 +647,41 @@ class PydocDocTest(unittest.TestCase):
         # Testing that the subclasses section does not appear
         self.assertNotIn('Built-in subclasses', text)
 
+    def test_builtin_with_wrapper(self):
+        """Test help on function wrapped.
+
+        When running help() on a function that is wrapped,
+        should be show the docstring of the last object in the chain
+        with __doc__ method.
+        """
+
+        import functools
+        class TestWrapper:
+            """This is the docstring of Wrapper"""
+            def __init__(self, func):
+                functools.update_wrapper(func)
+            def __call__(self):
+                pass
+
+        @TestWrapper
+        def test_func1():
+            """Test func1"""
+            pass
+
+        doc = pydoc.TextDoc()
+        text = doc.docclass(test_func1)
+        self.assertIn('Test func1', text)
+
+        text = doc.docclass(test_func1, follow_wrapped=False)
+        self.assertIn("This is the docstring for Wrapper", text)
+
+        @TestWrapper
+        def test_func2():
+            pass
+
+        text = doc.docclass(test_func1)
+        self.assertIn("This is the docstring for wrapper", text)
+
     @unittest.skipIf(sys.flags.optimize >= 2,
                      'Docstrings are omitted with -O2 and above')
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
