@@ -534,7 +534,9 @@ or :kbd:`)` is typed.  When the cursor is in the argument part of a definition,
 the menu or shortcut display a calltip.
 
 A calltip consists of the function signature and the first line of the
-docstring.  For builtins without an accessible signature, the calltip
+docstring.  A '/' or '*' in the signature indicates that the preceding
+or following arguments are passed by position or name (keyword) only.
+For builtins without an accessible signature, the calltip
 consists of all lines up the fifth line or the first blank line.  These
 details may change.
 
