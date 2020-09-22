@@ -275,8 +275,9 @@ def prepare_predicate(next, token):
                 if elem.find(tag) is not None:
                     yield elem
         return select
-    if signature == ".='" or signature == ".!='" or ((signature == "-='" or signature == "-!='")
-        and not re.match(r"\-?\d+$", predicate[0])):
+    if signature == ".='" or signature == ".!='" or (
+            (signature == "-='" or signature == "-!='")
+            and not re.match(r"\-?\d+$", predicate[0])):
         # [.='value'] or [tag='value'] or [.!='value'] or [tag!='value']
         tag = predicate[0]
         value = predicate[-1]
