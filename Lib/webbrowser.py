@@ -462,11 +462,16 @@ def register_X_browsers():
     if shutil.which("xdg-open"):
         register("xdg-open", None, BackgroundBrowser("xdg-open"))
 
-    # The default GNOME3 browser
+    # Opens an appropriate browser for the URL scheme according to
+    # freedesktop.org settings (GNOME, KDE, XFCE, etc.)
+    if shutil.which("gio"):
+        register("gio", None, BackgroundBrowser(["gio", "open", "--", "%s"]))
+
+    # Equivalent of gio open before 2015
     if "GNOME_DESKTOP_SESSION_ID" in os.environ and shutil.which("gvfs-open"):
         register("gvfs-open", None, BackgroundBrowser("gvfs-open"))
 
-    # The default GNOME browser
+    # The default GNOME browser before 2008
     if "GNOME_DESKTOP_SESSION_ID" in os.environ and shutil.which("gnome-open"):
         register("gnome-open", None, BackgroundBrowser("gnome-open"))
 
