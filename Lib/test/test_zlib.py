@@ -439,7 +439,14 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH',
                     'Z_PARTIAL_FLUSH']
 
-        ver = tuple(int(v) for v in zlib.ZLIB_RUNTIME_VERSION.split('.'))
+        v = zlib.ZLIB_RUNTIME_VERSION.split('-', 1)[0].split('.')
+        if len(v) < 4:
+            v.append('0')
+        elif not v[-1].isnumeric():
+            v[-1] = '0'
+
+        ver = tuple(map(int, v))
+
         # Z_BLOCK has a known failure prior to 1.2.5.3
         if ver >= (1, 2, 5, 3):
             sync_opt.append('Z_BLOCK')
