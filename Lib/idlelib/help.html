@@ -509,26 +509,29 @@ by typing ‘_’ after ‘.’, either before or after the box is opened.</p>
 </div>
 <div class="section" id="calltips">
 <span id="id4"></span><h3>Calltips<a class="headerlink" href="#calltips" title="Permalink to this headline">¶</a></h3>
-<p>A calltip is shown when one types <kbd class="kbd docutils literal notranslate">(</kbd> after the name of an <em>accessible</em>
-function.  A name expression may include dots and subscripts.  A calltip
-remains until it is clicked, the cursor is moved out of the argument area,
-or <kbd class="kbd docutils literal notranslate">)</kbd> is typed.  When the cursor is in the argument part of a definition,
-the menu or shortcut display a calltip.</p>
-<p>A calltip consists of the function signature and the first line of the
-docstring.  For builtins without an accessible signature, the calltip
-consists of all lines up the fifth line or the first blank line.  These
-details may change.</p>
-<p>The set of <em>accessible</em> functions depends on what modules have been imported
-into the user process, including those imported by Idle itself,
-and what definitions have been run, all since the last restart.</p>
+<p>A calltip is shown automatically when one types <kbd class="kbd docutils literal notranslate">(</kbd> after the name
+of an <em>accessible</em> function.  A function name expression may include
+dots and subscripts.  A calltip remains until it is clicked, the cursor
+is moved out of the argument area, or <kbd class="kbd docutils literal notranslate">)</kbd> is typed.  Whenever the
+cursor is in the argument part of a definition, select Edit and “Show
+Call Tip” on the menu or enter its shortcut to display a calltip.</p>
+<p>The calltip consists of the function’s signature and docstring up to
+the latter’s first blank line or the fifth non-blank line.  (Some builtin
+functions lack an accessible signature.)  A ‘/’ or ‘*’ in the signature
+indicates that the preceding or following arguments are passed by
+position or name (keyword) only.  Details are subject to change.</p>
+<p>In Shell, the accessible functions depends on what modules have been
+imported into the user process, including those imported by Idle itself,
+and which definitions have been run, all since the last restart.</p>
 <p>For example, restart the Shell and enter <code class="docutils literal notranslate"><span class="pre">itertools.count(</span></code>.  A calltip
-appears because Idle imports itertools into the user process for its own use.
-(This could change.)  Enter <code class="docutils literal notranslate"><span class="pre">turtle.write(</span></code> and nothing appears.  Idle does
-not import turtle.  The menu or shortcut do nothing either.  Enter
-<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">turtle</span></code> and then <code class="docutils literal notranslate"><span class="pre">turtle.write(</span></code> will work.</p>
-<p>In an editor, import statements have no effect until one runs the file.  One
-might want to run a file after writing the import statements at the top,
-or immediately run an existing file before editing.</p>
+appears because Idle imports itertools into the user process for its own
+use.  (This could change.)  Enter <code class="docutils literal notranslate"><span class="pre">turtle.write(</span></code> and nothing appears.
+Idle does not itself import turtle.  The menu entry and shortcut also do
+nothing.  Enter <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">turtle</span></code>.  Thereafter, <code class="docutils literal notranslate"><span class="pre">turtle.write(</span></code>
+will display a calltip.</p>
+<p>In an editor, import statements have no effect until one runs the file.
+One might want to run a file after writing import statements, after
+adding function definitions, or after opening an existing file.</p>
 </div>
 <div class="section" id="code-context">
 <span id="id5"></span><h3>Code Context<a class="headerlink" href="#code-context" title="Permalink to this headline">¶</a></h3>
@@ -975,7 +978,7 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Sep 09, 2020.
+    Last updated on Sep 22, 2020.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 
