@@ -5,7 +5,7 @@ import sys
 import unittest
 import threading
 from collections import OrderedDict
-from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
+from enum import Enum, IntEnum, StrEnum, EnumMeta, Flag, IntFlag, unique, auto
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -48,14 +48,9 @@ except Exception as exc:
     FlagStooges = exc
 
 # for pickle test and subclass tests
-try:
-    class StrEnum(str, Enum):
-        'accepts only string values'
-    class Name(StrEnum):
-        BDFL = 'Guido van Rossum'
-        FLUFL = 'Barry Warsaw'
-except Exception as exc:
-    Name = exc
+class Name(StrEnum):
+    BDFL = 'Guido van Rossum'
+    FLUFL = 'Barry Warsaw'
 
 try:
     Question = Enum('Question', 'who what when where why', module=__name__)
@@ -665,14 +660,13 @@ class TestEnum(unittest.TestCase):
             tau = 'Tau'
         self.assertTrue(phy.pi < phy.tau)
 
-    def test_strenum_inherited(self):
-        class StrEnum(str, Enum):
-            pass
+    def test_strenum_inherited_methods(self):
         class phy(StrEnum):
             pi = 'Pi'
             tau = 'Tau'
         self.assertTrue(phy.pi < phy.tau)
-
+        self.assertEqual(phy.pi.upper(), 'PI')
+        self.assertEqual(phy.tau.count('a'), 1)
 
     def test_intenum(self):
         class WeekDay(IntEnum):
@@ -2014,13 +2008,6 @@ class TestEnum(unittest.TestCase):
         self.assertTrue(issubclass(ReformedColor, int))
 
     def test_multiple_inherited_mixin(self):
-        class StrEnum(str, Enum):
-            def __new__(cls, *args, **kwargs):
-                for a in args:
-                    if not isinstance(a, str):
-                        raise TypeError("Enumeration '%s' (%s) is not"
-                                        " a string" % (a, type(a).__name__))
-                return str.__new__(cls, *args, **kwargs)
         @unique
         class Decision1(StrEnum):
             REVERT = "REVERT"
@@ -2043,6 +2030,33 @@ class TestEnum(unittest.TestCase):
         local_ls = {}
         exec(code, global_ns, local_ls)
 
+    def test_strenum(self):
+        class GoodStrEnum(StrEnum):
+            one = '1'
+            two = '2'
+            three = b'3', 'ascii'
+            four = b'4', 'latin1', 'strict'
+        with self.assertRaisesRegex(TypeError, '1 is not a string'):
+            class FirstFailedStrEnum(StrEnum):
+                one = 1
+                two = '2'
+        with self.assertRaisesRegex(TypeError, "2 is not a string"):
+            class SecondFailedStrEnum(StrEnum):
+                one = '1'
+                two = 2,
+                three = '3'
+        with self.assertRaisesRegex(TypeError, '2 is not a string'):
+            class ThirdFailedStrEnum(StrEnum):
+                one = '1'
+                two = 2
+        with self.assertRaisesRegex(TypeError, 'encoding must be a string, not %r' % (sys.getdefaultencoding, )):
+            class ThirdFailedStrEnum(StrEnum):
+                one = '1'
+                two = b'2', sys.getdefaultencoding
+        with self.assertRaisesRegex(TypeError, 'errors must be a string, not 9'):
+            class ThirdFailedStrEnum(StrEnum):
+                one = '1'
+                two = b'2', 'ascii', 9
 
 class TestOrder(unittest.TestCase):
 
