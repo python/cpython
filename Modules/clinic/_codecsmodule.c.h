@@ -15,6 +15,18 @@ PyDoc_STRVAR(_codecs_register__doc__,
 #define _CODECS_REGISTER_METHODDEF    \
     {"register", (PyCFunction)_codecs_register, METH_O, _codecs_register__doc__},
 
+PyDoc_STRVAR(_codecs_unregister__doc__,
+"unregister($module, search_function, /)\n"
+"--\n"
+"\n"
+"Unregister a codec search function.\n"
+"\n"
+"Unregister a codec search function from codec registry. If the search\n"
+"function haven\'t registered, this function does nothing.");
+
+#define _CODECS_UNREGISTER_METHODDEF    \
+    {"unregister", (PyCFunction)_codecs_unregister, METH_O, _codecs_unregister__doc__},
+
 PyDoc_STRVAR(_codecs_lookup__doc__,
 "lookup($module, encoding, /)\n"
 "--\n"
@@ -2827,4 +2839,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=eeead01414be6e42 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b2d6d8e9caa87da7 input=a9049054013a1b77]*/

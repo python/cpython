@@ -165,9 +165,16 @@ function:
 
    .. note::
 
-      Search function registration is not currently reversible,
-      which may cause problems in some cases, such as unit testing or
-      module reloading.
+      Search function registration is reversible since Python 3.10.
+      You can use `codecs.unregister()` to unregister the search function.
+
+.. function:: unregister(search_function)
+
+   Unregister a codec search function from the codecs registry. If
+   the search function haven't registered, this function dose nothing.
+
+   .. versionadded:: 3.10
+
 
 While the builtin :func:`open` and the associated :mod:`io` module are the
 recommended approach for working with encoded text files, this module

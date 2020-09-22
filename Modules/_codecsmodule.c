@@ -69,6 +69,24 @@ _codecs_register(PyObject *module, PyObject *search_function)
 }
 
 /*[clinic input]
+_codecs.unregister
+    search_function: object
+    /
+
+Unregister a codec search function.
+
+Unregister a codec search function from codec registry. If the search
+function haven't registered, this function does nothing.
+[clinic start generated code]*/
+
+static PyObject *
+_codecs_unregister(PyObject *module, PyObject *search_function)
+/*[clinic end generated code: output=1f0edee9cf246399 input=ecb26613941e6a47]*/
+{
+    return _PyCodec_Unregister(search_function);
+}
+
+/*[clinic input]
 _codecs.lookup
     encoding: str
     /
@@ -992,6 +1010,7 @@ _codecs_lookup_error_impl(PyObject *module, const char *name)
 
 static PyMethodDef _codecs_functions[] = {
     _CODECS_REGISTER_METHODDEF
+    _CODECS_UNREGISTER_METHODDEF
     _CODECS_LOOKUP_METHODDEF
     _CODECS_ENCODE_METHODDEF
     _CODECS_DECODE_METHODDEF

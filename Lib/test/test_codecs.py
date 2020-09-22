@@ -1641,6 +1641,12 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, codecs.register)
         self.assertRaises(TypeError, codecs.register, 42)
 
+    def test_unregister(self):
+        def test_encoding(encoding):
+            return None
+        codecs.register(test_encoding)
+        self.assertEqual(codecs.unregister(test_encoding), None)
+
     def test_lookup(self):
         self.assertRaises(TypeError, codecs.lookup)
         self.assertRaises(LookupError, codecs.lookup, "__spam__")

@@ -53,6 +53,10 @@ PyAPI_FUNC(PyObject *) _PyCodec_Lookup(
 PyAPI_FUNC(int) _PyCodec_Forget(
        const char *encoding
        );
+
+PyAPI_FUNC(PyObject *) _PyCodec_Unregister(
+       PyObject *search_function
+       );
 #endif
 
 /* Codec registry encoding check API.
