@@ -1,0 +1,3 @@
+:data:`types.EllipsisType`, :data:`types.NotImplementedType` and
+:data:`types.NoneType` have been reintroduced, providing a new set
+of types readily interpretable by static type checkers.
