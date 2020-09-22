@@ -44,6 +44,11 @@ helper, :class:`auto`.
     Base class for creating enumerated constants that are also
     subclasses of :class:`int`.
 
+.. class:: StrEnum
+
+    Base class for creating enumerated constants that are also
+    subclasses of :class:`str`.
+
 .. class:: IntFlag
 
     Base class for creating enumerated constants that can be combined using
@@ -601,6 +606,25 @@ However, they still can't be compared to standard :class:`Enum` enumerations::
     [0, 1]
 
 
+StrEnum
+^^^^^^^
+
+The second variation of :class:`Enum` that is provided is also a subclass of
+:class:`str`.  Members of a :class:`StrEnum` can be compared to strings;
+by extension, string enumerations of different types can also be compared
+to each other.  :class:`StrEnum` exists to help avoid the problem of getting
+an incorrect member::
+
+    >>> class Directions(StrEnum):
+    ...     NORTH = 'north',    # notice the trailing comma
+    ...     SOUTH = 'south'
+
+Before :class:`StrEnum`, ``Directions.NORTH`` would have been the :class:`tuple`
+``('north',)``.
+
+.. versionadded:: 3.10
+
+
 IntFlag
 ^^^^^^^
 
@@ -901,6 +925,32 @@ Using an auto-numbering :meth:`__new__` would look like::
     >>> Color.GREEN.value
     2
 
+To make a more general purpose ``AutoNumber``, add ``*args`` to the signature::
+
+    >>> class AutoNumber(NoValue):
+    ...     def __new__(cls, *args):      # this is the only change from above
+    ...         value = len(cls.__members__) + 1
+    ...         obj = object.__new__(cls)
+    ...         obj._value_ = value
+    ...         return obj
+    ...
+
+Then when you inherit from ``AutoNumber`` you can write your own ``__init__``
+to handle any extra arguments::
+
+    >>> class Swatch(AutoNumber):
+    ...     def __init__(self, pantone='unknown'):
+    ...         self.pantone = pantone
+    ...     AUBURN = '3497'
+    ...     SEA_GREEN = '1246'
+    ...     BLEACHED_CORAL = () # New color, no Pantone code yet!
+    ...
+    >>> Swatch.SEA_GREEN
+    <Swatch.SEA_GREEN: 2>
+    >>> Swatch.SEA_GREEN.pantone
+    '1246'
+    >>> Swatch.BLEACHED_CORAL.pantone
+    'unknown'
 
 .. note::
 
@@ -1130,6 +1180,20 @@ all-uppercase names for members)::
     2
 
 .. versionchanged:: 3.5
+
+
+Creating members that are mixed with other data types
+"""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+When subclassing other data types, such as :class:`int` or :class:`str`, with
+an :class:`Enum`, all values after the `=` are passed to that data type's
+constructor.  For example::
+
+    >>> class MyEnum(IntEnum):
+    ...     example = '11', 16      # '11' will be interpreted as a hexadecimal
+    ...                             # number
+    >>> MyEnum.example
+    <MyEnum.example: 17>
 
 
 Boolean value of ``Enum`` classes and members
