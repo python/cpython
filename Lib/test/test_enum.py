@@ -2036,6 +2036,37 @@ class TestEnum(unittest.TestCase):
             two = '2'
             three = b'3', 'ascii'
             four = b'4', 'latin1', 'strict'
+        self.assertEqual(GoodStrEnum.one, '1')
+        self.assertEqual(str(GoodStrEnum.one), '1')
+        self.assertEqual(GoodStrEnum.one, str(GoodStrEnum.one))
+        self.assertEqual(GoodStrEnum.one, '{}'.format(GoodStrEnum.one))
+        #
+        class DumbMixin:
+            def __str__(self):
+                return "don't do this"
+        class DumbStrEnum(DumbMixin, StrEnum):
+            five = '5'
+            six = '6'
+            seven = '7'
+        self.assertEqual(DumbStrEnum.seven, '7')
+        self.assertEqual(str(DumbStrEnum.seven), "don't do this")
+        #
+        class EnumMixin(Enum):
+            def hello(self):
+                print('hello from %s' % (self, ))
+        class HelloEnum(EnumMixin, StrEnum):
+            eight = '8'
+        self.assertEqual(HelloEnum.eight, '8')
+        self.assertEqual(HelloEnum.eight, str(HelloEnum.eight))
+        #
+        class GoodbyeMixin:
+            def goodbye(self):
+                print('%s wishes you a fond farewell')
+        class GoodbyeEnum(GoodbyeMixin, EnumMixin, StrEnum):
+            nine = '9'
+        self.assertEqual(GoodbyeEnum.nine, '9')
+        self.assertEqual(GoodbyeEnum.nine, str(GoodbyeEnum.nine))
+        #
         with self.assertRaisesRegex(TypeError, '1 is not a string'):
             class FirstFailedStrEnum(StrEnum):
                 one = 1

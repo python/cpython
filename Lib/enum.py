@@ -718,6 +718,8 @@ class StrEnum(str, Enum):
         member._value_ = value
         return member
 
+    __str__ = str.__str__
+
 
 def _reduce_ex_by_name(self, proto):
     return self.name

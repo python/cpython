@@ -622,6 +622,11 @@ an incorrect member::
 Before :class:`StrEnum`, ``Directions.NORTH`` would have been the :class:`tuple`
 ``('north',)``.
 
+.. note::
+
+    Unlike other Enum's, ``str(StrEnum.member)`` will return the value of the
+    member instead of the usual ``"EnumClass.member"``.
+
 .. versionadded:: 3.10
 
 
@@ -1242,4 +1247,14 @@ all named flags and all named combinations of flags that are in the value::
     <Color.YELLOW: 3>
     >>> Color(7)      # not named combination
     <Color.CYAN|MAGENTA|BLUE|YELLOW|GREEN|RED: 7>
+
+``StrEnum`` and :meth:`str.__str__`
+"""""""""""""""""""""""""""""""""""
+
+An important difference between :class:`StrEnum` and other Enums is the
+:meth:`__str__` method; because :class:`StrEnum` members are strings, some
+parts of Python will read the string data directly, while others will call
+:meth:`str()`. To make those two operations have the same result,
+:meth:`StrEnum.__str__` will be the same as :meth:`str.__str__` so that
+``str(StrEnum.member) == StrEnum.member`` is true.
 
