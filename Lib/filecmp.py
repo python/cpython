@@ -12,16 +12,18 @@ Functions:
 
 import os
 import stat
+from dataclasses import dataclass, field
 from functools import cached_property
 from itertools import filterfalse
-from pathlib import Path
+from os.path import isfile, isdir
+from typing import Tuple
 
 __all__ = ["clear_cache", "cmp", "dircmp", "cmpfiles", "DEFAULT_IGNORES"]
 
 _cache = {}
 BUFSIZE = 8 * 1024
 
-DEFAULT_IGNORES = [
+DEFAULT_IGNORES = (
     "RCS",
     "CVS",
     "tags",
@@ -30,7 +32,7 @@ DEFAULT_IGNORES = [
     ".bzr",
     "_darcs",
     "__pycache__",
-]
+)
 
 
 def clear_cache():
@@ -94,6 +96,7 @@ def _do_cmp(f1, f2):
                 return True
 
 
+@dataclass
 class dircmp:
     """A class that manages the comparison of 2 directories.
 
@@ -128,17 +131,10 @@ class dircmp:
      subdirs: a dictionary of dircmp objects, keyed by names in common_dirs.
      """
 
-    def __init__(self, a, b, ignore=None, hide=None):  # Initialize
-        self.left = a
-        self.right = b
-        if hide is None:
-            self.hide = [os.curdir, os.pardir]  # Names never to be shown
-        else:
-            self.hide = hide
-        if ignore is None:
-            self.ignore = DEFAULT_IGNORES
-        else:
-            self.ignore = ignore
+    left: os.PathLike
+    right: os.PathLike
+    ignore: Tuple[os.PathLike] = DEFAULT_IGNORES
+    hide: Tuple[os.PathLike] = (os.curdir, os.pardir)
 
     @cached_property
     def left_list(self):
@@ -165,32 +161,18 @@ class dircmp:
 
     @cached_property
     def common_dirs(self):
-        left_path = Path(self.left)
-        right_path = Path(self.right)
         return [
             name
             for name in self.common
-            if (left_path / name).isdir() and (right_path / name).isdir()
-        ]
-
-    @cached_property
-    def common_dirs(self):
-        left_path = Path(self.left)
-        right_path = Path(self.right)
-        return [
-            name
-            for name in self.common
-            if (left_path / name).is_dir() and (right_path / name).is_dir()
+            if isdir(os.path.join(self.left, name)) and isdir(os.path.join(self.right, name))
         ]
 
     @cached_property
     def common_files(self):
-        left_path = Path(self.left)
-        right_path = Path(self.right)
         return [
             name
             for name in self.common
-            if (left_path / name).is_file() and (right_path / name).is_file()
+            if isfile(os.path.join(self.left, name)) and isfile(os.path.join(self.right, name))
         ]
 
     @cached_property
