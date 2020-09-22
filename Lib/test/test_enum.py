@@ -2037,6 +2037,7 @@ class TestEnum(unittest.TestCase):
             three = b'3', 'ascii'
             four = b'4', 'latin1', 'strict'
         self.assertEqual(GoodStrEnum.one, '1')
+        self.assertEqual(str(GoodStrEnum.one), '1')
         self.assertEqual(GoodStrEnum.one, str(GoodStrEnum.one))
         self.assertEqual(GoodStrEnum.one, '{}'.format(GoodStrEnum.one))
         #
