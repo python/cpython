@@ -1674,7 +1674,7 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
     try:
         if follow_wrapped:
             thing = inspect.unwrap(thing,
-                                   stop=(lambda func: not hasattr(func, '__doc__')))
+                                   stop=(lambda func: not getattr(func, '__doc__', True)))
         if output is None:
             pager(render_doc(thing, title, forceload))
         else:
