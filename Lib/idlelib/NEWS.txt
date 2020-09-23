@@ -1,5 +1,5 @@
-What's New in IDLE 3.9.0 (since 3.8.0)
-Released on 2020-10-05?
+What's New in IDLE 3.10.0 (since 3.9.0)
+Released on 2021-10-04?
 ======================================
 
 
@@ -7,6 +7,11 @@ bpo-35764: Rewrite the Calltips doc section.
 
 bpo-40181: In calltips, stop reminding that '/' marks the end of
 positional-only arguments.
+
+
+What's New in IDLE 3.9.0 (since 3.8.0)
+Released on 2020-10-05?
+======================================
 
 bpo-41468: Improve IDLE run crash error message (which users should
 never see).
