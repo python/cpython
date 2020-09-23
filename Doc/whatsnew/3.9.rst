@@ -387,6 +387,20 @@ http
 HTTP status codes ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` are added to
 :class:`http.HTTPStatus`. (Contributed by Dong-hee Na in :issue:`39509` and Ross Rhodes in :issue:`39507`.)
 
+IDLE and idlelib
+----------------
+
+Add option to toggle cursor blink off.  (Contributed by Zackery Spytz
+in :issue:`4603`.)
+
+Escape key now closes IDLE completion windows.  (Contributed by Johnny
+Najera in :issue:`38944`.)
+
+Add keywords to module name completion list.  (Contributed by Terry J.
+Reedy in :issue:`37765`.)
+
+The changes above have been backported to 3.8 maintenance releases.
+
 imaplib
 -------
 
