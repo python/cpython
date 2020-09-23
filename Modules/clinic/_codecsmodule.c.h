@@ -19,7 +19,7 @@ PyDoc_STRVAR(_codecs_unregister__doc__,
 "unregister($module, search_function, /)\n"
 "--\n"
 "\n"
-"Unregister a codec search function.\n"
+"Unregister a codec search function and clear the registry\'s cache.\n"
 "\n"
 "If the search function is not registered, do nothing.");
 
@@ -2838,4 +2838,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=47d275cbfe79eea2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9a97e2ddf3e69072 input=a9049054013a1b77]*/

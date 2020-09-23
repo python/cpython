@@ -27,6 +27,16 @@ PyAPI_FUNC(int) PyCodec_Register(
        PyObject *search_function
        );
 
+/* Unregister a codec search function.
+
+   Unregister a codec search function and clear the registry's cache.
+   If the search function is not registered, do nothing.
+   */
+
+PyAPI_FUNC(int) PyCodec_Unregister(
+       PyObject *search_function
+       );
+
 /* Codec registry lookup API.
 
    Looks up the given encoding and returns a CodecInfo object with
@@ -52,10 +62,6 @@ PyAPI_FUNC(PyObject *) _PyCodec_Lookup(
 
 PyAPI_FUNC(int) _PyCodec_Forget(
        const char *encoding
-       );
-
-PyAPI_FUNC(int) _PyCodec_Unregister(
-       PyObject *search_function
        );
 #endif
 

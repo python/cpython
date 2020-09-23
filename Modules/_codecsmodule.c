@@ -73,16 +73,16 @@ _codecs.unregister
     search_function: object
     /
 
-Unregister a codec search function.
+Unregister a codec search function and clear the registry's cache.
 
 If the search function is not registered, do nothing.
 [clinic start generated code]*/
 
 static PyObject *
 _codecs_unregister(PyObject *module, PyObject *search_function)
-/*[clinic end generated code: output=1f0edee9cf246399 input=8bfb99685e00d653]*/
+/*[clinic end generated code: output=1f0edee9cf246399 input=dd7c004c652d345e]*/
 {
-    if (_PyCodec_Unregister(search_function)) {
+    if (PyCodec_Unregister(search_function) < 0) {
         return NULL;
     }
 

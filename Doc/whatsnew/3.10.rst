@@ -112,7 +112,7 @@ Base32 Encoding with Extended Hex Alphabet.
 codecs
 ------
 
-Add :func:`_codecs.unregister` to unregister a codec search function.
+Add :func:`codecs.unregister` to unregister a codec search function.
 
 curses
 ------

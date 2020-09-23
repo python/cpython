@@ -166,9 +166,8 @@ function:
 
 .. function:: unregister(search_function)
 
-   Unregister a codec search function from the codecs registry.
+   Unregister a codec search function and clear the registry's cache.
    If the search function is not registered, do nothing.
-   Clear the registry's cache if the codec search function is removed.
 
    .. versionadded:: 3.10
 

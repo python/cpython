@@ -1642,10 +1642,11 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, codecs.register, 42)
 
     def test_unregister(self):
-        def test_encoding(encoding):
-            return None
-        codecs.register(test_encoding)
-        self.assertEqual(codecs.unregister(test_encoding), None)
+        search_function = mock.Mock(return_value=(1, 2, 3, 4))
+        codecs.register(search_function)
+        codecs.unregister(search_function)
+        self.assertRaises(LookupError, codecs.lookup, "test")
+        search_function.assert_not_called()
 
     def test_lookup(self):
         self.assertRaises(TypeError, codecs.lookup)
