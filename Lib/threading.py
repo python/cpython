@@ -745,10 +745,9 @@ class BrokenBarrierError(RuntimeError):
 
 
 # Helper to generate new thread names
-_counter = _count().__next__
-_counter() # Consume 0 so first non-main thread has id 1.
-def _newname(template="Thread-%d"):
-    return template % _counter()
+_counter = _count(1).__next__
+def _newname(name_template):
+    return name_template % _counter()
 
 # Active thread administration
 _active_limbo_lock = _allocate_lock()
@@ -800,8 +799,19 @@ class Thread:
         assert group is None, "group argument must be None for now"
         if kwargs is None:
             kwargs = {}
+        if name:
+            name = str(name)
+        else:
+            name = _newname("Thread-%d")
+            if target is not None:
+                try:
+                    target_name = target.__name__
+                    name += f" ({target_name})"
+                except AttributeError:
+                    pass
+
         self._target = target
-        self._name = str(name or _newname())
+        self._name = name
         self._args = args
         self._kwargs = kwargs
         if daemon is not None:
