@@ -801,7 +801,7 @@ class Thread:
             kwargs = {}
         if name:
             name = str(name)
-        if not name:
+        else:
             name = _newname("Thread-%d")
             if target is not None:
                 try:
