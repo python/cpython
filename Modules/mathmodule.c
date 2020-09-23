@@ -2502,8 +2502,8 @@ References:
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    const double T27 = 134217729.0;     /* ldexp(1.0, 27)+1.0) */
-    double x, csum = 1.0, oldcsum, scale, frac=0.0, frac_mid=0.0, frac_lo=0.0;
+    const double T27 = 134217729.0;     /* ldexp(1.0, 27) + 1.0) */
+    double x, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0, frac3 = 0.0;
     double t, hi, lo, h;
     int max_e;
     Py_ssize_t i;
@@ -2539,18 +2539,18 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             assert(fabs(csum) >= fabs(x));
             oldcsum = csum;
             csum += x;
-            frac += (oldcsum - csum) + x;
+            frac1 += (oldcsum - csum) + x;
 
             x = 2.0 * hi * lo;
             assert(fabs(csum) >= fabs(x));
             oldcsum = csum;
             csum += x;
-            frac_mid += (oldcsum - csum) + x;
+            frac2 += (oldcsum - csum) + x;
 
             assert(csum + lo * lo == csum);
-            frac_lo += lo * lo;
+            frac3 += lo * lo;
         }
-        h = sqrt(csum - 1.0 + (frac_lo + frac_mid + frac));
+        h = sqrt(csum - 1.0 + (frac1 + frac2 + frac3));
 
         x = h;
         t = x * T27;
@@ -2562,21 +2562,21 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac1 += (oldcsum - csum) + x;
 
         x = -2.0 * hi * lo;
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac_mid += (oldcsum - csum) + x;
+        frac2 += (oldcsum - csum) + x;
 
         x = -lo * lo;
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac_lo += (oldcsum - csum) + x;
+        frac3 += (oldcsum - csum) + x;
 
-        x = csum - 1.0 + (frac_lo + frac_mid + frac);
+        x = csum - 1.0 + (frac1 + frac2 + frac3);
         return (h + x / (2.0 * h)) / scale;
     }
     /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
@@ -2591,9 +2591,9 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac1 += (oldcsum - csum) + x;
     }
-    return max * sqrt(csum - 1.0 + frac);
+    return max * sqrt(csum - 1.0 + frac1);
 }
 
 #define NUM_STACK_ELEMS 16
