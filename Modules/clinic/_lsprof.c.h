@@ -31,14 +31,25 @@ PyDoc_STRVAR(_lsprof_Profiler_getstats__doc__,
 "    inlinetime    inline time (not in further subcalls)");
 
 #define _LSPROF_PROFILER_GETSTATS_METHODDEF    \
-    {"getstats", (PyCFunction)_lsprof_Profiler_getstats, METH_NOARGS, _lsprof_Profiler_getstats__doc__},
+    {"getstats", (PyCFunction)(void(*)(void))_lsprof_Profiler_getstats, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _lsprof_Profiler_getstats__doc__},
 
 static PyObject *
-_lsprof_Profiler_getstats_impl(ProfilerObject *self);
+_lsprof_Profiler_getstats_impl(ProfilerObject *self, PyTypeObject *cls);
 
 static PyObject *
-_lsprof_Profiler_getstats(ProfilerObject *self, PyObject *Py_UNUSED(ignored))
+_lsprof_Profiler_getstats(ProfilerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _lsprof_Profiler_getstats_impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":getstats", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = _lsprof_Profiler_getstats_impl(self, cls);
+
+exit:
+    return return_value;
 }
-/*[clinic end generated code: output=24c525812713e00f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b4727cfebecdd22d input=a9049054013a1b77]*/

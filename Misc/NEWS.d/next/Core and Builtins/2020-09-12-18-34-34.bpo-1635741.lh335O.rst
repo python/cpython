@@ -1,0 +1,2 @@
+Port the :mod:`_lsprof` extension module to multi-phase initialization
+(:pep:`489`).
