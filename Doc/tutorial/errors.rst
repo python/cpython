@@ -286,7 +286,7 @@ This can be useful when you are transforming exceptions. For example::
     >>> try:
     ...     func()
     ... except IOError as exc:
-    ...     raise RuntimeError('Failed to open database') from exc
+    ...     raise RuntimeError('Encountered IOError') from exc
     ...
     Traceback (most recent call last):
       File "<stdin>", line 2, in <module>
@@ -297,7 +297,7 @@ This can be useful when you are transforming exceptions. For example::
     <BLANKLINE>
     Traceback (most recent call last):
       File "<stdin>", line 4, in <module>
-    RuntimeError
+    RuntimeError: Encountered IOError
 
 The expression following the :keyword:`from` must be either an exception or
 ``None``. Exception chaining happens automatically when an exception is raised
@@ -307,11 +307,11 @@ can be disabled by using ``from None`` idiom:
     >>> try:
     ...     open('database.sqlite')
     ... except IOError:
-    ...     raise RuntimeError from None
+    ...     raise RuntimeError('Failed to open database') from None
     ...
     Traceback (most recent call last):
       File "<stdin>", line 4, in <module>
-    RuntimeError
+    RuntimeError: Failed to open database
 
 
 .. _tut-userexceptions:
