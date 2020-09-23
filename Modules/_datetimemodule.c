@@ -115,14 +115,9 @@ class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCa
 #define SET_TD_SECONDS(o, v)    ((o)->seconds = (v))
 #define SET_TD_MICROSECONDS(o, v) ((o)->microseconds = (v))
 
-/* p is a pointer to a time or a datetime object; HASTZINFO(p) returns
- * p->hastzinfo.
- */
-#define HASTZINFO(p) (((_PyDateTime_BaseTZInfo *)(p))->hastzinfo)
-#define GET_TIME_TZINFO(p) (HASTZINFO(p) ? \
-                            ((PyDateTime_Time *)(p))->tzinfo : Py_None)
-#define GET_DT_TZINFO(p) (HASTZINFO(p) ? \
-                          ((PyDateTime_DateTime *)(p))->tzinfo : Py_None)
+#define HASTZINFO               _PyDateTime_HAS_TZINFO
+#define GET_TIME_TZINFO         PyDateTime_TIME_GET_TZINFO
+#define GET_DT_TZINFO           PyDateTime_DATE_GET_TZINFO
 /* M is a char or int claiming to be a valid month.  The macro is equivalent
  * to the two-sided Python test
  *      1 <= M <= 12

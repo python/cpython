@@ -231,6 +231,12 @@ New Features
   Python executable.
   (Contributed by Victor Stinner in :issue:`23427`.)
 
+* The :c:func:`PyDateTime_DATE_GET_TZINFO` and
+  :c:func:`PyDateTime_TIME_GET_TZINFO` macros have been added for accessing
+  the ``tzinfo`` attributes of :class:`datetime.datetime` and
+  :class:`datetime.time` objects.
+  (Contributed by Zackery Spytz in :issue:`30155`.)
+
 Porting to Python 3.10
 ----------------------
 
