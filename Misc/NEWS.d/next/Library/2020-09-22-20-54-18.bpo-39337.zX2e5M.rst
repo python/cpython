@@ -1,2 +1,0 @@
-Add a :func:`_codecs.unregister` which could unregister a codec search
-function from the codec registry.

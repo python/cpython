@@ -109,6 +109,11 @@ base64
 Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
 Base32 Encoding with Extended Hex Alphabet.
 
+codecs
+------
+
+Add :func:`_codecs.unregister` to unregister a codec search function.
+
 curses
 ------
 

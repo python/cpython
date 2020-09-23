@@ -50,24 +50,24 @@ int PyCodec_Register(PyObject *search_function)
     return -1;
 }
 
-PyObject *
+int
 _PyCodec_Unregister(PyObject *search_function)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
+    /* Do nothing if codec_search_path is not created yet or was created. */
     if (interp->codec_search_path == NULL) {
-        Py_RETURN_NONE;
+        return 0;
     }
 
     Py_ssize_t n = PyList_Size(interp->codec_search_path);
-    PyObject *list = PyList_New(0);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *item = PyList_GetItem(interp->codec_search_path, i);
-        if (item != search_function) {
-            PyList_Append(list, item);
+        if (item == search_function) {
+            return PyList_SetSlice(interp->codec_search_path, i, i+1, NULL);
         }
     }
-    Py_SETREF(interp->codec_search_path, list);
-    Py_RETURN_NONE;
+    PyDict_Clear(interp->codec_search_cache);
+    return 0;
 }
 
 extern int _Py_normalize_encoding(const char *, char *, size_t);

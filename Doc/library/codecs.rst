@@ -163,15 +163,12 @@ function:
    :class:`CodecInfo` object. In case a search function cannot find
    a given encoding, it should return ``None``.
 
-   .. note::
-
-      Search function registration is reversible since Python 3.10.
-      You can use `codecs.unregister()` to unregister the search function.
 
 .. function:: unregister(search_function)
 
-   Unregister a codec search function from the codecs registry. If
-   the search function haven't registered, this function dose nothing.
+   Unregister a codec search function from the codecs registry.
+   If the search function is not registered, do nothing.
+   Clear the registry's cache if the codec search function is removed.
 
    .. versionadded:: 3.10
 

@@ -21,8 +21,7 @@ PyDoc_STRVAR(_codecs_unregister__doc__,
 "\n"
 "Unregister a codec search function.\n"
 "\n"
-"Unregister a codec search function from codec registry. If the search\n"
-"function haven\'t registered, this function does nothing.");
+"If the search function is not registered, do nothing.");
 
 #define _CODECS_UNREGISTER_METHODDEF    \
     {"unregister", (PyCFunction)_codecs_unregister, METH_O, _codecs_unregister__doc__},
@@ -2839,4 +2838,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=b2d6d8e9caa87da7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=47d275cbfe79eea2 input=a9049054013a1b77]*/
