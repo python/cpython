@@ -66,7 +66,6 @@ Objects/tupleobject.c:_Py_tuple_zero_allocs                      Py_ssize_t _Py_
 Objects/typeobject.c:next_version_tag                            static unsigned int next_version_tag
 Python/Python-ast.c:init_types():initialized                     static int initialized
 Python/bootstrap_hash.c:urandom_cache                            static struct { int fd; dev_t st_dev; ino_t st_ino; } urandom_cache
-Python/ceval.c:_Py_CheckRecursionLimit                           int _Py_CheckRecursionLimit
 Python/ceval.c:lltrace                                           static int lltrace
 Python/ceval.c:make_pending_calls():busy                         static int busy
 Python/dynload_shlib.c:handles                                   static struct { dev_t dev; ino_t ino; void *handle; } handles[128]
