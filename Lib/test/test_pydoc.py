@@ -647,7 +647,7 @@ class PydocDocTest(unittest.TestCase):
         # Testing that the subclasses section does not appear
         self.assertNotIn('Built-in subclasses', text)
 
-    def test_builtin_with_wrapper(self):
+    def test_help_with_wrapper(self):
         """Test help on function wrapped.
 
         When running help() on a function that is wrapped,
@@ -659,7 +659,7 @@ class PydocDocTest(unittest.TestCase):
         class TestWrapper:
             """This is the docstring of Wrapper"""
             def __init__(self, func):
-                functools.update_wrapper(func)
+                functools.update_wrapper(self, func)
             def __call__(self):
                 pass
 
@@ -668,19 +668,22 @@ class PydocDocTest(unittest.TestCase):
             """Test func1"""
             pass
 
-        doc = pydoc.TextDoc()
-        text = doc.docclass(test_func1)
-        self.assertIn('Test func1', text)
+        buff = StringIO()
 
-        text = doc.docclass(test_func1, follow_wrapped=False)
-        self.assertIn("This is the docstring for Wrapper", text)
+        helper = pydoc.Helper(output=buff)
+
+        helper.help(test_func1)
+        self.assertIn('Test func1', buff.getvalue().strip())
+
+        helper.help(test_func1, follow_wrapped=False)
+        self.assertIn("This is the docstring of Wrapper", buff.getvalue().strip())
 
         @TestWrapper
         def test_func2():
             pass
 
-        text = doc.docclass(test_func1)
-        self.assertIn("This is the docstring for wrapper", text)
+        helper.help(test_func2)
+        self.assertIn("This is the docstring of Wrapper", buff.getvalue().strip())
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      'Docstrings are omitted with -O2 and above')

@@ -1775,9 +1775,8 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
         output=None, follow_wrapped=True):
     """Display text documentation, given an object or a path to an object."""
     try:
-        if follow_wrapped:
-            thing = inspect.unwrap(thing,
-                                   stop=(lambda func: not getattr(func, '__doc__', True)))
+        if not follow_wrapped:
+            thing = type(thing)
         if output is None:
             pager(render_doc(thing, title, forceload))
         else:
