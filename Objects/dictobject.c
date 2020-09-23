@@ -2811,6 +2811,7 @@ PyDict_Copy(PyObject *o)
     PyObject *copy;
     PyDictObject *mp;
     Py_ssize_t i, n;
+
     if (o == NULL || !PyDict_Check(o)) {
         PyErr_BadInternalCall();
         return NULL;
@@ -3501,6 +3502,7 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *self;
     PyDictObject *d;
+
     assert(type != NULL && type->tp_alloc != NULL);
     self = type->tp_alloc(type, 0);
     if (self == NULL)
