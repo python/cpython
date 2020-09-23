@@ -1328,7 +1328,7 @@ way is to instantiate one of the following classes:
 
    On Windows creating a :class:`CDLL` instance may fail even if the DLL name
    exists. When a dependent DLL of the loaded DLL is not found, a
-   :class:`OSError` error is raised with the message *"[WinError 126] The
+   :exc:`OSError` error is raised with the message *"[WinError 126] The
    specified module could not be found".* This error message does not contains
    the name of the missing DLL because the Windows API does not return this
    information making this error hard to diagnose. To resolve this error and
@@ -2559,4 +2559,3 @@ Arrays and pointers
 
         Returns the object to which to pointer points.  Assigning to this
         attribute changes the pointer to point to the assigned object.
-
