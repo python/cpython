@@ -3534,9 +3534,7 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
     assert(PyType_Check(type));
-    
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    
     if (!_PyArg_CheckPositional("dict", nargs, 0, 1)) {
         return NULL;
     }
