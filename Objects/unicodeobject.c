@@ -15754,6 +15754,10 @@ PyUnicode_InternInPlace(PyObject **p)
        this. */
     Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
+#else
+    // PyDict expects that interned strings have their hash
+    // (PyASCIIObject.hash) already computed.
+    (void)unicode_hash(s);
 #endif
 }
 
