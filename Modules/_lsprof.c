@@ -488,17 +488,17 @@ static PyStructSequence_Field profiler_subentry_fields[] = {
 };
 
 static PyStructSequence_Desc profiler_entry_desc = {
-    "_lsprof.profiler_entry", /* name */
-    "", /* doc */
-    profiler_entry_fields,
-    6
+    .name = "_lsprof.profiler_entry",
+    .doc = "",
+    .fields = profiler_entry_fields,
+    .n_in_sequence = 6
 };
 
 static PyStructSequence_Desc profiler_subentry_desc = {
-    "_lsprof.profiler_subentry", /* name */
-    "", /* doc */
-    profiler_subentry_fields,
-    5
+    .name = "_lsprof.profiler_subentry",
+    .doc = "",
+    .fields = profiler_subentry_fields,
+    .n_in_sequence = 5
 };
 
 typedef struct {
@@ -848,7 +848,6 @@ _lsprof_exec(PyObject *module)
 
     state->profiler_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &_lsprof_profiler_type_spec, NULL);
-
     if (state->profiler_type == NULL) {
         return -1;
     }
@@ -861,13 +860,12 @@ _lsprof_exec(PyObject *module)
     if (state->stats_entry_type == NULL) {
         return -1;
     }
-
-    state->stats_subentry_type = PyStructSequence_NewType(&profiler_subentry_desc);
-    if (state->stats_subentry_type == NULL) {
+    if (PyModule_AddType(module, state->stats_entry_type) < 0) {
         return -1;
     }
 
-    if (PyModule_AddType(module, state->stats_entry_type) < 0) {
+    state->stats_subentry_type = PyStructSequence_NewType(&profiler_subentry_desc);
+    if (state->stats_subentry_type == NULL) {
         return -1;
     }
     if (PyModule_AddType(module, state->stats_subentry_type) < 0) {
