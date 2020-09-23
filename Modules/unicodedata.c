@@ -93,11 +93,9 @@ static PyMemberDef DB_members[] = {
 /* forward declaration */
 static PyTypeObject UCD_Type;
 
-//check if self is of given type (which will be UCD_Type)
-//UCD_Type is not in the macro because this will become a heap
-//type and will need to be passed in.  self is NULL when
-//the PyCapsule API is used.
-#define UCD_Check(self, type) self && Py_IS_TYPE(self, type)
+// Check if self is an instance of UCD_Type.
+// Return 0 if self is NULL (when the PyCapsule C API is used).
+#define UCD_Check(self, ucd_type) (self != NULL && Py_IS_TYPE(self, ucd_type))
 
 static PyObject*
 new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4),
