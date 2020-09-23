@@ -1329,11 +1329,12 @@ way is to instantiate one of the following classes:
    On Windows creating a :class:`CDLL` instance may fail even if the DLL name
    exists. When a dependent DLL of the loaded DLL is not found, a
    :exc:`OSError` error is raised with the message *"[WinError 126] The
-   specified module could not be found".* This error message does not contains
+   specified module could not be found".* This error message does not contain
    the name of the missing DLL because the Windows API does not return this
    information making this error hard to diagnose. To resolve this error and
-   determine which DLL is missing, you need to find the list of missing
-   dependent DLLs using Windows debugging and tracing tools.
+   determine which DLL is not found, you need to find the list of dependent
+   DLLs and determine which one is not found using Windows debugging and
+   tracing tools.
 
 .. seealso::
 
