@@ -1,0 +1,153 @@
+.. bpo: 41525
+.. date: 2020-08-12-07-35-07
+.. nonce: d9q3XL
+.. release date: 2020-09-23
+.. section: Core and Builtins
+
+The output of ``python --help`` contains now only ASCII characters.
+
+..
+
+.. bpo: 41817
+.. date: 2020-09-22-00-23-30
+.. nonce: bnh-VG
+.. section: Library
+
+fix `tkinter.EventType` Enum so all members are strings, and none are tuples
+
+..
+
+.. bpo: 41815
+.. date: 2020-09-19-23-14-54
+.. nonce: RNpuX3
+.. section: Library
+
+Fix SQLite3 segfault when backing up closed database. Patch contributed by
+Peter David McCormick.
+
+..
+
+.. bpo: 41517
+.. date: 2020-09-15-22-43-30
+.. nonce: sLBH7g
+.. section: Library
+
+fix bug allowing Enums to be extended via multiple inheritance
+
+..
+
+.. bpo: 39587
+.. date: 2020-09-15-14-56-13
+.. nonce: 69xzuh
+.. section: Library
+
+use the correct mix-in data type when constructing Enums
+
+..
+
+.. bpo: 41789
+.. date: 2020-09-14-19-27-46
+.. nonce: pI_uZQ
+.. section: Library
+
+Honor `object` overrides in `Enum` class creation (specifically, `__str__`,
+`__repr__`, `__format__`, and `__reduce_ex__`).
+
+..
+
+.. bpo: 39651
+.. date: 2020-09-11-12-38-55
+.. nonce: JMp9l2
+.. section: Library
+
+Fix a race condition in the ``call_soon_threadsafe()`` method of
+``asyncio.ProactorEventLoop``: do nothing if the self-pipe socket has been
+closed.
+
+..
+
+.. bpo: 41720
+.. date: 2020-09-04-20-45-38
+.. nonce: PW9MzZ
+.. section: Library
+
+Fixed :meth:`turtle.Vec2D.__rmul__` for arguments which are not int or
+float.
+
+..
+
+.. bpo: 39728
+.. date: 2020-02-24-10-58-34
+.. nonce: kOOaHn
+.. section: Library
+
+fix default `_missing_` so a duplicate `ValueError` is not set as the
+`__context__` of the original `ValueError`
+
+..
+
+.. bpo: 37479
+.. date: 2019-07-02-12-43-57
+.. nonce: O53a5S
+.. section: Library
+
+When `Enum.__str__` is overridden in a derived class, the override will be
+used by `Enum.__format__` regardless of whether mixin classes are present.
+
+..
+
+.. bpo: 35293
+.. date: 2020-09-12-17-37-13
+.. nonce: _cOwPD
+.. section: Documentation
+
+Fix RemovedInSphinx40Warning when building the documentation. Patch by
+Dong-hee Na.
+
+..
+
+.. bpo: 37149
+.. date: 2020-09-10-07-48-02
+.. nonce: VD0rCv
+.. section: Documentation
+
+Change Shipman tkinter doc link from archive.org to TkDocs. (The doc has
+been removed from the NMT server.)  The new link responds much faster and
+includes a short explanatory note.
+
+..
+
+.. bpo: 41731
+.. date: 2020-09-11-19-12-31
+.. nonce: Ivxh4U
+.. section: Tests
+
+Make test_cmd_line_script pass with option '-vv'.
+
+..
+
+.. bpo: 41744
+.. date: 2020-09-11-17-59-33
+.. nonce: e_ugDQ
+.. section: Windows
+
+Fixes automatic import of props file when using the Nuget package.
+
+..
+
+.. bpo: 35764
+.. date: 2020-09-22-11-13-45
+.. nonce: VoNa8y
+.. section: IDLE
+
+Rewrite the Calltips doc section.
+
+..
+
+.. bpo: 40181
+.. date: 2020-09-22-00-45-40
+.. nonce: hhQi3z
+.. section: IDLE
+
+In calltips, stop reminding that '/' marks the end of positional-only
+arguments.
