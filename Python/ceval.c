@@ -1443,9 +1443,9 @@ main_loop:
         if (_Py_TracingPossible(ceval2) &&
             tstate->c_tracefunc != NULL && !tstate->tracing) {
             int err;
-            /* see maybe_call_line_trace
+            /* see maybe_call_line_trace()
                for expository comments */
-            f->f_stackdepth = stack_pointer-f->f_valuestack;
+            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
@@ -2275,7 +2275,7 @@ main_loop:
             assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
             f->f_state = FRAME_SUSPENDED;
-            f->f_stackdepth = stack_pointer-f->f_valuestack;
+            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
             goto exiting;
         }
 
@@ -2292,7 +2292,7 @@ main_loop:
                 retval = w;
             }
             f->f_state = FRAME_SUSPENDED;
-            f->f_stackdepth = stack_pointer-f->f_valuestack;
+            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
             goto exiting;
         }
 
