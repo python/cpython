@@ -6100,13 +6100,11 @@ fold_tuple_on_constants(struct instr *inst,
         PyTuple_SET_ITEM(newconst, i, constant);
     }
     Py_ssize_t index = PyList_GET_SIZE(consts);
-#if SIZEOF_SIZE_T > SIZEOF_INT
-    if ((size_t)index >= UINT_MAX - 1) {
+    if ((size_t)index >= (size_t)INT_MAX - 1) {
         Py_DECREF(newconst);
         PyErr_SetString(PyExc_OverflowError, "too many constants");
         return -1;
     }
-#endif
     if (PyList_Append(consts, newconst)) {
         Py_DECREF(newconst);
         return -1;
@@ -6116,7 +6114,7 @@ fold_tuple_on_constants(struct instr *inst,
         inst[i].i_opcode = NOP;
     }
     inst[n].i_opcode = LOAD_CONST;
-    inst[n].i_oparg = index;
+    inst[n].i_oparg = (int)index;
     return 0;
 }
 
