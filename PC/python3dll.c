@@ -663,7 +663,6 @@ EXPORT_FUNC(PyWeakref_NewProxy)
 EXPORT_FUNC(PyWeakref_NewRef)
 EXPORT_FUNC(PyWrapper_New)
 
-EXPORT_DATA(_Py_CheckRecursionLimit)
 EXPORT_DATA(_Py_EllipsisObject)
 EXPORT_DATA(_Py_FalseStruct)
 EXPORT_DATA(_Py_NoneStruct)
