@@ -179,8 +179,8 @@ exit:
 static PyObject*
 flatten_args(PyObject* args)
 {
-    int arg_length = PyTuple_GET_SIZE(args);
-    int total_args = 0;
+    Py_ssize_t arg_length = PyTuple_GET_SIZE(args);
+    Py_ssize_t total_args = 0;
     // Get number of total args once it's flattened.
     for (Py_ssize_t i = 0; i < arg_length; i++) {
         PyObject *arg = PyTuple_GET_ITEM(args, i);
@@ -434,7 +434,7 @@ _Py_Union(PyObject *args)
     unionobject* result = NULL;
 
     // Check arguments are unionable.
-    int nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(args, iarg);
         if (arg == NULL) {
