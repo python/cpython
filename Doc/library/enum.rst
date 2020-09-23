@@ -888,6 +888,32 @@ Using an auto-numbering :meth:`__new__` would look like::
     >>> Color.GREEN.value
     2
 
+To make a more general purpose ``AutoNumber``, add ``*args`` to the signature::
+
+    >>> class AutoNumber(NoValue):
+    ...     def __new__(cls, *args):      # this is the only change from above
+    ...         value = len(cls.__members__) + 1
+    ...         obj = object.__new__(cls)
+    ...         obj._value_ = value
+    ...         return obj
+    ...
+
+Then when you inherit from ``AutoNumber`` you can write your own ``__init__``
+to handle any extra arguments::
+
+    >>> class Swatch(AutoNumber):
+    ...     def __init__(self, pantone='unknown'):
+    ...         self.pantone = pantone
+    ...     AUBURN = '3497'
+    ...     SEA_GREEN = '1246'
+    ...     BLEACHED_CORAL = () # New color, no Pantone code yet!
+    ...
+    >>> Swatch.SEA_GREEN
+    <Swatch.SEA_GREEN: 2>
+    >>> Swatch.SEA_GREEN.pantone
+    '1246'
+    >>> Swatch.BLEACHED_CORAL.pantone
+    'unknown'
 
 .. note::
 
