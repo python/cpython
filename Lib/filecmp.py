@@ -13,14 +13,14 @@ Functions:
 import os
 import stat
 from dataclasses import dataclass, field
-from functools import cached_property
+from functools import cached_property, lru_cache
 from itertools import filterfalse
+from operator import attrgetter
 from os.path import isfile, isdir
 from typing import Tuple
 
 __all__ = ["clear_cache", "cmp", "dircmp", "cmpfiles", "DEFAULT_IGNORES"]
 
-_cache = {}
 BUFSIZE = 8 * 1024
 
 DEFAULT_IGNORES = (
@@ -37,7 +37,7 @@ DEFAULT_IGNORES = (
 
 def clear_cache():
     """Clear the filecmp cache."""
-    _cache.clear()
+    _file_comparison.cache_clear()
 
 
 def cmp(f1, f2, shallow=True):
@@ -62,26 +62,22 @@ def cmp(f1, f2, shallow=True):
 
     """
 
+    _sig = attrgetter("st_mode", "st_size", "st_mtime")
     s1 = _sig(os.stat(f1))
     s2 = _sig(os.stat(f2))
-    if s1[0] != stat.S_IFREG or s2[0] != stat.S_IFREG:
+    return _file_comparison(f1, f2, s1, s2, shallow)
+
+
+@lru_cache(maxsize=100)
+def _file_comparison(f1, f2, s1, s2, shallow):
+    if not stat.S_ISREG(s1[0]) or not stat.S_ISREG(s2[0]):
         return False
     if shallow and s1 == s2:
         return True
     if s1[1] != s2[1]:
         return False
 
-    outcome = _cache.get((f1, f2, s1, s2))
-    if outcome is None:
-        outcome = _do_cmp(f1, f2)
-        if len(_cache) > 100:  # limit the maximum size of the cache
-            clear_cache()
-        _cache[f1, f2, s1, s2] = outcome
-    return outcome
-
-
-def _sig(st):
-    return (stat.S_IFMT(st.st_mode), st.st_size, st.st_mtime)
+    return _do_cmp(f1, f2)
 
 
 def _do_cmp(f1, f2):
@@ -164,7 +160,8 @@ class dircmp:
         return [
             name
             for name in self.common
-            if isdir(os.path.join(self.left, name)) and isdir(os.path.join(self.right, name))
+            if isdir(os.path.join(self.left, name))
+            and isdir(os.path.join(self.right, name))
         ]
 
     @cached_property
@@ -172,7 +169,8 @@ class dircmp:
         return [
             name
             for name in self.common
-            if isfile(os.path.join(self.left, name)) and isfile(os.path.join(self.right, name))
+            if isfile(os.path.join(self.left, name))
+            and isfile(os.path.join(self.right, name))
         ]
 
     @cached_property
