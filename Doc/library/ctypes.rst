@@ -1326,6 +1326,20 @@ way is to instantiate one of the following classes:
    libraries use the standard C calling convention, and are assumed to return
    :c:type:`int`.
 
+   On Windows creating a :class:`CDLL` instance may fail even if the DLL name
+   exists. When a dependent DLL of the loaded DLL is not found, a
+   :class:`OSError` error is raised with the message *"[WinError 126] The
+   specified module could not be found".* This error message does not contains
+   the name of the missing DLL because the Windows API does not return this
+   information making this error hard to diagnose. To resolve this error and
+   determine which DLL is missing, you need to find the list of missing
+   dependent DLLs using Windows debugging and tracing tools.
+
+.. seealso::
+
+    `MS DUMPBIN tool https://docs.microsoft.com/cpp/build/reference/dependents`_
+    -- A tool to find DLL dependents.
+
 
 .. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
