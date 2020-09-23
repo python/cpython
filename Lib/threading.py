@@ -802,14 +802,13 @@ class Thread:
         if name:
             name = str(name)
         if not name:
-            name_template = "Thread-%d"
+            name = _newname("Thread-%d")
             if target is not None:
                 try:
                     target_name = target.__name__
-                    name_template = f"{name_template} ({target_name})"
+                    name += f" ({target_name})"
                 except AttributeError:
                     pass
-            name = _newname(name_template)
 
         self._target = target
         self._name = name
