@@ -314,3 +314,7 @@ Removed
 * Removed ``PyUnicode_AsUnicodeCopy()``. Please use :c:func:`PyUnicode_AsUCS4Copy` or
   :c:func:`PyUnicode_AsWideCharString`
   (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``_Py_CheckRecursionLimit`` variable: it has been replaced by
+  ``ceval.recursion_limit`` of the :c:type:`PyInterpreterState` structure.
+  (Contributed by Victor Stinner in :issue:`41834`.)
