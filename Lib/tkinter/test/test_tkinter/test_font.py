@@ -72,6 +72,24 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         self.assertNotEqual(font1, 0)
         self.assertEqual(font1, ALWAYS_EQ)
 
+    def test_neg(self):
+        font1 = font.Font(root=self.root, size=32)
+        font2 = -font1
+        self.assertEqual(font1['size'], -(font2['size']))
+        self.assertEqual(font1['size'], -font2['size'])
+
+    def test_equal(self):
+        font1 = font.Font(root=self.root, size=32)
+        font2 = font1.copy()
+        self.assertTrue(font1.equal(font2))
+        self.assertTrue(font2.equal(font1))
+        font2['size'] = 30
+        self.assertFalse(font1.equal(font2))
+        font3 = font.Font(root=self.root, size=30, underline=True)
+        self.assertFalse(font2.equal(font3))
+        font2['underline'] = True
+        self.assertTrue(font2.equal(font3))
+
     def test_measure(self):
         self.assertIsInstance(self.font.measure('abc'), int)
 

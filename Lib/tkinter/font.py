@@ -118,6 +118,11 @@ class Font:
         except Exception:
             pass
 
+    def __neg__(self):
+        cp = self.copy()
+        cp['size'] = -(cp['size'])
+        return cp
+
     def copy(self):
         "Return a distinct copy of the current font"
         return Font(self._tk, **self.actual())
@@ -148,6 +153,11 @@ class Font:
                 self._split(self._call("font", "config", self.name)))
 
     configure = config
+
+    def equal(self, other):
+        if not isinstance(other, Font):
+            return NotImplemented
+        return self.actual() == other.actual()
 
     def measure(self, text, displayof=None):
         "Return text width"
