@@ -242,7 +242,7 @@ New Features
   :class:`datetime.time` objects.
   (Contributed by Zackery Spytz in :issue:`30155`.)
 
-* Add a c:func:`PyCodec_Unregister` to unregister a codec search function.
+* Add a :c:func:`PyCodec_Unregister` to unregister a codec search function.
   (Contributed by Hai Shi in :issue:`41842`.)
 
 =======
