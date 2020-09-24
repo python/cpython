@@ -1,0 +1,4 @@
+In ``importlib.metadata``, fix issue where multiple children can be returned
+from ``FastPath.zip_children()``. Backport of
+`python-devs/importlib_metadata#117
+<https://gitlab.com/python-devs/importlib_metadata/-/issues/117>`_.
