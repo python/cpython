@@ -17,7 +17,7 @@ from functools import cached_property, lru_cache
 from itertools import filterfalse
 from operator import attrgetter
 from os.path import isfile, isdir
-from typing import Tuple
+from typing import Tuple, List, Set, Dict
 
 __all__ = ["clear_cache", "cmp", "dircmp", "cmpfiles", "DEFAULT_IGNORES"]
 
@@ -33,14 +33,15 @@ DEFAULT_IGNORES = (
     "_darcs",
     "__pycache__",
 )
+FILES = List[os.PathLike]
 
 
-def clear_cache():
+def clear_cache() -> None:
     """Clear the filecmp cache."""
     _file_comparison.cache_clear()
 
 
-def cmp(f1, f2, shallow=True):
+def cmp(f1: os.PathLike, f2: os.PathLike, shallow: bool = True) -> bool:
     """Compare two files.
 
     Arguments:
@@ -69,7 +70,10 @@ def cmp(f1, f2, shallow=True):
 
 
 @lru_cache(maxsize=100)
-def _file_comparison(f1, f2, s1, s2, shallow):
+def _file_comparison(
+    f1: os.PathLike, f2: os.PathLike, s1, s2, shallow: bool = True
+) -> bool:
+    """Compate files. Use the cached answer or compare files directly"""
     if not stat.S_ISREG(s1[0]) or not stat.S_ISREG(s2[0]):
         return False
     if shallow and s1 == s2:
@@ -80,7 +84,7 @@ def _file_comparison(f1, f2, s1, s2, shallow):
     return _do_cmp(f1, f2)
 
 
-def _do_cmp(f1, f2):
+def _do_cmp(f1: os.PathLike, f2: os.PathLike) -> bool:
     bufsize = BUFSIZE
     with open(f1, "rb") as fp1, open(f2, "rb") as fp2:
         while True:
@@ -133,30 +137,30 @@ class dircmp:
     hide: Tuple[os.PathLike] = (os.curdir, os.pardir)
 
     @cached_property
-    def left_list(self):
+    def left_list(self)->FILES:
         return sorted(_filter(os.listdir(self.left), self.hide + self.ignore))
 
     @cached_property
-    def right_list(self):
+    def right_list(self)->FILES:
         return sorted(_filter(os.listdir(self.right), self.hide + self.ignore))
 
     @cached_property
-    def common(self):
+    def common(self)->FILES:
         left_set = set(self.left_list)
         return list(left_set.intersection(self.right_list))
 
     @cached_property
-    def left_only(self):
+    def left_only(self)->FILES:
         left_set = set(self.left_list)
         return list(left_set.difference(self.common))
 
     @cached_property
-    def right_only(self):
+    def right_only(self)->FILES:
         right_set = set(self.right_list)
         return list(right_set.difference(self.common))
 
     @cached_property
-    def common_dirs(self):
+    def common_dirs(self)->FILES:
         return [
             name
             for name in self.common
@@ -165,7 +169,7 @@ class dircmp:
         ]
 
     @cached_property
-    def common_files(self):
+    def common_files(self)->FILES:
         return [
             name
             for name in self.common
@@ -174,7 +178,7 @@ class dircmp:
         ]
 
     @cached_property
-    def common_funny(self):
+    def common_funny(self)->FILES:
         return sorted(
             _filter(self.common, self.common_files + self.common_dirs)
         )
@@ -199,7 +203,7 @@ class dircmp:
         return funny_files
 
     @cached_property
-    def subdirs(self):
+    def subdirs(self)->Dict:
         return {
             subdir: dircmp(
                 os.path.join(self.left, subdir),
@@ -210,12 +214,12 @@ class dircmp:
             for subdir in self.common_dirs
         }
 
-    def compare_subdirs(self):
+    def compare_subdirs(self)-> None:
         """Recursively compare on subdirectories"""
         for sd in self.subdirs.values():
             sd.compare_subdirs()
 
-    def report(self):
+    def report(self)-> None:
         """Print a report on the differences between a and b
         Output format is purposely lousy
         """
@@ -242,14 +246,14 @@ class dircmp:
             self.common_funny.sort()
             print("Common funny cases :", self.common_funny)
 
-    def report_partial_closure(self):
+    def report_partial_closure(self)-> None:
         """Print reports on self and on subdirs """
         self.report()
         for sd in self.subdirs.values():
             print()
             sd.report()
 
-    def report_full_closure(self):
+    def report_full_closure(self)-> None:
         """Report on self and subdirs recursively"""
         self.report()
         for sd in self.subdirs.values():
@@ -257,7 +261,9 @@ class dircmp:
             sd.report_full_closure()
 
 
-def cmpfiles(a, b, common, shallow=True):
+def cmpfiles(
+    a: os.PathLike, b: os.PathLike, common: FILES, shallow=True
+)->Tuple[FILES, FILES, FILES]:
     """Compare common files in two directories.
 
     a, b -- directory names
@@ -278,28 +284,27 @@ def cmpfiles(a, b, common, shallow=True):
     return res
 
 
-# Compare two files.
-# Return:
-#       0 for equal
-#       1 for different
-#       2 for funny cases (can't stat, etc.)
-#
-def _cmp(a, b, sh, abs=abs, cmp=cmp):
+def _cmp(a: os.PathLike, b: os.PathLike, sh, abs=abs, cmp=cmp) ->int:
+    """
+     Compare two files.
+     Return:
+           0 for equal
+           1 for different
+           2 for funny cases (can't stat, etc.)
+    """
     try:
         return not abs(cmp(a, b, sh))
     except OSError:
         return 2
 
 
-# Return a copy with items that occur in skip removed.
-#
-def _filter(flist, skip):
+def _filter(flist:os.PathLike, skip:Tuple[os.PathLike])->Set[os.PathLike]:
+    """Return a copy with items that occur in skip removed."""
     return {name for name in flist if name not in skip}
 
 
-# Demonstration and testing.
-#
-def demo():
+def demo()->None:
+    """Demonstration and testing."""
     import sys
     import getopt
 
