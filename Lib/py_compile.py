@@ -63,6 +63,7 @@ class PyCompileError(Exception):
         return self.msg
 
 
+@enum._stdlib_enum
 class PycInvalidationMode(enum.Enum):
     TIMESTAMP = 1
     CHECKED_HASH = 2

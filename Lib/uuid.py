@@ -47,7 +47,7 @@ Typical usage:
 import os
 import sys
 
-from enum import Enum
+from enum import Enum, _stdlib_enum
 
 
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
@@ -75,6 +75,7 @@ int_ = int      # The built-in int type
 bytes_ = bytes  # The built-in bytes type
 
 
+@_stdlib_enum
 class SafeUUID(Enum):
     safe = 0
     unsafe = -1

@@ -777,12 +777,7 @@ class EnumMeta(type):
             members.sort(key=lambda t: t[0])
         cls = cls(name, members, module=module, boundary=boundary or KEEP)
         cls.__reduce_ex__ = _reduce_ex_by_name
-        if issubclass(cls, Flag):
-            cls.__repr__ = global_flag_repr
-        else:
-            cls.__repr__ = global_int_repr
-        if str not in cls.__mro__:
-            cls.__str__ = global_enum_str
+        _stdlib_enum(cls)
         module_globals.update(cls.__members__)
         module_globals[name] = cls
         return cls
@@ -1347,10 +1342,17 @@ def global_flag_repr(self):
     module = self.__class__.__module__
     if self._name_ is not None:
         return '%s.%s' % (module, self.name)
-    members, extra_flags = _decompose(self.__class__, self.value)
-    members = ['%s.%s' % (module, m.name) for m in members]
-    if extra_flags:
-        members.append(hex(extra_flags))
+    value = self._value_
+    members = []
+    negative = value < 0
+    if negative:
+        value = ~value
+    for m in self.__class__:
+        if value & m._value_:
+            value &= ~m._value_
+            members.append('re.%s' % (m._name_, ))
+    if value:
+        members.append(hex(value))
     res = '|'.join(members)
     if negative:
         if len(members) > 1:
@@ -1358,3 +1360,13 @@ def global_flag_repr(self):
         else:
             res = '~%s' % (res, )
     return res
+
+def _stdlib_enum(cls):
+    if issubclass(cls, Flag):
+        cls.__repr__ = global_flag_repr
+    else:
+        cls.__repr__ = global_int_repr
+    if str not in cls.__mro__:
+        cls.__str__ = global_enum_str
+    return cls
+

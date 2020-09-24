@@ -27,7 +27,7 @@
 import sys
 from _ast import *
 from contextlib import contextmanager, nullcontext
-from enum import IntEnum, auto
+from enum import IntEnum, auto, _stdlib_enum
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
@@ -636,6 +636,7 @@ class Param(expr_context):
 # We unparse those infinities to INFSTR.
 _INFSTR = "1e" + repr(sys.float_info.max_10_exp + 1)
 
+@_stdlib_enum
 class _Precedence(IntEnum):
     """Precedence table that originated from python grammar."""
 

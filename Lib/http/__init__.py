@@ -1,7 +1,8 @@
-from enum import IntEnum
+from enum import IntEnum, _stdlib_enum
 
 __all__ = ['HTTPStatus']
 
+@_stdlib_enum
 class HTTPStatus(IntEnum):
     """HTTP status codes and reason phrases
 

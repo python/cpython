@@ -94,6 +94,7 @@ import sys
 import os
 from collections import namedtuple
 from enum import Enum as _Enum, IntEnum as _IntEnum, IntFlag as _IntFlag
+from enum import _stdlib_enum
 
 import _ssl             # if we can't import it, let the error propagate
 
@@ -155,6 +156,7 @@ _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()
 _SSLv2_IF_EXISTS = getattr(_SSLMethod, 'PROTOCOL_SSLv2', None)
 
 
+@_stdlib_enum
 class TLSVersion(_IntEnum):
     MINIMUM_SUPPORTED = _ssl.PROTO_MINIMUM_SUPPORTED
     SSLv3 = _ssl.PROTO_SSLv3
@@ -165,6 +167,7 @@ class TLSVersion(_IntEnum):
     MAXIMUM_SUPPORTED = _ssl.PROTO_MAXIMUM_SUPPORTED
 
 
+@_stdlib_enum
 class _TLSContentType(_IntEnum):
     """Content types (record layer)
 
@@ -179,6 +182,7 @@ class _TLSContentType(_IntEnum):
     INNER_CONTENT_TYPE = 0x101
 
 
+@_stdlib_enum
 class _TLSAlertType(_IntEnum):
     """Alert types for TLSContentType.ALERT messages
 
@@ -220,6 +224,7 @@ class _TLSAlertType(_IntEnum):
     NO_APPLICATION_PROTOCOL = 120
 
 
+@_stdlib_enum
 class _TLSMessageType(_IntEnum):
     """Message types (handshake protocol)
 
@@ -464,6 +469,7 @@ class _ASN1Object(namedtuple("_ASN1Object", "nid shortname longname oid")):
         return super().__new__(cls, *_txt2obj(name, name=True))
 
 
+@_stdlib_enum
 class Purpose(_ASN1Object, _Enum):
     """SSLContext purpose flags with X509v3 Extended Key Usage objects
     """
