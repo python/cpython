@@ -1164,6 +1164,26 @@ This converts the list into a set, thereby removing duplicates, and then back
 into a list.
 
 
+How do you remove multiple items from a list
+--------------------------------------------
+
+As with removing duplicates, iterating in reverse is one solution::
+
+   for i, item in range(len(mylist)-1, -1, -1):
+       if remove(item):
+           del mylist[i]
+
+For a long enough list with enough deletions, moving keep items to
+the front of the list, using a second index, should be faster::
+
+   j = 0
+   for i, item in enumerate(mylist):
+       if keep(item):
+           mylist[j] = item
+           j += 1
+   del mylist[j:]
+
+
 How do you make an array in Python?
 -----------------------------------
 
