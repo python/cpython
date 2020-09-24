@@ -1648,6 +1648,7 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, codecs.lookup, name)
         search_function.assert_called_with(name)
         search_function.reset_mock()
+
         codecs.unregister(search_function)
         self.assertRaises(LookupError, codecs.lookup, name)
         search_function.assert_not_called()
