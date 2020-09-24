@@ -1,1 +1,2 @@
-Add a :func:`codecs.unregister` to unregister a codec search function.
+Add :func:`codecs.unregister` and :c:func:`PyCodec_Unregister` to unregister
+a codec search function.

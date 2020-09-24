@@ -54,7 +54,7 @@ int
 PyCodec_Unregister(PyObject *search_function)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    /* Do nothing if codec_search_path is not created yet or was created. */
+    /* Do nothing if codec_search_path is not created yet or was cleared. */
     if (interp->codec_search_path == NULL) {
         return 0;
     }

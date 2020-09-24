@@ -1645,7 +1645,7 @@ class CodecsModuleTest(unittest.TestCase):
         search_function = mock.Mock(return_value=(1, 2, 3, 4))
         codecs.register(search_function)
         codecs.unregister(search_function)
-        self.assertRaises(LookupError, codecs.lookup, "test")
+        self.assertRaises(LookupError, codecs.lookup, "nonexistent_codec_name")
         search_function.assert_not_called()
 
     def test_lookup(self):
