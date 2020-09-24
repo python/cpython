@@ -143,7 +143,7 @@ We also repeat each of the above scoping tests inside a function
 
     >>> [x for x in [] if lambda: x]
     []
-    
+
     >>> [x for x in [] if lambda: x or b]
     []
 

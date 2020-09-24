@@ -2005,6 +2005,19 @@ class CoroutineTest(unittest.TestCase):
             run_async(f()),
             ([], {1: 1, 2: 2, 3: 3}))
 
+    def test_comp_9(self):
+        async def gen():
+            yield 1
+            yield 2
+
+        async def f():
+            l = [i async for i in gen() if lambda: None]
+            return [i for i in l]
+
+        self.assertEqual(
+            run_async(f()),
+            ([], [1, 2]))
+
     def test_copy(self):
         async def func(): pass
         coro = func()
