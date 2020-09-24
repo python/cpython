@@ -27,9 +27,7 @@ PyAPI_FUNC(int) PyCodec_Register(
        PyObject *search_function
        );
 
-/* Unregister a codec search function.
-
-   Unregister a codec search function and clear the registry's cache.
+/* Unregister a codec search function and clear the registry's cache.
    If the search function is not registered, do nothing.
    Return 0 on success. Raise an exception and return -1 on error. */
 
