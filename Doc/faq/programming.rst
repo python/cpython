@@ -1170,16 +1170,16 @@ How do you remove multiple items from a list
 As with removing duplicates, iterating in reverse is one solution::
 
     for i in range(len(mylist)-1, -1, -1):
-        if remove(mylist[i]):
+        if should_remove(mylist[i]):
             del mylist[i]
 
 
-For a long enough list with enough deletions, moving keep items to
+For a long enough list with enough deletions, moving kept items to
 the front of the list, using a second index, should be faster::
 
    j = 0
    for i, item in enumerate(mylist):
-       if keep(item):
+       if should_keep(item):
            mylist[j] = item
            j += 1
    del mylist[j:]
