@@ -1,0 +1,3 @@
+stdlib Enum's now have their `repr()` print "module.name" and their `str()`
+print "name", unless the Enum is a `StrEnum` in which case the `str` will be
+the member's value
