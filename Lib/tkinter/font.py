@@ -156,7 +156,7 @@ class Font:
 
     def equal(self, other):
         if not isinstance(other, Font):
-            return NotImplemented
+            raise TypeError("Value for comparison must also be a Font")
         return self.actual() == other.actual()
 
     def measure(self, text, displayof=None):

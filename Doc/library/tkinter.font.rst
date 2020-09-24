@@ -61,6 +61,11 @@ The different font weights and slants are:
 
       Return new instance of the current font.
 
+   .. method:: equal(other)
+   
+      Compare the font to another and check if they represent the same font (in
+      contrast to ``__eq__``, which checks if they are the same Tk object).
+
    .. method:: measure(text, displayof=None)
 
       Return amount of space the text would occupy on the specified display
@@ -82,6 +87,11 @@ The different font weights and slants are:
          characters of the font that ensures no vertical overlap between lines.
 
       *fixed* - 1 if font is fixed-width else 0
+
+   .. method:: __neg__()
+   
+      Returns a new font object with the size negated. In practice, this means
+      converting the font size between points and pixels.
 
 .. function:: families(root=None, displayof=None)
 
