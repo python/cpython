@@ -6,13 +6,9 @@ from builtins import property as _bltin_property, bin as _bltin_bin
 __all__ = [
         'EnumMeta',
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag',
-<<<<<<< HEAD
         'auto', 'unique',
-        'property',
+        'property', 'global_flag_repr', 'global_int_repr',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
-=======
-        'auto', 'unique', 'global_flag_repr', 'global_int_repr',
->>>>>>> add new repr and str for converted Int-Enums/Flags
         ]
 
 
@@ -784,7 +780,8 @@ class EnumMeta(type):
             cls.__repr__ = global_flag_repr
         elif issubclass(cls, int):
             cls.__repr__ = global_int_repr
-        cls.__str__ = object.__str__
+        # if str not in cls.__mro__:
+        #     cls.__str__ = global_enum_str
         module_globals.update(cls.__members__)
         module_globals[name] = cls
         return cls
@@ -1338,6 +1335,10 @@ def _power_of_two(value):
     if value < 1:
         return False
     return value == 2 ** _high_bit(value)
+
+def global_enum_str(self):
+    return self.name
+
 def global_int_repr(self):
     return '%s.%s' % (self.__class__.__module__, self.name)
 
@@ -1352,7 +1353,7 @@ def global_flag_repr(self):
     res = '|'.join(members)
     if negative:
         if len(members) > 1:
-            res = f'~({res})'
+            res = '~(%s)' % (res, )
         else:
-            res = f'~{res}'
+            res = '~%s' % (res, )
     return res

@@ -3590,14 +3590,42 @@ class TestIntEnumConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
     def test_convert_repr_and_str(self):
-
         module = ('test.test_enum', '__main__')[__name__=='__main__']
         test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
                 module,
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         self.assertEqual(repr(test_type.CONVERT_TEST_NAME_A), '%s.CONVERT_TEST_NAME_A' % module)
-        self.assertEqual(str(test_type.CONVERT_TEST_NAME_A), '%s.CONVERT_TEST_NAME_A' % module)
+        self.assertEqual(str(test_type.CONVERT_TEST_NAME_A), 'CONVERT_TEST_NAME_A')
+
+# global names for StrEnum._convert_ test
+CONVERT_STR_TEST_2 = 'goodbye'
+CONVERT_STR_TEST_1 = 'hello'
+
+class TestStrEnumConvert(unittest.TestCase):
+
+    def test_convert(self):
+        test_type = enum.StrEnum._convert_(
+                'UnittestConvert',
+                ('test.test_enum', '__main__')[__name__=='__main__'],
+                filter=lambda x: x.startswith('CONVERT_STR_'))
+        # Ensure that test_type has all of the desired names and values.
+        self.assertEqual(test_type.CONVERT_STR_TEST_1, 'hello')
+        self.assertEqual(test_type.CONVERT_STR_TEST_2, 'goodbye')
+        # Ensure that test_type only picked up names matching the filter.
+        self.assertEqual([name for name in dir(test_type)
+                          if name[0:2] not in ('CO', '__')],
+                         [], msg='Names other than CONVERT_STR_* found.')
+
+    def test_convert_repr_and_str(self):
+        module = ('test.test_enum', '__main__')[__name__=='__main__']
+        test_type = enum.StrEnum._convert_(
+                'UnittestConvert',
+                module,
+                filter=lambda x: x.startswith('CONVERT_STR_'))
+        self.assertEqual(repr(test_type.CONVERT_STR_TEST_1), '%s.CONVERT_STR_TEST_1' % module)
+        self.assertEqual(str(test_type.CONVERT_STR_TEST_2), 'goodbye')
+
 
 if __name__ == '__main__':
     unittest.main()
