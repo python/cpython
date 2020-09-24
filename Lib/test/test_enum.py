@@ -3597,6 +3597,7 @@ class TestIntEnumConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         self.assertEqual(repr(test_type.CONVERT_TEST_NAME_A), '%s.CONVERT_TEST_NAME_A' % module)
         self.assertEqual(str(test_type.CONVERT_TEST_NAME_A), 'CONVERT_TEST_NAME_A')
+        self.assertEqual(format(test_type.CONVERT_TEST_NAME_A), '5')
 
 # global names for StrEnum._convert_ test
 CONVERT_STR_TEST_2 = 'goodbye'
@@ -3625,6 +3626,7 @@ class TestStrEnumConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_STR_'))
         self.assertEqual(repr(test_type.CONVERT_STR_TEST_1), '%s.CONVERT_STR_TEST_1' % module)
         self.assertEqual(str(test_type.CONVERT_STR_TEST_2), 'goodbye')
+        self.assertEqual(format(test_type.CONVERT_STR_TEST_1), 'hello')
 
 
 if __name__ == '__main__':
