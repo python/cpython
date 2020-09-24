@@ -14,7 +14,7 @@ Codec registry and support functions
 
    Unregister a codec search function and clear the registry's cache.
    If the search function is not registered, do nothing.
-   Return 0 on success. Raise an exception and return -1 on success.
+   Return 0 on success. Raise an exception and return -1 on error.
 
    .. versionadded:: 3.10
 
