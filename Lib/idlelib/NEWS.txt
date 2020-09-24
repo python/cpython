@@ -3,6 +3,8 @@ Released on 2021-10-04?
 ======================================
 
 
+bpo-41775: Make 'IDLE Shell' the shell title.
+
 bpo-35764: Rewrite the Calltips doc section.
 
 bpo-40181: In calltips, stop reminding that '/' marks the end of
