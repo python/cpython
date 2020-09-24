@@ -139,6 +139,20 @@ We also repeat each of the above scoping tests inside a function
     >>> test_func()
     [2, 2, 2, 2, 2]
 
+########### Tests for different syntactic corner cases ############
+
+    >>> [x for x in [] if lambda: x]
+    []
+    
+    >>> [x for x in [] if lambda: x or b]
+    []
+
+    >>> [x for x in [True, True, False] if x or True]
+    [True, True, False]
+
+    >>> [y for x in [1, 1, 0] if (y := x + 1)]
+    [2, 2, 1]
+
 """
 
 

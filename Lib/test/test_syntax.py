@@ -746,6 +746,19 @@ SyntaxError: only single target (not tuple) can be annotated
 Traceback (most recent call last):
 SyntaxError: only single target (not list) can be annotated
 
+>>> [x for x in range(5) if a:=b]
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+>>> [x for x in range(5) if if a else b]
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+>>> [x for x in range(5) if lambda: a:=b]
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+>>> [x for x in range(5) if lambda: True if True else False]
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
 Corner-cases that used to fail to raise the correct error:
 
     >>> def f(*, x=lambda __debug__:0): pass

@@ -1,0 +1,1 @@
+Allow simple lambda expressions in the if clauses of the comprehensions.

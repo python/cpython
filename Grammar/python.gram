@@ -332,6 +332,10 @@ expression[expr_ty] (memo):
     | disjunction
     | lambdef
 
+expression_no_cond[expr_ty]:
+    | disjunction
+    | 'lambda' a=[lambda_params] ':' b=expression_no_cond { _Py_Lambda((a) ? a : CHECK(_PyPegen_empty_arguments(p)), b, EXTRA) }
+
 lambdef[expr_ty]:
     | 'lambda' a=[lambda_params] ':' b=expression { _Py_Lambda((a) ? a : CHECK(_PyPegen_empty_arguments(p)), b, EXTRA) }
 
@@ -521,9 +525,9 @@ kvpair[KeyValuePair*]: a=expression ':' b=expression { _PyPegen_key_value_pair(p
 for_if_clauses[asdl_comprehension_seq*]:
     | a[asdl_comprehension_seq*]=for_if_clause+ { a }
 for_if_clause[comprehension_ty]:
-    | ASYNC 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
+    | ASYNC 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=expression_no_cond { z })* {
         CHECK_VERSION(6, "Async comprehensions are", _Py_comprehension(a, b, c, 1, p->arena)) }
-    | 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
+    | 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=expression_no_cond { z })* {
         _Py_comprehension(a, b, c, 0, p->arena) }
     | invalid_for_target
 
