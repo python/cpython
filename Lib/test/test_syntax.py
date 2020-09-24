@@ -777,6 +777,59 @@ Corner-cases that used to crash:
     >>> import ä £
     Traceback (most recent call last):
     SyntaxError: invalid character '£' (U+00A3)
+
+Too many implicit blocks in named exception handlers
+
+    >>> try:
+    ...     raise Exception
+    ... except Exception as e:
+    ...     try:
+    ...         raise Exception
+    ...     except Exception as e:
+    ...         try:
+    ...             raise Exception
+    ...         except Exception as e:
+    ...             try:
+    ...                 raise Exception
+    ...             except Exception as e:
+    ...                 try:
+    ...                     raise Exception
+    ...                 except Exception as e:
+    ...                     try:
+    ...                         raise Exception
+    ...                     except Exception as e:
+    ...                         try:
+    ...                             raise Exception
+    ...                         except Exception as e:
+    ...                             try:
+    ...                                 raise Exception
+    ...                             except Exception as e:
+    ...                                 try:
+    ...                                     raise Exception
+    ...                                 except Exception as e:
+    ...                                     try:
+    ...                                         raise Exception
+    ...                                     except Exception as e:
+    ...                                         try:
+    ...                                             raise Exception
+    ...                                         except Exception as e:
+    ...                                             try:
+    ...                                                 raise Exception
+    ...                                             except Exception as e:
+    ...                                                 try:
+    ...                                                     raise Exception
+    ...                                                 except Exception as e:
+    ...                                                     try:
+    ...                                                         raise Exception
+    ...                                                     except Exception as e:
+    ...                                                         try:
+    ...                                                             raise Exception
+    ...                                                         except Exception as e:
+    ...                                                             pass
+    ...
+    Traceback (most recent call last):
+    SyntaxError: too many statically nested blocks
+
 """
 
 import re
