@@ -7,8 +7,9 @@ __all__ = [
         'EnumMeta',
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag',
         'auto', 'unique',
-        'property', 'global_flag_repr', 'global_int_repr',
+        'property',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
+        'global_flag_repr', 'global_int_repr', 'global_enum_str',
         ]
 
 
@@ -778,10 +779,10 @@ class EnumMeta(type):
         cls.__reduce_ex__ = _reduce_ex_by_name
         if issubclass(cls, Flag):
             cls.__repr__ = global_flag_repr
-        elif issubclass(cls, int):
+        else:
             cls.__repr__ = global_int_repr
-        # if str not in cls.__mro__:
-        #     cls.__str__ = global_enum_str
+        if str not in cls.__mro__:
+            cls.__str__ = global_enum_str
         module_globals.update(cls.__members__)
         module_globals[name] = cls
         return cls
