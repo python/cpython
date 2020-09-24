@@ -112,8 +112,7 @@ Base32 Encoding with Extended Hex Alphabet.
 codecs
 ------
 
-Add :func:`codecs.unregister` and :c:func:`PyCodec_Unregister` to unregister
-a codec search function.
+Add a :func:`codecs.unregister` to unregister a codec search function.
 
 curses
 ------
@@ -228,6 +227,9 @@ New Features
   structure: the list of the original command line arguments passed to the
   Python executable.
   (Contributed by Victor Stinner in :issue:`23427`.)
+
+* Add a c:func:`PyCodec_Unregister` to unregister a codec search function.
+  (Contributed by Hai Shi in :issue:`41842`.)
 
 Porting to Python 3.10
 ----------------------
