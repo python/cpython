@@ -75,8 +75,8 @@ class FontTest(AbstractTkTest, unittest.TestCase):
     def test_neg(self):
         font1 = font.Font(root=self.root, size=32)
         font2 = -font1
-        self.assertEqual(font1['size'], -(font2['size']))
         self.assertEqual(font1['size'], -font2['size'])
+        self.assertEqual(font1['size'], (-font2)['size'])
 
     def test_equal(self):
         font1 = font.Font(root=self.root, size=32)

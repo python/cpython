@@ -120,7 +120,7 @@ class Font:
 
     def __neg__(self):
         cp = self.copy()
-        cp['size'] = -(cp['size'])
+        cp['size'] = -self['size']
         return cp
 
     def copy(self):

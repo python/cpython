@@ -64,7 +64,7 @@ The different font weights and slants are:
    .. method:: equal(other)
 
       Compare the font to another and check if they represent the same font (in
-      contrast to ``__eq__``, which checks if they are the same Tk object).
+      contrast to :meth:`__eq__`, which checks if they are the same Tk object).
 
       .. versionadded:: 3.10
 
@@ -92,7 +92,7 @@ The different font weights and slants are:
 
    .. method:: __neg__()
 
-      Returns a new font object with the size negated. In practice, this means
+      Return a new font object with the size negated. In practice, this means
       converting the font size between points and pixels.
 
       .. versionadded:: 3.10
