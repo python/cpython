@@ -1,0 +1,2 @@
+In calltips, stop reminding that '/' marks the end of positional-only
+arguments.
