@@ -5598,8 +5598,8 @@ fail:
 
 static int
 compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
-    asdl_seq *args = p->v.Call.args;
-    asdl_seq *kwargs = p->v.Call.keywords;
+    asdl_expr_seq *args = p->v.Call.args;
+    asdl_keyword_seq *kwargs = p->v.Call.keywords;
     Py_ssize_t nargs = asdl_seq_LEN(args);
     Py_ssize_t nkwargs = asdl_seq_LEN(kwargs);
     if (nargs + nkwargs > INT_MAX) {
@@ -5678,8 +5678,8 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
     basicblock *block, *end;
     CHECK(block = compiler_new_block(c));
     CHECK(end = compiler_new_block(c));
-    asdl_seq *keys = p->v.Dict.keys;
-    asdl_seq *values = p->v.Dict.values;
+    asdl_expr_seq *keys = p->v.Dict.keys;
+    asdl_expr_seq *values = p->v.Dict.values;
     Py_ssize_t size = asdl_seq_LEN(values);
     int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
     // TODO: (i >= (1 << 8)) || (n-i-1 >= (INT_MAX >> 8))
@@ -5750,7 +5750,7 @@ static int
 compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == List_kind || p->kind == Tuple_kind);
-    asdl_seq *values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
+    asdl_expr_seq *values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
     Py_ssize_t size = asdl_seq_LEN(values);
     Py_ssize_t star = -1;
     for (Py_ssize_t i = 0; i < size; i++) {

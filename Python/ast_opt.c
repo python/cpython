@@ -714,7 +714,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         break;
     case Match_kind:
         CALL(astfold_expr, expr_ty, node_->v.Match.subject);
-        CALL_SEQ(astfold_match_case, match_case_ty, node_->v.Match.cases);
+        CALL_SEQ(astfold_match_case, match_case, node_->v.Match.cases);
         break;
     default:
         break;
@@ -831,7 +831,7 @@ astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 {
     CALL(astfold_pattern, expr_ty, node_->pattern);
     CALL_OPT(astfold_expr, expr_ty, node_->guard);
-    CALL_SEQ(astfold_stmt, stmt_ty, node_->body);
+    CALL_SEQ(astfold_stmt, stmt, node_->body);
     return 1;
 }
 

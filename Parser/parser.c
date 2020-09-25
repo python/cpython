@@ -4909,7 +4909,7 @@ match_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c> match_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"match\" match_expr ':' NEWLINE INDENT case_block+ DEDENT"));
         expr_ty _keyword;
         Token * _literal;
-        asdl_seq * cases;
+        asdl_match_case_seq* cases;
         Token * dedent_var;
         Token * indent_var;
         Token * newline_var;
@@ -4925,7 +4925,7 @@ match_stmt_rule(Parser *p)
             &&
             (indent_var = _PyPegen_expect_token(p, INDENT))  // token='INDENT'
             &&
-            (cases = _loop1_50_rule(p))  // case_block+
+            (cases = (asdl_match_case_seq*)_loop1_50_rule(p))  // case_block+
             &&
             (dedent_var = _PyPegen_expect_token(p, DEDENT))  // token='DEDENT'
         )
@@ -5249,9 +5249,9 @@ or_pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> or_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'|'.closed_pattern+"));
-        asdl_seq * values;
+        asdl_expr_seq* values;
         if (
-            (values = _gather_51_rule(p))  // '|'.closed_pattern+
+            (values = (asdl_expr_seq*)_gather_51_rule(p))  // '|'.closed_pattern+
         )
         {
             D(fprintf(stderr, "%*c+ or_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'|'.closed_pattern+"));
@@ -6063,14 +6063,14 @@ class_pattern_rule(Parser *p)
         Token * _literal_1;
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
-        asdl_seq * args;
+        asdl_expr_seq* args;
         expr_ty func;
         if (
             (func = name_or_attr_rule(p))  // name_or_attr
             &&
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
-            (args = _gather_56_rule(p))  // ','.pattern+
+            (args = (asdl_expr_seq*)_gather_56_rule(p))  // ','.pattern+
             &&
             (_opt_var = _PyPegen_expect_token(p, 12), 1)  // ','?
             &&
@@ -6110,13 +6110,13 @@ class_pattern_rule(Parser *p)
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
         expr_ty func;
-        asdl_seq * keywords;
+        asdl_keyword_seq* keywords;
         if (
             (func = name_or_attr_rule(p))  // name_or_attr
             &&
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
-            (keywords = _gather_58_rule(p))  // ','.keyword_pattern+
+            (keywords = (asdl_keyword_seq*)_gather_58_rule(p))  // ','.keyword_pattern+
             &&
             (_opt_var = _PyPegen_expect_token(p, 12), 1)  // ','?
             &&
@@ -6156,19 +6156,19 @@ class_pattern_rule(Parser *p)
         Token * _literal_2;
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
-        asdl_seq * args;
+        asdl_expr_seq* args;
         expr_ty func;
-        asdl_seq * keywords;
+        asdl_keyword_seq* keywords;
         if (
             (func = name_or_attr_rule(p))  // name_or_attr
             &&
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
-            (args = _gather_60_rule(p))  // ','.pattern+
+            (args = (asdl_expr_seq*)_gather_60_rule(p))  // ','.pattern+
             &&
             (_literal_1 = _PyPegen_expect_token(p, 12))  // token=','
             &&
-            (keywords = _gather_62_rule(p))  // ','.keyword_pattern+
+            (keywords = (asdl_keyword_seq*)_gather_62_rule(p))  // ','.keyword_pattern+
             &&
             (_opt_var = _PyPegen_expect_token(p, 12), 1)  // ','?
             &&

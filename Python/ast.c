@@ -326,7 +326,7 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
 static int
 validate_pattern(expr_ty p)
 {
-    asdl_seq *keys, *values;
+    asdl_expr_seq *keys, *values;
     expr_ty key, value;
     Py_ssize_t i, size;
     switch (p->kind) {
