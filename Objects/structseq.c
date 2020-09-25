@@ -94,7 +94,7 @@ structseq_dealloc(PyStructSequence *obj)
         Py_XDECREF(obj->ob_item[i]);
     }
     PyObject_GC_Del(obj);
-    if (PyType_GetFlags(tp) & Py_TPFLAGS_HEAPTYPE) {
+    if (_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
         Py_DECREF(tp);
     }
 }

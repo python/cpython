@@ -741,15 +741,12 @@ Py_MakePendingCalls(void)
 /* The interpreter's recursion limit */
 
 #ifndef Py_DEFAULT_RECURSION_LIMIT
-#define Py_DEFAULT_RECURSION_LIMIT 1000
+#  define Py_DEFAULT_RECURSION_LIMIT 1000
 #endif
-
-int _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
 
 void
 _PyEval_InitRuntimeState(struct _ceval_runtime_state *ceval)
 {
-    _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
 #ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     _gil_initialize(&ceval->gil);
 #endif
@@ -797,14 +794,11 @@ Py_SetRecursionLimit(int new_limit)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     tstate->interp->ceval.recursion_limit = new_limit;
-    if (_Py_IsMainInterpreter(tstate)) {
-        _Py_CheckRecursionLimit = new_limit;
-    }
 }
 
 /* The function _Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
-   if the recursion_depth reaches _Py_CheckRecursionLimit.
-   If USE_STACKCHECK, the macro decrements _Py_CheckRecursionLimit
+   if the recursion_depth reaches recursion_limit.
+   If USE_STACKCHECK, the macro decrements recursion_limit
    to guarantee that _Py_CheckRecursiveCall() is regularly called.
    Without USE_STACKCHECK, there is no need for this. */
 int
@@ -818,10 +812,6 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         --tstate->recursion_depth;
         _PyErr_SetString(tstate, PyExc_MemoryError, "Stack overflow");
         return -1;
-    }
-    if (_Py_IsMainInterpreter(tstate)) {
-        /* Needed for ABI backwards-compatibility (see bpo-31857) */
-        _Py_CheckRecursionLimit = recursion_limit;
     }
 #endif
     if (tstate->recursion_critical)
@@ -1686,9 +1676,9 @@ main_loop:
         if (_Py_TracingPossible(ceval2) &&
             tstate->c_tracefunc != NULL && !tstate->tracing) {
             int err;
-            /* see maybe_call_line_trace
+            /* see maybe_call_line_trace()
                for expository comments */
-            f->f_stackdepth = stack_pointer-f->f_valuestack;
+            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
@@ -2466,35 +2456,59 @@ main_loop:
         case TARGET(YIELD_FROM): {
             PyObject *v = POP();
             PyObject *receiver = TOP();
-            int err;
-            if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) {
-                retval = _PyGen_Send((PyGenObject *)receiver, v);
+            int is_gen_or_coro = PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver);
+            int gen_status;
+            if (tstate->c_tracefunc == NULL && is_gen_or_coro) {
+                gen_status = PyGen_Send((PyGenObject *)receiver, v, &retval);
             } else {
-                _Py_IDENTIFIER(send);
-                if (v == Py_None)
-                    retval = Py_TYPE(receiver)->tp_iternext(receiver);
-                else
-                    retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
+                if (is_gen_or_coro) {
+                    retval = _PyGen_Send((PyGenObject *)receiver, v);
+                }
+                else {
+                    _Py_IDENTIFIER(send);
+                    if (v == Py_None) {
+                        retval = Py_TYPE(receiver)->tp_iternext(receiver);
+                    }
+                    else {
+                        retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
+                    }
+                }
+
+                if (retval == NULL) {
+                    if (tstate->c_tracefunc != NULL
+                            && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
+                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
+                    if (_PyGen_FetchStopIterationValue(&retval) == 0) {
+                        gen_status = PYGEN_RETURN;
+                    }
+                    else {
+                        gen_status = PYGEN_ERROR;
+                    }
+                }
+                else {
+                    gen_status = PYGEN_NEXT;
+                }
             }
             Py_DECREF(v);
-            if (retval == NULL) {
-                PyObject *val;
-                if (tstate->c_tracefunc != NULL
-                        && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
-                err = _PyGen_FetchStopIterationValue(&val);
-                if (err < 0)
-                    goto error;
+            if (gen_status == PYGEN_ERROR) {
+                assert (retval == NULL);
+                goto error;
+            }
+            if (gen_status == PYGEN_RETURN) {
+                assert (retval != NULL);
+
                 Py_DECREF(receiver);
-                SET_TOP(val);
+                SET_TOP(retval);
+                retval = NULL;
                 DISPATCH();
             }
+            assert (gen_status == PYGEN_NEXT);
             /* receiver remains on stack, retval is value to be yielded */
             /* and repeat... */
             assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
             f->f_state = FRAME_SUSPENDED;
-            f->f_stackdepth = stack_pointer-f->f_valuestack;
+            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
             goto exiting;
         }
 
@@ -2511,7 +2525,7 @@ main_loop:
                 retval = w;
             }
             f->f_state = FRAME_SUSPENDED;
-            f->f_stackdepth = stack_pointer-f->f_valuestack;
+            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
             goto exiting;
         }
 
