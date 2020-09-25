@@ -940,8 +940,9 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_from(self):
         widget = self.create()
-        cvt = False if sys.platform == 'win32' else float_round  # 39107
-        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=cvt)
+        tk_patchlevel = widget.tk.call('info', 'patchlevel')
+        conv = False if tk_patchlevel == '8.6.10' else float_round  # 39107
+        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=conv)
 
     def test_label(self):
         widget = self.create()
