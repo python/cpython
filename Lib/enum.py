@@ -960,11 +960,10 @@ class Enum(metaclass=EnumMeta):
         return None
 
     def __repr__(self):
-        return "<%s.%s: %r>" % (
-                self.__class__.__name__, self._name_, self._value_)
+        return "%s.%s" % ( self.__class__.__name__, self._name_)
 
     def __str__(self):
-        return "%s.%s" % (self.__class__.__name__, self._name_)
+        return "%s" % (self._name_, )
 
     def __dir__(self):
         """

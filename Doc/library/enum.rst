@@ -119,7 +119,7 @@ Enumeration members have human readable string representations::
 ...while their ``repr`` has more information::
 
     >>> print(repr(Color.RED))
-    <Color.RED: 1>
+    Color.RED
 
 The *type* of an enumeration member is the enumeration it belongs to::
 
@@ -166,16 +166,16 @@ situations where ``Color.RED`` won't do because the exact color is not known
 at program-writing time).  ``Enum`` allows such access::
 
     >>> Color(1)
-    <Color.RED: 1>
+    Color.RED
     >>> Color(3)
-    <Color.BLUE: 3>
+    Color.BLUE
 
 If you want to access enum members by *name*, use item access::
 
     >>> Color['RED']
-    <Color.RED: 1>
+    Color.RED
     >>> Color['GREEN']
-    <Color.GREEN: 2>
+    Color.GREEN
 
 If you have an enum member and need its :attr:`name` or :attr:`value`::
 
@@ -211,11 +211,11 @@ return A::
     ...     ALIAS_FOR_SQUARE = 2
     ...
     >>> Shape.SQUARE
-    <Shape.SQUARE: 2>
+    Shape.SQUARE
     >>> Shape.ALIAS_FOR_SQUARE
-    <Shape.SQUARE: 2>
+    Shape.SQUARE
     >>> Shape(2)
-    <Shape.SQUARE: 2>
+    Shape.SQUARE
 
 .. note::
 
@@ -262,7 +262,7 @@ If the exact value is unimportant you can use :class:`auto`::
     ...     GREEN = auto()
     ...
     >>> list(Color)
-    [<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN: 3>]
+    [Color.RED, Color.BLUE, Color.GREEN]
 
 The values are chosen by :func:`_generate_next_value_`, which can be
 overridden::
@@ -278,7 +278,7 @@ overridden::
     ...     WEST = auto()
     ...
     >>> list(Ordinal)
-    [<Ordinal.NORTH: 'NORTH'>, <Ordinal.SOUTH: 'SOUTH'>, <Ordinal.EAST: 'EAST'>, <Ordinal.WEST: 'WEST'>]
+    [Ordinal.NORTH, Ordinal.SOUTH, Ordinal.EAST, Ordinal.WEST]
 
 .. note::
 
@@ -296,7 +296,7 @@ Iteration
 Iterating over the members of an enum does not provide the aliases::
 
     >>> list(Shape)
-    [<Shape.SQUARE: 2>, <Shape.DIAMOND: 1>, <Shape.CIRCLE: 3>]
+    [Shape.SQUARE, Shape.DIAMOND, Shape.CIRCLE]
 
 The special attribute ``__members__`` is a read-only ordered mapping of names
 to members.  It includes all names defined in the enumeration, including the
@@ -305,10 +305,10 @@ aliases::
     >>> for name, member in Shape.__members__.items():
     ...     name, member
     ...
-    ('SQUARE', <Shape.SQUARE: 2>)
-    ('DIAMOND', <Shape.DIAMOND: 1>)
-    ('CIRCLE', <Shape.CIRCLE: 3>)
-    ('ALIAS_FOR_SQUARE', <Shape.SQUARE: 2>)
+    ('SQUARE', Shape.SQUARE)
+    ('DIAMOND', Shape.DIAMOND)
+    ('CIRCLE', Shape.CIRCLE)
+    ('ALIAS_FOR_SQUARE', Shape.SQUARE)
 
 The ``__members__`` attribute can be used for detailed programmatic access to
 the enumeration members.  For example, finding all the aliases::
@@ -386,7 +386,7 @@ usual.  If we have this enumeration::
 Then::
 
     >>> Mood.favorite_mood()
-    <Mood.HAPPY: 3>
+    Mood.HAPPY
     >>> Mood.HAPPY.describe()
     ('HAPPY', 3)
     >>> str(Mood.FUNKY)
@@ -473,11 +473,11 @@ The :class:`Enum` class is callable, providing the following functional API::
     >>> Animal
     <enum 'Animal'>
     >>> Animal.ANT
-    <Animal.ANT: 1>
+    Animal.ANT
     >>> Animal.ANT.value
     1
     >>> list(Animal)
-    [<Animal.ANT: 1>, <Animal.BEE: 2>, <Animal.CAT: 3>, <Animal.DOG: 4>]
+    [Animal.ANT, Animal.BEE, Animal.CAT, Animal.DOG]
 
 The semantics of this API resemble :class:`~collections.namedtuple`. The first
 argument of the call to :class:`Enum` is the name of the enumeration.
@@ -665,7 +665,7 @@ Sample :class:`IntFlag` class::
     ...     X = 1
     ...
     >>> Perm.R | Perm.W
-    <Perm.R|W: 6>
+    Perm.R|Perm.W
     >>> Perm.R + Perm.W
     6
     >>> RW = Perm.R | Perm.W
@@ -680,11 +680,11 @@ It is also possible to name the combinations::
     ...     X = 1
     ...     RWX = 7
     >>> Perm.RWX
-    <Perm.RWX: 7>
+    Perm.RWX
     >>> ~Perm.RWX
-    <Perm: 0>
+    Perm(0)
     >>> Perm(7)
-    <Perm.RWX: 7>
+    Perm.RWX
 
 .. note::
 
@@ -697,7 +697,7 @@ Another important difference between :class:`IntFlag` and :class:`Enum` is that
 if no flags are set (the value is 0), its boolean evaluation is :data:`False`::
 
     >>> Perm.R & Perm.X
-    <Perm: 0>
+    Perm(0)
     >>> bool(Perm.R & Perm.X)
     False
 
@@ -721,7 +721,7 @@ be combined with them (but may lose :class:`IntFlag` membership::
 :class:`IntFlag` members can also be iterated over::
 
     >>> list(RW)
-    [<Perm.R: 4>, <Perm.W: 2>]
+    [Perm.R, Perm.W]
 
 .. versionadded:: 3.10
 
@@ -748,7 +748,7 @@ flags being set, the boolean evaluation is :data:`False`::
     ...     GREEN = auto()
     ...
     >>> Color.RED & Color.GREEN
-    <Color: 0>
+    Color(0)
     >>> bool(Color.RED & Color.GREEN)
     False
 
@@ -762,7 +762,7 @@ while combinations of flags won't::
     ...     WHITE = RED | BLUE | GREEN
     ...
     >>> Color.WHITE
-    <Color.WHITE: 7>
+    Color.WHITE
 
 Giving a name to the "no flags set" condition does not change its boolean
 value::
@@ -774,7 +774,7 @@ value::
     ...     GREEN = auto()
     ...
     >>> Color.BLACK
-    <Color.BLACK: 0>
+    Color.BLACK
     >>> bool(Color.BLACK)
     False
 
@@ -782,7 +782,7 @@ value::
 
     >>> purple = Color.RED | Color.BLUE
     >>> list(purple)
-    [<Color.RED: 1>, <Color.BLUE: 2>]
+    [Color.RED, Color.BLUE]
 
 .. versionadded:: 3.10
 
@@ -984,7 +984,7 @@ to handle any extra arguments::
     ...     BLEACHED_CORAL = () # New color, no Pantone code yet!
     ...
     >>> Swatch.SEA_GREEN
-    <Swatch.SEA_GREEN>
+    Swatch.SEA_GREEN
     >>> Swatch.SEA_GREEN.pantone
     '1246'
     >>> Swatch.BLEACHED_CORAL.pantone
@@ -1110,9 +1110,9 @@ An example to show the :attr:`_ignore_` attribute in use::
     ...         Period['day_%d' % i] = i
     ...
     >>> list(Period)[:2]
-    [<Period.day_0: datetime.timedelta(0)>, <Period.day_1: datetime.timedelta(days=1)>]
+    [Period.day_0, Period.day_1]
     >>> list(Period)[-2:]
-    [<Period.day_365: datetime.timedelta(days=365)>, <Period.day_366: datetime.timedelta(days=366)>]
+    [Period.day_365, Period.day_366]
 
 
 How are Enums different?
@@ -1250,7 +1250,7 @@ constructor.  For example::
     ...     example = '11', 16      # '11' will be interpreted as a hexadecimal
     ...                             # number
     >>> MyEnum.example
-    <MyEnum.example: 17>
+    MyEnum.example
 
 
 Boolean value of ``Enum`` classes and members
@@ -1295,10 +1295,10 @@ are comprised of a single bit::
     ...     YELLOW = RED | GREEN
     ...     CYAN = GREEN | BLUE
     ...
-    >>> Color(3)
-    <Color.YELLOW: 3>
-    >>> Color(7)
-    <Color.RED|GREEN|BLUE: 7>
+    >>> Color(3)  # named combination
+    Color.YELLOW
+    >>> Color(7)      # not named combination
+    Color.RED|Color.GREEN|Color.BLUE
 
 ``StrEnum`` and :meth:`str.__str__`
 """""""""""""""""""""""""""""""""""
