@@ -3720,7 +3720,15 @@ class UTC(datetime.tzinfo):
 
 utc = UTC()
 
-class FormatterTest(unittest.TestCase):
+class AssertErrorMessage:
+
+    def assert_error_message(self, exception, message, *args, **kwargs):
+        try:
+            self.assertRaises((), *args, **kwargs)
+        except exception as e:
+            self.assertEqual(message, str(e))
+
+class FormatterTest(unittest.TestCase, AssertErrorMessage):
     def setUp(self):
         self.common = {
             'name': 'formatter.test',
@@ -3743,12 +3751,6 @@ class FormatterTest(unittest.TestCase):
         if name is not None:
             result.update(self.variants[name])
         return logging.makeLogRecord(result)
-
-    def assert_error_message(self, exception, message, *args, **kwargs):
-        try:
-            self.assertRaises(exception, *args, **kwargs)
-        except exception as e:
-            self.assertEqual(message, e.message)
 
     def test_percent(self):
         # Test %-formatting
@@ -3868,7 +3870,7 @@ class FormatterTest(unittest.TestCase):
         # Testing failure for '-' in field name
         self.assert_error_message(
             ValueError,
-            "invalid field name/expression: 'name-thing'",
+            "invalid format: invalid field name/expression: 'name-thing'",
             logging.Formatter, "{name-thing}", style="{"
         )
         # Testing failure for style mismatch
@@ -3891,7 +3893,7 @@ class FormatterTest(unittest.TestCase):
         # Testing failure for invalid spec
         self.assert_error_message(
             ValueError,
-            "bad specifier: '.2ff'",
+            "invalid format: bad specifier: '.2ff'",
             logging.Formatter, '{process:.2ff}', style='{'
         )
         self.assertRaises(ValueError, logging.Formatter, '{process:.2Z}', style='{')
@@ -3901,12 +3903,12 @@ class FormatterTest(unittest.TestCase):
         # Testing failure for mismatch braces
         self.assert_error_message(
             ValueError,
-            "invalid format: unmatched '{' in format spec",
+            "invalid format: expected '}' before end of string",
             logging.Formatter, '{process', style='{'
         )
         self.assert_error_message(
             ValueError,
-            "invalid format: unmatched '{' in format spec",
+            "invalid format: Single '}' encountered in format string",
             logging.Formatter, 'process}', style='{'
         )
         self.assertRaises(ValueError, logging.Formatter, '{{foo!r:4.2}', style='{')
@@ -4867,7 +4869,7 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertIs(self.logger.manager, orig_manager)
 
 
-class LoggerTest(BaseTest):
+class LoggerTest(BaseTest, AssertErrorMessage):
 
     def setUp(self):
         super(LoggerTest, self).setUp()
@@ -4879,7 +4881,12 @@ class LoggerTest(BaseTest):
         self.addCleanup(logging.shutdown)
 
     def test_set_invalid_level(self):
-        self.assertRaises(TypeError, self.logger.setLevel, object())
+        self.assert_error_message(
+            TypeError, 'Level not an integer or a valid string: None',
+            self.logger.setLevel, None)
+        self.assert_error_message(
+            TypeError, 'Level not an integer or a valid string: (0, 0)',
+            self.logger.setLevel, (0, 0))
 
     def test_exception(self):
         msg = 'testing exception: %r'
