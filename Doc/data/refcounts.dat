@@ -959,6 +959,11 @@ PyGen_NewWithQualName:PyFrameObject*:frame:0:
 PyGen_NewWithQualName:PyObject*:name:0:
 PyGen_NewWithQualName:PyObject*:qualname:0:
 
+PyGen_Send:int:::
+PyGen_Send:PyGenObject*:gen:0:
+PyGen_Send:PyObject*:arg:0:
+PyGen_Send:PyObject**:presult:+1:
+
 PyCoro_CheckExact:int:::
 PyCoro_CheckExact:PyObject*:ob:0:
 
@@ -2282,6 +2287,11 @@ PyType_CheckExact:PyObject*:o:0:
 
 PyType_FromSpec:PyObject*::+1:
 PyType_FromSpec:PyType_Spec*:spec::
+
+PyType_FromModuleAndSpec:PyObject*::+1:
+PyType_FromModuleAndSpec:PyObject*:module:+1:
+PyType_FromModuleAndSpec:PyType_Spec*:spec::
+PyType_FromModuleAndSpec:PyObject*:bases:0:
 
 PyType_FromSpecWithBases:PyObject*::+1:
 PyType_FromSpecWithBases:PyType_Spec*:spec::

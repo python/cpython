@@ -387,6 +387,20 @@ http
 HTTP status codes ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` are added to
 :class:`http.HTTPStatus`. (Contributed by Dong-hee Na in :issue:`39509` and Ross Rhodes in :issue:`39507`.)
 
+IDLE and idlelib
+----------------
+
+Add option to toggle cursor blink off.  (Contributed by Zackery Spytz
+in :issue:`4603`.)
+
+Escape key now closes IDLE completion windows.  (Contributed by Johnny
+Najera in :issue:`38944`.)
+
+Add keywords to module name completion list.  (Contributed by Terry J.
+Reedy in :issue:`37765`.)
+
+The changes above have been backported to 3.8 maintenance releases.
+
 imaplib
 -------
 
@@ -708,6 +722,11 @@ Deprecated
   users can leverage the Abstract Syntax Tree (AST) generation and compilation
   stage, using the :mod:`ast` module.
 
+* The Public C API functions :c:func:`PyParser_SimpleParseStringFlags`,
+  :c:func:`PyParser_SimpleParseStringFlagsFilename`,
+  :c:func:`PyParser_SimpleParseFileFlags` and :c:func:`PyNode_Compile`
+  are deprecated and will be removed in Python 3.10 together with the old parser.
+
 * Using :data:`NotImplemented` in a boolean context has been deprecated,
   as it is almost exclusively the result of incorrect rich comparator
   implementations. It will be made a :exc:`TypeError` in a future version
@@ -882,10 +901,16 @@ Removed
   deprecated since 2006, and only returning ``False`` when it's called.
   (Contributed by Batuhan Taskaya in :issue:`40208`)
 
-* The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks` have
+* The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks`
   have been removed. They were deprecated since Python 3.7 and you can use
   :func:`asyncio.current_task` and :func:`asyncio.all_tasks` instead.
   (Contributed by Rémi Lapeyre in :issue:`40967`)
+
+* The ``unescape()`` method in the :class:`html.parser.HTMLParser` class
+  has been removed (it was deprecated since Python 3.4).  :func:`html.unescape`
+  should be used for converting character references to the corresponding
+  unicode characters.
+
 
 Porting to Python 3.9
 =====================

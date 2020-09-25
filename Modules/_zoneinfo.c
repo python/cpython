@@ -484,9 +484,7 @@ zoneinfo_tzname(PyObject *self, PyObject *dt)
     return tti->tzname;
 }
 
-#define HASTZINFO(p) (((_PyDateTime_BaseTZInfo *)(p))->hastzinfo)
-#define GET_DT_TZINFO(p) \
-    (HASTZINFO(p) ? ((PyDateTime_DateTime *)(p))->tzinfo : Py_None)
+#define GET_DT_TZINFO PyDateTime_DATE_GET_TZINFO
 
 static PyObject *
 zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)

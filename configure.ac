@@ -1024,21 +1024,12 @@ LDVERSION="$VERSION"
 # If CXX is set, and if it is needed to link a main function that was
 # compiled with CXX, LINKCC is CXX instead. Always using CXX is undesirable:
 # python might then depend on the C++ runtime
-# This is altered for AIX in order to build the export list before
-# linking.
 AC_SUBST(LINKCC)
 AC_MSG_CHECKING(LINKCC)
 if test -z "$LINKCC"
 then
 	LINKCC='$(PURIFY) $(MAINCC)'
 	case $ac_sys_system in
-	AIX*)
-	   exp_extra="\"\""
-	   if test $ac_sys_release -ge 5 -o \
-		   $ac_sys_release -eq 4 -a `uname -r` -ge 2 ; then
-	       exp_extra="."
-	   fi
-	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp $exp_extra \$(LIBRARY); $LINKCC";;
 	QNX*)
 	   # qcc must be used because the other compilers do not
 	   # support -N.
@@ -1046,6 +1037,24 @@ then
 	esac
 fi
 AC_MSG_RESULT($LINKCC)
+
+# EXPORTSYMS holds the list of exported symbols for AIX.
+# EXPORTSFROM holds the module name exporting symbols on AIX.
+EXPORTSYMS=
+EXPORTSFROM=
+AC_SUBST(EXPORTSYMS)
+AC_SUBST(EXPORTSFROM)
+AC_MSG_CHECKING(EXPORTSYMS)
+case $ac_sys_system in
+AIX*)
+	EXPORTSYMS="Modules/python.exp"
+	if test $ac_sys_release -ge 5 -o \
+		$ac_sys_release -eq 4 -a `uname -r` -ge 2 ; then
+	    EXPORTSFROM=. # the main executable
+	fi
+	;;
+esac
+AC_MSG_RESULT($EXPORTSYMS)
 
 # GNULD is set to "yes" if the GNU linker is used.  If this goes wrong
 # make sure we default having it set to "no": this is used by
@@ -1984,10 +1993,13 @@ yes)
     ;;
 esac
 
-# ICC needs -fp-model strict or floats behave badly
 case "$CC" in
 *icc*)
+    # ICC needs -fp-model strict or floats behave badly
     CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
+    ;;
+*xlc*)
+    CFLAGS_NODIST="$CFLAGS_NODIST -qalias=noansi -qmaxmem=-1"
     ;;
 esac
 

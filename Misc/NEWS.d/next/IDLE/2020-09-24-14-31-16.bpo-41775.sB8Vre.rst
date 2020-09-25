@@ -1,0 +1,1 @@
+Use 'IDLE Shell' as shell title

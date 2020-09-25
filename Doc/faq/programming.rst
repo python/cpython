@@ -35,12 +35,6 @@ for Windows Extensions <https://sourceforge.net/projects/pywin32/>`__ project an
 as a part of the ActivePython distribution (see
 https://www.activestate.com/activepython\ ).
 
-`Boa Constructor <http://boa-constructor.sourceforge.net/>`_ is an IDE and GUI
-builder that uses wxWidgets.  It offers visual frame creation and manipulation,
-an object inspector, many views on the source like object browsers, inheritance
-hierarchies, doc string generated html documentation, an advanced debugger,
-integrated help, and Zope support.
-
 `Eric <http://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
 and the Scintilla editing component.
 
@@ -57,22 +51,14 @@ They include:
 * PyCharm (https://www.jetbrains.com/pycharm/)
 
 
-Is there a tool to help find bugs or perform static analysis?
+Are there tools to help find bugs or perform static analysis?
 -------------------------------------------------------------
 
 Yes.
 
-PyChecker is a static analysis tool that finds bugs in Python source code and
-warns about code complexity and style.  You can get PyChecker from
-http://pychecker.sourceforge.net/.
-
-`Pylint <https://www.pylint.org/>`_ is another tool that checks
-if a module satisfies a coding standard, and also makes it possible to write
-plug-ins to add a custom feature.  In addition to the bug checking that
-PyChecker performs, Pylint offers some additional features such as checking line
-length, whether variable names are well-formed according to your coding
-standard, whether declared interfaces are fully implemented, and more.
-https://docs.pylint.org/ provides a full list of Pylint's features.
+`Pylint <https://www.pylint.org/>`_ and
+`Pyflakes <https://github.com/PyCQA/pyflakes>`_ do basic checking that will
+help you catch bugs sooner.
 
 Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
 `Pyre <https://pyre-check.org/>`_, and
@@ -1155,7 +1141,7 @@ How do you remove duplicates from a list?
 
 See the Python Cookbook for a long discussion of many ways to do this:
 
-   https://code.activestate.com/recipes/52560/
+   https://github.com/ActiveState/code/tree/master/recipes/Python/52560_Remove_duplicates/recipe-52560.py
 
 If you don't mind reordering the list, sort it and then scan from the end of the
 list, deleting duplicates as you go::
@@ -1518,20 +1504,19 @@ Most :meth:`__setattr__` implementations must modify ``self.__dict__`` to store
 local state for self without causing an infinite recursion.
 
 
-How do I call a method defined in a base class from a derived class that overrides it?
---------------------------------------------------------------------------------------
+How do I call a method defined in a base class from a derived class that extends it?
+------------------------------------------------------------------------------------
 
 Use the built-in :func:`super` function::
 
    class Derived(Base):
        def meth(self):
-           super(Derived, self).meth()
+           super().meth()  # calls Base.meth
 
-For version prior to 3.0, you may be using classic classes: For a class
-definition such as ``class Derived(Base): ...`` you can call method ``meth()``
-defined in ``Base`` (or one of ``Base``'s base classes) as ``Base.meth(self,
-arguments...)``.  Here, ``Base.meth`` is an unbound method, so you need to
-provide the ``self`` argument.
+In the example, :func:`super` will automatically determine the instance from
+which it was called (the ``self`` value), look up the :term:`method resolution
+order` (MRO) with ``type(self).__mro__``, and return the next in line after
+``Derived`` in the MRO: ``Base``.
 
 
 How can I organize my code to make it easier to change the base class?
