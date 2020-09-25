@@ -1368,4 +1368,3 @@ def global_enum(cls):
         cls.__repr__ = global_int_repr
     vars(sys.modules[cls.__module__]).update(cls.__members__)
     return cls
-
