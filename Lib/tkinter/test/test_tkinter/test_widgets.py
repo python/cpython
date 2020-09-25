@@ -940,8 +940,7 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_from(self):
         widget = self.create()
-        tk_patchlevel = widget.tk.call('info', 'patchlevel')
-        conv = False if tk_patchlevel == '8.6.10' else float_round  # 39107
+        conv = False if get_tk_patchlevel() >= (8, 6, 10) else float_round
         self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=conv)
 
     def test_label(self):
