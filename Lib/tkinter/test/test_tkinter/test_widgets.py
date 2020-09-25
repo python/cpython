@@ -940,7 +940,8 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_from(self):
         widget = self.create()
-        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=float_round)
+        cvt = False if sys.platform == 'win32' else float_round  # 39107
+        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=cvt)
 
     def test_label(self):
         widget = self.create()
