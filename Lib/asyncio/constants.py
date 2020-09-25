@@ -21,7 +21,6 @@ SENDFILE_FALLBACK_READBUFFER_SIZE = 1024 * 256
 
 # The enum should be here to break circular dependencies between
 # base_events and sslproto
-@enum._stdlib_enum
 class _SendfileMode(enum.Enum):
     UNSUPPORTED = enum.auto()
     TRY_NATIVE = enum.auto()

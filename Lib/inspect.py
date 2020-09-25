@@ -2448,7 +2448,6 @@ class _empty:
     """Marker object for Signature.empty and Parameter.empty."""
 
 
-@enum._stdlib_enum
 class _ParameterKind(enum.IntEnum):
     POSITIONAL_ONLY = 0
     POSITIONAL_OR_KEYWORD = 1

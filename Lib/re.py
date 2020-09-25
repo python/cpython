@@ -142,7 +142,7 @@ __all__ = [
 
 __version__ = "2.2.1"
 
-@enum._stdlib_enum
+@enum.global_enum
 class RegexFlag(enum.IntFlag, boundary=enum.KEEP):
     ASCII = A = sre_compile.SRE_FLAG_ASCII # assume ascii "locale"
     IGNORECASE = I = sre_compile.SRE_FLAG_IGNORECASE # ignore case
@@ -154,8 +154,6 @@ class RegexFlag(enum.IntFlag, boundary=enum.KEEP):
     # sre extensions (experimental, don't rely on these)
     TEMPLATE = T = sre_compile.SRE_FLAG_TEMPLATE # disable backtracking
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
-
-globals().update(RegexFlag.__members__)
 
 # sre exception
 error = sre_compile.error

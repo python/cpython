@@ -9,7 +9,7 @@ __all__ = [
         'auto', 'unique',
         'property',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
-        'global_flag_repr', 'global_int_repr', 'global_enum_str',
+        'global_flag_repr', 'global_int_repr', 'global_enum',
         ]
 
 
@@ -777,8 +777,7 @@ class EnumMeta(type):
             members.sort(key=lambda t: t[0])
         cls = cls(name, members, module=module, boundary=boundary or KEEP)
         cls.__reduce_ex__ = _reduce_ex_by_name
-        _stdlib_enum(cls)
-        module_globals.update(cls.__members__)
+        global_enum(cls)
         module_globals[name] = cls
         return cls
 
@@ -1331,9 +1330,6 @@ def _power_of_two(value):
         return False
     return value == 2 ** _high_bit(value)
 
-def global_enum_str(self):
-    return self.name
-
 def global_int_repr(self):
     return '%s.%s' % (self.__class__.__module__, self.name)
 
@@ -1360,12 +1356,16 @@ def global_flag_repr(self):
             res = '~%s' % (res, )
     return res
 
-def _stdlib_enum(cls):
+def global_enum(cls):
+    """
+    decorator that makes the repr() of an enum member reference its module
+    instead of its class; also exports all members to the enum's module's
+    global namespace
+    """
     if issubclass(cls, Flag):
         cls.__repr__ = global_flag_repr
     else:
         cls.__repr__ = global_int_repr
-    if str not in cls.__mro__:
-        cls.__str__ = global_enum_str
+    vars(sys.modules[cls.__module__]).update(cls.__members__)
     return cls
 

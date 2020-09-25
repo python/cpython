@@ -1,4 +1,4 @@
-from enum import IntEnum, _stdlib_enum
+from enum import IntEnum
 
 __all__ = ['HTTPStatus']
 
