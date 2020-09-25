@@ -1,0 +1,1 @@
+Convert :mod:`sqlite3` to PEP 384.
