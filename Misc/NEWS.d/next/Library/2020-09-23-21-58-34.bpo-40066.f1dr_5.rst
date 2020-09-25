@@ -1,3 +1,4 @@
-stdlib Enum's now have their `repr()` print "module.name" and their `str()`
-print "name", unless the Enum is a `StrEnum` in which case the `str` will be
-the member's value
+Enum's `repr()` and `str()` have changed: `repr()` is now *EnumClass.MemberName*
+and `str()` is *MemberName*.  Additionally, stdlib Enum's whose contents are
+available as module attributes, such as `RegexFlag.IGNORECASE`, have their
+`repr()` as *module.name*, e.g. `re.IGNORECASE`.
