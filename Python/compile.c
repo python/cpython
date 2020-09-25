@@ -108,8 +108,8 @@ It's called a frame block to distinguish it from a basic block in the
 compiler IR.
 */
 
-enum fblocktype { WHILE_LOOP, FOR_LOOP, EXCEPT, FINALLY_TRY, FINALLY_END,
-                  WITH, ASYNC_WITH, HANDLER_CLEANUP, POP_VALUE };
+enum fblocktype { WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
+                  WITH, ASYNC_WITH, HANDLER_CLEANUP, POP_VALUE, EXCEPTION_HANDLER };
 
 struct fblockinfo {
     enum fblocktype fb_type;
@@ -1623,9 +1623,7 @@ compiler_push_fblock(struct compiler *c, enum fblocktype t, basicblock *b,
 {
     struct fblockinfo *f;
     if (c->u->u_nfblocks >= CO_MAXBLOCKS) {
-        PyErr_SetString(PyExc_SyntaxError,
-                        "too many statically nested blocks");
-        return 0;
+        return compiler_error(c, "too many statically nested blocks");
     }
     f = &c->u->u_fblock[c->u->u_nfblocks++];
     f->fb_type = t;
@@ -1665,6 +1663,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 {
     switch (info->fb_type) {
         case WHILE_LOOP:
+        case EXCEPTION_HANDLER:
             return 1;
 
         case FOR_LOOP:
@@ -1675,7 +1674,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             ADDOP(c, POP_TOP);
             return 1;
 
-        case EXCEPT:
+        case TRY_EXCEPT:
             ADDOP(c, POP_BLOCK);
             return 1;
 
@@ -3060,14 +3059,17 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         return 0;
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     compiler_use_next_block(c, body);
-    if (!compiler_push_fblock(c, EXCEPT, body, NULL, NULL))
+    if (!compiler_push_fblock(c, TRY_EXCEPT, body, NULL, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.body);
     ADDOP(c, POP_BLOCK);
-    compiler_pop_fblock(c, EXCEPT, body);
+    compiler_pop_fblock(c, TRY_EXCEPT, body);
     ADDOP_JUMP(c, JUMP_FORWARD, orelse);
     n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
+    /* Runtime will push a block here, so we need to account for that */
+    if (!compiler_push_fblock(c, EXCEPTION_HANDLER, NULL, NULL, NULL))
+        return 0;
     for (i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
             s->v.Try.handlers, i);
@@ -3152,6 +3154,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         }
         compiler_use_next_block(c, except);
     }
+    compiler_pop_fblock(c, EXCEPTION_HANDLER, NULL);
     ADDOP(c, RERAISE);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.Try.orelse);
