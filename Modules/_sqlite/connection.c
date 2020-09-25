@@ -281,13 +281,13 @@ PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, 
     }
 
     if (factory == NULL) {
-        factory = (PyObject*)&pysqlite_CursorType;
+        factory = (PyObject*)pysqlite_CursorType;
     }
 
     cursor = PyObject_CallOneArg(factory, (PyObject *)self);
     if (cursor == NULL)
         return NULL;
-    if (!PyObject_TypeCheck(cursor, &pysqlite_CursorType)) {
+    if (!PyObject_TypeCheck(cursor, pysqlite_CursorType)) {
         PyErr_Format(PyExc_TypeError,
                      "factory must return a cursor, not %.100s",
                      Py_TYPE(cursor)->tp_name);
