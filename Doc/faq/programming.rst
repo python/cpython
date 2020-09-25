@@ -1167,22 +1167,18 @@ into a list.
 How do you remove multiple items from a list
 --------------------------------------------
 
-As with removing duplicates, iterating in reverse is one solution::
+As with removing duplicates, explicitly iterating in reverse with a
+delete condition is one possibility.  However, using slice replacement
+with an implicit or explicit forward iteration, depending on whether one
+starts with a keep predicate function or keep condition,
+is easier and less error-prone.  For a long enough list with enough
+deletions, this will also be faster.  Here are the two options::
 
-    for i in range(len(mylist)-1, -1, -1):
-        if should_remove(mylist[i]):
-            del mylist[i]
+   mylist[:] = filter(keep_function, mylist)
+   mylist[:] = (x for x in mylist if keep_condition)
 
-
-For a long enough list with enough deletions, moving kept items to
-the front of the list, using a second index, should be faster::
-
-   j = 0
-   for i, item in enumerate(mylist):
-       if should_keep(item):
-           mylist[j] = item
-           j += 1
-   del mylist[j:]
+If space is not an issue, a list comprehension instead of a generator
+comprehension may be faster.
 
 
 How do you make an array in Python?
