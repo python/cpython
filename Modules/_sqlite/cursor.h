@@ -52,7 +52,7 @@ typedef struct
     PyObject* in_weakreflist; /* List of weak references */
 } pysqlite_Cursor;
 
-extern PyTypeObject pysqlite_CursorType;
+extern PyTypeObject *pysqlite_CursorType;
 
 PyObject* pysqlite_cursor_execute(pysqlite_Cursor* self, PyObject* args);
 PyObject* pysqlite_cursor_executemany(pysqlite_Cursor* self, PyObject* args);
