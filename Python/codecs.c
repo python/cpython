@@ -54,17 +54,18 @@ int
 PyCodec_Unregister(PyObject *search_function)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
+    PyObject *codec_search_path = interp->codec_search_path;
     /* Do nothing if codec_search_path is not created yet or was cleared. */
-    if (interp->codec_search_path == NULL) {
+    if (codec_search_path == NULL) {
         return 0;
     }
 
-    Py_ssize_t n = PyList_Size(interp->codec_search_path);
+    Py_ssize_t n = PyList_Size(codec_search_path);
     for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *item = PyList_GetItem(interp->codec_search_path, i);
+        PyObject *item = PyList_GetItem(codec_search_path, i);
         if (item == search_function) {
             PyDict_Clear(interp->codec_search_cache);
-            return PyList_SetSlice(interp->codec_search_path, i, i+1, NULL);
+            return PyList_SetSlice(codec_search_path, i, i+1, NULL);
         }
     }
     return 0;
