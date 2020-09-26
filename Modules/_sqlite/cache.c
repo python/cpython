@@ -48,11 +48,13 @@ pysqlite_Node* pysqlite_new_node(PyObject* key, PyObject* data)
 
 void pysqlite_node_dealloc(pysqlite_Node* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
+
     Py_DECREF(self->key);
     Py_DECREF(self->data);
 
-    Py_TYPE(self)->tp_free((PyObject*)self);
-    Py_DECREF(pysqlite_NodeType);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
