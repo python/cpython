@@ -75,10 +75,8 @@ class Future:
         loop object used by the future. If it's not provided, the future uses
         the default event loop.
         """
-        if loop is None:
-            self._loop = events.get_event_loop()
-        else:
-            self._loop = loop
+        self._loop = events.get_event_loop() if loop is None else loop
+
         self._callbacks = []
         if self._loop.get_debug():
             self._source_traceback = format_helpers.extract_stack(
