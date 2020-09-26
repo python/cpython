@@ -1264,13 +1264,15 @@ class Path(PurePath):
         with self.open(mode='wb') as f:
             return f.write(view)
 
-    def write_text(self, data, encoding=None, errors=None):
+    def write_text(self, data, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, write to it, and close the file.
         """
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)
+        if newline is not None:
+            data = re.sub('\r\n|\n|\r', newline, data)
         with self.open(mode='w', encoding=encoding, errors=errors) as f:
             return f.write(data)
 

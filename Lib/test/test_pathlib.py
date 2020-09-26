@@ -1510,6 +1510,25 @@ class _BasePathTest(object):
         self.assertRaises(TypeError, (p / 'fileA').write_text, b'somebytes')
         self.assertEqual((p / 'fileA').read_text(encoding='latin-1'), 'äbcdefg')
 
+    def test_write_text_with_newlines(self):
+        p = self.cls(BASE)
+        # Check that `\n` character is replaced
+        (p / 'fileA').write_text('abcde\nfghlk\n\nmnopq', newline='\1')
+        self.assertEqual((p / 'fileA').read_text(),
+                         'abcde\1fghlk\1\1mnopq')
+        # Check that `\r` character is replaced
+        (p / 'fileA').write_text('abcde\rfghlk\r\rmnopq', newline='\1')
+        self.assertEqual((p / 'fileA').read_text(),
+                         'abcde\1fghlk\1\1mnopq')
+        # Check that `\r\n` character is replaced
+        (p / 'fileA').write_text('abcde\r\nfghlk\r\n\r\nmnopq', newline='\1')
+        self.assertEqual((p / 'fileA').read_text(),
+                         'abcde\1fghlk\1\1mnopq')
+        # Check that None newline does not change anything
+        (p / 'fileA').write_text('abcde\nfghlk\n\nmnopq')
+        self.assertEqual((p / 'fileA').read_text(),
+                         'abcde\nfghlk\n\nmnopq')
+
     def test_iterdir(self):
         P = self.cls
         p = P(BASE)

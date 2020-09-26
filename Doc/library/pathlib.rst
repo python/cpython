@@ -1158,7 +1158,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.write_text(data, encoding=None, errors=None)
+.. method:: Path.write_text(data, encoding=None, errors=None, newline=None)
 
    Open the file pointed to in text mode, write *data* to it, and close the
    file::
@@ -1170,9 +1170,12 @@ call fails (for example because the path doesn't exist).
       'Text file contents'
 
    An existing file of the same name is overwritten. The optional parameters
-   have the same meaning as in :func:`open`.
-
+   *encoding* and *errors* have the same meaning as in :func:`open`.
+   If *newline* parameter is passed, all occurrences of default newline
+   characters (``\r``, ``\n`` and ``\r\n``) will be replaced with *newline*.
    .. versionadded:: 3.5
+   .. versionchanged:: 3.10
+      The *newline* parameter was added.
 
 Correspondence to tools in the :mod:`os` module
 -----------------------------------------------
