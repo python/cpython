@@ -293,14 +293,14 @@ static PyType_Spec pysqlite_CacheType_spec = {
 };
 PyTypeObject *pysqlite_CacheType = NULL;
 
-extern int pysqlite_cache_setup_types(void)
+extern int pysqlite_cache_setup_types(PyObject *mod)
 {
-    pysqlite_NodeType = (PyTypeObject *)PyType_FromSpec(&pysqlite_NodeType_spec);
+    pysqlite_NodeType = (PyTypeObject *)PyType_FromModuleAndSpec(mod, &pysqlite_NodeType_spec, NULL);
     if (pysqlite_NodeType == NULL) {
         return -1;
     }
 
-    pysqlite_CacheType = (PyTypeObject *)PyType_FromSpec(&pysqlite_CacheType_spec);
+    pysqlite_CacheType = (PyTypeObject *)PyType_FromModuleAndSpec(mod, &pysqlite_CacheType_spec, NULL);
     if (pysqlite_CacheType == NULL) {
         return -1;
     }

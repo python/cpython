@@ -69,6 +69,6 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs);
 void pysqlite_cache_dealloc(pysqlite_Cache* self);
 PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* args);
 
-int pysqlite_cache_setup_types(void);
+int pysqlite_cache_setup_types(PyObject *module);
 
 #endif
