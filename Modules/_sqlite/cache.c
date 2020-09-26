@@ -264,7 +264,7 @@ static PyType_Slot pysqlite_NodeType_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec pysqlite_NodeType_spec = {
+static PyType_Spec pysqlite_NodeType_spec = {
     .name = MODULE_NAME ".Node",
     .basicsize = sizeof(pysqlite_Node),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HEAPTYPE,
