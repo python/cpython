@@ -76,7 +76,7 @@ class Future:
         the default event loop.
         """
         self._loop = events.get_event_loop() if loop is None else loop
-
+ 
         self._callbacks = []
         if self._loop.get_debug():
             self._source_traceback = format_helpers.extract_stack(
