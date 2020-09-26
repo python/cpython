@@ -60,11 +60,15 @@ PyCodec_Unregister(PyObject *search_function)
         return 0;
     }
 
-    Py_ssize_t n = PyList_Size(codec_search_path);
+    assert(PyList_CheckExact(codec_search_path));
+    Py_ssize_t n = PyList_GET_SIZE(codec_search_path);
     for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *item = PyList_GetItem(codec_search_path, i);
+        PyObject *item = PyList_GET_ITEM(codec_search_path, i);
         if (item == search_function) {
-            PyDict_Clear(interp->codec_search_cache);
+            if (interp->codec_search_cache != NULL) {
+                assert(PyDict_Check(interp->codec_search_cache));
+                PyDict_Clear(interp->codec_search_cache);
+            }
             return PyList_SetSlice(codec_search_path, i, i+1, NULL);
         }
     }
