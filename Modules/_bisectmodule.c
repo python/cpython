@@ -234,6 +234,7 @@ having to sort the list after each insertion. For long lists of items with\n\
 expensive comparison operations, this can be an improvement over the more\n\
 common approach.\n");
 
+
 static struct PyModuleDef _bisectmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_bisect",
