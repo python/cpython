@@ -91,6 +91,7 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
 
 void pysqlite_cache_dealloc(pysqlite_Cache* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     pysqlite_Node* node;
     pysqlite_Node* delete_node;
 
@@ -112,8 +113,8 @@ void pysqlite_cache_dealloc(pysqlite_Cache* self)
     }
     Py_DECREF(self->mapping);
 
-    Py_TYPE(self)->tp_free((PyObject*)self);
-    Py_DECREF(pysqlite_CacheType);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* key)
