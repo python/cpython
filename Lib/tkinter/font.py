@@ -118,11 +118,6 @@ class Font:
         except Exception:
             pass
 
-    def __neg__(self):
-        cp = self.copy()
-        cp['size'] = -self['size']
-        return cp
-
     def copy(self):
         "Return a distinct copy of the current font"
         return Font(self._tk, **self.actual())

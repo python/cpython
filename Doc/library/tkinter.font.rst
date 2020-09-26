@@ -90,13 +90,6 @@ The different font weights and slants are:
 
       *fixed* - 1 if font is fixed-width else 0
 
-   .. method:: __neg__()
-
-      Return a new font object with the size negated. In practice, this means
-      converting the font size between points and pixels.
-
-      .. versionadded:: 3.10
-
 .. function:: families(root=None, displayof=None)
 
    Return the different font families.
