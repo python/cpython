@@ -23,7 +23,6 @@
 
 #include "cache.h"
 #include "module.h"
-#include "structmember.h"         // PyMemberDef
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
