@@ -35,6 +35,13 @@ class BackupTests(unittest.TestCase):
         with self.assertRaises(sqlite.ProgrammingError):
             self.cx.backup(bck)
 
+    def test_bad_source_closed_connection(self):
+        bck = sqlite.connect(':memory:')
+        source = sqlite.connect(":memory:")
+        source.close()
+        with self.assertRaises(sqlite.ProgrammingError):
+            source.backup(bck)
+
     def test_bad_target_in_transaction(self):
         bck = sqlite.connect(':memory:')
         bck.execute('CREATE TABLE bar (key INTEGER)')
