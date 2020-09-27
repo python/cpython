@@ -505,7 +505,13 @@ class _TemporaryFileWrapper:
         self.close()
         # if file is to be deleted, bot not on closure, deleting it now
         if self.delete and not self.delete_on_close:
-            _os.unlink(self.name)
+            try:
+                _os.unlink(self.name)
+            # It shall be Ok to ignore FileNotFoundError, because user may
+            # have deleted the file already before content manager came to it
+            except FileNotFoundError:
+                pass
+
         return result
 
     def close(self):

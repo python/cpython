@@ -987,7 +987,8 @@ class TestNamedTemporaryFile(BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             with tempfile.NamedTemporaryFile(dir=dir,
-                                             delete_on_close= False) as f:
+                                             delete=True,
+                                             delete_on_close=False) as f:
                 f.write(b'blat')
                 f_name = f.name
                 f.close()
@@ -1002,6 +1003,22 @@ class TestNamedTemporaryFile(BaseTestCase):
                 self.assertFalse(os.path.exists(f.name),
                                  "NamedTemporaryFile %s exists\
                                   after content manager exit" % f.name)
+
+        finally:
+            os.rmdir(dir)
+
+    def test_ok_to_dete_manually(self):
+        # A NamedTemporaryFile can be deleted by a user before content manager
+        # comes to it. This will not generate an error
+
+        dir = tempfile.mkdtemp()
+        try:
+            with tempfile.NamedTemporaryFile(dir=dir,
+                                             delete=True,
+                                             delete_on_close=False) as f:
+                f.write(b'blat')
+                f.close()
+                os.unlink(f.name)
 
         finally:
             os.rmdir(dir)
