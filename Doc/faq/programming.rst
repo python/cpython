@@ -1141,7 +1141,7 @@ How do you remove duplicates from a list?
 
 See the Python Cookbook for a long discussion of many ways to do this:
 
-   https://github.com/ActiveState/code/tree/master/recipes/Python/52560_Remove_duplicates/recipe-52560.py
+   https://code.activestate.com/recipes/52560/
 
 If you don't mind reordering the list, sort it and then scan from the end of the
 list, deleting duplicates as you go::
