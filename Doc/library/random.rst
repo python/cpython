@@ -57,7 +57,7 @@ from sources provided by the operating system.
 
 
    `Complementary-Multiply-with-Carry recipe
-   <https://github.com/ActiveState/code/tree/master/recipes/Python/576707_Long_period_random_number/recipe-576707.py>`_ for a compatible alternative
+   <https://code.activestate.com/recipes/576707/>`_ for a compatible alternative
    random number generator with a long period and comparatively simple update
    operations.
 
