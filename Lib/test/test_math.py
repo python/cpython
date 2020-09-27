@@ -803,8 +803,20 @@ class MathTests(unittest.TestCase):
             scale = FLOAT_MIN / 2.0 ** exp
             self.assertEqual(math.hypot(4*scale, 3*scale), 5*scale)
 
+    @requires_IEEE_754
+    @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
+                     "hypot() loses accuracy on machines with double rounding")
     def testHypotAccuracy(self):
         # Verify improved accuracy in cases that were known to be inaccurate.
+        #
+        # The new algorithm's accuracy depends on IEEE 754 arithmetic
+        # guarantees, on having the usual ROUND HALF EVEN rounding mode, on
+        # the system not having double rounding due to extended precision,
+        # and on the compiler maintaining the specified order of operations.
+        #
+        # This test is known to succeed on most of our builds.  If it fails
+        # some build, we either need to add another skipIf if the cause is
+        # identifiable; otherwise, we can remove this test entirely.
 
         hypot = math.hypot
         Decimal = decimal.Decimal
@@ -835,7 +847,7 @@ class MathTests(unittest.TestCase):
             ('0x1.1243a50751fd4p+29', '0x1.a5a10175622d9p+29'),
             ('0x1.57a8596e74722p+30', '0x1.42d1af9d04da9p+30'),
 
-            # Cases with 1 ulp error in version fff3c28052e6b0750d6218e00acacd2fded4991a
+            # Cases with 1 ulp error in version fff3c28052e6b0
             ('0x1.ee7dbd9565899p+29', '0x1.7ab4d6fc6e4b4p+29'),
             ('0x1.5c6bfbec5c4dcp+30', '0x1.02511184b4970p+30'),
             ('0x1.59dcebba995cap+30', '0x1.50ca7e7c38854p+29'),
@@ -847,9 +859,9 @@ class MathTests(unittest.TestCase):
             ('0x1.282bdb82f17f3p+30', '0x1.640ba4c4eed3ap+30'),
             ('0x1.89d8c423ea0c6p+29', '0x1.d35dcfe902bc3p+29'),
         ]:
-            with self.subTest(hx=hx, hy=hy):
-                x = float.fromhex(hx)
-                y = float.fromhex(hy)
+            x = float.fromhex(hx)
+            y = float.fromhex(hy)
+            with self.subTest(hx=hx, hy=hy, x=x, y=y):
                 with decimal.localcontext(high_precision):
                     z = float((Decimal(x)**2 + Decimal(y)**2).sqrt())
                 self.assertEqual(hypot(x, y), z)
