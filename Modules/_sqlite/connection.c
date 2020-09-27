@@ -133,7 +133,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     }
     Py_DECREF(isolation_level);
 
-    self->statement_cache = (pysqlite_Cache*)PyObject_CallFunction((PyObject*)&pysqlite_CacheType, "Oi", self, cached_statements);
+    self->statement_cache = (pysqlite_Cache*)PyObject_CallFunction((PyObject*)pysqlite_CacheType, "Oi", self, cached_statements);
     if (PyErr_Occurred()) {
         return -1;
     }

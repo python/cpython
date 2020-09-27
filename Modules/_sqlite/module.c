@@ -355,7 +355,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         (pysqlite_row_setup_types() < 0) ||
         (pysqlite_cursor_setup_types() < 0) ||
         (pysqlite_connection_setup_types() < 0) ||
-        (pysqlite_cache_setup_types() < 0) ||
+        (pysqlite_cache_setup_types(module) < 0) ||
         (pysqlite_statement_setup_types() < 0) ||
         (pysqlite_prepare_protocol_setup_types() < 0)
        ) {
