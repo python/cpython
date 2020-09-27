@@ -421,10 +421,11 @@ class _TemporaryFileCloser:
     file = None  # Set here since __del__ checks it
     close_called = False
 
-    def __init__(self, file, name, delete=True):
+    def __init__(self, file, name, delete=True, delete_on_close=True):
         self.file = file
         self.name = name
         self.delete = delete
+        self.delete_on_close = delete_on_close
 
     # NT provides delete-on-close as a primitive, so we don't need
     # the wrapper to do anything special.  We still use it so that
@@ -442,7 +443,7 @@ class _TemporaryFileCloser:
                 try:
                     self.file.close()
                 finally:
-                    if self.delete:
+                    if self.delete and self.delete_on_close:
                         unlink(self.name)
 
         # Need to ensure the file is deleted on __del__
@@ -468,6 +469,7 @@ class _TemporaryFileWrapper:
         self.file = file
         self.name = name
         self.delete = delete
+        self.delete_on_close = delete_on_close
         self._closer = _TemporaryFileCloser(file, name, delete,
                                             delete_on_close)
 
@@ -501,6 +503,9 @@ class _TemporaryFileWrapper:
     def __exit__(self, exc, value, tb):
         result = self.file.__exit__(exc, value, tb)
         self.close()
+        # if file is to be deleted, bot not on closure, deleting it now
+        if self.delete and not self.delete_on_close:
+            _os.unlink(self.name)
         return result
 
     def close(self):
