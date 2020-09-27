@@ -464,11 +464,12 @@ class _TemporaryFileWrapper:
     remove the file when it is no longer needed.
     """
 
-    def __init__(self, file, name, delete=True):
+    def __init__(self, file, name, delete=True, delete_on_close=True):
         self.file = file
         self.name = name
         self.delete = delete
-        self._closer = _TemporaryFileCloser(file, name, delete)
+        self._closer = _TemporaryFileCloser(file, name, delete,
+                                            delete_on_close)
 
     def __getattr__(self, name):
         # Attribute lookups are delegated to the underlying file
@@ -521,7 +522,8 @@ class _TemporaryFileWrapper:
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                        newline=None, suffix=None, prefix=None,
-                       dir=None, delete=True, *, errors=None):
+                       dir=None, delete=True, *, errors=None,
+                       delete_on_close=True):
     """Create and return a temporary file.
     Arguments:
     'prefix', 'suffix', 'dir' -- as for mkstemp.
@@ -529,9 +531,14 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     'buffering' -- the buffer size argument to io.open (default -1).
     'encoding' -- the encoding argument to io.open (default None)
     'newline' -- the newline argument to io.open (default None)
-    'delete' -- whether the file is deleted on close (default True).
+    'delete' -- whether the file is deleted at the end.  When exactly file gets
+       deleted (either on close or on context manager exit) is determined by
+       parameter delete_on_close.  (default True).
     'errors' -- the errors argument to io.open (default None)
     The file is created as mkstemp() would do it.
+    'delete_on_close' -- if 'delete', then determines whether file gets deleted
+       on close. Otherwise it gets deleted on context manager exit
+       (default True)
 
     Returns an object with a file-like interface; the name of the file
     is accessible as its 'name' attribute.  The file will be automatically
@@ -548,7 +555,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
 
     # Setting O_TEMPORARY in the flags causes the OS to delete
     # the file when it is closed.  This is only supported by Windows.
-    if _os.name == 'nt' and delete:
+    if _os.name == 'nt' and delete and delete_on_close:
         flags |= _os.O_TEMPORARY
 
     if "b" not in mode:
@@ -559,7 +566,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
         file = _io.open(fd, mode, buffering=buffering,
                         newline=newline, encoding=encoding, errors=errors)
 
-        return _TemporaryFileWrapper(file, name, delete)
+        return _TemporaryFileWrapper(file, name, delete, delete_on_close)
     except BaseException:
         _os.unlink(name)
         _os.close(fd)
