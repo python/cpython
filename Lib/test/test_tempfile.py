@@ -1007,7 +1007,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         finally:
             os.rmdir(dir)
 
-    def test_ok_to_dete_manually(self):
+    def test_ok_to_delete_manually(self):
         # A NamedTemporaryFile can be deleted by a user before content manager
         # comes to it. This will not generate an error
 
