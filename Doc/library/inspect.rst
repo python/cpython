@@ -431,7 +431,7 @@ attributes:
 
 .. function:: ismethodwrapper(object)
 
-   Return ``True`` if the object is a method-wrapper.
+   Return ``True`` if the type of object is a :class:`~types.MethodWrapperType`.
 
 
 .. function:: isroutine(object)

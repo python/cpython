@@ -1223,6 +1223,9 @@ now call :func:`inspect.get_annotations` to retrieve annotations. This means
 also now un-stringize stringized annotations.
 (Contributed by Larry Hastings in :issue:`43817`.)
 
+Add :func:`inspect.ismethodwrapper` for checking if the type of object is a
+:class:`~types.MethodWrapperType`. (Contributed by Hakan Çelik in :issue:`29418`.)
+
 linecache
 ---------
 
@@ -1511,6 +1514,7 @@ Add a :class:`~xml.sax.handler.LexicalHandler` class to the
 :mod:`xml.sax.handler` module.
 (Contributed by Jonathan Gossage and Zackery Spytz in :issue:`35018`.)
 
+
 zipimport
 ---------
 Add methods related to :pep:`451`: :meth:`~zipimport.zipimporter.find_spec`,
@@ -1520,6 +1524,7 @@ Add methods related to :pep:`451`: :meth:`~zipimport.zipimporter.find_spec`,
 
 Add :meth:`~zipimport.zipimporter.invalidate_caches` method.
 (Contributed by Desmond Cheong in :issue:`14678`.)
+=======
 
 
 Optimizations
