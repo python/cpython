@@ -1174,6 +1174,7 @@ call fails (for example because the path doesn't exist).
    If *newline* parameter is passed, all occurrences of default newline
    characters (``\r``, ``\n`` and ``\r\n``) will be replaced with *newline*.
    .. versionadded:: 3.5
+
    .. versionchanged:: 3.10
       The *newline* parameter was added.
 
