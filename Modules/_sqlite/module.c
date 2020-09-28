@@ -176,7 +176,7 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args)
         pysqlite_BaseTypeAdapted = 1;
     }
 
-    rc = pysqlite_microprotocols_add(type, (PyObject*)&pysqlite_PrepareProtocolType, caster);
+    rc = pysqlite_microprotocols_add(type, (PyObject*)pysqlite_PrepareProtocolType, caster);
     if (rc == -1)
         return NULL;
 
@@ -357,7 +357,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         (pysqlite_connection_setup_types() < 0) ||
         (pysqlite_cache_setup_types(module) < 0) ||
         (pysqlite_statement_setup_types() < 0) ||
-        (pysqlite_prepare_protocol_setup_types() < 0)
+        (pysqlite_prepare_protocol_setup_types(module) < 0)
        ) {
         Py_XDECREF(module);
         return NULL;
@@ -365,7 +365,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 
     ADD_TYPE(module, pysqlite_ConnectionType);
     ADD_TYPE(module, pysqlite_CursorType);
-    ADD_TYPE(module, pysqlite_PrepareProtocolType);
+    ADD_TYPE(module, *pysqlite_PrepareProtocolType);
     ADD_TYPE(module, pysqlite_RowType);
 
     if (!(dict = PyModule_GetDict(module))) {
