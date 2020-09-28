@@ -1,0 +1,5 @@
+NamedTemporaryFile is too hard to use portably when you need to open the file by name after writing it. To do that, you need to close the file first (on Windows), which means you have to pass delete=False, which in turn means that you get no help in cleaning up the actual file resource,
+
+The issue is solved by adding an additional optional argument to NamedTemporaryFile()
+'delete_on_close' -- It works in combination with already existing option 'delete', and determines whether file gets deleted
+on close (which is current and default functionality). Otherwise it gets deleted on context manager exit.
