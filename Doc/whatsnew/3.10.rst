@@ -824,65 +824,8 @@ Other Language Changes
   :meth:`~object.__index__` method).
   (Contributed by Serhiy Storchaka in :issue:`37999`.)
 
-* If :func:`object.__ipow__` returns :const:`NotImplemented`, the operator will
-  correctly fall back to :func:`object.__pow__` and :func:`object.__rpow__` as expected.
-  (Contributed by Alex Shkop in :issue:`38302`.)
+* XXX Describe changes to NamedTemporaryFile functionality. Re 2020-09-28-04-56-04.bpo-14243.YECnxv.rst
 
-* Assignment expressions can now be used unparenthesized within set literals
-  and set comprehensions, as well as in sequence indexes (but not slices).
-
-* Functions have a new ``__builtins__`` attribute which is used to look for
-  builtin symbols when a function is executed, instead of looking into
-  ``__globals__['__builtins__']``. The attribute is initialized from
-  ``__globals__["__builtins__"]`` if it exists, else from the current builtins.
-  (Contributed by Mark Shannon in :issue:`42990`.)
-
-* Two new builtin functions -- :func:`aiter` and :func:`anext` have been added
-  to provide asynchronous counterparts to :func:`iter` and :func:`next`,
-  respectively.
-  (Contributed by Joshua Bronson, Daniel Pope, and Justin Wang in :issue:`31861`.)
-
-* Static methods (:func:`@staticmethod <staticmethod>`) and class methods
-  (:func:`@classmethod <classmethod>`) now inherit the method attributes
-  (``__module__``, ``__name__``, ``__qualname__``, ``__doc__``,
-  ``__annotations__``) and have a new ``__wrapped__`` attribute.
-  Moreover, static methods are now callable as regular functions.
-  (Contributed by Victor Stinner in :issue:`43682`.)
-
-* Annotations for complex targets (everything beside ``simple name`` targets
-  defined by :pep:`526`) no longer cause any runtime effects with ``from __future__ import annotations``.
-  (Contributed by Batuhan Taskaya in :issue:`42737`.)
-
-* Class and module objects now lazy-create empty annotations dicts on demand.
-  The annotations dicts are stored in the object’s ``__dict__`` for
-  backwards compatibility.  This improves the best practices for working
-  with ``__annotations__``; for more information, please see
-  :ref:`annotations-howto`.
-  (Contributed by Larry Hastings in :issue:`43901`.)
-
-* Annotations consist of ``yield``, ``yield from``, ``await`` or named expressions
-  are now forbidden under ``from __future__ import annotations`` due to their side
-  effects.
-  (Contributed by Batuhan Taskaya in :issue:`42725`.)
-
-* Usage of unbound variables, ``super()`` and other expressions that might
-  alter the processing of symbol table as annotations are now rendered
-  effectless under ``from __future__ import annotations``.
-  (Contributed by Batuhan Taskaya in :issue:`42725`.)
-
-* Hashes of NaN values of both :class:`float` type and
-  :class:`decimal.Decimal` type now depend on object identity. Formerly, they
-  always hashed to ``0`` even though NaN values are not equal to one another.
-  This caused potentially quadratic runtime behavior due to excessive hash
-  collisions when creating dictionaries and sets containing multiple NaNs.
-  (Contributed by Raymond Hettinger in :issue:`43475`.)
-
-* A :exc:`SyntaxError` (instead of a :exc:`NameError`) will be raised when deleting
-  the :const:`__debug__` constant.  (Contributed by Dong-hee Na in :issue:`45000`.)
-
-* :exc:`SyntaxError` exceptions now have ``end_lineno`` and
-  ``end_offset`` attributes.  They will be ``None`` if not determined.
-  (Contributed by Pablo Galindo in :issue:`43914`.)
 
 New Modules
 ===========
