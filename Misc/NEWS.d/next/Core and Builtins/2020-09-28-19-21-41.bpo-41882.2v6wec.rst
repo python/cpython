@@ -1,0 +1,1 @@
+Clean up after :func:`CCompiler.has_function`

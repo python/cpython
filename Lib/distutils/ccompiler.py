@@ -792,6 +792,8 @@ int main (int argc, char **argv) {
             objects = self.compile([fname], include_dirs=include_dirs)
         except CompileError:
             return False
+        finally:
+            os.remove(fname)
 
         try:
             self.link_executable(objects, "a.out",
@@ -799,6 +801,12 @@ int main (int argc, char **argv) {
                                  library_dirs=library_dirs)
         except (LinkError, TypeError):
             return False
+        else:
+            os.remove("a.out")
+        finally:
+            for fn in objects:
+                os.remove(fn)
+
         return True
 
     def find_library_file (self, dirs, lib, debug=0):
