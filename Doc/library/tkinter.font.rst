@@ -109,5 +109,5 @@ The different font weights and slants are:
 References
 ----------
 
-.. [1] The :meth:`actual` docs are based on those found on the Tk 8.6 font man
-   page (https://www.tcl.tk/man/tcl8.6/TkCmd/font.htm#M5)
+.. [1] The :meth:`Font.actual` docs are based heavily on those found on the Tk
+   8.6 font man page (https://www.tcl.tk/man/tcl8.6/TkCmd/font.htm#M5)
