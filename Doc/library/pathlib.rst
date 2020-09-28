@@ -1170,9 +1170,7 @@ call fails (for example because the path doesn't exist).
       'Text file contents'
 
    An existing file of the same name is overwritten. The optional parameters
-   *encoding* and *errors* have the same meaning as in :func:`open`.
-   If *newline* parameter is passed, all occurrences of default newline
-   characters (``\r``, ``\n`` and ``\r\n``) will be replaced with *newline*.
+   have the same meaning as in :func:`open`.
 
    .. versionadded:: 3.5
 

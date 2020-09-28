@@ -1271,9 +1271,7 @@ class Path(PurePath):
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)
-        if newline is not None:
-            data = re.sub('\r\n|\n|\r', newline, data)
-        with self.open(mode='w', encoding=encoding, errors=errors) as f:
+        with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
     def readlink(self):
