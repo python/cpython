@@ -47,7 +47,16 @@ The different font weights and slants are:
 
    .. method:: actual(option=None, displayof=None)
 
-      Return the attributes of the font.
+      Returns information about the actual attributes that are obtained when
+      the font is used on *displayof*; the actual attributes obtained may
+      differ from those given (and retrieved by :meth:`Font.cget`) due to
+      platform-dependent limitations, such as the availability of font
+      families and pointsizes. If *displayof* is omitted, it defaults to the
+      main window.
+
+      If *option* is specified, value of just that attribute is returned; if
+      it is omitted, the return value is a dictionary of all the attributes
+      and their values. See above for a list of the possible attributes.
 
    .. method:: cget(option)
 
