@@ -68,7 +68,7 @@ The different font weights and slants are:
 
    .. method:: copy()
 
-      Return new instance of the current font.
+      Return new instance of the current font with a different *name*.
 
    .. method:: measure(text, displayof=None)
 
