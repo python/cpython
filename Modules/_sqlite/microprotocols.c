@@ -56,7 +56,7 @@ pysqlite_microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
     PyObject* key;
     int rc;
 
-    if (proto == NULL) proto = (PyObject*)&pysqlite_PrepareProtocolType;
+    if (proto == NULL) proto = (PyObject*)pysqlite_PrepareProtocolType;
 
     key = Py_BuildValue("(OO)", (PyObject*)type, proto);
     if (!key) {
@@ -152,7 +152,7 @@ PyObject *
 pysqlite_adapt(pysqlite_Cursor *self, PyObject *args)
 {
     PyObject *obj, *alt = NULL;
-    PyObject *proto = (PyObject*)&pysqlite_PrepareProtocolType;
+    PyObject *proto = (PyObject*)pysqlite_PrepareProtocolType;
 
     if (!PyArg_ParseTuple(args, "O|OO", &obj, &proto, &alt)) return NULL;
     return pysqlite_microprotocols_adapt(obj, proto, alt);
