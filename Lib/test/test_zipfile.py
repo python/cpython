@@ -1856,11 +1856,14 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zipf.comment, b"an updated comment")
 
         # check that comments are correctly shortened in append mode
+        # and the file is indeed truncated
         with zipfile.ZipFile(TESTFN,mode="w") as zipf:
             zipf.comment = b"original comment that's longer"
             zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+        original_zip_size = os.path.getsize(TESTFN)
         with zipfile.ZipFile(TESTFN,mode="a") as zipf:
             zipf.comment = b"shorter comment"
+        self.assertTrue(original_zip_size > os.path.getsize(TESTFN))
         with zipfile.ZipFile(TESTFN,mode="r") as zipf:
             self.assertEqual(zipf.comment, b"shorter comment")
 
