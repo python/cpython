@@ -1811,6 +1811,7 @@ class OtherTests(unittest.TestCase):
 
     def test_comments(self):
         """Check that comments on the archive are handled properly."""
+
         # check default comment is empty
         with zipfile.ZipFile(TESTFN, mode="w") as zipf:
             self.assertEqual(zipf.comment, b'')
