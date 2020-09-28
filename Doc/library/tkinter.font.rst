@@ -56,7 +56,7 @@ The different font weights and slants are:
 
       If *option* is specified, value of just that attribute is returned; if
       it is omitted, the return value is a dictionary of all the attributes
-      and their values. See above for a list of the possible attributes.
+      and their values. See above for a list of the possible attributes. [1]_
 
    .. method:: cget(option)
 
@@ -103,3 +103,9 @@ The different font weights and slants are:
 .. function:: nametofont(name)
 
    Return a :class:`Font` representation of a tk named font.
+
+References
+----------
+
+.. [1] Tk 8.6 font man page
+   https://www.tcl.tk/man/tcl8.6/TkCmd/font.htm#M5
