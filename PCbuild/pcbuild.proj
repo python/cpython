@@ -51,7 +51,7 @@
     <!-- pyshellext.dll -->
     <Projects Include="pyshellext.vcxproj" />
     <!-- Extension modules -->
-    <ExtensionModules Include="_asyncio;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;_queue;select;unicodedata;winsound" />
+    <ExtensionModules Include="_asyncio;_zoneinfo;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;_queue;select;unicodedata;winsound;_uuid" />
     <ExtensionModules Include="_ctypes" Condition="$(IncludeCTypes)" />
     <!-- Extension modules that require external sources -->
     <ExternalModules Include="_bz2;_lzma;_sqlite3" />

@@ -17,7 +17,7 @@
 
 #include "Python.h"
 #include "ucnhash.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #include <stdbool.h>
 
@@ -92,7 +92,10 @@ static PyMemberDef DB_members[] = {
 
 /* forward declaration */
 static PyTypeObject UCD_Type;
-#define UCD_Check(o) Py_IS_TYPE(o, &UCD_Type)
+
+// Check if self is an instance of UCD_Type.
+// Return 0 if self is NULL (when the PyCapsule C API is used).
+#define UCD_Check(self, ucd_type) (self != NULL && Py_IS_TYPE(self, ucd_type))
 
 static PyObject*
 new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4),
@@ -135,7 +138,7 @@ unicodedata_UCD_decimal_impl(PyObject *self, int chr,
     long rc;
     Py_UCS4 c = (Py_UCS4)chr;
 
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, &UCD_Type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0) {
             /* unassigned */
@@ -223,7 +226,7 @@ unicodedata_UCD_numeric_impl(PyObject *self, int chr,
     double rc;
     Py_UCS4 c = (Py_UCS4)chr;
 
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, &UCD_Type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0) {
             /* unassigned */
@@ -268,7 +271,7 @@ unicodedata_UCD_category_impl(PyObject *self, int chr)
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->category;
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, &UCD_Type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed != 0xFF)
             index = old->category_changed;
@@ -295,7 +298,7 @@ unicodedata_UCD_bidirectional_impl(PyObject *self, int chr)
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->bidirectional;
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, &UCD_Type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
@@ -324,7 +327,7 @@ unicodedata_UCD_combining_impl(PyObject *self, int chr)
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->combining;
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, &UCD_Type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
@@ -352,7 +355,7 @@ unicodedata_UCD_mirrored_impl(PyObject *self, int chr)
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->mirrored;
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, &UCD_Type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
@@ -379,7 +382,7 @@ unicodedata_UCD_east_asian_width_impl(PyObject *self, int chr)
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->east_asian_width;
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, &UCD_Type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
@@ -413,7 +416,7 @@ unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
 
     code = (int)c;
 
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, &UCD_Type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             return PyUnicode_FromString(""); /* unassigned */
@@ -460,7 +463,7 @@ get_decomp_record(PyObject *self, Py_UCS4 code, int *index, int *prefix, int *co
 {
     if (code >= 0x110000) {
         *index = 0;
-    } else if (self && UCD_Check(self) &&
+    } else if (UCD_Check(self, &UCD_Type) &&
                get_old_record(self, code)->category_changed==0) {
         /* unassigned in old version */
         *index = 0;
@@ -496,7 +499,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
     Py_UCS4 *output;
     Py_ssize_t i, o, osize;
     int kind;
-    void *data;
+    const void *data;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
     Py_UCS4 stack[20];
     Py_ssize_t space, isize;
@@ -558,7 +561,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
                 continue;
             }
             /* normalization changes */
-            if (self && UCD_Check(self)) {
+            if (UCD_Check(self, &UCD_Type)) {
                 Py_UCS4 value = ((PreviousDBVersion*)self)->normalization(code);
                 if (value != 0) {
                     stack[stackptr++] = value;
@@ -643,7 +646,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
 {
     PyObject *result;
     int kind;
-    void *data;
+    const void *data;
     Py_UCS4 *output;
     Py_ssize_t i, i1, o, len;
     int f,l,index,index1,comb;
@@ -799,12 +802,12 @@ is_normalized_quickcheck(PyObject *self, PyObject *input,
 {
     /* An older version of the database is requested, quickchecks must be
        disabled. */
-    if (self && UCD_Check(self))
+    if (UCD_Check(self, &UCD_Type))
         return NO;
 
     Py_ssize_t i, len;
     int kind;
-    void *data;
+    const void *data;
     unsigned char prev_combining = 0;
 
     /* The two quickcheck bits at this shift have type QuickcheckResult. */
@@ -1066,7 +1069,7 @@ _getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
     if (!with_alias_and_seq && (IS_ALIAS(code) || IS_NAMED_SEQ(code)))
         return 0;
 
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, &UCD_Type)) {
         /* in 3.2.0 there are no aliases and named sequences */
         const change_record *old;
         if (IS_ALIAS(code) || IS_NAMED_SEQ(code))

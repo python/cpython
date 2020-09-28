@@ -369,6 +369,11 @@ Miscellaneous options
    (filename or built-in module) from which it is loaded.  When given twice
    (:option:`!-vv`), print a message for each file that is checked for when
    searching for a module.  Also provides information on module cleanup at exit.
+
+   .. versionchanged:: 3.10
+      The :mod:`site` module reports the site-specific paths
+      and :file:`.pth` files being processed.
+
    See also :envvar:`PYTHONVERBOSE`.
 
 
@@ -478,6 +483,9 @@ Miscellaneous options
 
       The ``-X showalloccount`` option has been removed.
 
+   .. deprecated-removed:: 3.9 3.10
+      The ``-X oldparser`` option.
+
 
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -531,6 +539,14 @@ conflict.
    :envvar:`PYTHONPATH` as described above under
    :ref:`using-on-interface-options`. The search path can be manipulated from
    within a Python program as the variable :data:`sys.path`.
+
+
+.. envvar:: PYTHONPLATLIBDIR
+
+   If this is set to a non-empty string, it overrides the :data:`sys.platlibdir`
+   value.
+
+   .. versionadded:: 3.9
 
 
 .. envvar:: PYTHONSTARTUP

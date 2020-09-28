@@ -640,7 +640,7 @@ the original TOS1.
 
 .. opcode:: LIST_APPEND (i)
 
-   Calls ``list.append(TOS[-i], TOS)``.  Used to implement list comprehensions.
+   Calls ``list.append(TOS1[-i], TOS)``.  Used to implement list comprehensions.
 
 
 .. opcode:: MAP_ADD (i)
@@ -844,9 +844,9 @@ All of the following opcodes use their arguments.
 
 .. opcode:: BUILD_CONST_KEY_MAP (count)
 
-   The version of :opcode:`BUILD_MAP` specialized for constant keys.  *count*
-   values are consumed from the stack.  The top element on the stack contains
-   a tuple of keys.
+   The version of :opcode:`BUILD_MAP` specialized for constant keys. Pops the
+   top element on the stack which contains a tuple of keys, then starting from
+   ``TOS1``, pops *count* values to form values in the built dictionary.
 
    .. versionadded:: 3.6
 

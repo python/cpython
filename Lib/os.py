@@ -28,6 +28,8 @@ import stat as st
 
 from _collections_abc import _check_methods
 
+GenericAlias = type(list[int])
+
 _names = sys.builtin_module_names
 
 # Note:  more names are added to __all__ later.
@@ -1074,8 +1076,7 @@ class PathLike(abc.ABC):
             return _check_methods(subclass, '__fspath__')
         return NotImplemented
 
-    def __class_getitem__(cls, type):
-        return cls
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 if name == 'nt':

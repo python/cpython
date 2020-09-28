@@ -24,7 +24,6 @@
  */
 
 #include <Python.h>
-#include <structmember.h>
 
 #include "cursor.h"
 #include "microprotocols.h"

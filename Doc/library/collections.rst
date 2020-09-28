@@ -135,12 +135,12 @@ The class can be used to simulate nested scopes and is useful in templating.
       :attr:`~collections.ChainMap.parents` property.
 
     * The `Nested Contexts recipe
-      <https://code.activestate.com/recipes/577434/>`_ has options to control
+      <https://github.com/ActiveState/code/tree/master/recipes/Python/577434_Nested_contexts__chamapping/recipe-577434.py>`_ has options to control
       whether writes and other mutations apply only to the first mapping or to
       any mapping in the chain.
 
     * A `greatly simplified read-only version of Chainmap
-      <https://code.activestate.com/recipes/305268/>`_.
+      <https://github.com/ActiveState/code/tree/master/recipes/Python/305268_Chained_map_lookups/recipe-305268.py>`_.
 
 
 :class:`ChainMap` Examples and Recipes
@@ -327,6 +327,19 @@ For example::
         *mapping* (or counter).  Like :meth:`dict.update` but adds counts
         instead of replacing them.  Also, the *iterable* is expected to be a
         sequence of elements, not a sequence of ``(key, value)`` pairs.
+
+Counters support rich comparison operators for equality, subset, and
+superset relationships: ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``.
+All of those tests treat missing elements as having zero counts so that
+``Counter(a=1) == Counter(a=1, b=0)`` returns true.
+
+.. versionadded:: 3.10
+   Rich comparison operations we were added
+
+.. versionchanged:: 3.10
+   In equality tests, missing elements are treated as having zero counts.
+   Formerly, ``Counter(a=3)`` and ``Counter(a=3, b=0)`` were considered
+   distinct.
 
 Common patterns for working with :class:`Counter` objects::
 
@@ -1161,6 +1174,8 @@ variants of :func:`functools.lru_cache`::
             return value
 
         def __setitem__(self, key, value):
+            if key in self:
+                self.move_to_end(key)
             super().__setitem__(key, value)
             if len(self) > self.maxsize:
                 oldest = next(iter(self))

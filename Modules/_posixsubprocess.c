@@ -264,9 +264,15 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
         start_fd = keep_fd + 1;
     }
     if (start_fd <= end_fd) {
+#if defined(__FreeBSD__)
+        /* Any errors encountered while closing file descriptors are ignored */
+        closefrom(start_fd);
+#else
         for (fd_num = start_fd; fd_num < end_fd; ++fd_num) {
-            close(fd_num);
+            /* Ignore errors */
+            (void)close(fd_num);
         }
+#endif
     }
 }
 
@@ -657,6 +663,14 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         return NULL;
     }
 
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    if (config->_isolated_interpreter) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "subprocess not supported for isolated subinterpreters");
+        return NULL;
+    }
+
     /* We need to call gc.disable() when we'll be calling preexec_fn */
     if (preexec_fn != Py_None) {
         PyObject *result;
@@ -879,6 +893,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     if (_enable_gc(need_to_reenable_gc, gc_module)) {
         pid = -1;
     }
+    PyMem_RawFree(groups);
     Py_XDECREF(preexec_fn_args_tuple);
     Py_XDECREF(gc_module);
 

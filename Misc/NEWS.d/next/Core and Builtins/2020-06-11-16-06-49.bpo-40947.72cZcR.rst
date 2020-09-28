@@ -1,0 +1,2 @@
+The Python :ref:`Path Configuration <init-path-config>` now takes
+:c:member:`PyConfig.platlibdir` in account.

@@ -1,0 +1,1 @@
+Restored the deprecated :mod:`xml.etree.cElementTree` module.

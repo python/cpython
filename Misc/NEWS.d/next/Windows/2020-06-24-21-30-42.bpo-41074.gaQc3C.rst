@@ -1,0 +1,3 @@
+Fixed support of non-ASCII names in functions :func:`msilib.OpenDatabase`
+and :func:`msilib.init_database` and non-ASCII SQL in method
+:meth:`msilib.Database.OpenView`.
