@@ -1,0 +1,1 @@
+Add :func:`codecs.unregister` function to unregister a codec search function.

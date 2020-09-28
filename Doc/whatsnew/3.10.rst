@@ -109,6 +109,12 @@ base64
 Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
 Base32 Encoding with Extended Hex Alphabet.
 
+codecs
+------
+
+Add a :func:`codecs.unregister` function to unregister a codec search function.
+(Contributed by Hai Shi in :issue:`41842`.)
+
 curses
 ------
 
@@ -236,6 +242,10 @@ New Features
   the ``tzinfo`` attributes of :class:`datetime.datetime` and
   :class:`datetime.time` objects.
   (Contributed by Zackery Spytz in :issue:`30155`.)
+
+* Add a :c:func:`PyCodec_Unregister` function to unregister a codec
+  search function.
+  (Contributed by Hai Shi in :issue:`41842`.)
 
 Porting to Python 3.10
 ----------------------

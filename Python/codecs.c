@@ -50,6 +50,31 @@ int PyCodec_Register(PyObject *search_function)
     return -1;
 }
 
+int
+PyCodec_Unregister(PyObject *search_function)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyObject *codec_search_path = interp->codec_search_path;
+    /* Do nothing if codec_search_path is not created yet or was cleared. */
+    if (codec_search_path == NULL) {
+        return 0;
+    }
+
+    assert(PyList_CheckExact(codec_search_path));
+    Py_ssize_t n = PyList_GET_SIZE(codec_search_path);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = PyList_GET_ITEM(codec_search_path, i);
+        if (item == search_function) {
+            if (interp->codec_search_cache != NULL) {
+                assert(PyDict_CheckExact(interp->codec_search_cache));
+                PyDict_Clear(interp->codec_search_cache);
+            }
+            return PyList_SetSlice(codec_search_path, i, i+1, NULL);
+        }
+    }
+    return 0;
+}
+
 extern int _Py_normalize_encoding(const char *, char *, size_t);
 
 /* Convert a string to a normalized Python string(decoded from UTF-8): all characters are
