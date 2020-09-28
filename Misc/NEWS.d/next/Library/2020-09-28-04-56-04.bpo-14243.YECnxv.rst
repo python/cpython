@@ -1,15 +1,16 @@
-At the moment  NamedTemporaryFile is too hard to use portably when you need
-to open the file by name after writing to it. To do that, you need to close the
-file first (on Windows), which means you have to pass delete=False, which in
-turn means that you get no help in cleaning up the actual file resource.
+At the moment  ``NamedTemporaryFile`` is too hard to use portably when you
+need to open the file by name after writing to it. To do that, you need to
+close the file first (on Windows), which means you have to pass
+`delete=False`, which in turn means that you get no help in cleaning up the
+actual file resource.
 
 The issue is solved by adding an additional optional argument to
-NamedTemporaryFile() 'delete_on_close' (default is True). It works in
-combination with already existing argument 'delete', and determines whether
-created temporary file gets deleted on close (which until this change was
-the only functionality available and it remains default now).
+``NamedTemporaryFile()`` ``delete_on_close`` (default is ``True``). It works
+in combination with already existing argument ``'delete'``, and determines
+whether created temporary file gets deleted on close (which until this change
+was the only functionality available and it remains default now).
 
-If 'delete' = True and 'delete_on_close' = False then temporary file gets deleted
-on context manager exit only (which is a new functionality).
+If ``delete = True and delete_on_close = False`` then temporary file gets
+deleted on context manager exit only (which is a new functionality).
 
-If 'delete' is not true, then value of 'delete_on_close' is ignored.
+If ``delete is not True``, then value of ``delete_on_close`` is ignored.
