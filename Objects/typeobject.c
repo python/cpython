@@ -4344,8 +4344,8 @@ _PyObject_GetState(PyObject *obj, int required)
 
         if (required && Py_TYPE(obj)->tp_itemsize) {
             PyErr_Format(PyExc_TypeError,
-                         "cannot pickle '%.200s' object: expected " \
-                         "fixed-length instance (tp_itemsize != 0)",
+                         "cannot pickle '%.200s' object: missing " \
+                         "`__getstate__()` on variable-length object",
                          Py_TYPE(obj)->tp_name);
             return NULL;
         }
