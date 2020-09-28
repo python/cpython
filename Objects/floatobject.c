@@ -1662,7 +1662,8 @@ float_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    return float_new_impl((PyTypeObject *)type, args[0]);
+    PyObject *x = nargs >= 1 ? args[0] : _PyLong_Zero;
+    return float_new_impl((PyTypeObject *)type, x);
 }
 
 
