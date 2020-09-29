@@ -3415,7 +3415,7 @@ class Rot13UtilTest(unittest.TestCase):
             'To be, or not to be, that is the question')
 
 
-class NormalizedTest(unittest.TestCase):
+class CodecNameNormalizationTest(unittest.TestCase):
     """Test the normalizestring function via codecs module"""
     def test_normalized_encoding(self):
         def search_function(encoding):
