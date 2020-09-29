@@ -101,7 +101,7 @@ class Font:
         return self.name
 
     def __repr__(self):
-        return f"{self.__class__.__module__}.{self.__class__.__name__} object '{self.name}'"
+        return f"<{self.__class__.__module__}.{self.__class__.__qualname__} object '{self.name}'>"
 
     def __eq__(self, other):
         if not isinstance(other, Font):
