@@ -1649,6 +1649,24 @@ float_subtype_new(PyTypeObject *type, PyObject *x)
     return newobj;
 }
 
+static PyObject *
+float_vectorcall(PyObject *type, PyObject * const*args,
+                 size_t nargsf, PyObject *kwnames)
+{
+    if (!_PyArg_NoKwnames("float", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("float", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    PyObject *x = nargs >= 1 ? args[0] : _PyLong_Zero;
+    return float_new_impl((PyTypeObject *)type, x);
+}
+
+
 /*[clinic input]
 float.__getnewargs__
 [clinic start generated code]*/
@@ -1937,6 +1955,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     float_new,                                  /* tp_new */
+    .tp_vectorcall = (vectorcallfunc)float_vectorcall,
 };
 
 int
