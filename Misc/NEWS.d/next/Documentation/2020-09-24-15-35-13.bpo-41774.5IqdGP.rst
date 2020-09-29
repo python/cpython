@@ -1,0 +1,2 @@
+In Programming FAQ "Sequences (Tuples/Lists)" section, add "How do you
+remove multiple items from a list".
