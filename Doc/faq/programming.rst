@@ -1168,17 +1168,15 @@ How do you remove multiple items from a list
 --------------------------------------------
 
 As with removing duplicates, explicitly iterating in reverse with a
-delete condition is one possibility.  However, using slice replacement
-with an implicit or explicit forward iteration, depending on whether one
-starts with a keep predicate function or keep condition,
-is easier and less error-prone.  For a long enough list with enough
-deletions, this will also be faster.  Here are the two options::
+delete condition is one possibility.  However, it is easier and faster
+to use slice replacement with an implicit or explicit forward iteration.
+Here are three variations.::
 
    mylist[:] = filter(keep_function, mylist)
    mylist[:] = (x for x in mylist if keep_condition)
+   mylist[:] = [x for x in mylist if keep_condition]
 
-If space is not an issue, a list comprehension instead of a generator
-comprehension may be faster.
+If space is not an issue, the list comprehension may be fastest.
 
 
 How do you make an array in Python?
