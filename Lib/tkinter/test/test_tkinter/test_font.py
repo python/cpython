@@ -100,10 +100,10 @@ class FontTest(AbstractTkTest, unittest.TestCase):
             self.assertIsInstance(name, str)
             self.assertTrue(name)
         self.assertIn(fontname, names)
-    
+
     def test_repr(self):
         self.assertEqual(repr(self.font), f'<{self.font.__class__.__module__}.{self.font.__class__.__qualname__} object {fontname!r}>')
-        
+
 
 tests_gui = (FontTest, )
 
