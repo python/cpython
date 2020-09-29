@@ -174,6 +174,10 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.ismethodwrapper, "object().__str__")
         self.istest(inspect.ismethodwrapper, "object().__eq__")
         self.istest(inspect.ismethodwrapper, "object().__repr__")
+        self.assertFalse(inspect.ismethodwrapper(type))
+        self.assertFalse(inspect.ismethodwrapper(int))
+        self.assertFalse(inspect.ismethodwrapper(type("AnyClass", (), {})))
+
 
 
     def test_iscoroutine(self):
