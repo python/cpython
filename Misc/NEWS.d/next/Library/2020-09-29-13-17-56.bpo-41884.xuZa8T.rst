@@ -1,0 +1,1 @@
+Enhancement adding option to set folder permissions for tempfile generated temporary directory. Patch by Ray Sit.
