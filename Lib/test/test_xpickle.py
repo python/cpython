@@ -1,6 +1,7 @@
 # This test covers backwards compatibility with
 # previous version of Python by bouncing pickled objects through Python 3.6
 # and Python 3.9 by running xpickle_worker.py.
+import os
 import pathlib
 import pickle
 import subprocess
@@ -67,12 +68,15 @@ def have_python_version(py_version):
     python_str = ".".join(map(str, py_version))
     targets = [('py', f'-{python_str}'), (f'python{python_str}',)]
     if py_version not in py_executable_map:
-        for target in targets[0 if is_windows else 1:]:
-            worker = subprocess.Popen([*target, '-c','import test.support'],
-                                      shell=is_windows)
-            worker.communicate()
-            if worker.returncode == 0:
-                py_executable_map[py_version] = target
+        with open(os.devnull, 'w') as devnull:
+            for target in targets[0 if is_windows else 1:]:
+                worker = subprocess.Popen([*target, '-c','import test.support'],
+                                          stdout=devnull,
+                                          stderr=devnull,
+                                          shell=is_windows)
+                worker.communicate()
+                if worker.returncode == 0:
+                    py_executable_map[py_version] = target
 
     return py_executable_map.get(py_version, None)
 
@@ -99,8 +103,7 @@ class AbstractCompatTests(PyPicklerTests):
         pickletester.protocols = range(pickle.HIGHEST_PROTOCOL + 1)
         pickle.HIGHEST_PROTOCOL = self._OLD_HIGHEST_PROTOCOL
 
-    @staticmethod
-    def send_to_worker(python, obj, proto, **kwargs):
+    def send_to_worker(self, python, obj, proto, **kwargs):
         """Bounce a pickled object through another version of Python.
         This will pickle the object, send it to a child process where it will
         be unpickled, then repickled and sent back to the parent process.
@@ -145,8 +148,7 @@ class AbstractCompatTests(PyPicklerTests):
         python = py_executable_map[self.py_version]
         return self.send_to_worker(python, arg, proto, **kwargs)
 
-    @staticmethod
-    def loads(*args, **kwargs):
+    def loads(self, *args, **kwargs):
         return super().loads(*args, **kwargs)
 
     # A scaled-down version of test_bytes from pickletester, to reduce
