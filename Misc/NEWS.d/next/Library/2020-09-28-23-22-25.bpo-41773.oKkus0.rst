@@ -1,0 +1,2 @@
+Note in documentation that :func:`random.choices` doesn't support non-finite
+weights, raise :exc:`ValueError` when given non-finite weights.
