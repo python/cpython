@@ -1,0 +1,2 @@
+Change in :class:`tkinter.font.Font`, now representation of font object contains
+font name instead of object address.
