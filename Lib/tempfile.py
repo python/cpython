@@ -350,15 +350,12 @@ def mkdtemp(suffix=None, prefix=None, dir=None, mode=0o700):
         Ensures mode is valid; if any issues are found the mode is reset to 0o777
         which only allows access for the creating user.
         """
-        if mode is None:
-            return 0o700
         if not isinstance(mode, int):
             return 0o700
-        if 0o000 <= mode <= 0o777:
+        if not 0o000 <= mode <= 0o777:
             return 0o700
         return mode
     mode = sanitise_mode(mode)
-
     prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
 
     names = _get_candidate_names()
