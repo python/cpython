@@ -10,7 +10,6 @@ from unittest import mock
 from test import support
 from test.support import os_helper
 from test.support import warnings_helper
-import _testinternalcapi
 
 try:
     import _testcapi
@@ -3427,7 +3426,7 @@ class NormalizedTest(unittest.TestCase):
         codecs.register(search_function)
         self.assertEqual((1, 2, 3, 4), codecs.lookup('AAA-8'))
         self.assertEqual((None, None, None, None), codecs.lookup('BBB-8'))
-        _testinternalcapi.codecs_unregister(search_function)
+        codecs.unregister(search_function)
 
 
 if __name__ == "__main__":
