@@ -332,18 +332,32 @@ def mkstemp(suffix=None, prefix=None, dir=None, text=False):
     return _mkstemp_inner(dir, prefix, suffix, flags, output_type)
 
 
-def mkdtemp(suffix=None, prefix=None, dir=None):
+def mkdtemp(suffix=None, prefix=None, dir=None, mode=0o700):
     """User-callable function to create and return a unique temporary
     directory.  The return value is the pathname of the directory.
 
     Arguments are as for mkstemp, except that the 'text' argument is
     not accepted.
 
-    The directory is readable, writable, and searchable only by the
-    creating user.
+    By default, the directory is readable, writable, and searchable only by the
+    creating user. However, the permissions can be specified through the 'mode' arg.
 
     Caller is responsible for deleting the directory when done with it.
     """
+
+    def sanitise_mode(mode):
+        """
+        Ensures mode is valid; if any issues are found the mode is reset to 0o777
+        which only allows access for the creating user.
+        """
+        if mode is None:
+            return 0o700
+        if not isinstance(mode, int):
+            return 0o700
+        if 0o000 <= mode <= 0o777:
+            return 0o700
+        return mode
+    mode = sanitise_mode(mode)
 
     prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
 
@@ -356,7 +370,7 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
         file = _os.path.join(dir, prefix + name + suffix)
         _sys.audit("tempfile.mkdtemp", file)
         try:
-            _os.mkdir(file, 0o700)
+            _os.mkdir(file, mode)
         except FileExistsError:
             continue    # try again
         except PermissionError:
@@ -775,8 +789,8 @@ class TemporaryDirectory(object):
     in it are removed.
     """
 
-    def __init__(self, suffix=None, prefix=None, dir=None):
-        self.name = mkdtemp(suffix, prefix, dir)
+    def __init__(self, suffix=None, prefix=None, dir=None, mode=0o700):
+        self.name = mkdtemp(suffix, prefix, dir, mode)
         self._finalizer = _weakref.finalize(
             self, self._cleanup, self.name,
             warn_message="Implicitly cleaning up {!r}".format(self))
