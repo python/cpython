@@ -115,6 +115,10 @@ resources to test.  Currently only the following are defined:
 
     tzdata -    Run tests that require timezone data.
 
+    xpickle -   Test pickle and _pickle against Python 3.6, 3.7, 3.8 
+                and 3.9 to test backwards compatibility. These tests 
+                may take very long to complete.
+
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the gui tests, give the
 option '-uall,-gui'.
@@ -138,7 +142,7 @@ ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
 # - tzdata: while needed to validate fully test_datetime, it makes
 #   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
 #   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
+RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata', 'xpickle')
 
 class _ArgParser(argparse.ArgumentParser):
 
