@@ -1,1 +1,1 @@
-_tkinter correctly handles a null thread state when trying to restore the state.
+Fix a crash in ``_tkinter`` on Windows where ``ENTER_PYTHON`` may try to restore a NULL state.
