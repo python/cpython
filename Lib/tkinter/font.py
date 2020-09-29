@@ -100,6 +100,9 @@ class Font:
     def __str__(self):
         return self.name
 
+    def __repr__(self):
+        return f"{self.__class__.__module__}.{self.__class__.__name__} object '{self.name}'"
+
     def __eq__(self, other):
         if not isinstance(other, Font):
             return NotImplemented
