@@ -86,4 +86,3 @@ except Exception as e:
     pickle.dump(e, out_stream)
     sys.stderr.write(repr(e))
     sys.exit(1)
-

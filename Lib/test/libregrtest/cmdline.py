@@ -115,8 +115,8 @@ resources to test.  Currently only the following are defined:
 
     tzdata -    Run tests that require timezone data.
 
-    xpickle -   Test pickle and _pickle against Python 3.6, 3.7, 3.8 
-                and 3.9 to test backwards compatibility. These tests 
+    xpickle -   Test pickle and _pickle against Python 3.6, 3.7, 3.8
+                and 3.9 to test backwards compatibility. These tests
                 may take very long to complete.
 
 To enable all resources except one, use '-uall,-<resource>'.  For

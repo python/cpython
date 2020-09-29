@@ -247,14 +247,14 @@ if has_c_implementation:
 def test_main():
     support.requires('xpickle')
     tests = [PicklePython36Compat,
-             PicklePython37Compat, PicklePython38Compat, 
+             PicklePython37Compat, PicklePython38Compat,
              PicklePython39Compat]
     if has_c_implementation:
         tests.extend([CPicklePython36Compat,
-                      CPicklePython37Compat, CPicklePython38Compat, 
+                      CPicklePython37Compat, CPicklePython38Compat,
                       CPicklePython39Compat])
     support.run_unittest(*tests)
 
 
 if __name__ == '__main__':
-        test_main()
+    test_main()
