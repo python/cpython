@@ -757,9 +757,9 @@ class EnumMeta(type):
         # module;
         # also, replace the __reduce_ex__ method so unpickling works in
         # previous Python versions
-        module_globals = vars(sys.modules[module])
+        module_globals = sys.modules[module].__dict__
         if source:
-            source = vars(source)
+            source = source.__dict__
         else:
             source = module_globals
         # _value2member_map_ is populated in the same order every time
@@ -1366,5 +1366,5 @@ def global_enum(cls):
         cls.__repr__ = global_flag_repr
     else:
         cls.__repr__ = global_int_repr
-    vars(sys.modules[cls.__module__]).update(cls.__members__)
+    sys.modules[cls.__module__].__dict__.update(cls.__members__)
     return cls
