@@ -1,3 +1,15 @@
+This is ActiveState’s fork of Python 2.7.18. We address CVEs in the 
+language by issuing new versions, and contribute these fixes back 
+to the community.
+
+For those that require commercial extended support for Python 2.7 
+going forwards please refer to ActiveState’s offering at 
+https://www.activestate.com/products/python/python-2-7/.
+
+These changes are provided as is.
+
+The original README file follows.
+
 This is Python version 2.7.18
 =============================
 
