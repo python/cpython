@@ -64,6 +64,9 @@ class GeneralFloatCases(unittest.TestCase):
         # See bpo-34087
         self.assertRaises(ValueError, float, '\u3053\u3093\u306b\u3061\u306f')
 
+    def test_noargs(self):
+        self.assertEqual(float(), 0.0)
+
     def test_underscores(self):
         for lit in VALID_UNDERSCORE_LITERALS:
             if not any(ch in lit for ch in 'jJxXoObB'):
