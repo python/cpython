@@ -2311,7 +2311,6 @@ main_loop:
         }
 
         case TARGET(POP_BLOCK): {
-            PREDICTED(POP_BLOCK);
             PyFrame_BlockPop(f);
             DISPATCH();
         }
@@ -3366,7 +3365,6 @@ main_loop:
             STACK_SHRINK(1);
             Py_DECREF(iter);
             JUMPBY(oparg);
-            PREDICT(POP_BLOCK);
             DISPATCH();
         }
 

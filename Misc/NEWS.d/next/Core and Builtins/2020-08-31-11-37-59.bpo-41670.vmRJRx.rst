@@ -1,0 +1,4 @@
+Prevent line trace being skipped on platforms not compiled
+with ``USE_COMPUTED_GOTOS``.
+Fixes issue where some lines nested within a try-except block
+were not being traced on Windows.
