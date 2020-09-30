@@ -87,7 +87,8 @@ class AbstractCompatTests(PyPicklerTests):
     _OLD_HIGHEST_PROTOCOL = pickle.HIGHEST_PROTOCOL
 
     def setUp(self):
-        self.assertTrue(self.py_version)
+        self.assertIsNotNone(self.py_version,
+                             msg='Needs a python version tuple')
         if not have_python_version(self.py_version):
             py_version_str = ".".join(map(str, self.py_version))
             self.skipTest(f'Python {py_version_str} not available')
@@ -100,23 +101,21 @@ class AbstractCompatTests(PyPicklerTests):
 
     def tearDown(self):
         # Set the highest protocol back to the default.
-        pickletester.protocols = range(pickle.HIGHEST_PROTOCOL + 1)
         pickle.HIGHEST_PROTOCOL = self._OLD_HIGHEST_PROTOCOL
+        pickletester.protocols = range(pickle.HIGHEST_PROTOCOL + 1)
 
-    def send_to_worker(self, python, obj, proto, **kwargs):
+    @staticmethod
+    def send_to_worker(python, data):
         """Bounce a pickled object through another version of Python.
-        This will pickle the object, send it to a child process where it will
+        This will send data to a child process where it will
         be unpickled, then repickled and sent back to the parent process.
         Args:
             python: list containing the python binary to start and its arguments
-            obj: object to pickle.
-            proto: pickle protocol number to use.
-            kwargs: other keyword arguments to pass into pickle.dumps()
+            data: bytes object to send to the child process
         Returns:
             The pickled data received from the child process.
         """
         target = pathlib.Path(__file__).parent / 'xpickle_worker.py'
-        data = super().dumps((proto, obj), proto, **kwargs)
         worker = subprocess.Popen([*python, target],
                                   stdin=subprocess.PIPE,
                                   stdout=subprocess.PIPE,
@@ -145,8 +144,9 @@ class AbstractCompatTests(PyPicklerTests):
         # it works in a different Python version.
         if 'buffer_callback' in kwargs:
             self.skipTest('Test does not support "buffer_callback" argument.')
+        data = super().dumps((proto, arg), proto, **kwargs)
         python = py_executable_map[self.py_version]
-        return self.send_to_worker(python, arg, proto, **kwargs)
+        return self.send_to_worker(python, data)
 
     def loads(self, *args, **kwargs):
         return super().loads(*args, **kwargs)
