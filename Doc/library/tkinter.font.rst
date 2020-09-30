@@ -47,18 +47,19 @@ The different font weights and slants are:
 
    .. method:: actual(option=None, displayof=None)
 
-      Returns information about the actual attributes that are obtained when
-      the font is used on *displayof*; the values obtained may differ from
-      those given as kwargs or similar method (and retrieved by
-      :meth:`Font.cget`) due to platform-dependent limitations (such as the
-      availability of font families and pointsizes).
+      Returns the actual value for attributes when the given font is used on
+      *displayof*. Due to some differences between operating systems (such as
+      pointsizes and the availability of font families), some values returned
+      by this method may vary from those given as kwargs or similar method
+      (and retrieved by :meth:`Font.cget`).
 
       *displayof* accepts any tkinter widget and, if omitted, will default to
       the main window.
 
-      If *option* is specified, the value of just that attribute is returned;
-      if it is omitted, the return value is a dictionary of all the attributes
-      and their values. See above for a list of the possible attributes. [1]_
+      If *option* is specified, the value of just that attribute is returned.
+      If it is omitted or ``None``, the returned value is a dictionary of all
+      the attributes and their values. See above for a list of acceptable
+      attributes.
 
    .. method:: cget(option)
 
@@ -105,9 +106,3 @@ The different font weights and slants are:
 .. function:: nametofont(name)
 
    Return a :class:`Font` representation of a tk named font.
-
-References
-----------
-
-.. [1] The :meth:`Font.actual` docs are based heavily on those found on the Tk
-   8.6 font man page (https://www.tcl.tk/man/tcl8.6/TkCmd/font.htm#M5)
