@@ -1589,6 +1589,7 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.10
       Now allows leading whitespaces
 
+
 .. function:: get_docstring(node, clean=True)
 
    Return the docstring of the given *node* (which must be a
