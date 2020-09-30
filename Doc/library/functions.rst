@@ -506,6 +506,8 @@ are always available.  They are listed here in alphabetical order.
    returns the current global and local dictionary, respectively, which may be
    useful to pass around for use by :func:`eval` or :func:`exec`.
 
+   The leading whitespaces would be omitted.
+
    See :func:`ast.literal_eval` for a function that can safely evaluate strings
    with expressions containing only literals.
 
