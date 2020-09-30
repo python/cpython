@@ -1,0 +1,2 @@
+Add support for pickling and unpickling frozen :mod:`dataclasses` that have
+``__slots__``.

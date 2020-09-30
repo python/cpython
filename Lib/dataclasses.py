@@ -569,6 +569,18 @@ def _frozen_get_del_attr(cls, fields, globals):
                        f'super(cls, self).__delattr__(name)'),
                        locals=locals,
                        globals=globals),
+            _create_fn('__getstate__',
+                       ('self',),
+                       ('fields = getattr(self, _fields)',
+                        'valid_fields = (f.name for f in fields.values() if f._field_type is _FIELD)',
+                        'return [(attr, getattr(self, attr, None)) for attr in valid_fields]',
+                       ),
+                       globals=dict(globals, _fields=_FIELDS, _FIELD=_FIELD)),
+            _create_fn('__setstate__',
+                       ('self', 'state'),
+                       ('for slot, value in state:',
+                        ' object.__setattr__(self, slot, value)'),
+                       globals=globals),
             )
 
 
