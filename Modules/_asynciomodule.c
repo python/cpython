@@ -16,7 +16,6 @@ _Py_IDENTIFIER(add_done_callback);
 _Py_IDENTIFIER(call_soon);
 _Py_IDENTIFIER(cancel);
 _Py_IDENTIFIER(get_event_loop);
-_Py_IDENTIFIER(send);
 _Py_IDENTIFIER(throw);
 
 
