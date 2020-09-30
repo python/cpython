@@ -58,10 +58,10 @@ Build Instructions
 
 On Unix, Linux, BSD, macOS, and Cygwin::
 
-    ./configure
-    make
-    make test
-    sudo make install
+    Step 1: ./configure
+    Step 2: make
+    Step 3: make test
+    Step 4: sudo make install
 
 This will install Python as ``python3``.
 
@@ -87,11 +87,11 @@ On Windows, see `PCbuild/readme.txt
 If you wish, you can create a subdirectory and invoke configure from there.
 For example::
 
-    mkdir debug
-    cd debug
-    ../configure --with-pydebug
-    make
-    make test
+    Step 1: mkdir debug
+    Step 2: cd debug
+    Step 3: ../configure --with-pydebug
+    Step 4: make
+    Step 5: make test
 
 (This will fail if you *also* built at the top-level directory.  You should do
 a ``make clean`` at the top-level first.)
@@ -113,10 +113,10 @@ process will perform the following steps:
 The entire Python directory is cleaned of temporary files that may have
 resulted from a previous compilation.
 
-An instrumented version of the interpreter is built, using suitable compiler
-flags for each flavour. Note that this is just an intermediary step.  The
-binary resulting from this step is not good for real life workloads as it has
-profiling instructions embedded inside.
+An instrumented model of the interpreter is built, the use of appropriate compiler
+flags for every flavour. Note that this is simply an middleman step. The
+binary ensuing from this step is no longer top for actual existence workloads as it has
+profiling directions embedded inside.
 
 After the instrumented interpreter is built, the Makefile will run a training
 workload.  This is necessary in order to profile the interpreter execution.
@@ -157,9 +157,9 @@ Documentation
 `Documentation for Python 3.10 <https://docs.python.org/3.10/>`_ is online,
 updated daily.
 
-It can also be downloaded in many formats for faster access.  The documentation
+It can additionally be downloaded in many codecs for quicker access. The documentation
 is downloadable in HTML, PDF, and reStructuredText formats; the latter version
-is primarily for documentation authors, translators, and people with special
+is in particular for documentation authors, translators, and humans with special
 formatting requirements.
 
 For information about building Python's documentation, refer to `Doc/README.rst
