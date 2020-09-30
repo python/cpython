@@ -52,10 +52,10 @@ The different font weights and slants are:
       and, if omitted, will default to the main window (in most circumstances,
       this will be your ``Tk`` instance).
 
-      Due to some differences between operating systems (such as
-      pointsizes and the availability of font families), some values returned
-      by this method may vary from those given as kwargs or similar method
-      (and retrieved by :meth:`Font.cget`).
+      Due to some differences between operating systems (such as pointsizes
+      and the availability of font families), some values returned by this
+      method may vary from those given as kwargs or similar method (and
+      retrieved by :meth:`Font.cget`).
 
       If *option* is specified, the value of just that attribute is returned.
       If it is omitted or ``None``, the returned value is a dictionary of all
