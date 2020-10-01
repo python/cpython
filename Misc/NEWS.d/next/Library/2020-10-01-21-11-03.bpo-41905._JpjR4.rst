@@ -1,0 +1,1 @@
+A new function in abc: *update_abstractmethods* to re-calculate an abstract class's abstract status. In addition, *dataclass* and *total_ordering* have been changed to call this function. Finally, *total_ordering* was patched so that it would override abstract methods.
