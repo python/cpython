@@ -127,7 +127,7 @@ def update_abstractmethods(cls):
 
     If a class has had one of its abstract methods implemented after the
     class was created, the method will not be considered implemented until
-    this function is called. Alternativly, if a new abstract method has been
+    this function is called. Alternatively, if a new abstract method has been
     added to the class, it will only be considered an abstract method of the
     class after this function is called.
 
@@ -137,17 +137,27 @@ def update_abstractmethods(cls):
     Returns cls, to allow usage as a class decorator.
 
     If cls is has any subclasses, raises a RuntimeError.
+
+    If cls is not an instance of ABCMeta, raises a TypeError.
     """
+    if not hasattr(cls, '__abstractmethods__'):
+        # We check for __abstractmethods__ here because cls might by a C
+        # implementation or a python implementation (especially during
+        # testing), and we want to handle both cases.
+        raise TypeError('cls must be an abstract class or subclass of an abstract'
+                        ' class')
     if cls.__subclasses__():
-        raise RuntimeError("cannot update abstract methods of class after subclassing")
+        raise RuntimeError("cannot update abstract methods of class after"
+                           " subclassing")
+
     abstracts = set()
-    # check the existing abstract methods, keep only the ones that are
-    # still abstract
+    # Check the existing abstract methods, keep only the ones that are
+    # still abstract.
     for name in cls.__abstractmethods__:
         value = getattr(cls, name, None)
         if getattr(value, "__isabstractmethod__", False):
             abstracts.add(name)
-    # also add any other newly added abstract methods
+    # Also add any other newly added abstract methods.
     for name, value in cls.__dict__.items():
         if getattr(value, "__isabstractmethod__", False):
             abstracts.add(name)

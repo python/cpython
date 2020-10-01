@@ -558,6 +558,17 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             B()
             self.assertEqual(B.__abstractmethods__, set())
 
+        def test_update_non_abc(self):
+            class A:
+                pass
+
+            @abc.abstractmethod
+            def updated_foo(self):
+                pass
+
+            A.foo = updated_foo
+            self.assertRaises(TypeError, abc.update_abstractmethods, A)
+
 
     class TestABCWithInitSubclass(unittest.TestCase):
         def test_works_with_init_subclass(self):
