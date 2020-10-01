@@ -1,1 +1,2 @@
-Omit leading whitespaces on :func:`ast.literal_eval`.
+Strip leading whitespace on :func:`ast.literal_eval`. Also document
+stripping of whitespace for :func:`eval`.
