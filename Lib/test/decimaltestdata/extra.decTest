@@ -2346,6 +2346,24 @@ bool2096 iszero sNaN -> 0
 bool2097 iszero -sNaN -> 0
 bool2098 iszero sNaN123 -> 0
 bool2099 iszero -sNaN123 -> 0
+bool2100 is_integer -1.0 -> 1
+bool2101 is_integer 0.0 -> 1
+bool2102 is_integer 1.0 -> 1
+bool2103 is_integer 42 -> 1
+bool2104 is_integer 1e2 -> 1
+bool2105 is_integer 1.5 -> 0
+bool2106 is_integer 1e-2 -> 0
+bool2107 is_integer NaN -> 0
+bool2109 is_integer -NaN -> 0
+bool2110 is_integer NaN123 -> 0
+bool2111 is_integer -NaN123 -> 0
+bool2112 is_integer sNaN -> 0
+bool2113 is_integer -sNaN -> 0
+bool2114 is_integer sNaN123 -> 0
+bool2115 is_integer -sNaN123 -> 0
+bool2116 is_integer Infinity -> 0
+bool2117 is_integer -Infinity -> 0
+
 
 ------------------------------------------------------------------------
 -- The following tests (pwmx0 through pwmx440) are for the            --

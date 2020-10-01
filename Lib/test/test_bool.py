@@ -354,6 +354,11 @@ class BoolTest(unittest.TestCase):
         self.assertIs(type(False.real), int)
         self.assertIs(type(False.imag), int)
 
+    def test_always_is_integer(self):
+        # Issue #26680: Incorporating number.is_integer into bool
+        self.assertTrue(all(b.is_integer() for b in (False, True)))
+
+
 def test_main():
     support.run_unittest(BoolTest)
 

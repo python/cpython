@@ -1,0 +1,2 @@
+The int type now supports the x.is_integer() method for compatibility with
+float.
