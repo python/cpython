@@ -216,7 +216,7 @@ PyObject_AsFileDescriptor(PyObject *o)
         return -1;
     if (fd < 0) {
         PyErr_Format(PyExc_ValueError,
-                     "file descriptor cannot be a negative integer (%i)",
+                     "File Descriptor cannot be a negative integer (%i)",
                      fd);
         return -1;
     }
@@ -333,7 +333,7 @@ static int
 stdprinter_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyErr_SetString(PyExc_TypeError,
-                    "cannot create 'stderrprinter' instances");
+                    "Cannot Create 'stderrprinter' instances");
     return -1;
 }
 
@@ -587,3 +587,5 @@ PyFile_OpenCode(const char *utf8path)
 #ifdef __cplusplus
 }
 #endif
+/*End of the Project */
+
