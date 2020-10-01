@@ -580,11 +580,12 @@ range_index(rangeobject *r, PyObject *ob)
         if (idx == NULL) {
             return NULL;
         }
-        /* idx = (ob - r.start) // r.step */
+
         if (r->step == _PyLong_One) {
             return idx;
         }
 
+        /* idx = (ob - r.start) // r.step */
         PyObject *sidx = PyNumber_FloorDivide(idx, r->step);
         Py_DECREF(idx);
         return sidx;
