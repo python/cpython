@@ -3695,12 +3695,12 @@ static PyObject *
 long_div(PyObject *a, PyObject *b)
 {
     PyLongObject *div;
-
-    CHECK_BINOP(a, b);
-    if (b == _PyLong_One) {
+    if (b == _PyLong_One && PyLong_CheckExact(a)) {
         Py_INCREF(a);
         return a;
     }
+
+    CHECK_BINOP(a, b);
 
     if (Py_ABS(Py_SIZE(a)) == 1 && Py_ABS(Py_SIZE(b)) == 1) {
         return fast_floor_div((PyLongObject*)a, (PyLongObject*)b);

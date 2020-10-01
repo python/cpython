@@ -204,7 +204,10 @@ class LongTest(unittest.TestCase):
         self.check_division(710031681576388032, 26769404391308)
         self.check_division(1933622614268221, 30212853348836)
 
-
+    @support.cpython_only
+    def test_division_with_one(self):
+        for n in range(10000000):
+            self.assertEqual(n, n // 1)
 
     def test_karatsuba(self):
         digits = list(range(1, 5)) + list(range(KARATSUBA_CUTOFF,
