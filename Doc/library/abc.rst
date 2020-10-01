@@ -339,7 +339,7 @@ The :mod:`abc` module also provides the following functions:
    A function to recalculate an abstract class's abstraction status. This
    function should be called if a class's abstract methods have been
    implemented or changed after it was created. Usually, this function should
-   be called from within class decorator.
+   be called from within a class decorator.
 
    Returns *cls*, to allow usage as a class decorator.
 

@@ -128,18 +128,18 @@ def update_abstractmethods(cls):
     If a class has had one of its abstract methods implemented after the
     class was created, the method will not be considered implemented until
     this function is called. Alternativly, if a new abstract method has been
-    added to the class, it will not be considered to require that method
-    implemented until this function is called.
+    added to the class, it will only be considered an abstract method of the
+    class after this function is called.
 
     This function should be called before any use is made of the class,
-    usually in class decorators that implement methods.
+    usually in class decorators that add methods to the subject class.
 
     Returns cls, to allow usage as a class decorator.
 
     If cls is has any subclasses, raises a RuntimeError.
     """
     if cls.__subclasses__():
-        raise RuntimeError("cannot update abstract method of class after suclassing")
+        raise RuntimeError("cannot update abstract methods of class after subclassing")
     abstracts = set()
     # check the existing abstract methods, keep only the ones that are
     # still abstract
