@@ -576,13 +576,18 @@ range_index(rangeobject *r, PyObject *ob)
         return NULL;
 
     if (contains) {
-        PyObject *idx, *tmp = PyNumber_Subtract(ob, r->start);
-        if (tmp == NULL)
+        PyObject *idx = PyNumber_Subtract(ob, r->start);
+        if (idx == NULL) {
             return NULL;
+        }
         /* idx = (ob - r.start) // r.step */
-        idx = PyNumber_FloorDivide(tmp, r->step);
-        Py_DECREF(tmp);
-        return idx;
+        if (r->step == _PyLong_One) {
+            return idx;
+        }
+
+        PyObject *sidx = PyNumber_FloorDivide(idx, r->step);
+        Py_DECREF(idx);
+        return sidx;
     }
 
     /* object is not in the range */
