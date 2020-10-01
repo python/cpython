@@ -76,8 +76,7 @@ class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCa
 #define DATE_GET_FOLD           PyDateTime_DATE_GET_FOLD
 
 /* Date accessors for date and datetime. */
-#define SET_YEAR(o, v)          (((o)->data[0] = ((v) & 0xff00) >> 8), \
-                 ((o)->data[1] = ((v) & 0x00ff)))
+#define SET_YEAR(o, v)          (PyDateTime_GET_YEAR(o) = (v))
 #define SET_MONTH(o, v)         (PyDateTime_GET_MONTH(o) = (v))
 #define SET_DAY(o, v)           (PyDateTime_GET_DAY(o) = (v))
 
@@ -85,10 +84,7 @@ class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCa
 #define DATE_SET_HOUR(o, v)     (PyDateTime_DATE_GET_HOUR(o) = (v))
 #define DATE_SET_MINUTE(o, v)   (PyDateTime_DATE_GET_MINUTE(o) = (v))
 #define DATE_SET_SECOND(o, v)   (PyDateTime_DATE_GET_SECOND(o) = (v))
-#define DATE_SET_MICROSECOND(o, v)      \
-    (((o)->data[7] = ((v) & 0xff0000) >> 16), \
-     ((o)->data[8] = ((v) & 0x00ff00) >> 8), \
-     ((o)->data[9] = ((v) & 0x0000ff)))
+#define DATE_SET_MICROSECOND(o, v) (PyDateTime_DATE_GET_MICROSECOND(o) = (v))
 #define DATE_SET_FOLD(o, v)   (PyDateTime_DATE_GET_FOLD(o) = (v))
 
 /* Time accessors for time. */
@@ -100,10 +96,7 @@ class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCa
 #define TIME_SET_HOUR(o, v)     (PyDateTime_TIME_GET_HOUR(o) = (v))
 #define TIME_SET_MINUTE(o, v)   (PyDateTime_TIME_GET_MINUTE(o) = (v))
 #define TIME_SET_SECOND(o, v)   (PyDateTime_TIME_GET_SECOND(o) = (v))
-#define TIME_SET_MICROSECOND(o, v)      \
-    (((o)->data[3] = ((v) & 0xff0000) >> 16), \
-     ((o)->data[4] = ((v) & 0x00ff00) >> 8), \
-     ((o)->data[5] = ((v) & 0x0000ff)))
+#define TIME_SET_MICROSECOND(o, v) (PyDateTime_TIME_GET_MICROSECOND(o) = (v))
 #define TIME_SET_FOLD(o, v)   (PyDateTime_TIME_GET_FOLD(o) = (v))
 
 /* Delta accessors for timedelta. */
@@ -2792,7 +2785,7 @@ date_from_pickle(PyTypeObject *type, PyObject *state)
     me = (PyDateTime_Date *) (type->tp_alloc(type, 0));
     if (me != NULL) {
         const char *pdata = PyBytes_AS_STRING(state);
-        memcpy(me->data, pdata, _PyDateTime_DATE_DATASIZE);
+        memcpy(&me->data, pdata, _PyDateTime_DATE_DATASIZE);
         me->hashcode = -1;
     }
     return (PyObject *)me;
@@ -3380,8 +3373,8 @@ static PyObject *
 date_richcompare(PyObject *self, PyObject *other, int op)
 {
     if (PyDate_Check(other)) {
-        int diff = memcmp(((PyDateTime_Date *)self)->data,
-                          ((PyDateTime_Date *)other)->data,
+        int diff = memcmp(&((PyDateTime_Date *)self)->data,
+                          &((PyDateTime_Date *)other)->data,
                           _PyDateTime_DATE_DATASIZE);
         return diff_to_bool(diff, op);
     }
@@ -3432,7 +3425,7 @@ date_hash(PyDateTime_Date *self)
 {
     if (self->hashcode == -1) {
         self->hashcode = generic_hash(
-            (unsigned char *)self->data, _PyDateTime_DATE_DATASIZE);
+            (unsigned char *)&self->data, _PyDateTime_DATE_DATASIZE);
     }
 
     return self->hashcode;
@@ -3460,7 +3453,7 @@ static PyObject *
 date_getstate(PyDateTime_Date *self)
 {
     PyObject* field;
-    field = PyBytes_FromStringAndSize((char*)self->data,
+    field = PyBytes_FromStringAndSize((char*)&self->data,
                                        _PyDateTime_DATE_DATASIZE);
     return Py_BuildValue("(N)", field);
 }
@@ -4157,7 +4150,7 @@ time_from_pickle(PyTypeObject *type, PyObject *state, PyObject *tzinfo)
     if (me != NULL) {
         const char *pdata = PyBytes_AS_STRING(state);
 
-        memcpy(me->data, pdata, _PyDateTime_TIME_DATASIZE);
+        memcpy(&me->data, pdata, _PyDateTime_TIME_DATASIZE);
         me->hashcode = -1;
         me->hastzinfo = aware;
         if (aware) {
@@ -4165,7 +4158,7 @@ time_from_pickle(PyTypeObject *type, PyObject *state, PyObject *tzinfo)
             me->tzinfo = tzinfo;
         }
         if (pdata[0] & (1 << 7)) {
-            me->data[0] -= 128;
+            GET_YEAR(me) &= 0x7f;
             me->fold = 1;
         }
         else {
@@ -4414,8 +4407,8 @@ time_richcompare(PyObject *self, PyObject *other, int op)
         Py_RETURN_NOTIMPLEMENTED;
 
     if (GET_TIME_TZINFO(self) == GET_TIME_TZINFO(other)) {
-        diff = memcmp(((PyDateTime_Time *)self)->data,
-                      ((PyDateTime_Time *)other)->data,
+        diff = memcmp(&((PyDateTime_Time *)self)->data,
+                      &((PyDateTime_Time *)other)->data,
                       _PyDateTime_TIME_DATASIZE);
         return diff_to_bool(diff, op);
     }
@@ -4432,8 +4425,8 @@ time_richcompare(PyObject *self, PyObject *other, int op)
     if ((offset1 == offset2) ||
         (PyDelta_Check(offset1) && PyDelta_Check(offset2) &&
          delta_cmp(offset1, offset2) == 0)) {
-        diff = memcmp(((PyDateTime_Time *)self)->data,
-                      ((PyDateTime_Time *)other)->data,
+        diff = memcmp(&((PyDateTime_Time *)self)->data,
+                      &((PyDateTime_Time *)other)->data,
                       _PyDateTime_TIME_DATASIZE);
         result = diff_to_bool(diff, op);
     }
@@ -4504,7 +4497,7 @@ time_hash(PyDateTime_Time *self)
         /* Reduce this to a hash of another object. */
         if (offset == Py_None)
             self->hashcode = generic_hash(
-                (unsigned char *)self->data, _PyDateTime_TIME_DATASIZE);
+                (unsigned char *)&self->data, _PyDateTime_TIME_DATASIZE);
         else {
             PyObject *temp1, *temp2;
             int seconds, microseconds;
@@ -4627,7 +4620,7 @@ time_getstate(PyDateTime_Time *self, int proto)
     PyObject *basestate;
     PyObject *result = NULL;
 
-    basestate =  PyBytes_FromStringAndSize((char *)self->data,
+    basestate =  PyBytes_FromStringAndSize((char *)&self->data,
                                             _PyDateTime_TIME_DATASIZE);
     if (basestate != NULL) {
         if (proto > 3 && TIME_GET_FOLD(self))
@@ -4823,7 +4816,7 @@ datetime_from_pickle(PyTypeObject *type, PyObject *state, PyObject *tzinfo)
     if (me != NULL) {
         const char *pdata = PyBytes_AS_STRING(state);
 
-        memcpy(me->data, pdata, _PyDateTime_DATETIME_DATASIZE);
+        memcpy(&me->data, pdata, _PyDateTime_DATETIME_DATASIZE);
         me->hashcode = -1;
         me->hastzinfo = aware;
         if (aware) {
@@ -4831,7 +4824,7 @@ datetime_from_pickle(PyTypeObject *type, PyObject *state, PyObject *tzinfo)
             me->tzinfo = tzinfo;
         }
         if (pdata[2] & (1 << 7)) {
-            me->data[2] -= 128;
+            me->data.month -= 128;
             me->fold = 1;
         }
         else {
@@ -5702,8 +5695,8 @@ datetime_richcompare(PyObject *self, PyObject *other, int op)
     }
 
     if (GET_DT_TZINFO(self) == GET_DT_TZINFO(other)) {
-        diff = memcmp(((PyDateTime_DateTime *)self)->data,
-                      ((PyDateTime_DateTime *)other)->data,
+        diff = memcmp(&((PyDateTime_DateTime *)self)->data,
+                      &((PyDateTime_DateTime *)other)->data,
                       _PyDateTime_DATETIME_DATASIZE);
         return diff_to_bool(diff, op);
     }
@@ -5720,8 +5713,8 @@ datetime_richcompare(PyObject *self, PyObject *other, int op)
     if ((offset1 == offset2) ||
         (PyDelta_Check(offset1) && PyDelta_Check(offset2) &&
          delta_cmp(offset1, offset2) == 0)) {
-        diff = memcmp(((PyDateTime_DateTime *)self)->data,
-                      ((PyDateTime_DateTime *)other)->data,
+        diff = memcmp(&((PyDateTime_DateTime *)self)->data,
+                      &((PyDateTime_DateTime *)other)->data,
                       _PyDateTime_DATETIME_DATASIZE);
         if ((op == Py_EQ || op == Py_NE) && diff == 0) {
             int ex = pep495_eq_exception(self, other, offset1, offset2);
@@ -5804,7 +5797,7 @@ datetime_hash(PyDateTime_DateTime *self)
         /* Reduce this to a hash of another object. */
         if (offset == Py_None)
             self->hashcode = generic_hash(
-                (unsigned char *)self->data, _PyDateTime_DATETIME_DATASIZE);
+                (unsigned char *)&self->data, _PyDateTime_DATETIME_DATASIZE);
         else {
             PyObject *temp1, *temp2;
             int days, seconds;
@@ -6280,7 +6273,7 @@ datetime_getstate(PyDateTime_DateTime *self, int proto)
     PyObject *basestate;
     PyObject *result = NULL;
 
-    basestate = PyBytes_FromStringAndSize((char *)self->data,
+    basestate = PyBytes_FromStringAndSize((char *)&self->data,
                                            _PyDateTime_DATETIME_DATASIZE);
     if (basestate != NULL) {
         if (proto > 3 && DATE_GET_FOLD(self))
