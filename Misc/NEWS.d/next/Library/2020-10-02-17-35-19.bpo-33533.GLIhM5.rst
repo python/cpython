@@ -1,0 +1,2 @@
+:func:`asyncio.as_completed` now returns an asynchronous iterator.  Patch by
+Justin Arthur.

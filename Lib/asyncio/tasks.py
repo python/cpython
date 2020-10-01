@@ -9,6 +9,7 @@ __all__ = (
     '_register_task', '_unregister_task', '_enter_task', '_leave_task',
 )
 
+import asyncio
 import concurrent.futures
 import contextvars
 import functools
@@ -553,67 +554,106 @@ async def _cancel_and_wait(fut, loop):
         fut.remove_done_callback(cb)
 
 
-# This is *not* a @coroutine!  It is just an iterator (yielding Futures).
+class _AsCompletedIterator:
+    """Doubles as an async iterator of as-completed results of a set of
+    awaitables and a plain iterator of awaitable as-completed results
+    (of awaitables).
+    """
+    def __init__(self, aws, loop, timeout):
+        self._done = asyncio.Queue(loop=loop)
+        self._timeout_handle = None
+
+        if loop is None:
+            loop = events.get_event_loop()
+        else:
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
+
+        todo = {ensure_future(aw, loop=loop) for aw in frozenset(aws)}
+        for f in todo:
+            f.add_done_callback(self._handle_completion)
+        if todo and timeout is not None:
+            self._timeout_handle = (
+                loop.call_later(timeout, self._handle_timeout)
+            )
+        self._todo = todo
+        self._todo_left = len(todo)
+
+    def __aiter__(self):
+        return self
+
+    def __iter__(self):
+        return self
+
+    async def __anext__(self):
+        self._todo_left -= 1
+        if self._todo_left < 0:
+            raise StopAsyncIteration
+        return await self._wait_for_one()
+
+    def __next__(self):
+        self._todo_left -= 1
+        if self._todo_left < 0:
+            raise StopIteration
+        return self._wait_for_one(resolve=True)
+
+    def _handle_timeout(self):
+        for f in self._todo:
+            f.remove_done_callback(self._handle_completion)
+            self._done.put_nowait(None)  # Sentinel for _wait_for_one().
+        self._todo.clear()  # Can't do todo.remove(f) in the loop.
+
+    def _handle_completion(self, f):
+        if not self._todo:
+            return  # _handle_timeout() was here first.
+        self._todo.remove(f)
+        self._done.put_nowait(f)
+        if not self._todo and self._timeout_handle is not None:
+            self._timeout_handle.cancel()
+
+    async def _wait_for_one(self, resolve=False):
+        """Waits for the next future to be done and returns it unless resolve
+        is set, in which case it returns either the result of the future or
+        raises an exception."""
+        f = await self._done.get()
+        if f is None:
+            # Dummy value from _handle_timeout().
+            raise exceptions.TimeoutError
+        return f.result() if resolve else f
+
+
 def as_completed(fs, *, loop=None, timeout=None):
-    """Return an iterator whose values are coroutines.
+    """Return an async iterator that yields results from the given awaitables
+    in the order they finish as they finish.
 
-    When waiting for the yielded coroutines you'll get the results (or
-    exceptions!) of the original Futures (or coroutines), in the order
-    in which and as soon as they complete.
-
-    This differs from PEP 3148; the proper way to use this is:
-
-        for f in as_completed(fs):
-            result = await f  # The 'await' may raise.
+        async for result in as_completed(fs):
             # Use result.
 
-    If a timeout is specified, the 'await' will raise
-    TimeoutError when the timeout occurs before all Futures are done.
+    The first of any exceptions from the given awaitables will be raised by
+    the async for statement, as will a TimeoutError if the timeout is reached
+    before the iterator is exhausted.
+
+    For backwards compatibility, the returned object can also be used as a
+    plain iterator that yields new awaitables representing each next awaitable
+    to be completed:
+
+        for next_result in as_completed(fs):
+            result = await next_result  # The 'await' may raise.
+            # Use result.
+
+    When waiting for the yielded awaitables, you'll get the results (or
+    exceptions!) of the original awaitables in the order in which and as soon
+    as they complete.
 
     Note: The futures 'f' are not necessarily members of fs.
     """
-    if futures.isfuture(fs) or coroutines.iscoroutine(fs):
-        raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
+    if inspect.isawaitable(fs):
+        raise TypeError(
+            f"expects an iterable of awaitables, not {type(fs).__name__}"
+        )
 
-    from .queues import Queue  # Import here to avoid circular import problem.
-    done = Queue(loop=loop)
-
-    if loop is None:
-        loop = events.get_event_loop()
-    else:
-        warnings.warn("The loop argument is deprecated since Python 3.8, "
-                      "and scheduled for removal in Python 3.10.",
-                      DeprecationWarning, stacklevel=2)
-    todo = {ensure_future(f, loop=loop) for f in set(fs)}
-    timeout_handle = None
-
-    def _on_timeout():
-        for f in todo:
-            f.remove_done_callback(_on_completion)
-            done.put_nowait(None)  # Queue a dummy value for _wait_for_one().
-        todo.clear()  # Can't do todo.remove(f) in the loop.
-
-    def _on_completion(f):
-        if not todo:
-            return  # _on_timeout() was here first.
-        todo.remove(f)
-        done.put_nowait(f)
-        if not todo and timeout_handle is not None:
-            timeout_handle.cancel()
-
-    async def _wait_for_one():
-        f = await done.get()
-        if f is None:
-            # Dummy value from _on_timeout().
-            raise exceptions.TimeoutError
-        return f.result()  # May raise f.exception().
-
-    for f in todo:
-        f.add_done_callback(_on_completion)
-    if todo and timeout is not None:
-        timeout_handle = loop.call_later(timeout, _on_timeout)
-    for _ in range(len(todo)):
-        yield _wait_for_one()
+    return _AsCompletedIterator(fs, loop, timeout)
 
 
 @types.coroutine

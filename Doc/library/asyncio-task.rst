@@ -593,9 +593,10 @@ Waiting Primitives
 .. function:: as_completed(aws, \*, loop=None, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   set concurrently.  Return an iterator of coroutines.
-   Each coroutine returned can be awaited to get the earliest next
-   result from the set of the remaining awaitables.
+   set concurrently. Returns an asynchronous iterator of the next-completed
+   Tasks or Futures. If Tasks or Futures are supplied, those same objects
+   are yielded on completion. Other awaitables are scheduled and their
+   implicitly created Tasks are yielded instead.
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
@@ -605,10 +606,17 @@ Waiting Primitives
 
    Example::
 
-       for coro in as_completed(aws):
-           earliest_result = await coro
+       async for task in as_completed(aws):
+           earliest_result = await task
            # ...
 
+   For backwards compatibility, the object returned by ``as_completed()``
+   can be iterated as a plain iterator, yielding new coroutines that return
+   the results of the passed in awaitables as their tasks finish.::
+
+      for aw in as_completed(aws):
+          earliest_result = await aw
+          # ...
 
 Running in Threads
 ==================
