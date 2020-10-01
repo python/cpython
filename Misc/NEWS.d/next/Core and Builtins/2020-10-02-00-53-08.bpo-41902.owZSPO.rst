@@ -1,0 +1,1 @@
+Add fast path for long_div if the divisor is one. Patch by Dong-hee Na.

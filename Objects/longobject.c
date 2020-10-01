@@ -3697,6 +3697,10 @@ long_div(PyObject *a, PyObject *b)
     PyLongObject *div;
 
     CHECK_BINOP(a, b);
+    if (b == _PyLong_One) {
+        Py_INCREF(a);
+        return a;
+    }
 
     if (Py_ABS(Py_SIZE(a)) == 1 && Py_ABS(Py_SIZE(b)) == 1) {
         return fast_floor_div((PyLongObject*)a, (PyLongObject*)b);
