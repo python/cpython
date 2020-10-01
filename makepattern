@@ -1,0 +1,15 @@
+n=int(input("enter a no. for row: "))
+b=bool(int(input("enter no 1 or 0 : ")))
+if b==True:
+    a=1
+    b=n+1
+    c=1
+elif b==False: 
+    a=n
+    b=0
+    c=-1
+for i in range(a,b,c):
+    for j in range(0,i):
+        print('*',end=' ')
+    print('\n')
+  
