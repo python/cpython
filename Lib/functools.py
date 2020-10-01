@@ -14,7 +14,7 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
            'cached_property']
 
-from abc import get_cache_token
+from abc import ABCMeta, get_cache_token, update_abstractmethods
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
@@ -187,8 +187,10 @@ _convert = {
 
 def total_ordering(cls):
     """Class decorator that fills in missing ordering methods"""
-    # Find user-defined comparisons (not those inherited from object).
-    roots = {op for op in _convert if getattr(cls, op, None) is not getattr(object, op, None)}
+    # Find user-defined comparisons (not those inherited from object or abstract).
+    roots = {op for op in _convert
+             if getattr(cls, op, None) is not getattr(object, op, None)
+             and not getattr(getattr(cls, op, None), '__isabstractmethod__', False)}
     if not roots:
         raise ValueError('must define at least one ordering operation: < > <= >=')
     root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
@@ -196,6 +198,9 @@ def total_ordering(cls):
         if opname not in roots:
             opfunc.__name__ = opname
             setattr(cls, opname, opfunc)
+    # update the abstract methods of the class, if it is abstract
+    if isinstance(cls, ABCMeta):
+        update_abstractmethods(cls)
     return cls
 
 
