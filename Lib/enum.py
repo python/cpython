@@ -146,8 +146,9 @@ class EnumMeta(type):
         for key in ignore:
             classdict.pop(key, None)
         member_type, first_enum = metacls._get_mixins_(cls, bases)
-        __new__, save_new, use_args = metacls._find_new_(classdict, member_type,
-                                                        first_enum)
+        __new__, save_new, use_args = metacls._find_new_(
+                classdict, member_type, first_enum,
+                )
 
         # save enum items into separate mapping so they don't get baked into
         # the new class
@@ -501,12 +502,16 @@ class EnumMeta(type):
                 for base in chain.__mro__:
                     if base is object:
                         continue
+                    elif issubclass(base, Enum):
+                        if base._member_type_ is not object:
+                            data_types.append(base._member_type_)
+                            break
                     elif '__new__' in base.__dict__:
                         if issubclass(base, Enum):
                             continue
                         data_types.append(candidate or base)
                         break
-                    elif not issubclass(base, Enum):
+                    else:
                         candidate = base
             if len(data_types) > 1:
                 raise TypeError('%r: too many data types: %r' % (class_name, data_types))
