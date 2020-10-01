@@ -488,6 +488,22 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 pass
             self.assertEqual(C.__class__, abc_ABCMeta)
 
+        def test_update_del(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            del A.foo
+            self.assertEqual(A.__abstractmethods__, {'foo'})
+            self.assertFalse(hasattr(A, 'foo'))
+
+            abc.update_abstractmethods(A)
+
+            self.assertEqual(A.__abstractmethods__, set())
+            A()
+
+
         def test_update_new_abstractmethods(self):
             class A(metaclass=abc_ABCMeta):
                 @abc.abstractmethod
@@ -520,6 +536,24 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             B.foo = lambda self: None
 
             abc.update_abstractmethods(B)
+
+            B()
+            self.assertEqual(B.__abstractmethods__, set())
+
+        def test_update_asdecorator(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            def class_decorator(cls):
+                cls.foo = lambda self: None
+                return cls
+
+            @abc.update_abstractmethods
+            @class_decorator
+            class B(A):
+                pass
 
             B()
             self.assertEqual(B.__abstractmethods__, set())
