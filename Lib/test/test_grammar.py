@@ -636,10 +636,6 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(f.__annotations__, {'x': 'str'})
         def f(**x: float): pass
         self.assertEqual(f.__annotations__, {'x': 'float'})
-        def f(x, y: 1+2): pass
-        self.assertEqual(f.__annotations__, {'y': '1 + 2'})
-        def f(x, y: 1+2, /): pass
-        self.assertEqual(f.__annotations__, {'y': '1 + 2'})
         def f(a, b: 1, c: 2, d): pass
         self.assertEqual(f.__annotations__, {'b': '1', 'c': '2'})
         def f(a, b: 1, /, c: 2, d): pass

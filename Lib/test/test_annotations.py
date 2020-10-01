@@ -198,6 +198,7 @@ class PostponedAnnotationsTestCase(unittest.TestCase):
         eq('(((a, b)))', '(a, b)')
         eq("(x := 10)")
         eq("f'{(x := 10):=10}'")
+        eq("1 + 2")
         eq("1 + 2 + 3")
 
     def test_fstring_debug_annotations(self):
