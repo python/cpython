@@ -28,7 +28,7 @@ See the end of this file for further copyright and license information.
 
 .. contents::
 
-General Information
+General Details
 -------------------
 
 - Website: https://www.python.org
