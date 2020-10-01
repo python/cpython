@@ -304,7 +304,7 @@ class closing(AbstractContextManager):
 
 
 class aclosing(AbstractAsyncContextManager):
-    """Context to automatically aclose an async generator at the end of a block.
+    """Async context manager for safely finalizing an async generator using its ``aclose()`` method.
 
     Code like this:
 

@@ -154,7 +154,7 @@ Functions and classes provided:
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
 
-.. function:: aclosing(thing)
+.. class:: aclosing(thing)
 
    Return an async context manager that calls the ``aclose()`` method of *thing*
    upon completion of the block.  This is basically equivalent to::
