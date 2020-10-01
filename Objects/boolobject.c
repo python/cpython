@@ -72,9 +72,9 @@ bool_vectorcall(PyObject *type, PyObject * const*args,
     assert(PyType_Check(type));
     if (nargs) {
         ok = PyObject_IsTrue(args[0]);
-    }
-    if (ok < 0) {
-        return NULL;
+        if (ok < 0) {
+            return NULL;
+        }
     }
     return PyBool_FromLong(ok);
 }
