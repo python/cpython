@@ -540,7 +540,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             B()
             self.assertEqual(B.__abstractmethods__, set())
 
-        def test_update_asdecorator(self):
+        def test_update_as_decorator(self):
             class A(metaclass=abc_ABCMeta):
                 @abc.abstractmethod
                 def foo(self):
