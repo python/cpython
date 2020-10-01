@@ -267,7 +267,7 @@ static PyType_Slot pysqlite_NodeType_slots[] = {
 static PyType_Spec pysqlite_NodeType_spec = {
     .name = MODULE_NAME ".Node",
     .basicsize = sizeof(pysqlite_Node),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HEAPTYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .slots = pysqlite_NodeType_slots,
 };
 PyTypeObject *pysqlite_NodeType = NULL;
@@ -291,7 +291,7 @@ static PyType_Slot pysqlite_CacheType_slots[] = {
 static PyType_Spec pysqlite_CacheType_spec = {
     .name = MODULE_NAME ".Cache",
     .basicsize = sizeof(pysqlite_Cache),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HEAPTYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .slots = pysqlite_CacheType_slots,
 };
 PyTypeObject *pysqlite_CacheType = NULL;
