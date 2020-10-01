@@ -487,17 +487,17 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class C(with_metaclass(abc_ABCMeta, A, B)):
                 pass
             self.assertEqual(C.__class__, abc_ABCMeta)
-        
+
         def test_update_new_abstractmethods(self):
             class A(metaclass=abc_ABCMeta):
                 @abc.abstractmethod
                 def bar(self):
                     pass
-            
+
             @abc.abstractmethod
             def updated_foo(self):
                 pass
-            
+
             A.foo = updated_foo
             abc.update_abstractmethods(A)
             msg = "class A with abstract methods bar, foo"
@@ -509,18 +509,18 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 @abc.abstractmethod
                 def foo(self):
                     pass
-            
+
             class B(A):
                 pass
-            
+
             msg = "class B with abstract method foo"
             self.assertRaisesRegex(TypeError, msg, B)
             self.assertEqual(B.__abstractmethods__, {'foo'})
-            
+
             B.foo = lambda self: None
 
             abc.update_abstractmethods(B)
-            
+
             B()
             self.assertEqual(B.__abstractmethods__, set())
 

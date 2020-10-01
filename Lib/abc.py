@@ -124,18 +124,18 @@ else:
 def update_abstractmethods(cls):
     """Repopulate the abstract methods of an abstract class, or a subclass of
     an abstract class.
-    
+
     If a class has had one of its abstract methods implemented after the
     class was created, the method will not be considered implemented until
     this function is called. Alternativly, if a new abstract method has been
     added to the class, it will not be considered to require that method
     implemented until this function is called.
-    
+
     This function should be called before any use is made of the class,
     usually in class decorators that implement methods.
-    
+
     Returns cls, to allow usage as a class decorator.
-    
+
     If cls is has any subclasses, raises a RuntimeError.
     """
     if cls.__subclasses__():
