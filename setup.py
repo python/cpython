@@ -1881,7 +1881,7 @@ class PyBuildExt(build_ext):
         # you want to build and link with a framework build of Tcl and Tk
         # that is not in /Library/Frameworks, say, in your private
         # $HOME/Library/Frameworks directory or elsewhere. It turns
-        # out to be difficult to make that work automtically here
+        # out to be difficult to make that work automatically here
         # without bringing into play more tools and magic. That case
         # can be hamdled using a recipe with the right arguments
         # to detect_tkinter_explicitly().
