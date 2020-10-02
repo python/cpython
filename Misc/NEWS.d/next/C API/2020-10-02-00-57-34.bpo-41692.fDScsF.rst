@@ -1,0 +1,3 @@
+The ``PyUnicode_InternImmortal()`` function is now deprecated and will be
+removed in Python 3.12: use :c:func:`PyUnicode_InternInPlace` instead.
+Patch by Victor Stinner.

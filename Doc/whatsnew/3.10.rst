@@ -299,6 +299,14 @@ Porting to Python 3.10
   Unicode object without initial data.
   (Contributed by Inada Naoki in :issue:`36346`.)
 
+Deprecated
+----------
+
+* The ``PyUnicode_InternImmortal()`` function is now deprecated
+  and will be removed in Python 3.12: use :c:func:`PyUnicode_InternInPlace`
+  instead.
+  (Contributed by Victor Stinner in :issue:`41692`.)
+
 Removed
 -------
 
