@@ -14,10 +14,10 @@ class SlowTask:
         self.exited = False
 
     async def run(self):
-        exitat = time.time() + self.TASK_TIMEOUT
+        exitat = time.monotonic() + self.TASK_TIMEOUT
 
         while True:
-            tosleep = exitat - time.time()
+            tosleep = exitat - time.monotonic()
             if tosleep <= 0:
                 break
 
