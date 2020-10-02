@@ -1632,100 +1632,131 @@ static int init_handler_descrs(void)
 }
 
 PyMODINIT_FUNC
-MODULE_INITFUNC(void)
+PyInit_pyexpat(void)
 {
-    PyObject *m, *d;
-    PyObject *errmod_name = PyUnicode_FromString(MODULE_NAME ".errors");
-    PyObject *errors_module;
-    PyObject *modelmod_name;
-    PyObject *model_module;
-    PyObject *tmpnum, *tmpstr;
-    PyObject *codes_dict;
-    PyObject *rev_codes_dict;
-    int res;
-    static struct PyExpat_CAPI capi;
-    PyObject *capi_object;
+    PyObject *mod = PyModule_Create(&pyexpatmodule);
+    if (mod == NULL) {
+        return NULL;
+    }
 
-    if (errmod_name == NULL)
-        return NULL;
-    modelmod_name = PyUnicode_FromString(MODULE_NAME ".model");
-    if (modelmod_name == NULL)
-        return NULL;
+    PyObject *codes_dict = NULL, *rev_codes_dict = NULL;
 
-    if (PyType_Ready(&Xmlparsetype) < 0 || init_handler_descrs() < 0)
-        return NULL;
+    if (PyType_Ready(&Xmlparsetype) < 0) {
+        goto error;
+    }
 
-    /* Create the module and add the functions */
-    m = PyModule_Create(&pyexpatmodule);
-    if (m == NULL)
-        return NULL;
+    if (init_handler_descrs() < 0) {
+        goto error;
+    }
 
     /* Add some symbolic constants to the module */
     if (ErrorObject == NULL) {
         ErrorObject = PyErr_NewException("xml.parsers.expat.ExpatError",
-                                         NULL, NULL);
-        if (ErrorObject == NULL)
-            return NULL;
+                                        NULL, NULL);
+    }
+    if (ErrorObject == NULL) {
+        goto error;
+    }
+
+    Py_INCREF(ErrorObject);
+    if (PyModule_AddObject(mod, "error", ErrorObject) < 0) {
+        goto error;
     }
     Py_INCREF(ErrorObject);
-    PyModule_AddObject(m, "error", ErrorObject);
-    Py_INCREF(ErrorObject);
-    PyModule_AddObject(m, "ExpatError", ErrorObject);
+    if (PyModule_AddObject(mod, "ExpatError", ErrorObject) < 0) {
+        goto error;
+    }
     Py_INCREF(&Xmlparsetype);
-    PyModule_AddObject(m, "XMLParserType", (PyObject *) &Xmlparsetype);
+    if (PyModule_AddObject(mod, "XMLParserType",
+                           (PyObject *) &Xmlparsetype) < 0) {
+        goto error;
+    }
 
-    PyModule_AddStringConstant(m, "EXPAT_VERSION",
-                               XML_ExpatVersion());
+    if (PyModule_AddStringConstant(mod, "EXPAT_VERSION",
+                               XML_ExpatVersion()) < 0) {
+        goto error;
+    }
     {
         XML_Expat_Version info = XML_ExpatVersionInfo();
-        PyModule_AddObject(m, "version_info",
-                           Py_BuildValue("(iii)", info.major,
-                                         info.minor, info.micro));
+        if (PyModule_AddObject(mod, "version_info", Py_BuildValue("(iii)",
+                               info.major, info.minor, info.micro)) < 0) {
+            goto error;
+        }
     }
     /* XXX When Expat supports some way of figuring out how it was
        compiled, this should check and set native_encoding
        appropriately.
     */
-    PyModule_AddStringConstant(m, "native_encoding", "UTF-8");
-
-    d = PyModule_GetDict(m);
-    if (d == NULL) {
-        Py_DECREF(m);
-        return NULL;
+    if (PyModule_AddStringConstant(mod, "native_encoding", "UTF-8") < 0) {
+        goto error;
     }
-    errors_module = PyDict_GetItemWithError(d, errmod_name);
+
+    PyObject *d = PyModule_GetDict(mod);
+    if (d == NULL) {
+        goto error;
+    }
+
+    PyObject *errmod_name = PyUnicode_FromString(MODULE_NAME ".errors");
+    if (errmod_name == NULL) {
+        goto error;
+    }
+
+    PyObject *errors_module = PyDict_GetItemWithError(d, errmod_name);
     if (errors_module == NULL && !PyErr_Occurred()) {
         errors_module = PyModule_New(MODULE_NAME ".errors");
         if (errors_module != NULL) {
-            _PyImport_SetModule(errmod_name, errors_module);
+            if (_PyImport_SetModule(errmod_name, errors_module) < 0) {
+                Py_DECREF(errors_module);
+                Py_CLEAR(errmod_name);
+                goto error;
+            }
             /* gives away the reference to errors_module */
-            PyModule_AddObject(m, "errors", errors_module);
+            if (PyModule_AddObject(mod, "errors", errors_module) < 0) {
+                Py_DECREF(errors_module);
+                Py_CLEAR(errmod_name);
+                goto error;
+            }
         }
     }
-    Py_DECREF(errmod_name);
-    model_module = PyDict_GetItemWithError(d, modelmod_name);
+    Py_CLEAR(errmod_name);
+
+    PyObject *modelmod_name = PyUnicode_FromString(MODULE_NAME ".model");
+    if (modelmod_name == NULL) {
+        goto error;
+    }
+
+    PyObject *model_module = PyDict_GetItemWithError(d, modelmod_name);
     if (model_module == NULL && !PyErr_Occurred()) {
         model_module = PyModule_New(MODULE_NAME ".model");
         if (model_module != NULL) {
-            _PyImport_SetModule(modelmod_name, model_module);
+            if (_PyImport_SetModule(modelmod_name, model_module) < 0) {
+                Py_DECREF(model_module);
+                Py_CLEAR(modelmod_name);
+                goto error;
+            }
             /* gives away the reference to model_module */
-            PyModule_AddObject(m, "model", model_module);
+            if (PyModule_AddObject(mod, "model", model_module) < 0) {
+                Py_DECREF(model_module);
+                Py_CLEAR(modelmod_name);
+                goto error;
+            }
         }
     }
-    Py_DECREF(modelmod_name);
+    Py_CLEAR(modelmod_name);
+
     if (errors_module == NULL || model_module == NULL) {
         /* Don't core dump later! */
-        Py_DECREF(m);
-        return NULL;
+        goto error;
     }
 
 #if XML_COMBINED_VERSION > 19505
     {
         const XML_Feature *features = XML_GetFeatureList();
         PyObject *list = PyList_New(0);
-        if (list == NULL)
+        if (list == NULL) {
             /* just ignore it */
             PyErr_Clear();
+        }
         else {
             int i = 0;
             for (; features[i].feature != XML_FEATURE_END; ++i) {
@@ -1744,8 +1775,9 @@ MODULE_INITFUNC(void)
                     break;
                 }
             }
-            if (list != NULL)
-                PyModule_AddObject(m, "features", list);
+            if (list != NULL) {
+                PyModule_AddObject(mod, "features", list);
+            }
         }
     }
 #endif
@@ -1753,26 +1785,39 @@ MODULE_INITFUNC(void)
     codes_dict = PyDict_New();
     rev_codes_dict = PyDict_New();
     if (codes_dict == NULL || rev_codes_dict == NULL) {
-        Py_XDECREF(codes_dict);
-        Py_XDECREF(rev_codes_dict);
-        return NULL;
+        goto error;
     }
 
-#define MYCONST(name) \
-    if (PyModule_AddStringConstant(errors_module, #name,               \
-                                   XML_ErrorString(name)) < 0)         \
-        return NULL;                                                   \
-    tmpnum = PyLong_FromLong(name);                                    \
-    if (tmpnum == NULL) return NULL;                                   \
-    res = PyDict_SetItemString(codes_dict,                             \
-                               XML_ErrorString(name), tmpnum);         \
-    if (res < 0) return NULL;                                          \
-    tmpstr = PyUnicode_FromString(XML_ErrorString(name));              \
-    if (tmpstr == NULL) return NULL;                                   \
-    res = PyDict_SetItem(rev_codes_dict, tmpnum, tmpstr);              \
-    Py_DECREF(tmpstr);                                                 \
-    Py_DECREF(tmpnum);                                                 \
-    if (res < 0) return NULL;                                          \
+    int res;
+    PyObject *tmpnum, *tmpstr;
+#define MYCONST(name) do {                                          \
+        if (PyModule_AddStringConstant(errors_module, #name,        \
+                                    XML_ErrorString(name)) < 0) {   \
+            goto error;                                             \
+        }                                                           \
+        tmpnum = PyLong_FromLong(name);                             \
+        if (tmpnum == NULL) {                                       \
+            goto error;                                             \
+        }                                                           \
+        res = PyDict_SetItemString(codes_dict,                      \
+                                XML_ErrorString(name), tmpnum);     \
+        if (res < 0) {                                              \
+            Py_DECREF(tmpnum);                                      \
+            goto error;                                             \
+        }                                                           \
+        tmpstr = PyUnicode_FromString(XML_ErrorString(name));       \
+        if (tmpstr == NULL) {                                       \
+            Py_DECREF(tmpnum);                                      \
+            goto error;                                             \
+        }                                                           \
+        res = PyDict_SetItem(rev_codes_dict, tmpnum, tmpstr);       \
+        Py_CLEAR(tmpstr);                                           \
+        Py_CLEAR(tmpnum);                                           \
+        if (res < 0) {                                              \
+            goto error;                                             \
+        }                                                           \
+    } while(0);
+
 
     MYCONST(XML_ERROR_NO_MEMORY);
     MYCONST(XML_ERROR_SYNTAX);
@@ -1816,25 +1861,39 @@ MODULE_INITFUNC(void)
 
     if (PyModule_AddStringConstant(errors_module, "__doc__",
                                    "Constants used to describe "
-                                   "error conditions.") < 0)
-        return NULL;
+                                   "error conditions.") < 0) {
+        goto error;
+    }
 
-    if (PyModule_AddObject(errors_module, "codes", codes_dict) < 0)
-        return NULL;
-    if (PyModule_AddObject(errors_module, "messages", rev_codes_dict) < 0)
-        return NULL;
+    if (PyModule_AddObject(errors_module, "codes", codes_dict) < 0) {
+        goto error;
+    }
+    if (PyModule_AddObject(errors_module, "messages", rev_codes_dict) < 0) {
+        goto error;
+    }
 
 #undef MYCONST
 
-#define MYCONST(c) PyModule_AddIntConstant(m, #c, c)
+#define MYCONST(c) do {                                 \
+        if (PyModule_AddIntConstant(mod, #c, c) < 0) {  \
+            goto error;                                  \
+        }                                               \
+    } while(0);
     MYCONST(XML_PARAM_ENTITY_PARSING_NEVER);
     MYCONST(XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE);
     MYCONST(XML_PARAM_ENTITY_PARSING_ALWAYS);
 #undef MYCONST
 
-#define MYCONST(c) PyModule_AddIntConstant(model_module, #c, c)
-    PyModule_AddStringConstant(model_module, "__doc__",
-                     "Constants used to interpret content model information.");
+#define MYCONST(c)  do {                                        \
+        if (PyModule_AddIntConstant(model_module, #c, c) < 0) { \
+            goto error;                                          \
+        }                                                       \
+    } while(0);
+    if (PyModule_AddStringConstant(
+        model_module, "__doc__",
+        "Constants used to interpret content model information.") < 0) {
+        goto error;
+    }
 
     MYCONST(XML_CTYPE_EMPTY);
     MYCONST(XML_CTYPE_ANY);
@@ -1849,6 +1908,7 @@ MODULE_INITFUNC(void)
     MYCONST(XML_CQUANT_PLUS);
 #undef MYCONST
 
+    static struct PyExpat_CAPI capi;
     /* initialize pyexpat dispatch table */
     capi.size = sizeof(capi);
     capi.magic = PyExpat_CAPI_MAGIC;
@@ -1880,10 +1940,22 @@ MODULE_INITFUNC(void)
 #endif
 
     /* export using capsule */
-    capi_object = PyCapsule_New(&capi, PyExpat_CAPSULE_NAME, NULL);
-    if (capi_object)
-        PyModule_AddObject(m, "expat_CAPI", capi_object);
-    return m;
+    PyObject *capi_object = PyCapsule_New(&capi, PyExpat_CAPSULE_NAME, NULL);
+    if (capi_object == NULL) {
+        goto error;
+    }
+
+    if (PyModule_AddObject(mod, "expat_CAPI", capi_object) < 0) {
+        Py_DECREF(capi_object);
+        goto error;
+    }
+
+    return mod;
+
+error:
+    Py_CLEAR(codes_dict);
+    Py_CLEAR(rev_codes_dict);
+    return NULL;
 }
 
 static void
