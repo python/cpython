@@ -15764,6 +15764,15 @@ PyUnicode_InternInPlace(PyObject **p)
 void
 PyUnicode_InternImmortal(PyObject **p)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "PyUnicode_InternImmortal() is deprecated; "
+            "use PyUnicode_InternInPlace() instead", 1) < 0)
+    {
+        // The function has no return value, the exception cannot
+        // be reported to the caller, so just log it.
+        PyErr_WriteUnraisable(NULL);
+    }
+
     PyUnicode_InternInPlace(p);
     if (PyUnicode_CHECK_INTERNED(*p) != SSTATE_INTERNED_IMMORTAL) {
         _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
