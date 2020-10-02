@@ -2494,7 +2494,7 @@ References:
 3. Square root differential correction:  https://arxiv.org/pdf/1904.09481.pdf
 4. Data dependency graph:  https://bugs.python.org/file49439/hypot.png
 5. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
-6. Analysis of internal accuracy:  https://bugs.python.org/file49435/best_frac.py
+6. Analysis of internal accuracy:  https://bugs.python.org/file49484/best_frac.py
 7. Commutativity test:  https://bugs.python.org/file49448/test_hypot_commutativity.py
 
 */
