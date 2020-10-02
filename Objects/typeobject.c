@@ -4344,9 +4344,10 @@ _PyObject_GetState(PyObject *obj, int required)
 
         if (required && Py_TYPE(obj)->tp_itemsize) {
             PyErr_Format(PyExc_TypeError,
-                         "cannot pickle '%.200s' object: missing " \
-                         "`__getstate__()` on variable-length object",
+                         "cannot pickle '%.200s' object",
                          Py_TYPE(obj)->tp_name);
+            // for internal debugging
+            assert(! (required && Py_TYPE(obj)->tp_itemsize));
             return NULL;
         }
 
@@ -4386,9 +4387,10 @@ _PyObject_GetState(PyObject *obj, int required)
                 Py_DECREF(slotnames);
                 Py_DECREF(state);
                 PyErr_Format(PyExc_TypeError,
-                             "cannot pickle '%.200s' object: basic size " \
-                             "greater than expected",
+                             "cannot pickle '%.200s' object",
                              Py_TYPE(obj)->tp_name);
+                // for internal debugging
+                assert(! Py_TYPE(obj)->tp_basicsize > basicsize);
                 return NULL;
             }
         }
@@ -4624,8 +4626,10 @@ reduce_newobj(PyObject *obj)
 
     if (Py_TYPE(obj)->tp_new == NULL) {
         PyErr_Format(PyExc_TypeError,
-                     "cannot pickle '%.200s' object: object has no `__new__()`",
+                     "cannot pickle '%.200s' object",
                      Py_TYPE(obj)->tp_name);
+        // for internal debugging
+        assert(Py_TYPE(obj)->tp_new != NULL);
         return NULL;
     }
     if (_PyObject_GetNewArguments(obj, &args, &kwargs) < 0)
