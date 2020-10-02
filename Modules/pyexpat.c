@@ -1660,26 +1660,33 @@ PyInit_pyexpat(void)
 
     Py_INCREF(ErrorObject);
     if (PyModule_AddObject(mod, "error", ErrorObject) < 0) {
+        Py_DECREF(ErrorObject);
         goto error;
     }
     Py_INCREF(ErrorObject);
     if (PyModule_AddObject(mod, "ExpatError", ErrorObject) < 0) {
+        Py_DECREF(ErrorObject);
         goto error;
     }
     Py_INCREF(&Xmlparsetype);
     if (PyModule_AddObject(mod, "XMLParserType",
                            (PyObject *) &Xmlparsetype) < 0) {
+        Py_DECREF(&Xmlparsetype);
         goto error;
     }
 
     if (PyModule_AddStringConstant(mod, "EXPAT_VERSION",
-                               XML_ExpatVersion()) < 0) {
+                                   XML_ExpatVersion()) < 0) {
         goto error;
     }
     {
         XML_Expat_Version info = XML_ExpatVersionInfo();
-        if (PyModule_AddObject(mod, "version_info", Py_BuildValue("(iii)",
-                               info.major, info.minor, info.micro)) < 0) {
+        PyObject *versionInfo = Py_BuildValue("(iii)",
+                                              info.major,
+                                              info.minor,
+                                              info.micro);
+        if (PyModule_AddObject(mod, "version_info", versionInfo) < 0) {
+            Py_DECREF(versionInfo);
             goto error;
         }
     }
@@ -1691,8 +1698,8 @@ PyInit_pyexpat(void)
         goto error;
     }
 
-    PyObject *d = PyModule_GetDict(mod);
-    if (d == NULL) {
+    PyObject *errors_module = PyModule_New(MODULE_NAME ".errors");
+    if (errors_module == NULL) {
         goto error;
     }
 
@@ -1701,46 +1708,39 @@ PyInit_pyexpat(void)
         goto error;
     }
 
-    PyObject *errors_module = PyDict_GetItemWithError(d, errmod_name);
-    if (errors_module == NULL && !PyErr_Occurred()) {
-        errors_module = PyModule_New(MODULE_NAME ".errors");
-        if (errors_module != NULL) {
-            if (_PyImport_SetModule(errmod_name, errors_module) < 0) {
-                Py_DECREF(errors_module);
-                Py_CLEAR(errmod_name);
-                goto error;
-            }
-            /* gives away the reference to errors_module */
-            if (PyModule_AddObject(mod, "errors", errors_module) < 0) {
-                Py_DECREF(errors_module);
-                Py_CLEAR(errmod_name);
-                goto error;
-            }
-        }
+    if (_PyImport_SetModule(errmod_name, errors_module) < 0) {
+        Py_DECREF(errors_module);
+        Py_CLEAR(errmod_name);
+        goto error;
+    }
+    /* gives away the reference to errors_module */
+    if (PyModule_AddObject(mod, "errors", errors_module) < 0) {
+        Py_DECREF(errors_module);
+        Py_CLEAR(errmod_name);
+        goto error;
     }
     Py_CLEAR(errmod_name);
+
+    PyObject *model_module = PyModule_New(MODULE_NAME ".model");
+    if (model_module == NULL) {
+        goto error;
+    }
 
     PyObject *modelmod_name = PyUnicode_FromString(MODULE_NAME ".model");
     if (modelmod_name == NULL) {
         goto error;
     }
 
-    PyObject *model_module = PyDict_GetItemWithError(d, modelmod_name);
-    if (model_module == NULL && !PyErr_Occurred()) {
-        model_module = PyModule_New(MODULE_NAME ".model");
-        if (model_module != NULL) {
-            if (_PyImport_SetModule(modelmod_name, model_module) < 0) {
-                Py_DECREF(model_module);
-                Py_CLEAR(modelmod_name);
-                goto error;
-            }
-            /* gives away the reference to model_module */
-            if (PyModule_AddObject(mod, "model", model_module) < 0) {
-                Py_DECREF(model_module);
-                Py_CLEAR(modelmod_name);
-                goto error;
-            }
-        }
+    if (_PyImport_SetModule(modelmod_name, model_module) < 0) {
+        Py_DECREF(model_module);
+        Py_CLEAR(modelmod_name);
+        goto error;
+    }
+    /* gives away the reference to model_module */
+    if (PyModule_AddObject(mod, "model", model_module) < 0) {
+        Py_DECREF(model_module);
+        Py_CLEAR(modelmod_name);
+        goto error;
     }
     Py_CLEAR(modelmod_name);
 
@@ -1754,30 +1754,26 @@ PyInit_pyexpat(void)
         const XML_Feature *features = XML_GetFeatureList();
         PyObject *list = PyList_New(0);
         if (list == NULL) {
-            /* just ignore it */
-            PyErr_Clear();
+            goto error;
         }
         else {
             int i = 0;
             for (; features[i].feature != XML_FEATURE_END; ++i) {
-                int ok;
                 PyObject *item = Py_BuildValue("si", features[i].name,
                                                features[i].value);
                 if (item == NULL) {
                     Py_DECREF(list);
-                    list = NULL;
-                    break;
+                    goto error;
                 }
-                ok = PyList_Append(list, item);
+                int ok = PyList_Append(list, item);
                 Py_DECREF(item);
                 if (ok < 0) {
                     PyErr_Clear();
                     break;
                 }
             }
-            if (list != NULL) {
-                PyModule_AddObject(mod, "features", list);
-            }
+
+            PyModule_AddObject(mod, "features", list);
         }
     }
 #endif
@@ -1792,7 +1788,7 @@ PyInit_pyexpat(void)
     PyObject *tmpnum, *tmpstr;
 #define MYCONST(name) do {                                          \
         if (PyModule_AddStringConstant(errors_module, #name,        \
-                                    XML_ErrorString(name)) < 0) {   \
+                                       XML_ErrorString(name)) < 0) {\
             goto error;                                             \
         }                                                           \
         tmpnum = PyLong_FromLong(name);                             \
@@ -1800,7 +1796,7 @@ PyInit_pyexpat(void)
             goto error;                                             \
         }                                                           \
         res = PyDict_SetItemString(codes_dict,                      \
-                                XML_ErrorString(name), tmpnum);     \
+                                   XML_ErrorString(name), tmpnum);  \
         if (res < 0) {                                              \
             Py_DECREF(tmpnum);                                      \
             goto error;                                             \
@@ -1816,7 +1812,7 @@ PyInit_pyexpat(void)
         if (res < 0) {                                              \
             goto error;                                             \
         }                                                           \
-    } while(0);
+    } while(0)
 
 
     MYCONST(XML_ERROR_NO_MEMORY);
@@ -1878,7 +1874,7 @@ PyInit_pyexpat(void)
         if (PyModule_AddIntConstant(mod, #c, c) < 0) {  \
             goto error;                                  \
         }                                               \
-    } while(0);
+    } while(0)
     MYCONST(XML_PARAM_ENTITY_PARSING_NEVER);
     MYCONST(XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE);
     MYCONST(XML_PARAM_ENTITY_PARSING_ALWAYS);
@@ -1888,7 +1884,7 @@ PyInit_pyexpat(void)
         if (PyModule_AddIntConstant(model_module, #c, c) < 0) { \
             goto error;                                          \
         }                                                       \
-    } while(0);
+    } while(0)
     if (PyModule_AddStringConstant(
         model_module, "__doc__",
         "Constants used to interpret content model information.") < 0) {
