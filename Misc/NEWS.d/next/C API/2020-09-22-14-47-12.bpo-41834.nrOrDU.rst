@@ -1,0 +1,3 @@
+Remove the ``_Py_CheckRecursionLimit`` variable: it has been replaced by
+``ceval.recursion_limit`` of the :c:type:`PyInterpreterState`
+structure. Patch by Victor Stinner.

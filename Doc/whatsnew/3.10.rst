@@ -103,12 +103,46 @@ New Modules
 Improved Modules
 ================
 
+base64
+------
+
+Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
+Base32 Encoding with Extended Hex Alphabet.
+
+codecs
+------
+
+Add a :func:`codecs.unregister` function to unregister a codec search function.
+(Contributed by Hai Shi in :issue:`41842`.)
+
+curses
+------
+
+The extended color functions added in ncurses 6.1 will be used transparently
+by :func:`curses.color_content`, :func:`curses.init_color`,
+:func:`curses.init_pair`, and :func:`curses.pair_content`. A new function,
+:func:`curses.has_extended_color_support`, indicates whether extended color
+support is provided by the underlying ncurses library.
+(Contributed by Jeffrey Kintscher and Hans Petter Jansson in :issue:`36982`.)
+
 glob
 ----
 
 Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
+
+os
+--
+
+Added :func:`os.cpu_count()` support for VxWorks RTOS.
+(Contributed by Peixing Xin in :issue:`41440`.)
+
+py_compile
+----------
+
+Added ``--quiet`` option to command-line interface of :mod:`py_compile`.
+(Contributed by Gregory Schevchenko in :issue:`38731`.)
 
 sys
 ---
@@ -117,9 +151,35 @@ Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
 
+types
+-----
+
+Reintroduced the :data:`types.EllipsisType`, :data:`types.NoneType`
+and :data:`types.NotImplementedType` classes, providing a new set
+of types readily interpretable by type checkers.
+(Contributed by Bas van Beek in :issue:`41810`.)
+
+unittest
+--------
+
+Add new method :meth:`~unittest.TestCase.assertNoLogs` to complement the
+existing :meth:`~unittest.TestCase.assertLogs`. (Contributed by Kit Yan Choi
+in :issue:`39385`.)
+
+xml
+---
+
+Add a :class:`~xml.sax.handler.LexicalHandler` class to the
+:mod:`xml.sax.handler` module.
+(Contributed by Jonathan Gossage and Zackery Spytz in :issue:`35018`.)
+
 
 Optimizations
 =============
+
+* Constructors :func:`str`, :func:`bytes` and :func:`bytearray` are now faster
+  (around 30--40% for small objects).
+  (Contributed by Serhiy Storchaka in :issue:`41334`.)
 
 * The :mod:`runpy` module now imports fewer modules.
   The ``python3 -m module-name`` command startup time is 1.3x faster in
@@ -134,6 +194,12 @@ Deprecated
 Removed
 =======
 
+* The ``ParserBase.error()`` method from the private and undocumented ``_markupbase``
+  module has been removed.  :class:`html.parser.HTMLParser` is the only subclass of
+  ``ParserBase`` and its ``error()`` implementation has already been removed in
+  Python 3.5.
+  (Contributed by Berker Peksag in :issue:`31844`.)
+
 
 Porting to Python 3.10
 ======================
@@ -146,9 +212,14 @@ that may require changes to your code.
 Build Changes
 =============
 
+
 * The C99 functions :c:func:`snprintf` and :c:func:`vsnprintf` are now required
   to build Python.
   (Contributed by Victor Stinner in :issue:`36020`.)
+
+* :mod:`sqlite3` requires SQLite 3.7.3 or higher.
+  (Contributed by Sergey Fedoseev and Erlend E. Aasland :issue:`40744`.)
+
 
 
 C API Changes
@@ -165,6 +236,16 @@ New Features
   structure: the list of the original command line arguments passed to the
   Python executable.
   (Contributed by Victor Stinner in :issue:`23427`.)
+
+* The :c:func:`PyDateTime_DATE_GET_TZINFO` and
+  :c:func:`PyDateTime_TIME_GET_TZINFO` macros have been added for accessing
+  the ``tzinfo`` attributes of :class:`datetime.datetime` and
+  :class:`datetime.time` objects.
+  (Contributed by Zackery Spytz in :issue:`30155`.)
+
+* Add a :c:func:`PyCodec_Unregister` function to unregister a codec
+  search function.
+  (Contributed by Hai Shi in :issue:`41842`.)
 
 Porting to Python 3.10
 ----------------------
@@ -218,6 +299,14 @@ Porting to Python 3.10
   Unicode object without initial data.
   (Contributed by Inada Naoki in :issue:`36346`.)
 
+Deprecated
+----------
+
+* The ``PyUnicode_InternImmortal()`` function is now deprecated
+  and will be removed in Python 3.12: use :c:func:`PyUnicode_InternInPlace`
+  instead.
+  (Contributed by Victor Stinner in :issue:`41692`.)
+
 Removed
 -------
 
@@ -249,3 +338,7 @@ Removed
 * Removed ``PyUnicode_AsUnicodeCopy()``. Please use :c:func:`PyUnicode_AsUCS4Copy` or
   :c:func:`PyUnicode_AsWideCharString`
   (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``_Py_CheckRecursionLimit`` variable: it has been replaced by
+  ``ceval.recursion_limit`` of the :c:type:`PyInterpreterState` structure.
+  (Contributed by Victor Stinner in :issue:`41834`.)

@@ -310,6 +310,10 @@ the operations, see :ref:`operator-summary`):
 +---------------------+---------------------------------+---------+--------------------+
 | ``x ** y``          | *x* to the power *y*            | \(5)    |                    |
 +---------------------+---------------------------------+---------+--------------------+
+| ``x.is_integer()``  | ``True`` if *x* has a finite    |         | :func:`~numbers\   |
+|                     | and integral value, otherwise   |         | .Real.is_integer`  |
+|                     | ``False``.                      |         |                    |
++---------------------+---------------------------------+---------+--------------------+
 
 .. index::
    triple: operations on; numeric; types
@@ -582,16 +586,6 @@ class`. float also has the following additional methods.
    original float and with a positive denominator.  Raises
    :exc:`OverflowError` on infinities and a :exc:`ValueError` on
    NaNs.
-
-.. method:: float.is_integer()
-
-   Return ``True`` if the float instance is finite with integral
-   value, and ``False`` otherwise::
-
-      >>> (-2.0).is_integer()
-      True
-      >>> (3.2).is_integer()
-      False
 
 Two methods support conversion to
 and from hexadecimal strings.  Since Python's floats are stored
@@ -1568,33 +1562,6 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
 
-.. method:: str.removeprefix(prefix, /)
-
-   If the string starts with the *prefix* string, return
-   ``string[len(prefix):]``. Otherwise, return a copy of the original
-   string::
-
-      >>> 'TestHook'.removeprefix('Test')
-      'Hook'
-      >>> 'BaseTestCase'.removeprefix('Test')
-      'BaseTestCase'
-
-   .. versionadded:: 3.9
-
-.. method:: str.removesuffix(suffix, /)
-
-   If the string ends with the *suffix* string and that *suffix* is not empty,
-   return ``string[:-len(suffix)]``. Otherwise, return a copy of the
-   original string::
-
-      >>> 'MiscTests'.removesuffix('Tests')
-      'Misc'
-      >>> 'TmpDirMixin'.removesuffix('Tests')
-      'TmpDirMixin'
-
-   .. versionadded:: 3.9
-
-
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
    Return an encoded version of the string as a bytes object. Default encoding
@@ -1907,6 +1874,34 @@ expression support in the :mod:`re` module).
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
    the string itself, followed by two empty strings.
+
+
+.. method:: str.removeprefix(prefix, /)
+
+   If the string starts with the *prefix* string, return
+   ``string[len(prefix):]``. Otherwise, return a copy of the original
+   string::
+
+      >>> 'TestHook'.removeprefix('Test')
+      'Hook'
+      >>> 'BaseTestCase'.removeprefix('Test')
+      'BaseTestCase'
+
+   .. versionadded:: 3.9
+
+
+.. method:: str.removesuffix(suffix, /)
+
+   If the string ends with the *suffix* string and that *suffix* is not empty,
+   return ``string[:-len(suffix)]``. Otherwise, return a copy of the
+   original string::
+
+      >>> 'MiscTests'.removesuffix('Tests')
+      'Misc'
+      >>> 'TmpDirMixin'.removesuffix('Tests')
+      'TmpDirMixin'
+
+   .. versionadded:: 3.9
 
 
 .. method:: str.replace(old, new[, count])
@@ -4205,7 +4200,7 @@ The constructors for both classes work the same:
 
 
    Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
-   :meth:`difference`, and :meth:`symmetric_difference`, :meth:`issubset`, and
+   :meth:`difference`, :meth:`symmetric_difference`, :meth:`issubset`, and
    :meth:`issuperset` methods will accept any iterable as an argument.  In
    contrast, their operator based counterparts require their arguments to be
    sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``

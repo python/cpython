@@ -445,8 +445,13 @@ async def wait_for(fut, timeout, *, loop=None):
         if fut.done():
             return fut.result()
 
-        fut.cancel()
-        raise exceptions.TimeoutError()
+        await _cancel_and_wait(fut, loop=loop)
+        try:
+            fut.result()
+        except exceptions.CancelledError as exc:
+            raise exceptions.TimeoutError() from exc
+        else:
+            raise exceptions.TimeoutError()
 
     waiter = loop.create_future()
     timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
@@ -460,9 +465,12 @@ async def wait_for(fut, timeout, *, loop=None):
         try:
             await waiter
         except exceptions.CancelledError:
-            fut.remove_done_callback(cb)
-            fut.cancel()
-            raise
+            if fut.done():
+                return fut.result()
+            else:
+                fut.remove_done_callback(cb)
+                fut.cancel()
+                raise
 
         if fut.done():
             return fut.result()
@@ -729,6 +737,13 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
     the outer Future is *not* cancelled in this case.  (This is to
     prevent the cancellation of one child to cause other children to
     be cancelled.)
+
+    If *return_exceptions* is False, cancelling gather() after it
+    has been marked done won't cancel any submitted awaitables.
+    For instance, gather can be marked done after propagating an
+    exception to the caller, therefore, calling ``gather.cancel()``
+    after catching an exception (raised by one of the awaitables) from
+    gather won't cancel any other awaitables.
     """
     if not coros_or_futures:
         if loop is None:

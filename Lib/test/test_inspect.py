@@ -24,8 +24,10 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import run_unittest, TESTFN, DirsOnSysPath, cpython_only
+from test.support import run_unittest, cpython_only
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
+from test.support.import_helper import DirsOnSysPath
+from test.support.os_helper import TESTFN
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2

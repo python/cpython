@@ -10,6 +10,7 @@ import sys
 import sysconfig
 import test.support
 from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 import textwrap
@@ -632,7 +633,7 @@ class SysModuleTest(unittest.TestCase):
         out = p.communicate()[0].strip()
         self.assertEqual(out, b'\xbd')
 
-    @unittest.skipUnless(test.support.FS_NONASCII,
+    @unittest.skipUnless(os_helper.FS_NONASCII,
                          'requires OS support of non-ASCII encodings')
     @unittest.skipUnless(sys.getfilesystemencoding() == locale.getpreferredencoding(False),
                          'requires FS encoding to match locale')
@@ -641,10 +642,10 @@ class SysModuleTest(unittest.TestCase):
 
         env["PYTHONIOENCODING"] = ""
         p = subprocess.Popen([sys.executable, "-c",
-                                'print(%a)' % test.support.FS_NONASCII],
+                                'print(%a)' % os_helper.FS_NONASCII],
                                 stdout=subprocess.PIPE, env=env)
         out = p.communicate()[0].strip()
-        self.assertEqual(out, os.fsencode(test.support.FS_NONASCII))
+        self.assertEqual(out, os.fsencode(os_helper.FS_NONASCII))
 
     @unittest.skipIf(sys.base_prefix != sys.prefix,
                      'Test is not venv-compatible')
@@ -1236,7 +1237,7 @@ class SizeofTest(unittest.TestCase):
         nfrees = len(x.f_code.co_freevars)
         extras = x.f_code.co_stacksize + x.f_code.co_nlocals +\
                   ncells + nfrees - 1
-        check(x, vsize('5P2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
+        check(x, vsize('4Pi2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
         # function
         def func(): pass
         check(func, size('13P'))
@@ -1253,7 +1254,7 @@ class SizeofTest(unittest.TestCase):
             check(bar, size('PP'))
         # generator
         def get_gen(): yield 1
-        check(get_gen(), size('Pb2PPP4P'))
+        check(get_gen(), size('P2PPP4P'))
         # iterator
         check(iter('abc'), size('lP'))
         # callable-iterator

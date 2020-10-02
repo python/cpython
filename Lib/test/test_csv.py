@@ -10,6 +10,7 @@ import csv
 import gc
 import pickle
 from test import support
+from test.support import warnings_helper
 from itertools import permutations
 from textwrap import dedent
 from collections import OrderedDict
@@ -201,6 +202,20 @@ class Test_Csv(unittest.TestCase):
                          escapechar='\\', quoting = csv.QUOTE_NONE)
         self._write_test(['a',1,'p,q'], 'a,1,p\\,q',
                          escapechar='\\', quoting = csv.QUOTE_NONE)
+        self._write_test(['\\', 'a'], '\\\\,a',
+                         escapechar='\\', quoting=csv.QUOTE_NONE)
+        self._write_test(['\\', 'a'], '\\\\,a',
+                         escapechar='\\', quoting=csv.QUOTE_MINIMAL)
+        self._write_test(['\\', 'a'], '"\\\\","a"',
+                         escapechar='\\', quoting=csv.QUOTE_ALL)
+        self._write_test(['\\ ', 'a'], '\\\\ ,a',
+                         escapechar='\\', quoting=csv.QUOTE_MINIMAL)
+        self._write_test(['\\,', 'a'], '\\\\\\,,a',
+                         escapechar='\\', quoting=csv.QUOTE_NONE)
+        self._write_test([',\\', 'a'], '",\\\\",a',
+                         escapechar='\\', quoting=csv.QUOTE_MINIMAL)
+        self._write_test(['C\\', '6', '7', 'X"'], 'C\\\\,6,7,"X"""',
+                         escapechar='\\', quoting=csv.QUOTE_MINIMAL)
 
     def test_write_iterable(self):
         self._write_test(iter(['a', 1, 'p,q']), 'a,1,"p,q"')
@@ -250,9 +265,10 @@ class Test_Csv(unittest.TestCase):
             self.assertRaises(OSError, writer.writerows, BadIterable())
 
     @support.cpython_only
+    @support.requires_legacy_unicode_capi
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_writerows_legacy_strings(self):
         import _testcapi
-
         c = _testcapi.unicode_legacy_string('a')
         with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj)

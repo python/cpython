@@ -291,10 +291,13 @@ error:
 static int
 set_running_loop(PyObject *loop)
 {
-    cached_running_holder = NULL;
-    cached_running_holder_tsid = 0;
+    PyObject *ts_dict = NULL;
 
-    PyObject *ts_dict = PyThreadState_GetDict();  // borrowed
+    PyThreadState *tstate = PyThreadState_Get();
+    if (tstate != NULL) {
+        ts_dict = _PyThreadState_GetDict(tstate);  // borrowed
+    }
+
     if (ts_dict == NULL) {
         PyErr_SetString(
             PyExc_RuntimeError, "thread-local storage is not available");
@@ -313,6 +316,9 @@ set_running_loop(PyObject *loop)
         return -1;
     }
     Py_DECREF(rl);
+
+    cached_running_holder = (PyObject *)rl;
+    cached_running_holder_tsid = PyThreadState_GetID(tstate);
 
     return 0;
 }
@@ -2615,6 +2621,20 @@ task_set_error_soon(TaskObj *task, PyObject *et, const char *format, ...)
     Py_RETURN_NONE;
 }
 
+static inline int
+gen_status_from_result(PyObject **result)
+{
+    if (*result != NULL) {
+        return PYGEN_NEXT;
+    }
+    if (_PyGen_FetchStopIterationValue(result) == 0) {
+        return PYGEN_RETURN;
+    }
+
+    assert(PyErr_Occurred());
+    return PYGEN_ERROR;
+}
+
 static PyObject *
 task_step_impl(TaskObj *task, PyObject *exc)
 {
@@ -2673,26 +2693,29 @@ task_step_impl(TaskObj *task, PyObject *exc)
         return NULL;
     }
 
+    int gen_status = PYGEN_ERROR;
     if (exc == NULL) {
         if (PyGen_CheckExact(coro) || PyCoro_CheckExact(coro)) {
-            result = _PyGen_Send((PyGenObject*)coro, Py_None);
+            gen_status = PyGen_Send((PyGenObject*)coro, Py_None, &result);
         }
         else {
             result = _PyObject_CallMethodIdOneArg(coro, &PyId_send, Py_None);
+            gen_status = gen_status_from_result(&result);
         }
     }
     else {
         result = _PyObject_CallMethodIdOneArg(coro, &PyId_throw, exc);
+        gen_status = gen_status_from_result(&result);
         if (clear_exc) {
             /* We created 'exc' during this call */
             Py_DECREF(exc);
         }
     }
 
-    if (result == NULL) {
+    if (gen_status == PYGEN_RETURN || gen_status == PYGEN_ERROR) {
         PyObject *et, *ev, *tb;
 
-        if (_PyGen_FetchStopIterationValue(&o) == 0) {
+        if (result != NULL) {
             /* The error is StopIteration and that means that
                the underlying coroutine has resolved */
 
@@ -2703,10 +2726,10 @@ task_step_impl(TaskObj *task, PyObject *exc)
                 res = future_cancel((FutureObj*)task, task->task_cancel_msg);
             }
             else {
-                res = future_set_result((FutureObj*)task, o);
+                res = future_set_result((FutureObj*)task, result);
             }
 
-            Py_DECREF(o);
+            Py_DECREF(result);
 
             if (res == NULL) {
                 return NULL;

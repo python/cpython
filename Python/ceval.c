@@ -741,15 +741,12 @@ Py_MakePendingCalls(void)
 /* The interpreter's recursion limit */
 
 #ifndef Py_DEFAULT_RECURSION_LIMIT
-#define Py_DEFAULT_RECURSION_LIMIT 1000
+#  define Py_DEFAULT_RECURSION_LIMIT 1000
 #endif
-
-int _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
 
 void
 _PyEval_InitRuntimeState(struct _ceval_runtime_state *ceval)
 {
-    _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
 #ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     _gil_initialize(&ceval->gil);
 #endif
@@ -797,14 +794,11 @@ Py_SetRecursionLimit(int new_limit)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     tstate->interp->ceval.recursion_limit = new_limit;
-    if (_Py_IsMainInterpreter(tstate)) {
-        _Py_CheckRecursionLimit = new_limit;
-    }
 }
 
 /* The function _Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
-   if the recursion_depth reaches _Py_CheckRecursionLimit.
-   If USE_STACKCHECK, the macro decrements _Py_CheckRecursionLimit
+   if the recursion_depth reaches recursion_limit.
+   If USE_STACKCHECK, the macro decrements recursion_limit
    to guarantee that _Py_CheckRecursiveCall() is regularly called.
    Without USE_STACKCHECK, there is no need for this. */
 int
@@ -818,10 +812,6 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         --tstate->recursion_depth;
         _PyErr_SetString(tstate, PyExc_MemoryError, "Stack overflow");
         return -1;
-    }
-    if (_Py_IsMainInterpreter(tstate)) {
-        /* Needed for ABI backwards-compatibility (see bpo-31857) */
-        _Py_CheckRecursionLimit = recursion_limit;
     }
 #endif
     if (tstate->recursion_critical)
@@ -1349,10 +1339,15 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         assert(f->f_lasti % sizeof(_Py_CODEUNIT) == 0);
         next_instr += f->f_lasti / sizeof(_Py_CODEUNIT) + 1;
     }
-    stack_pointer = f->f_stacktop;
-    assert(stack_pointer != NULL);
-    f->f_stacktop = NULL;       /* remains NULL unless yield suspends frame */
-    f->f_executing = 1;
+    stack_pointer = f->f_valuestack + f->f_stackdepth;
+    /* Set f->f_stackdepth to -1.
+     * Update when returning or calling trace function.
+       Having f_stackdepth <= 0 ensures that invalid
+       values are not visible to the cycle GC.
+       We choose -1 rather than 0 to assist debugging.
+     */
+    f->f_stackdepth = -1;
+    f->f_state = FRAME_EXECUTING;
 
     if (co->co_opcache_flag < OPCACHE_MIN_RUNS) {
         co->co_opcache_flag++;
@@ -1438,9 +1433,9 @@ main_loop:
         if (_Py_TracingPossible(ceval2) &&
             tstate->c_tracefunc != NULL && !tstate->tracing) {
             int err;
-            /* see maybe_call_line_trace
+            /* see maybe_call_line_trace()
                for expository comments */
-            f->f_stacktop = stack_pointer;
+            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
@@ -1448,10 +1443,8 @@ main_loop:
                                         &instr_lb, &instr_ub, &instr_prev);
             /* Reload possibly changed frame fields */
             JUMPTO(f->f_lasti);
-            if (f->f_stacktop != NULL) {
-                stack_pointer = f->f_stacktop;
-                f->f_stacktop = NULL;
-            }
+            stack_pointer = f->f_valuestack+f->f_stackdepth;
+            f->f_stackdepth = -1;
             if (err)
                 /* trace function raised an exception */
                 goto error;
@@ -1708,7 +1701,7 @@ main_loop:
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *sum;
-            /* NOTE(haypo): Please don't try to micro-optimize int+int on
+            /* NOTE(vstinner): Please don't try to micro-optimize int+int on
                CPython using bytecode, it is simply worthless.
                See http://bugs.python.org/issue21955 and
                http://bugs.python.org/issue10044 for the discussion. In short,
@@ -2076,6 +2069,8 @@ main_loop:
             retval = POP();
             assert(f->f_iblock == 0);
             assert(EMPTY());
+            f->f_state = FRAME_RETURNED;
+            f->f_stackdepth = 0;
             goto exiting;
         }
 
@@ -2218,34 +2213,59 @@ main_loop:
         case TARGET(YIELD_FROM): {
             PyObject *v = POP();
             PyObject *receiver = TOP();
-            int err;
-            if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) {
-                retval = _PyGen_Send((PyGenObject *)receiver, v);
+            int is_gen_or_coro = PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver);
+            int gen_status;
+            if (tstate->c_tracefunc == NULL && is_gen_or_coro) {
+                gen_status = PyGen_Send((PyGenObject *)receiver, v, &retval);
             } else {
-                _Py_IDENTIFIER(send);
-                if (v == Py_None)
-                    retval = Py_TYPE(receiver)->tp_iternext(receiver);
-                else
-                    retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
+                if (is_gen_or_coro) {
+                    retval = _PyGen_Send((PyGenObject *)receiver, v);
+                }
+                else {
+                    _Py_IDENTIFIER(send);
+                    if (v == Py_None) {
+                        retval = Py_TYPE(receiver)->tp_iternext(receiver);
+                    }
+                    else {
+                        retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
+                    }
+                }
+
+                if (retval == NULL) {
+                    if (tstate->c_tracefunc != NULL
+                            && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
+                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
+                    if (_PyGen_FetchStopIterationValue(&retval) == 0) {
+                        gen_status = PYGEN_RETURN;
+                    }
+                    else {
+                        gen_status = PYGEN_ERROR;
+                    }
+                }
+                else {
+                    gen_status = PYGEN_NEXT;
+                }
             }
             Py_DECREF(v);
-            if (retval == NULL) {
-                PyObject *val;
-                if (tstate->c_tracefunc != NULL
-                        && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
-                err = _PyGen_FetchStopIterationValue(&val);
-                if (err < 0)
-                    goto error;
+            if (gen_status == PYGEN_ERROR) {
+                assert (retval == NULL);
+                goto error;
+            }
+            if (gen_status == PYGEN_RETURN) {
+                assert (retval != NULL);
+
                 Py_DECREF(receiver);
-                SET_TOP(val);
+                SET_TOP(retval);
+                retval = NULL;
                 DISPATCH();
             }
+            assert (gen_status == PYGEN_NEXT);
             /* receiver remains on stack, retval is value to be yielded */
-            f->f_stacktop = stack_pointer;
             /* and repeat... */
             assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
+            f->f_state = FRAME_SUSPENDED;
+            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
             goto exiting;
         }
 
@@ -2261,8 +2281,8 @@ main_loop:
                 }
                 retval = w;
             }
-
-            f->f_stacktop = stack_pointer;
+            f->f_state = FRAME_SUSPENDED;
+            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
             goto exiting;
         }
 
@@ -2291,7 +2311,6 @@ main_loop:
         }
 
         case TARGET(POP_BLOCK): {
-            PREDICTED(POP_BLOCK);
             PyFrame_BlockPop(f);
             DISPATCH();
         }
@@ -3346,7 +3365,6 @@ main_loop:
             STACK_SHRINK(1);
             Py_DECREF(iter);
             JUMPBY(oparg);
-            PREDICT(POP_BLOCK);
             DISPATCH();
         }
 
@@ -3762,11 +3780,15 @@ error:
         /* Log traceback info. */
         PyTraceBack_Here(f);
 
-        if (tstate->c_tracefunc != NULL)
+        if (tstate->c_tracefunc != NULL) {
+            /* Make sure state is set to FRAME_EXECUTING for tracing */
+            assert(f->f_state == FRAME_EXECUTING);
+            f->f_state = FRAME_UNWINDING;
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
                            tstate, f);
-
+        }
 exception_unwind:
+        f->f_state = FRAME_UNWINDING;
         /* Unwind stacks if an exception occurred */
         while (f->f_iblock > 0) {
             /* Pop the current block. */
@@ -3825,6 +3847,7 @@ exception_unwind:
                     }
                 }
                 /* Resume normal execution */
+                f->f_state = FRAME_EXECUTING;
                 goto main_loop;
             }
         } /* unwind stack */
@@ -3841,7 +3864,8 @@ exception_unwind:
         PyObject *o = POP();
         Py_XDECREF(o);
     }
-
+    f->f_stackdepth = 0;
+    f->f_state = FRAME_RAISED;
 exiting:
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
@@ -3863,7 +3887,6 @@ exit_eval_frame:
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(f);
     _Py_LeaveRecursiveCall(tstate);
-    f->f_executing = 0;
     tstate->frame = f->f_back;
 
     return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);

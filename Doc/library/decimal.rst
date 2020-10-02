@@ -621,6 +621,13 @@ Decimal objects
       Return :const:`True` if the argument is either positive or negative
       infinity and :const:`False` otherwise.
 
+   .. method:: is_integer()
+
+      Return :const:`True` if the argument is a finite integral value and
+      :const:`False` otherwise.
+
+      .. versionadded:: 3.10
+
    .. method:: is_nan()
 
       Return :const:`True` if the argument is a (quiet or signaling) NaN and
@@ -1215,6 +1222,13 @@ In addition to the three supplied contexts, new contexts can be created with the
       Returns ``True`` if *x* is infinite; otherwise returns ``False``.
 
 
+   .. method:: is_integer(x)
+
+      Returns ``True`` if *x* is finite and integral; otherwise
+      returns ``False``.
+
+      .. versionadded:: 3.10
+
    .. method:: is_nan(x)
 
       Returns ``True`` if *x* is a qNaN or sNaN; otherwise returns ``False``.
@@ -1356,6 +1370,9 @@ In addition to the three supplied contexts, new contexts can be created with the
       the result is finite and can be expressed exactly in 'precision' digits.
       The rounding mode of the context is used. Results are always correctly-rounded
       in the Python version.
+
+      ``Decimal(0) ** Decimal(0)`` results in ``InvalidOperation``, and if ``InvalidOperation``
+      is not trapped, then results in ``Decimal('NaN')``.
 
       .. versionchanged:: 3.3
          The C module computes :meth:`power` in terms of the correctly-rounded

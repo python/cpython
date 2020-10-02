@@ -87,6 +87,58 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(int___round____doc__,
+"__round__($self, ndigits=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Rounding an Integral returns itself.\n"
+"\n"
+"Rounding with an ndigits argument also returns an integer.");
+
+#define INT___ROUND___METHODDEF    \
+    {"__round__", (PyCFunction)(void(*)(void))int___round__, METH_FASTCALL, int___round____doc__},
+
+static PyObject *
+int___round___impl(PyObject *self, PyObject *o_ndigits);
+
+static PyObject *
+int___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *o_ndigits = NULL;
+
+    if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    o_ndigits = args[0];
+skip_optional:
+    return_value = int___round___impl(self, o_ndigits);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(int_is_integer__doc__,
+"is_integer($self, /)\n"
+"--\n"
+"\n"
+"Returns True for all integers.");
+
+#define INT_IS_INTEGER_METHODDEF    \
+    {"is_integer", (PyCFunction)int_is_integer, METH_NOARGS, int_is_integer__doc__},
+
+static PyObject *
+int_is_integer_impl(PyObject *self);
+
+static PyObject *
+int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return int_is_integer_impl(self);
+}
+
 PyDoc_STRVAR(int___sizeof____doc__,
 "__sizeof__($self, /)\n"
 "--\n"
@@ -333,4 +385,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4257cfdb155efd00 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=022614978e2fcdf3 input=a9049054013a1b77]*/

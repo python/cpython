@@ -745,7 +745,7 @@ Command line options
 
 .. cmdoption:: --indent, --tab, --no-indent, --compact
 
-   Mutually exclusive options for whitespace control
+   Mutually exclusive options for whitespace control.
 
    .. versionadded:: 3.9
 

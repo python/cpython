@@ -602,6 +602,23 @@ class TraceTestCase(unittest.TestCase):
         self.compare_events(doit_async.__code__.co_firstlineno,
                             tracer.events, events)
 
+    def test_loop_in_try_except(self):
+        # https://bugs.python.org/issue41670
+
+        def func():
+            try:
+                for i in []: pass
+                return 1
+            except:
+                return 2
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'return')])
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""
@@ -948,7 +965,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(11)
         output.append(12)
 
-    @jump_test(5, 11, [2, 4], (ValueError, 'unreachable'))
+    @jump_test(5, 11, [2, 4], (ValueError, 'after'))
     def test_no_jump_over_return_try_finally_in_finally_block(output):
         try:
             output.append(2)
@@ -1457,7 +1474,7 @@ class JumpTestCase(unittest.TestCase):
         async with asynctracecontext(output, 4):
             output.append(5)
 
-    @jump_test(5, 7, [2, 4], (ValueError, "unreachable"))
+    @jump_test(5, 7, [2, 4], (ValueError, "after"))
     def test_no_jump_over_return_out_of_finally_block(output):
         try:
             output.append(2)
