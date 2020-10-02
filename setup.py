@@ -1084,7 +1084,7 @@ class PyBuildExt(build_ext):
                 # ncurses wide char support
                 curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
         elif MACOS and curses_library == 'ncurses':
-            # Building with the system-suppied combined libncurses/libpanel
+            # Building with the system-supplied combined libncurses/libpanel
             curses_defines.append(('HAVE_NCURSESW', '1'))
             curses_defines.append(('_XOPEN_SOURCE_EXTENDED', '1'))
 
