@@ -256,7 +256,8 @@ compute_item(rangeobject *r, PyObject *i)
      */
     if (r->step == _PyLong_One) {
         result = PyNumber_Add(r->start, i);
-    } else {
+    }
+    else {
         incr = PyNumber_Multiply(i, r->step);
         if (!incr) {
             return NULL;
