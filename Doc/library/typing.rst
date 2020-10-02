@@ -1666,12 +1666,13 @@ Introspection helpers
    Check if a type is a :class:`TypedDict`.
 
    For example::
-        class Film(TypedDict):
-            title: str
-            year: int
 
-        is_typeddict(Film)  # => True
-        is_typeddict(Union[list, str])  # => False
+      class Film(TypedDict):
+          title: str
+          year: int
+
+      is_typeddict(Film)  # => True
+      is_typeddict(Union[list, str])  # => False
 
    .. versionadded:: 3.10
 
