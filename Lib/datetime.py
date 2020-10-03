@@ -1452,7 +1452,8 @@ class time:
         part is omitted if self.microsecond == 0.
 
         The optional argument timespec specifies the number of additional
-        terms of the time to include.
+        terms of the time to include. Valid options are 'auto', 'hours',
+        'minutes', 'seconds', 'milliseconds' and 'microseconds'.
         """
         s = _format_time(self._hour, self._minute, self._second,
                           self._microsecond, timespec)
@@ -1937,7 +1938,8 @@ class datetime(date):
         time, default 'T'.
 
         The optional argument timespec specifies the number of additional
-        terms of the time to include.
+        terms of the time to include. Valid options are 'auto', 'hours',
+        'minutes', 'seconds', 'milliseconds' and 'microseconds'.
         """
         s = ("%04d-%02d-%02d%c" % (self._year, self._month, self._day, sep) +
              _format_time(self._hour, self._minute, self._second,
