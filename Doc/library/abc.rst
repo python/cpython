@@ -345,7 +345,7 @@ The :mod:`abc` module also provides the following functions:
 
    If *cls* has any subclasses, raises a :exc:`RuntimeError`.
 
-   If *cls* is not an instance of ABCMeta, raises a :exc:`TypeError`.
+   If *cls* is not an instance of ABCMeta, does nothing.
 
    .. versionadded:: 3.10
 

@@ -138,14 +138,14 @@ def update_abstractmethods(cls):
 
     If cls is has any subclasses, raises a RuntimeError.
 
-    If cls is not an instance of ABCMeta, raises a TypeError.
+    If cls is not an instance of ABCMeta, does nothing.
     """
     if not hasattr(cls, '__abstractmethods__'):
         # We check for __abstractmethods__ here because cls might by a C
         # implementation or a python implementation (especially during
         # testing), and we want to handle both cases.
-        raise TypeError('cls must be an abstract class or subclass of an abstract'
-                        ' class')
+        return cls
+
     if cls.__subclasses__():
         raise RuntimeError("cannot update abstract methods of class after"
                            " subclassing")

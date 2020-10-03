@@ -567,7 +567,9 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 pass
 
             A.foo = updated_foo
-            self.assertRaises(TypeError, abc.update_abstractmethods, A)
+            abc.update_abstractmethods(A)
+            A()
+            self.assertFalse(hasattr(A, '__abstractmethods__'))
 
 
     class TestABCWithInitSubclass(unittest.TestCase):

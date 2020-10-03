@@ -993,9 +993,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
         cls.__doc__ = (cls.__name__ +
                        str(inspect.signature(cls)).replace(' -> None', ''))
 
-    # Update the abstract methods of the class, if it is abstract.
-    if isinstance(cls, abc.ABCMeta):
-        abc.update_abstractmethods(cls)
+    abc.update_abstractmethods(cls)
 
     return cls
 
