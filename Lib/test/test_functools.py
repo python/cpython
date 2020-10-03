@@ -3,7 +3,6 @@ import builtins
 import collections
 import collections.abc
 import copy
-import inspect
 from itertools import permutations
 import pickle
 from random import choice
@@ -1157,41 +1156,6 @@ class TestTotalOrdering(unittest.TestCase):
                     method = getattr(Orderable_LT, name)
                     method_copy = pickle.loads(pickle.dumps(method, proto))
                     self.assertIs(method_copy, method)
-
-    def test_abc_forward(self):
-        @functools.total_ordering
-        class A(abc.ABC):
-            @abc.abstractmethod
-            def __lt__(self, other):
-                pass
-
-        self.assertLess({'__lt__', '__le__', '__gt__', '__ge__'}, A.__dict__.keys())
-        self.assertTrue(inspect.isabstract(A))
-        self.assertEqual(A.__abstractmethods__, {'__lt__'})
-
-        class Inf(A):
-            def __lt__(self, other):
-                return False
-
-        self.assertFalse(inspect.isabstract(Inf))
-        self.assertTrue(Inf().__gt__(None))
-
-    def test_abc_impl(self):
-        class A(abc.ABC):
-            @abc.abstractmethod
-            def __gt__(self, other):
-                pass
-
-            @abc.abstractmethod
-            def __lt__(self, other):
-                pass
-
-        @functools.total_ordering
-        class B(A):
-            def __lt__(self, other):
-                return True
-        B()
-        self.assertFalse(inspect.isabstract(B))
 
 @functools.total_ordering
 class Orderable_LT:
