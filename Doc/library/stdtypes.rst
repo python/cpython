@@ -4748,6 +4748,10 @@ single class dictionary lookup is negligible.
 Union Type
 ====================
 
+.. index::
+   object: Union
+   pair: union; type
+
 A union object holds the value of the ``|`` (bitwise or) operation on
 multiple :ref:`type objects<bltin-type-objects>`. This enables cleaner type
 hinting syntax compared to :data:`typing.Union`.
