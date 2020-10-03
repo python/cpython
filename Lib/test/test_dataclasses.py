@@ -2805,6 +2805,13 @@ class TestDescriptors(unittest.TestCase):
 
 
 class TestStringAnnotations(unittest.TestCase):
+    def test_double_stringification(self):
+        @dataclass
+        class T:
+            a: "typing.ClassVar[int]"
+
+        T()
+
     def test_classvar(self):
         # These tests assume that both "import typing" and "from
         # typing import *" have been run in this file.

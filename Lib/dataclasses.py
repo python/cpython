@@ -652,6 +652,12 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # a eval() penalty for every single field of every dataclass
     # that's defined.  It was judged not worth it.
 
+    # Strip away the extra quotes as a result of double-stringifying when the
+    # 'annotations' feature became default.
+    if annotation.startswith(("'", '"')) and annotation.endswith(("'", '"')):
+        annotation = annotation[1:-1]
+
+
     match = _MODULE_IDENTIFIER_RE.match(annotation)
     if match:
         ns = None
