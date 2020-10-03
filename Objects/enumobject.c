@@ -319,7 +319,7 @@ reversed_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
     assert(PyType_Check(type));
-    
+
     if (!_PyArg_NoKwnames("reversed", kwnames)) {
         return NULL;
     }
@@ -463,5 +463,5 @@ PyTypeObject PyReversed_Type = {
     PyType_GenericAlloc,            /* tp_alloc */
     reversed_new,                   /* tp_new */
     PyObject_GC_Del,                /* tp_free */
-    .tp_vectorcall = reversed_vectorcall,
+    .tp_vectorcall = (vectorcallfunc)reversed_vectorcall,
 };
