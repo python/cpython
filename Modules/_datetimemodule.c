@@ -4663,7 +4663,7 @@ static PyMethodDef time_methods[] = {
     {"isoformat",   (PyCFunction)(void(*)(void))time_isoformat,        METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return string in ISO 8601 format, [HH[:MM[:SS[.mmm[uuu]]]]]"
                "[+HH:MM].\n\n"
-               "The optional argument timespec specifies the number 
+               "The optional argument timespec specifies the number "
                "of additional terms\nof the time to include. Valid "
                "options are 'auto', 'hours', 'minutes',\n'seconds', "
                "'milliseconds' and 'microseconds'.\n")},
@@ -6373,7 +6373,7 @@ static PyMethodDef datetime_methods[] = {
                "YYYY-MM-DDT[HH[:MM[:SS[.mmm[uuu]]]]][+HH:MM].\n"
                "sep is used to separate the year from the time, and "
                "defaults to 'T'.\n"
-               "The optional argument timespec specifies the number 
+               "The optional argument timespec specifies the number "
                "of additional terms\nof the time to include. Valid "
                "options are 'auto', 'hours', 'minutes',\n'seconds', "
                "'milliseconds' and 'microseconds'.\n")},
