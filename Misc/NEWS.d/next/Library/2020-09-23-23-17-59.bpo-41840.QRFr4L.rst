@@ -1,0 +1,3 @@
+Fix a bug in the :mod:`symtable` module that was causing module-scope global
+variables to not be reported as both local and global. Patch by Pablo
+Galindo.
