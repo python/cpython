@@ -4743,6 +4743,101 @@ define these methods must provide them as a normal Python accessible method.
 Compared to the overhead of setting up the runtime context, the overhead of a
 single class dictionary lookup is negligible.
 
+.. _types-union:
+
+Union Type
+====================
+
+A union object holds the value of the ``|`` (bitwise or) operation on
+multiple :ref:`type objects<bltin-type-objects>`. This enables cleaner type
+hinting syntax compared to :data:`typing.Union`.
+
+.. describe:: X | Y | ...
+
+   Defines a union object which holds types *X*, *Y*, and so forth. X | Y
+   means either X or Y. It is syntactically equivalent to
+   ``typing.Union[X, Y, ...]``.
+   Example::
+
+      def square(number: int | float) -> int | float:
+          return number ** 2
+
+.. describe:: union_object == other
+
+   Union objects can be tested for equality with other union objects. Details:
+
+   * Unions of unions are flattened, e.g.::
+
+       (int | str) | float == int | str | float
+
+   * Redundant arguments are skipped, e.g.::
+
+       int | str | int == int | str
+
+   * When comparing unions, the argument order is ignored, e.g.::
+
+      int | str == str | int
+
+   * Compatible with :data:`typing.Union`::
+
+      int | str == typing.Union[int, str]
+
+   * Optional values are equivalent to :data:`typing.Optional`::
+
+      str | None == typing.Optional[str]
+
+.. describe:: isinstance(obj, union_object)
+
+   Calls to :func:`isinstance` are also supported with a Union object::
+
+      >>> isinstance("", int | str)
+      True
+
+   Union objects containing parametrized generics cannot be used::
+
+      >>> isinstance(1, int | list[int])
+      TypeError: isinstance() argument 2 cannot contain a parameterized generic
+
+.. describe:: issubclass(obj, union_object)
+
+   Calls to :func:`issubclass` are also supported with a Union Object.::
+
+      >>> issubclass(bool, int | str)
+      True
+
+   Union objects containing parametrized generics cannot be used::
+
+      >>> issubclass(bool, bool | list[str])
+      TypeError: issubclass() argument 2 cannot contain a parameterized generic
+
+
+The type for the Union object is :data:`types.Union`. An object
+cannot be instantiated from the type.
+
+.. note::
+   The :meth:`__or__` method for type objects was added to support the syntax
+   X | Y. If a metaclass implements :meth:`__or__`, the Union may
+   override it::
+
+      class M(type):
+          def __or__(self, other):
+              return "Hello"
+
+      class C(metaclass=M):
+          pass
+
+      # 'Hello'
+      print(C | int)
+
+      # 'int | __main__.C'
+      print(int | C)
+
+.. seealso::
+
+   :pep:`604` -- PEP proposing the Union object and type.
+
+.. versionadded:: 3.10
+
 
 .. _typesother:
 

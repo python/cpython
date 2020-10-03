@@ -82,6 +82,9 @@ New Features
 * :pep:`618`: The :func:`zip` function now has an optional ``strict`` flag, used
   to require that all the iterables have an equal length.
 
+* :pep:`604`: Builtin Union type to allow writing X | Y in place of
+  ``typing.Union[X, Y]``.
+  (Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
 
 Other Language Changes
 ======================
