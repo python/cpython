@@ -187,10 +187,18 @@ _convert = {
 
 def total_ordering(cls):
     """Class decorator that fills in missing ordering methods"""
-    # Find user-defined comparisons (not those inherited from object or abstract).
-    roots = {op for op in _convert
-             if (root := getattr(cls, op, None)) is not getattr(object, op, None)
-             and not getattr(root, '__isabstractmethod__', False)}
+    # Find user-defined comparisons (not those inherited from object or
+    # abstract).
+    def is_root(op):
+        root = getattr(cls, op, None)
+        if root is getattr(object, op, None):
+            return False
+        if getattr(root, '__isabstractmethod__', False):
+            # We only accept a root if it defined in the class itself.
+            return op in cls.__dict__
+        return True
+
+    roots = {op for op in _convert if is_root(op)}
     if not roots:
         raise ValueError('must define at least one ordering operation: < > <= >=')
     root = max(roots)       # prefer __lt__ to __le__ to __gt__ to __ge__
@@ -198,9 +206,7 @@ def total_ordering(cls):
         if opname not in roots:
             opfunc.__name__ = opname
             setattr(cls, opname, opfunc)
-    # update the abstract methods of the class, if it is abstract
-    if isinstance(cls, ABCMeta):
-        update_abstractmethods(cls)
+    update_abstractmethods(cls)
     return cls
 
 
