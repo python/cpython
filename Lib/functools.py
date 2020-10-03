@@ -194,7 +194,8 @@ def total_ordering(cls):
         if root is getattr(object, op, None):
             return False
         if getattr(root, '__isabstractmethod__', False):
-            # We only accept a root if it defined in the class itself.
+            # We only accept an abstract root if it defined in the class
+            # itself.
             return op in cls.__dict__
         return True
 
