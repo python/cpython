@@ -1008,6 +1008,7 @@ Module(
     def test_literal_eval_trailing_ws(self):
         self.assertEqual(ast.literal_eval("    -1"), -1)
         self.assertEqual(ast.literal_eval("\t\t-1"), -1)
+        self.assertEqual(ast.literal_eval(" \t -1"), -1)
         self.assertRaises(IndentationError, ast.literal_eval, "\n -1")
 
     def test_bad_integer(self):

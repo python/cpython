@@ -1587,8 +1587,8 @@ and classes for traversing abstract syntax trees:
       Now supports creating empty sets with ``'set()'``.
 
    .. versionchanged:: 3.10
-      For string inputs, leading whitespace is now stripped (as
-      trailing whitespace already was).
+      For string inputs, leading spaces and tabs is now stripped (as
+      the trailing ones already was).
 
 
 .. function:: get_docstring(node, clean=True)
