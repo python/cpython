@@ -402,10 +402,10 @@ Initially :pep:`484` defined Python static type system as using
 a class ``B`` is expected if and only if ``A`` is a subclass of ``B``.
 
 This requirement previously also applied to abstract base classes, such as
-:class:`Iterable`. The problem with this approach is that a class had
+:class:`~collections.abc.Iterable`. The problem with this approach is that a class had
 to be explicitly marked to support them, which is unpythonic and unlike
 what one would normally do in idiomatic dynamically typed Python code.
-For example, this conforms to the :pep:`484`::
+For example, this conforms to :pep:`484`::
 
    from typing import Sized, Iterable, Iterator
 
