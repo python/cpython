@@ -4539,7 +4539,10 @@ static PyMethodDef time_methods[] = {
     {"isoformat",   (PyCFunction)(void(*)(void))time_isoformat,        METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return string in ISO 8601 format, [HH[:MM[:SS[.mmm[uuu]]]]]"
                "[+HH:MM].\n\n"
-               "timespec specifies what components of the time to include.\n")},
+               "The optional argument timespec specifies the number "
+               "of additional terms\nof the time to include. Valid "
+               "options are 'auto', 'hours', 'minutes',\n'seconds', "
+               "'milliseconds' and 'microseconds'.\n")},
 
     {"strftime",        (PyCFunction)(void(*)(void))time_strftime,     METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("format -> strftime() style string.")},
@@ -6246,9 +6249,10 @@ static PyMethodDef datetime_methods[] = {
                "YYYY-MM-DDT[HH[:MM[:SS[.mmm[uuu]]]]][+HH:MM].\n"
                "sep is used to separate the year from the time, and "
                "defaults to 'T'.\n"
-               "timespec specifies what components of the time to include"
-               " (allowed values are 'auto', 'hours', 'minutes', 'seconds',"
-               " 'milliseconds', and 'microseconds').\n")},
+               "The optional argument timespec specifies the number "
+               "of additional terms\nof the time to include. Valid "
+               "options are 'auto', 'hours', 'minutes',\n'seconds', "
+               "'milliseconds' and 'microseconds'.\n")},
 
     {"utcoffset",       (PyCFunction)datetime_utcoffset, METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.utcoffset(self).")},
