@@ -661,7 +661,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    and should not be set on instances of that class. Usage::
 
       class Starship:
-          stats: ClassVar[Dict[str, int]] = {} # class variable
+          stats: ClassVar[dict[str, int]] = {} # class variable
           damage: int = 10                     # instance variable
 
    :data:`ClassVar` accepts only types and cannot be further subscribed.
@@ -774,10 +774,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    * ``Annotated`` can be used with nested and generic aliases::
 
        T = TypeVar('T')
-       Vec = Annotated[List[Tuple[T, T]], MaxLen(10)]
+       Vec = Annotated[list[tuple[T, T]], MaxLen(10)]
        V = Vec[int]
 
-       V == Annotated[List[Tuple[int, int]], MaxLen(10)]
+       V == Annotated[list[tuple[int, int]], MaxLen(10)]
 
    .. versionadded:: 3.9
 
@@ -1540,7 +1540,7 @@ Functions and decorators
       def process(response: None) -> None:
           ...
       @overload
-      def process(response: int) -> Tuple[int, str]:
+      def process(response: int) -> tuple[int, str]:
           ...
       @overload
       def process(response: bytes) -> str:
@@ -1679,8 +1679,8 @@ Introspection helpers
 .. class:: ForwardRef
 
    A class used for internal typing representation of string forward references.
-   For example, ``List["SomeClass"]`` is implicitly transformed into
-   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   For example, ``list["SomeClass"]`` is implicitly transformed into
+   ``list[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
 Constant
