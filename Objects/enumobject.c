@@ -314,6 +314,24 @@ reversed_new_impl(PyTypeObject *type, PyObject *seq)
     return (PyObject *)ro;
 }
 
+static PyObject *
+reversed_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
+{
+    assert(PyType_Check(type));
+
+    if (!_PyArg_NoKwnames("reversed", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("reversed", nargs, 1, 1)) {
+        return NULL;
+    }
+
+    return reversed_new_impl((PyTypeObject *)type, args[0]);
+}
+
 static void
 reversed_dealloc(reversedobject *ro)
 {
@@ -445,4 +463,5 @@ PyTypeObject PyReversed_Type = {
     PyType_GenericAlloc,            /* tp_alloc */
     reversed_new,                   /* tp_new */
     PyObject_GC_Del,                /* tp_free */
+    .tp_vectorcall = (vectorcallfunc)reversed_vectorcall,
 };
