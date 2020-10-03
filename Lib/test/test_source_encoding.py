@@ -235,8 +235,8 @@ class EncodingsTest(unittest.TestCase):
         """
         import encodings
 
-        out = encodings.normalize_encoding("¿¿¿-8")
-        self.assertEqual(out, '8')
+        out = encodings.normalize_encoding("utf\xE9\u20AC\U0010ffff-8")
+        self.assertEqual(out, 'utf_8')
 
 
 if __name__ == "__main__":

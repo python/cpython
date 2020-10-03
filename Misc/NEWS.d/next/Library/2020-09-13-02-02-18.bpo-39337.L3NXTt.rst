@@ -1,2 +1,1 @@
-similar to :c:func:`_Py_normalize_encoding`,
-:func:`encodings.normalize_encoding` should ignore non-ASCII letters.
+:func:`encodings.normalize_encoding` now ignores non-ASCII letters.
