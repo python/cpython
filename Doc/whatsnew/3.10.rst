@@ -82,6 +82,10 @@ New Features
 * :pep:`618`: The :func:`zip` function now has an optional ``strict`` flag, used
   to require that all the iterables have an equal length.
 
+* :pep:`613`: The :mod:`typing` module now has a special annotation
+  :class:`TypeAlias` to explicitly declare :pep:`484`-compliant type aliases,
+  better differentiating them from regular assignments.
+
 
 Other Language Changes
 ======================
