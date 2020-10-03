@@ -4816,7 +4816,13 @@ hinting syntax compared to :data:`typing.Union`.
 
 
 The type for the Union object is :data:`types.Union`. An object
-cannot be instantiated from the type.
+cannot be instantiated from the type::
+
+   >>> import types
+   >>> isinstance(int | str, types.Union)
+   True
+   >>> types.Union()
+   TypeError: cannot create 'types.Union' instances
 
 .. note::
    The :meth:`__or__` method for type objects was added to support the syntax
