@@ -4,6 +4,7 @@ import pkgutil
 import sys
 import runpy
 import tempfile
+import subprocess
 
 
 __all__ = ["version", "bootstrap"]
@@ -11,7 +12,7 @@ __all__ = ["version", "bootstrap"]
 
 _SETUPTOOLS_VERSION = "49.2.1"
 
-_PIP_VERSION = "20.2.1"
+_PIP_VERSION = "20.2.3"
 
 _PROJECTS = [
     ("setuptools", _SETUPTOOLS_VERSION, "py3"),
@@ -20,22 +21,18 @@ _PROJECTS = [
 
 
 def _run_pip(args, additional_paths=None):
-    # Add our bundled software to the sys.path so we can import it
-    if additional_paths is not None:
-        sys.path = additional_paths + sys.path
-
-    # Invoke pip as if it's the main module, and catch the exit.
-    backup_argv = sys.argv[:]
-    sys.argv[1:] = args
-    try:
-        # run_module() alters sys.modules and sys.argv, but restores them at exit
-        runpy.run_module("pip", run_name="__main__", alter_sys=True)
-    except SystemExit as exc:
-        return exc.code
-    finally:
-        sys.argv[:] = backup_argv
-
-    raise SystemError("pip did not exit, this should never happen")
+    # Run the bootstraping in a subprocess to avoid leaking any state that happens
+    # after pip has executed. Particulary, this avoids the case when pip holds onto
+    # the files in *additional_paths*, preventing us to remove them at the end of the
+    # invocation.
+    code = f"""
+import runpy
+import sys
+sys.path = {additional_paths or []} + sys.path
+sys.argv[1:] = {args}
+runpy.run_module("pip", run_name="__main__", alter_sys=True)
+"""
+    return subprocess.run([sys.executable, "-c", code], check=True).returncode
 
 
 def version():
