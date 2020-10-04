@@ -657,7 +657,6 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     if annotation.startswith(("'", '"')) and annotation.endswith(("'", '"')):
         annotation = annotation[1:-1]
 
-
     match = _MODULE_IDENTIFIER_RE.match(annotation)
     if match:
         ns = None
@@ -998,7 +997,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
         cls.__doc__ = (cls.__name__ +
-                       str(inspect.signature(cls)).replace(' -> None', ''))
+                       str(inspect.signature(cls)).replace(' -> NoneType', ''))
 
     return cls
 

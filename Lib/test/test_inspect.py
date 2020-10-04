@@ -861,8 +861,8 @@ class TestClassesAndFunctions(unittest.TestCase):
                                      formatted='(*arg1, arg2=1)')
 
         self.assertFullArgSpecEquals(mod2.annotated, ['arg1'],
-                                     ann_e={'arg1' : 'list'},
-                                     formatted="(arg1: 'list')")
+                                     ann_e={'arg1' : list},
+                                     formatted="(arg1: list)")
         self.assertFullArgSpecEquals(mod2.keyword_only_arg, [],
                                      kwonlyargs_e=['arg'],
                                      formatted='(*, arg)')
@@ -2218,9 +2218,9 @@ class TestSignatureObject(unittest.TestCase):
         def test(*, a:float, b:str) -> int:
             pass
         self.assertEqual(self.signature(test),
-                         ((('a', ..., 'float', "keyword_only"),
-                           ('b', ..., 'str', "keyword_only")),
-                           'int'))
+                         ((('a', ..., float, "keyword_only"),
+                           ('b', ..., str, "keyword_only")),
+                           int))
 
     def test_signature_on_complex_args(self):
         def test(a, b:'foo'=10, *args:'bar', spam:'baz', ham=123, **kwargs:int):
@@ -2466,7 +2466,7 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(self.signature(Test().m1),
                          ((('arg1', ..., ..., "positional_or_keyword"),
                            ('arg2', 1, ..., "positional_or_keyword")),
-                          'int'))
+                          int))
 
         self.assertEqual(self.signature(Test().m2),
                          ((('args', ..., ..., "var_positional"),),
@@ -2490,7 +2490,7 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(self.signature(m1d),
                          ((('arg1', ..., ..., "positional_or_keyword"),
                            ('arg2', 1, ..., "positional_or_keyword")),
-                          'int'))
+                          int))
 
     def test_signature_on_classmethod(self):
         class Test:

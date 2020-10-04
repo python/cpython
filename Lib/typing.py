@@ -472,7 +472,7 @@ class ForwardRef(_Final, _root=True):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
 
         # Double-stringified forward references is a result of activating
-        # 'annotations' future by default. This way, we eliminate them on
+        # the 'annotations' future by default. This way, we eliminate them in
         # the runtime.
         if arg.startswith(("'", '\"')) and arg.endswith(("'", '"')):
             arg = arg[1:-1]

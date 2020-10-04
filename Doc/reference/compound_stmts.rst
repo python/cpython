@@ -610,10 +610,9 @@ following the parameter name.  Any parameter may have an annotation, even those 
 ``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
-semantics of a function.  The annotation values are available as values of
-a dictionary keyed by the parameters' names in the :attr:`__annotations__`
-attribute of the function object. Used annnotations are preserved as strings at
-runtime which enables postponed evaluation.
+semantics of a function.  The annotation values are available as string values
+in a dictionary keyed by the parameters' names in the :attr:`__annotations__`
+attribute of the function object.
 
 .. index:: pair: lambda; expression
 

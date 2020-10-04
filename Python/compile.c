@@ -2026,7 +2026,7 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
 {
     if (annotation) {
         PyObject *mangled;
-        VISIT(c, annexpr, annotation)
+        VISIT(c, annexpr, annotation);
         mangled = _Py_Mangle(c->u->u_private, id);
         if (!mangled)
             return 0;
@@ -5256,7 +5256,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
-            VISIT(c, annexpr, s->v.AnnAssign.annotation)
+            VISIT(c, annexpr, s->v.AnnAssign.annotation);
             ADDOP_NAME(c, LOAD_NAME, __annotations__, names);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
             ADDOP_LOAD_CONST_NEW(c, mangled);
