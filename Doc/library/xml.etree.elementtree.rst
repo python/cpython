@@ -251,11 +251,17 @@ We can remove elements using :meth:`Element.remove`.  Let's say we want to
 remove all countries with a rank higher than 50::
 
    >>> for country in root.findall('country'):
+   ...     # using root.findall() to avoid removal during traversal
    ...     rank = int(country.find('rank').text)
    ...     if rank > 50:
    ...         root.remove(country)
    ...
    >>> tree.write('output.xml')
+
+Note that concurrent modification while iterating can lead to problems,
+just like when iterating and modifying Python lists or dicts.
+Therefore, the example first collects all matching elements with
+``root.findall()``, and only then iterates over the list of matches.
 
 Our XML now looks like this:
 
