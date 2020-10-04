@@ -347,11 +347,13 @@ The :mod:`abc` module also provides the following functions:
 
    .. note::
 
-      Since it is meant to be called before the class is used by anywhere but
-      in the decorator that called it, this function assumes that *cls* has no
-      subclasses. This means that if the decorator itself creates subclasses
-      to *cls*, it must also call *update_abstractmethods* on each of them.
+      This function ignores whatever subclasses *cls* might have. This means
+      that if the decorator itself creates subclasses to *cls*, it must also
+      call *update_abstractmethods* on each of them.
 
+   .. note::
+
+      This function assumes that *cls*'s superclasses are already updated.
 
    .. versionadded:: 3.10
 
