@@ -381,8 +381,13 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError(f"data: expecting a bytes-like instance, "
                             f"got {type(data).__name__}")
+        if self._ssl_protocol._sslpipe is None:
+            # The SSL pipe has been destroyed. Writing should fail.
+            # See bpo-25292.
+            raise BrokenPipeError("SSL pipe is broken")
         if not data:
             return
+
         self._ssl_protocol._write_appdata(data)
 
     def can_write_eof(self):

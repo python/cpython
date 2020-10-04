@@ -151,8 +151,8 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         transp = ssl_proto._app_transport
         transp.close()
 
-        # should not raise
-        self.assertIsNone(transp.write(b'data'))
+        with self.assertRaises(BrokenPipeError):
+            self.assertIsNone(transp.write(b'data'))
 
 
 ##############################################################################
