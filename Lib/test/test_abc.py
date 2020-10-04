@@ -590,6 +590,28 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             msg = "class B with abstract method foo"
             self.assertRaisesRegex(TypeError, msg, B)
 
+        def test_update_layered_implementation(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            class B(A):
+                pass
+
+            class C(B):
+                def foo(self):
+                    pass
+
+            C()
+
+            del C.foo
+
+            abc.update_abstractmethods(C)
+
+            msg = "class C with abstract method foo"
+            self.assertRaisesRegex(TypeError, msg, C)
+
 
 
     class TestABCWithInitSubclass(unittest.TestCase):
