@@ -609,7 +609,8 @@ Waiting Primitives
 
    For backwards compatibility, the object returned by ``as_completed()``
    can be iterated as a plain iterator, yielding new coroutines that return
-   the results of the passed in awaitables as their tasks finish.::
+   the results or raise the errors of the passed in awaitables as their tasks
+   finish.::
 
       for aw in as_completed(aws):
           earliest_result = await aw

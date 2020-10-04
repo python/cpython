@@ -640,20 +640,20 @@ def as_completed(fs, *, loop=None, timeout=None):
     Coroutines will be scheduled and their implicitly created tasks will be
     yielded instead.
 
-    Any exception from the given awaitables will be raised by the async for
-    statement, as will a TimeoutError if the timeout is reached before
-    the iterator is exhausted.
+    A TimeoutError is raised by the async for statement if the supplied
+    timeout is reached before the iterator is exhausted.
 
     For backwards compatibility, the returned object can also be used as a
     plain iterator that yields new coroutines representing each next awaitable
     to be completed:
 
         for next_completed in as_completed(fs):
-            result = await next_completed  # The 'await' may raise.
+            result = await next_completed
             # Use result.
 
     The coroutines yielded by the plain iterator are not the original
-    awaitables passed in.
+    awaitables passed in and are the source of TimeoutErrors instead of the
+    for loop.
     """
     if inspect.isawaitable(fs):
         raise TypeError(
