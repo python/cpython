@@ -1,0 +1,2 @@
+Strip leading spaces and tabs on :func:`ast.literal_eval`. Also document
+stripping of spaces and tabs for :func:`eval`.
