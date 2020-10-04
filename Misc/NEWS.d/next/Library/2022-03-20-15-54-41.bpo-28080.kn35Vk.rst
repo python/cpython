@@ -1,0 +1,3 @@
+Add the *metadata_encoding* parameter in the :class:`zipfile.ZipFile`
+constructor and the ``--metadata-encoding`` option in the :mod:`zipfile`
+CLI.
