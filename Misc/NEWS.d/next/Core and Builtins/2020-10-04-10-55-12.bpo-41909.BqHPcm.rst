@@ -1,0 +1,2 @@
+Fixed stack overflow in :func:`issubclass` and :func:`isinstance` when
+getting the ``__bases__`` attribute leads to infinite recursion.
