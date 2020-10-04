@@ -15285,9 +15285,7 @@ PyUnicode_InternInPlace(PyObject **p)
             return;
         }
     }
-    Py_ALLOW_RECURSION
     t = PyDict_SetDefault(interned, s, s);
-    Py_END_ALLOW_RECURSION
     if (t == NULL) {
         PyErr_Clear();
         return;
