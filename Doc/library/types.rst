@@ -258,7 +258,7 @@ Standard names are defined for the following types:
 
 .. data:: Union
 
-   The type of :ref:`builtins.Union<types-union>`.
+   The type of :ref:`union type expressions<types-union>`.
 
    .. versionadded:: 3.10
 

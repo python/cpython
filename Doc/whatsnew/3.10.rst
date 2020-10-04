@@ -82,9 +82,24 @@ New Features
 * :pep:`618`: The :func:`zip` function now has an optional ``strict`` flag, used
   to require that all the iterables have an equal length.
 
-* :pep:`604`: Builtin Union type to allow writing X | Y in place of
-  ``typing.Union[X, Y]``.
-  (Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
+PEP604: New Type Operators
+--------------------------
+There is a new syntax ``X | Y`` that allows for type union expressions. This
+provides a cleaner way of writing 'either type X or type Y' instead of
+using :data:`typing.Union`.
+
+For example::
+
+   def square(number: int | float) -> int | float:
+       return number ** 2
+
+Which is equivalent to, but more readable than using ``typing.Union``::
+
+   def square(number: Union[int, float]) -> Union[int, float]:
+       return number ** 2
+
+See :pep:`604` more details.
+(Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
 
 Other Language Changes
 ======================

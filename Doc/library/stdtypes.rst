@@ -4746,21 +4746,21 @@ single class dictionary lookup is negligible.
 .. _types-union:
 
 Union Type
-====================
+==========
 
 .. index::
    object: Union
    pair: union; type
 
 A union object holds the value of the ``|`` (bitwise or) operation on
-multiple :ref:`type objects<bltin-type-objects>`. This enables cleaner type
-hinting syntax compared to :data:`typing.Union`.
+multiple :ref:`type objects<bltin-type-objects>`. These types are intended
+primarily for type annotations. The union type expression
+enables cleaner type hinting syntax compared to :data:`typing.Union`.
 
 .. describe:: X | Y | ...
 
-   Defines a union object which holds types *X*, *Y*, and so forth. X | Y
-   means either X or Y. It is syntactically equivalent to
-   ``typing.Union[X, Y, ...]``.
+   Defines a union object which holds types *X*, *Y*, and so forth. ``X | Y``
+   means either X or Y. It is equivalent to ``typing.Union[X, Y, ...]``.
    Example::
 
       def square(number: int | float) -> int | float:
@@ -4774,19 +4774,19 @@ hinting syntax compared to :data:`typing.Union`.
 
        (int | str) | float == int | str | float
 
-   * Redundant arguments are skipped, e.g.::
+   * Redundant types are removed, e.g.::
 
        int | str | int == int | str
 
-   * When comparing unions, the argument order is ignored, e.g.::
+   * When comparing unions, the order is ignored, e.g.::
 
       int | str == str | int
 
-   * Compatible with :data:`typing.Union`::
+   * It is compatible with :data:`typing.Union`::
 
       int | str == typing.Union[int, str]
 
-   * Optional values are equivalent to :data:`typing.Optional`::
+   * Optional types can be spelled as a union with None::
 
       str | None == typing.Optional[str]
 
@@ -4797,7 +4797,7 @@ hinting syntax compared to :data:`typing.Union`.
       >>> isinstance("", int | str)
       True
 
-   Union objects containing parametrized generics cannot be used::
+   However, union objects containing parameterized generics cannot be used::
 
       >>> isinstance(1, int | list[int])
       TypeError: isinstance() argument 2 cannot contain a parameterized generic
@@ -4809,7 +4809,8 @@ hinting syntax compared to :data:`typing.Union`.
       >>> issubclass(bool, int | str)
       True
 
-   Union objects containing parametrized generics cannot be used::
+   However, union objects containing parameterized :ref:`generics<generics>`
+   cannot be used::
 
       >>> issubclass(bool, bool | list[str])
       TypeError: issubclass() argument 2 cannot contain a parameterized generic
@@ -4826,21 +4827,20 @@ cannot be instantiated from the type::
 
 .. note::
    The :meth:`__or__` method for type objects was added to support the syntax
-   X | Y. If a metaclass implements :meth:`__or__`, the Union may
+   ``X | Y``. If a metaclass implements :meth:`__or__`, the Union may
    override it::
 
-      class M(type):
-          def __or__(self, other):
-              return "Hello"
-
-      class C(metaclass=M):
-          pass
-
-      # 'Hello'
-      print(C | int)
-
-      # 'int | __main__.C'
-      print(int | C)
+      >>> class M(type):
+      ...     def __or__(self, other):
+      ...     return "Hello"
+      ...
+      >>> class C(metaclass=M):
+      ...     pass
+      ...
+      >>> C | int
+      'Hello'
+      >>> int | C
+      int | __main__.C
 
 .. seealso::
 
