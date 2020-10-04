@@ -99,7 +99,7 @@ month_abbr = _localized_month('%b')
 
 def isleap(year):
     """Return True for leap years, False for non-leap years."""
-    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+    return (year % 4 == 0) ^ (year % 100 == 0) ^ (year % 400 == 0)
 
 
 def leapdays(y1, y2):
