@@ -151,12 +151,13 @@ def update_abstractmethods(cls):
                            " subclassing")
 
     abstracts = set()
-    # Check the existing abstract methods, keep only the ones that are
-    # still abstract.
-    for name in cls.__abstractmethods__:
-        value = getattr(cls, name, None)
-        if getattr(value, "__isabstractmethod__", False):
-            abstracts.add(name)
+    # Check the existing abstract methods of the parents, keep only the ones
+    # that are not implemented.
+    for scls in cls.__bases__:
+        for name in getattr(scls, '__abstractmethods__', ()):
+            value = getattr(cls, name, None)
+            if getattr(value, "__isabstractmethod__", False):
+                abstracts.add(name)
     # Also add any other newly added abstract methods.
     for name, value in cls.__dict__.items():
         if getattr(value, "__isabstractmethod__", False):

@@ -516,8 +516,8 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             A.foo = updated_foo
             abc.update_abstractmethods(A)
-            msg = "class A with abstract methods bar, foo"
             self.assertEqual(A.__abstractmethods__, {'foo', 'bar'})
+            msg = "class A with abstract methods bar, foo"
             self.assertRaisesRegex(TypeError, msg, A)
 
         def test_update_implementation(self):
@@ -570,6 +570,26 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             abc.update_abstractmethods(A)
             A()
             self.assertFalse(hasattr(A, '__abstractmethods__'))
+
+        def test_update_del_implementation(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            class B(A):
+                def foo(self):
+                    pass
+
+            B()
+
+            del B.foo
+
+            abc.update_abstractmethods(B)
+
+            msg = "class B with abstract method foo"
+            self.assertRaisesRegex(TypeError, msg, B)
+
 
 
     class TestABCWithInitSubclass(unittest.TestCase):
