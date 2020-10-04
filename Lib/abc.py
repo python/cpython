@@ -122,8 +122,7 @@ else:
             _reset_caches(cls)
 
 def update_abstractmethods(cls):
-    """Repopulate the abstract methods of an abstract class, or a subclass of
-    an abstract class.
+    """Recalculate the set of abstract methods of an abstract class.
 
     If a class has had one of its abstract methods implemented after the
     class was created, the method will not be considered implemented until
@@ -136,8 +135,6 @@ def update_abstractmethods(cls):
 
     Returns cls, to allow usage as a class decorator.
 
-    If cls is has any subclasses, raises a RuntimeError.
-
     If cls is not an instance of ABCMeta, does nothing.
     """
     if not hasattr(cls, '__abstractmethods__'):
@@ -145,10 +142,6 @@ def update_abstractmethods(cls):
         # implementation or a python implementation (especially during
         # testing), and we want to handle both cases.
         return cls
-
-    if cls.__subclasses__():
-        raise RuntimeError("cannot update abstract methods of class after"
-                           " subclassing")
 
     abstracts = set()
     # Check the existing abstract methods of the parents, keep only the ones

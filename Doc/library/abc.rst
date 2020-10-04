@@ -343,9 +343,15 @@ The :mod:`abc` module also provides the following functions:
 
    Returns *cls*, to allow usage as a class decorator.
 
-   If *cls* has any subclasses, raises a :exc:`RuntimeError`.
-
    If *cls* is not an instance of ABCMeta, does nothing.
+
+   .. note::
+
+      Since it is meant to be called before the class is used by anywhere but
+      in the decorator that called it, this function assumes that *cls* has no
+      subclasses. This means that if the decorator itself creates subclasses
+      to *cls*, it must also call *update_abstractmethods* on each of them.
+
 
    .. versionadded:: 3.10
 

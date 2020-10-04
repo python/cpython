@@ -612,6 +612,30 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             msg = "class C with abstract method foo"
             self.assertRaisesRegex(TypeError, msg, C)
 
+        def test_update_multi_inheritance(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            class B(metaclass=abc_ABCMeta):
+                def foo(self):
+                    pass
+
+            class C(B, A):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            self.assertEqual(C.__abstractmethods__, {'foo'})
+
+            del C.foo
+
+            abc.update_abstractmethods(C)
+
+            self.assertEqual(C.__abstractmethods__, set())
+
+            C()
 
 
     class TestABCWithInitSubclass(unittest.TestCase):
