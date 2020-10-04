@@ -624,29 +624,31 @@ class _AsCompletedIterator:
 
 
 def as_completed(fs, *, loop=None, timeout=None):
-    """Return an async iterator that yields results from the given awaitables
+    """Return an async iterator that yields tasks from the given awaitables
     in the order they finish as they finish.
 
-        async for result in as_completed(fs):
+        async for completed_task in as_completed(fs):
+            result = await completed_task
             # Use result.
 
-    The first of any exceptions from the given awaitables will be raised by
-    the async for statement, as will a TimeoutError if the timeout is reached
-    before the iterator is exhausted.
+    Supplied Tasks and Futures are yielded as-is once they've completed.
+    Coroutines will be scheduled and their implicitly created tasks will be
+    yielded instead.
+
+    Any exception from the given awaitables will be raised by the async for
+    statement, as will a TimeoutError if the timeout is reached before
+    the iterator is exhausted.
 
     For backwards compatibility, the returned object can also be used as a
-    plain iterator that yields new awaitables representing each next awaitable
+    plain iterator that yields new coroutines representing each next awaitable
     to be completed:
 
-        for next_result in as_completed(fs):
-            result = await next_result  # The 'await' may raise.
+        for next_completed in as_completed(fs):
+            result = await next_completed  # The 'await' may raise.
             # Use result.
 
-    When waiting for the yielded awaitables, you'll get the results (or
-    exceptions!) of the original awaitables in the order in which and as soon
-    as they complete.
-
-    Note: The futures 'f' are not necessarily members of fs.
+    The coroutines yielded by the plain iterator are not the original
+    awaitables passed in.
     """
     if inspect.isawaitable(fs):
         raise TypeError(
