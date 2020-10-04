@@ -555,9 +555,10 @@ async def _cancel_and_wait(fut, loop):
 
 
 class _AsCompletedIterator:
-    """Doubles as an async iterator of as-completed results of a set of
-    awaitables and a plain iterator of awaitable as-completed results
-    (of awaitables).
+    """Doubles as an async iterator of as-completed tasks and futures
+    from a supplied set of awaitables and a plain iterator of
+    coroutines that resolve to results from the supplied awaitables as
+    their underlying tasks or futures complete.
     """
     def __init__(self, aws, loop, timeout):
         self._done = asyncio.Queue(loop=loop)
@@ -597,6 +598,10 @@ class _AsCompletedIterator:
         if self._todo_left < 0:
             raise StopIteration
         return self._wait_for_one(resolve=True)
+
+    def __del__(self):
+        for f in self._todo:
+            f.remove_done_callback(self._handle_completion)
 
     def _handle_timeout(self):
         for f in self._todo:
