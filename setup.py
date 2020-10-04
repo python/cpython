@@ -1881,9 +1881,9 @@ class PyBuildExt(build_ext):
         # you want to build and link with a framework build of Tcl and Tk
         # that is not in /Library/Frameworks, say, in your private
         # $HOME/Library/Frameworks directory or elsewhere. It turns
-        # out to be difficult to make that work automtically here
+        # out to be difficult to make that work automatically here
         # without bringing into play more tools and magic. That case
-        # can be hamdled using a recipe with the right arguments
+        # can be handled using a recipe with the right arguments
         # to detect_tkinter_explicitly().
         #
         # Note also that the fallback case here is to try to use the
@@ -1891,7 +1891,7 @@ class PyBuildExt(build_ext):
         # be forewarned that they are deprecated by Apple and typically
         # out-of-date and buggy; their use should be avoided if at
         # all possible by installing a newer version of Tcl and Tk in
-        # /Library/Frameworks before bwfore building Python without
+        # /Library/Frameworks before building Python without
         # an explicit SDK or by configuring build arguments explicitly.
 
         from os.path import join, exists
@@ -1908,7 +1908,7 @@ class PyBuildExt(build_ext):
         else:
             # Use case #1: no explicit SDK selected.
             # Search the local system-wide /Library/Frameworks,
-            # not the one in the default SDK, othewise fall back to
+            # not the one in the default SDK, otherwise fall back to
             # /System/Library/Frameworks whose header files may be in
             # the default SDK or, on older systems, actually installed.
             framework_dirs = [
@@ -1924,7 +1924,7 @@ class PyBuildExt(build_ext):
                 if not exists(join(F, fw + '.framework')):
                     break
             else:
-                # ok, F is now directory with both frameworks. Continure
+                # ok, F is now directory with both frameworks. Continue
                 # building
                 break
         else:
