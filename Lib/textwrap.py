@@ -348,6 +348,10 @@ class TextWrapper:
         and all other whitespace characters (including newline) are
         converted to space.
         """
+        if not isinstance(text, str):
+            raise TypeError(
+                "Expected text to be str, got %s" % type(text).__name__
+            )
         chunks = self._split_chunks(text)
         if self.fix_sentence_endings:
             self._fix_sentence_endings(chunks)
