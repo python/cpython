@@ -4797,7 +4797,8 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       >>> isinstance("", int | str)
       True
 
-   However, union objects containing parameterized generics cannot be used::
+   However, union objects containing parameterized :ref:`generics<generics>`
+   cannot be used::
 
       >>> isinstance(1, int | list[int])
       TypeError: isinstance() argument 2 cannot contain a parameterized generic
