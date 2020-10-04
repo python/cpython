@@ -544,7 +544,7 @@ def _findclass(func):
 
 def _finddoc(obj):
     if isclass(obj):
-        for base in obj.__mro__:
+        for base in getmro(obj):
             if base is not object:
                 try:
                     doc = base.__doc__
@@ -595,7 +595,7 @@ def _finddoc(obj):
                 return slots[name]
     else:
         return None
-    for base in cls.__mro__:
+    for base in getmro(cls):
         try:
             doc = getattr(base, name).__doc__
         except AttributeError:
@@ -2366,7 +2366,7 @@ def _signature_from_callable(obj, *,
             # At this point we know, that `obj` is a class, with no user-
             # defined '__init__', '__new__', or class-level '__call__'
 
-            for base in obj.__mro__[:-1]:
+            for base in getmro(obj)[:-1]:
                 # Since '__text_signature__' is implemented as a
                 # descriptor that extracts text signature from the
                 # class docstring, if 'obj' is derived from a builtin
@@ -2387,7 +2387,7 @@ def _signature_from_callable(obj, *,
             # No '__text_signature__' was found for the 'obj' class.
             # Last option is to check if its '__init__' is
             # object.__init__ or type.__init__.
-            if type not in obj.__mro__:
+            if type not in getmro(obj):
                 # We have a class (not metaclass), but no user-defined
                 # __init__ or __new__ for it
                 if (obj.__init__ is object.__init__ and
