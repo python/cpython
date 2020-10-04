@@ -342,7 +342,10 @@ non-important content
         self.assertIsNone(g.__doc__)
 
     def test_literal_eval(self):
-        with self.assertRaisesRegex(ValueError, 'malformed node or string'):
+        with self.assertRaisesRegex(
+            ValueError,
+            'malformed node or string in literal context'
+        ):
             ast.literal_eval("f'x'")
 
     def test_ast_compile_time_concat(self):

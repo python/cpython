@@ -1005,6 +1005,22 @@ Module(
         malformed = ast.Dict(keys=[ast.Constant(1)], values=[ast.Constant(2), ast.Constant(3)])
         self.assertRaises(ValueError, ast.literal_eval, malformed)
 
+    def test_literal_eval_message(self):
+        tests = {
+            "2 * 5": "in literal context",
+            "[] + []": "in binary operation context",
+            "+''": "in unary operation context",
+            ast.Dict(
+                keys=[ast.Constant(1)], values=[]
+            ): "in dictionary context",
+            ast.BinOp(
+                ast.Constant(1), ast.Add(), "oops"
+            ): "malformed node or string: 'oops'",
+        }
+        for test, message in tests.items():
+            with self.subTest(test=test, expected_message=message):
+                self.assertRaisesRegex(ValueError, message, ast.literal_eval, test)
+
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values
         body = [ast.ImportFrom(module='time',
