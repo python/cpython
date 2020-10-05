@@ -1,3 +1,0 @@
-When cancelling the task due to a timeout, :meth:`asyncio.wait_for` will now
-wait until the cancellation is complete also in the case when *timeout* is
-<= 0, like it does with positive timeouts.
