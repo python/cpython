@@ -347,13 +347,8 @@ The :mod:`abc` module also provides the following functions:
 
    .. note::
 
-      This function ignores whatever subclasses *cls* might have. This means
-      that if the decorator itself creates subclasses to *cls*, it must also
-      call *update_abstractmethods* on each of them.
-
-   .. note::
-
       This function assumes that *cls*'s superclasses are already updated.
+      It does not update any subclasses.
 
    .. versionadded:: 3.10
 
