@@ -525,6 +525,8 @@ class ImportSideEffectTests(unittest.TestCase):
         # string displayed by license in the absence of a LICENSE file.
         url = license._Printer__data.split()[1]
         req = urllib.request.Request(url, method='HEAD')
+        # Reset global urllib.request._opener
+        self.addCleanup(urllib.request.urlcleanup)
         try:
             with socket_helper.transient_internet(url):
                 with urllib.request.urlopen(req) as data:
