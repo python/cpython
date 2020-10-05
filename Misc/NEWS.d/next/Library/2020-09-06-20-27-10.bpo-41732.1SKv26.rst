@@ -1,0 +1,1 @@
+Added an :term:`iterator` to :class:`memoryview`.

@@ -11,6 +11,8 @@ import sys
 
 glob = 42
 some_var = 12
+some_non_assigned_global_var = 11
+some_assigned_global_var = 11
 
 class Mine:
     instance_var = 24
@@ -19,6 +21,8 @@ class Mine:
 
 def spam(a, b, *var, **kw):
     global bar
+    global some_assigned_global_var
+    some_assigned_global_var = 12
     bar = 47
     some_var = 10
     x = 23
@@ -88,14 +92,14 @@ class SymtableTest(unittest.TestCase):
 
     def test_lineno(self):
         self.assertEqual(self.top.get_lineno(), 0)
-        self.assertEqual(self.spam.get_lineno(), 12)
+        self.assertEqual(self.spam.get_lineno(), 14)
 
     def test_function_info(self):
         func = self.spam
         self.assertEqual(sorted(func.get_parameters()), ["a", "b", "kw", "var"])
         expected = ['a', 'b', 'internal', 'kw', 'other_internal', 'some_var', 'var', 'x']
         self.assertEqual(sorted(func.get_locals()), expected)
-        self.assertEqual(sorted(func.get_globals()), ["bar", "glob"])
+        self.assertEqual(sorted(func.get_globals()), ["bar", "glob", "some_assigned_global_var"])
         self.assertEqual(self.internal.get_frees(), ("x",))
 
     def test_globals(self):
@@ -106,6 +110,9 @@ class SymtableTest(unittest.TestCase):
         self.assertFalse(self.internal.lookup("x").is_global())
         self.assertFalse(self.Mine.lookup("instance_var").is_global())
         self.assertTrue(self.spam.lookup("bar").is_global())
+        # Module-scope globals are both global and local
+        self.assertTrue(self.top.lookup("some_non_assigned_global_var").is_global())
+        self.assertTrue(self.top.lookup("some_assigned_global_var").is_global())
 
     def test_nonlocal(self):
         self.assertFalse(self.spam.lookup("some_var").is_nonlocal())
@@ -116,6 +123,9 @@ class SymtableTest(unittest.TestCase):
     def test_local(self):
         self.assertTrue(self.spam.lookup("x").is_local())
         self.assertFalse(self.spam.lookup("bar").is_local())
+        # Module-scope globals are both global and local
+        self.assertTrue(self.top.lookup("some_non_assigned_global_var").is_local())
+        self.assertTrue(self.top.lookup("some_assigned_global_var").is_local())
 
     def test_free(self):
         self.assertTrue(self.internal.lookup("x").is_free())
@@ -233,6 +243,10 @@ class SymtableTest(unittest.TestCase):
 
         top = symtable.symtable(code, "?", "exec")
         self.assertIsNotNone(find_block(top, "\u017d"))
+
+    def test_symtable_repr(self):
+        self.assertEqual(str(self.top), "<SymbolTable for module ?>")
+        self.assertEqual(str(self.spam), "<Function SymbolTable for spam in ?>")
 
 
 if __name__ == '__main__':

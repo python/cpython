@@ -1,0 +1,1 @@
+Fixed pprint's handling of dict subclasses that override __repr__.

@@ -1,6 +1,7 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
+#include "pycore_unionobject.h"      // _Py_UnionType && _Py_Union()
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -839,7 +840,6 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
                 Py_TYPE(w)->tp_name);
             return NULL;
         }
-
         return binop_type_error(v, w, op_name);
     }
     return result;
@@ -2336,9 +2336,7 @@ abstract_get_bases(PyObject *cls)
     _Py_IDENTIFIER(__bases__);
     PyObject *bases;
 
-    Py_ALLOW_RECURSION
     (void)_PyObject_LookupAttrId(cls, &PyId___bases__, &bases);
-    Py_END_ALLOW_RECURSION
     if (bases != NULL && !PyTuple_Check(bases)) {
         Py_DECREF(bases);
         return NULL;
@@ -2412,7 +2410,6 @@ object_isinstance(PyObject *inst, PyObject *cls)
     PyObject *icls;
     int retval;
     _Py_IDENTIFIER(__class__);
-
     if (PyType_Check(cls)) {
         retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
         if (retval == 0) {
@@ -2432,7 +2429,7 @@ object_isinstance(PyObject *inst, PyObject *cls)
     }
     else {
         if (!check_class(cls,
-            "isinstance() arg 2 must be a type or tuple of types"))
+            "isinstance() arg 2 must be a type, a tuple of types or a union"))
             return -1;
         retval = _PyObject_LookupAttrId(inst, &PyId___class__, &icls);
         if (icls != NULL) {
@@ -2525,10 +2522,14 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
     if (!check_class(derived,
                      "issubclass() arg 1 must be a class"))
         return -1;
-    if (!check_class(cls,
-                    "issubclass() arg 2 must be a class"
-                    " or tuple of classes"))
+
+    PyTypeObject *type = Py_TYPE(cls);
+    int is_union = (PyType_Check(type) && type == &_Py_UnionType);
+    if (!is_union && !check_class(cls,
+                            "issubclass() arg 2 must be a class,"
+                            " a tuple of classes, or a union.")) {
         return -1;
+    }
 
     return abstract_issubclass(derived, cls);
 }

@@ -19,6 +19,12 @@ An enumeration is a set of symbolic names (members) bound to unique,
 constant values.  Within an enumeration, the members can be compared
 by identity, and the enumeration itself can be iterated over.
 
+.. note:: Case of Enum Members
+
+    Because Enums are used to represent constants we recommend using
+    UPPER_CASE names for enum members, and will be using that style
+    in our examples.
+
 
 Module Contents
 ---------------
@@ -37,6 +43,11 @@ helper, :class:`auto`.
 
     Base class for creating enumerated constants that are also
     subclasses of :class:`int`.
+
+.. class:: StrEnum
+
+    Base class for creating enumerated constants that are also
+    subclasses of :class:`str`.
 
 .. class:: IntFlag
 
@@ -595,6 +606,30 @@ However, they still can't be compared to standard :class:`Enum` enumerations::
     [0, 1]
 
 
+StrEnum
+^^^^^^^
+
+The second variation of :class:`Enum` that is provided is also a subclass of
+:class:`str`.  Members of a :class:`StrEnum` can be compared to strings;
+by extension, string enumerations of different types can also be compared
+to each other.  :class:`StrEnum` exists to help avoid the problem of getting
+an incorrect member::
+
+    >>> class Directions(StrEnum):
+    ...     NORTH = 'north',    # notice the trailing comma
+    ...     SOUTH = 'south'
+
+Before :class:`StrEnum`, ``Directions.NORTH`` would have been the :class:`tuple`
+``('north',)``.
+
+.. note::
+
+    Unlike other Enum's, ``str(StrEnum.member)`` will return the value of the
+    member instead of the usual ``"EnumClass.member"``.
+
+.. versionadded:: 3.10
+
+
 IntFlag
 ^^^^^^^
 
@@ -650,6 +685,13 @@ be combined with them::
     >>> Perm.X | 8
     <Perm.8|X: 9>
 
+:class:`IntFlag` members can also be iterated over::
+
+    >>> list(RW)
+    [<Perm.R: 4>, <Perm.W: 2>]
+
+.. versionadded:: 3.10
+
 
 Flag
 ^^^^
@@ -702,6 +744,14 @@ value::
     <Color.BLACK: 0>
     >>> bool(Color.BLACK)
     False
+
+:class:`Flag` members can also be iterated over::
+
+    >>> purple = Color.RED | Color.BLUE
+    >>> list(purple)
+    [<Color.BLUE: 2>, <Color.RED: 1>]
+
+.. versionadded:: 3.10
 
 .. note::
 
@@ -880,6 +930,32 @@ Using an auto-numbering :meth:`__new__` would look like::
     >>> Color.GREEN.value
     2
 
+To make a more general purpose ``AutoNumber``, add ``*args`` to the signature::
+
+    >>> class AutoNumber(NoValue):
+    ...     def __new__(cls, *args):      # this is the only change from above
+    ...         value = len(cls.__members__) + 1
+    ...         obj = object.__new__(cls)
+    ...         obj._value_ = value
+    ...         return obj
+    ...
+
+Then when you inherit from ``AutoNumber`` you can write your own ``__init__``
+to handle any extra arguments::
+
+    >>> class Swatch(AutoNumber):
+    ...     def __init__(self, pantone='unknown'):
+    ...         self.pantone = pantone
+    ...     AUBURN = '3497'
+    ...     SEA_GREEN = '1246'
+    ...     BLEACHED_CORAL = () # New color, no Pantone code yet!
+    ...
+    >>> Swatch.SEA_GREEN
+    <Swatch.SEA_GREEN: 2>
+    >>> Swatch.SEA_GREEN.pantone
+    '1246'
+    >>> Swatch.BLEACHED_CORAL.pantone
+    'unknown'
 
 .. note::
 
@@ -1111,6 +1187,20 @@ all-uppercase names for members)::
 .. versionchanged:: 3.5
 
 
+Creating members that are mixed with other data types
+"""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+When subclassing other data types, such as :class:`int` or :class:`str`, with
+an :class:`Enum`, all values after the `=` are passed to that data type's
+constructor.  For example::
+
+    >>> class MyEnum(IntEnum):
+    ...     example = '11', 16      # '11' will be interpreted as a hexadecimal
+    ...                             # number
+    >>> MyEnum.example
+    <MyEnum.example: 17>
+
+
 Boolean value of ``Enum`` classes and members
 """""""""""""""""""""""""""""""""""""""""""""
 
@@ -1157,4 +1247,14 @@ all named flags and all named combinations of flags that are in the value::
     <Color.YELLOW: 3>
     >>> Color(7)      # not named combination
     <Color.CYAN|MAGENTA|BLUE|YELLOW|GREEN|RED: 7>
+
+``StrEnum`` and :meth:`str.__str__`
+"""""""""""""""""""""""""""""""""""
+
+An important difference between :class:`StrEnum` and other Enums is the
+:meth:`__str__` method; because :class:`StrEnum` members are strings, some
+parts of Python will read the string data directly, while others will call
+:meth:`str()`. To make those two operations have the same result,
+:meth:`StrEnum.__str__` will be the same as :meth:`str.__str__` so that
+``str(StrEnum.member) == StrEnum.member`` is true.
 

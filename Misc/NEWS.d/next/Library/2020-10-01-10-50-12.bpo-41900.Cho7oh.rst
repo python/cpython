@@ -1,0 +1,2 @@
+C14N 2.0 serialisation in xml.etree.ElementTree failed for unprefixed attributes
+when a default namespace was defined.

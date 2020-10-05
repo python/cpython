@@ -2677,8 +2677,9 @@ test_PyDateTime_DATE_GET(PyObject *self, PyObject *obj)
     minute = PyDateTime_DATE_GET_MINUTE(obj);
     second = PyDateTime_DATE_GET_SECOND(obj);
     microsecond = PyDateTime_DATE_GET_MICROSECOND(obj);
+    PyObject *tzinfo = PyDateTime_DATE_GET_TZINFO(obj);
 
-    return Py_BuildValue("(llll)", hour, minute, second, microsecond);
+    return Py_BuildValue("(llllO)", hour, minute, second, microsecond, tzinfo);
 }
 
 static PyObject *
@@ -2690,8 +2691,9 @@ test_PyDateTime_TIME_GET(PyObject *self, PyObject *obj)
     minute = PyDateTime_TIME_GET_MINUTE(obj);
     second = PyDateTime_TIME_GET_SECOND(obj);
     microsecond = PyDateTime_TIME_GET_MICROSECOND(obj);
+    PyObject *tzinfo = PyDateTime_TIME_GET_TZINFO(obj);
 
-    return Py_BuildValue("(llll)", hour, minute, second, microsecond);
+    return Py_BuildValue("(llllO)", hour, minute, second, microsecond, tzinfo);
 }
 
 static PyObject *
@@ -6462,6 +6464,30 @@ static PyTypeObject MethodDescriptor2_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_VECTORCALL,
 };
 
+PyDoc_STRVAR(heapdocctype__doc__,
+"HeapDocCType(arg1, arg2)\n"
+"--\n"
+"\n"
+"somedoc");
+
+typedef struct {
+    PyObject_HEAD
+} HeapDocCTypeObject;
+
+static PyType_Slot HeapDocCType_slots[] = {
+    {Py_tp_doc, (char*)heapdocctype__doc__},
+    {0},
+};
+
+static PyType_Spec HeapDocCType_spec = {
+    "_testcapi.HeapDocCType",
+    sizeof(HeapDocCTypeObject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    HeapDocCType_slots
+};
+
+
 PyDoc_STRVAR(heapgctype__doc__,
 "A heap type with GC, and with overridden dealloc.\n\n"
 "The 'value' attribute is set to 10 in __init__.");
@@ -7129,6 +7155,12 @@ PyInit__testcapi(void)
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
     PyModule_AddObject(m, "error", TestError);
+
+    PyObject *HeapDocCType = PyType_FromSpec(&HeapDocCType_spec);
+    if (HeapDocCType == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "HeapDocCType", HeapDocCType);
 
     PyObject *HeapGcCType = PyType_FromSpec(&HeapGcCType_spec);
     if (HeapGcCType == NULL) {
