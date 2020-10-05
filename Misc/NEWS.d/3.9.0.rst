@@ -1,0 +1,57 @@
+.. bpo: 41815
+.. date: 2020-09-19-23-14-54
+.. nonce: RNpuX3
+.. release date: 2020-10-04
+.. section: Library
+
+Fix SQLite3 segfault when backing up closed database. Patch contributed by
+Peter David McCormick.
+
+..
+
+.. bpo: 41662
+.. date: 2020-08-30-21-38-57
+.. nonce: 6e9iZn
+.. section: Library
+
+No longer override exceptions raised in ``__len__()`` of a sequence of
+parameters in :mod:`sqlite3` with :exc:`~sqlite3.ProgrammingError`.
+
+..
+
+.. bpo: 41662
+.. date: 2020-08-29-16-07-36
+.. nonce: Mn79zh
+.. section: Library
+
+Fixed crash when mutate list of parameters during iteration in
+:mod:`sqlite3`.
+
+..
+
+.. bpo: 39728
+.. date: 2020-02-24-10-58-34
+.. nonce: kOOaHn
+.. section: Library
+
+fix default `_missing_` so a duplicate `ValueError` is not set as the
+`__context__` of the original `ValueError`
+
+..
+
+.. bpo: 41602
+.. date: 2020-08-25-19-25-36
+.. nonce: Z64s0I
+.. section: Tests
+
+Add tests for SIGINT handling in the runpy module.
+
+..
+
+.. bpo: 38249
+.. date: 2020-09-28-21-56-51
+.. nonce: uzMCaZ
+.. section: Build
+
+Update :c:macro:`Py_UNREACHABLE` to use __builtin_unreachable() if only the
+compiler is able to use it. Patch by Dong-hee Na.

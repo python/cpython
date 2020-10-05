@@ -1,5 +1,5 @@
-This is Python version 3.9.0 release candidate 2
-================================================
+This is Python version 3.9.0
+============================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=3.9
    :alt: CPython build status on Travis CI
