@@ -1,0 +1,3 @@
+Fix test_site.test_license_exists_at_url(): call
+``urllib.request.urlcleanup()`` to reset the global
+``urllib.request._opener``. Patch by Victor Stinner.
