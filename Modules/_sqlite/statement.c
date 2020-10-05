@@ -28,6 +28,8 @@
 #include "prepare_protocol.h"
 #include "util.h"
 
+#include "structmember.h"         // PyMemberDef
+
 /* prototypes */
 static int pysqlite_check_remaining_sql(const char* tail);
 
@@ -461,7 +463,7 @@ static int pysqlite_check_remaining_sql(const char* tail)
     return 0;
 }
 
-static PyMemberDef stmt_members[] = {
+static struct PyMemberDef stmt_members[] = {
     {"__weaklistoffset__", T_PYSSIZET, offsetof(pysqlite_Statement, in_weakreflist), READONLY},
     {NULL},
 };
