@@ -21,6 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#include "structmember.h"         // PyMemberDef
+
 #include "cursor.h"
 #include "module.h"
 #include "util.h"
