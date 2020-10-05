@@ -1,0 +1,3 @@
+Removed undocumented macros ``Py_ALLOW_RECURSION`` and
+``Py_END_ALLOW_RECURSION`` and the ``recursion_critical`` field of the
+:c:type:`PyInterpreterState` structure.
