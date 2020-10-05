@@ -544,6 +544,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    .. versionchanged:: 3.7
       Don't remove explicit subclasses from unions at runtime.
 
+   .. versionchanged:: 3.10
+      Unions can now be written as ``X | Y``. See
+      :ref:`union type expressions<types-union>`.
+
 .. data:: Optional
 
    Optional type.

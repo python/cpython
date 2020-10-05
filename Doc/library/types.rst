@@ -256,6 +256,11 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.10
 
+.. data:: Union
+
+   The type of :ref:`union type expressions<types-union>`.
+
+   .. versionadded:: 3.10
 
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
