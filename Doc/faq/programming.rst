@@ -1175,7 +1175,7 @@ Here are three variations.::
    mylist[:] = (x for x in mylist if keep_condition)
    mylist[:] = [x for x in mylist if keep_condition]
 
-If space is not an issue, the list comprehension may be fastest.
+The list comprehension may be fastest.
 
 
 How do you make an array in Python?
