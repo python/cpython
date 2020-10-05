@@ -365,3 +365,8 @@ Removed
 * Removed ``_Py_CheckRecursionLimit`` variable: it has been replaced by
   ``ceval.recursion_limit`` of the :c:type:`PyInterpreterState` structure.
   (Contributed by Victor Stinner in :issue:`41834`.)
+
+* Removed undocumented macros ``Py_ALLOW_RECURSION`` and
+  ``Py_END_ALLOW_RECURSION`` and the ``recursion_critical`` field of the
+  :c:type:`PyInterpreterState` structure.
+  (Contributed by Serhiy Storchaka in :issue:`41936`.)
