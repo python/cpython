@@ -1,4 +1,0 @@
-Python 3.8.3 had a regression where compiling with
-ast.PyCF_ALLOW_TOP_LEVEL_AWAIT would aggressively mark list comprehension
-with CO_COROUTINE. Now only list comprehension making use of async/await
-will tagged as so.

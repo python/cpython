@@ -1,2 +1,0 @@
-Add :c:func:`PyCodec_Unregister` function to unregister a codec search
-function.

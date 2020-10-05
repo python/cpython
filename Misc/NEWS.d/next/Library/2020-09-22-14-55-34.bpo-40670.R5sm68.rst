@@ -1,3 +1,0 @@
-More reliable validation of statements in :class:`timeit.Timer`. It now
-accepts "empty" statements (only whitespaces and comments) and rejects
-misindentent statements.
