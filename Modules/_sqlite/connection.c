@@ -23,12 +23,13 @@
 
 #include "cache.h"
 #include "module.h"
-#include "structmember.h"         // PyMemberDef
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
 #include "prepare_protocol.h"
 #include "util.h"
+
+#include "structmember.h"         // PyMemberDef
 
 #define ACTION_FINALIZE 1
 #define ACTION_RESET 2
