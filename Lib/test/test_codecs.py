@@ -3431,12 +3431,13 @@ class CodecNameNormalizationTest(unittest.TestCase):
         self.assertEqual(FOUND, codecs.lookup('AAA-8'))
         self.assertEqual(FOUND, codecs.lookup('AAA---8'))
         self.assertEqual(FOUND, codecs.lookup('AAA   8'))
+        self.assertEqual(FOUND, codecs.lookup('aaa\xe9\u20ac-8'))
         self.assertEqual(NOT_FOUND, codecs.lookup('AAA.8'))
         self.assertEqual(NOT_FOUND, codecs.lookup('AAA...8'))
         self.assertEqual(NOT_FOUND, codecs.lookup('BBB-8'))
         self.assertEqual(NOT_FOUND, codecs.lookup('BBB.8'))
         self.assertEqual(NOT_FOUND, codecs.lookup('a\xe9\u20ac-8'))
-        codecs.unregister(search_function)
+        self.addCleanup(codecs.unregister, search_function)
 
 
 if __name__ == "__main__":
