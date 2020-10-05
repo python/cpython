@@ -59,7 +59,7 @@ def literal_eval(node_or_string):
     sets, booleans, and None.
     """
     if isinstance(node_or_string, str):
-        node_or_string = parse(node_or_string, mode='eval')
+        node_or_string = parse(node_or_string.lstrip(" \t"), mode='eval')
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
     def _raise_malformed_node(node):

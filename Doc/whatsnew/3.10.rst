@@ -86,6 +86,29 @@ New Features
   :class:`TypeAlias` to explicitly declare :pep:`484`-compliant type aliases,
   better differentiating them from regular assignments.
 
+PEP604: New Type Operator
+-------------------------
+
+A new type union operator was introduced which enables the syntax ``X | Y``.
+This provides a cleaner way of expressing 'either type X or type Y' instead of
+using :data:`typing.Union`, especially in type hints (annotations).
+
+In previous versions of Python, to apply a type hint for functions accepting
+arguments of multiple types, :data:`typing.Union` was used::
+
+   def square(number: Union[int, float]) -> Union[int, float]:
+       return number ** 2
+
+
+Now, type hints can be written in a more succinct manner::
+
+   def square(number: int | float) -> int | float:
+       return number ** 2
+
+
+See :pep:`604` for more details.
+
+(Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
 
 Other Language Changes
 ======================
@@ -346,3 +369,8 @@ Removed
 * Removed ``_Py_CheckRecursionLimit`` variable: it has been replaced by
   ``ceval.recursion_limit`` of the :c:type:`PyInterpreterState` structure.
   (Contributed by Victor Stinner in :issue:`41834`.)
+
+* Removed undocumented macros ``Py_ALLOW_RECURSION`` and
+  ``Py_END_ALLOW_RECURSION`` and the ``recursion_critical`` field of the
+  :c:type:`PyInterpreterState` structure.
+  (Contributed by Serhiy Storchaka in :issue:`41936`.)
