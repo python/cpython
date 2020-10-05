@@ -1,2 +1,0 @@
-:mod:`test.support`: Rename ``blacklist`` parameter of
-:func:`~test.support.check__all__` to ``not_exported``.
