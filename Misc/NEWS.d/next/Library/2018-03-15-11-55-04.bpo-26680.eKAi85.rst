@@ -1,3 +1,0 @@
-The x.is_integer() method is incorporated into the abstract types of the
-numeric tower, Real, Rational and Integral, with appropriate default
-implementations.

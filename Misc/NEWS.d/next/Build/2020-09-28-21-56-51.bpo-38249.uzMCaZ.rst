@@ -1,2 +1,0 @@
-Update :c:macro:`Py_UNREACHABLE` to use __builtin_unreachable() if only the
-compiler is able to use it. Patch by Dong-hee Na.
