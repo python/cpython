@@ -121,6 +121,7 @@ else:
             """Clear the caches (for debugging or testing)."""
             _reset_caches(cls)
 
+
 def update_abstractmethods(cls):
     """Recalculate the set of abstract methods of an abstract class.
 
