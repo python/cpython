@@ -84,9 +84,10 @@ New Features
 
 PEP604: New Type Operator
 -------------------------
+
 A new type union operator was introduced which enables the syntax ``X | Y``.
 This provides a cleaner way of expressing 'either type X or type Y' instead of
-using :data:`typing.Union`.
+using :data:`typing.Union`, especially in type hints (annotations).
 
 In previous versions of Python, to apply a type hint for functions accepting
 arguments of multiple types, :data:`typing.Union` was used::

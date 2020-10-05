@@ -4760,7 +4760,7 @@ type hinting syntax compared to :data:`typing.Union`.
 .. describe:: X | Y | ...
 
    Defines a union object which holds types *X*, *Y*, and so forth. ``X | Y``
-   means either X or Y.  It is equivalent to ``typing.Union[X, Y, ...]``.
+   means either X or Y.  It is equivalent to ``typing.Union[X, Y]``.
    Example::
 
       def square(number: int | float) -> int | float:
@@ -4797,8 +4797,14 @@ type hinting syntax compared to :data:`typing.Union`.
       >>> isinstance("", int | str)
       True
 
-   However, union objects containing parameterized :ref:`generics<generics>`
-   cannot be used::
+   ..
+      At the time of writing this, there is no documentation for parameterized
+      generics or PEP 585. Thus the link currently points to PEP 585 itself.
+      Please change the link for parameterized generics to reference the correct
+      documentation once documentation for PEP 585 becomes available.
+
+   However, union objects containing `parameterized generics
+   <https://www.python.org/dev/peps/pep-0585/>`_ cannot be used::
 
       >>> isinstance(1, int | list[int])
       Traceback (most recent call last):
@@ -4812,8 +4818,13 @@ type hinting syntax compared to :data:`typing.Union`.
       >>> issubclass(bool, int | str)
       True
 
-   However, union objects containing parameterized :ref:`generics<generics>`
-   cannot be used::
+   ..
+      Once again, please change the link below for parameterized generics to
+      reference the correct documentation once documentation for PEP 585
+      becomes available.
+
+   However, union objects containing `parameterized generics
+   <https://www.python.org/dev/peps/pep-0585/>`_ cannot be used::
 
       >>> issubclass(bool, bool | list[str])
       Traceback (most recent call last):
