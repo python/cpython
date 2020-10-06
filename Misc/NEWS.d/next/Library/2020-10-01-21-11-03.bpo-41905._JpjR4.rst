@@ -1,0 +1,1 @@
+A new function in abc: *update_abstractmethods* to re-calculate an abstract class's abstract status. In addition, *dataclass* has been changed to call this function.

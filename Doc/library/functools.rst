@@ -254,6 +254,13 @@ The :mod:`functools` module defines the following functions:
       application, implementing all six rich comparison methods instead is
       likely to provide an easy speed boost.
 
+   .. note::
+
+      This decorator makes no attempt to override methods that have been
+      declared in the class *or its superclasses*. Meaning that if a
+      superclass defines a comparison operator, *total_ordering* will not
+      implement it again, even if the original method is abstract.
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
