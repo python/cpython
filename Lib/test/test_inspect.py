@@ -862,7 +862,7 @@ class TestClassesAndFunctions(unittest.TestCase):
 
         self.assertFullArgSpecEquals(mod2.annotated, ['arg1'],
                                      ann_e={'arg1' : list},
-                                     formatted='(arg1: list)')
+                                     formatted="(arg1: list)")
         self.assertFullArgSpecEquals(mod2.keyword_only_arg, [],
                                      kwonlyargs_e=['arg'],
                                      formatted='(*, arg)')
@@ -2211,8 +2211,8 @@ class TestSignatureObject(unittest.TestCase):
             pass
         self.assertEqual(self.signature(test),
                          ((('a', ..., ..., "positional_or_keyword"),
-                           ('b', ..., 'foo', "positional_or_keyword")),
-                          123))
+                           ('b', ..., repr('foo'), "positional_or_keyword")),
+                          '123'))
 
     def test_signature_on_wkwonly(self):
         def test(*, a:float, b:str) -> int:
@@ -2227,11 +2227,11 @@ class TestSignatureObject(unittest.TestCase):
             pass
         self.assertEqual(self.signature(test),
                          ((('a', ..., ..., "positional_or_keyword"),
-                           ('b', 10, 'foo', "positional_or_keyword"),
-                           ('args', ..., 'bar', "var_positional"),
-                           ('spam', ..., 'baz', "keyword_only"),
+                           ('b', 10, repr('foo'), "positional_or_keyword"),
+                           ('args', ..., repr('bar'), "var_positional"),
+                           ('spam', ..., repr('baz'), "keyword_only"),
                            ('ham', 123, ..., "keyword_only"),
-                           ('kwargs', ..., int, "var_keyword")),
+                           ('kwargs', ..., 'int', "var_keyword")),
                           ...))
 
     def test_signature_without_self(self):
@@ -2640,12 +2640,12 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(self.signature(partial(partial(test, 1))),
                          ((('b', ..., ..., "positional_or_keyword"),
-                           ('c', ..., int, "positional_or_keyword")),
-                          42))
+                           ('c', ..., 'int', "positional_or_keyword")),
+                          '42'))
 
         self.assertEqual(self.signature(partial(partial(test, 1), 2)),
-                         ((('c', ..., int, "positional_or_keyword"),),
-                          42))
+                         ((('c', ..., 'int', "positional_or_keyword"),),
+                          '42'))
 
         psig = inspect.signature(partial(partial(test, 1), 2))
 
@@ -2764,12 +2764,12 @@ class TestSignatureObject(unittest.TestCase):
                          ((('it', ..., ..., 'positional_or_keyword'),
                            ('a', ..., ..., 'positional_or_keyword'),
                            ('c', 1, ..., 'keyword_only')),
-                          'spam'))
+                          repr('spam')))
 
         self.assertEqual(self.signature(Spam().ham),
                          ((('a', ..., ..., 'positional_or_keyword'),
                            ('c', 1, ..., 'keyword_only')),
-                          'spam'))
+                          repr('spam')))
 
         class Spam:
             def test(self: 'anno', x):
@@ -2778,7 +2778,7 @@ class TestSignatureObject(unittest.TestCase):
             g = partialmethod(test, 1)
 
         self.assertEqual(self.signature(Spam.g),
-                         ((('self', ..., 'anno', 'positional_or_keyword'),),
+                         ((('self', ..., repr('anno'), 'positional_or_keyword'),),
                           ...))
 
     def test_signature_on_fake_partialmethod(self):
@@ -3116,20 +3116,16 @@ class TestSignatureObject(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'unhashable type'):
             hash(inspect.signature(foo))
 
-        def foo(a) -> {}: pass
-        with self.assertRaisesRegex(TypeError, 'unhashable type'):
-            hash(inspect.signature(foo))
-
     def test_signature_str(self):
         def foo(a:int=1, *, b, c=None, **kwargs) -> 42:
             pass
         self.assertEqual(str(inspect.signature(foo)),
-                         '(a: int = 1, *, b, c=None, **kwargs) -> 42')
+                         '(a: \'int\' = 1, *, b, c=None, **kwargs) -> \'42\'')
 
         def foo(a:int=1, *args, b, c=None, **kwargs) -> 42:
             pass
         self.assertEqual(str(inspect.signature(foo)),
-                         '(a: int = 1, *args, b, c=None, **kwargs) -> 42')
+                         '(a: \'int\' = 1, *args, b, c=None, **kwargs) -> \'42\'')
 
         def foo():
             pass
@@ -3172,8 +3168,8 @@ class TestSignatureObject(unittest.TestCase):
         self.assertIs(sig.return_annotation, None)
         sig = sig.replace(return_annotation=sig.empty)
         self.assertIs(sig.return_annotation, sig.empty)
-        sig = sig.replace(return_annotation=42)
-        self.assertEqual(sig.return_annotation, 42)
+        sig = sig.replace(return_annotation='42')
+        self.assertEqual(sig.return_annotation, '42')
         self.assertEqual(sig, inspect.signature(test))
 
     def test_signature_on_mangled_parameters(self):
@@ -3185,8 +3181,8 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(self.signature(Spam.foo),
                          ((('self', ..., ..., "positional_or_keyword"),
-                           ('_Spam__p1', 2, 1, "positional_or_keyword"),
-                           ('_Spam__p2', 3, 2, "keyword_only")),
+                           ('_Spam__p1', 2, '1', "positional_or_keyword"),
+                           ('_Spam__p2', 3, '2', "keyword_only")),
                           ...))
 
         self.assertEqual(self.signature(Spam.foo),

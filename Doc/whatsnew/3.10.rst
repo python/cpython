@@ -70,6 +70,23 @@ Summary -- Release highlights
 New Features
 ============
 
+.. _whatsnew310-pep563:
+
+PEP 563: Postponed Evaluation of Annotations Becomes Default
+------------------------------------------------------------
+
+In Python 3.7, postponed evaluation of annotations was added,
+to be enabled with a ``from __future__ import annotations``
+directive.  In 3.10 this became the default behavior, even
+without that future directive.  With this being default, all
+annotations stored in :attr:`__annotations__` will be strings.
+If needed, annotations can be resolved at runtime using
+:func:`typing.get_type_hints`.  See :pep:`563` for a full
+description.  Also, the :func:`inspect.signature` will try to
+resolve types from now on, and when it fails it will fall back to
+showing the string annotations.  (Contributed by Batuhan Taskaya
+in :issue:`38605`.)
+
 * The :class:`int` type has a new method :meth:`int.bit_count`, returning the
   number of ones in the binary expansion of a given integer, also known
   as the population count. (Contributed by Niklas Fiekas in :issue:`29882`.)

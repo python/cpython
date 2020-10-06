@@ -1,0 +1,3 @@
+Enable ``from __future__ import annotations`` (:pep:`563`) by default.
+The values found in :attr:`__annotations__` dicts are now strings, e.g.
+``{"x": "int"}`` instead of ``{"x": int}``.
