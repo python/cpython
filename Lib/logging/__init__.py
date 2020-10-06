@@ -1662,14 +1662,17 @@ class Logger(Filterer):
         c = self
         found = 0
         while c:
-            for hdlr in c.handlers:
-                found = found + 1
-                if record.levelno >= hdlr.level:
-                    hdlr.handle(record)
-            if not c.propagate:
+            if not c.isEnabledFor(record.levelno):
                 c = None    #break out
             else:
-                c = c.parent
+                for hdlr in c.handlers:
+                    found = found + 1
+                    if record.levelno >= hdlr.level:
+                        hdlr.handle(record)
+                if not c.propagate:
+                    c = None    #break out
+                else:
+                    c = c.parent
         if (found == 0):
             if lastResort:
                 if record.levelno >= lastResort.level:
