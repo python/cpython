@@ -94,7 +94,7 @@ for two inputs:
 >>> correlation(x, y)  #doctest: +ELLIPSIS
 0.31622776601...
 >>> linear_regression(x, y)  #doctest:
-(1.5, 0.1)
+LinearRegression(intercept=1.5, slope=0.1)
 
 
 Exceptions
@@ -137,7 +137,7 @@ from itertools import groupby
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
 from operator import itemgetter
-from collections import Counter
+from collections import Counter, namedtuple
 
 # === Exceptions ===
 
@@ -910,7 +910,10 @@ def correlation(x, y, /):
         raise StatisticsError('at least one of the inputs is constant')
 
 
-def linear_regression(regressor, dependent_variable):
+LinearRegression = namedtuple('LinearRegression', ['intercept', 'slope'])
+
+
+def linear_regression(regressor, dependent_variable, /):
     """Intercept and slope for simple linear regression
 
     Return the ``(intercept, slope)`` tuple of the simple linear regression
@@ -930,7 +933,7 @@ def linear_regression(regressor, dependent_variable):
     >>> noise = NormalDist().samples(5, seed=42)
     >>> dependent_variable = [2 + 3 * regressor[i] + noise[i] for i in range(5)]
     >>> linear_regression(regressor, dependent_variable)  #doctest: +ELLIPSIS
-    (1.75684970486..., 3.09078914170...)
+    LinearRegression(intercept=1.75684970486..., slope=3.09078914170...)
 
     """
     n = len(regressor)
@@ -943,7 +946,7 @@ def linear_regression(regressor, dependent_variable):
     except ZeroDivisionError:
         raise StatisticsError('regressor is constant')
     intercept = mean(dependent_variable) - slope * mean(regressor)
-    return intercept, slope
+    return LinearRegression(intercept=intercept, slope=slope)
 
 
 ## Normal Distribution #####################################################
