@@ -406,10 +406,10 @@ Initially :pep:`484` defined Python static type system as using
 a class ``B`` is expected if and only if ``A`` is a subclass of ``B``.
 
 This requirement previously also applied to abstract base classes, such as
-:class:`Iterable`. The problem with this approach is that a class had
+:class:`~collections.abc.Iterable`. The problem with this approach is that a class had
 to be explicitly marked to support them, which is unpythonic and unlike
 what one would normally do in idiomatic dynamically typed Python code.
-For example, this conforms to the :pep:`484`::
+For example, this conforms to :pep:`484`::
 
    from collections.abc import Sized, Iterable, Iterator
 
@@ -544,6 +544,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    .. versionchanged:: 3.7
       Don't remove explicit subclasses from unions at runtime.
 
+   .. versionchanged:: 3.10
+      Unions can now be written as ``X | Y``. See
+      :ref:`union type expressions<types-union>`.
+
 .. data:: Optional
 
    Optional type.
@@ -661,7 +665,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    and should not be set on instances of that class. Usage::
 
       class Starship:
-          stats: ClassVar[Dict[str, int]] = {} # class variable
+          stats: ClassVar[dict[str, int]] = {} # class variable
           damage: int = 10                     # instance variable
 
    :data:`ClassVar` accepts only types and cannot be further subscribed.
@@ -774,10 +778,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    * ``Annotated`` can be used with nested and generic aliases::
 
        T = TypeVar('T')
-       Vec = Annotated[List[Tuple[T, T]], MaxLen(10)]
+       Vec = Annotated[list[tuple[T, T]], MaxLen(10)]
        V = Vec[int]
 
-       V == Annotated[List[Tuple[int, int]], MaxLen(10)]
+       V == Annotated[list[tuple[int, int]], MaxLen(10)]
 
    .. versionadded:: 3.9
 
@@ -903,7 +907,7 @@ These are not used in annotations. They are building blocks for creating generic
    Such a protocol can be used with :func:`isinstance` and :func:`issubclass`.
    This raises :exc:`TypeError` when applied to a non-protocol class.  This
    allows a simple-minded structural check, very similar to "one trick ponies"
-   in :mod:`collections.abc` such as :class:`Iterable`.  For example::
+   in :mod:`collections.abc` such as :class:`~collections.abc.Iterable`.  For example::
 
       @runtime_checkable
       class Closable(Protocol):
@@ -1540,7 +1544,7 @@ Functions and decorators
       def process(response: None) -> None:
           ...
       @overload
-      def process(response: int) -> Tuple[int, str]:
+      def process(response: int) -> tuple[int, str]:
           ...
       @overload
       def process(response: bytes) -> str:
@@ -1666,20 +1670,21 @@ Introspection helpers
    Check if a type is a :class:`TypedDict`.
 
    For example::
-        class Film(TypedDict):
-            title: str
-            year: int
 
-        is_typeddict(Film)  # => True
-        is_typeddict(Union[list, str])  # => False
+      class Film(TypedDict):
+          title: str
+          year: int
+
+      is_typeddict(Film)  # => True
+      is_typeddict(Union[list, str])  # => False
 
    .. versionadded:: 3.10
 
 .. class:: ForwardRef
 
    A class used for internal typing representation of string forward references.
-   For example, ``List["SomeClass"]`` is implicitly transformed into
-   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   For example, ``list["SomeClass"]`` is implicitly transformed into
+   ``list[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
 Constant

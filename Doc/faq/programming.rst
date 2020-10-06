@@ -1176,7 +1176,7 @@ Here are three variations.::
    mylist[:] = (x for x in mylist if keep_condition)
    mylist[:] = [x for x in mylist if keep_condition]
 
-If space is not an issue, the list comprehension may be fastest.
+The list comprehension may be fastest.
 
 
 How do you make an array in Python?
@@ -1191,7 +1191,7 @@ difference is that a Python list can contain objects of many different types.
 
 The ``array`` module also provides methods for creating arrays of fixed types
 with compact representations, but they are slower to index than lists.  Also
-note that the Numeric extensions and others define array-like structures with
+note that NumPy and other third party packages define array-like structures with
 various characteristics as well.
 
 To get Lisp-style linked lists, you can emulate cons cells using tuples::

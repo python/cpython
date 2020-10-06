@@ -82,6 +82,29 @@ New Features
 * :pep:`618`: The :func:`zip` function now has an optional ``strict`` flag, used
   to require that all the iterables have an equal length.
 
+PEP604: New Type Operator
+-------------------------
+
+A new type union operator was introduced which enables the syntax ``X | Y``.
+This provides a cleaner way of expressing 'either type X or type Y' instead of
+using :data:`typing.Union`, especially in type hints (annotations).
+
+In previous versions of Python, to apply a type hint for functions accepting
+arguments of multiple types, :data:`typing.Union` was used::
+
+   def square(number: Union[int, float]) -> Union[int, float]:
+       return number ** 2
+
+
+Now, type hints can be written in a more succinct manner::
+
+   def square(number: int | float) -> int | float:
+       return number ** 2
+
+
+See :pep:`604` for more details.
+
+(Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
 
 Other Language Changes
 ======================
@@ -299,6 +322,14 @@ Porting to Python 3.10
   Unicode object without initial data.
   (Contributed by Inada Naoki in :issue:`36346`.)
 
+Deprecated
+----------
+
+* The ``PyUnicode_InternImmortal()`` function is now deprecated
+  and will be removed in Python 3.12: use :c:func:`PyUnicode_InternInPlace`
+  instead.
+  (Contributed by Victor Stinner in :issue:`41692`.)
+
 Removed
 -------
 
@@ -334,3 +365,8 @@ Removed
 * Removed ``_Py_CheckRecursionLimit`` variable: it has been replaced by
   ``ceval.recursion_limit`` of the :c:type:`PyInterpreterState` structure.
   (Contributed by Victor Stinner in :issue:`41834`.)
+
+* Removed undocumented macros ``Py_ALLOW_RECURSION`` and
+  ``Py_END_ALLOW_RECURSION`` and the ``recursion_critical`` field of the
+  :c:type:`PyInterpreterState` structure.
+  (Contributed by Serhiy Storchaka in :issue:`41936`.)

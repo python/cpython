@@ -1,2 +1,0 @@
-Make the stack trace correct after calling :meth:`generator.throw`
-on a generator that has yielded from a ``yield from``.
