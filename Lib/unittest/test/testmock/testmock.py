@@ -1,4 +1,5 @@
 import copy
+import inspect
 import re
 import sys
 import tempfile
@@ -866,6 +867,20 @@ class MockTest(unittest.TestCase):
 
         mock.y = 'foo'
         self.assertRaises(AttributeError, set_attr)
+
+
+    def test_finds_attrs_set_in__init__(self):
+        class X(object):
+            y = 3
+
+            def __init__(self, z):
+                self.z = self.__get_z()
+
+            def __get_z(self): return 'Z'
+
+        mock = Mock(spec=X)
+        self.assertTrue(hasattr(mock, 'y'))
+        self.assertTrue(hasattr(mock, 'z'))
 
 
     def test_copy(self):
