@@ -318,7 +318,8 @@ class TestBase_Mapping(unittest.TestCase):
                 if len(data) != 2:
                     continue
 
-                assert data[0][:2] == '0x'
+                if data[0][:2] != '0x':
+                    self.fail(f"Invalid line: {line!r}")
                 csetch = bytes.fromhex(data[0][2:])
                 if len(csetch) == 1 and 0x80 <= csetch[0]:
                     continue
