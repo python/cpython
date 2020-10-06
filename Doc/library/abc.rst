@@ -174,10 +174,11 @@ The :mod:`abc` module also provides the following decorator:
    to declare abstract methods for properties and descriptors.
 
    Dynamically adding abstract methods to a class, or attempting to modify the
-   abstraction status of a method or class once it is created, are not
-   supported.  The :func:`abstractmethod` only affects subclasses derived using
-   regular inheritance; "virtual subclasses" registered with the ABC's
-   :meth:`register` method are not affected.
+   abstraction status of a method or class once it is created, are only
+   supported using the :func:`update_abstractmethods` function.  The
+   :func:`abstractmethod` only affects subclasses derived using regular
+   inheritance; "virtual subclasses" registered with the ABC's :meth:`register`
+   method are not affected.
 
    When :func:`abstractmethod` is applied in combination with other method
    descriptors, it should be applied as the innermost decorator, as shown in
@@ -234,7 +235,6 @@ The :mod:`abc` module also provides the following decorator:
       overrides it.  This could be useful as an end-point for a
       super-call in a framework that uses cooperative
       multiple-inheritance.
-
 
 The :mod:`abc` module also supports the following legacy decorators:
 
@@ -335,6 +335,22 @@ The :mod:`abc` module also provides the following functions:
 
    .. versionadded:: 3.4
 
+.. function:: update_abstractmethods(cls)
+   A function to recalculate an abstract class's abstraction status. This
+   function should be called if a class's abstract methods have been
+   implemented or changed after it was created. Usually, this function should
+   be called from within a class decorator.
+
+   Returns *cls*, to allow usage as a class decorator.
+
+   If *cls* is not an instance of ABCMeta, does nothing.
+
+   .. note::
+
+      This function assumes that *cls*'s superclasses are already updated.
+      It does not update any subclasses.
+
+   .. versionadded:: 3.10
 
 .. rubric:: Footnotes
 
