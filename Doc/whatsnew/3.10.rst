@@ -82,9 +82,26 @@ New Features
 * :pep:`618`: The :func:`zip` function now has an optional ``strict`` flag, used
   to require that all the iterables have an equal length.
 
-* :pep:`613`: The :mod:`typing` module now has a special annotation
-  :class:`TypeAlias` to explicitly declare :pep:`484`-compliant type aliases,
-  better differentiating them from regular assignments.
+PEP613: TypeAlias Annotation
+----------------------------
+
+:pep:`484` introduced the concept of type aliases, only requiring them to be
+top-level unannotated assignments. This simplicity sometimes made it difficult
+for type checkers to distinguish between type aliases and ordinary assignments,
+especially when forward references or invalid types were involved. Compare::
+
+   StrCache = 'Cache[str]'  # a type alias
+   LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
+
+Now the :mod:`typing` module has a special annotation :data:`TypeAlias` to
+declare type aliases more explicitly::
+
+   StrCache: TypeAlias = 'Cache[str]'  # a type alias
+   LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
+
+See :pep:`613` for more details.
+
+(Contributed by Mikhail Golubev in :issue:`41923`.)
 
 PEP604: New Type Operator
 -------------------------
