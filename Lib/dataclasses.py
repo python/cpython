@@ -6,6 +6,7 @@ import inspect
 import keyword
 import builtins
 import functools
+import abc
 import _thread
 from types import GenericAlias
 
@@ -991,6 +992,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
         # Create a class doc-string.
         cls.__doc__ = (cls.__name__ +
                        str(inspect.signature(cls)).replace(' -> None', ''))
+
+    abc.update_abstractmethods(cls)
 
     return cls
 
