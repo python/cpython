@@ -18,6 +18,7 @@ At large scale, the structure of the module is following:
 """
 
 from abc import abstractmethod, ABCMeta
+import ast
 import collections
 import collections.abc
 import contextlib
@@ -469,6 +470,13 @@ class ForwardRef(_Final, _root=True):
     def __init__(self, arg, is_argument=True):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
+
+        # Double-stringified forward references is a result of activating
+        # the 'annotations' future by default. This way, we eliminate them in
+        # the runtime.
+        if arg.startswith(("'", '\"')) and arg.endswith(("'", '"')):
+            arg = arg[1:-1]
+
         try:
             code = compile(arg, '<string>', 'eval')
         except SyntaxError:
