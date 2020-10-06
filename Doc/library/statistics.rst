@@ -617,7 +617,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: linear_regression(regressor, dependent_variable)
 
-   Return the ``(intercept, slope)`` tuple of the `simple linear regression
+   Return the intercept and slope of `simple linear regression
    <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
    parameters estimated using ordinary least squares. Simple linear
    regression describes relationship between *regressor* and
