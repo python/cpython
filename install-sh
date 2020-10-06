@@ -30,14 +30,10 @@ scriptversion=2018-03-11.20; # UTC
 # be used in advertising or otherwise to promote the sale, use or other deal-
 # ings in this Software without prior written authorization from the X Consor-
 # tium.
-#
-#
 # FSF changes to this file are in the public domain.
-#
 # Calling this script install-sh is preferred over install.sh, to prevent
 # 'make' implicit rules from creating a file called install from it
 # when there is no Makefile.
-#
 # This script is compatible with the BSD install script, but was written
 # from scratch.
 
