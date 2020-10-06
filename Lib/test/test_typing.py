@@ -349,7 +349,7 @@ class UnionTests(BaseTestCase):
     def test_no_eval_union(self):
         u = Union[int, str]
         def f(x: u): ...
-        self.assertIs(get_type_hints(f)['x'], u)
+        self.assertIs(get_type_hints(f, globals(), locals())['x'], u)
 
     def test_function_repr_union(self):
         def fun() -> int: ...
@@ -2849,11 +2849,11 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(gth(HasForeignBaseClass),
                          {'some_xrepr': XRepr, 'other_a': mod_generics_cache.A,
                           'some_b': mod_generics_cache.B})
-        self.assertEqual(gth(XRepr.__new__),
+        self.assertEqual(gth(XRepr),
                          {'x': int, 'y': int})
         self.assertEqual(gth(mod_generics_cache.B),
                          {'my_inner_a1': mod_generics_cache.B.A,
-                          'my_inner_a2': mod_generics_cache.B.A,
+                          'my_inner_a2': mod_generics_cache.A,
                           'my_outer_a': mod_generics_cache.A})
 
     def test_respect_no_type_check(self):
@@ -3641,7 +3641,7 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(tim.cool, 9000)
         self.assertEqual(CoolEmployee.__name__, 'CoolEmployee')
         self.assertEqual(CoolEmployee._fields, ('name', 'cool'))
-        self.assertEqual(CoolEmployee.__annotations__,
+        self.assertEqual(gth(CoolEmployee),
                          collections.OrderedDict(name=str, cool=int))
 
     def test_annotation_usage_with_default(self):
@@ -3655,7 +3655,7 @@ class NamedTupleTests(BaseTestCase):
 
         self.assertEqual(CoolEmployeeWithDefault.__name__, 'CoolEmployeeWithDefault')
         self.assertEqual(CoolEmployeeWithDefault._fields, ('name', 'cool'))
-        self.assertEqual(CoolEmployeeWithDefault.__annotations__,
+        self.assertEqual(gth(CoolEmployeeWithDefault),
                          dict(name=str, cool=int))
         self.assertEqual(CoolEmployeeWithDefault._field_defaults, dict(cool=0))
 
@@ -3823,7 +3823,7 @@ class TypedDictTests(BaseTestCase):
     def test_py36_class_syntax_usage(self):
         self.assertEqual(LabelPoint2D.__name__, 'LabelPoint2D')
         self.assertEqual(LabelPoint2D.__module__, __name__)
-        self.assertEqual(LabelPoint2D.__annotations__, {'x': int, 'y': int, 'label': str})
+        self.assertEqual(gth(LabelPoint2D), {'x': int, 'y': int, 'label': str})
         self.assertEqual(LabelPoint2D.__bases__, (dict,))
         self.assertEqual(LabelPoint2D.__total__, True)
         self.assertNotIsSubclass(LabelPoint2D, typing.Sequence)
@@ -3882,11 +3882,11 @@ class TypedDictTests(BaseTestCase):
 
         assert BaseAnimal.__required_keys__ == frozenset(['name'])
         assert BaseAnimal.__optional_keys__ == frozenset([])
-        assert BaseAnimal.__annotations__ == {'name': str}
+        assert gth(BaseAnimal) == {'name': str}
 
         assert Animal.__required_keys__ == frozenset(['name'])
         assert Animal.__optional_keys__ == frozenset(['tail', 'voice'])
-        assert Animal.__annotations__ == {
+        assert gth(Animal) == {
             'name': str,
             'tail': bool,
             'voice': str,
@@ -3894,7 +3894,7 @@ class TypedDictTests(BaseTestCase):
 
         assert Cat.__required_keys__ == frozenset(['name', 'fur_color'])
         assert Cat.__optional_keys__ == frozenset(['tail', 'voice'])
-        assert Cat.__annotations__ == {
+        assert gth(Cat) == {
             'fur_color': str,
             'name': str,
             'tail': bool,
@@ -3915,7 +3915,7 @@ class IOTests(BaseTestCase):
         def stuff(a: IO) -> AnyStr:
             return a.readline()
 
-        a = stuff.__annotations__['a']
+        a = gth(stuff)['a']
         self.assertEqual(a.__parameters__, (AnyStr,))
 
     def test_textio(self):
@@ -3923,7 +3923,7 @@ class IOTests(BaseTestCase):
         def stuff(a: TextIO) -> str:
             return a.readline()
 
-        a = stuff.__annotations__['a']
+        a = gth(stuff)['a']
         self.assertEqual(a.__parameters__, ())
 
     def test_binaryio(self):
@@ -3931,7 +3931,7 @@ class IOTests(BaseTestCase):
         def stuff(a: BinaryIO) -> bytes:
             return a.readline()
 
-        a = stuff.__annotations__['a']
+        a = gth(stuff)['a']
         self.assertEqual(a.__parameters__, ())
 
     def test_io_submodule(self):
