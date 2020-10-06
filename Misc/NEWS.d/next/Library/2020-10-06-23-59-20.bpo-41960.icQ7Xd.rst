@@ -1,0 +1,2 @@
+Add ``globalns`` and ``localns`` parameters to the :func:`inspect.signature`
+and :meth:`inspect.Signature.from_callable`.
