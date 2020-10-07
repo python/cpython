@@ -1,0 +1,2 @@
+Update "Using Python on Windows" document. Commented for Windows Vista and
+Windows 7.
