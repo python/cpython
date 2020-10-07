@@ -82,8 +82,8 @@ New Features
 * :pep:`618`: The :func:`zip` function now has an optional ``strict`` flag, used
   to require that all the iterables have an equal length.
 
-PEP613: TypeAlias Annotation
-----------------------------
+PEP 613: TypeAlias Annotation
+-----------------------------
 
 :pep:`484` introduced the concept of type aliases, only requiring them to be
 top-level unannotated assignments. This simplicity sometimes made it difficult
@@ -103,8 +103,8 @@ See :pep:`613` for more details.
 
 (Contributed by Mikhail Golubev in :issue:`41923`.)
 
-PEP604: New Type Operator
--------------------------
+PEP604: New Type Union Operator
+-------------------------------
 
 A new type union operator was introduced which enables the syntax ``X | Y``.
 This provides a cleaner way of expressing 'either type X or type Y' instead of
