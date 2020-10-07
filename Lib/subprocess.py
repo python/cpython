@@ -526,7 +526,7 @@ def run(*popenargs,
     return CompletedProcess(process.args, retcode, stdout, stderr)
 
 
-def list2cmdline(seq):
+def list2cmdline(seq, escape_wildcard=False):
     """
     Translate a sequence of arguments into a command line
     string, using the same rules as the MS C runtime:
@@ -573,6 +573,10 @@ def list2cmdline(seq):
             if c == '\\':
                 # Don't know if we need to double yet.
                 bs_buf.append(c)
+            elif escape_wildcard and c == '*':
+                result.append('\\*')
+            elif escape_wildcard and c == '?':
+                result.append('\\?')
             elif c == '"':
                 # Double backslashes.
                 result.append('\\' * len(bs_buf)*2)
@@ -741,6 +745,15 @@ class Popen(object):
 
       pass_fds (POSIX only)
 
+      escape_wildcard: (Win32 only, POSIX have no effect) If true, the wildcard
+       character * and ? will be escaped to \* and \? on win32. This is useful
+       for program such as git that need wildcard character as parameter and
+       not match to local files.
+       For such command `git describe --match=v* --always`, if we don't escape
+       * to \*, then the Windows msvcrt will automatically match the files like
+       --match=v123 if it exist; and pass '--match=v123' arg to git, and that's
+       not git wanted, git wants the original '--match=v*'.
+
       encoding and errors: Text mode encoding and error handling to use for
           file objects stdin, stdout and stderr.
 
@@ -756,7 +769,7 @@ class Popen(object):
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
                  pass_fds=(), *, user=None, group=None, extra_groups=None,
-                 encoding=None, errors=None, text=None, umask=-1):
+                 encoding=None, errors=None, text=None, umask=-1, escape_wildcard=False):
         """Create new Popen instance."""
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
@@ -952,7 +965,7 @@ class Popen(object):
                                 errread, errwrite,
                                 restore_signals,
                                 gid, gids, uid, umask,
-                                start_new_session)
+                                start_new_session, escape_wildcard)
         except:
             # Cleanup if the child failed starting.
             for f in filter(None, (self.stdin, self.stdout, self.stderr)):
@@ -1336,7 +1349,7 @@ class Popen(object):
                            unused_restore_signals,
                            unused_gid, unused_gids, unused_uid,
                            unused_umask,
-                           unused_start_new_session):
+                           unused_start_new_session, escape_wildcard):
             """Execute program (MS Windows version)"""
 
             assert not pass_fds, "pass_fds not supported on Windows."
@@ -1346,14 +1359,14 @@ class Popen(object):
             elif isinstance(args, bytes):
                 if shell:
                     raise TypeError('bytes args is not allowed on Windows')
-                args = list2cmdline([args])
+                args = list2cmdline([args], escape_wildcard)
             elif isinstance(args, os.PathLike):
                 if shell:
                     raise TypeError('path-like args is not allowed when '
                                     'shell is true')
-                args = list2cmdline([args])
+                args = list2cmdline([args], escape_wildcard)
             else:
-                args = list2cmdline(args)
+                args = list2cmdline(args, escape_wildcard)
 
             if executable is not None:
                 executable = os.fsdecode(executable)
@@ -1664,7 +1677,7 @@ class Popen(object):
                            errread, errwrite,
                            restore_signals,
                            gid, gids, uid, umask,
-                           start_new_session):
+                           start_new_session, escape_wildcard):
             """Execute program (POSIX version)"""
 
             if isinstance(args, (str, bytes)):

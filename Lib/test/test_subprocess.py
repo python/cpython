@@ -1086,6 +1086,14 @@ class ProcessTestCase(BaseTestCase):
             shutil.rmtree(tmpdir)
 
     def test_list2cmdline(self):
+        self.assertEqual(subprocess.list2cmdline(['a b* c', 'd', 'e'], False),
+                         '"a b* c" d e')
+        self.assertEqual(subprocess.list2cmdline(['a b* c', 'd', 'e'], True),
+                         '"a b\\* c" d e')
+        self.assertEqual(subprocess.list2cmdline(['a b? c', 'd', 'e'], False),
+                         '"a b? c" d e')
+        self.assertEqual(subprocess.list2cmdline(['a b? c', 'd', 'e'], True),
+                         '"a b\\? c" d e')
         self.assertEqual(subprocess.list2cmdline(['a b c', 'd', 'e']),
                          '"a b c" d e')
         self.assertEqual(subprocess.list2cmdline(['ab"c', '\\', 'd']),
