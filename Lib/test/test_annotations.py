@@ -1,3 +1,4 @@
+import ast
 import unittest
 import sys
 from textwrap import dedent
@@ -34,17 +35,14 @@ class PostponedAnnotationsTestCase(unittest.TestCase):
         self.assertEqual(func_ret_ann, var_ann2)
         return func_ret_ann
 
-    def assertAnnotationEqual(
-        self, annotation, expected=None, drop_parens=False, is_tuple=False,
-    ):
-        actual = self.getActual(annotation)
-        if expected is None:
-            expected = annotation if not is_tuple else annotation[1:-1]
-        if drop_parens:
-            self.assertNotEqual(actual, expected)
-            actual = actual.replace("(", "").replace(")", "")
 
-        self.assertEqual(actual, expected)
+    def assertAnnotationEqual(self, annotation, expected=None):
+        if expected is None:
+            expected = annotation
+
+        with self.subTest(annotation=annotation, expected=expected):
+            actual = self.getActual(annotation)
+            self.assertEqual(ast.dump(ast.parse(actual)), ast.dump(ast.parse(expected)), msg = f"{expected} != {actual}")
 
     def test_annotations(self):
         eq = self.assertAnnotationEqual
@@ -216,10 +214,10 @@ class PostponedAnnotationsTestCase(unittest.TestCase):
         self.assertAnnotationEqual("1e1000j")
         self.assertAnnotationEqual("-1e1000")
         self.assertAnnotationEqual("3+1e1000j")
-        self.assertAnnotationEqual("(1e1000, 1e1000j)")
+        self.assertAnnotationEqual("(1e1000,1e1000j)")
         self.assertAnnotationEqual("'inf'")
-        self.assertAnnotationEqual("('inf', 1e1000, 'infxxx', 1e1000j)")
-        self.assertAnnotationEqual("(1e1000, (1e1000j,))")
+        self.assertAnnotationEqual("('inf',1e1000,'infxxx',1e1000j)")
+        self.assertAnnotationEqual("(1e1000,(1e1000j,))")
 
 
 if __name__ == "__main__":

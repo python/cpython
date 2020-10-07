@@ -2282,32 +2282,69 @@ expr_ty _PyPegen_collect_call_seqs(Parser *p, asdl_expr_seq *a, asdl_seq *b,
                     col_offset, end_lineno, end_col_offset, arena);
 }
 
+#define IS_KEYWORD(token) token->type > NT_OFFSET || token->type == AWAIT ||\
+                          token->type == ASYNC
 
 expr_ty _PyPegen_produce_string(Parser *p, expr_ty a) {
-
-    Py_ssize_t left = a->col_offset;
-    Py_ssize_t right = a->end_col_offset;
-
-    Py_ssize_t index = left;
-    Py_ssize_t parens = 0;
-    while (p->tok->buf[index] != ':' && p->tok->buf[index] != '>') {
-        index--;
-        if (p->tok->buf[index] == '(') {
-            parens++;
-            left = index;
+    int start = -1, end = -1, length = 0, seen_walrus = 0, mark;
+    for (mark = p->mark; start == -1; --mark) {
+        Token* token = p->tokens[mark];
+        if (token->end_lineno == a->end_lineno
+            && token->end_col_offset == a->end_col_offset)
+        {
+            end = mark;
+        }
+        if (token->lineno == a->lineno
+            && token->col_offset == a->col_offset)
+        {
+            start = mark;
+        }
+        if (end != -1) {
+            length = length + PyBytes_GET_SIZE(token->bytes);
+            if (IS_KEYWORD(token) || token->type == NUMBER) {
+                length = length + 2;
+            } else if (token->type == COLONEQUAL) {
+                seen_walrus = 1;
+            }
         }
     }
 
-    index = right;
-    while (parens != 0) {
-        if (p->tok->buf[index] == ')') {
-            parens--;
-            right = index + 1;
+    assert(start != -1 || end != -1);
+    char* buffer = PyMem_Calloc(length + seen_walrus * 2, sizeof(char*));
+    for (mark = start; mark <= end; ++mark) {
+        int is_start = mark == start;
+        Token* token = p->tokens[mark];
+        char *value = PyBytes_AS_STRING(token->bytes);
+        if (IS_KEYWORD(token) || token->type == NUMBER) {
+            const char *format;
+            char new_value[strlen(value) + 2];
+            if (is_start) {
+                format = "%s ";
+            } else {
+                format = " %s ";
+            }
+            value = PyMem_Malloc(sprintf(new_value, format, value) + 1);
+            strcpy(value, new_value);
         }
-        index++;
+        if (mark == start) {
+            if (seen_walrus) {
+                strcpy(buffer, "(");
+                strcat(buffer, value);
+            } else {
+                strcpy(buffer, value);
+            }
+        } else {
+            strcat(buffer, value);
+        }
     }
-
-    PyObject *res= PyUnicode_DecodeUTF8(p->tok->buf+left, right-left, NULL);
+    if (seen_walrus) {
+        strcat(buffer, ")");
+    }
+    PyObject *res = PyUnicode_FromString(buffer);
+    PyMem_Free(buffer);
+    if (res == NULL) {
+        return NULL;
+    }
     if (PyArena_AddPyObject(p->arena, res) < 0) {
         Py_DECREF(res);
         return NULL;

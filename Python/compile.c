@@ -2047,7 +2047,7 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
 
         ADDOP_LOAD_CONST(c, mangled);
         Py_DECREF(mangled);
-        VISIT(c, annexpr, annotation);
+        VISIT(c, expr, annotation);
         *annotations_len += 2;
     }
     return 1;
