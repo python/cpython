@@ -4138,7 +4138,6 @@ Dec_BoolFunc(mpd_isqnan)
 Dec_BoolFunc(mpd_issnan)
 Dec_BoolFunc(mpd_issigned)
 Dec_BoolFunc(mpd_iszero)
-Dec_BoolFunc(mpd_isinteger)
 
 /* Boolean functions, optional context arg */
 Dec_BoolFuncVA(mpd_isnormal)
@@ -4773,7 +4772,6 @@ static PyMethodDef dec_methods [] =
   { "is_snan", dec_mpd_issnan, METH_NOARGS, doc_is_snan },
   { "is_signed", dec_mpd_issigned, METH_NOARGS, doc_is_signed },
   { "is_zero", dec_mpd_iszero, METH_NOARGS, doc_is_zero },
-  { "is_integer", dec_mpd_isinteger, METH_NOARGS, doc_is_integer},
 
   /* Boolean functions, optional context arg */
   { "is_normal", (PyCFunction)(void(*)(void))dec_mpd_isnormal, METH_VARARGS|METH_KEYWORDS, doc_is_normal },
@@ -5185,7 +5183,6 @@ DecCtx_BoolFunc_NO_CTX(mpd_isqnan)
 DecCtx_BoolFunc_NO_CTX(mpd_issigned)
 DecCtx_BoolFunc_NO_CTX(mpd_issnan)
 DecCtx_BoolFunc_NO_CTX(mpd_iszero)
-DecCtx_BoolFunc_NO_CTX(mpd_isinteger)
 
 static PyObject *
 ctx_iscanonical(PyObject *context UNUSED, PyObject *v)
@@ -5467,7 +5464,6 @@ static PyMethodDef context_methods [] =
   { "is_snan", ctx_mpd_issnan, METH_O, doc_ctx_is_snan },
   { "is_subnormal", ctx_mpd_issubnormal, METH_O, doc_ctx_is_subnormal },
   { "is_zero", ctx_mpd_iszero, METH_O, doc_ctx_is_zero },
-  { "is_integer", ctx_mpd_isinteger, METH_O, doc_ctx_is_integer },
 
   /* Functions with a single decimal argument */
   { "_apply", PyDecContext_Apply, METH_O, NULL }, /* alias for apply */
@@ -6101,3 +6097,5 @@ error:
 
     return NULL; /* GCOV_NOT_REACHED */
 }
+
+

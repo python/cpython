@@ -310,10 +310,6 @@ the operations, see :ref:`operator-summary`):
 +---------------------+---------------------------------+---------+--------------------+
 | ``x ** y``          | *x* to the power *y*            | \(5)    |                    |
 +---------------------+---------------------------------+---------+--------------------+
-| ``x.is_integer()``  | ``True`` if *x* has a finite    |         | :func:`~numbers\   |
-|                     | and integral value, otherwise   |         | .Real.is_integer`  |
-|                     | ``False``.                      |         |                    |
-+---------------------+---------------------------------+---------+--------------------+
 
 .. index::
    triple: operations on; numeric; types
@@ -586,6 +582,16 @@ class`. float also has the following additional methods.
    original float and with a positive denominator.  Raises
    :exc:`OverflowError` on infinities and a :exc:`ValueError` on
    NaNs.
+
+.. method:: float.is_integer()
+
+   Return ``True`` if the float instance is finite with integral
+   value, and ``False`` otherwise::
+
+      >>> (-2.0).is_integer()
+      True
+      >>> (3.2).is_integer()
+      False
 
 Two methods support conversion to
 and from hexadecimal strings.  Since Python's floats are stored

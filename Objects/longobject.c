@@ -5234,19 +5234,6 @@ int___round___impl(PyObject *self, PyObject *o_ndigits)
 }
 
 /*[clinic input]
-int.is_integer
-
-Returns True for all integers.
-[clinic start generated code]*/
-
-static PyObject *
-int_is_integer_impl(PyObject *self)
-/*[clinic end generated code: output=90f8e794ce5430ef input=1c1a86957301d26d]*/
-{
-    Py_RETURN_TRUE;
-}
-
-/*[clinic input]
 int.__sizeof__ -> Py_ssize_t
 
 Returns size in memory, in bytes.
@@ -5560,7 +5547,6 @@ static PyMethodDef long_methods[] = {
     {"__ceil__",        long_long_meth, METH_NOARGS,
      "Ceiling of an Integral returns itself."},
     INT___ROUND___METHODDEF
-    INT_IS_INTEGER_METHODDEF
     INT___GETNEWARGS___METHODDEF
     INT___FORMAT___METHODDEF
     INT___SIZEOF___METHODDEF

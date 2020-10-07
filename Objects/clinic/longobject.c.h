@@ -121,24 +121,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(int_is_integer__doc__,
-"is_integer($self, /)\n"
-"--\n"
-"\n"
-"Returns True for all integers.");
-
-#define INT_IS_INTEGER_METHODDEF    \
-    {"is_integer", (PyCFunction)int_is_integer, METH_NOARGS, int_is_integer__doc__},
-
-static PyObject *
-int_is_integer_impl(PyObject *self);
-
-static PyObject *
-int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return int_is_integer_impl(self);
-}
-
 PyDoc_STRVAR(int___sizeof____doc__,
 "__sizeof__($self, /)\n"
 "--\n"
@@ -385,4 +367,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=022614978e2fcdf3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea18e51af5b53591 input=a9049054013a1b77]*/

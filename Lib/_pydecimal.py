@@ -3164,12 +3164,6 @@ class Decimal(object):
         """Return True if self is a zero; otherwise return False."""
         return not self._is_special and self._int == '0'
 
-    def is_integer(self):
-        """Return True is self is finite and integral; otherwise False."""
-        if self._is_special:
-            return False
-        return self.to_integral_value(rounding=ROUND_FLOOR) == self
-
     def _ln_exp_bound(self):
         """Compute a lower bound for the adjusted exponent of self.ln().
         In other words, compute r such that self.ln() >= 10**r.  Assumes
@@ -4664,25 +4658,6 @@ class Context(object):
         """
         a = _convert_other(a, raiseit=True)
         return a.is_zero()
-
-    def is_integer(self, a):
-        """Return True if the operand is integral; otherwise return False.
-
-        >>> ExtendedContext.is_integer(Decimal('0'))
-        True
-        >>> ExtendedContext.is_integer(Decimal('2.50'))
-        False
-        >>> ExtendedContext.is_integer(Decimal('-0E+2'))
-        True
-        >>> ExtendedContext.is_integer(Decimal('-0.5'))
-        False
-        >>> ExtendedContext.is_integer(Decimal('NaN'))
-        False
-        >>> ExtendedContext.is_integer(10)
-        True
-        """
-        a = _convert_other(a, raiseit=True)
-        return a.is_integer()
 
     def ln(self, a):
         """Returns the natural (base e) logarithm of the operand.
