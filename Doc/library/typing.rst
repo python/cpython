@@ -34,6 +34,8 @@ In the function ``greeting``, the argument ``name`` is expected to be of type
 :class:`str` and the return type :class:`str`. Subtypes are accepted as
 arguments.
 
+.. _type-aliases:
+
 Type aliases
 ============
 
@@ -488,6 +490,17 @@ These can be used as types in annotations and do not support ``[]``.
 
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
+
+.. data:: TypeAlias
+
+   Special annotation for explicitly declaring a :ref:`type alias <type-aliases>`.
+   For example::
+
+    from typing import TypeAlias
+
+    Factors: TypeAlias = list[int]
+
+   .. versionadded:: 3.10
 
 Special forms
 """""""""""""
