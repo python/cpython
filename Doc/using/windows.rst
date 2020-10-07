@@ -23,8 +23,9 @@ available for application-local distributions.
 
 As specified in :pep:`11`, a Python release only supports a Windows platform
 while Microsoft considers the platform under extended support. This means that
-Python |version| supports Windows Vista and newer. If you require Windows XP
-support then please install Python 3.4.
+Python |version| supports Windows 8.1 and newer. If you require Windows XP
+support then please install Python 3.4. If you require Windows Vista or
+Windows 7 then please install Python 3.8.
 
 There are a number of different installers available for Windows, each with
 certain benefits and downsides.
