@@ -331,28 +331,6 @@ class BuiltinLevelsTest(BaseTest):
         self.assertEqual(logging.getLevelName(logging.NOTSET), 'NOTSET')
         self.assertEqual(logging.getLevelName('NOTSET'), logging.NOTSET)
 
-    def test_issue_41943(self):
-        """See issue #41943 for more information."""
-        m = self.next_message
-        ROOT = logging.getLogger()
-        self.addCleanup(ROOT.setLevel, ROOT.level)
-        ROOT.setLevel(logging.WARNING)
-        CHILD = logging.getLogger("CHILD")
-        self.addCleanup(CHILD.setLevel, CHILD.level)
-        CHILD.setLevel(logging.INFO)
-
-        # This should log.
-        CHILD.warning(m())
-
-        # These should not log.
-        CHILD.debug(m())
-        CHILD.info(m())
-
-        self.assert_log_lines([
-            ('CHILD', 'WARNING', '1'),
-        ])
-
-
 class BasicFilterTest(BaseTest):
 
     """Test the bundled Filter class."""
@@ -2095,20 +2073,14 @@ class MemoryTest(BaseTest):
         #  if visible references are destroyed.
         self.root_logger.setLevel(logging.INFO)
         foo = logging.getLogger("foo")
-        foo_stream = io.StringIO()
-        foo_hdlr = logging.StreamHandler(foo_stream)
-        foo_hdlr.setFormatter(logging.Formatter(self.log_format))
-        foo.addHandler(foo_hdlr)
-
-        self._watch_for_survival(foo, foo_hdlr)
+        self._watch_for_survival(foo)
         foo.setLevel(logging.DEBUG)
         self.root_logger.debug(self.next_message())
         foo.debug(self.next_message())
         self.assert_log_lines([
             ('foo', 'DEBUG', '2'),
-        ], stream=foo.handlers[0].stream)
+        ])
         del foo
-        del foo_hdlr
         # foo has survived.
         self._assertTruesurvival()
         # foo has retained its settings.
@@ -2117,7 +2089,7 @@ class MemoryTest(BaseTest):
         self.assert_log_lines([
             ('foo', 'DEBUG', '2'),
             ('foo', 'DEBUG', '3'),
-        ], stream=bar.handlers[0].stream)
+        ])
 
 
 class EncodingTest(BaseTest):
