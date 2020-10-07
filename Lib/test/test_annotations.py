@@ -194,8 +194,8 @@ class PostponedAnnotationsTestCase(unittest.TestCase):
         eq('f(x for x in a)')
         eq('f(1, (x for x in a))')
         eq('f((x for x in a), 2)')
-        eq('(((a)))', 'a')
-        eq('(((a, b)))', '(a, b)')
+        eq('(((a)))')
+        eq('(((a, b)))')
         eq("(x := 10)")
         eq("f'{(x := 10):=10}'")
         eq("1 + 2")
@@ -204,24 +204,22 @@ class PostponedAnnotationsTestCase(unittest.TestCase):
     def test_fstring_debug_annotations(self):
         # f-strings with '=' don't round trip very well, so set the expected
         # result explicitely.
-        self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
-        self.assertAnnotationEqual("f'{x=:}'", expected="f'x={x:}'")
-        self.assertAnnotationEqual("f'{x=:.2f}'", expected="f'x={x:.2f}'")
-        self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
-        self.assertAnnotationEqual("f'{x=!a}'", expected="f'x={x!a}'")
-        self.assertAnnotationEqual("f'{x=!s:*^20}'", expected="f'x={x!s:*^20}'")
+        self.assertAnnotationEqual("f'{x=!r}'")
+        self.assertAnnotationEqual("f'{x=:}'")
+        self.assertAnnotationEqual("f'{x=:.2f}'")
+        self.assertAnnotationEqual("f'{x=!r}'")
+        self.assertAnnotationEqual("f'{x=!a}'")
+        self.assertAnnotationEqual("f'{x=!s:*^20}'")
 
     def test_infinity_numbers(self):
-        inf = "1e" + repr(sys.float_info.max_10_exp + 1)
-        infj = f"{inf}j"
-        self.assertAnnotationEqual("1e1000", expected=inf)
-        self.assertAnnotationEqual("1e1000j", expected=infj)
-        self.assertAnnotationEqual("-1e1000", expected=f"-{inf}")
-        self.assertAnnotationEqual("3+1e1000j", expected=f"3 + {infj}")
-        self.assertAnnotationEqual("(1e1000, 1e1000j)", expected=f"({inf}, {infj})")
+        self.assertAnnotationEqual("1e1000")
+        self.assertAnnotationEqual("1e1000j")
+        self.assertAnnotationEqual("-1e1000")
+        self.assertAnnotationEqual("3+1e1000j")
+        self.assertAnnotationEqual("(1e1000, 1e1000j)")
         self.assertAnnotationEqual("'inf'")
-        self.assertAnnotationEqual("('inf', 1e1000, 'infxxx', 1e1000j)", expected=f"('inf', {inf}, 'infxxx', {infj})")
-        self.assertAnnotationEqual("(1e1000, (1e1000j,))", expected=f"({inf}, ({infj},))")
+        self.assertAnnotationEqual("('inf', 1e1000, 'infxxx', 1e1000j)")
+        self.assertAnnotationEqual("(1e1000, (1e1000j,))")
 
 
 if __name__ == "__main__":

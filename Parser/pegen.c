@@ -2281,3 +2281,38 @@ expr_ty _PyPegen_collect_call_seqs(Parser *p, asdl_expr_seq *a, asdl_seq *b,
     return _Py_Call(_PyPegen_dummy_name(p), args, keywords, lineno,
                     col_offset, end_lineno, end_col_offset, arena);
 }
+
+
+expr_ty _PyPegen_produce_string(Parser *p, expr_ty a) {
+
+    Py_ssize_t left = a->col_offset;
+    Py_ssize_t right = a->end_col_offset;
+
+    Py_ssize_t index = left;
+    Py_ssize_t parens = 0;
+    while (p->tok->buf[index] != ':' && p->tok->buf[index] != '>') {
+        index--;
+        if (p->tok->buf[index] == '(') {
+            parens++;
+            left = index;
+        }
+    }
+
+    index = right;
+    while (parens != 0) {
+        if (p->tok->buf[index] == ')') {
+            parens--;
+            right = index + 1;
+        }
+        index++;
+    }
+
+    PyObject *res= PyUnicode_DecodeUTF8(p->tok->buf+left, right-left, NULL);
+    if (PyArena_AddPyObject(p->arena, res) < 0) {
+        Py_DECREF(res);
+        return NULL;
+    }
+
+    return Constant(res, NULL, a->lineno, a->col_offset, a->end_lineno, a->end_col_offset,
+                    p->arena);
+}
