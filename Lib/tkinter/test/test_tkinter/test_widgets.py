@@ -940,7 +940,6 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_from(self):
         widget = self.create()
-        # A change in Tk 8.6.10 means `from` is not rounded (bpo-41306)
         conv = float_round if get_tk_patchlevel() < (8, 6, 10) else noconv
         self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=conv)
 
