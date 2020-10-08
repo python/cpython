@@ -3415,5 +3415,30 @@ class Rot13UtilTest(unittest.TestCase):
             'To be, or not to be, that is the question')
 
 
+class CodecNameNormalizationTest(unittest.TestCase):
+    """Test codec name normalization"""
+    def test_normalized_encoding(self):
+        FOUND = (1, 2, 3, 4)
+        NOT_FOUND = (None, None, None, None)
+        def search_function(encoding):
+            if encoding == "aaa_8":
+                return FOUND
+            else:
+                return NOT_FOUND
+
+        codecs.register(search_function)
+        self.addCleanup(codecs.unregister, search_function)
+        self.assertEqual(FOUND, codecs.lookup('aaa_8'))
+        self.assertEqual(FOUND, codecs.lookup('AAA-8'))
+        self.assertEqual(FOUND, codecs.lookup('AAA---8'))
+        self.assertEqual(FOUND, codecs.lookup('AAA   8'))
+        self.assertEqual(FOUND, codecs.lookup('aaa\xe9\u20ac-8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('AAA.8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('AAA...8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('BBB-8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('BBB.8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('a\xe9\u20ac-8'))
+
+
 if __name__ == "__main__":
     unittest.main()
