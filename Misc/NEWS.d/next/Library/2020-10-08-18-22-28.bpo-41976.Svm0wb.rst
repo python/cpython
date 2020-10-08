@@ -1,0 +1,3 @@
+Fixed a bug that was causing :func:`ctypes.util.find_library` to return
+``None`` when triying to locate a library in an environment when gcc>=9 is
+available and ``ldconfig`` is not. Patch by Pablo Galindo
