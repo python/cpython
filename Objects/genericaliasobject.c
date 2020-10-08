@@ -582,7 +582,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_name = "types.GenericAlias",
     .tp_doc = "Represent a PEP 585 generic type\n"
               "\n"
-              "E.g. for t = list[int], t.origin is list and t.args is (int,).",
+              "E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).",
     .tp_basicsize = sizeof(gaobject),
     .tp_dealloc = ga_dealloc,
     .tp_repr = ga_repr,
