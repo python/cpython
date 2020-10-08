@@ -1,0 +1,1 @@
+Fixed a failure in ``test_tk.test_widgets.ScaleTest`` happening when executing the test with Tk 8.6.10.
