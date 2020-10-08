@@ -2759,11 +2759,7 @@ def _get_test_codec(codec_name):
 class ExceptionChainingTest(unittest.TestCase):
 
     def setUp(self):
-        # After the codecs.unregister function is added in bpo-41842,
-        # we don't make sure we use a truly unique id for the custom codec
-        # to avoid the refleaks of the codec cache when running these tests
-        # multiple times.
-        self.codec_name = encodings.normalize_encoding(repr(self).lower())
+        self.codec_name = 'exception_chaining_test'
         codecs.register(_get_test_codec)
         self.addCleanup(codecs.unregister, _get_test_codec)
 
