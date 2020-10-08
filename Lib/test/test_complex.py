@@ -101,6 +101,12 @@ class ComplexTest(unittest.TestCase):
 
         self.assertAlmostEqual(complex.__truediv__(2+0j, 1+1j), 1-1j)
 
+        for denom_real, denom_imag in [(0, NAN), (NAN, 0), (NAN, NAN)]:
+            z = complex(0, 0) / complex(denom_real, denom_imag)
+            self.assertTrue(isnan(z.real))
+            self.assertTrue(isnan(z.imag))
+
+    def test_truediv_zero_division(self):
         with self.assertRaises(ZeroDivisionError):
             (1+1j) / (0+0j)
         with self.assertRaises(ZeroDivisionError):
@@ -111,11 +117,6 @@ class ComplexTest(unittest.TestCase):
             1.0 / (0+0j)
         with self.assertRaises(ZeroDivisionError):
             1 / (0+0j)
-
-        for denom_real, denom_imag in [(0, NAN), (NAN, 0), (NAN, NAN)]:
-            z = complex(0, 0) / complex(denom_real, denom_imag)
-            self.assertTrue(isnan(z.real))
-            self.assertTrue(isnan(z.imag))
 
     def test_floordiv(self):
         with self.assertRaises(TypeError):
@@ -129,6 +130,7 @@ class ComplexTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             1 // (1+0j)
 
+    def test_floordiv_zero_division(self):
         with self.assertRaises(TypeError):
             (1+1j) // (0+0j)
         with self.assertRaises(TypeError):
@@ -196,6 +198,7 @@ class ComplexTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             1 % (1+0j)
 
+    def test_mod_zero_division(self):
         with self.assertRaises(TypeError):
             (1+1j) % 0j
         with self.assertRaises(TypeError):
@@ -214,6 +217,7 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, divmod, 1.0, 1+0j)
         self.assertRaises(TypeError, divmod, 1, 1+0j)
 
+    def test_divmod_zero_division(self):
         self.assertRaises(TypeError, divmod, 1+1j, 0+0j)
         self.assertRaises(TypeError, divmod, 1+1j, 0.0)
         self.assertRaises(TypeError, divmod, 1+1j, 0)
