@@ -84,6 +84,16 @@ For example, ``'[?]'`` matches the character ``'?'``.
 
    .. audit-event:: glob.glob pathname,recursive glob.iglob
 
+   .. note::
+      Using the "``**``" pattern in large directory trees may consume
+      an inordinate amount of time.
+
+   .. versionchanged:: 3.5
+      Support for recursive globs using "``**``".
+
+   .. versionchanged:: 3.10
+      Added the *root_dir* and *dir_fd* parameters.
+
 
 .. function:: escape(pathname)
 
