@@ -1,1 +1,1 @@
-Accept star-unpacking on with-item targets for the PEG parser.
+Star-unpacking is now allowed for with item's targets in the PEG parser.
