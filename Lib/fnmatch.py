@@ -46,7 +46,7 @@ def _compile_pattern(pat):
     return re.compile(res).match
 
 def filter(names, pat):
-    """Return a list of items in iterable NAMES that match PAT."""
+    """Construct a list from those elements of the iterable NAMES that match PAT."""
     result = []
     pat = os.path.normcase(pat)
     match = _compile_pattern(pat)
