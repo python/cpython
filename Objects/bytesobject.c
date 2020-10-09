@@ -522,7 +522,7 @@ formatlong(PyObject *v, int flags, int prec, int type)
     PyErr_Format(PyExc_TypeError,
         "%%%c format: %s is required, not %.200s", type,
         (type == 'o' || type == 'x' || type == 'X') ? "an integer"
-                                                    : "a number",
+                                                    : "a real number",
         Py_TYPE(v)->tp_name);
     return NULL;
 }
