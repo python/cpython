@@ -255,6 +255,12 @@ Deprecated
 Removed
 =======
 
+* Removed special methods ``__int__``, ``__float__``, ``__floordiv__``,
+  ``__mod__``, ``__divmod__``, ``__rfloordiv__``, ``__rmod__`` and
+  ``__rdivmod__`` of the :class:`complex` class.  They always raised
+  a :exc:`TypeError`.
+  (Contributed by Serhiy Storchaka in :issue:`41974`.)
+
 * The ``ParserBase.error()`` method from the private and undocumented ``_markupbase``
   module has been removed.  :class:`html.parser.HTMLParser` is the only subclass of
   ``ParserBase`` and its ``error()`` implementation has already been removed in

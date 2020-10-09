@@ -14839,7 +14839,7 @@ wrongtype:
             break;
         default:
             PyErr_Format(PyExc_TypeError,
-                    "%%%c format: a number is required, "
+                    "%%%c format: a real number is required, "
                     "not %.200s",
                     type, Py_TYPE(v)->tp_name);
             break;
