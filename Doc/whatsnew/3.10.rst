@@ -70,6 +70,23 @@ Summary -- Release highlights
 New Features
 ============
 
+.. _whatsnew310-pep563:
+
+PEP 563: Postponed Evaluation of Annotations Becomes Default
+------------------------------------------------------------
+
+In Python 3.7, postponed evaluation of annotations was added,
+to be enabled with a ``from __future__ import annotations``
+directive.  In 3.10 this became the default behavior, even
+without that future directive.  With this being default, all
+annotations stored in :attr:`__annotations__` will be strings.
+If needed, annotations can be resolved at runtime using
+:func:`typing.get_type_hints`.  See :pep:`563` for a full
+description.  Also, the :func:`inspect.signature` will try to
+resolve types from now on, and when it fails it will fall back to
+showing the string annotations.  (Contributed by Batuhan Taskaya
+in :issue:`38605`.)
+
 * The :class:`int` type has a new method :meth:`int.bit_count`, returning the
   number of ones in the binary expansion of a given integer, also known
   as the population count. (Contributed by Niklas Fiekas in :issue:`29882`.)
@@ -82,6 +99,50 @@ New Features
 * :pep:`618`: The :func:`zip` function now has an optional ``strict`` flag, used
   to require that all the iterables have an equal length.
 
+PEP 613: TypeAlias Annotation
+-----------------------------
+
+:pep:`484` introduced the concept of type aliases, only requiring them to be
+top-level unannotated assignments. This simplicity sometimes made it difficult
+for type checkers to distinguish between type aliases and ordinary assignments,
+especially when forward references or invalid types were involved. Compare::
+
+   StrCache = 'Cache[str]'  # a type alias
+   LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
+
+Now the :mod:`typing` module has a special annotation :data:`TypeAlias` to
+declare type aliases more explicitly::
+
+   StrCache: TypeAlias = 'Cache[str]'  # a type alias
+   LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
+
+See :pep:`613` for more details.
+
+(Contributed by Mikhail Golubev in :issue:`41923`.)
+
+PEP604: New Type Union Operator
+-------------------------------
+
+A new type union operator was introduced which enables the syntax ``X | Y``.
+This provides a cleaner way of expressing 'either type X or type Y' instead of
+using :data:`typing.Union`, especially in type hints (annotations).
+
+In previous versions of Python, to apply a type hint for functions accepting
+arguments of multiple types, :data:`typing.Union` was used::
+
+   def square(number: Union[int, float]) -> Union[int, float]:
+       return number ** 2
+
+
+Now, type hints can be written in a more succinct manner::
+
+   def square(number: int | float) -> int | float:
+       return number ** 2
+
+
+See :pep:`604` for more details.
+
+(Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
 
 Other Language Changes
 ======================
@@ -108,6 +169,12 @@ base64
 
 Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
 Base32 Encoding with Extended Hex Alphabet.
+
+codecs
+------
+
+Add a :func:`codecs.unregister` function to unregister a codec search function.
+(Contributed by Hai Shi in :issue:`41842`.)
 
 curses
 ------
@@ -144,6 +211,21 @@ sys
 Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
+
+types
+-----
+
+Reintroduced the :data:`types.EllipsisType`, :data:`types.NoneType`
+and :data:`types.NotImplementedType` classes, providing a new set
+of types readily interpretable by type checkers.
+(Contributed by Bas van Beek in :issue:`41810`.)
+
+unittest
+--------
+
+Add new method :meth:`~unittest.TestCase.assertNoLogs` to complement the
+existing :meth:`~unittest.TestCase.assertLogs`. (Contributed by Kit Yan Choi
+in :issue:`39385`.)
 
 xml
 ---
@@ -216,6 +298,16 @@ New Features
   Python executable.
   (Contributed by Victor Stinner in :issue:`23427`.)
 
+* The :c:func:`PyDateTime_DATE_GET_TZINFO` and
+  :c:func:`PyDateTime_TIME_GET_TZINFO` macros have been added for accessing
+  the ``tzinfo`` attributes of :class:`datetime.datetime` and
+  :class:`datetime.time` objects.
+  (Contributed by Zackery Spytz in :issue:`30155`.)
+
+* Add a :c:func:`PyCodec_Unregister` function to unregister a codec
+  search function.
+  (Contributed by Hai Shi in :issue:`41842`.)
+
 Porting to Python 3.10
 ----------------------
 
@@ -268,6 +360,14 @@ Porting to Python 3.10
   Unicode object without initial data.
   (Contributed by Inada Naoki in :issue:`36346`.)
 
+Deprecated
+----------
+
+* The ``PyUnicode_InternImmortal()`` function is now deprecated
+  and will be removed in Python 3.12: use :c:func:`PyUnicode_InternInPlace`
+  instead.
+  (Contributed by Victor Stinner in :issue:`41692`.)
+
 Removed
 -------
 
@@ -299,3 +399,12 @@ Removed
 * Removed ``PyUnicode_AsUnicodeCopy()``. Please use :c:func:`PyUnicode_AsUCS4Copy` or
   :c:func:`PyUnicode_AsWideCharString`
   (Contributed by Inada Naoki in :issue:`41103`.)
+
+* Removed ``_Py_CheckRecursionLimit`` variable: it has been replaced by
+  ``ceval.recursion_limit`` of the :c:type:`PyInterpreterState` structure.
+  (Contributed by Victor Stinner in :issue:`41834`.)
+
+* Removed undocumented macros ``Py_ALLOW_RECURSION`` and
+  ``Py_END_ALLOW_RECURSION`` and the ``recursion_critical`` field of the
+  :c:type:`PyInterpreterState` structure.
+  (Contributed by Serhiy Storchaka in :issue:`41936`.)

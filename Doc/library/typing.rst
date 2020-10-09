@@ -34,14 +34,15 @@ In the function ``greeting``, the argument ``name`` is expected to be of type
 :class:`str` and the return type :class:`str`. Subtypes are accepted as
 arguments.
 
+.. _type-aliases:
+
 Type aliases
 ============
 
 A type alias is defined by assigning the type to the alias. In this example,
-``Vector`` and ``List[float]`` will be treated as interchangeable synonyms::
+``Vector`` and ``list[float]`` will be treated as interchangeable synonyms::
 
-   from typing import List
-   Vector = List[float]
+   Vector = list[float]
 
    def scale(scalar: float, vector: Vector) -> Vector:
        return [scalar * num for num in vector]
@@ -51,11 +52,11 @@ A type alias is defined by assigning the type to the alias. In this example,
 
 Type aliases are useful for simplifying complex type signatures. For example::
 
-   from typing import Dict, Tuple, Sequence
+   from collections.abc import Sequence
 
-   ConnectionOptions = Dict[str, str]
-   Address = Tuple[str, int]
-   Server = Tuple[Address, ConnectionOptions]
+   ConnectionOptions = dict[str, str]
+   Address = tuple[str, int]
+   Server = tuple[Address, ConnectionOptions]
 
    def broadcast_message(message: str, servers: Sequence[Server]) -> None:
        ...
@@ -64,7 +65,7 @@ Type aliases are useful for simplifying complex type signatures. For example::
    # being exactly equivalent to this one.
    def broadcast_message(
            message: str,
-           servers: Sequence[Tuple[Tuple[str, int], Dict[str, str]]]) -> None:
+           servers: Sequence[tuple[tuple[str, int], dict[str, str]]]) -> None:
        ...
 
 Note that ``None`` as a type hint is a special case and is replaced by
@@ -157,7 +158,7 @@ type hinted using ``Callable[[Arg1Type, Arg2Type], ReturnType]``.
 
 For example::
 
-   from typing import Callable
+   from collections.abc import Callable
 
    def feeder(get_next_item: Callable[[], str]) -> None:
        # Body
@@ -181,7 +182,7 @@ subscription to denote expected types for container elements.
 
 ::
 
-   from typing import Mapping, Sequence
+   from collections.abc import Mapping, Sequence
 
    def notify_by_email(employees: Sequence[Employee],
                        overrides: Mapping[str, str]) -> None: ...
@@ -191,7 +192,8 @@ called :class:`TypeVar`.
 
 ::
 
-   from typing import Sequence, TypeVar
+   from collections.abc import Sequence
+   from typing import TypeVar
 
    T = TypeVar('T')      # Declare type variable
 
@@ -235,7 +237,7 @@ class body.
 The :class:`Generic` base class defines :meth:`__class_getitem__` so that
 ``LoggedVar[t]`` is valid as a type::
 
-   from typing import Iterable
+   from collections.abc import Iterable
 
    def zero_all_vars(vars: Iterable[LoggedVar[int]]) -> None:
        for var in vars:
@@ -266,7 +268,8 @@ This is thus invalid::
 
 You can use multiple inheritance with :class:`Generic`::
 
-   from typing import TypeVar, Generic, Sized
+   from collections.abc import Sized
+   from typing import TypeVar, Generic
 
    T = TypeVar('T')
 
@@ -275,7 +278,8 @@ You can use multiple inheritance with :class:`Generic`::
 
 When inheriting from generic classes, some type variables could be fixed::
 
-    from typing import TypeVar, Mapping
+    from collections.abc import Mapping
+    from typing import TypeVar
 
     T = TypeVar('T')
 
@@ -288,13 +292,14 @@ Using a generic class without specifying type parameters assumes
 :data:`Any` for each position. In the following example, ``MyIterable`` is
 not generic but implicitly inherits from ``Iterable[Any]``::
 
-   from typing import Iterable
+   from collections.abc import Iterable
 
    class MyIterable(Iterable): # Same as Iterable[Any]
 
 User defined generic type aliases are also supported. Examples::
 
-   from typing import TypeVar, Iterable, Tuple, Union
+   from collections.abc import Iterable
+   from typing import TypeVar, Union
    S = TypeVar('S')
    Response = Union[Iterable[S], int]
 
@@ -303,9 +308,9 @@ User defined generic type aliases are also supported. Examples::
        ...
 
    T = TypeVar('T', int, float, complex)
-   Vec = Iterable[Tuple[T, T]]
+   Vec = Iterable[tuple[T, T]]
 
-   def inproduct(v: Vec[T]) -> T: # Same as Iterable[Tuple[T, T]]
+   def inproduct(v: Vec[T]) -> T: # Same as Iterable[tuple[T, T]]
        return sum(x*y for x, y in v)
 
 .. versionchanged:: 3.7
@@ -403,12 +408,12 @@ Initially :pep:`484` defined Python static type system as using
 a class ``B`` is expected if and only if ``A`` is a subclass of ``B``.
 
 This requirement previously also applied to abstract base classes, such as
-:class:`Iterable`. The problem with this approach is that a class had
+:class:`~collections.abc.Iterable`. The problem with this approach is that a class had
 to be explicitly marked to support them, which is unpythonic and unlike
 what one would normally do in idiomatic dynamically typed Python code.
-For example, this conforms to the :pep:`484`::
+For example, this conforms to :pep:`484`::
 
-   from typing import Sized, Iterable, Iterator
+   from collections.abc import Sized, Iterable, Iterator
 
    class Bucket(Sized, Iterable[int]):
        ...
@@ -421,7 +426,7 @@ allowing ``Bucket`` to be implicitly considered a subtype of both ``Sized``
 and ``Iterable[int]`` by static type checkers. This is known as
 *structural subtyping* (or static duck-typing)::
 
-   from typing import Iterator, Iterable
+   from collections.abc import Iterator, Iterable
 
    class Bucket:  # Note: no base classes
        ...
@@ -486,6 +491,17 @@ These can be used as types in annotations and do not support ``[]``.
    .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
 
+.. data:: TypeAlias
+
+   Special annotation for explicitly declaring a :ref:`type alias <type-aliases>`.
+   For example::
+
+    from typing import TypeAlias
+
+    Factors: TypeAlias = list[int]
+
+   .. versionadded:: 3.10
+
 Special forms
 """""""""""""
 
@@ -540,6 +556,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    .. versionchanged:: 3.7
       Don't remove explicit subclasses from unions at runtime.
+
+   .. versionchanged:: 3.10
+      Unions can now be written as ``X | Y``. See
+      :ref:`union type expressions<types-union>`.
 
 .. data:: Optional
 
@@ -658,7 +678,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    and should not be set on instances of that class. Usage::
 
       class Starship:
-          stats: ClassVar[Dict[str, int]] = {} # class variable
+          stats: ClassVar[dict[str, int]] = {} # class variable
           damage: int = 10                     # instance variable
 
    :data:`ClassVar` accepts only types and cannot be further subscribed.
@@ -771,10 +791,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    * ``Annotated`` can be used with nested and generic aliases::
 
        T = TypeVar('T')
-       Vec = Annotated[List[Tuple[T, T]], MaxLen(10)]
+       Vec = Annotated[list[tuple[T, T]], MaxLen(10)]
        V = Vec[int]
 
-       V == Annotated[List[Tuple[int, int]], MaxLen(10)]
+       V == Annotated[list[tuple[int, int]], MaxLen(10)]
 
    .. versionadded:: 3.9
 
@@ -900,7 +920,7 @@ These are not used in annotations. They are building blocks for creating generic
    Such a protocol can be used with :func:`isinstance` and :func:`issubclass`.
    This raises :exc:`TypeError` when applied to a non-protocol class.  This
    allows a simple-minded structural check, very similar to "one trick ponies"
-   in :mod:`collections.abc` such as :class:`Iterable`.  For example::
+   in :mod:`collections.abc` such as :class:`~collections.abc.Iterable`.  For example::
 
       @runtime_checkable
       class Closable(Protocol):
@@ -1371,10 +1391,10 @@ Asynchronous programming
    The variance and order of type variables
    correspond to those of :class:`Generator`, for example::
 
-      from typing import List, Coroutine
-      c = None # type: Coroutine[List[str], str, int]
+      from collections.abc import Coroutine
+      c = None # type: Coroutine[list[str], str, int]
       ...
-      x = c.send('hi') # type: List[str]
+      x = c.send('hi') # type: list[str]
       async def bar() -> None:
           x = await c # type: int
 
@@ -1537,7 +1557,7 @@ Functions and decorators
       def process(response: None) -> None:
           ...
       @overload
-      def process(response: int) -> Tuple[int, str]:
+      def process(response: int) -> tuple[int, str]:
           ...
       @overload
       def process(response: bytes) -> str:
@@ -1658,11 +1678,26 @@ Introspection helpers
 
    .. versionadded:: 3.8
 
+.. function:: is_typeddict(tp)
+
+   Check if a type is a :class:`TypedDict`.
+
+   For example::
+
+      class Film(TypedDict):
+          title: str
+          year: int
+
+      is_typeddict(Film)  # => True
+      is_typeddict(Union[list, str])  # => False
+
+   .. versionadded:: 3.10
+
 .. class:: ForwardRef
 
    A class used for internal typing representation of string forward references.
-   For example, ``List["SomeClass"]`` is implicitly transformed into
-   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   For example, ``list["SomeClass"]`` is implicitly transformed into
+   ``list[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
 Constant

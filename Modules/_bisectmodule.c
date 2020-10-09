@@ -237,18 +237,14 @@ common approach.\n");
 
 static struct PyModuleDef _bisectmodule = {
     PyModuleDef_HEAD_INIT,
-    "_bisect",
-    module_doc,
-    -1,
-    bisect_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_bisect",
+    .m_doc = module_doc,
+    .m_methods = bisect_methods,
+    .m_size = 0
 };
 
 PyMODINIT_FUNC
 PyInit__bisect(void)
 {
-    return PyModule_Create(&_bisectmodule);
+    return PyModuleDef_Init(&_bisectmodule);
 }

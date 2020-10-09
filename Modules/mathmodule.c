@@ -2429,7 +2429,7 @@ magnitude.  We avoid this cost by arranging the calculation so that
 fabs(csum) is always as large as fabs(x).
 
 To establish the invariant, *csum* is initialized to 1.0 which is
-always larger than x**2 after scaling or division by *max*.
+always larger than x**2 after scaling or after division by *max*.
 After the loop is finished, the initial 1.0 is subtracted out for a
 net zero effect on the final sum.  Since *csum* will be greater than
 1.0, the subtraction of 1.0 will not cause fractional digits to be
@@ -2458,7 +2458,7 @@ Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 To minimize loss of information during the accumulation of fractional
 values, each term has a separate accumulator.  This also breaks up
 sequential dependencies in the inner loop so the CPU can maximize
-floating point throughput. [5] On a 2.6 GHz Haswell, adding one
+floating point throughput. [4]  On a 2.6 GHz Haswell, adding one
 dimension has an incremental cost of only 5ns -- for example when
 moving from hypot(x,y) to hypot(x,y,z).
 
@@ -2470,7 +2470,7 @@ The differential correction starts with a value *x* that is
 the difference between the square of *h*, the possibly inaccurately
 rounded square root, and the accurately computed sum of squares.
 The correction is the first order term of the Maclaurin series
-expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2). [4]
+expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2). [5]
 
 Essentially, this differential correction is equivalent to one
 refinement step in Newton's divide-and-average square root
@@ -2492,18 +2492,18 @@ References:
 1. Veltkamp-Dekker splitting: http://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
 2. Compensated summation:  http://www.ti3.tu-harburg.de/paper/rump/Ru08b.pdf
 3. Square root differential correction:  https://arxiv.org/pdf/1904.09481.pdf
-4. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
-5. https://bugs.python.org/file49439/hypot.png
-6. https://bugs.python.org/file49435/best_frac.py
-7. https://bugs.python.org/file49448/test_hypot_commutativity.py
+4. Data dependency graph:  https://bugs.python.org/file49439/hypot.png
+5. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+6. Analysis of internal accuracy:  https://bugs.python.org/file49484/best_frac.py
+7. Commutativity test:  https://bugs.python.org/file49448/test_hypot_commutativity.py
 
 */
 
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    const double T27 = 134217729.0;     /* ldexp(1.0, 27)+1.0) */
-    double x, csum = 1.0, oldcsum, scale, frac=0.0, frac_mid=0.0, frac_lo=0.0;
+    const double T27 = 134217729.0;     /* ldexp(1.0, 27) + 1.0) */
+    double x, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0, frac3 = 0.0;
     double t, hi, lo, h;
     int max_e;
     Py_ssize_t i;
@@ -2539,19 +2539,18 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             assert(fabs(csum) >= fabs(x));
             oldcsum = csum;
             csum += x;
-            frac += (oldcsum - csum) + x;
+            frac1 += (oldcsum - csum) + x;
 
             x = 2.0 * hi * lo;
             assert(fabs(csum) >= fabs(x));
             oldcsum = csum;
             csum += x;
-            frac_mid += (oldcsum - csum) + x;
+            frac2 += (oldcsum - csum) + x;
 
             assert(csum + lo * lo == csum);
-            frac_lo += lo * lo;
+            frac3 += lo * lo;
         }
-        frac += frac_lo + frac_mid;
-        h = sqrt(csum - 1.0 + frac);
+        h = sqrt(csum - 1.0 + (frac1 + frac2 + frac3));
 
         x = h;
         t = x * T27;
@@ -2563,21 +2562,21 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac1 += (oldcsum - csum) + x;
 
         x = -2.0 * hi * lo;
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac2 += (oldcsum - csum) + x;
 
         x = -lo * lo;
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac3 += (oldcsum - csum) + x;
 
-        x = csum - 1.0 + frac;
+        x = csum - 1.0 + (frac1 + frac2 + frac3);
         return (h + x / (2.0 * h)) / scale;
     }
     /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
@@ -2592,9 +2591,9 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac1 += (oldcsum - csum) + x;
     }
-    return max * sqrt(csum - 1.0 + frac);
+    return max * sqrt(csum - 1.0 + frac1);
 }
 
 #define NUM_STACK_ELEMS 16
