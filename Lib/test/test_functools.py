@@ -13,15 +13,24 @@ import time
 import typing
 import unittest
 import unittest.mock
+import os
+import weakref
+import gc
 from weakref import proxy
 import contextlib
 
+from test.support import import_helper
+from test.support import threading_helper
+from test.support.script_helper import assert_python_ok
+
 import functools
 
-py_functools = support.import_fresh_module('functools', blocked=['_functools'])
-c_functools = support.import_fresh_module('functools', fresh=['_functools'])
+py_functools = import_helper.import_fresh_module('functools',
+                                                 blocked=['_functools'])
+c_functools = import_helper.import_fresh_module('functools',
+                                                fresh=['_functools'])
 
-decimal = support.import_fresh_module('decimal', fresh=['_decimal'])
+decimal = import_helper.import_fresh_module('decimal', fresh=['_decimal'])
 
 @contextlib.contextmanager
 def replaced_module(name, replacement):
@@ -464,6 +473,7 @@ class TestPartialMethod(unittest.TestCase):
         positional = functools.partialmethod(capture, 1)
         keywords = functools.partialmethod(capture, a=2)
         both = functools.partialmethod(capture, 3, b=4)
+        spec_keywords = functools.partialmethod(capture, self=1, func=2)
 
         nested = functools.partialmethod(positional, 5)
 
@@ -496,6 +506,8 @@ class TestPartialMethod(unittest.TestCase):
         self.assertEqual(self.a.both(5, c=6), ((self.a, 3, 5), {'b': 4, 'c': 6}))
 
         self.assertEqual(self.A.both(self.a, 5, c=6), ((self.a, 3, 5), {'b': 4, 'c': 6}))
+
+        self.assertEqual(self.a.spec_keywords(), ((self.a,), {'self': 1, 'func': 2}))
 
     def test_nested(self):
         self.assertEqual(self.a.nested(), ((self.a, 1, 5), {}))
@@ -550,6 +562,12 @@ class TestPartialMethod(unittest.TestCase):
         with self.assertRaises(TypeError):
             class B(object):
                 method = functools.partialmethod(None, 1)
+        with self.assertRaises(TypeError):
+            class B:
+                method = functools.partialmethod()
+        with self.assertRaises(TypeError):
+            class B:
+                method = functools.partialmethod(func=capture, a=1)
 
     def test_repr(self):
         self.assertEqual(repr(vars(self.A)['both']),
@@ -569,6 +587,13 @@ class TestPartialMethod(unittest.TestCase):
 
         for func in [self.A.static, self.A.cls, self.A.over_partial, self.A.nested, self.A.both]:
             self.assertFalse(getattr(func, '__isabstractmethod__', False))
+
+    def test_positional_only(self):
+        def f(a, b, /):
+            return a + b
+
+        p = functools.partial(f, 1)
+        self.assertEqual(p(2), f(1, 2))
 
 
 class TestUpdateWrapper(unittest.TestCase):
@@ -593,7 +618,7 @@ class TestUpdateWrapper(unittest.TestCase):
 
 
     def _default_update(self):
-        def f(a:'This is a new annotation'):
+        def f(a: int):
             """This is a test"""
             pass
         f.attr = 'This is also a test'
@@ -610,7 +635,7 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertEqual(wrapper.__name__, 'f')
         self.assertEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.attr, 'This is also a test')
-        self.assertEqual(wrapper.__annotations__['a'], 'This is a new annotation')
+        self.assertEqual(wrapper.__annotations__['a'], 'int')
         self.assertNotIn('b', wrapper.__annotations__)
 
     @unittest.skipIf(sys.flags.optimize >= 2,
@@ -1142,6 +1167,25 @@ class Orderable_LT:
         return self.value == other.value
 
 
+class TestCache:
+    # This tests that the pass-through is working as designed.
+    # The underlying functionality is tested in TestLRU.
+
+    def test_cache(self):
+        @self.module.cache
+        def fib(n):
+            if n < 2:
+                return n
+            return fib(n-1) + fib(n-2)
+        self.assertEqual([fib(n) for n in range(16)],
+            [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610])
+        self.assertEqual(fib.cache_info(),
+            self.module._CacheInfo(hits=28, misses=16, maxsize=None, currsize=16))
+        fib.cache_clear()
+        self.assertEqual(fib.cache_info(),
+            self.module._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0))
+
+
 class TestLRU:
 
     def test_lru(self):
@@ -1232,6 +1276,59 @@ class TestLRU:
         self.assertEqual(hits, 12)
         self.assertEqual(misses, 4)
         self.assertEqual(currsize, 2)
+
+    def test_lru_no_args(self):
+        @self.module.lru_cache
+        def square(x):
+            return x ** 2
+
+        self.assertEqual(list(map(square, [10, 20, 10])),
+                         [100, 400, 100])
+        self.assertEqual(square.cache_info().hits, 1)
+        self.assertEqual(square.cache_info().misses, 2)
+        self.assertEqual(square.cache_info().maxsize, 128)
+        self.assertEqual(square.cache_info().currsize, 2)
+
+    def test_lru_bug_35780(self):
+        # C version of the lru_cache was not checking to see if
+        # the user function call has already modified the cache
+        # (this arises in recursive calls and in multi-threading).
+        # This cause the cache to have orphan links not referenced
+        # by the cache dictionary.
+
+        once = True                 # Modified by f(x) below
+
+        @self.module.lru_cache(maxsize=10)
+        def f(x):
+            nonlocal once
+            rv = f'.{x}.'
+            if x == 20 and once:
+                once = False
+                rv = f(x)
+            return rv
+
+        # Fill the cache
+        for x in range(15):
+            self.assertEqual(f(x), f'.{x}.')
+        self.assertEqual(f.cache_info().currsize, 10)
+
+        # Make a recursive call and make sure the cache remains full
+        self.assertEqual(f(20), '.20.')
+        self.assertEqual(f.cache_info().currsize, 10)
+
+    def test_lru_bug_36650(self):
+        # C version of lru_cache was treating a call with an empty **kwargs
+        # dictionary as being distinct from a call with no keywords at all.
+        # This did not result in an incorrect answer, but it did trigger
+        # an unexpected cache miss.
+
+        @self.module.lru_cache()
+        def f(x):
+            pass
+
+        f(0)
+        f(0, **{})
+        self.assertEqual(f.cache_info().hits, 1)
 
     def test_lru_hash_only_once(self):
         # To protect against weird reentrancy bugs and to improve
@@ -1329,7 +1426,7 @@ class TestLRU:
         for i in (0, 1):
             self.assertEqual([eq(n) for n in range(150)], list(range(150)))
         self.assertEqual(eq.cache_info(),
-            self.module._CacheInfo(hits=0, misses=300, maxsize=-10, currsize=1))
+            self.module._CacheInfo(hits=0, misses=300, maxsize=0, currsize=0))
 
     def test_lru_with_exceptions(self):
         # Verify that user_function exceptions get passed through without
@@ -1436,7 +1533,7 @@ class TestLRU:
             # create n threads in order to fill cache
             threads = [threading.Thread(target=full, args=[k])
                        for k in range(n)]
-            with support.start_threads(threads):
+            with threading_helper.start_threads(threads):
                 start.set()
 
             hits, misses, maxsize, currsize = f.cache_info()
@@ -1454,7 +1551,7 @@ class TestLRU:
             threads += [threading.Thread(target=full, args=[k])
                         for k in range(n)]
             start.clear()
-            with support.start_threads(threads):
+            with threading_helper.start_threads(threads):
                 start.set()
         finally:
             sys.setswitchinterval(orig_si)
@@ -1476,7 +1573,7 @@ class TestLRU:
                 self.assertEqual(f(i), 3 * i)
                 stop.wait(10)
         threads = [threading.Thread(target=test) for k in range(n)]
-        with support.start_threads(threads):
+        with threading_helper.start_threads(threads):
             for i in range(m):
                 start.wait(10)
                 stop.reset()
@@ -1496,7 +1593,7 @@ class TestLRU:
                 self.assertEqual(f(x), 3 * x, i)
         threads = [threading.Thread(target=test, args=(i, v))
                    for i, v in enumerate([1, 2, 2, 3, 2])]
-        with support.start_threads(threads):
+        with threading_helper.start_threads(threads):
             pass
 
     def test_need_for_rlock(self):
@@ -1522,13 +1619,6 @@ class TestLRU:
         test_func(DoubleEq(2))                      # Load the cache
         self.assertEqual(test_func(DoubleEq(2)),    # Trigger a re-entrant __eq__ call
                          DoubleEq(2))               # Verify the correct return value
-
-    def test_early_detection_of_bad_call(self):
-        # Issue #22184
-        with self.assertRaises(TypeError):
-            @functools.lru_cache
-            def f():
-                pass
 
     def test_lru_method(self):
         class X(int):
@@ -1592,6 +1682,46 @@ class TestLRU:
             with self.subTest(func=f):
                 f_copy = copy.deepcopy(f)
                 self.assertIs(f_copy, f)
+
+    def test_lru_cache_parameters(self):
+        @self.module.lru_cache(maxsize=2)
+        def f():
+            return 1
+        self.assertEqual(f.cache_parameters(), {'maxsize': 2, "typed": False})
+
+        @self.module.lru_cache(maxsize=1000, typed=True)
+        def f():
+            return 1
+        self.assertEqual(f.cache_parameters(), {'maxsize': 1000, "typed": True})
+
+    def test_lru_cache_weakrefable(self):
+        @self.module.lru_cache
+        def test_function(x):
+            return x
+
+        class A:
+            @self.module.lru_cache
+            def test_method(self, x):
+                return (self, x)
+
+            @staticmethod
+            @self.module.lru_cache
+            def test_staticmethod(x):
+                return (self, x)
+
+        refs = [weakref.ref(test_function),
+                weakref.ref(A.test_method),
+                weakref.ref(A.test_staticmethod)]
+
+        for ref in refs:
+            self.assertIsNotNone(ref())
+
+        del A
+        del test_function
+        gc.collect()
+
+        for ref in refs:
+            self.assertIsNone(ref())
 
 
 @py_functools.lru_cache()
@@ -2296,9 +2426,6 @@ class TestSingleDispatch(unittest.TestCase):
         ))
         self.assertTrue(str(exc.exception).endswith(msg_suffix))
 
-        # FIXME: The following will only work after PEP 560 is implemented.
-        return
-
         with self.assertRaises(TypeError) as exc:
             @i.register
             def _(arg: typing.Iterable[str]):
@@ -2307,10 +2434,12 @@ class TestSingleDispatch(unittest.TestCase):
                 # types from `typing`. Instead, annotate with regular types
                 # or ABCs.
                 return "I annotated with a generic collection"
-        self.assertTrue(str(exc.exception).startswith(msg_prefix +
-            "<function TestSingleDispatch.test_invalid_registrations.<locals>._"
+        self.assertTrue(str(exc.exception).startswith(
+            "Invalid annotation for 'arg'."
         ))
-        self.assertTrue(str(exc.exception).endswith(msg_suffix))
+        self.assertTrue(str(exc.exception).endswith(
+            'typing.Iterable[str] is not a class.'
+        ))
 
     def test_invalid_positional_argument(self):
         @functools.singledispatch
@@ -2398,7 +2527,7 @@ class TestCachedProperty(unittest.TestCase):
                 threading.Thread(target=lambda: item.cost)
                 for k in range(num_threads)
             ]
-            with support.start_threads(threads):
+            with threading_helper.start_threads(threads):
                 go.set()
         finally:
             sys.setswitchinterval(orig_si)

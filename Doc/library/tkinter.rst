@@ -31,7 +31,7 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
    `TKDocs <http://www.tkdocs.com/>`_
       Extensive tutorial plus friendlier widget pages for some of the widgets.
 
-   `Tkinter reference: a GUI for Python <https://infohost.nmt.edu/tcc/help/pubs/tkinter/web/index.html>`_
+   `Tkinter 8.5 reference: a GUI for Python <https://www.tkdocs.com/shipman/>`_
       On-line reference material.
 
    `Tkinter docs from effbot <http://effbot.org/tkinterbook/>`_
@@ -41,7 +41,7 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
       Book by Mark Lutz, has excellent coverage of Tkinter.
 
    `Modern Tkinter for Busy Python Developers <https://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
-      Book by Mark Rozerman about building attractive and modern graphical user interfaces with Python and Tkinter.
+      Book by Mark Roseman about building attractive and modern graphical user interfaces with Python and Tkinter.
 
    `Python and Tkinter Programming <https://www.manning.com/books/python-and-tkinter-programming>`_
       Book by John Grayson (ISBN 1-884777-81-3).
@@ -55,7 +55,7 @@ installed, so you can read the Tcl/Tk documentation specific to that version.
    `Tcl/Tk recent man pages <https://www.tcl.tk/doc/>`_
       Recent Tcl/Tk manuals on www.tcl.tk.
 
-   `ActiveState Tcl Home Page <http://tcl.activestate.com/>`_
+   `ActiveState Tcl Home Page <https://tcl.tk>`_
       The Tk/Tcl development is largely taking place at ActiveState.
 
    `Tcl and the Tk Toolkit <https://www.amazon.com/exec/obidos/ASIN/020163337X>`_
@@ -109,9 +109,6 @@ Or, more often::
 
 Other modules that provide Tk support include:
 
-:mod:`tkinter.scrolledtext`
-   Text widget with a vertical scroll bar built in.
-
 :mod:`tkinter.colorchooser`
    Dialog to let the user choose a color.
 
@@ -126,6 +123,9 @@ Other modules that provide Tk support include:
 
 :mod:`tkinter.messagebox`
    Access to standard Tk dialog boxes.
+
+:mod:`tkinter.scrolledtext`
+   Text widget with a vertical scroll bar built in.
 
 :mod:`tkinter.simpledialog`
    Basic dialogs and convenience functions.
@@ -464,12 +464,11 @@ The Packer
 .. index:: single: packing (widgets)
 
 The packer is one of Tk's geometry-management mechanisms.    Geometry managers
-are used to specify the relative positioning of the positioning of widgets
-within their container - their mutual *master*.  In contrast to the more
-cumbersome *placer* (which is used less commonly, and we do not cover here), the
-packer takes qualitative relationship specification - *above*, *to the left of*,
-*filling*, etc - and works everything out to determine the exact placement
-coordinates for you.
+are used to specify the relative positioning of widgets within their container -
+their mutual *master*.  In contrast to the more cumbersome *placer* (which is
+used less commonly, and we do not cover here), the packer takes qualitative
+relationship specification - *above*, *to the left of*, *filling*, etc - and
+works everything out to determine the exact placement coordinates for you.
 
 The size of any *master* widget is determined by the size of the "slave widgets"
 inside.  The packer is used to control where slave widgets appear inside the
@@ -542,31 +541,35 @@ the variable, with no further intervention on your part.
 
 For example::
 
-   class App(Frame):
-       def __init__(self, master=None):
+   import tkinter as tk
+
+   class App(tk.Frame):
+       def __init__(self, master):
            super().__init__(master)
            self.pack()
 
-           self.entrythingy = Entry()
+           self.entrythingy = tk.Entry()
            self.entrythingy.pack()
 
-           # here is the application variable
-           self.contents = StringVar()
-           # set it to some value
+           # Create the application variable.
+           self.contents = tk.StringVar()
+           # Set it to some value.
            self.contents.set("this is a variable")
-           # tell the entry widget to watch this variable
+           # Tell the entry widget to watch this variable.
            self.entrythingy["textvariable"] = self.contents
 
-           # and here we get a callback when the user hits return.
-           # we will have the program print out the value of the
-           # application variable when the user hits return
+           # Define a callback for when the user hits return.
+           # It prints the current value of the variable.
            self.entrythingy.bind('<Key-Return>',
-                                 self.print_contents)
+                                self.print_contents)
 
        def print_contents(self, event):
-           print("hi. contents of entry is now ---->",
+           print("Hi. The current entry content is:",
                  self.contents.get())
 
+   root = tk.Tk()
+   myapp = App(root)
+   myapp.mainloop()
 
 The Window Manager
 ^^^^^^^^^^^^^^^^^^
@@ -680,9 +683,10 @@ scrollcommand
    This is almost always the :meth:`!set` method of some scrollbar widget, but can
    be any widget method that takes a single argument.
 
-wrap:
+wrap
    Must be one of: ``"none"``, ``"char"``, or ``"word"``.
 
+.. _Bindings-and-Events:
 
 Bindings and Events
 ^^^^^^^^^^^^^^^^^^^

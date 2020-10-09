@@ -253,6 +253,13 @@ class TestUnpackingGeneralizations(GrammarTest):
     def test_double_star_dict_literal_after_keywords(self):
         self.validate("""func(spam='fried', **{'eggs':'scrambled'})""")
 
+    def test_double_star_expression(self):
+        self.validate("""func(**{'a':2} or {})""")
+        self.validate("""func(**() or {})""")
+
+    def test_star_expression(self):
+        self.validate("""func(*[] or [2])""")
+
     def test_list_display(self):
         self.validate("""[*{2}, 3, *[4]]""")
 
@@ -531,7 +538,7 @@ class TestSetLiteral(GrammarTest):
 
 # Adapted from Python 3's Lib/test/test_unicode_identifiers.py and
 # Lib/test/test_tokenize.py:TokenizeTest.test_non_ascii_identifiers
-class TestIdentfier(GrammarTest):
+class TestIdentifier(GrammarTest):
     def test_non_ascii_identifiers(self):
         self.validate("Örter = 'places'\ngrün = 'green'")
         self.validate("蟒 = a蟒 = 锦蛇 = 1")
@@ -620,6 +627,21 @@ class TestLiterals(GrammarTest):
                     "6f630fad67cda0ee1fb1f562db3aa53e")
             """
         self.validate(s)
+
+
+class TestNamedAssignments(GrammarTest):
+
+    def test_named_assignment_if(self):
+        driver.parse_string("if f := x(): pass\n")
+
+    def test_named_assignment_while(self):
+        driver.parse_string("while f := x(): pass\n")
+
+    def test_named_assignment_generator(self):
+        driver.parse_string("any((lastNum := num) == 1 for num in [1, 2, 3])\n")
+
+    def test_named_assignment_listcomp(self):
+        driver.parse_string("[(lastNum := num) == 1 for num in [1, 2, 3]]\n")
 
 
 class TestPickleableException(unittest.TestCase):

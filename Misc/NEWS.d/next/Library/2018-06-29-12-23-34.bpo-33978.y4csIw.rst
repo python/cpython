@@ -1,2 +1,0 @@
-Closed existing logging handlers before reconfiguration via fileConfig
-and dictConfig. Patch by Karthikeyan Singaravelan.

@@ -15,6 +15,10 @@
     The subdirectory on the host to copy files to.
 .Parameter tests
     The path to run download tests in.
+.Parameter doc_htmlhelp
+    Optional path besides -build to locate CHM files.
+.Parameter embed
+    Optional path besides -build to locate ZIP files.
 .Parameter skipupload
     Skip uploading
 .Parameter skippurge
@@ -30,6 +34,8 @@ param(
     [string]$server="python-downloads",
     [string]$target="/srv/www.python.org/ftp/python",
     [string]$tests=${env:TEMP},
+    [string]$doc_htmlhelp=$null,
+    [string]$embed=$null,
     [switch]$skipupload,
     [switch]$skippurge,
     [switch]$skiptest,
@@ -73,36 +79,53 @@ if (-not $skipupload) {
     "Upload using $pscp and $plink"
     ""
 
-    pushd $build
-    $doc = gci python*.chm, python*.chm.asc
+    if ($doc_htmlhelp) {
+        pushd $doc_htmlhelp
+    } else {
+        pushd $build
+    }
+    $chm = gci python*.chm, python*.chm.asc
     popd
 
     $d = "$target/$($p[0])/"
     & $plink -batch $user@$server mkdir $d
     & $plink -batch $user@$server chgrp downloads $d
     & $plink -batch $user@$server chmod g-x,o+rx $d
-    & $pscp -batch $doc.FullName "$user@${server}:$d"
+    & $pscp -batch $chm.FullName "$user@${server}:$d"
+    if (-not $?) { throw "Failed to upload $chm" }
 
-    foreach ($a in gci "$build" -Directory) {
+    $dirs = gci "$build" -Directory
+    if ($embed) {
+        $dirs = ($dirs, (gi $embed)) | %{ $_ }
+    }
+
+    foreach ($a in $dirs) {
         "Uploading files from $($a.FullName)"
         pushd "$($a.FullName)"
         $exe = gci *.exe, *.exe.asc, *.zip, *.zip.asc
         $msi = gci *.msi, *.msi.asc, *.msu, *.msu.asc
         popd
 
-        & $pscp -batch $exe.FullName "$user@${server}:$d"
+        if ($exe) {
+            & $pscp -batch $exe.FullName "$user@${server}:$d"
+            if (-not $?) { throw "Failed to upload $exe" }
+        }
 
-        $sd = "$d$($a.Name)$($p[1])/"
-        & $plink -batch $user@$server mkdir $sd
-        & $plink -batch $user@$server chgrp downloads $sd
-        & $plink -batch $user@$server chmod g-x,o+rx $sd
-        & $pscp -batch $msi.FullName "$user@${server}:$sd"
-        & $plink -batch $user@$server chgrp downloads $sd*
-        & $plink -batch $user@$server chmod g-x,o+r $sd*
+        if ($msi) {
+            $sd = "$d$($a.Name)$($p[1])/"
+            & $plink -batch $user@$server mkdir $sd
+            & $plink -batch $user@$server chgrp downloads $sd
+            & $plink -batch $user@$server chmod g-x,o+rx $sd
+            & $pscp -batch $msi.FullName "$user@${server}:$sd"
+            if (-not $?) { throw "Failed to upload $msi" }
+            & $plink -batch $user@$server chgrp downloads $sd*
+            & $plink -batch $user@$server chmod g-x,o+r $sd*
+        }
     }
 
     & $plink -batch $user@$server chgrp downloads $d*
     & $plink -batch $user@$server chmod g-x,o+r $d*
+    & $pscp -ls "$user@${server}:$d"
 }
 
 if (-not $skippurge) {
@@ -128,11 +151,21 @@ if (-not $skiptest) {
 if (-not $skiphash) {
     # Display MD5 hash and size of each downloadable file
     pushd $build
-    $hashes = gci python*.chm, *\*.exe, *\*.zip | `
+    $files = gci python*.chm, *\*.exe, *\*.zip
+    if ($doc_htmlhelp) {
+        cd $doc_htmlhelp
+        $files = ($files, (gci python*.chm)) | %{ $_ }
+    }
+    if ($embed) {
+        cd $embed
+        $files = ($files, (gci *.zip)) | %{ $_ }
+    }
+    popd
+
+    $hashes = $files | `
         Sort-Object Name | `
         Format-Table Name, @{Label="MD5"; Expression={(Get-FileHash $_ -Algorithm MD5).Hash}}, Length -AutoSize | `
         Out-String -Width 4096
     $hashes | clip
     $hashes
-    popd
 }

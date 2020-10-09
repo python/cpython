@@ -1,1 +1,0 @@
-Fixed the '--list' and '--list-paths' arguments for the py.exe launcher

@@ -32,6 +32,8 @@ PyAPI_FUNC(void) _Py_NO_RETURN Py_Exit(int);
 /* Bootstrap __main__ (defined in Modules/main.c) */
 PyAPI_FUNC(int) Py_Main(int argc, wchar_t **argv);
 
+PyAPI_FUNC(int) Py_BytesMain(int argc, char **argv);
+
 /* In pathconfig.c */
 PyAPI_FUNC(void) Py_SetProgramName(const wchar_t *);
 PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);

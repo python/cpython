@@ -1,6 +1,7 @@
 '''A multi-producer, multi-consumer queue.'''
 
 import threading
+import types
 from collections import deque
 from heapq import heappush, heappop
 from time import monotonic as time
@@ -14,7 +15,7 @@ __all__ = ['Empty', 'Full', 'Queue', 'PriorityQueue', 'LifoQueue', 'SimpleQueue'
 
 try:
     from _queue import Empty
-except AttributeError:
+except ImportError:
     class Empty(Exception):
         'Exception raised by Queue.get(block=0)/get_nowait().'
         pass
@@ -216,6 +217,8 @@ class Queue:
     def _get(self):
         return self.queue.popleft()
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 
 class PriorityQueue(Queue):
     '''Variant of Queue that retrieves open entries in priority order (lowest first).
@@ -315,6 +318,8 @@ class _PySimpleQueue:
     def qsize(self):
         '''Return the approximate size of the queue (not reliable!).'''
         return len(self._queue)
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 if SimpleQueue is None:

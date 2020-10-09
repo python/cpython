@@ -416,7 +416,7 @@ Functions and classes provided:
       The passed in object is returned from the function, allowing this
       method to be used as a function decorator.
 
-   .. method:: callback(callback, *args, **kwds)
+   .. method:: callback(callback, /, *args, **kwds)
 
       Accepts an arbitrary callback function and arguments and adds it to
       the callback stack.
@@ -473,7 +473,7 @@ Functions and classes provided:
       Similar to :meth:`push` but expects either an asynchronous context manager
       or a coroutine function.
 
-   .. method:: push_async_callback(callback, *args, **kwds)
+   .. method:: push_async_callback(callback, /, *args, **kwds)
 
       Similar to :meth:`callback` but expects a coroutine function.
 
@@ -637,7 +637,7 @@ even further by means of a small helper class::
    from contextlib import ExitStack
 
    class Callback(ExitStack):
-       def __init__(self, callback, *args, **kwds):
+       def __init__(self, callback, /, *args, **kwds):
            super(Callback, self).__init__()
            self.callback(callback, *args, **kwds)
 

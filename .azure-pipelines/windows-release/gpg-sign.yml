@@ -1,0 +1,28 @@
+parameters:
+  GPGKeyFile: $(GPGKey)
+  GPGPassphrase: $(GPGPassphrase)
+  Files: '*'
+  WorkingDirectory: $(Build.BinariesDirectory)
+
+steps:
+- task: DownloadSecureFile@1
+  name: gpgkey
+  inputs:
+    secureFile: ${{ parameters.GPGKeyFile }}
+  displayName: 'Download GPG key'
+
+- powershell: |
+    git clone https://github.com/python/cpython-bin-deps --branch gpg --single-branch --depth 1 --progress -v "gpg"
+    gpg/gpg2.exe --import "$(gpgkey.secureFilePath)"
+    (gci -File ${{ parameters.Files }}).FullName | %{
+        gpg/gpg2.exe -ba --batch --passphrase ${{ parameters.GPGPassphrase }} $_
+        "Made signature for $_"
+    }
+  displayName: 'Generate GPG signatures'
+  workingDirectory: ${{ parameters.WorkingDirectory }}
+
+- powershell: |
+    $p = gps "gpg-agent" -EA 0
+    if ($p) { $p.Kill() }
+  displayName: 'Kill GPG agent'
+  condition: true

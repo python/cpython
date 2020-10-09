@@ -117,8 +117,8 @@ of the new API.
    a 10-tuple; the first 9 elements make up a tuple that can be passed directly to
    :func:`time.mktime`, and the tenth is the offset of the date's timezone from UTC
    (which is the official term for Greenwich Mean Time) [#]_.  If the input string
-   has no timezone, the last element of the tuple returned is ``None``.  Note that
-   indexes 6, 7, and 8 of the result tuple are not usable.
+   has no timezone, the last element of the tuple returned is ``0``, which represents
+   UTC. Note that indexes 6, 7, and 8 of the result tuple are not usable.
 
 
 .. function:: parsedate_to_datetime(date)

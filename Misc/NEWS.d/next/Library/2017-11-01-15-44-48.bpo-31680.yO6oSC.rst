@@ -1,1 +1,0 @@
-Added :data:`curses.ncurses_version`.

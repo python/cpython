@@ -17,6 +17,7 @@ class PathTests:
         # Test also implicitly verifies the returned object is a pathlib.Path
         # instance.
         with resources.path(self.data, 'utf-8.file') as path:
+            self.assertTrue(path.name.endswith("utf-8.file"), repr(path))
             # pathlib.Path.read_text() was introduced in Python 3.5.
             with path.open('r', encoding='utf-8') as file:
                 text = file.read()
@@ -25,6 +26,15 @@ class PathTests:
 
 class PathDiskTests(PathTests, unittest.TestCase):
     data = data01
+
+    def test_natural_path(self):
+        """
+        Guarantee the internal implementation detail that
+        file-system-backed resources do not get the tempdir
+        treatment.
+        """
+        with resources.path(self.data, 'utf-8.file') as path:
+            assert 'data' in str(path)
 
 
 class PathZipTests(PathTests, util.ZipSetup, unittest.TestCase):

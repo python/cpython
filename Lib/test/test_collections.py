@@ -7,6 +7,7 @@ import inspect
 import operator
 import pickle
 from random import choice, randrange
+from itertools import product, chain, combinations
 import string
 import sys
 from test import support
@@ -37,6 +38,20 @@ class TestUserObjects(unittest.TestCase):
                 b=b.__name__,
             ),
         )
+
+    def _copy_test(self, obj):
+        # Test internal copy
+        obj_copy = obj.copy()
+        self.assertIsNot(obj.data, obj_copy.data)
+        self.assertEqual(obj.data, obj_copy.data)
+
+        # Test copy.copy
+        obj.test = [1234]  # Make sure instance vars are also copied.
+        obj_copy = copy.copy(obj)
+        self.assertIsNot(obj.data, obj_copy.data)
+        self.assertEqual(obj.data, obj_copy.data)
+        self.assertIs(obj.test, obj_copy.test)
+
     def test_str_protocol(self):
         self._superset_test(UserString, str)
 
@@ -45,6 +60,16 @@ class TestUserObjects(unittest.TestCase):
 
     def test_dict_protocol(self):
         self._superset_test(UserDict, dict)
+
+    def test_list_copy(self):
+        obj = UserList()
+        obj.append(123)
+        self._copy_test(obj)
+
+    def test_dict_copy(self):
+        obj = UserDict()
+        obj[123] = "abc"
+        self._copy_test(obj)
 
 
 ################################################################################
@@ -112,6 +137,20 @@ class TestChainMap(unittest.TestCase):
         self.assertEqual(f.parents.maps, [{'c':30}, {'a':1, 'b':2}])   # check parents
         self.assertEqual(f['b'], 5)                                    # find first in chain
         self.assertEqual(f.parents['b'], 2)                            # look beyond maps[0]
+
+    def test_ordering(self):
+        # Combined order matches a series of dict updates from last to first.
+        # This test relies on the ordering of the underlying dicts.
+
+        baseline = {'music': 'bach', 'art': 'rembrandt'}
+        adjustments = {'art': 'van gogh', 'opera': 'carmen'}
+
+        cm = ChainMap(adjustments, baseline)
+
+        combined = baseline.copy()
+        combined.update(adjustments)
+
+        self.assertEqual(list(combined.items()), list(cm.items()))
 
     def test_constructor(self):
         self.assertEqual(ChainMap().maps, [{}])                        # no-args --> one new dict
@@ -194,6 +233,52 @@ class TestChainMap(unittest.TestCase):
         for k, v in dict(a=1, B=20, C=30, z=100).items():             # check get
             self.assertEqual(d.get(k, 100), v)
 
+    def test_union_operators(self):
+        cm1 = ChainMap(dict(a=1, b=2), dict(c=3, d=4))
+        cm2 = ChainMap(dict(a=10, e=5), dict(b=20, d=4))
+        cm3 = cm1.copy()
+        d = dict(a=10, c=30)
+        pairs = [('c', 3), ('p',0)]
+
+        tmp = cm1 | cm2 # testing between chainmaps
+        self.assertEqual(tmp.maps, [cm1.maps[0] | dict(cm2), *cm1.maps[1:]])
+        cm1 |= cm2
+        self.assertEqual(tmp, cm1)
+
+        tmp = cm2 | d # testing between chainmap and mapping
+        self.assertEqual(tmp.maps, [cm2.maps[0] | d, *cm2.maps[1:]])
+        self.assertEqual((d | cm2).maps, [d | dict(cm2)])
+        cm2 |= d
+        self.assertEqual(tmp, cm2)
+
+        # testing behavior between chainmap and iterable key-value pairs
+        with self.assertRaises(TypeError):
+            cm3 | pairs
+        tmp = cm3.copy()
+        cm3 |= pairs
+        self.assertEqual(cm3.maps, [tmp.maps[0] | dict(pairs), *tmp.maps[1:]])
+
+        # testing proper return types for ChainMap and it's subclasses
+        class Subclass(ChainMap):
+            pass
+
+        class SubclassRor(ChainMap):
+            def __ror__(self, other):
+                return super().__ror__(other)
+
+        tmp = ChainMap() | ChainMap()
+        self.assertIs(type(tmp), ChainMap)
+        self.assertIs(type(tmp.maps[0]), dict)
+        tmp = ChainMap() | Subclass()
+        self.assertIs(type(tmp), ChainMap)
+        self.assertIs(type(tmp.maps[0]), dict)
+        tmp = Subclass() | ChainMap()
+        self.assertIs(type(tmp), Subclass)
+        self.assertIs(type(tmp.maps[0]), dict)
+        tmp = ChainMap() | SubclassRor()
+        self.assertIs(type(tmp), SubclassRor)
+        self.assertIs(type(tmp.maps[0]), dict)
+
 
 ################################################################################
 ### Named Tuples
@@ -234,18 +319,18 @@ class TestNamedTuple(unittest.TestCase):
 
     def test_defaults(self):
         Point = namedtuple('Point', 'x y', defaults=(10, 20))              # 2 defaults
-        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point._field_defaults, {'x': 10, 'y': 20})
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))
         self.assertEqual(Point(), (10, 20))
 
         Point = namedtuple('Point', 'x y', defaults=(20,))                 # 1 default
-        self.assertEqual(Point._fields_defaults, {'y': 20})
+        self.assertEqual(Point._field_defaults, {'y': 20})
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))
 
         Point = namedtuple('Point', 'x y', defaults=())                     # 0 defaults
-        self.assertEqual(Point._fields_defaults, {})
+        self.assertEqual(Point._field_defaults, {})
         self.assertEqual(Point(1, 2), (1, 2))
         with self.assertRaises(TypeError):
             Point(1)
@@ -262,21 +347,21 @@ class TestNamedTuple(unittest.TestCase):
             Point = namedtuple('Point', 'x y', defaults=False)
 
         Point = namedtuple('Point', 'x y', defaults=None)                   # default is None
-        self.assertEqual(Point._fields_defaults, {})
+        self.assertEqual(Point._field_defaults, {})
         self.assertIsNone(Point.__new__.__defaults__, None)
         self.assertEqual(Point(10, 20), (10, 20))
         with self.assertRaises(TypeError):                                  # catch too few args
             Point(10)
 
         Point = namedtuple('Point', 'x y', defaults=[10, 20])               # allow non-tuple iterable
-        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point._field_defaults, {'x': 10, 'y': 20})
         self.assertEqual(Point.__new__.__defaults__, (10, 20))
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))
         self.assertEqual(Point(), (10, 20))
 
         Point = namedtuple('Point', 'x y', defaults=iter([10, 20]))         # allow plain iterator
-        self.assertEqual(Point._fields_defaults, {'x': 10, 'y': 20})
+        self.assertEqual(Point._field_defaults, {'x': 10, 'y': 20})
         self.assertEqual(Point.__new__.__defaults__, (10, 20))
         self.assertEqual(Point(1, 2), (1, 2))
         self.assertEqual(Point(1), (1, 20))
@@ -326,6 +411,18 @@ class TestNamedTuple(unittest.TestCase):
         Q = namedtuple('Q', ['o', 'p'])
         self.assertIs(P.m.__doc__, Q.o.__doc__)
         self.assertIs(P.n.__doc__, Q.p.__doc__)
+
+    @support.cpython_only
+    def test_field_repr(self):
+        Point = namedtuple('Point', 'x y')
+        self.assertEqual(repr(Point.x), "_tuplegetter(0, 'Alias for field number 0')")
+        self.assertEqual(repr(Point.y), "_tuplegetter(1, 'Alias for field number 1')")
+
+        Point.x.__doc__ = 'The x-coordinate'
+        Point.y.__doc__ = 'The y-coordinate'
+
+        self.assertEqual(repr(Point.x), "_tuplegetter(0, 'The x-coordinate')")
+        self.assertEqual(repr(Point.y), "_tuplegetter(1, 'The y-coordinate')")
 
     def test_name_fixer(self):
         for spec, renamed in [
@@ -386,8 +483,8 @@ class TestNamedTuple(unittest.TestCase):
 
         self.assertIsInstance(p, tuple)
         self.assertEqual(p, (11, 22))                                       # matches a real tuple
-        self.assertEqual(tuple(p), (11, 22))                                # coercable to a real tuple
-        self.assertEqual(list(p), [11, 22])                                 # coercable to a list
+        self.assertEqual(tuple(p), (11, 22))                                # coercible to a real tuple
+        self.assertEqual(list(p), [11, 22])                                 # coercible to a list
         self.assertEqual(max(p), 22)                                        # iterable
         self.assertEqual(max(*p), 22)                                       # star-able
         x, y = p
@@ -558,6 +655,15 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point.x.__get__(p), 11)
         self.assertRaises(AttributeError, Point.x.__set__, p, 33)
         self.assertRaises(AttributeError, Point.x.__delete__, p)
+
+        class NewPoint(tuple):
+            x = pickle.loads(pickle.dumps(Point.x))
+            y = pickle.loads(pickle.dumps(Point.y))
+
+        np = NewPoint([1, 2])
+
+        self.assertEqual(np.x, 1)
+        self.assertEqual(np.y, 2)
 
 
 ################################################################################
@@ -1425,9 +1531,6 @@ class TestCollectionABCs(ABCTestCase):
 
     def test_issue26915(self):
         # Container membership test should check identity first
-        class CustomEqualObject:
-            def __eq__(self, other):
-                return False
         class CustomSequence(Sequence):
             def __init__(self, seq):
                 self._seq = seq
@@ -1437,7 +1540,7 @@ class TestCollectionABCs(ABCTestCase):
                 return len(self._seq)
 
         nan = float('nan')
-        obj = CustomEqualObject()
+        obj = support.NEVER_EQ
         seq = CustomSequence([nan, obj, nan])
         containers = [
             seq,
@@ -1867,6 +1970,63 @@ class TestCounter(unittest.TestCase):
         self.assertRaises(TypeError, Counter, (), ())
         self.assertRaises(TypeError, Counter.__init__)
 
+    def test_order_preservation(self):
+        # Input order dictates items() order
+        self.assertEqual(list(Counter('abracadabra').items()),
+               [('a', 5), ('b', 2), ('r', 2), ('c', 1), ('d', 1)])
+        # letters with same count:   ^----------^         ^---------^
+
+        # Verify retention of order even when all counts are equal
+        self.assertEqual(list(Counter('xyzpdqqdpzyx').items()),
+               [('x', 2), ('y', 2), ('z', 2), ('p', 2), ('d', 2), ('q', 2)])
+
+        # Input order dictates elements() order
+        self.assertEqual(list(Counter('abracadabra simsalabim').elements()),
+                ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'b', 'b', 'b','r',
+                 'r', 'c', 'd', ' ', 's', 's', 'i', 'i', 'm', 'm', 'l'])
+
+        # Math operations order first by the order encountered in the left
+        # operand and then by the order encountered in the right operand.
+        ps = 'aaabbcdddeefggghhijjjkkl'
+        qs = 'abbcccdeefffhkkllllmmnno'
+        order = {letter: i for i, letter in enumerate(dict.fromkeys(ps + qs))}
+        def correctly_ordered(seq):
+            'Return true if the letters occur in the expected order'
+            positions = [order[letter] for letter in seq]
+            return positions == sorted(positions)
+
+        p, q = Counter(ps), Counter(qs)
+        self.assertTrue(correctly_ordered(+p))
+        self.assertTrue(correctly_ordered(-p))
+        self.assertTrue(correctly_ordered(p + q))
+        self.assertTrue(correctly_ordered(p - q))
+        self.assertTrue(correctly_ordered(p | q))
+        self.assertTrue(correctly_ordered(p & q))
+
+        p, q = Counter(ps), Counter(qs)
+        p += q
+        self.assertTrue(correctly_ordered(p))
+
+        p, q = Counter(ps), Counter(qs)
+        p -= q
+        self.assertTrue(correctly_ordered(p))
+
+        p, q = Counter(ps), Counter(qs)
+        p |= q
+        self.assertTrue(correctly_ordered(p))
+
+        p, q = Counter(ps), Counter(qs)
+        p &= q
+        self.assertTrue(correctly_ordered(p))
+
+        p, q = Counter(ps), Counter(qs)
+        p.update(q)
+        self.assertTrue(correctly_ordered(p))
+
+        p, q = Counter(ps), Counter(qs)
+        p.subtract(q)
+        self.assertTrue(correctly_ordered(p))
+
     def test_update(self):
         c = Counter()
         c.update(self=42)
@@ -2036,6 +2196,47 @@ class TestCounter(unittest.TestCase):
         c = CounterSubclassWithGet('abracadabra')
         self.assertTrue(c.called)
         self.assertEqual(dict(c), {'a': 5, 'b': 2, 'c': 1, 'd': 1, 'r':2 })
+
+    def test_multiset_operations_equivalent_to_set_operations(self):
+        # When the multiplicities are all zero or one, multiset operations
+        # are guaranteed to be equivalent to the corresponding operations
+        # for regular sets.
+        s = list(product(('a', 'b', 'c'), range(2)))
+        powerset = chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+        counters = [Counter(dict(groups)) for groups in powerset]
+        for cp, cq in product(counters, repeat=2):
+            sp = set(cp.elements())
+            sq = set(cq.elements())
+            self.assertEqual(set(cp + cq), sp | sq)
+            self.assertEqual(set(cp - cq), sp - sq)
+            self.assertEqual(set(cp | cq), sp | sq)
+            self.assertEqual(set(cp & cq), sp & sq)
+            self.assertEqual(cp == cq, sp == sq)
+            self.assertEqual(cp != cq, sp != sq)
+            self.assertEqual(cp <= cq, sp <= sq)
+            self.assertEqual(cp >= cq, sp >= sq)
+            self.assertEqual(cp < cq, sp < sq)
+            self.assertEqual(cp > cq, sp > sq)
+
+    def test_eq(self):
+        self.assertEqual(Counter(a=3, b=2, c=0), Counter('ababa'))
+        self.assertNotEqual(Counter(a=3, b=2), Counter('babab'))
+
+    def test_le(self):
+        self.assertTrue(Counter(a=3, b=2, c=0) <= Counter('ababa'))
+        self.assertFalse(Counter(a=3, b=2) <= Counter('babab'))
+
+    def test_lt(self):
+        self.assertTrue(Counter(a=3, b=1, c=0) < Counter('ababa'))
+        self.assertFalse(Counter(a=3, b=2, c=0) < Counter('ababa'))
+
+    def test_ge(self):
+        self.assertTrue(Counter(a=2, b=1, c=0) >= Counter('aab'))
+        self.assertFalse(Counter(a=3, b=2, c=0) >= Counter('aabd'))
+
+    def test_gt(self):
+        self.assertTrue(Counter(a=3, b=2, c=0) > Counter('aab'))
+        self.assertFalse(Counter(a=2, b=1, c=0) > Counter('aab'))
 
 
 ################################################################################

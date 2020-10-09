@@ -6,10 +6,10 @@ import socket
 import statistics
 import subprocess
 import sys
-import threading
 import time
 import unittest
 from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok, spawn_python
 try:
     import _testcapi
@@ -78,6 +78,22 @@ class PosixTests(unittest.TestCase):
         self.assertNotIn(signal.NSIG, s)
         self.assertLess(len(s), signal.NSIG)
 
+    @unittest.skipUnless(sys.executable, "sys.executable required.")
+    def test_keyboard_interrupt_exit_code(self):
+        """KeyboardInterrupt triggers exit via SIGINT."""
+        process = subprocess.run(
+                [sys.executable, "-c",
+                 "import os, signal, time\n"
+                 "os.kill(os.getpid(), signal.SIGINT)\n"
+                 "for _ in range(999): time.sleep(0.01)"],
+                stderr=subprocess.PIPE)
+        self.assertIn(b"KeyboardInterrupt", process.stderr)
+        self.assertEqual(process.returncode, -signal.SIGINT)
+        # Caveat: The exit code is insufficient to guarantee we actually died
+        # via a signal.  POSIX shells do more than look at the 8 bit value.
+        # Writing an automation friendly test of an interactive shell
+        # to confirm that our process died via a SIGINT proved too complex.
+
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")
 class WindowsSignalTests(unittest.TestCase):
@@ -112,6 +128,20 @@ class WindowsSignalTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             signal.signal(7, handler)
 
+    @unittest.skipUnless(sys.executable, "sys.executable required.")
+    def test_keyboard_interrupt_exit_code(self):
+        """KeyboardInterrupt triggers an exit using STATUS_CONTROL_C_EXIT."""
+        # We don't test via os.kill(os.getpid(), signal.CTRL_C_EVENT) here
+        # as that requires setting up a console control handler in a child
+        # in its own process group.  Doable, but quite complicated.  (see
+        # @eryksun on https://github.com/python/cpython/pull/11862)
+        process = subprocess.run(
+                [sys.executable, "-c", "raise KeyboardInterrupt"],
+                stderr=subprocess.PIPE)
+        self.assertIn(b"KeyboardInterrupt", process.stderr)
+        STATUS_CONTROL_C_EXIT = 0xC000013A
+        self.assertEqual(process.returncode, STATUS_CONTROL_C_EXIT)
+
 
 class WakeupFDTests(unittest.TestCase):
 
@@ -125,7 +155,7 @@ class WakeupFDTests(unittest.TestCase):
             signal.set_wakeup_fd(signal.SIGINT, False)
 
     def test_invalid_fd(self):
-        fd = support.make_bad_fd()
+        fd = os_helper.make_bad_fd()
         self.assertRaises((ValueError, OSError),
                           signal.set_wakeup_fd, fd)
 
@@ -615,7 +645,7 @@ class SiginterruptTest(unittest.TestCase):
                 # wait until the child process is loaded and has started
                 first_line = process.stdout.readline()
 
-                stdout, stderr = process.communicate(timeout=5.0)
+                stdout, stderr = process.communicate(timeout=support.SHORT_TIMEOUT)
             except subprocess.TimeoutExpired:
                 process.kill()
                 return False
@@ -1163,7 +1193,7 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, second_handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.monotonic() + 15.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
 
         while expected_sigs < N:
             os.kill(os.getpid(), signal.SIGPROF)
@@ -1197,7 +1227,7 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.monotonic() + 15.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
 
         while expected_sigs < N:
             # Hopefully the SIGALRM will be received somewhere during
@@ -1217,11 +1247,8 @@ class StressTest(unittest.TestCase):
 class RaiseSignalTest(unittest.TestCase):
 
     def test_sigint(self):
-        try:
+        with self.assertRaises(KeyboardInterrupt):
             signal.raise_signal(signal.SIGINT)
-            self.fail("Expected KeyInterrupt")
-        except KeyboardInterrupt:
-            pass
 
     @unittest.skipIf(sys.platform != "win32", "Windows specific test")
     def test_invalid_argument(self):
@@ -1246,6 +1273,27 @@ class RaiseSignalTest(unittest.TestCase):
         signal.raise_signal(signal.SIGINT)
         self.assertTrue(is_ok)
 
+
+class PidfdSignalTest(unittest.TestCase):
+
+    @unittest.skipUnless(
+        hasattr(signal, "pidfd_send_signal"),
+        "pidfd support not built in",
+    )
+    def test_pidfd_send_signal(self):
+        with self.assertRaises(OSError) as cm:
+            signal.pidfd_send_signal(0, signal.SIGINT)
+        if cm.exception.errno == errno.ENOSYS:
+            self.skipTest("kernel does not support pidfds")
+        elif cm.exception.errno == errno.EPERM:
+            self.skipTest("Not enough privileges to use pidfs")
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+        my_pidfd = os.open(f'/proc/{os.getpid()}', os.O_DIRECTORY)
+        self.addCleanup(os.close, my_pidfd)
+        with self.assertRaisesRegex(TypeError, "^siginfo must be None$"):
+            signal.pidfd_send_signal(my_pidfd, signal.SIGINT, object(), 0)
+        with self.assertRaises(KeyboardInterrupt):
+            signal.pidfd_send_signal(my_pidfd, signal.SIGINT)
 
 def tearDownModule():
     support.reap_children()

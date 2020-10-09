@@ -17,7 +17,7 @@ import types
 import unittest
 import warnings
 
-from test.support import make_legacy_pyc, unload
+from test.support.import_helper import make_legacy_pyc, unload
 
 from test.test_py_compile import without_source_date_epoch
 from test.test_py_compile import SourceDateEpochTestMeta
@@ -325,7 +325,7 @@ class SimpleTest(abc.LoaderTests):
             )
 
     @util.writes_bytecode_files
-    def test_overiden_unchecked_hash_based_pyc(self):
+    def test_overridden_unchecked_hash_based_pyc(self):
         with util.create_modules('_temp') as mapping, \
              unittest.mock.patch('_imp.check_hash_based_pycs', 'always'):
             source = mapping['_temp']

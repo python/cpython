@@ -1,9 +1,26 @@
 import sys
-from test import support
 import unittest
 
-crypt = support.import_module('crypt')
 
+try:
+    import crypt
+    IMPORT_ERROR = None
+except ImportError as ex:
+    if sys.platform != 'win32':
+        raise unittest.SkipTest(str(ex))
+    crypt = None
+    IMPORT_ERROR = str(ex)
+
+
+@unittest.skipUnless(sys.platform == 'win32', 'This should only run on windows')
+@unittest.skipIf(crypt, 'import succeeded')
+class TestWhyCryptDidNotImport(unittest.TestCase):
+
+    def test_import_failure_message(self):
+        self.assertIn('not supported', IMPORT_ERROR)
+
+
+@unittest.skipUnless(crypt, 'crypt module is required')
 class CryptTestCase(unittest.TestCase):
 
     def test_crypt(self):
@@ -39,9 +56,13 @@ class CryptTestCase(unittest.TestCase):
         else:
             self.assertEqual(crypt.methods[-1], crypt.METHOD_CRYPT)
 
-    @unittest.skipUnless(crypt.METHOD_SHA256 in crypt.methods or
-                         crypt.METHOD_SHA512 in crypt.methods,
-                        'requires support of SHA-2')
+    @unittest.skipUnless(
+        crypt
+        and (
+            crypt.METHOD_SHA256 in crypt.methods or crypt.METHOD_SHA512 in crypt.methods
+        ),
+        'requires support of SHA-2',
+    )
     def test_sha2_rounds(self):
         for method in (crypt.METHOD_SHA256, crypt.METHOD_SHA512):
             for rounds in 1000, 10_000, 100_000:
@@ -54,8 +75,9 @@ class CryptTestCase(unittest.TestCase):
                 cr2 = crypt.crypt('mypassword', cr)
                 self.assertEqual(cr2, cr)
 
-    @unittest.skipUnless(crypt.METHOD_BLOWFISH in crypt.methods,
-                        'requires support of Blowfish')
+    @unittest.skipUnless(
+        crypt and crypt.METHOD_BLOWFISH in crypt.methods, 'requires support of Blowfish'
+    )
     def test_blowfish_rounds(self):
         for log_rounds in range(4, 11):
             salt = crypt.mksalt(crypt.METHOD_BLOWFISH, rounds=1 << log_rounds)

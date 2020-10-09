@@ -2,7 +2,7 @@ import string
 
 from idlelib.delegator import Delegator
 
-# tkintter import not needed because module does not create widgets,
+# tkinter import not needed because module does not create widgets,
 # although many methods operate on text widget arguments.
 
 #$ event <<redo>>

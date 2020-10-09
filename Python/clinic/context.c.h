@@ -82,7 +82,7 @@ PyDoc_STRVAR(_contextvars_Context_values__doc__,
 "values($self, /)\n"
 "--\n"
 "\n"
-"Return a list of all variables’ values in the context object.");
+"Return a list of all variables\' values in the context object.");
 
 #define _CONTEXTVARS_CONTEXT_VALUES_METHODDEF    \
     {"values", (PyCFunction)_contextvars_Context_values, METH_NOARGS, _contextvars_Context_values__doc__},
@@ -115,7 +115,7 @@ _contextvars_Context_copy(PyContext *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_contextvars_ContextVar_get__doc__,
-"get($self, default=None, /)\n"
+"get($self, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return a value for the context variable for the current context.\n"
@@ -177,4 +177,4 @@ PyDoc_STRVAR(_contextvars_ContextVar_reset__doc__,
 
 #define _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF    \
     {"reset", (PyCFunction)_contextvars_ContextVar_reset, METH_O, _contextvars_ContextVar_reset__doc__},
-/*[clinic end generated code: output=67c3a8f76b6cf4e7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f2e42f34e358e179 input=a9049054013a1b77]*/

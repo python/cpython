@@ -1,3 +1,0 @@
-For :meth:`str.format`, :meth:`float.__format__` and
-:meth:`complex.__format__` methods for non-ASCII decimal point when using
-the "n" formatter.

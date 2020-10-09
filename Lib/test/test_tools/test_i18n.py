@@ -7,7 +7,7 @@ from textwrap import dedent
 
 from test.support.script_helper import assert_python_ok
 from test.test_tools import skip_if_missing, toolsdir
-from test.support import temp_cwd, temp_dir
+from test.support.os_helper import temp_cwd, temp_dir
 
 
 skip_if_missing()
@@ -211,7 +211,7 @@ class Test_pygettext(unittest.TestCase):
         self.assertIn('doc3', msgids)
 
     def test_classdocstring_early_colon(self):
-        """ Test docstring extraction for a class with colons occuring within
+        """ Test docstring extraction for a class with colons occurring within
         the parentheses.
         """
         msgids = self.extract_docstrings_from_str(dedent('''\

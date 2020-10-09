@@ -329,7 +329,12 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.entry.wait_visibility()
         self.entry.update_idletasks()
 
-        self.assertEqual(self.entry.identify(5, 5), "textarea")
+        # bpo-27313: macOS Cocoa widget differs from X, allow either
+        if sys.platform == 'darwin':
+            self.assertIn(self.entry.identify(5, 5),
+                ("textarea", "Combobox.button") )
+        else:
+            self.assertEqual(self.entry.identify(5, 5), "textarea")
         self.assertEqual(self.entry.identify(-1, -1), "")
 
         self.assertRaises(tkinter.TclError, self.entry.identify, None, 5)
@@ -484,8 +489,7 @@ class ComboboxTest(EntryTest, unittest.TestCase):
                         expected=('mon', 'tue', 'wed', 'thur'))
         self.checkParam(self.combo, 'values', ('mon', 'tue', 'wed', 'thur'))
         self.checkParam(self.combo, 'values', (42, 3.14, '', 'any string'))
-        self.checkParam(self.combo, 'values', '',
-                        expected='' if get_tk_patchlevel() < (8, 5, 10) else ())
+        self.checkParam(self.combo, 'values', '')
 
         self.combo['values'] = ['a', 1, 'c']
 
@@ -1240,12 +1244,7 @@ class SpinboxTest(EntryTest, unittest.TestCase):
                         expected=('mon', 'tue', 'wed', 'thur'))
         self.checkParam(self.spin, 'values', ('mon', 'tue', 'wed', 'thur'))
         self.checkParam(self.spin, 'values', (42, 3.14, '', 'any string'))
-        self.checkParam(
-            self.spin,
-            'values',
-            '',
-            expected='' if get_tk_patchlevel() < (8, 5, 10) else ()
-        )
+        self.checkParam(self.spin, 'values', '')
 
         self.spin['values'] = ['a', 1, 'c']
 
@@ -1303,8 +1302,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.checkParam(widget, 'columns', 'a b c',
                         expected=('a', 'b', 'c'))
         self.checkParam(widget, 'columns', ('a', 'b', 'c'))
-        self.checkParam(widget, 'columns', (),
-                        expected='' if get_tk_patchlevel() < (8, 5, 10) else ())
+        self.checkParam(widget, 'columns', '')
 
     def test_displaycolumns(self):
         widget = self.create()

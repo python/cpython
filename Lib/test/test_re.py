@@ -1552,8 +1552,7 @@ class ReTests(unittest.TestCase):
         self.assertRaises(re.error, re.compile, r'(?au)\w')
 
     def test_locale_flag(self):
-        import locale
-        _, enc = locale.getlocale(locale.LC_CTYPE)
+        enc = locale.getpreferredencoding()
         # Search non-ASCII letter
         for i in range(128, 256):
             try:
@@ -1762,24 +1761,28 @@ class ReTests(unittest.TestCase):
     def test_match_repr(self):
         for string in '[abracadabra]', S('[abracadabra]'):
             m = re.search(r'(.+)(.*?)\1', string)
-            self.assertEqual(repr(m), "<%s.%s object; "
-                             "span=(1, 12), match='abracadabra'>" %
-                             (type(m).__module__, type(m).__qualname__))
+            pattern = r"<(%s\.)?%s object; span=\(1, 12\), match='abracadabra'>" % (
+                type(m).__module__, type(m).__qualname__
+            )
+            self.assertRegex(repr(m), pattern)
         for string in (b'[abracadabra]', B(b'[abracadabra]'),
                        bytearray(b'[abracadabra]'),
                        memoryview(b'[abracadabra]')):
             m = re.search(br'(.+)(.*?)\1', string)
-            self.assertEqual(repr(m), "<%s.%s object; "
-                             "span=(1, 12), match=b'abracadabra'>" %
-                             (type(m).__module__, type(m).__qualname__))
+            pattern = r"<(%s\.)?%s object; span=\(1, 12\), match=b'abracadabra'>" % (
+                type(m).__module__, type(m).__qualname__
+            )
+            self.assertRegex(repr(m), pattern)
 
         first, second = list(re.finditer("(aa)|(bb)", "aa bb"))
-        self.assertEqual(repr(first), "<%s.%s object; "
-                         "span=(0, 2), match='aa'>" %
-                         (type(second).__module__, type(first).__qualname__))
-        self.assertEqual(repr(second), "<%s.%s object; "
-                         "span=(3, 5), match='bb'>" %
-                         (type(second).__module__, type(second).__qualname__))
+        pattern = r"<(%s\.)?%s object; span=\(0, 2\), match='aa'>" % (
+            type(second).__module__, type(second).__qualname__
+        )
+        self.assertRegex(repr(first), pattern)
+        pattern = r"<(%s\.)?%s object; span=\(3, 5\), match='bb'>" % (
+            type(second).__module__, type(second).__qualname__
+        )
+        self.assertRegex(repr(second), pattern)
 
     def test_zerowidth(self):
         # Issues 852532, 1647489, 3262, 25054.
@@ -2067,6 +2070,40 @@ ELSE
         self.assertEqual(m.group(), b'xyz')
         self.assertEqual(m2.group(), b'')
 
+    def test_bug_34294(self):
+        # Issue 34294: wrong capturing groups
+
+        # exists since Python 2
+        s = "a\tx"
+        p = r"\b(?=(\t)|(x))x"
+        self.assertEqual(re.search(p, s).groups(), (None, 'x'))
+
+        # introduced in Python 3.7.0
+        s = "ab"
+        p = r"(?=(.)(.)?)"
+        self.assertEqual(re.findall(p, s),
+                         [('a', 'b'), ('b', '')])
+        self.assertEqual([m.groups() for m in re.finditer(p, s)],
+                         [('a', 'b'), ('b', None)])
+
+        # test-cases provided by issue34294, introduced in Python 3.7.0
+        p = r"(?=<(?P<tag>\w+)/?>(?:(?P<text>.+?)</(?P=tag)>)?)"
+        s = "<test><foo2/></test>"
+        self.assertEqual(re.findall(p, s),
+                         [('test', '<foo2/>'), ('foo2', '')])
+        self.assertEqual([m.groupdict() for m in re.finditer(p, s)],
+                         [{'tag': 'test', 'text': '<foo2/>'},
+                          {'tag': 'foo2', 'text': None}])
+        s = "<test>Hello</test><foo/>"
+        self.assertEqual([m.groupdict() for m in re.finditer(p, s)],
+                         [{'tag': 'test', 'text': 'Hello'},
+                          {'tag': 'foo', 'text': None}])
+        s = "<test>Hello</test><foo/><foo/>"
+        self.assertEqual([m.groupdict() for m in re.finditer(p, s)],
+                         [{'tag': 'test', 'text': 'Hello'},
+                          {'tag': 'foo', 'text': None},
+                          {'tag': 'foo', 'text': None}])
+
 
 class PatternReprTests(unittest.TestCase):
     def check(self, pattern, expected):
@@ -2133,6 +2170,18 @@ class PatternReprTests(unittest.TestCase):
         self.assertEqual(r[:30], "re.compile('Very long long lon")
         self.assertEqual(r[-16:], ", re.IGNORECASE)")
 
+    def test_flags_repr(self):
+        self.assertEqual(repr(re.I), "re.IGNORECASE")
+        self.assertEqual(repr(re.I|re.S|re.X),
+                         "re.IGNORECASE|re.DOTALL|re.VERBOSE")
+        self.assertEqual(repr(re.I|re.S|re.X|(1<<20)),
+                         "re.IGNORECASE|re.DOTALL|re.VERBOSE|0x100000")
+        self.assertEqual(repr(~re.I), "~re.IGNORECASE")
+        self.assertEqual(repr(~(re.I|re.S|re.X)),
+                         "~(re.IGNORECASE|re.DOTALL|re.VERBOSE)")
+        self.assertEqual(repr(~(re.I|re.S|re.X|(1<<20))),
+                         "~(re.IGNORECASE|re.DOTALL|re.VERBOSE|0x100000)")
+
 
 class ImplementationTest(unittest.TestCase):
     """
@@ -2168,7 +2217,7 @@ class ExternalTests(unittest.TestCase):
 
     def test_re_tests(self):
         're_tests test suite'
-        from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
+        from test.re_tests import tests, FAIL, SYNTAX_ERROR
         for t in tests:
             pattern = s = outcome = repl = expected = None
             if len(t) == 5:

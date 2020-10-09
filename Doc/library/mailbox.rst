@@ -308,6 +308,9 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    representation. If *create* is ``True``, the mailbox is created if it does not
    exist.
 
+   If *create* is ``True`` and the *dirname* path exists, it will be treated as
+   an existing maildir without attempting to verify its directory layout.
+
    It is for historical reasons that *dirname* is named as such rather than *path*.
 
    Maildir is a directory-based mailbox format invented for the qmail mail

@@ -39,7 +39,7 @@ More Python resources:
 * https://docs.python.org:  Fast access to Python's  documentation.
 
 * https://pypi.org: The Python Package Index, previously also nicknamed
-  the Cheese Shop, is an index of user-created Python modules that are available
+  the Cheese Shop [#]_, is an index of user-created Python modules that are available
   for download.  Once you begin releasing code, you can register it here so that
   others can find it.
 
@@ -68,3 +68,9 @@ Before posting, be sure to check the list of
 :ref:`Frequently Asked Questions <faq-index>` (also called the FAQ).  The
 FAQ answers many of the questions that come up again and again, and may
 already contain the solution for your problem.
+
+.. rubric:: Footnotes
+
+.. [#] "Cheese Shop" is a Monty Python's sketch: a customer enters a cheese shop,
+   but whatever cheese he asks for, the clerk says it's missing.
+

@@ -55,7 +55,7 @@ class BytesTest(unittest.TestCase):
 
 class StrTest(unittest.TestCase):
 
-    unicodesize = 2 if sys.maxunicode < 65536 else 4
+    unicodesize = 4
 
     @bigaddrspacetest
     def test_concat(self):

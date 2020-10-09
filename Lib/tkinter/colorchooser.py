@@ -21,6 +21,8 @@
 
 from tkinter.commondialog import Dialog
 
+__all__ = ["Chooser", "askcolor"]
+
 
 #
 # color chooser class

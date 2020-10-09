@@ -1,2 +1,0 @@
-Make sure to only check if the handle is a tty, when opening
-a file with ``buffering=-1``.

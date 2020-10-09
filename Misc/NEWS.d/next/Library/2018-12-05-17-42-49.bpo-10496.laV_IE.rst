@@ -1,3 +1,0 @@
-:func:`~distutils.utils.check_environ` of :mod:`distutils.utils` now catchs
-:exc:`KeyError` on calling :func:`pwd.getpwuid`: don't create the ``HOME``
-environment variable in this case.

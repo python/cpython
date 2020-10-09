@@ -1,6 +1,6 @@
 :tocdepth: 2
 
-.. highlightlang:: none
+.. highlight:: none
 
 .. _windows-faq:
 
@@ -14,6 +14,8 @@ Python on Windows FAQ
 
 .. XXX need review for Python 3.
    XXX need review for Windows Vista/Seven?
+
+.. _faq-run-program-under-windows:
 
 
 How do I run a Python program under Windows?

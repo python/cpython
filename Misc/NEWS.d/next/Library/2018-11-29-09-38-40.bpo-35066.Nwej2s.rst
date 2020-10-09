@@ -1,5 +1,0 @@
-Previously, calling the strftime() method on a datetime object with a
-trailing '%' in the format string would result in an exception. However,
-this only occured when the datetime C module was being used; the python
-implementation did not match this behavior. Datetime is now PEP-399
-compliant, and will not throw an exception on a trailing '%'.

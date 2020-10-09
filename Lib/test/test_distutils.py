@@ -10,8 +10,14 @@ import test.support
 
 
 def test_main():
+    # used by regrtest
     test.support.run_unittest(distutils.tests.test_suite())
     test.support.reap_children()
+
+
+def load_tests(*_):
+    # used by unittest
+    return distutils.tests.test_suite()
 
 
 if __name__ == "__main__":

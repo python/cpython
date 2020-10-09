@@ -242,7 +242,11 @@ exit:
 PyDoc_STRVAR(_io__IOBase_writelines__doc__,
 "writelines($self, lines, /)\n"
 "--\n"
-"\n");
+"\n"
+"Write a list of lines to stream.\n"
+"\n"
+"Line separators are not added, so it is usual for each of the\n"
+"lines provided to have a line separator at the end.");
 
 #define _IO__IOBASE_WRITELINES_METHODDEF    \
     {"writelines", (PyCFunction)_io__IOBase_writelines, METH_O, _io__IOBase_writelines__doc__},
@@ -270,14 +274,9 @@ _io__RawIOBase_read(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -311,4 +310,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=60e43a7cbd9f314e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=83c1361a7a51ca84 input=a9049054013a1b77]*/

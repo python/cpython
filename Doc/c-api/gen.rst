@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _gen-objects:
 
@@ -15,6 +15,11 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
    The C structure used for generator objects.
 
 
+.. c:type:: PySendResult
+
+   The enum value used to represent different results of :c:func:`PyGen_Send`.
+
+
 .. c:var:: PyTypeObject PyGen_Type
 
    The type object corresponding to generator objects.
@@ -22,23 +27,33 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
 
 .. c:function:: int PyGen_Check(PyObject *ob)
 
-   Return true if *ob* is a generator object; *ob* must not be *NULL*.
+   Return true if *ob* is a generator object; *ob* must not be ``NULL``.
 
 
 .. c:function:: int PyGen_CheckExact(PyObject *ob)
 
-   Return true if *ob*'s type is *PyGen_Type*; *ob* must not be *NULL*.
+   Return true if *ob*'s type is :c:type:`PyGen_Type`; *ob* must not be ``NULL``.
 
 
 .. c:function:: PyObject* PyGen_New(PyFrameObject *frame)
 
    Create and return a new generator object based on the *frame* object.
    A reference to *frame* is stolen by this function. The argument must not be
-   *NULL*.
+   ``NULL``.
 
 .. c:function:: PyObject* PyGen_NewWithQualName(PyFrameObject *frame, PyObject *name, PyObject *qualname)
 
    Create and return a new generator object based on the *frame* object,
    with ``__name__`` and ``__qualname__`` set to *name* and *qualname*.
    A reference to *frame* is stolen by this function.  The *frame* argument
-   must not be *NULL*.
+   must not be ``NULL``.
+
+.. c:function:: PySendResult PyGen_Send(PyGenObject *gen, PyObject *arg, PyObject **presult)
+
+   Sends the *arg* value into the generator *gen*. Coroutine objects
+   are also allowed to be as the *gen* argument but they need to be
+   explicitly casted to PyGenObject*. Returns:
+
+   - ``PYGEN_RETURN`` if generator returns. Return value is returned via *presult*.
+   - ``PYGEN_NEXT`` if generator yields. Yielded value is returned via *presult*.
+   - ``PYGEN_ERROR`` if generator has raised and exception. *presult* is set to ``NULL``.

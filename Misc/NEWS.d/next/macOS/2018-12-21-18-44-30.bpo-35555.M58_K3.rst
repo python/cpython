@@ -1,1 +1,0 @@
-Gray out Code Context menu entry when it's not applicable.

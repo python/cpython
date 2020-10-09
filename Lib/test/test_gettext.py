@@ -2,10 +2,10 @@ import os
 import base64
 import contextlib
 import gettext
-import locale
 import unittest
 
 from test import support
+from test.support import os_helper
 
 
 # TODO:
@@ -130,14 +130,14 @@ class GettextBaseTest(unittest.TestCase):
             fp.write(base64.decodebytes(UMO_DATA))
         with open(MMOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(MMO_DATA))
-        self.env = support.EnvironmentVarGuard()
+        self.env = os_helper.EnvironmentVarGuard()
         self.env['LANGUAGE'] = 'xx'
         gettext._translations.clear()
 
     def tearDown(self):
         self.env.__exit__()
         del self.env
-        support.rmtree(os.path.split(LOCALEDIR)[0])
+        os_helper.rmtree(os.path.split(LOCALEDIR)[0])
 
 GNU_MO_DATA_ISSUE_17898 = b'''\
 3hIElQAAAAABAAAAHAAAACQAAAAAAAAAAAAAAAAAAAAsAAAAggAAAC0AAAAAUGx1cmFsLUZvcm1z
@@ -684,6 +684,19 @@ class GNUTranslationParsingTest(GettextBaseTest):
             # If this runs cleanly, the bug is fixed.
             t = gettext.GNUTranslations(fp)
 
+    def test_ignore_comments_in_headers_issue36239(self):
+        """Checks that comments like:
+
+            #-#-#-#-#  messages.po (EdX Studio)  #-#-#-#-#
+
+        are ignored.
+        """
+        with open(MOFILE, 'wb') as fp:
+            fp.write(base64.decodebytes(GNU_MO_DATA_ISSUE_17898))
+        with open(MOFILE, 'rb') as fp:
+            t = gettext.GNUTranslations(fp)
+            self.assertEqual(t.info()["plural-forms"], "nplurals=2; plural=(n != 1);")
+
 
 class UnicodeTranslationsTest(GettextBaseTest):
     def setUp(self):
@@ -807,8 +820,8 @@ class GettextCacheTestCase(GettextBaseTest):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'c2py', 'ENOENT'}
-        support.check__all__(self, gettext, blacklist=blacklist)
+        support.check__all__(self, gettext,
+                             not_exported={'c2py', 'ENOENT'})
 
 
 if __name__ == '__main__':

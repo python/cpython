@@ -1,2 +1,0 @@
-Verify the value for the parameter '-s' of the cProfile CLI. Patch by Robert
-Kuska

@@ -1,2 +1,0 @@
-Make IDLE calltips always visible on Mac. Some MacOS-tk combinations need
-.update_idletasks(). Patch by Kevin Walzer.

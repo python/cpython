@@ -1,3 +1,0 @@
-Enable "squeezing" of long outputs in the shell, to avoid performance
-degradation and to clean up the history without losing it.  Squeezed outputs
-may be copied, viewed in a separate window, and "unsqueezed".

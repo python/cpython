@@ -24,7 +24,6 @@
  */
 
 #include <Python.h>
-#include <structmember.h>
 
 #include "cursor.h"
 #include "microprotocols.h"
@@ -57,7 +56,7 @@ pysqlite_microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
     PyObject* key;
     int rc;
 
-    if (proto == NULL) proto = (PyObject*)&pysqlite_PrepareProtocolType;
+    if (proto == NULL) proto = (PyObject*)pysqlite_PrepareProtocolType;
 
     key = Py_BuildValue("(OO)", (PyObject*)type, proto);
     if (!key) {
@@ -84,7 +83,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
        way to get a quotable object to be its instance */
 
     /* look for an adapter in the registry */
-    key = Py_BuildValue("(OO)", (PyObject*)obj->ob_type, proto);
+    key = Py_BuildValue("(OO)", (PyObject*)Py_TYPE(obj), proto);
     if (!key) {
         return NULL;
     }
@@ -92,7 +91,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
     Py_DECREF(key);
     if (adapter) {
         Py_INCREF(adapter);
-        adapted = PyObject_CallFunctionObjArgs(adapter, obj, NULL);
+        adapted = PyObject_CallOneArg(adapter, obj);
         Py_DECREF(adapter);
         return adapted;
     }
@@ -105,7 +104,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
         return NULL;
     }
     if (adapter) {
-        adapted = PyObject_CallFunctionObjArgs(adapter, obj, NULL);
+        adapted = PyObject_CallOneArg(adapter, obj);
         Py_DECREF(adapter);
 
         if (adapted == Py_None) {
@@ -124,7 +123,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
         return NULL;
     }
     if (adapter) {
-        adapted = PyObject_CallFunctionObjArgs(adapter, proto, NULL);
+        adapted = PyObject_CallOneArg(adapter, proto);
         Py_DECREF(adapter);
 
         if (adapted == Py_None) {
@@ -153,7 +152,7 @@ PyObject *
 pysqlite_adapt(pysqlite_Cursor *self, PyObject *args)
 {
     PyObject *obj, *alt = NULL;
-    PyObject *proto = (PyObject*)&pysqlite_PrepareProtocolType;
+    PyObject *proto = (PyObject*)pysqlite_PrepareProtocolType;
 
     if (!PyArg_ParseTuple(args, "O|OO", &obj, &proto, &alt)) return NULL;
     return pysqlite_microprotocols_adapt(obj, proto, alt);

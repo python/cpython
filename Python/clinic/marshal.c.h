@@ -42,11 +42,6 @@ marshal_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     version = _PyLong_AsInt(args[2]);
     if (version == -1 && PyErr_Occurred()) {
         goto exit;
@@ -111,11 +106,6 @@ marshal_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     version = _PyLong_AsInt(args[1]);
     if (version == -1 && PyErr_Occurred()) {
         goto exit;
@@ -152,7 +142,7 @@ marshal_loads(PyObject *module, PyObject *arg)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&bytes, 'C')) {
-        _PyArg_BadArgument("loads", 0, "contiguous buffer", arg);
+        _PyArg_BadArgument("loads", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = marshal_loads_impl(module, &bytes);
@@ -165,4 +155,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ae2bca1aa239e095 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=68b78f38bfe0c06d input=a9049054013a1b77]*/

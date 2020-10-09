@@ -55,6 +55,12 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
     (250, b'Ok')
     >>>
 
+   .. audit-event:: smtplib.send self,data smtplib.SMTP
+
+      All commands will raise an :ref:`auditing event <auditing>`
+      ``smtplib.SMTP.send`` with arguments ``self`` and ``data``,
+      where ``data`` is the bytes about to be sent to the remote host.
+
    .. versionchanged:: 3.3
       Support for the :keyword:`with` statement was added.
 
@@ -64,6 +70,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    .. versionadded:: 3.5
       The SMTPUTF8 extension (:rfc:`6531`) is now supported.
 
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket
 
 .. class:: SMTP_SSL(host='', port=0, local_hostname=None, keyfile=None, \
                     certfile=None [, timeout], context=None, \
@@ -102,8 +111,12 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
        :func:`ssl.create_default_context` select the system's trusted CA
        certificates for you.
 
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket
 
-.. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, source_address=None)
+.. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None,
+                source_address=None[, timeout])
 
    The LMTP protocol, which is very similar to ESMTP, is heavily based on the
    standard SMTP client. It's common to use Unix sockets for LMTP, so our
@@ -115,6 +128,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    Authentication is supported, using the regular SMTP mechanism. When using a
    Unix socket, LMTP generally don't support or require any authentication, but
    your mileage might vary.
+
+   .. versionchanged:: 3.9
+      The optional *timeout* parameter was added.
 
 
 A nice selection of exceptions is defined as well:
@@ -242,6 +258,8 @@ An :class:`SMTP` instance has the following methods:
    2-tuple of the response code and message sent by the server in its
    connection response.
 
+   .. audit-event:: smtplib.connect self,host,port smtplib.SMTP.connect
+
 
 .. method:: SMTP.helo(name='')
 
@@ -261,9 +279,10 @@ An :class:`SMTP` instance has the following methods:
    response for ESMTP option and store them for use by :meth:`has_extn`.
    Also sets several informational attributes: the message returned by
    the server is stored as the :attr:`ehlo_resp` attribute, :attr:`does_esmtp`
-   is set to true or false depending on whether the server supports ESMTP, and
-   :attr:`esmtp_features` will be a dictionary containing the names of the
-   SMTP service extensions this server supports, and their parameters (if any).
+   is set to ``True`` or ``False`` depending on whether the server supports
+   ESMTP, and :attr:`esmtp_features` will be a dictionary containing the names
+   of the SMTP service extensions this server supports, and their parameters
+   (if any).
 
    Unless you wish to use :meth:`has_extn` before sending mail, it should not be
    necessary to call this method explicitly.  It will be implicitly called by

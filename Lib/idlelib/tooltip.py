@@ -75,7 +75,7 @@ class TooltipBase(object):
         if tw:
             try:
                 tw.destroy()
-            except TclError:
+            except TclError:  # pragma: no cover
                 pass
 
 
@@ -103,8 +103,8 @@ class OnHoverTooltipBase(TooltipBase):
     def __del__(self):
         try:
             self.anchor_widget.unbind("<Enter>", self._id1)
-            self.anchor_widget.unbind("<Leave>", self._id2)
-            self.anchor_widget.unbind("<Button>", self._id3)
+            self.anchor_widget.unbind("<Leave>", self._id2)  # pragma: no cover
+            self.anchor_widget.unbind("<Button>", self._id3) # pragma: no cover
         except TclError:
             pass
         super(OnHoverTooltipBase, self).__del__()
@@ -137,7 +137,7 @@ class OnHoverTooltipBase(TooltipBase):
         """hide the tooltip"""
         try:
             self.unschedule()
-        except TclError:
+        except TclError:  # pragma: no cover
             pass
         super(OnHoverTooltipBase, self).hidetip()
 

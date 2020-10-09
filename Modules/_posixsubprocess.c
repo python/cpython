@@ -8,7 +8,7 @@
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#if defined(HAVE_SYS_STAT_H) && defined(__FreeBSD__)
+#if defined(HAVE_SYS_STAT_H)
 #include <sys/stat.h>
 #endif
 #ifdef HAVE_SYS_SYSCALL_H
@@ -20,6 +20,11 @@
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
+#ifdef HAVE_GRP_H
+#include <grp.h>
+#endif /* HAVE_GRP_H */
+
+#include "posixmodule.h"
 
 #ifdef _Py_MEMORY_SANITIZER
 # include <sanitizer/msan_interface.h>
@@ -47,20 +52,43 @@
 # define FD_DIR "/proc/self/fd"
 #endif
 
+#ifdef NGROUPS_MAX
+#define MAX_GROUPS NGROUPS_MAX
+#else
+#define MAX_GROUPS 64
+#endif
+
 #define POSIX_CALL(call)   do { if ((call) == -1) goto error; } while (0)
 
+typedef struct {
+    PyObject* disable;
+    PyObject* enable;
+    PyObject* isenabled;
+} _posixsubprocessstate;
+
+static struct PyModuleDef _posixsubprocessmodule;
+
+static inline _posixsubprocessstate*
+get_posixsubprocess_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_posixsubprocessstate *)state;
+}
+
+#define _posixsubprocessstate_global get_posixsubprocess_state(PyState_FindModule(&_posixsubprocessmodule))
 
 /* If gc was disabled, call gc.enable().  Return 0 on success. */
 static int
 _enable_gc(int need_to_reenable_gc, PyObject *gc_module)
 {
     PyObject *result;
-    _Py_IDENTIFIER(enable);
     PyObject *exctype, *val, *tb;
 
     if (need_to_reenable_gc) {
         PyErr_Fetch(&exctype, &val, &tb);
-        result = _PyObject_CallMethodId(gc_module, &PyId_enable, NULL);
+        result = PyObject_CallMethodNoArgs(
+            gc_module, _posixsubprocessstate_global->enable);
         if (exctype != NULL) {
             PyErr_Restore(exctype, val, tb);
         }
@@ -236,9 +264,15 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
         start_fd = keep_fd + 1;
     }
     if (start_fd <= end_fd) {
+#if defined(__FreeBSD__)
+        /* Any errors encountered while closing file descriptors are ignored */
+        closefrom(start_fd);
+#else
         for (fd_num = start_fd; fd_num < end_fd; ++fd_num) {
-            close(fd_num);
+            /* Ignore errors */
+            (void)close(fd_num);
         }
+#endif
     }
 }
 
@@ -405,6 +439,9 @@ child_exec(char *const exec_array[],
            int errpipe_read, int errpipe_write,
            int close_fds, int restore_signals,
            int call_setsid,
+           int call_setgid, gid_t gid,
+           int call_setgroups, size_t groups_size, const gid_t *groups,
+           int call_setuid, uid_t uid, int child_umask,
            PyObject *py_fds_to_keep,
            PyObject *preexec_fn,
            PyObject *preexec_fn_args_tuple)
@@ -474,6 +511,9 @@ child_exec(char *const exec_array[],
     if (cwd)
         POSIX_CALL(chdir(cwd));
 
+    if (child_umask >= 0)
+        umask(child_umask);  /* umask() always succeeds. */
+
     if (restore_signals)
         _Py_RestoreSignals();
 
@@ -481,6 +521,22 @@ child_exec(char *const exec_array[],
     if (call_setsid)
         POSIX_CALL(setsid());
 #endif
+
+#ifdef HAVE_SETGROUPS
+    if (call_setgroups)
+        POSIX_CALL(setgroups(groups_size, groups));
+#endif /* HAVE_SETGROUPS */
+
+#ifdef HAVE_SETREGID
+    if (call_setgid)
+        POSIX_CALL(setregid(gid, gid));
+#endif /* HAVE_SETREGID */
+
+#ifdef HAVE_SETREUID
+    if (call_setuid)
+        POSIX_CALL(setreuid(uid, uid));
+#endif /* HAVE_SETREUID */
+
 
     reached_preexec = 1;
     if (preexec_fn != Py_None && preexec_fn_args_tuple) {
@@ -561,30 +617,40 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     PyObject *env_list, *preexec_fn;
     PyObject *process_args, *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
+    PyObject *groups_list;
+    PyObject *uid_object, *gid_object;
     int p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite;
     int errpipe_read, errpipe_write, close_fds, restore_signals;
     int call_setsid;
+    int call_setgid = 0, call_setgroups = 0, call_setuid = 0;
+    uid_t uid;
+    gid_t gid, *groups = NULL;
+    int child_umask;
     PyObject *cwd_obj, *cwd_obj2;
     const char *cwd;
     pid_t pid;
     int need_to_reenable_gc = 0;
     char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
-    Py_ssize_t arg_num;
+    Py_ssize_t arg_num, num_groups = 0;
     int need_after_fork = 0;
     int saved_errno = 0;
 
     if (!PyArg_ParseTuple(
-            args, "OOpO!OOiiiiiiiiiiO:fork_exec",
+            args, "OOpO!OOiiiiiiiiiiOOOiO:fork_exec",
             &process_args, &executable_list,
             &close_fds, &PyTuple_Type, &py_fds_to_keep,
             &cwd_obj, &env_list,
             &p2cread, &p2cwrite, &c2pread, &c2pwrite,
             &errread, &errwrite, &errpipe_read, &errpipe_write,
-            &restore_signals, &call_setsid, &preexec_fn))
+            &restore_signals, &call_setsid,
+            &gid_object, &groups_list, &uid_object, &child_umask,
+            &preexec_fn))
         return NULL;
 
-    if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
-        PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+    if ((preexec_fn != Py_None) &&
+            (PyInterpreterState_Get() != PyInterpreterState_Main())) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "preexec_fn not supported within subinterpreters");
         return NULL;
     }
 
@@ -597,16 +663,23 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         return NULL;
     }
 
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    if (config->_isolated_interpreter) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "subprocess not supported for isolated subinterpreters");
+        return NULL;
+    }
+
     /* We need to call gc.disable() when we'll be calling preexec_fn */
     if (preexec_fn != Py_None) {
         PyObject *result;
-        _Py_IDENTIFIER(isenabled);
-        _Py_IDENTIFIER(disable);
 
         gc_module = PyImport_ImportModule("gc");
         if (gc_module == NULL)
             return NULL;
-        result = _PyObject_CallMethodId(gc_module, &PyId_isenabled, NULL);
+        result = PyObject_CallMethodNoArgs(
+            gc_module, _posixsubprocessstate_global->isenabled);
         if (result == NULL) {
             Py_DECREF(gc_module);
             return NULL;
@@ -617,7 +690,8 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             Py_DECREF(gc_module);
             return NULL;
         }
-        result = _PyObject_CallMethodId(gc_module, &PyId_disable, NULL);
+        result = PyObject_CallMethodNoArgs(
+            gc_module, _posixsubprocessstate_global->disable);
         if (result == NULL) {
             Py_DECREF(gc_module);
             return NULL;
@@ -677,6 +751,90 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         cwd_obj2 = NULL;
     }
 
+    if (groups_list != Py_None) {
+#ifdef HAVE_SETGROUPS
+        Py_ssize_t i;
+        unsigned long gid;
+
+        if (!PyList_Check(groups_list)) {
+            PyErr_SetString(PyExc_TypeError,
+                    "setgroups argument must be a list");
+            goto cleanup;
+        }
+        num_groups = PySequence_Size(groups_list);
+
+        if (num_groups < 0)
+            goto cleanup;
+
+        if (num_groups > MAX_GROUPS) {
+            PyErr_SetString(PyExc_ValueError, "too many groups");
+            goto cleanup;
+        }
+
+        if ((groups = PyMem_RawMalloc(num_groups * sizeof(gid_t))) == NULL) {
+            PyErr_SetString(PyExc_MemoryError,
+                    "failed to allocate memory for group list");
+            goto cleanup;
+        }
+
+        for (i = 0; i < num_groups; i++) {
+            PyObject *elem;
+            elem = PySequence_GetItem(groups_list, i);
+            if (!elem)
+                goto cleanup;
+            if (!PyLong_Check(elem)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "groups must be integers");
+                Py_DECREF(elem);
+                goto cleanup;
+            } else {
+                /* In posixmodule.c UnsignedLong is used as a fallback value
+                * if the value provided does not fit in a Long. Since we are
+                * already doing the bounds checking on the Python side, we
+                * can go directly to an UnsignedLong here. */
+                if (!_Py_Gid_Converter(elem, &gid)) {
+                    Py_DECREF(elem);
+                    PyErr_SetString(PyExc_ValueError, "invalid group id");
+                    goto cleanup;
+                }
+                groups[i] = gid;
+            }
+            Py_DECREF(elem);
+        }
+        call_setgroups = 1;
+
+#else /* HAVE_SETGROUPS */
+        PyErr_BadInternalCall();
+        goto cleanup;
+#endif /* HAVE_SETGROUPS */
+    }
+
+    if (gid_object != Py_None) {
+#ifdef HAVE_SETREGID
+        if (!_Py_Gid_Converter(gid_object, &gid))
+            goto cleanup;
+
+        call_setgid = 1;
+
+#else /* HAVE_SETREGID */
+        PyErr_BadInternalCall();
+        goto cleanup;
+#endif /* HAVE_SETREUID */
+    }
+
+    if (uid_object != Py_None) {
+#ifdef HAVE_SETREUID
+        if (!_Py_Uid_Converter(uid_object, &uid))
+            goto cleanup;
+
+        call_setuid = 1;
+
+#else /* HAVE_SETREUID */
+        PyErr_BadInternalCall();
+        goto cleanup;
+#endif /* HAVE_SETREUID */
+    }
+
     /* This must be the last thing done before fork() because we do not
      * want to call PyOS_BeforeFork() if there is any chance of another
      * error leading to the cleanup: code without calling fork(). */
@@ -709,6 +867,8 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
                    p2cread, p2cwrite, c2pread, c2pwrite,
                    errread, errwrite, errpipe_read, errpipe_write,
                    close_fds, restore_signals, call_setsid,
+                   call_setgid, gid, call_setgroups, num_groups, groups,
+                   call_setuid, uid, child_umask,
                    py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
         _exit(255);
         return NULL;  /* Dead code to avoid a potential compiler warning. */
@@ -733,6 +893,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     if (_enable_gc(need_to_reenable_gc, gc_module)) {
         pid = -1;
     }
+    PyMem_RawFree(groups);
     Py_XDECREF(preexec_fn_args_tuple);
     Py_XDECREF(gc_module);
 
@@ -753,6 +914,8 @@ cleanup:
         _Py_FreeCharPArray(argv);
     if (exec_array)
         _Py_FreeCharPArray(exec_array);
+
+    PyMem_RawFree(groups);
     Py_XDECREF(converted_args);
     Py_XDECREF(fast_args);
     Py_XDECREF(preexec_fn_args_tuple);
@@ -763,16 +926,22 @@ cleanup:
 
 
 PyDoc_STRVAR(subprocess_fork_exec_doc,
-"fork_exec(args, executable_list, close_fds, cwd, env,\n\
+"fork_exec(args, executable_list, close_fds, pass_fds, cwd, env,\n\
           p2cread, p2cwrite, c2pread, c2pwrite,\n\
           errread, errwrite, errpipe_read, errpipe_write,\n\
-          restore_signals, call_setsid, preexec_fn)\n\
+          restore_signals, call_setsid,\n\
+          gid, groups_list, uid,\n\
+          preexec_fn)\n\
 \n\
 Forks a child process, closes parent file descriptors as appropriate in the\n\
 child and dups the few that are needed before calling exec() in the child\n\
 process.\n\
 \n\
-The preexec_fn, if supplied, will be called immediately before exec.\n\
+If close_fds is true, close file descriptors 3 and higher, except those listed\n\
+in the sorted tuple pass_fds.\n\
+\n\
+The preexec_fn, if supplied, will be called immediately before closing file\n\
+descriptors and exec.\n\
 WARNING: preexec_fn is NOT SAFE if your application uses threads.\n\
          It may trigger infrequent, difficult to debug deadlocks.\n\
 \n\
@@ -796,16 +965,56 @@ static PyMethodDef module_methods[] = {
 };
 
 
+static int _posixsubprocess_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(get_posixsubprocess_state(m)->disable);
+    Py_VISIT(get_posixsubprocess_state(m)->enable);
+    Py_VISIT(get_posixsubprocess_state(m)->isenabled);
+    return 0;
+}
+
+static int _posixsubprocess_clear(PyObject *m) {
+    Py_CLEAR(get_posixsubprocess_state(m)->disable);
+    Py_CLEAR(get_posixsubprocess_state(m)->enable);
+    Py_CLEAR(get_posixsubprocess_state(m)->isenabled);
+    return 0;
+}
+
+static void _posixsubprocess_free(void *m) {
+    _posixsubprocess_clear((PyObject *)m);
+}
+
 static struct PyModuleDef _posixsubprocessmodule = {
         PyModuleDef_HEAD_INIT,
         "_posixsubprocess",
         module_doc,
-        -1,  /* No memory is needed. */
+        sizeof(_posixsubprocessstate),
         module_methods,
+        NULL,
+        _posixsubprocess_traverse,
+        _posixsubprocess_clear,
+        _posixsubprocess_free,
 };
 
 PyMODINIT_FUNC
 PyInit__posixsubprocess(void)
 {
-    return PyModule_Create(&_posixsubprocessmodule);
+    PyObject* m;
+
+    m = PyState_FindModule(&_posixsubprocessmodule);
+    if (m != NULL) {
+      Py_INCREF(m);
+      return m;
+    }
+
+    m = PyModule_Create(&_posixsubprocessmodule);
+    if (m == NULL) {
+      return NULL;
+    }
+
+    get_posixsubprocess_state(m)->disable = PyUnicode_InternFromString("disable");
+    get_posixsubprocess_state(m)->enable = PyUnicode_InternFromString("enable");
+    get_posixsubprocess_state(m)->isenabled = PyUnicode_InternFromString("isenabled");
+
+    PyState_AddModule(m, &_posixsubprocessmodule);
+    return m;
 }

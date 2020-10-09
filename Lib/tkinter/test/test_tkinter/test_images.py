@@ -1,6 +1,7 @@
 import unittest
 import tkinter
 from test import support
+from test.support import os_helper
 from tkinter.test.support import AbstractTkTest, requires_tcl
 
 support.requires('gui')
@@ -296,12 +297,12 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
 
     def test_write(self):
         image = self.create()
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
-        image.write(support.TESTFN)
+        image.write(os_helper.TESTFN)
         image2 = tkinter.PhotoImage('::img::test2', master=self.root,
                                     format='ppm',
-                                    file=support.TESTFN)
+                                    file=os_helper.TESTFN)
         self.assertEqual(str(image2), '::img::test2')
         self.assertEqual(image2.type(), 'photo')
         self.assertEqual(image2.width(), 16)
@@ -309,16 +310,25 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(0, 0), image.get(0, 0))
         self.assertEqual(image2.get(15, 8), image.get(15, 8))
 
-        image.write(support.TESTFN, format='gif', from_coords=(4, 6, 6, 9))
+        image.write(os_helper.TESTFN, format='gif', from_coords=(4, 6, 6, 9))
         image3 = tkinter.PhotoImage('::img::test3', master=self.root,
                                     format='gif',
-                                    file=support.TESTFN)
+                                    file=os_helper.TESTFN)
         self.assertEqual(str(image3), '::img::test3')
         self.assertEqual(image3.type(), 'photo')
         self.assertEqual(image3.width(), 2)
         self.assertEqual(image3.height(), 3)
         self.assertEqual(image3.get(0, 0), image.get(4, 6))
         self.assertEqual(image3.get(1, 2), image.get(5, 8))
+
+    def test_transparency(self):
+        image = self.create()
+        self.assertEqual(image.transparency_get(0, 0), True)
+        self.assertEqual(image.transparency_get(4, 6), False)
+        image.transparency_set(4, 6, True)
+        self.assertEqual(image.transparency_get(4, 6), True)
+        image.transparency_set(4, 6, False)
+        self.assertEqual(image.transparency_get(4, 6), False)
 
 
 tests_gui = (MiscTest, BitmapImageTest, PhotoImageTest,)
