@@ -226,18 +226,5 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
         self.assertEqual(res.out.rstrip(), expected)
 
 
-class EncodingsTest(unittest.TestCase):
-
-    def test_bpo39337(self):
-        """
-        bpo-39337: similar to _Py_normalize_encoding(),
-        encodings.normalize_encoding() should ignore non-ASCII letters .
-        """
-        import encodings
-
-        out = encodings.normalize_encoding("utf\xE9\u20AC\U0010ffff-8")
-        self.assertEqual(out, 'utf_8')
-
-
 if __name__ == "__main__":
     unittest.main()
