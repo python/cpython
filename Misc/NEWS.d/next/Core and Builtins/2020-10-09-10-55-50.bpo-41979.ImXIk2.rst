@@ -1,0 +1,1 @@
+Accept star-unpacking on with-item targets for the PEG parser.
