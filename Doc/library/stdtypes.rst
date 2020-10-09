@@ -4749,6 +4749,112 @@ define these methods must provide them as a normal Python accessible method.
 Compared to the overhead of setting up the runtime context, the overhead of a
 single class dictionary lookup is negligible.
 
+
+.. _types-genericalias:
+
+Generic Alias Type
+==================
+
+.. index::
+   object: GenericAlias
+   pair: Generic; Alias
+
+The ``GenericAlias`` object acts as a proxy for :term:`generic types
+<generic type>`, implementing *parameterized generics* - a specific instance
+of a generic with the types for container elements provided. It is intended
+primarily for type :term:`annotations <annotation>`.  ``GenericAlias`` objects
+are returned by expressions like ``list[int]``.
+
+.. describe:: generic[X, Y, ...]
+
+   Defines a generic containing elements of types *X*, *Y*, and more depending
+   on the *generic* used.  For example, for a function expecting a :class:`list`
+   containing :class:`float` elements::
+
+      def average(values: list[float]) -> float:
+          return sum(values) / len(values)
+
+   Another example for :term:`mapping` objects, using a :class:`dict`.  In this
+   case, the expected ``dict`` has keys of type :class:`str` and their
+   corresponding values are lists which hold :class:`int` elements::
+
+      def send_request(message_body: dict[str, list[int]]) -> None:
+          ...
+
+The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
+parameterized generic types for their second argument::
+
+   >>> isinstance([1, 2], list[str])
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: isinstance() argument 2 cannot be a parameterized generic
+   >>> issubclass(list, list[str])
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: issubclass() argument 2 cannot be a parameterized generic
+
+Generic types erase type parameters during object creation::
+
+   list[int]() == []
+
+Furthermore, type parameters are not checked by the Python interpreter during
+object creation when using a generic type::
+
+   list[str]([1, 2, 3]) == list[int]([1, 2, 3])
+
+The following collections are generics.  Most of their type parameters
+can be found in the :mod:`typing` module:
+
+* :class:`tuple`
+* :class:`list`
+* :class:`dict`
+* :class:`set`
+* :class:`frozenset`
+* :class:`type`
+* :class:`collections.deque`
+* :class:`collections.defaultdict`
+* :class:`collections.OrderedDict`
+* :class:`collections.Counter`
+* :class:`collections.ChainMap`
+* :class:`collections.abc.Awaitable`
+* :class:`collections.abc.Coroutine`
+* :class:`collections.abc.AsyncIterable`
+* :class:`collections.abc.AsyncIterator`
+* :class:`collections.abc.AsyncGenerator`
+* :class:`collections.abc.Iterable`
+* :class:`collections.abc.Iterator`
+* :class:`collections.abc.Generator`
+* :class:`collections.abc.Reversible`
+* :class:`collections.abc.Container`
+* :class:`collections.abc.Collection`
+* :class:`collections.abc.Callable`
+* :class:`collections.abc.Set`
+* :class:`collections.abc.MutableSet`
+* :class:`collections.abc.Mapping`
+* :class:`collections.abc.MutableMapping`
+* :class:`collections.abc.Sequence`
+* :class:`collections.abc.MutableSequence`
+* :class:`collections.abc.ByteString`
+* :class:`collections.abc.MappingView`
+* :class:`collections.abc.KeysView`
+* :class:`collections.abc.ItemsView`
+* :class:`collections.abc.ValuesView`
+* :class:`contextlib.AbstractContextManager`
+* :class:`contextlib.AbstractAsyncContextManager`
+* :ref:`re.Pattern <re-objects>`
+* :ref:`re.Match <match-objects>`
+
+The type for the ``GenericAlias`` object is :data:`types.GenericAlias`.
+
+.. seealso::
+
+   * :pep:`585` -- "Type Hinting Generics In Standard Collections"
+   * :meth:`__class_getitem__` -- Method used to parameterize contained types.
+     in generics
+
+.. versionadded:: 3.9
+
+
 .. _types-union:
 
 Union Type
