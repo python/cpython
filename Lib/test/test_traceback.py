@@ -212,6 +212,26 @@ class TracebackCases(unittest.TestCase):
         )
         self.assertEqual(output.getvalue(), "Exception: projector\n")
 
+    def test_print_exception_exc(self):
+        output = StringIO()
+        traceback.print_exception(Exception("projector"), file=output)
+        self.assertEqual(output.getvalue(), "Exception: projector\n")
+
+    def test_format_exception_exc(self):
+        e = Exception("projector")
+        output = traceback.format_exception(e)
+        self.assertEqual(output, ["Exception: projector\n"])
+        with self.assertRaisesRegex(ValueError, 'Both or neither'):
+            traceback.format_exception(e.__class__, e)
+        with self.assertRaisesRegex(ValueError, 'Both or neither'):
+            traceback.format_exception(e.__class__, tb=e.__traceback__)
+        with self.assertRaisesRegex(TypeError, 'positional-only'):
+            traceback.format_exception(exc=e)
+
+    def test_format_exception_only_exc(self):
+        output = traceback.format_exception_only(Exception("projector"))
+        self.assertEqual(output, ["Exception: projector\n"])
+
 
 class TracebackFormatTests(unittest.TestCase):
 

@@ -212,6 +212,15 @@ Add :data:`sys.orig_argv` attribute: the list of the original command line
 arguments passed to the Python executable.
 (Contributed by Victor Stinner in :issue:`23427`.)
 
+traceback
+---------
+
+The :func:`~traceback.format_exception`,
+:func:`~traceback.format_exception_only`, and
+:func:`~traceback.print_exception` functions can now take an exception object
+as a positional-only argument.
+(Contributed by Zackery Spytz and Matthias Bussonnier in :issue:`26389`.)
+
 types
 -----
 
