@@ -29,7 +29,7 @@ try:
 except ImportError:
     # multiprocessing.shared_memory is not available on e.g. Android
     ShareableList = None
-from multiprocessing.queues import SimpleQueue
+from multiprocessing.queues import SimpleQueue as MPSimpleQueue
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType, AsyncGeneratorType
@@ -81,7 +81,7 @@ class BaseTest(unittest.TestCase):
                  SplitResult, ParseResult,
                  ValueProxy, ApplyResult,
                  WeakSet, ReferenceType, ref,
-                 ShareableList, SimpleQueue,
+                 ShareableList, MPSimpleQueue,
                  Future, _WorkItem,
                  Morsel]
         if ctypes is not None:
