@@ -1,4 +1,5 @@
 from test import support
+from test.support import warnings_helper
 import decimal
 import enum
 import locale
@@ -247,7 +248,7 @@ class TimeTestCase(unittest.TestCase):
         # not change output based on its value and no test for year
         # because systems vary in their support for year 0.
         expected = "2000 01 01 00 00 00 1 001"
-        with support.check_warnings():
+        with warnings_helper.check_warnings():
             result = time.strftime("%Y %m %d %H %M %S %w %j", (2000,)+(0,)*8)
         self.assertEqual(expected, result)
 

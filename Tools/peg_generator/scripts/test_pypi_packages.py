@@ -57,22 +57,11 @@ def find_dirname(package_name: str) -> str:
 def run_tests(dirname: str, tree: int) -> int:
     return test_parse_directory.parse_directory(
         dirname,
-        HERE / ".." / ".." / ".." / "Grammar" / "python.gram",
-        HERE / ".." / ".." / ".." / "Grammar" / "Tokens",
         verbose=False,
-        excluded_files=[
-            "*/failset/*",
-            "*/failset/**",
-            "*/failset/**/*",
-            "*/test2to3/*",
-            "*/test2to3/**/*",
-            "*/bad*",
-            "*/lib2to3/tests/data/*",
-        ],
-        skip_actions=False,
+        excluded_files=[],
         tree_arg=tree,
         short=True,
-        mode=1,
+        mode=1 if tree else 0,
         parser="pegen",
     )
 

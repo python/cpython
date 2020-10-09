@@ -294,8 +294,6 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     Py_CLEAR(interp->codec_error_registry);
     Py_CLEAR(interp->modules);
     Py_CLEAR(interp->modules_by_index);
-    Py_CLEAR(interp->sysdict);
-    Py_CLEAR(interp->builtins);
     Py_CLEAR(interp->builtins_copy);
     Py_CLEAR(interp->importlib);
     Py_CLEAR(interp->import_func);
@@ -308,6 +306,14 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     if (_PyRuntimeState_GetFinalizing(runtime) == NULL) {
         _PyWarnings_Fini(interp);
     }
+    /* We don't clear sysdict and builtins until the end of this function.
+       Because clearing other attributes can execute arbitrary Python code
+       which requires sysdict and builtins. */
+    PyDict_Clear(interp->sysdict);
+    PyDict_Clear(interp->builtins);
+    Py_CLEAR(interp->sysdict);
+    Py_CLEAR(interp->builtins);
+
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.
@@ -575,7 +581,6 @@ new_threadstate(PyInterpreterState *interp, int init)
     tstate->frame = NULL;
     tstate->recursion_depth = 0;
     tstate->overflowed = 0;
-    tstate->recursion_critical = 0;
     tstate->stackcheck_counter = 0;
     tstate->tracing = 0;
     tstate->use_tracing = 0;
@@ -1726,7 +1731,7 @@ _str_shared(PyObject *obj, _PyCrossInterpreterData *data)
     struct _shared_str_data *shared = PyMem_NEW(struct _shared_str_data, 1);
     shared->kind = PyUnicode_KIND(obj);
     shared->buffer = PyUnicode_DATA(obj);
-    shared->len = PyUnicode_GET_LENGTH(obj) - 1;
+    shared->len = PyUnicode_GET_LENGTH(obj);
     data->data = (void *)shared;
     Py_INCREF(obj);
     data->obj = obj;  // Will be "released" (decref'ed) when data released.

@@ -387,6 +387,20 @@ http
 HTTP status codes ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` are added to
 :class:`http.HTTPStatus`. (Contributed by Dong-hee Na in :issue:`39509` and Ross Rhodes in :issue:`39507`.)
 
+IDLE and idlelib
+----------------
+
+Add option to toggle cursor blink off.  (Contributed by Zackery Spytz
+in :issue:`4603`.)
+
+Escape key now closes IDLE completion windows.  (Contributed by Johnny
+Najera in :issue:`38944`.)
+
+Add keywords to module name completion list.  (Contributed by Terry J.
+Reedy in :issue:`37765`.)
+
+The changes above have been backported to 3.8 maintenance releases.
+
 imaplib
 -------
 
@@ -685,6 +699,10 @@ in nanoseconds.  The benchmarks were measured on an
 running the macOS 64-bit builds found at
 `python.org <https://www.python.org/downloads/mac-osx/>`_.
 
+* A number of Python builtins (:class:`range`, :class:`tuple`, :class:`set`, :class:`frozenset`, :class:`list`, :class:`dict`)
+  are now sped up by using :pep:`590` vectorcall protocol.
+  (Contributed by Dong-hee Na, Mark Shannon, Jeroen Demeyer and Petr Viktorin in :issue:`37207`.)
+
 
 Deprecated
 ==========
@@ -703,6 +721,11 @@ Deprecated
   removed in future versions of Python. For the majority of use cases,
   users can leverage the Abstract Syntax Tree (AST) generation and compilation
   stage, using the :mod:`ast` module.
+
+* The Public C API functions :c:func:`PyParser_SimpleParseStringFlags`,
+  :c:func:`PyParser_SimpleParseStringFlagsFilename`,
+  :c:func:`PyParser_SimpleParseFileFlags` and :c:func:`PyNode_Compile`
+  are deprecated and will be removed in Python 3.10 together with the old parser.
 
 * Using :data:`NotImplemented` in a boolean context has been deprecated,
   as it is almost exclusively the result of incorrect rich comparator
@@ -826,11 +849,6 @@ Removed
   module have been removed.  They were deprecated in Python 3.2.
   Use ``iter(x)`` or ``list(x)`` instead of ``x.getchildren()`` and
   ``x.iter()`` or ``list(x.iter())`` instead of ``x.getiterator()``.
-  The ``xml.etree.cElementTree`` module has been removed,
-  use the :mod:`xml.etree.ElementTree` module instead.
-  Since Python 3.3 the ``xml.etree.cElementTree`` module has been deprecated,
-  the ``xml.etree.ElementTree`` module uses a fast implementation whenever
-  available.
   (Contributed by Serhiy Storchaka in :issue:`36543`.)
 
 * The old :mod:`plistlib` API has been removed, it was deprecated since Python
@@ -882,6 +900,16 @@ Removed
 * The :meth:`symtable.SymbolTable.has_exec` method has been removed. It was
   deprecated since 2006, and only returning ``False`` when it's called.
   (Contributed by Batuhan Taskaya in :issue:`40208`)
+
+* The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks`
+  have been removed. They were deprecated since Python 3.7 and you can use
+  :func:`asyncio.current_task` and :func:`asyncio.all_tasks` instead.
+  (Contributed by Rémi Lapeyre in :issue:`40967`)
+
+* The ``unescape()`` method in the :class:`html.parser.HTMLParser` class
+  has been removed (it was deprecated since Python 3.4).  :func:`html.unescape`
+  should be used for converting character references to the corresponding
+  unicode characters.
 
 
 Porting to Python 3.9
@@ -1021,6 +1049,13 @@ C API Changes
 New Features
 ------------
 
+* :pep:`573`: Add :c:func:`PyType_FromModuleAndSpec` to associate
+  a module with a class; :c:func:`PyType_GetModule` and
+  :c:func:`PyType_GetModuleState` to retrieve the module and its state; and
+  :c:data:`PyCMethod` and :c:data:`METH_METHOD` to allow a method to
+  access the class it was defined in.
+  (Contributed by Marcel Plch and Petr Viktorin in :issue:`38787`.)
+
 * Add :c:func:`PyFrame_GetCode` function: get a frame code.
   Add :c:func:`PyFrame_GetBack` function: get the frame next outer frame.
   (Contributed by Victor Stinner in :issue:`40421`.)
@@ -1102,6 +1137,12 @@ Porting to Python 3.9
   internal C API (``pycore_gc.h``).
   (Contributed by Victor Stinner in :issue:`40241`.)
 
+* The ``Py_UNICODE_COPY``, ``Py_UNICODE_FILL``, ``PyUnicode_WSTR_LENGTH``,
+  :c:func:`PyUnicode_FromUnicode`, :c:func:`PyUnicode_AsUnicode`,
+  ``_PyUnicode_AsUnicode``, and :c:func:`PyUnicode_AsUnicodeAndSize` are
+  marked as deprecated in C.  They have been deprecated by :pep:`393` since
+  Python 3.3.
+  (Contributed by Inada Naoki in :issue:`36346`.)
 
 Removed
 -------
@@ -1170,3 +1211,8 @@ Removed
 
 * Remove ``_PyUnicode_ClearStaticStrings()`` function.
   (Contributed by Victor Stinner in :issue:`39465`.)
+
+* Remove ``Py_UNICODE_MATCH``. It has been deprecated by :pep:`393`, and
+  broken since Python 3.3. The :c:func:`PyUnicode_Tailmatch` function can be
+  used instead.
+  (Contributed by Inada Naoki in :issue:`36346`.)

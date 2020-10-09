@@ -23,7 +23,7 @@ using :pep:`526` type annotations.  For example this code::
 
   @dataclass
   class InventoryItem:
-      '''Class for keeping track of an item in inventory.'''
+      """Class for keeping track of an item in inventory."""
       name: str
       unit_price: float
       quantity_on_hand: int = 0
@@ -188,7 +188,7 @@ Module-level decorators, classes, and functions
 
      @dataclass
      class C:
-         mylist: List[int] = field(default_factory=list)
+         mylist: list[int] = field(default_factory=list)
 
      c = C()
      c.mylist += [1, 2, 3]
@@ -301,7 +301,7 @@ Module-level decorators, classes, and functions
 
      @dataclass
      class C:
-          mylist: List[Point]
+          mylist: list[Point]
 
      p = Point(10, 20)
      assert asdict(p) == {'x': 10, 'y': 20}

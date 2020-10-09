@@ -462,16 +462,16 @@ receiving cookies.  There are also some strictness switches that allow you to
 tighten up the rather loose Netscape protocol rules a little bit (at the cost of
 blocking some benign cookies).
 
-A domain blacklist and whitelist is provided (both off by default). Only domains
-not in the blacklist and present in the whitelist (if the whitelist is active)
+A domain blocklist and allowlist is provided (both off by default). Only domains
+not in the blocklist and present in the allowlist (if the allowlist is active)
 participate in cookie setting and returning.  Use the *blocked_domains*
 constructor argument, and :meth:`blocked_domains` and
 :meth:`set_blocked_domains` methods (and the corresponding argument and methods
-for *allowed_domains*).  If you set a whitelist, you can turn it off again by
+for *allowed_domains*).  If you set an allowlist, you can turn it off again by
 setting it to :const:`None`.
 
 Domains in block or allow lists that do not start with a dot must equal the
-cookie domain to be matched.  For example, ``"example.com"`` matches a blacklist
+cookie domain to be matched.  For example, ``"example.com"`` matches a blocklist
 entry of ``"example.com"``, but ``"www.example.com"`` does not.  Domains that do
 start with a dot are matched by more specific domains too. For example, both
 ``"www.example.com"`` and ``"www.coyote.example.com"`` match ``".example.com"``
@@ -494,7 +494,7 @@ and ``".168.1.2"``, 192.168.1.2 is blocked, but 193.168.1.2 is not.
 
 .. method:: DefaultCookiePolicy.is_blocked(domain)
 
-   Return whether *domain* is on the blacklist for setting or receiving cookies.
+   Return whether *domain* is on the blocklist for setting or receiving cookies.
 
 
 .. method:: DefaultCookiePolicy.allowed_domains()
@@ -509,7 +509,7 @@ and ``".168.1.2"``, 192.168.1.2 is blocked, but 193.168.1.2 is not.
 
 .. method:: DefaultCookiePolicy.is_not_allowed(domain)
 
-   Return whether *domain* is not on the whitelist for setting or receiving
+   Return whether *domain* is not on the allowlist for setting or receiving
    cookies.
 
 :class:`DefaultCookiePolicy` instances have the following attributes, which are

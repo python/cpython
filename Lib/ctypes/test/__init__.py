@@ -1,9 +1,11 @@
 import os
 import unittest
 from test import support
+from test.support import import_helper
+
 
 # skip tests if _ctypes was not built
-ctypes = support.import_module('ctypes')
+ctypes = import_helper.import_module('ctypes')
 ctypes_symbols = dir(ctypes)
 
 def need_symbol(name):

@@ -1,10 +1,10 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
-#include "pycore_ceval.h"        // _Py_EnterRecursiveCall()
-#include "pycore_object.h"
-#include "pycore_pystate.h"      // _PyThreadState_GET()
-#include "pycore_tupleobject.h"
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
 
 _Py_IDENTIFIER(getattr);

@@ -829,13 +829,6 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
     int init_legacy_encoding = Py_LegacyWindowsFSEncodingFlag;
 #endif
 
-    if (args) {
-        status = _PyPreCmdline_SetArgv(&cmdline, args);
-        if (_PyStatus_EXCEPTION(status)) {
-            goto done;
-        }
-    }
-
     int locale_coerced = 0;
     int loops = 0;
 
@@ -846,7 +839,7 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         loops++;
         if (loops == 3) {
             status = _PyStatus_ERR("Encoding changed twice while "
-                               "reading the configuration");
+                                   "reading the configuration");
             goto done;
         }
 
@@ -856,6 +849,15 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
 #ifdef MS_WINDOWS
         Py_LegacyWindowsFSEncodingFlag = config->legacy_windows_fs_encoding;
 #endif
+
+        if (args) {
+            // Set command line arguments at each iteration. If they are bytes
+            // strings, they are decoded from the new encoding.
+            status = _PyPreCmdline_SetArgv(&cmdline, args);
+            if (_PyStatus_EXCEPTION(status)) {
+                goto done;
+            }
+        }
 
         status = preconfig_read(config, &cmdline);
         if (_PyStatus_EXCEPTION(status)) {
@@ -896,7 +898,7 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         }
 
         /* Reset the configuration before reading again the configuration,
-           just keep UTF-8 Mode value. */
+           just keep UTF-8 Mode and coerce C locale value. */
         int new_utf8_mode = config->utf8_mode;
         int new_coerce_c_locale = config->coerce_c_locale;
         preconfig_copy(config, &save_config);

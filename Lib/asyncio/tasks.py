@@ -113,34 +113,6 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     # status is still pending
     _log_destroy_pending = True
 
-    @classmethod
-    def current_task(cls, loop=None):
-        """Return the currently running task in an event loop or None.
-
-        By default the current task for the current event loop is returned.
-
-        None is returned when called not in the context of a Task.
-        """
-        warnings.warn("Task.current_task() is deprecated since Python 3.7, "
-                      "use asyncio.current_task() instead",
-                      DeprecationWarning,
-                      stacklevel=2)
-        if loop is None:
-            loop = events.get_event_loop()
-        return current_task(loop)
-
-    @classmethod
-    def all_tasks(cls, loop=None):
-        """Return a set of all tasks for an event loop.
-
-        By default all tasks for the current event loop are returned.
-        """
-        warnings.warn("Task.all_tasks() is deprecated since Python 3.7, "
-                      "use asyncio.all_tasks() instead",
-                      DeprecationWarning,
-                      stacklevel=2)
-        return _all_tasks_compat(loop)
-
     def __init__(self, coro, *, loop=None, name=None):
         super().__init__(loop=loop)
         if self._source_traceback:
@@ -473,8 +445,13 @@ async def wait_for(fut, timeout, *, loop=None):
         if fut.done():
             return fut.result()
 
-        fut.cancel()
-        raise exceptions.TimeoutError()
+        await _cancel_and_wait(fut, loop=loop)
+        try:
+            fut.result()
+        except exceptions.CancelledError as exc:
+            raise exceptions.TimeoutError() from exc
+        else:
+            raise exceptions.TimeoutError()
 
     waiter = loop.create_future()
     timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
@@ -488,9 +465,12 @@ async def wait_for(fut, timeout, *, loop=None):
         try:
             await waiter
         except exceptions.CancelledError:
-            fut.remove_done_callback(cb)
-            fut.cancel()
-            raise
+            if fut.done():
+                return fut.result()
+            else:
+                fut.remove_done_callback(cb)
+                fut.cancel()
+                raise
 
         if fut.done():
             return fut.result()
@@ -757,6 +737,13 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
     the outer Future is *not* cancelled in this case.  (This is to
     prevent the cancellation of one child to cause other children to
     be cancelled.)
+
+    If *return_exceptions* is False, cancelling gather() after it
+    has been marked done won't cancel any submitted awaitables.
+    For instance, gather can be marked done after propagating an
+    exception to the caller, therefore, calling ``gather.cancel()``
+    after catching an exception (raised by one of the awaitables) from
+    gather won't cancel any other awaitables.
     """
     if not coros_or_futures:
         if loop is None:

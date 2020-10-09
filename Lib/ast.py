@@ -59,7 +59,7 @@ def literal_eval(node_or_string):
     sets, booleans, and None.
     """
     if isinstance(node_or_string, str):
-        node_or_string = parse(node_or_string, mode='eval')
+        node_or_string = parse(node_or_string.lstrip(" \t"), mode='eval')
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
     def _raise_malformed_node(node):
@@ -180,7 +180,11 @@ def copy_location(new_node, old_node):
     for attr in 'lineno', 'col_offset', 'end_lineno', 'end_col_offset':
         if attr in old_node._attributes and attr in new_node._attributes:
             value = getattr(old_node, attr, None)
-            if value is not None:
+            # end_lineno and end_col_offset are optional attributes, and they
+            # should be copied whether the value is None or not.
+            if value is not None or (
+                hasattr(old_node, attr) and attr.startswith("end_")
+            ):
                 setattr(new_node, attr, value)
     return new_node
 
@@ -229,8 +233,11 @@ def increment_lineno(node, n=1):
     for child in walk(node):
         if 'lineno' in child._attributes:
             child.lineno = getattr(child, 'lineno', 0) + n
-        if 'end_lineno' in child._attributes:
-            child.end_lineno = getattr(child, 'end_lineno', 0) + n
+        if (
+            "end_lineno" in child._attributes
+            and (end_lineno := getattr(child, "end_lineno", 0)) is not None
+        ):
+            child.end_lineno = end_lineno + n
     return node
 
 
@@ -490,18 +497,20 @@ class NodeTransformer(NodeVisitor):
         return node
 
 
-# The following code is for backward compatibility.
-# It will be removed in future.
+# If the ast module is loaded more than once, only add deprecated methods once
+if not hasattr(Constant, 'n'):
+    # The following code is for backward compatibility.
+    # It will be removed in future.
 
-def _getter(self):
-    """Deprecated. Use value instead."""
-    return self.value
+    def _getter(self):
+        """Deprecated. Use value instead."""
+        return self.value
 
-def _setter(self, value):
-    self.value = value
+    def _setter(self, value):
+        self.value = value
 
-Constant.n = property(_getter, _setter)
-Constant.s = property(_getter, _setter)
+    Constant.n = property(_getter, _setter)
+    Constant.s = property(_getter, _setter)
 
 class _ABC(type):
 
@@ -593,14 +602,19 @@ class ExtSlice(slice):
     def __new__(cls, dims=(), **kwargs):
         return Tuple(list(dims), Load(), **kwargs)
 
-def _dims_getter(self):
-    """Deprecated. Use elts instead."""
-    return self.elts
+# If the ast module is loaded more than once, only add deprecated methods once
+if not hasattr(Tuple, 'dims'):
+    # The following code is for backward compatibility.
+    # It will be removed in future.
 
-def _dims_setter(self, value):
-    self.elts = value
+    def _dims_getter(self):
+        """Deprecated. Use elts instead."""
+        return self.elts
 
-Tuple.dims = property(_dims_getter, _dims_setter)
+    def _dims_setter(self, value):
+        self.elts = value
+
+    Tuple.dims = property(_dims_getter, _dims_setter)
 
 class Suite(mod):
     """Deprecated AST node class.  Unused in Python 3."""
