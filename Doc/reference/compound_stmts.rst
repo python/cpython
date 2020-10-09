@@ -302,8 +302,7 @@ stored in the :mod:`sys` module and can be accessed via :func:`sys.exc_info`.
 :func:`sys.exc_info` returns a 3-tuple consisting of the exception class, the
 exception instance and a traceback object (see section :ref:`types`) identifying
 the point in the program where the exception occurred.  :func:`sys.exc_info`
-values are restored to their previous values (before the call) when leaving
-an exception handler.
+elements are restored to their previous values when leaving an exception handler.
 
 .. index::
    keyword: else
