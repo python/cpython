@@ -51,18 +51,6 @@ get_termios_state(PyObject *module)
     return (termiosmodulestate *)state;
 }
 
-static int fdconv(PyObject* obj, void* p)
-{
-    int fd;
-
-    fd = PyObject_AsFileDescriptor(obj);
-    if (fd >= 0) {
-        *(int*)p = fd;
-        return 1;
-    }
-    return 0;
-}
-
 static struct PyModuleDef termiosmodule;
 
 PyDoc_STRVAR(termios_tcgetattr__doc__,
@@ -81,7 +69,7 @@ termios_tcgetattr(PyObject *module, PyObject *args)
 {
     int fd;
     if (!PyArg_ParseTuple(args, "O&:tcgetattr",
-                          fdconv, (void*)&fd)) {
+                          _PyLong_FileDescriptor_Converter, (void*)&fd)) {
         return NULL;
     }
 
@@ -160,7 +148,7 @@ termios_tcsetattr(PyObject *module, PyObject *args)
     int fd, when;
     PyObject *term;
     if (!PyArg_ParseTuple(args, "O&iO:tcsetattr",
-                          fdconv, &fd, &when, &term)) {
+                          _PyLong_FileDescriptor_Converter, &fd, &when, &term)) {
         return NULL;
     }
 
@@ -233,7 +221,7 @@ termios_tcsendbreak(PyObject *module, PyObject *args)
 {
     int fd, duration;
     if (!PyArg_ParseTuple(args, "O&i:tcsendbreak",
-                          fdconv, &fd, &duration)) {
+                          _PyLong_FileDescriptor_Converter, &fd, &duration)) {
         return NULL;
     }
 
@@ -255,7 +243,7 @@ termios_tcdrain(PyObject *module, PyObject *args)
 {
     int fd;
     if (!PyArg_ParseTuple(args, "O&:tcdrain",
-                          fdconv, &fd)) {
+                          _PyLong_FileDescriptor_Converter, &fd)) {
         return NULL;
     }
 
@@ -280,7 +268,7 @@ termios_tcflush(PyObject *module, PyObject *args)
 {
     int fd, queue;
     if (!PyArg_ParseTuple(args, "O&i:tcflush",
-                          fdconv, &fd, &queue)) {
+                          _PyLong_FileDescriptor_Converter, &fd, &queue)) {
         return NULL;
     }
 
@@ -305,7 +293,7 @@ termios_tcflow(PyObject *module, PyObject *args)
 {
     int fd, action;
     if (!PyArg_ParseTuple(args, "O&i:tcflow",
-                          fdconv, &fd, &action)) {
+                          _PyLong_FileDescriptor_Converter, &fd, &action)) {
         return NULL;
     }
 
