@@ -2815,11 +2815,9 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     }
     type->tp_dealloc = subtype_dealloc;
 
-    /* Enable GC unless this class is not adding new instance variables and
-       the base class did not use GC. */
-    if ((base->tp_flags & Py_TPFLAGS_HAVE_GC) ||
-        type->tp_basicsize > base->tp_basicsize)
-        type->tp_flags |= Py_TPFLAGS_HAVE_GC;
+    // All heap types need GC, since we can create a reference cycle by storing
+    // an instance on one of its parents:
+    type->tp_flags |= Py_TPFLAGS_HAVE_GC;
 
     /* Always override allocation strategy to use regular heap */
     type->tp_alloc = PyType_GenericAlloc;
