@@ -261,6 +261,8 @@ Standard names are defined for the following types:
    The type of :ref:`parameterized generics <types-genericalias>` such as
    ``list[int]``.
 
+   .. versionadded:: 3.9
+
 .. data:: Union
 
    The type of :ref:`union type expressions<types-union>`.
