@@ -185,8 +185,7 @@ class EventType(enum.StrEnum):
     Deactivate = '37'
     MouseWheel = '38'
 
-    def __str__(self):
-        return self.name
+    __str__ = str.__str__
 
 
 class Event:
@@ -266,7 +265,7 @@ class Event:
                 'num', 'delta', 'focus',
                 'x', 'y', 'width', 'height')
         return '<%s event%s>' % (
-            self.type,
+            getattr(self.type, 'name', self.type),
             ''.join(' %s=%s' % (k, attrs[k]) for k in keys if k in attrs)
         )
 
