@@ -2210,24 +2210,17 @@ main_loop:
         case TARGET(YIELD_FROM): {
             PyObject *v = POP();
             PyObject *receiver = TOP();
-            int is_gen_or_coro = PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver);
-            int gen_status;
-            if (tstate->c_tracefunc == NULL && is_gen_or_coro) {
-                gen_status = PyGen_Send((PyGenObject *)receiver, v, &retval);
+            PySendResult gen_status;
+            if (tstate->c_tracefunc == NULL) {
+                gen_status = PyIter_Send(receiver, v, &retval);
             } else {
-                if (is_gen_or_coro) {
-                    retval = _PyGen_Send((PyGenObject *)receiver, v);
+                _Py_IDENTIFIER(send);
+                if (v == Py_None && PyIter_Check(receiver)) {
+                    retval = Py_TYPE(receiver)->tp_iternext(receiver);
                 }
                 else {
-                    _Py_IDENTIFIER(send);
-                    if (v == Py_None) {
-                        retval = Py_TYPE(receiver)->tp_iternext(receiver);
-                    }
-                    else {
-                        retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
-                    }
+                    retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
                 }
-
                 if (retval == NULL) {
                     if (tstate->c_tracefunc != NULL
                             && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))

@@ -1081,6 +1081,11 @@ PyIter_Check:PyObject*:o:0:
 PyIter_Next:PyObject*::+1:
 PyIter_Next:PyObject*:o:0:
 
+PyIter_Send:int:::
+PyIter_Send:PyObject*:iter:0:
+PyIter_Send:PyObject*:arg:0:
+PyIter_Send:PyObject**:presult:+1:
+
 PyList_Append:int:::
 PyList_Append:PyObject*:list:0:
 PyList_Append:PyObject*:item:+1:

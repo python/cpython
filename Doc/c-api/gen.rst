@@ -15,11 +15,6 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
    The C structure used for generator objects.
 
 
-.. c:type:: PySendResult
-
-   The enum value used to represent different results of :c:func:`PyGen_Send`.
-
-
 .. c:var:: PyTypeObject PyGen_Type
 
    The type object corresponding to generator objects.
