@@ -308,12 +308,6 @@ gen_send(PyGenObject *gen, PyObject *arg)
     return gen_send_ex(gen, arg, 0, 0);
 }
 
-PyObject *
-_PyGen_Send(PyGenObject *gen, PyObject *arg)
-{
-    return gen_send(gen, arg);
-}
-
 PyDoc_STRVAR(close_doc,
 "close() -> raise GeneratorExit inside generator.");
 
@@ -1012,7 +1006,7 @@ PyDoc_STRVAR(coro_close_doc,
 "close() -> raise GeneratorExit inside coroutine.");
 
 static PyMethodDef coro_methods[] = {
-    {"send",(PyCFunction)_PyGen_Send, METH_O, coro_send_doc},
+    {"send",(PyCFunction)gen_send, METH_O, coro_send_doc},
     {"throw",(PyCFunction)gen_throw, METH_VARARGS, coro_throw_doc},
     {"close",(PyCFunction)gen_close, METH_NOARGS, coro_close_doc},
     {NULL, NULL}        /* Sentinel */
