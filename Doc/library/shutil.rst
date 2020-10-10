@@ -349,7 +349,7 @@ Directory and files operations
    will be created in or as *dst* and *src* will be removed.
 
    If *copy_function* is given, it must be a callable that takes two arguments
-   *src* and *dst*, and will be used to copy *src* to *dest* if
+   *src* and *dst*, and will be used to copy *src* to *dst* if
    :func:`os.rename` cannot be used.  If the source is a directory,
    :func:`copytree` is called, passing it the :func:`copy_function`. The
    default *copy_function* is :func:`copy2`.  Using :func:`~shutil.copy` as the
