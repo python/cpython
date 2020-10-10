@@ -1785,28 +1785,30 @@ dumps() -- marshal value as a bytes object\n\
 loads() -- read value from a bytes-like object");
 
 
+static int
+marshal_module_exec(PyObject *mod)
+{
+    if (PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot marshalmodule_slots[] = {
+    {Py_mod_exec, marshal_module_exec},
+    {0, NULL}
+};
 
 static struct PyModuleDef marshalmodule = {
     PyModuleDef_HEAD_INIT,
-    "marshal",
-    module_doc,
-    0,
-    marshal_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "marshal",
+    .m_doc = module_doc,
+    .m_methods = marshal_methods,
+    .m_slots = marshalmodule_slots,
 };
 
 PyMODINIT_FUNC
 PyMarshal_Init(void)
 {
-    PyObject *mod = PyModule_Create(&marshalmodule);
-    if (mod == NULL)
-        return NULL;
-    if (PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION) < 0) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-    return mod;
+    return PyModuleDef_Init(&marshalmodule);
 }

@@ -11,6 +11,14 @@ INF = float("inf")
 NAN = float("nan")
 # These tests ensure that complex math does the right thing
 
+ZERO_DIVISION = (
+    (1+1j, 0+0j),
+    (1+1j, 0.0),
+    (1+1j, 0),
+    (1.0, 0+0j),
+    (1, 0+0j),
+)
+
 class ComplexTest(unittest.TestCase):
 
     def assertAlmostEqual(self, a, b):
@@ -99,20 +107,34 @@ class ComplexTest(unittest.TestCase):
             self.check_div(complex(random(), random()),
                            complex(random(), random()))
 
-        self.assertRaises(ZeroDivisionError, complex.__truediv__, 1+1j, 0+0j)
-        self.assertRaises(OverflowError, pow, 1e200+1j, 1e200+1j)
-
         self.assertAlmostEqual(complex.__truediv__(2+0j, 1+1j), 1-1j)
-        self.assertRaises(ZeroDivisionError, complex.__truediv__, 1+1j, 0+0j)
 
         for denom_real, denom_imag in [(0, NAN), (NAN, 0), (NAN, NAN)]:
             z = complex(0, 0) / complex(denom_real, denom_imag)
             self.assertTrue(isnan(z.real))
             self.assertTrue(isnan(z.imag))
 
+    def test_truediv_zero_division(self):
+        for a, b in ZERO_DIVISION:
+            with self.assertRaises(ZeroDivisionError):
+                a / b
+
     def test_floordiv(self):
-        self.assertRaises(TypeError, complex.__floordiv__, 3+0j, 1.5+0j)
-        self.assertRaises(TypeError, complex.__floordiv__, 3+0j, 0+0j)
+        with self.assertRaises(TypeError):
+            (1+1j) // (1+0j)
+        with self.assertRaises(TypeError):
+            (1+1j) // 1.0
+        with self.assertRaises(TypeError):
+            (1+1j) // 1
+        with self.assertRaises(TypeError):
+            1.0 // (1+0j)
+        with self.assertRaises(TypeError):
+            1 // (1+0j)
+
+    def test_floordiv_zero_division(self):
+        for a, b in ZERO_DIVISION:
+            with self.assertRaises(TypeError):
+                a // b
 
     def test_richcompare(self):
         self.assertIs(complex.__eq__(1+1j, 1<<10000), False)
@@ -159,13 +181,32 @@ class ComplexTest(unittest.TestCase):
 
     def test_mod(self):
         # % is no longer supported on complex numbers
-        self.assertRaises(TypeError, (1+1j).__mod__, 0+0j)
-        self.assertRaises(TypeError, lambda: (3.33+4.43j) % 0)
-        self.assertRaises(TypeError, (1+1j).__mod__, 4.3j)
+        with self.assertRaises(TypeError):
+            (1+1j) % (1+0j)
+        with self.assertRaises(TypeError):
+            (1+1j) % 1.0
+        with self.assertRaises(TypeError):
+            (1+1j) % 1
+        with self.assertRaises(TypeError):
+            1.0 % (1+0j)
+        with self.assertRaises(TypeError):
+            1 % (1+0j)
+
+    def test_mod_zero_division(self):
+        for a, b in ZERO_DIVISION:
+            with self.assertRaises(TypeError):
+                a % b
 
     def test_divmod(self):
         self.assertRaises(TypeError, divmod, 1+1j, 1+0j)
-        self.assertRaises(TypeError, divmod, 1+1j, 0+0j)
+        self.assertRaises(TypeError, divmod, 1+1j, 1.0)
+        self.assertRaises(TypeError, divmod, 1+1j, 1)
+        self.assertRaises(TypeError, divmod, 1.0, 1+0j)
+        self.assertRaises(TypeError, divmod, 1, 1+0j)
+
+    def test_divmod_zero_division(self):
+        for a, b in ZERO_DIVISION:
+            self.assertRaises(TypeError, divmod, a, b)
 
     def test_pow(self):
         self.assertAlmostEqual(pow(1+1j, 0+0j), 1.0)
@@ -174,6 +215,7 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(pow(1j, -1), 1/1j)
         self.assertAlmostEqual(pow(1j, 200), 1)
         self.assertRaises(ValueError, pow, 1+1j, 1+1j, 1+1j)
+        self.assertRaises(OverflowError, pow, 1e200+1j, 1e200+1j)
 
         a = 3.33+4.43j
         self.assertEqual(a ** 0j, 1)

@@ -38,8 +38,8 @@ The different font weights and slants are:
        | *family* - font family i.e. Courier, Times
        | *size* - font size
        |     If *size* is positive it is interpreted as size in points.
-       |     If *size* is a negative number its absolute value is treated as
-             as size in pixels.
+       |     If *size* is a negative number its absolute value is treated
+       |     as size in pixels.
        | *weight* - font emphasis (NORMAL, BOLD)
        | *slant* - ROMAN, ITALIC
        | *underline* - font underlining (0 - none, 1 - underline)

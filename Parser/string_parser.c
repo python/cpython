@@ -970,15 +970,15 @@ ExprList_Dealloc(ExprList *l)
     l->size = -1;
 }
 
-static asdl_seq *
+static asdl_expr_seq *
 ExprList_Finish(ExprList *l, PyArena *arena)
 {
-    asdl_seq *seq;
+    asdl_expr_seq *seq;
 
     ExprList_check_invariants(l);
 
     /* Allocate the asdl_seq and copy the expressions in to it. */
-    seq = _Py_asdl_seq_new(l->size, arena);
+    seq = _Py_asdl_expr_seq_new(l->size, arena);
     if (seq) {
         Py_ssize_t i;
         for (i = 0; i < l->size; i++) {
@@ -1167,7 +1167,7 @@ expr_ty
 _PyPegen_FstringParser_Finish(Parser *p, FstringParser *state, Token* first_token,
                      Token *last_token)
 {
-    asdl_seq *seq;
+    asdl_expr_seq *seq;
 
     FstringParser_check_invariants(state);
 

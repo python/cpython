@@ -103,6 +103,13 @@ If you instantiate any of these types, note that signatures may vary between Pyt
 
 Standard names are defined for the following types:
 
+.. data:: NoneType
+
+   The type of :data:`None`.
+
+   .. versionadded:: 3.10
+
+
 .. data:: FunctionType
           LambdaType
 
@@ -186,6 +193,13 @@ Standard names are defined for the following types:
    .. versionadded:: 3.7
 
 
+.. data:: NotImplementedType
+
+   The type of :data:`NotImplemented`.
+
+   .. versionadded:: 3.10
+
+
 .. data:: MethodDescriptorType
 
    The type of methods of some built-in data types such as :meth:`str.join`.
@@ -235,6 +249,18 @@ Standard names are defined for the following types:
       .. versionchanged:: 3.4
          Defaults to ``None``. Previously the attribute was optional.
 
+
+.. data:: EllipsisType
+
+   The type of :data:`Ellipsis`.
+
+   .. versionadded:: 3.10
+
+.. data:: Union
+
+   The type of :ref:`union type expressions<types-union>`.
+
+   .. versionadded:: 3.10
 
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 

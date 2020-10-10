@@ -14839,7 +14839,7 @@ wrongtype:
             break;
         default:
             PyErr_Format(PyExc_TypeError,
-                    "%%%c format: a number is required, "
+                    "%%%c format: a real number is required, "
                     "not %.200s",
                     type, Py_TYPE(v)->tp_name);
             break;
@@ -15734,9 +15734,7 @@ PyUnicode_InternInPlace(PyObject **p)
     }
 
     PyObject *t;
-    Py_ALLOW_RECURSION
     t = PyDict_SetDefault(interned, s, s);
-    Py_END_ALLOW_RECURSION
 
     if (t == NULL) {
         PyErr_Clear();
@@ -15754,12 +15752,25 @@ PyUnicode_InternInPlace(PyObject **p)
        this. */
     Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
+#else
+    // PyDict expects that interned strings have their hash
+    // (PyASCIIObject.hash) already computed.
+    (void)unicode_hash(s);
 #endif
 }
 
 void
 PyUnicode_InternImmortal(PyObject **p)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "PyUnicode_InternImmortal() is deprecated; "
+            "use PyUnicode_InternInPlace() instead", 1) < 0)
+    {
+        // The function has no return value, the exception cannot
+        // be reported to the caller, so just log it.
+        PyErr_WriteUnraisable(NULL);
+    }
+
     PyUnicode_InternInPlace(p);
     if (PyUnicode_CHECK_INTERNED(*p) != SSTATE_INTERNED_IMMORTAL) {
         _PyUnicode_STATE(*p).interned = SSTATE_INTERNED_IMMORTAL;
@@ -16243,20 +16254,16 @@ static PyMethodDef _string_methods[] = {
 
 static struct PyModuleDef _string_module = {
     PyModuleDef_HEAD_INIT,
-    "_string",
-    PyDoc_STR("string helper module"),
-    0,
-    _string_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_string",
+    .m_doc = PyDoc_STR("string helper module"),
+    .m_size = 0,
+    .m_methods = _string_methods,
 };
 
 PyMODINIT_FUNC
 PyInit__string(void)
 {
-    return PyModule_Create(&_string_module);
+    return PyModuleDef_Init(&_string_module);
 }
 
 

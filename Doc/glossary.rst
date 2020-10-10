@@ -587,7 +587,7 @@ Glossary
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
       with an :meth:`__iter__` method or with a :meth:`__getitem__` method
-      that implements :term:`Sequence` semantics.
+      that implements :term:`Sequence <sequence>` semantics.
 
       Iterables can be
       used in a :keyword:`for` loop and in many other places where a sequence is
@@ -1084,19 +1084,15 @@ Glossary
       Type aliases are useful for simplifying :term:`type hints <type hint>`.
       For example::
 
-         from typing import List, Tuple
-
          def remove_gray_shades(
-                 colors: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
+                 colors: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
              pass
 
       could be made more readable like this::
 
-         from typing import List, Tuple
+         Color = tuple[int, int, int]
 
-         Color = Tuple[int, int, int]
-
-         def remove_gray_shades(colors: List[Color]) -> List[Color]:
+         def remove_gray_shades(colors: list[Color]) -> list[Color]:
              pass
 
       See :mod:`typing` and :pep:`484`, which describe this functionality.

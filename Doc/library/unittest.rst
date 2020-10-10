@@ -1091,7 +1091,8 @@ Test cases
 
       If given, *logger* should be a :class:`logging.Logger` object or a
       :class:`str` giving the name of a logger.  The default is the root
-      logger, which will catch all messages.
+      logger, which will catch all messages that were not blocked by a
+      non-propagating descendent logger.
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or

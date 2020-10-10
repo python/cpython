@@ -1,6 +1,7 @@
 # Python test set -- part 5, built-in exceptions
 
 import copy
+import gc
 import os
 import sys
 import unittest
@@ -1329,6 +1330,36 @@ class ExceptionTests(unittest.TestCase):
         else:
             del AssertionError
             self.fail('Expected exception')
+
+    def test_memory_error_subclasses(self):
+        # bpo-41654: MemoryError instances use a freelist of objects that are
+        # linked using the 'dict' attribute when they are inactive/dead.
+        # Subclasses of MemoryError should not participate in the freelist
+        # schema. This test creates a MemoryError object and keeps it alive
+        # (therefore advancing the freelist) and then it creates and destroys a
+        # subclass object. Finally, it checks that creating a new MemoryError
+        # succeeds, proving that the freelist is not corrupted.
+
+        class TestException(MemoryError):
+            pass
+
+        try:
+            raise MemoryError
+        except MemoryError as exc:
+            inst = exc
+
+        try:
+            raise TestException
+        except Exception:
+            pass
+
+        for _ in range(10):
+            try:
+                raise MemoryError
+            except MemoryError as exc:
+                pass
+
+            gc_collect()
 
 
 class ImportErrorTests(unittest.TestCase):

@@ -338,6 +338,22 @@ PyAPI_FUNC(int) PyIter_Check(PyObject *);
    NULL with an exception means an error occurred. */
 PyAPI_FUNC(PyObject *) PyIter_Next(PyObject *);
 
+typedef enum {
+    PYGEN_RETURN = 0,
+    PYGEN_ERROR = -1,
+    PYGEN_NEXT = 1,
+} PySendResult;
+
+/* Takes generator, coroutine or iterator object and sends the value into it.
+   Returns:
+   - PYGEN_RETURN (0) if generator has returned.
+     'result' parameter is filled with return value
+   - PYGEN_ERROR (-1) if exception was raised.
+     'result' parameter is NULL
+   - PYGEN_NEXT (1) if generator has yielded.
+     'result' parameter is filled with yielded value. */
+PyAPI_FUNC(PySendResult) PyIter_Send(PyObject *, PyObject *, PyObject **);
+
 
 /* === Number Protocol ================================================== */
 
