@@ -1436,7 +1436,8 @@ static PyMethodDef unicodedata_functions[] = {
 };
 
 static void
-ucd_dealloc(PreviousDBVersion *self) {
+ucd_dealloc(PreviousDBVersion *self)
+{
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_Del(self);
     Py_DECREF(tp);
@@ -1447,7 +1448,7 @@ static PyType_Slot unicodedata_ucd_type_slots[] = {
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_methods, unicodedata_functions},
     {Py_tp_members, DB_members},
-    {0,0}
+    {0, 0}
 };
 
 static PyType_Spec unicodedata_ucd_type_spec = {
@@ -1492,37 +1493,47 @@ PyInit_unicodedata(void)
         state->ucd_type = (PyTypeObject *)PyType_FromSpec(
             &unicodedata_ucd_type_spec);
         if (state->ucd_type == NULL) {
-            return NULL;
+            goto error;
         }
     }
 
-    PyModule_AddStringConstant(mod, "unidata_version", UNIDATA_VERSION);
-    Py_INCREF(state->ucd_type);
     PyModule_AddObject(mod, "UCD", (PyObject*)state->ucd_type);
 
+    if (PyModule_AddStringConstant(
+        mod, "unidata_version", UNIDATA_VERSION) < 0) {
+        goto error;
+    }
+
+    if (PyModule_AddType(mod, state->ucd_type) < 0) {
+        goto error;
+    }
 
     /* Previous versions */
     PyObject *v;
     v = new_previous_version(state, "3.2.0", get_change_3_2_0, normalization_3_2_0);
     if (v == NULL) {
-        return NULL;
+        goto error;
     }
 
     if (PyModule_AddObject(mod, "ucd_3_2_0", v) < 0) {
         Py_DECREF(v);
-        return NULL;
+        goto error;
     }
 
     /* Export C API */
     v = PyCapsule_New((void *)&hashAPI, PyUnicodeData_CAPSULE_NAME, NULL);
     if (v == NULL) {
-        return NULL;
+        goto error;
     }
     if (PyModule_AddObject(mod, "ucnhash_CAPI", v) < 0) {
         Py_DECREF(v);
-        return NULL;
+        goto error;
     }
     return mod;
+
+error:
+    Py_DECREF(mod);
+    return NULL;
 }
 
 /*
