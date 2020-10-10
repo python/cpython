@@ -910,18 +910,17 @@ remove_module(PyThreadState *tstate, PyObject *name)
     _PyErr_Fetch(tstate, &type, &value, &traceback);
 
     PyObject *modules = tstate->interp->modules;
-    if (!PyMapping_HasKey(modules, name)) {
-        goto out;
+    if (PyDict_CheckExact(modules)) {
+        PyObject *mod = _PyDict_Pop(modules, name, Py_None);
+        Py_XDECREF(mod);
     }
-    if (PyMapping_DelItem(modules, name) < 0) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                         "deleting key in sys.modules failed");
-        _PyErr_ChainExceptions(type, value, traceback);
-        return;
+    else if (PyMapping_DelItem(modules, name) < 0) {
+        if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+            _PyErr_Clear(tstate);
+        }
     }
 
-out:
-    _PyErr_Restore(tstate, type, value, traceback);
+    _PyErr_ChainExceptions(type, value, traceback);
 }
 
 
