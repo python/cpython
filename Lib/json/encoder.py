@@ -1,5 +1,6 @@
 """Implementation of JSONEncoder
 """
+import os
 import re
 
 try:
@@ -82,7 +83,7 @@ class JSONEncoder(object):
     +-------------------+---------------+
     | list, tuple       | array         |
     +-------------------+---------------+
-    | str               | string        |
+    | str, os.PathLike  | string        |
     +-------------------+---------------+
     | int, float        | number        |
     +-------------------+---------------+
@@ -413,6 +414,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
     def _iterencode(o, _current_indent_level):
         if isinstance(o, str):
             yield _encoder(o)
+        elif isinstance(o, os.PathLike):
+            yield _encoder(str(o))
         elif o is None:
             yield 'null'
         elif o is True:
