@@ -4765,6 +4765,8 @@ of a generic with the types for container elements provided. It is intended
 primarily for type :term:`annotations <annotation>`.  ``GenericAlias`` objects
 are returned by expressions like ``list[int]``.
 
+The type for the ``GenericAlias`` object is :data:`types.GenericAlias`.
+
 .. describe:: generic[X, Y, ...]
 
    Defines a generic containing elements of types *X*, *Y*, and more depending
@@ -4775,10 +4777,11 @@ are returned by expressions like ``list[int]``.
           return sum(values) / len(values)
 
    Another example for :term:`mapping` objects, using a :class:`dict`.  In this
-   case, the expected ``dict`` has keys of type :class:`str` and their
-   corresponding values are lists which hold :class:`int` elements::
+   case, the function expects a ``dict`` for its ``body`` argument. The ``body``
+   has keys of type :class:`str` and their corresponding values are lists which
+   hold :class:`int` elements::
 
-      def send_request(message_body: dict[str, list[int]]) -> None:
+      def send_post_request(url: str, body: dict[str, list[int]]) -> None:
           ...
 
 The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
@@ -4788,22 +4791,59 @@ parameterized generic types for their second argument::
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    TypeError: isinstance() argument 2 cannot be a parameterized generic
+   >>>
    >>> issubclass(list, list[str])
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    TypeError: issubclass() argument 2 cannot be a parameterized generic
 
-Generic types erase type parameters during object creation::
+The Python runtime does not enforce type :term:`annotations <annotation>`.
+This extends to generic types and their type parameters. When creating
+an object from a parameterized generic, container elements are not checked
+against their type. For example, the following code is discouraged, but will
+run without errors::
 
-   list[int]() == []
+   >>> t = list[str]
+   >>> t([1, 2, 3])
+   [1, 2, 3]
 
-Furthermore, type parameters are not checked by the Python interpreter during
-object creation when using a generic type::
+Furthermore, parameterized generics erase type parameters during object
+creation::
 
-   list[str]([1, 2, 3]) == list[int]([1, 2, 3])
+   >>> t = list[str]
+   >>> type(t)
+   <class 'types.GenericAlias'>
+   >>>
+   >>> l = t()
+   >>> type(l)
+   <class 'list'>
 
-The following collections are generics.  Most of their type parameters
-can be found in the :mod:`typing` module:
+Calling :func:`repr` on a generic shows the parameterized type::
+
+   >>> repr(list[int])
+   'list[int]'
+
+The :meth:`__getitem__` method of generics will raise an exception to disallow
+mistakes like ``dict[str][str]``::
+
+   >>> dict[str][str]
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: There are no type variables left in dict[str]
+
+However, that syntax is valid when type variables are used::
+
+   >>> from typing import TypeVar
+   >>> T = TypeVar('T')
+   >>> dict[str, T][int]
+   dict[str, int]
+
+
+Standard Generic Collections
+----------------------------
+
+These standard library collections support parameterized generics.  Most of
+their type parameters can be found in the :mod:`typing` module:
 
 * :class:`tuple`
 * :class:`list`
@@ -4844,7 +4884,41 @@ can be found in the :mod:`typing` module:
 * :ref:`re.Pattern <re-objects>`
 * :ref:`re.Match <match-objects>`
 
-The type for the ``GenericAlias`` object is :data:`types.GenericAlias`.
+
+Special Attributes of Generics
+------------------------------
+
+All parameterized generics implement special read-only attributes.
+
+.. attribute:: generic.__origin__
+
+   This attribute points at the non-parameterized generic class::
+
+      >>> list[int].__origin__
+      <class 'list'>
+
+
+.. attribute:: generic.__args__
+
+   This attribute is a :class:`tuple` (possibly of length 1) of generic
+   types passed to the original :meth:`__class_getitem__`
+   of the generic container::
+
+      >>> dict[str, list[int]].__args__
+      (<class 'str'>, list[int])
+
+
+.. attribute:: generic.__parameters__
+
+   This attribute is a lazily computed tuple (possibly empty) of unique type
+   variables found in ``__args__``::
+
+      >>> from typing import TypeVar
+      >>>
+      >>> T = TypeVar('T')
+      >>> list[t].__parameters__
+      (~T,)
+
 
 .. seealso::
 
