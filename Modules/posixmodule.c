@@ -8778,10 +8778,6 @@ _fdwalk_close_func(void *lohi, int fd)
 void
 _Py_closerange(int first, int last)
 {
-#ifdef USE_FDWALK
-    int lohi[2];
-#endif
-
     first = Py_MAX(first, 0);
 #ifdef USE_CLOSEFROM
     if (last >= sysconf(_SC_OPEN_MAX)) {
@@ -8792,6 +8788,7 @@ _Py_closerange(int first, int last)
 #endif /* USE_CLOSEFROM */
 #ifdef USE_FDWALK
     {
+        int lohi[2];
         lohi[0] = first;
         lohi[1] = last + 1;
         fdwalk(_fdwalk_close_func, lohi);
