@@ -261,8 +261,9 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
         _Py_closerange(start_fd, keep_fd - 1);
         start_fd = keep_fd + 1;
     }
-    if (start_fd <= end_fd)
+    if (start_fd <= end_fd) {
         _Py_closerange(start_fd, end_fd);
+    }
 }
 
 
