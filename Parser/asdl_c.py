@@ -618,16 +618,6 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("}", depth)
 
 
-class MarshalPrototypeVisitor(PickleVisitor):
-
-    def prototype(self, sum, name):
-        ctype = get_c_type(name)
-        self.emit("static int marshal_write_%s(PyObject **, int *, %s);"
-                  % (name, ctype), 0)
-
-    visitProduct = visitSum = prototype
-
-
 class SequenceConstructorVisitor(EmitVisitor):
     def visitModule(self, mod):
         for dfn in mod.dfns:
@@ -1167,25 +1157,6 @@ PyInit__ast(void)
         self.emit("Py_INCREF(state->%s_type);" % name, 1)
 
 
-_SPECIALIZED_SEQUENCES = ('stmt', 'expr')
-
-def find_sequence(fields, doing_specialization):
-    """Return True if any field uses a sequence."""
-    for f in fields:
-        if f.seq:
-            if not doing_specialization:
-                return True
-            if str(f.type) not in _SPECIALIZED_SEQUENCES:
-                return True
-    return False
-
-def has_sequence(types, doing_specialization):
-    for t in types:
-        if find_sequence(t.fields, doing_specialization):
-            return True
-    return False
-
-
 class StaticVisitor(PickleVisitor):
     CODE = '''Very simple, always emit this static code.  Override CODE'''
 
@@ -1283,18 +1254,6 @@ class ObjVisitor(PickleVisitor):
         emit("goto failed;", 1)
         emit("Py_DECREF(value);", 0)
 
-    def emitSeq(self, field, value, depth, emit):
-        emit("seq = %s;" % value, 0)
-        emit("n = asdl_seq_LEN(seq);", 0)
-        emit("value = PyList_New(n);", 0)
-        emit("if (!value) goto failed;", 0)
-        emit("for (i = 0; i < n; i++) {", 0)
-        self.set("value", field, "asdl_seq_GET(seq, i)", depth + 1)
-        emit("if (!value1) goto failed;", 1)
-        emit("PyList_SET_ITEM(value, i, value1);", 1)
-        emit("value1 = NULL;", 1)
-        emit("}", 0)
-
     def set(self, field, value, depth):
         if field.seq:
             # XXX should really check for is_simple, but that requires a symbol table
@@ -1313,7 +1272,6 @@ class ObjVisitor(PickleVisitor):
             else:
                 self.emit("value = ast2obj_list(state, (asdl_seq*)%s, ast2obj_%s);" % (value, field.type), depth)
         else:
-            ctype = get_c_type(field.type)
             self.emit("value = ast2obj_%s(state, %s);" % (field.type, value), depth, reflow=False)
 
 
