@@ -1,0 +1,2 @@
+Added contextlib.aclosing(), async equivalent to the closing() context
+manager.  Especially useful for deterministic cleanup of async generators.

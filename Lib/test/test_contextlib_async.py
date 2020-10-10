@@ -1,5 +1,5 @@
 import asyncio
-from contextlib import asynccontextmanager, AbstractAsyncContextManager, AsyncExitStack
+from contextlib import asynccontextmanager, AbstractAsyncContextManager, AsyncExitStack, aclosing
 import functools
 from test import support
 import unittest
@@ -451,6 +451,66 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
         inner_exc = saved_details[1]
         self.assertIsInstance(inner_exc, ValueError)
         self.assertIsInstance(inner_exc.__context__, ZeroDivisionError)
+
+
+class AsyncClosingTestCase(unittest.TestCase):
+
+    @_async_test
+    async def test_aclosing(self):
+        state = []
+        class C:
+            async def aclose(self):
+                state.append(1)
+        x = C()
+        self.assertEqual(state, [])
+        async with aclosing(x) as y:
+            self.assertEqual(x, y)
+        self.assertEqual(state, [1])
+
+    @_async_test
+    async def test_aclosing_error(self):
+        state = []
+        class C:
+            async def aclose(self):
+                state.append(1)
+        x = C()
+        self.assertEqual(state, [])
+        with self.assertRaises(ZeroDivisionError):
+            async with aclosing(x) as y:
+                self.assertEqual(x, y)
+                1 / 0
+        self.assertEqual(state, [1])
+
+    @staticmethod
+    async def _async_range(count, closed_slot):
+        try:
+            for i in range(count):
+                yield i
+        except GeneratorExit:
+            closed_slot[0] = True
+
+    @_async_test
+    async def test_generator_example(self):
+        closed_slot = [False]
+        async with aclosing(self._async_range(10, closed_slot)) as gen:
+            it = iter(range(10))
+            async for item in gen:
+                assert item == next(it)
+                if item == 4:
+                    break
+        assert closed_slot[0]
+
+    @_async_test
+    async def test_generator_example_error(self):
+        closed_slot = [False]
+        with self.assertRaises(ValueError):
+            async with aclosing(self._async_range(10, closed_slot)) as gen:
+                it = iter(range(10))
+                async for item in gen:
+                    assert item == next(it)
+                    if item == 4:
+                        raise ValueError()
+        assert closed_slot[0]
 
 
 if __name__ == '__main__':

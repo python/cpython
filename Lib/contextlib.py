@@ -9,7 +9,7 @@ from types import MethodType, GenericAlias
 __all__ = ["asynccontextmanager", "contextmanager", "closing", "nullcontext",
            "AbstractContextManager", "AbstractAsyncContextManager",
            "AsyncExitStack", "ContextDecorator", "ExitStack",
-           "redirect_stdout", "redirect_stderr", "suppress"]
+           "redirect_stdout", "redirect_stderr", "suppress", "aclosing"]
 
 
 class AbstractContextManager(abc.ABC):
@@ -301,6 +301,47 @@ class closing(AbstractContextManager):
         return self.thing
     def __exit__(self, *exc_info):
         self.thing.close()
+
+
+class aclosing(AbstractAsyncContextManager):
+    """Async context to automatically close something at the end of a block.
+
+    Code like this:
+
+        async with aclosing(<module>.open(<arguments>)) as f:
+            <block>
+
+    is equivalent to this:
+
+        f = await <module>.open(<arguments>)
+        try:
+            <block>
+        finally:
+            await f.aclose()
+
+    This is especially useful to ensure that an async generator that has exited
+    early due to `break` or exception will run its async exit code in the same
+    context as its iterations (so that exceptions and context variables work as
+    expected, and the exit code isn't run after the lifetime of some task it
+    depends on).  Instead of this:
+
+        async for value in my_generator():
+            if value == 42:
+                break
+
+    do this:
+
+        async with aclosing(my_generator()) as values:
+            async for value in values:
+                if value == 42:
+                    break
+    """
+    def __init__(self, thing):
+        self.thing = thing
+    async def __aenter__(self):
+        return self.thing
+    async def __aexit__(self, *exc_info):
+        await self.thing.aclose()
 
 
 class _RedirectStream(AbstractContextManager):
