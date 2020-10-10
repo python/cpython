@@ -1587,18 +1587,6 @@ PyDoc_STRVAR(pyexpat_module_documentation,
 #define MODULE_INITFUNC PyInit_pyexpat
 #endif
 
-static struct PyModuleDef pyexpatmodule = {
-        PyModuleDef_HEAD_INIT,
-        MODULE_NAME,
-        pyexpat_module_documentation,
-        -1,
-        pyexpat_methods,
-        NULL,
-        NULL,
-        NULL,
-        NULL
-};
-
 static int init_handler_descrs(void)
 {
     int i;
@@ -1631,14 +1619,9 @@ static int init_handler_descrs(void)
     return 0;
 }
 
-PyMODINIT_FUNC
-PyInit_pyexpat(void)
+static int
+pyexpat_exec(PyObject *mod)
 {
-    PyObject *mod = PyModule_Create(&pyexpatmodule);
-    if (mod == NULL) {
-        return NULL;
-    }
-
     PyObject *codes_dict = NULL, *rev_codes_dict = NULL;
 
     if (PyType_Ready(&Xmlparsetype) < 0) {
@@ -1652,7 +1635,7 @@ PyInit_pyexpat(void)
     /* Add some symbolic constants to the module */
     if (ErrorObject == NULL) {
         ErrorObject = PyErr_NewException("xml.parsers.expat.ExpatError",
-                                        NULL, NULL);
+                                         NULL, NULL);
     }
     if (ErrorObject == NULL) {
         goto error;
@@ -1756,24 +1739,26 @@ PyInit_pyexpat(void)
         if (list == NULL) {
             goto error;
         }
-        else {
-            int i = 0;
-            for (; features[i].feature != XML_FEATURE_END; ++i) {
-                PyObject *item = Py_BuildValue("si", features[i].name,
-                                               features[i].value);
-                if (item == NULL) {
-                    Py_DECREF(list);
-                    goto error;
-                }
-                int ok = PyList_Append(list, item);
-                Py_DECREF(item);
-                if (ok < 0) {
-                    PyErr_Clear();
-                    break;
-                }
-            }
 
-            PyModule_AddObject(mod, "features", list);
+        int i = 0;
+        for (; features[i].feature != XML_FEATURE_END; ++i) {
+            PyObject *item = Py_BuildValue("si", features[i].name,
+                                            features[i].value);
+            if (item == NULL) {
+                Py_DECREF(list);
+                goto error;
+            }
+            int ok = PyList_Append(list, item);
+            Py_DECREF(item);
+            if (ok < 0) {
+                PyErr_Clear();
+                Py_DECREF(list);
+                goto error;
+            }
+        }
+        if (PyModule_AddObject(mod, "features", list) < 0) {
+            Py_DECREF(list);
+            goto error;
         }
     }
 #endif
@@ -1875,6 +1860,7 @@ PyInit_pyexpat(void)
             goto error;                                  \
         }                                               \
     } while(0)
+
     MYCONST(XML_PARAM_ENTITY_PARSING_NEVER);
     MYCONST(XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE);
     MYCONST(XML_PARAM_ENTITY_PARSING_ALWAYS);
@@ -1885,6 +1871,7 @@ PyInit_pyexpat(void)
             goto error;                                          \
         }                                                       \
     } while(0)
+
     if (PyModule_AddStringConstant(
         model_module, "__doc__",
         "Constants used to interpret content model information.") < 0) {
@@ -1946,12 +1933,32 @@ PyInit_pyexpat(void)
         goto error;
     }
 
-    return mod;
+    return 0;
 
 error:
-    Py_CLEAR(codes_dict);
-    Py_CLEAR(rev_codes_dict);
-    return NULL;
+    Py_XDECREF(codes_dict);
+    Py_XDECREF(rev_codes_dict);
+    return -1;
+}
+
+static PyModuleDef_Slot pyexpat_slots[] = {
+    {Py_mod_exec, pyexpat_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef pyexpatmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = MODULE_NAME,
+    .m_doc = pyexpat_module_documentation,
+    .m_size = 0,
+    .m_methods = pyexpat_methods,
+    .m_slots = pyexpat_slots
+};
+
+PyMODINIT_FUNC
+PyInit_pyexpat(void)
+{
+    return PyModuleDef_Init(&pyexpatmodule);
 }
 
 static void
