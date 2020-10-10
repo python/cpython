@@ -13,12 +13,13 @@ from contextvars import ContextVar, Token
 from dataclasses import Field
 from functools import partial, partialmethod, cached_property
 from mailbox import Mailbox, _PartialFile
-from ctypes import Array, LibraryLoader
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
 from difflib import SequenceMatcher
 from filecmp import dircmp
 from fileinput import FileInput
-from mmap import mmap
-from ipaddress import IPv4Network, IPv4Interface, IPv6Network, IPv6Interface
 from itertools import chain
 from http.cookies import Morsel
 from multiprocessing.managers import ValueProxy
@@ -28,7 +29,7 @@ try:
 except ImportError:
     # multiprocessing.shared_memory is not available on e.g. Android
     ShareableList = None
-from multiprocessing.queues import SimpleQueue
+from multiprocessing.queues import SimpleQueue as MPSimpleQueue
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType, AsyncGeneratorType
@@ -41,50 +42,51 @@ import typing
 
 from typing import TypeVar
 T = TypeVar('T')
+K = TypeVar('K')
+V = TypeVar('V')
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
 
     def test_subscriptable(self):
-        for t in (type, tuple, list, dict, set, frozenset, enumerate,
-                  mmap,
-                  defaultdict, deque,
-                  SequenceMatcher,
-                  dircmp,
-                  FileInput,
-                  OrderedDict, Counter, UserDict, UserList,
-                  Pattern, Match,
-                  partial, partialmethod, cached_property,
-                  AbstractContextManager, AbstractAsyncContextManager,
-                  Awaitable, Coroutine,
-                  AsyncIterable, AsyncIterator,
-                  AsyncGenerator, Generator,
-                  Iterable, Iterator,
-                  Reversible,
-                  Container, Collection,
-                  Callable,
-                  Mailbox, _PartialFile,
-                  ContextVar, Token,
-                  Field,
-                  Set, MutableSet,
-                  Mapping, MutableMapping, MappingView,
-                  KeysView, ItemsView, ValuesView,
-                  Sequence, MutableSequence,
-                  MappingProxyType, AsyncGeneratorType,
-                  DirEntry,
-                  IPv4Network, IPv4Interface, IPv6Network, IPv6Interface,
-                  chain,
-                  TemporaryDirectory, SpooledTemporaryFile,
-                  Queue, SimpleQueue,
-                  _AssertRaisesContext,
-                  Array, LibraryLoader,
-                  SplitResult, ParseResult,
-                  ValueProxy, ApplyResult,
-                  WeakSet, ReferenceType, ref,
-                  ShareableList, SimpleQueue,
-                  Future, _WorkItem,
-                  Morsel,
-                  ):
+        types = [type, tuple, list, dict, set, frozenset, enumerate,
+                 defaultdict, deque,
+                 SequenceMatcher,
+                 dircmp,
+                 FileInput,
+                 OrderedDict, Counter, UserDict, UserList,
+                 Pattern, Match,
+                 partial, partialmethod, cached_property,
+                 AbstractContextManager, AbstractAsyncContextManager,
+                 Awaitable, Coroutine,
+                 AsyncIterable, AsyncIterator,
+                 AsyncGenerator, Generator,
+                 Iterable, Iterator,
+                 Reversible,
+                 Container, Collection,
+                 Callable,
+                 Mailbox, _PartialFile,
+                 ContextVar, Token,
+                 Field,
+                 Set, MutableSet,
+                 Mapping, MutableMapping, MappingView,
+                 KeysView, ItemsView, ValuesView,
+                 Sequence, MutableSequence,
+                 MappingProxyType, AsyncGeneratorType,
+                 DirEntry,
+                 chain,
+                 TemporaryDirectory, SpooledTemporaryFile,
+                 Queue, SimpleQueue,
+                 _AssertRaisesContext,
+                 SplitResult, ParseResult,
+                 ValueProxy, ApplyResult,
+                 WeakSet, ReferenceType, ref,
+                 ShareableList, MPSimpleQueue,
+                 Future, _WorkItem,
+                 Morsel]
+        if ctypes is not None:
+            types.extend((ctypes.Array, ctypes.LibraryLoader))
+        for t in types:
             if t is None:
                 continue
             tname = t.__name__
@@ -170,10 +172,7 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(a.__parameters__, ())
 
     def test_parameters(self):
-        from typing import TypeVar
-        T = TypeVar('T')
-        K = TypeVar('K')
-        V = TypeVar('V')
+        from typing import List, Dict, Callable
         D0 = dict[str, int]
         self.assertEqual(D0.__args__, (str, int))
         self.assertEqual(D0.__parameters__, ())
@@ -195,14 +194,43 @@ class BaseTest(unittest.TestCase):
         L1 = list[T]
         self.assertEqual(L1.__args__, (T,))
         self.assertEqual(L1.__parameters__, (T,))
+        L2 = list[list[T]]
+        self.assertEqual(L2.__args__, (list[T],))
+        self.assertEqual(L2.__parameters__, (T,))
+        L3 = list[List[T]]
+        self.assertEqual(L3.__args__, (List[T],))
+        self.assertEqual(L3.__parameters__, (T,))
+        L4a = list[Dict[K, V]]
+        self.assertEqual(L4a.__args__, (Dict[K, V],))
+        self.assertEqual(L4a.__parameters__, (K, V))
+        L4b = list[Dict[T, int]]
+        self.assertEqual(L4b.__args__, (Dict[T, int],))
+        self.assertEqual(L4b.__parameters__, (T,))
+        L5 = list[Callable[[K, V], K]]
+        self.assertEqual(L5.__args__, (Callable[[K, V], K],))
+        self.assertEqual(L5.__parameters__, (K, V))
 
     def test_parameter_chaining(self):
-        from typing import TypeVar
-        T = TypeVar('T')
+        from typing import List, Dict, Union, Callable
         self.assertEqual(list[T][int], list[int])
         self.assertEqual(dict[str, T][int], dict[str, int])
         self.assertEqual(dict[T, int][str], dict[str, int])
+        self.assertEqual(dict[K, V][str, int], dict[str, int])
         self.assertEqual(dict[T, T][int], dict[int, int])
+
+        self.assertEqual(list[list[T]][int], list[list[int]])
+        self.assertEqual(list[dict[T, int]][str], list[dict[str, int]])
+        self.assertEqual(list[dict[str, T]][int], list[dict[str, int]])
+        self.assertEqual(list[dict[K, V]][str, int], list[dict[str, int]])
+        self.assertEqual(dict[T, list[int]][str], dict[str, list[int]])
+
+        self.assertEqual(list[List[T]][int], list[List[int]])
+        self.assertEqual(list[Dict[K, V]][str, int], list[Dict[str, int]])
+        self.assertEqual(list[Union[K, V]][str, int], list[Union[str, int]])
+        self.assertEqual(list[Callable[[K, V], K]][str, int],
+                         list[Callable[[str, int], str]])
+        self.assertEqual(dict[T, List[int]][str], dict[str, List[int]])
+
         with self.assertRaises(TypeError):
             list[int][int]
             dict[T, int][str, int]
@@ -255,11 +283,15 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(a.__parameters__, ())
 
     def test_union_generic(self):
-        T = typing.TypeVar('T')
         a = typing.Union[list[T], tuple[T, ...]]
         self.assertEqual(a.__args__, (list[T], tuple[T, ...]))
         self.assertEqual(a.__parameters__, (T,))
 
+    def test_dir(self):
+        dir_of_gen_alias = set(dir(list[int]))
+        self.assertTrue(dir_of_gen_alias.issuperset(dir(list)))
+        for generic_alias_property in ("__origin__", "__args__", "__parameters__"):
+            self.assertIn(generic_alias_property, dir_of_gen_alias)
 
 if __name__ == "__main__":
     unittest.main()

@@ -19,9 +19,10 @@ from tempfile import TemporaryFile
 from random import randint, random, randbytes
 
 from test.support import script_helper
-from test.support import (TESTFN, findfile, unlink, rmtree, temp_dir, temp_cwd,
-                          requires_zlib, requires_bz2, requires_lzma,
-                          captured_stdout)
+from test.support import (findfile, requires_zlib, requires_bz2,
+                          requires_lzma, captured_stdout)
+from test.support.os_helper import TESTFN, unlink, rmtree, temp_dir, temp_cwd
+
 
 TESTFN2 = TESTFN + "2"
 TESTFNDIR = TESTFN + "d"
@@ -640,7 +641,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 59))
 
 
-@requires_zlib
+@requires_zlib()
 class DeflateTestsWithSourceFile(AbstractTestsWithSourceFile,
                                  unittest.TestCase):
     compression = zipfile.ZIP_DEFLATED
@@ -656,12 +657,12 @@ class DeflateTestsWithSourceFile(AbstractTestsWithSourceFile,
             self.assertEqual(sinfo.compress_type, zipfile.ZIP_STORED)
             self.assertEqual(dinfo.compress_type, zipfile.ZIP_DEFLATED)
 
-@requires_bz2
+@requires_bz2()
 class Bzip2TestsWithSourceFile(AbstractTestsWithSourceFile,
                                unittest.TestCase):
     compression = zipfile.ZIP_BZIP2
 
-@requires_lzma
+@requires_lzma()
 class LzmaTestsWithSourceFile(AbstractTestsWithSourceFile,
                               unittest.TestCase):
     compression = zipfile.ZIP_LZMA
@@ -1075,17 +1076,17 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
                     self.assertEqual(zf.read(zinfo), expected_content)
 
 
-@requires_zlib
+@requires_zlib()
 class DeflateTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
                                    unittest.TestCase):
     compression = zipfile.ZIP_DEFLATED
 
-@requires_bz2
+@requires_bz2()
 class Bzip2TestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
                                  unittest.TestCase):
     compression = zipfile.ZIP_BZIP2
 
-@requires_lzma
+@requires_lzma()
 class LzmaTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
                                 unittest.TestCase):
     compression = zipfile.ZIP_LZMA
@@ -1120,15 +1121,15 @@ class AbstractWriterTests:
 class StoredWriterTests(AbstractWriterTests, unittest.TestCase):
     compression = zipfile.ZIP_STORED
 
-@requires_zlib
+@requires_zlib()
 class DeflateWriterTests(AbstractWriterTests, unittest.TestCase):
     compression = zipfile.ZIP_DEFLATED
 
-@requires_bz2
+@requires_bz2()
 class Bzip2WriterTests(AbstractWriterTests, unittest.TestCase):
     compression = zipfile.ZIP_BZIP2
 
-@requires_lzma
+@requires_lzma()
 class LzmaWriterTests(AbstractWriterTests, unittest.TestCase):
     compression = zipfile.ZIP_LZMA
 
@@ -1582,7 +1583,7 @@ class OtherTests(unittest.TestCase):
         self.assertRaises(NotImplementedError, zipfile.ZipFile,
                           io.BytesIO(data), 'r')
 
-    @requires_zlib
+    @requires_zlib()
     def test_read_unicode_filenames(self):
         # bug #10801
         fname = findfile('zip_cp437_header.zip')
@@ -1599,6 +1600,11 @@ class OtherTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN, "r") as zf:
             self.assertEqual(zf.filelist[0].filename, "foo.txt")
             self.assertEqual(zf.filelist[1].filename, "\xf6.txt")
+
+    def test_read_after_write_unicode_filenames(self):
+        with zipfile.ZipFile(TESTFN2, 'w') as zipfp:
+            zipfp.writestr('приклад', b'sample')
+            self.assertEqual(zipfp.read('приклад'), b'sample')
 
     def test_exclusive_create_zip_file(self):
         """Test exclusive creating a new zipfile."""
@@ -1850,11 +1856,14 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zipf.comment, b"an updated comment")
 
         # check that comments are correctly shortened in append mode
+        # and the file is indeed truncated
         with zipfile.ZipFile(TESTFN,mode="w") as zipf:
             zipf.comment = b"original comment that's longer"
             zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+        original_zip_size = os.path.getsize(TESTFN)
         with zipfile.ZipFile(TESTFN,mode="a") as zipf:
             zipf.comment = b"shorter comment"
+        self.assertTrue(original_zip_size > os.path.getsize(TESTFN))
         with zipfile.ZipFile(TESTFN,mode="r") as zipf:
             self.assertEqual(zipf.comment, b"shorter comment")
 
@@ -2018,7 +2027,7 @@ class OtherTests(unittest.TestCase):
                 fp.seek(0, os.SEEK_SET)
                 self.assertEqual(fp.tell(), 0)
 
-    @requires_bz2
+    @requires_bz2()
     def test_decompress_without_3rd_party_library(self):
         data = b'PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         zip_file = io.BytesIO(data)
@@ -2076,7 +2085,7 @@ class StoredBadCrcTests(AbstractBadCrcTests, unittest.TestCase):
         b'lePK\005\006\0\0\0\0\001\0\001\0003\000'
         b'\0\0/\0\0\0\0\0')
 
-@requires_zlib
+@requires_zlib()
 class DeflateBadCrcTests(AbstractBadCrcTests, unittest.TestCase):
     compression = zipfile.ZIP_DEFLATED
     zip_with_bad_crc = (
@@ -2089,7 +2098,7 @@ class DeflateBadCrcTests(AbstractBadCrcTests, unittest.TestCase):
         b'\x00afilePK\x05\x06\x00\x00\x00\x00\x01\x00'
         b'\x01\x003\x00\x00\x003\x00\x00\x00\x00\x00')
 
-@requires_bz2
+@requires_bz2()
 class Bzip2BadCrcTests(AbstractBadCrcTests, unittest.TestCase):
     compression = zipfile.ZIP_BZIP2
     zip_with_bad_crc = (
@@ -2105,7 +2114,7 @@ class Bzip2BadCrcTests(AbstractBadCrcTests, unittest.TestCase):
         b'\x05\x06\x00\x00\x00\x00\x01\x00\x01\x003\x00\x00\x00[\x00'
         b'\x00\x00\x00\x00')
 
-@requires_lzma
+@requires_lzma()
 class LzmaBadCrcTests(AbstractBadCrcTests, unittest.TestCase):
     compression = zipfile.ZIP_LZMA
     zip_with_bad_crc = (
@@ -2172,7 +2181,7 @@ class DecryptionTests(unittest.TestCase):
         self.zip2.setpassword(b"perl")
         self.assertRaises(RuntimeError, self.zip2.read, "zero")
 
-    @requires_zlib
+    @requires_zlib()
     def test_good_password(self):
         self.zip.setpassword(b"python")
         self.assertEqual(self.zip.read("test.txt"), self.plain)
@@ -2318,17 +2327,17 @@ class StoredTestsWithRandomBinaryFiles(AbstractTestsWithRandomBinaryFiles,
                                        unittest.TestCase):
     compression = zipfile.ZIP_STORED
 
-@requires_zlib
+@requires_zlib()
 class DeflateTestsWithRandomBinaryFiles(AbstractTestsWithRandomBinaryFiles,
                                         unittest.TestCase):
     compression = zipfile.ZIP_DEFLATED
 
-@requires_bz2
+@requires_bz2()
 class Bzip2TestsWithRandomBinaryFiles(AbstractTestsWithRandomBinaryFiles,
                                       unittest.TestCase):
     compression = zipfile.ZIP_BZIP2
 
-@requires_lzma
+@requires_lzma()
 class LzmaTestsWithRandomBinaryFiles(AbstractTestsWithRandomBinaryFiles,
                                      unittest.TestCase):
     compression = zipfile.ZIP_LZMA
@@ -2416,7 +2425,7 @@ class UnseekableTests(unittest.TestCase):
                     self.assertEqual(zipf.read('twos'), b'222')
 
 
-@requires_zlib
+@requires_zlib()
 class TestsWithMultipleOpens(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -2682,7 +2691,7 @@ class CommandLineTest(unittest.TestCase):
                                   PYTHONIOENCODING='ascii:backslashreplace')
             self.assertEqual(out, expected)
 
-    @requires_zlib
+    @requires_zlib()
     def test_create_command(self):
         self.addCleanup(unlink, TESTFN)
         with open(TESTFN, 'w') as f:
@@ -2880,6 +2889,33 @@ class TestPath(unittest.TestCase):
                 data = strm.read()
             assert data == "content of a"
 
+    def test_open_write(self):
+        """
+        If the zipfile is open for write, it should be possible to
+        write bytes or text to it.
+        """
+        zf = zipfile.Path(zipfile.ZipFile(io.BytesIO(), mode='w'))
+        with zf.joinpath('file.bin').open('wb') as strm:
+            strm.write(b'binary contents')
+        with zf.joinpath('file.txt').open('w') as strm:
+            strm.write('text file')
+
+    def test_open_extant_directory(self):
+        """
+        Attempting to open a directory raises IsADirectoryError.
+        """
+        zf = zipfile.Path(add_dirs(build_alpharep_fixture()))
+        with self.assertRaises(IsADirectoryError):
+            zf.joinpath('b').open()
+
+    def test_open_missing_directory(self):
+        """
+        Attempting to open a missing directory raises FileNotFoundError.
+        """
+        zf = zipfile.Path(add_dirs(build_alpharep_fixture()))
+        with self.assertRaises(FileNotFoundError):
+            zf.joinpath('z').open()
+
     def test_read(self):
         for alpharep in self.zipfile_alpharep():
             root = zipfile.Path(alpharep)
@@ -2976,6 +3012,12 @@ class TestPath(unittest.TestCase):
     def test_implied_dirs_performance(self):
         data = ['/'.join(string.ascii_lowercase + str(n)) for n in range(10000)]
         zipfile.CompleteDirs._implied_dirs(data)
+
+    def test_read_does_not_close(self):
+        for alpharep in self.zipfile_ondisk():
+            with zipfile.ZipFile(alpharep) as file:
+                for rep in range(2):
+                    zipfile.Path(file, 'a.txt').read_text()
 
 
 if __name__ == "__main__":

@@ -2,17 +2,12 @@
 #define Py_COMPILE_H
 
 #ifndef Py_LIMITED_API
-#include "code.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Public interface */
-struct _node; /* Declare the existence of this type */
-PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
-/* XXX (ncoghlan): Unprefixed type name in a public API! */
-
 #define PyCF_MASK (CO_FUTURE_DIVISION | CO_FUTURE_ABSOLUTE_IMPORT | \
                    CO_FUTURE_WITH_STATEMENT | CO_FUTURE_PRINT_FUNCTION | \
                    CO_FUTURE_UNICODE_LITERALS | CO_FUTURE_BARRY_AS_BDFL | \

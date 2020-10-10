@@ -1,5 +1,0 @@
-CVE-2020-8492: The :class:`~urllib.request.AbstractBasicAuthHandler` class of the
-:mod:`urllib.request` module uses an inefficient regular expression which can
-be exploited by an attacker to cause a denial of service. Fix the regex to
-prevent the catastrophic backtracking. Vulnerability reported by Ben Caller
-and Matt Schwager.

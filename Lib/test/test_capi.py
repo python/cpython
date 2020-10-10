@@ -13,8 +13,13 @@ import threading
 import time
 import unittest
 import weakref
+import importlib.machinery
+import importlib.util
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
+from test.support import import_helper
+from test.support import threading_helper
+from test.support import warnings_helper
 from test.support.script_helper import assert_python_failure, assert_python_ok
 try:
     import _posixsubprocess
@@ -22,7 +27,7 @@ except ImportError:
     _posixsubprocess = None
 
 # Skip this test if the _testcapi module isn't available.
-_testcapi = support.import_module('_testcapi')
+_testcapi = import_helper.import_module('_testcapi')
 
 import _testinternalcapi
 
@@ -65,7 +70,10 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(err.rstrip().startswith(
                          b'Fatal Python error: '
                          b'PyThreadState_Get: '
-                         b'current thread state is NULL (released GIL?)'))
+                         b'the function must be called with the GIL held, '
+                         b'but the GIL is released '
+                         b'(the current Python thread state is NULL)'),
+                        err)
 
     def test_memoryview_from_NULL_pointer(self):
         self.assertRaises(ValueError, _testcapi.make_memoryview_from_NULL_pointer)
@@ -393,6 +401,10 @@ class CAPITest(unittest.TestCase):
             del L
             self.assertEqual(PyList.num, 0)
 
+    def test_heap_ctype_doc_and_text_signature(self):
+        self.assertEqual(_testcapi.HeapDocCType.__doc__, "somedoc")
+        self.assertEqual(_testcapi.HeapDocCType.__text_signature__, "(arg1, arg2)")
+
     def test_subclass_of_heap_gc_ctype_with_tpdealloc_decrefs_once(self):
         class HeapGcCTypeSubclass(_testcapi.HeapGcCType):
             def __init__(self):
@@ -471,6 +483,11 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(ref(), inst)
         self.assertEqual(inst.weakreflist, ref)
 
+    def test_heaptype_with_buffer(self):
+        inst = _testcapi.HeapCTypeWithBuffer()
+        b = bytes(inst)
+        self.assertEqual(b, b"1234")
+
     def test_c_subclass_of_heap_ctype_with_tpdealloc_decrefs_once(self):
         subclass_instance = _testcapi.HeapCTypeSubclass()
         type_refcnt = sys.getrefcount(_testcapi.HeapCTypeSubclass)
@@ -504,6 +521,14 @@ class CAPITest(unittest.TestCase):
 
         # Test that subtype_dealloc decref the newly assigned __class__ only once
         self.assertEqual(new_type_refcnt, sys.getrefcount(_testcapi.HeapCTypeSubclass))
+
+    def test_heaptype_with_setattro(self):
+        obj = _testcapi.HeapCTypeSetattr()
+        self.assertEqual(obj.pvalue, 10)
+        obj.value = 12
+        self.assertEqual(obj.pvalue, 12)
+        del obj.value
+        self.assertEqual(obj.pvalue, 0)
 
     def test_pynumber_tobase(self):
         from _testcapi import pynumber_tobase
@@ -573,7 +598,7 @@ class TestPendingCalls(unittest.TestCase):
         threads = [threading.Thread(target=self.pendingcalls_thread,
                                     args=(context,))
                    for i in range(context.nThreads)]
-        with support.start_threads(threads):
+        with threading_helper.start_threads(threads):
             self.pendingcalls_wait(context.l, n, context)
 
     def pendingcalls_thread(self, context):
@@ -616,6 +641,27 @@ class SubinterpreterTest(unittest.TestCase):
             self.assertNotEqual(pickle.load(f), id(sys.modules))
             self.assertNotEqual(pickle.load(f), id(builtins))
 
+    def test_subinterps_recent_language_features(self):
+        r, w = os.pipe()
+        code = """if 1:
+            import pickle
+            with open({:d}, "wb") as f:
+
+                @(lambda x:x)  # Py 3.9
+                def noop(x): return x
+
+                a = (b := f'1{{2}}3') + noop('x')  # Py 3.8 (:=) / 3.6 (f'')
+
+                async def foo(arg): return await arg  # Py 3.5
+
+                pickle.dump(dict(a=a, b=b), f)
+            """.format(w)
+
+        with open(r, "rb") as f:
+            ret = support.run_in_subinterp(code)
+            self.assertEqual(ret, 0)
+            self.assertEqual(pickle.load(f), {'a': '123x', 'b': '123'})
+
     def test_mutate_exception(self):
         """
         Exceptions saved in global module state get shared between
@@ -632,7 +678,7 @@ class SubinterpreterTest(unittest.TestCase):
 
 class TestThreadState(unittest.TestCase):
 
-    @support.reap_threads
+    @threading_helper.reap_threads
     def test_thread_state(self):
         # some extra thread-state tests driven via _testcapi
         def target():
@@ -658,6 +704,11 @@ class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
                     for name in dir(_testcapi)
                     if name.startswith('test_') and not name.endswith('_code'))
+
+    # Suppress warning from PyUnicode_FromUnicode().
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_widechar(self):
+        _testcapi.test_widechar()
 
 
 class Test_testinternalcapi(unittest.TestCase):
@@ -772,6 +823,77 @@ class PyMemPymallocDebugTests(PyMemDebugTests):
 class PyMemDefaultTests(PyMemDebugTests):
     # test default allocator of Python compiled in debug mode
     PYTHONMALLOC = ''
+
+
+class Test_ModuleStateAccess(unittest.TestCase):
+    """Test access to module start (PEP 573)"""
+
+    # The C part of the tests lives in _testmultiphase, in a module called
+    # _testmultiphase_meth_state_access.
+    # This module has multi-phase initialization, unlike _testcapi.
+
+    def setUp(self):
+        fullname = '_testmultiphase_meth_state_access'  # XXX
+        origin = importlib.util.find_spec('_testmultiphase').origin
+        loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+        spec = importlib.util.spec_from_loader(fullname, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        self.module = module
+
+    def test_subclass_get_module(self):
+        """PyType_GetModule for defining_class"""
+        class StateAccessType_Subclass(self.module.StateAccessType):
+            pass
+
+        instance = StateAccessType_Subclass()
+        self.assertIs(instance.get_defining_module(), self.module)
+
+    def test_subclass_get_module_with_super(self):
+        class StateAccessType_Subclass(self.module.StateAccessType):
+            def get_defining_module(self):
+                return super().get_defining_module()
+
+        instance = StateAccessType_Subclass()
+        self.assertIs(instance.get_defining_module(), self.module)
+
+    def test_state_access(self):
+        """Checks methods defined with and without argument clinic
+
+        This tests a no-arg method (get_count) and a method with
+        both a positional and keyword argument.
+        """
+
+        a = self.module.StateAccessType()
+        b = self.module.StateAccessType()
+
+        methods = {
+            'clinic': a.increment_count_clinic,
+            'noclinic': a.increment_count_noclinic,
+        }
+
+        for name, increment_count in methods.items():
+            with self.subTest(name):
+                self.assertEqual(a.get_count(), b.get_count())
+                self.assertEqual(a.get_count(), 0)
+
+                increment_count()
+                self.assertEqual(a.get_count(), b.get_count())
+                self.assertEqual(a.get_count(), 1)
+
+                increment_count(3)
+                self.assertEqual(a.get_count(), b.get_count())
+                self.assertEqual(a.get_count(), 4)
+
+                increment_count(-2, twice=True)
+                self.assertEqual(a.get_count(), b.get_count())
+                self.assertEqual(a.get_count(), 0)
+
+                with self.assertRaises(TypeError):
+                    increment_count(thrice=3)
+
+                with self.assertRaises(TypeError):
+                    increment_count(1, 2, 3)
 
 
 if __name__ == "__main__":

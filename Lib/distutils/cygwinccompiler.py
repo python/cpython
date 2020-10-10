@@ -51,12 +51,10 @@ import copy
 from subprocess import Popen, PIPE, check_output
 import re
 
-from distutils.ccompiler import gen_preprocess_options, gen_lib_options
 from distutils.unixccompiler import UnixCCompiler
 from distutils.file_util import write_file
 from distutils.errors import (DistutilsExecError, CCompilerError,
         CompileError, UnknownFileError)
-from distutils import log
 from distutils.version import LooseVersion
 from distutils.spawn import find_executable
 

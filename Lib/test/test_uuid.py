@@ -1,19 +1,18 @@
 import unittest
 from test import support
+from test.support import import_helper
 import builtins
 import contextlib
 import copy
 import io
 import os
 import pickle
-import shutil
-import subprocess
 import sys
 import weakref
 from unittest import mock
 
-py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
-c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
+py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
+c_uuid = import_helper.import_fresh_module('uuid', fresh=['_uuid'])
 
 def importable(name):
     try:
@@ -854,17 +853,6 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         node = self.uuid._netstat_getnode()
         self.check_node(node, 'netstat')
 
-    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
-    def test_ipconfig_getnode(self):
-        node = self.uuid._ipconfig_getnode()
-        self.check_node(node, 'ipconfig')
-
-    @unittest.skipUnless(importable('win32wnet'), 'requires win32wnet')
-    @unittest.skipUnless(importable('netbios'), 'requires netbios')
-    def test_netbios_getnode(self):
-        node = self.uuid._netbios_getnode()
-        self.check_node(node)
-
     def test_random_getnode(self):
         node = self.uuid._random_getnode()
         # The multicast bit, i.e. the least significant bit of first octet,
@@ -875,6 +863,13 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
         node2 = self.uuid._random_getnode()
         self.assertNotEqual(node2, node, '%012x' % node)
+
+class TestInternalsWithoutExtModule(BaseTestInternals, unittest.TestCase):
+    uuid = py_uuid
+
+@unittest.skipUnless(c_uuid, 'requires the C _uuid module')
+class TestInternalsWithExtModule(BaseTestInternals, unittest.TestCase):
+    uuid = c_uuid
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_unix_getnode(self):
@@ -887,18 +882,9 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         self.check_node(node, 'unix')
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
-    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_windll_getnode(self):
         node = self.uuid._windll_getnode()
         self.check_node(node)
-
-
-class TestInternalsWithoutExtModule(BaseTestInternals, unittest.TestCase):
-    uuid = py_uuid
-
-@unittest.skipUnless(c_uuid, 'requires the C _uuid module')
-class TestInternalsWithExtModule(BaseTestInternals, unittest.TestCase):
-    uuid = c_uuid
 
 
 if __name__ == '__main__':

@@ -961,19 +961,6 @@ values are:
      usage: PROG [-h] foo [foo ...]
      PROG: error: the following arguments are required: foo
 
-.. _`argparse.REMAINDER`:
-
-* ``argparse.REMAINDER``.  All the remaining command-line arguments are gathered
-  into a list.  This is commonly useful for command line utilities that dispatch
-  to other command line utilities::
-
-     >>> parser = argparse.ArgumentParser(prog='PROG')
-     >>> parser.add_argument('--foo')
-     >>> parser.add_argument('command')
-     >>> parser.add_argument('args', nargs=argparse.REMAINDER)
-     >>> print(parser.parse_args('--foo B cmd --arg1 XX ZZ'.split()))
-     Namespace(args=['--arg1', 'XX', 'ZZ'], command='cmd', foo='B')
-
 If the ``nargs`` keyword argument is not provided, the number of arguments consumed
 is determined by the action_.  Generally this means a single command-line argument
 will be consumed and a single item (not a list) will be produced.
@@ -1146,6 +1133,20 @@ container should match the type_ specified::
 
 Any container can be passed as the *choices* value, so :class:`list` objects,
 :class:`set` objects, and custom containers are all supported.
+This includes :class:`enum.Enum`, which could be used to restrain
+argument's choices; if we reuse previous rock/paper/scissors game example,
+this could be as follows::
+
+   >>> from enum import Enum
+   >>> class GameMove(Enum):
+   ...     ROCK = 'rock'
+   ...     PAPER = 'paper'
+   ...     SCISSORS = 'scissors'
+   ...
+   >>> parser = argparse.ArgumentParser(prog='game.py')
+   >>> parser.add_argument('move', type=GameMove, choices=GameMove)
+   >>> parser.parse_args(['rock'])
+   Namespace(move=<GameMove.ROCK: 'rock'>)
 
 
 required
@@ -1161,8 +1162,8 @@ keyword argument to :meth:`~ArgumentParser.add_argument`::
    >>> parser.parse_args(['--foo', 'BAR'])
    Namespace(foo='BAR')
    >>> parser.parse_args([])
-   usage: argparse.py [-h] [--foo FOO]
-   argparse.py: error: option --foo is required
+   usage: [-h] --foo FOO
+   : error: the following arguments are required: --foo
 
 As the example shows, if an option is marked as ``required``,
 :meth:`~ArgumentParser.parse_args` will report an error if that option is not

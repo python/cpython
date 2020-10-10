@@ -11,7 +11,7 @@ PyAPI_FUNC(PyObject *) _PyImport_FindBuiltin(
     );
 
 #ifdef HAVE_FORK
-extern void _PyImport_ReInitLock(void);
+extern PyStatus _PyImport_ReInitLock(void);
 #endif
 extern void _PyImport_Cleanup(PyThreadState *tstate);
 

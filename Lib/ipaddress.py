@@ -12,7 +12,6 @@ __version__ = '1.0'
 
 
 import functools
-import types
 
 IPV4LENGTH = 32
 IPV6LENGTH = 128
@@ -1125,8 +1124,6 @@ class _BaseNetwork(_IPAddressBase):
         return (self.network_address.is_loopback and
                 self.broadcast_address.is_loopback)
 
-    __class_getitem__ = classmethod(types.GenericAlias)
-
 class _BaseV4:
 
     """Base IPv4 object.
@@ -1217,7 +1214,7 @@ class _BaseV4:
         """
         if not octet_str:
             raise ValueError("Empty octet not permitted")
-        # Whitelist the characters, since int() allows a lot of bizarre stuff.
+        # Reject non-ASCII digits.
         if not (octet_str.isascii() and octet_str.isdigit()):
             msg = "Only decimal digits permitted in %r"
             raise ValueError(msg % octet_str)
@@ -1423,7 +1420,7 @@ class IPv4Interface(IPv4Address):
             return False
 
     def __hash__(self):
-        return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+        return hash((self._ip, self._prefixlen, int(self.network.network_address)))
 
     __reduce__ = _IPAddressBase.__reduce__
 
@@ -1445,8 +1442,6 @@ class IPv4Interface(IPv4Address):
     def with_hostmask(self):
         return '%s/%s' % (self._string_from_ip_int(self._ip),
                           self.hostmask)
-
-    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class IPv4Network(_BaseV4, _BaseNetwork):
@@ -1471,7 +1466,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
             address: A string or integer representing the IP [& network].
               '192.0.2.0/24'
               '192.0.2.0/255.255.255.0'
-              '192.0.0.2/0.0.0.255'
+              '192.0.2.0/0.0.0.255'
               are all functionally the same in IPv4. Similarly,
               '192.0.2.1'
               '192.0.2.1/255.255.255.255'
@@ -1724,7 +1719,7 @@ class _BaseV6:
               [0..FFFF].
 
         """
-        # Whitelist the characters, since int() allows a lot of bizarre stuff.
+        # Reject non-ASCII digits.
         if not cls._HEX_DIGITS.issuperset(hextet_str):
             raise ValueError("Only hex digits permitted in %r" % hextet_str)
         # We do the length check second, since the invalid character error
@@ -2125,7 +2120,7 @@ class IPv6Interface(IPv6Address):
             return False
 
     def __hash__(self):
-        return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+        return hash((self._ip, self._prefixlen, int(self.network.network_address)))
 
     __reduce__ = _IPAddressBase.__reduce__
 
@@ -2155,8 +2150,6 @@ class IPv6Interface(IPv6Address):
     @property
     def is_loopback(self):
         return self._ip == 1 and self.network.is_loopback
-
-    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class IPv6Network(_BaseV6, _BaseNetwork):

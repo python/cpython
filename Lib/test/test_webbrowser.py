@@ -5,6 +5,8 @@ import sys
 import subprocess
 from unittest import mock
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 
 
 URL = 'http://www.example.com'
@@ -270,7 +272,7 @@ class BrowserRegistrationTest(unittest.TestCase):
 
 class ImportTest(unittest.TestCase):
     def test_register(self):
-        webbrowser = support.import_fresh_module('webbrowser')
+        webbrowser = import_helper.import_fresh_module('webbrowser')
         self.assertIsNone(webbrowser._tryorder)
         self.assertFalse(webbrowser._browsers)
 
@@ -284,7 +286,7 @@ class ImportTest(unittest.TestCase):
         self.assertEqual(webbrowser._browsers['example1'], [ExampleBrowser, None])
 
     def test_get(self):
-        webbrowser = support.import_fresh_module('webbrowser')
+        webbrowser = import_helper.import_fresh_module('webbrowser')
         self.assertIsNone(webbrowser._tryorder)
         self.assertFalse(webbrowser._browsers)
 
@@ -293,38 +295,38 @@ class ImportTest(unittest.TestCase):
         self.assertIsNotNone(webbrowser._tryorder)
 
     def test_synthesize(self):
-        webbrowser = support.import_fresh_module('webbrowser')
+        webbrowser = import_helper.import_fresh_module('webbrowser')
         name = os.path.basename(sys.executable).lower()
         webbrowser.register(name, None, webbrowser.GenericBrowser(name))
         webbrowser.get(sys.executable)
 
     def test_environment(self):
-        webbrowser = support.import_fresh_module('webbrowser')
+        webbrowser = import_helper.import_fresh_module('webbrowser')
         try:
             browser = webbrowser.get().name
         except (webbrowser.Error, AttributeError) as err:
             self.skipTest(str(err))
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env["BROWSER"] = browser
-            webbrowser = support.import_fresh_module('webbrowser')
+            webbrowser = import_helper.import_fresh_module('webbrowser')
             webbrowser.get()
 
     def test_environment_preferred(self):
-        webbrowser = support.import_fresh_module('webbrowser')
+        webbrowser = import_helper.import_fresh_module('webbrowser')
         try:
             webbrowser.get()
             least_preferred_browser = webbrowser.get(webbrowser._tryorder[-1]).name
         except (webbrowser.Error, AttributeError, IndexError) as err:
             self.skipTest(str(err))
 
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env["BROWSER"] = least_preferred_browser
-            webbrowser = support.import_fresh_module('webbrowser')
+            webbrowser = import_helper.import_fresh_module('webbrowser')
             self.assertEqual(webbrowser.get().name, least_preferred_browser)
 
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env["BROWSER"] = sys.executable
-            webbrowser = support.import_fresh_module('webbrowser')
+            webbrowser = import_helper.import_fresh_module('webbrowser')
             self.assertEqual(webbrowser.get().name, sys.executable)
 
 

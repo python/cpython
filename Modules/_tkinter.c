@@ -54,7 +54,7 @@ Copyright (C) 1994 Steen Lumholt.
 
 #if TK_HEX_VERSION >= 0x08050208 && TK_HEX_VERSION < 0x08060000 || \
     TK_HEX_VERSION >= 0x08060200
-#define HAVE_LIBTOMMAMTH
+#define HAVE_LIBTOMMATH
 #include <tclTomMath.h>
 #endif
 
@@ -965,7 +965,7 @@ static PyType_Spec PyTclObject_Type_spec = {
 #define CHECK_STRING_LENGTH(s)
 #endif
 
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
 static Tcl_Obj*
 asBignumObj(PyObject *value)
 {
@@ -1045,7 +1045,7 @@ AsObj(PyObject *value)
 #endif
         /* If there is an overflow in the wideInt conversion,
            fall through to bignum handling. */
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
         return asBignumObj(value);
 #endif
         /* If there is no wideInt or bignum support,
@@ -1167,7 +1167,7 @@ fromWideIntObj(TkappObject *tkapp, Tcl_Obj *value)
         return NULL;
 }
 
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
 static PyObject*
 fromBignumObj(TkappObject *tkapp, Tcl_Obj *value)
 {
@@ -1247,7 +1247,7 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
            fall through to bignum handling. */
     }
 
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
     if (value->typePtr == tkapp->IntType ||
         value->typePtr == tkapp->WideIntType ||
         value->typePtr == tkapp->BignumType) {
@@ -1300,7 +1300,7 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
     }
 #endif
 
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
     if (tkapp->BignumType == NULL &&
         strcmp(value->typePtr->name, "bignum") == 0) {
         /* bignum type is not registered in Tcl */
@@ -2001,7 +2001,7 @@ _tkinter_tkapp_getint(TkappObject *self, PyObject *arg)
        Prefer bignum because Tcl_GetWideIntFromObj returns ambiguous result for
        value in ranges -2**64..-2**63-1 and 2**63..2**64-1 (on 32-bit platform).
      */
-#ifdef HAVE_LIBTOMMAMTH
+#ifdef HAVE_LIBTOMMATH
     result = fromBignumObj(self, value);
 #else
     result = fromWideIntObj(self, value);

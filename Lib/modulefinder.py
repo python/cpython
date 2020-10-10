@@ -7,8 +7,6 @@ import marshal
 import os
 import io
 import sys
-import types
-import warnings
 
 
 LOAD_CONST = dis.opmap['LOAD_CONST']

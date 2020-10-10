@@ -11,6 +11,64 @@ import time
 import token
 import traceback
 
+from typing import Tuple
+
+from pegen.build import Grammar, Parser, Tokenizer, ParserGenerator
+
+
+def generate_c_code(
+    args: argparse.Namespace,
+) -> Tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
+    from pegen.build import build_c_parser_and_generator
+
+    verbose = args.verbose
+    verbose_tokenizer = verbose >= 3
+    verbose_parser = verbose == 2 or verbose >= 4
+    try:
+        grammar, parser, tokenizer, gen = build_c_parser_and_generator(
+            args.grammar_filename,
+            args.tokens_filename,
+            args.output,
+            args.compile_extension,
+            verbose_tokenizer,
+            verbose_parser,
+            args.verbose,
+            keep_asserts_in_extension=False if args.optimized else True,
+            skip_actions=args.skip_actions,
+        )
+        return grammar, parser, tokenizer, gen
+    except Exception as err:
+        if args.verbose:
+            raise  # Show traceback
+        traceback.print_exception(err.__class__, err, None)
+        sys.stderr.write("For full traceback, use -v\n")
+        sys.exit(1)
+
+
+def generate_python_code(
+    args: argparse.Namespace,
+) -> Tuple[Grammar, Parser, Tokenizer, ParserGenerator]:
+    from pegen.build import build_python_parser_and_generator
+
+    verbose = args.verbose
+    verbose_tokenizer = verbose >= 3
+    verbose_parser = verbose == 2 or verbose >= 4
+    try:
+        grammar, parser, tokenizer, gen = build_python_parser_and_generator(
+            args.grammar_filename,
+            args.output,
+            verbose_tokenizer,
+            verbose_parser,
+            skip_actions=args.skip_actions,
+        )
+        return grammar, parser, tokenizer, gen
+    except Exception as err:
+        if args.verbose:
+            raise  # Show traceback
+        traceback.print_exception(err.__class__, err, None)
+        sys.stderr.write("For full traceback, use -v\n")
+        sys.exit(1)
+
 
 argparser = argparse.ArgumentParser(
     prog="pegen", description="Experimental PEG-like parser generator"
@@ -23,63 +81,52 @@ argparser.add_argument(
     default=0,
     help="Print timing stats; repeat for more debug output",
 )
-argparser.add_argument(
-    "-c", "--cpython", action="store_true", help="Generate C code for inclusion into CPython"
+subparsers = argparser.add_subparsers(help="target language for the generated code")
+
+c_parser = subparsers.add_parser("c", help="Generate C code for inclusion into CPython")
+c_parser.set_defaults(func=generate_c_code)
+c_parser.add_argument("grammar_filename", help="Grammar description")
+c_parser.add_argument("tokens_filename", help="Tokens description")
+c_parser.add_argument(
+    "-o", "--output", metavar="OUT", default="parse.c", help="Where to write the generated parser"
 )
-argparser.add_argument(
+c_parser.add_argument(
     "--compile-extension",
     action="store_true",
     help="Compile generated C code into an extension module",
 )
-argparser.add_argument(
+c_parser.add_argument(
+    "--optimized", action="store_true", help="Compile the extension in optimized mode"
+)
+c_parser.add_argument(
+    "--skip-actions", action="store_true", help="Suppress code emission for rule actions",
+)
+
+python_parser = subparsers.add_parser("python", help="Generate Python code")
+python_parser.set_defaults(func=generate_python_code)
+python_parser.add_argument("grammar_filename", help="Grammar description")
+python_parser.add_argument(
     "-o",
     "--output",
     metavar="OUT",
-    help="Where to write the generated parser (default parse.py or parse.c)",
+    default="parse.py",
+    help="Where to write the generated parser",
 )
-argparser.add_argument("filename", help="Grammar description")
-argparser.add_argument(
-    "--optimized", action="store_true", help="Compile the extension in optimized mode"
-)
-argparser.add_argument(
+python_parser.add_argument(
     "--skip-actions", action="store_true", help="Suppress code emission for rule actions",
 )
 
 
 def main() -> None:
-    from pegen.build import build_parser_and_generator
     from pegen.testutil import print_memstats
 
     args = argparser.parse_args()
-    verbose = args.verbose
-    verbose_tokenizer = verbose >= 3
-    verbose_parser = verbose == 2 or verbose >= 4
+    if "func" not in args:
+        argparser.error("Must specify the target language mode ('c' or 'python')")
+
     t0 = time.time()
-
-    output_file = args.output
-    if not output_file:
-        if args.cpython:
-            output_file = "parse.c"
-        else:
-            output_file = "parse.py"
-
-    try:
-        grammar, parser, tokenizer, gen = build_parser_and_generator(
-            args.filename,
-            output_file,
-            args.compile_extension,
-            verbose_tokenizer,
-            verbose_parser,
-            args.verbose,
-            keep_asserts_in_extension=False if args.optimized else True,
-            skip_actions=args.skip_actions,
-        )
-    except Exception as err:
-        if args.verbose:
-            raise  # Show traceback
-        traceback.print_exception(err.__class__, err, None)
-        sys.stderr.write("For full traceback, use -v\n")
-        sys.exit(1)
+    grammar, parser, tokenizer, gen = args.func(args)
+    t1 = time.time()
 
     if not args.quiet:
         if args.verbose:
@@ -109,8 +156,6 @@ def main() -> None:
                     print("  # Left-recursive")
                 else:
                     print()
-
-    t1 = time.time()
 
     if args.verbose:
         dt = t1 - t0

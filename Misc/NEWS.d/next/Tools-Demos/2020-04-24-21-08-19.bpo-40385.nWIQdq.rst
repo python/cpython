@@ -1,2 +1,0 @@
-Removed the checkpyc.py tool. Please see compileall without force mode as a
-potential alternative.

@@ -35,7 +35,7 @@ Abstract Grammar
 The abstract grammar is currently defined as follows:
 
 .. literalinclude:: ../../Parser/Python.asdl
-   :language: none
+   :language: asdl
 
 
 Node classes
@@ -1553,7 +1553,12 @@ and classes for traversing abstract syntax trees:
 
    .. warning::
       The produced code string will not necessarily be equal to the original
-      code that generated the :class:`ast.AST` object.
+      code that generated the :class:`ast.AST` object (without any compiler
+      optimizations, such as constant tuples/frozensets).
+
+   .. warning::
+      Trying to unparse a highly complex expression would result with
+      :exc:`RecursionError`.
 
    .. versionadded:: 3.9
 
@@ -1580,6 +1585,9 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.9
       Now supports creating empty sets with ``'set()'``.
+
+   .. versionchanged:: 3.10
+      For string inputs, leading spaces and tabs are now stripped.
 
 
 .. function:: get_docstring(node, clean=True)
@@ -1795,5 +1803,24 @@ to stdout.  Otherwise, the content is read from stdin.
 
 .. seealso::
 
-    `Green Tree Snakes <https://greentreesnakes.readthedocs.io/>`_, an external documentation resource, has good
-    details on working with Python ASTs.
+    `Green Tree Snakes <https://greentreesnakes.readthedocs.io/>`_, an external
+    documentation resource, has good details on working with Python ASTs.
+
+    `ASTTokens <https://asttokens.readthedocs.io/en/latest/user-guide.html>`_
+    annotates Python ASTs with the positions of tokens and text in the source
+    code that generated them. This is helpful for tools that make source code
+    transformations.
+
+    `leoAst.py <http://leoeditor.com/appendices.html#leoast-py>`_ unifies the
+    token-based and parse-tree-based views of python programs by inserting
+    two-way links between tokens and ast nodes.
+
+    `LibCST <https://libcst.readthedocs.io/>`_ parses code as a Concrete Syntax
+    Tree that looks like an ast tree and keeps all formatting details. It's
+    useful for building automated refactoring (codemod) applications and
+    linters.
+
+    `Parso <https://parso.readthedocs.io>`_ is a Python parser that supports
+    error recovery and round-trip parsing for different Python versions (in
+    multiple Python versions). Parso is also able to list multiple syntax errors
+    in your python file.

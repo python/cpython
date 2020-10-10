@@ -157,10 +157,3 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
 .. c:function:: int PySet_Clear(PyObject *set)
 
    Empty an existing set of all elements.
-
-
-.. c:function:: int PySet_ClearFreeList()
-
-   Clear the free list. Return the total number of freed items.
-
-   .. versionadded:: 3.3

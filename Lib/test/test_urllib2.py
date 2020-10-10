@@ -1,5 +1,8 @@
 import unittest
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
+from test.support import warnings_helper
 from test import test_urllib
 
 import os
@@ -764,7 +767,7 @@ class HandlerTests(unittest.TestCase):
         h = urllib.request.FileHandler()
         o = h.parent = MockOpener()
 
-        TESTFN = support.TESTFN
+        TESTFN = os_helper.TESTFN
         urlpath = sanepathname2url(os.path.abspath(TESTFN))
         towrite = b"hello, world\n"
         urls = [
@@ -1489,7 +1492,7 @@ class HandlerTests(unittest.TestCase):
             self.check_basic_auth(headers, realm)
 
         # no quote: expect a warning
-        with support.check_warnings(("Basic Auth Realm was unquoted",
+        with warnings_helper.check_warnings(("Basic Auth Realm was unquoted",
                                      UserWarning)):
             headers = [f'WWW-Authenticate: Basic realm={realm}']
             self.check_basic_auth(headers, realm)
@@ -1776,7 +1779,7 @@ class MiscTests(unittest.TestCase):
     @unittest.skipUnless(support.is_resource_enabled('network'),
                          'test requires network access')
     def test_issue16464(self):
-        with support.transient_internet("http://www.example.com/"):
+        with socket_helper.transient_internet("http://www.example.com/"):
             opener = urllib.request.build_opener()
             request = urllib.request.Request("http://www.example.com/")
             self.assertEqual(None, request.data)

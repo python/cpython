@@ -3,6 +3,7 @@ import os.path
 import sys
 import runpy
 import tempfile
+import subprocess
 from importlib import resources
 
 from . import _bundled
@@ -12,33 +13,29 @@ from . import _bundled
 __all__ = ["version", "bootstrap"]
 
 
-_SETUPTOOLS_VERSION = "41.2.0"
+_SETUPTOOLS_VERSION = "47.1.0"
 
-_PIP_VERSION = "19.2.3"
+_PIP_VERSION = "20.2.3"
 
 _PROJECTS = [
-    ("setuptools", _SETUPTOOLS_VERSION),
-    ("pip", _PIP_VERSION),
+    ("setuptools", _SETUPTOOLS_VERSION, "py3"),
+    ("pip", _PIP_VERSION, "py2.py3"),
 ]
 
 
 def _run_pip(args, additional_paths=None):
-    # Add our bundled software to the sys.path so we can import it
-    if additional_paths is not None:
-        sys.path = additional_paths + sys.path
-
-    # Invoke pip as if it's the main module, and catch the exit.
-    backup_argv = sys.argv[:]
-    sys.argv[1:] = args
-    try:
-        # run_module() alters sys.modules and sys.argv, but restores them at exit
-        runpy.run_module("pip", run_name="__main__", alter_sys=True)
-    except SystemExit as exc:
-        return exc.code
-    finally:
-        sys.argv[:] = backup_argv
-
-    raise SystemError("pip did not exit, this should never happen")
+    # Run the bootstraping in a subprocess to avoid leaking any state that happens
+    # after pip has executed. Particulary, this avoids the case when pip holds onto
+    # the files in *additional_paths*, preventing us to remove them at the end of the
+    # invocation.
+    code = f"""
+import runpy
+import sys
+sys.path = {additional_paths or []} + sys.path
+sys.argv[1:] = {args}
+runpy.run_module("pip", run_name="__main__", alter_sys=True)
+"""
+    return subprocess.run([sys.executable, "-c", code], check=True).returncode
 
 
 def version():
@@ -107,8 +104,8 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
         # Put our bundled wheels into a temporary directory and construct the
         # additional paths that need added to sys.path
         additional_paths = []
-        for project, version in _PROJECTS:
-            wheel_name = "{}-{}-py2.py3-none-any.whl".format(project, version)
+        for project, version, py_tag in _PROJECTS:
+            wheel_name = "{}-{}-{}-none-any.whl".format(project, version, py_tag)
             whl = resources.read_binary(
                 _bundled,
                 wheel_name,
@@ -119,7 +116,7 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
             additional_paths.append(os.path.join(tmpdir, wheel_name))
 
         # Construct the arguments to be passed to the pip command
-        args = ["install", "--no-index", "--find-links", tmpdir]
+        args = ["install", "--no-cache-dir", "--no-index", "--find-links", tmpdir]
         if root:
             args += ["--root", root]
         if upgrade:
