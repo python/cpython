@@ -1897,7 +1897,7 @@ _PyPegen_empty_arguments(Parser *p)
         return NULL;
     }
 
-    return _Py_arguments(posonlyargs, posargs, NULL, kwonlyargs, kwdefaults, NULL, kwdefaults,
+    return _Py_arguments(posonlyargs, posargs, NULL, kwonlyargs, kwdefaults, NULL, posdefaults,
                          p->arena);
 }
 
