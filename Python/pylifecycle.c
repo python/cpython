@@ -160,7 +160,7 @@ init_importlib(PyThreadState *tstate, PyObject *sysmod)
     interp->importlib = importlib;
     Py_INCREF(interp->importlib);
 
-    interp->import_func = PyDict_GetItemString(interp->builtins, "__import__");
+    interp->import_func = _PyDict_GetItemStringWithError(interp->builtins, "__import__");
     if (interp->import_func == NULL)
         return _PyStatus_ERR("__import__ not found");
     Py_INCREF(interp->import_func);
@@ -1683,7 +1683,10 @@ add_main_module(PyInterpreterState *interp)
     }
     Py_DECREF(ann_dict);
 
-    if (PyDict_GetItemString(d, "__builtins__") == NULL) {
+    if (_PyDict_GetItemStringWithError(d, "__builtins__") == NULL) {
+        if (PyErr_Occurred()) {
+            return _PyStatus_ERR("Failed to test __main__.__builtins__");
+        }
         PyObject *bimod = PyImport_ImportModule("builtins");
         if (bimod == NULL) {
             return _PyStatus_ERR("Failed to retrieve builtins module");
@@ -1700,8 +1703,11 @@ add_main_module(PyInterpreterState *interp)
      * be set if __main__ gets further initialized later in the startup
      * process.
      */
-    loader = PyDict_GetItemString(d, "__loader__");
+    loader = _PyDict_GetItemStringWithError(d, "__loader__");
     if (loader == NULL || loader == Py_None) {
+        if (PyErr_Occurred()) {
+            return _PyStatus_ERR("Failed to test __main__.__loader__");
+        }
         PyObject *loader = PyObject_GetAttrString(interp->importlib,
                                                   "BuiltinImporter");
         if (loader == NULL) {

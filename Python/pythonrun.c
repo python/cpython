@@ -351,7 +351,10 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
         return -1;
     Py_INCREF(m);
     d = PyModule_GetDict(m);
-    if (PyDict_GetItemString(d, "__file__") == NULL) {
+    if (_PyDict_GetItemStringWithError(d, "__file__") == NULL) {
+        if (PyErr_Occurred()) {
+            goto done;
+        }
         PyObject *f;
         f = PyUnicode_DecodeFSDefault(filename);
         if (f == NULL)
@@ -1116,9 +1119,11 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     _Py_UnhandledKeyboardInterrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (globals != NULL && PyDict_GetItemString(globals, "__builtins__") == NULL) {
-        if (PyDict_SetItemString(globals, "__builtins__",
-                                 tstate->interp->builtins) < 0) {
+    if (globals != NULL && _PyDict_GetItemStringWithError(globals, "__builtins__") == NULL) {
+        if (PyErr_Occurred() ||
+            PyDict_SetItemString(globals, "__builtins__",
+                                 tstate->interp->builtins) < 0)
+        {
             return NULL;
         }
     }

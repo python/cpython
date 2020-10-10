@@ -489,8 +489,8 @@ dictbytype(PyObject *src, int scope_type, int flag, Py_ssize_t offset)
         /* XXX this should probably be a macro in symtable.h */
         long vi;
         k = PyList_GET_ITEM(sorted_keys, key_i);
-        v = PyDict_GetItem(src, k);
-        assert(PyLong_Check(v));
+        v = PyDict_GetItemWithError(src, k);
+        assert(v && PyLong_Check(v));
         vi = PyLong_AS_LONG(v);
         scope = (vi >> SCOPE_OFFSET) & SCOPE_MASK;
 
@@ -1889,7 +1889,7 @@ static int
 compiler_lookup_arg(PyObject *dict, PyObject *name)
 {
     PyObject *v;
-    v = PyDict_GetItem(dict, name);
+    v = PyDict_GetItemWithError(dict, name);
     if (v == NULL)
         return -1;
     return PyLong_AS_LONG(v);

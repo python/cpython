@@ -64,7 +64,6 @@ PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
    argument is raised.
 */
 PyAPI_FUNC(int) _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
-PyAPI_FUNC(PyObject *) _PyDict_GetItemId(PyObject *dp, struct _Py_Identifier *key);
 PyAPI_FUNC(int) _PyDict_SetItemId(PyObject *dp, struct _Py_Identifier *key, PyObject *item);
 
 PyAPI_FUNC(int) _PyDict_DelItemId(PyObject *mp, struct _Py_Identifier *key);

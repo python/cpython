@@ -68,7 +68,13 @@ sys_get_object_id(PyThreadState *tstate, _Py_Identifier *key)
     if (sd == NULL) {
         return NULL;
     }
-    return _PyDict_GetItemId(sd, key);
+    PyObject *exc_type, *exc_value, *exc_tb;
+    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+    PyObject *value = _PyDict_GetItemIdWithError(sd, key);
+    /* XXX Suppress a new exception if it was raised and restore
+     * the old one. */
+    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
+    return value;
 }
 
 PyObject *
@@ -86,24 +92,39 @@ PySys_GetObject(const char *name)
     if (sd == NULL) {
         return NULL;
     }
-    return PyDict_GetItemString(sd, name);
+    PyObject *exc_type, *exc_value, *exc_tb;
+    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+    PyObject *value = _PyDict_GetItemStringWithError(sd, name);
+    /* XXX Suppress a new exception if it was raised and restore
+     * the old one. */
+    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
+    return value;
+}
+
+static int
+sys_set_object(PyThreadState *tstate, PyObject *key, PyObject *v)
+{
+    if (key == NULL) {
+        return -1;
+    }
+    PyObject *sd = tstate->interp->sysdict;
+    if (v == NULL) {
+        v = _PyDict_Pop(sd, key, Py_None);
+        if (v == NULL) {
+            return -1;
+        }
+        Py_DECREF(v);
+        return 0;
+    }
+    else {
+        return PyDict_SetItem(sd, key, v);
+    }
 }
 
 static int
 sys_set_object_id(PyThreadState *tstate, _Py_Identifier *key, PyObject *v)
 {
-    PyObject *sd = tstate->interp->sysdict;
-    if (v == NULL) {
-        if (_PyDict_GetItemId(sd, key) == NULL) {
-            return 0;
-        }
-        else {
-            return _PyDict_DelItemId(sd, key);
-        }
-    }
-    else {
-        return _PyDict_SetItemId(sd, key, v);
-    }
+    return sys_set_object(tstate, _PyUnicode_FromId(key), v);
 }
 
 int
@@ -114,27 +135,20 @@ _PySys_SetObjectId(_Py_Identifier *key, PyObject *v)
 }
 
 static int
-sys_set_object(PyThreadState *tstate, const char *name, PyObject *v)
+sys_set_object_str(PyThreadState *tstate, const char *name, PyObject *v)
 {
-    PyObject *sd = tstate->interp->sysdict;
-    if (v == NULL) {
-        if (PyDict_GetItemString(sd, name) == NULL) {
-            return 0;
-        }
-        else {
-            return PyDict_DelItemString(sd, name);
-        }
-    }
-    else {
-        return PyDict_SetItemString(sd, name, v);
-    }
+    PyObject *key = v ? PyUnicode_InternFromString(name)
+                      : PyUnicode_FromString(name);
+    int r = sys_set_object(tstate, key, v);
+    Py_XDECREF(key);
+    return r;
 }
 
 int
 PySys_SetObject(const char *name, PyObject *v)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return sys_set_object(tstate, name, v);
+    return sys_set_object_str(tstate, name, v);
 }
 
 
@@ -3083,7 +3097,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
     if (av == NULL) {
         Py_FatalError("no mem for sys.argv");
     }
-    if (sys_set_object(tstate, "argv", av) != 0) {
+    if (sys_set_object_str(tstate, "argv", av) != 0) {
         Py_DECREF(av);
         Py_FatalError("can't assign sys.argv");
     }

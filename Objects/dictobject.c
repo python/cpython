@@ -3525,18 +3525,6 @@ PyTypeObject PyDict_Type = {
     .tp_vectorcall = dict_vectorcall,
 };
 
-PyObject *
-_PyDict_GetItemId(PyObject *dp, struct _Py_Identifier *key)
-{
-    PyObject *kv;
-    kv = _PyUnicode_FromId(key); /* borrowed */
-    if (kv == NULL) {
-        PyErr_Clear();
-        return NULL;
-    }
-    return PyDict_GetItem(dp, kv);
-}
-
 /* For backward compatibility with old dictionary interface */
 
 PyObject *

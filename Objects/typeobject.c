@@ -4777,8 +4777,11 @@ object___reduce_ex___impl(PyObject *self, int protocol)
     _Py_IDENTIFIER(__reduce__);
 
     if (objreduce == NULL) {
-        objreduce = _PyDict_GetItemId(PyBaseObject_Type.tp_dict,
-                                      &PyId___reduce__);
+        objreduce = _PyDict_GetItemIdWithError(PyBaseObject_Type.tp_dict,
+                                               &PyId___reduce__);
+        if (objreduce == NULL && PyErr_Occurred()) {
+            return NULL;
+        }
     }
 
     if (_PyObject_LookupAttrId(self, &PyId___reduce__, &reduce) < 0) {
@@ -5191,10 +5194,16 @@ overrides_hash(PyTypeObject *type)
     _Py_IDENTIFIER(__eq__);
 
     assert(dict != NULL);
-    if (_PyDict_GetItemId(dict, &PyId___eq__) != NULL)
+    if (_PyDict_GetItemIdWithError(dict, &PyId___eq__) != NULL)
         return 1;
-    if (_PyDict_GetItemId(dict, &PyId___hash__) != NULL)
+    if (PyErr_Occurred()) {
+        PyErr_Clear();
+    }
+    if (_PyDict_GetItemIdWithError(dict, &PyId___hash__) != NULL)
         return 1;
+    if (PyErr_Occurred()) {
+        PyErr_Clear();
+    }
     return 0;
 }
 

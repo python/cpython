@@ -1361,18 +1361,36 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
     }
 
+    if (throwflag) { /* support for generator.throw() */
 #ifdef LLTRACE
-    lltrace = _PyDict_GetItemId(f->f_globals, &PyId___ltrace__) != NULL;
+        PyObject *exc, *val, *tb;
+        _PyErr_Fetch(tstate, &exc, &val, &tb);
+        PyObject *tmp = _PyDict_GetItemIdWithError(f->f_globals, &PyId___ltrace__);
+        if (tmp == NULL && _PyErr_Occurred(tstate)) {
+            _PyErr_ChainExceptions(exc, val, tb);
+            goto exit_eval_frame;
+        }
+        lltrace = tmp != NULL;
+        _PyErr_Restore(tstate, exc, val, tb);
 #endif
-
-    if (throwflag) /* support for generator.throw() */
         goto error;
+    }
 
 #ifdef Py_DEBUG
     /* _PyEval_EvalFrameDefault() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!_PyErr_Occurred(tstate));
+#endif
+
+#ifdef LLTRACE
+    {
+        PyObject *tmp = _PyDict_GetItemIdWithError(f->f_globals, &PyId___ltrace__);
+        if (tmp == NULL && _PyErr_Occurred(tstate)) {
+            goto exit_eval_frame;
+        }
+        lltrace = tmp != NULL;
+    }
 #endif
 
 main_loop:
