@@ -190,6 +190,24 @@ class TestAsyncCase(unittest.TestCase):
                                   'async_cleanup 2',
                                   'sync_cleanup 1'])
 
+    def test_base_exception_from_async_method(self):
+        events = []
+        class Test(unittest.IsolatedAsyncioTestCase):
+            async def test_a(self):
+                events.append("test_a")
+                raise BaseException()
+                events.append("not it")
+
+            async def test_b(self):
+                events.append("test_b")
+
+        test = Test("test_a")
+        output = test.run()
+        self.assertFalse(output.wasSuccessful())
+
+        test = Test("test_b")
+        test.run()
+        self.assertEqual(events, ['test_a', 'test_b'])
 
 if __name__ == "__main__":
     unittest.main()

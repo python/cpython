@@ -104,7 +104,7 @@ class IsolatedAsyncioTestCase(TestCase):
                     fut.set_result(ret)
             except asyncio.CancelledError:
                 raise
-            except Exception as ex:
+            except BaseException as ex:
                 if not fut.cancelled():
                     fut.set_exception(ex)
 
