@@ -1,0 +1,1 @@
+:c:func:`PyObject_GenericGetDict` is available again in the limited API.
