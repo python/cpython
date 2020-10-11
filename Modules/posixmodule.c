@@ -8741,12 +8741,15 @@ os_close_impl(PyObject *module, int fd)
 }
 
 /* Our selection logic for which function to use is as follows:
- * 1. If closefrom(2) is available, we'll attempt to use that next if we're
+ * 1. If close_range(2) is available, always prefer that; it's better for
+ *    contiguous ranges like this than fdwalk(3) which entails iterating over
+ *    the entire fd space and simply doing nothing for those outside the range.
+ * 2. If closefrom(2) is available, we'll attempt to use that next if we're
  *    closing up to sysconf(_SC_OPEN_MAX).
- * 1a. Fallback to fdwalk(3) if we're not closing up to sysconf(_SC_OPEN_MAX),
+ * 2a. Fallback to fdwalk(3) if we're not closing up to sysconf(_SC_OPEN_MAX),
  *    as that will be more performant if the range happens to have any chunk of
  *    non-opened fd in the middle.
- * 1b. If fdwalk(3) isn't available, just do a plain close(2) loop.
+ * 2b. If fdwalk(3) isn't available, just do a plain close(2) loop.
  */
 #ifdef __FreeBSD__
 #define USE_CLOSEFROM
@@ -8779,6 +8782,14 @@ void
 _Py_closerange(int first, int last)
 {
     first = Py_MAX(first, 0);
+#ifdef HAVE_CLOSE_RANGE
+    if (close_range(first, last, 0) == 0 || errno != ENOSYS) {
+        /* Any errors encountered while closing file descriptors are ignored;
+         * ENOSYS means no kernel support, though,
+         * so we'll fallback to the other methods. */
+    }
+    else
+#endif /* HAVE_CLOSE_RANGE */
 #ifdef USE_CLOSEFROM
     if (last >= sysconf(_SC_OPEN_MAX)) {
         /* Any errors encountered while closing file descriptors are ignored */
