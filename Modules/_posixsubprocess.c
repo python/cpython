@@ -250,7 +250,6 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
     long end_fd = safe_get_max_fd();
     Py_ssize_t num_fds_to_keep = PyTuple_GET_SIZE(py_fds_to_keep);
     Py_ssize_t keep_seq_idx;
-    int fd_num;
     /* As py_fds_to_keep is sorted we can loop through the list closing
      * fds in between any in the keep list falling within our range. */
     for (keep_seq_idx = 0; keep_seq_idx < num_fds_to_keep; ++keep_seq_idx) {
@@ -258,21 +257,11 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
         int keep_fd = PyLong_AsLong(py_keep_fd);
         if (keep_fd < start_fd)
             continue;
-        for (fd_num = start_fd; fd_num < keep_fd; ++fd_num) {
-            close(fd_num);
-        }
+        _Py_closerange(start_fd, keep_fd - 1);
         start_fd = keep_fd + 1;
     }
     if (start_fd <= end_fd) {
-#if defined(__FreeBSD__)
-        /* Any errors encountered while closing file descriptors are ignored */
-        closefrom(start_fd);
-#else
-        for (fd_num = start_fd; fd_num < end_fd; ++fd_num) {
-            /* Ignore errors */
-            (void)close(fd_num);
-        }
-#endif
+        _Py_closerange(start_fd, end_fd);
     }
 }
 
