@@ -389,6 +389,7 @@ class TestShellSidebar(unittest.TestCase):
         idlelib.pyshell.use_subprocess = True
 
         cls.root = root = tk.Tk()
+        root.withdraw()
 
         fix_scaling(root)
         fixwordbreaks(root)
