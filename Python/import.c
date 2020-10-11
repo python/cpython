@@ -902,7 +902,11 @@ PyImport_AddModule(const char *name)
 }
 
 
-/* Remove name from sys.modules, if it's there. */
+/* Remove name from sys.modules, if it's there.
+ * Can be called with an exception raised.
+ * If fail to remove name a new exception will be chained with the old
+ * exception, otherwise the old exception is preserved.
+ */
 static void
 remove_module(PyThreadState *tstate, PyObject *name)
 {
