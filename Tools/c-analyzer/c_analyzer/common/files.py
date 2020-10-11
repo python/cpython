@@ -60,7 +60,7 @@ def glob_tree(root, *,
 
 
 def iter_files(root, suffix=None, relparent=None, *,
-               get_files=os.walk,
+               get_files=None,
                _glob=glob_tree,
                _walk=walk_tree,
                ):
@@ -75,6 +75,8 @@ def iter_files(root, suffix=None, relparent=None, *,
     if "relparent" is provided then it is used to resolve each
     filename as a relative path.
     """
+    if get_files is None:
+        get_files = os.walk
     if not isinstance(root, str):
         roots = root
         for root in roots:
