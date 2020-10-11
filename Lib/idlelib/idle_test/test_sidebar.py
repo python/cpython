@@ -162,7 +162,7 @@ class LineNumbersTest(unittest.TestCase):
         self.assert_sidebar_n_lines(3)
         self.assert_state_disabled()
 
-        # Note: deleting up to "2.end" doesn't delete the final newline.
+        # Deleting up to "2.end" doesn't delete the final newline.
         self.text.delete('2.0', '2.end')
         self.assert_text_equals('fbarfoo\n\n\n')
         self.assert_sidebar_n_lines(3)
@@ -173,7 +173,7 @@ class LineNumbersTest(unittest.TestCase):
         self.assert_sidebar_n_lines(1)
         self.assert_state_disabled()
 
-        # Note: Text widgets always keep a single '\n' character at the end.
+        # Text widgets always keep a single '\n' character at the end.
         self.text.delete('1.0', 'end')
         self.assert_text_equals('\n')
         self.assert_sidebar_n_lines(1)
@@ -242,7 +242,7 @@ class LineNumbersTest(unittest.TestCase):
         self.assert_sidebar_n_lines(4)
         self.assertEqual(get_width(), 1)
 
-        # Note: Text widgets always keep a single '\n' character at the end.
+        # Text widgets always keep a single '\n' character at the end.
         self.text.delete('1.0', 'end -1c')
         self.assert_sidebar_n_lines(1)
         self.assertEqual(get_width(), 1)
@@ -495,7 +495,7 @@ class TestShellSidebar(unittest.TestCase):
         self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
 
     def test_multi_line_command(self):
-        # note: block statements are not indented because IDLE auto-indents
+        # Block statements are not indented because IDLE auto-indents.
         self.do_input(dedent('''\
             if True:
             print(1)
