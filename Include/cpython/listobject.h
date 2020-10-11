@@ -26,7 +26,7 @@ PyAPI_FUNC(void) _PyList_DebugMallocStats(FILE *out);
 
 /* Macro, trading safety for speed */
 
-/* Cast argument to PyTupleObject* type. */
+/* Cast argument to PyListObject* type. */
 #define _PyList_CAST(op) (assert(PyList_Check(op)), (PyListObject *)(op))
 
 #define PyList_GET_ITEM(op, i) (_PyList_CAST(op)->ob_item[i])
