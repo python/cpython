@@ -436,13 +436,13 @@ class TestShellSidebar(unittest.TestCase):
         texts.sort(key=lambda text: canvas.bbox(text)[1])
         return [canvas.itemcget(text, 'text') for text in texts]
 
-    def assertSidebarLinesEndWith(self, expected_lines):
+    def assert_sidebar_lines_end_with(self, expected_lines):
         self.assertEqual(
             self.get_sidebar_lines()[-len(expected_lines):],
             expected_lines,
         )
 
-    def getShellLineYCoords(self):
+    def get_shell_line_y_coords(self):
         text = self.shell.text
         y_coords = []
         index = text.index("@0,0")
@@ -454,19 +454,19 @@ class TestShellSidebar(unittest.TestCase):
             index = text.index(f"{index} +1line")
         return y_coords
 
-    def getSidebarLineYCoords(self):
+    def get_sidebar_line_y_coords(self):
         canvas = self.shell.shell_sidebar.canvas
         texts = list(canvas.find(tk.ALL))
         texts.sort(key=lambda text: canvas.bbox(text)[1])
         return [canvas.bbox(text)[1] for text in texts]
 
-    def assertSidebarLinesSynced(self):
+    def assert_sidebar_lines_synced(self):
         self.assertEqual(
-            self.getSidebarLineYCoords(),
-            self.getShellLineYCoords(),
+            self.get_sidebar_line_y_coords(),
+            self.get_shell_line_y_coords(),
         )
 
-    def doInput(self, input):
+    def do_input(self, input):
         shell = self.shell
         text = shell.text
         for line_index, line in enumerate(input.split('\n')):
@@ -478,30 +478,30 @@ class TestShellSidebar(unittest.TestCase):
         sleep(0.1)
         self.root.update()
 
-    def testInitialState(self):
+    def test_initial_state(self):
         sidebar_lines = self.get_sidebar_lines()
         self.assertEqual(
             sidebar_lines,
             ['   '] * (len(sidebar_lines) - 1) + ['>>>'],
         )
-        self.assertSidebarLinesSynced()
+        self.assert_sidebar_lines_synced()
 
-    def testSingleEmptyInput(self):
-        self.doInput('\n')
-        self.assertSidebarLinesEndWith(['>>>', '>>>'])
+    def test_single_empty_input(self):
+        self.do_input('\n')
+        self.assert_sidebar_lines_end_with(['>>>', '>>>'])
 
-    def testSingleLineCommand(self):
-        self.doInput('1\n')
-        self.assertSidebarLinesEndWith(['>>>', '   ', '>>>'])
+    def test_single_line_command(self):
+        self.do_input('1\n')
+        self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
 
-    def testMultiLineCommand(self):
+    def test_multi_line_command(self):
         # note: block statements are not indented because IDLE auto-indents
-        self.doInput(dedent('''\
+        self.do_input(dedent('''\
             if True:
             print(1)
 
             '''))
-        self.assertSidebarLinesEndWith([
+        self.assert_sidebar_lines_end_with([
             '>>>',
             '...',
             '...',
@@ -510,32 +510,32 @@ class TestShellSidebar(unittest.TestCase):
             '>>>',
         ])
 
-    def testSingleLongLineWraps(self):
-        self.doInput('1' * 200 + '\n')
-        self.assertSidebarLinesEndWith(['>>>', '   ', '>>>'])
-        self.assertSidebarLinesSynced()
+    def test_single_long_line_wraps(self):
+        self.do_input('1' * 200 + '\n')
+        self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
+        self.assert_sidebar_lines_synced()
 
-    def testSqueezeSingleLineCommand(self):
+    def test_squeeze_single_line_command(self):
         root = self.root
         shell = self.shell
         text = shell.text
 
-        self.doInput('1\n')
-        self.assertSidebarLinesEndWith(['>>>', '   ', '>>>'])
+        self.do_input('1\n')
+        self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
 
         line = int(shell.text.index('insert -1line').split('.')[0])
         text.mark_set('insert', f"{line}.0")
         text.event_generate('<<squeeze-current-text>>')
         sleep(0.1)
         root.update()
-        self.assertSidebarLinesEndWith(['>>>', '   ', '>>>'])
-        self.assertSidebarLinesSynced()
+        self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
+        self.assert_sidebar_lines_synced()
 
         shell.squeezer.expandingbuttons[0].expand()
         sleep(0.1)
         root.update()
-        self.assertSidebarLinesEndWith(['>>>', '   ', '>>>'])
-        self.assertSidebarLinesSynced()
+        self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
+        self.assert_sidebar_lines_synced()
 
 
 if __name__ == '__main__':
