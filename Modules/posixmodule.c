@@ -8783,7 +8783,7 @@ _Py_closerange(int first, int last)
 {
     first = Py_MAX(first, 0);
 #ifdef HAVE_CLOSE_RANGE
-    if (close_range(first, last, 0) == -1 && errno != ENOSYS) {
+    if (close_range(first, last, 0) == 0 || errno != ENOSYS) {
         /* Any errors encountered while closing file descriptors are ignored;
          * ENOSYS means no kernel support, though,
          * so we'll fallback to the other methods. */
