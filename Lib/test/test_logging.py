@@ -1164,22 +1164,27 @@ class MemoryHandlerTest(BaseTest):
         class MockRaceConditionHandler:
             def __init__(self, mem_hdlr):
                 self.mem_hdlr = mem_hdlr
+                self.threads = []
 
             def removeTarget(self):
                 self.mem_hdlr.setTarget(None)
 
             def handle(self, msg):
-                t = threading.Thread(target=self.removeTarget)
-                t.daemon = True
-                t.start()
+                thread = threading.Thread(target=self.removeTarget)
+                self.threads.append(thread)
+                thread.start()
 
         target = MockRaceConditionHandler(self.mem_hdlr)
-        self.mem_hdlr.setTarget(target)
+        try:
+            self.mem_hdlr.setTarget(target)
 
-        for _ in range(10):
-            time.sleep(0.005)
-            self.mem_logger.info("not flushed")
-            self.mem_logger.warning("flushed")
+            for _ in range(10):
+                time.sleep(0.005)
+                self.mem_logger.info("not flushed")
+                self.mem_logger.warning("flushed")
+        finally:
+            for thread in target.threads:
+                threading_helper.join_thread(thread)
 
 
 class ExceptionFormatter(logging.Formatter):
