@@ -948,18 +948,6 @@ class PyShell(OutputWindow):
         self.text.insert = self.per.top.insert
         self.per.insertfilter(UserInputTaggingDelegator())
 
-    def get_tag_colors(self):
-        tag_colors = super().get_tag_colors()
-
-        theme = idleConf.CurrentTheme()
-        tag_colors.update({
-            "stdin": {'background': None, 'foreground': None},
-            "stdout": idleConf.GetHighlight(theme, "stdout"),
-            "stderr": idleConf.GetHighlight(theme, "stderr"),
-            "console": idleConf.GetHighlight(theme, "console"),
-        })
-        return tag_colors
-
     def ResetFont(self):
         super().ResetFont()
         # Update the sidebar widget, since its width affects
@@ -968,10 +956,20 @@ class PyShell(OutputWindow):
 
     def update_colors(self):
         super().update_colors()
+
+        theme = idleConf.CurrentTheme()
+        tag_colors = {
+          "stdin": {'background': None, 'foreground': None},
+          "stdout": idleConf.GetHighlight(theme, "stdout"),
+          "stderr": idleConf.GetHighlight(theme, "stderr"),
+          "console": idleConf.GetHighlight(theme, "console"),
+        }
+        for tag, tag_colors_config in tag_colors.items():
+            self.text.tag_configure(tag, **tag_colors_config)
+
         # During __init__, update_colors() is called before the sidebar is created.
         if self.shell_sidebar is not None:
             self.shell_sidebar.update_colors()
-
     def replace_event(self, event):
         replace.replace(self.text, insert_tags="stdin")
         return "break"

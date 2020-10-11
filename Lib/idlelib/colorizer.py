@@ -123,6 +123,11 @@ class ColorDelegator(Delegator):
             "SYNC": {'background': None, 'foreground': None},
             "TODO": {'background': None, 'foreground': None},
             "ERROR": idleConf.GetHighlight(theme, "error"),
+            # "hit" is used by ReplaceDialog to mark matches. It shouldn't be changed by Colorizer, but
+            # that currently isn't technically possible. This should be moved elsewhere in the future
+            # when fixing the "hit" tag's visibility, or when the replace dialog is replaced with a
+            # non-modal alternative.
+            "hit": idleConf.GetHighlight(theme, "hit"),
         }
 
         if DEBUG: print('tagdefs',self.tagdefs)

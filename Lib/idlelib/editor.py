@@ -807,10 +807,6 @@ class EditorWindow(object):
         """
         EditorWindow.color_config(self.text)
 
-        tag_colors = self.get_tag_colors()
-        for tag, tag_colors_config in tag_colors.items():
-            self.text.tag_configure(tag, **tag_colors_config)
-
         self.ResetColorizer()
 
         if self.code_context is not None:
@@ -818,13 +814,6 @@ class EditorWindow(object):
 
         if self.line_numbers is not None:
             self.line_numbers.update_colors()
-
-    def get_tag_colors(self):
-        theme = idleConf.CurrentTheme()
-        return {
-            # The following is used by ReplaceDialog:
-            "hit": idleConf.GetHighlight(theme, "hit"),
-        }
 
     IDENTCHARS = string.ascii_letters + string.digits + "_"
 
