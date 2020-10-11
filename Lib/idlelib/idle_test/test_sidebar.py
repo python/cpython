@@ -378,7 +378,7 @@ class LineNumbersTest(unittest.TestCase):
         assert_colors_are_equal(orig_colors)
 
 
-class TestShellSidebar(unittest.TestCase):
+class ShellSidebarTest(unittest.TestCase):
     root: tk.Tk = None
     shell: PyShell = None
 
