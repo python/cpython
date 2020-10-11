@@ -845,22 +845,29 @@ PyImport_AddModule(const char *name)
 }
 
 
-/* Remove name from sys.modules, if it's there. */
+/* Remove name from sys.modules, if it's there.
+ * Can be called with an exception raised.
+ * If fail to remove name a new exception will be chained with the old
+ * exception, otherwise the old exception is preserved.
+ */
 static void
 remove_module(PyObject *name)
 {
     PyObject *type, *value, *traceback;
     PyErr_Fetch(&type, &value, &traceback);
-    PyObject *modules = PyImport_GetModuleDict();
-    if (!PyMapping_HasKey(modules, name)) {
-        goto out;
+
+    PyObject *modules = tstate->interp->modules;
+    if (PyDict_CheckExact(modules)) {
+        PyObject *mod = _PyDict_Pop(modules, name, Py_None);
+        Py_XDECREF(mod);
     }
-    if (PyMapping_DelItem(modules, name) < 0) {
-        Py_FatalError("import:  deleting existing key in "
-                      "sys.modules failed");
+    else if (PyMapping_DelItem(modules, name) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+            PyErr_Clear();
+        }
     }
-out:
-    PyErr_Restore(type, value, traceback);
+
+    _PyErr_ChainExceptions(type, value, traceback);
 }
 
 
