@@ -516,7 +516,6 @@ static PyObject *
 random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     RandomObject *self;
-    PyObject *tmp;
 
     if (type == (PyTypeObject*)_randomstate_global->Random_Type &&
         !_PyArg_NoKeywords("Random()", kwds)) {
@@ -526,12 +525,16 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = (RandomObject *)PyType_GenericAlloc(type, 0);
     if (self == NULL)
         return NULL;
-    tmp = random_seed(self, args);
-    if (tmp == NULL) {
-        Py_DECREF(self);
-        return NULL;
+
+    if (PyTuple_Size(args) == 1) {
+        PyObject *tmp = random_seed(self, PyTuple_GET_ITEM(args, 0));
+        if (tmp == NULL) {
+            Py_DECREF(self);
+            return NULL;
+        }
+        Py_DECREF(tmp);
     }
-    Py_DECREF(tmp);
+
     return (PyObject *)self;
 }
 
