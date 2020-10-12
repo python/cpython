@@ -874,7 +874,7 @@ can appear before a future statement are:
 * blank lines, and
 * other future statements.
 
-The only feature that can be enabled using the future statement is
+The only feature that requires using the future statement is
 ``annotations`` (see :pep:`563`).
 
 All historical features enabled by the future statement are still recognized
