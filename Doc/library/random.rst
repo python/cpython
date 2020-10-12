@@ -521,10 +521,10 @@ Recipes
 
 The default :func:`.random` returns one of 2⁵³ evenly spaced floats in
 the range ``0.0 ≤ x < 1.0``.  Each possible selection is binary fraction
-with an integer numerator in the range `0 ≤ X < 2⁵³` and with a
-denominator of 2⁵³. A number like `0.05954861408025609` is not a
-possible selection because its binary fraction, `4290929858916333 ÷ 2⁵⁶`
-has a denominator than is greater than 2⁵³.
+with an integer numerator in the range ``0 ≤ X < 2⁵³`` and with a
+denominator of 2⁵³. A number like ``0.05954861408025609`` is not a
+possible selection because its binary fraction, ``4290929858916333 ÷ 2⁵⁶``
+has a denominator that is greater than 2⁵³.
 
 For some applications, it may be desirable to have an alternative
 implementation of :func:`.random` that selects from a much larger
