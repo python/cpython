@@ -294,11 +294,11 @@ class BaseTest(unittest.TestCase):
             self.assertIn(generic_alias_property, dir_of_gen_alias)
 
     def test_indexing(self):
-        with self.assertRaises(TypeError):
-            list[0]
-            list[0.8]
-            list[True]
-            list[1 + 3j]
+        stmts = ['list[0]', 'list[0.0]', 'list[True]', 'list[1 + 3j]']
+        for stmt in stmts:
+            with self.subTest(stmt=stmt):
+                with self.assertRaises(TypeError):
+                    eval(stmt)
 
 
 if __name__ == "__main__":
