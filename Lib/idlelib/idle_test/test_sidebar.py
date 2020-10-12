@@ -2,7 +2,6 @@
 from textwrap import dedent
 from time import sleep
 
-import idlelib.sidebar
 from itertools import chain
 import unittest
 import unittest.mock
@@ -16,6 +15,8 @@ from idlelib.percolator import Percolator
 import idlelib.pyshell
 from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
 from idlelib.run import fix_scaling
+import idlelib.sidebar
+from idlelib.sidebar import get_lineno
 
 
 class Dummy_editwin:
@@ -378,6 +379,12 @@ class LineNumbersTest(unittest.TestCase):
         assert_colors_are_equal(orig_colors)
 
 
+def test_coroutine(test_method):
+    def new_method(self):
+        return self.run_test_coroutine(test_method(self))
+    return new_method
+
+
 class ShellSidebarTest(unittest.TestCase):
     root: tk.Tk = None
     shell: PyShell = None
@@ -413,8 +420,9 @@ class ShellSidebarTest(unittest.TestCase):
     @classmethod
     def init_shell(cls):
         cls.shell = cls.flist.open_shell()
+        cls.shell.pollinterval = 10
         cls.root.update()
-        cls.n_preface_lines = int(cls.shell.text.index('end-1c').split('.')[0]) - 1
+        cls.n_preface_lines = get_lineno(cls.shell.text, 'end-1c') - 1
 
     @classmethod
     def reset_shell(cls):
@@ -430,13 +438,12 @@ class ShellSidebarTest(unittest.TestCase):
 
     def get_sidebar_lines(self):
         canvas = self.shell.shell_sidebar.canvas
-        sleep(0.1)
-        self.root.update()
         texts = list(canvas.find(tk.ALL))
         texts.sort(key=lambda text: canvas.bbox(text)[1])
         return [canvas.itemcget(text, 'text') for text in texts]
 
     def assert_sidebar_lines_end_with(self, expected_lines):
+        self.shell.shell_sidebar.update_sidebar()
         self.assertEqual(
             self.get_sidebar_lines()[-len(expected_lines):],
             expected_lines,
@@ -475,8 +482,28 @@ class ShellSidebarTest(unittest.TestCase):
                 text.event_generate('<KeyRelease-Return>')
             for char in line:
                 text.event_generate(char)
-        sleep(0.1)
-        self.root.update()
+
+    def run_test_coroutine(self, coroutine):
+        root = self.root
+        # Exceptions raised by self.assert...() need to be raised outside of
+        # the after callback in order for the test harness to capture them.
+        exception = None
+        def after_callback():
+            nonlocal exception
+            try:
+                interval_multiplier = next(coroutine) or 1
+            except StopIteration:
+                root.quit()
+            except Exception as exc:
+                exception = exc
+                root.quit()
+            else:
+                root.after(100 * interval_multiplier, after_callback)
+        root.after(0, after_callback)
+        root.mainloop()
+
+        if exception:
+            raise exception
 
     def test_initial_state(self):
         sidebar_lines = self.get_sidebar_lines()
@@ -486,14 +513,19 @@ class ShellSidebarTest(unittest.TestCase):
         )
         self.assert_sidebar_lines_synced()
 
+    @test_coroutine
     def test_single_empty_input(self):
         self.do_input('\n')
+        yield 0
         self.assert_sidebar_lines_end_with(['>>>', '>>>'])
 
+    @test_coroutine
     def test_single_line_command(self):
         self.do_input('1\n')
+        yield 2
         self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
 
+    @test_coroutine
     def test_multi_line_command(self):
         # Block statements are not indented because IDLE auto-indents.
         self.do_input(dedent('''\
@@ -501,6 +533,7 @@ class ShellSidebarTest(unittest.TestCase):
             print(1)
 
             '''))
+        yield 2
         self.assert_sidebar_lines_end_with([
             '>>>',
             '...',
@@ -510,30 +543,31 @@ class ShellSidebarTest(unittest.TestCase):
             '>>>',
         ])
 
+    @test_coroutine
     def test_single_long_line_wraps(self):
         self.do_input('1' * 200 + '\n')
+        yield 2
         self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
         self.assert_sidebar_lines_synced()
 
+    @test_coroutine
     def test_squeeze_single_line_command(self):
-        root = self.root
         shell = self.shell
         text = shell.text
 
         self.do_input('1\n')
+        yield 2
         self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
 
         line = int(shell.text.index('insert -1line').split('.')[0])
         text.mark_set('insert', f"{line}.0")
         text.event_generate('<<squeeze-current-text>>')
-        sleep(0.1)
-        root.update()
+        yield 0
         self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
         self.assert_sidebar_lines_synced()
 
         shell.squeezer.expandingbuttons[0].expand()
-        sleep(0.1)
-        root.update()
+        yield 0
         self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
         self.assert_sidebar_lines_synced()
 
