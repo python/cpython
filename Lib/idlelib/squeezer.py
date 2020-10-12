@@ -288,11 +288,9 @@ class Squeezer:
         return count_lines_with_wrapping(s, self.editwin.width)
 
     def squeeze_current_text(self):
-        """squeeze-current-text event handler
+        """Squeeze the text block where the insertion cursor is.
 
-        Squeeze the block of text inside which contains the "insert" cursor.
-
-        If the insert cursor is not in a squeezable block of text, give the
+        If the cursor is not in a squeezable block of text, give the
         user a small warning and do nothing.
         """
         # Set tag_name to the first valid tag found on the "insert" cursor.
