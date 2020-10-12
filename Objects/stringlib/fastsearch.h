@@ -256,6 +256,12 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
     LOG(" into "); LOG_STRING(needle, suffix);
     LOG(" and "); LOG_STRING(needle + suffix, needle_len - suffix);
     LOG(".\n");
+    unsigned long mask = 0;
+
+    /* Get the set of characters (mod 2^k) in the needle. */
+    for (Py_ssize_t i = 0; i < needle_len; i++) {
+        STRINGLIB_BLOOM_ADD(mask, needle[i]);
+    }
 
     if (memcmp(needle, needle+period, suffix * STRINGLIB_SIZEOF_CHAR) == 0) {
         LOG("needle is completely periodic.\n");
@@ -264,10 +270,18 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
         Py_ssize_t memory = 0;
         Py_ssize_t j = 0; // index into haystack
         while (j <= haystack_len - needle_len) {
+
             // Visualize the line-up:
             LOG("> "); LOG_STRING(haystack, haystack_len);
             LOG("\n> "); LOG("%*s", j, ""); LOG_STRING(needle, needle_len);
             LOG("\n");
+
+            if (!STRINGLIB_BLOOM(mask, haystack[j + needle_len - 1])) {
+                LOG("'%c' not in needle; skipping ahead!\n", haystack[j + needle_len - 1]);
+                memory = 0;
+                j += needle_len;
+                continue;
+            }
 
             LOG("Scanning right half.\n");
             Py_ssize_t i = Py_MAX(suffix, memory);
@@ -298,16 +312,33 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
     }
     else {
         LOG("needle is NOT completely periodic.\n");
+
+        period = 1 + Py_MAX(suffix, needle_len - suffix);
+        STRINGLIB_CHAR suffix_start = needle[suffix];
+
+        // Compute the distance between suffix_start and the pervious
+        // occurrence of suffix_start.
+        Py_ssize_t shift = suffix;
+        for (Py_ssize_t k = suffix - 1; k >= 0; k--) {
+            if (needle[k] == suffix_start) {
+                shift = suffix - k;
+                break;
+            }
+        }
+
         // The two halves are distinct;
         // no extra memory is required,
         // and a mismatch results in a maximal shift.
-        period = 1 + Py_MAX(suffix, needle_len - suffix);
-        STRINGLIB_CHAR suffix_start = needle[suffix];
         LOG("Using period %d.\n", period);
         LOG("Right half starts with %c\n", suffix_start);
 
         Py_ssize_t j = 0;
         while (j <= haystack_len - needle_len) {
+            if (!STRINGLIB_BLOOM(mask, haystack[j + needle_len - 1])) {
+                LOG("'%c' not in needle; skipping ahead!\n", haystack[j + needle_len - 1]);
+                j += needle_len;
+                continue;
+            }
             // use faster code looking for first char.
             Py_ssize_t find;
             find = STRINGLIB(find_char)(haystack + suffix + j,
@@ -321,12 +352,18 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
 
             LOG("Found at %d.\n", j);
 
+            if (!STRINGLIB_BLOOM(mask, haystack[j + needle_len - 1])) {
+                LOG("'%c' not in needle; skipping ahead!\n", haystack[j + needle_len - 1]);
+                j += needle_len;
+                continue;
+            }
+
             LOG("> "); LOG_STRING(haystack, haystack_len);
             LOG("\n> "); LOG("%*s", j, ""); LOG_STRING(needle, needle_len);
             LOG("\n");
 
             LOG("Checking the right half.\n");
-            Py_ssize_t i = suffix+1;
+            Py_ssize_t i = suffix + 1;
             for (; i < needle_len; i++) {
                 if (needle[i] != haystack[j + i]){
                     LOG("No match.\n");
@@ -334,7 +371,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                 }
             }
 
-            if (needle_len <= i) {
+            if (i >= needle_len) {
                 LOG("Matches. Checking the left half.\n");
                 i = suffix - 1;
                 for (i = suffix - 1; i >= 0; i--) {
@@ -350,7 +387,8 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
             }
             else {
                 LOG("Jump forward without checking left half.\n");
-                j += i - suffix + 1;
+                // Note: In common cases, "shift" wins.
+                j += Py_MAX(shift, i - suffix + 1);
             }
         }
 
@@ -365,7 +403,7 @@ STRINGLIB(_fastsearch)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                        const STRINGLIB_CHAR *haystack, Py_ssize_t haystack_len)
 {
     if (needle_len == 0) {
-        return 0;
+        return -1;
     }
     STRINGLIB_CHAR first = needle[0];
 
