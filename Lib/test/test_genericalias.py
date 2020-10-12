@@ -293,5 +293,13 @@ class BaseTest(unittest.TestCase):
         for generic_alias_property in ("__origin__", "__args__", "__parameters__"):
             self.assertIn(generic_alias_property, dir_of_gen_alias)
 
+    def test_indexing(self):
+        with self.assertRaises(TypeError):
+            list[0]
+            list[0.8]
+            list[True]
+            list[1 + 3j]
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -187,6 +187,12 @@ PyObject_GetItem(PyObject *o, PyObject *key)
         if ((PyTypeObject*)o == &PyType_Type) {
             return Py_GenericAlias(o, key);
         }
+        // To deny things like list[1], list[0.8], list[True], list[3 + 3j]
+        if (PyLong_CheckExact(key) || PyFloat_CheckExact(key) 
+            || PyBool_Check(key) || PyComplex_CheckExact(key)){
+            return type_error("generic type parameter must be a type, " 
+                              "not '%.200s'", key);
+        }
 
         if (_PyObject_LookupAttrId(o, &PyId___class_getitem__, &meth) < 0) {
             return NULL;
