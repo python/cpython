@@ -12,12 +12,12 @@ from idlelib.delegator import Delegator
 
 
 def get_lineno(text, index):
-    """Utility to get the line number of an index in a Tk text widget."""
+    """Return the line number of an index in a Tk text widget."""
     return int(float(text.index(index)))
 
 
 def get_end_linenumber(text):
-    """Utility to get the last line's number in a Tk text widget."""
+    """Return the number of the last line in a Tk text widget."""
     return get_lineno(text, 'end-1c')
 
 
