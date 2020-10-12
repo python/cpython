@@ -3417,7 +3417,7 @@ class Rot13UtilTest(unittest.TestCase):
 
 class CodecNameNormalizationTest(unittest.TestCase):
     """Test codec name normalization"""
-    def test_normalized_encoding(self):
+    def test_codecs_lookup(self):
         FOUND = (1, 2, 3, 4)
         NOT_FOUND = (None, None, None, None)
         def search_function(encoding):
@@ -3439,19 +3439,20 @@ class CodecNameNormalizationTest(unittest.TestCase):
         self.assertEqual(NOT_FOUND, codecs.lookup('BBB.8'))
         self.assertEqual(NOT_FOUND, codecs.lookup('a\xe9\u20ac-8'))
 
-
-class EncodingNormalizationTest(unittest.TestCase):
-
-    def test_normalization(self):
+    def test_encodings_normalize_encoding(self):
         # encodings.normalize_encoding() ignores non-ASCII letters.
-        out = encodings.normalize_encoding('utf\xE9\u20AC\U0010ffff-8')
-        self.assertEqual(out, 'utf_8')
         out = encodings.normalize_encoding('utf_8')
+        self.assertEqual(out, 'utf_8')
+        out = encodings.normalize_encoding('utf\xE9\u20AC\U0010ffff-8')
         self.assertEqual(out, 'utf_8')
         out = encodings.normalize_encoding('utf   8')
         self.assertEqual(out, 'utf_8')
+        # encodings.normalize_encoding() doesn't convert
+        # characters to lower case.
         out = encodings.normalize_encoding('UTF 8')
         self.assertEqual(out, 'UTF_8')
+        out = encodings.normalize_encoding('utf.8')
+        self.assertEqual(out, 'utf.8')
         out = encodings.normalize_encoding('utf...8')
         self.assertEqual(out, 'utf...8')
 
