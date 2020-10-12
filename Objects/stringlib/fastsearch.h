@@ -8,7 +8,7 @@
        https://en.wikipedia.org/wiki/Two-way_string-matching_algorithm
    Largely influenced by glibc:
        https://code.woboq.org/userspace/glibc/string/str-two-way.h.html
-       https://code.woboq.org/userspace/glibc/string/memmem.c.html 
+       https://code.woboq.org/userspace/glibc/string/memmem.c.html
 
    FAST_RSEARCH uses another algorithm, based on a mix between boyer-
    moore and horspool, with a few more bells and whistles on the top.
@@ -227,7 +227,7 @@ STRINGLIB(_critical_factorization)(const STRINGLIB_CHAR *needle, Py_ssize_t need
         >>> period
         2               */
     Py_ssize_t period1, period2, max_suf1, max_suf2;
-    
+
     // Search using both forward and inverted character-orderings
     max_suf1 = STRINGLIB(_lex_search)(needle, needle_len, 0, &period1);
     max_suf2 = STRINGLIB(_lex_search)(needle, needle_len, 1, &period2);
@@ -320,7 +320,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
             j += find;
 
             LOG("Found at %d.\n", j);
-            
+
             LOG("> "); LOG_STRING(haystack, haystack_len);
             LOG("\n> "); LOG("%*s", j, ""); LOG_STRING(needle, needle_len);
             LOG("\n");
@@ -331,7 +331,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                 if (needle[i] != haystack[j + i]){
                     LOG("No match.\n");
                     break;
-                } 
+                }
             }
 
             if (needle_len <= i) {
@@ -364,29 +364,22 @@ Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(_fastsearch)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                        const STRINGLIB_CHAR *haystack, Py_ssize_t haystack_len)
 {
-    LOG("memmem: needle="); LOG_STRING(needle, needle_len);
-    LOG(" and haystack="); LOG_STRING(haystack, haystack_len);
-    LOG("\n");
     if (needle_len == 0) {
-        LOG("Easy out: empty.\n");
         return 0;
     }
     STRINGLIB_CHAR first = needle[0];
 
     Py_ssize_t index = STRINGLIB(find_char)(haystack, haystack_len, first);
     if (index == -1) {
-        LOG("Easy out: empty.\n");
         return -1;
     }
 
     if (haystack_len < needle_len + index) {
-        LOG("Easy out: no room left after first found.\n");
         return -1;
     }
 
     // Do a fast compare to maybe avoid the initialization overhead
     if (memcmp(haystack+index, needle, needle_len*STRINGLIB_SIZEOF_CHAR) == 0) {
-        LOG("Easy out: Naive guess was correct.\n");
         return index;
     }
 
