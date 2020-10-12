@@ -164,8 +164,8 @@ are always available.  They are listed here in alphabetical order.
    * If it is an *integer*, the array will have that size and will be
      initialized with null bytes.
 
-   * If it is an object conforming to the *buffer* interface, a read-only buffer
-     of the object will be used to initialize the bytes array.
+   * If it is an object conforming to the :ref:`buffer interface <bufferobjects>`,
+     a read-only buffer of the object will be used to initialize the bytes array.
 
    * If it is an *iterable*, it must be an iterable of integers in the range
      ``0 <= x < 256``, which are used as the initial contents of the array.
