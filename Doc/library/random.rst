@@ -533,6 +533,7 @@ following recipe chooses floats in the range ``0.0 ≤ x < 1.0`` but
 allows denominators in the full range supported by Python floats::
 
     from random import getrandbits
+    from math import ldexp
 
     def full_random():
         ''' Uniform distribution from all possible floats
@@ -549,7 +550,7 @@ allows denominators in the full range supported by Python floats::
         while not x:
             x = getrandbits(32)
             exponent += x.bit_length() - 32
-        return mantissa * 2.0 ** exponent
+        return ldexp(mantissa, exponent)
 
 
 .. seealso::
