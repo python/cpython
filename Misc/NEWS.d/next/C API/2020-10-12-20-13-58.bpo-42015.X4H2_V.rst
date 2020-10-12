@@ -1,0 +1,5 @@
+Order of dereferencing for `PyCFunction` deallocation changed to make sure
+the object passed as ``self`` argument is only dereferenced after the last
+access to the function's associated `PyMethodDef`. The allows extension
+modules to manage the lifetime of dynamically allocated `PyModuleDef`
+instances through ``self``.
