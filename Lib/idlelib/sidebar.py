@@ -64,9 +64,7 @@ def temp_enable_text_widget(text):
 
 
 class BaseSideBar:
-    """
-    The base class for extensions which require a sidebar.
-    """
+    """A base class for sidebars using Text."""
     def __init__(self, editwin):
         self.editwin = editwin
         self.parent = editwin.text_frame
@@ -142,14 +140,11 @@ class BaseSideBar:
 
 
 class EndLineDelegator(Delegator):
-    """Generate callbacks with the current end line number after
-       insert or delete operations"""
+    """Generate callbacks with the current end line number.
+
+    The provided callback is called after every insert and delete.
+    """
     def __init__(self, changed_callback):
-        """
-        changed_callback - Callable, will be called after insert
-                           or delete operations with the current
-                           end line number.
-        """
         Delegator.__init__(self)
         self.changed_callback = changed_callback
 
