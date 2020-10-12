@@ -1,6 +1,6 @@
 """Test sidebar, coverage 93%"""
 from textwrap import dedent
-from time import sleep
+import sys
 
 from itertools import chain
 import unittest
@@ -16,7 +16,7 @@ import idlelib.pyshell
 from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
 from idlelib.run import fix_scaling
 import idlelib.sidebar
-from idlelib.sidebar import get_lineno
+from idlelib.sidebar import get_end_linenumber, get_lineno
 
 
 class Dummy_editwin:
@@ -571,6 +571,53 @@ class ShellSidebarTest(unittest.TestCase):
         self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
         self.assert_sidebar_lines_synced()
 
+    @test_coroutine
+    def test_interrupt_recall_undo_redo(self):
+        event_generate = self.shell.text.event_generate
+        # Block statements are not indented because IDLE auto-indents.
+        initial_sidebar_lines = self.get_sidebar_lines()
+
+        self.do_input(dedent('''\
+            if True:
+            print(1)
+            '''))
+        yield 0
+        self.assert_sidebar_lines_end_with(['>>>', '...', '...'])
+        with_block_sidebar_lines = self.get_sidebar_lines()
+        self.assertNotEqual(with_block_sidebar_lines, initial_sidebar_lines)
+
+        # Control-C
+        event_generate('<<interrupt-execution>>')
+        yield 0
+        self.assert_sidebar_lines_end_with(['>>>', '...', '...', '   ', '>>>'])
+
+        # Recall previous via history
+        event_generate('<<history-previous>>')
+        event_generate('<<interrupt-execution>>')
+        yield 0
+        self.assert_sidebar_lines_end_with(['>>>', '...', '   ', '>>>'])
+
+        # Recall previous via recall
+        event_generate('<Key-Up>')
+        event_generate('<Key-Up>')
+        event_generate('<Key-Return>')
+        yield 0
+
+        event_generate('<<undo>>')
+        yield 0
+        self.assert_sidebar_lines_end_with(['>>>'])
+
+        event_generate('<<redo>>')
+        yield 0
+        self.assert_sidebar_lines_end_with(['>>>', '...'])
+
+        event_generate('<Key-Return>')
+        event_generate('<Key-Return>')
+        yield 2
+        self.assert_sidebar_lines_end_with(
+            ['>>>', '...', '...', '...', '   ', '>>>']
+        )
+
     def test_font(self):
         sidebar = self.shell.shell_sidebar
 
@@ -628,6 +675,31 @@ class ShellSidebarTest(unittest.TestCase):
         self.assertNotEqual(get_sidebar_colors(), test_colors)
         sidebar.update_colors()
         self.assertEqual(get_sidebar_colors(), test_colors)
+
+    @test_coroutine
+    def test_mousewheel(self):
+        sidebar = self.shell.shell_sidebar
+        text = self.shell.text
+
+        # Press Return 50 times to get the shell screen to scroll down.
+        for _i in range(50):
+            self.do_input('\n')
+        yield 0
+        self.assertGreater(get_lineno(text, '@0,0'), 1)
+
+        last_lineno = get_end_linenumber(text)
+        self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
+
+        # Scroll up using the <MouseWheel> event with a positive delta.
+        delta = -1 if sys.platform == 'darwin' else 120
+        sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
+        yield 0
+        self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
+
+        # Scroll back down using the <Button-5> event.
+        sidebar.canvas.event_generate('<Button-5>', x=0, y=0)
+        yield 0
+        self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
 
 if __name__ == '__main__':
