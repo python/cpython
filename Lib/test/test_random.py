@@ -397,7 +397,7 @@ class TestBasicOps:
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             r = _random.Random()
             self.assertRaises(TypeError, pickle.dumps, r, proto)
-    
+
     @test.support.cpython_only
     def test_bug_42008(self):
         # _random.Random should call seed with first element of arg tuple
