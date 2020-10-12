@@ -1,0 +1,2 @@
+Throw :exc:`TypeError` when attempting to index a generic type. For example,
+``list[1]``.
