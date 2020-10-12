@@ -1136,7 +1136,7 @@ static int add_ast_fields(astmodulestate *state)
             fields = name+"_fields"
             field_qualifiers = name+"_field_qualifiers"
         else:
-            fields = field_defaults = "NULL"
+            fields = field_qualifiers = "NULL"
         self.emit('state->%s_type = make_type(state, "%s", state->AST_type, %s, %s, %d,' %
                         (name, name, fields, field_qualifiers, len(prod.fields)), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(name, prod), 2), 2, reflow=False)
