@@ -22,7 +22,7 @@ class _NodeInfo:
 
 
 class CycleError(ValueError):
-    """Subclass of ValueError raised by :meth:`TopologicalSorter.prepare` if cycles
+    """Subclass of ValueError raised by TopologicalSorter.prepare if cycles
     exist in the working graph.
 
     If multiple cycles exist, only one undefined choice among them will be reported
