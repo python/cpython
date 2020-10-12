@@ -8781,8 +8781,8 @@ _fdwalk_close_func(void *lohi, int fd)
 void
 _Py_closerange(int first, int last)
 {
-    _Py_BEGIN_SUPPRESS_IPH
     first = Py_MAX(first, 0);
+    _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_CLOSE_RANGE
     if (close_range(first, last, 0) == 0 || errno != ENOSYS) {
         /* Any errors encountered while closing file descriptors are ignored;
