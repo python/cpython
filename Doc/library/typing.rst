@@ -1461,7 +1461,7 @@ Context manager types
    .. versionadded:: 3.6.0
 
    .. deprecated:: 3.9
-      :class:`collections.contextlib.AbstractContextManager` now supports ``[]``. See :pep:`585`.
+      :class:`contextlib.AbstractContextManager` now supports ``[]``. See :pep:`585`.
 
 .. class:: AsyncContextManager(Generic[T_co])
 
@@ -1471,7 +1471,7 @@ Context manager types
    .. versionadded:: 3.6.2
 
    .. deprecated:: 3.9
-      :class:`collections.contextlib.AbstractAsyncContextManager` now supports ``[]``. See :pep:`585`.
+      :class:`contextlib.AbstractAsyncContextManager` now supports ``[]``. See :pep:`585`.
 
 Protocols
 ---------
