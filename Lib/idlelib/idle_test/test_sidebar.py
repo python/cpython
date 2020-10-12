@@ -571,6 +571,64 @@ class ShellSidebarTest(unittest.TestCase):
         self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
         self.assert_sidebar_lines_synced()
 
+    def test_font(self):
+        sidebar = self.shell.shell_sidebar
+
+        test_font = 'TkTextFont'
+
+        def mock_idleconf_GetFont(root, configType, section):
+            return test_font
+        GetFont_patcher = unittest.mock.patch.object(
+            idlelib.sidebar.idleConf, 'GetFont', mock_idleconf_GetFont)
+        GetFont_patcher.start()
+        def cleanup():
+            GetFont_patcher.stop()
+            sidebar.update_font()
+        self.addCleanup(cleanup)
+
+        def get_sidebar_font():
+            canvas = sidebar.canvas
+            texts = list(canvas.find(tk.ALL))
+            fonts = {canvas.itemcget(text, 'font') for text in texts}
+            self.assertEqual(len(fonts), 1)
+            return next(iter(fonts))
+
+        self.assertNotEqual(get_sidebar_font(), test_font)
+        sidebar.update_font()
+        self.assertEqual(get_sidebar_font(), test_font)
+
+    def test_highlight_colors(self):
+        sidebar = self.shell.shell_sidebar
+
+        test_colors = {"background": '#abcdef', "foreground": '#123456'}
+
+        orig_idleConf_GetHighlight = idlelib.sidebar.idleConf.GetHighlight
+        def mock_idleconf_GetHighlight(theme, element):
+            if element in ['linenumber', 'console']:
+                return test_colors
+            return orig_idleConf_GetHighlight(theme, element)
+        GetHighlight_patcher = unittest.mock.patch.object(
+            idlelib.sidebar.idleConf, 'GetHighlight',
+            mock_idleconf_GetHighlight)
+        GetHighlight_patcher.start()
+        def cleanup():
+            GetHighlight_patcher.stop()
+            sidebar.update_colors()
+        self.addCleanup(cleanup)
+
+        def get_sidebar_colors():
+            canvas = sidebar.canvas
+            texts = list(canvas.find(tk.ALL))
+            fgs = {canvas.itemcget(text, 'fill') for text in texts}
+            self.assertEqual(len(fgs), 1)
+            fg = next(iter(fgs))
+            bg = canvas.cget('background')
+            return {"background": bg, "foreground": fg}
+
+        self.assertNotEqual(get_sidebar_colors(), test_colors)
+        sidebar.update_colors()
+        self.assertEqual(get_sidebar_colors(), test_colors)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
