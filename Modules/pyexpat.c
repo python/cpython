@@ -1619,6 +1619,39 @@ static int init_handler_descrs(void)
     return 0;
 }
 
+static PyObject *
+add_submodule(PyObject *mod, const char *fullname)
+{
+    const char *name = strrchr(fullname, '.') + 1;
+
+    PyObject *submodule = PyModule_New(fullname);
+    if (submodule == NULL) {
+        return NULL;
+    }
+
+    PyObject *mod_name = PyUnicode_FromString(fullname);
+    if (mod_name == NULL) {
+        Py_DECREF(submodule);
+        return NULL;
+    }
+
+    if (_PyImport_SetModule(mod_name, submodule) < 0) {
+        Py_DECREF(submodule);
+        Py_DECREF(mod_name);
+        return NULL;
+    }
+
+    /* gives away the reference to the submodule */
+    if (PyModule_AddObject(mod, name, submodule) < 0) {
+        Py_DECREF(submodule);
+        Py_DECREF(mod_name);
+        return NULL;
+    }
+
+    Py_DECREF(mod_name);
+    return submodule;
+}
+
 static int
 pyexpat_exec(PyObject *mod)
 {
@@ -1681,54 +1714,13 @@ pyexpat_exec(PyObject *mod)
         goto error;
     }
 
-    PyObject *errors_module = PyModule_New(MODULE_NAME ".errors");
+    PyObject *errors_module = add_submodule(mod, MODULE_NAME ".errors");
     if (errors_module == NULL) {
         goto error;
     }
 
-    PyObject *errmod_name = PyUnicode_FromString(MODULE_NAME ".errors");
-    if (errmod_name == NULL) {
-        goto error;
-    }
-
-    if (_PyImport_SetModule(errmod_name, errors_module) < 0) {
-        Py_DECREF(errors_module);
-        Py_CLEAR(errmod_name);
-        goto error;
-    }
-    /* gives away the reference to errors_module */
-    if (PyModule_AddObject(mod, "errors", errors_module) < 0) {
-        Py_DECREF(errors_module);
-        Py_CLEAR(errmod_name);
-        goto error;
-    }
-    Py_CLEAR(errmod_name);
-
-    PyObject *model_module = PyModule_New(MODULE_NAME ".model");
+    PyObject *model_module = add_submodule(mod, MODULE_NAME ".model");
     if (model_module == NULL) {
-        goto error;
-    }
-
-    PyObject *modelmod_name = PyUnicode_FromString(MODULE_NAME ".model");
-    if (modelmod_name == NULL) {
-        goto error;
-    }
-
-    if (_PyImport_SetModule(modelmod_name, model_module) < 0) {
-        Py_DECREF(model_module);
-        Py_CLEAR(modelmod_name);
-        goto error;
-    }
-    /* gives away the reference to model_module */
-    if (PyModule_AddObject(mod, "model", model_module) < 0) {
-        Py_DECREF(model_module);
-        Py_CLEAR(modelmod_name);
-        goto error;
-    }
-    Py_CLEAR(modelmod_name);
-
-    if (errors_module == NULL || model_module == NULL) {
-        /* Don't core dump later! */
         goto error;
     }
 
