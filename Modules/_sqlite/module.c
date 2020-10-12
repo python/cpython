@@ -238,12 +238,18 @@ Enable or disable callback functions throwing errors to stderr.");
 
 static void converters_init(PyObject* dict)
 {
+    int ret;
+
     _pysqlite_converters = PyDict_New();
     if (!_pysqlite_converters) {
         return;
     }
 
-    PyDict_SetItemString(dict, "converters", _pysqlite_converters);
+    ret = PyDict_SetItemString(dict, "converters", _pysqlite_converters);
+    if (ret < 0) {
+        Py_DECREF(_pysqlite_converters);
+    }
+    return;
 }
 
 static PyMethodDef module_methods[] = {
@@ -338,6 +344,23 @@ do {                                           \
     }                                          \
 } while (0)
 
+#define ADD_STRING(dict, name, obj)                  \
+do {                                                 \
+    if (PyDict_SetItemString(dict, name, obj) < 0) { \
+        Py_DECREF(obj);                              \
+        goto error;                                  \
+    }                                                \
+} while (0)
+
+#define ADD_EXCEPTION(dict, name, exc, base)                    \
+do {                                                            \
+    exc = PyErr_NewException(MODULE_NAME "." name, base, NULL); \
+    if (!exc) {                                                 \
+        goto error;                                             \
+    }                                                           \
+    ADD_STRING(dict, name, exc);                                \
+} while (0)
+
 PyMODINIT_FUNC PyInit__sqlite3(void)
 {
     PyObject *module, *dict;
@@ -373,60 +396,20 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     }
 
     /*** Create DB-API Exception hierarchy */
-
-    if (!(pysqlite_Error = PyErr_NewException(MODULE_NAME ".Error", PyExc_Exception, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "Error", pysqlite_Error);
-
-    if (!(pysqlite_Warning = PyErr_NewException(MODULE_NAME ".Warning", PyExc_Exception, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "Warning", pysqlite_Warning);
+    ADD_EXCEPTION(dict, "Error", pysqlite_Error, PyExc_Exception);
+    ADD_EXCEPTION(dict, "Warning", pysqlite_Warning, PyExc_Exception);
 
     /* Error subclasses */
-
-    if (!(pysqlite_InterfaceError = PyErr_NewException(MODULE_NAME ".InterfaceError", pysqlite_Error, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "InterfaceError", pysqlite_InterfaceError);
-
-    if (!(pysqlite_DatabaseError = PyErr_NewException(MODULE_NAME ".DatabaseError", pysqlite_Error, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "DatabaseError", pysqlite_DatabaseError);
+    ADD_EXCEPTION(dict, "InterfaceError", pysqlite_InterfaceError, pysqlite_Error);
+    ADD_EXCEPTION(dict, "DatabaseError", pysqlite_DatabaseError, pysqlite_Error);
 
     /* pysqlite_DatabaseError subclasses */
-
-    if (!(pysqlite_InternalError = PyErr_NewException(MODULE_NAME ".InternalError", pysqlite_DatabaseError, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "InternalError", pysqlite_InternalError);
-
-    if (!(pysqlite_OperationalError = PyErr_NewException(MODULE_NAME ".OperationalError", pysqlite_DatabaseError, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "OperationalError", pysqlite_OperationalError);
-
-    if (!(pysqlite_ProgrammingError = PyErr_NewException(MODULE_NAME ".ProgrammingError", pysqlite_DatabaseError, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "ProgrammingError", pysqlite_ProgrammingError);
-
-    if (!(pysqlite_IntegrityError = PyErr_NewException(MODULE_NAME ".IntegrityError", pysqlite_DatabaseError,NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "IntegrityError", pysqlite_IntegrityError);
-
-    if (!(pysqlite_DataError = PyErr_NewException(MODULE_NAME ".DataError", pysqlite_DatabaseError, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "DataError", pysqlite_DataError);
-
-    if (!(pysqlite_NotSupportedError = PyErr_NewException(MODULE_NAME ".NotSupportedError", pysqlite_DatabaseError, NULL))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "NotSupportedError", pysqlite_NotSupportedError);
+    ADD_EXCEPTION(dict, "InternalError", pysqlite_InternalError, pysqlite_DatabaseError);
+    ADD_EXCEPTION(dict, "OperationalError", pysqlite_OperationalError, pysqlite_DatabaseError);
+    ADD_EXCEPTION(dict, "ProgrammingError", pysqlite_ProgrammingError, pysqlite_DatabaseError);
+    ADD_EXCEPTION(dict, "IntegrityError", pysqlite_IntegrityError, pysqlite_DatabaseError);
+    ADD_EXCEPTION(dict, "DataError", pysqlite_DataError, pysqlite_DatabaseError);
+    ADD_EXCEPTION(dict, "NotSupportedError", pysqlite_NotSupportedError, pysqlite_DatabaseError);
 
     /* In Python 2.x, setting Connection.text_factory to
        OptimizedUnicode caused Unicode objects to be returned for
@@ -434,7 +417,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
        Now OptimizedUnicode is an alias for str, so it has no
        effect. */
     Py_INCREF((PyObject*)&PyUnicode_Type);
-    PyDict_SetItemString(dict, "OptimizedUnicode", (PyObject*)&PyUnicode_Type);
+    ADD_STRING(dict, "OptimizedUnicode", (PyObject*)&PyUnicode_Type);
 
     /* Set integer constants */
     for (i = 0; _int_constants[i].constant_name != NULL; i++) {
@@ -442,24 +425,23 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         if (!tmp_obj) {
             goto error;
         }
-        PyDict_SetItemString(dict, _int_constants[i].constant_name, tmp_obj);
-        Py_DECREF(tmp_obj);
+        ADD_STRING(dict, _int_constants[i].constant_name, tmp_obj);
     }
 
     if (!(tmp_obj = PyUnicode_FromString(PYSQLITE_VERSION))) {
         goto error;
     }
-    PyDict_SetItemString(dict, "version", tmp_obj);
-    Py_DECREF(tmp_obj);
+    ADD_STRING(dict, "version", tmp_obj);
 
     if (!(tmp_obj = PyUnicode_FromString(sqlite3_libversion()))) {
         goto error;
     }
-    PyDict_SetItemString(dict, "sqlite_version", tmp_obj);
-    Py_DECREF(tmp_obj);
+    ADD_STRING(dict, "sqlite_version", tmp_obj);
 
     /* initialize microprotocols layer */
-    pysqlite_microprotocols_init(dict);
+    if (pysqlite_microprotocols_init(dict) < 0) {
+        goto error;
+    }
 
     /* initialize the default converters */
     converters_init(dict);
