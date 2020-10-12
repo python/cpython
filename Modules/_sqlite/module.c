@@ -344,10 +344,10 @@ do {                                           \
     }                                          \
 } while (0)
 
-#define ADD_STRING(dict, name, obj)                  \
+#define ADD_STRING(dict, key, val)                   \
 do {                                                 \
-    if (PyDict_SetItemString(dict, name, obj) < 0) { \
-        Py_DECREF(obj);                              \
+    if (PyDict_SetItemString(dict, key, val) < 0) {  \
+        Py_DECREF(val);                              \
         goto error;                                  \
     }                                                \
 } while (0)
