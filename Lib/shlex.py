@@ -316,7 +316,11 @@ def split(s, comments=False, posix=True):
     lex.whitespace_split = True
     if not comments:
         lex.commenters = ''
-    return list(lex)
+
+    if isinstance(s, bytes):
+        return [i.encode("ascii") for i in lex]
+    else:
+        return list(lex)
 
 
 def join(split_command):

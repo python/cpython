@@ -171,9 +171,9 @@ class ShlexTest(unittest.TestCase):
         """Test data splitting with posix parser"""
         self.splitTest(self.posix_data, comments=True)
 
-    def splitBytesTest(self):
+    def testSplitBytes(self):
         """Test byte objects splitting"""
-        self.assertEqual(shlex.split(b"split words"), [b"hello", b"world"])
+        self.assertEqual(shlex.split(b"split words"), [b"split", b"words"])
 
     def testCompat(self):
         """Test compatibility interface"""
