@@ -8782,6 +8782,7 @@ void
 _Py_closerange(int first, int last)
 {
     first = Py_MAX(first, 0);
+    _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_CLOSE_RANGE
     if (close_range(first, last, 0) == 0 || errno != ENOSYS) {
         /* Any errors encountered while closing file descriptors are ignored;
@@ -8812,6 +8813,7 @@ _Py_closerange(int first, int last)
         }
     }
 #endif /* USE_FDWALK */
+    _Py_END_SUPPRESS_IPH
 }
 
 /*[clinic input]
@@ -8829,9 +8831,7 @@ os_closerange_impl(PyObject *module, int fd_low, int fd_high)
 /*[clinic end generated code: output=0ce5c20fcda681c2 input=5855a3d053ebd4ec]*/
 {
     Py_BEGIN_ALLOW_THREADS
-    _Py_BEGIN_SUPPRESS_IPH
     _Py_closerange(fd_low, fd_high - 1);
-    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     Py_RETURN_NONE;
 }
