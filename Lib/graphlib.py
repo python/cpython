@@ -150,7 +150,7 @@ class TopologicalSorter:
         """Marks a set of nodes returned by "get_ready" as processed.
 
         This method unblocks any successor of each node in *nodes* for being returned
-        in the future by a call to "get_ready"
+        in the future by a call to "get_ready".
 
         Raises :exec:`ValueError` if any node in *nodes* has already been marked as
         processed by a previous call to this method, if a node was not added to the
