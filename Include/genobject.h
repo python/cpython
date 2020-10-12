@@ -45,15 +45,6 @@ PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
 PyObject *_PyGen_yf(PyGenObject *);
 PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
 
-/* Sends the value into the generator or the coroutine. Returns:
-   - PYGEN_RETURN (0) if generator has returned.
-     'result' parameter is filled with return value
-   - PYGEN_ERROR (-1) if exception was raised.
-     'result' parameter is NULL
-   - PYGEN_NEXT (1) if generator has yielded.
-     'result' parameter is filled with yielded value. */
-PyAPI_FUNC(PySendResult) PyGen_Send(PyGenObject *, PyObject *, PyObject **);
-
 #ifndef Py_LIMITED_API
 typedef struct {
     _PyGenObject_HEAD(cr)

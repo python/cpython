@@ -2669,31 +2669,6 @@ PyIter_Next(PyObject *iter)
     return result;
 }
 
-PySendResult
-PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
-{
-    _Py_IDENTIFIER(send);
-    assert(result != NULL);
-
-    if (PyGen_CheckExact(iter) || PyCoro_CheckExact(iter)) {
-        return PyGen_Send((PyGenObject *)iter, arg, result);
-    }
-
-    if (arg == Py_None && PyIter_Check(iter)) {
-        *result = Py_TYPE(iter)->tp_iternext(iter);
-    }
-    else {
-        *result = _PyObject_CallMethodIdOneArg(iter, &PyId_send, arg);
-    }
-    if (*result != NULL) {
-        return PYGEN_NEXT;
-    }
-    if (_PyGen_FetchStopIterationValue(result) == 0) {
-        return PYGEN_RETURN;
-    }
-    return PYGEN_ERROR;
-}
-
 /*
  * Flatten a sequence of bytes() objects into a C array of
  * NULL terminated string pointers with a NULL char* terminating the array.
