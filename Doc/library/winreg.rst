@@ -443,7 +443,7 @@ This module offers the following functions:
    :const:`REG_SZ`, meaning only strings are supported.  Use the :func:`SetValueEx`
    function for support for other data types.
 
-   *value* is a string that specifies the new value.
+   *value* is a string or integer that specifies the new value.
 
    If the key specified by the *sub_key* parameter does not exist, the SetValue
    function creates it.
@@ -473,7 +473,7 @@ This module offers the following functions:
    *type* is an integer that specifies the type of the data. See
    :ref:`Value Types <value-types>` for the available types.
 
-   *value* is a string that specifies the new value.
+   *value* is a string or integer that specifies the new value.
 
    This method can also set additional value and type information for the specified
    key.  The key identified by the key parameter must have been opened with
