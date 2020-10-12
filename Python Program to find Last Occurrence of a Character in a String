@@ -1,0 +1,13 @@
+# 
+string = input("Please enter your own String : ")
+char = input("Please enter your own Character : ")
+
+flag = -1
+for i in range(len(string)):
+    if(string[i] == char):
+        flag = i
+
+if(flag == -1):
+    print("Sorry! We haven't found the Search Character in this string ")
+else:
+    print("The Last Occurrence of ", char, " is Found at Position " , flag + 1)
