@@ -526,7 +526,7 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (self == NULL)
         return NULL;
 
-    if (PyTuple_Size(args) == 1) {
+    if (PyTuple_GET_SIZE(args) == 1) {
         PyObject *tmp = random_seed(self, PyTuple_GET_ITEM(args, 0));
         if (tmp == NULL) {
             Py_DECREF(self);
