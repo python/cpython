@@ -164,9 +164,9 @@ meth_dealloc(PyCFunctionObject *m)
     if (m->m_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*) m);
     }
+    Py_XDECREF(PyCFunction_GET_CLASS(m));
     Py_XDECREF(m->m_self);
     Py_XDECREF(m->m_module);
-    Py_XDECREF(PyCFunction_GET_CLASS(m));
     PyObject_GC_Del(m);
 }
 
