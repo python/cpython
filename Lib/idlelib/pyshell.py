@@ -970,6 +970,7 @@ class PyShell(OutputWindow):
         # During __init__, update_colors() is called before the sidebar is created.
         if self.shell_sidebar is not None:
             self.shell_sidebar.update_colors()
+
     def replace_event(self, event):
         replace.replace(self.text, insert_tags="stdin")
         return "break"

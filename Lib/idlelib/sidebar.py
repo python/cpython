@@ -494,6 +494,30 @@ class ShellSidebar:
         # the line numbers.
         self.canvas.bind('<MouseWheel>', self.redirect_mousewheel_event)
 
+        # Redirect mouse button events to the main editor text widget,
+        # except for the left mouse button (1).
+        #
+        # Note: X-11 sends Button-4 and Button-5 events for the scroll wheel.
+        def bind_mouse_event(event_name, target_event_name):
+            handler = functools.partial(self.redirect_mousebutton_event,
+                                        event_name=target_event_name)
+            self.canvas.bind(event_name, handler)
+
+        for button in [2, 3, 4, 5]:
+            for event_name in (f'<Button-{button}>',
+                               f'<ButtonRelease-{button}>',
+                               f'<B{button}-Motion>',
+                               ):
+                bind_mouse_event(event_name, target_event_name=event_name)
+
+            # Convert double- and triple-click events to normal click events,
+            # since event_generate() doesn't allow generating such events.
+            for event_name in (f'<Double-Button-{button}>',
+                               f'<Triple-Button-{button}>',
+                               ):
+                bind_mouse_event(event_name,
+                                 target_event_name=f'<Button-{button}>')
+
 
 def _linenumbers_drag_scrolling(parent):  # htest #
     from idlelib.idle_test.test_sidebar import Dummy_editwin
