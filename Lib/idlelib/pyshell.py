@@ -940,7 +940,6 @@ class PyShell(OutputWindow):
         self.pollinterval = 50  # millisec
 
         self.shell_sidebar = self.ShellSidebar(self)
-        self.shell_sidebar.show_sidebar()
 
         # Insert UserInputTaggingDelegator at the top of the percolator,
         # but make calls to text.insert() skip it.  This causes only insert

@@ -391,21 +391,9 @@ class ShellSidebar:
 
         self.update_font()
         self.update_colors()
-
-    def show_sidebar(self):
-        if not self.is_shown:
-            self.update_sidebar()
-            # _padx, pady = get_widget_padding(self.text)
-            self.canvas.grid(row=1, column=0, sticky=tk.NSEW,
-                             # padx=2, pady=pady)
-                             padx=2, pady=0)
-            self.is_shown = True
-
-    def hide_sidebar(self):
-        if self.is_shown:
-            self.canvas.grid_forget()
-            self.canvas.delete(tk.ALL)
-            self.is_shown = False
+        self.update_sidebar()
+        self.canvas.grid(row=1, column=0, sticky=tk.NSEW, padx=2, pady=0)
+        self.is_shown = True
 
     def change_callback(self):
         if self.is_shown:
