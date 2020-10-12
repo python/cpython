@@ -18,6 +18,8 @@ PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
     size_t *error_pos);
 #endif
 
+PyAPI_FUNC(void) _Py_closerange(int first, int last);
+
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_FILEUTILS_H
 #  include  "cpython/fileutils.h"
