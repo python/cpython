@@ -1,4 +1,4 @@
-"""Test sidebar, coverage 96%"""
+"""Test sidebar, coverage 93%"""
 from textwrap import dedent
 import sys
 
