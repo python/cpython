@@ -32,11 +32,11 @@ VER_SUFFIX = _get_suffix(VER_FIELD4)
 VER_FIELD3 = VER_MICRO << 8 | VER_FIELD4
 VER_DOT = "{}.{}".format(VER_MAJOR, VER_MINOR)
 
-PYTHON_DLL_NAME = "python{}{}.dll".format(VER_MAJOR, VER_MINOR)
+PYTHON_DLL_NAME = "python{}_{}.dll".format(VER_MAJOR, VER_MINOR)
 PYTHON_STABLE_DLL_NAME = "python{}.dll".format(VER_MAJOR)
-PYTHON_ZIP_NAME = "python{}{}.zip".format(VER_MAJOR, VER_MINOR)
-PYTHON_PTH_NAME = "python{}{}._pth".format(VER_MAJOR, VER_MINOR)
+PYTHON_ZIP_NAME = "python{}_{}.zip".format(VER_MAJOR, VER_MINOR)
+PYTHON_PTH_NAME = "python{}_{}._pth".format(VER_MAJOR, VER_MINOR)
 
-PYTHON_CHM_NAME = "python{}{}{}{}.chm".format(
+PYTHON_CHM_NAME = "python{}_{}{}{}.chm".format(
     VER_MAJOR, VER_MINOR, VER_MICRO, VER_SUFFIX
 )
