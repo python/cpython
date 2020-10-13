@@ -22,6 +22,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_fileutils.h"
 #ifdef MS_WINDOWS
    /* include <windows.h> early to avoid conflict with pycore_condvar.h:
 
