@@ -50,6 +50,8 @@ something like this::
 
    The enum value used to represent different results of :c:func:`PyIter_Send`.
 
+   .. versionadded:: 3.10
+
 
 .. c:function:: PySendResult PyIter_Send(PyObject *iter, PyObject *arg, PyObject **presult)
 
@@ -58,3 +60,5 @@ something like this::
    - ``PYGEN_RETURN`` if iterator returns. Return value is returned via *presult*.
    - ``PYGEN_NEXT`` if iterator yields. Yielded value is returned via *presult*.
    - ``PYGEN_ERROR`` if iterator has raised and exception. *presult* is set to ``NULL``.
+
+   .. versionadded:: 3.10
