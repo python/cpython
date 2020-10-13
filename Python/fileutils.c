@@ -2119,11 +2119,11 @@ done:
  * 2b. If fdwalk(3) isn't available, just do a plain close(2) loop.
  */
 #ifdef __FreeBSD__
-#define USE_CLOSEFROM
+#  define USE_CLOSEFROM
 #endif /* __FreeBSD__ */
 
 #ifdef HAVE_FDWALK
-#define USE_FDWALK
+#  define USE_FDWALK
 #endif /* HAVE_FDWALK */
 
 #ifdef USE_FDWALK
