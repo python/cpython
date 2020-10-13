@@ -1478,7 +1478,7 @@ Context manager types
    .. versionadded:: 3.6.0
 
    .. deprecated:: 3.9
-      :class:`collections.contextlib.AbstractContextManager` now supports ``[]``. See :pep:`585`.
+      :class:`contextlib.AbstractContextManager` now supports ``[]``. See :pep:`585`.
 
 .. class:: AsyncContextManager(Generic[T_co])
 
@@ -1488,7 +1488,7 @@ Context manager types
    .. versionadded:: 3.6.2
 
    .. deprecated:: 3.9
-      :class:`collections.contextlib.AbstractAsyncContextManager` now supports ``[]``. See :pep:`585`.
+      :class:`contextlib.AbstractAsyncContextManager` now supports ``[]``. See :pep:`585`.
 
 Protocols
 ---------
@@ -1723,7 +1723,7 @@ Constant
 
       If ``from __future__ import annotations`` is used in Python 3.7 or later,
       annotations are not evaluated at function definition time.
-      Instead, the are stored as strings in ``__annotations__``,
+      Instead, they are stored as strings in ``__annotations__``,
       This makes it unnecessary to use quotes around the annotation.
       (see :pep:`563`).
 

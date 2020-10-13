@@ -215,7 +215,7 @@ PyFloat_FromString(PyObject *v)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-            "float() argument must be a string or a number, not '%.200s'",
+            "float() argument must be a string or a real number, not '%.200s'",
             Py_TYPE(v)->tp_name);
         return NULL;
     }
