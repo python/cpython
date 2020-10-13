@@ -526,16 +526,10 @@ are not possible selections.  For example, ``0.05954861408025609``
 isn't an integer multiple of 2⁻⁵³.
 
 The following recipe takes a different approach.  All floats in the
-interval are possible selections.  Conceptually it works by choosing
-from evenly spaced multiples of 2⁻¹⁰⁷⁴ and then rounding down to the
-nearest representable float.
-
-For efficiency, the actual mechanics involve calling
-:func:`~math.ldexp` to construct a representable float.  The mantissa
-comes from a uniform distribution of integers in the range *2⁵² ≤
-mantissa < 2⁵³*.  The exponent comes from a geometric distribution
-where exponents smaller than *-53* occur half as often as the next
-larger exponent.
+interval are possible selections.  The mantissa comes from a uniform
+distribution of integers in the range *2⁵² ≤ mantissa < 2⁵³*.  The
+exponent comes from a geometric distribution where exponents smaller
+than *-53* occur half as often as the next larger exponent.
 
 ::
 
@@ -560,6 +554,12 @@ All of the real valued distributions will use the new method::
     0.05954861408025609
     >>> fr.expovariate(0.25)
     8.87925541791544
+
+Conceptually, the recipe is equivalent to choosing from all multiples of
+2⁻¹⁰⁷⁴ in the range *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced
+but most have to be rounded down to the nearest representable Python
+float.  (The value 2⁻¹⁰⁷⁴ is the smallest possible unnormalized float
+and is equal to ``math.ulp(0.0)``.)
 
 
 .. seealso::
