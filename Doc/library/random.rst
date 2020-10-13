@@ -57,7 +57,7 @@ from sources provided by the operating system.
 
 
    `Complementary-Multiply-with-Carry recipe
-   <https://github.com/ActiveState/code/tree/master/recipes/Python/576707_Long_period_random_number/recipe-576707.py>`_ for a compatible alternative
+   <https://code.activestate.com/recipes/576707/>`_ for a compatible alternative
    random number generator with a long period and comparatively simple update
    operations.
 
@@ -180,8 +180,8 @@ Functions for sequences
 
    The *weights* or *cum_weights* can use any numeric type that interoperates
    with the :class:`float` values returned by :func:`random` (that includes
-   integers, floats, and fractions but excludes decimals).  Behavior is
-   undefined if any weight is negative.  A :exc:`ValueError` is raised if all
+   integers, floats, and fractions but excludes decimals).  Weights are assumed
+   to be non-negative and finite.  A :exc:`ValueError` is raised if all
    weights are zero.
 
    For a given seed, the :func:`choices` function with equal weighting

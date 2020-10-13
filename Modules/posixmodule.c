@@ -1634,18 +1634,6 @@ path_error2(path_t *path, path_t *path2)
 
 /* POSIX generic methods */
 
-static int
-fildes_converter(PyObject *o, void *p)
-{
-    int fd;
-    int *pointer = (int *)p;
-    fd = PyObject_AsFileDescriptor(o);
-    if (fd < 0)
-        return 0;
-    *pointer = fd;
-    return 1;
-}
-
 static PyObject *
 posix_fildes_fd(int fd, int (*func)(int))
 {
@@ -2642,10 +2630,6 @@ class dir_fd_converter(CConverter):
         else:
             self.converter = 'dir_fd_converter'
 
-class fildes_converter(CConverter):
-    type = 'int'
-    converter = 'fildes_converter'
-
 class uid_t_converter(CConverter):
     type = "uid_t"
     converter = '_Py_Uid_Converter'
@@ -2708,7 +2692,7 @@ class sysconf_confname_converter(path_confname_converter):
     converter="conv_sysconf_confname"
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=f1c8ae8d744f6c8b]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=3338733161aa7879]*/
 
 /*[clinic input]
 
@@ -8756,8 +8740,26 @@ os_close_impl(PyObject *module, int fd)
     Py_RETURN_NONE;
 }
 
+/* Our selection logic for which function to use is as follows:
+ * 1. If close_range(2) is available, always prefer that; it's better for
+ *    contiguous ranges like this than fdwalk(3) which entails iterating over
+ *    the entire fd space and simply doing nothing for those outside the range.
+ * 2. If closefrom(2) is available, we'll attempt to use that next if we're
+ *    closing up to sysconf(_SC_OPEN_MAX).
+ * 2a. Fallback to fdwalk(3) if we're not closing up to sysconf(_SC_OPEN_MAX),
+ *    as that will be more performant if the range happens to have any chunk of
+ *    non-opened fd in the middle.
+ * 2b. If fdwalk(3) isn't available, just do a plain close(2) loop.
+ */
+#ifdef __FreeBSD__
+#define USE_CLOSEFROM
+#endif /* __FreeBSD__ */
 
 #ifdef HAVE_FDWALK
+#define USE_FDWALK
+#endif /* HAVE_FDWALK */
+
+#ifdef USE_FDWALK
 static int
 _fdwalk_close_func(void *lohi, int fd)
 {
@@ -8773,7 +8775,46 @@ _fdwalk_close_func(void *lohi, int fd)
     }
     return 0;
 }
-#endif /* HAVE_FDWALK */
+#endif /* USE_FDWALK */
+
+/* Closes all file descriptors in [first, last], ignoring errors. */
+void
+_Py_closerange(int first, int last)
+{
+    first = Py_MAX(first, 0);
+    _Py_BEGIN_SUPPRESS_IPH
+#ifdef HAVE_CLOSE_RANGE
+    if (close_range(first, last, 0) == 0 || errno != ENOSYS) {
+        /* Any errors encountered while closing file descriptors are ignored;
+         * ENOSYS means no kernel support, though,
+         * so we'll fallback to the other methods. */
+    }
+    else
+#endif /* HAVE_CLOSE_RANGE */
+#ifdef USE_CLOSEFROM
+    if (last >= sysconf(_SC_OPEN_MAX)) {
+        /* Any errors encountered while closing file descriptors are ignored */
+        closefrom(first);
+    }
+    else
+#endif /* USE_CLOSEFROM */
+#ifdef USE_FDWALK
+    {
+        int lohi[2];
+        lohi[0] = first;
+        lohi[1] = last + 1;
+        fdwalk(_fdwalk_close_func, lohi);
+    }
+#else
+    {
+        for (int i = first; i <= last; i++) {
+            /* Ignore errors */
+            (void)close(i);
+        }
+    }
+#endif /* USE_FDWALK */
+    _Py_END_SUPPRESS_IPH
+}
 
 /*[clinic input]
 os.closerange
@@ -8789,32 +8830,8 @@ static PyObject *
 os_closerange_impl(PyObject *module, int fd_low, int fd_high)
 /*[clinic end generated code: output=0ce5c20fcda681c2 input=5855a3d053ebd4ec]*/
 {
-#ifdef HAVE_FDWALK
-    int lohi[2];
-#endif
     Py_BEGIN_ALLOW_THREADS
-    _Py_BEGIN_SUPPRESS_IPH
-#ifdef HAVE_FDWALK
-    lohi[0] = Py_MAX(fd_low, 0);
-    lohi[1] = fd_high;
-    fdwalk(_fdwalk_close_func, lohi);
-#else
-    fd_low = Py_MAX(fd_low, 0);
-#ifdef __FreeBSD__
-    if (fd_high >= sysconf(_SC_OPEN_MAX)) {
-        /* Any errors encountered while closing file descriptors are ignored */
-        closefrom(fd_low);
-    }
-    else
-#endif
-    {
-        for (int i = fd_low; i < fd_high; i++) {
-            /* Ignore errors */
-            (void)close(i);
-        }
-    }
-#endif
-    _Py_END_SUPPRESS_IPH
+    _Py_closerange(fd_low, fd_high - 1);
     Py_END_ALLOW_THREADS
     Py_RETURN_NONE;
 }

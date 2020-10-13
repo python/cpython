@@ -55,6 +55,30 @@ bool_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return PyBool_FromLong(ok);
 }
 
+static PyObject *
+bool_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
+{
+    long ok = 0;
+    if (!_PyArg_NoKwnames("bool", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("bool", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    assert(PyType_Check(type));
+    if (nargs) {
+        ok = PyObject_IsTrue(args[0]);
+        if (ok < 0) {
+            return NULL;
+        }
+    }
+    return PyBool_FromLong(ok);
+}
+
 /* Arithmetic operations redefined to return bool if both args are bool. */
 
 static PyObject *
@@ -170,6 +194,7 @@ PyTypeObject PyBool_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     bool_new,                                   /* tp_new */
+    .tp_vectorcall = bool_vectorcall,
 };
 
 /* The objects representing bool values False and True */

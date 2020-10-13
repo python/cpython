@@ -6,6 +6,7 @@ import inspect
 import keyword
 import builtins
 import functools
+import abc
 import _thread
 from types import GenericAlias
 
@@ -398,8 +399,10 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
 
     ns = {}
     exec(txt, globals, ns)
-    return ns['__create_fn__'](**locals)
-
+    func = ns['__create_fn__'](**locals)
+    for arg, annotation in func.__annotations__.copy().items():
+        func.__annotations__[arg] = locals[annotation]
+    return func
 
 def _field_assign(frozen, name, value, self_name):
     # If we're a frozen class, then assign to our fields in __init__
@@ -649,6 +652,11 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # correct global and local namespaces.  However that would involve
     # a eval() penalty for every single field of every dataclass
     # that's defined.  It was judged not worth it.
+
+    # Strip away the extra quotes as a result of double-stringifying when the
+    # 'annotations' feature became default.
+    if annotation.startswith(("'", '"')) and annotation.endswith(("'", '"')):
+        annotation = annotation[1:-1]
 
     match = _MODULE_IDENTIFIER_RE.match(annotation)
     if match:
@@ -990,7 +998,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
         cls.__doc__ = (cls.__name__ +
-                       str(inspect.signature(cls)).replace(' -> None', ''))
+                       str(inspect.signature(cls)).replace(' -> NoneType', ''))
+
+    abc.update_abstractmethods(cls)
 
     return cls
 

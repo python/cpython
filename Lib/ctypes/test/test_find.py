@@ -1,4 +1,5 @@
 import unittest
+import unittest.mock
 import os.path
 import sys
 import test.support
@@ -73,7 +74,7 @@ class Test_OpenGL_libs(unittest.TestCase):
 
 @unittest.skipUnless(sys.platform.startswith('linux'),
                      'Test only valid for Linux')
-class LibPathFindTest(unittest.TestCase):
+class FindLibraryLinux(unittest.TestCase):
     def test_find_on_libpath(self):
         import subprocess
         import tempfile
@@ -111,6 +112,15 @@ class LibPathFindTest(unittest.TestCase):
                 # now check that the .so can be found (since in
                 # LD_LIBRARY_PATH)
                 self.assertEqual(find_library(libname), 'lib%s.so' % libname)
+
+    def test_find_library_with_gcc(self):
+        with unittest.mock.patch("ctypes.util._findSoname_ldconfig", lambda *args: None):
+            self.assertNotEqual(find_library('c'), None)
+
+    def test_find_library_with_ld(self):
+        with unittest.mock.patch("ctypes.util._findSoname_ldconfig", lambda *args: None), \
+             unittest.mock.patch("ctypes.util._findLib_gcc", lambda *args: None):
+            self.assertNotEqual(find_library('c'), None)
 
 
 if __name__ == "__main__":

@@ -842,7 +842,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 class PyShell(OutputWindow):
     from idlelib.squeezer import Squeezer
 
-    shell_title = "Python " + python_version() + " Shell"
+    shell_title = "IDLE Shell " + python_version()
 
     # Override classes
     ColorDelegator = ModifiedColorDelegator
