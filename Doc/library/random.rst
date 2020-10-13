@@ -571,7 +571,7 @@ than *-53* occur half as often as the next larger exponent.
                 exponent += x.bit_length() - 32
             return ldexp(mantissa, exponent)
 
-All of the :ref:`real valued distributions <real-valued-distributions>`
+All :ref:`real valued distributions <real-valued-distributions>`
 in the class will use the new method::
 
     >>> fr = FullRandom()
