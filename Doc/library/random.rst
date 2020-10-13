@@ -519,38 +519,47 @@ Simulation of arrival times and service deliveries for a multiserver queue::
 Recipes
 -------
 
-The default :func:`.random` returns one of 2⁵³ evenly spaced floats in
-the range ``0.0 ≤ x < 1.0``.  Each possible selection is binary fraction
-with an integer numerator in the range ``0 ≤ X < 2⁵³`` and with a
-denominator of 2⁵³. A number like ``0.05954861408025609`` is not a
-possible selection because its binary fraction, ``4290929858916333 ÷ 2⁵⁶``
-has a denominator that is greater than 2⁵³.
+The default :func:`.random` returns multiples of 2⁻⁵³ in the range
+*0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and exactly
+representable as Python floats.  However, many floats in that interval
+are not possible selections.  For example, ``0.05954861408025609``
+isn't an integer multiple of 2⁻⁵³.
 
-For some applications, it may be desirable to have an alternative
-implementation of :func:`.random` that selects from a much larger
-population that includes binary fractions with larger denominators. The
-following recipe chooses floats in the range ``0.0 ≤ x < 1.0`` but
-allows denominators in the full range supported by Python floats::
+The following recipe takes a different approach.  All floats in the
+interval are possible selections.  Conceptually it works by choosing
+from evenly spaced multiples of 2⁻¹⁰⁷⁴ and then rounding down to the
+nearest representable float.
 
-    from random import getrandbits
+For efficiency, the actual mechanics involve calling
+:func:`~math.ldexp` to construct a representable float.  The mantissa
+comes from a uniform distribution of integers in the range *2⁵² ≤
+mantissa < 2⁵³*.  The exponent comes from a geometric distribution
+where exponents smaller than *-53* occur half as often as the next
+larger exponent.
+
+::
+
+    from random import Random
     from math import ldexp
 
-    def full_random():
-        ''' Uniform distribution from all possible floats
-            in the interval 0.0 <= X < 1.0.
+    class FullRandom(Random):
 
-        '''
-        # Choose a significand uniformly from:  2**52 <= mantissa < 2**53.
-        # Then choose a binade from a geometric distribution where smaller
-        # binade exponents occur half as often as the next larger exponent.
+        def random(self):
+            mantissa = 0x10_0000_0000_0000 | self.getrandbits(52)
+            exponent = -53
+            x = 0
+            while not x:
+                x = self.getrandbits(32)
+                exponent += x.bit_length() - 32
+            return ldexp(mantissa, exponent)
 
-        mantissa = 0x10_0000_0000_0000 | getrandbits(52)
-        exponent = -53
-        x = 0
-        while not x:
-            x = getrandbits(32)
-            exponent += x.bit_length() - 32
-        return ldexp(mantissa, exponent)
+All of the real valued distributions will use the new method::
+
+    >>> fr = FullRandom()
+    >>> fr.random()
+    0.05954861408025609
+    >>> fr.expovariate(0.25)
+    8.87925541791544
 
 
 .. seealso::
