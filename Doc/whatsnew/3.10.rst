@@ -188,7 +188,7 @@ support is provided by the underlying ncurses library.
 
 encodings
 ---------
-:func:`encodings.normalize_encoding` now ignores non-ASCII letters.
+:func:`encodings.normalize_encoding` now ignores non-ASCII characters.
 (Contributed by Hai Shi in :issue:`39337`.)
 
 glob

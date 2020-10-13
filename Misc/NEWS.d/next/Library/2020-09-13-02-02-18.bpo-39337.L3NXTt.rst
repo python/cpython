@@ -1,1 +1,1 @@
-:func:`encodings.normalize_encoding` now ignores non-ASCII letters.
+:func:`encodings.normalize_encoding` now ignores non-ASCII characters.

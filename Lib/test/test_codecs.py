@@ -3440,7 +3440,7 @@ class CodecNameNormalizationTest(unittest.TestCase):
         self.assertEqual(NOT_FOUND, codecs.lookup('a\xe9\u20ac-8'))
 
     def test_encodings_normalize_encoding(self):
-        # encodings.normalize_encoding() ignores non-ASCII letters.
+        # encodings.normalize_encoding() ignores non-ASCII characters.
         normalize = encodings.normalize_encoding
         self.assertEqual(normalize('utf_8'), 'utf_8')
         self.assertEqual(normalize('utf\xE9\u20AC\U0010ffff-8'), 'utf_8')
