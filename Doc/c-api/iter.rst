@@ -52,6 +52,7 @@ something like this::
 
    .. versionadded:: 3.10
 
+
 .. c:function:: PySendResult PyIter_Send(PyObject *iter, PyObject *arg, PyObject **presult)
 
    Sends the *arg* value into the iterator *iter*. Returns:
