@@ -48,6 +48,8 @@ PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
     PyObject **decimal_point,
     PyObject **thousands_sep);
 
+PyAPI_FUNC(void) _Py_closerange(int first, int last);
+
 #ifdef __cplusplus
 }
 #endif
