@@ -580,11 +580,11 @@ in the class will use the new method::
     >>> fr.expovariate(0.25)
     8.87925541791544
 
-Conceptually, the recipe is equivalent to choosing from all multiples of
-2⁻¹⁰⁷⁴ in the range *0.0 ≤ x < 1.0*.  All such numbers are evenly
-spaced, but most have to be rounded down to the nearest representable
-Python float.  (The value 2⁻¹⁰⁷⁴ is the smallest positive unnormalized
-float and is equal to ``math.ulp(0.0)``.)
+Conceptually, the recipe chooses from the multiples of 2⁻¹⁰⁷⁴ in the
+range *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced, but most
+have to be rounded down to the nearest representable Python float.  (The
+value 2⁻¹⁰⁷⁴ is the smallest positive unnormalized float and is equal to
+``math.ulp(0.0)``.)
 
 
 .. seealso::
