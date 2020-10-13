@@ -1,4 +1,5 @@
-"""The io module provides the Python interfaces to stream handling. The
+"""
+The io module provides the Python interfaces to stream handling. The
 builtin open function is defined in this module.
 
 At the top of the I/O hierarchy is the abstract base class IOBase. It

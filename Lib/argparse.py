@@ -1,9 +1,9 @@
-# Author: Steven J. Bethard <steven.bethard@gmail.com>.
-# New maintainer as of 29 August 2019:  Raymond Hettinger <raymond.hettinger@gmail.com>
+# 作者: Steven J. Bethard <steven.bethard@gmail.com>.
+# 新维护者（2019年8月29日起）:  Raymond Hettinger <raymond.hettinger@gmail.com>
 
-"""Command-line parsing library
+"""命令行解析库
 
-This module is an optparse-inspired command-line parsing library that:
+该模块是一个受optparser启发的命令行解析库:
 
     - handles both optional and positional arguments
     - produces highly informative usage messages
