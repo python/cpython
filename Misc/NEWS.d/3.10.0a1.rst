@@ -133,16 +133,6 @@ Port the :mod:`_lsprof` extension module to multi-phase initialization
 
 ..
 
-.. bpo: 41756
-.. date: 2020-09-12-12-55-45
-.. nonce: 1h0tbV
-.. section: Core and Builtins
-
-Add PyGen_Send function to allow sending value into generator/coroutine
-without raising StopIteration exception to signal return
-
-..
-
 .. bpo: 1635741
 .. date: 2020-09-08-21-58-47
 .. nonce: vdjSLH

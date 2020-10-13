@@ -2669,7 +2669,6 @@ PyIter_Next(PyObject *iter)
     return result;
 }
 
-
 /*
  * Flatten a sequence of bytes() objects into a C array of
  * NULL terminated string pointers with a NULL char* terminating the array.

@@ -2106,3 +2106,79 @@ done:
     PyMem_Free(oldloc);
     return res;
 }
+
+/* Our selection logic for which function to use is as follows:
+ * 1. If close_range(2) is available, always prefer that; it's better for
+ *    contiguous ranges like this than fdwalk(3) which entails iterating over
+ *    the entire fd space and simply doing nothing for those outside the range.
+ * 2. If closefrom(2) is available, we'll attempt to use that next if we're
+ *    closing up to sysconf(_SC_OPEN_MAX).
+ * 2a. Fallback to fdwalk(3) if we're not closing up to sysconf(_SC_OPEN_MAX),
+ *    as that will be more performant if the range happens to have any chunk of
+ *    non-opened fd in the middle.
+ * 2b. If fdwalk(3) isn't available, just do a plain close(2) loop.
+ */
+#ifdef __FreeBSD__
+#  define USE_CLOSEFROM
+#endif /* __FreeBSD__ */
+
+#ifdef HAVE_FDWALK
+#  define USE_FDWALK
+#endif /* HAVE_FDWALK */
+
+#ifdef USE_FDWALK
+static int
+_fdwalk_close_func(void *lohi, int fd)
+{
+    int lo = ((int *)lohi)[0];
+    int hi = ((int *)lohi)[1];
+
+    if (fd >= hi) {
+        return 1;
+    }
+    else if (fd >= lo) {
+        /* Ignore errors */
+        (void)close(fd);
+    }
+    return 0;
+}
+#endif /* USE_FDWALK */
+
+/* Closes all file descriptors in [first, last], ignoring errors. */
+void
+_Py_closerange(int first, int last)
+{
+    first = Py_MAX(first, 0);
+    _Py_BEGIN_SUPPRESS_IPH
+#ifdef HAVE_CLOSE_RANGE
+    if (close_range(first, last, 0) == 0 || errno != ENOSYS) {
+        /* Any errors encountered while closing file descriptors are ignored;
+         * ENOSYS means no kernel support, though,
+         * so we'll fallback to the other methods. */
+    }
+    else
+#endif /* HAVE_CLOSE_RANGE */
+#ifdef USE_CLOSEFROM
+    if (last >= sysconf(_SC_OPEN_MAX)) {
+        /* Any errors encountered while closing file descriptors are ignored */
+        closefrom(first);
+    }
+    else
+#endif /* USE_CLOSEFROM */
+#ifdef USE_FDWALK
+    {
+        int lohi[2];
+        lohi[0] = first;
+        lohi[1] = last + 1;
+        fdwalk(_fdwalk_close_func, lohi);
+    }
+#else
+    {
+        for (int i = first; i <= last; i++) {
+            /* Ignore errors */
+            (void)close(i);
+        }
+    }
+#endif /* USE_FDWALK */
+    _Py_END_SUPPRESS_IPH
+}
