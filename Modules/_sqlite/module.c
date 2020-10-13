@@ -267,59 +267,52 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
-struct _IntConstantPair {
-    const char *constant_name;
-    int constant_value;
-};
+static int add_integer_constants(PyObject *module) {
+    int ret = 0;
 
-typedef struct _IntConstantPair IntConstantPair;
-
-static const IntConstantPair _int_constants[] = {
-    {"PARSE_DECLTYPES", PARSE_DECLTYPES},
-    {"PARSE_COLNAMES", PARSE_COLNAMES},
-
-    {"SQLITE_OK", SQLITE_OK},
-    {"SQLITE_DENY", SQLITE_DENY},
-    {"SQLITE_IGNORE", SQLITE_IGNORE},
-    {"SQLITE_CREATE_INDEX", SQLITE_CREATE_INDEX},
-    {"SQLITE_CREATE_TABLE", SQLITE_CREATE_TABLE},
-    {"SQLITE_CREATE_TEMP_INDEX", SQLITE_CREATE_TEMP_INDEX},
-    {"SQLITE_CREATE_TEMP_TABLE", SQLITE_CREATE_TEMP_TABLE},
-    {"SQLITE_CREATE_TEMP_TRIGGER", SQLITE_CREATE_TEMP_TRIGGER},
-    {"SQLITE_CREATE_TEMP_VIEW", SQLITE_CREATE_TEMP_VIEW},
-    {"SQLITE_CREATE_TRIGGER", SQLITE_CREATE_TRIGGER},
-    {"SQLITE_CREATE_VIEW", SQLITE_CREATE_VIEW},
-    {"SQLITE_DELETE", SQLITE_DELETE},
-    {"SQLITE_DROP_INDEX", SQLITE_DROP_INDEX},
-    {"SQLITE_DROP_TABLE", SQLITE_DROP_TABLE},
-    {"SQLITE_DROP_TEMP_INDEX", SQLITE_DROP_TEMP_INDEX},
-    {"SQLITE_DROP_TEMP_TABLE", SQLITE_DROP_TEMP_TABLE},
-    {"SQLITE_DROP_TEMP_TRIGGER", SQLITE_DROP_TEMP_TRIGGER},
-    {"SQLITE_DROP_TEMP_VIEW", SQLITE_DROP_TEMP_VIEW},
-    {"SQLITE_DROP_TRIGGER", SQLITE_DROP_TRIGGER},
-    {"SQLITE_DROP_VIEW", SQLITE_DROP_VIEW},
-    {"SQLITE_INSERT", SQLITE_INSERT},
-    {"SQLITE_PRAGMA", SQLITE_PRAGMA},
-    {"SQLITE_READ", SQLITE_READ},
-    {"SQLITE_SELECT", SQLITE_SELECT},
-    {"SQLITE_TRANSACTION", SQLITE_TRANSACTION},
-    {"SQLITE_UPDATE", SQLITE_UPDATE},
-    {"SQLITE_ATTACH", SQLITE_ATTACH},
-    {"SQLITE_DETACH", SQLITE_DETACH},
-    {"SQLITE_ALTER_TABLE", SQLITE_ALTER_TABLE},
-    {"SQLITE_REINDEX", SQLITE_REINDEX},
-    {"SQLITE_ANALYZE", SQLITE_ANALYZE},
-    {"SQLITE_CREATE_VTABLE", SQLITE_CREATE_VTABLE},
-    {"SQLITE_DROP_VTABLE", SQLITE_DROP_VTABLE},
-    {"SQLITE_FUNCTION", SQLITE_FUNCTION},
-    {"SQLITE_SAVEPOINT", SQLITE_SAVEPOINT},
+    ret += PyModule_AddIntMacro(module, PARSE_DECLTYPES);
+    ret += PyModule_AddIntMacro(module, PARSE_COLNAMES);
+    ret += PyModule_AddIntMacro(module, SQLITE_OK);
+    ret += PyModule_AddIntMacro(module, SQLITE_DENY);
+    ret += PyModule_AddIntMacro(module, SQLITE_IGNORE);
+    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_INDEX);
+    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TABLE);
+    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TEMP_INDEX);
+    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TEMP_TABLE);
+    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TEMP_TRIGGER);
+    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TEMP_VIEW);
+    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_TRIGGER);
+    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_VIEW);
+    ret += PyModule_AddIntMacro(module, SQLITE_DELETE);
+    ret += PyModule_AddIntMacro(module, SQLITE_DROP_INDEX);
+    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TABLE);
+    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TEMP_INDEX);
+    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TEMP_TABLE);
+    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TEMP_TRIGGER);
+    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TEMP_VIEW);
+    ret += PyModule_AddIntMacro(module, SQLITE_DROP_TRIGGER);
+    ret += PyModule_AddIntMacro(module, SQLITE_DROP_VIEW);
+    ret += PyModule_AddIntMacro(module, SQLITE_INSERT);
+    ret += PyModule_AddIntMacro(module, SQLITE_PRAGMA);
+    ret += PyModule_AddIntMacro(module, SQLITE_READ);
+    ret += PyModule_AddIntMacro(module, SQLITE_SELECT);
+    ret += PyModule_AddIntMacro(module, SQLITE_TRANSACTION);
+    ret += PyModule_AddIntMacro(module, SQLITE_UPDATE);
+    ret += PyModule_AddIntMacro(module, SQLITE_ATTACH);
+    ret += PyModule_AddIntMacro(module, SQLITE_DETACH);
+    ret += PyModule_AddIntMacro(module, SQLITE_ALTER_TABLE);
+    ret += PyModule_AddIntMacro(module, SQLITE_REINDEX);
+    ret += PyModule_AddIntMacro(module, SQLITE_ANALYZE);
+    ret += PyModule_AddIntMacro(module, SQLITE_CREATE_VTABLE);
+    ret += PyModule_AddIntMacro(module, SQLITE_DROP_VTABLE);
+    ret += PyModule_AddIntMacro(module, SQLITE_FUNCTION);
+    ret += PyModule_AddIntMacro(module, SQLITE_SAVEPOINT);
 #if SQLITE_VERSION_NUMBER >= 3008003
-    {"SQLITE_RECURSIVE", SQLITE_RECURSIVE},
+    ret += PyModule_AddIntMacro(module, SQLITE_RECURSIVE);
 #endif
-    {"SQLITE_DONE", SQLITE_DONE},
-    {(char*)NULL, 0}
-};
-
+    ret += PyModule_AddIntMacro(module, SQLITE_DONE);
+    return ret;
+}
 
 static struct PyModuleDef _sqlite3module = {
         PyModuleDef_HEAD_INIT,
@@ -356,7 +349,6 @@ do {                                                            \
 PyMODINIT_FUNC PyInit__sqlite3(void)
 {
     PyObject *module;
-    int i;
 
     if (sqlite3_libversion_number() < 3007003) {
         PyErr_SetString(PyExc_ImportError, MODULE_NAME ": SQLite 3.7.3 or higher required");
@@ -410,12 +402,8 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     }
 
     /* Set integer constants */
-    for (i = 0; _int_constants[i].constant_name != NULL; i++) {
-        if (PyModule_AddIntConstant(module,
-                                    _int_constants[i].constant_name,
-                                    _int_constants[i].constant_value) < 0) {
-            goto error;
-        }
+    if (add_integer_constants(module) < 0) {
+        goto error;
     }
 
     if (PyModule_AddStringConstant(module, "version", PYSQLITE_VERSION) < 0) {
