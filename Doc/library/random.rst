@@ -253,6 +253,8 @@ Functions for sequences
       order so that the sample is reproducible.
 
 
+.. _real-valued-distributions:
+
 Real-valued distributions
 -------------------------
 
@@ -516,11 +518,33 @@ Simulation of arrival times and service deliveries for a multiserver queue::
     print(f'Mean wait: {mean(waits):.1f}   Max wait: {max(waits):.1f}')
     print('Quartiles:', [round(q, 1) for q in quantiles(waits)])
 
+.. seealso::
+
+   `Statistics for Hackers <https://www.youtube.com/watch?v=Iq9DzN6mvYA>`_
+   a video tutorial by
+   `Jake Vanderplas <https://us.pycon.org/2016/speaker/profile/295/>`_
+   on statistical analysis using just a few fundamental concepts
+   including simulation, sampling, shuffling, and cross-validation.
+
+   `Economics Simulation
+   <http://nbviewer.jupyter.org/url/norvig.com/ipython/Economics.ipynb>`_
+   a simulation of a marketplace by
+   `Peter Norvig <http://norvig.com/bio.html>`_ that shows effective
+   use of many of the tools and distributions provided by this module
+   (gauss, uniform, sample, betavariate, choice, triangular, and randrange).
+
+   `A Concrete Introduction to Probability (using Python)
+   <http://nbviewer.jupyter.org/url/norvig.com/ipython/Probability.ipynb>`_
+   a tutorial by `Peter Norvig <http://norvig.com/bio.html>`_ covering
+   the basics of probability theory, how to write simulations, and
+   how to perform data analysis using Python.
+
+
 Recipes
 -------
 
 The default :func:`.random` returns multiples of 2⁻⁵³ in the range
-*0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and exactly
+*0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and are exactly
 representable as Python floats.  However, many floats in that interval
 are not possible selections.  For example, ``0.05954861408025609``
 isn't an integer multiple of 2⁻⁵³.
@@ -547,7 +571,8 @@ than *-53* occur half as often as the next larger exponent.
                 exponent += x.bit_length() - 32
             return ldexp(mantissa, exponent)
 
-All of the real valued distributions will use the new method::
+All of the :ref:`real valued distributions <real-valued-distributions>`
+in the class will use the new method::
 
     >>> fr = FullRandom()
     >>> fr.random()
@@ -556,32 +581,13 @@ All of the real valued distributions will use the new method::
     8.87925541791544
 
 Conceptually, the recipe is equivalent to choosing from all multiples of
-2⁻¹⁰⁷⁴ in the range *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced
-but most have to be rounded down to the nearest representable Python
-float.  (The value 2⁻¹⁰⁷⁴ is the smallest possible unnormalized float
-and is equal to ``math.ulp(0.0)``.)
+2⁻¹⁰⁷⁴ in the range *0.0 ≤ x < 1.0*.  All such numbers are evenly
+spaced, but most have to be rounded down to the nearest representable
+Python float.  (The value 2⁻¹⁰⁷⁴ is the smallest positive unnormalized
+float and is equal to ``math.ulp(0.0)``.)
 
 
 .. seealso::
-
-   `Statistics for Hackers <https://www.youtube.com/watch?v=Iq9DzN6mvYA>`_
-   a video tutorial by
-   `Jake Vanderplas <https://us.pycon.org/2016/speaker/profile/295/>`_
-   on statistical analysis using just a few fundamental concepts
-   including simulation, sampling, shuffling, and cross-validation.
-
-   `Economics Simulation
-   <http://nbviewer.jupyter.org/url/norvig.com/ipython/Economics.ipynb>`_
-   a simulation of a marketplace by
-   `Peter Norvig <http://norvig.com/bio.html>`_ that shows effective
-   use of many of the tools and distributions provided by this module
-   (gauss, uniform, sample, betavariate, choice, triangular, and randrange).
-
-   `A Concrete Introduction to Probability (using Python)
-   <http://nbviewer.jupyter.org/url/norvig.com/ipython/Probability.ipynb>`_
-   a tutorial by `Peter Norvig <http://norvig.com/bio.html>`_ covering
-   the basics of probability theory, how to write simulations, and
-   how to perform data analysis using Python.
 
    `Generating Pseudo-random Floating-Point Values
    <https://allendowney.com/research/rand/downey07randfloat.pdf>`_ a
