@@ -338,6 +338,7 @@ PyAPI_FUNC(int) PyIter_Check(PyObject *);
    NULL with an exception means an error occurred. */
 PyAPI_FUNC(PyObject *) PyIter_Next(PyObject *);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
 typedef enum {
     PYGEN_RETURN = 0,
     PYGEN_ERROR = -1,
@@ -353,6 +354,7 @@ typedef enum {
    - PYGEN_NEXT (1) if generator has yielded.
      'result' parameter is filled with yielded value. */
 PyAPI_FUNC(PySendResult) PyIter_Send(PyObject *, PyObject *, PyObject **);
+#endif
 
 
 /* === Number Protocol ================================================== */
