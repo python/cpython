@@ -3441,16 +3441,15 @@ class CodecNameNormalizationTest(unittest.TestCase):
 
     def test_encodings_normalize_encoding(self):
         # encodings.normalize_encoding() ignores non-ASCII letters.
-        self.assertEqual(encodings.normalize_encoding('utf_8'), 'utf_8')
-        self.assertEqual(
-                encodings.normalize_encoding('utf\xE9\u20AC\U0010ffff-8'),
-                'utf_8')
-        self.assertEqual(encodings.normalize_encoding('utf   8'), 'utf_8')
+        normalize = encodings.normalize_encoding
+        self.assertEqual(normalize('utf_8'), 'utf_8')
+        self.assertEqual(normalize('utf\xE9\u20AC\U0010ffff-8'), 'utf_8')
+        self.assertEqual(normalize('utf   8'), 'utf_8')
         # encodings.normalize_encoding() doesn't convert
         # characters to lower case.
-        self.assertEqual(encodings.normalize_encoding('UTF 8'), 'UTF_8')
-        self.assertEqual(encodings.normalize_encoding('utf.8'), 'utf.8')
-        self.assertEqual(encodings.normalize_encoding('utf...8'), 'utf...8')
+        self.assertEqual(normalize('UTF 8'), 'UTF_8')
+        self.assertEqual(normalize('utf.8'), 'utf.8')
+        self.assertEqual(normalize('utf...8'), 'utf...8')
 
 
 if __name__ == "__main__":
