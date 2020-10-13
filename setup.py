@@ -950,7 +950,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('_csv', ['_csv.c']))
 
         # POSIX subprocess module helper.
-        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c']))
+        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
     def detect_test_extensions(self):
         # Python C API test module
