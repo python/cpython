@@ -17,7 +17,7 @@ def main():
         description='Run tests for an idlelib module '
                     'and collect coverage stats',
     )
-    parser.add_argument('module', choices=module_names)
+    parser.add_argument('module', choices=['all'] + module_names)
     args = parser.parse_args()
     module_name = args.module
 
@@ -33,7 +33,8 @@ def main():
             f.write(textwrap.dedent('''\
                 [run]
                 branch = True
-                
+                cover_pylib = True
+
                 [report]
                 # Regexes for lines to exclude from consideration
                 exclude_lines =
@@ -41,24 +42,34 @@ def main():
                     if 0:
                     if False:
                     if __name__ == .__main__.:
-                
+
                     .*# htest #
                     if not _utest:
                     if _htest:
+                show_missing = True
                 '''))
-        subprocess.run([
-            venv_python_path, '-m', 'coverage',
-            'run', '--pylib', f'--source=idlelib.{module_name}',
-            f'./Lib/idlelib/idle_test/test_{module_name}.py',
-        ])
-        subprocess.run([
-            venv_python_path, '-m', 'coverage',
-            'report', '--show-missing',
-        ])
-        subprocess.run([
-            venv_python_path, '-m', 'coverage',
-            'html',
-        ])
+        if module_name == 'all':
+            subprocess.run([
+                venv_python_path, '-m', 'coverage', 'run',
+                '--source=idlelib',
+                '-m', 'test', '-ugui', 'test_idle',
+            ])
+        else:
+            subprocess.run([
+                venv_python_path, '-m', 'coverage', 'run',
+                f'--source=idlelib.{module_name}',
+                f'./Lib/idlelib/idle_test/test_{module_name}.py',
+            ])
+            if module_name in ['pyshell', 'run']:
+                # also run the tests in test_warning.py
+                subprocess.run([
+                    venv_python_path, '-m', 'coverage', 'run', '-a',
+                    f'--source=idlelib.{module_name}',
+                    './Lib/idlelib/idle_test/test_warning.py',
+                ])
+
+        subprocess.run([venv_python_path, '-m', 'coverage', 'report'])
+        subprocess.run([venv_python_path, '-m', 'coverage', 'html'])
     finally:
         if orig_coverage_rc:
             with coveragerc_path.open('w', encoding='utf-8') as f:
@@ -72,7 +83,13 @@ def main():
         'xdg-open'
     )
     subprocess.run([
-        open_cmd, f'htmlcov/Lib_idlelib_{module_name}_py.html',
+        open_cmd,
+        (
+            'htmlcov/index.html'
+            if module_name == 'all' else
+            f'htmlcov/Lib_idlelib_{module_name}_py.html'
+
+        ),
     ])
 
 
