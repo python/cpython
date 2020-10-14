@@ -61,7 +61,8 @@ def normalize_encoding(encoding):
         if c.isalnum() or c == '.':
             if punct and chars:
                 chars.append('_')
-            chars.append(c)
+            if c.isascii():
+                chars.append(c)
             punct = False
         else:
             punct = True
