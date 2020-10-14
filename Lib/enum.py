@@ -776,6 +776,7 @@ class Flag(Enum):
             pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
         return pseudo_member
 
+    # TODO: document that Flag `in` is a subset operation
     def __contains__(self, other):
         if not isinstance(other, self.__class__):
             raise TypeError(
@@ -784,14 +785,14 @@ class Flag(Enum):
         return other._value_ & self._value_ == other._value_
 
     def __iter__(self):
-        members, extra_flags = _decompose(self.__class__, self.value)
+        members, _ = _decompose(self.__class__, self.value)
         return (m for m in members if m._value_ != 0)
 
     def __repr__(self):
         cls = self.__class__
         if self._name_ is not None:
             return '<%s.%s: %r>' % (cls.__name__, self._name_, self._value_)
-        members, uncovered = _decompose(cls, self._value_)
+        members, _ = _decompose(cls, self._value_)
         return '<%s.%s: %r>' % (
                 cls.__name__,
                 '|'.join([str(m._name_ or m._value_) for m in members]),
@@ -802,7 +803,7 @@ class Flag(Enum):
         cls = self.__class__
         if self._name_ is not None:
             return '%s.%s' % (cls.__name__, self._name_)
-        members, uncovered = _decompose(cls, self._value_)
+        members, _ = _decompose(cls, self._value_)
         if len(members) == 1 and members[0]._name_ is None:
             return '%s.%r' % (cls.__name__, members[0]._value_)
         else:
@@ -830,7 +831,7 @@ class Flag(Enum):
         return self.__class__(self._value_ ^ other._value_)
 
     def __invert__(self):
-        members, uncovered = _decompose(self.__class__, self._value_)
+        members, _ = _decompose(self.__class__, self._value_)
         inverted = self.__class__(0)
         for m in self.__class__:
             if m not in members and not (m._value_ & self._value_):
