@@ -8490,6 +8490,7 @@ os_times_impl(PyObject *module)
     FILETIME create, exit, kernel, user;
     HANDLE hProc;
     hProc = GetCurrentProcess();
+    BOOL ok;
     ok = GetProcessTimes(hProc, &create, &exit, &kernel, &user);
     if (!ok) {
         PyErr_SetFromWindowsErr(0);
