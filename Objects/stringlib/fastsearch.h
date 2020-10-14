@@ -397,11 +397,6 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                     j += needle_len;
                     continue;
                 }
-                case SHIFT_OVERFLOW: {
-                    LOG("Shift overflowed.\n");
-                    j += SHIFT_OVERFLOW;
-                    continue;
-                }
                 default: {
                     LOG("Table says shift by %d.\n", shift);
                     j += shift;
