@@ -314,7 +314,7 @@ New Features
   search function.
   (Contributed by Hai Shi in :issue:`41842`.)
 
-* The :c:func:`PyIter_Send` and :c:func:`PyGen_Send` functions were added to allow
+* The :c:func:`PyIter_Send` function was added to allow
   sending value into iterator without raising ``StopIteration`` exception.
   (Contributed by Vladimir Matveev in :issue:`41756`.)
 

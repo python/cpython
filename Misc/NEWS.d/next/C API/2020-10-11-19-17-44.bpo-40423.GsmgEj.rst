@@ -1,0 +1,3 @@
+The :mod:`subprocess` module and ``os.closerange`` will now use the
+``close_range(low, high, flags)`` syscall when it is available for more
+efficient closing of ranges of descriptors.
