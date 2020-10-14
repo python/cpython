@@ -186,6 +186,11 @@ by :func:`curses.color_content`, :func:`curses.init_color`,
 support is provided by the underlying ncurses library.
 (Contributed by Jeffrey Kintscher and Hans Petter Jansson in :issue:`36982`.)
 
+encodings
+---------
+:func:`encodings.normalize_encoding` now ignores non-ASCII characters.
+(Contributed by Hai Shi in :issue:`39337`.)
+
 glob
 ----
 
