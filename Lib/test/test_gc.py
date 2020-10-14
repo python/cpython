@@ -586,6 +586,48 @@ class GCTests(unittest.TestCase):
         self.assertFalse(gc.is_tracked(UserFloatSlots()))
         self.assertFalse(gc.is_tracked(UserIntSlots()))
 
+    def test_track_and_untrack(self):
+        class A:
+            pass
+
+        a = A()
+        self.assertTrue(gc.is_tracked(a))
+        gc.untrack(a)
+        self.assertFalse(gc.is_tracked(a))
+        gc.track(a)
+        self.assertTrue(gc.is_tracked(a))
+
+        # Check track/untrack with an object that starts untracked
+        # but has gc support
+
+        a = (1,2,3)
+        self.assertFalse(gc.is_tracked(a))
+        gc.track(a)
+        self.assertTrue(gc.is_tracked(a))
+        gc.untrack(a)
+        self.assertFalse(gc.is_tracked(a))
+
+    def test_track_and_untrack_multiple_times(self):
+        # The C functions can crash if called over already tracked/untracked
+        # objects, but the Python functions should be fine in those scenarios.
+        x = (1,2,3)
+        gc.untrack(x)
+        gc.untrack(x)
+        gc.untrack(x)
+        self.assertFalse(gc.is_tracked(x))
+
+        gc.track(x)
+        gc.track(x)
+        gc.track(x)
+        self.assertTrue(gc.is_tracked(x))
+
+    def test_track_and_untrack_error_cases(self):
+        with self.assertRaises(ValueError):
+            gc.track("blech")
+
+        with self.assertRaises(ValueError):
+            gc.untrack("blech")
+
     def test_is_finalized(self):
         # Objects not tracked by the always gc return false
         self.assertFalse(gc.is_finalized(3))

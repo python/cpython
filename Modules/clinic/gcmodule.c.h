@@ -303,6 +303,24 @@ PyDoc_STRVAR(gc_is_finalized__doc__,
 #define GC_IS_FINALIZED_METHODDEF    \
     {"is_finalized", (PyCFunction)gc_is_finalized, METH_O, gc_is_finalized__doc__},
 
+PyDoc_STRVAR(gc_track__doc__,
+"track($module, obj, /)\n"
+"--\n"
+"\n"
+"Adds the object op to the set of container objects tracked by the collector.");
+
+#define GC_TRACK_METHODDEF    \
+    {"track", (PyCFunction)gc_track, METH_O, gc_track__doc__},
+
+PyDoc_STRVAR(gc_untrack__doc__,
+"untrack($module, obj, /)\n"
+"--\n"
+"\n"
+"Remove the object from the set of container objects tracked by the collector.");
+
+#define GC_UNTRACK_METHODDEF    \
+    {"untrack", (PyCFunction)gc_untrack, METH_O, gc_untrack__doc__},
+
 PyDoc_STRVAR(gc_freeze__doc__,
 "freeze($module, /)\n"
 "--\n"
@@ -372,4 +390,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=61e15f3a549f3ab5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7b8d6f9ebcb0ff54 input=a9049054013a1b77]*/

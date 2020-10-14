@@ -151,6 +151,19 @@ The :mod:`gc` module provides the following functions:
    be involved in a cycle.  So, for example, if an integer is directly reachable
    from an argument, that integer object may or may not appear in the result list.
 
+.. function:: track(obj)
+
+   Adds the object to the set of container objects tracked by the collector. This function will
+   raise :exc:`ValueError` if the object does not provide gc support.
+
+   .. versionadded:: 3.10
+
+.. function:: untrack(obj)
+
+   Remove the object from the set of container objects tracked by the collector. This function
+   will raise :exc:`ValueError` if the object does not provide gc support.
+
+   .. versionadded:: 3.10
 
 .. function:: is_tracked(obj)
 

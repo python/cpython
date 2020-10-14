@@ -1886,6 +1886,64 @@ gc_is_finalized(PyObject *module, PyObject *obj)
 }
 
 /*[clinic input]
+gc.track
+
+    obj: object
+    /
+
+Add the object to the set of container objects tracked by the collector.
+[clinic start generated code]*/
+
+static PyObject *
+gc_track(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=bde3be0acaedaf0d input=98823623dfd1299e]*/
+{
+    if (!PyObject_IS_GC(obj)) {
+        PyErr_Format(PyExc_ValueError,
+                "The object %R has no garbage collector support", obj);
+        return NULL;
+    }
+    if (gc_is_collecting(AS_GC(obj))) {
+        PyErr_Format(PyExc_RuntimeError,
+                "The object %R is in generation which is garbage collected", obj);
+    }
+    if (_PyObject_GC_IS_TRACKED(obj)) {
+        Py_RETURN_NONE;
+    }
+    PyObject_GC_Track(obj);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+gc.untrack
+
+    obj: object
+    /
+
+Remove the object from the set of container objects tracked by the collector.
+[clinic start generated code]*/
+
+static PyObject *
+gc_untrack(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=c4c94567da0a6043 input=b9f0e2f4df72707a]*/
+{
+    if (!PyObject_IS_GC(obj)) {
+        PyErr_Format(PyExc_ValueError,
+                "The object %R has no garbage collector support", obj);
+        return NULL;
+    }
+    if (gc_is_collecting(AS_GC(obj))) {
+        PyErr_Format(PyExc_RuntimeError,
+                "The object %R is in generation which is garbage collected", obj);
+    }
+    if (!_PyObject_GC_IS_TRACKED(obj)) {
+        Py_RETURN_NONE;
+    }
+    PyObject_GC_UnTrack(obj);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 gc.freeze
 
 Freeze all current tracked objects and ignore them for future collections.
@@ -1974,6 +2032,8 @@ static PyMethodDef GcMethods[] = {
     GC_COLLECT_METHODDEF
     GC_GET_OBJECTS_METHODDEF
     GC_GET_STATS_METHODDEF
+    GC_TRACK_METHODDEF
+    GC_UNTRACK_METHODDEF
     GC_IS_TRACKED_METHODDEF
     GC_IS_FINALIZED_METHODDEF
     {"get_referrers",  gc_get_referrers, METH_VARARGS,

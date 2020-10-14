@@ -1,0 +1,2 @@
+Added the new functions :func:`gc.track` and :func:`gc.untrack` to manually
+track or untrack objects in the garbage collector. Patch by Pablo Galindo.

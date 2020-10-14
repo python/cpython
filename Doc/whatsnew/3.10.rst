@@ -191,6 +191,13 @@ encodings
 :func:`encodings.normalize_encoding` now ignores non-ASCII characters.
 (Contributed by Hai Shi in :issue:`39337`.)
 
+gc
+--
+
+Added the new functions :func:`gc.track` and :func:`gc.untrack` to manually track
+or untrack objects in the garbage collector. (Contributed by Pablo Galindo in
+:issue:`42039`.)
+
 glob
 ----
 
