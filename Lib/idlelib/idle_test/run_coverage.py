@@ -5,6 +5,7 @@ import pathlib
 import subprocess
 import sys
 import textwrap
+import webbrowser
 
 
 def main():
@@ -161,17 +162,12 @@ def generate_coverage_report(*, venv_python_path, no_html):
 
 
 def display_coverage_report(*, module_name):
-    open_cmd = (
-        'start' if sys.platform == 'win32' else
-        'open' if sys.platform == 'darwin' else
-        'xdg-open'
-    )
     html_file = (
         'htmlcov/index.html'
         if module_name == 'all' else
         f'htmlcov/Lib_idlelib_{module_name}_py.html'
     )
-    subprocess.run([open_cmd, html_file])
+    webbrowser.open(html_file)
 
 
 if __name__ == '__main__':
