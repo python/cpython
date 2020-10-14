@@ -172,4 +172,8 @@ def display_coverage_report(*, module_name):
 
 
 if __name__ == '__main__':
+    if sys.version_info < (3,):
+        print('Running this script with Python 2 is not supported',
+              file=sys.stderr)
+        sys.exit(1)
     main()
