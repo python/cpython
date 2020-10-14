@@ -2776,8 +2776,6 @@ static struct PyModuleDef sremodule = {
 PyMODINIT_FUNC PyInit__sre(void)
 {
     PyObject* m;
-    PyObject* d;
-    PyObject* x;
 
     /* Patch object types */
     if (PyType_Ready(&Pattern_Type) || PyType_Ready(&Match_Type) ||
@@ -2787,37 +2785,27 @@ PyMODINIT_FUNC PyInit__sre(void)
     m = PyModule_Create(&sremodule);
     if (m == NULL)
         return NULL;
-    d = PyModule_GetDict(m);
 
-    x = PyLong_FromLong(SRE_MAGIC);
-    if (x) {
-        PyDict_SetItemString(d, "MAGIC", x);
-        Py_DECREF(x);
+    if (PyModule_AddIntConstant(m, "MAGIC", SRE_MAGIC) < 0) {
+        return NULL;
     }
 
-    x = PyLong_FromLong(sizeof(SRE_CODE));
-    if (x) {
-        PyDict_SetItemString(d, "CODESIZE", x);
-        Py_DECREF(x);
+    if (PyModule_AddIntConstant(m, "CODESIZE", sizeof(SRE_CODE)) < 0) {
+        return NULL;
     }
 
-    x = PyLong_FromUnsignedLong(SRE_MAXREPEAT);
-    if (x) {
-        PyDict_SetItemString(d, "MAXREPEAT", x);
-        Py_DECREF(x);
+    if (PyModule_AddIntConstant(m, "MAXREPEAT", SRE_MAXREPEAT) < 0) {
+        return NULL;
     }
 
-    x = PyLong_FromUnsignedLong(SRE_MAXGROUPS);
-    if (x) {
-        PyDict_SetItemString(d, "MAXGROUPS", x);
-        Py_DECREF(x);
+    if (PyModule_AddIntConstant(m, "MAXGROUPS", SRE_MAXGROUPS) < 0) {
+        return NULL;
     }
 
-    x = PyUnicode_FromString(copyright);
-    if (x) {
-        PyDict_SetItemString(d, "copyright", x);
-        Py_DECREF(x);
+    if (PyModule_AddStringConstant(m, "copyright", copyright) < 0) {
+        return NULL;
     }
+
     return m;
 }
 
