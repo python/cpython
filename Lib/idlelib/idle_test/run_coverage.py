@@ -18,18 +18,22 @@ def main():
                     'and collect coverage stats',
     )
     parser.add_argument('module', choices=['all'] + module_names)
+    parser.add_argument(
+        '--no-html', action='store_true',
+        help='Do not create an HTML coverage report and open it in a browser')
     args = parser.parse_args()
-    module_name = args.module
 
     venv_path, venv_python_path = ensure_venv(sources_root_path)
     os.chdir(sources_root_path)
 
     with coveragerc_replacement():
-        run_tests_with_coverage(module_name=module_name,
+        run_tests_with_coverage(module_name=args.module,
                                 venv_python_path=venv_python_path)
-        generate_coverage_report(venv_python_path=venv_python_path)
+        generate_coverage_report(venv_python_path=venv_python_path,
+                                 no_html=args.no_html)
 
-    display_coverage_report(module_name=module_name)
+    if not args.no_html:
+        display_coverage_report(module_name=args.module)
 
 
 def listfiles(path):
@@ -150,9 +154,10 @@ def run_tests_with_coverage(*, module_name, venv_python_path):
             ])
 
 
-def generate_coverage_report(*, venv_python_path):
+def generate_coverage_report(*, venv_python_path, no_html):
     subprocess.run([venv_python_path, '-m', 'coverage', 'report'])
-    subprocess.run([venv_python_path, '-m', 'coverage', 'html'])
+    if not no_html:
+        subprocess.run([venv_python_path, '-m', 'coverage', 'html'])
 
 
 def display_coverage_report(*, module_name):
