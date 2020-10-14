@@ -961,7 +961,7 @@ class PyShell(OutputWindow):
           "stdin": {'background': None, 'foreground': None},
           "stdout": idleConf.GetHighlight(theme, "stdout"),
           "stderr": idleConf.GetHighlight(theme, "stderr"),
-          "console": idleConf.GetHighlight(theme, "console"),
+          "console": idleConf.GetHighlight(theme, "normal"),
         }
         for tag, tag_colors_config in tag_colors.items():
             self.text.tag_configure(tag, **tag_colors_config)
