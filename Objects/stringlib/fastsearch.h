@@ -193,7 +193,7 @@ STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
             period = suffix - max_suffix;
         }
         else if (a == b) {
-            // Advance through the repitition of the current period.
+            // Advance through the repetition of the current period.
             if (k != period) {
                 k++;
             }
@@ -243,11 +243,39 @@ STRINGLIB(_critical_factorization)(const STRINGLIB_CHAR *needle, Py_ssize_t need
     }
 }
 
+#define SHIFT_TYPE uint16_t
+#define NOT_FOUND ((1U<<(8*sizeof(SHIFT_TYPE))) - 1U)
+#define SHIFT_OVERFLOW (NOT_FOUND - 1U)
+
+#define TABLE_SIZE_BITS 7
+#define TABLE_SIZE (1U << TABLE_SIZE_BITS)
+#define TABLE_MASK (TABLE_SIZE - 1U)
+
+Py_LOCAL_INLINE(void)
+STRINGLIB(_init_table)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
+                       SHIFT_TYPE *table)
+{
+    // Fill the table with TABLE_MASK
+    memset(table, 0xff, TABLE_SIZE * sizeof(SHIFT_TYPE));
+    assert(table[0] == NOT_FOUND);
+    assert(table[TABLE_SIZE - 1] == NOT_FOUND);
+    for (Py_ssize_t j = 0; j < needle_len; j++) {
+        // CODE:
+        // TABLE_MASK means not in string
+        // TABLE_MASK-1 means shift at least TABLE_MASK-1
+        Py_ssize_t shift = needle_len - j - 1;
+        if (shift > SHIFT_OVERFLOW) {
+            shift = SHIFT_OVERFLOW;
+        }
+        table[needle[j] & TABLE_MASK] = shift;
+    }
+}
 
 Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                     const STRINGLIB_CHAR *haystack, Py_ssize_t haystack_len,
-                    Py_ssize_t suffix, Py_ssize_t period)
+                    Py_ssize_t suffix, Py_ssize_t period,
+                    SHIFT_TYPE *shift_table)
 {
     LOG("========================\n");
     LOG("Two-way with needle="); LOG_STRING(needle, needle_len);
@@ -256,12 +284,6 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
     LOG(" into "); LOG_STRING(needle, suffix);
     LOG(" and "); LOG_STRING(needle + suffix, needle_len - suffix);
     LOG(".\n");
-    unsigned long mask = 0;
-
-    /* Get the set of characters (mod 2^k) in the needle. */
-    for (Py_ssize_t i = 0; i < needle_len; i++) {
-        STRINGLIB_BLOOM_ADD(mask, needle[i]);
-    }
 
     if (memcmp(needle, needle+period, suffix * STRINGLIB_SIZEOF_CHAR) == 0) {
         LOG("needle is completely periodic.\n");
@@ -276,11 +298,38 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
             LOG("\n> "); LOG("%*s", j, ""); LOG_STRING(needle, needle_len);
             LOG("\n");
 
-            if (!STRINGLIB_BLOOM(mask, haystack[j + needle_len - 1])) {
-                LOG("'%c' not in needle; skipping ahead!\n", haystack[j + needle_len - 1]);
-                memory = 0;
-                j += needle_len;
-                continue;
+            STRINGLIB_CHAR last = haystack[j + needle_len - 1];
+            int index = last & TABLE_MASK;
+            SHIFT_TYPE shift = shift_table[index];
+
+            //SHIFT_TYPE shift = shift_table[haystack[j + needle_len - 1] && TABLE_MASK];
+            switch (shift)
+            {
+                case 0: {
+                    break;
+                }
+                case NOT_FOUND: {
+                    LOG("Last character not found in string.\n");
+                    memory = 0;
+                    j += needle_len;
+                    continue;
+                }
+                case SHIFT_OVERFLOW: {
+                    LOG("Shift overflowed.\n");
+                    memory = 0;
+                    j += SHIFT_OVERFLOW;
+                    continue;
+                }
+                default: {
+                    if (memory && shift < period) {
+                        LOG("Shifting through multiple periods.\n");
+                        j += needle_len - period;
+                    } else {
+                        LOG("Table says shift by %d.\n", shift);
+                        j += shift;
+                    }
+                    memory = 0;
+                }
             }
 
             LOG("Scanning right half.\n");
@@ -317,106 +366,45 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
         // no extra memory is required,
         // and a mismatch results in a maximal shift.
         period = 1 + Py_MAX(suffix, needle_len - suffix);
-        STRINGLIB_CHAR suffix_start = needle[suffix];
-        STRINGLIB_CHAR suffix_end = needle[needle_len - 1];
 
         LOG("Using period %d.\n", period);
-        LOG("Right half starts with %c\n", suffix_start);
-        LOG("Right half endswith %c\n", suffix_end);
-
-        // Compute the distance between suffix_start and the pervious
-        // occurrence of suffix_start.
-        Py_ssize_t middle_shift = suffix;
-        for (Py_ssize_t k = suffix - 1; k >= 0; k--) {
-            if (needle[k] == suffix_start) {
-                middle_shift = suffix - k;
-                break;
-            }
-        }
-
-        Py_ssize_t end_shift = needle_len;
-        for (Py_ssize_t k = needle_len - 1; k >= 0; k--) {
-            if (needle[k] == suffix_end) {
-                end_shift = needle_len - k;
-                break;
-            }
-        }
-
-        Py_ssize_t both_shift = suffix;
-        for (Py_ssize_t k = 1; suffix - k >= 0; k++) {
-            if (needle[suffix - k] == suffix_start
-                && suffix_start == needle[needle_len - 1 - k])
-            {
-                both_shift = k;
-                break;
-            }
-        }
 
         Py_ssize_t j = 0;
         while (j <= haystack_len - needle_len) {
-            while (1) {
-                // scan until middle matches
-                Py_ssize_t find;
-                find = STRINGLIB(find_char)(haystack + j + suffix,
-                                            haystack_len - j - needle_len + 1,
-                                            suffix_start);
-                if (find == -1) {
-                    return -1;
-                }
-                else {
-                    j += find;
-                    if (j > haystack_len - needle_len) {
-                        assert(j <= haystack_len - needle_len);
-                    }
-                }
-                if (haystack[j + suffix] != suffix_start) {
-                    assert(haystack[j + suffix] == suffix_start);
-                }
-
-                STRINGLIB_CHAR end = haystack[j+needle_len-1];
-                if (end == suffix_end) {
-                    break;
-                }
-                else if (!STRINGLIB_BLOOM(mask, end)) {
-                    j += needle_len;
-                }
-                else {
-                    j += middle_shift;
-                }
-                if (j > haystack_len - needle_len) {
-                    return -1;
-                }
-                find = STRINGLIB(find_char)(haystack + j + needle_len - 1,
-                                            haystack_len - j - needle_len + 1,
-                                            suffix_end);
-                if (find == -1) {
-                    return -1;
-                }
-                else {
-                    j += find;
-                    assert(j <= haystack_len - needle_len);
-                }
-                assert(haystack[j + needle_len - 1] == suffix_end);
-                if (haystack[j+suffix] == suffix_start) {
-                    break;
-                }
-                else {
-                    j += end_shift;
-                }
-                if (j > haystack_len - needle_len) {
-                    return -1;
-                }
-            }
-
-            assert(haystack[j + suffix] == suffix_start);
-            assert(haystack[j + needle_len - 1] == suffix_end);
-
             LOG("> "); LOG_STRING(haystack, haystack_len);
             LOG("\n> "); LOG("%*s", j, ""); LOG_STRING(needle, needle_len);
             LOG("\n");
 
+            STRINGLIB_CHAR last = haystack[j + needle_len - 1];
+            int index = last & TABLE_MASK;
+            SHIFT_TYPE shift = shift_table[index];
+            switch (shift)
+            {
+                case 0: {
+                    break;
+                }
+                case NOT_FOUND: {
+                    LOG("Last character not found in string.\n");
+                    j += needle_len;
+                    continue;
+                }
+                case SHIFT_OVERFLOW: {
+                    LOG("Shift overflowed.\n");
+                    j += SHIFT_OVERFLOW;
+                    continue;
+                }
+                default: {
+                    LOG("Table says shift by %d.\n", shift);
+                    j += shift;
+                }
+            }
+
+            if (j > haystack_len - needle_len) {
+                return -1;
+            }
+
             LOG("Checking the right half.\n");
-            Py_ssize_t i = suffix + 1;
+            Py_ssize_t i = suffix;
             for (; i < needle_len; i++) {
                 if (needle[i] != haystack[j + i]){
                     LOG("No match.\n");
@@ -440,8 +428,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
             }
             else {
                 LOG("Jump forward without checking left half.\n");
-                // Note: In common cases, "both_shift" wins.
-                j += Py_MAX(both_shift, i - suffix + 1);
+                j += i - suffix + 1;
             }
         }
 
@@ -478,10 +465,16 @@ STRINGLIB(_fastsearch)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
     index++;
     Py_ssize_t period, suffix;
     suffix = STRINGLIB(_critical_factorization)(needle, needle_len, &period);
+
+    // make a skip table
+    SHIFT_TYPE shift_table[TABLE_SIZE];
+    STRINGLIB(_init_table)(needle, needle_len, shift_table);
+
     Py_ssize_t result = STRINGLIB(_two_way)(needle, needle_len,
                                             haystack + index,
                                             haystack_len - index,
-                                            suffix, period);
+                                            suffix, period,
+                                            shift_table);
 
     if (result == -1) {
         return -1;
@@ -523,12 +516,15 @@ STRINGLIB(_fastcount)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
     }
     Py_ssize_t suffix, period;
     suffix = STRINGLIB(_critical_factorization)(needle, needle_len, &period);
+    SHIFT_TYPE shift_table[TABLE_SIZE];
+    STRINGLIB(_init_table)(needle, needle_len, shift_table);
     Py_ssize_t count = 0;
     while (1) {
         Py_ssize_t result = STRINGLIB(_two_way)(needle, needle_len,
                                                 haystack + index,
                                                 haystack_len - index,
-                                                suffix, period);
+                                                suffix, period,
+                                                shift_table);
         if (result == -1) {
             return count;
         }
@@ -542,6 +538,13 @@ STRINGLIB(_fastcount)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
     }
 
 }
+
+#undef SHIFT_TYPE
+#undef NOT_FOUND
+#undef SHIFT_OVERFLOW
+#undef TABLE_SIZE_BITS
+#undef TABLE_SIZE
+#undef TABLE_MASK
 
 
 Py_LOCAL_INLINE(Py_ssize_t)
