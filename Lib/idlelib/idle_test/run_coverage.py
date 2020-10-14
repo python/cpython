@@ -10,7 +10,6 @@ import textwrap
 def main():
     idlelib_path = find_idlelib_path()
     sources_root_path = idlelib_path.parent.parent
-    venv_path, venv_python_path = ensure_venv(sources_root_path)
 
     module_names = sorted(get_module_names(idlelib_path))
 
@@ -22,6 +21,7 @@ def main():
     args = parser.parse_args()
     module_name = args.module
 
+    venv_path, venv_python_path = ensure_venv(sources_root_path)
     os.chdir(sources_root_path)
 
     with coveragerc_replacement():
