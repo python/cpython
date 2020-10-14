@@ -871,21 +871,13 @@ PyImport_AddModuleObject(PyObject *name)
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *mod = import_add_module(tstate, name);
     if (mod) {
-        if (Py_REFCNT(mod) == 1) {
-            /* This check does not prevent an undefined behavior in the
-             * following code, because the module can have references
-             * to itself. */
-            PyErr_SetString(PyExc_RuntimeError, "Unexpected zero reference count");
-            Py_DECREF(mod);
-            return NULL;
-        }
+        PyObject *ref = PyWeakref_NewRef(mod, NULL);
         Py_DECREF(mod);
-        if (Py_REFCNT(mod) == 0) {
-            /* Strictly speaking, this is undefined behafior, and
-             * the above check can crash. */
-            PyErr_SetString(PyExc_RuntimeError, "Unexpected zero reference count");
+        if (ref == NULL) {
             return NULL;
         }
+        mod = PyWeakref_GetObject(ref);
+        Py_DECREF(ref);
     }
     return mod; /* borrowed reference */
 }
