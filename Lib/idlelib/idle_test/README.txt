@@ -186,7 +186,7 @@ python -m idlelib.idle_test.htest
 
 To get a coverage report for a specific module's tests, run:
 
-./python Lib/idlelib/idle_test/run_coverage.py <module_name>
+python Lib/idlelib/idle_test/run_coverage.py <module_name>
 
 Replace <module_name> above with just the name of the module,
 such as colorizer. (On Windows, replace ./python with ./python.exe .)
