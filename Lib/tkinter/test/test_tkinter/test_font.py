@@ -101,6 +101,12 @@ class FontTest(AbstractTkTest, unittest.TestCase):
             self.assertTrue(name)
         self.assertIn(fontname, names)
 
+    def test_repr(self):
+        self.assertEqual(
+            repr(self.font), f'<tkinter.font.Font object {fontname!r}>'
+        )
+
+
 tests_gui = (FontTest, )
 
 if __name__ == "__main__":
