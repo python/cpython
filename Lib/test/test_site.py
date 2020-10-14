@@ -516,8 +516,6 @@ class ImportSideEffectTests(unittest.TestCase):
 
     @test.support.requires_resource('network')
     @test.support.system_must_validate_cert
-    @unittest.skipUnless(sys.version_info[3] == 'final',
-                         'only for released versions')
     @unittest.skipUnless(hasattr(urllib.request, "HTTPSHandler"),
                          'need SSL support to download license')
     def test_license_exists_at_url(self):
