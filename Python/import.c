@@ -872,7 +872,7 @@ PyImport_AddModuleObject(PyObject *name)
     PyObject *mod = import_add_module(tstate, name);
     if (mod) {
         if (Py_REFCNT(mod) == 1) {
-            /* This check does not preven an undefined behavior in the
+            /* This check does not prevent an undefined behavior in the
              * following code, because the module can have references
              * to itself. */
             PyErr_SetString(PyExc_RuntimeError, "Unexpected zero reference count");
@@ -881,7 +881,7 @@ PyImport_AddModuleObject(PyObject *name)
         }
         Py_DECREF(mod);
         if (Py_REFCNT(mod) == 0) {
-            /* Strictly speaking, this is an undefined behafior, and
+            /* Strictly speaking, this is undefined behafior, and
              * the above check can crash. */
             PyErr_SetString(PyExc_RuntimeError, "Unexpected zero reference count");
             return NULL;
