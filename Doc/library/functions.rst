@@ -1698,7 +1698,7 @@ are always available.  They are listed here in alphabetical order.
       >>> class X:
       ...     a = 1
       ...
-      >>> X = type('X', (), {'a': 1})
+      >>> X = type('X', (), dict(a=1))
 
    See also :ref:`bltin-type-objects`.
 
