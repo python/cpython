@@ -267,7 +267,7 @@ STRINGLIB(_init_table)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
         if (shift > SHIFT_OVERFLOW) {
             shift = SHIFT_OVERFLOW;
         }
-        table[needle[j] & TABLE_MASK] = shift;
+        table[needle[j] & TABLE_MASK] = (SHIFT_TYPE)shift;
     }
 }
 
@@ -362,6 +362,15 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
     else {
         LOG("needle is NOT completely periodic.\n");
 
+        Py_ssize_t shift = needle_len;
+        STRINGLIB_CHAR last_in_needle = needle[needle_len - 1];
+        for (Py_ssize_t i = needle_len - 1; i >= 0; i++) {
+            if ((last_in_needle & TABLE_MASK) == (needle[i] & TABLE_MASK)) {
+                shift = i;
+                break;
+            }
+        }
+        LOG("Last character shift is %d.\n", shift);
         // The two halves are distinct;
         // no extra memory is required,
         // and a mismatch results in a maximal shift.
@@ -396,12 +405,12 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                 default: {
                     LOG("Table says shift by %d.\n", shift);
                     j += shift;
+                    continue;
                 }
             }
 
-            if (j > haystack_len - needle_len) {
-                return -1;
-            }
+            assert((haystack[j + needle_len - 1] & TABLE_MASK)
+                   == (needle[needle_len - 1] & TABLE_MASK));
 
             LOG("Checking the right half.\n");
             Py_ssize_t i = suffix;
@@ -428,7 +437,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
             }
             else {
                 LOG("Jump forward without checking left half.\n");
-                j += i - suffix + 1;
+                j += Py_MAX(shift, i - suffix + 1);
             }
         }
 
@@ -570,7 +579,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
         Py_ssize_t w = n - m;
         Py_ssize_t mlast = m - 1;
         Py_ssize_t skip = mlast - 1;
-        Py_ssize_t mask = 0;
+        unsigned long mask = 0;
         Py_ssize_t i, j;
 
         /* create compressed boyer-moore delta 1 table */
