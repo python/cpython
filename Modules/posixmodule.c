@@ -8490,7 +8490,11 @@ os_times_impl(PyObject *module)
     FILETIME create, exit, kernel, user;
     HANDLE hProc;
     hProc = GetCurrentProcess();
-    GetProcessTimes(hProc, &create, &exit, &kernel, &user);
+    ok = GetProcessTimes(hProc, &create, &exit, &kernel, &user);
+    if (!ok) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
     /* The fields of a FILETIME structure are the hi and lo part
        of a 64-bit value expressed in 100 nanosecond units.
        1e7 is one second in such units; 1e-7 the inverse.
@@ -15022,7 +15026,8 @@ posixmodule_exec(PyObject *m)
     fd_specified("", -1);
     follow_symlinks_specified("", 1);
     dir_fd_and_follow_symlinks_invalid("chmod", DEFAULT_DIR_FD, 1);
-    dir_fd_converter(Py_None, &ignored);
+    if(!dir_fd_converter(Py_None, &ignored))
+       return 0;
     dir_fd_unavailable(Py_None, &ignored);
     }
 
