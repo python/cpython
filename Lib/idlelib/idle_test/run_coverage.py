@@ -1,4 +1,5 @@
 import argparse
+import contextlib
 import os
 import pathlib
 import subprocess
@@ -23,74 +24,12 @@ def main():
 
     os.chdir(sources_root_path)
 
-    coveragerc_path = pathlib.Path('.coveragerc')
-    orig_coverage_rc = None
-    if coveragerc_path.is_file():
-        with coveragerc_path.open('r', encoding='utf-8') as f:
-            orig_coverage_rc = f.read()
-    try:
-        with coveragerc_path.open('w', encoding='utf-8') as f:
-            f.write(textwrap.dedent('''\
-                [run]
-                branch = True
-                cover_pylib = True
+    with coveragerc_replacement():
+        run_tests_with_coverage(module_name=module_name,
+                                venv_python_path=venv_python_path)
+        generate_coverage_report(venv_python_path=venv_python_path)
 
-                [report]
-                # Regexes for lines to exclude from consideration
-                exclude_lines =
-                    # Don't complain if non-runnable code isn't run:
-                    if 0:
-                    if False:
-                    if __name__ == .__main__.:
-
-                    .*# htest #
-                    if not _utest:
-                    if _htest:
-                show_missing = True
-                '''))
-        if module_name == 'all':
-            subprocess.run([
-                venv_python_path, '-m', 'coverage', 'run',
-                '--source=idlelib',
-                '-m', 'test', '-ugui', 'test_idle',
-            ])
-        else:
-            subprocess.run([
-                venv_python_path, '-m', 'coverage', 'run',
-                f'--source=idlelib.{module_name}',
-                f'./Lib/idlelib/idle_test/test_{module_name}.py',
-            ])
-            if module_name in ['pyshell', 'run']:
-                # also run the tests in test_warning.py
-                subprocess.run([
-                    venv_python_path, '-m', 'coverage', 'run', '-a',
-                    f'--source=idlelib.{module_name}',
-                    './Lib/idlelib/idle_test/test_warning.py',
-                ])
-
-        subprocess.run([venv_python_path, '-m', 'coverage', 'report'])
-        subprocess.run([venv_python_path, '-m', 'coverage', 'html'])
-    finally:
-        if orig_coverage_rc:
-            with coveragerc_path.open('w', encoding='utf-8') as f:
-                f.write(orig_coverage_rc)
-        else:
-            coveragerc_path.unlink()
-
-    open_cmd = (
-        'start' if sys.platform == 'win32' else
-        'open' if sys.platform == 'darwin' else
-        'xdg-open'
-    )
-    subprocess.run([
-        open_cmd,
-        (
-            'htmlcov/index.html'
-            if module_name == 'all' else
-            f'htmlcov/Lib_idlelib_{module_name}_py.html'
-
-        ),
-    ])
+    display_coverage_report(module_name=module_name)
 
 
 def listfiles(path):
@@ -146,6 +85,83 @@ def ensure_venv(sources_root_path):
         subprocess.run([sys.executable, '-m', 'venv', venv_path])
         subprocess.run([venv_python_path, '-m', 'pip', 'install', 'coverage'])
     return venv_path, venv_python_path
+
+
+@contextlib.contextmanager
+def coveragerc_replacement():
+    coveragerc_path = pathlib.Path('.coveragerc')
+    orig_coverage_rc = None
+    if coveragerc_path.is_file():
+        with coveragerc_path.open('r', encoding='utf-8') as f:
+            orig_coverage_rc = f.read()
+    try:
+        with coveragerc_path.open('w', encoding='utf-8') as f:
+            f.write(textwrap.dedent('''\
+                [run]
+                branch = True
+                cover_pylib = True
+
+                [report]
+                # Regexes for lines to exclude from consideration
+                exclude_lines =
+                    # Don't complain if non-runnable code isn't run:
+                    if 0:
+                    if False:
+                    if __name__ == .__main__.:
+
+                    .*# htest #
+                    if not _utest:
+                    if _htest:
+                show_missing = True
+                '''))
+        yield
+    finally:
+        if orig_coverage_rc:
+            with coveragerc_path.open('w', encoding='utf-8') as f:
+                f.write(orig_coverage_rc)
+        else:
+            coveragerc_path.unlink()
+
+
+def run_tests_with_coverage(*, module_name, venv_python_path):
+    if module_name == 'all':
+        subprocess.run([
+            venv_python_path, '-m', 'coverage', 'run',
+            '--source=idlelib',
+            '-m', 'test', '-ugui', 'test_idle',
+        ])
+    else:
+        subprocess.run([
+            venv_python_path, '-m', 'coverage', 'run',
+            f'--source=idlelib.{module_name}',
+            f'./Lib/idlelib/idle_test/test_{module_name}.py',
+        ])
+        if module_name in ['pyshell', 'run']:
+            # also run the tests in test_warning.py
+            subprocess.run([
+                venv_python_path, '-m', 'coverage', 'run', '-a',
+                f'--source=idlelib.{module_name}',
+                './Lib/idlelib/idle_test/test_warning.py',
+            ])
+
+
+def generate_coverage_report(*, venv_python_path):
+    subprocess.run([venv_python_path, '-m', 'coverage', 'report'])
+    subprocess.run([venv_python_path, '-m', 'coverage', 'html'])
+
+
+def display_coverage_report(*, module_name):
+    open_cmd = (
+        'start' if sys.platform == 'win32' else
+        'open' if sys.platform == 'darwin' else
+        'xdg-open'
+    )
+    html_file = (
+        'htmlcov/index.html'
+        if module_name == 'all' else
+        f'htmlcov/Lib_idlelib_{module_name}_py.html'
+    )
+    subprocess.run([open_cmd, html_file])
 
 
 if __name__ == '__main__':
