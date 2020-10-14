@@ -81,8 +81,13 @@ def ensure_venv(sources_root_path):
         if sys.platform == 'win32' else
         venv_path.joinpath('bin', 'python')
     )
+    built_python_path = sources_root_path.joinpath(
+        'python.bat' if sys.platform == 'win32' else
+        'python.exe' if sys.platform == 'darwin' else
+        'python'
+    )
     if not venv_path.is_dir():
-        subprocess.run([sys.executable, '-m', 'venv', venv_path])
+        subprocess.run([built_python_path, '-m', 'venv', venv_path])
         subprocess.run([venv_python_path, '-m', 'pip', 'install', 'coverage'])
     return venv_path, venv_python_path
 
