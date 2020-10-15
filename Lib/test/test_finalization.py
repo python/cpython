@@ -120,8 +120,14 @@ class NonGCResurrector(NonGCSimpleBase):
 class Simple(SimpleBase):
     pass
 
-class SimpleResurrector(NonGCResurrector, SimpleBase):
-    pass
+# Can't inherit from NonGCResurrector, in case importing without_gc fails.
+class SimpleResurrector(SimpleBase):
+
+    def side_effect(self):
+        """
+        Resurrect self by storing self in a class-wide list.
+        """
+        self.survivors.append(self)
 
 
 class TestBase:
