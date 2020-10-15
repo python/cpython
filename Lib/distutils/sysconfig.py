@@ -17,17 +17,16 @@ import warnings
 
 from .errors import DistutilsPlatformError
 
+from sysconfig import _PREFIX as PREFIX
+from sysconfig import _BASE_PREFIX as BASE_PREFIX
+from sysconfig import _EXEC_PREFIX as EXEC_PREFIX
+from sysconfig import _BASE_EXEC_PREFIX as BASE_EXEC_PREFIX
+
 warnings.warn(
     'the distutils.sysconfig module is deprecated, use sysconfig instead',
     DeprecationWarning,
     stacklevel=2
 )
-
-# These are needed in a couple of spots, so just compute them once.
-PREFIX = os.path.normpath(sys.prefix)
-EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
-BASE_PREFIX = os.path.normpath(sys.base_prefix)
-BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 
 # Path to the base directory of the project. On Windows the binary may
 # live in project/PCbuild/win32 or project/PCbuild/amd64.
