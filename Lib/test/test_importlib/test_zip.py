@@ -3,11 +3,15 @@ import unittest
 
 from contextlib import ExitStack
 from importlib.metadata import (
-    distribution, entry_points, files, PackageNotFoundError, version,
+    distribution, entry_points, files, PackageNotFoundError,
+    version, distributions,
 )
 from importlib.resources import path
 
+from test.support import requires_zlib
 
+
+@requires_zlib
 class TestZip(unittest.TestCase):
     root = 'test.test_importlib.data'
 
@@ -46,7 +50,12 @@ class TestZip(unittest.TestCase):
             path = str(file.dist.locate_file(file))
             assert '.whl/' in path, path
 
+    def test_one_distribution(self):
+        dists = list(distributions(path=sys.path[:1]))
+        assert len(dists) == 1
 
+
+@requires_zlib
 class TestEgg(TestZip):
     def setUp(self):
         # Find the path to the example-*.egg so we can add it to the front of
