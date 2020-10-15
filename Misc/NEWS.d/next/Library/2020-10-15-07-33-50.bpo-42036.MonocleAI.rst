@@ -1,0 +1,1 @@
+Fix unchecked return in Modules/posixmodule.c. The return value of a function that is potentially used to initialize a local variable is not checked. Therefore, reading the local variable may result in an undefined behavior.
