@@ -329,6 +329,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                         j += shift;
                     }
                     memory = 0;
+                    continue;
                 }
             }
 
@@ -361,21 +362,10 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
     }
     else {
         LOG("needle is NOT completely periodic.\n");
-
-        Py_ssize_t shift = needle_len;
-        STRINGLIB_CHAR last_in_needle = needle[needle_len - 1];
-        for (Py_ssize_t i = needle_len - 1; i >= 0; i++) {
-            if ((last_in_needle & TABLE_MASK) == (needle[i] & TABLE_MASK)) {
-                shift = i;
-                break;
-            }
-        }
-        LOG("Last character shift is %d.\n", shift);
         // The two halves are distinct;
         // no extra memory is required,
         // and a mismatch results in a maximal shift.
         period = 1 + Py_MAX(suffix, needle_len - suffix);
-
         LOG("Using period %d.\n", period);
 
         Py_ssize_t j = 0;
@@ -432,7 +422,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
             }
             else {
                 LOG("Jump forward without checking left half.\n");
-                j += Py_MAX(shift, i - suffix + 1);
+                j += i - suffix + 1;
             }
         }
 
