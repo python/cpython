@@ -3899,10 +3899,12 @@ without_gc(PyObject *Py_UNUSED(self), PyObject *obj)
         // Don't try this at home, kids:
         tp->tp_flags -= Py_TPFLAGS_HAVE_GC;
         tp->tp_free = PyObject_Del;
+        tp->tp_traverse = NULL;
+        tp->tp_clear = NULL;
     }
     assert(!PyType_IS_GC(tp));
     Py_INCREF(obj);
-    return (PyObject*)obj;
+    return obj;
 }
 
 static PyMethodDef ml;
