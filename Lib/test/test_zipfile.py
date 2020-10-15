@@ -3019,6 +3019,12 @@ class TestPath(unittest.TestCase):
                 for rep in range(2):
                     zipfile.Path(file, 'a.txt').read_text()
 
+    def test_inheritance(self):
+      cls = type('PathChild', (zipfile.Path,), {})
+      for alpharep in self.zipfile_alpharep():
+          file = cls(alpharep).joinpath('some dir').parent
+          assert isinstance(file, cls)
+
 
 if __name__ == "__main__":
     unittest.main()
