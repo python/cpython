@@ -249,61 +249,72 @@ class LineNumbersTest(unittest.TestCase):
         self.assert_sidebar_n_lines(1)
         self.assertEqual(get_width(), 1)
 
-    # def test_click_selection(self):
-    #     self.linenumber.show_sidebar()
-    #     self.text.insert('1.0', 'one\ntwo\nthree\nfour\n')
-    #     self.root.update()
+    # The following tests are temporarily disabled due to relying on
+    # simulated user input and inspecting which text is selected, which
+    # are fragile and can fail when several GUI tests are run in parallel
+    # or when the windows created by the test lose focus.
     #
-    #     # Click on the second line.
-    #     x, y = self.get_line_screen_position(2)
-    #     self.linenumber.sidebar_text.event_generate('<Button-1>', x=x, y=y)
-    #     self.linenumber.sidebar_text.update()
-    #     self.root.update()
-    #
-    #     self.assertEqual(self.get_selection(), ('2.0', '3.0'))
-    #
-    # def simulate_drag(self, start_line, end_line):
-    #     start_x, start_y = self.get_line_screen_position(start_line)
-    #     end_x, end_y = self.get_line_screen_position(end_line)
-    #
-    #     self.linenumber.sidebar_text.event_generate('<Button-1>',
-    #                                                 x=start_x, y=start_y)
-    #     self.root.update()
-    #
-    #     def lerp(a, b, steps):
-    #         """linearly interpolate from a to b (inclusive) in equal steps"""
-    #         last_step = steps - 1
-    #         for i in range(steps):
-    #             yield ((last_step - i) / last_step) * a + (i / last_step) * b
-    #
-    #     for x, y in zip(
-    #             map(int, lerp(start_x, end_x, steps=11)),
-    #             map(int, lerp(start_y, end_y, steps=11)),
-    #     ):
-    #         self.linenumber.sidebar_text.event_generate('<B1-Motion>', x=x, y=y)
-    #         self.root.update()
-    #
-    #     self.linenumber.sidebar_text.event_generate('<ButtonRelease-1>',
-    #                                                 x=end_x, y=end_y)
-    #     self.root.update()
-    #
-    # def test_drag_selection_down(self):
-    #     self.linenumber.show_sidebar()
-    #     self.text.insert('1.0', 'one\ntwo\nthree\nfour\nfive\n')
-    #     self.root.update()
-    #
-    #     # Drag from the second line to the fourth line.
-    #     self.simulate_drag(2, 4)
-    #     self.assertEqual(self.get_selection(), ('2.0', '5.0'))
-    #
-    # def test_drag_selection_up(self):
-    #     self.linenumber.show_sidebar()
-    #     self.text.insert('1.0', 'one\ntwo\nthree\nfour\nfive\n')
-    #     self.root.update()
-    #
-    #     # Drag from the fourth line to the second line.
-    #     self.simulate_drag(4, 2)
-    #     self.assertEqual(self.get_selection(), ('2.0', '5.0'))
+    # TODO: Re-work these tests or remove them from the test suite.
+
+    @unittest.skip('test disabled')
+    def test_click_selection(self):
+        self.linenumber.show_sidebar()
+        self.text.insert('1.0', 'one\ntwo\nthree\nfour\n')
+        self.root.update()
+
+        # Click on the second line.
+        x, y = self.get_line_screen_position(2)
+        self.linenumber.sidebar_text.event_generate('<Button-1>', x=x, y=y)
+        self.linenumber.sidebar_text.update()
+        self.root.update()
+
+        self.assertEqual(self.get_selection(), ('2.0', '3.0'))
+
+    @unittest.skip('test disabled')
+    def simulate_drag(self, start_line, end_line):
+        start_x, start_y = self.get_line_screen_position(start_line)
+        end_x, end_y = self.get_line_screen_position(end_line)
+
+        self.linenumber.sidebar_text.event_generate('<Button-1>',
+                                                    x=start_x, y=start_y)
+        self.root.update()
+
+        def lerp(a, b, steps):
+            """linearly interpolate from a to b (inclusive) in equal steps"""
+            last_step = steps - 1
+            for i in range(steps):
+                yield ((last_step - i) / last_step) * a + (i / last_step) * b
+
+        for x, y in zip(
+                map(int, lerp(start_x, end_x, steps=11)),
+                map(int, lerp(start_y, end_y, steps=11)),
+        ):
+            self.linenumber.sidebar_text.event_generate('<B1-Motion>', x=x, y=y)
+            self.root.update()
+
+        self.linenumber.sidebar_text.event_generate('<ButtonRelease-1>',
+                                                    x=end_x, y=end_y)
+        self.root.update()
+
+    @unittest.skip('test disabled')
+    def test_drag_selection_down(self):
+        self.linenumber.show_sidebar()
+        self.text.insert('1.0', 'one\ntwo\nthree\nfour\nfive\n')
+        self.root.update()
+
+        # Drag from the second line to the fourth line.
+        self.simulate_drag(2, 4)
+        self.assertEqual(self.get_selection(), ('2.0', '5.0'))
+
+    @unittest.skip('test disabled')
+    def test_drag_selection_up(self):
+        self.linenumber.show_sidebar()
+        self.text.insert('1.0', 'one\ntwo\nthree\nfour\nfive\n')
+        self.root.update()
+
+        # Drag from the fourth line to the second line.
+        self.simulate_drag(4, 2)
+        self.assertEqual(self.get_selection(), ('2.0', '5.0'))
 
     def test_scroll(self):
         self.linenumber.show_sidebar()
@@ -316,15 +327,15 @@ class LineNumbersTest(unittest.TestCase):
         self.assertEqual(self.text.index('@0,0'), '11.0')
         self.assertEqual(self.linenumber.sidebar_text.index('@0,0'), '11.0')
 
-        # # Generate a mouse-wheel event and make sure it scrolled up or down.
-        # # The meaning of the "delta" is OS-dependant, so this just checks for
-        # # any change.
-        # self.linenumber.sidebar_text.event_generate('<MouseWheel>',
-        #                                             x=0, y=0,
-        #                                             delta=10)
-        # self.root.update()
-        # self.assertNotEqual(self.text.index('@0,0'), '11.0')
-        # self.assertNotEqual(self.linenumber.sidebar_text.index('@0,0'), '11.0')
+        # Generate a mouse-wheel event and make sure it scrolled up or down.
+        # The meaning of the "delta" is OS-dependant, so this just checks for
+        # any change.
+        self.linenumber.sidebar_text.event_generate('<MouseWheel>',
+                                                    x=0, y=0,
+                                                    delta=10)
+        self.root.update()
+        self.assertNotEqual(self.text.index('@0,0'), '11.0')
+        self.assertNotEqual(self.linenumber.sidebar_text.index('@0,0'), '11.0')
 
     def test_font(self):
         ln = self.linenumber
