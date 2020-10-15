@@ -15,23 +15,33 @@ import re
 import sys
 import warnings
 
+from functools import partial
+
 from .errors import DistutilsPlatformError
 
 from sysconfig import _PREFIX as PREFIX
 from sysconfig import _BASE_PREFIX as BASE_PREFIX
 from sysconfig import _EXEC_PREFIX as EXEC_PREFIX
 from sysconfig import _BASE_EXEC_PREFIX as BASE_EXEC_PREFIX
+from sysconfig import _PROJECT_BASE as project_base
+from sysconfig import _PYTHON_BUILD as python_build
+from sysconfig import _CONFIG_VARS as _config_vars
 from sysconfig import parse_config_h as sysconfig_parse_config_h
 from sysconfig import _parse_makefile as sysconfig_parse_makefile
 
 from sysconfig import _is_python_source_dir
 from sysconfig import _sys_home
 
+from sysconfig import build_flags
 from sysconfig import expand_makefile_vars
+from sysconfig import is_python_build
 from sysconfig import get_config_var
+from sysconfig import get_python_inc
 from sysconfig import get_python_version
 from sysconfig import get_python_lib
 
+if os.name == "nt":
+    from sysconfig import _fix_pcbuild
 
 warnings.warn(
     'the distutils.sysconfig module is deprecated, use sysconfig instead',
@@ -48,89 +58,7 @@ def parse_config_h(fp, g=None):
 def parse_makefile(fn, g=None):
     return sysconfig_parse_makefile(fn, vars=g)
 
-
-# Path to the base directory of the project. On Windows the binary may
-# live in project/PCbuild/win32 or project/PCbuild/amd64.
-# set for cross builds
-if "_PYTHON_PROJECT_BASE" in os.environ:
-    project_base = os.path.abspath(os.environ["_PYTHON_PROJECT_BASE"])
-else:
-    if sys.executable:
-        project_base = os.path.dirname(os.path.abspath(sys.executable))
-    else:
-        # sys.executable can be empty if argv[0] has been changed and Python is
-        # unable to retrieve the real program name
-        project_base = os.getcwd()
-
-
-if os.name == 'nt':
-    def _fix_pcbuild(d):
-        if d and os.path.normcase(d).startswith(
-                os.path.normcase(os.path.join(PREFIX, "PCbuild"))):
-            return PREFIX
-        return d
-    project_base = _fix_pcbuild(project_base)
-    _sys_home = _fix_pcbuild(_sys_home)
-
-def _python_build():
-    if _sys_home:
-        return _is_python_source_dir(_sys_home)
-    return _is_python_source_dir(project_base)
-
-python_build = _python_build()
-
-
-# Calculate the build qualifier flags if they are defined.  Adding the flags
-# to the include and lib directories only makes sense for an installation, not
-# an in-source build.
-build_flags = ''
-try:
-    if not python_build:
-        build_flags = sys.abiflags
-except AttributeError:
-    # It's not a configure-based build, so the sys module doesn't have
-    # this attribute, which is fine.
-    pass
-
-
-def get_python_inc(plat_specific=0, prefix=None):
-    """Return the directory containing installed Python header files.
-
-    If 'plat_specific' is false (the default), this is the path to the
-    non-platform-specific header files, i.e. Python.h and so on;
-    otherwise, this is the path to platform-specific header files
-    (namely pyconfig.h).
-
-    If 'prefix' is supplied, use it instead of sys.base_prefix or
-    sys.base_exec_prefix -- i.e., ignore 'plat_specific'.
-    """
-    if prefix is None:
-        prefix = plat_specific and BASE_EXEC_PREFIX or BASE_PREFIX
-    if os.name == "posix":
-        if python_build:
-            # Assume the executable is in the build directory.  The
-            # pyconfig.h file should be in the same directory.  Since
-            # the build directory may not be the source directory, we
-            # must use "srcdir" from the makefile to find the "Include"
-            # directory.
-            if plat_specific:
-                return _sys_home or project_base
-            else:
-                incdir = os.path.join(get_config_var('srcdir'), 'Include')
-                return os.path.normpath(incdir)
-        python_dir = 'python' + get_python_version() + build_flags
-        return os.path.join(prefix, "include", python_dir)
-    elif os.name == "nt":
-        if python_build:
-            # Include both the include and PC dir to ensure we can find
-            # pyconfig.h
-            return (os.path.join(prefix, "include") + os.path.pathsep +
-                    os.path.join(prefix, "PC"))
-        return os.path.join(prefix, "include")
-    else:
-        raise DistutilsPlatformError(
-            "I don't know where Python installs its C header files "
-            "on platform '%s'" % os.name)
+_python_build = partial(is_python_build, check_home=True)
 
 
 def customize_compiler(compiler):
@@ -229,8 +157,6 @@ def get_makefile_filename():
         config_file += '-%s' % sys.implementation._multiarch
     return os.path.join(lib_dir, config_file, 'Makefile')
 
-
-_config_vars = None
 
 def _init_posix():
     """Initialize the module as appropriate for POSIX systems."""
