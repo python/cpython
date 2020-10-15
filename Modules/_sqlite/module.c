@@ -243,7 +243,6 @@ static void converters_init(PyObject* module)
         return;
     }
 
-    Py_INCREF(_pysqlite_converters);
     if (PyModule_AddObject(module, "converters", _pysqlite_converters) < 0) {
         Py_DECREF(_pysqlite_converters);
     }
