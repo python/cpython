@@ -185,7 +185,7 @@ _symtable symtablemodule.c
 #_json -I$(srcdir)/Include/internal -DPy_BUILD_CORE_BUILTIN _json.c	# _json speedups
 #_statistics _statisticsmodule.c # statistics accelerator
 
-#unicodedata unicodedata.c    # static Unicode character database
+#unicodedata unicodedata.c -DPy_BUILD_CORE_BUILTIN   # static Unicode character database
 
 
 # Modules with some UNIX dependencies -- on by default:
