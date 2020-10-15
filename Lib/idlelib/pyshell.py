@@ -1283,7 +1283,8 @@ class PyShell(OutputWindow):
             if prefix.rstrip().endswith(':'):
                 self.newline_and_indent_event(event)
                 prefix = self.text.get("insert linestart", "insert")
-            self.text.insert("insert", lines[0].strip(), self.user_input_insert_tags)
+            self.text.insert("insert", lines[0].strip(),
+                             self.user_input_insert_tags)
             if len(lines) > 1:
                 orig_base_indent = re.search(r'^([ \t]*)', lines[0]).group(0)
                 new_base_indent  = re.search(r'^([ \t]*)', prefix).group(0)
@@ -1291,7 +1292,8 @@ class PyShell(OutputWindow):
                     if line.startswith(orig_base_indent):
                         # replace orig base indentation with new indentation
                         line = new_base_indent + line[len(orig_base_indent):]
-                    self.text.insert('insert', '\n'+line.rstrip(), self.user_input_insert_tags)
+                    self.text.insert('insert', '\n' + line.rstrip(),
+                                     self.user_input_insert_tags)
         finally:
             self.text.see("insert")
             self.text.undo_block_stop()
@@ -1302,10 +1304,14 @@ class PyShell(OutputWindow):
         # Strip off last newline and surrounding whitespace.
         # (To allow you to hit return twice to end a statement.)
         line = re.sub(r"[ \t]*\n?[ \t]*$", "", line)
-        input_is_incomplete = self.interp.runsource(line)
-        if not input_is_incomplete:
-            if self.user_input_insert_tags:
+        input_is_complete = self.interp.runsource(line)
+        if input_is_complete or input_is_complete is None:
+            if (
+                self.user_input_insert_tags and
+                self.text.get(index_before) == '\n'
+            ):
                 self.text.tag_remove(self.user_input_insert_tags, index_before)
+            self.shell_sidebar.update_sidebar()
 
     def open_stack_viewer(self, event=None):
         if self.interp.rpcclt:
