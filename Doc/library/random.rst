@@ -545,9 +545,9 @@ Recipes
 
 The default :func:`.random` returns multiples of 2⁻⁵³ in the range
 *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and are exactly
-representable as Python floats.  However, many floats in that interval
-are not possible selections.  For example, ``0.05954861408025609``
-isn't an integer multiple of 2⁻⁵³.
+representable as Python floats.  However, many other representable
+floats in that interval are not possible selections.  For example,
+``0.05954861408025609`` isn't an integer multiple of 2⁻⁵³.
 
 The following recipe takes a different approach.  All floats in the
 interval are possible selections.  The mantissa comes from a uniform
