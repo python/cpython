@@ -340,7 +340,6 @@ do {                                                            \
     if (!exc) {                                                 \
         goto error;                                             \
     }                                                           \
-    Py_INCREF(exc);                                             \
     if (PyModule_AddObject(module, name, exc) < 0) {            \
         Py_DECREF(exc);                                         \
         goto error;                                             \
