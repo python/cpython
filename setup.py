@@ -1,5 +1,6 @@
 # Autodetecting setup.py script for building the Python extensions
 
+# All modules and libraries that should be imported
 import argparse
 import importlib._bootstrap
 import importlib.machinery
