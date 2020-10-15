@@ -835,8 +835,8 @@ class Flag(Enum):
         inverted = self.__class__(0)
         for m in self.__class__:
             if m not in members and not (m._value_ & self._value_):
-                inverted = inverted | m
-        return self.__class__(inverted)
+                inverted |= m
+        return inverted
 
 
 class IntFlag(int, Flag):
@@ -900,8 +900,7 @@ class IntFlag(int, Flag):
     __rxor__ = __xor__
 
     def __invert__(self):
-        result = self.__class__(~self._value_)
-        return result
+        return self.__class__(~self._value_)
 
 
 def _high_bit(value):
