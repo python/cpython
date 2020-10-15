@@ -13,6 +13,7 @@ import time
 import unittest
 import unittest.mock as mock
 import zipfile
+import functools
 
 
 from tempfile import TemporaryFile
@@ -2836,6 +2837,20 @@ def build_alpharep_fixture():
     return zf
 
 
+def pass_alpharep(meth):
+    """
+    Given a method, wrap it in a for loop that invokes method
+    with each subtest.
+    """
+
+    @functools.wraps(meth)
+    def wrapper(self):
+        for alpharep in self.zipfile_alpharep():
+            meth(self, alpharep=alpharep)
+
+    return wrapper
+
+
 class TestPath(unittest.TestCase):
     def setUp(self):
         self.fixtures = contextlib.ExitStack()
@@ -2847,47 +2862,58 @@ class TestPath(unittest.TestCase):
         with self.subTest():
             yield add_dirs(build_alpharep_fixture())
 
-    def zipfile_ondisk(self):
+    def zipfile_ondisk(self, alpharep):
         tmpdir = pathlib.Path(self.fixtures.enter_context(temp_dir()))
-        for alpharep in self.zipfile_alpharep():
-            buffer = alpharep.fp
-            alpharep.close()
-            path = tmpdir / alpharep.filename
-            with path.open("wb") as strm:
-                strm.write(buffer.getvalue())
-            yield path
+        buffer = alpharep.fp
+        alpharep.close()
+        path = tmpdir / alpharep.filename
+        with path.open("wb") as strm:
+            strm.write(buffer.getvalue())
+        return path
 
-    def test_iterdir_and_types(self):
-        for alpharep in self.zipfile_alpharep():
-            root = zipfile.Path(alpharep)
-            assert root.is_dir()
-            a, b, g = root.iterdir()
-            assert a.is_file()
-            assert b.is_dir()
-            assert g.is_dir()
-            c, f, d = b.iterdir()
-            assert c.is_file() and f.is_file()
-            e, = d.iterdir()
-            assert e.is_file()
-            h, = g.iterdir()
-            i, = h.iterdir()
-            assert i.is_file()
+    @pass_alpharep
+    def test_iterdir_and_types(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert root.is_dir()
+        a, b, g = root.iterdir()
+        assert a.is_file()
+        assert b.is_dir()
+        assert g.is_dir()
+        c, f, d = b.iterdir()
+        assert c.is_file() and f.is_file()
+        (e,) = d.iterdir()
+        assert e.is_file()
+        (h,) = g.iterdir()
+        (i,) = h.iterdir()
+        assert i.is_file()
 
-    def test_subdir_is_dir(self):
-        for alpharep in self.zipfile_alpharep():
-            root = zipfile.Path(alpharep)
-            assert (root / 'b').is_dir()
-            assert (root / 'b/').is_dir()
-            assert (root / 'g').is_dir()
-            assert (root / 'g/').is_dir()
+    @pass_alpharep
+    def test_is_file_missing(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert not root.joinpath('missing.txt').is_file()
 
-    def test_open(self):
-        for alpharep in self.zipfile_alpharep():
-            root = zipfile.Path(alpharep)
-            a, b, g = root.iterdir()
-            with a.open() as strm:
-                data = strm.read()
-            assert data == "content of a"
+    @pass_alpharep
+    def test_iterdir_on_file(self, alpharep):
+        root = zipfile.Path(alpharep)
+        a, b, g = root.iterdir()
+        with self.assertRaises(ValueError):
+            a.iterdir()
+
+    @pass_alpharep
+    def test_subdir_is_dir(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert (root / 'b').is_dir()
+        assert (root / 'b/').is_dir()
+        assert (root / 'g').is_dir()
+        assert (root / 'g/').is_dir()
+
+    @pass_alpharep
+    def test_open(self, alpharep):
+        root = zipfile.Path(alpharep)
+        a, b, g = root.iterdir()
+        with a.open() as strm:
+            data = strm.read()
+        assert data == "content of a"
 
     def test_open_write(self):
         """
@@ -2908,6 +2934,14 @@ class TestPath(unittest.TestCase):
         with self.assertRaises(IsADirectoryError):
             zf.joinpath('b').open()
 
+    @pass_alpharep
+    def test_open_binary_invalid_args(self, alpharep):
+        root = zipfile.Path(alpharep)
+        with self.assertRaises(ValueError):
+            root.joinpath('a.txt').open('rb', encoding='utf-8')
+        with self.assertRaises(ValueError):
+            root.joinpath('a.txt').open('rb', 'utf-8')
+
     def test_open_missing_directory(self):
         """
         Attempting to open a missing directory raises FileNotFoundError.
@@ -2916,75 +2950,87 @@ class TestPath(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             zf.joinpath('z').open()
 
-    def test_read(self):
-        for alpharep in self.zipfile_alpharep():
-            root = zipfile.Path(alpharep)
-            a, b, g = root.iterdir()
-            assert a.read_text() == "content of a"
-            assert a.read_bytes() == b"content of a"
+    @pass_alpharep
+    def test_read(self, alpharep):
+        root = zipfile.Path(alpharep)
+        a, b, g = root.iterdir()
+        assert a.read_text() == "content of a"
+        assert a.read_bytes() == b"content of a"
 
-    def test_joinpath(self):
-        for alpharep in self.zipfile_alpharep():
-            root = zipfile.Path(alpharep)
-            a = root.joinpath("a")
-            assert a.is_file()
-            e = root.joinpath("b").joinpath("d").joinpath("e.txt")
-            assert e.read_text() == "content of e"
+    @pass_alpharep
+    def test_joinpath(self, alpharep):
+        root = zipfile.Path(alpharep)
+        a = root.joinpath("a.txt")
+        assert a.is_file()
+        e = root.joinpath("b").joinpath("d").joinpath("e.txt")
+        assert e.read_text() == "content of e"
 
-    def test_traverse_truediv(self):
-        for alpharep in self.zipfile_alpharep():
-            root = zipfile.Path(alpharep)
-            a = root / "a"
-            assert a.is_file()
-            e = root / "b" / "d" / "e.txt"
-            assert e.read_text() == "content of e"
+    @pass_alpharep
+    def test_traverse_truediv(self, alpharep):
+        root = zipfile.Path(alpharep)
+        a = root / "a.txt"
+        assert a.is_file()
+        e = root / "b" / "d" / "e.txt"
+        assert e.read_text() == "content of e"
 
-    def test_pathlike_construction(self):
+    @pass_alpharep
+    def test_traverse_simplediv(self, alpharep):
+        """
+        Disable the __future__.division when testing traversal.
+        """
+        code = compile(
+            source="zipfile.Path(alpharep) / 'a'",
+            filename="(test)",
+            mode="eval",
+            dont_inherit=True,
+        )
+        eval(code)
+
+    @pass_alpharep
+    def test_pathlike_construction(self, alpharep):
         """
         zipfile.Path should be constructable from a path-like object
         """
-        for zipfile_ondisk in self.zipfile_ondisk():
-            pathlike = pathlib.Path(str(zipfile_ondisk))
-            zipfile.Path(pathlike)
+        zipfile_ondisk = self.zipfile_ondisk(alpharep)
+        pathlike = pathlib.Path(str(zipfile_ondisk))
+        zipfile.Path(pathlike)
 
-    def test_traverse_pathlike(self):
-        for alpharep in self.zipfile_alpharep():
-            root = zipfile.Path(alpharep)
-            root / pathlib.Path("a")
+    @pass_alpharep
+    def test_traverse_pathlike(self, alpharep):
+        root = zipfile.Path(alpharep)
+        root / pathlib.Path("a")
 
-    def test_parent(self):
-        for alpharep in self.zipfile_alpharep():
-            root = zipfile.Path(alpharep)
-            assert (root / 'a').parent.at == ''
-            assert (root / 'a' / 'b').parent.at == 'a/'
+    @pass_alpharep
+    def test_parent(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert (root / 'a').parent.at == ''
+        assert (root / 'a' / 'b').parent.at == 'a/'
 
-    def test_dir_parent(self):
-        for alpharep in self.zipfile_alpharep():
-            root = zipfile.Path(alpharep)
-            assert (root / 'b').parent.at == ''
-            assert (root / 'b/').parent.at == ''
+    @pass_alpharep
+    def test_dir_parent(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert (root / 'b').parent.at == ''
+        assert (root / 'b/').parent.at == ''
 
-    def test_missing_dir_parent(self):
-        for alpharep in self.zipfile_alpharep():
-            root = zipfile.Path(alpharep)
-            assert (root / 'missing dir/').parent.at == ''
+    @pass_alpharep
+    def test_missing_dir_parent(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert (root / 'missing dir/').parent.at == ''
 
-    def test_mutability(self):
+    @pass_alpharep
+    def test_mutability(self, alpharep):
         """
         If the underlying zipfile is changed, the Path object should
         reflect that change.
         """
-        for alpharep in self.zipfile_alpharep():
-            root = zipfile.Path(alpharep)
-            a, b, g = root.iterdir()
-            alpharep.writestr('foo.txt', 'foo')
-            alpharep.writestr('bar/baz.txt', 'baz')
-            assert any(
-                child.name == 'foo.txt'
-                for child in root.iterdir())
-            assert (root / 'foo.txt').read_text() == 'foo'
-            baz, = (root / 'bar').iterdir()
-            assert baz.read_text() == 'baz'
+        root = zipfile.Path(alpharep)
+        a, b, g = root.iterdir()
+        alpharep.writestr('foo.txt', 'foo')
+        alpharep.writestr('bar/baz.txt', 'baz')
+        assert any(child.name == 'foo.txt' for child in root.iterdir())
+        assert (root / 'foo.txt').read_text() == 'foo'
+        (baz,) = (root / 'bar').iterdir()
+        assert baz.read_text() == 'baz'
 
     HUGE_ZIPFILE_NUM_ENTRIES = 2 ** 13
 
@@ -3013,11 +3059,65 @@ class TestPath(unittest.TestCase):
         data = ['/'.join(string.ascii_lowercase + str(n)) for n in range(10000)]
         zipfile.CompleteDirs._implied_dirs(data)
 
-    def test_read_does_not_close(self):
-        for alpharep in self.zipfile_ondisk():
-            with zipfile.ZipFile(alpharep) as file:
-                for rep in range(2):
-                    zipfile.Path(file, 'a.txt').read_text()
+    @pass_alpharep
+    def test_read_does_not_close(self, alpharep):
+        alpharep = self.zipfile_ondisk(alpharep)
+        with zipfile.ZipFile(alpharep) as file:
+            for rep in range(2):
+                zipfile.Path(file, 'a.txt').read_text()
+
+    @pass_alpharep
+    def test_subclass(self, alpharep):
+        class Subclass(zipfile.Path):
+            pass
+
+        root = Subclass(alpharep)
+        assert isinstance(root / 'b', Subclass)
+
+    @pass_alpharep
+    def test_filename(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert root.filename == pathlib.Path('alpharep.zip')
+
+    @pass_alpharep
+    def test_root_name(self, alpharep):
+        """
+        The name of the root should be the name of the zipfile
+        """
+        root = zipfile.Path(alpharep)
+        assert root.name == 'alpharep.zip' == root.filename.name
+
+    @pass_alpharep
+    def test_root_parent(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert root.parent == pathlib.Path('.')
+        root.root.filename = 'foo/bar.zip'
+        assert root.parent == pathlib.Path('foo')
+
+    @pass_alpharep
+    def test_root_unnamed(self, alpharep):
+        """
+        It is an error to attempt to get the name
+        or parent of an unnamed zipfile.
+        """
+        alpharep.filename = None
+        root = zipfile.Path(alpharep)
+        with self.assertRaises(TypeError):
+            root.name
+        with self.assertRaises(TypeError):
+            root.parent
+
+        # .name and .parent should still work on subs
+        sub = root / "b"
+        assert sub.name == "b"
+        assert sub.parent
+
+    @pass_alpharep
+    def test_inheritance(self, alpharep):
+        cls = type('PathChild', (zipfile.Path,), {})
+        for alpharep in self.zipfile_alpharep():
+            file = cls(alpharep).joinpath('some dir').parent
+            assert isinstance(file, cls)
 
 
 if __name__ == "__main__":
