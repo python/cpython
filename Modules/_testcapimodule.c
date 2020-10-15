@@ -3511,6 +3511,25 @@ with_tp_del(PyObject *self, PyObject *args)
     return obj;
 }
 
+static PyObject *
+without_gc(PyObject *Py_UNUSED(self), PyObject *obj)
+{
+    PyTypeObject *tp = (PyTypeObject*)obj;
+    if (!PyType_Check(obj) || !PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
+        return PyErr_Format(PyExc_TypeError, "heap type expected, got %R", obj);
+    }
+    if (PyType_IS_GC(tp)) {
+        // Don't try this at home, kids:
+        tp->tp_flags -= Py_TPFLAGS_HAVE_GC;
+        tp->tp_free = PyObject_Del;
+        tp->tp_traverse = NULL;
+        tp->tp_clear = NULL;
+    }
+    assert(!PyType_IS_GC(tp));
+    Py_INCREF(obj);
+    return obj;
+}
+
 static PyMethodDef ml;
 
 static PyObject *
@@ -5325,6 +5344,7 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"write_unraisable_exc", test_write_unraisable_exc, METH_VARARGS},
     {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
+    {"without_gc", without_gc, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
