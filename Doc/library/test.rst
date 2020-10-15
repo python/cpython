@@ -1168,6 +1168,8 @@ script execution tests.
 The :mod:`test.support.bytecode_helper` module provides support for testing
 and inspecting bytecode generation.
 
+.. versionadded:: 3.9
+
 The module defines the following class:
 
 .. class:: BytecodeTestCase(unittest.TestCase)
