@@ -823,16 +823,15 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
         PyTypeObject *cls;
         PyObject *new_mro, *old_mro = NULL;
 
-        if(!PyArg_UnpackTuple(PyList_GET_ITEM(temp, i),
+        if(PyArg_UnpackTuple(PyList_GET_ITEM(temp, i),
                           "", 2, 3, &cls, &new_mro, &old_mro)) {
-           return NULL;
-        }
-        /* Do not rollback if cls has a newer version of MRO.  */
-        if (cls->tp_mro == new_mro) {
-            Py_XINCREF(old_mro);
-            cls->tp_mro = old_mro;
-            Py_DECREF(new_mro);
-        }
+           /* Do not rollback if cls has a newer version of MRO.  */
+           if (cls->tp_mro == new_mro) {
+               Py_XINCREF(old_mro);
+               cls->tp_mro = old_mro;
+               Py_DECREF(new_mro);
+           }
+        } 
     }
     Py_DECREF(temp);
 
