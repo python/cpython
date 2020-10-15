@@ -21,12 +21,33 @@ from sysconfig import _PREFIX as PREFIX
 from sysconfig import _BASE_PREFIX as BASE_PREFIX
 from sysconfig import _EXEC_PREFIX as EXEC_PREFIX
 from sysconfig import _BASE_EXEC_PREFIX as BASE_EXEC_PREFIX
+from sysconfig import parse_config_h as sysconfig_parse_config_h
+from sysconfig import _parse_makefile as sysconfig_parse_makefile
+
+from sysconfig import _is_python_source_dir
+from sysconfig import _sys_home
+
+from sysconfig import expand_makefile_vars
+from sysconfig import get_config_var
+from sysconfig import get_python_version
+from sysconfig import get_python_lib
+
 
 warnings.warn(
     'the distutils.sysconfig module is deprecated, use sysconfig instead',
     DeprecationWarning,
     stacklevel=2
 )
+
+
+# Following functions are the same as in sysconfig but with different API
+def parse_config_h(fp, g=None):
+    return sysconfig_parse_config_h(fp, vars=g)
+
+
+def parse_makefile(fn, g=None):
+    return sysconfig_parse_makefile(fn, vars=g)
+
 
 # Path to the base directory of the project. On Windows the binary may
 # live in project/PCbuild/win32 or project/PCbuild/amd64.
@@ -41,17 +62,6 @@ else:
         # unable to retrieve the real program name
         project_base = os.getcwd()
 
-
-# python_build: (Boolean) if true, we're either building Python or
-# building an extension with an un-installed Python, so we use
-# different (hard-wired) directories.
-def _is_python_source_dir(d):
-    for fn in ("Setup", "Setup.local"):
-        if os.path.isfile(os.path.join(d, "Modules", fn)):
-            return True
-    return False
-
-_sys_home = getattr(sys, '_home', None)
 
 if os.name == 'nt':
     def _fix_pcbuild(d):
@@ -81,13 +91,6 @@ except AttributeError:
     # It's not a configure-based build, so the sys module doesn't have
     # this attribute, which is fine.
     pass
-
-def get_python_version():
-    """Return a string containing the major and minor Python version,
-    leaving off the patchlevel.  Sample return values could be '1.5'
-    or '2.2'.
-    """
-    return '%d.%d' % sys.version_info[:2]
 
 
 def get_python_inc(plat_specific=0, prefix=None):
@@ -128,52 +131,6 @@ def get_python_inc(plat_specific=0, prefix=None):
         raise DistutilsPlatformError(
             "I don't know where Python installs its C header files "
             "on platform '%s'" % os.name)
-
-
-def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
-    """Return the directory containing the Python library (standard or
-    site additions).
-
-    If 'plat_specific' is true, return the directory containing
-    platform-specific modules, i.e. any module from a non-pure-Python
-    module distribution; otherwise, return the platform-shared library
-    directory.  If 'standard_lib' is true, return the directory
-    containing standard Python library modules; otherwise, return the
-    directory for site-specific modules.
-
-    If 'prefix' is supplied, use it instead of sys.base_prefix or
-    sys.base_exec_prefix -- i.e., ignore 'plat_specific'.
-    """
-    if prefix is None:
-        if standard_lib:
-            prefix = plat_specific and BASE_EXEC_PREFIX or BASE_PREFIX
-        else:
-            prefix = plat_specific and EXEC_PREFIX or PREFIX
-
-    if os.name == "posix":
-        if plat_specific or standard_lib:
-            # Platform-specific modules (any module from a non-pure-Python
-            # module distribution) or standard Python library modules.
-            libdir = sys.platlibdir
-        else:
-            # Pure Python
-            libdir = "lib"
-        libpython = os.path.join(prefix, libdir,
-                                 "python" + get_python_version())
-        if standard_lib:
-            return libpython
-        else:
-            return os.path.join(libpython, "site-packages")
-    elif os.name == "nt":
-        if standard_lib:
-            return os.path.join(prefix, "Lib")
-        else:
-            return os.path.join(prefix, "Lib", "site-packages")
-    else:
-        raise DistutilsPlatformError(
-            "I don't know where Python installs its library "
-            "on platform '%s'" % os.name)
-
 
 
 def customize_compiler(compiler):
@@ -271,172 +228,6 @@ def get_makefile_filename():
     if hasattr(sys.implementation, '_multiarch'):
         config_file += '-%s' % sys.implementation._multiarch
     return os.path.join(lib_dir, config_file, 'Makefile')
-
-
-def parse_config_h(fp, g=None):
-    """Parse a config.h-style file.
-
-    A dictionary containing name/value pairs is returned.  If an
-    optional dictionary is passed in as the second argument, it is
-    used instead of a new dictionary.
-    """
-    if g is None:
-        g = {}
-    define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
-    undef_rx = re.compile("/[*] #undef ([A-Z][A-Za-z0-9_]+) [*]/\n")
-    #
-    while True:
-        line = fp.readline()
-        if not line:
-            break
-        m = define_rx.match(line)
-        if m:
-            n, v = m.group(1, 2)
-            try: v = int(v)
-            except ValueError: pass
-            g[n] = v
-        else:
-            m = undef_rx.match(line)
-            if m:
-                g[m.group(1)] = 0
-    return g
-
-
-# Regexes needed for parsing Makefile (and similar syntaxes,
-# like old-style Setup files).
-_variable_rx = re.compile(r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
-_findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
-_findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
-
-def parse_makefile(fn, g=None):
-    """Parse a Makefile-style file.
-
-    A dictionary containing name/value pairs is returned.  If an
-    optional dictionary is passed in as the second argument, it is
-    used instead of a new dictionary.
-    """
-    from distutils.text_file import TextFile
-    fp = TextFile(fn, strip_comments=1, skip_blanks=1, join_lines=1, errors="surrogateescape")
-
-    if g is None:
-        g = {}
-    done = {}
-    notdone = {}
-
-    while True:
-        line = fp.readline()
-        if line is None: # eof
-            break
-        m = _variable_rx.match(line)
-        if m:
-            n, v = m.group(1, 2)
-            v = v.strip()
-            # `$$' is a literal `$' in make
-            tmpv = v.replace('$$', '')
-
-            if "$" in tmpv:
-                notdone[n] = v
-            else:
-                try:
-                    v = int(v)
-                except ValueError:
-                    # insert literal `$'
-                    done[n] = v.replace('$$', '$')
-                else:
-                    done[n] = v
-
-    # Variables with a 'PY_' prefix in the makefile. These need to
-    # be made available without that prefix through sysconfig.
-    # Special care is needed to ensure that variable expansion works, even
-    # if the expansion uses the name without a prefix.
-    renamed_variables = ('CFLAGS', 'LDFLAGS', 'CPPFLAGS')
-
-    # do variable interpolation here
-    while notdone:
-        for name in list(notdone):
-            value = notdone[name]
-            m = _findvar1_rx.search(value) or _findvar2_rx.search(value)
-            if m:
-                n = m.group(1)
-                found = True
-                if n in done:
-                    item = str(done[n])
-                elif n in notdone:
-                    # get it on a subsequent round
-                    found = False
-                elif n in os.environ:
-                    # do it like make: fall back to environment
-                    item = os.environ[n]
-
-                elif n in renamed_variables:
-                    if name.startswith('PY_') and name[3:] in renamed_variables:
-                        item = ""
-
-                    elif 'PY_' + n in notdone:
-                        found = False
-
-                    else:
-                        item = str(done['PY_' + n])
-                else:
-                    done[n] = item = ""
-                if found:
-                    after = value[m.end():]
-                    value = value[:m.start()] + item + after
-                    if "$" in after:
-                        notdone[name] = value
-                    else:
-                        try: value = int(value)
-                        except ValueError:
-                            done[name] = value.strip()
-                        else:
-                            done[name] = value
-                        del notdone[name]
-
-                        if name.startswith('PY_') \
-                            and name[3:] in renamed_variables:
-
-                            name = name[3:]
-                            if name not in done:
-                                done[name] = value
-            else:
-                # bogus variable reference; just drop it since we can't deal
-                del notdone[name]
-
-    fp.close()
-
-    # strip spurious spaces
-    for k, v in done.items():
-        if isinstance(v, str):
-            done[k] = v.strip()
-
-    # save the results in the global dictionary
-    g.update(done)
-    return g
-
-
-def expand_makefile_vars(s, vars):
-    """Expand Makefile-style variables -- "${foo}" or "$(foo)" -- in
-    'string' according to 'vars' (a dictionary mapping variable names to
-    values).  Variables not present in 'vars' are silently expanded to the
-    empty string.  The variable values in 'vars' should not contain further
-    variable expansions; if 'vars' is the output of 'parse_makefile()',
-    you're fine.  Returns a variable-expanded version of 's'.
-    """
-
-    # This algorithm does multiple expansion, so if vars['foo'] contains
-    # "${bar}", it will expand ${foo} to ${bar}, and then expand
-    # ${bar}... and so forth.  This is fine as long as 'vars' comes from
-    # 'parse_makefile()', which takes care of such expansions eagerly,
-    # according to make's variable expansion semantics.
-
-    while True:
-        m = _findvar1_rx.search(s) or _findvar2_rx.search(s)
-        if m:
-            (beg, end) = m.span()
-            s = s[0:beg] + vars.get(m.group(1)) + s[end:]
-        else:
-            break
-    return s
 
 
 _config_vars = None
@@ -550,12 +341,3 @@ def get_config_vars(*args):
     else:
         return _config_vars
 
-def get_config_var(name):
-    """Return the value of a single variable using the dictionary
-    returned by 'get_config_vars()'.  Equivalent to
-    get_config_vars().get(name)
-    """
-    if name == 'SO':
-        import warnings
-        warnings.warn('SO is deprecated, use EXT_SUFFIX', DeprecationWarning, 2)
-    return get_config_vars().get(name)

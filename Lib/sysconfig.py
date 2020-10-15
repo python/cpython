@@ -1,8 +1,10 @@
 """Access to Python's configuration information."""
 
 import os
+import re
 import sys
 from os.path import pardir, realpath
+from distutils.errors import DistutilsPlatformError
 
 __all__ = [
     'get_config_h_filename',
@@ -130,6 +132,12 @@ _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 _CONFIG_VARS = None
 _USER_BASE = None
 
+# Regexes needed for parsing Makefile (and similar syntaxes,
+# like old-style Setup files).
+_variable_rx = re.compile(r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
+_findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
+_findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
+
 
 def _safe_realpath(path):
     try:
@@ -222,13 +230,6 @@ def _parse_makefile(filename, vars=None):
     optional dictionary is passed in as the second argument, it is
     used instead of a new dictionary.
     """
-    # Regexes needed for parsing Makefile (and similar syntaxes,
-    # like old-style Setup files).
-    import re
-    _variable_rx = re.compile(r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
-    _findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
-    _findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
-
     if vars is None:
         vars = {}
     done = {}
@@ -710,6 +711,76 @@ def get_platform():
 
 def get_python_version():
     return _PY_VERSION_SHORT
+
+
+def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
+    """Return the directory containing the Python library (standard or
+    site additions).
+
+    If 'plat_specific' is true, return the directory containing
+    platform-specific modules, i.e. any module from a non-pure-Python
+    module distribution; otherwise, return the platform-shared library
+    directory.  If 'standard_lib' is true, return the directory
+    containing standard Python library modules; otherwise, return the
+    directory for site-specific modules.
+
+    If 'prefix' is supplied, use it instead of sys.base_prefix or
+    sys.base_exec_prefix -- i.e., ignore 'plat_specific'.
+    """
+    if prefix is None:
+        if standard_lib:
+            prefix = plat_specific and _BASE_EXEC_PREFIX or _BASE_PREFIX
+        else:
+            prefix = plat_specific and _EXEC_PREFIX or _PREFIX
+
+    if os.name == "posix":
+        if plat_specific or standard_lib:
+            # Platform-specific modules (any module from a non-pure-Python
+            # module distribution) or standard Python library modules.
+            libdir = sys.platlibdir
+        else:
+            # Pure Python
+            libdir = "lib"
+        libpython = os.path.join(prefix, libdir,
+                                 "python" + get_python_version())
+        if standard_lib:
+            return libpython
+        else:
+            return os.path.join(libpython, "site-packages")
+    elif os.name == "nt":
+        if standard_lib:
+            return os.path.join(prefix, "Lib")
+        else:
+            return os.path.join(prefix, "Lib", "site-packages")
+    else:
+        raise DistutilsPlatformError(
+            "I don't know where Python installs its library "
+            "on platform '%s'" % os.name)
+
+
+def expand_makefile_vars(s, vars):
+    """Expand Makefile-style variables -- "${foo}" or "$(foo)" -- in
+    'string' according to 'vars' (a dictionary mapping variable names to
+    values).  Variables not present in 'vars' are silently expanded to the
+    empty string.  The variable values in 'vars' should not contain further
+    variable expansions; if 'vars' is the output of 'parse_makefile()',
+    you're fine.  Returns a variable-expanded version of 's'.
+    """
+
+    # This algorithm does multiple expansion, so if vars['foo'] contains
+    # "${bar}", it will expand ${foo} to ${bar}, and then expand
+    # ${bar}... and so forth.  This is fine as long as 'vars' comes from
+    # 'parse_makefile()', which takes care of such expansions eagerly,
+    # according to make's variable expansion semantics.
+
+    while True:
+        m = _findvar1_rx.search(s) or _findvar2_rx.search(s)
+        if m:
+            (beg, end) = m.span()
+            s = s[0:beg] + vars.get(m.group(1)) + s[end:]
+        else:
+            break
+    return s
 
 
 def _print_dict(title, data):
