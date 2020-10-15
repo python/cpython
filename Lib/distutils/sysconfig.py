@@ -13,8 +13,15 @@ import _imp
 import os
 import re
 import sys
+import warnings
 
 from .errors import DistutilsPlatformError
+
+warnings.warn(
+    'the distutils.sysconfig module is deprecated, use sysconfig instead',
+    DeprecationWarning,
+    stacklevel=2
+)
 
 # These are needed in a couple of spots, so just compute them once.
 PREFIX = os.path.normpath(sys.prefix)
