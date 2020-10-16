@@ -773,8 +773,9 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
 /*[clinic end generated code: output=b024a93c2c922d57 input=bfb37b3864cfb606]*/
 {
     int err = Z_OK;
-    Py_ssize_t ibuflen, obuflen = DEF_BUF_SIZE, hard_limit;
-    PyObject *RetVal = NULL;
+    Py_ssize_t ibuflen;
+    PyObject *RetVal;
+    _BlocksOutputBuffer buffer;
 
     PyObject *module = PyType_GetModule(cls);
     if (module == NULL)
@@ -785,33 +786,28 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
         PyErr_SetString(PyExc_ValueError, "max_length must be non-negative");
         return NULL;
     } else if (max_length == 0)
-        hard_limit = PY_SSIZE_T_MAX;
-    else
-        hard_limit = max_length;
+        max_length = -1;
 
     self->zst.next_in = data->buf;
     ibuflen = data->len;
 
-    /* limit amount of data allocated to max_length */
-    if (max_length && obuflen > max_length)
-        obuflen = max_length;
-
     ENTER_ZLIB(self);
+
+    if (OutputBuffer(InitAndGrow)(&buffer, max_length, &self->zst.next_out, &self->zst.avail_out) < 0) {
+        goto abort;
+    }
 
     do {
         arrange_input_buffer(&self->zst, &ibuflen);
 
         do {
-            obuflen = arrange_output_buffer_with_maximum(&self->zst, &RetVal,
-                                                         obuflen, hard_limit);
-            if (obuflen == -2) {
-                if (max_length > 0) {
+            if (self->zst.avail_out == 0) {
+                if (OutputBuffer(GetDataSize)(&buffer, self->zst.avail_out) == max_length) {
                     goto save;
                 }
-                PyErr_NoMemory();
-            }
-            if (obuflen < 0) {
-                goto abort;
+                if (OutputBuffer(Grow)(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0) {
+                    goto abort;
+                }
             }
 
             Py_BEGIN_ALLOW_THREADS
@@ -855,12 +851,14 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
         goto abort;
     }
 
-    if (_PyBytes_Resize(&RetVal, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) == 0)
+    RetVal = OutputBuffer(Finish)(&buffer, self->zst.avail_out);
+    if (RetVal != NULL) {
         goto success;
+    }
 
  abort:
-    Py_CLEAR(RetVal);
+    OutputBuffer(OnError)(&buffer);
+    RetVal = NULL;
  success:
     LEAVE_ZLIB(self);
     return RetVal;
