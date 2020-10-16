@@ -208,31 +208,6 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     return NULL;
 }
 
-int _PyCodec_Forget(const char *encoding)
-{
-    PyObject *v;
-    int result;
-
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->codec_search_path == NULL) {
-        return -1;
-    }
-
-    /* Convert the encoding to a normalized Python string: all
-       characters are converted to lower case, spaces and hyphens are
-       replaced with underscores. */
-    v = normalizestring(encoding);
-    if (v == NULL) {
-        return -1;
-    }
-
-    /* Drop the named codec from the internal cache */
-    result = PyDict_DelItem(interp->codec_search_cache, v);
-    Py_DECREF(v);
-
-    return result;
-}
-
 /* Codec registry encoding check API. */
 
 int PyCodec_KnownEncoding(const char *encoding)

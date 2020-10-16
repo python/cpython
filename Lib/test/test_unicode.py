@@ -36,7 +36,6 @@ def search_function(encoding):
         return (encode2, decode2, None, None)
     else:
         return None
-codecs.register(search_function)
 
 def duplicate_string(text):
     """
@@ -57,6 +56,10 @@ class UnicodeTest(string_tests.CommonTest,
         unittest.TestCase):
 
     type2test = str
+
+    def setUp(self):
+        codecs.register(search_function)
+        self.addCleanup(codecs.unregister, search_function)
 
     def checkequalnofix(self, result, object, methodname, *args):
         method = getattr(object, methodname)

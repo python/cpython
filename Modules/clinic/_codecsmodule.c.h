@@ -217,43 +217,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_codecs__forget_codec__doc__,
-"_forget_codec($module, encoding, /)\n"
-"--\n"
-"\n"
-"Purge the named codec from the internal codec lookup cache");
-
-#define _CODECS__FORGET_CODEC_METHODDEF    \
-    {"_forget_codec", (PyCFunction)_codecs__forget_codec, METH_O, _codecs__forget_codec__doc__},
-
-static PyObject *
-_codecs__forget_codec_impl(PyObject *module, const char *encoding);
-
-static PyObject *
-_codecs__forget_codec(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    const char *encoding;
-
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("_forget_codec", "argument", "str", arg);
-        goto exit;
-    }
-    Py_ssize_t encoding_length;
-    encoding = PyUnicode_AsUTF8AndSize(arg, &encoding_length);
-    if (encoding == NULL) {
-        goto exit;
-    }
-    if (strlen(encoding) != (size_t)encoding_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
-    return_value = _codecs__forget_codec_impl(module, encoding);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_codecs_escape_decode__doc__,
 "escape_decode($module, data, errors=None, /)\n"
 "--\n"
@@ -2838,4 +2801,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=9a97e2ddf3e69072 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=557c3b37e4c492ac input=a9049054013a1b77]*/

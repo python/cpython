@@ -2754,29 +2754,14 @@ _TEST_CODECS = {}
 
 def _get_test_codec(codec_name):
     return _TEST_CODECS.get(codec_name)
-codecs.register(_get_test_codec) # Returns None, not usable as a decorator
-
-try:
-    # Issue #22166: Also need to clear the internal cache in CPython
-    from _codecs import _forget_codec
-except ImportError:
-    def _forget_codec(codec_name):
-        pass
 
 
 class ExceptionChainingTest(unittest.TestCase):
 
     def setUp(self):
-        # There's no way to unregister a codec search function, so we just
-        # ensure we render this one fairly harmless after the test
-        # case finishes by using the test case repr as the codec name
-        # The codecs module normalizes codec names, although this doesn't
-        # appear to be formally documented...
-        # We also make sure we use a truly unique id for the custom codec
-        # to avoid issues with the codec cache when running these tests
-        # multiple times (e.g. when hunting for refleaks)
-        unique_id = repr(self) + str(id(self))
-        self.codec_name = encodings.normalize_encoding(unique_id).lower()
+        self.codec_name = 'exception_chaining_test'
+        codecs.register(_get_test_codec)
+        self.addCleanup(codecs.unregister, _get_test_codec)
 
         # We store the object to raise on the instance because of a bad
         # interaction between the codec caching (which means we can't
@@ -2791,10 +2776,6 @@ class ExceptionChainingTest(unittest.TestCase):
         _TEST_CODECS.pop(self.codec_name, None)
         # Issue #22166: Also pop from caches to avoid appearance of ref leaks
         encodings._cache.pop(self.codec_name, None)
-        try:
-            _forget_codec(self.codec_name)
-        except KeyError:
-            pass
 
     def set_codec(self, encode, decode):
         codec_info = codecs.CodecInfo(encode, decode,
