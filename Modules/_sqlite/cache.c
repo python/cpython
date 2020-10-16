@@ -29,7 +29,7 @@ pysqlite_Node* pysqlite_new_node(PyObject* key, PyObject* data)
 {
     pysqlite_Node* node;
 
-    node = (pysqlite_Node*) (pysqlite_NodeType.tp_alloc(&pysqlite_NodeType, 0));
+    node = (pysqlite_Node*) (pysqlite_NodeType->tp_alloc(pysqlite_NodeType, 0));
     if (!node) {
         return NULL;
     }
@@ -48,10 +48,13 @@ pysqlite_Node* pysqlite_new_node(PyObject* key, PyObject* data)
 
 void pysqlite_node_dealloc(pysqlite_Node* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
+
     Py_DECREF(self->key);
     Py_DECREF(self->data);
 
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
@@ -88,6 +91,7 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
 
 void pysqlite_cache_dealloc(pysqlite_Cache* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     pysqlite_Node* node;
     pysqlite_Node* delete_node;
 
@@ -109,7 +113,8 @@ void pysqlite_cache_dealloc(pysqlite_Cache* self)
     }
     Py_DECREF(self->mapping);
 
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* key)
@@ -253,6 +258,20 @@ PyObject* pysqlite_cache_display(pysqlite_Cache* self, PyObject* args)
     Py_RETURN_NONE;
 }
 
+static PyType_Slot pysqlite_NodeType_slots[] = {
+    {Py_tp_dealloc, pysqlite_node_dealloc},
+    {Py_tp_new, PyType_GenericNew},
+    {0, NULL},
+};
+
+static PyType_Spec pysqlite_NodeType_spec = {
+    .name = MODULE_NAME ".Node",
+    .basicsize = sizeof(pysqlite_Node),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .slots = pysqlite_NodeType_slots,
+};
+PyTypeObject *pysqlite_NodeType = NULL;
+
 static PyMethodDef cache_methods[] = {
     {"get", (PyCFunction)pysqlite_cache_get, METH_O,
         PyDoc_STR("Gets an entry from the cache or calls the factory function to produce one.")},
@@ -261,102 +280,32 @@ static PyMethodDef cache_methods[] = {
     {NULL, NULL}
 };
 
-PyTypeObject pysqlite_NodeType = {
-        PyVarObject_HEAD_INIT(NULL, 0)
-        MODULE_NAME "Node",                             /* tp_name */
-        sizeof(pysqlite_Node),                          /* tp_basicsize */
-        0,                                              /* tp_itemsize */
-        (destructor)pysqlite_node_dealloc,              /* tp_dealloc */
-        0,                                              /* tp_vectorcall_offset */
-        0,                                              /* tp_getattr */
-        0,                                              /* tp_setattr */
-        0,                                              /* tp_as_async */
-        0,                                              /* tp_repr */
-        0,                                              /* tp_as_number */
-        0,                                              /* tp_as_sequence */
-        0,                                              /* tp_as_mapping */
-        0,                                              /* tp_hash */
-        0,                                              /* tp_call */
-        0,                                              /* tp_str */
-        0,                                              /* tp_getattro */
-        0,                                              /* tp_setattro */
-        0,                                              /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE,         /* tp_flags */
-        0,                                              /* tp_doc */
-        0,                                              /* tp_traverse */
-        0,                                              /* tp_clear */
-        0,                                              /* tp_richcompare */
-        0,                                              /* tp_weaklistoffset */
-        0,                                              /* tp_iter */
-        0,                                              /* tp_iternext */
-        0,                                              /* tp_methods */
-        0,                                              /* tp_members */
-        0,                                              /* tp_getset */
-        0,                                              /* tp_base */
-        0,                                              /* tp_dict */
-        0,                                              /* tp_descr_get */
-        0,                                              /* tp_descr_set */
-        0,                                              /* tp_dictoffset */
-        (initproc)0,                                    /* tp_init */
-        0,                                              /* tp_alloc */
-        0,                                              /* tp_new */
-        0                                               /* tp_free */
+static PyType_Slot pysqlite_CacheType_slots[] = {
+    {Py_tp_dealloc, pysqlite_cache_dealloc},
+    {Py_tp_methods, cache_methods},
+    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_init, pysqlite_cache_init},
+    {0, NULL},
 };
 
-PyTypeObject pysqlite_CacheType = {
-        PyVarObject_HEAD_INIT(NULL, 0)
-        MODULE_NAME ".Cache",                           /* tp_name */
-        sizeof(pysqlite_Cache),                         /* tp_basicsize */
-        0,                                              /* tp_itemsize */
-        (destructor)pysqlite_cache_dealloc,             /* tp_dealloc */
-        0,                                              /* tp_vectorcall_offset */
-        0,                                              /* tp_getattr */
-        0,                                              /* tp_setattr */
-        0,                                              /* tp_as_async */
-        0,                                              /* tp_repr */
-        0,                                              /* tp_as_number */
-        0,                                              /* tp_as_sequence */
-        0,                                              /* tp_as_mapping */
-        0,                                              /* tp_hash */
-        0,                                              /* tp_call */
-        0,                                              /* tp_str */
-        0,                                              /* tp_getattro */
-        0,                                              /* tp_setattro */
-        0,                                              /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE,         /* tp_flags */
-        0,                                              /* tp_doc */
-        0,                                              /* tp_traverse */
-        0,                                              /* tp_clear */
-        0,                                              /* tp_richcompare */
-        0,                                              /* tp_weaklistoffset */
-        0,                                              /* tp_iter */
-        0,                                              /* tp_iternext */
-        cache_methods,                                  /* tp_methods */
-        0,                                              /* tp_members */
-        0,                                              /* tp_getset */
-        0,                                              /* tp_base */
-        0,                                              /* tp_dict */
-        0,                                              /* tp_descr_get */
-        0,                                              /* tp_descr_set */
-        0,                                              /* tp_dictoffset */
-        (initproc)pysqlite_cache_init,                  /* tp_init */
-        0,                                              /* tp_alloc */
-        0,                                              /* tp_new */
-        0                                               /* tp_free */
+static PyType_Spec pysqlite_CacheType_spec = {
+    .name = MODULE_NAME ".Cache",
+    .basicsize = sizeof(pysqlite_Cache),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .slots = pysqlite_CacheType_slots,
 };
+PyTypeObject *pysqlite_CacheType = NULL;
 
-extern int pysqlite_cache_setup_types(void)
+extern int pysqlite_cache_setup_types(PyObject *mod)
 {
-    int rc;
-
-    pysqlite_NodeType.tp_new = PyType_GenericNew;
-    pysqlite_CacheType.tp_new = PyType_GenericNew;
-
-    rc = PyType_Ready(&pysqlite_NodeType);
-    if (rc < 0) {
-        return rc;
+    pysqlite_NodeType = (PyTypeObject *)PyType_FromModuleAndSpec(mod, &pysqlite_NodeType_spec, NULL);
+    if (pysqlite_NodeType == NULL) {
+        return -1;
     }
 
-    rc = PyType_Ready(&pysqlite_CacheType);
-    return rc;
+    pysqlite_CacheType = (PyTypeObject *)PyType_FromModuleAndSpec(mod, &pysqlite_CacheType_spec, NULL);
+    if (pysqlite_CacheType == NULL) {
+        return -1;
+    }
+    return 0;
 }

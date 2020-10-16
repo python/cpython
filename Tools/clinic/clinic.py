@@ -3103,6 +3103,19 @@ class size_t_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 
+class fildes_converter(CConverter):
+    type = 'int'
+    converter = '_PyLong_FileDescriptor_Converter'
+
+    def _parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyObject_AsFileDescriptor({argname});
+            if ({paramname} == -1) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.name)
+
+
 class float_converter(CConverter):
     type = 'float'
     default_type = float

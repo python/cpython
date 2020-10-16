@@ -633,7 +633,7 @@ If you want to know how to change the first sequence into the second, use
      work.
 
    * `Simple version control recipe
-     <https://github.com/ActiveState/code/tree/master/recipes/Python/576729_Simple_Version_Control/recipe-576729.py>`_ for a small application
+     <https://code.activestate.com/recipes/576729/>`_ for a small application
      built with :class:`SequenceMatcher`.
 
 

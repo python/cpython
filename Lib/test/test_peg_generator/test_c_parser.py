@@ -90,7 +90,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_c_parser(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=stmt* $ { Module(a, NULL, p->arena) }
+        start[mod_ty]: a[asdl_stmt_seq*]=stmt* $ { Module(a, NULL, p->arena) }
         stmt[stmt_ty]: a=expr_stmt { a }
         expr_stmt[stmt_ty]: a=expression NEWLINE { _Py_Expr(a, EXTRA) }
         expression[expr_ty]: ( l=expression '+' r=term { _Py_BinOp(l, Add, r, EXTRA) }
@@ -232,7 +232,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
     def test_return_stmt_noexpr_action(self) -> None:
         grammar_source = """
         start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
-        statements[asdl_seq*]: a=statement+ { a }
+        statements[asdl_stmt_seq*]: a[asdl_stmt_seq*]=statement+ { a }
         statement[stmt_ty]: simple_stmt
         simple_stmt[stmt_ty]: small_stmt
         small_stmt[stmt_ty]: return_stmt
@@ -246,7 +246,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_gather_action_ast(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=';'.pass_stmt+ NEWLINE ENDMARKER { Module(a, NULL, p->arena) }
+        start[mod_ty]: a[asdl_stmt_seq*]=';'.pass_stmt+ NEWLINE ENDMARKER { Module(a, NULL, p->arena) }
         pass_stmt[stmt_ty]: a='pass' { _Py_Pass(EXTRA)}
         """
         test_source = """
@@ -258,7 +258,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
     def test_pass_stmt_action(self) -> None:
         grammar_source = """
         start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
-        statements[asdl_seq*]: a=statement+ { a }
+        statements[asdl_stmt_seq*]: a[asdl_stmt_seq*]=statement+ { a }
         statement[stmt_ty]: simple_stmt
         simple_stmt[stmt_ty]: small_stmt
         small_stmt[stmt_ty]: pass_stmt
@@ -273,10 +273,11 @@ class TestCParser(TempdirManager, unittest.TestCase):
     def test_if_stmt_action(self) -> None:
         grammar_source = """
         start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
-        statements[asdl_seq*]: a=statement+ { _PyPegen_seq_flatten(p, a) }
-        statement[asdl_seq*]:  a=compound_stmt { _PyPegen_singleton_seq(p, a) } | simple_stmt
+        statements[asdl_stmt_seq*]: a=statement+ { (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a) }
+        statement[asdl_stmt_seq*]:  a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } | simple_stmt
 
-        simple_stmt[asdl_seq*]: a=small_stmt b=further_small_stmt* [';'] NEWLINE { _PyPegen_seq_insert_in_front(p, a, b) }
+        simple_stmt[asdl_stmt_seq*]: a=small_stmt b=further_small_stmt* [';'] NEWLINE {
+                                            (asdl_stmt_seq*)_PyPegen_seq_insert_in_front(p, a, b) }
         further_small_stmt[stmt_ty]: ';' a=small_stmt { a }
 
         block: simple_stmt | NEWLINE INDENT a=statements DEDENT { a }
@@ -299,14 +300,14 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_same_name_different_types(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=import_from+ NEWLINE ENDMARKER { Module(a, NULL, p->arena)}
+        start[mod_ty]: a[asdl_stmt_seq*]=import_from+ NEWLINE ENDMARKER { Module(a, NULL, p->arena)}
         import_from[stmt_ty]: ( a='from' !'import' c=simple_name 'import' d=import_as_names_from {
                                 _Py_ImportFrom(c->v.Name.id, d, 0, EXTRA) }
                             | a='from' '.' 'import' c=import_as_names_from {
                                 _Py_ImportFrom(NULL, c, 1, EXTRA) }
                             )
         simple_name[expr_ty]: NAME
-        import_as_names_from[asdl_seq*]: a=','.import_as_name_from+ { a }
+        import_as_names_from[asdl_alias_seq*]: a[asdl_alias_seq*]=','.import_as_name_from+ { a }
         import_as_name_from[alias_ty]: a=NAME 'as' b=NAME { _Py_alias(((expr_ty) a)->v.Name.id, ((expr_ty) b)->v.Name.id, p->arena) }
         """
         test_source = """
@@ -320,12 +321,12 @@ class TestCParser(TempdirManager, unittest.TestCase):
     def test_with_stmt_with_paren(self) -> None:
         grammar_source = """
         start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
-        statements[asdl_seq*]: a=statement+ { _PyPegen_seq_flatten(p, a) }
-        statement[asdl_seq*]: a=compound_stmt { _PyPegen_singleton_seq(p, a) }
+        statements[asdl_stmt_seq*]: a=statement+ { (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a) }
+        statement[asdl_stmt_seq*]: a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) }
         compound_stmt[stmt_ty]: with_stmt
         with_stmt[stmt_ty]: (
-            a='with' '(' b=','.with_item+ ')' ':' c=block {
-                _Py_With(b, _PyPegen_singleton_seq(p, c), NULL, EXTRA) }
+            a='with' '(' b[asdl_withitem_seq*]=','.with_item+ ')' ':' c=block {
+                _Py_With(b, (asdl_stmt_seq*) _PyPegen_singleton_seq(p, c), NULL, EXTRA) }
         )
         with_item[withitem_ty]: (
             e=NAME o=['as' t=NAME { t }] { _Py_withitem(e, _PyPegen_set_expr_context(p, o, Store), p->arena) }
@@ -346,12 +347,12 @@ class TestCParser(TempdirManager, unittest.TestCase):
     def test_ternary_operator(self) -> None:
         grammar_source = """
         start[mod_ty]: a=expr ENDMARKER { Module(a, NULL, p->arena) }
-        expr[asdl_seq*]: a=listcomp NEWLINE { _PyPegen_singleton_seq(p, _Py_Expr(a, EXTRA)) }
+        expr[asdl_stmt_seq*]: a=listcomp NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, _Py_Expr(a, EXTRA)) }
         listcomp[expr_ty]: (
             a='[' b=NAME c=for_if_clauses d=']' { _Py_ListComp(b, c, EXTRA) }
         )
-        for_if_clauses[asdl_seq*]: (
-            a=(y=[ASYNC] 'for' a=NAME 'in' b=NAME c=('if' z=NAME { z })*
+        for_if_clauses[asdl_comprehension_seq*]: (
+            a[asdl_comprehension_seq*]=(y=[ASYNC] 'for' a=NAME 'in' b=NAME c[asdl_expr_seq*]=('if' z=NAME { z })*
                 { _Py_comprehension(_Py_Name(((expr_ty) a)->v.Name.id, Store, EXTRA), b, c, (y == NULL) ? 0 : 1, p->arena) })+ { a }
         )
         """
