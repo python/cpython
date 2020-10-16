@@ -763,8 +763,8 @@ class Filter(object):
         """
         Determine if the specified record is to be logged.
 
-        Is the specified record to be logged? Returns 0 for no, nonzero for
-        yes. If deemed appropriate, the record may be modified in-place.
+        Returns True if the record should be logged, or False otherwise.
+        If deemed appropriate, the record may be modified in-place.
         """
         if self.nlen == 0:
             return True
