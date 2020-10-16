@@ -672,13 +672,12 @@ if sys.platform != 'win32':
             policy.set_child_watcher(watcher)
 
         def tearDown(self):
+            super().tearDown()
             policy = asyncio.get_event_loop_policy()
             watcher = policy.get_child_watcher()
             policy.set_child_watcher(None)
             watcher.attach_loop(None)
             watcher.close()
-            # Since setUp() does super().setUp() first, do tearDown() last.
-            super().tearDown()
 
     class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
                                          test_utils.TestCase):
