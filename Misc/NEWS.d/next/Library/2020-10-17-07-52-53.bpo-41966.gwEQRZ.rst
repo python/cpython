@@ -1,0 +1,1 @@
+Fix pickling pure Python :class:`datetime.time` subclasses
