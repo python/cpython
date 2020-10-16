@@ -34,6 +34,10 @@ from sysconfig import _init_non_posix
 from sysconfig import _is_python_source_dir
 from sysconfig import _sys_home
 
+from sysconfig import _variable_rx
+from sysconfig import _findvar1_rx
+from sysconfig import _findvar2_rx
+
 from sysconfig import build_flags
 from sysconfig import customize_compiler
 from sysconfig import expand_makefile_vars
