@@ -9,6 +9,12 @@
 #include "structmember.h"         // PyMemberDef
 #include "zlib.h"
 
+// _BlocksOutputBuffer
+#define BOB_BUFFER_TYPE Bytef      // type of next_out pointer
+#define BOB_SIZE_TYPE   uint32_t   // type of avail_out
+#include "blocks_output_buffer.h"
+#define OutputBuffer(F) _BlocksOutputBuffer_##F
+
 
 #define ENTER_ZLIB(obj) \
     Py_BEGIN_ALLOW_THREADS; \
