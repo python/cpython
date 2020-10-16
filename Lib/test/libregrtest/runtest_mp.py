@@ -416,6 +416,8 @@ class MultiprocessTestRunner:
             running = get_running(self.workers)
             if running and not self.ns.pgo:
                 self.log('running: %s' % ', '.join(running))
+            elif not any(worker.is_alive() for worker in self.workers):
+                return None
 
     def display_result(self, mp_result: MultiprocessResult) -> None:
         result = mp_result.result
