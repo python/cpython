@@ -45,7 +45,7 @@ see the `Developer Guide`_.
 
 .. _Developer Guide: https://devguide.python.org/
 
-Using Python
+Using Python language
 ------------
 
 Installable Python kits, and information about using Python, are available at
