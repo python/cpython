@@ -1,0 +1,4 @@
+Use a new output buffer management code for :mod:`bz2` / :mod:`lzma` /
+:mod:`zlib` modules, and add ``.readall()`` function to
+``_compression.DecompressReader`` class. These bring some performance
+improvements. Patch by Ma Lin.
