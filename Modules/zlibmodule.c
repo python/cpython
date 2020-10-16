@@ -153,56 +153,6 @@ arrange_input_buffer(z_stream *zst, Py_ssize_t *remains)
     *remains -= zst->avail_in;
 }
 
-static Py_ssize_t
-arrange_output_buffer_with_maximum(z_stream *zst, PyObject **buffer,
-                                   Py_ssize_t length,
-                                   Py_ssize_t max_length)
-{
-    Py_ssize_t occupied;
-
-    if (*buffer == NULL) {
-        if (!(*buffer = PyBytes_FromStringAndSize(NULL, length)))
-            return -1;
-        occupied = 0;
-    }
-    else {
-        occupied = zst->next_out - (Byte *)PyBytes_AS_STRING(*buffer);
-
-        if (length == occupied) {
-            Py_ssize_t new_length;
-            assert(length <= max_length);
-            /* can not scale the buffer over max_length */
-            if (length == max_length)
-                return -2;
-            if (length <= (max_length >> 1))
-                new_length = length << 1;
-            else
-                new_length = max_length;
-            if (_PyBytes_Resize(buffer, new_length) < 0)
-                return -1;
-            length = new_length;
-        }
-    }
-
-    zst->avail_out = (uInt)Py_MIN((size_t)(length - occupied), UINT_MAX);
-    zst->next_out = (Byte *)PyBytes_AS_STRING(*buffer) + occupied;
-
-    return length;
-}
-
-static Py_ssize_t
-arrange_output_buffer(z_stream *zst, PyObject **buffer, Py_ssize_t length)
-{
-    Py_ssize_t ret;
-
-    ret = arrange_output_buffer_with_maximum(zst, buffer, length,
-                                             PY_SSIZE_T_MAX);
-    if (ret == -2)
-        PyErr_NoMemory();
-
-    return ret;
-}
-
 /*[clinic input]
 zlib.compress
 
