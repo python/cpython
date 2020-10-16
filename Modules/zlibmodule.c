@@ -652,9 +652,9 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
                             Py_buffer *data)
 /*[clinic end generated code: output=6731b3f0ff357ca6 input=04d00f65ab01d260]*/
 {
-    PyObject *RetVal = NULL;
-    Py_ssize_t obuflen = DEF_BUF_SIZE;
+    PyObject *RetVal;
     int err;
+    _BlocksOutputBuffer buffer;
 
     zlibstate *state = PyType_GetModuleState(cls);
 
@@ -663,13 +663,18 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
 
     ENTER_ZLIB(self);
 
+    if (OutputBuffer(InitAndGrow)(&buffer, -1, &self->zst.next_out, &self->zst.avail_out) < 0) {
+        goto error;
+    }
+
     do {
         arrange_input_buffer(&self->zst, &ibuflen);
 
         do {
-            obuflen = arrange_output_buffer(&self->zst, &RetVal, obuflen);
-            if (obuflen < 0)
-                goto error;
+            if (self->zst.avail_out == 0) {
+                if (OutputBuffer(Grow)(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0)
+                    goto error;
+            }
 
             Py_BEGIN_ALLOW_THREADS
             err = deflate(&self->zst, Z_NO_FLUSH);
@@ -685,12 +690,14 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
 
     } while (ibuflen != 0);
 
-    if (_PyBytes_Resize(&RetVal, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) == 0)
+    RetVal = OutputBuffer(Finish)(&buffer, self->zst.avail_out);
+    if (RetVal != NULL) {
         goto success;
+    }
 
  error:
-    Py_CLEAR(RetVal);
+    OutputBuffer(OnError)(&buffer);
+    RetVal = NULL;
  success:
     LEAVE_ZLIB(self);
     return RetVal;
