@@ -319,11 +319,12 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                      Py_ssize_t bufsize)
 /*[clinic end generated code: output=77c7e35111dc8c42 input=a9ac17beff1f893f]*/
 {
-    PyObject *RetVal = NULL;
+    PyObject *RetVal;
     Byte *ibuf;
     Py_ssize_t ibuflen;
     int err, flush;
     z_stream zst;
+    _BlocksOutputBuffer buffer;
 
     zlibstate *state = get_zlib_state(module);
 
@@ -332,6 +333,12 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
         return NULL;
     } else if (bufsize == 0) {
         bufsize = 1;
+    }
+
+    // OutputBuffer(OnError)(&buffer) is after `error` label,
+    // so initialize the buffer before any `goto error` statement.
+    if (OutputBuffer(InitWithSize)(&buffer, bufsize, &zst.next_out, &zst.avail_out) < 0) {
+        goto error;
     }
 
     ibuf = data->buf;
@@ -362,10 +369,11 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
         flush = ibuflen == 0 ? Z_FINISH : Z_NO_FLUSH;
 
         do {
-            bufsize = arrange_output_buffer(&zst, &RetVal, bufsize);
-            if (bufsize < 0) {
-                inflateEnd(&zst);
-                goto error;
+            if (zst.avail_out == 0) {
+                if (OutputBuffer(Grow)(&buffer, &zst.next_out, &zst.avail_out) < 0) {
+                    inflateEnd(&zst);
+                    goto error;
+                }
             }
 
             Py_BEGIN_ALLOW_THREADS
@@ -405,14 +413,13 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
         goto error;
     }
 
-    if (_PyBytes_Resize(&RetVal, zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) < 0)
-        goto error;
-
-    return RetVal;
+    RetVal = OutputBuffer(Finish)(&buffer, zst.avail_out);
+    if (RetVal != NULL) {
+        return RetVal;
+    }
 
  error:
-    Py_XDECREF(RetVal);
+    OutputBuffer(OnError)(&buffer);
     return NULL;
 }
 
