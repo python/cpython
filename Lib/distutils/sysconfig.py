@@ -66,7 +66,7 @@ def parse_config_h(fp, g=None):
 
 
 def parse_makefile(fn, g=None):
-    return sysconfig_parse_makefile(fn, vars=g)
+    return sysconfig_parse_makefile(fn, vars=g, distutils_compat=True)
 
 _python_build = partial(is_python_build, check_home=True)
 _init_posix = partial(sysconfig_init_posix, _config_vars)
