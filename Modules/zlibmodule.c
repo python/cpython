@@ -885,8 +885,8 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
 /*[clinic end generated code: output=c7efd13efd62add2 input=286146e29442eb6c]*/
 {
     int err;
-    Py_ssize_t length = DEF_BUF_SIZE;
-    PyObject *RetVal = NULL;
+    PyObject *RetVal;
+    _BlocksOutputBuffer buffer;
 
     zlibstate *state = PyType_GetModuleState(cls);
     /* Flushing with Z_NO_FLUSH is a no-op, so there's no point in
@@ -899,11 +899,15 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
 
     self->zst.avail_in = 0;
 
+    if (OutputBuffer(InitAndGrow)(&buffer, -1, &self->zst.next_out, &self->zst.avail_out) < 0) {
+        goto error;
+    }
+
     do {
-        length = arrange_output_buffer(&self->zst, &RetVal, length);
-        if (length < 0) {
-            Py_CLEAR(RetVal);
-            goto error;
+        if (self->zst.avail_out == 0) {
+            if (OutputBuffer(Grow)(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0) {
+                goto error;
+            }
         }
 
         Py_BEGIN_ALLOW_THREADS
@@ -912,7 +916,6 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
 
         if (err == Z_STREAM_ERROR) {
             zlib_error(state, self->zst, err, "while flushing");
-            Py_CLEAR(RetVal);
             goto error;
         }
     } while (self->zst.avail_out == 0);
@@ -925,7 +928,6 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
         err = deflateEnd(&self->zst);
         if (err != Z_OK) {
             zlib_error(state, self->zst, err, "while finishing compression");
-            Py_CLEAR(RetVal);
             goto error;
         }
         else
@@ -937,15 +939,18 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
         */
     } else if (err != Z_OK && err != Z_BUF_ERROR) {
         zlib_error(state, self->zst, err, "while flushing");
-        Py_CLEAR(RetVal);
         goto error;
     }
 
-    if (_PyBytes_Resize(&RetVal, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) < 0)
-        Py_CLEAR(RetVal);
+    RetVal = OutputBuffer(Finish)(&buffer, self->zst.avail_out);
+    if (RetVal != NULL) {
+        goto success;
+    }
 
- error:
+error:
+    OutputBuffer(OnError)(&buffer);
+    RetVal = NULL;
+success:
     LEAVE_ZLIB(self);
     return RetVal;
 }
