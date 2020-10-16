@@ -239,7 +239,7 @@ implementation used by the asyncio event loop:
       :meth:`loop.add_signal_handler`, this method can only be invoked
       from the main thread.
 
-     .. versionchanged:: 3.9
+     .. versionchanged:: 3.10
 
         The method now calls :func:`signal.set_wakeup_fd` as part of the
         handler initialization.
