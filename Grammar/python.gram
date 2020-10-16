@@ -182,7 +182,7 @@ with_stmt[stmt_ty]:
     | ASYNC 'with' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
        CHECK_VERSION(5, "Async with statements are", _Py_AsyncWith(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
 with_item[withitem_ty]:
-    | e=expression 'as' t=target &(',' | ')' | ':') { _Py_withitem(e, t, p->arena) }
+    | e=expression 'as' t=star_target &(',' | ')' | ':') { _Py_withitem(e, t, p->arena) }
     | invalid_with_item
     | e=expression { _Py_withitem(e, NULL, p->arena) }
 

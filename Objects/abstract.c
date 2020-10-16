@@ -747,10 +747,10 @@ done:
 int
 PyNumber_Check(PyObject *o)
 {
-    return o && Py_TYPE(o)->tp_as_number &&
-           (Py_TYPE(o)->tp_as_number->nb_index ||
-            Py_TYPE(o)->tp_as_number->nb_int ||
-            Py_TYPE(o)->tp_as_number->nb_float);
+    if (o == NULL)
+        return 0;
+    PyNumberMethods *nb = Py_TYPE(o)->tp_as_number;
+    return nb && (nb->nb_index || nb->nb_int || nb->nb_float || PyComplex_Check(o));
 }
 
 /* Binary operators */
@@ -1461,7 +1461,7 @@ PyNumber_Long(PyObject *o)
     }
 
     return type_error("int() argument must be a string, a bytes-like object "
-                      "or a number, not '%.200s'", o);
+                      "or a real number, not '%.200s'", o);
 }
 
 PyObject *
@@ -2336,9 +2336,7 @@ abstract_get_bases(PyObject *cls)
     _Py_IDENTIFIER(__bases__);
     PyObject *bases;
 
-    Py_ALLOW_RECURSION
     (void)_PyObject_LookupAttrId(cls, &PyId___bases__, &bases);
-    Py_END_ALLOW_RECURSION
     if (bases != NULL && !PyTuple_Check(bases)) {
         Py_DECREF(bases);
         return NULL;
@@ -2670,7 +2668,6 @@ PyIter_Next(PyObject *iter)
     }
     return result;
 }
-
 
 /*
  * Flatten a sequence of bytes() objects into a C array of

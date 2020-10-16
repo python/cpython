@@ -302,14 +302,14 @@ class PositionalOnlyTestCase(unittest.TestCase):
             def f(x: int, /): ...
             return f
 
-        assert inner_has_pos_only().__annotations__ == {'x': int}
+        assert inner_has_pos_only().__annotations__ == {'x': 'int'}
 
         class Something:
             def method(self):
                 def f(x: int, /): ...
                 return f
 
-        assert Something().method().__annotations__ == {'x': int}
+        assert Something().method().__annotations__ == {'x': 'int'}
 
         def multiple_levels():
             def inner_has_pos_only():
@@ -317,7 +317,7 @@ class PositionalOnlyTestCase(unittest.TestCase):
                 return f
             return inner_has_pos_only()
 
-        assert multiple_levels().__annotations__ == {'x': int}
+        assert multiple_levels().__annotations__ == {'x': 'int'}
 
     def test_same_keyword_as_positional_with_kwargs(self):
         def f(something,/,**kwargs):
@@ -428,17 +428,6 @@ class PositionalOnlyTestCase(unittest.TestCase):
                 return super().method()
 
         self.assertEqual(C().method(), sentinel)
-
-    def test_annotations_constant_fold(self):
-        def g():
-            def f(x: not (int is int), /): ...
-
-        # without constant folding we end up with
-        # COMPARE_OP(is), IS_OP (0)
-        # with constant folding we should expect a IS_OP (1)
-        codes = [(i.opname, i.argval) for i in dis.get_instructions(g)]
-        self.assertNotIn(('UNARY_NOT', None), codes)
-        self.assertIn(('IS_OP', 1), codes)
 
 
 if __name__ == "__main__":
