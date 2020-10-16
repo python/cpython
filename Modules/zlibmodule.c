@@ -219,15 +219,21 @@ static PyObject *
 zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
 /*[clinic end generated code: output=d80906d73f6294c8 input=638d54b6315dbed3]*/
 {
-    PyObject *RetVal = NULL;
-    Py_ssize_t obuflen = DEF_BUF_SIZE;
+    PyObject *RetVal;
     int flush;
     z_stream zst;
+    _BlocksOutputBuffer buffer;
 
     zlibstate *state = get_zlib_state(module);
 
     Byte *ibuf = data->buf;
     Py_ssize_t ibuflen = data->len;
+
+    // OutputBuffer(OnError)(&buffer) is after `error` label,
+    // so initialize the buffer before any `goto error` statement.
+    if (OutputBuffer(InitAndGrow)(&buffer, -1, &zst.next_out, &zst.avail_out) < 0) {
+        goto error;
+    }
 
     zst.opaque = NULL;
     zst.zalloc = PyZlib_Malloc;
@@ -256,10 +262,11 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
         flush = ibuflen == 0 ? Z_FINISH : Z_NO_FLUSH;
 
         do {
-            obuflen = arrange_output_buffer(&zst, &RetVal, obuflen);
-            if (obuflen < 0) {
-                deflateEnd(&zst);
-                goto error;
+            if (zst.avail_out == 0) {
+                if (OutputBuffer(Grow)(&buffer, &zst.next_out, &zst.avail_out) < 0) {
+                    deflateEnd(&zst);
+                    goto error;
+                }
             }
 
             Py_BEGIN_ALLOW_THREADS
@@ -280,15 +287,16 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
 
     err = deflateEnd(&zst);
     if (err == Z_OK) {
-        if (_PyBytes_Resize(&RetVal, zst.next_out -
-                            (Byte *)PyBytes_AS_STRING(RetVal)) < 0)
+        RetVal = OutputBuffer(Finish)(&buffer, zst.avail_out);
+        if (RetVal == NULL) {
             goto error;
+        }
         return RetVal;
     }
     else
         zlib_error(state, zst, err, "while finishing compression");
  error:
-    Py_XDECREF(RetVal);
+    OutputBuffer(OnError)(&buffer);
     return NULL;
 }
 
