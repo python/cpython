@@ -1150,8 +1150,9 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
 {
     int err, flush;
     Py_buffer data;
-    PyObject *RetVal = NULL;
+    PyObject *RetVal;
     Py_ssize_t ibuflen;
+    _BlocksOutputBuffer buffer;
 
     PyObject *module = PyType_GetModule(cls);
     if (module == NULL) {
@@ -1174,14 +1175,19 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
     self->zst.next_in = data.buf;
     ibuflen = data.len;
 
+    if (OutputBuffer(InitWithSize)(&buffer, length, &self->zst.next_out, &self->zst.avail_out) < 0) {
+        goto abort;
+    }
+
     do {
         arrange_input_buffer(&self->zst, &ibuflen);
         flush = ibuflen == 0 ? Z_FINISH : Z_NO_FLUSH;
 
         do {
-            length = arrange_output_buffer(&self->zst, &RetVal, length);
-            if (length < 0)
-                goto abort;
+            if (self->zst.avail_out == 0) {
+                if (OutputBuffer(Grow)(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0)
+                    goto abort;
+            }
 
             Py_BEGIN_ALLOW_THREADS
             err = inflate(&self->zst, flush);
@@ -1223,13 +1229,14 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
         }
     }
 
-    if (_PyBytes_Resize(&RetVal, self->zst.next_out -
-                        (Byte *)PyBytes_AS_STRING(RetVal)) == 0) {
+    RetVal = OutputBuffer(Finish)(&buffer, self->zst.avail_out);
+    if (RetVal != NULL) {
         goto success;
     }
 
  abort:
-    Py_CLEAR(RetVal);
+    OutputBuffer(OnError)(&buffer);
+    RetVal = NULL;
  success:
     PyBuffer_Release(&data);
     LEAVE_ZLIB(self);
