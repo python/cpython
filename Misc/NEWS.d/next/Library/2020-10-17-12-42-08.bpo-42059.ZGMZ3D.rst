@@ -1,0 +1,3 @@
+Fixed ``__required_keys__`` and ``__optional_keys__`` in ``TypedDict`` not
+respecting ``total=False`` when the class was constructed with the old
+syntax.
