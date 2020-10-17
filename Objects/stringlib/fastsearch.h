@@ -2,17 +2,24 @@
 
 #define STRINGLIB_FASTSEARCH_H
 
-
-/* FAST_SEARCH and FAST_COUNT use the two-way algorithm. See:
-      http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
-       https://en.wikipedia.org/wiki/Two-way_string-matching_algorithm
-   Largely influenced by glibc:
-       https://code.woboq.org/userspace/glibc/string/str-two-way.h.html
-       https://code.woboq.org/userspace/glibc/string/memmem.c.html
-
-   FAST_RSEARCH uses another algorithm, based on a mix between boyer-
+/* fast search/count implementation, based on a mix between boyer-
    moore and horspool, with a few more bells and whistles on the top.
    for some more background, see: http://effbot.org/zone/stringlib.htm */
+
+/* When the needle/pattern is long enough during the a forward search
+   or count, use the more complex Two-Way algorithm, which leverages
+   patterns in the string to ensure no worse than linear time.
+   Additionally, a Boyer-Moore bad-character shift table is computed
+   so that sublinear (as in O(n/m)) time is achieved in more cases.
+   References:
+       http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
+       https://en.wikipedia.org/wiki/Two-way_string-matching_algorithm
+   This implementation was largely influenced by glibc:
+       https://code.woboq.org/userspace/glibc/string/str-two-way.h.html
+       https://code.woboq.org/userspace/glibc/string/memmem.c.html
+   Discussion here:
+       https://bugs.python.org/issue41972
+   */
 
 #define FAST_COUNT 0
 #define FAST_SEARCH 1
@@ -170,7 +177,7 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 
 #undef MEMCHR_CUT_OFF
 
-
+// Preprocessing steps for the two-way algorithm.
 Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                        int inverted, Py_ssize_t *return_period)
@@ -216,7 +223,8 @@ STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
 
 
 Py_LOCAL_INLINE(Py_ssize_t)
-STRINGLIB(_critical_factorization)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
+STRINGLIB(_critical_factorization)(const STRINGLIB_CHAR *needle,
+                                   Py_ssize_t needle_len,
                                    Py_ssize_t *return_period)
 {
     /* Morally, this is what we want to happen:
@@ -243,6 +251,7 @@ STRINGLIB(_critical_factorization)(const STRINGLIB_CHAR *needle, Py_ssize_t need
     }
 }
 
+
 #define SHIFT_TYPE uint16_t
 #define NOT_FOUND ((1U<<(8*sizeof(SHIFT_TYPE))) - 1U)
 #define SHIFT_OVERFLOW (NOT_FOUND - 1U)
@@ -255,14 +264,13 @@ Py_LOCAL_INLINE(void)
 STRINGLIB(_init_table)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                        SHIFT_TYPE *table)
 {
-    // Fill the table with TABLE_MASK
+    // Fill the table with NOT_FOUND
     memset(table, 0xff, TABLE_SIZE * sizeof(SHIFT_TYPE));
     assert(table[0] == NOT_FOUND);
     assert(table[TABLE_SIZE - 1] == NOT_FOUND);
     for (Py_ssize_t j = 0; j < needle_len; j++) {
-        // CODE:
         // TABLE_MASK means not in string
-        // TABLE_MASK-1 means shift at least TABLE_MASK-1
+        // SHIFT_OVERFLOW means shift at least SHIFT_OVERFLOW
         Py_ssize_t shift = needle_len - j - 1;
         if (shift > SHIFT_OVERFLOW) {
             shift = SHIFT_OVERFLOW;
@@ -270,6 +278,7 @@ STRINGLIB(_init_table)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
         table[needle[j] & TABLE_MASK] = (SHIFT_TYPE)shift;
     }
 }
+
 
 Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
@@ -430,6 +439,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
     return -1;
 }
 
+
 Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(_fastsearch)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                        const STRINGLIB_CHAR *haystack, Py_ssize_t haystack_len)
@@ -481,31 +491,12 @@ STRINGLIB(_fastcount)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                       const STRINGLIB_CHAR *haystack, Py_ssize_t haystack_len,
                       Py_ssize_t maxcount)
 {
-    if (maxcount == 0) {
-        return 0;
-    }
-    if (needle_len == 1) {
-        Py_ssize_t count = 0;
-        for (Py_ssize_t i = 0; i < haystack_len; i++) {
-            if (haystack[i] == needle[0]) {
-                count++;
-                if (count == maxcount) {
-                    return maxcount;
-                }
-            }
-        }
-        return count;
-    }
-    if (needle_len == 0) {
-        return haystack_len + 1;
-    }
     STRINGLIB_CHAR first = needle[0];
-    Py_ssize_t index = STRINGLIB(find_char)(haystack, haystack_len, first);
+    Py_ssize_t index = STRINGLIB(find_char)(haystack,
+                                            haystack_len - needle_len + 1,
+                                            first);
     if (index == -1) {
         return 0;
-    }
-    if (haystack_len < needle_len + index) {
-        return -1;
     }
     Py_ssize_t suffix, period;
     suffix = STRINGLIB(_critical_factorization)(needle, needle_len, &period);
@@ -588,6 +579,9 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
                 return STRINGLIB(_fastcount)(p, m, s, n, maxcount);
             }
         }
+
+        /* Short needles use Fredrik Lundh's Horspool/Sunday hybrid
+           aglorithm for less overhead. */
         const STRINGLIB_CHAR *ss = s + m - 1;
         const STRINGLIB_CHAR *pp = p + m - 1;
 
