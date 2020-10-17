@@ -304,8 +304,8 @@ class closing(AbstractContextManager):
 
 
 class aclosing(AbstractAsyncContextManager):
-    """Async context manager for safely finalizing asynchronously cleaned-up
-    resources such as async generators, calling their ``aclose()`` method.
+    """Async context manager for safely finalizing an asynchronously cleaned-up
+    resource such as an async generator, calling its ``aclose()`` method.
 
     Code like this:
 
