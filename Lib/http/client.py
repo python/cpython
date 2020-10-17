@@ -574,7 +574,7 @@ class HTTPResponse(io.BufferedIOBase):
     def _read_chunked(self, amt=None):
         if self.chunked == _UNKNOWN:
             raise IncompleteRead("Unkown chunk detected.")
-        
+
         value = []
         try:
             while True:
