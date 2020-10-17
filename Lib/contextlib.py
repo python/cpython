@@ -304,7 +304,8 @@ class closing(AbstractContextManager):
 
 
 class aclosing(AbstractAsyncContextManager):
-    """Async context manager for safely finalizing an async generator using its ``aclose()`` method.
+    """Async context manager for safely finalizing asynchronously cleaned-up
+    resources such as async generators, calling their ``aclose()`` method.
 
     Code like this:
 
@@ -313,7 +314,7 @@ class aclosing(AbstractAsyncContextManager):
 
     is equivalent to this:
 
-        agen = await <module>.fetch(<arguments>)
+        agen = <module>.fetch(<arguments>)
         try:
             <block>
         finally:
