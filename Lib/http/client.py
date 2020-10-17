@@ -572,7 +572,9 @@ class HTTPResponse(io.BufferedIOBase):
         return chunk_left
 
     def _read_chunked(self, amt=None):
-        assert self.chunked != _UNKNOWN
+        if self.chunked == _UNKNOWN:
+            raise IncompleteRead("Unkown chunk detected.")
+        
         value = []
         try:
             while True:
@@ -594,7 +596,8 @@ class HTTPResponse(io.BufferedIOBase):
             raise IncompleteRead(b''.join(value))
 
     def _readinto_chunked(self, b):
-        assert self.chunked != _UNKNOWN
+        if self.chunked == _UNKNOWN:
+            raise IncompleteRead("Unkown chunk detected.")
         total_bytes = 0
         mvb = memoryview(b)
         try:
@@ -1363,7 +1366,8 @@ class HTTPConnection:
             except ConnectionError:
                 self.close()
                 raise
-            assert response.will_close != _UNKNOWN
+            if self.chunked == _UNKNOWN:
+                raise HTTPException("Unkown chunk detected.")
             self.__state = _CS_IDLE
 
             if response.will_close:
