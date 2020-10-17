@@ -74,16 +74,16 @@ class AutoFileTests:
         self.assertEqual(self.f._blksize, blksize)
 
     def testReadWithWritingMode(self):
-        with os.pipe() as r, w:
-            w = os.fdopen(w, "w")
+        r, w = os.pipe()
+        with os.fdopen(w, "w") as w:
             w.write("hello")
         with io.FileIO(r, mode="w") as f:
             with self.assertRaises(_io.UnsupportedOperation):
                 f.read()
 
     def testReadallWithWritingMode(self):
-        with os.pipe() as r, w
-            w = os.fdopen(w, "w")
+        r, w = os.pipe()
+        with os.fdopen(w, "w") as w:
             w.write("hello")
         with io.FileIO(r, mode="w") as f:
             with self.assertRaises(_io.UnsupportedOperation):
