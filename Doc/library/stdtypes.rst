@@ -4819,7 +4819,7 @@ type hinting syntax compared to :data:`typing.Union`.
 
 .. describe:: issubclass(obj, union_object)
 
-   Calls to :func:`issubclass` are also supported with a Union object::
+   Calls to :func:`issubclass` are also supported with a union object::
 
       >>> issubclass(bool, int | str)
       True
