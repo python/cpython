@@ -18,7 +18,7 @@
 --------------
 
 This module provides runtime support for type hints as specified by
-:pep:`484`, :pep:`526`, :pep:`544`, :pep:`586`, :pep:`589`, and :pep:`591`.
+:pep:`484`, :pep:`526`, :pep:`544`, :pep:`586`, :pep:`589`, :pep:`591`, and :pep:`613`.
 The most fundamental support consists of the types :data:`Any`, :data:`Union`,
 :data:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
 :class:`Generic`.  For full specification please see :pep:`484`.  For
@@ -499,6 +499,8 @@ These can be used as types in annotations and do not support ``[]``.
     from typing import TypeAlias
 
     Factors: TypeAlias = list[int]
+
+   See :pep:`613` for more details about explicit type aliases.
 
    .. versionadded:: 3.10
 
