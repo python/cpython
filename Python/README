@@ -1,1 +1,3 @@
-Miscellaneous source files for the main Python shared library
+Miscellaneous source files for the main Python shared library.
+Miscellaneous  source files are creating temporary files and directories see the tempfile module.
+Shared libraries are libraries that are loaded by programs when they start.
