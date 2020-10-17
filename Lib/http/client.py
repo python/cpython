@@ -1366,8 +1366,8 @@ class HTTPConnection:
             except ConnectionError:
                 self.close()
                 raise
-            if self.chunked == _UNKNOWN:
-                raise HTTPException("Unkown chunk detected.")
+            if response.will_close == _UNKNOWN:
+                raise ConnectionError("Unknown if response will close.")
             self.__state = _CS_IDLE
 
             if response.will_close:
