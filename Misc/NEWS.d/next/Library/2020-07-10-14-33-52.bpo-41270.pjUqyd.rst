@@ -1,1 +1,1 @@
-Made NamedTemporaryFile its own iterator to mimic file objects.
+Added :func:`tempfile._TemporaryFileWrapper.__next__` so that the object returned by :func:`tempfile.NamedTemporaryFile` can be used to iterate over the contents of the file.
