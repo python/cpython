@@ -4763,7 +4763,7 @@ The ``GenericAlias`` object acts as a proxy for :term:`generic types
 <generic type>`, implementing *parameterized generics* - a specific instance
 of a generic with the types for container elements provided. It is intended
 primarily for type :term:`annotations <annotation>`.  ``GenericAlias`` objects
-are returned by expressions like ``list[int]``.
+are created by expressions like ``list[int]``.
 
 The type for the ``GenericAlias`` object is :data:`types.GenericAlias`.
 
@@ -4923,8 +4923,7 @@ All parameterized generics implement special read-only attributes.
 .. seealso::
 
    * :pep:`585` -- "Type Hinting Generics In Standard Collections"
-   * :meth:`__class_getitem__` -- Method used to parameterize contained types.
-     in generics
+   * :meth:`__class_getitem__` -- Used to implement parameterized generics.
 
 .. versionadded:: 3.9
 
