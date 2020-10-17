@@ -168,20 +168,21 @@ Functions and classes provided:
           finally:
               await thing.aclose()
 
-   And lets you write code like this::
+   Significantly, ``aclosing()`` supports deterministic cleanup of async
+   generators when they happen to exit early by :keyword:`break` or an
+   exception.  For example::
 
-      async def ticker(delay, to):
-          for i in range(to):
-              yield i
-              await asyncio.sleep(delay)
+      from contextlib import aclosing
 
-      async with aclosing(ticker(10)) as ticks:
-          async for tick in ticks:
-              print(tick)
+      async with aclosing(my_generator()) as values:
+          async for value in values:
+              if value == 42:
+                  break
 
-   without needing to explicitly call the ``aclose()`` method of ``ticks``.
-   Even if an error occurs, ``ticks.aclose()`` will be called when
-   the :keyword:`async with` block is exited.
+   This pattern ensures that the generator's async exit code is executed in
+   the same context as its iterations (so that exceptions and context
+   variables work as expected, and the exit code isn't run after the
+   lifetime of some task it depends on).
 
    .. versionadded:: 3.10
 
