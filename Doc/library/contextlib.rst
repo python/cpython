@@ -162,7 +162,7 @@ Functions and classes provided:
       from contextlib import asynccontextmanager
 
       @asynccontextmanager
-      def aclosing(thing):
+      async def aclosing(thing):
           try:
               yield thing
           finally:
@@ -175,7 +175,7 @@ Functions and classes provided:
               yield i
               await asyncio.sleep(delay)
 
-      with aclosing(ticker(10)) as ticks:
+      async with aclosing(ticker(10)) as ticks:
           async for tick in ticks:
               print(tick)
 

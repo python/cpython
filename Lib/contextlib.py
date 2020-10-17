@@ -313,7 +313,7 @@ class aclosing(AbstractAsyncContextManager):
 
     is equivalent to this:
 
-        agen = <module>.fetch(<arguments>)
+        agen = await <module>.fetch(<arguments>)
         try:
             <block>
         finally:
