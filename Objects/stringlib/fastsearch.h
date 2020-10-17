@@ -302,7 +302,6 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
             int index = last & TABLE_MASK;
             SHIFT_TYPE shift = shift_table[index];
 
-            //SHIFT_TYPE shift = shift_table[haystack[j + needle_len - 1] && TABLE_MASK];
             switch (shift)
             {
                 case 0: {
@@ -431,7 +430,6 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
     return -1;
 }
 
-
 Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(_fastsearch)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                        const STRINGLIB_CHAR *haystack, Py_ssize_t haystack_len)
@@ -441,26 +439,27 @@ STRINGLIB(_fastsearch)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
     }
     STRINGLIB_CHAR first = needle[0];
 
-    Py_ssize_t index = STRINGLIB(find_char)(haystack, haystack_len, first);
+    Py_ssize_t index = STRINGLIB(find_char)(haystack,
+                                            haystack_len - needle_len + 1,
+                                            first);
     if (index == -1) {
         return -1;
     }
 
-    if (haystack_len < needle_len + index) {
-        return -1;
-    }
-
-    // Do a fast compare to maybe avoid the initialization overhead
+    // Do a fast compare in all cases to maybe avoid the initialization overhead
     if (memcmp(haystack+index, needle, needle_len*STRINGLIB_SIZEOF_CHAR) == 0) {
         return index;
     }
+    else {
+        // Start later.
+        index++;
+    }
 
-    // Start later.
-    index++;
+    // Prework: factorize.
     Py_ssize_t period, suffix;
     suffix = STRINGLIB(_critical_factorization)(needle, needle_len, &period);
 
-    // make a skip table
+    // Prework: make a skip table.
     SHIFT_TYPE shift_table[TABLE_SIZE];
     STRINGLIB(_init_table)(needle, needle_len, shift_table);
 
@@ -546,26 +545,92 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
            const STRINGLIB_CHAR* p, Py_ssize_t m,
            Py_ssize_t maxcount, int mode)
 {
-    if (m > n) {
+    unsigned long mask;
+    Py_ssize_t skip, count = 0;
+    Py_ssize_t i, j, mlast, w;
+
+    w = n - m;
+
+    if (w < 0 || (mode == FAST_COUNT && maxcount == 0))
         return -1;
-    }
 
-    if (mode == FAST_SEARCH) {
-        return STRINGLIB(_fastsearch)(p, m, s, n);
-    }
-    else if (mode == FAST_COUNT) {
-        return STRINGLIB(_fastcount)(p, m, s, n, maxcount);
-    }
-    else {    /* FAST_RSEARCH */
-        if (m == 1) {
+    /* look for special cases */
+    if (m <= 1) {
+        if (m <= 0)
+            return -1;
+        /* use special case for 1-character strings */
+        if (mode == FAST_SEARCH)
+            return STRINGLIB(find_char)(s, n, p[0]);
+        else if (mode == FAST_RSEARCH)
             return STRINGLIB(rfind_char)(s, n, p[0]);
+        else {  /* FAST_COUNT */
+            for (i = 0; i < n; i++)
+                if (s[i] == p[0]) {
+                    count++;
+                    if (count == maxcount)
+                        return maxcount;
+                }
+            return count;
         }
+    }
 
-        Py_ssize_t w = n - m;
-        Py_ssize_t mlast = m - 1;
-        Py_ssize_t skip = mlast - 1;
-        unsigned long mask = 0;
-        Py_ssize_t i, j;
+    mlast = m - 1;
+    skip = mlast;
+    mask = 0;
+
+    if (mode != FAST_RSEARCH) {
+        if (m >= 10) {
+            /* long needles get the two-way algorithm. */
+            if (mode == FAST_SEARCH) {
+                return STRINGLIB(_fastsearch)(p, m, s, n);
+            }
+            else {
+                return STRINGLIB(_fastcount)(p, m, s, n, maxcount);
+            }
+        }
+        const STRINGLIB_CHAR *ss = s + m - 1;
+        const STRINGLIB_CHAR *pp = p + m - 1;
+
+        /* create compressed boyer-moore delta 1 table */
+
+        /* process pattern[:-1] */
+        for (i = 0; i < mlast; i++) {
+            STRINGLIB_BLOOM_ADD(mask, p[i]);
+            if (p[i] == p[mlast])
+                skip = mlast - i - 1;
+        }
+        /* process pattern[-1] outside the loop */
+        STRINGLIB_BLOOM_ADD(mask, p[mlast]);
+
+        for (i = 0; i <= w; i++) {
+            /* note: using mlast in the skip path slows things down on x86 */
+            if (ss[i] == pp[0]) {
+                /* candidate match */
+                for (j = 0; j < mlast; j++)
+                    if (s[i+j] != p[j])
+                        break;
+                if (j == mlast) {
+                    /* got a match! */
+                    if (mode != FAST_COUNT)
+                        return i;
+                    count++;
+                    if (count == maxcount)
+                        return maxcount;
+                    i = i + mlast;
+                    continue;
+                }
+                /* miss: check if next character is part of pattern */
+                if (!STRINGLIB_BLOOM(mask, ss[i+1]))
+                    i = i + m;
+                else
+                    i = i + skip;
+            } else {
+                /* skip: check if next character is part of pattern */
+                if (!STRINGLIB_BLOOM(mask, ss[i+1]))
+                    i = i + m;
+            }
+        }
+    } else {    /* FAST_RSEARCH */
 
         /* create compressed boyer-moore delta 1 table */
 
@@ -598,8 +663,11 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
                     i = i - m;
             }
         }
-        return -1;
     }
+
+    if (mode != FAST_COUNT)
+        return -1;
+    return count;
 }
 
 #undef LOG
