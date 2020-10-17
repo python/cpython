@@ -21,6 +21,13 @@
        https://bugs.python.org/issue41972
    */
 
+/* note: fastsearch may access s[n], which isn't a problem when using
+   Python's ordinary string types, but may cause problems if you're
+   using this code in other contexts.  also, the count mode returns -1
+   if there cannot possible be a match in the target string, and 0 if
+   it has actually checked for matches, but didn't find any.  callers
+   beware! */
+
 #define FAST_COUNT 0
 #define FAST_SEARCH 1
 #define FAST_RSEARCH 2
@@ -581,7 +588,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
         }
 
         /* Short needles use Fredrik Lundh's Horspool/Sunday hybrid
-           aglorithm for less overhead. */
+           algorithm for less overhead. */
         const STRINGLIB_CHAR *ss = s + m - 1;
         const STRINGLIB_CHAR *pp = p + m - 1;
 
