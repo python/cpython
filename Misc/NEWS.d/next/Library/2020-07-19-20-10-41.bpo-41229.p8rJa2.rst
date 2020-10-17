@@ -1,2 +1,2 @@
-Add ``contextlib.aclosing`` analogous to ``contextlib.closing`` but for
-async generators and arbitrary objects with an ``aclose`` coroutine method.
+Add ``contextlib.aclosing`` for deterministic cleanup of async generators
+which is analogous to ``contextlib.closing`` for non-async generators.
