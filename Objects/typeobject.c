@@ -5197,7 +5197,7 @@ overrides_hash(PyTypeObject *type)
     return 0;
 }
 
-static void
+static int
 inherit_slots(PyTypeObject *type, PyTypeObject *base)
 {
     PyTypeObject *basebase;
@@ -5340,11 +5340,16 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         /* Copy comparison-related slots only when
            not overriding them anywhere */
         if (type->tp_richcompare == NULL &&
-            type->tp_hash == NULL &&
-            !overrides_hash(type))
+            type->tp_hash == NULL)
         {
-            type->tp_richcompare = base->tp_richcompare;
-            type->tp_hash = base->tp_hash;
+            int r = overrides_hash(type);
+            if (r < 0) {
+                return -1;
+            }
+            if (!r) {
+                type->tp_richcompare = base->tp_richcompare;
+                type->tp_hash = base->tp_hash;
+            }
         }
     }
     {
@@ -5387,6 +5392,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
          * obvious to be done -- the type is on its own.
          */
     }
+    return 0;
 }
 
 static int add_operators(PyTypeObject *);
@@ -5516,8 +5522,11 @@ PyType_Ready(PyTypeObject *type)
     n = PyTuple_GET_SIZE(bases);
     for (i = 1; i < n; i++) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
-        if (PyType_Check(b))
-            inherit_slots(type, (PyTypeObject *)b);
+        if (PyType_Check(b)) {
+            if (inherit_slots(type, (PyTypeObject *)b) < 0) {
+                goto error;
+            }
+        }
     }
 
     /* All bases of statically allocated type should be statically allocated */

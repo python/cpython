@@ -333,7 +333,7 @@ remove_unusable_flags(PyObject *m)
 
     dict = PyModule_GetDict(m);
     if (dict == NULL) {
-        return 0;
+        return -1;
     }
 
     /* set to Windows 10, except BuildNumber. */
@@ -365,12 +365,10 @@ remove_unusable_flags(PyObject *m)
             }
             PyObject *v = _PyDict_Pop(dict, flag_name, Py_None);
             Py_DECREF(flag_name);
-            if (v != NULL) {
-                Py_DECREF(v);
-            }
-            else if (PyErr_Occurred()) {
+            if (v == NULL) {
                 return -1;
             }
+            Py_DECREF(v);
         }
     }
     return 0;

@@ -1361,18 +1361,18 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
     }
 
-    if (throwflag) { /* support for generator.throw() */
 #ifdef LLTRACE
-        PyObject *exc, *val, *tb;
-        _PyErr_Fetch(tstate, &exc, &val, &tb);
-        PyObject *tmp = _PyDict_GetItemIdWithError(f->f_globals, &PyId___ltrace__);
-        if (tmp == NULL && _PyErr_Occurred(tstate)) {
-            _PyErr_ChainExceptions(exc, val, tb);
+    {
+        PyObject *key = _PyUnicode_FromId(&PyId___ltrace__);
+        int r = key ? PyDict_Contains(f->f_globals, key) : -1;
+        if (r < 0) {
             goto exit_eval_frame;
         }
-        lltrace = tmp != NULL;
-        _PyErr_Restore(tstate, exc, val, tb);
+        lltrace = r;
+    }
 #endif
+
+    if (throwflag) { /* support for generator.throw() */
         goto error;
     }
 
@@ -1381,16 +1381,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!_PyErr_Occurred(tstate));
-#endif
-
-#ifdef LLTRACE
-    {
-        PyObject *tmp = _PyDict_GetItemIdWithError(f->f_globals, &PyId___ltrace__);
-        if (tmp == NULL && _PyErr_Occurred(tstate)) {
-            goto exit_eval_frame;
-        }
-        lltrace = tmp != NULL;
-    }
 #endif
 
 main_loop:
