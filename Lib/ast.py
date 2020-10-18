@@ -654,12 +654,12 @@ class _Unparser(NodeVisitor):
     is disregarded."""
 
     def __init__(self, *, _avoid_backslashes=False):
-        self._avoid_backslashes = _avoid_backslashes
         self._source = []
         self._buffer = []
         self._precedences = {}
         self._type_ignores = {}
         self._indent = 0
+        self._avoid_backslashes = _avoid_backslashes
 
     def interleave(self, inter, f, seq):
         """Call f on each item in seq, calling inter() in between."""
