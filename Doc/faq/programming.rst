@@ -942,7 +942,7 @@ There are various techniques.
      f()
 
 
-* Use :func:`locals` or :func:`eval` to resolve the function name::
+* Use :func:`locals` to resolve the function name::
 
      def myFunc():
          print("hello")
@@ -952,12 +952,6 @@ There are various techniques.
      f = locals()[fname]
      f()
 
-     f = eval(fname)
-     f()
-
-  Note: Using :func:`eval` is slow and dangerous.  If you don't have absolute
-  control over the contents of the string, someone could pass a string that
-  resulted in an arbitrary function being executed.
 
 Is there an equivalent to Perl's chomp() for removing trailing newlines from strings?
 -------------------------------------------------------------------------------------
@@ -1379,20 +1373,6 @@ out the element you want. ::
    >>> result = [x[1] for x in pairs]
    >>> result
    ['else', 'sort', 'to', 'something']
-
-
-An alternative for the last step is::
-
-   >>> result = []
-   >>> for p in pairs: result.append(p[1])
-
-If you find this more legible, you might prefer to use this instead of the final
-list comprehension.  However, it is almost twice as slow for long lists.  Why?
-First, the ``append()`` operation has to reallocate memory, and while it uses
-some tricks to avoid doing that each time, it still has to do it occasionally,
-and that costs quite a bit.  Second, the expression "result.append" requires an
-extra attribute lookup, and third, there's a speed reduction from having to make
-all those function calls.
 
 
 Objects

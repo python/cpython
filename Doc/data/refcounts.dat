@@ -959,11 +959,6 @@ PyGen_NewWithQualName:PyFrameObject*:frame:0:
 PyGen_NewWithQualName:PyObject*:name:0:
 PyGen_NewWithQualName:PyObject*:qualname:0:
 
-PyGen_Send:int:::
-PyGen_Send:PyGenObject*:gen:0:
-PyGen_Send:PyObject*:arg:0:
-PyGen_Send:PyObject**:presult:+1:
-
 PyCoro_CheckExact:int:::
 PyCoro_CheckExact:PyObject*:ob:0:
 

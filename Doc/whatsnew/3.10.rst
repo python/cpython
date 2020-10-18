@@ -186,6 +186,11 @@ by :func:`curses.color_content`, :func:`curses.init_color`,
 support is provided by the underlying ncurses library.
 (Contributed by Jeffrey Kintscher and Hans Petter Jansson in :issue:`36982`.)
 
+encodings
+---------
+:func:`encodings.normalize_encoding` now ignores non-ASCII characters.
+(Contributed by Hai Shi in :issue:`39337`.)
+
 glob
 ----
 
@@ -314,7 +319,7 @@ New Features
   search function.
   (Contributed by Hai Shi in :issue:`41842`.)
 
-* The :c:func:`PyIter_Send` and :c:func:`PyGen_Send` functions were added to allow
+* The :c:func:`PyIter_Send` function was added to allow
   sending value into iterator without raising ``StopIteration`` exception.
   (Contributed by Vladimir Matveev in :issue:`41756`.)
 
