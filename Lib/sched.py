@@ -54,13 +54,18 @@ _sentinel = object()
 
 class scheduler:
 
-    def __init__(self, timefunc=_time, delayfunc=time.sleep):
+    def __init__(self, timefunc=_time, delayfunc=None):
         """Initialize a new instance, passing the time and delay
         functions"""
         self._queue = []
         self._lock = threading.RLock()
         self.timefunc = timefunc
-        self.delayfunc = delayfunc
+        if delayfunc is None:
+            self._event = threading.Event()
+            self.delayfunc = self._event.wait
+        else:
+            self._event = None
+            self.delayfunc = delayfunc
 
     def enterabs(self, time, priority, action, argument=(), kwargs=_sentinel):
         """Enter a new event in the queue at an absolute time.
@@ -95,6 +100,17 @@ class scheduler:
         with self._lock:
             self._queue.remove(event)
             heapq.heapify(self._queue)
+            if self._event:
+                self._event.set()
+
+    def cancel_all(self):
+        """Remove all events from the queue."""
+
+        with self._lock:
+            self._queue.clear()
+            heapq.heapify(self._queue)
+            if self._event:
+                self._event.set()
 
     def empty(self):
         """Check whether the queue is empty."""
