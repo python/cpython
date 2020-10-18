@@ -47,7 +47,8 @@ PyAPI_FUNC(int) _PyDict_Next(
 
 /* Get the number of items of a dictionary. */
 #define PyDict_GET_SIZE(mp)  (assert(PyDict_Check(mp)),((PyDictObject *)mp)->ma_used)
-PyAPI_FUNC(int) _PyDict_Contains(PyObject *mp, PyObject *key, Py_hash_t hash);
+PyAPI_FUNC(int) _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
+PyAPI_FUNC(int) _PyDict_ContainsId(PyObject *, struct _Py_Identifier *);
 PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
 PyAPI_FUNC(void) _PyDict_MaybeUntrack(PyObject *mp);
 PyAPI_FUNC(int) _PyDict_HasOnlyStringKeys(PyObject *mp);

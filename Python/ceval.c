@@ -1363,8 +1363,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
 #ifdef LLTRACE
     {
-        PyObject *key = _PyUnicode_FromId(&PyId___ltrace__);
-        int r = key ? PyDict_Contains(f->f_globals, key) : -1;
+        int r = _PyDict_ContainsId(f->f_globals, &PyId___ltrace__);
         if (r < 0) {
             goto exit_eval_frame;
         }

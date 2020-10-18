@@ -5184,17 +5184,11 @@ overrides_hash(PyTypeObject *type)
     _Py_IDENTIFIER(__eq__);
 
     assert(dict != NULL);
-    if (_PyDict_GetItemIdWithError(dict, &PyId___eq__) != NULL)
-        return 1;
-    if (PyErr_Occurred()) {
-        PyErr_Clear();
+    int r = _PyDict_ContainsId(dict, &PyId___eq__);
+    if (r == 0) {
+        r = _PyDict_ContainsId(dict, &PyId___hash__);
     }
-    if (_PyDict_GetItemIdWithError(dict, &PyId___hash__) != NULL)
-        return 1;
-    if (PyErr_Occurred()) {
-        PyErr_Clear();
-    }
-    return 0;
+    return r;
 }
 
 static int
