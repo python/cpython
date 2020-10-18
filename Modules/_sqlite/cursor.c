@@ -460,8 +460,10 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         (void)pysqlite_statement_reset(self->statement);
     }
 
-    Py_XSETREF(self->statement,
-              (pysqlite_Statement *)pysqlite_cache_get(self->connection->statement_cache, func_args));
+    _Py_IDENTIFIER(get);
+    PyObject *stmt_cache = (PyObject *)self->connection->statement_cache;
+    PyObject *stmt = _PyObject_CallMethodIdOneArg(stmt_cache, &PyId_get, func_args);
+    Py_XSETREF(self->statement, (pysqlite_Statement *)stmt);
     Py_DECREF(func_args);
 
     if (!self->statement) {

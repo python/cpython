@@ -62,8 +62,6 @@ typedef struct
 extern PyTypeObject *pysqlite_NodeType;
 extern PyTypeObject *pysqlite_CacheType;
 
-PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* args);
-
 int pysqlite_cache_setup_types(PyObject *module);
 
 #endif
