@@ -37,6 +37,7 @@ import urllib.parse, urllib.request
 import threading as _threading
 import http.client  # only for the default HTTP port
 from calendar import timegm
+from copy import deepcopy
 
 debug = False   # set to True to enable debugging via the logging module
 logger = None
@@ -1217,7 +1218,7 @@ class DefaultCookiePolicy(CookiePolicy):
         return False
 
 def vals_sorted_by_key(adict):
-    keys = sorted(adict.keys())
+    keys = deepcopy(adict).keys()
     return map(adict.get, keys)
 
 def deepvalues(mapping):
