@@ -220,6 +220,48 @@ class Test_pygettext(unittest.TestCase):
         '''))
         self.assertIn('doc', msgids)
 
+    def test_calls_in_fstrings(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo bar')}"
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_raw(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        rf"{_('foo bar')}"
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_nested(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"""{f'{_("foo bar")}'}"""
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_attribute(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{obj._('foo bar')}"
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_with_call_on_call(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{type(str)('foo bar')}"
+        '''))
+        self.assertFalse([msgid for msgid in msgids if 'foo bar' in msgid])
+
+    def test_calls_in_fstrings_with_format(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo {bar}').format(bar='baz')}"
+        '''))
+        self.assertIn('foo {bar}', msgids)
+
+    def test_calls_in_fstrings_with_wrong_input(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_(f'foo {bar}')}"
+        '''))
+        self.assertFalse([msgid for msgid in msgids if 'foo {bar}' in msgid])
+
     def test_files_list(self):
         """Make sure the directories are inspected for source files
            bpo-31920
