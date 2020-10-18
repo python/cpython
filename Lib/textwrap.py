@@ -220,7 +220,7 @@ class TextWrapper:
             if self.break_on_hyphens and len(chunk) > space_left:
                 hyphen = chunk.rfind('-', 0, space_left)
                 if hyphen != -1:
-                    end = hyphen+1
+                    end = hyphen + 1
             cur_line.append(chunk[:end])
             reversed_chunks[-1] = chunk[end:]
 
