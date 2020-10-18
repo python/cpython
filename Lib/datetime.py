@@ -1548,7 +1548,7 @@ class time:
         self._tzinfo = tzinfo
 
     def __reduce_ex__(self, protocol):
-        return (time, self._getstate(protocol))
+        return (self.__class__, self._getstate(protocol))
 
     def __reduce__(self):
         return self.__reduce_ex__(2)
