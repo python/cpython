@@ -1076,9 +1076,10 @@ class _Unparser(NodeVisitor):
             return c
 
         escaped_string = "".join(map(escape_char, string))
-        possible_quotes = [q for q in quote_types if q not in escaped_string]
+        possible_quotes = quote_types
         if "\n" in escaped_string:
             possible_quotes = [q for q in possible_quotes if q in _MULTI_QUOTES]
+        possible_quotes = [q for q in possible_quotes if q not in escaped_string]
         if not possible_quotes:
             # If there aren't any possible_quotes, fallback to using repr
             # on the original string. Try to use a quote from quote_types,
