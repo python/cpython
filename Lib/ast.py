@@ -1060,7 +1060,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.body)
 
     def _str_literal_helper(
-        self, string, quote_types=_ALL_QUOTES, escape=""
+        self, string, *, quote_types=_ALL_QUOTES, escape=""
     ):
         """Helper for writing string literals, minimizing escapes.
         Returns the tuple (string literal to write, possible quote types).
@@ -1095,9 +1095,9 @@ class _Unparser(NodeVisitor):
                 escaped_string = escaped_string[:-1] + "\\" + escaped_string[-1]
         return escaped_string, possible_quotes
 
-    def _write_str_avoiding_backslashes(self, string, **kwargs):
+    def _write_str_avoiding_backslashes(self, string, *, quote_types=_ALL_QUOTES):
         """Write string literal value with a best effort attempt to avoid backslashes."""
-        string, quote_types = self._str_literal_helper(string, **kwargs)
+        string, quote_types = self._str_literal_helper(string, quote_types=quote_types)
         quote_type = quote_types[0]
         self.write(f"{quote_type}{string}{quote_type}")
 
@@ -1124,7 +1124,7 @@ class _Unparser(NodeVisitor):
         for value, is_constant in buffer:
             # Repeatedly narrow down the list of possible quote_types
             value, quote_types = self._str_literal_helper(
-                value, quote_types, escape='\n\t' if is_constant else ''
+                value, quote_types=quote_types, escape='\n\t' if is_constant else ''
             )
             new_buffer.append(value)
         value = "".join(new_buffer)
