@@ -1063,7 +1063,7 @@ class _Unparser(NodeVisitor):
         self, string, quote_types=_ALL_QUOTES, escape=""
     ):
         """Helper for writing string literals, minimizing escapes.
-        Returns (possible quote types, string literal to write).
+        Returns the tuple (string literal to write, possible quote types).
         """
         # Escape characters we've been told to escape, backslashes, and
         # non-printable characters other than \n and \t.
