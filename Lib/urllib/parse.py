@@ -631,6 +631,8 @@ def unquote(string, encoding='utf-8', errors='replace'):
 
     unquote('abc%20def') -> 'abc def'.
     """
+    if isinstance(string, bytes):
+        raise TypeError('Expected str, got bytes')
     if '%' not in string:
         string.split
         return string
