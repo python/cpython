@@ -1,0 +1,3 @@
+Disallow passing a *check* parameter to :meth:`subprocess.check_output`,
+which would cause a confusing exception if set to ``False``.
+PR by Rémi Lapeyre.
