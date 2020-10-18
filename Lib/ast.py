@@ -1065,17 +1065,17 @@ class _Unparser(NodeVisitor):
         """Helper for writing string literals, minimizing escapes.
         Returns the tuple (string literal to write, possible quote types).
         """
-        # Escape characters we've been told to escape, backslashes, and
-        # non-printable characters other than \n and \t.
-        escape = ('\n', '\t', '\\') if escape_special_whitespace else ('\\',)
-        escaped_string = "".join(
-            (
-                c.encode('unicode_escape').decode('ascii')
-                if c in escape or (not c.isprintable() and c not in '\n\t')
-                else c
-            )
-            for c in string
-        )
+        def escape_char(c):
+            # \n and \t are non-printable, but we only escape them if
+            # escape_special_whitespace is True
+            if not escape_special_whitespace and c in "\n\t":
+                return c
+            # Always escape backslashes and other non-printable characters
+            if c == "\\" or not c.isprintable():
+                return c.encode("unicode_escape").decode("ascii")
+            return c
+
+        escaped_string = "".join(map(escape_char, string))
         possible_quotes = [q for q in quote_types if q not in escaped_string]
         if "\n" in escaped_string:
             possible_quotes = [q for q in possible_quotes if q in _MULTI_QUOTES]
