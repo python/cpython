@@ -354,8 +354,13 @@ class TokenEater:
                 for call in filter(lambda node: isinstance(node, ast.Call),
                                    ast.walk(value)):
                     func = call.func
-                    # Name.id or Attribute.attr
-                    func_name = getattr(func, "id", None) or func.attr
+                    if isinstance(func, ast.Name):
+                        func_name = func.id
+                    elif isinstance(func, ast.Attribute):
+                        func_name = func.attr
+                    else:
+                        continue
+
                     if func_name not in opts.keywords:
                         continue
                     if len(call.args) != 1 or call.keywords:
