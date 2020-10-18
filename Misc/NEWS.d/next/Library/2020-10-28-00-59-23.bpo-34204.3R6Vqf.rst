@@ -1,0 +1,2 @@
+The :mod:`shelve` module now uses :mod:`pickle` default protocol for the
+Python version in use rather than protocol version 3.

@@ -1,4 +1,5 @@
 import unittest
+import pickle
 import shelve
 import glob
 from test import support
@@ -160,7 +161,7 @@ class TestCase(unittest.TestCase):
 
     def test_default_protocol(self):
         with shelve.Shelf({}) as s:
-            self.assertEqual(s._protocol, 3)
+            self.assertEqual(s._protocol, pickle.DEFAULT_PROTOCOL)
 
 from test import mapping_tests
 
