@@ -1060,14 +1060,14 @@ class _Unparser(NodeVisitor):
             self.traverse(node.body)
 
     def _str_literal_helper(
-        self, string, *, quote_types=_ALL_QUOTES, escape=""
+        self, string, *, quote_types=_ALL_QUOTES, escape_special_whitespace=False
     ):
         """Helper for writing string literals, minimizing escapes.
         Returns the tuple (string literal to write, possible quote types).
         """
         # Escape characters we've been told to escape, backslashes, and
         # non-printable characters other than \n and \t.
-        escape = {*escape, '\\'}
+        escape = ('\n', '\t', '\\') if escape_special_whitespace else ('\\',)
         escaped_string = "".join(
             (
                 c.encode('unicode_escape').decode('ascii')
@@ -1124,7 +1124,8 @@ class _Unparser(NodeVisitor):
         for value, is_constant in buffer:
             # Repeatedly narrow down the list of possible quote_types
             value, quote_types = self._str_literal_helper(
-                value, quote_types=quote_types, escape='\n\t' if is_constant else ''
+                value, quote_types=quote_types,
+                escape_special_whitespace=is_constant
             )
             new_buffer.append(value)
         value = "".join(new_buffer)
