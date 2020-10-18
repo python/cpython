@@ -1245,6 +1245,12 @@ class UnquotingTests(unittest.TestCase):
         self.assertEqual(expect, result,
                          "using unquote(): %r != %r" % (expect, result))
 
+    def test_unquoting_with_bytes_input(self):
+        # Bytes not supported yet
+        with self.assertRaisesRegex(TypeError, 'Expected str, got bytes'):
+            given = b'bl\xc3\xa5b\xc3\xa6rsyltet\xc3\xb8y'
+            urllib.parse.unquote(given)
+
 class urlencode_Tests(unittest.TestCase):
     """Tests for urlencode()"""
 
