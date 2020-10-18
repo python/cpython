@@ -84,18 +84,6 @@ Creating virtual environments
    without there needing to be any reference to its virtual environment in
    ``PATH``.
 
-   On Windows, the actual Python interpreter running your script is the *base*
-   interpreter, rather than the executable in the virtual environment. This is
-   normally transparent to your script, as the value of ``sys.executable`` is
-   set to the virtual environment's executable. But if you run a subprocess,
-   Windows searches the directory containing the *actual* executable before
-   checking ``PATH``. This means that if you run the command ``python`` via
-   the ``subprocess`` module, Windows will find the base executable rather than
-   the virtual environment's executable, *even if the virtual environment is
-   activated*. The fix for this is to use ``sys.executable`` when calling
-   Python, rather than relying on the system resolving the ``python`` command
-   to the executable you expect.
-
 
 .. _venv-api:
 

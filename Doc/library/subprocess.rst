@@ -356,6 +356,15 @@ functions.
    arguments for additional differences from the default behavior.  Unless
    otherwise stated, it is recommended to pass *args* as a sequence.
 
+   .. warning::
+
+      Using the string ``"python"`` as the program to execute is not a good
+      idea, as there are a number of circumstances where the Python interpreter
+      may not be visible under that name. Instead, use :data:`sys.executable`
+      if you want to start a copy of the current interpreter, or use
+      :meth:`shutil.which` if you want to find the Python interpreter by name
+      using the shell's current search path.
+
    An example of passing some arguments to an external program
    as a sequence is::
 
