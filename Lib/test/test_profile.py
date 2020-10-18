@@ -6,7 +6,7 @@ import unittest
 import os
 from difflib import unified_diff
 from io import StringIO
-from test.support import TESTFN, run_unittest, unlink
+from test.support import TESTFN, run_unittest, unlink, temp_dir, change_cwd
 from contextlib import contextmanager
 
 import profile
@@ -110,6 +110,20 @@ class ProfileTest(unittest.TestCase):
         # Test successful run
         assert_python_ok('-m', self.profilermodule.__name__,
                          '-m', 'timeit', '-n', '1')
+
+    def test_output_file_when_changing_directory(self):
+        with temp_dir() as tmpdir, change_cwd(tmpdir):
+            os.mkdir('dest')
+            with open('demo.py', 'w') as f:
+                f.write('import os; os.chdir("dest")')
+
+            assert_python_ok(
+                '-m', self.profilermodule.__name__,
+                '-o', 'out.pstats',
+                'demo.py',
+            )
+
+            self.assertTrue(os.path.exists('out.pstats'))
 
 
 def regenerate_expected_output(filename, cls):
