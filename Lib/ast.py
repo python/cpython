@@ -648,6 +648,11 @@ class _Precedence(IntEnum):
         except ValueError:
             return self
 
+
+_SINGLE_QUOTES = ("'", '"')
+_MULTI_QUOTES = ('"""', "'''")
+_ALL_QUOTES = (*_SINGLE_QUOTES, *_MULTI_QUOTES)
+
 class _Unparser(NodeVisitor):
     """Methods in this class recursively traverse an AST and
     output source code for the abstract syntax; original formatting
@@ -1055,7 +1060,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.body)
 
     def _str_literal_helper(
-        self, string, quote_types=("'", '"', '"""', "'''"), escape=""
+        self, string, quote_types=_ALL_QUOTES, escape=""
     ):
         """Helper for writing string literals, minimizing escapes.
         Returns (possible quote types, string literal to write).
@@ -1073,7 +1078,7 @@ class _Unparser(NodeVisitor):
         )
         possible_quotes = [q for q in quote_types if q not in escaped_string]
         if "\n" in escaped_string:
-            possible_quotes = [q for q in possible_quotes if q in ('"""', "'''")]
+            possible_quotes = [q for q in possible_quotes if q in _MULTI_QUOTES]
         if not possible_quotes:
             # If there aren't any possible_quotes, fallback to using repr
             # on the original string. Try to use a quote from quote_types.
@@ -1115,7 +1120,7 @@ class _Unparser(NodeVisitor):
             meth(value, self.buffer_writer)
             buffer.append((self.buffer, isinstance(value, Constant)))
         new_buffer = []
-        quote_types = ["'", '"', '"""', "'''"]
+        quote_types = _ALL_QUOTES
         for value, is_constant in buffer:
             # Repeatedly narrow down the list of possible quote_types
             value, quote_types = self._str_literal_helper(
@@ -1170,7 +1175,7 @@ class _Unparser(NodeVisitor):
         self.fill()
         if node.kind == "u":
             self.write("u")
-        self._write_str_avoiding_backslashes(node.value, quote_types=('"""', "'''"))
+        self._write_str_avoiding_backslashes(node.value, quote_types=_MULTI_QUOTES)
 
     def _write_constant(self, value):
         if isinstance(value, (float, complex)):
