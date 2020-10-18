@@ -218,8 +218,10 @@ class TextWrapper:
             end = space_left
             chunk = reversed_chunks[-1]
             if self.break_on_hyphens and len(chunk) > space_left:
+                # break after last hyphen, but only if there are
+                # non-hyphens before it
                 hyphen = chunk.rfind('-', 0, space_left)
-                if hyphen != -1:
+                if hyphen > 0 and any(c != '-' for c in chunk[0:hyphen]):
                     end = hyphen + 1
             cur_line.append(chunk[:end])
             reversed_chunks[-1] = chunk[end:]
