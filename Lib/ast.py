@@ -1081,7 +1081,8 @@ class _Unparser(NodeVisitor):
             possible_quotes = [q for q in possible_quotes if q in _MULTI_QUOTES]
         if not possible_quotes:
             # If there aren't any possible_quotes, fallback to using repr
-            # on the original string. Try to use a quote from quote_types.
+            # on the original string. Try to use a quote from quote_types,
+            # e.g., so that we use triple quotes for docstrings.
             string = repr(string)
             quote = next((q for q in quote_types if string[0] in q), string[0])
             return string[1:-1], [quote]
