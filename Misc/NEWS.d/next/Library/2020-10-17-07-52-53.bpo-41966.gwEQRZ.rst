@@ -1,0 +1,2 @@
+Fix pickling pure Python :class:`datetime.time` subclasses. Patch by Dean
+Inwood.
