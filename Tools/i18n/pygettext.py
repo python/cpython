@@ -369,7 +369,7 @@ class TokenEater:
                     arg = call.args[0]
                     if not isinstance(arg, ast.Constant):
                         # what warning should I print when this happens?
-                        break
+                        continue
                     if isinstance(arg.value, str):
                         self.__addentry(arg.value, lineno)
 
