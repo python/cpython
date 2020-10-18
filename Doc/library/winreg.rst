@@ -443,7 +443,7 @@ This module offers the following functions:
    :const:`REG_SZ`, meaning only strings are supported.  Use the :func:`SetValueEx`
    function for support for other data types.
 
-   *value* is a string or integer that specifies the new value.
+   *value* is a string that specifies the new value.
 
    If the key specified by the *sub_key* parameter does not exist, the SetValue
    function creates it.
@@ -801,5 +801,4 @@ integer handle, and also disconnect the Windows handle from the handle object.
           ...  # work with key
 
    will automatically close *key* when control leaves the :keyword:`with` block.
-
 
