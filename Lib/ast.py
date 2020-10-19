@@ -743,6 +743,7 @@ class _Unparser(NodeVisitor):
         assert self._pattern
         self._pattern = False
 
+    @property
     def in_pattern(self):
         return self._pattern
 
@@ -839,9 +840,15 @@ class _Unparser(NodeVisitor):
     def visit_NamedExpr(self, node):
         with self.require_parens(_Precedence.TUPLE, node):
             self.set_precedence(_Precedence.ATOM, node.target, node.value)
-            self.traverse(node.target)
-            self.write(" := ")
-            self.traverse(node.value)
+            # XXX
+            if self.in_pattern:
+                self.traverse(node.value)
+                self.write(" as ")
+                self.traverse(node.target)
+            else:
+                self.traverse(node.target)
+                self.write(" := ")
+                self.traverse(node.value)
 
     def visit_Import(self, node):
         self.fill("import ")
@@ -1346,7 +1353,7 @@ class _Unparser(NodeVisitor):
     boolop_precedence = {"and": _Precedence.AND, "or": _Precedence.OR}
 
     def visit_BoolOp(self, node):
-        if self.in_pattern():
+        if self.in_pattern:
             operator = "|"
             operator_precedence = _Precedence.OR
         else:

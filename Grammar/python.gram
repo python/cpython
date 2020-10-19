@@ -216,7 +216,7 @@ patterns[expr_ty]:
     | pattern
 
 pattern[expr_ty]:
-    | target=NAME ':=' value=or_pattern {
+    | value=or_pattern 'as' target=NAME {
         _Py_NamedExpr(CHECK(_PyPegen_set_expr_context(p, target, Store)), value, EXTRA) }
     | or_pattern
 

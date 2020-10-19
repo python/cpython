@@ -5142,7 +5142,7 @@ patterns_rule(Parser *p)
     return _res;
 }
 
-// pattern: NAME ':=' or_pattern | or_pattern
+// pattern: or_pattern 'as' NAME | or_pattern
 static expr_ty
 pattern_rule(Parser *p)
 {
@@ -5162,24 +5162,24 @@ pattern_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // NAME ':=' or_pattern
+    { // or_pattern 'as' NAME
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME ':=' or_pattern"));
-        Token * _literal;
+        D(fprintf(stderr, "%*c> pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "or_pattern 'as' NAME"));
+        Token * _keyword;
         expr_ty target;
         expr_ty value;
         if (
-            (target = _PyPegen_name_token(p))  // NAME
-            &&
-            (_literal = _PyPegen_expect_token(p, 53))  // token=':='
-            &&
             (value = or_pattern_rule(p))  // or_pattern
+            &&
+            (_keyword = _PyPegen_expect_token(p, 520))  // token='as'
+            &&
+            (target = _PyPegen_name_token(p))  // NAME
         )
         {
-            D(fprintf(stderr, "%*c+ pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME ':=' or_pattern"));
+            D(fprintf(stderr, "%*c+ pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "or_pattern 'as' NAME"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -5199,7 +5199,7 @@ pattern_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME ':=' or_pattern"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "or_pattern 'as' NAME"));
     }
     { // or_pattern
         if (p->error_indicator) {
