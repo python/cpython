@@ -31,15 +31,21 @@ always available.
    When an auditing event is raised through the :func:`sys.audit` function, each
    hook will be called in the order it was added with the event name and the
    tuple of arguments. Native hooks added by :c:func:`PySys_AddAuditHook` are
-   called first, followed by hooks added in the current interpreter.
+   called first, followed by hooks added in the current interpreter.  Hooks
+   can then log the event, raise an exception to abort the operation,
+   or terminate the process entirely.
 
    .. audit-event:: sys.addaudithook "" sys.addaudithook
 
-      Raise an auditing event ``sys.addaudithook`` with no arguments. If any
+      Calling this function will itself raise an auditing event
+      named ``sys.addaudithook`` with no arguments. If any
       existing hooks raise an exception derived from :class:`RuntimeError`, the
       new hook will not be added and the exception suppressed. As a result,
       callers cannot assume that their hook has been added unless they control
       all existing hooks.
+
+   See the :ref:`audit events table <audit-events>` for all events raised by
+   CPython, and :pep:`578` for the original design discussion.
 
    .. versionadded:: 3.8
 
@@ -81,14 +87,28 @@ always available.
 
    .. index:: single: auditing
 
-   Raise an auditing event with any active hooks. The event name is a string
-   identifying the event and its associated schema, which is the number and
-   types of arguments. The schema for a given event is considered public and
-   stable API and should not be modified between releases.
+   Raise an auditing event and trigger any active auditing hooks.
+   `event` is a string identifying the event, and `args` may contain
+   optional arguments with more information about the event.  The
+   number and types of arguments for a given event are considered a
+   public and stable API and should not be modified between releases.
 
-   This function will raise the first exception raised by any hook. In general,
-   these errors should not be handled and should terminate the process as
-   quickly as possible.
+   For example, one auditing event is named "os.chdir". This event has
+   one argument called `path` that will contain the requested new
+   working directory.
+
+   This function will call the existing auditing hooks in order,
+   passing the event name and arguments, and the first exception
+   raised by any hook will be re-raised. Native hooks added by
+   :c:func:`PySys_AddAuditHook` are called first, followed by hooks
+   added in the current interpreter.
+
+   In general, any exceptions raised by this function should not be
+   handled and should terminate the process as quickly as
+   possible. This allows hook implementations to decide how to respond
+   to any particular event. The typical responses will be to log the
+   event, abort the operation with an exception, or to immediately
+   terminate the process with an operating system exit call.
 
    Hooks are added using the :func:`sys.addaudithook` or
    :c:func:`PySys_AddAuditHook` functions.
@@ -97,7 +117,7 @@ always available.
    native function is preferred when possible.
 
    See the :ref:`audit events table <audit-events>` for all events raised by
-   CPython.
+   CPython, and :pep:`578` for the original design discussion.
 
    .. versionadded:: 3.8
 
