@@ -451,14 +451,9 @@ Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(_fastsearch)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                        const STRINGLIB_CHAR *haystack, Py_ssize_t haystack_len)
 {
-    if (needle_len == 0) {
-        return -1;
-    }
-    STRINGLIB_CHAR first = needle[0];
-
     Py_ssize_t index = STRINGLIB(find_char)(haystack,
                                             haystack_len - needle_len + 1,
-                                            first);
+                                            needle[0]);
     if (index == -1) {
         return -1;
     }
@@ -498,10 +493,9 @@ STRINGLIB(_fastcount)(const STRINGLIB_CHAR *needle, Py_ssize_t needle_len,
                       const STRINGLIB_CHAR *haystack, Py_ssize_t haystack_len,
                       Py_ssize_t maxcount)
 {
-    STRINGLIB_CHAR first = needle[0];
     Py_ssize_t index = STRINGLIB(find_char)(haystack,
                                             haystack_len - needle_len + 1,
-                                            first);
+                                            needle[0]);
     if (index == -1) {
         return 0;
     }
