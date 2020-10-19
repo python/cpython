@@ -766,7 +766,7 @@ Deprecated
   and will be removed in future Python versions.  ``value`` itself should be
   used instead of ``Index(value)``.  ``Tuple(slices, Load())`` should be
   used instead of ``ExtSlice(slices)``.
-  (Contributed by Serhiy Storchaka in :issue:`32892`.)
+  (Contributed by Serhiy Storchaka in :issue:`34822`.)
 
 * :mod:`ast` classes ``Suite``, ``Param``, ``AugLoad`` and ``AugStore``
   are considered deprecated and will be removed in future Python versions.
