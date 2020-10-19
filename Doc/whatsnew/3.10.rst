@@ -323,6 +323,10 @@ New Features
   sending value into iterator without raising ``StopIteration`` exception.
   (Contributed by Vladimir Matveev in :issue:`41756`.)
 
+* Added :c:func:`PyUnicode_AsUTF8AndSize` to the limited C API.
+  (Contributed by Alex Gaynor in :issue:`41784`.)
+
+
 Porting to Python 3.10
 ----------------------
 
