@@ -1641,6 +1641,18 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, codecs.register)
         self.assertRaises(TypeError, codecs.register, 42)
 
+    def test_unregister(self):
+        name = "nonexistent_codec_name"
+        search_function = mock.Mock()
+        codecs.register(search_function)
+        self.assertRaises(TypeError, codecs.lookup, name)
+        search_function.assert_called_with(name)
+        search_function.reset_mock()
+
+        codecs.unregister(search_function)
+        self.assertRaises(LookupError, codecs.lookup, name)
+        search_function.assert_not_called()
+
     def test_lookup(self):
         self.assertRaises(TypeError, codecs.lookup)
         self.assertRaises(LookupError, codecs.lookup, "__spam__")
@@ -3401,6 +3413,31 @@ class Rot13UtilTest(unittest.TestCase):
         self.assertEqual(
             plain_text,
             'To be, or not to be, that is the question')
+
+
+class CodecNameNormalizationTest(unittest.TestCase):
+    """Test codec name normalization"""
+    def test_normalized_encoding(self):
+        FOUND = (1, 2, 3, 4)
+        NOT_FOUND = (None, None, None, None)
+        def search_function(encoding):
+            if encoding == "aaa_8":
+                return FOUND
+            else:
+                return NOT_FOUND
+
+        codecs.register(search_function)
+        self.addCleanup(codecs.unregister, search_function)
+        self.assertEqual(FOUND, codecs.lookup('aaa_8'))
+        self.assertEqual(FOUND, codecs.lookup('AAA-8'))
+        self.assertEqual(FOUND, codecs.lookup('AAA---8'))
+        self.assertEqual(FOUND, codecs.lookup('AAA   8'))
+        self.assertEqual(FOUND, codecs.lookup('aaa\xe9\u20ac-8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('AAA.8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('AAA...8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('BBB-8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('BBB.8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('a\xe9\u20ac-8'))
 
 
 if __name__ == "__main__":

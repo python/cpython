@@ -16,7 +16,6 @@ _Py_IDENTIFIER(add_done_callback);
 _Py_IDENTIFIER(call_soon);
 _Py_IDENTIFIER(cancel);
 _Py_IDENTIFIER(get_event_loop);
-_Py_IDENTIFIER(send);
 _Py_IDENTIFIER(throw);
 
 
@@ -2695,13 +2694,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
 
     int gen_status = PYGEN_ERROR;
     if (exc == NULL) {
-        if (PyGen_CheckExact(coro) || PyCoro_CheckExact(coro)) {
-            gen_status = PyGen_Send((PyGenObject*)coro, Py_None, &result);
-        }
-        else {
-            result = _PyObject_CallMethodIdOneArg(coro, &PyId_send, Py_None);
-            gen_status = gen_status_from_result(&result);
-        }
+        gen_status = PyIter_Send(coro, Py_None, &result);
     }
     else {
         result = _PyObject_CallMethodIdOneArg(coro, &PyId_throw, exc);

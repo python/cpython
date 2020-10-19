@@ -324,6 +324,22 @@ class TestBasicOps:
         with self.assertRaises(ValueError):
             self.gen.choices('AB', [0.0, 0.0])
 
+    def test_choices_negative_total(self):
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', [3, -5, 1])
+
+    def test_choices_infinite_total(self):
+        with self.assertRaises(ValueError):
+            self.gen.choices('A', [float('inf')])
+        with self.assertRaises(ValueError):
+            self.gen.choices('AB', [0.0, float('inf')])
+        with self.assertRaises(ValueError):
+            self.gen.choices('AB', [-float('inf'), 123])
+        with self.assertRaises(ValueError):
+            self.gen.choices('AB', [0.0, float('nan')])
+        with self.assertRaises(ValueError):
+            self.gen.choices('AB', [float('-inf'), float('inf')])
+
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In
         # particular, through 2.2.1 it failed to reset a piece of state used

@@ -2649,18 +2649,7 @@ static struct PyModuleDef sysmodule = {
 };
 
 /* Updating the sys namespace, returning NULL pointer on error */
-#define SET_SYS_FROM_STRING_BORROW(key, value)             \
-    do {                                                   \
-        PyObject *v = (value);                             \
-        if (v == NULL) {                                   \
-            goto err_occurred;                             \
-        }                                                  \
-        res = PyDict_SetItemString(sysdict, key, v);       \
-        if (res < 0) {                                     \
-            goto err_occurred;                             \
-        }                                                  \
-    } while (0)
-#define SET_SYS_FROM_STRING(key, value)                    \
+#define SET_SYS(key, value)                                \
     do {                                                   \
         PyObject *v = (value);                             \
         if (v == NULL) {                                   \
@@ -2673,6 +2662,9 @@ static struct PyModuleDef sysmodule = {
         }                                                  \
     } while (0)
 
+#define SET_SYS_FROM_STRING(key, value) \
+        SET_SYS(key, PyUnicode_FromString(value))
+
 static PyStatus
 _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 {
@@ -2681,65 +2673,48 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 
     /* stdin/stdout/stderr are set in pylifecycle.c */
 
-    SET_SYS_FROM_STRING_BORROW("__displayhook__",
-                               PyDict_GetItemString(sysdict, "displayhook"));
-    SET_SYS_FROM_STRING_BORROW("__excepthook__",
-                               PyDict_GetItemString(sysdict, "excepthook"));
-    SET_SYS_FROM_STRING_BORROW(
-        "__breakpointhook__",
-        PyDict_GetItemString(sysdict, "breakpointhook"));
-    SET_SYS_FROM_STRING_BORROW("__unraisablehook__",
-                               PyDict_GetItemString(sysdict, "unraisablehook"));
+#define COPY_SYS_ATTR(tokey, fromkey) \
+        SET_SYS(tokey, PyMapping_GetItemString(sysdict, fromkey))
 
-    SET_SYS_FROM_STRING("version",
-                         PyUnicode_FromString(Py_GetVersion()));
-    SET_SYS_FROM_STRING("hexversion",
-                         PyLong_FromLong(PY_VERSION_HEX));
-    SET_SYS_FROM_STRING("_git",
-                        Py_BuildValue("(szz)", "CPython", _Py_gitidentifier(),
-                                      _Py_gitversion()));
-    SET_SYS_FROM_STRING("_framework", PyUnicode_FromString(_PYTHONFRAMEWORK));
-    SET_SYS_FROM_STRING("api_version",
-                        PyLong_FromLong(PYTHON_API_VERSION));
-    SET_SYS_FROM_STRING("copyright",
-                        PyUnicode_FromString(Py_GetCopyright()));
-    SET_SYS_FROM_STRING("platform",
-                        PyUnicode_FromString(Py_GetPlatform()));
-    SET_SYS_FROM_STRING("maxsize",
-                        PyLong_FromSsize_t(PY_SSIZE_T_MAX));
-    SET_SYS_FROM_STRING("float_info",
-                        PyFloat_GetInfo());
-    SET_SYS_FROM_STRING("int_info",
-                        PyLong_GetInfo());
+    COPY_SYS_ATTR("__displayhook__", "displayhook");
+    COPY_SYS_ATTR("__excepthook__", "excepthook");
+    COPY_SYS_ATTR("__breakpointhook__", "breakpointhook");
+    COPY_SYS_ATTR("__unraisablehook__", "unraisablehook");
+
+#undef COPY_SYS_ATTR
+
+    SET_SYS_FROM_STRING("version", Py_GetVersion());
+    SET_SYS("hexversion", PyLong_FromLong(PY_VERSION_HEX));
+    SET_SYS("_git", Py_BuildValue("(szz)", "CPython", _Py_gitidentifier(),
+                                  _Py_gitversion()));
+    SET_SYS_FROM_STRING("_framework", _PYTHONFRAMEWORK);
+    SET_SYS("api_version", PyLong_FromLong(PYTHON_API_VERSION));
+    SET_SYS_FROM_STRING("copyright", Py_GetCopyright());
+    SET_SYS_FROM_STRING("platform", Py_GetPlatform());
+    SET_SYS("maxsize", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
+    SET_SYS("float_info", PyFloat_GetInfo());
+    SET_SYS("int_info", PyLong_GetInfo());
     /* initialize hash_info */
     if (Hash_InfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&Hash_InfoType, &hash_info_desc) < 0) {
             goto type_init_failed;
         }
     }
-    SET_SYS_FROM_STRING("hash_info",
-                        get_hash_info(tstate));
-    SET_SYS_FROM_STRING("maxunicode",
-                        PyLong_FromLong(0x10FFFF));
-    SET_SYS_FROM_STRING("builtin_module_names",
-                        list_builtin_module_names());
+    SET_SYS("hash_info", get_hash_info(tstate));
+    SET_SYS("maxunicode", PyLong_FromLong(0x10FFFF));
+    SET_SYS("builtin_module_names", list_builtin_module_names());
 #if PY_BIG_ENDIAN
-    SET_SYS_FROM_STRING("byteorder",
-                        PyUnicode_FromString("big"));
+    SET_SYS_FROM_STRING("byteorder", "big");
 #else
-    SET_SYS_FROM_STRING("byteorder",
-                        PyUnicode_FromString("little"));
+    SET_SYS_FROM_STRING("byteorder", "little");
 #endif
 
 #ifdef MS_COREDLL
-    SET_SYS_FROM_STRING("dllhandle",
-                        PyLong_FromVoidPtr(PyWin_DLLhModule));
-    SET_SYS_FROM_STRING("winver",
-                        PyUnicode_FromString(PyWin_DLLVersionString));
+    SET_SYS("dllhandle", PyLong_FromVoidPtr(PyWin_DLLhModule));
+    SET_SYS_FROM_STRING("winver", PyWin_DLLVersionString);
 #endif
 #ifdef ABIFLAGS
-    SET_SYS_FROM_STRING("abiflags",
-                        PyUnicode_FromString(ABIFLAGS));
+    SET_SYS_FROM_STRING("abiflags", ABIFLAGS);
 #endif
 
     /* version_info */
@@ -2750,7 +2725,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
         }
     }
     version_info = make_version_info(tstate);
-    SET_SYS_FROM_STRING("version_info", version_info);
+    SET_SYS("version_info", version_info);
     /* prevent user from creating new instances */
     VersionInfoType.tp_init = NULL;
     VersionInfoType.tp_new = NULL;
@@ -2760,7 +2735,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     }
 
     /* implementation */
-    SET_SYS_FROM_STRING("implementation", make_impl_info(version_info));
+    SET_SYS("implementation", make_impl_info(version_info));
 
     /* flags */
     if (FlagsType.tp_name == 0) {
@@ -2769,7 +2744,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
         }
     }
     /* Set flags to their default values (updated by _PySys_InitMain()) */
-    SET_SYS_FROM_STRING("flags", make_flags(tstate));
+    SET_SYS("flags", make_flags(tstate));
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
@@ -2790,14 +2765,12 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
 #ifndef PY_NO_SHORT_FLOAT_REPR
-    SET_SYS_FROM_STRING("float_repr_style",
-                        PyUnicode_FromString("short"));
+    SET_SYS_FROM_STRING("float_repr_style", "short");
 #else
-    SET_SYS_FROM_STRING("float_repr_style",
-                        PyUnicode_FromString("legacy"));
+    SET_SYS_FROM_STRING("float_repr_style", "legacy");
 #endif
 
-    SET_SYS_FROM_STRING("thread_info", PyThread_GetInfo());
+    SET_SYS("thread_info", PyThread_GetInfo());
 
     /* initialize asyncgen_hooks */
     if (AsyncGenHooksType.tp_name == NULL) {
@@ -2818,20 +2791,6 @@ type_init_failed:
 err_occurred:
     return _PyStatus_ERR("can't initialize sys module");
 }
-
-/* Updating the sys namespace, returning integer error codes */
-#define SET_SYS_FROM_STRING_INT_RESULT(key, value)         \
-    do {                                                   \
-        PyObject *v = (value);                             \
-        if (v == NULL)                                     \
-            return -1;                                     \
-        res = PyDict_SetItemString(sysdict, key, v);       \
-        Py_DECREF(v);                                      \
-        if (res < 0) {                                     \
-            return res;                                    \
-        }                                                  \
-    } while (0)
-
 
 static int
 sys_add_xoption(PyObject *opts, const wchar_t *s)
@@ -2895,24 +2854,10 @@ _PySys_InitMain(PyThreadState *tstate)
     int res;
 
 #define COPY_LIST(KEY, VALUE) \
-    do { \
-        PyObject *list = _PyWideStringList_AsList(&(VALUE)); \
-        if (list == NULL) { \
-            return -1; \
-        } \
-        SET_SYS_FROM_STRING_BORROW(KEY, list); \
-        Py_DECREF(list); \
-    } while (0)
+        SET_SYS(KEY, _PyWideStringList_AsList(&(VALUE)));
 
 #define SET_SYS_FROM_WSTR(KEY, VALUE) \
-    do { \
-        PyObject *str = PyUnicode_FromWideChar(VALUE, -1); \
-        if (str == NULL) { \
-            return -1; \
-        } \
-        SET_SYS_FROM_STRING_BORROW(KEY, str); \
-        Py_DECREF(str); \
-    } while (0)
+        SET_SYS(KEY, PyUnicode_FromWideChar(VALUE, -1));
 
     COPY_LIST("path", config->module_search_paths);
 
@@ -2934,19 +2879,14 @@ _PySys_InitMain(PyThreadState *tstate)
     COPY_LIST("orig_argv", config->orig_argv);
     COPY_LIST("warnoptions", config->warnoptions);
 
-    PyObject *xoptions = sys_create_xoptions_dict(config);
-    if (xoptions == NULL) {
-        return -1;
-    }
-    SET_SYS_FROM_STRING_BORROW("_xoptions", xoptions);
-    Py_DECREF(xoptions);
+    SET_SYS("_xoptions", sys_create_xoptions_dict(config));
 
 #undef COPY_LIST
 #undef SET_SYS_FROM_WSTR
 
 
     /* Set flags to their final values */
-    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(tstate));
+    SET_SYS("flags", make_flags(tstate));
     /* prevent user from creating new instances */
     FlagsType.tp_init = NULL;
     FlagsType.tp_new = NULL;
@@ -2958,8 +2898,7 @@ _PySys_InitMain(PyThreadState *tstate)
         _PyErr_Clear(tstate);
     }
 
-    SET_SYS_FROM_STRING_INT_RESULT("dont_write_bytecode",
-                         PyBool_FromLong(!config->write_bytecode));
+    SET_SYS("dont_write_bytecode", PyBool_FromLong(!config->write_bytecode));
 
     if (get_warnoptions(tstate) == NULL) {
         return -1;
@@ -2978,9 +2917,8 @@ err_occurred:
     return -1;
 }
 
+#undef SET_SYS
 #undef SET_SYS_FROM_STRING
-#undef SET_SYS_FROM_STRING_BORROW
-#undef SET_SYS_FROM_STRING_INT_RESULT
 
 
 /* Set up a preliminary stderr printer until we have enough

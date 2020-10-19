@@ -277,7 +277,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.9a2  3423 (add IS_OP, CONTAINS_OP and JUMP_IF_NOT_EXC_MATCH bytecodes #39156)
 #     Python 3.9a2  3424 (simplify bytecodes for *value unpacking)
 #     Python 3.9a2  3425 (simplify bytecodes for **value unpacking)
-#     Python 3.10a0 3467 (add structural pattern matching)
+#     Python 3.10a1 3430 (Make 'annotations' future by default)
+#     Python 3.10a1 3467 (add structural pattern matching)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no

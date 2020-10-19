@@ -192,6 +192,54 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaises(tkinter.TclError):
             root.clipboard_get()
 
+    def test_event_repr_defaults(self):
+        e = tkinter.Event()
+        e.serial = 12345
+        e.num = '??'
+        e.height = '??'
+        e.keycode = '??'
+        e.state = 0
+        e.time = 123456789
+        e.width = '??'
+        e.x = '??'
+        e.y = '??'
+        e.char = ''
+        e.keysym = '??'
+        e.keysym_num = '??'
+        e.type = '100'
+        e.widget = '??'
+        e.x_root = '??'
+        e.y_root = '??'
+        e.delta = 0
+        self.assertEqual(repr(e), '<100 event>')
+
+    def test_event_repr(self):
+        e = tkinter.Event()
+        e.serial = 12345
+        e.num = 3
+        e.focus = True
+        e.height = 200
+        e.keycode = 65
+        e.state = 0x30405
+        e.time = 123456789
+        e.width = 300
+        e.x = 10
+        e.y = 20
+        e.char = 'A'
+        e.send_event = True
+        e.keysym = 'Key-A'
+        e.keysym_num = ord('A')
+        e.type = tkinter.EventType.Configure
+        e.widget = '.text'
+        e.x_root = 1010
+        e.y_root = 1020
+        e.delta = -1
+        self.assertEqual(repr(e),
+                         "<Configure event send_event=True"
+                         " state=Shift|Control|Button3|0x30000"
+                         " keysym=Key-A keycode=65 char='A'"
+                         " num=3 delta=-1 focus=True"
+                         " x=10 y=20 width=300 height=200>")
 
 tests_gui = (MiscTest, )
 
