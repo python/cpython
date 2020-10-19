@@ -2029,9 +2029,15 @@ class MozillaCookieJar(FileCookieJar):
                 # last field may be absent, so keep any trailing tab
                 if line.endswith("\n"): line = line[:-1]
 
+                # support HTTP-only cookies (as stored by curl or old Firefox).
+                # per prior comment, we need to take care NOT to strip trailing
+                # whitespace
+                sline = line.lstrip()
+                if sline.startswith("#HttpOnly_"):
+                    line = sline[10:]
                 # skip comments and blank lines XXX what is $ for?
-                if (line.strip().startswith(("#", "$")) or
-                    line.strip() == ""):
+                elif (sline.startswith(("#", "$")) or
+                      line.strip() == ""):
                     continue
 
                 domain, domain_specified, path, secure, expires, name, value = \
@@ -2107,6 +2113,10 @@ class MozillaCookieJar(FileCookieJar):
                 else:
                     name = cookie.name
                     value = cookie.value
+                if cookie.httponly:
+                    domain = '#HttpOnly_' + cookie.domain
+                else:
+                    domain = cookie.domain
                 f.write(
                     "\t".join([cookie.domain, initial_dot, cookie.path,
                                secure, expires, name, value])+
