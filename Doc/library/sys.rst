@@ -37,7 +37,7 @@ always available.
 
    .. audit-event:: sys.addaudithook "" sys.addaudithook
 
-      Calling this function will itself raise an auditing event
+      Calling :func:`sys.addaudithook` will itself raise an auditing event
       named ``sys.addaudithook`` with no arguments. If any
       existing hooks raise an exception derived from :class:`RuntimeError`, the
       new hook will not be added and the exception suppressed. As a result,
@@ -93,22 +93,17 @@ always available.
    number and types of arguments for a given event are considered a
    public and stable API and should not be modified between releases.
 
-   For example, one auditing event is named "os.chdir". This event has
-   one argument called `path` that will contain the requested new
+   For example, one auditing event is named ``os.chdir``. This event has
+   one argument called *path* that will contain the requested new
    working directory.
 
-   This function will call the existing auditing hooks in order,
-   passing the event name and arguments, and the first exception
-   raised by any hook will be re-raised. Native hooks added by
-   :c:func:`PySys_AddAuditHook` are called first, followed by hooks
-   added in the current interpreter.
-
-   In general, any exceptions raised by this function should not be
-   handled and should terminate the process as quickly as
+   :func:`sys.audit` will call the existing auditing hooks, passing
+   the event name and arguments, and will re-raise the first exception
+   from any hook. In general, if an exception is raised, it should not
+   be handled and the process should be terminated as quickly as
    possible. This allows hook implementations to decide how to respond
-   to any particular event. The typical responses will be to log the
-   event, abort the operation with an exception, or to immediately
-   terminate the process with an operating system exit call.
+   to particular events: they can merely log the event or abort the
+   operation by raising an exception.
 
    Hooks are added using the :func:`sys.addaudithook` or
    :c:func:`PySys_AddAuditHook` functions.
@@ -117,7 +112,7 @@ always available.
    native function is preferred when possible.
 
    See the :ref:`audit events table <audit-events>` for all events raised by
-   CPython, and :pep:`578` for the original design discussion.
+   CPython.
 
    .. versionadded:: 3.8
 
