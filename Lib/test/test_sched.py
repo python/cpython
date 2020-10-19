@@ -148,9 +148,10 @@ class TestCase(unittest.TestCase):
         scheduler = sched.scheduler()
         scheduler.enterabs(1, 1, events.append, ("a",))
         b = scheduler.enterabs(1, 1, events.append, ("b",))
+        scheduler.enterabs(1, 1, events.append, ("c",))
         scheduler.cancel(b)
         scheduler.run()
-        self.assertEqual(events[0], "a")
+        self.assertEqual(events, ["a", "c"])
 
     def test_empty(self):
         l = []
