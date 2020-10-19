@@ -67,7 +67,7 @@ The :mod:`shlex` module defines the following functions:
 
       The ``shlex`` module is **only designed for Unix shells**.
 
-      The :func:`quote` function is not guaranteed to be safe on non-POSIX
+      The :func:`quote` function is not guaranteed to be correct on non-POSIX
       compliant shells or shells from other operating systems such as Windows.
       Executing commands quoted by this module on such shells can open up the
       possibility of a command injection vulnerability.
