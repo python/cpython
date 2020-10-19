@@ -158,28 +158,26 @@ RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype, int lineno,
     RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, (a)->lineno, (a)->col_offset, msg, ##__VA_ARGS__)
 
 Py_LOCAL_INLINE(void *)
-CHECK_CALL(Parser *p, void *result)
+SET_ERROR(Parser *p)
 {
-    if (result == NULL) {
-        assert(PyErr_Occurred());
-        p->error_indicator = 1;
-    }
-    return result;
+    assert(PyErr_Occurred());
+    p->error_indicator = 1;
+    return NULL;
 }
 
 /* This is needed for helper functions that are allowed to
    return NULL without an error. Example: _PyPegen_seq_extract_starred_exprs */
 Py_LOCAL_INLINE(void *)
-CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
+SET_ERROR_NULL_ALLOWED(Parser *p)
 {
-    if (result == NULL && PyErr_Occurred()) {
-        p->error_indicator = 1;
-    }
-    return result;
+    p->error_indicator = 1;
+    return NULL;
 }
 
-#define CHECK(result) CHECK_CALL(p, result)
-#define CHECK_NULL_ALLOWED(result) CHECK_CALL_NULL_ALLOWED(p, result)
+#define CHECK(result) (result == NULL ? SET_ERROR(p) : result)
+#define CHECK_NULL_ALLOWED(result) ((result == NULL && PyErr_Occurred()) \
+                                    ? SET_ERROR_NULL_ALLOWED(p) \
+                                    : result)
 
 PyObject *_PyPegen_new_type_comment(Parser *, char *);
 
