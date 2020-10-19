@@ -88,7 +88,7 @@ always available.
    .. index:: single: auditing
 
    Raise an auditing event and trigger any active auditing hooks.
-   `event` is a string identifying the event, and `args` may contain
+   *event* is a string identifying the event, and *args* may contain
    optional arguments with more information about the event.  The
    number and types of arguments for a given event are considered a
    public and stable API and should not be modified between releases.
