@@ -269,13 +269,29 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
 }
 
 PySendResult
-PyGen_Send(PyGenObject *gen, PyObject *arg, PyObject **result)
+PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
 {
-    assert(PyGen_CheckExact(gen) || PyCoro_CheckExact(gen));
-    assert(result != NULL);
+    _Py_IDENTIFIER(send);
     assert(arg != NULL);
+    assert(result != NULL);
 
-    return gen_send_ex2(gen, arg, result, 0, 0);
+    if (PyGen_CheckExact(iter) || PyCoro_CheckExact(iter)) {
+        return gen_send_ex2((PyGenObject *)iter, arg, result, 0, 0);
+    }
+
+    if (arg == Py_None && PyIter_Check(iter)) {
+        *result = Py_TYPE(iter)->tp_iternext(iter);
+    }
+    else {
+        *result = _PyObject_CallMethodIdOneArg(iter, &PyId_send, arg);
+    }
+    if (*result != NULL) {
+        return PYGEN_NEXT;
+    }
+    if (_PyGen_FetchStopIterationValue(result) == 0) {
+        return PYGEN_RETURN;
+    }
+    return PYGEN_ERROR;
 }
 
 static PyObject *
