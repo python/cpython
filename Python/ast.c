@@ -331,7 +331,7 @@ validate_pattern(expr_ty p)
     Py_ssize_t i, size;
     switch (p->kind) {
         case Attribute_kind:
-            return validate_expr(p, Load);
+            return validate_expr(p, Load);  // TODO
         case BinOp_kind:
             // TODO
             return 1;
@@ -358,7 +358,7 @@ validate_pattern(expr_ty p)
             // TODO
             return 1;
         case Constant_kind:
-            return validate_expr(p, Load);
+            return validate_expr(p, Load);  // TODO
         case Dict_kind:
             keys = p->v.Dict.keys;
             values = p->v.Dict.values;
@@ -431,10 +431,10 @@ validate_pattern(expr_ty p)
                     "Name ctx in pattern must be Load or Store");
                 return 0;
             }
-            return validate_expr(p, p->v.Name.ctx);
+            return validate_expr(p, p->v.Name.ctx);  // TODO
         case NamedExpr_kind:
             return (validate_pattern(p->v.NamedExpr.value)
-                    && validate_expr(p->v.NamedExpr.target, Store));
+                    && validate_expr(p->v.NamedExpr.target, Store));  // TODO
         case UnaryOp_kind:
             // TODO
             return 1;

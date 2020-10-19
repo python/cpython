@@ -984,7 +984,7 @@ do_match(PyThreadState *tstate, Py_ssize_t nargs, PyObject *kwargs, PyObject *ty
     Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwargs);
     Py_ssize_t count = nargs + nkwargs;
     Py_ssize_t nmatch_args;
-    // TODO: Just build attrs in two passes (nargs and nkwargs)
+    // TODO: Just build attrs in two passes (nargs and nkwargs)?
     if (!nargs) {
         nmatch_args = 0;
         args = PyTuple_New(0);
