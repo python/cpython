@@ -210,17 +210,6 @@ def build_files(file_defs, prefix=pathlib.Path()):
                     f.write(DALS(contents))
 
 
-class FileBuilder:
-    def unicode_filename(self):
-        try:
-            from test.support import os_helper
-        except ImportError:
-            # outside CPython, hard-code a unicode snowman
-            return '☃'
-        return os_helper.FS_NONASCII or \
-            self.skip("File system does not support non-ascii.")
-
-
 def DALS(str):
     "Dedent and left-strip"
     return textwrap.dedent(str).lstrip()
