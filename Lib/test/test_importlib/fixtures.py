@@ -5,7 +5,8 @@ import pathlib
 import tempfile
 import textwrap
 import contextlib
-import test.support
+
+from test.support.os_helper import FS_NONASCII
 
 
 @contextlib.contextmanager
@@ -213,7 +214,7 @@ def build_files(file_defs, prefix=pathlib.Path()):
 
 class FileBuilder:
     def unicode_filename(self):
-        return test.support.FS_NONASCII or \
+        return FS_NONASCII or \
             self.skip("File system does not support non-ascii.")
 
 
