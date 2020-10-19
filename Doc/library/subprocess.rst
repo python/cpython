@@ -358,12 +358,22 @@ functions.
 
    .. warning::
 
-      Using the string ``"python"`` as the program to execute is not a good
-      idea, as there are a number of circumstances where the Python interpreter
-      may not be visible under that name. Instead, use :data:`sys.executable`
-      if you want to start a copy of the current interpreter, or use
-      :meth:`shutil.which` if you want to find the Python interpreter by name
-      using the shell's current search path.
+      For maximum reliability, use a fully-qualified path for the executable.
+      To search for an unqualified name on :envvar:`PATH`, use
+      :meth:`shutil.which`. On all platforms, passing :data:`sys.executable`
+      is the recommended way to launch the current Python interpreter again,
+      and use the ``-m`` command-line format to launch an installed module.
+
+      Resolving the path of *executable* (or the first item of *args*) is
+      platform dependent. For POSIX, see :meth:`os.execvpe`, and note that
+      when resolving or searching for the executable path, *cwd* overrides the
+      current working directory and *env* can override the ``PATH``
+      environment variable. For Windows, see the documentation of the
+      ``lpApplicationName`` and ``lpCommandLine`` parameters of WinAPI
+      ``CreateProcess``, and note that when resolving or searching for the
+      executable path with ``shell=False``, *cwd* does not override the
+      current working directory and *env* cannot override the ``PATH``
+      environment variable. Using a full path avoids all of these variations.
 
    An example of passing some arguments to an external program
    as a sequence is::
