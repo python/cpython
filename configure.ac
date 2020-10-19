@@ -3622,12 +3622,6 @@ AC_MSG_CHECKING(DYNLOADFILE)
 if test -z "$DYNLOADFILE"
 then
 	case $ac_sys_system/$ac_sys_release in
-	AIX*) # Use dynload_shlib.c and dlopen() if we have it; otherwise dynload_aix.c
-	if test "$ac_cv_func_dlopen" = yes
-	then DYNLOADFILE="dynload_shlib.o"
-	else DYNLOADFILE="dynload_aix.o"
-	fi
-	;;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
