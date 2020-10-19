@@ -5,6 +5,7 @@ import pathlib
 import tempfile
 import textwrap
 import contextlib
+import test.support
 
 
 @contextlib.contextmanager
@@ -208,6 +209,12 @@ def build_files(file_defs, prefix=pathlib.Path()):
             else:
                 with full_name.open('w') as f:
                     f.write(DALS(contents))
+
+
+class FileBuilder:
+    def unicode_filename(self):
+        return test.support.FS_NONASCII or \
+            self.skip("File system does not support non-ascii.")
 
 
 def DALS(str):
