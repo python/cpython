@@ -1653,110 +1653,15 @@ add_submodule(PyObject *mod, const char *fullname)
 }
 
 static int
-pyexpat_exec(PyObject *mod)
+add_errors_module(PyObject *mod)
 {
-    PyObject *codes_dict = NULL, *rev_codes_dict = NULL;
-
-    if (PyType_Ready(&Xmlparsetype) < 0) {
-        goto error;
-    }
-
-    if (init_handler_descrs() < 0) {
-        goto error;
-    }
-
-    /* Add some symbolic constants to the module */
-    if (ErrorObject == NULL) {
-        ErrorObject = PyErr_NewException("xml.parsers.expat.ExpatError",
-                                         NULL, NULL);
-    }
-    if (ErrorObject == NULL) {
-        goto error;
-    }
-
-    Py_INCREF(ErrorObject);
-    if (PyModule_AddObject(mod, "error", ErrorObject) < 0) {
-        Py_DECREF(ErrorObject);
-        goto error;
-    }
-    Py_INCREF(ErrorObject);
-    if (PyModule_AddObject(mod, "ExpatError", ErrorObject) < 0) {
-        Py_DECREF(ErrorObject);
-        goto error;
-    }
-    Py_INCREF(&Xmlparsetype);
-    if (PyModule_AddObject(mod, "XMLParserType",
-                           (PyObject *) &Xmlparsetype) < 0) {
-        Py_DECREF(&Xmlparsetype);
-        goto error;
-    }
-
-    if (PyModule_AddStringConstant(mod, "EXPAT_VERSION",
-                                   XML_ExpatVersion()) < 0) {
-        goto error;
-    }
-    {
-        XML_Expat_Version info = XML_ExpatVersionInfo();
-        PyObject *versionInfo = Py_BuildValue("(iii)",
-                                              info.major,
-                                              info.minor,
-                                              info.micro);
-        if (PyModule_AddObject(mod, "version_info", versionInfo) < 0) {
-            Py_DECREF(versionInfo);
-            goto error;
-        }
-    }
-    /* XXX When Expat supports some way of figuring out how it was
-       compiled, this should check and set native_encoding
-       appropriately.
-    */
-    if (PyModule_AddStringConstant(mod, "native_encoding", "UTF-8") < 0) {
-        goto error;
-    }
-
     PyObject *errors_module = add_submodule(mod, MODULE_NAME ".errors");
     if (errors_module == NULL) {
-        goto error;
+        return -1;
     }
 
-    PyObject *model_module = add_submodule(mod, MODULE_NAME ".model");
-    if (model_module == NULL) {
-        goto error;
-    }
-
-#if XML_COMBINED_VERSION > 19505
-    {
-        const XML_Feature *features = XML_GetFeatureList();
-        PyObject *list = PyList_New(0);
-        if (list == NULL) {
-            goto error;
-        }
-
-        int i = 0;
-        for (; features[i].feature != XML_FEATURE_END; ++i) {
-            PyObject *item = Py_BuildValue("si", features[i].name,
-                                            features[i].value);
-            if (item == NULL) {
-                Py_DECREF(list);
-                goto error;
-            }
-            int ok = PyList_Append(list, item);
-            Py_DECREF(item);
-            if (ok < 0) {
-                PyErr_Clear();
-                Py_DECREF(list);
-                goto error;
-            }
-        }
-        if (PyModule_AddObject(mod, "features", list) < 0) {
-            Py_DECREF(list);
-            goto error;
-        }
-    }
-#endif
-
-    codes_dict = PyDict_New();
-    rev_codes_dict = PyDict_New();
+    PyObject *codes_dict = PyDict_New();
+    PyObject *rev_codes_dict = PyDict_New();
     if (codes_dict == NULL || rev_codes_dict == NULL) {
         goto error;
     }
@@ -1844,30 +1749,34 @@ pyexpat_exec(PyObject *mod)
     if (PyModule_AddObject(errors_module, "messages", rev_codes_dict) < 0) {
         goto error;
     }
+    #undef MYCONST
 
-#undef MYCONST
+    return 0;
 
-#define MYCONST(c) do {                                 \
-        if (PyModule_AddIntConstant(mod, #c, c) < 0) {  \
-            goto error;                                  \
-        }                                               \
-    } while(0)
+    error:
+    Py_XDECREF(codes_dict);
+    Py_XDECREF(rev_codes_dict);
+    return -1;
+}
 
-    MYCONST(XML_PARAM_ENTITY_PARSING_NEVER);
-    MYCONST(XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE);
-    MYCONST(XML_PARAM_ENTITY_PARSING_ALWAYS);
-#undef MYCONST
+static int
+add_model_module(PyObject *mod)
+{
+    PyObject *model_module = add_submodule(mod, MODULE_NAME ".model");
+    if (model_module == NULL) {
+        return -1;
+    }
 
 #define MYCONST(c)  do {                                        \
         if (PyModule_AddIntConstant(model_module, #c, c) < 0) { \
-            goto error;                                          \
+            return -1;                                          \
         }                                                       \
     } while(0)
 
     if (PyModule_AddStringConstant(
         model_module, "__doc__",
         "Constants used to interpret content model information.") < 0) {
-        goto error;
+        return -1;
     }
 
     MYCONST(XML_CTYPE_EMPTY);
@@ -1881,6 +1790,118 @@ pyexpat_exec(PyObject *mod)
     MYCONST(XML_CQUANT_OPT);
     MYCONST(XML_CQUANT_REP);
     MYCONST(XML_CQUANT_PLUS);
+#undef MYCONST
+    return 0;
+}
+
+static int
+pyexpat_exec(PyObject *mod)
+{
+    if (PyType_Ready(&Xmlparsetype) < 0) {
+        return -1;
+    }
+
+    if (init_handler_descrs() < 0) {
+        return -1;
+    }
+
+    /* Add some symbolic constants to the module */
+    if (ErrorObject == NULL) {
+        ErrorObject = PyErr_NewException("xml.parsers.expat.ExpatError",
+                                         NULL, NULL);
+    }
+    if (ErrorObject == NULL) {
+        return -1;
+    }
+
+    Py_INCREF(ErrorObject);
+    if (PyModule_AddObject(mod, "error", ErrorObject) < 0) {
+        Py_DECREF(ErrorObject);
+        return -1;
+    }
+    Py_INCREF(ErrorObject);
+    if (PyModule_AddObject(mod, "ExpatError", ErrorObject) < 0) {
+        Py_DECREF(ErrorObject);
+        return -1;
+    }
+    Py_INCREF(&Xmlparsetype);
+    if (PyModule_AddObject(mod, "XMLParserType",
+                           (PyObject *) &Xmlparsetype) < 0) {
+        Py_DECREF(&Xmlparsetype);
+        return -1;
+    }
+
+    if (PyModule_AddStringConstant(mod, "EXPAT_VERSION",
+                                   XML_ExpatVersion()) < 0) {
+        return -1;
+    }
+    {
+        XML_Expat_Version info = XML_ExpatVersionInfo();
+        PyObject *versionInfo = Py_BuildValue("(iii)",
+                                              info.major,
+                                              info.minor,
+                                              info.micro);
+        if (PyModule_AddObject(mod, "version_info", versionInfo) < 0) {
+            Py_DECREF(versionInfo);
+            return -1;
+        }
+    }
+    /* XXX When Expat supports some way of figuring out how it was
+       compiled, this should check and set native_encoding
+       appropriately.
+    */
+    if (PyModule_AddStringConstant(mod, "native_encoding", "UTF-8") < 0) {
+        return -1;
+    }
+
+    if (add_errors_module(mod) < 0) {
+        return -1;
+    }
+
+    if (add_model_module(mod) < 0) {
+        return -1;
+    }
+
+#if XML_COMBINED_VERSION > 19505
+    {
+        const XML_Feature *features = XML_GetFeatureList();
+        PyObject *list = PyList_New(0);
+        if (list == NULL) {
+            return -1;
+        }
+
+        int i = 0;
+        for (; features[i].feature != XML_FEATURE_END; ++i) {
+            PyObject *item = Py_BuildValue("si", features[i].name,
+                                            features[i].value);
+            if (item == NULL) {
+                Py_DECREF(list);
+                return -1;
+            }
+            int ok = PyList_Append(list, item);
+            Py_DECREF(item);
+            if (ok < 0) {
+                PyErr_Clear();
+                Py_DECREF(list);
+                return -1;
+            }
+        }
+        if (PyModule_AddObject(mod, "features", list) < 0) {
+            Py_DECREF(list);
+            return -1;
+        }
+    }
+#endif
+
+#define MYCONST(c) do {                                 \
+        if (PyModule_AddIntConstant(mod, #c, c) < 0) {  \
+            return -1;                                  \
+        }                                               \
+    } while(0)
+
+    MYCONST(XML_PARAM_ENTITY_PARSING_NEVER);
+    MYCONST(XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE);
+    MYCONST(XML_PARAM_ENTITY_PARSING_ALWAYS);
 #undef MYCONST
 
     static struct PyExpat_CAPI capi;
@@ -1917,20 +1938,15 @@ pyexpat_exec(PyObject *mod)
     /* export using capsule */
     PyObject *capi_object = PyCapsule_New(&capi, PyExpat_CAPSULE_NAME, NULL);
     if (capi_object == NULL) {
-        goto error;
+        return -1;
     }
 
     if (PyModule_AddObject(mod, "expat_CAPI", capi_object) < 0) {
         Py_DECREF(capi_object);
-        goto error;
+        return -1;
     }
 
     return 0;
-
-error:
-    Py_XDECREF(codes_dict);
-    Py_XDECREF(rev_codes_dict);
-    return -1;
 }
 
 static PyModuleDef_Slot pyexpat_slots[] = {
