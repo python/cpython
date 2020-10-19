@@ -274,7 +274,9 @@ PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
     _Py_IDENTIFIER(send);
     assert(arg != NULL);
     assert(result != NULL);
-
+    if (Py_TYPE(iter)->tp_as_async != NULL && Py_TYPE(iter)->tp_as_async->am_send != NULL) {
+        return Py_TYPE(iter)->tp_as_async->am_send(iter, arg, result);
+    }
     if (PyGen_CheckExact(iter) || PyCoro_CheckExact(iter)) {
         return gen_send_ex2((PyGenObject *)iter, arg, result, 0, 0);
     }
@@ -1031,7 +1033,8 @@ static PyMethodDef coro_methods[] = {
 static PyAsyncMethods coro_as_async = {
     (unaryfunc)coro_await,                      /* am_await */
     0,                                          /* am_aiter */
-    0                                           /* am_anext */
+    0,                                          /* am_anext */
+    0,                                          /* am_send  */
 };
 
 PyTypeObject PyCoro_Type = {
@@ -1413,7 +1416,8 @@ static PyMethodDef async_gen_methods[] = {
 static PyAsyncMethods async_gen_as_async = {
     0,                                          /* am_await */
     PyObject_SelfIter,                          /* am_aiter */
-    (unaryfunc)async_gen_anext                  /* am_anext */
+    (unaryfunc)async_gen_anext,                 /* am_anext */
+    0,                                          /* am_send  */
 };
 
 
@@ -1676,7 +1680,8 @@ static PyMethodDef async_gen_asend_methods[] = {
 static PyAsyncMethods async_gen_asend_as_async = {
     PyObject_SelfIter,                          /* am_await */
     0,                                          /* am_aiter */
-    0                                           /* am_anext */
+    0,                                          /* am_anext */
+    0,                                          /* am_send  */
 };
 
 
@@ -2084,7 +2089,8 @@ static PyMethodDef async_gen_athrow_methods[] = {
 static PyAsyncMethods async_gen_athrow_as_async = {
     PyObject_SelfIter,                          /* am_await */
     0,                                          /* am_aiter */
-    0                                           /* am_anext */
+    0,                                          /* am_anext */
+    0,                                          /* am_send  */
 };
 
 

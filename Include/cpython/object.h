@@ -167,10 +167,23 @@ typedef struct {
     objobjargproc mp_ass_subscript;
 } PyMappingMethods;
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+typedef enum {
+    PYGEN_RETURN = 0,
+    PYGEN_ERROR = -1,
+    PYGEN_NEXT = 1,
+} PySendResult;
+
+typedef PySendResult (*sendfunc)(PyObject *iter, PyObject *value, PyObject **result);
+#endif
+
 typedef struct {
     unaryfunc am_await;
     unaryfunc am_aiter;
     unaryfunc am_anext;
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+    sendfunc am_send;
+#endif
 } PyAsyncMethods;
 
 typedef struct {
