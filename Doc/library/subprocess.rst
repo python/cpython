@@ -341,7 +341,7 @@ functions.
                  startupinfo=None, creationflags=0, restore_signals=True, \
                  start_new_session=False, pass_fds=(), \*, group=None, \
                  extra_groups=None, user=None, umask=-1, \
-                 encoding=None, errors=None, text=None)
+                 encoding=None, errors=None, text=None, pipesize=-1)
 
    Execute a child program in a new process.  On POSIX, the class uses
    :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
@@ -624,6 +624,14 @@ functions.
       * :data:`DETACHED_PROCESS`
       * :data:`CREATE_DEFAULT_ERROR_MODE`
       * :data:`CREATE_BREAKAWAY_FROM_JOB`
+
+   *pipesize* can be used to change the size of the pipe when
+   :data:`PIPE` is used for *stdin*, *stdout* or *stderr*. The size of the pipe
+   is only changed on platforms that support this (only Linux at this time of
+   writing). Other platforms will ignore this parameter.
+
+   .. versionadded:: 3.10
+      The ``pipesize`` parameter was added.
 
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
