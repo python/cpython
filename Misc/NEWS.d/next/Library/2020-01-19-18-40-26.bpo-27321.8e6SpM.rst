@@ -1,0 +1,2 @@
+Fixed KeyError exception when flattening an email to a string attempts to
+replace a non-existent Content-Transfer-Encoding header.
