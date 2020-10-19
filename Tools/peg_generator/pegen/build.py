@@ -49,6 +49,7 @@ def compile_c_extension(
     from distutils.command.clean import clean  # type: ignore
     from distutils.command.build_ext import build_ext  # type: ignore
     from distutils.tests.support import fixup_build_ext  # type: ignore
+    from distutils.util import get_platform
 
     if verbose:
         distutils.log.set_verbosity(distutils.log.DEBUG)
@@ -59,6 +60,8 @@ def compile_c_extension(
     extra_link_args = get_extra_flags("LDFLAGS", "PY_LDFLAGS_NODIST")
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
+    if get_platform().startswith("win32"):
+        extra_compile_args.append("-w")
     extension = [
         Extension(
             extension_name,
