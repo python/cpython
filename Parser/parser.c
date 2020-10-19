@@ -4943,7 +4943,7 @@ match_stmt_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _Py_Match ( subject , cases , EXTRA );
+            _res = CHECK_VERSION ( 10 , "Pattern matching is" , _Py_Match ( subject , cases , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);

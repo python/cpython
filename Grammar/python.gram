@@ -203,7 +203,7 @@ match_expr[expr_ty]:
 
 match_stmt[stmt_ty]:
     | "match" subject=match_expr ':' NEWLINE INDENT cases[asdl_match_case_seq*]=case_block+ DEDENT {
-        _Py_Match(subject, cases, EXTRA) }
+        CHECK_VERSION(10, "Pattern matching is", _Py_Match(subject, cases, EXTRA)) }
 case_block[match_case_ty]:
     | "case" pattern=patterns guard=guard? ':' body=block {
         _Py_match_case(pattern, guard, body, p->arena) }
