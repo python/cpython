@@ -117,7 +117,7 @@ thoughts in mind:
   the key function may be called again and again on the same array elements.
   If the key function isn't fast, consider wrapping it with
   :func:`functools.cache` to avoid duplicate computations.  Alternatively,
-  consider searching an array of precomputed the keys to locate the insertion
+  consider searching an array of precomputed keys to locate the insertion
   point (as shown in the examples section below).
 
 .. seealso::
