@@ -860,7 +860,7 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
             goto fail;
         }
     }
-    seen = PyList_New(0);
+    seen = PySet_New(NULL);
     if (!seen) {
         goto fail;
     }
@@ -871,7 +871,7 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
     PyObject *key, *value;
     for (Py_ssize_t i = 0; i < nkeys; i++) {
         key = PyTuple_GET_ITEM(keys, i);
-        if (PySequence_Contains(seen, key) || PyList_Append(seen, key)) {
+        if (PySet_Contains(seen, key) || PySet_Add(seen, key)) {
             if (!_PyErr_Occurred(tstate)) {
                 _PyErr_Format(tstate, PyExc_ValueError,
                               "mapping pattern checks duplicate key (%R)", key);
@@ -1024,7 +1024,7 @@ do_match(PyThreadState *tstate, Py_ssize_t nargs, PyObject *kwargs, PyObject *ty
     if (!attrs) {
         goto error;
     }
-    seen = PyList_New(0);
+    seen = PySet_New(NULL);
     if (!seen) {
         goto error;
     }
@@ -1048,7 +1048,7 @@ do_match(PyThreadState *tstate, Py_ssize_t nargs, PyObject *kwargs, PyObject *ty
         else {
             name = PyTuple_GET_ITEM(kwargs, i - nargs);
         }
-        if (PySequence_Contains(seen, name) || PyList_Append(seen, name)) {
+        if (PySet_Contains(seen, name) || PySet_Add(seen, name)) {
             if (!_PyErr_Occurred(tstate)) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                     "%s() got multiple sub-patterns for attribute %R",
