@@ -571,7 +571,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
     mask = 0;
 
     if (mode != FAST_RSEARCH) {
-        if (n >= 500 && m >= 10) {
+        if (n >= 4000 && m >= 20) {
             /* long needles/haystacks get the two-way algorithm. */
             if (mode == FAST_SEARCH) {
                 return STRINGLIB(_fastsearch)(p, m, s, n);
