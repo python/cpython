@@ -1618,7 +1618,7 @@ They are instances of a private class:
    ``ctypes.seh_exception`` with argument ``code`` will be raised, allowing an
    audit hook to replace the exception with its own.
 
-.. audit-event:: ctypes.call_function func_pointer,arguments ctype-foreign-functions
+.. audit-event:: ctypes.call_function func_pointer,arguments foreign-functions
 
    Some ways to invoke foreign function calls may raise an auditing event
    ``ctypes.call_function`` with arguments ``function pointer`` and ``arguments``.
@@ -2545,4 +2545,3 @@ Arrays and pointers
 
         Returns the object to which to pointer points.  Assigning to this
         attribute changes the pointer to point to the assigned object.
-
