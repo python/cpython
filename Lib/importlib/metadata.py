@@ -37,6 +37,15 @@ __all__ = [
 class PackageNotFoundError(ModuleNotFoundError):
     """The package was not found."""
 
+    def __str__(self):
+        tmpl = "No package metadata was found for {self.name}"
+        return tmpl.format(**locals())
+
+    @property
+    def name(self):
+        name, = self.args
+        return name
+
 
 class EntryPoint(
         collections.namedtuple('EntryPointBase', 'name value group')):

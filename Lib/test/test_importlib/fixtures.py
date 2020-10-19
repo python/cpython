@@ -6,6 +6,8 @@ import tempfile
 import textwrap
 import contextlib
 
+from test.support.os_helper import FS_NONASCII
+
 
 @contextlib.contextmanager
 def tempdir():
@@ -212,12 +214,7 @@ def build_files(file_defs, prefix=pathlib.Path()):
 
 class FileBuilder:
     def unicode_filename(self):
-        try:
-            from test.support import os_helper
-        except ImportError:
-            # outside CPython, hard-code a unicode snowman
-            return '☃'
-        return os_helper.FS_NONASCII or \
+        return FS_NONASCII or \
             self.skip("File system does not support non-ascii.")
 
 
