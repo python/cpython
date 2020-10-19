@@ -1098,6 +1098,9 @@ These are the UTF-8 codec APIs:
    .. versionchanged:: 3.7
       The return type is now ``const char *`` rather of ``char *``.
 
+   .. versionchanged:: 3.10
+      This function is a part of the :ref:`limited API <stable>`.
+
 
 .. c:function:: const char* PyUnicode_AsUTF8(PyObject *unicode)
 
