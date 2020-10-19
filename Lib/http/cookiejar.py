@@ -762,6 +762,7 @@ class Cookie:
                  comment_url,
                  rest,
                  rfc2109=False,
+                 httponly=False,
                  ):
 
         if version is not None: version = int(version)
@@ -790,6 +791,7 @@ class Cookie:
         self.comment = comment
         self.comment_url = comment_url
         self.rfc2109 = rfc2109
+        self.httponly = httponly
 
         self._rest = copy.copy(rest)
 
@@ -828,6 +830,7 @@ class Cookie:
             args.append("%s=%s" % (name, repr(attr)))
         args.append("rest=%s" % repr(self._rest))
         args.append("rfc2109=%s" % repr(self.rfc2109))
+        args.append("httponly=%s" % repr(self.httponly))
         return "%s(%s)" % (self.__class__.__name__, ", ".join(args))
 
 
@@ -1398,7 +1401,7 @@ class CookieJar:
         """
         cookie_tuples = []
 
-        boolean_attrs = "discard", "secure"
+        boolean_attrs = "discard", "secure", "httponly"
         value_attrs = ("version",
                        "expires", "max-age",
                        "domain", "path", "port",
@@ -1498,6 +1501,7 @@ class CookieJar:
             except ValueError:
                 return None  # invalid version, ignore cookie
         secure = standard.get("secure", False)
+        httponly = standard.get("httponly", False)
         # (discard is also set if expires is Absent)
         discard = standard.get("discard", False)
         comment = standard.get("comment", None)
@@ -1570,7 +1574,8 @@ class CookieJar:
                       discard,
                       comment,
                       comment_url,
-                      rest)
+                      rest,
+                      httponly=httponly)
 
     def _cookies_from_attrs_set(self, attrs_set, request):
         cookie_tuples = self._normalized_cookie_tuples(attrs_set)
@@ -2034,11 +2039,14 @@ class MozillaCookieJar(FileCookieJar):
                 # whitespace
                 sline = line.lstrip()
                 if sline.startswith("#HttpOnly_"):
+                    httponly = True
                     line = sline[10:]
                 # skip comments and blank lines XXX what is $ for?
                 elif (sline.startswith(("#", "$")) or
                       line.strip() == ""):
                     continue
+                else:
+                    httponly = False
 
                 domain, domain_specified, path, secure, expires, name, value = \
                         line.split("\t")
@@ -2069,7 +2077,8 @@ class MozillaCookieJar(FileCookieJar):
                            discard,
                            None,
                            None,
-                           {})
+                           {},
+                           httponly=httponly)
                 if not ignore_discard and c.discard:
                     continue
                 if not ignore_expires and c.is_expired(now):
@@ -2118,6 +2127,6 @@ class MozillaCookieJar(FileCookieJar):
                 else:
                     domain = cookie.domain
                 f.write(
-                    "\t".join([cookie.domain, initial_dot, cookie.path,
+                    "\t".join([domain, initial_dot, cookie.path,
                                secure, expires, name, value])+
                     "\n")

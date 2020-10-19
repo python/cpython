@@ -1771,7 +1771,8 @@ class LWPCookieTests(unittest.TestCase):
         interact_netscape(c, "http://www.foo.com/",
                           "foob=bar; Domain=.foo.com; %s" % expires)
         interact_netscape(c, "http://www.foo.com/",
-                          "fooc=bar; Domain=www.foo.com; %s" % expires)
+                          "fooc=bar; Domain=www.foo.com; Secure; HttpOnly; %s"
+                          % expires)
 
         def save_and_restore(cj, ignore_discard):
             try:
@@ -1787,6 +1788,10 @@ class LWPCookieTests(unittest.TestCase):
         new_c = save_and_restore(c, True)
         self.assertEqual(len(new_c), 6)  # none discarded
         self.assertIn("name='foo1', value='bar'", repr(new_c))
+
+        # verify that HttpOnly cookie is preserved, with that flag set on it
+        self.assertIn("name='fooc', value='bar'", repr(new_c))
+        self.assertIn("httponly", repr(new_c))
 
         new_c = save_and_restore(c, False)
         self.assertEqual(len(new_c), 4)  # 2 of them discarded on save
