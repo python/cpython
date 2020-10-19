@@ -98,7 +98,7 @@ statements.  They have the following attributes:
 
    ``True`` for functions that are defined with the ``async`` prefix, ``False`` otherwise.
 
-   .. versionadded:: 3.9
+   .. versionadded:: 3.10
 
 
 .. _pyclbr-class-objects:
