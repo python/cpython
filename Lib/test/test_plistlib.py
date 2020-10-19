@@ -90,6 +90,19 @@ TESTDATA={
         xQHHAsQC0gAAAAAAAAIBAAAAAAAAADkAAAAAAAAAAAAAAAAAAALs'''),
 }
 
+XML_PLIST_WITH_ENTITY=b'''\
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd" [
+   <!ENTITY entity "replacement text">
+  ]>
+<plist version="1.0">
+  <dict>
+    <key>A</key>
+    <string>&entity;</string>
+  </dict>
+</plist>
+'''
+
 
 class TestPlistlib(unittest.TestCase):
 
@@ -442,6 +455,11 @@ class TestPlistlib(unittest.TestCase):
                 data = bom + data.decode('utf-8').encode(encoding)
                 pl2 = plistlib.loads(data)
                 self.assertEqual(dict(pl), dict(pl2))
+
+    def test_xml_plist_with_entity_decl(self):
+        with self.assertRaisesRegex(plistlib.InvalidFileException,
+                                    "XML entity declarations are not supported"):
+            plistlib.loads(XML_PLIST_WITH_ENTITY, fmt=plistlib.FMT_XML)
 
 
 class TestBinaryPlistlib(unittest.TestCase):
