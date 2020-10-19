@@ -268,32 +268,10 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     return result ? PYGEN_RETURN : PYGEN_ERROR;
 }
 
-PySendResult
-PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
+static PySendResult
+PyGen_am_send(PyGenObject *gen, PyObject *arg, PyObject **result)
 {
-    _Py_IDENTIFIER(send);
-    assert(arg != NULL);
-    assert(result != NULL);
-    if (Py_TYPE(iter)->tp_as_async != NULL && Py_TYPE(iter)->tp_as_async->am_send != NULL) {
-        return Py_TYPE(iter)->tp_as_async->am_send(iter, arg, result);
-    }
-    if (PyGen_CheckExact(iter) || PyCoro_CheckExact(iter)) {
-        return gen_send_ex2((PyGenObject *)iter, arg, result, 0, 0);
-    }
-
-    if (arg == Py_None && PyIter_Check(iter)) {
-        *result = Py_TYPE(iter)->tp_iternext(iter);
-    }
-    else {
-        *result = _PyObject_CallMethodIdOneArg(iter, &PyId_send, arg);
-    }
-    if (*result != NULL) {
-        return PYGEN_NEXT;
-    }
-    if (_PyGen_FetchStopIterationValue(result) == 0) {
-        return PYGEN_RETURN;
-    }
-    return PYGEN_ERROR;
+    return gen_send_ex2(gen, arg, result, 0, 0);
 }
 
 static PyObject *
@@ -1034,7 +1012,7 @@ static PyAsyncMethods coro_as_async = {
     (unaryfunc)coro_await,                      /* am_await */
     0,                                          /* am_aiter */
     0,                                          /* am_anext */
-    0,                                          /* am_send  */
+    (sendfunc)PyGen_am_send,                    /* am_send  */
 };
 
 PyTypeObject PyCoro_Type = {
@@ -1417,7 +1395,7 @@ static PyAsyncMethods async_gen_as_async = {
     0,                                          /* am_await */
     PyObject_SelfIter,                          /* am_aiter */
     (unaryfunc)async_gen_anext,                 /* am_anext */
-    0,                                          /* am_send  */
+    (sendfunc)PyGen_am_send,                    /* am_send  */
 };
 
 

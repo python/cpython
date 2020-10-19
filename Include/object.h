@@ -557,6 +557,15 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_GT 4
 #define Py_GE 5
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+/* Result of calling PyIter_Send */
+typedef enum {
+    PYGEN_RETURN = 0,
+    PYGEN_ERROR = -1,
+    PYGEN_NEXT = 1,
+} PySendResult;
+#endif
+
 /*
  * Macro for implementing rich comparisons
  *

@@ -1604,11 +1604,14 @@ FutureIter_dealloc(futureiterobject *it)
 }
 
 static PySendResult
-FutureIter_am_send(futureiterobject *it, PyObject *arg, PyObject **result)
+FutureIter_am_send(futureiterobject *it, PyObject *Py_UNUSED(arg), PyObject **result)
 {
+    /* arg is unused, see the comment on FutureIter_send for clarification */
+
     PyObject *res;
     FutureObj *fut = it->future;
 
+    *result = NULL;
     if (fut == NULL) {
         return PYGEN_ERROR;
     }
