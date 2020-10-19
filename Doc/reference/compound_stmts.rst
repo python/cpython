@@ -610,13 +610,9 @@ following the parameter name.  Any parameter may have an annotation, even those 
 ``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
-semantics of a function.  The annotation values are available as values of
-a dictionary keyed by the parameters' names in the :attr:`__annotations__`
-attribute of the function object.  If the ``annotations`` import from
-:mod:`__future__` is used, annotations are preserved as strings at runtime which
-enables postponed evaluation.  Otherwise, they are evaluated when the function
-definition is executed.  In this case annotations may be evaluated in
-a different order than they appear in the source code.
+semantics of a function.  The annotation values are available as string values
+in a dictionary keyed by the parameters' names in the :attr:`__annotations__`
+attribute of the function object.
 
 .. index:: pair: lambda; expression
 
@@ -772,10 +768,8 @@ Coroutine function definition
    keyword: await
 
 Execution of Python coroutines can be suspended and resumed at many points
-(see :term:`coroutine`).  Inside the body of a coroutine function, ``await`` and
-``async`` identifiers become reserved keywords; :keyword:`await` expressions,
-:keyword:`async for` and :keyword:`async with` can only be used in
-coroutine function bodies.
+(see :term:`coroutine`). :keyword:`await` expressions, :keyword:`async for` and
+:keyword:`async with` can only be used in the body of a coroutine function.
 
 Functions defined with ``async def`` syntax are always coroutine functions,
 even if they do not contain ``await`` or ``async`` keywords.
@@ -789,6 +783,9 @@ An example of a coroutine function::
         do_stuff()
         await some_coroutine()
 
+.. versionchanged:: 3.7
+   ``await`` and ``async`` are now keywords; previously they were only
+   treated as such inside the body of a coroutine function.
 
 .. index:: statement: async for
 .. _`async for`:

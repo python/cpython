@@ -4290,7 +4290,10 @@ with_stmt_rule(Parser *p)
     return _res;
 }
 
-// with_item: expression 'as' target &(',' | ')' | ':') | invalid_with_item | expression
+// with_item:
+//     | expression 'as' star_target &(',' | ')' | ':')
+//     | invalid_with_item
+//     | expression
 static withitem_ty
 with_item_rule(Parser *p)
 {
@@ -4301,12 +4304,12 @@ with_item_rule(Parser *p)
     }
     withitem_ty _res = NULL;
     int _mark = p->mark;
-    { // expression 'as' target &(',' | ')' | ':')
+    { // expression 'as' star_target &(',' | ')' | ':')
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> with_item[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression 'as' target &(',' | ')' | ':')"));
+        D(fprintf(stderr, "%*c> with_item[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression 'as' star_target &(',' | ')' | ':')"));
         Token * _keyword;
         expr_ty e;
         expr_ty t;
@@ -4315,12 +4318,12 @@ with_item_rule(Parser *p)
             &&
             (_keyword = _PyPegen_expect_token(p, 520))  // token='as'
             &&
-            (t = target_rule(p))  // target
+            (t = star_target_rule(p))  // star_target
             &&
             _PyPegen_lookahead(1, _tmp_47_rule, p)
         )
         {
-            D(fprintf(stderr, "%*c+ with_item[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression 'as' target &(',' | ')' | ':')"));
+            D(fprintf(stderr, "%*c+ with_item[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression 'as' star_target &(',' | ')' | ':')"));
             _res = _Py_withitem ( e , t , p -> arena );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -4331,7 +4334,7 @@ with_item_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s with_item[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression 'as' target &(',' | ')' | ':')"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression 'as' star_target &(',' | ')' | ':')"));
     }
     { // invalid_with_item
         if (p->error_indicator) {

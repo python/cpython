@@ -1,1 +1,0 @@
-The pdb whatis command correctly reports instance methods as 'Method' rather than 'Function'.

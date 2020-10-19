@@ -814,9 +814,6 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         return -1;
     }
 #endif
-    if (tstate->recursion_critical)
-        /* Somebody asked that we don't check for recursion. */
-        return 0;
     if (tstate->overflowed) {
         if (tstate->recursion_depth > recursion_limit + 50) {
             /* Overflowing while handling an overflow. Give up. */
@@ -1701,7 +1698,7 @@ main_loop:
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *sum;
-            /* NOTE(haypo): Please don't try to micro-optimize int+int on
+            /* NOTE(vstinner): Please don't try to micro-optimize int+int on
                CPython using bytecode, it is simply worthless.
                See http://bugs.python.org/issue21955 and
                http://bugs.python.org/issue10044 for the discussion. In short,
@@ -2213,24 +2210,17 @@ main_loop:
         case TARGET(YIELD_FROM): {
             PyObject *v = POP();
             PyObject *receiver = TOP();
-            int is_gen_or_coro = PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver);
-            int gen_status;
-            if (tstate->c_tracefunc == NULL && is_gen_or_coro) {
-                gen_status = PyGen_Send((PyGenObject *)receiver, v, &retval);
+            PySendResult gen_status;
+            if (tstate->c_tracefunc == NULL) {
+                gen_status = PyIter_Send(receiver, v, &retval);
             } else {
-                if (is_gen_or_coro) {
-                    retval = _PyGen_Send((PyGenObject *)receiver, v);
+                _Py_IDENTIFIER(send);
+                if (v == Py_None && PyIter_Check(receiver)) {
+                    retval = Py_TYPE(receiver)->tp_iternext(receiver);
                 }
                 else {
-                    _Py_IDENTIFIER(send);
-                    if (v == Py_None) {
-                        retval = Py_TYPE(receiver)->tp_iternext(receiver);
-                    }
-                    else {
-                        retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
-                    }
+                    retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
                 }
-
                 if (retval == NULL) {
                     if (tstate->c_tracefunc != NULL
                             && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
@@ -2311,7 +2301,6 @@ main_loop:
         }
 
         case TARGET(POP_BLOCK): {
-            PREDICTED(POP_BLOCK);
             PyFrame_BlockPop(f);
             DISPATCH();
         }
@@ -3366,7 +3355,6 @@ main_loop:
             STACK_SHRINK(1);
             Py_DECREF(iter);
             JUMPBY(oparg);
-            PREDICT(POP_BLOCK);
             DISPATCH();
         }
 

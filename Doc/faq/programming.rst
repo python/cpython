@@ -942,7 +942,7 @@ There are various techniques.
      f()
 
 
-* Use :func:`locals` or :func:`eval` to resolve the function name::
+* Use :func:`locals` to resolve the function name::
 
      def myFunc():
          print("hello")
@@ -952,12 +952,6 @@ There are various techniques.
      f = locals()[fname]
      f()
 
-     f = eval(fname)
-     f()
-
-  Note: Using :func:`eval` is slow and dangerous.  If you don't have absolute
-  control over the contents of the string, someone could pass a string that
-  resulted in an arbitrary function being executed.
 
 Is there an equivalent to Perl's chomp() for removing trailing newlines from strings?
 -------------------------------------------------------------------------------------
@@ -1141,7 +1135,7 @@ How do you remove duplicates from a list?
 
 See the Python Cookbook for a long discussion of many ways to do this:
 
-   https://github.com/ActiveState/code/tree/master/recipes/Python/52560_Remove_duplicates/recipe-52560.py
+   https://code.activestate.com/recipes/52560/
 
 If you don't mind reordering the list, sort it and then scan from the end of the
 list, deleting duplicates as you go::
@@ -1164,6 +1158,21 @@ This converts the list into a set, thereby removing duplicates, and then back
 into a list.
 
 
+How do you remove multiple items from a list
+--------------------------------------------
+
+As with removing duplicates, explicitly iterating in reverse with a
+delete condition is one possibility.  However, it is easier and faster
+to use slice replacement with an implicit or explicit forward iteration.
+Here are three variations.::
+
+   mylist[:] = filter(keep_function, mylist)
+   mylist[:] = (x for x in mylist if keep_condition)
+   mylist[:] = [x for x in mylist if keep_condition]
+
+The list comprehension may be fastest.
+
+
 How do you make an array in Python?
 -----------------------------------
 
@@ -1176,7 +1185,7 @@ difference is that a Python list can contain objects of many different types.
 
 The ``array`` module also provides methods for creating arrays of fixed types
 with compact representations, but they are slower to index than lists.  Also
-note that the Numeric extensions and others define array-like structures with
+note that NumPy and other third party packages define array-like structures with
 various characteristics as well.
 
 To get Lisp-style linked lists, you can emulate cons cells using tuples::
@@ -1364,20 +1373,6 @@ out the element you want. ::
    >>> result = [x[1] for x in pairs]
    >>> result
    ['else', 'sort', 'to', 'something']
-
-
-An alternative for the last step is::
-
-   >>> result = []
-   >>> for p in pairs: result.append(p[1])
-
-If you find this more legible, you might prefer to use this instead of the final
-list comprehension.  However, it is almost twice as slow for long lists.  Why?
-First, the ``append()`` operation has to reallocate memory, and while it uses
-some tricks to avoid doing that each time, it still has to do it occasionally,
-and that costs quite a bit.  Second, the expression "result.append" requires an
-extra attribute lookup, and third, there's a speed reduction from having to make
-all those function calls.
 
 
 Objects

@@ -202,8 +202,8 @@ flatten_args(PyObject* args)
         PyTypeObject* arg_type = Py_TYPE(arg);
         if (arg_type == &_Py_UnionType) {
             PyObject* nested_args = ((unionobject*)arg)->args;
-            int nested_arg_length = PyTuple_GET_SIZE(nested_args);
-            for (int j = 0; j < nested_arg_length; j++) {
+            Py_ssize_t nested_arg_length = PyTuple_GET_SIZE(nested_args);
+            for (Py_ssize_t j = 0; j < nested_arg_length; j++) {
                 PyObject* nested_arg = PyTuple_GET_ITEM(nested_args, j);
                 Py_INCREF(nested_arg);
                 PyTuple_SET_ITEM(flattened_args, pos, nested_arg);
@@ -231,7 +231,7 @@ dedup_and_flatten_args(PyObject* args)
         return NULL;
     }
     // Add unique elements to an array.
-    int added_items = 0;
+    Py_ssize_t added_items = 0;
     for (Py_ssize_t i = 0; i < arg_length; i++) {
         int is_duplicate = 0;
         PyObject* i_element = PyTuple_GET_ITEM(args, i);
@@ -311,21 +311,22 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
     _Py_IDENTIFIER(__args__);
     PyObject *qualname = NULL;
     PyObject *module = NULL;
+    PyObject *tmp;
     PyObject *r = NULL;
     int err;
 
-    int has_origin = _PyObject_HasAttrId(p, &PyId___origin__);
-    if (has_origin < 0) {
+    if (_PyObject_LookupAttrId(p, &PyId___origin__, &tmp) < 0) {
         goto exit;
     }
 
-    if (has_origin) {
-        int has_args = _PyObject_HasAttrId(p, &PyId___args__);
-        if (has_args < 0) {
+    if (tmp) {
+        Py_DECREF(tmp);
+        if (_PyObject_LookupAttrId(p, &PyId___args__, &tmp) < 0) {
             goto exit;
         }
-        if (has_args) {
+        if (tmp) {
             // It looks like a GenericAlias
+            Py_DECREF(tmp);
             goto use_repr;
         }
     }

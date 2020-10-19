@@ -2612,10 +2612,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     slots = NULL;
 
     /* Initialize tp_flags */
+    // All heap types need GC, since we can create a reference cycle by storing
+    // an instance on one of its parents:
     type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE |
-        Py_TPFLAGS_BASETYPE;
-    if (base->tp_flags & Py_TPFLAGS_HAVE_GC)
-        type->tp_flags |= Py_TPFLAGS_HAVE_GC;
+        Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC;
 
     /* Initialize essential fields */
     type->tp_as_async = &et->as_async;
@@ -2815,21 +2815,11 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     }
     type->tp_dealloc = subtype_dealloc;
 
-    /* Enable GC unless this class is not adding new instance variables and
-       the base class did not use GC. */
-    if ((base->tp_flags & Py_TPFLAGS_HAVE_GC) ||
-        type->tp_basicsize > base->tp_basicsize)
-        type->tp_flags |= Py_TPFLAGS_HAVE_GC;
-
     /* Always override allocation strategy to use regular heap */
     type->tp_alloc = PyType_GenericAlloc;
-    if (type->tp_flags & Py_TPFLAGS_HAVE_GC) {
-        type->tp_free = PyObject_GC_Del;
-        type->tp_traverse = subtype_traverse;
-        type->tp_clear = subtype_clear;
-    }
-    else
-        type->tp_free = PyObject_Del;
+    type->tp_free = PyObject_GC_Del;
+    type->tp_traverse = subtype_traverse;
+    type->tp_clear = subtype_clear;
 
     /* store type in class' cell if one is supplied */
     cell = _PyDict_GetItemIdWithError(dict, &PyId___classcell__);

@@ -1,0 +1,3 @@
+Fix an incorrectly formatted error from :meth:`_codecs.charmap_decode` when
+called with a mapped value outside the range of valid Unicode code points.
+PR by Max Bernstein.
