@@ -326,7 +326,8 @@ enum _expr_kind {BoolOp_kind=1, NamedExpr_kind=2, BinOp_kind=3, UnaryOp_kind=4,
                   YieldFrom_kind=15, Compare_kind=16, Call_kind=17,
                   FormattedValue_kind=18, JoinedStr_kind=19, Constant_kind=20,
                   Attribute_kind=21, Subscript_kind=22, Starred_kind=23,
-                  Name_kind=24, List_kind=25, Tuple_kind=26, Slice_kind=27};
+                  Name_kind=24, List_kind=25, Tuple_kind=26, Slice_kind=27,
+                  MatchAs_kind=28};
 struct _expr {
     enum _expr_kind kind;
     union {
@@ -468,6 +469,11 @@ struct _expr {
             expr_ty upper;
             expr_ty step;
         } Slice;
+
+        struct {
+            expr_ty pattern;
+            identifier name;
+        } MatchAs;
 
     } v;
     int lineno;
@@ -768,6 +774,10 @@ expr_ty _Py_Tuple(asdl_expr_seq * elts, expr_context_ty ctx, int lineno, int
 expr_ty _Py_Slice(expr_ty lower, expr_ty upper, expr_ty step, int lineno, int
                   col_offset, int end_lineno, int end_col_offset, PyArena
                   *arena);
+#define MatchAs(a0, a1, a2, a3, a4, a5, a6) _Py_MatchAs(a0, a1, a2, a3, a4, a5, a6)
+expr_ty _Py_MatchAs(expr_ty pattern, identifier name, int lineno, int
+                    col_offset, int end_lineno, int end_col_offset, PyArena
+                    *arena);
 #define comprehension(a0, a1, a2, a3, a4) _Py_comprehension(a0, a1, a2, a3, a4)
 comprehension_ty _Py_comprehension(expr_ty target, expr_ty iter, asdl_expr_seq
                                    * ifs, int is_async, PyArena *arena);

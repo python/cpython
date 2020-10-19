@@ -309,6 +309,10 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         return validate_exprs(exp->v.Tuple.elts, ctx, 0);
     case NamedExpr_kind:
         return validate_expr(exp->v.NamedExpr.value, Load);
+    case MatchAs_kind:
+        PyErr_SetString(
+            PyExc_ValueError, "MatchAs can only be used in match_case patterns");
+        return 0;
     /* This last case doesn't have any checking. */
     case Name_kind:
         return 1;
@@ -426,9 +430,9 @@ validate_pattern(expr_ty p)
                 return 0;
             }
             return validate_expr(p, p->v.Name.ctx);  // TODO
-        case NamedExpr_kind:
-            return (validate_pattern(p->v.NamedExpr.value)
-                    && validate_expr(p->v.NamedExpr.target, Store));  // TODO
+        case MatchAs_kind:
+            return validate_pattern(p->v.MatchAs.pattern)
+                && validate_name(p->v.MatchAs.name);
         case UnaryOp_kind:
             // TODO
             return 1;

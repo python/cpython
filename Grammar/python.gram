@@ -216,8 +216,7 @@ patterns[expr_ty]:
     | pattern
 
 pattern[expr_ty]:
-    | value=or_pattern 'as' target=NAME {
-        _Py_NamedExpr(CHECK(_PyPegen_set_expr_context(p, target, Store)), value, EXTRA) }
+    | value=or_pattern 'as' target=NAME { _Py_MatchAs(value, target->v.Name.id, EXTRA) }
     | or_pattern
 
 or_pattern[expr_ty]:
@@ -281,7 +280,7 @@ values_pattern[asdl_seq*]:
 items_pattern[asdl_seq*]:
     | items=','.key_value_pattern+ ','? { items }
 keyword_pattern[keyword_ty]:
-    | arg=NAME '=' value=or_pattern { _Py_keyword(arg->v.Name.id, value, EXTRA) }
+    | arg=NAME '=' value=pattern { _Py_keyword(arg->v.Name.id, value, EXTRA) }
 error_argument_pattern:
     | pattern
     | keyword_pattern
@@ -292,7 +291,7 @@ value_pattern[expr_ty]:
     | '*' value=name_pattern { _Py_Starred(value, Store, EXTRA) }
     | pattern
 key_value_pattern[KeyValuePair*]:
-    | key=(literal_pattern | constant_pattern) ':' value=or_pattern {
+    | key=(literal_pattern | constant_pattern) ':' value=pattern {
         _PyPegen_key_value_pair(p, key, value) }
     | '**' value=name_pattern { _PyPegen_key_value_pair(p, NULL, value) }
 

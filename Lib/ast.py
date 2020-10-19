@@ -840,15 +840,9 @@ class _Unparser(NodeVisitor):
     def visit_NamedExpr(self, node):
         with self.require_parens(_Precedence.TUPLE, node):
             self.set_precedence(_Precedence.ATOM, node.target, node.value)
-            # XXX
-            if self.in_pattern:
-                self.traverse(node.value)
-                self.write(" as ")
-                self.traverse(node.target)
-            else:
-                self.traverse(node.target)
-                self.write(" := ")
-                self.traverse(node.value)
+            self.traverse(node.target)
+            self.write(" := ")
+            self.traverse(node.value)
 
     def visit_Import(self, node):
         self.fill("import ")
@@ -1536,6 +1530,11 @@ class _Unparser(NodeVisitor):
             self.traverse(node.guard)
         with self.block():
             self.traverse(node.body)
+
+    def visit_MatchAs(self, node):
+        with self.require_parens(_Precedence.TUPLE, node):
+            self.traverse(node.pattern)
+            self.write(f" as {node.name}")
 
 def unparse(ast_obj):
     unparser = _Unparser()

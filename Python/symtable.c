@@ -1669,6 +1669,10 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     case Tuple_kind:
         VISIT_SEQ(st, expr, e->v.Tuple.elts);
         break;
+    case MatchAs_kind:
+        VISIT(st, expr, e->v.MatchAs.pattern);
+        symtable_add_def(st, e->v.MatchAs.name, DEF_LOCAL);
+        break;
     }
     VISIT_QUIT(st, 1);
 }

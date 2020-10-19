@@ -5130,6 +5130,9 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_list(c, e);
     case Tuple_kind:
         return compiler_tuple(c, e);
+    case MatchAs_kind:
+        // Can only occur in patterns, which are handled elsewhere.
+        Py_UNREACHABLE();
     }
     return 1;
 }
@@ -5494,11 +5497,9 @@ pattern_load_constant(struct compiler *c, expr_ty p, pattern_context *pc)
 
 
 static int
-pattern_store_name(struct compiler *c, expr_ty p, pattern_context *pc)
+pattern_store_name(struct compiler *c, identifier n, pattern_context *pc)
 {
-    assert(p->kind == Name_kind);
-    assert(p->v.Name.ctx == Store);
-    if (WILDCARD_CHECK(p)) {
+    if (_PyUnicode_EqualToASCIIString(n, "_")) {
         const char *e = "can't assign to '_' here; consider removing or "
                         "renaming?";
         return compiler_error(c, e);
@@ -5507,17 +5508,17 @@ pattern_store_name(struct compiler *c, expr_ty p, pattern_context *pc)
         CHECK(pc->stores = PySet_New(NULL));
     }
     else {
-        int duplicate = PySet_Contains(pc->stores, p->v.Name.id);
+        int duplicate = PySet_Contains(pc->stores, n);
         if (duplicate < 0) {
             return 0;
         }
         if (duplicate) {
             const char *e = "multiple assignments to name %R in pattern";
-            return compiler_error(c, e, p->v.Name.id);
+            return compiler_error(c, e, n);
         }
     }
-    CHECK(!PySet_Add(pc->stores, p->v.Name.id));
-    CHECK(compiler_nameop(c, p->v.Name.id, Store));
+    CHECK(!PySet_Add(pc->stores, n));
+    CHECK(compiler_nameop(c, n, Store));
     return 1;
 }
 
@@ -5722,7 +5723,7 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
         }
         ADDOP(c, POP_TOP);
         if (star) {
-            CHECK(pattern_store_name(c, asdl_seq_GET(values, size - 1), pc));
+            CHECK(pattern_store_name(c, asdl_seq_GET(values, size - 1)->v.Name.id, pc));
         }
         else {
             ADDOP(c, POP_TOP);
@@ -5829,7 +5830,7 @@ compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context *pc)
     assert(p->v.Name.ctx == Store);
     if (!WILDCARD_CHECK(p)) {
         ADDOP(c, DUP_TOP);
-        CHECK(pattern_store_name(c, p, pc));
+        CHECK(pattern_store_name(c, p->v.Name.id, pc));
     }
     ADDOP_LOAD_CONST(c, Py_True);
     return 1;
@@ -5837,16 +5838,16 @@ compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context *pc)
 
 
 static int
-compiler_pattern_namedexpr(struct compiler *c, expr_ty p, pattern_context *pc)
+compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
 {
-    assert(p->kind == NamedExpr_kind);
+    assert(p->kind == MatchAs_kind);
     basicblock *end;
     CHECK(end = compiler_new_block(c));
-    CHECK(compiler_pattern(c, p->v.NamedExpr.value, pc));
+    CHECK(compiler_pattern(c, p->v.MatchAs.pattern, pc));
     ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
     NEXT_BLOCK(c);
     ADDOP(c, DUP_TOP);
-    CHECK(pattern_store_name(c, p->v.NamedExpr.target, pc));
+    CHECK(pattern_store_name(c, p->v.MatchAs.name, pc));
     ADDOP_LOAD_CONST(c, Py_True);
     compiler_use_next_block(c, end);
     return 1;
@@ -5877,10 +5878,10 @@ compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
         case List_kind:
         case Tuple_kind:
             return compiler_pattern_list_tuple(c, p, pc);
+        case MatchAs_kind:
+            return compiler_pattern_as(c, p, pc);
         case Name_kind:
             return compiler_pattern_name(c, p, pc);
-        case NamedExpr_kind:
-            return compiler_pattern_namedexpr(c, p, pc);
         default:
             Py_UNREACHABLE();
     }

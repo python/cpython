@@ -789,8 +789,8 @@ astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         // Not actually valid, but it's the compiler's job to complain:
         case JoinedStr_kind:
         case List_kind:
+        case MatchAs_kind:
         case Name_kind:
-        case NamedExpr_kind:
         case Tuple_kind:
             return 1;
         case UnaryOp_kind:

@@ -87,6 +87,7 @@ typedef struct {
     PyObject *Lt_type;
     PyObject *MatMult_singleton;
     PyObject *MatMult_type;
+    PyObject *MatchAs_type;
     PyObject *Match_type;
     PyObject *Mod_singleton;
     PyObject *Mod_type;
@@ -339,6 +340,7 @@ void _PyAST_Fini(PyThreadState *tstate)
     Py_CLEAR(state->Lt_type);
     Py_CLEAR(state->MatMult_singleton);
     Py_CLEAR(state->MatMult_type);
+    Py_CLEAR(state->MatchAs_type);
     Py_CLEAR(state->Match_type);
     Py_CLEAR(state->Mod_singleton);
     Py_CLEAR(state->Mod_type);
@@ -835,6 +837,10 @@ static const char * const Slice_fields[]={
     "lower",
     "upper",
     "step",
+};
+static const char * const MatchAs_fields[]={
+    "pattern",
+    "name",
 };
 static PyObject* ast2obj_expr_context(astmodulestate *state, expr_context_ty);
 static PyObject* ast2obj_boolop(astmodulestate *state, boolop_ty);
@@ -1474,7 +1480,8 @@ static int init_types(astmodulestate *state)
         "     | Name(identifier id, expr_context ctx)\n"
         "     | List(expr* elts, expr_context ctx)\n"
         "     | Tuple(expr* elts, expr_context ctx)\n"
-        "     | Slice(expr? lower, expr? upper, expr? step)");
+        "     | Slice(expr? lower, expr? upper, expr? step)\n"
+        "     | MatchAs(expr pattern, identifier name)");
     if (!state->expr_type) return 0;
     if (!add_attributes(state, state->expr_type, expr_attributes, 4)) return 0;
     if (PyObject_SetAttr(state->expr_type, state->end_lineno, Py_None) == -1)
@@ -1607,6 +1614,10 @@ static int init_types(astmodulestate *state)
         return 0;
     if (PyObject_SetAttr(state->Slice_type, state->step, Py_None) == -1)
         return 0;
+    state->MatchAs_type = make_type(state, "MatchAs", state->expr_type,
+                                    MatchAs_fields, 2,
+        "MatchAs(expr pattern, identifier name)");
+    if (!state->MatchAs_type) return 0;
     state->expr_context_type = make_type(state, "expr_context",
                                          state->AST_type, NULL, 0,
         "expr_context = Load | Store | Del");
@@ -3297,6 +3308,34 @@ Slice(expr_ty lower, expr_ty upper, expr_ty step, int lineno, int col_offset,
     return p;
 }
 
+expr_ty
+MatchAs(expr_ty pattern, identifier name, int lineno, int col_offset, int
+        end_lineno, int end_col_offset, PyArena *arena)
+{
+    expr_ty p;
+    if (!pattern) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'pattern' is required for MatchAs");
+        return NULL;
+    }
+    if (!name) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field 'name' is required for MatchAs");
+        return NULL;
+    }
+    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = MatchAs_kind;
+    p->v.MatchAs.pattern = pattern;
+    p->v.MatchAs.name = name;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
 comprehension_ty
 comprehension(expr_ty target, expr_ty iter, asdl_expr_seq * ifs, int is_async,
               PyArena *arena)
@@ -4525,6 +4564,21 @@ ast2obj_expr(astmodulestate *state, void* _o)
         value = ast2obj_expr(state, o->v.Slice.step);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->step, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case MatchAs_kind:
+        tp = (PyTypeObject *)state->MatchAs_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_expr(state, o->v.MatchAs.pattern);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->pattern, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_identifier(state, o->v.MatchAs.name);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->name, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -8751,6 +8805,46 @@ obj2ast_expr(astmodulestate *state, PyObject* obj, expr_ty* out, PyArena* arena)
         if (*out == NULL) goto failed;
         return 0;
     }
+    tp = state->MatchAs_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        expr_ty pattern;
+        identifier name;
+
+        if (_PyObject_LookupAttr(obj, state->pattern, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"pattern\" missing from MatchAs");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(state, tmp, &pattern, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from MatchAs");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_identifier(state, tmp, &name, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = MatchAs(pattern, name, lineno, col_offset, end_lineno,
+                       end_col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of expr, but got %R", obj);
     failed:
@@ -10209,6 +10303,10 @@ astmodule_exec(PyObject *m)
         return -1;
     }
     Py_INCREF(state->Slice_type);
+    if (PyModule_AddObject(m, "MatchAs", state->MatchAs_type) < 0) {
+        return -1;
+    }
+    Py_INCREF(state->MatchAs_type);
     if (PyModule_AddObject(m, "expr_context", state->expr_context_type) < 0) {
         return -1;
     }
