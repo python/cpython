@@ -1756,6 +1756,34 @@ and classes for traversing abstract syntax trees:
       Added the *indent* option.
 
 
+.. _ast-compiler-flags:
+
+Compiler Flags
+--------------
+
+The following flags may be passed to :func:`compile` in order to change
+effects on the compilation of a program:
+
+.. data:: PyCF_ALLOW_TOP_LEVEL_AWAIT
+
+   Enables support for top-level ``await``, ``async for``, ``async with``
+   and async comprehensions.
+
+   .. versionadded:: 3.8
+
+.. data:: PyCF_ONLY_AST
+
+   Generates and returns an abstract syntax tree instead of returning a
+   compiled code object.
+
+.. data:: PyCF_TYPE_COMMENTS
+
+   Enables support for :pep:`484` and :pep:`526` style type comments
+   (``# type: <type>``, ``# type: ignore <stuff>``).
+
+   .. versionadded:: 3.8
+
+
 .. _ast-cli:
 
 Command-Line Usage

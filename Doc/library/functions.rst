@@ -259,26 +259,24 @@ are always available.  They are listed here in alphabetical order.
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
 
-   The optional arguments *flags* and *dont_inherit* control which :ref:`future
-   statements <future>` affect the compilation of *source*.  If neither
-   is present (or both are zero) the code is compiled with those future
-   statements that are in effect in the code that is calling :func:`compile`.  If the
-   *flags* argument is given and *dont_inherit* is not (or is zero) then the
-   future statements specified by the *flags* argument are used in addition to
-   those that would be used anyway. If *dont_inherit* is a non-zero integer then
-   the *flags* argument is it -- the future statements in effect around the call
-   to compile are ignored.
+   The optional argument *flags* and *dont_inherit* controls which
+   :ref:`compiler options <ast-compiler-flags>` should be activated
+   and which :ref:`future features <future>` should be allowed. If neither
+   is present (or both are zero) the code is compiled with the same flags that
+   affect the code that is calling :func:`compile`. If the *flags*
+   argument is given and *dont_inherit* is not (or is zero) then the compiler
+   options and the future statements specified by the *flags* argument are used
+   in addition to those that would be used anyway. If *dont_inherit* is a
+   non-zero integer then the *flags* argument is it -- the flags (future
+   features and compiler options) in the surrounding code are ignored.
 
-   Future statements are specified by bits which can be bitwise ORed together to
-   specify multiple statements.  The bitfield required to specify a given feature
-   can be found as the :attr:`~__future__._Feature.compiler_flag` attribute on
-   the :class:`~__future__._Feature` instance in the :mod:`__future__` module.
-
-   The optional argument *flags* also controls whether the compiled source is
-   allowed to contain top-level ``await``, ``async for`` and ``async with``.
-   When the bit ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` is set, the return code
-   object has ``CO_COROUTINE`` set in ``co_code``, and can be interactively
-   executed via ``await eval(code_object)``.
+   Compiler options and future statements are specified by bits which can be
+   bitwise ORed together to specify multiple options. The bitfield required to
+   specify a given future feature can be found as the
+   :attr:`~__future__._Feature.compiler_flag` attribute on the
+   :class:`~__future__._Feature` instance in the :mod:`__future__` module.
+   :ref:`Compiler flags <ast-compiler-flags>` can be found in :mod:`ast`
+   module, with ``PyCF_`` prefix.
 
    The argument *optimize* specifies the optimization level of the compiler; the
    default value of ``-1`` selects the optimization level of the interpreter as
