@@ -118,7 +118,9 @@
         "We've reached an unreachable state. Anything is possible.\n" \
         "The limits were in our heads all along. Follow your dreams.\n" \
         "https://xkcd.com/2200")
-#elif defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#  define Py_UNREACHABLE() __builtin_unreachable()
+#elif defined(__clang__) || defined(__INTEL_COMPILER)
 #  define Py_UNREACHABLE() __builtin_unreachable()
 #elif defined(_MSC_VER)
 #  define Py_UNREACHABLE() __assume(0)

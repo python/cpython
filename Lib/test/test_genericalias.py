@@ -29,7 +29,7 @@ try:
 except ImportError:
     # multiprocessing.shared_memory is not available on e.g. Android
     ShareableList = None
-from multiprocessing.queues import SimpleQueue
+from multiprocessing.queues import SimpleQueue as MPSimpleQueue
 from os import DirEntry
 from re import Pattern, Match
 from types import GenericAlias, MappingProxyType, AsyncGeneratorType
@@ -81,7 +81,7 @@ class BaseTest(unittest.TestCase):
                  SplitResult, ParseResult,
                  ValueProxy, ApplyResult,
                  WeakSet, ReferenceType, ref,
-                 ShareableList, SimpleQueue,
+                 ShareableList, MPSimpleQueue,
                  Future, _WorkItem,
                  Morsel]
         if ctypes is not None:
@@ -287,6 +287,11 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(a.__args__, (list[T], tuple[T, ...]))
         self.assertEqual(a.__parameters__, (T,))
 
+    def test_dir(self):
+        dir_of_gen_alias = set(dir(list[int]))
+        self.assertTrue(dir_of_gen_alias.issuperset(dir(list)))
+        for generic_alias_property in ("__origin__", "__args__", "__parameters__"):
+            self.assertIn(generic_alias_property, dir_of_gen_alias)
 
 if __name__ == "__main__":
     unittest.main()

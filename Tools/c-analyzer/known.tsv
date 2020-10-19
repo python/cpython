@@ -805,7 +805,6 @@ Objects/iterobject.c	-	PyCallIter_Type	variable	PyTypeObject PyCallIter_Type
 Objects/capsule.c	-	PyCapsule_Type	variable	PyTypeObject PyCapsule_Type
 Objects/cellobject.c	-	PyCell_Type	variable	PyTypeObject PyCell_Type
 Objects/methodobject.c	-	PyCFunction_Type	variable	PyTypeObject PyCFunction_Type
-Python/ceval.c	-	_Py_CheckRecursionLimit	variable	int _Py_CheckRecursionLimit
 Objects/descrobject.c	-	PyClassMethodDescr_Type	variable	PyTypeObject PyClassMethodDescr_Type
 Objects/funcobject.c	-	PyClassMethod_Type	variable	PyTypeObject PyClassMethod_Type
 Objects/codeobject.c	-	PyCode_Type	variable	PyTypeObject PyCode_Type

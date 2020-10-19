@@ -1,2 +1,0 @@
-Free the stack allocated in ``va_build_stack`` if ``do_mkstack`` fails and
-the stack is not a ``small_stack``.

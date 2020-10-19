@@ -318,22 +318,32 @@ md5_done(struct md5_state *md5, unsigned char *out)
  * ------------------------------------------------------------------------
  */
 
-static PyTypeObject MD5type;
+typedef struct {
+    PyTypeObject* md5_type;
+} MD5State;
 
-
-static MD5object *
-newMD5object(void)
+static inline MD5State*
+md5_get_state(PyObject *module)
 {
-    return (MD5object *)PyObject_New(MD5object, &MD5type);
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (MD5State *)state;
 }
 
+static MD5object *
+newMD5object(MD5State * st)
+{
+    return (MD5object *)PyObject_New(MD5object, st->md5_type);
+}
 
 /* Internal methods for a hash object */
 
 static void
 MD5_dealloc(PyObject *ptr)
 {
+    PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_Del(ptr);
+    Py_DECREF(tp);
 }
 
 
@@ -342,16 +352,19 @@ MD5_dealloc(PyObject *ptr)
 /*[clinic input]
 MD5Type.copy
 
+    cls: defining_class
+
 Return a copy of the hash object.
 [clinic start generated code]*/
 
 static PyObject *
-MD5Type_copy_impl(MD5object *self)
-/*[clinic end generated code: output=596eb36852f02071 input=2c09e6d2493f3079]*/
+MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
+/*[clinic end generated code: output=bf055e08244bf5ee input=d89087dcfb2a8620]*/
 {
-    MD5object *newobj;
+    MD5State *st = PyType_GetModuleState(cls);
 
-    if ((newobj = newMD5object())==NULL)
+    MD5object *newobj;
+    if ((newobj = newMD5object(st))==NULL)
         return NULL;
 
     newobj->hash_state = self->hash_state;
@@ -445,7 +458,6 @@ md5_get_digest_size(PyObject *self, void *closure)
     return PyLong_FromLong(MD5_DIGESTSIZE);
 }
 
-
 static PyGetSetDef MD5_getseters[] = {
     {"block_size",
      (getter)MD5_get_block_size, NULL,
@@ -462,40 +474,19 @@ static PyGetSetDef MD5_getseters[] = {
     {NULL}  /* Sentinel */
 };
 
-static PyTypeObject MD5type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_md5.md5",         /*tp_name*/
-    sizeof(MD5object),  /*tp_basicsize*/
-    0,                  /*tp_itemsize*/
-    /* methods */
-    MD5_dealloc,        /*tp_dealloc*/
-    0,                  /*tp_vectorcall_offset*/
-    0,                  /*tp_getattr*/
-    0,                  /*tp_setattr*/
-    0,                  /*tp_as_async*/
-    0,                  /*tp_repr*/
-    0,                  /*tp_as_number*/
-    0,                  /*tp_as_sequence*/
-    0,                  /*tp_as_mapping*/
-    0,                  /*tp_hash*/
-    0,                  /*tp_call*/
-    0,                  /*tp_str*/
-    0,                  /*tp_getattro*/
-    0,                  /*tp_setattro*/
-    0,                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT, /*tp_flags*/
-    0,                  /*tp_doc*/
-    0,                  /*tp_traverse*/
-    0,                  /*tp_clear*/
-    0,                  /*tp_richcompare*/
-    0,                  /*tp_weaklistoffset*/
-    0,                  /*tp_iter*/
-    0,                  /*tp_iternext*/
-    MD5_methods,        /* tp_methods */
-    NULL,               /* tp_members */
-    MD5_getseters,      /* tp_getset */
+static PyType_Slot md5_type_slots[] = {
+    {Py_tp_dealloc, MD5_dealloc},
+    {Py_tp_methods, MD5_methods},
+    {Py_tp_getset, MD5_getseters},
+    {0,0}
 };
 
+static PyType_Spec md5_type_spec = {
+    .name = "_md5.md5",
+    .basicsize =  sizeof(MD5object),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = md5_type_slots
+};
 
 /* The single module-level function: new() */
 
@@ -519,7 +510,8 @@ _md5_md5_impl(PyObject *module, PyObject *string, int usedforsecurity)
     if (string)
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
 
-    if ((new = newMD5object()) == NULL) {
+    MD5State *st = md5_get_state(module);
+    if ((new = newMD5object(st)) == NULL) {
         if (string)
             PyBuffer_Release(&buf);
         return NULL;
@@ -549,37 +541,69 @@ static struct PyMethodDef MD5_functions[] = {
     {NULL,      NULL}            /* Sentinel */
 };
 
+static int
+_md5_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    MD5State *state = md5_get_state(module);
+    Py_VISIT(state->md5_type);
+    return 0;
+}
+
+static int
+_md5_clear(PyObject *module)
+{
+    MD5State *state = md5_get_state(module);
+    Py_CLEAR(state->md5_type);
+    return 0;
+}
+
+static void
+_md5_free(void *module)
+{
+    _md5_clear((PyObject *)module);
+}
 
 /* Initialize this module. */
+static int
+md5_exec(PyObject *m)
+{
+    MD5State *st = md5_get_state(m);
+
+    st->md5_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        m, &md5_type_spec, NULL);
+
+    if (st->md5_type == NULL) {
+        return -1;
+    }
+
+    Py_INCREF((PyObject *)st->md5_type);
+    if (PyModule_AddObject(m, "MD5Type", (PyObject *)st->md5_type) < 0) {
+         Py_DECREF(st->md5_type);
+        return -1;
+    }
+
+    return 0;
+}
+
+static PyModuleDef_Slot _md5_slots[] = {
+    {Py_mod_exec, md5_exec},
+    {0, NULL}
+};
+
 
 static struct PyModuleDef _md5module = {
         PyModuleDef_HEAD_INIT,
-        "_md5",
-        NULL,
-        -1,
-        MD5_functions,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        .m_name = "_md5",
+        .m_size = sizeof(MD5State),
+        .m_methods = MD5_functions,
+        .m_slots = _md5_slots,
+        .m_traverse = _md5_traverse,
+        .m_clear = _md5_clear,
+        .m_free = _md5_free,
 };
 
 PyMODINIT_FUNC
 PyInit__md5(void)
 {
-    PyObject *m;
-
-    Py_SET_TYPE(&MD5type, &PyType_Type);
-    if (PyType_Ready(&MD5type) < 0) {
-        return NULL;
-    }
-
-    m = PyModule_Create(&_md5module);
-    if (m == NULL) {
-        return NULL;
-    }
-
-    Py_INCREF((PyObject *)&MD5type);
-    PyModule_AddObject(m, "MD5Type", (PyObject *)&MD5type);
-    return m;
+    return PyModuleDef_Init(&_md5module);
 }

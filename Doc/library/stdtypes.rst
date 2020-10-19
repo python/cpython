@@ -1568,33 +1568,6 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
 
-.. method:: str.removeprefix(prefix, /)
-
-   If the string starts with the *prefix* string, return
-   ``string[len(prefix):]``. Otherwise, return a copy of the original
-   string::
-
-      >>> 'TestHook'.removeprefix('Test')
-      'Hook'
-      >>> 'BaseTestCase'.removeprefix('Test')
-      'BaseTestCase'
-
-   .. versionadded:: 3.9
-
-.. method:: str.removesuffix(suffix, /)
-
-   If the string ends with the *suffix* string and that *suffix* is not empty,
-   return ``string[:-len(suffix)]``. Otherwise, return a copy of the
-   original string::
-
-      >>> 'MiscTests'.removesuffix('Tests')
-      'Misc'
-      >>> 'TmpDirMixin'.removesuffix('Tests')
-      'TmpDirMixin'
-
-   .. versionadded:: 3.9
-
-
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
    Return an encoded version of the string as a bytes object. Default encoding
@@ -1907,6 +1880,34 @@ expression support in the :mod:`re` module).
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
    the string itself, followed by two empty strings.
+
+
+.. method:: str.removeprefix(prefix, /)
+
+   If the string starts with the *prefix* string, return
+   ``string[len(prefix):]``. Otherwise, return a copy of the original
+   string::
+
+      >>> 'TestHook'.removeprefix('Test')
+      'Hook'
+      >>> 'BaseTestCase'.removeprefix('Test')
+      'BaseTestCase'
+
+   .. versionadded:: 3.9
+
+
+.. method:: str.removesuffix(suffix, /)
+
+   If the string ends with the *suffix* string and that *suffix* is not empty,
+   return ``string[:-len(suffix)]``. Otherwise, return a copy of the
+   original string::
+
+      >>> 'MiscTests'.removesuffix('Tests')
+      'Misc'
+      >>> 'TmpDirMixin'.removesuffix('Tests')
+      'TmpDirMixin'
+
+   .. versionadded:: 3.9
 
 
 .. method:: str.replace(old, new[, count])
@@ -4747,6 +4748,128 @@ structure for Python objects in the Python/C API. Extension types wanting to
 define these methods must provide them as a normal Python accessible method.
 Compared to the overhead of setting up the runtime context, the overhead of a
 single class dictionary lookup is negligible.
+
+.. _types-union:
+
+Union Type
+==========
+
+.. index::
+   object: Union
+   pair: union; type
+
+A union object holds the value of the ``|`` (bitwise or) operation on
+multiple :ref:`type objects<bltin-type-objects>`.  These types are intended
+primarily for type annotations. The union type expression enables cleaner
+type hinting syntax compared to :data:`typing.Union`.
+
+.. describe:: X | Y | ...
+
+   Defines a union object which holds types *X*, *Y*, and so forth. ``X | Y``
+   means either X or Y.  It is equivalent to ``typing.Union[X, Y]``.
+   Example::
+
+      def square(number: int | float) -> int | float:
+          return number ** 2
+
+.. describe:: union_object == other
+
+   Union objects can be tested for equality with other union objects.  Details:
+
+   * Unions of unions are flattened, e.g.::
+
+       (int | str) | float == int | str | float
+
+   * Redundant types are removed, e.g.::
+
+       int | str | int == int | str
+
+   * When comparing unions, the order is ignored, e.g.::
+
+      int | str == str | int
+
+   * It is compatible with :data:`typing.Union`::
+
+      int | str == typing.Union[int, str]
+
+   * Optional types can be spelled as a union with ``None``::
+
+      str | None == typing.Optional[str]
+
+.. describe:: isinstance(obj, union_object)
+
+   Calls to :func:`isinstance` are also supported with a Union object::
+
+      >>> isinstance("", int | str)
+      True
+
+   ..
+      At the time of writing this, there is no documentation for parameterized
+      generics or PEP 585. Thus the link currently points to PEP 585 itself.
+      Please change the link for parameterized generics to reference the correct
+      documentation once documentation for PEP 585 becomes available.
+
+   However, union objects containing `parameterized generics
+   <https://www.python.org/dev/peps/pep-0585/>`_ cannot be used::
+
+      >>> isinstance(1, int | list[int])
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: isinstance() argument 2 cannot contain a parameterized generic
+
+.. describe:: issubclass(obj, union_object)
+
+   Calls to :func:`issubclass` are also supported with a Union Object.::
+
+      >>> issubclass(bool, int | str)
+      True
+
+   ..
+      Once again, please change the link below for parameterized generics to
+      reference the correct documentation once documentation for PEP 585
+      becomes available.
+
+   However, union objects containing `parameterized generics
+   <https://www.python.org/dev/peps/pep-0585/>`_ cannot be used::
+
+      >>> issubclass(bool, bool | list[str])
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: issubclass() argument 2 cannot contain a parameterized generic
+
+The type for the Union object is :data:`types.Union`.  An object cannot be
+instantiated from the type::
+
+   >>> import types
+   >>> isinstance(int | str, types.Union)
+   True
+   >>> types.Union()
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: cannot create 'types.Union' instances
+
+.. note::
+   The :meth:`__or__` method for type objects was added to support the syntax
+   ``X | Y``.  If a metaclass implements :meth:`__or__`, the Union may
+   override it::
+
+      >>> class M(type):
+      ...     def __or__(self, other):
+      ...     return "Hello"
+      ...
+      >>> class C(metaclass=M):
+      ...     pass
+      ...
+      >>> C | int
+      'Hello'
+      >>> int | C
+      int | __main__.C
+
+.. seealso::
+
+   :pep:`604` -- PEP proposing the ``X | Y`` syntax and the Union type.
+
+.. versionadded:: 3.10
 
 
 .. _typesother:

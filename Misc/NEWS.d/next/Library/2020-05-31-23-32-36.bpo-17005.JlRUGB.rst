@@ -1,4 +1,0 @@
-The topological sort functionality that was introduced initially in the
-:mod:`functools` module has been moved to a new :mod:`graphlib` module to
-better accommodate the new tools and keep the original scope of the
-:mod:`functools` module. Patch by Pablo Galindo
