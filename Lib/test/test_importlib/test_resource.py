@@ -7,7 +7,7 @@ from . import zipdata01, zipdata02
 from . import util
 from importlib import resources, import_module
 from pathlib import Path
-from test.support import import_helper, unlink
+from test.support import import_helper, os_helper
 
 
 class ResourceTests:
@@ -196,7 +196,7 @@ class DeletingZipsTest(unittest.TestCase):
             pass
 
         try:
-            unlink(self.zip_path)
+            os_helper.unlink(self.zip_path)
         except OSError:
             # If the test fails, this will probably fail too
             pass
