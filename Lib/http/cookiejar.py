@@ -1217,13 +1217,13 @@ class DefaultCookiePolicy(CookiePolicy):
         _debug("  %s does not path-match %s", req_path, path)
         return False
 
-def vals_sorted_by_key(adict):
+def vals_by_key(adict):
     keys = deepcopy(adict).keys()
     return map(adict.get, keys)
 
 def deepvalues(mapping):
     """Iterates over nested mapping, depth-first, in sorted order by key."""
-    values = vals_sorted_by_key(mapping)
+    values = vals_by_key(mapping)
     for obj in values:
         mapping = False
         try:
