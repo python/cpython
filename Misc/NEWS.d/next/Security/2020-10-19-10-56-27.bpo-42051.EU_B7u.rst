@@ -1,0 +1,3 @@
+The :mod:`plistlib` module no longer accepts entity declarations in XML
+plist files to avoid XML vulnerabilities. This should not affect users as
+entity declarations are not used in regular plist files.
