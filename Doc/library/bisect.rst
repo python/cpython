@@ -113,9 +113,9 @@ thoughts in mind:
   is dominated by the linear time insertion step.
 
 * The search functions are stateless and discard key function results after
-  they are used.  Consequently, if the search functions are used a loop, the
-  key function may be called again and again on the same array elements.  If
-  the key function isn't fast, consider wrapping it with
+  they are used.  Consequently, if the search functions are used in a loop,
+  the key function may be called again and again on the same array elements.
+  If the key function isn't fast, consider wrapping it with
   :func:`functools.cache` to avoid duplicate computations.  Alternatively,
   consider searching an array of precomputed the keys to locate the insertion
   point (as shown in the examples section below).
