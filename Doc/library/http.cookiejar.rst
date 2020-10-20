@@ -140,6 +140,9 @@ The following classes are provided:
 
    :rfc:`2964` - Use of HTTP State Management
 
+   https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
+      Describes the purpose of the ``HttpOnly`` attribute.
+
 .. _cookie-jar-objects:
 
 CookieJar and FileCookieJar Objects
@@ -704,6 +707,13 @@ internal consistency, so you should know what you're doing if you do that.
 
    ``True`` if the domain explicitly specified by the server began with a dot
    (``'.'``).
+
+.. attribute:: Cookie.httponly
+
+   ``True`` if cookie should only be accessible to the web server, and not to
+   client-side scripts running in a web browser.
+
+   .. versionadded:: 3.10
 
 Cookies may have additional non-standard cookie-attributes.  These may be
 accessed using the following methods:

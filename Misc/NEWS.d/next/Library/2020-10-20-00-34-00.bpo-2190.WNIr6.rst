@@ -1,0 +1,4 @@
+:class:`http.cookiejar.MozillaCookieJar` will now correctly load and
+save cookies marked `HTTP-only
+<https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies>`_.  Patch by
+Daniel Lenski.
