@@ -308,6 +308,12 @@ Glossary
       keys can be any object with :meth:`__hash__` and :meth:`__eq__` methods.
       Called a hash in Perl.
 
+   dictionary comprehension
+      A compact way to process all or part of the elements in an iterable and
+      return a dictionary with the results. ``results = {n: n ** 2 for n in
+      range(10)}`` generates a dictionary containing key ``n`` mapped to
+      value ``n ** 2``. See :ref:`comprehensions`.
+
    dictionary view
       The objects returned from :meth:`dict.keys`, :meth:`dict.values`, and
       :meth:`dict.items` are called dictionary views. They provide a dynamic
@@ -1025,6 +1031,12 @@ Glossary
       :meth:`__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
       :func:`~abc.register`.
+
+   set comprehension
+      A compact way to process all or part of the elements in an iterable and
+      return a set with the results. ``results = {c for c in 'abracadabra' if
+      c not in 'abc'}`` generates the set of strings ``{'r', 'd'}``.  See
+      :ref:`comprehensions`.
 
    single dispatch
       A form of :term:`generic function` dispatch where the implementation is
