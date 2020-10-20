@@ -203,6 +203,7 @@ struct compiler {
 
 typedef struct {
     PyObject *stores;
+    int irrefutable;
 } pattern_context;
 
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
@@ -250,6 +251,7 @@ static int compiler_async_comprehension_generator(
                                       int depth,
                                       expr_ty elt, expr_ty val, int type);
 
+static int compiler_subpattern(struct compiler *, expr_ty, pattern_context *);
 static int compiler_pattern(struct compiler *, expr_ty, pattern_context *);
 static int compiler_match(struct compiler *, stmt_ty);
 
@@ -5451,11 +5453,6 @@ compiler_slice(struct compiler *c, expr_ty s)
 // pushing, popping, and jumping in the peephole optimizer than to detect or
 // predict it here.
 
-// Other than that, go nuts. The PEP intentionally gives us broad freedom to
-// take (reasonable) shortcuts - the AST optimization pass in particular is full
-// of low-hanging fruit. Please *always* document these with a comment of the
-// form "OPTIM: ...", so we can track exactly when and where they're happening.
-
 
 #define WILDCARD_CHECK(N) \
     ((N)->kind == Name_kind && \
@@ -5547,12 +5544,17 @@ compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
     Py_ssize_t size = asdl_seq_LEN(p->v.BoolOp.values);
     assert(size > 1);
     PyObject *stores_init = pc->stores;
+    assert(!pc->irrefutable);
     expr_ty alt;
     for (Py_ssize_t i = 0; i < size; i++) {
         // Can't use our helpful returning macros here (they'll leak sets):
         alt = asdl_seq_GET(p->v.BoolOp.values, i);
         pc->stores = PySet_New(stores_init);
         SET_LOC(c, alt);
+        if (pc->irrefutable) {
+            compiler_error(c, "pattern follows an irrefutable alternative");
+            goto fail;
+        }
         if (!pc->stores ||
             !compiler_pattern(c, alt, pc) ||
             !compiler_addop_j(c, JUMP_IF_TRUE_OR_POP, end) ||
@@ -5635,7 +5637,7 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
             continue;
         }
         ADDOP_I(c, GET_INDEX, i);
-        CHECK(compiler_pattern(c, arg, pc));
+        CHECK(compiler_subpattern(c, arg, pc));
         ADDOP(c, ROT_TWO);
         ADDOP(c, POP_TOP);
         ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
@@ -5715,7 +5717,7 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
                 continue;
             }
             ADDOP_I(c, GET_INDEX, i);
-            CHECK(compiler_pattern(c, value, pc));
+            CHECK(compiler_subpattern(c, value, pc));
             ADDOP(c, ROT_TWO);
             ADDOP(c, POP_TOP);
             ADDOP_JUMP(c, POP_JUMP_IF_FALSE, block);
@@ -5803,7 +5805,7 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
         else {
             ADDOP_I(c, GET_INDEX_END, size - 1 - i);
         }
-        CHECK(compiler_pattern(c, value, pc));
+        CHECK(compiler_subpattern(c, value, pc));
         ADDOP_JUMP(c, POP_JUMP_IF_FALSE, subblock);
         NEXT_BLOCK(c);
         ADDOP(c, POP_TOP);
@@ -5828,6 +5830,7 @@ compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
+    pc->irrefutable = 1;
     if (!WILDCARD_CHECK(p)) {
         ADDOP(c, DUP_TOP);
         CHECK(pattern_store_name(c, p->v.Name.id, pc));
@@ -5850,6 +5853,16 @@ compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
     CHECK(pattern_store_name(c, p->v.MatchAs.name, pc));
     ADDOP_LOAD_CONST(c, Py_True);
     compiler_use_next_block(c, end);
+    return 1;
+}
+
+
+static int
+compiler_subpattern(struct compiler *c, expr_ty p, pattern_context *pc)
+{
+    assert(!pc->irrefutable);
+    CHECK(compiler_pattern(c, p, pc));
+    pc->irrefutable = 0;
     return 1;
 }
 
@@ -5897,27 +5910,26 @@ compiler_match(struct compiler *c, stmt_ty s)
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases);
     pattern_context pc;
+    pc.irrefutable = 0;
+    pc.stores = NULL;
     int result;
     match_case_ty m = asdl_seq_GET(s->v.Match.cases, cases - 1);
     int has_default = WILDCARD_CHECK(m->pattern) && 1 < cases;
     for (Py_ssize_t i = 0; i < cases - has_default; i++) {
         m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
-        if (!m->guard && m->pattern->kind == Name_kind &&
-            m->pattern->v.Name.ctx == Store && i != cases - 1)
-        {
-            const char *w = "unguarded name capture pattern %R makes remaining "
-                            "cases unreachable";
-            CHECK(compiler_warn(c, w, m->pattern->v.Name.id));
+        if (pc.irrefutable) {
+            const char *w = "case follows irrefutable match arm";
+            CHECK(compiler_error(c, w, m->pattern->v.Name.id));
         }
         CHECK(next = compiler_new_block(c));
-        pc.stores = NULL;
         result = compiler_pattern(c, m->pattern, &pc);
         Py_CLEAR(pc.stores);
         CHECK(result);
         ADDOP_JUMP(c, POP_JUMP_IF_FALSE, next);
         NEXT_BLOCK(c);
         if (m->guard) {
+            pc.irrefutable = 0;
             CHECK(compiler_jump_if(c, m->guard, next, 0));
         }
         ADDOP(c, POP_TOP);
@@ -5930,6 +5942,11 @@ compiler_match(struct compiler *c, stmt_ty s)
         // A trailing "case _" is common, and lets us save a bit of redundant
         // pushing and popping in the loop above:
         m = asdl_seq_GET(s->v.Match.cases, cases - 1);
+        SET_LOC(c, m->pattern);
+        if (pc.irrefutable) {
+            const char *w = "case follows irrefutable match arm";
+            CHECK(compiler_error(c, w, m->pattern->v.Name.id));
+        }
         if (m->guard) {
             CHECK(compiler_jump_if(c, m->guard, end, 0));
         }

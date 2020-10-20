@@ -2448,17 +2448,13 @@ class TestPatma(unittest.TestCase):
 
     @no_perf
     def test_patma_243(self):
-        namespace = {}
-        code = """
+        self.assert_syntax_error("""
         match 42:
             case x:
                 pass
             case y:
                 pass
-        """
-        with self.assertWarns(SyntaxWarning):
-            exec(inspect.cleandoc(code), None, namespace)
-        self.assertEqual(namespace, {"x": 42})
+        """)
 
     @no_perf
     def test_patma_244(self):
@@ -2700,6 +2696,86 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(x, ((0, 1), (2, 3)))
         self.assertEqual(y, 0)
         self.assertEqual(z, (2, 3))
+
+    @no_perf
+    def test_patma_266(self):
+        self.assert_syntax_error("""
+        match ...:
+            case _ | _:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_267(self):
+        self.assert_syntax_error("""
+        match ...:
+            case (_ as x) | [x]:
+                pass
+        """)
+
+
+    @no_perf
+    def test_patma_268(self):
+        self.assert_syntax_error("""
+        match ...:
+            case _ | _ if condition():
+                pass
+        """)
+
+
+    @no_perf
+    def test_patma_269(self):
+        self.assert_syntax_error("""
+        match ...:
+            case x | [_ as x] if x:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_270(self):
+        self.assert_syntax_error("""
+        match ...:
+            case _:
+                pass
+            case None:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_271(self):
+        self.assert_syntax_error("""
+        match ...:
+            case x:
+                pass
+            case [x] if x:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_272(self):
+        self.assert_syntax_error("""
+        match ...:
+            case x:
+                pass
+            case _:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_273(self):
+        self.assert_syntax_error("""
+        match ...:
+            case (None | _) | _:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_274(self):
+        self.assert_syntax_error("""
+        match ...:
+            case _ | (True | False):
+                pass
+        """)
 
     # TODO: Better use of assertIs
     # TODO: Don't check side-effecty assignments
