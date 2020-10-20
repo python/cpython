@@ -144,6 +144,7 @@ locale_is_ascii(const char *str)
 static int
 locale_decode_monetary(PyObject *dict, struct lconv *lc)
 {
+#ifndef MS_WINDOWS
     int change_locale;
     change_locale = (!locale_is_ascii(lc->int_curr_symbol)
                      || !locale_is_ascii(lc->currency_symbol)
@@ -179,12 +180,18 @@ locale_decode_monetary(PyObject *dict, struct lconv *lc)
         }
     }
 
+#define GET_LOCALE_STRING(ATTR) PyUnicode_DecodeLocale(lc->ATTR, NULL)
+#else  /* MS_WINDOWS */
+/* Use _W_* fields of Windows struct lconv */
+#define GET_LOCALE_STRING(ATTR) PyUnicode_FromWideChar(lc->_W_ ## ATTR, -1)
+#endif /* MS_WINDOWS */
+
     int res = -1;
 
 #define RESULT_STRING(ATTR) \
     do { \
         PyObject *obj; \
-        obj = PyUnicode_DecodeLocale(lc->ATTR, NULL); \
+        obj = GET_LOCALE_STRING(ATTR); \
         if (obj == NULL) { \
             goto done; \
         } \
@@ -200,14 +207,17 @@ locale_decode_monetary(PyObject *dict, struct lconv *lc)
     RESULT_STRING(mon_decimal_point);
     RESULT_STRING(mon_thousands_sep);
 #undef RESULT_STRING
+#undef GET_LOCALE_STRING
 
     res = 0;
 
 done:
+#ifndef MS_WINDOWS
     if (loc != NULL) {
         setlocale(LC_CTYPE, oldloc);
     }
     PyMem_Free(oldloc);
+#endif
     return res;
 }
 
@@ -243,9 +253,15 @@ PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
         Py_DECREF(obj); \
     } while (0)
 
+#ifdef MS_WINDOWS
+/* Use _W_* fields of Windows struct lconv */
+#define GET_LOCALE_STRING(ATTR) PyUnicode_FromWideChar(lc->_W_ ## ATTR, -1)
+#else
+#define GET_LOCALE_STRING(ATTR) PyUnicode_DecodeLocale(lc->ATTR, NULL)
+#endif
 #define RESULT_STRING(s)\
     do { \
-        x = PyUnicode_DecodeLocale(lc->s, NULL); \
+        x = GET_LOCALE_STRING(s); \
         RESULT(#s, x); \
     } while (0)
 
@@ -274,8 +290,10 @@ PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
     RESULT_INT(n_sign_posn);
 
     /* Numeric information: LC_NUMERIC encoding */
-    PyObject *decimal_point, *thousands_sep;
+    PyObject *decimal_point = NULL, *thousands_sep = NULL;
     if (_Py_GetLocaleconvNumeric(lc, &decimal_point, &thousands_sep) < 0) {
+        Py_XDECREF(decimal_point);
+        Py_XDECREF(thousands_sep);
         goto failed;
     }
 
@@ -304,6 +322,7 @@ PyLocale_localeconv(PyObject* self, PyObject *Py_UNUSED(ignored))
 #undef RESULT
 #undef RESULT_STRING
 #undef RESULT_INT
+#undef GET_LOCALE_STRING
 }
 
 #if defined(HAVE_WCSCOLL)
