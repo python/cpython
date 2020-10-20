@@ -768,6 +768,14 @@ static PyMethodDef gen_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
+static PyAsyncMethods gen_as_async = {
+    0,                                          /* am_await */
+    0,                                          /* am_aiter */
+    0,                                          /* am_anext */
+    (sendfunc)PyGen_am_send,                    /* am_send  */
+};
+
+
 PyTypeObject PyGen_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "generator",                                /* tp_name */
@@ -778,7 +786,7 @@ PyTypeObject PyGen_Type = {
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
+    &gen_as_async,                              /* tp_as_async */
     (reprfunc)gen_repr,                         /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
