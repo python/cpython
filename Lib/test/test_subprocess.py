@@ -680,42 +680,52 @@ class ProcessTestCase(BaseTestCase):
                 'default pipesize too small to perform test.')
         p = subprocess.Popen(
             [sys.executable, "-c",
-             'import sys; sys.stdin.read(); sys.stdout.write("out"); sys.stderr.write("error!")'],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            pipesize=pipesize)
+             'import sys; sys.stdin.read(); sys.stdout.write("out"); '
+             'sys.stderr.write("error!")'],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, pipesize=pipesize)
         try:
-          # We only assert pipe size has changed on platforms that support it.
-          if sys.platform != "win32" and hasattr(fcntl, "F_GETPIPE_SZ"):
-              for fifo in [p.stdin, p.stdout, p.stderr]:
-                  self.assertEqual(fcntl.fcntl(fifo.fileno(), fcntl.F_GETPIPE_SZ), pipesize)
-          # Windows pipe size can be acquired with the GetNamedPipeInfoFunction
-          # https://docs.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-getnamedpipeinfo
-          # However, this function is not yet in _winapi.
-          p.stdin.write(b"pear")
-          p.stdin.close()
+            # We only assert pipe size has changed on platforms that support it.
+            if sys.platform != "win32" and hasattr(fcntl, "F_GETPIPE_SZ"):
+                for fifo in [p.stdin, p.stdout, p.stderr]:
+                    self.assertEqual(
+                        fcntl.fcntl(fifo.fileno(), fcntl.F_GETPIPE_SZ),
+                        pipesize)
+            # Windows pipe size can be acquired with the GetNamedPipeInfoFunction
+            # https://docs.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-getnamedpipeinfo
+            # However, this function is not yet in _winapi.
+            p.stdin.write(b"pear")
+            p.stdin.close()
         finally:
-          p.kill()
-          p.wait()
+            p.kill()
+            p.wait()
 
     def test_pipesize_default(self):
-        p = subprocess.Popen([sys.executable, "-c",
-                         'import sys; sys.stdin.read(); sys.stdout.write("out");'
-                         ' sys.stderr.write("error!")'],
-                         stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                         pipesize=-1)
-        # UNIX tests using fcntl
-        if sys.platform != "win32" and hasattr(fcntl, "F_GETPIPE_SZ"):
-            fp_r, fp_w = os.pipe()
-            default_pipesize = fcntl.fcntl(fp_w, fcntl.F_GETPIPE_SZ)
-            for fifo in [p.stdin, p.stdout, p.stderr]:
-                self.assertEqual(
-                    fcntl.fcntl(fifo.fileno(), fcntl.F_GETPIPE_SZ), default_pipesize)
-        # On other platforms we cannot test the pipe size (yet). But above code
-        # using pipesize=-1 should not crash.
-        p.stdin.close()
-        p.wait()
+        p = subprocess.Popen(
+            [sys.executable, "-c",
+             'import sys; sys.stdin.read(); sys.stdout.write("out"); '
+             'sys.stderr.write("error!")'],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, pipesize=-1)
+        try:
+            # POSIX tests using fcntl
+            if sys.platform != "win32" and hasattr(fcntl, "F_GETPIPE_SZ"):
+                fp_r, fp_w = os.pipe()
+                try:
+                    default_pipesize = fcntl.fcntl(fp_w, fcntl.F_GETPIPE_SZ)
+                    for fifo in [p.stdin, p.stdout, p.stderr]:
+                        self.assertEqual(
+                            fcntl.fcntl(fifo.fileno(), fcntl.F_GETPIPE_SZ),
+                            default_pipesize)
+                finally:
+                    os.close(fp_r)
+                    os.close(fp_w)
+            # On other platforms we cannot test the pipe size (yet). But above
+            # code using pipesize=-1 should not crash.
+            p.stdin.close()
+        finally:
+            p.kill()
+            p.wait()
 
     def test_env(self):
         newenv = os.environ.copy()
