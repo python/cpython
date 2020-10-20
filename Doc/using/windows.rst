@@ -103,9 +103,9 @@ paths longer than this would not resolve and errors would result.
 
 In the latest versions of Windows, this limitation can be expanded to
 approximately 32,000 characters. Your administrator will need to activate the
-"Enable Win32 long paths" group policy, or set the registry value
-``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem@LongPathsEnabled``
-to ``1``.
+"Enable Win32 long paths" group policy, or set ``LongPathsEnabled`` to ``1``
+in the registry key
+``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem``.
 
 This allows the :func:`open` function, the :mod:`os` module and most other
 path functionality to accept and return paths longer than 260 characters.
