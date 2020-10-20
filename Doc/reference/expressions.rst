@@ -796,8 +796,8 @@ Subscriptions
    object: dictionary
    pair: sequence; item
 
-A subscription selects an item of a sequence (string, tuple or list) or mapping
-(dictionary) object:
+Subscription of a sequence (string, tuple or list) or mapping (dictionary)
+object usually selects an item from the collection:
 
 .. productionlist:: python-grammar
    subscription: `primary` "[" `expression_list` "]"
@@ -832,6 +832,17 @@ this method will need to explicitly add that support.
 
 A string's items are characters.  A character is not a separate data type but a
 string of exactly one character.
+
+..
+   At the time of writing this, there is no documentation for parameterized
+   generics or PEP 585.  Thus the link currently points to PEP 585 itself.
+   Please change the link for parameterized generics to reference the correct
+   documentation once documentation for PEP 585 becomes available.
+
+Subscription of certain classes or types creates a `generic alias
+<https://www.python.org/dev/peps/pep-0585/>`_.  In this case, user-defined
+classes can support subscription by providing a :meth:`__class_getitem__`
+classmethod.
 
 
 .. _slicings:
