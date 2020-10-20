@@ -4759,6 +4759,12 @@ Generic Alias Type
    object: GenericAlias
    pair: Generic; Alias
 
+Most of the time, the :ref:`subscription expression <subscriptions>` calls the
+:term:`method` :meth:`__getitem__` of an :term:`object`. However, the
+subscription of a :term:`class` itself calls the :func:`classmethod
+<classmethod>` :meth:`__class_getitem__` of the class instead. The classmethod
+:meth:`__class_getitem__` returns a ``GenericAlias`` object.
+
 The ``GenericAlias`` object acts as a proxy for :term:`generic types
 <generic type>`, implementing *parameterized generics* - a specific instance
 of a generic with the types for container elements provided. It is intended
@@ -4766,6 +4772,13 @@ primarily for type :term:`annotations <annotation>`.  ``GenericAlias`` objects
 are created by expressions like ``list[int]``.
 
 The type for the ``GenericAlias`` object is :data:`types.GenericAlias`.
+
+.. impl-detail::
+
+   The C equivalent of :meth:`__getitem__` - :c:func:`PyObject_GetItem` - is
+   called first for builtin classes and types. When :c:func:`PyObject_GetItem`
+   detects that it was called on a type, it then calls :meth:`__class_getitem__`
+   and returns the ``GenericAlias`` object.
 
 .. describe:: generic[X, Y, ...]
 
@@ -4885,12 +4898,12 @@ their type parameters can be found in the :mod:`typing` module:
 * :ref:`re.Match <match-objects>`
 
 
-Special Attributes of Generics
-------------------------------
+Special Attributes of Generic Alias
+-----------------------------------
 
 All parameterized generics implement special read-only attributes.
 
-.. attribute:: generic.__origin__
+.. attribute:: genericalias.__origin__
 
    This attribute points at the non-parameterized generic class::
 
@@ -4898,7 +4911,7 @@ All parameterized generics implement special read-only attributes.
       <class 'list'>
 
 
-.. attribute:: generic.__args__
+.. attribute:: genericalias.__args__
 
    This attribute is a :class:`tuple` (possibly of length 1) of generic
    types passed to the original :meth:`__class_getitem__`
@@ -4908,7 +4921,7 @@ All parameterized generics implement special read-only attributes.
       (<class 'str'>, list[int])
 
 
-.. attribute:: generic.__parameters__
+.. attribute:: genericalias.__parameters__
 
    This attribute is a lazily computed tuple (possibly empty) of unique type
    variables found in ``__args__``::
