@@ -836,7 +836,7 @@ string of exactly one character.
 ..
    At the time of writing this, there is no documentation for parameterized
    generics or PEP 585.  Thus the link currently points to PEP 585 itself.
-   Please change the link for parameterized generics to reference the correct
+   Please change the link for generic alias to reference the correct
    documentation once documentation for PEP 585 becomes available.
 
 Subscription of certain :term:`classes <class>` or :term:`types <type>`
