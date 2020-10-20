@@ -283,7 +283,11 @@ two arguments: ``open(filename, mode)``.
 
 ::
 
-   >>> f = open('workfile', 'w')
+    try:
+        f = open('workfile', 'w')
+    except OSError as e:
+        # File open failed
+        ...
 
 .. XXX str(f) is <io.TextIOWrapper object at 0x82e8dc4>
 
