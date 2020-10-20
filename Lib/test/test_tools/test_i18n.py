@@ -266,17 +266,17 @@ class Test_pygettext(unittest.TestCase):
         msgids = self.extract_docstrings_from_str(dedent('''\
         f"{_(1)}"
         '''))
-        self.assertNotIn(1)
+        self.assertNotIn(1, msgids)
 
     def test_calls_in_fstring_with_multiple_args(self):
-        msgids = self.extract.docstrings_from_str(dedent('''\
+        msgids = self.extract_docstrings_from_str(dedent('''\
         f"{_('foo', 'bar')}"
         '''))
         self.assertNotIn('foo', msgids)
         self.assertNotIn('bar', msgids)
 
     def test_calls_in_fstring_with_keyword_args(self):
-        msgids = self.extract.docstrings_from_str(dedent('''\
+        msgids = self.extract_docstrings_from_str(dedent('''\
         f"{_('foo', bar='baz')}"
         '''))
         self.assertNotIn('foo', msgids)
@@ -284,7 +284,7 @@ class Test_pygettext(unittest.TestCase):
         self.assertNotIn('baz', msgids)
 
     def test_calls_in_fstring_with_partially_wrong_expression(self):
-        msgids = self.extract.docstrings_from_str(dedent('''\
+        msgids = self.extract_docstrings_from_str(dedent('''\
         f"{_(f'foo') + _('bar')}"
         '''))
         self.assertNotIn('foo', msgids)
