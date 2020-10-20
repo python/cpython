@@ -485,7 +485,7 @@ class DirectoryTestCase(ASTTestCase):
     test_directories = (lib_dir, lib_dir / "test")
     skip_files = {"test_fstring.py"}
     run_always_files = {"test_grammar.py", "test_syntax.py", "test_compile.py",
-                        "test_ast.py", "test_asdl_parser.py", "test_patma.py"}  # XXX
+                        "test_ast.py", "test_asdl_parser.py"}
 
     _files_to_test = None
 

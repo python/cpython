@@ -5444,7 +5444,7 @@ compiler_slice(struct compiler *c, expr_ty s)
 }
 
 
-// PEP 622: Structural Pattern Matching
+// PEP 634: Structural Pattern Matching
 
 // To keep things simple, all compiler_pattern_* routines follow the convention
 // of preserving TOS (the subject for the given pattern) and pushing either True

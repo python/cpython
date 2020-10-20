@@ -1241,12 +1241,29 @@ All of the following opcodes use their arguments.
 
    TODO
 
+   TOS is a tuple of keyword attribute names.
+   TOS1 is the "class" being called.
+   TOS2 is the subject.
+   *oparg* is the number of positional sub-patterns.
+
+   On match, replaces TOS1 with a tuple extracted attributes, and TOS with True.
+   On no match, replaces TOS with False.
+
    .. versionadded:: 3.10
 
 
 .. opcode:: MATCH_KEYS (copy)
 
    TODO
+
+   TOS is a tuple of keys.
+   TOS1 is the match subject.
+
+   On failure, replaces TOS with None and pushes False.
+
+   On success, replaces TOS with a tuple of keys and pushes TRUE. If *oparg* is
+   non-zero, gather remaining items into a dict and put it on the stack where
+   the subject used to be.
 
    .. versionadded:: 3.10
 
