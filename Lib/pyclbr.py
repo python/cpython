@@ -60,11 +60,7 @@ class _Object:
         self.parent = parent
         self.children = {}
         if parent is not None:
-            parent._addchild(name, self)
-
-    def _addchild(self, name, obj):
-        self.children[name] = obj
-
+            parent.children[name] = self
 
 class Function(_Object):
     "Information about a Python function, including methods."
@@ -72,7 +68,7 @@ class Function(_Object):
         super().__init__(module, name, file, lineno, parent)
         self.is_async = is_async
         if isinstance(parent, Class):
-            parent._addmethod(name, lineno)
+            parent.methods[name] = lineno
 
 class Class(_Object):
     "Information about a Python class."
@@ -81,24 +77,15 @@ class Class(_Object):
         self.super = super_ or []
         self.methods = {}
 
-    def _addmethod(self, name, lineno):
-        self.methods[name] = lineno
-
-# This 2 functions are used in these tests
+# These 2 functions are used in these tests
 # Lib/test/test_pyclbr, Lib/idlelib/idle_test/test_browser.py
 def _nest_function(ob, func_name, lineno, is_async=False):
     "Return a Function after nesting within ob."
-    newfunc = Function(ob.module, func_name, ob.file, lineno, ob, is_async)
-    ob._addchild(func_name, newfunc)
-    if isinstance(ob, Class):
-        ob._addmethod(func_name, lineno)
-    return newfunc
+    return Function(ob.module, func_name, ob.file, lineno, ob, is_async)
 
 def _nest_class(ob, class_name, lineno, super=None):
     "Return a Class after nesting within ob."
-    newclass = Class(ob.module, class_name, super, ob.file, lineno, ob)
-    ob._addchild(class_name, newclass)
-    return newclass
+    return Class(ob.module, class_name, super, ob.file, lineno, ob)
 
 def readmodule(module, path=None):
     """Return Class objects for the top-level classes in module.
@@ -231,8 +218,8 @@ class _ModuleBrowser(ast.NodeVisitor):
             value.module, name, value.file, node.lineno, parent, value.is_async
         )
         child.children = copy.deepcopy(value.children)
-        parent._addchild(name, child)
-        parent._addmethod(name, node.lineno)
+        parent.children[name] = child
+        parent.methods[name] = node.lineno
 
     def single_target_function_assign(self, node):
         """Check if given assignment consists from a single target
