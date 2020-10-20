@@ -839,10 +839,10 @@ string of exactly one character.
    Please change the link for parameterized generics to reference the correct
    documentation once documentation for PEP 585 becomes available.
 
-Subscription of certain classes or types creates a `generic alias
-<https://www.python.org/dev/peps/pep-0585/>`_.  In this case, user-defined
-classes can support subscription by providing a :meth:`__class_getitem__`
-classmethod.
+Subscription of certain :term:`classes <class>` or :term:`types <type>`
+creates a `generic alias <https://www.python.org/dev/peps/pep-0585/>`_.
+In this case, user-defined classes can support subscription by providing a
+:meth:`__class_getitem__` classmethod.
 
 
 .. _slicings:
