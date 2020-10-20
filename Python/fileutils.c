@@ -2047,6 +2047,7 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
     assert(decimal_point != NULL);
     assert(thousands_sep != NULL);
 
+#ifndef MS_WINDOWS
     int change_locale = 0;
     if ((strlen(lc->decimal_point) > 1 || ((unsigned char)lc->decimal_point[0]) > 127)) {
         change_locale = 1;
@@ -2085,14 +2086,20 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
         }
     }
 
+#define GET_LOCALE_STRING(ATTR) PyUnicode_DecodeLocale(lc->ATTR, NULL)
+#else /* MS_WINDOWS */
+/* Use _W_* fields of Windows strcut lconv */
+#define GET_LOCALE_STRING(ATTR) PyUnicode_FromWideChar(lc->_W_ ## ATTR, -1)
+#endif /* MS_WINDOWS */
+
     int res = -1;
 
-    *decimal_point = PyUnicode_DecodeLocale(lc->decimal_point, NULL);
+    *decimal_point = GET_LOCALE_STRING(decimal_point);
     if (*decimal_point == NULL) {
         goto done;
     }
 
-    *thousands_sep = PyUnicode_DecodeLocale(lc->thousands_sep, NULL);
+    *thousands_sep = GET_LOCALE_STRING(thousands_sep);
     if (*thousands_sep == NULL) {
         goto done;
     }
@@ -2100,11 +2107,15 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
     res = 0;
 
 done:
+#ifndef MS_WINDOWS
     if (loc != NULL) {
         setlocale(LC_CTYPE, oldloc);
     }
     PyMem_Free(oldloc);
+#endif
     return res;
+
+#undef GET_LOCALE_STRING
 }
 
 /* Our selection logic for which function to use is as follows:
