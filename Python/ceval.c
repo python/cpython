@@ -111,6 +111,7 @@ static long dxp[256];
 #else
 #define OPCACHE_MIN_RUNS 1024  /* create opcache when code executed this time */
 #endif
+#define OPCODE_CACHE_MAX_TRIES 20
 #define OPCACHE_STATS 0  /* Enable stats */
 
 #if OPCACHE_STATS
@@ -120,6 +121,12 @@ static size_t opcache_code_objects_extra_mem = 0;
 static size_t opcache_global_opts = 0;
 static size_t opcache_global_hits = 0;
 static size_t opcache_global_misses = 0;
+
+static size_t opcache_attr_opts = 0;
+static size_t opcache_attr_hits = 0;
+static size_t opcache_attr_misses = 0;
+static size_t opcache_attr_deopts = 0;
+static size_t opcache_attr_total = 0;
 #endif
 
 
@@ -365,6 +372,25 @@ _PyEval_Fini(void)
             opcache_global_opts);
 
     fprintf(stderr, "\n");
+
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR hits     = %zd (%d%%)\n",
+            opcache_attr_hits,
+            (int) (100.0 * opcache_attr_hits /
+                opcache_attr_total));
+
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR misses   = %zd (%d%%)\n",
+            opcache_attr_misses,
+            (int) (100.0 * opcache_attr_misses /
+                opcache_attr_total));
+
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR opts     = %zd\n",
+            opcache_attr_opts);
+
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR deopts   = %zd\n",
+            opcache_attr_deopts);
+
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR total    = %zd\n",
+            opcache_attr_total);
 #endif
 }
 
@@ -1224,13 +1250,40 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     do { \
         co_opcache = NULL; \
         if (co->co_opcache != NULL) { \
-            unsigned char co_opt_offset = \
+            unsigned char co_opcache_offset = \
                 co->co_opcache_map[next_instr - first_instr]; \
-            if (co_opt_offset > 0) { \
-                assert(co_opt_offset <= co->co_opcache_size); \
-                co_opcache = &co->co_opcache[co_opt_offset - 1]; \
+            if (co_opcache_offset > 0) { \
+                assert(co_opcache_offset <= co->co_opcache_size); \
+                co_opcache = &co->co_opcache[co_opcache_offset - 1]; \
                 assert(co_opcache != NULL); \
             } \
+        } \
+    } while (0)
+
+#define OPCACHE_DEOPT() \
+    do { \
+        if (co_opcache != NULL) { \
+            co_opcache->optimized = -1; \
+            unsigned char co_opcache_offset = \
+                co->co_opcache_map[next_instr - first_instr]; \
+            assert(co_opcache_offset <= co->co_opcache_size); \
+            co->co_opcache_map[co_opcache_offset] = 0; \
+            co_opcache = NULL; \
+        } \
+    } while (0)
+
+#define OPCACHE_DEOPT_LOAD_ATTR() \
+    do { \
+        if (co_opcache != NULL) { \
+            OPCACHE_STAT_ATTR_DEOPT(); \
+            OPCACHE_DEOPT(); \
+        } \
+    } while (0)
+
+#define OPCACHE_MAYBE_DEOPT_LOAD_ATTR() \
+    do { \
+        if (co_opcache != NULL && --co_opcache->optimized <= 0) { \
+            OPCACHE_DEOPT_LOAD_ATTR(); \
         } \
     } while (0)
 
@@ -1251,11 +1304,42 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         if (co->co_opcache != NULL) opcache_global_opts++; \
     } while (0)
 
+#define OPCACHE_STAT_ATTR_HIT() \
+    do { \
+        if (co->co_opcache != NULL) opcache_attr_hits++; \
+    } while (0)
+
+#define OPCACHE_STAT_ATTR_MISS() \
+    do { \
+        if (co->co_opcache != NULL) opcache_attr_misses++; \
+    } while (0)
+
+#define OPCACHE_STAT_ATTR_OPT() \
+    do { \
+        if (co->co_opcache!= NULL) opcache_attr_opts++; \
+    } while (0)
+
+#define OPCACHE_STAT_ATTR_DEOPT() \
+    do { \
+        if (co->co_opcache != NULL) opcache_attr_deopts++; \
+    } while (0)
+
+#define OPCACHE_STAT_ATTR_TOTAL() \
+    do { \
+        if (co->co_opcache != NULL) opcache_attr_total++; \
+    } while (0)
+
 #else /* OPCACHE_STATS */
 
 #define OPCACHE_STAT_GLOBAL_HIT()
 #define OPCACHE_STAT_GLOBAL_MISS()
 #define OPCACHE_STAT_GLOBAL_OPT()
+
+#define OPCACHE_STAT_ATTR_HIT()
+#define OPCACHE_STAT_ATTR_MISS()
+#define OPCACHE_STAT_ATTR_OPT()
+#define OPCACHE_STAT_ATTR_DEOPT()
+#define OPCACHE_STAT_ATTR_TOTAL()
 
 #endif
 
@@ -3023,7 +3107,134 @@ main_loop:
         case TARGET(LOAD_ATTR): {
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
-            PyObject *res = PyObject_GetAttr(owner, name);
+
+            PyTypeObject *type = Py_TYPE(owner);
+            PyObject *res;
+            PyObject **dictptr;
+            PyObject *dict;
+            _PyOpCodeOpt_LoadAttr *la;
+
+            OPCACHE_STAT_ATTR_TOTAL();
+
+            OPCACHE_CHECK();
+            if (co_opcache != NULL && PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
+            {
+                if (co_opcache->optimized > 0) {
+                    /* Fast path -- cache hit makes LOAD_ATTR ~30% faster */
+                    la = &co_opcache->u.la;
+                    if (la->type == type && la->tp_version_tag == type->tp_version_tag)
+                    {
+                        assert(type->tp_dict != NULL);
+                        assert(type->tp_dictoffset > 0);
+
+                        dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
+                        dict = *dictptr;
+                        if (dict != NULL && PyDict_CheckExact(dict)) {
+                            Py_ssize_t hint = la->hint;
+                            Py_INCREF(dict);
+                            res = NULL;
+                            la->hint = _PyDict_GetItemHint((PyDictObject*)dict, name, hint, &res);
+
+                            if (res != NULL) {
+                                if (la->hint == hint && hint >= 0) {
+                                    /* Our hint has helped -- cache hit. */
+                                    OPCACHE_STAT_ATTR_HIT();
+                                } else {
+                                    /* The hint we provided didn't work.
+                                       Maybe next time? */
+                                    OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
+                                }
+
+                                Py_INCREF(res);
+                                SET_TOP(res);
+                                Py_DECREF(owner);
+                                Py_DECREF(dict);
+                                DISPATCH();
+                            } else {
+                                // This attribute can be missing sometimes -- we
+                                // don't want to optimize this lookup.
+                                OPCACHE_DEOPT_LOAD_ATTR();
+                                Py_DECREF(dict);
+                            }
+                        } else {
+                            // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact
+                            OPCACHE_DEOPT_LOAD_ATTR();
+                        }
+                    } else {
+                        // The type of the object has either been updated,
+                        // or is different.  Maybe it will stabilize?
+                        OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
+                    }
+
+                    OPCACHE_STAT_ATTR_MISS();
+                }
+
+                if (co_opcache != NULL && /* co_opcache can be NULL after a DEOPT() call. */
+                    type->tp_getattro == PyObject_GenericGetAttr)
+                {
+                    PyObject *descr;
+                    Py_ssize_t ret;
+
+                    if (type->tp_dictoffset > 0) {
+                        if (type->tp_dict == NULL) {
+                            if (PyType_Ready(type) < 0) {
+                                Py_DECREF(owner);
+                                SET_TOP(NULL);
+                                goto error;
+                            }
+                        }
+
+                        descr = _PyType_Lookup(type, name);
+                        if (descr == NULL ||
+                            descr->ob_type->tp_descr_get == NULL ||
+                            !PyDescr_IsData(descr))
+                        {
+                            dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
+                            dict = *dictptr;
+
+                            if (dict != NULL && PyDict_CheckExact(dict)) {
+                                Py_INCREF(dict);
+                                res = NULL;
+                                ret = _PyDict_GetItemHint((PyDictObject*)dict, name, -1, &res);
+                                if (res != NULL) {
+                                    Py_INCREF(res);
+                                    Py_DECREF(dict);
+                                    Py_DECREF(owner);
+                                    SET_TOP(res);
+
+                                    if (co_opcache->optimized == 0) {
+                                        // First time we optimize this opcode. */
+                                        OPCACHE_STAT_ATTR_OPT();
+                                        co_opcache->optimized = OPCODE_CACHE_MAX_TRIES;
+                                    }
+
+                                    la = &co_opcache->u.la;
+                                    la->type = type;
+                                    la->tp_version_tag = type->tp_version_tag;
+                                    la->hint = ret;
+
+                                    DISPATCH();
+                                }
+                                Py_DECREF(dict);
+                            } else {
+                                // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact
+                                OPCACHE_DEOPT_LOAD_ATTR();
+                            }
+                        } else {
+                            // We failed to find an attribute without a data-like descriptor
+                            OPCACHE_DEOPT_LOAD_ATTR();
+                        }
+                    } else {
+                        // The object's class does not have a tp_dictoffset we can use
+                        OPCACHE_DEOPT_LOAD_ATTR();
+                    }
+                } else if (type->tp_getattro != PyObject_GenericGetAttr) {
+                    OPCACHE_DEOPT_LOAD_ATTR();
+                }
+            }
+
+            /* slow path */
+            res = PyObject_GetAttr(owner, name);
             Py_DECREF(owner);
             SET_TOP(res);
             if (res == NULL)
