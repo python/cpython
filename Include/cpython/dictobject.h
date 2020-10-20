@@ -71,6 +71,7 @@ PyAPI_FUNC(void) _PyDict_DebugMallocStats(FILE *out);
 
 int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
 PyObject *_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
+Py_ssize_t _PyDict_GetItemHint(PyDictObject *, PyObject *, Py_ssize_t, PyObject **);
 
 /* _PyDictView */
 
