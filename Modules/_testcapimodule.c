@@ -1021,30 +1021,29 @@ test_buildvalue_N(PyObject *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    char *tp_name = PyType_GetSlot(&PyLong_Type, Py_type_name);
+    char *tp_name = PyType_GetSlot(&PyLong_Type, Py_tp_name);
     assert(strcmp(tp_name, "int") == 0);
 
-    newfunc tp_new = PyType_GetSlot(&PyLong_Type, Py_type_new);
+    newfunc tp_new = PyType_GetSlot(&PyLong_Type, Py_tp_new);
     PyObject *args = PyTuple_New(0);
     PyObject *object = tp_new(&PyLong_Type, args, NULL);
     assert(object);
 
-    reprfunc tp_repr = PyType_GetSlot(&PyLong_Type, Py_type_repr);
+    reprfunc tp_repr = PyType_GetSlot(&PyLong_Type, Py_tp_repr);
     PyObject *decimal_str = tp_repr(object);
     assert(decimal_str);
 
-    ternaryfunc tp_call = PyType_GetSlot(&PyLong_Type, Py_type_call);
+    ternaryfunc tp_call = PyType_GetSlot(&PyLong_Type, Py_tp_call);
     assert(tp_call == 0);
 
-    binaryfunc nb_add = PyType_GetSlot(&PyLong_Type, Py_type_nb_add); 
+    binaryfunc nb_add = PyType_GetSlot(&PyLong_Type, Py_tp_nb_add); 
     PyObject *result = nb_add(object, object);
     assert(result);
 
-    lenfunc mp_length = PyType_GetSlot(&PyLong_Type, Py_type_mp_length);
+    lenfunc mp_length = PyType_GetSlot(&PyLong_Type, Py_mp_length);
     assert(mp_length == NULL);
 
-    void *over_value = PyType_GetSlot(&PyLong_Type,
-            Py_type_bf_releasebuffer + 1);
+    void *over_value = PyType_GetSlot(&PyLong_Type, Py_bf_releasebuffer + 1);
     assert(over_value == NULL);
 
     Py_DECREF(decimal_str);
