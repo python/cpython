@@ -356,8 +356,10 @@ given type object has a specified feature.
 /* Type is abstract and cannot be instantiated */
 #define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
 /* Type has am_send entry in tp_as_async slot */
 #define Py_TPFLAGS_HAVE_SEND (1UL << 21)
+#endif
 
 /* These flags are used to determine if a type is a subclass. */
 #define Py_TPFLAGS_LONG_SUBCLASS        (1UL << 24)
