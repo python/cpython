@@ -552,18 +552,7 @@ class Telnet:
                             print('*** Connection closed by remote host ***')
                             return
                         if text:
-                            try:
-                                sys.stdout.write(text.decode('ascii'))
-                            except UnicodeDecodeError:
-                                if hasattr(sys.stdout, 'buffer'):
-                                    sys.stdout.buffer.write(text)
-                                else:
-                                    sys.stdout.write(
-                                        text.decode(
-                                            sys.stdout.encoding,
-                                            'strict'
-                                        )
-                                    )
+                            sys.stdout.write(text.decode(sys.stdout.encoding))
                             sys.stdout.flush()
                     elif key.fileobj is sys.stdin:
                         line = sys.stdin.readline().encode('ascii')
@@ -590,18 +579,7 @@ class Telnet:
                 print('*** Connection closed by remote host ***')
                 return
             if data:
-                try:
-                    sys.stdout.write(text.decode('ascii'))
-                except UnicodeDecodeError:
-                    if hasattr(sys.stdout, 'buffer'):
-                        sys.stdout.buffer.write(text)
-                    else:
-                        sys.stdout.write(
-                            text.decode(
-                                sys.stdout.encoding,
-                                'strict'
-                            )
-                        )
+                sys.stdout.write(text.decode(sys.stdout.encoding))
             else:
                 sys.stdout.flush()
 
