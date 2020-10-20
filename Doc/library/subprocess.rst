@@ -344,7 +344,7 @@ functions.
                  encoding=None, errors=None, text=None)
 
    Execute a child program in a new process.  On POSIX, the class uses
-   :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
+   :meth:`os.execvpe`-like behavior to execute the child program.  On Windows,
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
 
@@ -543,7 +543,7 @@ functions.
 
    If *cwd* is not ``None``, the function changes the working directory to
    *cwd* before executing the child.  *cwd* can be a string, bytes or
-   :term:`path-like <path-like object>` object.  In particular, the function
+   :term:`path-like <path-like object>` object.  In POSIX, the function
    looks for *executable* (or for the first item in *args*) relative to *cwd*
    if the executable path is a relative path.
 
