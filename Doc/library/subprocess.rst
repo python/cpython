@@ -344,7 +344,7 @@ functions.
                  encoding=None, errors=None, text=None, pipesize=-1)
 
    Execute a child program in a new process.  On POSIX, the class uses
-   :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
+   :meth:`os.execvpe`-like behavior to execute the child program.  On Windows,
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
 
@@ -355,6 +355,25 @@ functions.
    platform-dependent and described below.  See the *shell* and *executable*
    arguments for additional differences from the default behavior.  Unless
    otherwise stated, it is recommended to pass *args* as a sequence.
+
+   .. warning::
+
+      For maximum reliability, use a fully-qualified path for the executable.
+      To search for an unqualified name on :envvar:`PATH`, use
+      :meth:`shutil.which`. On all platforms, passing :data:`sys.executable`
+      is the recommended way to launch the current Python interpreter again,
+      and use the ``-m`` command-line format to launch an installed module.
+
+      Resolving the path of *executable* (or the first item of *args*) is
+      platform dependent. For POSIX, see :meth:`os.execvpe`, and note that
+      when resolving or searching for the executable path, *cwd* overrides the
+      current working directory and *env* can override the ``PATH``
+      environment variable. For Windows, see the documentation of the
+      ``lpApplicationName`` and ``lpCommandLine`` parameters of WinAPI
+      ``CreateProcess``, and note that when resolving or searching for the
+      executable path with ``shell=False``, *cwd* does not override the
+      current working directory and *env* cannot override the ``PATH``
+      environment variable. Using a full path avoids all of these variations.
 
    An example of passing some arguments to an external program
    as a sequence is::
@@ -524,7 +543,7 @@ functions.
 
    If *cwd* is not ``None``, the function changes the working directory to
    *cwd* before executing the child.  *cwd* can be a string, bytes or
-   :term:`path-like <path-like object>` object.  In particular, the function
+   :term:`path-like <path-like object>` object.  In POSIX, the function
    looks for *executable* (or for the first item in *args*) relative to *cwd*
    if the executable path is a relative path.
 
