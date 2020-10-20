@@ -1075,6 +1075,7 @@ class EventLoopTestsMixin:
                                                ssl=sslcontext_client,
                                                server_hostname='localhost')
         client, pr = self.loop.run_until_complete(f_c)
+        self.loop.run_until_complete(proto.connected)
 
         # close connection
         proto.transport.close()
@@ -1100,6 +1101,7 @@ class EventLoopTestsMixin:
                                           ssl=sslcontext_client,
                                           server_hostname='localhost')
         client, pr = self.loop.run_until_complete(f_c)
+        self.loop.run_until_complete(proto.connected)
 
         # extra info is available
         self.check_ssl_extra_info(client, peername=(host, port),
