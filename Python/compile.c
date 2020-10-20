@@ -5552,7 +5552,9 @@ compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
         pc->stores = PySet_New(stores_init);
         SET_LOC(c, alt);
         if (pc->irrefutable) {
-            compiler_error(c, "pattern follows an irrefutable alternative");
+            const char *e = "the previous pattern always matches, making this "
+                            "one unreachable";
+            compiler_error(c, e);
             goto fail;
         }
         if (!pc->stores ||
@@ -5919,8 +5921,9 @@ compiler_match(struct compiler *c, stmt_ty s)
         m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
         if (pc.irrefutable) {
-            const char *w = "case follows irrefutable match arm";
-            CHECK(compiler_error(c, w, m->pattern->v.Name.id));
+            const char *e = "the previous case always matches, making this one "
+                            "unreachable";
+            CHECK(compiler_error(c, e));
         }
         CHECK(next = compiler_new_block(c));
         result = compiler_pattern(c, m->pattern, &pc);
@@ -5944,8 +5947,9 @@ compiler_match(struct compiler *c, stmt_ty s)
         m = asdl_seq_GET(s->v.Match.cases, cases - 1);
         SET_LOC(c, m->pattern);
         if (pc.irrefutable) {
-            const char *w = "case follows irrefutable match arm";
-            CHECK(compiler_error(c, w, m->pattern->v.Name.id));
+            const char *e = "the previous case always matches, making this one "
+                            "unreachable";
+            CHECK(compiler_error(c, e));
         }
         if (m->guard) {
             CHECK(compiler_jump_if(c, m->guard, end, 0));
