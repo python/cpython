@@ -696,7 +696,7 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 #ifdef HAVE_CLOCK_GETTIME
 
 #if defined(__APPLE__) 
-    if (__builtin_available(macOS 10.12, *)) {
+    if (__builtin_available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)) {
 #endif
 
     err = clock_gettime(CLOCK_REALTIME, &ts);

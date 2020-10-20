@@ -51,6 +51,12 @@
 #define _Py_tzname tzname
 #endif
 
+#if defined(__APPLE__ ) && defined(__has_builtin) && __has_builtin(__builtin_available)
+#  define HAVE_CLOCK_GETTIME_RUNTIME __builtin_available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)
+#else
+#  define HAVE_CLOCK_GETTIME_RUNTIME 1
+#endif
+
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
 /* Forward declarations */
@@ -1178,39 +1184,35 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     && (defined(CLOCK_PROCESS_CPUTIME_ID) || defined(CLOCK_PROF))
     struct timespec ts;
 
-#ifdef __APPLE__
-  if (__builtin_available(macos 10.12, *)) {
-#endif
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
 
 #ifdef CLOCK_PROF
-    const clockid_t clk_id = CLOCK_PROF;
-    const char *function = "clock_gettime(CLOCK_PROF)";
+        const clockid_t clk_id = CLOCK_PROF;
+        const char *function = "clock_gettime(CLOCK_PROF)";
 #else
-    const clockid_t clk_id = CLOCK_PROCESS_CPUTIME_ID;
-    const char *function = "clock_gettime(CLOCK_PROCESS_CPUTIME_ID)";
+        const clockid_t clk_id = CLOCK_PROCESS_CPUTIME_ID;
+        const char *function = "clock_gettime(CLOCK_PROCESS_CPUTIME_ID)";
 #endif
 
-    if (clock_gettime(clk_id, &ts) == 0) {
-        if (info) {
-            struct timespec res;
-            info->implementation = function;
-            info->monotonic = 1;
-            info->adjustable = 0;
-            if (clock_getres(clk_id, &res)) {
-                PyErr_SetFromErrno(PyExc_OSError);
+        if (clock_gettime(clk_id, &ts) == 0) {
+            if (info) {
+                struct timespec res;
+                info->implementation = function;
+                info->monotonic = 1;
+                info->adjustable = 0;
+                if (clock_getres(clk_id, &res)) {
+                    PyErr_SetFromErrno(PyExc_OSError);
+                    return -1;
+                }
+                info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+            }
+
+            if (_PyTime_FromTimespec(tp, &ts) < 0) {
                 return -1;
             }
-            info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+            return 0;
         }
-
-        if (_PyTime_FromTimespec(tp, &ts) < 0) {
-            return -1;
-        }
-        return 0;
     }
-#ifdef __APPLE__
-  }
-#endif
 #endif
 
     /* getrusage(RUSAGE_SELF) */
@@ -1399,7 +1401,11 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 
 #ifdef __APPLE__
 static int
-_PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info) __attribute__((availability(macos, introduced=10.12)));
+_PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info) 
+     __attribute__((availability(macos, introduced=10.12)))
+     __attribute__((availability(ios, introduced=10.0)))
+     __attribute__((availability(tvos, introduced=10.0)))
+     __attribute__((availability(watchos, introduced=3.0)));
 #endif
 
 static int
@@ -1528,16 +1534,16 @@ time_get_clock_info(PyObject *self, PyObject *args)
     else if (strcmp(name, "thread_time") == 0) {
 
 #ifdef __APPLE__
-     if (__builtin_available(macos 10.12, *)) {
+        if (HAVE_CLOCK_GETTIME_RUNTIME) {
 #endif
-        if (_PyTime_GetThreadTimeWithInfo(&t, &info) < 0) {
+            if (_PyTime_GetThreadTimeWithInfo(&t, &info) < 0) {
+                return NULL;
+            }
+#ifdef __APPLE__
+        } else {
+            PyErr_SetString(PyExc_ValueError, "unknown clock");
             return NULL;
         }
-#ifdef __APPLE__
-     } else {
-        PyErr_SetString(PyExc_ValueError, "unknown clock");
-        return NULL;
-     }
 #endif
     }
 #endif
@@ -1825,106 +1831,70 @@ time_exec(PyObject *module)
     }
 
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES)
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
 
 #ifdef CLOCK_REALTIME
-#ifdef __APPLE__
-  if (__builtin_available(macOS 10.12, *)) {
-#endif
-    if (PyModule_AddIntMacro(module, CLOCK_REALTIME) < 0) {
-        return -1;
-    }
-#ifdef __APPLE__
-  }
-#endif
+        if (PyModule_AddIntMacro(module, CLOCK_REALTIME) < 0) {
+            return -1;
+        }
 #endif
 
 #ifdef CLOCK_MONOTONIC
 
-#ifdef __APPLE__
-  if (__builtin_available(macOS 10.12, *)) {
-#endif
-    if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC) < 0) {
-        return -1;
-    }
-
-#ifdef __APPLE__
-  }
-#endif
+        if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC) < 0) {
+            return -1;
+        }
 
 #endif
 #ifdef CLOCK_MONOTONIC_RAW
-#ifdef __APPLE__
-  if (__builtin_available(macOS 10.12, *)) {
-#endif
-    if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC_RAW) < 0) {
-        return -1;
-    }
-#ifdef __APPLE__
-  }
-#endif
+        if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC_RAW) < 0) {
+            return -1;
+        }
 #endif
 
 #ifdef CLOCK_HIGHRES
-    if (PyModule_AddIntMacro(module, CLOCK_HIGHRES) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_HIGHRES) < 0) {
+            return -1;
+        }
 #endif
 #ifdef CLOCK_PROCESS_CPUTIME_ID
-#ifdef __APPLE__
-  if (__builtin_available(macOS 10.12, *)) {
-#endif
-    if (PyModule_AddIntMacro(module, CLOCK_PROCESS_CPUTIME_ID) < 0) {
-        return -1;
-    }
-#ifdef __APPLE__
-  }
-#endif
+        if (PyModule_AddIntMacro(module, CLOCK_PROCESS_CPUTIME_ID) < 0) {
+            return -1;
+        }
 #endif
 
 #ifdef CLOCK_THREAD_CPUTIME_ID
-#ifdef __APPLE__
-  if (__builtin_available(macOS 10.12, *)) {
-#endif
-    if (PyModule_AddIntMacro(module, CLOCK_THREAD_CPUTIME_ID) < 0) {
-        return -1;
-    }
-#ifdef __APPLE__
-  }
-#endif
+        if (PyModule_AddIntMacro(module, CLOCK_THREAD_CPUTIME_ID) < 0) {
+            return -1;
+        }
 #endif
 #ifdef CLOCK_PROF
-    if (PyModule_AddIntMacro(module, CLOCK_PROF) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_PROF) < 0) {
+            return -1;
+        }
 #endif
 #ifdef CLOCK_BOOTTIME
-    if (PyModule_AddIntMacro(module, CLOCK_BOOTTIME) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_BOOTTIME) < 0) {
+            return -1;
+        }
 #endif
 #ifdef CLOCK_TAI
-    if (PyModule_AddIntMacro(module, CLOCK_TAI) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_TAI) < 0) {
+            return -1;
+        }
 #endif
 #ifdef CLOCK_UPTIME
-    if (PyModule_AddIntMacro(module, CLOCK_UPTIME) < 0) {
-        return -1;
-    }
+        if (PyModule_AddIntMacro(module, CLOCK_UPTIME) < 0) {
+            return -1;
+        }
 #endif
 #ifdef CLOCK_UPTIME_RAW
 
-#ifdef __APPLE__
-  if (__builtin_available(macOS 10.12, *)) {
+        if (PyModule_AddIntMacro(module, CLOCK_UPTIME_RAW) < 0) {
+            return -1;
+        }
 #endif
-    if (PyModule_AddIntMacro(module, CLOCK_UPTIME_RAW) < 0) {
-        return -1;
     }
-
-#ifdef __APPLE__
-  }
-#endif
-#endif
 
 #endif  /* defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES) */
 
@@ -1977,7 +1947,7 @@ PyInit_time(void)
     PyObject* module = PyModuleDef_Init(&timemodule);
 
 #if defined(__APPLE__) && defined(HAVE_CLOCK_GETTIME)
-    if (__builtin_available(macOS 10.12, *)) {
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
         /* pass: ^^^ cannot use '!' here */
     } else {
         PyObject* dct = PyModule_GetDict(module);
@@ -2000,7 +1970,7 @@ PyInit_time(void)
     }
 #endif
 #if defined(__APPLE__) && defined(HAVE_THREAD_TIME)
-    if (__builtin_available(macOS 10.12, *)) {
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
         /* pass: ^^^ cannot use '!' here */
     } else {
         PyObject* dct = PyModule_GetDict(module);

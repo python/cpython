@@ -25,6 +25,13 @@
 #  include <sanitizer/msan_interface.h>
 #endif
 
+#if defined(__APPLE__) && defined(__has_builtin) && __has_builtin(__builtin_available)
+#  define HAVE_GETENTRYPY_GETRANDOM_RUNTIME __builtin_available(macOS 10.12, iOS 10.10, tvOS 10.0, watchOS 3.0, *)
+#else
+#  define HAVE_GETENTRYPY_GETRANDOM_RUNTIME 1
+#endif
+
+
 #ifdef Py_DEBUG
 int _Py_HashSecret_Initialized = 0;
 #else
@@ -208,9 +215,14 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
      error.
 
    getentropy() is retried if it failed with EINTR: interrupted by a signal. */
-#ifdef __APPLE__
+
+#if defined(__APPLE__) && __has_attribute(availability)
 static int
-py_getentropy(char *buffer, Py_ssize_t size, int raise) __attribute__((availability(macos,introduced=10.12)));
+py_getentropy(char *buffer, Py_ssize_t size, int raise) 
+	__attribute__((availability(macos,introduced=10.12)))
+	__attribute__((availability(ios,introduced=10.0)))
+	__attribute__((availability(tvos,introduced=10.0)))
+	__attribute__((availability(watchos,introduced=3.0)));
 #endif
 
 static int
@@ -503,25 +515,21 @@ pyurandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 #else
 
 #if defined(PY_GETRANDOM) || defined(PY_GETENTROPY)
-#ifdef __APPLE__
-    if (__builtin_available(macOS 10.12, *)) {
-#endif
+    if (HAVE_GETENTRYPY_GETRANDOM_RUNTIME) {
 #ifdef PY_GETRANDOM
-    res = py_getrandom(buffer, size, blocking, raise);
+        res = py_getrandom(buffer, size, blocking, raise);
 #else
-    res = py_getentropy(buffer, size, raise);
+        res = py_getentropy(buffer, size, raise);
 #endif
-    if (res < 0) {
-        return -1;
-    }
-    if (res == 1) {
-        return 0;
-    }
-    /* getrandom() or getentropy() function is not available: failed with
-       ENOSYS or EPERM. Fall back on reading from /dev/urandom. */
-#ifdef __APPLE__
-    } /* end of availability block */
-#endif
+        if (res < 0) {
+            return -1;
+        }
+        if (res == 1) {
+            return 0;
+        }
+        /* getrandom() or getentropy() function is not available: failed with
+           ENOSYS or EPERM. Fall back on reading from /dev/urandom. */
+        } /* end of availability block */
 #endif
 
     return dev_urandom(buffer, size, raise);
