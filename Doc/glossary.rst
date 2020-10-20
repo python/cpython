@@ -1010,12 +1010,6 @@ Glossary
       reserved for rare cases where there are large numbers of instances in a
       memory-critical application.
 
-   set comprehension
-      A compact way to process all or part of the elements in an iterable and
-      return a set with the results. ``results = {c for c in 'abracadabra' if
-      c not in 'abc'}`` generates the set of strings ``{'r', 'd'}``.  See
-      :ref:`comprehensions`.
-
    sequence
       An :term:`iterable` which supports efficient element access using integer
       indices via the :meth:`__getitem__` special method and defines a
@@ -1033,6 +1027,12 @@ Glossary
       :meth:`__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
       :func:`~abc.register`.
+
+   set comprehension
+      A compact way to process all or part of the elements in an iterable and
+      return a set with the results. ``results = {c for c in 'abracadabra' if
+      c not in 'abc'}`` generates the set of strings ``{'r', 'd'}``.  See
+      :ref:`comprehensions`.
 
    single dispatch
       A form of :term:`generic function` dispatch where the implementation is
