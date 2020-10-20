@@ -252,6 +252,9 @@ Optimizations
   average.
   (Contributed by Victor Stinner in :issue:`41006`.)
 
+* The ``LOAD_ATTR`` instruction now uses new "per opcode cache" mechanism.
+  It is about 36% faster now.  (Contributed by Pablo Galindo and Yury Selivanov
+  in :issue:`42093`.)
 
 Deprecated
 ==========

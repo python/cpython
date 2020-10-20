@@ -1,0 +1,2 @@
+The ``LOAD_ATTR`` instruction now uses new "per opcode cache" mechanism and
+it is about 36% faster now. Patch by Pablo Galindo and Yury Selivanov.
