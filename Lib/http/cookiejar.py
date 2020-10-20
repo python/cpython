@@ -1222,7 +1222,7 @@ def vals_by_key(adict):
     return map(adict.get, keys)
 
 def deepvalues(mapping):
-    """Iterates over nested mapping, depth-first, in sorted order by key."""
+    """Iterates over nested mapping, depth-first"""
     values = vals_by_key(mapping)
     for obj in values:
         mapping = False
