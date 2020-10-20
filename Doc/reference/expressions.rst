@@ -834,8 +834,8 @@ A string's items are characters.  A character is not a separate data type but a
 string of exactly one character.
 
 ..
-   At the time of writing this, there is no documentation for parameterized
-   generics or PEP 585.  Thus the link currently points to PEP 585 itself.
+   At the time of writing this, there is no documentation for generic alias
+   or PEP 585.  Thus the link currently points to PEP 585 itself.
    Please change the link for generic alias to reference the correct
    documentation once documentation for PEP 585 becomes available.
 
