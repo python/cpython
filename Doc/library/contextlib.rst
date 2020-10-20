@@ -177,12 +177,12 @@ Functions and classes provided:
       def process_file(file_or_path):
           if isinstance(file_or_path, str):
               # If string, open file
-              cm = open(file_or_path)
+              cm = open
           else:
-              # Caller is responsible for closing file
-              cm = nullcontext(file_or_path)
+              # Caller opened the file and is responsible for closing it
+              cm = nullcontext
 
-          with cm as file:
+          with cm(file_or_path) as file:
               # Perform processing on the file
 
    .. versionadded:: 3.7
