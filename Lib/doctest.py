@@ -994,9 +994,15 @@ class DocTestFinder:
         if inspect.ismodule(obj) and self._recurse:
             for valname, val in obj.__dict__.items():
                 valname = '%s.%s' % (name, valname)
+
+                # Protect against objects that cause unwrap to throw
+                isroutine = False
+                try:
+                    isroutine = inspect.isroutine(inspect.unwrap(val))
+                except ValueError:
+                    pass
                 # Recurse to functions & classes.
-                if ((inspect.isroutine(inspect.unwrap(val))
-                     or inspect.isclass(val)) and
+                if ((isroutine or inspect.isclass(val)) and
                     self._from_module(module, val)):
                     self._find(tests, val, valname, module, source_lines,
                                globs, seen)
