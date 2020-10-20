@@ -4798,7 +4798,7 @@ type hinting syntax compared to :data:`typing.Union`.
 
 .. describe:: isinstance(obj, union_object)
 
-   Calls to :func:`isinstance` are also supported with a Union object::
+   Calls to :func:`isinstance` are also supported with a union object::
 
       >>> isinstance("", int | str)
       True
@@ -4819,7 +4819,7 @@ type hinting syntax compared to :data:`typing.Union`.
 
 .. describe:: issubclass(obj, union_object)
 
-   Calls to :func:`issubclass` are also supported with a Union Object.::
+   Calls to :func:`issubclass` are also supported with a union object::
 
       >>> issubclass(bool, int | str)
       True
@@ -4837,7 +4837,7 @@ type hinting syntax compared to :data:`typing.Union`.
         File "<stdin>", line 1, in <module>
       TypeError: issubclass() argument 2 cannot contain a parameterized generic
 
-The type for the Union object is :data:`types.Union`.  An object cannot be
+The type of a union object is :data:`types.Union`.  An object cannot be
 instantiated from the type::
 
    >>> import types
