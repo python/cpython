@@ -1,0 +1,394 @@
+filename	funcname	name	kind	declaration
+Include/code.h	-	PyCodeObject	typedef	struct PyCodeObject
+Include/py_curses.h	-	inline-1	struct	[<ob_base: PyObject>, <win: WINDOW*>, <encoding: char*>]
+Include/py_curses.h	-	PyCursesWindowObject	typedef	struct inline-1
+Include/pyframe.h	-	PyFrameObject	typedef	struct _frame
+Include/object.h	-	PyTypeObject	typedef	struct _typeobject
+Include/object.h	-	_object	struct	[<ob_refcnt: Py_ssize_t>, <ob_type: PyTypeObject*>]
+Include/object.h	-	PyObject	typedef	struct _object
+Include/object.h	-	inline-1	struct	[<ob_base: PyObject>, <ob_size: Py_ssize_t>]
+Include/object.h	-	PyVarObject	typedef	struct inline-1
+Include/object.h	-	unaryfunc	typedef	PyObject* (*)(PyObject *)
+Include/object.h	-	binaryfunc	typedef	PyObject* (*)(PyObject *, PyObject *)
+Include/object.h	-	ternaryfunc	typedef	PyObject* (*)(PyObject *, PyObject *, PyObject *)
+Include/object.h	-	inquiry	typedef	int(*)(PyObject *)
+Include/object.h	-	lenfunc	typedef	Py_ssize_t(*)(PyObject *)
+Include/object.h	-	ssizeargfunc	typedef	PyObject*(*)(PyObject *, Py_ssize_t)
+Include/object.h	-	ssizessizeargfunc	typedef	PyObject*(*)(PyObject *, Py_ssize_t, Py_ssize_t)
+Include/object.h	-	ssizeobjargproc	typedef	int(*)(PyObject *, Py_ssize_t, PyObject *)
+Include/object.h	-	ssizessizeobjargproc	typedef	int(*)(PyObject *, Py_ssize_t, Py_ssize_t, PyObject *)
+Include/object.h	-	objobjargproc	typedef	int(*)(PyObject *, PyObject *, PyObject *)
+Include/object.h	-	objobjproc	typedef	int(*)(PyObject *, PyObject *)
+Include/object.h	-	visitproc	typedef	int(*)(PyObject *, void *)
+Include/object.h	-	traverseproc	typedef	int(*)(PyObject *, visitproc, void *)
+Include/object.h	-	freefunc	typedef	void(*)(void *)
+Include/object.h	-	destructor	typedef	void(*)(PyObject *)
+Include/object.h	-	getattrfunc	typedef	PyObject*(*)(PyObject *, char *)
+Include/object.h	-	getattrofunc	typedef	PyObject*(*)(PyObject *, PyObject *)
+Include/object.h	-	setattrfunc	typedef	int(*)(PyObject *, char *, PyObject *)
+Include/object.h	-	setattrofunc	typedef	int(*)(PyObject *, PyObject *, PyObject *)
+Include/object.h	-	reprfunc	typedef	PyObject*(*)(PyObject *)
+Include/object.h	-	hashfunc	typedef	Py_hash_t(*)(PyObject *)
+Include/object.h	-	richcmpfunc	typedef	PyObject*(*) (PyObject *, PyObject *, int)
+Include/object.h	-	getiterfunc	typedef	PyObject*(*) (PyObject *)
+Include/object.h	-	iternextfunc	typedef	PyObject*(*) (PyObject *)
+Include/object.h	-	descrgetfunc	typedef	PyObject*(*) (PyObject *, PyObject *, PyObject *)
+Include/object.h	-	descrsetfunc	typedef	int(*) (PyObject *, PyObject *, PyObject *)
+Include/object.h	-	initproc	typedef	int(*)(PyObject *, PyObject *, PyObject *)
+Include/object.h	-	newfunc	typedef	PyObject*(*)(PyTypeObject *, PyObject *, PyObject *)
+Include/object.h	-	allocfunc	typedef	PyObject*(*)(PyTypeObject *, Py_ssize_t)
+Include/object.h	-	inline-2	struct	[<slot: int>, <pfunc: void*>]
+Include/object.h	-	PyType_Slot	typedef	struct inline-2
+Include/object.h	-	inline-3	struct	[<name: const char* >, <basicsize: int>, <itemsize: int>, <flags: unsigned int>, <slots: PyType_Slot*>]
+Include/object.h	-	PyType_Spec	typedef	struct inline-3
+Include/symtable.h	-	_block_type	enum	FunctionBlock,ClassBlock,ModuleBlock
+Include/symtable.h	-	_Py_block_ty	typedef	enum _block_type
+Include/symtable.h	-	symtable	struct	[<st_filename: PyObject*>, <st_cur: struct _symtable_entry*>, <st_top: struct _symtable_entry*>, <st_blocks: PyObject*>, <st_stack: PyObject*>, <st_global: PyObject*>, <st_nblocks: int>, <st_private: PyObject*>, <st_future: PyFutureFeatures*>, <recursion_depth: int>, <recursion_limit: int>]
+Include/symtable.h	-	_symtable_entry	struct	[<ob_base: PyObject>, <ste_id: PyObject*>, <ste_symbols: PyObject*>, <ste_name: PyObject*>, <ste_varnames: PyObject*>, <ste_children: PyObject*>, <ste_directives: PyObject*>, <ste_type: _Py_block_ty>, <ste_nested: int>, <ste_free: unsigned>, <ste_child_free: unsigned>, <ste_generator: unsigned>, <ste_coroutine: unsigned>, <ste_comprehension: unsigned>, <ste_varargs: unsigned>, <ste_varkeywords: unsigned>, <ste_returns_value: unsigned>, <ste_needs_class_closure: unsigned>, <ste_comp_iter_target: unsigned>, <ste_comp_iter_expr: int>, <ste_lineno: int>, <ste_col_offset: int>, <ste_opt_lineno: int>, <ste_opt_col_offset: int>, <ste_table: struct symtable*>]
+Include/symtable.h	-	PySTEntryObject	typedef	struct _symtable_entry
+Include/moduleobject.h	-	PyModuleDef_Base	struct	[<ob_base: PyObject>, <m_init: PyObject* (*)(void)>, <m_index: Py_ssize_t>, <m_copy: PyObject* >]
+Include/moduleobject.h	-	PyModuleDef_Base	typedef	struct PyModuleDef_Base
+Include/moduleobject.h	-	PyModuleDef_Slot	struct	[<slot: int>, <value: void*>]
+Include/moduleobject.h	-	PyModuleDef_Slot	typedef	struct PyModuleDef_Slot
+Include/moduleobject.h	-	PyModuleDef	struct	[<m_base: PyModuleDef_Base>, <m_name: const char* >, <m_doc: const char* >, <m_size: Py_ssize_t>, <m_methods: PyMethodDef*>, <m_slots: struct PyModuleDef_Slot* >, <m_traverse: traverseproc>, <m_clear: inquiry>, <m_free: freefunc>]
+Include/moduleobject.h	-	PyModuleDef	typedef	struct PyModuleDef
+Include/genobject.h	-	inline-1	struct	[<ob_base: PyObject>, <gi_frame: PyFrameObject*>, <gi_running: char>, <gi_code: PyObject*>, <gi_weakreflist: PyObject*>, <gi_name: PyObject*>, <gi_qualname: PyObject*>, <gi_exc_state: _PyErr_StackItem>]
+Include/genobject.h	-	PyGenObject	typedef	struct inline-1
+Include/genobject.h	-	inline-2	struct	[<ob_base: PyObject>, <cr_frame: PyFrameObject*>, <cr_running: char>, <cr_code: PyObject*>, <cr_weakreflist: PyObject*>, <cr_name: PyObject*>, <cr_qualname: PyObject*>, <cr_exc_state: _PyErr_StackItem>, <cr_origin: PyObject*>]
+Include/genobject.h	-	PyCoroObject	typedef	struct inline-2
+Include/genobject.h	-	inline-3	struct	[<ob_base: PyObject>, <ag_frame: PyFrameObject*>, <ag_running: char>, <ag_code: PyObject*>, <ag_weakreflist: PyObject*>, <ag_name: PyObject*>, <ag_qualname: PyObject*>, <ag_exc_state: _PyErr_StackItem>, <ag_finalizer: PyObject*>, <ag_hooks_inited: int>, <ag_closed: int>, <ag_running_async: int>]
+Include/genobject.h	-	PyAsyncGenObject	typedef	struct inline-3
+Include/longintrepr.h	-	digit	typedef	uint32_t
+Include/longintrepr.h	-	sdigit	typedef	int32_t
+Include/longintrepr.h	-	twodigits	typedef	uint64_t
+Include/longintrepr.h	-	stwodigits	typedef	int64_t
+Include/longintrepr.h	-	_longobject	struct	[<ob_base: PyVarObject>, <ob_digit: digit[1]>]
+Include/ucnhash.h	-	inline-1	struct	[<size: int>, <getname: int(*)(PyObject *self, Py_UCS4 code, char* buffer, int buflen, int with_alias_and_seq)>, <getcode: int(*)(PyObject *self, const char* name, int namelen, Py_UCS4* code, int with_named_seq)>]
+Include/ucnhash.h	-	_PyUnicode_Name_CAPI	typedef	struct inline-1
+Include/pyarena.h	-	PyArena	typedef	struct _arena
+Include/pythread.h	-	PyThread_type_lock	typedef	void*
+Include/pythread.h	-	PyLockStatus	enum	PY_LOCK_FAILURE,PY_LOCK_ACQUIRED,PY_LOCK_INTR
+Include/pythread.h	-	PyLockStatus	typedef	enum PyLockStatus
+Include/pythread.h	-	Py_tss_t	typedef	struct _Py_tss_t
+Include/pythread.h	-	_Py_tss_t	struct	[<_is_initialized: int>, <_key: pthread_key_t>]
+Include/sliceobject.h	-	inline-1	struct	[<ob_base: PyObject>, <start: PyObject*>, <stop: PyObject*>, <step: PyObject*>]
+Include/sliceobject.h	-	PySliceObject	typedef	struct inline-1
+Include/parsetok.h	-	inline-1	struct	[<error: int>, <filename: PyObject*>, <lineno: int>, <offset: int>, <text: char*>, <token: int>, <expected: int>]
+Include/parsetok.h	-	perrdetail	typedef	struct inline-1
+Include/modsupport.h	-	_PyArg_Parser	struct	[<format: const char*>, <keywords: const char* const *>, <fname: const char*>, <custom_msg: const char*>, <pos: int>, <min: int>, <max: int>, <kwtuple: PyObject*>, <next: struct _PyArg_Parser*>]
+Include/modsupport.h	-	_PyArg_Parser	typedef	struct _PyArg_Parser
+Include/cellobject.h	-	inline-1	struct	[<ob_base: PyObject>, <ob_ref: PyObject*>]
+Include/cellobject.h	-	PyCellObject	typedef	struct inline-1
+Include/datetime.h	-	inline-1	struct	[<ob_base: PyObject>, <hashcode: Py_hash_t>, <days: int>, <seconds: int>, <microseconds: int>]
+Include/datetime.h	-	PyDateTime_Delta	typedef	struct inline-1
+Include/datetime.h	-	inline-2	struct	[<ob_base: PyObject>]
+Include/datetime.h	-	PyDateTime_TZInfo	typedef	struct inline-2
+Include/datetime.h	-	inline-3	struct	[<ob_base: PyObject>, <hashcode: Py_hash_t>, <hastzinfo: char>]
+Include/datetime.h	-	_PyDateTime_BaseTZInfo	typedef	struct inline-3
+Include/datetime.h	-	inline-4	struct	[<ob_base: PyObject>, <hashcode: Py_hash_t>, <hastzinfo: char>, <data: unsigned char[6]>]
+Include/datetime.h	-	_PyDateTime_BaseTime	typedef	struct inline-4
+Include/datetime.h	-	inline-5	struct	[<ob_base: PyObject>, <hashcode: Py_hash_t>, <hastzinfo: char>, <data: unsigned char[6]>, <fold: unsigned char>, <tzinfo: PyObject*>]
+Include/datetime.h	-	PyDateTime_Time	typedef	struct inline-5
+Include/datetime.h	-	inline-6	struct	[<ob_base: PyObject>, <hashcode: Py_hash_t>, <hastzinfo: char>, <data: unsigned char[4]>]
+Include/datetime.h	-	PyDateTime_Date	typedef	struct inline-6
+Include/datetime.h	-	inline-7	struct	[<ob_base: PyObject>, <hashcode: Py_hash_t>, <hastzinfo: char>, <data: unsigned char[10]>]
+Include/datetime.h	-	_PyDateTime_BaseDateTime	typedef	struct inline-7
+Include/datetime.h	-	inline-8	struct	[<ob_base: PyObject>, <hashcode: Py_hash_t>, <hastzinfo: char>, <data: unsigned char[10]>, <fold: unsigned char>, <tzinfo: PyObject*>]
+Include/datetime.h	-	PyDateTime_DateTime	typedef	struct inline-8
+Include/datetime.h	-	inline-9	struct	[<DateType: PyTypeObject*>, <DateTimeType: PyTypeObject*>, <TimeType: PyTypeObject*>, <DeltaType: PyTypeObject*>, <TZInfoType: PyTypeObject*>, <TimeZone_UTC: PyObject*>, <Date_FromDate: PyObject*(*)(int, int, int, PyTypeObject*)>, <DateTime_FromDateAndTime: PyObject*(*)(int, int, int, int, int, int, int, PyObject*, PyTypeObject*)>, <Time_FromTime: PyObject*(*)(int, int, int, int, PyObject*, PyTypeObject*)>, <Delta_FromDelta: PyObject*(*)(int, int, int, int, PyTypeObject*)>, <TimeZone_FromTimeZone: PyObject*(*)(PyObject *offset, PyObject *name)>, <DateTime_FromTimestamp: PyObject*(*)(PyObject*, PyObject*, PyObject*)>, <Date_FromTimestamp: PyObject*(*)(PyObject*, PyObject*)>, <DateTime_FromDateAndTimeAndFold: PyObject*(*)(int, int, int, int, int, int, int, PyObject*, int, PyTypeObject*)>, <Time_FromTimeAndFold: PyObject*(*)(int, int, int, int, PyObject*, int, PyTypeObject*)>]
+Include/datetime.h	-	PyDateTime_CAPI	typedef	struct inline-9
+Include/Python-ast.h	-	mod_ty	typedef	struct _mod*
+Include/Python-ast.h	-	stmt_ty	typedef	struct _stmt*
+Include/Python-ast.h	-	expr_ty	typedef	struct _expr*
+Include/Python-ast.h	-	_expr_context	enum	Load,Store,Del
+Include/Python-ast.h	-	expr_context_ty	typedef	enum _expr_context
+Include/Python-ast.h	-	_boolop	enum	And,Or
+Include/Python-ast.h	-	boolop_ty	typedef	enum _boolop
+Include/Python-ast.h	-	_operator	enum	Add,Sub,Mult,MatMult,Div,Mod,Pow,LShift,RShift,BitOr,BitXor,BitAnd,FloorDiv
+Include/Python-ast.h	-	operator_ty	typedef	enum _operator
+Include/Python-ast.h	-	_unaryop	enum	Invert,Not,UAdd,USub
+Include/Python-ast.h	-	unaryop_ty	typedef	enum _unaryop
+Include/Python-ast.h	-	_cmpop	enum	Eq,NotEq,Lt,LtE,Gt,GtE,Is,IsNot,In,NotIn
+Include/Python-ast.h	-	cmpop_ty	typedef	enum _cmpop
+Include/Python-ast.h	-	comprehension_ty	typedef	struct _comprehension*
+Include/Python-ast.h	-	excepthandler_ty	typedef	struct _excepthandler*
+Include/Python-ast.h	-	arguments_ty	typedef	struct _arguments*
+Include/Python-ast.h	-	arg_ty	typedef	struct _arg*
+Include/Python-ast.h	-	keyword_ty	typedef	struct _keyword*
+Include/Python-ast.h	-	alias_ty	typedef	struct _alias*
+Include/Python-ast.h	-	withitem_ty	typedef	struct _withitem*
+Include/Python-ast.h	-	type_ignore_ty	typedef	struct _type_ignore*
+Include/Python-ast.h	-	_mod_kind	enum	Module_kind,Interactive_kind,Expression_kind,FunctionType_kind
+Include/Python-ast.h	-	inline-2	struct	[<body: asdl_seq*>, <type_ignores: asdl_seq*>]
+Include/Python-ast.h	-	inline-3	struct	[<body: asdl_seq*>]
+Include/Python-ast.h	-	inline-4	struct	[<body: expr_ty>]
+Include/Python-ast.h	-	inline-5	struct	[<argtypes: asdl_seq*>, <returns: expr_ty>]
+Include/Python-ast.h	-	inline-1	union	[<Module: struct inline-2>, <Interactive: struct inline-3>, <Expression: struct inline-4>, <FunctionType: struct inline-5>]
+Include/Python-ast.h	-	_mod	struct	[<kind: enum _mod_kind>, <v: union inline-1>]
+Include/Python-ast.h	-	_stmt_kind	enum	FunctionDef_kind,AsyncFunctionDef_kind,ClassDef_kind,Return_kind,Delete_kind,Assign_kind,AugAssign_kind,AnnAssign_kind,For_kind,AsyncFor_kind,While_kind,If_kind,With_kind,AsyncWith_kind,Raise_kind,Try_kind,Assert_kind,Import_kind,ImportFrom_kind,Global_kind,Nonlocal_kind,Expr_kind,Pass_kind,Break_kind,Continue_kind
+Include/Python-ast.h	-	inline-7	struct	[<name: identifier>, <args: arguments_ty>, <body: asdl_seq*>, <decorator_list: asdl_seq*>, <returns: expr_ty>, <type_comment: string>]
+Include/Python-ast.h	-	inline-8	struct	[<name: identifier>, <args: arguments_ty>, <body: asdl_seq*>, <decorator_list: asdl_seq*>, <returns: expr_ty>, <type_comment: string>]
+Include/Python-ast.h	-	inline-9	struct	[<name: identifier>, <bases: asdl_seq*>, <keywords: asdl_seq*>, <body: asdl_seq*>, <decorator_list: asdl_seq*>]
+Include/Python-ast.h	-	inline-10	struct	[<value: expr_ty>]
+Include/Python-ast.h	-	inline-11	struct	[<targets: asdl_seq*>]
+Include/Python-ast.h	-	inline-12	struct	[<targets: asdl_seq*>, <value: expr_ty>, <type_comment: string>]
+Include/Python-ast.h	-	inline-13	struct	[<target: expr_ty>, <op: operator_ty>, <value: expr_ty>]
+Include/Python-ast.h	-	inline-14	struct	[<target: expr_ty>, <annotation: expr_ty>, <value: expr_ty>, <simple: int>]
+Include/Python-ast.h	-	inline-15	struct	[<target: expr_ty>, <iter: expr_ty>, <body: asdl_seq*>, <orelse: asdl_seq*>, <type_comment: string>]
+Include/Python-ast.h	-	inline-16	struct	[<target: expr_ty>, <iter: expr_ty>, <body: asdl_seq*>, <orelse: asdl_seq*>, <type_comment: string>]
+Include/Python-ast.h	-	inline-17	struct	[<test: expr_ty>, <body: asdl_seq*>, <orelse: asdl_seq*>]
+Include/Python-ast.h	-	inline-18	struct	[<test: expr_ty>, <body: asdl_seq*>, <orelse: asdl_seq*>]
+Include/Python-ast.h	-	inline-19	struct	[<items: asdl_seq*>, <body: asdl_seq*>, <type_comment: string>]
+Include/Python-ast.h	-	inline-20	struct	[<items: asdl_seq*>, <body: asdl_seq*>, <type_comment: string>]
+Include/Python-ast.h	-	inline-21	struct	[<exc: expr_ty>, <cause: expr_ty>]
+Include/Python-ast.h	-	inline-22	struct	[<body: asdl_seq*>, <handlers: asdl_seq*>, <orelse: asdl_seq*>, <finalbody: asdl_seq*>]
+Include/Python-ast.h	-	inline-23	struct	[<test: expr_ty>, <msg: expr_ty>]
+Include/Python-ast.h	-	inline-24	struct	[<names: asdl_seq*>]
+Include/Python-ast.h	-	inline-25	struct	[<module: identifier>, <names: asdl_seq*>, <level: int>]
+Include/Python-ast.h	-	inline-26	struct	[<names: asdl_seq*>]
+Include/Python-ast.h	-	inline-27	struct	[<names: asdl_seq*>]
+Include/Python-ast.h	-	inline-28	struct	[<value: expr_ty>]
+Include/Python-ast.h	-	inline-6	union	[<FunctionDef: struct inline-7>, <AsyncFunctionDef: struct inline-8>, <ClassDef: struct inline-9>, <Return: struct inline-10>, <Delete: struct inline-11>, <Assign: struct inline-12>, <AugAssign: struct inline-13>, <AnnAssign: struct inline-14>, <For: struct inline-15>, <AsyncFor: struct inline-16>, <While: struct inline-17>, <If: struct inline-18>, <With: struct inline-19>, <AsyncWith: struct inline-20>, <Raise: struct inline-21>, <Try: struct inline-22>, <Assert: struct inline-23>, <Import: struct inline-24>, <ImportFrom: struct inline-25>, <Global: struct inline-26>, <Nonlocal: struct inline-27>, <Expr: struct inline-28>]
+Include/Python-ast.h	-	_stmt	struct	[<kind: enum _stmt_kind>, <v: union inline-6>, <lineno: int>, <col_offset: int>, <end_lineno: int>, <end_col_offset: int>]
+Include/Python-ast.h	-	_expr_kind	enum	BoolOp_kind,NamedExpr_kind,BinOp_kind,UnaryOp_kind,Lambda_kind,IfExp_kind,Dict_kind,Set_kind,ListComp_kind,SetComp_kind,DictComp_kind,GeneratorExp_kind,Await_kind,Yield_kind,YieldFrom_kind,Compare_kind,Call_kind,FormattedValue_kind,JoinedStr_kind,Constant_kind,Attribute_kind,Subscript_kind,Starred_kind,Name_kind,List_kind,Tuple_kind,Slice_kind
+Include/Python-ast.h	-	inline-30	struct	[<op: boolop_ty>, <values: asdl_seq*>]
+Include/Python-ast.h	-	inline-31	struct	[<target: expr_ty>, <value: expr_ty>]
+Include/Python-ast.h	-	inline-32	struct	[<left: expr_ty>, <op: operator_ty>, <right: expr_ty>]
+Include/Python-ast.h	-	inline-33	struct	[<op: unaryop_ty>, <operand: expr_ty>]
+Include/Python-ast.h	-	inline-34	struct	[<args: arguments_ty>, <body: expr_ty>]
+Include/Python-ast.h	-	inline-35	struct	[<test: expr_ty>, <body: expr_ty>, <orelse: expr_ty>]
+Include/Python-ast.h	-	inline-36	struct	[<keys: asdl_seq*>, <values: asdl_seq*>]
+Include/Python-ast.h	-	inline-37	struct	[<elts: asdl_seq*>]
+Include/Python-ast.h	-	inline-38	struct	[<elt: expr_ty>, <generators: asdl_seq*>]
+Include/Python-ast.h	-	inline-39	struct	[<elt: expr_ty>, <generators: asdl_seq*>]
+Include/Python-ast.h	-	inline-40	struct	[<key: expr_ty>, <value: expr_ty>, <generators: asdl_seq*>]
+Include/Python-ast.h	-	inline-41	struct	[<elt: expr_ty>, <generators: asdl_seq*>]
+Include/Python-ast.h	-	inline-42	struct	[<value: expr_ty>]
+Include/Python-ast.h	-	inline-43	struct	[<value: expr_ty>]
+Include/Python-ast.h	-	inline-44	struct	[<value: expr_ty>]
+Include/Python-ast.h	-	inline-45	struct	[<left: expr_ty>, <ops: asdl_int_seq*>, <comparators: asdl_seq*>]
+Include/Python-ast.h	-	inline-46	struct	[<func: expr_ty>, <args: asdl_seq*>, <keywords: asdl_seq*>]
+Include/Python-ast.h	-	inline-47	struct	[<value: expr_ty>, <conversion: int>, <format_spec: expr_ty>]
+Include/Python-ast.h	-	inline-48	struct	[<values: asdl_seq*>]
+Include/Python-ast.h	-	inline-49	struct	[<value: constant>, <kind: string>]
+Include/Python-ast.h	-	inline-50	struct	[<value: expr_ty>, <attr: identifier>, <ctx: expr_context_ty>]
+Include/Python-ast.h	-	inline-51	struct	[<value: expr_ty>, <slice: expr_ty>, <ctx: expr_context_ty>]
+Include/Python-ast.h	-	inline-52	struct	[<value: expr_ty>, <ctx: expr_context_ty>]
+Include/Python-ast.h	-	inline-53	struct	[<id: identifier>, <ctx: expr_context_ty>]
+Include/Python-ast.h	-	inline-54	struct	[<elts: asdl_seq*>, <ctx: expr_context_ty>]
+Include/Python-ast.h	-	inline-55	struct	[<elts: asdl_seq*>, <ctx: expr_context_ty>]
+Include/Python-ast.h	-	inline-56	struct	[<lower: expr_ty>, <upper: expr_ty>, <step: expr_ty>]
+Include/Python-ast.h	-	inline-29	union	[<BoolOp: struct inline-30>, <NamedExpr: struct inline-31>, <BinOp: struct inline-32>, <UnaryOp: struct inline-33>, <Lambda: struct inline-34>, <IfExp: struct inline-35>, <Dict: struct inline-36>, <Set: struct inline-37>, <ListComp: struct inline-38>, <SetComp: struct inline-39>, <DictComp: struct inline-40>, <GeneratorExp: struct inline-41>, <Await: struct inline-42>, <Yield: struct inline-43>, <YieldFrom: struct inline-44>, <Compare: struct inline-45>, <Call: struct inline-46>, <FormattedValue: struct inline-47>, <JoinedStr: struct inline-48>, <Constant: struct inline-49>, <Attribute: struct inline-50>, <Subscript: struct inline-51>, <Starred: struct inline-52>, <Name: struct inline-53>, <List: struct inline-54>, <Tuple: struct inline-55>, <Slice: struct inline-56>]
+Include/Python-ast.h	-	_expr	struct	[<kind: enum _expr_kind>, <v: union inline-29>, <lineno: int>, <col_offset: int>, <end_lineno: int>, <end_col_offset: int>]
+Include/Python-ast.h	-	_comprehension	struct	[<target: expr_ty>, <iter: expr_ty>, <ifs: asdl_seq*>, <is_async: int>]
+Include/Python-ast.h	-	_excepthandler_kind	enum	ExceptHandler_kind
+Include/Python-ast.h	-	inline-58	struct	[<type: expr_ty>, <name: identifier>, <body: asdl_seq*>]
+Include/Python-ast.h	-	inline-57	union	[<ExceptHandler: struct inline-58>]
+Include/Python-ast.h	-	_excepthandler	struct	[<kind: enum _excepthandler_kind>, <v: union inline-57>, <lineno: int>, <col_offset: int>, <end_lineno: int>, <end_col_offset: int>]
+Include/Python-ast.h	-	_arguments	struct	[<posonlyargs: asdl_seq*>, <args: asdl_seq*>, <vararg: arg_ty>, <kwonlyargs: asdl_seq*>, <kw_defaults: asdl_seq*>, <kwarg: arg_ty>, <defaults: asdl_seq*>]
+Include/Python-ast.h	-	_arg	struct	[<arg: identifier>, <annotation: expr_ty>, <type_comment: string>, <lineno: int>, <col_offset: int>, <end_lineno: int>, <end_col_offset: int>]
+Include/Python-ast.h	-	_keyword	struct	[<arg: identifier>, <value: expr_ty>, <lineno: int>, <col_offset: int>, <end_lineno: int>, <end_col_offset: int>]
+Include/Python-ast.h	-	_alias	struct	[<name: identifier>, <asname: identifier>]
+Include/Python-ast.h	-	_withitem	struct	[<context_expr: expr_ty>, <optional_vars: expr_ty>]
+Include/Python-ast.h	-	_type_ignore_kind	enum	TypeIgnore_kind
+Include/Python-ast.h	-	inline-60	struct	[<lineno: int>, <tag: string>]
+Include/Python-ast.h	-	inline-59	union	[<TypeIgnore: struct inline-60>]
+Include/Python-ast.h	-	_type_ignore	struct	[<kind: enum _type_ignore_kind>, <v: union inline-59>]
+Include/longobject.h	-	PyLongObject	typedef	struct _longobject
+Include/pylifecycle.h	-	PyOS_sighandler_t	typedef	void(*)(int)
+Include/pytime.h	-	_PyTime_t	typedef	int64_t
+Include/pytime.h	-	inline-1	enum	_PyTime_ROUND_FLOOR,_PyTime_ROUND_CEILING,_PyTime_ROUND_HALF_EVEN,_PyTime_ROUND_UP,_PyTime_ROUND_TIMEOUT
+Include/pytime.h	-	_PyTime_round_t	typedef	enum inline-1
+Include/pytime.h	-	inline-2	struct	[<implementation: const char*>, <monotonic: int>, <adjustable: int>, <resolution: double>]
+Include/pytime.h	-	_Py_clock_info_t	typedef	struct inline-2
+Include/pyexpat.h	-	PyExpat_CAPI	struct	[<magic: char* >, <size: int>, <MAJOR_VERSION: int>, <MINOR_VERSION: int>, <MICRO_VERSION: int>, <ErrorString: const XML_LChar* (*)(enum XML_Error code)>, <GetErrorCode: enum XML_Error(*)(XML_Parser parser)>, <GetErrorColumnNumber: XML_Size(*)(XML_Parser parser)>, <GetErrorLineNumber: XML_Size(*)(XML_Parser parser)>, <Parse: enum XML_Status(*)( XML_r parser, const char *s, int len, int isFinal)>, <ParserCreate_MM: XML_Parser(*)( const XML_Char *encoding, const XML_Memory_Handling_Suite *memsuite, const XML_Char *namespaceSeparator)>, <ParserFree: void(*)(XML_Parser parser)>, <SetCharacterDataHandler: void(*)( XML_Parser parser, XML_CharacterDataHandler handler)>, <SetCommentHandler: void(*)( XML_Parser parser, XML_CommentHandler handler)>, <SetDefaultHandlerExpand: void(*)( XML_Parser parser, XML_DefaultHandler handler)>, <SetElementHandler: void(*)( XML_Parser parser, XML_StartElementHandler start, XML_EndElementHandler end)>, <SetNamespaceDeclHandler: void(*)( XML_Parser parser, XML_StartNamespaceDeclHandler start, XML_EndNamespaceDeclHandler end)>, <SetProcessingInstructionHandler: void(*)( XML_Parser parser, XML_ProcessingInstructionHandler handler)>, <SetUnknownEncodingHandler: void(*)( XML_Parser parser, XML_UnknownEncodingHandler handler, void *encodingHandlerData)>, <SetUserData: void(*)(XML_Parser parser, void *userData)>, <SetStartDoctypeDeclHandler: void(*)(XML_Parser parser, XML_StartDoctypeDeclHandler start)>, <SetEncoding: enum XML_Status(*)(XML_Parser parser, const XML_Char *encoding)>, <DefaultUnknownEncodingHandler: int(*)( void *encodingHandlerData, const XML_Char *name, XML_Encoding *info)>, <SetHashSalt: int(*)(XML_Parser parser, unsigned long hash_salt)>]
+Include/structseq.h	-	PyStructSequence_Field	struct	[<name: const char*>, <doc: const char*>]
+Include/structseq.h	-	PyStructSequence_Field	typedef	struct PyStructSequence_Field
+Include/structseq.h	-	PyStructSequence_Desc	struct	[<name: const char*>, <doc: const char*>, <fields: struct PyStructSequence_Field*>, <n_in_sequence: int>]
+Include/structseq.h	-	PyStructSequence_Desc	typedef	struct PyStructSequence_Desc
+Include/structseq.h	-	PyStructSequence	typedef	PyTupleObject
+Include/grammar.h	-	inline-1	struct	[<lb_type: int>, <lb_str: const char*>]
+Include/grammar.h	-	label	typedef	struct inline-1
+Include/grammar.h	-	inline-2	struct	[<ll_nlabels: int>, <ll_label: const label*>]
+Include/grammar.h	-	labellist	typedef	struct inline-2
+Include/grammar.h	-	inline-3	struct	[<a_lbl: short>, <a_arrow: short>]
+Include/grammar.h	-	arc	typedef	struct inline-3
+Include/grammar.h	-	inline-4	struct	[<s_narcs: int>, <s_arc: const arc*>, <s_lower: int>, <s_upper: int>, <s_accel: int*>, <s_accept: int>]
+Include/grammar.h	-	state	typedef	struct inline-4
+Include/grammar.h	-	inline-5	struct	[<d_type: int>, <d_name: char*>, <d_nstates: int>, <d_state: state*>, <d_first: bitset>]
+Include/grammar.h	-	dfa	typedef	struct inline-5
+Include/grammar.h	-	inline-6	struct	[<g_ndfas: int>, <g_dfa: const dfa*>, <g_ll: const labellist>, <g_start: int>, <g_accel: int>]
+Include/grammar.h	-	grammar	typedef	struct inline-6
+Include/bitset.h	-	bitset	typedef	char*
+Include/methodobject.h	-	PyCFunction	typedef	PyObject*(*)(PyObject *, PyObject *)
+Include/methodobject.h	-	_PyCFunctionFast	typedef	PyObject*(*) (PyObject *, PyObject *const *, Py_ssize_t)
+Include/methodobject.h	-	PyCFunctionWithKeywords	typedef	PyObject*(*)(PyObject *, PyObject *, PyObject *)
+Include/methodobject.h	-	_PyCFunctionFastWithKeywords	typedef	PyObject*(*) (PyObject *, PyObject *const *, Py_ssize_t, PyObject *)
+Include/methodobject.h	-	PyCMethod	typedef	PyObject*(*)(PyObject *, PyTypeObject *, PyObject *const *, size_t, PyObject *)
+Include/methodobject.h	-	PyMethodDef	struct	[<ml_name: const char*>, <ml_meth: PyCFunction>, <ml_flags: int>, <ml_doc: const char*>]
+Include/methodobject.h	-	PyMethodDef	typedef	struct PyMethodDef
+Include/node.h	-	_node	struct	[<n_type: short>, <n_str: char*>, <n_lineno: int>, <n_col_offset: int>, <n_nchildren: int>, <n_child: struct _node*>, <n_end_lineno: int>, <n_end_col_offset: int>]
+Include/node.h	-	node	typedef	struct _node
+Include/pyhash.h	-	inline-2	struct	[<prefix: Py_hash_t>, <suffix: Py_hash_t>]
+Include/pyhash.h	-	inline-3	struct	[<k0: uint64_t>, <k1: uint64_t>]
+Include/pyhash.h	-	inline-4	struct	[<padding: unsigned char[16]>, <suffix: Py_hash_t>]
+Include/pyhash.h	-	inline-5	struct	[<padding: unsigned char[16]>, <hashsalt: Py_hash_t>]
+Include/pyhash.h	-	inline-1	union	[<uc: unsigned char[24]>, <fnv: struct inline-2>, <siphash: struct inline-3>, <djbx33a: struct inline-4>, <expat: struct inline-5>]
+Include/pyhash.h	-	_Py_HashSecret_t	typedef	union inline-1
+Include/pyhash.h	-	inline-6	struct	[<hash: Py_hash_t(*const )(const void *, Py_ssize_t)>, <name: const char*>, <hash_bits: const int>, <seed_bits: const int>]
+Include/pyhash.h	-	PyHash_FuncDef	typedef	struct inline-6
+Include/context.h	-	PyContext	typedef	struct _pycontextobject
+Include/context.h	-	PyContextVar	typedef	struct _pycontextvarobject
+Include/context.h	-	PyContextToken	typedef	struct _pycontexttokenobject
+Include/memoryobject.h	-	inline-1	struct	[<ob_base: PyObject>, <flags: int>, <exports: Py_ssize_t>, <master: Py_buffer>]
+Include/memoryobject.h	-	_PyManagedBufferObject	typedef	struct inline-1
+Include/memoryobject.h	-	inline-2	struct	[<ob_base: PyVarObject>, <mbuf: _PyManagedBufferObject*>, <hash: Py_hash_t>, <flags: int>, <exports: Py_ssize_t>, <view: Py_buffer>, <weakreflist: PyObject*>, <ob_array: Py_ssize_t[1]>]
+Include/memoryobject.h	-	PyMemoryViewObject	typedef	struct inline-2
+Include/floatobject.h	-	inline-1	struct	[<ob_base: PyObject>, <ob_fval: double>]
+Include/floatobject.h	-	PyFloatObject	typedef	struct inline-1
+Include/asdl.h	-	identifier	typedef	PyObject* 
+Include/asdl.h	-	string	typedef	PyObject* 
+Include/asdl.h	-	object	typedef	PyObject* 
+Include/asdl.h	-	constant	typedef	PyObject* 
+Include/asdl.h	-	inline-1	struct	[<size: Py_ssize_t>, <elements: void*[1]>]
+Include/asdl.h	-	asdl_seq	typedef	struct inline-1
+Include/asdl.h	-	inline-2	struct	[<size: Py_ssize_t>, <elements: int[1]>]
+Include/asdl.h	-	asdl_int_seq	typedef	struct inline-2
+Include/unicodeobject.h	-	Py_UCS4	typedef	uint32_t
+Include/unicodeobject.h	-	Py_UCS2	typedef	uint16_t
+Include/unicodeobject.h	-	Py_UCS1	typedef	uint8_t
+Include/funcobject.h	-	inline-1	struct	[<ob_base: PyObject>, <func_code: PyObject*>, <func_globals: PyObject*>, <func_defaults: PyObject*>, <func_kwdefaults: PyObject*>, <func_closure: PyObject*>, <func_doc: PyObject*>, <func_name: PyObject*>, <func_dict: PyObject*>, <func_weakreflist: PyObject*>, <func_module: PyObject*>, <func_annotations: PyObject*>, <func_qualname: PyObject*>, <vectorcall: vectorcallfunc>]
+Include/funcobject.h	-	PyFunctionObject	typedef	struct inline-1
+Include/complexobject.h	-	inline-1	struct	[<real: double>, <imag: double>]
+Include/complexobject.h	-	Py_complex	typedef	struct inline-1
+Include/complexobject.h	-	inline-2	struct	[<ob_base: PyObject>, <cval: Py_complex>]
+Include/complexobject.h	-	PyComplexObject	typedef	struct inline-2
+Include/setobject.h	-	inline-1	struct	[<key: PyObject*>, <hash: Py_hash_t>]
+Include/setobject.h	-	setentry	typedef	struct inline-1
+Include/setobject.h	-	inline-2	struct	[<ob_base: PyObject>, <fill: Py_ssize_t>, <used: Py_ssize_t>, <mask: Py_ssize_t>, <table: setentry*>, <hash: Py_hash_t>, <finger: Py_ssize_t>, <smalltable: setentry[8]>, <weakreflist: PyObject*>]
+Include/setobject.h	-	PySetObject	typedef	struct inline-2
+Include/weakrefobject.h	-	PyWeakReference	typedef	struct _PyWeakReference
+Include/weakrefobject.h	-	_PyWeakReference	struct	[<ob_base: PyObject>, <wr_object: PyObject*>, <wr_callback: PyObject*>, <hash: Py_hash_t>, <wr_prev: PyWeakReference*>, <wr_next: PyWeakReference*>]
+Include/pystate.h	-	PyThreadState	typedef	struct _ts
+Include/pystate.h	-	PyInterpreterState	typedef	struct _is
+Include/pystate.h	-	inline-1	enum	PyGILState_LOCKED,PyGILState_UNLOCKED
+Include/pystate.h	-	PyGILState_STATE	typedef	enum inline-1
+Include/compile.h	-	inline-1	struct	[<cf_flags: int>, <cf_feature_version: int>]
+Include/compile.h	-	PyCompilerFlags	typedef	struct inline-1
+Include/compile.h	-	inline-2	struct	[<ff_features: int>, <ff_lineno: int>]
+Include/compile.h	-	PyFutureFeatures	typedef	struct inline-2
+Include/compile.h	-	inline-3	struct	[<optimize: int>, <ff_features: int>]
+Include/compile.h	-	_PyASTOptimizeState	typedef	struct inline-3
+Include/classobject.h	-	inline-1	struct	[<ob_base: PyObject>, <im_func: PyObject*>, <im_self: PyObject*>, <im_weakreflist: PyObject*>, <vectorcall: vectorcallfunc>]
+Include/classobject.h	-	PyMethodObject	typedef	struct inline-1
+Include/classobject.h	-	inline-2	struct	[<ob_base: PyObject>, <func: PyObject*>]
+Include/classobject.h	-	PyInstanceMethodObject	typedef	struct inline-2
+Include/structmember.h	-	PyMemberDef	struct	[<name: const char*>, <type: int>, <offset: Py_ssize_t>, <flags: int>, <doc: const char*>]
+Include/structmember.h	-	PyMemberDef	typedef	struct PyMemberDef
+Include/odictobject.h	-	PyODictObject	typedef	struct _odictobject
+Include/descrobject.h	-	getter	typedef	PyObject*(*)(PyObject *, void *)
+Include/descrobject.h	-	setter	typedef	int(*)(PyObject *, PyObject *, void *)
+Include/descrobject.h	-	PyGetSetDef	struct	[<name: const char*>, <get: getter>, <set: setter>, <doc: const char*>, <closure: void*>]
+Include/descrobject.h	-	PyGetSetDef	typedef	struct PyGetSetDef
+Include/descrobject.h	-	wrapperfunc	typedef	PyObject*(*)(PyObject *self, PyObject *args, void *wrapped)
+Include/descrobject.h	-	wrapperfunc_kwds	typedef	PyObject*(*)(PyObject *self, PyObject *args, void *wrapped, PyObject *kwds)
+Include/descrobject.h	-	wrapperbase	struct	[<name: const char*>, <offset: int>, <function: void*>, <wrapper: wrapperfunc>, <doc: const char*>, <flags: int>, <name_strobj: PyObject*>]
+Include/descrobject.h	-	inline-1	struct	[<ob_base: PyObject>, <d_type: PyTypeObject*>, <d_name: PyObject*>, <d_qualname: PyObject*>]
+Include/descrobject.h	-	PyDescrObject	typedef	struct inline-1
+Include/descrobject.h	-	inline-2	struct	[<d_common: PyDescrObject>, <d_method: PyMethodDef*>, <vectorcall: vectorcallfunc>]
+Include/descrobject.h	-	PyMethodDescrObject	typedef	struct inline-2
+Include/descrobject.h	-	inline-3	struct	[<d_common: PyDescrObject>, <d_member: struct PyMemberDef*>]
+Include/descrobject.h	-	PyMemberDescrObject	typedef	struct inline-3
+Include/descrobject.h	-	inline-4	struct	[<d_common: PyDescrObject>, <d_getset: PyGetSetDef*>]
+Include/descrobject.h	-	PyGetSetDescrObject	typedef	struct inline-4
+Include/descrobject.h	-	inline-5	struct	[<d_common: PyDescrObject>, <d_base: struct wrapperbase*>, <d_wrapped: void*>]
+Include/descrobject.h	-	PyWrapperDescrObject	typedef	struct inline-5
+Include/pycapsule.h	-	PyCapsule_Destructor	typedef	void(*)(PyObject *)
+Include/pyport.h	-	Py_uintptr_t	typedef	uintptr_t
+Include/pyport.h	-	Py_intptr_t	typedef	intptr_t
+Include/pyport.h	-	Py_ssize_t	typedef	ssize_t
+Include/pyport.h	-	Py_hash_t	typedef	Py_ssize_t
+Include/pyport.h	-	Py_uhash_t	typedef	size_t
+Include/pyport.h	-	Py_ssize_clean_t	typedef	int
+Include/internal/pycore_warnings.h	-	_warnings_runtime_state	struct	[<filters: PyObject*>, <once_registry: PyObject*>, <default_action: PyObject*>, <filters_version: long>]
+Include/internal/pycore_hashtable.h	-	_Py_slist_item_s	struct	[<next: struct _Py_slist_item_s*>]
+Include/internal/pycore_hashtable.h	-	_Py_slist_item_t	typedef	struct _Py_slist_item_s
+Include/internal/pycore_hashtable.h	-	inline-1	struct	[<head: _Py_slist_item_t*>]
+Include/internal/pycore_hashtable.h	-	_Py_slist_t	typedef	struct inline-1
+Include/internal/pycore_hashtable.h	-	inline-2	struct	[<_Py_slist_item: _Py_slist_item_t>, <key_hash: Py_uhash_t>, <key: void*>, <value: void*>]
+Include/internal/pycore_hashtable.h	-	_Py_hashtable_entry_t	typedef	struct inline-2
+Include/internal/pycore_hashtable.h	-	_Py_hashtable_t	typedef	struct _Py_hashtable_t
+Include/internal/pycore_hashtable.h	-	_Py_hashtable_hash_func	typedef	Py_uhash_t(*) (const void *key)
+Include/internal/pycore_hashtable.h	-	_Py_hashtable_compare_func	typedef	int(*) (const void *key1, const void *key2)
+Include/internal/pycore_hashtable.h	-	_Py_hashtable_destroy_func	typedef	void(*) (void *key)
+Include/internal/pycore_hashtable.h	-	_Py_hashtable_get_entry_func	typedef	_Py_hashtable_entry_t* (*)(_Py_hashtable_t *ht, const void *key)
+Include/internal/pycore_hashtable.h	-	inline-3	struct	[<malloc: void* (*) (size_t size)>, <free: void(*) (void *ptr)>]
+Include/internal/pycore_hashtable.h	-	_Py_hashtable_allocator_t	typedef	struct inline-3
+Include/internal/pycore_hashtable.h	-	_Py_hashtable_t	struct	[<nentries: size_t>, <nbuckets: size_t>, <buckets: _Py_slist_t*>, <get_entry_func: _Py_hashtable_get_entry_func>, <hash_func: _Py_hashtable_hash_func>, <compare_func: _Py_hashtable_compare_func>, <key_destroy_func: _Py_hashtable_destroy_func>, <value_destroy_func: _Py_hashtable_destroy_func>, <alloc: _Py_hashtable_allocator_t>]
+Include/internal/pycore_hashtable.h	-	_Py_hashtable_foreach_func	typedef	int(*) (_Py_hashtable_t *ht, const void *key, const void *value, void *user_data)
+Include/internal/pycore_gil.h	-	_gil_runtime_state	struct	[<interval: unsigned long>, <last_holder: _Py_atomic_address>, <locked: _Py_atomic_int>, <switch_number: unsigned long>, <cond: pthread_cond_t>, <mutex: pthread_mutex_t>, <switch_cond: pthread_cond_t>, <switch_mutex: pthread_mutex_t>]
+Include/internal/pycore_context.h	-	_pycontextobject	struct	[<ob_base: PyObject>, <ctx_prev: PyContext*>, <ctx_vars: PyHamtObject*>, <ctx_weakreflist: PyObject*>, <ctx_entered: int>]
+Include/internal/pycore_context.h	-	_pycontextvarobject	struct	[<ob_base: PyObject>, <var_name: PyObject*>, <var_default: PyObject*>, <var_cached: PyObject*>, <var_cached_tsid: uint64_t>, <var_cached_tsver: uint64_t>, <var_hash: Py_hash_t>]
+Include/internal/pycore_context.h	-	_pycontexttokenobject	struct	[<ob_base: PyObject>, <tok_ctx: PyContext*>, <tok_var: PyContextVar*>, <tok_oldval: PyObject*>, <tok_used: int>]
+Include/internal/pycore_hamt.h	-	inline-1	struct	[<ob_base: PyObject>]
+Include/internal/pycore_hamt.h	-	PyHamtNode	typedef	struct inline-1
+Include/internal/pycore_hamt.h	-	inline-2	struct	[<ob_base: PyObject>, <h_root: PyHamtNode*>, <h_weakreflist: PyObject*>, <h_count: Py_ssize_t>]
+Include/internal/pycore_hamt.h	-	PyHamtObject	typedef	struct inline-2
+Include/internal/pycore_hamt.h	-	inline-3	struct	[<i_nodes: PyHamtNode*[7]>, <i_pos: Py_ssize_t[7]>, <i_level: int8_t>]
+Include/internal/pycore_hamt.h	-	PyHamtIteratorState	typedef	struct inline-3
+Include/internal/pycore_hamt.h	-	inline-4	struct	[<ob_base: PyObject>, <hi_obj: PyHamtObject*>, <hi_iter: PyHamtIteratorState>, <hi_yield: binaryfunc>]
+Include/internal/pycore_hamt.h	-	PyHamtIterator	typedef	struct inline-4
+Include/internal/pycore_interp.h	-	inline-1	struct	[<level: int>, <atbol: int>]
+Include/internal/pycore_interp.h	-	_Py_parser_state	struct	[<listnode: struct inline-1>]
+Include/internal/pycore_interp.h	-	inline-2	struct	[<func: int(*)(void *)>, <arg: void*>]
+Include/internal/pycore_interp.h	-	_pending_calls	struct	[<lock: PyThread_type_lock>, <calls_to_do: _Py_atomic_int>, <async_exc: int>, <calls: struct inline-2[32]>, <first: int>, <last: int>]
+Include/internal/pycore_interp.h	-	_ceval_state	struct	[<recursion_limit: int>, <tracing_possible: int>, <eval_breaker: _Py_atomic_int>, <gil_drop_request: _Py_atomic_int>, <pending: struct _pending_calls>]
+Include/internal/pycore_interp.h	-	_Py_unicode_fs_codec	struct	[<encoding: char*>, <utf8: int>, <errors: char*>, <error_handler: _Py_error_handler>]
+Include/internal/pycore_interp.h	-	_Py_unicode_state	struct	[<fs_codec: struct _Py_unicode_fs_codec>]
+Include/internal/pycore_interp.h	-	_Py_tuple_state	struct	[<free_list: PyTupleObject*[20]>, <numfree: int[20]>]
+Include/internal/pycore_interp.h	-	_Py_list_state	struct	[<free_list: PyListObject*[80]>, <numfree: int>]
+Include/internal/pycore_interp.h	-	_Py_float_state	struct	[<numfree: int>, <free_list: PyFloatObject*>]
+Include/internal/pycore_interp.h	-	_Py_frame_state	struct	[<free_list: PyFrameObject*>, <numfree: int>]
+Include/internal/pycore_interp.h	-	_Py_async_gen_state	struct	[<value_freelist: struct _PyAsyncGenWrappedValue* [80]>, <value_numfree: int>, <asend_freelist: struct PyAsyncGenASend* [80]>, <asend_numfree: int>]
+Include/internal/pycore_interp.h	-	_Py_context_state	struct	[<freelist: PyContext*>, <numfree: int>]
+Include/internal/pycore_interp.h	-	_is	struct	[<next: struct _is*>, <tstate_head: struct _ts*>, <runtime: struct pyruntimestate*>, <id: int64_t>, <id_refcount: int64_t>, <requires_idref: int>, <id_mutex: PyThread_type_lock>, <finalizing: int>, <ceval: struct _ceval_state>, <gc: struct _gc_runtime_state>, <modules: PyObject*>, <modules_by_index: PyObject*>, <sysdict: PyObject*>, <builtins: PyObject*>, <importlib: PyObject*>, <num_threads: long>, <pythread_stacksize: size_t>, <codec_search_path: PyObject*>, <codec_search_cache: PyObject*>, <codec_error_registry: PyObject*>, <codecs_initialized: int>, <unicode: struct _Py_unicode_state>, <config: PyConfig>, <dlopenflags: int>, <dict: PyObject*>, <builtins_copy: PyObject*>, <import_func: PyObject*>, <eval_frame: _PyFrameEvalFunction>, <co_extra_user_count: Py_ssize_t>, <co_extra_freefuncs: freefunc[MAX_CO_EXTRA_USERS]>, <before_forkers: PyObject*>, <after_forkers_parent: PyObject*>, <after_forkers_child: PyObject*>, <pyexitfunc: void(*)(PyObject *)>, <pyexitmodule: PyObject*>, <tstate_next_unique_id: uint64_t>, <warnings: struct _warnings_runtime_state>, <audit_hooks: PyObject*>, <parser: struct _Py_parser_state>, <small_ints: PyLongObject* [5 + 257]>, <tuple: struct _Py_tuple_state>, <list: struct _Py_list_state>, <float_state: struct _Py_float_state>, <frame: struct _Py_frame_state>, <async_gen: struct _Py_async_gen_state>, <context: struct _Py_context_state>, <slice_cache: PySliceObject*>]
+Include/internal/pycore_interp.h	-	_xidregitem	struct	[<cls: PyTypeObject*>, <getdata: crossinterpdatafunc>, <next: struct _xidregitem*>]
+Include/internal/pycore_accu.h	-	inline-1	struct	[<large: PyObject*>, <small: PyObject*>]
+Include/internal/pycore_accu.h	-	_PyAccu	typedef	struct inline-1
+Include/internal/pycore_getopt.h	-	inline-1	struct	[<name: const wchar_t*>, <has_arg: int>, <val: int>]
+Include/internal/pycore_getopt.h	-	_PyOS_LongOption	typedef	struct inline-1
+Include/internal/pycore_pymem.h	-	inline-1	enum	TRACEMALLOC_NOT_INITIALIZED,TRACEMALLOC_INITIALIZED,TRACEMALLOC_FINALIZED
+Include/internal/pycore_pymem.h	-	_PyTraceMalloc_Config	struct	[<initialized: enum inline-1>, <tracing: int>, <max_nframe: int>]
+Include/internal/pycore_gc.h	-	inline-1	struct	[<_gc_next: uintptr_t>, <_gc_prev: uintptr_t>]
+Include/internal/pycore_gc.h	-	PyGC_Head	typedef	struct inline-1
+Include/internal/pycore_gc.h	-	gc_generation	struct	[<head: PyGC_Head>, <threshold: int>, <count: int>]
+Include/internal/pycore_gc.h	-	gc_generation_stats	struct	[<collections: Py_ssize_t>, <collected: Py_ssize_t>, <uncollectable: Py_ssize_t>]
+Include/internal/pycore_gc.h	-	_gc_runtime_state	struct	[<trash_delete_later: PyObject*>, <trash_delete_nesting: int>, <enabled: int>, <debug: int>, <generations: struct gc_generation[3]>, <generation0: PyGC_Head*>, <permanent_generation: struct gc_generation>, <generation_stats: struct gc_generation_stats[3]>, <collecting: int>, <garbage: PyObject*>, <callbacks: PyObject*>, <long_lived_total: Py_ssize_t>, <long_lived_pending: Py_ssize_t>]
+Include/internal/pycore_runtime.h	-	_ceval_runtime_state	struct	[<signals_pending: _Py_atomic_int>, <gil: struct _gil_runtime_state>]
+Include/internal/pycore_runtime.h	-	_gilstate_runtime_state	struct	[<check_enabled: int>, <tstate_current: _Py_atomic_address>, <autoInterpreterState: PyInterpreterState*>, <autoTSSkey: Py_tss_t>]
+Include/internal/pycore_runtime.h	-	_Py_AuditHookEntry	struct	[<next: struct _Py_AuditHookEntry*>, <hookCFunction: Py_AuditHookFunction>, <userData: void*>]
+Include/internal/pycore_runtime.h	-	_Py_AuditHookEntry	typedef	struct _Py_AuditHookEntry
+Include/internal/pycore_runtime.h	-	pyinterpreters	struct	[<mutex: PyThread_type_lock>, <head: PyInterpreterState*>, <main: PyInterpreterState*>, <next_id: int64_t>]
+Include/internal/pycore_runtime.h	-	_xidregistry	struct	[<mutex: PyThread_type_lock>, <head: struct _xidregitem*>]
+Include/internal/pycore_runtime.h	-	pyruntimestate	struct	[<preinitializing: int>, <preinitialized: int>, <core_initialized: int>, <initialized: int>, <_finalizing: _Py_atomic_address>, <interpreters: struct pyinterpreters>, <xidregistry: struct _xidregistry>, <main_thread: unsigned long>, <exitfuncs: void(*[32])(void)>, <nexitfuncs: int>, <ceval: struct _ceval_runtime_state>, <gilstate: struct _gilstate_runtime_state>, <preconfig: PyPreConfig>, <open_code_hook: Py_OpenCodeHookFunction>, <open_code_userdata: void*>, <audit_hook_head: _Py_AuditHookEntry*>]
+Include/internal/pycore_runtime.h	-	_PyRuntimeState	typedef	struct pyruntimestate
+Include/internal/pycore_code.h	-	inline-1	struct	[<ptr: PyObject*>, <globals_ver: uint64_t>, <builtins_ver: uint64_t>]
+Include/internal/pycore_code.h	-	_PyOpcache_LoadGlobal	typedef	struct inline-1
+Include/internal/pycore_code.h	-	inline-2	union	[<lg: _PyOpcache_LoadGlobal>]
+Include/internal/pycore_code.h	-	_PyOpcache	struct	[<u: union inline-2>, <optimized: char>]
+Include/internal/pycore_initconfig.h	-	_PyArgv	struct	[<argc: Py_ssize_t>, <use_bytes_argv: int>, <bytes_argv: char* const *>, <wchar_argv: wchar_t* const *>]
+Include/internal/pycore_initconfig.h	-	_PyArgv	typedef	struct _PyArgv
+Include/internal/pycore_initconfig.h	-	inline-1	struct	[<argv: PyWideStringList>, <xoptions: PyWideStringList>, <isolated: int>, <use_environment: int>, <dev_mode: int>]
+Include/internal/pycore_initconfig.h	-	_PyPreCmdline	typedef	struct inline-1
+Include/internal/pycore_initconfig.h	-	inline-2	enum	_PyConfig_INIT_COMPAT,_PyConfig_INIT_PYTHON,_PyConfig_INIT_ISOLATED
+Include/internal/pycore_initconfig.h	-	_PyConfigInitEnum	typedef	enum inline-2
+Include/internal/pycore_pathconfig.h	-	_PyPathConfig	struct	[<program_full_path: wchar_t*>, <prefix: wchar_t*>, <exec_prefix: wchar_t*>, <module_search_path: wchar_t*>, <program_name: wchar_t*>, <home: wchar_t*>]
+Include/internal/pycore_pathconfig.h	-	_PyPathConfig	typedef	struct _PyPathConfig
+Include/internal/pycore_atomic.h	-	_Py_memory_order	enum	_Py_memory_order_relaxed,_Py_memory_order_acquire,_Py_memory_order_release,_Py_memory_order_acq_rel,_Py_memory_order_seq_cst
+Include/internal/pycore_atomic.h	-	_Py_memory_order	typedef	enum _Py_memory_order
+Include/internal/pycore_atomic.h	-	_Py_atomic_address	struct	[<_value: atomic_uintptr_t>]
+Include/internal/pycore_atomic.h	-	_Py_atomic_address	typedef	struct _Py_atomic_address
+Include/internal/pycore_atomic.h	-	_Py_atomic_int	struct	[<_value: atomic_int>]
+Include/internal/pycore_atomic.h	-	_Py_atomic_int	typedef	struct _Py_atomic_int
+Objects/odictobject.c	-	_odictobject	struct	[<od_dict: PyDictObject>, <od_first: _ODictNode*>, <od_last: _ODictNode*>, <od_fast_nodes: _ODictNode**>, <od_fast_nodes_size: Py_ssize_t>, <od_resize_sentinel: void*>, <od_state: size_t>, <od_inst_dict: PyObject*>, <od_weakreflist: PyObject*>]
+Python/pyarena.c	-	_arena	struct	[<a_head: block*>, <a_cur: block*>, <a_objects: PyObject*>, <total_allocs: size_t>, <total_size: size_t>, <total_blocks: size_t>, <total_block_size: size_t>, <total_big_blocks: size_t>]
