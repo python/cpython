@@ -666,6 +666,7 @@ class ProcessTestCase(BaseTestCase):
         p.wait()
         self.assertEqual(p.stdin, None)
 
+    @unittest.skipIf(not fcntl, 'fcntl module required for test.')
     def test_pipesizes(self):
         test_pipe_r, test_pipe_w = os.pipe()
         try:
@@ -700,6 +701,7 @@ class ProcessTestCase(BaseTestCase):
             p.kill()
             p.wait()
 
+    @unittest.skipIf(not fcntl, 'fcntl module required for test.')
     def test_pipesize_default(self):
         p = subprocess.Popen(
             [sys.executable, "-c",
