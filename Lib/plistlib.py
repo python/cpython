@@ -252,7 +252,11 @@ class _PlistParser:
         self.add_object(False)
 
     def end_integer(self):
-        self.add_object(int(self.get_data()))
+        raw = self.get_data()
+        if raw.startswith('0x') or raw.startswith('0X'):
+            self.add_object(int(raw, 16))
+        else:
+            self.add_object(int(raw))
 
     def end_real(self):
         self.add_object(float(self.get_data()))

@@ -498,6 +498,19 @@ class TestPlistlib(unittest.TestCase):
         self.assertRaises(ValueError, plistlib.loads,
                           b"<plist><integer>not real</integer></plist>")
 
+    def test_integer_notations(self):
+        pl = b"<plist><integer>456</integer></plist>"
+        value = plistlib.loads(pl)
+        self.assertEqual(value, 456)
+
+        pl = b"<plist><integer>0xa</integer></plist>"
+        value = plistlib.loads(pl)
+        self.assertEqual(value, 10)
+
+        pl = b"<plist><integer>0123</integer></plist>"
+        value = plistlib.loads(pl)
+        self.assertEqual(value, 123)
+
     def test_xml_encodings(self):
         base = TESTDATA[plistlib.FMT_XML]
 
