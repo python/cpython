@@ -98,7 +98,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
 .. class:: EnvBuilder(system_site_packages=False, clear=False, \
                       symlinks=False, upgrade=False, with_pip=False, \
-                      prompt=None, upgrade_deps=False)
+                      prompt=None, upgrade_deps=False, inherit=None)
 
     The :class:`EnvBuilder` class accepts the following keyword arguments on
     instantiation:
@@ -135,6 +135,11 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. versionadded:: 3.9
        Added the ``upgrade_deps`` parameter
+
+    * ``inherit`` -- a List of virtual enviroments this enviroment should
+      inherit from.
+
+    .. versionadded:: 3.10
 
     Creators of third-party virtual environment tools will be free to use the
     provided :class:`EnvBuilder` class as a base class.

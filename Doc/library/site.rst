@@ -274,6 +274,12 @@ the user site-packages directory is enabled, ``1`` if it was disabled by the
 user, ``2`` if it is disabled for security reasons or by an administrator, and a
 value greater than 2 if there is an error.
 
+.. cmdoption:: --path
+
+   When using inheritied virtual environment, will print a list of path for each
+   virtual environents. And exit with a 0 exit status. Used in venv
+   activate script to generate the PATH variable.
+
 .. seealso::
 
    :pep:`370` -- Per user site-packages directory

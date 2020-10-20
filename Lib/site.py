@@ -75,6 +75,8 @@ import builtins
 import _sitebuiltins
 import io
 
+# Inheritance information.
+INHERIT = {}
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
 # Enable per user site-packages directory
@@ -582,6 +584,147 @@ def execusercustomize():
                 (err.__class__.__name__, err))
 
 
+def _read_inherit(filename):
+    """Return a list of directories from an inherit file."""
+
+    # Set VIRTUAL_ENV_DISABLE_INHERIT (to any value)
+    # to disable inheritance.
+    if "VIRTUAL_ENV_DISABLE_INHERIT" in os.environ:
+        return []
+
+    virtualenvs = []
+    try:
+        with open(filename, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("inherit ="):
+                    paths_list_str = line.split('=', maxsplit=1)[1].strip()
+                    paths_list = paths_list_str.split(":")
+                    virtualenvs.extend(paths_list)
+                    break
+    except IOError as e:
+        import errno
+        if e.errno == errno.ENOENT:
+            return []
+        else:
+            raise
+    return virtualenvs
+
+
+def _walk_inherit(dir, seen):
+    """Walk through the inheritance hierarchy, recursively: depth first.
+
+    This sets up a linearized precedence list in INHERIT["sys.prefix"].
+    """
+
+    # First, visit this directory, and remember that we've been here.
+    INHERIT["sys.prefix"].append(dir)
+    seen.add(dir)
+
+    # Next, visit each base directory mentioned in an inherit file (if any).
+    for base in _read_inherit(os.path.join(dir, "pyvenv.cfg")):
+        # Relative base directories are relative to this directory,
+        # i.e., the directory containing the inherit file.
+        absbase = base if os.path.isabs(base) else os.path.join(dir, base)
+
+        # Canonicalize the base directory.
+        canonbase = os.path.realpath(absbase)
+
+        # Only visit each directory once.
+        if not canonbase in seen:
+            _walk_inherit(canonbase, seen)
+
+
+def _init_sys_prefix():
+    """Initialize INHERIT["sys.prefix"]."""
+
+    INHERIT["sys.prefix"] = []
+
+    # Initialize the linearized precedence list for all virtualenvs.
+    _walk_inherit(sys.prefix, set())
+
+
+def get_venv_base_prefix(base):
+    """
+    Obtain the base python directory of a virtualenv
+    """
+    virtual_conf = os.path.join(base, "pyvenv.cfg")
+    # the base python installation does not have a pyvenv.cfg file
+    if not os.path.exists(virtual_conf):
+        # check that the $base/bin/python symlink exists
+        pydir = os.path.join(base, "bin", "python")
+        if not os.path.exists(pydir):
+            return None
+        return base, ''
+
+    # read the "home" variable from pyvenv.cfg
+    # and call get_venv_base_prefix on it recursively
+    with open(virtual_conf, encoding="utf-8") as f:
+        for line in f:
+            if "=" in line:
+                key, _, value = line.partition("=")
+                key = key.strip().lower()
+                value = value.strip()
+                if key == "home":
+                    home = os.path.dirname(value)
+                    base, reason = get_venv_base_prefix(home)
+                    return base
+
+    # no lines matching "home = " in the file - bad config
+    return None
+
+
+def _check_inherit():
+    """Perform sanity checks on the base virtualenvs."""
+
+    if "VIRTUAL_ENV_DISABLE_BASE_CHECKS" in os.environ:
+        return
+
+    errmsg = ""
+    for base in INHERIT["sys.prefix"][1:]:
+        base_prefix = get_venv_base_prefix(base)
+        if not base_prefix:
+            errmsg += "\n%s is not a python3 virtualenv" % base
+        elif base_prefix != sys.base_prefix:
+            errmsg += (
+                "\nbase virtualenv for %s (%s) "
+                "does not match current python version (%s)"
+                % (base, base_prefix, sys.base_prefix)
+            )
+
+    if errmsg:
+        raise RuntimeError("virtualenv inheritance problems: %r" % errmsg)
+
+
+def _fini_sys_prefix():
+    """Finalize INHERIT["sys.prefix"]."""
+
+    # Perform sanity checks on the base virtualenvs.
+    _check_inherit()
+
+    # Set up other prefixes, for convenience and consistency.
+    INHERIT["sys.prefix"].append(USER_BASE)
+    INHERIT["sys.prefix"].append(sys.base_prefix)
+
+
+def _init_PATH():
+    """Initialize PATH components added by activation scripts."""
+
+    # Derive the bin subdirectory from the location of the python executable.
+    bindir = os.path.basename(os.path.dirname(sys.executable))
+
+    # Initialize the list of PATH components by appending the bin subdirectory
+    # to the top-level directories for all of the virtualenvs.
+    INHERIT["PATH"] = [
+        os.path.join(dirpath, bindir) for dirpath in INHERIT["sys.prefix"]
+    ]
+
+
+def _get_PATH():
+    """Return PATH components added by activation scripts, as a string."""
+
+    return os.pathsep.join(INHERIT["PATH"])
+
+
 def main():
     """Add standard site-specific directories to the module search path.
 
@@ -591,6 +734,9 @@ def main():
     global ENABLE_USER_SITE
 
     orig_path = sys.path[:]
+    # No longer populated in py3, but initialized for backwards compatibility
+    INHERIT["sys.path"] = []
+
     known_paths = removeduppaths()
     if orig_path != sys.path:
         # removeduppaths() might make sys.path absolute.
@@ -598,10 +744,21 @@ def main():
         abs_paths()
 
     known_paths = venv(known_paths)
+    # Once sys.prefix has been set, initialize the linearized precedence list
+    # for all virtualenvs.
+    _init_sys_prefix()
+    # Add all the virtualenvs to site-packages
+    known_paths = addsitepackages(known_paths, INHERIT["sys.prefix"][1:])
+
     if ENABLE_USER_SITE is None:
         ENABLE_USER_SITE = check_enableusersite()
     known_paths = addusersitepackages(known_paths)
     known_paths = addsitepackages(known_paths)
+    # Initialize PATH components added by activation scripts
+    _init_PATH()
+    # Finalize the linearized precedence list.
+    # This is done last, after all of the locations have been determined.
+    _fini_sys_prefix()
     setquit()
     setcopyright()
     sethelper()
@@ -618,7 +775,7 @@ if not sys.flags.no_site:
 
 def _script():
     help = """\
-    %s [--user-base] [--user-site]
+    %s [--user-base] [--user-site] [--path]
 
     Without arguments print some useful information
     With arguments print the value of USER_BASE and/or USER_SITE separated
@@ -649,6 +806,9 @@ def _script():
         print(f"ENABLE_USER_SITE: {ENABLE_USER_SITE!r}")
         sys.exit(0)
 
+    if "--path" in args:
+        print(_get_PATH())
+        sys.exit(0)
     buffer = []
     if '--user-base' in args:
         buffer.append(USER_BASE)

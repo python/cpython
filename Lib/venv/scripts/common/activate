@@ -42,7 +42,7 @@ VIRTUAL_ENV="__VENV_DIR__"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
-PATH="$VIRTUAL_ENV/__VENV_BIN_NAME__:$PATH"
+PATH="$($VIRTUAL_ENV/__VENV_BIN_NAME__/python -m site --path):$PATH"
 export PATH
 
 # unset PYTHONHOME if set

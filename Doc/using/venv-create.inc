@@ -14,6 +14,11 @@ used at environment creation time). It also creates an (initially empty)
 ``Lib\site-packages``). If an existing directory is specified, it will be
 re-used.
 
+.. versionadded: 3.10
+
+   ``pyvenv.cfg`` may now have the key ``inherit`` which value is a list of
+   absolute path colon separated from which current environment inherit from.
+
 .. deprecated:: 3.6
    ``pyvenv`` was the recommended tool for creating virtual environments for
    Python 3.3 and 3.4, and is `deprecated in Python 3.6
@@ -32,6 +37,13 @@ Alternatively, if you configured the ``PATH`` and ``PATHEXT`` variables for
 your :ref:`Python installation <using-on-windows>`::
 
     c:\>python -m venv c:\path\to\myenv
+
+Starting at Python 3.10, you can use the ``--inherit`` flag, one or several time
+to inherit the packages installed from another virtual environment, and packages
+installed on parent venvs will be visible in child one when the child do not
+shadow them. This works similarly to ChainMap. Many tools (like pip) will only
+let you remove or modify packages in current environment, and will nto allow you
+to modify parent directly.
 
 The command, if run with ``-h``, will show the available options::
 
@@ -63,9 +75,16 @@ The command, if run with ``-h``, will show the available options::
                             environment.
       --upgrade-deps        Upgrade core dependencies: pip setuptools to the
                             latest version in PyPI
+      --inherit BASE        Inherit packages from another base virtualenv. This
+                            option can be repeated for multiple inheritance.
 
     Once an environment has been created, you may wish to activate it, e.g. by
     sourcing an activate script in its bin directory.
+
+.. versionadded:: 3.10
+
+   Ass ``--inherit`` option to allow inheritance of virtual environments.
+
 
 .. versionchanged:: 3.9
    Add ``--upgrade-deps`` option to upgrade pip + setuptools to the latest on PyPI
@@ -147,3 +166,4 @@ detail (typically a script or shell function will be used).
 .. versionadded:: 3.8
    PowerShell activation scripts installed under POSIX for PowerShell Core
    support.
+

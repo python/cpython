@@ -33,7 +33,7 @@ deactivate nondestructive
 set -gx VIRTUAL_ENV "__VENV_DIR__"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
-set -gx PATH "$VIRTUAL_ENV/__VENV_BIN_NAME__" $PATH
+set -gx PATH ($VIRTUAL_ENV/__VENV_BIN_NAME__/python -m site --path) $PATH
 
 # Unset PYTHONHOME if set.
 if set -q PYTHONHOME

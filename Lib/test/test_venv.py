@@ -84,6 +84,37 @@ class BaseTest(unittest.TestCase):
             result = f.read()
         return result
 
+class VenvInheritTests(BaseTest):
+
+
+    def test_create_inherit(self):
+        builder1 = venv.EnvBuilder()
+        with tempfile.TemporaryDirectory() as fake_env_dir:
+
+            def pip_cmd_checker(cmd):
+                self.assertEqual(
+                    cmd,
+                    [
+                        os.path.join(fake_env_dir, bin_path, python_exe),
+                        '-m',
+                        'pip',
+                        'install',
+                        '--upgrade',
+                        'pip',
+                        'setuptools'
+                    ]
+                )
+
+            fake_context = builder1.create(fake_env_dir)
+            with tempfile.TemporaryDirectory() as child_env_dir:
+                builder2 = venv.EnvBuilder(inherit=[fake_env_dir])
+                with patch.dict(os.environ, {"VIRTUAL_ENV_DISABLE_BASE_CHECKS": "1"}):
+                    fake_context = builder2.create(child_env_dir)
+
+                    with open(os.path.join( child_env_dir, 'pyvenv.cfg'), 'r') as f:
+                        self.assertIn(fake_env_dir, f.read())
+
+
 class BasicTest(BaseTest):
     """Test venv module functionality."""
 

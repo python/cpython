@@ -41,11 +41,12 @@ class EnvBuilder:
                      environment
     :param prompt: Alternative terminal prefix for the environment.
     :param upgrade_deps: Update the base venv modules to the latest on PyPI
+    :param inherit: List of virtualenvs to inherit
     """
 
     def __init__(self, system_site_packages=False, clear=False,
                  symlinks=False, upgrade=False, with_pip=False, prompt=None,
-                 upgrade_deps=False):
+                 upgrade_deps=False, inherit=None):
         self.system_site_packages = system_site_packages
         self.clear = clear
         self.symlinks = symlinks
@@ -55,6 +56,9 @@ class EnvBuilder:
             prompt = os.path.basename(os.getcwd())
         self.prompt = prompt
         self.upgrade_deps = upgrade_deps
+        if inherit:
+            assert not isinstance(inherit, str), "inherit must be a iterable of strings, not a string"
+        self.inherit = inherit
 
     def create(self, env_dir):
         """
@@ -63,6 +67,7 @@ class EnvBuilder:
         :param env_dir: The target directory to create an environment in.
 
         """
+        self.validate_inherit()
         env_dir = os.path.abspath(env_dir)
         context = self.ensure_directories(env_dir)
         # See issue 24875. We need system_site_packages to be False
@@ -164,6 +169,37 @@ class EnvBuilder:
             f.write('version = %d.%d.%d\n' % sys.version_info[:3])
             if self.prompt is not None:
                 f.write(f'prompt = {self.prompt!r}\n')
+            if self.inherit:
+                paths = ':'.join(self.inherit)
+                f.write(f"inherit = {paths}\n")
+
+    def validate_inherit(self):
+        """
+        If inherit was specified, check that it's a python3 virtualenv
+        with a matching major version
+        """
+        if not self.inherit:
+            return
+
+        if "VIRTUAL_ENV_DISABLE_BASE_CHECKS" in os.environ:
+            return
+
+        import site
+        for base in self.inherit:
+            base_prefix = site.get_venv_base_prefix(base)
+            if not base_prefix:
+                sys.exit(f"ERROR: {base} is not a python3 virtualenv.")
+            elif base_prefix != sys.base_prefix:
+                sys.exit(f"ERROR: {base} does not match current python version {base_prefix}, {sys.base_prefix}")
+
+    if os.name == 'nt':
+        def include_binary(self, f):
+            if f.endswith(('.pyd', '.dll')):
+                result = True
+            else:
+                result = f.startswith('python') and f.endswith('.exe')
+            return result
+
 
     if os.name != 'nt':
         def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):
@@ -405,11 +441,11 @@ class EnvBuilder:
 
 
 def create(env_dir, system_site_packages=False, clear=False,
-           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False):
+           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False, inherit=None):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
                          clear=clear, symlinks=symlinks, with_pip=with_pip,
-                         prompt=prompt, upgrade_deps=upgrade_deps)
+                         prompt=prompt, upgrade_deps=upgrade_deps, inherit=inherit)
     builder.create(env_dir)
 
 def main(args=None):
@@ -477,16 +513,23 @@ def main(args=None):
                             help='Upgrade core dependencies: {} to the latest '
                                  'version in PyPI'.format(
                                  ' '.join(CORE_VENV_DEPS)))
+        parser.add_argument('--inherit', action="append", metavar="BASE",
+                            default=os.environ.get('VIRTUALENV_INHERIT', '').split(),
+                            help='Inherit packages from another base virtualenv. '
+                                 'This option can be repeated for multiple inheritance.')
         options = parser.parse_args(args)
         if options.upgrade and options.clear:
             raise ValueError('you cannot supply --upgrade and --clear together.')
+        if options.inherit:
+            options.inherit = [os.path.abspath(path) for path in options.inherit]
         builder = EnvBuilder(system_site_packages=options.system_site,
                              clear=options.clear,
                              symlinks=options.symlinks,
                              upgrade=options.upgrade,
                              with_pip=options.with_pip,
                              prompt=options.prompt,
-                             upgrade_deps=options.upgrade_deps)
+                             upgrade_deps=options.upgrade_deps,
+                             inherit=options.inherit)
         for d in options.dirs:
             builder.create(d)
 
