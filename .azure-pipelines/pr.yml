@@ -25,13 +25,15 @@ jobs:
   displayName: macOS PR Tests
   dependsOn: Prebuild
   condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+  #condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
+  # bpo-39837: macOS tests on Azure Pipelines are disabled
 
   variables:
     testRunTitle: '$(system.pullRequest.TargetBranch)-macos'
     testRunPlatform: macos
 
   pool:
-    vmImage: xcode9-macos10.13
+    vmImage: macos-10.14
 
   steps:
   - template: ./macos-steps.yml
