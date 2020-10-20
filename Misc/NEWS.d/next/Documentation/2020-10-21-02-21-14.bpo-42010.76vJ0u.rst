@@ -1,0 +1,4 @@
+Clarify that subscription expressions are also valid for certain
+:term:`classes <class>` and :term:`types <type>` in the standard library, and
+for user-defined classes and types if the classmethod
+:meth:`__class_getitem__` is provided.
