@@ -256,11 +256,39 @@ class Test_pygettext(unittest.TestCase):
         '''))
         self.assertIn('foo {bar}', msgids)
 
-    def test_calls_in_fstrings_with_wrong_input(self):
+    def test_calls_in_fstrings_with_wrong_input_1(self):
         msgids = self.extract_docstrings_from_str(dedent('''\
         f"{_(f'foo {bar}')}"
         '''))
         self.assertFalse([msgid for msgid in msgids if 'foo {bar}' in msgid])
+
+    def test_calls_in_fstrings_with_wrong_input_2(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_(1)}"
+        '''))
+        self.assertNotIn(1)
+
+    def test_calls_in_fstring_with_multiple_args(self):
+        msgids = self.extract.docstrings_from_str(dedent('''\
+        f"{_('foo', 'bar')}"
+        '''))
+        self.assertNotIn('foo', msgids)
+        self.assertNotIn('bar', msgids)
+
+    def test_calls_in_fstring_with_keyword_args(self):
+        msgids = self.extract.docstrings_from_str(dedent('''\
+        f"{_('foo', bar='baz')}"
+        '''))
+        self.assertNotIn('foo', msgids)
+        self.assertNotIn('bar', msgids)
+        self.assertNotIn('baz', msgids)
+
+    def test_calls_in_fstring_with_partially_wrong_expression(self):
+        msgids = self.extract.docstrings_from_str(dedent('''\
+        f"{_(f'foo') + _('bar')}"
+        '''))
+        self.assertNotIn('foo', msgids)
+        self.assertIn('bar', msgids)
 
     def test_files_list(self):
         """Make sure the directories are inspected for source files
