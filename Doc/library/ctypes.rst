@@ -1338,7 +1338,7 @@ way is to instantiate one of the following classes:
 
 .. seealso::
 
-    `MS DUMPBIN tool <https://docs.microsoft.com/cpp/build/reference/dependents>`_
+    `Microsoft DUMPBIN tool <https://docs.microsoft.com/cpp/build/reference/dependents>`_
     -- A tool to find DLL dependents.
 
 
