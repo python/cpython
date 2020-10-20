@@ -15077,137 +15077,210 @@ all_ins(PyObject *m)
 }
 
 
-static const char * const have_functions[] = {
+
+#define PROBE(name, test) \
+   static int name(void)  \
+   {                      \
+      if (test) {        \
+          return 1;       \
+      } else {            \
+          return 0;       \
+      }                   \
+   }
+
+#ifdef HAVE_FSTATAT
+PROBE(probe_fstatat, HAVE_FSTATAT_RUNTIME)
+#endif
 
 #ifdef HAVE_FACCESSAT
-    "HAVE_FACCESSAT",
-#endif
-
-#ifdef HAVE_FCHDIR
-    "HAVE_FCHDIR",
-#endif
-
-#ifdef HAVE_FCHMOD
-    "HAVE_FCHMOD",
+PROBE(probe_faccessat, HAVE_FACCESSAT_RUNTIME)
 #endif
 
 #ifdef HAVE_FCHMODAT
-    "HAVE_FCHMODAT",
-#endif
-
-#ifdef HAVE_FCHOWN
-    "HAVE_FCHOWN",
+PROBE(probe_fchmodat, HAVE_FCHMODAT_RUNTIME)
 #endif
 
 #ifdef HAVE_FCHOWNAT
-    "HAVE_FCHOWNAT",
-#endif
-
-#ifdef HAVE_FEXECVE
-    "HAVE_FEXECVE",
-#endif
-
-#ifdef HAVE_FDOPENDIR
-    "HAVE_FDOPENDIR",
-#endif
-
-#ifdef HAVE_FPATHCONF
-    "HAVE_FPATHCONF",
-#endif
-
-#ifdef HAVE_FSTATAT
-    "HAVE_FSTATAT",
-#endif
-
-#ifdef HAVE_FSTATVFS
-    "HAVE_FSTATVFS",
-#endif
-
-#if defined HAVE_FTRUNCATE || defined MS_WINDOWS
-    "HAVE_FTRUNCATE",
-#endif
-
-#ifdef HAVE_FUTIMENS
-    "HAVE_FUTIMENS",
-#endif
-
-#ifdef HAVE_FUTIMES
-    "HAVE_FUTIMES",
-#endif
-
-#ifdef HAVE_FUTIMESAT
-    "HAVE_FUTIMESAT",
+PROBE(probe_fchownat, HAVE_FCHOWNAT_RUNTIME)
 #endif
 
 #ifdef HAVE_LINKAT
-    "HAVE_LINKAT",
+PROBE(probe_linkat, HAVE_LINKAT_RUNTIME)
 #endif
 
-#ifdef HAVE_LCHFLAGS
-    "HAVE_LCHFLAGS",
-#endif
-
-#ifdef HAVE_LCHMOD
-    "HAVE_LCHMOD",
-#endif
-
-#ifdef HAVE_LCHOWN
-    "HAVE_LCHOWN",
-#endif
-
-#ifdef HAVE_LSTAT
-    "HAVE_LSTAT",
-#endif
-
-#ifdef HAVE_LUTIMES
-    "HAVE_LUTIMES",
-#endif
-
-#ifdef HAVE_MEMFD_CREATE
-    "HAVE_MEMFD_CREATE",
+#ifdef HAVE_FDOPENDIR
+PROBE(probe_fdopendir, HAVE_FDOPENDIR_RUNTIME)
 #endif
 
 #ifdef HAVE_MKDIRAT
-    "HAVE_MKDIRAT",
-#endif
-
-#ifdef HAVE_MKFIFOAT
-    "HAVE_MKFIFOAT",
-#endif
-
-#ifdef HAVE_MKNODAT
-    "HAVE_MKNODAT",
-#endif
-
-#ifdef HAVE_OPENAT
-    "HAVE_OPENAT",
-#endif
-
-#ifdef HAVE_READLINKAT
-    "HAVE_READLINKAT",
+PROBE(probe_mkdirat, HAVE_MKDIRAT_RUNTIME)
 #endif
 
 #ifdef HAVE_RENAMEAT
-    "HAVE_RENAMEAT",
-#endif
-
-#ifdef HAVE_SYMLINKAT
-    "HAVE_SYMLINKAT",
+PROBE(probe_renameat, HAVE_RENAMEAT_RUNTIME)
 #endif
 
 #ifdef HAVE_UNLINKAT
-    "HAVE_UNLINKAT",
+PROBE(probe_unlinkat, HAVE_UNLINKAT_RUNTIME)
+#endif
+
+#ifdef HAVE_OPENAT
+PROBE(probe_openat, HAVE_OPENAT_RUNTIME)
+#endif
+
+#ifdef HAVE_READLINKAT
+PROBE(probe_readlinkat, HAVE_READLINKAT_RUNTIME)
+#endif
+
+#ifdef HAVE_SYMLINKAT
+PROBE(probe_symlinkat, HAVE_SYMLINKAT_RUNTIME)
+#endif
+
+#ifdef HAVE_FUTIMENS
+PROBE(probe_futimens, HAVE_FUTIMENS_RUNTIME)
 #endif
 
 #ifdef HAVE_UTIMENSAT
-    "HAVE_UTIMENSAT",
+PROBE(probe_utimensat, HAVE_UTIMENSAT_RUNTIME)
+#endif
+
+
+
+
+static const struct have_function {
+    const char * const label;
+    int (*probe)(void);
+} have_functions[] = {
+
+#ifdef HAVE_FACCESSAT
+    { "HAVE_FACCESSAT", probe_faccessat },
+#endif
+
+#ifdef HAVE_FCHDIR
+    { "HAVE_FCHDIR", NULL },
+#endif
+
+#ifdef HAVE_FCHMOD
+    { "HAVE_FCHMOD", NULL },
+#endif
+
+#ifdef HAVE_FCHMODAT
+    { "HAVE_FCHMODAT", probe_fchmodat },
+#endif
+
+#ifdef HAVE_FCHOWN
+    { "HAVE_FCHOWN", NULL },
+#endif
+
+#ifdef HAVE_FCHOWNAT
+    { "HAVE_FCHOWNAT", probe_fchownat },
+#endif
+
+#ifdef HAVE_FEXECVE
+    { "HAVE_FEXECVE", NULL },
+#endif
+
+#ifdef HAVE_FDOPENDIR
+    { "HAVE_FDOPENDIR", probe_fdopendir },
+#endif
+
+#ifdef HAVE_FPATHCONF
+    { "HAVE_FPATHCONF", NULL },
+#endif
+
+#ifdef HAVE_FSTATAT
+    { "HAVE_FSTATAT", probe_fstatat },
+#endif
+
+#ifdef HAVE_FSTATVFS
+    { "HAVE_FSTATVFS", NULL },
+#endif
+
+#if defined HAVE_FTRUNCATE || defined MS_WINDOWS
+    { "HAVE_FTRUNCATE", NULL },
+#endif
+
+#ifdef HAVE_FUTIMENS
+    { "HAVE_FUTIMENS", probe_futimens },
+#endif
+
+#ifdef HAVE_FUTIMES
+    { "HAVE_FUTIMES", NULL },
+#endif
+
+#ifdef HAVE_FUTIMESAT
+    { "HAVE_FUTIMESAT", probe_futimesat },
+#endif
+
+#ifdef HAVE_LINKAT
+    { "HAVE_LINKAT", probe_linkat },
+#endif
+
+#ifdef HAVE_LCHFLAGS
+    { "HAVE_LCHFLAGS", NULL },
+#endif
+
+#ifdef HAVE_LCHMOD
+    { "HAVE_LCHMOD", NULL },
+#endif
+
+#ifdef HAVE_LCHOWN
+    { "HAVE_LCHOWN", NULL },
+#endif
+
+#ifdef HAVE_LSTAT
+    { "HAVE_LSTAT", NULL },
+#endif
+
+#ifdef HAVE_LUTIMES
+    { "HAVE_LUTIMES", NULL },
+#endif
+
+#ifdef HAVE_MEMFD_CREATE
+    { "HAVE_MEMFD_CREATE", NULL },
+#endif
+
+#ifdef HAVE_MKDIRAT
+    { "HAVE_MKDIRAT", probe_mkdirat },
+#endif
+
+#ifdef HAVE_MKFIFOAT
+    { "HAVE_MKFIFOAT", NULL },
+#endif
+
+#ifdef HAVE_MKNODAT
+    { "HAVE_MKNODAT", NULL },
+#endif
+
+#ifdef HAVE_OPENAT
+    { "HAVE_OPENAT", probe_openat },
+#endif
+
+#ifdef HAVE_READLINKAT
+    { "HAVE_READLINKAT", probe_readlinkat },
+#endif
+
+#ifdef HAVE_RENAMEAT
+    { "HAVE_RENAMEAT", probe_renameat },
+#endif
+
+#ifdef HAVE_SYMLINKAT
+    { "HAVE_SYMLINKAT", probe_symlinkat },
+#endif
+
+#ifdef HAVE_UNLINKAT
+    { "HAVE_UNLINKAT", probe_unlinkat },
+#endif
+
+#ifdef HAVE_UTIMENSAT
+    { "HAVE_UTIMENSAT", probe_utimensat },
 #endif
 
 #ifdef MS_WINDOWS
-    "MS_WINDOWS",
+    { "MS_WINDOWS", NULL },
 #endif
 
-    NULL
+    { NULL, NULL }
 };
 
 
@@ -15357,14 +15430,17 @@ posixmodule_exec(PyObject *m)
     if (!list) {
         return -1;
     }
-    for (const char * const *trace = have_functions; *trace; trace++) {
-        PyObject *unicode = PyUnicode_DecodeASCII(*trace, strlen(*trace), NULL);
+    for (const struct have_function *trace = have_functions; trace->label; trace++) {
+        PyObject *unicode;
+        if (trace->probe && !trace->probe()) continue;
+        unicode = PyUnicode_DecodeASCII(trace->label, strlen(trace->label), NULL);
         if (!unicode)
             return -1;
         if (PyList_Append(list, unicode))
             return -1;
         Py_DECREF(unicode);
     }
+
     PyModule_AddObject(m, "_have_functions", list);
 
     return 0;
