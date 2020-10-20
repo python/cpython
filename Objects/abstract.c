@@ -2675,7 +2675,9 @@ PyIter_Send(PyObject *iter, PyObject *arg, PyObject **result)
     _Py_IDENTIFIER(send);
     assert(arg != NULL);
     assert(result != NULL);
-    if (Py_TYPE(iter)->tp_as_async != NULL && Py_TYPE(iter)->tp_as_async->am_send != NULL) {
+    if (PyType_HasFeature(Py_TYPE(iter), Py_TPFLAGS_HAVE_SEND)) {
+        assert (Py_TYPE(iter)->tp_as_async != NULL);
+        assert (Py_TYPE(iter)->tp_as_async->am_send != NULL);
         return Py_TYPE(iter)->tp_as_async->am_send(iter, arg, result);
     }
     if (arg == Py_None && PyIter_Check(iter)) {
