@@ -108,9 +108,7 @@ approximately 32,000 characters. Your administrator will need to activate the
 to ``1``.
 
 This allows the :func:`open` function, the :mod:`os` module and most other
-path functionality to accept and return paths longer than 260 characters when
-using strings. (Use of bytes as paths is deprecated on Windows, and this feature
-is not available when using bytes.)
+path functionality to accept and return paths longer than 260 characters.
 
 After changing the above option, no further configuration is required.
 
@@ -601,6 +599,50 @@ example variable could look like this (assuming the first two entries already
 existed)::
 
     C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Python 3.9
+
+.. _win-utf8-mode:
+
+UTF-8 mode
+==========
+
+.. versionadded:: 3.7
+
+Windows still uses legacy encodings for the system encoding (the ANSI Code
+Page).  Python uses it for the default encoding of text files (e.g.
+:func:`locale.getpreferredencoding`).
+
+This may cause issues because UTF-8 is widely used on the internet
+and most Unix systems, including WSL (Windows Subsystem for Linux).
+
+You can use UTF-8 mode to change the default text encoding to UTF-8.
+You can enable UTF-8 mode via the ``-X utf8`` command line option, or
+the ``PYTHONUTF8=1`` environment variable.  See :envvar:`PYTHONUTF8` for
+enabling UTF-8 mode, and :ref:`setting-envvars` for how to modify
+environment variables.
+
+When UTF-8 mode is enabled:
+
+* :func:`locale.getpreferredencoding` returns ``'UTF-8'`` instead of
+  the system encoding.  This function is used for the default text
+  encoding in many places, including :func:`open`, :class:`Popen`,
+  :meth:`Path.read_text`, etc.
+* :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr`
+  all use UTF-8 as their text encoding.
+* You can still use the system encoding via the "mbcs" codec.
+
+Note that adding ``PYTHONUTF8=1`` to the default environment variables
+will affect all Python 3.7+ applications on your system.
+If you have any Python 3.7+ applications which rely on the legacy
+system encoding, it is recommended to set the environment variable
+temporarily or use the ``-X utf8`` command line option.
+
+.. note::
+   Even when UTF-8 mode is disabled, Python uses UTF-8 by default
+   on Windows for:
+
+   * Console I/O including standard I/O (see :pep:`528` for details).
+   * The filesystem encoding (see :pep:`529` for details).
+
 
 .. _launcher:
 

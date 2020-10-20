@@ -261,8 +261,10 @@ and imaginary parts.
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
 operands of different numeric types, the operand with the "narrower" type is
 widened to that of the other, where integer is narrower than floating point,
-which is narrower than complex.  Comparisons between numbers of mixed type use
-the same rule. [2]_ The constructors :func:`int`, :func:`float`, and
+which is narrower than complex. A comparison between numbers of different types
+behaves as though the exact values of those numbers were being compared. [2]_
+
+The constructors :func:`int`, :func:`float`, and
 :func:`complex` can be used to produce numbers of a specific type.
 
 All numeric types (except complex) support the following operations (for priorities of
@@ -350,7 +352,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See http://www.unicode.org/Public/12.1.0/ucd/extracted/DerivedNumericType.txt
+   See https://www.unicode.org/Public/13.0.0/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -432,12 +434,10 @@ Notes:
    Negative shift counts are illegal and cause a :exc:`ValueError` to be raised.
 
 (2)
-   A left shift by *n* bits is equivalent to multiplication by ``pow(2, n)``
-   without overflow check.
+   A left shift by *n* bits is equivalent to multiplication by ``pow(2, n)``.
 
 (3)
-   A right shift by *n* bits is equivalent to division by ``pow(2, n)`` without
-   overflow check.
+   A right shift by *n* bits is equivalent to floor division by ``pow(2, n)``.
 
 (4)
    Performing these calculations with at least one extra sign extension bit in
@@ -477,6 +477,27 @@ class`. In addition, it provides a few more methods:
             return len(s)       # len('100101') --> 6
 
     .. versionadded:: 3.1
+
+.. method:: int.bit_count()
+
+    Return the number of ones in the binary representation of the absolute
+    value of the integer. This is also known as the population count.
+    Example::
+
+        >>> n = 19
+        >>> bin(n)
+        '0b10011'
+        >>> n.bit_count()
+        3
+        >>> (-n).bit_count()
+        3
+
+    Equivalent to::
+
+        def bit_count(self):
+            return bin(self).count("1")
+
+    .. versionadded:: 3.10
 
 .. method:: int.to_bytes(length, byteorder, \*, signed=False)
 
@@ -1559,8 +1580,8 @@ expression support in the :mod:`re` module).
    list of possible encodings, see section :ref:`standard-encodings`.
 
    By default, the *errors* argument is not checked for best performances, but
-   only used at the first encoding error. Enable the development mode
-   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+   only used at the first encoding error. Enable the :ref:`Python Development
+   Mode <devmode>`, or use a debug build to check *errors*.
 
    .. versionchanged:: 3.1
       Support for keyword arguments added.
@@ -1829,6 +1850,14 @@ expression support in the :mod:`re` module).
       >>> 'www.example.com'.lstrip('cmowz.')
       'example.com'
 
+   See :meth:`str.removeprefix` for a method that will remove a single prefix
+   string rather than all of a set of characters.  For example::
+
+      >>> 'Arthur: three!'.lstrip('Arthur: ')
+      'ee!'
+      >>> 'Arthur: three!'.removeprefix('Arthur: ')
+      'three!'
+
 
 .. staticmethod:: str.maketrans(x[, y[, z]])
 
@@ -1851,6 +1880,34 @@ expression support in the :mod:`re` module).
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
    the string itself, followed by two empty strings.
+
+
+.. method:: str.removeprefix(prefix, /)
+
+   If the string starts with the *prefix* string, return
+   ``string[len(prefix):]``. Otherwise, return a copy of the original
+   string::
+
+      >>> 'TestHook'.removeprefix('Test')
+      'Hook'
+      >>> 'BaseTestCase'.removeprefix('Test')
+      'BaseTestCase'
+
+   .. versionadded:: 3.9
+
+
+.. method:: str.removesuffix(suffix, /)
+
+   If the string ends with the *suffix* string and that *suffix* is not empty,
+   return ``string[:-len(suffix)]``. Otherwise, return a copy of the
+   original string::
+
+      >>> 'MiscTests'.removesuffix('Tests')
+      'Misc'
+      >>> 'TmpDirMixin'.removesuffix('Tests')
+      'TmpDirMixin'
+
+   .. versionadded:: 3.9
 
 
 .. method:: str.replace(old, new[, count])
@@ -1909,6 +1966,13 @@ expression support in the :mod:`re` module).
       >>> 'mississippi'.rstrip('ipz')
       'mississ'
 
+   See :meth:`str.removesuffix` for a method that will remove a single suffix
+   string rather than all of a set of characters.  For example::
+
+      >>> 'Monty Python'.rstrip(' Python')
+      'M'
+      >>> 'Monty Python'.removesuffix(' Python')
+      'Monty'
 
 .. method:: str.split(sep=None, maxsplit=-1)
 
@@ -2416,7 +2480,7 @@ data and are closely related to string objects in a variety of other ways.
    A reverse conversion function exists to transform a bytes object into its
    hexadecimal representation.
 
-   .. method:: hex()
+   .. method:: hex([sep[, bytes_per_sep]])
 
       Return a string object containing two hexadecimal digits for each
       byte in the instance.
@@ -2510,7 +2574,7 @@ objects.
    A reverse conversion function exists to transform a bytearray object into its
    hexadecimal representation.
 
-   .. method:: hex()
+   .. method:: hex([sep[, bytes_per_sep]])
 
       Return a string object containing two hexadecimal digits for each
       byte in the instance.
@@ -2519,6 +2583,11 @@ objects.
       'f0f1f2'
 
       .. versionadded:: 3.5
+
+      .. versionchanged:: 3.8
+         Similar to :meth:`bytes.hex`, :meth:`bytearray.hex` now supports
+         optional *sep* and *bytes_per_sep* parameters to insert separators
+         between bytes in the hex output.
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -2584,6 +2653,50 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
+.. method:: bytes.removeprefix(prefix, /)
+            bytearray.removeprefix(prefix, /)
+
+   If the binary data starts with the *prefix* string, return
+   ``bytes[len(prefix):]``. Otherwise, return a copy of the original
+   binary data::
+
+      >>> b'TestHook'.removeprefix(b'Test')
+      b'Hook'
+      >>> b'BaseTestCase'.removeprefix(b'Test')
+      b'BaseTestCase'
+
+   The *prefix* may be any :term:`bytes-like object`.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
+
+   .. versionadded:: 3.9
+
+
+.. method:: bytes.removesuffix(suffix, /)
+            bytearray.removesuffix(suffix, /)
+
+   If the binary data ends with the *suffix* string and that *suffix* is
+   not empty, return ``bytes[:-len(suffix)]``.  Otherwise, return a copy of
+   the original binary data::
+
+      >>> b'MiscTests'.removesuffix(b'Tests')
+      b'Misc'
+      >>> b'TmpDirMixin'.removesuffix(b'Tests')
+      b'TmpDirMixin'
+
+   The *suffix* may be any :term:`bytes-like object`.
+
+   .. note::
+
+      The bytearray version of this method does *not* operate in place -
+      it always produces a new object, even if no changes were made.
+
+   .. versionadded:: 3.9
+
+
 .. method:: bytes.decode(encoding="utf-8", errors="strict")
             bytearray.decode(encoding="utf-8", errors="strict")
 
@@ -2596,8 +2709,8 @@ arbitrary binary data.
    list of possible encodings, see section :ref:`standard-encodings`.
 
    By default, the *errors* argument is not checked for best performances, but
-   only used at the first decoding error. Enable the development mode
-   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+   only used at the first decoding error. Enable the :ref:`Python Development
+   Mode <devmode>`, or use a debug build to check *errors*.
 
    .. note::
 
@@ -2834,7 +2947,14 @@ produce new objects.
       b'example.com'
 
    The binary sequence of byte values to remove may be any
-   :term:`bytes-like object`.
+   :term:`bytes-like object`. See :meth:`~bytes.removeprefix` for a method
+   that will remove a single prefix string rather than all of a set of
+   characters.  For example::
+
+      >>> b'Arthur: three!'.lstrip(b'Arthur: ')
+      b'ee!'
+      >>> b'Arthur: three!'.removeprefix(b'Arthur: ')
+      b'three!'
 
    .. note::
 
@@ -2883,7 +3003,14 @@ produce new objects.
       b'mississ'
 
    The binary sequence of byte values to remove may be any
-   :term:`bytes-like object`.
+   :term:`bytes-like object`. See :meth:`~bytes.removesuffix` for a method
+   that will remove a single suffix string rather than all of a set of
+   characters.  For example::
+
+      >>> b'Monty Python'.rstrip(b' Python')
+      b'M'
+      >>> b'Monty Python'.removesuffix(b' Python')
+      b'Monty'
 
    .. note::
 
@@ -3667,13 +3794,13 @@ copying.
       :mod:`struct` module syntax.
 
       .. versionadded:: 3.8
-         *Order* can be {'C', 'F', 'A'}.  When *order* is 'C' or 'F', the data
+         *order* can be {'C', 'F', 'A'}.  When *order* is 'C' or 'F', the data
          of the original array is converted to C or Fortran order. For contiguous
          views, 'A' returns an exact copy of the physical memory. In particular,
          in-memory Fortran order is preserved. For non-contiguous views, the
          data is converted to C first. *order=None* is the same as *order='C'*.
 
-   .. method:: hex()
+   .. method:: hex([sep[, bytes_per_sep]])
 
       Return a string object containing two hexadecimal digits for each
       byte in the buffer. ::
@@ -3683,6 +3810,11 @@ copying.
          '616263'
 
       .. versionadded:: 3.5
+
+      .. versionchanged:: 3.8
+         Similar to :meth:`bytes.hex`, :meth:`memoryview.hex` now supports
+         optional *sep* and *bytes_per_sep* parameters to insert separators
+         between bytes in the hex output.
 
    .. method:: tolist()
 
@@ -4074,7 +4206,7 @@ The constructors for both classes work the same:
 
 
    Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
-   :meth:`difference`, and :meth:`symmetric_difference`, :meth:`issubset`, and
+   :meth:`difference`, :meth:`symmetric_difference`, :meth:`issubset`, and
    :meth:`issuperset` methods will accept any iterable as an argument.  In
    contrast, their operator based counterparts require their arguments to be
    sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
@@ -4351,6 +4483,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       Return a reverse iterator over the keys of the dictionary. This is a
       shortcut for ``reversed(d.keys())``.
 
+      .. versionadded:: 3.8
+
    .. method:: setdefault(key[, default])
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
@@ -4379,6 +4513,22 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
          >>> d = {'a': 1}
          >>> d.values() == d.values()
          False
+
+   .. describe:: d | other
+
+      Create a new dictionary with the merged keys and values of *d* and
+      *other*, which must both be dictionaries. The values of *other* take
+      priority when *d* and *other* share keys.
+
+      .. versionadded:: 3.9
+
+   .. describe:: d |= other
+
+      Update the dictionary *d* with keys and values from *other*, which may be
+      either a :term:`mapping` or an :term:`iterable` of key/value pairs. The
+      values of *other* take priority when *d* and *other* share keys.
+
+      .. versionadded:: 3.9
 
    Dictionaries compare equal if and only if they have the same ``(key,
    value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
@@ -4473,6 +4623,12 @@ support membership tests:
    .. versionchanged:: 3.8
       Dictionary views are now reversible.
 
+.. describe:: dictview.mapping
+
+   Return a :class:`types.MappingProxyType` that wraps the original
+   dictionary to which the view refers.
+
+   .. versionadded:: 3.10
 
 Keys views are set-like since their entries are unique and hashable.  If all
 values are hashable, so that ``(key, value)`` pairs are unique and hashable,
@@ -4511,6 +4667,12 @@ An example of dictionary view usage::
    {'bacon'}
    >>> keys ^ {'sausage', 'juice'}
    {'juice', 'sausage', 'bacon', 'spam'}
+
+   >>> # get back a read-only proxy for the original dictionary
+   >>> values.mapping
+   mappingproxy({'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500})
+   >>> values.mapping['spam']
+   500
 
 
 .. _typecontextmanager:
@@ -4586,6 +4748,128 @@ structure for Python objects in the Python/C API. Extension types wanting to
 define these methods must provide them as a normal Python accessible method.
 Compared to the overhead of setting up the runtime context, the overhead of a
 single class dictionary lookup is negligible.
+
+.. _types-union:
+
+Union Type
+==========
+
+.. index::
+   object: Union
+   pair: union; type
+
+A union object holds the value of the ``|`` (bitwise or) operation on
+multiple :ref:`type objects<bltin-type-objects>`.  These types are intended
+primarily for type annotations. The union type expression enables cleaner
+type hinting syntax compared to :data:`typing.Union`.
+
+.. describe:: X | Y | ...
+
+   Defines a union object which holds types *X*, *Y*, and so forth. ``X | Y``
+   means either X or Y.  It is equivalent to ``typing.Union[X, Y]``.
+   Example::
+
+      def square(number: int | float) -> int | float:
+          return number ** 2
+
+.. describe:: union_object == other
+
+   Union objects can be tested for equality with other union objects.  Details:
+
+   * Unions of unions are flattened, e.g.::
+
+       (int | str) | float == int | str | float
+
+   * Redundant types are removed, e.g.::
+
+       int | str | int == int | str
+
+   * When comparing unions, the order is ignored, e.g.::
+
+      int | str == str | int
+
+   * It is compatible with :data:`typing.Union`::
+
+      int | str == typing.Union[int, str]
+
+   * Optional types can be spelled as a union with ``None``::
+
+      str | None == typing.Optional[str]
+
+.. describe:: isinstance(obj, union_object)
+
+   Calls to :func:`isinstance` are also supported with a Union object::
+
+      >>> isinstance("", int | str)
+      True
+
+   ..
+      At the time of writing this, there is no documentation for parameterized
+      generics or PEP 585. Thus the link currently points to PEP 585 itself.
+      Please change the link for parameterized generics to reference the correct
+      documentation once documentation for PEP 585 becomes available.
+
+   However, union objects containing `parameterized generics
+   <https://www.python.org/dev/peps/pep-0585/>`_ cannot be used::
+
+      >>> isinstance(1, int | list[int])
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: isinstance() argument 2 cannot contain a parameterized generic
+
+.. describe:: issubclass(obj, union_object)
+
+   Calls to :func:`issubclass` are also supported with a Union Object.::
+
+      >>> issubclass(bool, int | str)
+      True
+
+   ..
+      Once again, please change the link below for parameterized generics to
+      reference the correct documentation once documentation for PEP 585
+      becomes available.
+
+   However, union objects containing `parameterized generics
+   <https://www.python.org/dev/peps/pep-0585/>`_ cannot be used::
+
+      >>> issubclass(bool, bool | list[str])
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: issubclass() argument 2 cannot contain a parameterized generic
+
+The type for the Union object is :data:`types.Union`.  An object cannot be
+instantiated from the type::
+
+   >>> import types
+   >>> isinstance(int | str, types.Union)
+   True
+   >>> types.Union()
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: cannot create 'types.Union' instances
+
+.. note::
+   The :meth:`__or__` method for type objects was added to support the syntax
+   ``X | Y``.  If a metaclass implements :meth:`__or__`, the Union may
+   override it::
+
+      >>> class M(type):
+      ...     def __or__(self, other):
+      ...     return "Hello"
+      ...
+      >>> class C(metaclass=M):
+      ...     pass
+      ...
+      >>> C | int
+      'Hello'
+      >>> int | C
+      int | __main__.C
+
+.. seealso::
+
+   :pep:`604` -- PEP proposing the ``X | Y`` syntax and the Union type.
+
+.. versionadded:: 3.10
 
 
 .. _typesother:

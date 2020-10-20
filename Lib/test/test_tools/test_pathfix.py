@@ -3,7 +3,8 @@ import subprocess
 import sys
 import unittest
 from test import support
-from test.test_tools import import_tool, scriptsdir, skip_if_missing
+from test.support import os_helper
+from test.test_tools import scriptsdir, skip_if_missing
 
 
 # need Tools/script/ directory: skip if run on Python installed on the system
@@ -14,7 +15,7 @@ class TestPathfixFunctional(unittest.TestCase):
     script = os.path.join(scriptsdir, 'pathfix.py')
 
     def setUp(self):
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
     def pathfix(self, shebang, pathfix_flags, exitcode=0, stdout='', stderr='',
                 directory=''):
@@ -24,22 +25,24 @@ class TestPathfixFunctional(unittest.TestCase):
             filename = os.path.join(directory, 'script-A_1.py')
             pathfix_arg = directory
         else:
-            filename = support.TESTFN
+            filename = os_helper.TESTFN
             pathfix_arg = filename
 
         with open(filename, 'w', encoding='utf8') as f:
             f.write(f'{shebang}\n' + 'print("Hello world")\n')
 
+        encoding = sys.getfilesystemencoding()
         proc = subprocess.run(
             [sys.executable, self.script,
              *pathfix_flags, '-n', pathfix_arg],
-            capture_output=True, text=1)
+            env={**os.environ, 'PYTHONIOENCODING': encoding},
+            capture_output=True)
 
         if stdout == '' and proc.returncode == 0:
             stdout = f'{filename}: updating\n'
         self.assertEqual(proc.returncode, exitcode, proc)
-        self.assertEqual(proc.stdout, stdout, proc)
-        self.assertEqual(proc.stderr, stderr, proc)
+        self.assertEqual(proc.stdout.decode(encoding), stdout.replace('\n', os.linesep), proc)
+        self.assertEqual(proc.stderr.decode(encoding), stderr.replace('\n', os.linesep), proc)
 
         with open(filename, 'r', encoding='utf8') as f:
             output = f.read()
@@ -54,8 +57,8 @@ class TestPathfixFunctional(unittest.TestCase):
         return new_shebang
 
     def test_recursive(self):
-        tmpdir = support.TESTFN + '.d'
-        self.addCleanup(support.rmtree, tmpdir)
+        tmpdir = os_helper.TESTFN + '.d'
+        self.addCleanup(os_helper.rmtree, tmpdir)
         os.mkdir(tmpdir)
         expected_stderr = f"recursedown('{os.path.basename(tmpdir)}')\n"
         self.assertEqual(

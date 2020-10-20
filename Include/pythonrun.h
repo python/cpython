@@ -32,57 +32,7 @@ PyAPI_FUNC(int) PyRun_InteractiveLoopFlags(
     const char *filename,       /* decoded from the filesystem encoding */
     PyCompilerFlags *flags);
 
-PyAPI_FUNC(struct _mod *) PyParser_ASTFromString(
-    const char *s,
-    const char *filename,       /* decoded from the filesystem encoding */
-    int start,
-    PyCompilerFlags *flags,
-    PyArena *arena);
-PyAPI_FUNC(struct _mod *) PyParser_ASTFromStringObject(
-    const char *s,
-    PyObject *filename,
-    int start,
-    PyCompilerFlags *flags,
-    PyArena *arena);
-PyAPI_FUNC(struct _mod *) PyParser_ASTFromFile(
-    FILE *fp,
-    const char *filename,       /* decoded from the filesystem encoding */
-    const char* enc,
-    int start,
-    const char *ps1,
-    const char *ps2,
-    PyCompilerFlags *flags,
-    int *errcode,
-    PyArena *arena);
-PyAPI_FUNC(struct _mod *) PyParser_ASTFromFileObject(
-    FILE *fp,
-    PyObject *filename,
-    const char* enc,
-    int start,
-    const char *ps1,
-    const char *ps2,
-    PyCompilerFlags *flags,
-    int *errcode,
-    PyArena *arena);
-#endif
 
-#ifndef PyParser_SimpleParseString
-#define PyParser_SimpleParseString(S, B) \
-    PyParser_SimpleParseStringFlags(S, B, 0)
-#define PyParser_SimpleParseFile(FP, S, B) \
-    PyParser_SimpleParseFileFlags(FP, S, B, 0)
-#endif
-PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlags(const char *, int,
-                                                           int);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
-PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlagsFilename(const char *,
-                                                                   const char *,
-                                                                   int, int);
-#endif
-PyAPI_FUNC(struct _node *) PyParser_SimpleParseFileFlags(FILE *, const char *,
-                                                         int, int);
-
-#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyRun_StringFlags(const char *, int, PyObject *,
                                          PyObject *, PyCompilerFlags *);
 

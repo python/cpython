@@ -78,15 +78,15 @@ created.  Socket addresses are represented as follows:
     Python programs.
 
 - For :const:`AF_INET6` address family, a four-tuple ``(host, port, flowinfo,
-  scopeid)`` is used, where *flowinfo* and *scopeid* represent the ``sin6_flowinfo``
+  scope_id)`` is used, where *flowinfo* and *scope_id* represent the ``sin6_flowinfo``
   and ``sin6_scope_id`` members in :const:`struct sockaddr_in6` in C.  For
-  :mod:`socket` module methods, *flowinfo* and *scopeid* can be omitted just for
-  backward compatibility.  Note, however, omission of *scopeid* can cause problems
+  :mod:`socket` module methods, *flowinfo* and *scope_id* can be omitted just for
+  backward compatibility.  Note, however, omission of *scope_id* can cause problems
   in manipulating scoped IPv6 addresses.
 
   .. versionchanged:: 3.7
-     For multicast addresses (with *scopeid* meaningful) *address* may not contain
-     ``%scope`` (or ``zone id``) part. This information is superfluous and may
+     For multicast addresses (with *scope_id* meaningful) *address* may not contain
+     ``%scope_id`` (or ``zone id``) part. This information is superfluous and may
      be safely omitted (recommended).
 
 - :const:`AF_NETLINK` sockets are represented as pairs ``(pid, groups)``.
@@ -118,6 +118,10 @@ created.  Socket addresses are represented as follows:
   - :const:`CAN_ISOTP` protocol require a tuple ``(interface, rx_addr, tx_addr)``
     where both additional parameters are unsigned long integer that represent a
     CAN identifier (standard or extended).
+  - :const:`CAN_J1939` protocol require a tuple ``(interface, name, pgn, addr)``
+    where additional parameters are 64-bit unsigned integer representing the
+    ECU name, a 32-bit unsigned integer representing the Parameter Group Number
+    (PGN), and an 8-bit integer representing the address.
 
 - A string or a tuple ``(id, unit)`` is used for the :const:`SYSPROTO_CONTROL`
   protocol of the :const:`PF_SYSTEM` family. The string is the name of a
@@ -408,6 +412,17 @@ Constants
 
    .. versionadded:: 3.5
 
+.. data:: CAN_RAW_JOIN_FILTERS
+
+   Joins the applied CAN filters such that only CAN frames that match all
+   given CAN filters are passed to user space.
+
+   This constant is documented in the Linux documentation.
+
+   .. availability:: Linux >= 4.1.
+
+   .. versionadded:: 3.9
+
 .. data:: CAN_ISOTP
 
    CAN_ISOTP, in the CAN protocol family, is the ISO-TP (ISO 15765-2) protocol.
@@ -416,6 +431,15 @@ Constants
    .. availability:: Linux >= 2.6.25.
 
    .. versionadded:: 3.7
+
+.. data:: CAN_J1939
+
+   CAN_J1939, in the CAN protocol family, is the SAE J1939 protocol.
+   J1939 constants, documented in the Linux documentation.
+
+   .. availability:: Linux >= 5.4.
+
+   .. versionadded:: 3.9
 
 
 .. data:: AF_PACKET
@@ -533,7 +557,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    default), :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other
    ``SOCK_`` constants. The protocol number is usually zero and may be omitted
    or in the case where the address family is :const:`AF_CAN` the protocol
-   should be one of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`.
+   should be one of :const:`CAN_RAW`, :const:`CAN_BCM`, :const:`CAN_ISOTP` or
+   :const:`CAN_J1939`.
 
    If *fileno* is specified, the values for *family*, *type*, and *proto* are
    auto-detected from the specified file descriptor.  Auto-detection can be
@@ -565,7 +590,9 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       When :const:`SOCK_NONBLOCK` or :const:`SOCK_CLOEXEC`
       bit flags are applied to *type* they are cleared, and
       :attr:`socket.type` will not reflect them.  They are still passed
-      to the underlying system `socket()` call.  Therefore::
+      to the underlying system `socket()` call.  Therefore,
+
+      ::
 
           sock = socket.socket(
               socket.AF_INET,
@@ -574,6 +601,9 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       will still create a non-blocking socket on OSes that support
       ``SOCK_NONBLOCK``, but ``sock.type`` will be set to
       ``socket.SOCK_STREAM``.
+
+   .. versionchanged:: 3.9
+       The CAN_J1939 protocol was added.
 
 .. function:: socketpair([family[, type[, proto]]])
 
@@ -736,7 +766,7 @@ The :mod:`socket` module also offers various network-related services:
    :const:`AI_CANONNAME` is part of the *flags* argument; else *canonname*
    will be empty.  *sockaddr* is a tuple describing a socket address, whose
    format depends on the returned *family* (a ``(address, port)`` 2-tuple for
-   :const:`AF_INET`, a ``(address, port, flow info, scope id)`` 4-tuple for
+   :const:`AF_INET`, a ``(address, port, flowinfo, scope_id)`` 4-tuple for
    :const:`AF_INET6`), and is meant to be passed to the :meth:`socket.connect`
    method.
 
@@ -757,7 +787,7 @@ The :mod:`socket` module also offers various network-related services:
 
    .. versionchanged:: 3.7
       for IPv6 multicast addresses, string representing an address will not
-      contain ``%scope`` part.
+      contain ``%scope_id`` part.
 
 .. function:: getfqdn([name])
 
@@ -825,8 +855,8 @@ The :mod:`socket` module also offers various network-related services:
    or numeric address representation in *host*.  Similarly, *port* can contain a
    string port name or a numeric port number.
 
-   For IPv6 addresses, ``%scope`` is appended to the host part if *sockaddr*
-   contains meaningful *scopeid*. Usually this happens for multicast addresses.
+   For IPv6 addresses, ``%scope_id`` is appended to the host part if *sockaddr*
+   contains meaningful *scope_id*. Usually this happens for multicast addresses.
 
    For more information about *flags* you can consult :manpage:`getnameinfo(3)`.
 
@@ -1352,7 +1382,7 @@ to sockets.
 
    .. versionchanged:: 3.7
       For multicast IPv6 address, first item of *address* does not contain
-      ``%scope`` part anymore. In order to get full IPv6 address use
+      ``%scope_id`` part anymore. In order to get full IPv6 address use
       :func:`getnameinfo`.
 
 .. method:: socket.recvmsg(bufsize[, ancbufsize[, flags]])
@@ -1411,9 +1441,9 @@ to sockets.
           fds = array.array("i")   # Array of ints
           msg, ancdata, flags, addr = sock.recvmsg(msglen, socket.CMSG_LEN(maxfds * fds.itemsize))
           for cmsg_level, cmsg_type, cmsg_data in ancdata:
-              if (cmsg_level == socket.SOL_SOCKET and cmsg_type == socket.SCM_RIGHTS):
+              if cmsg_level == socket.SOL_SOCKET and cmsg_type == socket.SCM_RIGHTS:
                   # Append data, ignoring any truncated integers at the end.
-                  fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+                  fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
           return msg, list(fds)
 
    .. availability:: most Unix platforms, possibly others.
@@ -1665,7 +1695,9 @@ to sockets.
 
 .. method:: socket.setsockopt(level, optname, value: int)
 .. method:: socket.setsockopt(level, optname, value: buffer)
+   :noindex:
 .. method:: socket.setsockopt(level, optname, None, optlen: int)
+   :noindex:
 
    .. index:: module: struct
 

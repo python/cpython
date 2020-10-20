@@ -50,8 +50,16 @@ exception is raised if the entry asked for cannot be found.");
 typedef struct {
     PyTypeObject *StructPwdType;
 } pwdmodulestate;
-#define modulestate(o) ((pwdmodulestate *)PyModule_GetState(o))
-#define modulestate_global modulestate(PyState_FindModule(&pwdmodule))
+
+static inline pwdmodulestate*
+get_pwd_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (pwdmodulestate *)state;
+}
+
+#define modulestate_global get_pwd_state(PyState_FindModule(&pwdmodule))
 
 static struct PyModuleDef pwdmodule;
 
@@ -316,11 +324,11 @@ static PyMethodDef pwd_methods[] = {
 };
 
 static int pwdmodule_traverse(PyObject *m, visitproc visit, void *arg) {
-    Py_VISIT(modulestate(m)->StructPwdType);
+    Py_VISIT(get_pwd_state(m)->StructPwdType);
     return 0;
 }
 static int pwdmodule_clear(PyObject *m) {
-    Py_CLEAR(modulestate(m)->StructPwdType);
+    Py_CLEAR(get_pwd_state(m)->StructPwdType);
     return 0;
 }
 static void pwdmodule_free(void *m) {

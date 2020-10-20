@@ -55,7 +55,7 @@
  */
 
 #include "Python.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 #ifdef MS_WIN32
 #include <windows.h>
@@ -156,10 +156,9 @@ _ctypes_get_errobj(int **pspace)
         Py_INCREF(errobj);
     }
     else if (!PyErr_Occurred()) {
-        void *space = PyMem_Malloc(sizeof(int) * 2);
+        void *space = PyMem_Calloc(2, sizeof(int));
         if (space == NULL)
             return NULL;
-        memset(space, 0, sizeof(int) * 2);
         errobj = PyCapsule_New(space, CTYPES_CAPSULE_NAME_PYMEM, pymem_destructor);
         if (errobj == NULL) {
             PyMem_Free(space);
@@ -752,7 +751,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 #if defined(MS_WIN32) && !defined(_WIN32_WCE)
 /*
 Per: https://msdn.microsoft.com/en-us/library/7572ztz4.aspx
-To be returned by value in RAX, user-defined types must have a length 
+To be returned by value in RAX, user-defined types must have a length
 of 1, 2, 4, 8, 16, 32, or 64 bits
 */
 int can_return_struct_as_int(size_t s)
@@ -945,7 +944,7 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
     if (!checker || !retval)
         return retval;
 
-    v = _PyObject_CallOneArg(checker, retval);
+    v = PyObject_CallOneArg(checker, retval);
     if (v == NULL)
         _PyTraceback_Add("GetResult", "_ctypes/callproc.c", __LINE__-2);
     Py_DECREF(retval);
@@ -1074,6 +1073,14 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 #endif
 
 /*
+ * bpo-13097: Max number of arguments _ctypes_callproc will accept.
+ *
+ * This limit is enforced for the `alloca()` call in `_ctypes_callproc`,
+ * to avoid allocating a massive buffer on the stack.
+ */
+#define CTYPES_MAX_ARGCOUNT 1024
+
+/*
  * Requirements, must be ensured by the caller:
  * - argtuple is tuple of arguments
  * - argtypes is either NULL, or a tuple of the same size as argtuple
@@ -1108,6 +1115,13 @@ PyObject *_ctypes_callproc(PPROC pProc,
         ++argcount;
 #endif
 
+    if (argcount > CTYPES_MAX_ARGCOUNT)
+    {
+        PyErr_Format(PyExc_ArgError, "too many arguments (%zi), maximum is %i",
+                     argcount, CTYPES_MAX_ARGCOUNT);
+        return NULL;
+    }
+
     args = (struct argument *)alloca(sizeof(struct argument) * argcount);
     if (!args) {
         PyErr_NoMemory();
@@ -1138,7 +1152,7 @@ PyObject *_ctypes_callproc(PPROC pProc,
         if (argtypes && argtype_count > i) {
             PyObject *v;
             converter = PyTuple_GET_ITEM(argtypes, i);
-            v = _PyObject_CallOneArg(converter, arg);
+            v = PyObject_CallOneArg(converter, arg);
             if (v == NULL) {
                 _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
@@ -1217,7 +1231,9 @@ PyObject *_ctypes_callproc(PPROC pProc,
     if (rtype->type != FFI_TYPE_FLOAT
         && rtype->type != FFI_TYPE_STRUCT
         && rtype->size < sizeof(ffi_arg))
+    {
         resbuf = (char *)resbuf + sizeof(ffi_arg) - rtype->size;
+    }
 #endif
 
 #ifdef MS_WIN32
@@ -1284,7 +1300,6 @@ module. load_flags are as defined for LoadLibraryEx in the\n\
 Windows API.\n";
 static PyObject *load_library(PyObject *self, PyObject *args)
 {
-    const WCHAR *name;
     PyObject *nameobj;
     int load_flags = 0;
     HMODULE hMod;
@@ -1293,13 +1308,13 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "U|i:LoadLibrary", &nameobj, &load_flags))
         return NULL;
 
-    name = _PyUnicode_AsUnicode(nameobj);
-    if (!name)
-        return NULL;
-
     if (PySys_Audit("ctypes.dlopen", "O", nameobj) < 0) {
         return NULL;
     }
+
+    WCHAR *name = PyUnicode_AsWideCharString(nameobj, NULL);
+    if (!name)
+        return NULL;
 
     Py_BEGIN_ALLOW_THREADS
     /* bpo-36085: Limit DLL search directories to avoid pre-loading
@@ -1309,10 +1324,12 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     err = hMod ? 0 : GetLastError();
     Py_END_ALLOW_THREADS
 
+    PyMem_Free(name);
     if (err == ERROR_MOD_NOT_FOUND) {
         PyErr_Format(PyExc_FileNotFoundError,
-                     ("Could not find module '%.500S'. Try using "
-                      "the full path with constructor syntax."),
+                     ("Could not find module '%.500S' (or one of its "
+                      "dependencies). Try using the full path with "
+                      "constructor syntax."),
                      nameobj);
         return NULL;
     } else if (err) {
@@ -1384,7 +1401,7 @@ copy_com_pointer(PyObject *self, PyObject *args)
 static PyObject *py_dl_open(PyObject *self, PyObject *args)
 {
     PyObject *name, *name2;
-    char *name_str;
+    const char *name_str;
     void * handle;
 #if HAVE_DECL_RTLD_LOCAL
     int mode = RTLD_NOW | RTLD_LOCAL;
@@ -1398,15 +1415,12 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     if (name != Py_None) {
         if (PyUnicode_FSConverter(name, &name2) == 0)
             return NULL;
-        if (PyBytes_Check(name2))
-            name_str = PyBytes_AS_STRING(name2);
-        else
-            name_str = PyByteArray_AS_STRING(name2);
+        name_str = PyBytes_AS_STRING(name2);
     } else {
         name_str = NULL;
         name2 = NULL;
     }
-    if (PySys_Audit("ctypes.dlopen", "s", name_str) < 0) {
+    if (PySys_Audit("ctypes.dlopen", "O", name) < 0) {
         return NULL;
     }
     handle = ctypes_dlopen(name_str, mode);
@@ -1711,10 +1725,9 @@ resize(PyObject *self, PyObject *args)
     if (!_CDataObject_HasExternalBuffer(obj)) {
         /* We are currently using the objects default buffer, but it
            isn't large enough any more. */
-        void *ptr = PyMem_Malloc(size);
+        void *ptr = PyMem_Calloc(1, size);
         if (ptr == NULL)
             return PyErr_NoMemory();
-        memset(ptr, 0, size);
         memmove(ptr, obj->b_ptr, obj->b_size);
         obj->b_ptr = ptr;
         obj->b_size = size;
@@ -1834,7 +1847,7 @@ pointer(PyObject *self, PyObject *arg)
 
     typ = PyDict_GetItemWithError(_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg));
     if (typ) {
-        return _PyObject_CallOneArg(typ, arg);
+        return PyObject_CallOneArg(typ, arg);
     }
     else if (PyErr_Occurred()) {
         return NULL;
@@ -1842,7 +1855,7 @@ pointer(PyObject *self, PyObject *arg)
     typ = POINTER(NULL, (PyObject *)Py_TYPE(arg));
     if (typ == NULL)
         return NULL;
-    result = _PyObject_CallOneArg(typ, arg);
+    result = PyObject_CallOneArg(typ, arg);
     Py_DECREF(typ);
     return result;
 }

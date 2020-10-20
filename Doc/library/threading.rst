@@ -264,8 +264,10 @@ since it is impossible to detect the termination of alien threads.
    *target* is the callable object to be invoked by the :meth:`run` method.
    Defaults to ``None``, meaning nothing is called.
 
-   *name* is the thread name.  By default, a unique name is constructed of the
-   form "Thread-*N*" where *N* is a small decimal number.
+   *name* is the thread name. By default, a unique name is constructed
+   of the form "Thread-*N*" where *N* is a small decimal number,
+   or "Thread-*N* (target)" where "target" is ``target.__name__`` if the
+   *target* argument is specified.
 
    *args* is the argument tuple for the target invocation.  Defaults to ``()``.
 
@@ -280,7 +282,8 @@ since it is impossible to detect the termination of alien threads.
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
 
-   Daemon threads must not be used in subinterpreters.
+   .. versionchanged:: 3.10
+      Use the *target* name if *name* argument is omitted.
 
    .. versionchanged:: 3.3
       Added the *daemon* argument.
@@ -295,12 +298,6 @@ since it is impossible to detect the termination of alien threads.
 
       This method will raise a :exc:`RuntimeError` if called more than once
       on the same thread object.
-
-      Raise a :exc:`RuntimeError` if the thread is a daemon thread and the
-      method is called from a subinterpreter.
-
-      .. versionchanged:: 3.9
-         In a subinterpreter, spawning a daemon thread now raises an exception.
 
    .. method:: run()
 
@@ -357,13 +354,12 @@ since it is impossible to detect the termination of alien threads.
 
    .. attribute:: native_id
 
-      The native integral thread ID of this thread.
+      The Thread ID (``TID``) of this thread, as assigned by the OS (kernel).
       This is a non-negative integer, or ``None`` if the thread has not
       been started. See the :func:`get_native_id` function.
-      This represents the Thread ID (``TID``) as assigned to the
-      thread by the OS (kernel).  Its value may be used to uniquely identify
-      this particular thread system-wide (until the thread terminates,
-      after which the value may be recycled by the OS).
+      This value may be used to uniquely identify this particular thread
+      system-wide (until the thread terminates, after which the value
+      may be recycled by the OS).
 
       .. note::
 
@@ -403,7 +399,8 @@ since it is impossible to detect the termination of alien threads.
 
 .. impl-detail::
 
-   In CPython, due to the :term:`Global Interpreter Lock`, only one thread
+   In CPython, due to the :term:`Global Interpreter Lock
+   <global interpreter lock>`, only one thread
    can execute Python code at once (even though certain performance-oriented
    libraries might overcome this limitation).
    If you want your application to make better use of the computational
@@ -495,6 +492,11 @@ All methods are executed atomically.
       When invoked on an unlocked lock, a :exc:`RuntimeError` is raised.
 
       There is no return value.
+
+   .. method:: locked()
+
+      Return true if the lock is acquired.
+
 
 
 .. _rlock-objects:

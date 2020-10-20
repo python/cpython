@@ -358,7 +358,7 @@ an error value).
 .. c:function:: int PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level, const char *format, ...)
 
    Function similar to :c:func:`PyErr_WarnFormat`, but *category* is
-   :exc:`ResourceWarning` and pass *source* to :func:`warnings.WarningMessage`.
+   :exc:`ResourceWarning` and it passes *source* to :func:`warnings.WarningMessage`.
 
    .. versionadded:: 3.6
 
@@ -637,10 +637,20 @@ The following functions are used to create and modify Unicode exceptions from C.
    *object*, *length*, *start*, *end* and *reason*. *encoding* and *reason* are
    UTF-8 encoded strings.
 
+   .. deprecated:: 3.3 3.11
+
+      ``Py_UNICODE`` is deprecated since Python 3.3. Please migrate to
+      ``PyObject_CallFunction(PyExc_UnicodeEncodeError, "sOnns", ...)``.
+
 .. c:function:: PyObject* PyUnicodeTranslateError_Create(const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
 
    Create a :class:`UnicodeTranslateError` object with the attributes *object*,
    *length*, *start*, *end* and *reason*. *reason* is a UTF-8 encoded string.
+
+   .. deprecated:: 3.3 3.11
+
+      ``Py_UNICODE`` is deprecated since Python 3.3. Please migrate to
+      ``PyObject_CallFunction(PyExc_UnicodeTranslateError, "Onns", ...)``.
 
 .. c:function:: PyObject* PyUnicodeDecodeError_GetEncoding(PyObject *exc)
                 PyObject* PyUnicodeEncodeError_GetEncoding(PyObject *exc)
@@ -773,7 +783,7 @@ Standard Exceptions
 
 All standard Python exceptions are available as global variables whose names are
 ``PyExc_`` followed by the Python exception name.  These have the type
-:c:type:`PyObject\*`; they are all class objects.  For completeness, here are all
+:c:type:`PyObject*`; they are all class objects.  For completeness, here are all
 the variables:
 
 .. index::
@@ -983,9 +993,6 @@ Notes:
    This is a base class for other standard exceptions.
 
 (2)
-   This is the same as :exc:`weakref.ReferenceError`.
-
-(3)
    Only defined on Windows; protect code that uses this by testing that the
    preprocessor macro ``MS_WINDOWS`` is defined.
 
@@ -996,7 +1003,7 @@ Standard Warning Categories
 
 All standard Python warning categories are available as global variables whose
 names are ``PyExc_`` followed by the Python exception name. These have the type
-:c:type:`PyObject\*`; they are all class objects. For completeness, here are all
+:c:type:`PyObject*`; they are all class objects. For completeness, here are all
 the variables:
 
 .. index::

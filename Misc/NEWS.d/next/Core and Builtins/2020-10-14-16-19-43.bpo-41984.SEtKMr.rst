@@ -1,0 +1,2 @@
+The garbage collector now tracks all user-defined classes. Patch by Brandt
+Bucher.

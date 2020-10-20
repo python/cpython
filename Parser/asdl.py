@@ -33,8 +33,7 @@ __all__ = [
 # See the EBNF at the top of the file to understand the logical connection
 # between the various node types.
 
-builtin_types = {'identifier', 'string', 'bytes', 'int', 'object', 'singleton',
-                 'constant'}
+builtin_types = {'identifier', 'string', 'int', 'constant'}
 
 class AST:
     def __repr__(self):
@@ -71,6 +70,16 @@ class Field(AST):
         self.name = name
         self.seq = seq
         self.opt = opt
+
+    def __str__(self):
+        if self.seq:
+            extra = "*"
+        elif self.opt:
+            extra = "?"
+        else:
+            extra = ""
+
+        return "{}{} {}".format(self.type, extra, self.name)
 
     def __repr__(self):
         if self.seq:

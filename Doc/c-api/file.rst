@@ -8,7 +8,7 @@ File Objects
 .. index:: object: file
 
 These APIs are a minimal emulation of the Python 2 C API for built-in file
-objects, which used to rely on the buffered I/O (:c:type:`FILE\*`) support
+objects, which used to rely on the buffered I/O (:c:type:`FILE*`) support
 from the C standard library.  In Python 3, files and streams use the new
 :mod:`io` module, which defines several layers over the low-level unbuffered
 I/O of the operating system.  The functions described below are
@@ -17,7 +17,7 @@ error reporting in the interpreter; third-party code is advised to access
 the :mod:`io` APIs instead.
 
 
-.. c:function:: PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const char *encoding, const char *errors, const char *newline, int closefd)
+.. c:function:: PyObject* PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const char *encoding, const char *errors, const char *newline, int closefd)
 
    Create a Python file object from the file descriptor of an already
    opened file *fd*.  The arguments *name*, *encoding*, *errors* and *newline*
