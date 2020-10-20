@@ -783,6 +783,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. impl-detail:: This is the address of the object in memory.
 
+   .. audit-event:: builtins.id id id
+
 
 .. function:: input([prompt])
 
