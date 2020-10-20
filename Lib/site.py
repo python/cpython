@@ -276,7 +276,7 @@ def _get_path(userbase):
     version = sys.version_info
 
     if os.name == 'nt':
-        ver_nodot = sys.winver.replace('.', '')
+        ver_nodot = sys.winver.replace('.', '_')
         return f'{userbase}\\Python{ver_nodot}\\site-packages'
 
     if sys.platform == 'darwin' and sys._framework:

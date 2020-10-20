@@ -86,7 +86,7 @@ _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
 
 _PY_VERSION = sys.version.split()[0]
 _PY_VERSION_SHORT = '%d.%d' % sys.version_info[:2]
-_PY_VERSION_SHORT_NO_DOT = '%d%d' % sys.version_info[:2]
+_PY_VERSION_SHORT_NO_DOT = '%d_%d' % sys.version_info[:2]
 _PREFIX = os.path.normpath(sys.prefix)
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
 _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
@@ -545,7 +545,7 @@ def get_config_vars(*args):
             # sys.abiflags may not be defined on all platforms.
             _CONFIG_VARS['abiflags'] = ''
         try:
-            _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
+            _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '_')
         except AttributeError:
             _CONFIG_VARS['py_version_nodot_plat'] = ''
 

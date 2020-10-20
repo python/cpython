@@ -154,6 +154,8 @@ Other Language Changes
   :meth:`~object.__index__` method).
   (Contributed by Serhiy Storchaka in :issue:`37999`.)
 
+* The ``nodot`` version number has been changed to ``3_10`` for clarity
+  (:issue:`40747`)
 
 New Modules
 ===========

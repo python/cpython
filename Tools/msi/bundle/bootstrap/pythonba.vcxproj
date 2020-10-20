@@ -35,7 +35,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <Py_IntDir Condition="'$(Py_IntDir)' == ''">$(PySourcePath)PCbuild\obj\</Py_IntDir>
-    <IntDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\msi_$(ProjectName)\</IntDir>
+    <IntDir>$(Py_IntDir)\$(MajorVersionNumber)_$(MinorVersionNumber)$(ArchName)_$(Configuration)\msi_$(ProjectName)\</IntDir>
     <IntDir>$(IntDir.Replace(`\\`, `\`))</IntDir>
     <OutDir>$(IntDir)</OutDir>
   </PropertyGroup>

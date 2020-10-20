@@ -23,9 +23,9 @@ C++.
 
    This chapter mentions a number of filenames that include an encoded Python
    version number.  These filenames are represented with the version number shown
-   as ``XY``; in practice, ``'X'`` will be the major version number and ``'Y'``
+   as ``X_Y``; in practice, ``'X'`` will be the major version number and ``'Y'``
    will be the minor version number of the Python release you're working with.  For
-   example, if you are using Python 2.2.1, ``XY`` will actually be ``22``.
+   example, if you are using Python 3.10.1, ``X_Y`` will actually be ``3_10``.
 
 
 .. _win-cookbook:
@@ -109,17 +109,23 @@ Windows Python is built in Microsoft Visual C++; using other compilers may or
 may not work (though Borland seems to).  The rest of this section is MSVC++
 specific.
 
-When creating DLLs in Windows, you must pass :file:`pythonXY.lib` to the linker.
+When creating DLLs in Windows, the linker expects to see the import library
+:file:`pythonX_Y.lib` in order to find all the C-API functions available in
+:file:`pythonX_Y.dll` (or in the case of universal c-extensions,
+:file:`pythonX.lib` and :file:`pythonX.dll` respectively. This is handled with
+a pragma in :file:`pyconfig.h` so you do not need to add anything special in
+your build.
+
 To build two DLLs, spam and ni (which uses C functions found in spam), you could
 use these commands::
 
-   cl /LD /I/python/include spam.c ../libs/pythonXY.lib
-   cl /LD /I/python/include ni.c spam.lib ../libs/pythonXY.lib
+   cl /LD /I/python/include spam.c
+   cl /LD /I/python/include ni.c spam.lib
 
 The first command created three files: :file:`spam.obj`, :file:`spam.dll` and
 :file:`spam.lib`.  :file:`Spam.dll` does not contain any Python functions (such
 as :c:func:`PyArg_ParseTuple`), but it does know how to find the Python code
-thanks to :file:`pythonXY.lib`.
+thanks to the pragma and linking to the proper import lib.
 
 The second command created :file:`ni.dll` (and :file:`.obj` and :file:`.lib`),
 which knows how to find the necessary functions from spam, and also from the

@@ -14,7 +14,7 @@
                 <File Id="libs_python_stable.lib" Name="python$(var.MajorVersionNumber).lib" KeyPath="yes" />
             </Component>
             <Component Id="libs_python.lib" Directory="libs" Guid="*">
-                <File Id="libs_python.lib" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber).lib" KeyPath="yes" />
+                <File Id="libs_python.lib" Name="python$(var.MajorVersionNumber)_$(var.MinorVersionNumber).lib" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>
@@ -25,7 +25,7 @@
                 <File Id="libs_python_stable_d.lib" Name="python$(var.MajorVersionNumber)_d.lib" />
             </Component>
             <Component Id="libs_python_d.lib" Directory="libs" Guid="*">
-                <File Id="libs_python_d.lib" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)_d.lib" />
+                <File Id="libs_python_d.lib" Name="python$(var.MajorVersionNumber)_$(var.MinorVersionNumber)_d.lib" />
             </Component>
         </ComponentGroup>
     </Fragment>

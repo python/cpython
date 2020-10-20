@@ -1683,10 +1683,10 @@ SelectPythonDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                                          &py_major, &py_minor);
                         if (result == 2) {
 #ifdef _DEBUG
-                            wsprintf(pythondll, "python%d%d_d.dll",
+                            wsprintf(pythondll, "python%d_%d_d.dll",
                                      py_major, py_minor);
 #else
-                            wsprintf(pythondll, "python%d%d.dll",
+                            wsprintf(pythondll, "python%d_%d.dll",
                                      py_major, py_minor);
 #endif
                         }
