@@ -2306,6 +2306,11 @@ PyType_CheckExact:PyObject*:o:0:
 PyType_FromSpec:PyObject*::+1:
 PyType_FromSpec:PyType_Spec*:spec::
 
+PyType_FromModuleAndSpec:PyObject*::+1:
+PyType_FromModuleAndSpec:PyObject*:module:+1:
+PyType_FromModuleAndSpec:PyType_Spec*:spec::
+PyType_FromModuleAndSpec:PyObject*:bases:0:
+
 PyType_FromSpecWithBases:PyObject*::+1:
 PyType_FromSpecWithBases:PyType_Spec*:spec::
 PyType_FromSpecWithBases:PyObject*:bases:0:
