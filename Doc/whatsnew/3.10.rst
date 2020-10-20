@@ -252,6 +252,9 @@ Optimizations
   average.
   (Contributed by Victor Stinner in :issue:`41006`.)
 
+* The ``LOAD_ATTR`` instruction now uses new "per opcode cache" mechanism.
+  It is about 36% faster now.  (Contributed by Pablo Galindo and Yury Selivanov
+  in :issue:`42093`.)
 
 Deprecated
 ==========
@@ -322,6 +325,10 @@ New Features
 * The :c:func:`PyIter_Send` function was added to allow
   sending value into iterator without raising ``StopIteration`` exception.
   (Contributed by Vladimir Matveev in :issue:`41756`.)
+
+* Added :c:func:`PyUnicode_AsUTF8AndSize` to the limited C API.
+  (Contributed by Alex Gaynor in :issue:`41784`.)
+
 
 Porting to Python 3.10
 ----------------------

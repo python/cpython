@@ -727,26 +727,6 @@ PyAPI_FUNC(int) _PyUnicode_FormatAdvancedWriter(
 /* --- Manage the default encoding ---------------------------------------- */
 
 /* Returns a pointer to the default encoding (UTF-8) of the
-   Unicode object unicode and the size of the encoded representation
-   in bytes stored in *size.
-
-   In case of an error, no *size is set.
-
-   This function caches the UTF-8 encoded string in the unicodeobject
-   and subsequent calls will return the same string.  The memory is released
-   when the unicodeobject is deallocated.
-
-   _PyUnicode_AsStringAndSize is a #define for PyUnicode_AsUTF8AndSize to
-   support the previous internal function with the same behaviour.
-*/
-
-PyAPI_FUNC(const char *) PyUnicode_AsUTF8AndSize(
-    PyObject *unicode,
-    Py_ssize_t *size);
-
-#define _PyUnicode_AsStringAndSize PyUnicode_AsUTF8AndSize
-
-/* Returns a pointer to the default encoding (UTF-8) of the
    Unicode object unicode.
 
    Like PyUnicode_AsUTF8AndSize(), this also caches the UTF-8 representation
