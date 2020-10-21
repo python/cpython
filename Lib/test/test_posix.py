@@ -1990,19 +1990,45 @@ class TestPosixWeaklinking(unittest.TestCase):
            self.assertIn("HAVE_LINKAT", posix._have_functions)
 
         else:
-           self.assertNotIn("HAVE_LINKAT", posix._have_functions)
+            self.assertNotIn("HAVE_LINKAT", posix._have_functions)
 
-           with self.assertRaisesRegex(NotImplementedError, "src_dir_fd unavailable"):
-               os.link("source", "target",  src_dir_fd=0)
+            with self.assertRaisesRegex(NotImplementedError, "src_dir_fd unavailable"):
+                os.link("source", "target",  src_dir_fd=0)
 
-           with self.assertRaisesRegex(NotImplementedError, "dst_dir_fd unavailable"):
-               os.link("source", "target",  dst_dir_fd=0)
+            with self.assertRaisesRegex(NotImplementedError, "dst_dir_fd unavailable"):
+                os.link("source", "target",  dst_dir_fd=0)
+ 
+            with self.assertRaisesRegex(NotImplementedError, "src_dir_fd unavailable"):
+                os.link("source", "target",  src_dir_fd=0, dst_dir_fd=0)
+ 
+            # issue 41355: !HAVE_LINKAT code path ignores the follow_symlinks flag
+            base_path = os.path.abspath(support.TESTFN) + '.link'
+            link_path = os.path.join(base_path, "link")
+            target_path = os.path.join(base_path, "target")
+            source_path = os.path.join(base_path, "source")
+            try:
+                os.mkdir(base_path)
+ 
+                with open(source_path, "w") as fp:
+                    fp.write("data")
 
-           with self.assertRaisesRegex(NotImplementedError, "src_dir_fd unavailable"):
-               os.link("source", "target",  src_dir_fd=0, dst_dir_fd=0)
+                os.symlink("target", link_path)
 
-           # issue 41355: !HAVE_LINKAT code path ignores the follow_symlinks flag
-           self.fail("Implement test")
+                # Calling os.link should fail in the link(2) call, and
+                # should not reject *follow_symlinks* (to match the 
+                # behaviour you'd get when building on a platform without
+                # linkat)
+                with self.assertRaises(FileExistsError):
+                    os.link(source_path, link_path, follow_symlinks=True)
+
+                with self.assertRaises(FileExistsError):
+                    os.link(source_path, link_path, follow_symlinks=False)
+
+            finally:
+                support.rmtree(base_path)
+             
+           
+           
 
     def test_listdir_scandir(self):
         self._verify_available("HAVE_FDOPENDIR")
@@ -2101,7 +2127,7 @@ class TestPosixWeaklinking(unittest.TestCase):
         self._verify_available("HAVE_UTIMENSAT_RUNTIME")
         if self.mac_ver >= (10, 13): 
            self.assertIn("HAVE_FUTIMENS_RUNTIME", posix._have_functions)
-           self.assertIn("HAVE_UTIMENSAT_RUNTIME, posix._have_functions)
+           self.assertIn("HAVE_UTIMENSAT_RUNTIME", posix._have_functions)
 
         else:
            self.assertNotIn("HAVE_FUTIMENS_RUNTIME", posix._have_functions)
