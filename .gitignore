@@ -60,7 +60,6 @@ Lib/test/data/*
 !Lib/test/data/README
 /Makefile
 /Makefile.pre
-Misc/m4/
 Misc/python.pc
 Misc/python-embed.pc
 Misc/python-config.sh
@@ -103,7 +102,6 @@ Tools/unicode/data/
 /config.log
 /config.status
 /config.status.lineno
-/m4/
 /platform
 /profile-clean-stamp
 /profile-run-stamp
