@@ -1825,6 +1825,43 @@ if it is -1, mktime() should guess based on the date and time.\n");
 static int
 time_exec(PyObject *module)
 {
+#if defined(__APPLE__) && defined(HAVE_CLOCK_GETTIME)
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
+        /* pass: ^^^ cannot use '!' here */
+    } else {
+        PyObject* dct = PyModule_GetDict(module);
+
+        if (PyDict_DelItemString(dct, "clock_gettime") == -1) {
+            PyErr_Clear();
+        }
+        if (PyDict_DelItemString(dct, "clock_gettime_ns") == -1) {
+            PyErr_Clear();
+        }
+        if (PyDict_DelItemString(dct, "clock_settime") == -1) {
+            PyErr_Clear();
+        }
+        if (PyDict_DelItemString(dct, "clock_settime_ns") == -1) {
+            PyErr_Clear();
+        }
+        if (PyDict_DelItemString(dct, "clock_getres") == -1) {
+            PyErr_Clear();
+        }
+    }
+#endif
+#if defined(__APPLE__) && defined(HAVE_THREAD_TIME)
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
+        /* pass: ^^^ cannot use '!' here */
+    } else {
+        PyObject* dct = PyModule_GetDict(module);
+
+        if (PyDict_DelItemString(dct, "thread_time") == -1) {
+            PyErr_Clear();
+        }
+        if (PyDict_DelItemString(dct, "thread_time_ns") == -1) {
+            PyErr_Clear();
+        }
+    }
+#endif
     /* Set, or reset, module variables like time.timezone */
     if (init_timezone(module) < 0) {
         return -1;
@@ -1945,44 +1982,6 @@ PyMODINIT_FUNC
 PyInit_time(void)
 {
     PyObject* module = PyModuleDef_Init(&timemodule);
-
-#if defined(__APPLE__) && defined(HAVE_CLOCK_GETTIME)
-    if (HAVE_CLOCK_GETTIME_RUNTIME) {
-        /* pass: ^^^ cannot use '!' here */
-    } else {
-        PyObject* dct = PyModule_GetDict(module);
-
-        if (PyDict_DelItemString(dct, "clock_gettime") == -1) {
-            PyErr_Clear();
-        }
-        if (PyDict_DelItemString(dct, "clock_gettime_ns") == -1) {
-            PyErr_Clear();
-        }
-        if (PyDict_DelItemString(dct, "clock_settime") == -1) {
-            PyErr_Clear();
-        }
-        if (PyDict_DelItemString(dct, "clock_settime_ns") == -1) {
-            PyErr_Clear();
-        }
-        if (PyDict_DelItemString(dct, "clock_getres") == -1) {
-            PyErr_Clear();
-        }
-    }
-#endif
-#if defined(__APPLE__) && defined(HAVE_THREAD_TIME)
-    if (HAVE_CLOCK_GETTIME_RUNTIME) {
-        /* pass: ^^^ cannot use '!' here */
-    } else {
-        PyObject* dct = PyModule_GetDict(module);
-
-        if (PyDict_DelItemString(dct, "thread_time") == -1) {
-            PyErr_Clear();
-        }
-        if (PyDict_DelItemString(dct, "thread_time_ns") == -1) {
-            PyErr_Clear();
-        }
-    }
-#endif
 
     return module;
 }
