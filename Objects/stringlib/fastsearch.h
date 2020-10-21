@@ -248,7 +248,7 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
            >>> cut, period = factorize(x)
            >>> x[:cut], (right := x[cut:])
            ('GC', 'AGAGAG')
-           >>> period
+           >>> period  # right half period
            2
            >>> right[period:] == right[:-period]
            True
@@ -281,19 +281,40 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
     return cut;
 }
 
+typedef struct STRINGLIB(_pre) {
+    const STRINGLIB_CHAR *needle;
+    Py_ssize_t len_needle;
+    Py_ssize_t cut;
+    Py_ssize_t period;
+    int is_periodic;
+} STRINGLIB(prework);
+
+
+Py_LOCAL_INLINE(void)
+STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
+                       STRINGLIB(prework) *p)
+{
+    p->needle = needle;
+    p->len_needle = len_needle;
+    p->cut = STRINGLIB(_factorize)(needle, len_needle, &(p->period));
+    p->is_periodic = (0 == memcmp(needle,
+                                  needle + p->period,
+                                  p->cut * STRINGLIB_SIZEOF_CHAR));
+}
 
 Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
-                    const STRINGLIB_CHAR *needle, Py_ssize_t len_needle)
+                    STRINGLIB(prework) *p)
 {
     // Crochemore and Perrin's (1991) Two-Way algorithm.
     // See http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
+    const STRINGLIB_CHAR *needle = p->needle;
+    Py_ssize_t len_needle = p->len_needle;
+    Py_ssize_t cut = p->cut;
+    Py_ssize_t period = p->period;
     LOG("===== Checking \"%s\" in \"%s\". =====\n", needle, haystack);
 
-    Py_ssize_t cut, period;
-    cut = STRINGLIB(_factorize)(needle, len_needle, &period);
-
-    if (memcmp(needle, needle + period, cut * STRINGLIB_SIZEOF_CHAR) == 0) {
+    if (p->is_periodic) {
         LOG("Needle is periodic.\n");
         Py_ssize_t j = 0;
         Py_ssize_t memory = 0;
@@ -330,8 +351,8 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
         }
     }
     else {
-        LOG("Needle is not periodic.\n");
         period = Py_MAX(cut, len_needle - cut) + 1;
+        LOG("Needle is not periodic.\n");
         Py_ssize_t j = 0;
         while (j <= len_haystack - len_needle) {
 
@@ -354,7 +375,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                     LOG("Left half matches. Returning %d.\n", j);
                     return j;
                 }
-                LOG("Left half does not match. Advance by %d.\n", period);
+                LOG("Left half does not match. Advance by period %d.\n", period);
                 j += period;
             }
             else {
@@ -363,8 +384,81 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
             }
         }
     }
+    LOG("Not found. Returning -1.\n");
     return -1;
 }
+
+Py_LOCAL_INLINE(Py_ssize_t)
+STRINGLIB(_find)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
+                 const STRINGLIB_CHAR *needle, Py_ssize_t len_needle)
+{
+    LOG(">>> Counting \"%s\" in \"%s\".\n", needle, haystack);
+    Py_ssize_t index;
+    index = STRINGLIB(find_char)(haystack,
+                                 len_haystack - len_needle + 1,
+                                 needle[0]);
+    if (index == -1) {
+        return -1;
+    }
+    if (0 == memcmp(haystack + index,
+                    needle,
+                    len_needle * STRINGLIB_SIZEOF_CHAR)) {
+        return index;
+    }
+    else {
+        index++;
+    }
+    STRINGLIB(prework) p;
+    STRINGLIB(_preprocess)(needle, len_needle, &p);
+    Py_ssize_t result;
+    result = STRINGLIB(_two_way)(haystack + index, len_haystack - index, &p);
+    if (result == -1) {
+        return -1;
+    }
+    return result + index;
+}
+
+Py_LOCAL_INLINE(Py_ssize_t)
+STRINGLIB(_count)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
+                  const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
+                  Py_ssize_t maxcount)
+{
+    LOG(">>> Counting \"%s\" in \"%s\".\n", needle, haystack);
+    Py_ssize_t index;
+    Py_ssize_t count = 0;
+    index = STRINGLIB(find_char)(haystack,
+                                 len_haystack - len_needle + 1,
+                                 needle[0]);
+    if (index == -1) {
+        return -1;
+    }
+    if (0 == memcmp(haystack + index,
+                    needle,
+                    len_needle * STRINGLIB_SIZEOF_CHAR)) {
+        count++;
+        index += len_needle;
+        if (count == maxcount || index + len_needle > len_haystack) {
+            return count;
+        }
+    }
+    STRINGLIB(prework) p;
+    STRINGLIB(_preprocess)(needle, len_needle, &p);
+    while (index + len_needle <= len_haystack) {
+        Py_ssize_t result;
+        result = STRINGLIB(_two_way)(haystack + index,
+                                     len_haystack - index, &p);
+        if (result == -1) {
+            return count;
+        }
+        count++;
+        if (count == maxcount) {
+            return maxcount;
+        }
+        index += result + len_needle;
+    }
+    return count;
+}
+
 
 #undef LOG
 #undef LOG_STRING
@@ -409,7 +503,10 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
 
     if (mode != FAST_RSEARCH) {
         if (mode == FAST_SEARCH) {
-            return STRINGLIB(_two_way)(s, n, p, m);
+            return STRINGLIB(_find)(s, n, p, m);
+        }
+        if (mode == FAST_COUNT) {
+            return STRINGLIB(_count)(s, n, p, m, maxcount);
         }
         const STRINGLIB_CHAR *ss = s + m - 1;
         const STRINGLIB_CHAR *pp = p + m - 1;
