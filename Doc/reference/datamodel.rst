@@ -182,7 +182,7 @@ Ellipsis
    related to mathematical numbers, but subject to the limitations of numerical
    representation in computers.
 
-   The string representations of the Numeric classes, computed by
+   The string representations of the numeric classes, computed by
    :meth:`__repr__` and :meth:`__str__`, have the following
    properties:
 
