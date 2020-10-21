@@ -310,8 +310,8 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
     case NamedExpr_kind:
         return validate_expr(exp->v.NamedExpr.value, Load);
     case MatchAs_kind:
-        PyErr_SetString(
-            PyExc_ValueError, "MatchAs can only be used in match_case patterns");
+        PyErr_SetString(PyExc_ValueError,
+                        "MatchAs is only valid in match_case patterns");
         return 0;
     /* This last case doesn't have any checking. */
     case Name_kind:
@@ -324,122 +324,8 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
 static int
 validate_pattern(expr_ty p)
 {
-    asdl_expr_seq *keys, *values;
-    expr_ty key, value;
-    Py_ssize_t i, size;
-    switch (p->kind) {
-        case Attribute_kind:
-            return validate_expr(p, Load);  // TODO
-        case BinOp_kind:
-            // TODO
-            return 1;
-        case BoolOp_kind:
-            if (p->v.BoolOp.op != Or) {
-                PyErr_SetString(PyExc_ValueError,
-                    "BoolOp op in pattern must be Or");
-                return 0;
-            }
-            values = p->v.BoolOp.values;
-            size = asdl_seq_LEN(values);
-            if (size < 2) {
-                PyErr_SetString(PyExc_ValueError,
-                    "BoolOp must have at least two values");
-                return 0;
-            }
-            for (i = 0; i < size; i++) {
-                if (!validate_pattern(asdl_seq_GET(values, i))) {
-                    return 0;
-                }
-            }
-            return 1;
-        case Call_kind:
-            // TODO
-            return 1;
-        case Constant_kind:
-            return validate_expr(p, Load);  // TODO
-        case Dict_kind:
-            keys = p->v.Dict.keys;
-            values = p->v.Dict.values;
-            size = asdl_seq_LEN(values);
-            if (asdl_seq_LEN(keys) != size) {
-                PyErr_SetString(PyExc_ValueError,
-                    "Dict keys and values must be equal-length");
-                return 0;
-            }
-            for (i = 0; i < size; i++) {
-                key = asdl_seq_GET(keys, i);
-                if (key) {
-                    // TODO: Attribute is valid here, not Name!
-                    // if (key->kind == Name_kind) {
-                    //     if (key->v.Name.ctx != Load) {
-                    //         PyErr_SetString(PyExc_ValueError,
-                    //             "Name ctx in Dict keys pattern must be Load");
-                    //         return 0;
-                    //     }
-                    // }
-                    // else if (key->kind != Constant_kind) {
-                    //     PyErr_SetString(PyExc_ValueError,
-                    //         "Dict keys pattern must be Constant or Name");
-                    //     return 0;
-                    // }
-                    return validate_expr(key, Load);
-                }
-                else {
-                    if (i != size - 1) {
-                        // TODO
-                    }
-                    // if (key->kind != Name_kind) {
-                    //     // TODO
-                    // }
-                    // if (key->v.Name.ctx != Store) {
-                    //     // TODO
-                    // }
-                }
-                if (!validate_pattern(asdl_seq_GET(values, i))) {
-                    return 0;
-                }
-            }
-            return 1;
-        case JoinedStr_kind:
-            // Not actually valid, but it's the compiler's job to complain:
-            return 1;
-        case List_kind:
-        case Tuple_kind:
-            values = p->kind == List_kind ? p->v.List.elts : p->v.Tuple.elts;
-            size = asdl_seq_LEN(values);
-            for (i = 0; i < size; i++) {
-                value = asdl_seq_GET(values, i);
-                if (value->kind == Starred_kind) {
-                    value = value->v.Starred.value;
-                    if (value->kind != Name_kind) {
-                        // TODO
-                    }
-                    if (value->v.Name.ctx != Store) {
-                        // TODO
-                    }
-                }
-                if (!validate_pattern(value)) {
-                    return 0;
-                }
-            }
-            return 1;
-        case Name_kind:
-            if (p->v.Name.ctx != Load && p->v.Name.ctx != Store) {
-                PyErr_SetString(PyExc_ValueError,
-                    "Name ctx in pattern must be Load or Store");
-                return 0;
-            }
-            return validate_expr(p, p->v.Name.ctx);  // TODO
-        case MatchAs_kind:
-            return validate_pattern(p->v.MatchAs.pattern)
-                && validate_name(p->v.MatchAs.name);
-        case UnaryOp_kind:
-            // TODO
-            return 1;
-        default:
-            PyErr_SetString(PyExc_ValueError, "invalid Match pattern");
-            return 0;
-    }
+    // Coming soon (thanks Batuhan)!
+    return 1;
 }
 
 static int
