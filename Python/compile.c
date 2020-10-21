@@ -5662,7 +5662,7 @@ compiler_pattern_constant(struct compiler *c, expr_ty p, pattern_context *pc)
     PyObject *v = p->v.Constant.value;
     // Literal True, False, and None are compared by identity.
     // All others use equality.
-    ADDOP_COMPARE(c, v == Py_None || PyBool_Check(v) ? Is : Eq);
+    ADDOP_COMPARE(c, (v == Py_None || PyBool_Check(v)) ? Is : Eq);
     return 1;
 }
 
@@ -5944,6 +5944,9 @@ compiler_match(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, end);
     return 1;
 }
+
+
+#undef WILDCARD_CHECK
 
 
 /* End of the compiler section, beginning of the assembler section */

@@ -3533,19 +3533,20 @@ main_loop:
         }
 
         case TARGET(GET_LEN): {
-            Py_ssize_t l = PyObject_Length(TOP());
-            if (l < 0) {
+            // PUSH(len(TOS))
+            Py_ssize_t len_i = PyObject_Length(TOP());
+            if (len_i < 0) {
                 goto error;
             }
             // We might have one or more GET_INDEX_* instructions soon. Cache
             // the length on the PyInterpreterState struct so they can reuse it:
             PyInterpreterState *interp = PyInterpreterState_Get();
-            interp->get_len = l;
-            PyObject *len = PyLong_FromSsize_t(l);
-            if (!len) {
+            interp->get_len = len_i;
+            PyObject *len_o = PyLong_FromSsize_t(len_i);
+            if (!len_o) {
                 goto error;
             }
-            PUSH(len);
+            PUSH(len_o);
             DISPATCH();
         }
 
@@ -3567,6 +3568,7 @@ main_loop:
         }
 
         case TARGET(MATCH_MAPPING): {
+            // PUSH(isinstance(TOS, _collections_abc.Mapping))
             PyObject *subject = TOP();
             // Fast path for dicts:
             if (PyDict_Check(subject)) {
@@ -3596,6 +3598,9 @@ main_loop:
         }
 
         case TARGET(MATCH_SEQUENCE): {
+            // PUSH(isinstance(TOS, _collections_abc.Sequence)
+            //      and not isinstance(TOS, (bytearray, bytes, str))
+            //      and not hasattr(TOS, "__next__"))
             PyObject *subject = TOP();
             // Fast path for lists and tuples:
             if (PyType_FastSubclass(Py_TYPE(subject),
@@ -3618,7 +3623,7 @@ main_loop:
                 DISPATCH();
             }
             // Lazily import _collections_abc.Sequence, and keep it handy on the
-            // PyInterpreterState struct (it gets cleaned up  at exit):
+            // PyInterpreterState struct (it gets cleaned up at exit):
             PyInterpreterState *interp = PyInterpreterState_Get();
             if (!interp->seq_abc) {
                 PyObject *abc = PyImport_ImportModule("_collections_abc");
@@ -3686,8 +3691,8 @@ main_loop:
             // PyInterpreterState struct. In addition to avoiding tons of
             // redundant __len__ calls, this also handles length changes during
             // extraction more intuitively. It's also much faster and simpler
-            // than trying to rotate it around on the stack and pop it off when
-            // we're done.
+            // than trying to rotate the length around on the stack and pop it
+            // off when we're done.
             PyInterpreterState *interp = PyInterpreterState_Get();
             assert(interp->get_len - 1 - oparg >= 0);
             PyObject *item = PySequence_GetItem(TOP(), interp->get_len - 1 - oparg);
@@ -3704,27 +3709,27 @@ main_loop:
             // Ditto GET_INDEX_END's length handling.
             PyInterpreterState *interp = PyInterpreterState_Get();
             Py_ssize_t start = oparg & 0xFF;
-            Py_ssize_t stop = interp->get_len - (oparg >> 8);
-            assert(start <= stop);
-            PyObject *slice = PyList_New(stop - start);
+            Py_ssize_t size = interp->get_len - (oparg >> 8) - start;
+            assert(0 <= size);
+            PyObject *slice = PyList_New(size);
             if (!slice) {
                 goto error;
             }
             PyObject **slice_items = PySequence_Fast_ITEMS(slice);
             PyObject *subject = TOP();
             if (PyList_CheckExact(subject) || PyTuple_CheckExact(subject)) {
-                // Fast path for lists and tuples: no errors!
-                assert(stop <= PySequence_Fast_GET_SIZE(subject));
-                PyObject **subject_items = PySequence_Fast_ITEMS(subject);
-                for (Py_ssize_t i = start; i < stop; i++) {
-                    slice_items[i - start] = subject_items[i];
-                    Py_INCREF(subject_items[i]);
+                // Fast path for lists and tuples (no errors)!
+                assert(start + size <= PySequence_Fast_GET_SIZE(subject));
+                memcpy(slice_items, &PySequence_Fast_ITEMS(subject)[start],
+                       size * sizeof(PyObject*));
+                for (Py_ssize_t i = 0; i < size; i++) {
+                    Py_INCREF(slice_items[i]);
                 }
             }
             else {
-                for (Py_ssize_t i = start; i < stop; i++) {
-                    slice_items[i - start] = PySequence_GetItem(subject, i);
-                    if (!slice_items[i - start]) {
+                for (Py_ssize_t i = 0; i < size; i++) {
+                    slice_items[i] = PySequence_GetItem(subject, start + i);
+                    if (!slice_items[i]) {
                         Py_DECREF(slice);
                         goto error;
                     }
