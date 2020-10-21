@@ -1,1 +1,1 @@
-Added *newline* parameter to *pathlib.Path.write_text()*.
+Added *newline* parameter to ``pathlib.Path.write_text()``.
