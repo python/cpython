@@ -76,53 +76,61 @@
 
 #else /* Xcode 8 or earlier */
 
-#ifdef HAVE_FSTATAT
-#  define HAVE_FSTATAT_RUNTIME (fstatat != NULL)
-#endif
+   /* __builtin_available is not present in these compilers, but
+    * some of the symbols might be weak linked (10.10 SDK or later
+    * deploying on 10.9.
+    *
+    * Fall back to the older style of availability checking for
+    * symbols introduced in macOS 10.10.
+    */
 
-#ifdef HAVE_FACCESSAT
-#  define HAVE_FACCESSAT_RUNTIME (faccessat != NULL)
-#endif
+#  ifdef HAVE_FSTATAT
+#    define HAVE_FSTATAT_RUNTIME (fstatat != NULL)
+#  endif
 
-#ifdef HAVE_FCHMODAT
-#  define HAVE_FCHMODAT_RUNTIME (fchmodat != NULL)
-#endif
+#  ifdef HAVE_FACCESSAT
+#    define HAVE_FACCESSAT_RUNTIME (faccessat != NULL)
+#  endif
 
-#ifdef HAVE_FCHOWNAT
-#  define HAVE_FCHOWNAT_RUNTIME (fchownat != NULL)
-#endif
+#  ifdef HAVE_FCHMODAT
+#    define HAVE_FCHMODAT_RUNTIME (fchmodat != NULL)
+#  endif
 
-#ifdef HAVE_LINKAT
-#  define HAVE_LINKAT_RUNTIME (linkat != NULL)
-#endif
+#  ifdef HAVE_FCHOWNAT
+#    define HAVE_FCHOWNAT_RUNTIME (fchownat != NULL)
+#  endif
 
-#ifdef HAVE_FDOPENDIR
-#  define HAVE_FDOPENDIR_RUNTIME (fdopendir != NULL)
-#endif
+#  ifdef HAVE_LINKAT
+#    define HAVE_LINKAT_RUNTIME (linkat != NULL)
+#  endif
 
-#ifdef HAVE_MKDIRAT
-#  define HAVE_MKDIRAT_RUNTIME (mkdirat != NULL)
-#endif
+#  ifdef HAVE_FDOPENDIR
+#    define HAVE_FDOPENDIR_RUNTIME (fdopendir != NULL)
+#  endif
 
-#ifdef HAVE_RENAMEAT
-#  define HAVE_RENAMEAT_RUNTIME (renameat != NULL)
-#endif
+#  ifdef HAVE_MKDIRAT
+#    define HAVE_MKDIRAT_RUNTIME (mkdirat != NULL)
+#  endif
 
-#ifdef HAVE_UNLINKAT
-#  define HAVE_UNLINKAT_RUNTIME (unlinkat != NULL)
-#endif
+#  ifdef HAVE_RENAMEAT
+#    define HAVE_RENAMEAT_RUNTIME (renameat != NULL)
+#  endif
 
-#ifdef HAVE_OPENAT
-#  define HAVE_OPENAT_RUNTIME (openat != NULL)
-#endif
+#  ifdef HAVE_UNLINKAT
+#    define HAVE_UNLINKAT_RUNTIME (unlinkat != NULL)
+#  endif
 
-#ifdef HAVE_READLINKAT
-#  define HAVE_READLINKAT_RUNTIME (readlinkat != NULL)
-#endif
+#  ifdef HAVE_OPENAT
+#    define HAVE_OPENAT_RUNTIME (openat != NULL)
+#  endif
 
-#ifdef HAVE_SYMLINKAT
-#  define HAVE_SYMLINKAT_RUNTIME (symlinkat != NULL)
-#endif
+#  ifdef HAVE_READLINKAT
+#    define HAVE_READLINKAT_RUNTIME (readlinkat != NULL)
+#  endif
+
+#  ifdef HAVE_SYMLINKAT
+#    define HAVE_SYMLINKAT_RUNTIME (symlinkat != NULL)
+#  endif
 
 #endif
 
