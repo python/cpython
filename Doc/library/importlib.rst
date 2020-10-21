@@ -1304,7 +1304,7 @@ find and load modules.
 
    (``__loader__``)
 
-   The :class:`Loader <importlib.abc.Loader>` that should be used when loading
+   The :term:`Loader` that should be used when loading
    the module.  Finders should always set this.
 
    .. attribute:: origin
