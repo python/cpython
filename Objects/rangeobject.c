@@ -254,11 +254,17 @@ compute_item(rangeobject *r, PyObject *i)
     /* PyLong equivalent to:
      *    return r->start + (i * r->step)
      */
-    incr = PyNumber_Multiply(i, r->step);
-    if (!incr)
-        return NULL;
-    result = PyNumber_Add(r->start, incr);
-    Py_DECREF(incr);
+    if (r->step == _PyLong_One) {
+        result = PyNumber_Add(r->start, i);
+    }
+    else {
+        incr = PyNumber_Multiply(i, r->step);
+        if (!incr) {
+            return NULL;
+        }
+        result = PyNumber_Add(r->start, incr);
+        Py_DECREF(incr);
+    }
     return result;
 }
 
