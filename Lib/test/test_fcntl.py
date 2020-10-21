@@ -198,13 +198,13 @@ class TestFcntl(unittest.TestCase):
         try:
             # Get the default pipesize with F_GETPIPE_SZ
             pipesize_default = fcntl.fcntl(test_pipe_w, fcntl.F_GETPIPE_SZ)
-            pipesize = pipesize_default // 2
+            pipesize = pipesize_default // 2  # A new value to detect change.
             if pipesize < 512:  # the POSIX minimum
                 raise unittest.SkitTest(
                     'default pipesize too small to perform test.')
-            # Multiply the default with 2 to get a new value.
             fcntl.fcntl(test_pipe_w, fcntl.F_SETPIPE_SZ, pipesize)
-            self.assertEqual(fcntl.fcntl(test_pipe_w, fcntl.F_GETPIPE_SZ), pipesize)
+            self.assertEqual(fcntl.fcntl(test_pipe_w, fcntl.F_GETPIPE_SZ),
+                             pipesize)
         finally:
             os.close(test_pipe_r)
             os.close(test_pipe_w)
