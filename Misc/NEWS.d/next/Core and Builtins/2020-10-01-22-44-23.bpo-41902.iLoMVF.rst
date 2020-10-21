@@ -1,0 +1,1 @@
+Micro optimization for range.index if step is 1. Patch by Dong-hee Na.
