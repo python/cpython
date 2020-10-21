@@ -842,20 +842,16 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
     if (!nkeys) {
         return PyTuple_New(0);
     }
-    PyObject *get = NULL;
-    PyObject *dummy = NULL;
     PyObject *seen = NULL;
     PyObject *values = NULL;
-    if (!PyDict_CheckExact(map)) {
-        _Py_IDENTIFIER(get);
-        get = _PyObject_GetAttrId(map, &PyId_get);
-        if (!get) {
-            return NULL;
-        }
-        dummy = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
-        if (!dummy) {
-            goto fail;
-        }
+    _Py_IDENTIFIER(get);
+    PyObject *get = _PyObject_GetAttrId(map, &PyId_get);
+    if (!get) {
+        return NULL;
+    }
+    PyObject *dummy = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
+    if (!dummy) {
+        goto fail;
     }
     seen = PySet_New(NULL);
     if (!seen) {
@@ -875,30 +871,19 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
             }
             goto fail;
         }
-        if (!get) {
-            assert(PyDict_CheckExact(map));
-            value = PyDict_GetItemWithError(map, key);
-            if (!value) {
-                goto fail;
-            }
-            Py_INCREF(value);
-        }
-        else {
-            assert(dummy);
-            value = PyObject_CallFunctionObjArgs(get, key, dummy, NULL);
-            if (!value || value == dummy) {
-                Py_XDECREF(value);
-                goto fail;
-            }
+        value = PyObject_CallFunctionObjArgs(get, key, dummy, NULL);
+        if (!value || value == dummy) {
+            Py_XDECREF(value);
+            goto fail;
         }
         PyTuple_SET_ITEM(values, i, value);
     }
-    Py_XDECREF(get);
-    Py_XDECREF(dummy);
+    Py_DECREF(get);
+    Py_DECREF(dummy);
     Py_DECREF(seen);
     return values;
 fail:
-    Py_XDECREF(get);
+    Py_DECREF(get);
     Py_XDECREF(dummy);
     Py_XDECREF(seen);
     Py_XDECREF(values);
@@ -3538,8 +3523,9 @@ main_loop:
             if (len_i < 0) {
                 goto error;
             }
-            // We might have one or more GET_INDEX_* instructions soon. Cache
-            // the length on the PyInterpreterState struct so they can reuse it:
+            // We might have one or more GET_INDEX_* instructions coming up.
+            // Cache the length on the PyInterpreterState struct so they can
+            // reuse it:
             PyInterpreterState *interp = PyInterpreterState_Get();
             interp->get_len = len_i;
             PyObject *len_o = PyLong_FromSsize_t(len_i);
@@ -3551,6 +3537,7 @@ main_loop:
         }
 
         case TARGET(MATCH_CLASS): {
+            // TODO
             PyObject *names = TOP();
             PyObject *type = SECOND();
             PyObject *subject = THIRD();
@@ -3644,6 +3631,7 @@ main_loop:
         }
 
         case TARGET(MATCH_KEYS): {
+            // TODO
             PyObject *keys = TOP();
             PyObject *subject = SECOND();
             PyObject *values = match_map_items(tstate, subject, keys);
@@ -3715,25 +3703,19 @@ main_loop:
             if (!slice) {
                 goto error;
             }
-            PyObject **slice_items = PySequence_Fast_ITEMS(slice);
             PyObject *subject = TOP();
-            if (PyList_CheckExact(subject) || PyTuple_CheckExact(subject)) {
-                // Fast path for lists and tuples (no errors)!
-                assert(start + size <= PySequence_Fast_GET_SIZE(subject));
-                memcpy(slice_items, &PySequence_Fast_ITEMS(subject)[start],
-                       size * sizeof(PyObject*));
-                for (Py_ssize_t i = 0; i < size; i++) {
-                    Py_INCREF(slice_items[i]);
+            // NOTE: Fast path for lists and tuples showed no perf improvement,
+            // likely because test_patma's star-unpacking examples are too small
+            // to make a difference. It will be interesting to see if real-world
+            // code commonly uses star-unpacking in patterns with big list/tuple
+            // subjects. A fast path could pay off, if so.
+            for (Py_ssize_t i = 0; i < size; i++) {
+                PyObject *item = PySequence_GetItem(subject, start + i);
+                if (!item) {
+                    Py_DECREF(slice);
+                    goto error;
                 }
-            }
-            else {
-                for (Py_ssize_t i = 0; i < size; i++) {
-                    slice_items[i] = PySequence_GetItem(subject, start + i);
-                    if (!slice_items[i]) {
-                        Py_DECREF(slice);
-                        goto error;
-                    }
-                }
+                PyList_SET_ITEM(slice, i, item);
             }
             PUSH(slice);
             DISPATCH();
