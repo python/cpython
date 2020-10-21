@@ -4093,8 +4093,8 @@ _posix_listdir(path_t *path, PyObject *list)
         dirp = fdopendir(fd);
         Py_END_ALLOW_THREADS
       } else {
-        /* XXX: This error message is suboptimal... */
-        argument_unavailable_error(NULL, "path as file descriptor");
+        PyErr_SetString(PyExc_TypeError,
+            "listdir: path should be string, bytes, os.PathLike or None, not int");
         return NULL;
       }
     }
@@ -4618,7 +4618,7 @@ internal_rename(path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int is
 
 #ifdef HAVE_RENAMEAT
     if (renameat_unavailable) {
-        argument_unavailable_error(function_name, "dir_fd");
+        argument_unavailable_error(function_name, "src_dir_fd and dst_dir_fd");
         return NULL;
     }
 #endif
@@ -4720,15 +4720,15 @@ os_rmdir_impl(PyObject *module, path_t *path, int dir_fd)
         unlinkat_unavailable = 1;
         result = -1;
       }
-#endif
     } else
+#endif
         result = rmdir(path->narrow);
 #endif
     Py_END_ALLOW_THREADS
 
-#ifdef HAVE_ULINKAT
+#ifdef HAVE_UNLINKAT
     if (unlinkat_unavailable) {
-        argument_unavailable_error(NULL, "dir_fd");
+        argument_unavailable_error("rmdir", "dir_fd");
         return NULL;
     }
 #endif
@@ -9022,6 +9022,9 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
 {
     int fd;
     int async_err = 0;
+#ifdef HAVE_OPENAT
+    int openat_unavailable = 0;
+#endif
 
 #ifdef O_CLOEXEC
     int *atomic_flag_works = &_Py_open_cloexec_works;
@@ -9051,8 +9054,8 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
                 fd = openat(dir_fd, path->narrow, flags, mode);
 
             } else {
-                argument_unavailable_error(NULL, "dir_fd");
-                return -1;
+                openat_unavailable = 1;
+                fd = -1;
             }
         } else
 #endif /* HAVE_OPENAT */
@@ -9061,6 +9064,11 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
         Py_END_ALLOW_THREADS
     } while (fd < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     _Py_END_SUPPRESS_IPH
+
+    if (openat_unavailable) {
+        argument_unavailable_error(NULL, "dir_fd");
+        return -1;
+    }
 
     if (fd < 0) {
         if (!async_err)
@@ -14062,7 +14070,8 @@ os_scandir_impl(PyObject *module, path_t *path)
         iterator->dirp = fdopendir(fd);
         Py_END_ALLOW_THREADS
       } else {
-        argument_unavailable_error("opendir", "dir_fd");
+        PyErr_SetString(PyExc_TypeError,
+            "scandir: path should be string, bytes, os.PathLike or None, not int");
         return NULL;
       }
     }
