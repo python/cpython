@@ -240,6 +240,7 @@ symtable_new(void)
         goto fail;
     st->st_cur = NULL;
     st->st_private = NULL;
+    st->in_pattern = 0;
     return st;
  fail:
     PySymtable_Free(st);
@@ -1650,6 +1651,13 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT(st, expr, e->v.Slice.step)
         break;
     case Name_kind:
+        // Don't make "_" a local when used in a pattern:
+        if (st->in_pattern &&
+            e->v.Name.ctx == Store &&
+            _PyUnicode_EqualToASCIIString(e->v.Name.id, "_"))
+        {
+            break;
+        }
         if (!symtable_add_def(st, e->v.Name.id,
                               e->v.Name.ctx == Load ? USE : DEF_LOCAL))
             VISIT_QUIT(st, 0);
@@ -1671,6 +1679,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case MatchAs_kind:
         VISIT(st, expr, e->v.MatchAs.pattern);
+        // "_" is not actually valid, but it's the compiler's job to complain:
         symtable_add_def(st, e->v.MatchAs.name, DEF_LOCAL);
         break;
     }
@@ -1794,7 +1803,11 @@ symtable_visit_withitem(struct symtable *st, withitem_ty item)
 static int
 symtable_visit_match_case(struct symtable *st, match_case_ty m)
 {
+    assert(!st->in_pattern);
+    st->in_pattern = 1;
     VISIT(st, expr, m->pattern);
+    assert(st->in_pattern);
+    st->in_pattern = 0;
     if (m->guard) {
         VISIT(st, expr, m->guard);
     }
