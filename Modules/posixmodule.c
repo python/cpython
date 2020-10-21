@@ -15367,7 +15367,7 @@ posixmodule_exec(PyObject *m)
         PyObject* dct = PyModule_GetDict(m);
 
         if (dct == NULL) {
-            return NULL;
+            return -1;
         }
 
         if (PyDict_DelItemString(dct, "pwritev") == -1) {

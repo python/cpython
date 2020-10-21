@@ -1830,6 +1830,9 @@ time_exec(PyObject *module)
         /* pass: ^^^ cannot use '!' here */
     } else {
         PyObject* dct = PyModule_GetDict(module);
+        if (dct == NULL) {
+            return -1;
+        }
 
         if (PyDict_DelItemString(dct, "clock_gettime") == -1) {
             PyErr_Clear();
