@@ -19,9 +19,9 @@
 #endif
 
 #ifdef PYD_PLATFORM_TAG
-#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) "-" PYD_PLATFORM_TAG ".pyd"
+#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" Py_STRINGIFY(PY_MAJOR_VERSION) "_" Py_STRINGIFY(PY_MINOR_VERSION) "-" PYD_PLATFORM_TAG ".pyd"
 #else
-#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) ".pyd"
+#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" Py_STRINGIFY(PY_MAJOR_VERSION) "_" Py_STRINGIFY(PY_MINOR_VERSION) ".pyd"
 #endif
 
 #define PYD_UNTAGGED_SUFFIX PYD_DEBUG_SUFFIX ".pyd"
@@ -135,12 +135,14 @@ static char *GetPythonImport (HINSTANCE hModule)
                 /* Ensure python prefix is followed only
                    by numbers to the end of the basename */
                 pch = import_name + 6;
+                while (*pch) {
 #ifdef _DEBUG
-                while (*pch && pch[0] != '_' && pch[1] != 'd' && pch[2] != '.') {
+                    if (strcmp(pch, "_d.dll") == 0) {
 #else
-                while (*pch && *pch != '.') {
+                    if (strcmp(pch, ".dll") == 0) {
 #endif
-                    if (*pch >= '0' && *pch <= '9') {
+                        break;
+                    } else if (*pch == '.' || *pch >= '0' && *pch <= '9') {
                         pch++;
                     } else {
                         pch = NULL;
@@ -260,11 +262,11 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
 
             PyOS_snprintf(buffer, sizeof(buffer),
 #ifdef _DEBUG
-                          "python%d%d_d.dll",
+                          "python%d.%d_d.dll",
 #else
-                          "python%d%d.dll",
+                          "python%d.%d.dll",
 #endif
-                          PY_MAJOR_VERSION,PY_MINOR_VERSION);
+                          PY_MAJOR_VERSION, PY_MINOR_VERSION);
             import_python = GetPythonImport(hDLL);
 
             if (import_python &&
