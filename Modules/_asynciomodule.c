@@ -1604,7 +1604,9 @@ FutureIter_dealloc(futureiterobject *it)
 }
 
 static PySendResult
-FutureIter_am_send(futureiterobject *it, PyObject *Py_UNUSED(arg), PyObject **result)
+FutureIter_am_send(futureiterobject *it,
+                   PyObject *Py_UNUSED(arg),
+                   PyObject **result)
 {
     /* arg is unused, see the comment on FutureIter_send for clarification */
 
@@ -1759,7 +1761,8 @@ static PyTypeObject FutureIterType = {
     .tp_dealloc = (destructor)FutureIter_dealloc,
     .tp_as_async = &FutureIterType_as_async,
     .tp_getattro = PyObject_GenericGetAttr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_SEND,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_HAVE_AM_SEND,
     .tp_traverse = (traverseproc)FutureIter_traverse,
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = (iternextfunc)FutureIter_iternext,
