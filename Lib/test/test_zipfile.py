@@ -2037,6 +2037,16 @@ class OtherTests(unittest.TestCase):
             with zipfile.ZipFile(zip_file) as zf:
                 self.assertRaises(RuntimeError, zf.extract, 'a.txt')
 
+    def test_reading_archive_member_starts_with_slash(self):
+        member_path = '/folder/file.txt'
+        member_data = b'hello world'
+        with open(TESTFN, "wb") as f:
+            f.write(member_data)
+        with zipfile.ZipFile(TESTFN2, 'w') as zf:
+            zf.write(TESTFN, member_path)
+        with zipfile.ZipFile(TESTFN2) as zf:
+            self.assertEqual(zf.read(member_path), member_data)
+
     def tearDown(self):
         unlink(TESTFN)
         unlink(TESTFN2)
