@@ -182,6 +182,24 @@ Ellipsis
    related to mathematical numbers, but subject to the limitations of numerical
    representation in computers.
 
+   The string representations of the Numeric classes, computed by
+   :meth:`__repr__` and :meth:`__str__`, have the following
+   properties:
+
+   * They are valid numeric literals which, when passed to their
+     class constructor, produce an object having the value of the
+     original numeric.
+
+   * The representation is in base 10, when possible.
+
+   * Leading zeros, possibly excepting a single zero before a
+     decimal point, are not shown.
+
+   * Trailing zeros, possibly excepting a single zero after a
+     decimal point, are not shown.
+
+   * A sign is shown only when the number is negative.
+
    Python distinguishes between integers, floating point numbers, and complex
    numbers:
 
