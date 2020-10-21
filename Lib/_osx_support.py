@@ -140,6 +140,20 @@ def _supports_universal_builds():
             osx_version = ''
     return bool(osx_version >= (10, 4)) if osx_version else False
 
+def _supports_arm64_builds():
+    """Returns jTrue if arm64 buids are supported on this system"""
+    # There are two sets of systems supporting macOS/arm64 builds:
+    # 1. macOS 11 and later, unconditionally
+    # 2. macOS 10.15 with Xcode 12.2 or later
+    # For now the second category is ignored.
+    osx_version = _get_system_version()
+    if osx_version:
+        try:
+            osx_version = tuple(int(i) for i in osx_version.split('.'))
+        except ValueError:
+            osx_version = ''
+    return osx_version >= (11, 0) if osx_version else False
+
 
 def _find_appropriate_compiler(_config_vars):
     """Find appropriate C compiler for extension module builds"""
@@ -329,6 +343,13 @@ def compiler_fixup(compiler_so, cc_args):
                 # Strip this argument and the next one:
                 del compiler_so[index:index+2]
             except ValueError:
+                break
+
+    elif not _supports_arm64_builds():
+        # Look for "-arch arm64" and drop that
+        for idx in range(len(compiler_so)):
+            if compiler_so[idx] == '-arch' and compiler_so[idx+1] == "arm64":
+                del compiler_so[idx:idx+2]
                 break
 
     if 'ARCHFLAGS' in os.environ and not stripArch:
