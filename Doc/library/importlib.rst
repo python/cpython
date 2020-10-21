@@ -1305,7 +1305,7 @@ find and load modules.
    (``__loader__``)
 
    The :term:`Loader` that should be used when loading
-   the module.  Finders should always set this.
+   the module.  :term:`Finders <finder>` should always set this.
 
    .. attribute:: origin
 
