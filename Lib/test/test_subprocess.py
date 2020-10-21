@@ -666,45 +666,66 @@ class ProcessTestCase(BaseTestCase):
         p.wait()
         self.assertEqual(p.stdin, None)
 
+    @unittest.skipUnless(fcntl and hasattr(fcntl, 'F_GETPIPE_SZ'),
+                         'fcntl.F_GETPIPE_SZ required for test.')
     def test_pipesizes(self):
-        # stdin redirection
-        pipesize = 16 * 1024
-        p = subprocess.Popen([sys.executable, "-c",
-                         'import sys; sys.stdin.read(); sys.stdout.write("out"); sys.stderr.write("error!")'],
-                         stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                         pipesize=pipesize)
-        # We only assert pipe size has changed on platforms that support it.
-        if sys.platform != "win32" and hasattr(fcntl, "F_GETPIPE_SZ"):
-            for fifo in [p.stdin, p.stdout, p.stderr]:
-                self.assertEqual(fcntl.fcntl(fifo.fileno(), fcntl.F_GETPIPE_SZ), pipesize)
-        # Windows pipe size can be acquired with the GetNamedPipeInfoFunction
-        # https://docs.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-getnamedpipeinfo
-        # However, this function is not yet in _winapi.
-        p.stdin.write(b"pear")
-        p.stdin.close()
-        p.wait()
-
-    def test_pipesize_default(self):
-        p = subprocess.Popen([sys.executable, "-c",
-                         'import sys; sys.stdin.read(); sys.stdout.write("out");'
-                         ' sys.stderr.write("error!")'],
-                         stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                         pipesize=-1)
-        # UNIX tests using fcntl
-        if sys.platform != "win32" and hasattr(fcntl, "F_GETPIPE_SZ"):
-            fp_r, fp_w = os.pipe()
-            default_pipesize = fcntl.fcntl(fp_w, fcntl.F_GETPIPE_SZ)
+        test_pipe_r, test_pipe_w = os.pipe()
+        try:
+            # Get the default pipesize with F_GETPIPE_SZ
+            pipesize_default = fcntl.fcntl(test_pipe_w, fcntl.F_GETPIPE_SZ)
+        finally:
+            os.close(test_pipe_r)
+            os.close(test_pipe_w)
+        pipesize = pipesize_default // 2
+        if pipesize < 512:  # the POSIX minimum
+            raise unittest.SkitTest(
+                'default pipesize too small to perform test.')
+        p = subprocess.Popen(
+            [sys.executable, "-c",
+             'import sys; sys.stdin.read(); sys.stdout.write("out"); '
+             'sys.stderr.write("error!")'],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, pipesize=pipesize)
+        try:
             for fifo in [p.stdin, p.stdout, p.stderr]:
                 self.assertEqual(
-                    fcntl.fcntl(fifo.fileno(), fcntl.F_GETPIPE_SZ), default_pipesize)
-        # On other platforms we cannot test the pipe size (yet). But above code
-        # using pipesize=-1 should not crash.
-        p.stdin.close()
-        p.wait()
+                    fcntl.fcntl(fifo.fileno(), fcntl.F_GETPIPE_SZ),
+                    pipesize)
+            # Windows pipe size can be acquired via GetNamedPipeInfoFunction
+            # https://docs.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-getnamedpipeinfo
+            # However, this function is not yet in _winapi.
+            p.stdin.write(b"pear")
+            p.stdin.close()
+        finally:
+            p.kill()
+            p.wait()
+
+    @unittest.skipUnless(fcntl and hasattr(fcntl, 'F_GETPIPE_SZ'),
+                         'fcntl.F_GETPIPE_SZ required for test.')
+    def test_pipesize_default(self):
+        p = subprocess.Popen(
+            [sys.executable, "-c",
+             'import sys; sys.stdin.read(); sys.stdout.write("out"); '
+             'sys.stderr.write("error!")'],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, pipesize=-1)
+        try:
+            fp_r, fp_w = os.pipe()
+            try:
+                default_pipesize = fcntl.fcntl(fp_w, fcntl.F_GETPIPE_SZ)
+                for fifo in [p.stdin, p.stdout, p.stderr]:
+                    self.assertEqual(
+                        fcntl.fcntl(fifo.fileno(), fcntl.F_GETPIPE_SZ),
+                        default_pipesize)
+            finally:
+                os.close(fp_r)
+                os.close(fp_w)
+            # On other platforms we cannot test the pipe size (yet). But above
+            # code using pipesize=-1 should not crash.
+            p.stdin.close()
+        finally:
+            p.kill()
+            p.wait()
 
     def test_env(self):
         newenv = os.environ.copy()
