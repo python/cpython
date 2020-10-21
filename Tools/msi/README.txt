@@ -378,7 +378,7 @@ either "%SystemRoot%\System32" or "%SystemRoot%\SysWOW64" as
 appropriate. For the current user, they are installed in the Python
 install directory.
 
-.\python3x.dll      The core interpreter
+.\python3.X.dll      The core interpreter
 .\python3.dll       The stable ABI reference
 
 When installed for all users, the following files are installed to

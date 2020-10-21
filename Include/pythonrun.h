@@ -95,7 +95,7 @@ PyAPI_FUNC(void) PyErr_Display(PyObject *, PyObject *, PyObject *);
 /* A function flavor is also exported by libpython. It is required when
     libpython is accessed directly rather than using header files which defines
     macros below. On Windows, for example, PyAPI_FUNC() uses dllexport to
-    export functions in pythonXX.dll. */
+    export functions in pythonX.X.dll. */
 PyAPI_FUNC(PyObject *) PyRun_String(const char *str, int s, PyObject *g, PyObject *l);
 PyAPI_FUNC(int) PyRun_AnyFile(FILE *fp, const char *name);
 PyAPI_FUNC(int) PyRun_AnyFileEx(FILE *fp, const char *name, int closeit);

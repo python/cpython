@@ -409,7 +409,7 @@ directly accessed by end-users.
 When extracted, the embedded distribution is (almost) fully isolated from the
 user's system, including environment variables, system registry settings, and
 installed packages. The standard library is included as pre-compiled and
-optimized ``.pyc`` files in a ZIP, and ``python3.dll``, ``python37.dll``,
+optimized ``.pyc`` files in a ZIP, and ``python3.dll``, ``python3.10.dll``,
 ``python.exe`` and ``pythonw.exe`` are all provided. Tcl/tk (including all
 dependants, such as Idle), pip and the Python documentation are not included.
 
@@ -1030,7 +1030,7 @@ following advice will prevent conflicts with other installations:
   environment variables, and also ignore :mod:`site` unless ``import site`` is
   listed.
 
-* If you are loading :file:`python3.dll` or :file:`python37.dll` in your own
+* If you are loading :file:`python3.dll` or :file:`python3.10.dll` in your own
   executable, explicitly call :c:func:`Py_SetPath` or (at least)
   :c:func:`Py_SetProgramName` before :c:func:`Py_Initialize`.
 

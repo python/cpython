@@ -297,6 +297,15 @@ Build Changes
 * :mod:`sqlite3` requires SQLite 3.7.3 or higher.
   (Contributed by Sergey Fedoseev and Erlend E. Aasland :issue:`40744`.)
 
+* The main Python DLL on Windows is now named :file:`python3.10.dll` (previously
+  there was no dot between the two version numbers).
+
+* The default installation directory on Windows is now named ``Python3_10`` or
+  ``Python3_10-32`` (previously there was no underscore between the two version
+  numbers).
+
+* The default standard library ZIP file is now named ``python3.10.zip`` on all
+  platforms (previously there was no dot between the two version numbers).
 
 
 C API Changes

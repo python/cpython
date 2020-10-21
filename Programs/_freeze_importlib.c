@@ -21,7 +21,7 @@ static const struct _frozen _PyImport_FrozenModules[] = {
 };
 
 #ifndef MS_WINDOWS
-/* On Windows, this links with the regular pythonXY.dll, so this variable comes
+/* On Windows, this links with the regular python3.X.dll, so this variable comes
    from frozen.obj. In the Makefile, frozen.o is not linked into this executable,
    so we define the variable here. */
 const struct _frozen *PyImport_FrozenModules;

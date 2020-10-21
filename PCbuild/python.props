@@ -202,7 +202,7 @@
     <Field3Value Condition="$(UseTestMarker) == 'true'">$([msbuild]::Add($(Field3Value), 9000))</Field3Value>
     
     <!-- The name of the resulting pythonX_Y.dll (without the extension) -->
-    <PyDllName>python$(MajorVersionNumber)_$(MinorVersionNumber)$(PyDebugExt)</PyDllName>
+    <PyDllName>python$(MajorVersionNumber).$(MinorVersionNumber)$(PyDebugExt)</PyDllName>
     <!-- The name of the resulting pythonX.dll (without the extension) -->
     <Py3DllName>python3$(PyDebugExt)</Py3DllName>
 

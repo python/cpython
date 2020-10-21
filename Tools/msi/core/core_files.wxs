@@ -6,14 +6,14 @@
                 <File Id="python_stable.dll" Name="python$(var.MajorVersionNumber).dll" KeyPath="yes" />
             </Component>
             <Component Id="python.dll" Directory="InstallDirectory" Guid="*">
-                <File Id="python.dll" Name="python$(var.MajorVersionNumber)_$(var.MinorVersionNumber).dll" KeyPath="yes" />
+                <File Id="python.dll" Name="python$(var.MajorVersionNumber).$(var.MinorVersionNumber).dll" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>
     <Fragment>
         <ComponentGroup Id="core_symbols">
             <Component Id="python.pdb" Directory="InstallDirectory" Guid="*">
-                <File Id="python.pdb" Name="python$(var.MajorVersionNumber)_$(var.MinorVersionNumber).pdb" KeyPath="yes" />
+                <File Id="python.pdb" Name="python$(var.MajorVersionNumber).$(var.MinorVersionNumber).pdb" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>
@@ -23,8 +23,8 @@
                 <File Id="python_stable_d.dll" Name="python$(var.MajorVersionNumber)_d.dll" KeyPath="yes" />
             </Component>
             <Component Id="python_d.dll" Directory="InstallDirectory" Guid="*">
-                <File Id="python_d.dll" Name="python$(var.MajorVersionNumber)_$(var.MinorVersionNumber)_d.dll" KeyPath="yes" />
-                <File Id="python_d.pdb" Name="python$(var.MajorVersionNumber)_$(var.MinorVersionNumber)_d.pdb" KeyPath="no" />
+                <File Id="python_d.dll" Name="python$(var.MajorVersionNumber).$(var.MinorVersionNumber)_d.dll" KeyPath="yes" />
+                <File Id="python_d.pdb" Name="python$(var.MajorVersionNumber).$(var.MinorVersionNumber)_d.pdb" KeyPath="no" />
             </Component>
         </ComponentGroup>
     </Fragment>

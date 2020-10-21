@@ -7,7 +7,7 @@
    This describes how sys.path is formed on Windows.  It describes the
    functionality, not the implementation (ie, the order in which these
    are actually fetched is different). The presence of a python._pth or
-   pythonXY._pth file alongside the program overrides these rules - see
+   python3.X._pth file alongside the program overrides these rules - see
    below.
 
    * Python always adds an empty entry at the start, which corresponds
@@ -40,8 +40,8 @@
 
    If a '._pth' file exists adjacent to the executable with the same base name
    (e.g. python._pth adjacent to python.exe) or adjacent to the shared library
-   (e.g. python36._pth adjacent to python36.dll), it is used in preference to
-   the above process. The shared library file takes precedence over the
+   (e.g. python3.10._pth adjacent to python3.10.dll), it is used in preference
+   to the above process. The shared library file takes precedence over the
    executable. The path file must contain a list of paths to add to sys.path,
    one per line. Each path is relative to the directory containing the file.
    Blank lines and comments beginning with '#' are permitted.
@@ -1112,7 +1112,7 @@ _Py_CheckPython3(void)
     }
     python3_checked = 1;
 
-    /* If there is a python3.dll next to the python3y.dll,
+    /* If there is a python3.dll next to the python3.x.dll,
        use that DLL */
     if (!get_dllpath(py3path)) {
         reduce(py3path);

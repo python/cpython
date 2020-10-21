@@ -222,7 +222,7 @@ Embedding the Python interpreter in a Windows app can be summarized as follows:
       PyRun_SimpleString("import myApp");  // Import the shadow class.
 
 5. There are two problems with Python's C API which will become apparent if you
-   use a compiler other than MSVC, the compiler used to build pythonNN.dll.
+   use a compiler other than MSVC, the compiler used to build python3.X.dll.
 
    Problem 1: The so-called "Very High Level" functions that take FILE *
    arguments will not work in a multi-compiler environment because each
@@ -239,7 +239,7 @@ Embedding the Python interpreter in a Windows app can be summarized as follows:
       return _resultobj;
 
    Alas, Py_None is a macro that expands to a reference to a complex data
-   structure called _Py_NoneStruct inside pythonNN.dll.  Again, this code will
+   structure called _Py_NoneStruct inside python3.X.dll.  Again, this code will
    fail in a mult-compiler environment.  Replace such code by:
 
    .. code-block:: c
