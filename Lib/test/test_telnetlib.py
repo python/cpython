@@ -3,10 +3,12 @@ import selectors
 import telnetlib
 import threading
 import contextlib
+import io
 
 from test import support
 from test.support import socket_helper
 import unittest
+import unittest.mock
 
 HOST = socket_helper.HOST
 
@@ -397,6 +399,27 @@ class ExpectTests(ExpectAndReadTestCase):
         (_,_,data) = telnet.expect([b'match'])
         self.assertEqual(data, b''.join(want[:-1]))
 
+class InteractTests(ExpectAndReadTestCase):
+    @unittest.mock.patch('telnetlib.sys.stdin', new_callable=io.StringIO)
+    def test_interact(self, stdin):
+        encoding = 'ascii'
+        want = ['x'.encode(encoding)]
+        f = io.TextIOWrapper(io.BytesIO(), encoding)
+        telnet = test_telnet(want)
+        with contextlib.redirect_stdout(f):
+            telnet.interact()
+        self.assertEqual(f.buffer.getvalue(), want[0])
+
+    @unittest.mock.patch('telnetlib.sys.stdin', new_callable=io.StringIO)
+    def test_interact_utf8(self, stdin):
+        # bpo-37640
+        encoding = 'utf-8'
+        want = ['\xff'.encode(encoding)]
+        f = io.TextIOWrapper(io.BytesIO(), encoding)
+        telnet = test_telnet(want)
+        with contextlib.redirect_stdout(f):
+            telnet.interact()
+        self.assertEqual(f.buffer.getvalue(), want[0])
 
 if __name__ == '__main__':
     unittest.main()

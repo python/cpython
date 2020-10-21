@@ -555,15 +555,8 @@ class Telnet:
                             try:
                                 sys.stdout.write(text.decode('ascii'))
                             except UnicodeDecodeError:
-                                if hasattr(sys.stdout, 'buffer'):
-                                    sys.stdout.buffer.write(text)
-                                else:
-                                    sys.stdout.write(
-                                        text.decode(
-                                            sys.stdout.encoding,
-                                            'strict'
-                                        )
-                                    )
+                                # bpo-37640
+                                sys.stdout.buffer.write(text)
                             sys.stdout.flush()
                     elif key.fileobj is sys.stdin:
                         line = sys.stdin.readline().encode('ascii')
@@ -593,15 +586,8 @@ class Telnet:
                 try:
                     sys.stdout.write(text.decode('ascii'))
                 except UnicodeDecodeError:
-                    if hasattr(sys.stdout, 'buffer'):
-                        sys.stdout.buffer.write(text)
-                    else:
-                        sys.stdout.write(
-                            text.decode(
-                                sys.stdout.encoding,
-                                'strict'
-                            )
-                        )
+                    # bpo-37640
+                    sys.stdout.buffer.write(text)
             else:
                 sys.stdout.flush()
 
