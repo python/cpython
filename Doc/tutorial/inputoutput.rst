@@ -286,7 +286,7 @@ two arguments: ``open(filename, mode)``.
    >>> try:
    ...     f = open('workfile', 'w')
    ... except OSError as e:
-   ...     print('File open failed')
+   ...     print('Cannot open file: ', e)
    ... 
    
 
