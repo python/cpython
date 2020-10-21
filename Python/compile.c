@@ -5660,12 +5660,9 @@ compiler_pattern_constant(struct compiler *c, expr_ty p, pattern_context *pc)
     ADDOP(c, DUP_TOP);
     CHECK(pattern_load_constant(c, p, pc));
     PyObject *v = p->v.Constant.value;
-    if (v == Py_None || PyBool_Check(v)) {
-        ADDOP_COMPARE(c, Is);
-    }
-    else {
-        ADDOP_COMPARE(c, Eq);
-    }
+    // Literal True, False, and None are compared by identity.
+    // All others use equality.
+    ADDOP_COMPARE(c, v == Py_None || PyBool_Check(v) ? Is : Eq);
     return 1;
 }
 
@@ -5761,7 +5758,7 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
         }
         star = i;
     }
-    basicblock *block, *end, *subblock;
+    basicblock *end;
     CHECK(end = compiler_new_block(c));
     ADDOP(c, MATCH_SEQUENCE);
     ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
@@ -5773,9 +5770,6 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
         compiler_use_next_block(c, end);
         return 1;
     }
-    CHECK(subblock = compiler_new_block(c));
-    CHECK(block = compiler_new_block(c));
-    ADDOP(c, DUP_TOP);
     if (star < 0) {
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
         ADDOP_COMPARE(c, Eq);
@@ -5784,9 +5778,8 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - 1));
         ADDOP_COMPARE(c, GtE);
     }
-    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, block);
+    ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
     NEXT_BLOCK(c);
-    ADDOP(c, ROT_TWO);
     for (Py_ssize_t i = 0; i < size; i++) {
         // TODO: (i >= (1 << 8)) || (n-i-1 >= (INT_MAX >> 8))
         expr_ty value = asdl_seq_GET(values, i);
@@ -5808,20 +5801,12 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
             ADDOP_I(c, GET_INDEX_END, size - 1 - i);
         }
         CHECK(compiler_subpattern(c, value, pc));
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, subblock);
-        NEXT_BLOCK(c);
+        ADDOP(c, ROT_TWO);
         ADDOP(c, POP_TOP);
+        ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
+        NEXT_BLOCK(c);
     }
-    ADDOP(c, ROT_TWO);
-    ADDOP(c, POP_TOP);
     ADDOP_LOAD_CONST(c, Py_True);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, subblock);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, ROT_TWO);
-    compiler_use_next_block(c, block);
-    ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_False);
     compiler_use_next_block(c, end);
     return 1;
 }

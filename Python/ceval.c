@@ -835,6 +835,34 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 // Need these for pattern matching:
 
 static PyObject*
+get_seq_abc()
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if (!interp->seq_abc) {
+        PyObject *abc = PyImport_ImportModule("_collections_abc");
+        if (!abc) {
+            return NULL;
+        }
+        interp->seq_abc = PyObject_GetAttrString(abc, "Sequence");
+    }
+    return interp->seq_abc;
+}
+
+static PyObject*
+get_map_abc()
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if (!interp->map_abc) {
+        PyObject *abc = PyImport_ImportModule("_collections_abc");
+        if (!abc) {
+            return NULL;
+        }
+        interp->map_abc = PyObject_GetAttrString(abc, "Sequence");
+    }
+    return interp->map_abc;
+}
+
+static PyObject*
 match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
 {
     assert(PyTuple_CheckExact(keys));
@@ -3537,6 +3565,8 @@ main_loop:
             if (l < 0) {
                 goto error;
             }
+            PyInterpreterState *interp = PyInterpreterState_Get();
+            interp->get_len = l;
             PyObject *len = PyLong_FromSsize_t(l);
             if (!len) {
                 goto error;
@@ -3563,19 +3593,17 @@ main_loop:
         }
 
         case TARGET(MATCH_MAPPING): {
-            PyInterpreterState *interp = PyInterpreterState_Get();
-            if (!interp->map_abc) {
-                PyObject *abc = PyImport_ImportModule("_collections_abc");
-                if (!abc) {
-                    goto error;
-                }
-                interp->map_abc = PyObject_GetAttrString(abc, "Mapping");
-                Py_DECREF(abc);
-                if (!interp->map_abc) {
-                    goto error;
-                }
+            PyObject *subject = TOP();
+            if (PyDict_Check(subject)) {
+                Py_INCREF(Py_True);
+                PUSH(Py_True);
+                DISPATCH();
             }
-            int match = PyObject_IsInstance(TOP(), interp->map_abc);
+            PyObject *map_abc = get_map_abc();
+            if (!map_abc) {
+                goto error;
+            }
+            int match = PyObject_IsInstance(subject, map_abc);
             if (match < 0) {
                 goto error;
             }
@@ -3586,7 +3614,16 @@ main_loop:
         case TARGET(MATCH_SEQUENCE): {
             PyObject *subject = TOP();
             if (PyType_FastSubclass(Py_TYPE(subject),
-                    Py_TPFLAGS_BYTES_SUBCLASS | Py_TPFLAGS_UNICODE_SUBCLASS)
+                                    Py_TPFLAGS_LIST_SUBCLASS |
+                                    Py_TPFLAGS_TUPLE_SUBCLASS))
+            {
+                Py_INCREF(Py_True);
+                PUSH(Py_True);
+                DISPATCH();
+            }
+            if (PyType_FastSubclass(Py_TYPE(subject),
+                                    Py_TPFLAGS_BYTES_SUBCLASS |
+                                    Py_TPFLAGS_UNICODE_SUBCLASS)
                 || PyIter_Check(subject)
                 || PyByteArray_Check(subject))
             {
@@ -3594,19 +3631,11 @@ main_loop:
                 PUSH(Py_False);
                 DISPATCH();
             }
-            PyInterpreterState *interp = PyInterpreterState_Get();
-            if (!interp->seq_abc) {
-                PyObject *abc = PyImport_ImportModule("_collections_abc");
-                if (!abc) {
-                    goto error;
-                }
-                interp->seq_abc = PyObject_GetAttrString(abc, "Sequence");
-                Py_DECREF(abc);
-                if (!interp->seq_abc) {
-                    goto error;
-                }
+            PyObject *seq_abc = get_seq_abc();
+            if (!seq_abc) {
+                goto error;
             }
-            int match = PyObject_IsInstance(subject, interp->seq_abc);
+            int match = PyObject_IsInstance(subject, seq_abc);
             if (match < 0) {
                 goto error;
             }
@@ -3655,18 +3684,15 @@ main_loop:
         }
 
         case TARGET(GET_INDEX_END): {
-            // PUSH(TOS[TOS1 - 1 - oparg])
+            // PUSH(TOS[len(TOS) - 1 - oparg])
             // NOTE: We can't rely on support for negative indexing!
             // Although PySequence_GetItem tries to correct negative indexes, we
-            // just use the length we already have at TOS1. In addition to
+            // just use the length we already cached from GET_LEN. In addition to
             // avoiding tons of redundant __len__ calls, this also handles
             // length changes during extraction more intuitively.
-            Py_ssize_t len = PyLong_AsSsize_t(SECOND());
-            if (len < 0) {
-                goto error;
-            }
-            assert(len - 1 - oparg >= 0);
-            PyObject *item = PySequence_GetItem(TOP(), len - 1 - oparg);
+            PyInterpreterState *interp = PyInterpreterState_Get();
+            assert(interp->get_len - 1 - oparg >= 0);
+            PyObject *item = PySequence_GetItem(TOP(), interp->get_len - 1 - oparg);
             if (!item) {
                 goto error;
             }
@@ -3675,15 +3701,12 @@ main_loop:
         }
 
         case TARGET(GET_INDEX_SLICE): {
-            // PUSH(list(TOS[oparg & 0xFF: TOS1 - (oparg >> 8)]))
+            // PUSH(list(TOS[oparg & 0xFF: len(TOS) - (oparg >> 8)]))
             // NOTE: We can't rely on support for slicing or negative indexing!
             // Ditto GET_INDEX_END's length handling.
-            Py_ssize_t len = PyLong_AsSsize_t(SECOND());
-            if (len < 0) {
-                goto error;
-            }
+            PyInterpreterState *interp = PyInterpreterState_Get();
             Py_ssize_t start = oparg & 0xFF;
-            Py_ssize_t stop = len - (oparg >> 8);
+            Py_ssize_t stop = interp->get_len - (oparg >> 8);
             assert(start <= stop);
             PyObject *subject = TOP();
             PyObject *items;
