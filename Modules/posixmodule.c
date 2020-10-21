@@ -15362,6 +15362,23 @@ posixmodule_exec(PyObject *m)
 {
     _posixstate *state = get_posix_state(m);
 
+#if defined(HAVE_PWRITEV) 
+    if (HAVE_PWRITEV_RUNTIME) {} else {
+        PyObject* dct = PyModule_GetDict(m);
+
+        if (dct == NULL) {
+            return NULL;
+        }
+
+        if (PyDict_DelItemString(dct, "pwritev") == -1) {
+            PyErr_Clear();
+        }
+        if (PyDict_DelItemString(dct, "preadv") == -1) {
+            PyErr_Clear();
+        }
+    }
+#endif
+
     /* Initialize environ dictionary */
     PyObject *v = convertenviron();
     Py_XINCREF(v);
@@ -15541,24 +15558,6 @@ PyMODINIT_FUNC
 INITFUNC(void)
 {
     PyObject* module = PyModuleDef_Init(&posixmodule);
-#if defined(HAVE_PWRITEV) 
-    if (module) {
-        if (HAVE_PWRITEV_RUNTIME) {} else {
-            PyObject* dct = PyModule_GetDict(module);
-
-            if (dct == NULL) {
-                return NULL;
-            }
-
-            if (PyDict_DelItemString(dct, "pwritev") == -1) {
-                PyErr_Clear();
-            }
-            if (PyDict_DelItemString(dct, "preadv") == -1) {
-                PyErr_Clear();
-            }
-        }
-    }
-#endif
 
     return module;
 }
