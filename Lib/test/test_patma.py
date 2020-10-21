@@ -2777,6 +2777,23 @@ class TestPatma(unittest.TestCase):
                 pass
         """)
 
+    def test_patma_275(self):
+        x = collections.UserDict({0: 1, 2: 3})
+        match x:
+            case {2: 3}:
+                y = 0
+        self.assertEqual(x, {0: 1, 2: 3})
+        self.assertEqual(y, 0)
+
+    def test_patma_276(self):
+        x = collections.UserDict({0: 1, 2: 3})
+        match x:
+            case {2: 3, **z}:
+                y = 0
+        self.assertEqual(x, {0: 1, 2: 3})
+        self.assertEqual(y, 0)
+        self.assertEqual(z, {0: 1})
+
     # TODO: Better use of assertIs
     # TODO: Don't check side-effecty assignments
 
