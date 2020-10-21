@@ -34,7 +34,7 @@
     </Projects2>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <!-- pythonX_Y.dll -->
+    <!-- python3.X.dll -->
     <!--
     Parallel build is explicitly disabled for this project because it
     causes many conflicts between pythoncore and projects that depend

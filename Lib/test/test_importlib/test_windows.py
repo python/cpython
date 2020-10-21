@@ -91,7 +91,7 @@ class WindowsRegistryFinderTests:
 class WindowsExtensionSuffixTests:
     def test_tagged_suffix(self):
         suffixes = self.machinery.EXTENSION_SUFFIXES
-        expected_tag = ".cp{0.major}{0.minor}-{1}.pyd".format(sys.version_info,
+        expected_tag = ".cp{0.major}_{0.minor}-{1}.pyd".format(sys.version_info,
             re.sub('[^a-zA-Z0-9]', '_', get_platform()))
         try:
             untagged_i = suffixes.index(".pyd")

@@ -201,9 +201,9 @@
     ))</Field3Value>
     <Field3Value Condition="$(UseTestMarker) == 'true'">$([msbuild]::Add($(Field3Value), 9000))</Field3Value>
     
-    <!-- The name of the resulting pythonX_Y.dll (without the extension) -->
+    <!-- The name of the resulting python3.X.dll (without the extension) -->
     <PyDllName>python$(MajorVersionNumber).$(MinorVersionNumber)$(PyDebugExt)</PyDllName>
-    <!-- The name of the resulting pythonX.dll (without the extension) -->
+    <!-- The name of the resulting python#.dll (without the extension) -->
     <Py3DllName>python3$(PyDebugExt)</Py3DllName>
 
     <!-- The version and platform tag to include in .pyd filenames -->

@@ -1172,9 +1172,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             tmpdir = os.path.realpath(tmpdir)
 
             if MS_WINDOWS:
-                # Copy pythonX_Y.dll (or pythonX_Y_d.dll)
+                # Copy python3.X.dll (or python3.X_d.dll)
                 ver = sys.version_info
-                dll = f'python{ver.major}_{ver.minor}'
+                dll = f'python{ver.major}.{ver.minor}'
                 dll3 = f'python{ver.major}'
                 if debug_build(sys.executable):
                     dll += '_d'
