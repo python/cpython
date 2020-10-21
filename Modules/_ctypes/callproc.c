@@ -890,6 +890,16 @@ static int _call_function_pointer(int flags,
                                 "ffi_prep_cif_var failed");
                 return -1;
             }
+        } else {
+            if (FFI_OK != ffi_prep_cif(&cif,
+                                       cc,
+                                       argcount,
+                                       restype,
+                                       atypes)) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "ffi_prep_cif failed");
+                return -1;
+            }
         }
     } else
 #endif
