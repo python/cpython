@@ -278,11 +278,7 @@ always available.
                sys.stdout.write(text)
            except UnicodeEncodeError:
                bytes = text.encode(sys.stdout.encoding, 'backslashreplace')
-               if hasattr(sys.stdout, 'buffer'):
-                   sys.stdout.buffer.write(bytes)
-               else:
-                   text = bytes.decode(sys.stdout.encoding, 'strict')
-                   sys.stdout.write(text)
+               sys.stdout.buffer.write(bytes)
            sys.stdout.write("\n")
            builtins._ = value
 
