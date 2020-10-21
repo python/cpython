@@ -55,7 +55,9 @@
  * In mixing the test with other tests or using negations will result in compile 
  * errors.
  */
-#if defined(__APPLE__) && defined(__has_builtin) && __has_builtin(__builtin_available)
+#if defined(__APPLE__) 
+
+#if defined(__has_builtin) && __has_builtin(__builtin_available)
 #  define HAVE_FSTATAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_FACCESSAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_FCHMODAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
@@ -72,7 +74,60 @@
 #  define HAVE_UTIMENSAT_RUNTIME __builtin_available(macOS 10.13, iOS 11.0, tvOS 11.0, watchOS 4.0, *)
 #  define HAVE_PWRITEV_RUNTIME __builtin_available(macOS 11.0, iOS 14.0, tvOS 14.0, watchOS 7.0, *)
 
+#else /* Xcode 8 or earlier */
+
+#ifdef HAVE_FSTATAT
+#  define HAVE_FSTATAT_RUNTIME (fstatat != NULL)
+#endif
+
+#ifdef HAVE_FACCESSAT
+#  define HAVE_FACCESSAT_RUNTIME (faccessat != NULL)
+#endif
+
+#ifdef HAVE_FCHMODAT
+#  define HAVE_FCHMODAT_RUNTIME (fchmodat != NULL)
+#endif
+
+#ifdef HAVE_FCHOWNAT
+#  define HAVE_FCHOWNAT_RUNTIME (fchownat != NULL)
+#endif
+
+#ifdef HAVE_LINKAT
+#  define HAVE_LINKAT_RUNTIME (linkat != NULL)
+#endif
+
+#ifdef HAVE_FDOPENDIR
+#  define HAVE_FDOPENDIR_RUNTIME (fdopendir != NULL)
+#endif
+
+#ifdef HAVE_MKDIRAT
+#  define HAVE_MKDIRAT_RUNTIME (mkdirat != NULL)
+#endif
+
+#ifdef HAVE_RENAMEAT
+#  define HAVE_RENAMEAT_RUNTIME (renameat != NULL)
+#endif
+
+#ifdef HAVE_UNLINKAT
+#  define HAVE_UNLINKAT_RUNTIME (unlinkat != NULL)
+#endif
+
+#ifdef HAVE_OPENAT
+#  define HAVE_OPENAT_RUNTIME (openat != NULL)
+#endif
+
+#ifdef HAVE_READLINKAT
+#  define HAVE_READLINKAT_RUNTIME (readlinkat != NULL)
+#endif
+
+#ifdef HAVE_SYMLINKAT
+#  define HAVE_SYMLINKAT_RUNTIME (symlinkat != NULL)
+#endif
+
+#endif
+
 #ifdef HAVE_FUTIMESAT
+/* Some of the logic for weak linking depends on this assertion */
 # error "HAVE_FUTIMESAT unexpectedly defined"
 #endif
 
@@ -93,6 +148,7 @@
 #  define HAVE_UTIMENSAT_RUNTIME 1
 #  define HAVE_PWRITEV_RUNTIME 1
 #endif
+
 
 #ifdef __cplusplus
 extern "C" {

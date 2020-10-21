@@ -750,7 +750,7 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
         info->adjustable = 1;
     }
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(HAVE_CLOCK_GETTIME)
     } /* end of availibity block */
 #endif
 
