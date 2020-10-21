@@ -256,6 +256,14 @@ Optimizations
   It is about 36% faster now.  (Contributed by Pablo Galindo and Yury Selivanov
   in :issue:`42093`.)
 
+* When building Python with ``--enable-optimizations`` now
+  ``-fno-semantic-interposition`` is added to both the compile and link line.
+  This speeds builds of the Python interpreter created with ``--enable-shared``
+  with ``gcc`` by up to 30%. See `this article
+  <https://developers.redhat.com/blog/2020/06/25/red-hat-enterprise-linux-8-2-brings-faster-python-3-8-run-speeds/>`_
+  for more details. (Contributed by Victor Stinner and Pablo Galindo in
+  :issue:`38980`)
+
 Deprecated
 ==========
 
