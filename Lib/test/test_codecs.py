@@ -8,10 +8,12 @@ import encodings
 from unittest import mock
 
 from test import support
+from test.support import os_helper
+from test.support import warnings_helper
 
 try:
     import _testcapi
-except ImportError as exc:
+except ImportError:
     _testcapi = None
 
 try:
@@ -709,11 +711,11 @@ class UTF16Test(ReadTest, unittest.TestCase):
         s1 = 'Hello\r\nworld\r\n'
 
         s = s1.encode(self.encoding)
-        self.addCleanup(support.unlink, support.TESTFN)
-        with open(support.TESTFN, 'wb') as fp:
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(s)
-        with support.check_warnings(('', DeprecationWarning)):
-            reader = codecs.open(support.TESTFN, 'U', encoding=self.encoding)
+        with warnings_helper.check_warnings(('', DeprecationWarning)):
+            reader = codecs.open(os_helper.TESTFN, 'U', encoding=self.encoding)
         with reader:
             self.assertEqual(reader.read(), s1)
 
@@ -1142,6 +1144,7 @@ class UTF8SigTest(UTF8Test, unittest.TestCase):
             got = ostream.getvalue()
             self.assertEqual(got, unistring)
 
+
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
         self.assertEqual(codecs.escape_decode(b""), (b"", 0))
@@ -1330,6 +1333,18 @@ class PunycodeTest(unittest.TestCase):
             self.assertEqual(uni, puny.decode("punycode"))
             puny = puny.decode("ascii").encode("ascii")
             self.assertEqual(uni, puny.decode("punycode"))
+
+    def test_decode_invalid(self):
+        testcases = [
+            (b"xn--w&", "strict", UnicodeError()),
+            (b"xn--w&", "ignore", "xn-"),
+        ]
+        for puny, errors, expected in testcases:
+            with self.subTest(puny=puny, errors=errors):
+                if isinstance(expected, Exception):
+                    self.assertRaises(UnicodeError, puny.decode, "punycode", errors)
+                else:
+                    self.assertEqual(puny.decode("punycode", errors), expected)
 
 
 # From http://www.gnu.org/software/libidn/draft-josefsson-idn-test-vectors.html
@@ -1626,6 +1641,18 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, codecs.register)
         self.assertRaises(TypeError, codecs.register, 42)
 
+    def test_unregister(self):
+        name = "nonexistent_codec_name"
+        search_function = mock.Mock()
+        codecs.register(search_function)
+        self.assertRaises(TypeError, codecs.lookup, name)
+        search_function.assert_called_with(name)
+        search_function.reset_mock()
+
+        codecs.unregister(search_function)
+        self.assertRaises(LookupError, codecs.lookup, name)
+        search_function.assert_not_called()
+
     def test_lookup(self):
         self.assertRaises(TypeError, codecs.lookup)
         self.assertRaises(LookupError, codecs.lookup, "__spam__")
@@ -1684,10 +1711,10 @@ class CodecsModuleTest(unittest.TestCase):
             getattr(codecs, api)
 
     def test_open(self):
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         for mode in ('w', 'r', 'r+', 'w+', 'a', 'a+'):
             with self.subTest(mode), \
-                    codecs.open(support.TESTFN, mode, 'ascii') as file:
+                    codecs.open(os_helper.TESTFN, mode, 'ascii') as file:
                 self.assertIsInstance(file, codecs.StreamReaderWriter)
 
     def test_undefined(self):
@@ -1700,6 +1727,14 @@ class CodecsModuleTest(unittest.TestCase):
                 codecs.encode, 'abc', 'undefined', errors)
             self.assertRaises(UnicodeError,
                 codecs.decode, b'abc', 'undefined', errors)
+
+    def test_file_closes_if_lookup_error_raised(self):
+        mock_open = mock.mock_open()
+        with mock.patch('builtins.open', mock_open) as file:
+            with self.assertRaises(LookupError):
+                codecs.open(os_helper.TESTFN, 'wt', 'invalid-encoding')
+
+            file().close.assert_called()
 
 
 class StreamReaderTest(unittest.TestCase):
@@ -2162,6 +2197,18 @@ class CharmapTest(unittest.TestCase):
             ("", len(allbytes))
         )
 
+        self.assertRaisesRegex(TypeError,
+            "character mapping must be in range\\(0x110000\\)",
+            codecs.charmap_decode,
+            b"\x00\x01\x02", "strict", {0: "A", 1: 'Bb', 2: -2}
+        )
+
+        self.assertRaisesRegex(TypeError,
+            "character mapping must be in range\\(0x110000\\)",
+            codecs.charmap_decode,
+            b"\x00\x01\x02", "strict", {0: "A", 1: 'Bb', 2: 999999999}
+        )
+
     def test_decode_with_int2int_map(self):
         a = ord('a')
         b = ord('b')
@@ -2495,10 +2542,10 @@ class BomTest(unittest.TestCase):
                  "utf-32",
                  "utf-32-le",
                  "utf-32-be")
-        self.addCleanup(support.unlink, support.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         for encoding in tests:
             # Check if the BOM is written only once
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data)
                 f.write(data)
                 f.seek(0)
@@ -2507,7 +2554,7 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data * 2)
 
             # Check that the BOM is written after a seek(0)
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data[0])
                 self.assertNotEqual(f.tell(), 0)
                 f.seek(0)
@@ -2516,7 +2563,7 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data)
 
             # (StreamWriter) Check that the BOM is written after a seek(0)
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.writer.write(data[0])
                 self.assertNotEqual(f.writer.tell(), 0)
                 f.writer.seek(0)
@@ -2526,7 +2573,7 @@ class BomTest(unittest.TestCase):
 
             # Check that the BOM is not written after a seek() at a position
             # different than the start
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data)
                 f.seek(f.tell())
                 f.write(data)
@@ -2535,7 +2582,7 @@ class BomTest(unittest.TestCase):
 
             # (StreamWriter) Check that the BOM is not written after a seek()
             # at a position different than the start
-            with codecs.open(support.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs.open(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.writer.write(data)
                 f.writer.seek(f.writer.tell())
                 f.writer.write(data)
@@ -2621,7 +2668,7 @@ class TransformCodecTest(unittest.TestCase):
                 view_decoded = codecs.decode(view, encoding)
                 self.assertEqual(view_decoded, data)
 
-    def test_text_to_binary_blacklists_binary_transforms(self):
+    def test_text_to_binary_denylists_binary_transforms(self):
         # Check binary -> binary codecs give a good error for str input
         bad_input = "bad input type"
         for encoding in bytes_transform_encodings:
@@ -2633,14 +2680,14 @@ class TransformCodecTest(unittest.TestCase):
                     bad_input.encode(encoding)
                 self.assertIsNone(failure.exception.__cause__)
 
-    def test_text_to_binary_blacklists_text_transforms(self):
+    def test_text_to_binary_denylists_text_transforms(self):
         # Check str.encode gives a good error message for str -> str codecs
         msg = (r"^'rot_13' is not a text encoding; "
                r"use codecs.encode\(\) to handle arbitrary codecs")
         with self.assertRaisesRegex(LookupError, msg):
             "just an example message".encode("rot_13")
 
-    def test_binary_to_text_blacklists_binary_transforms(self):
+    def test_binary_to_text_denylists_binary_transforms(self):
         # Check bytes.decode and bytearray.decode give a good error
         # message for binary -> binary codecs
         data = b"encode first to ensure we meet any format restrictions"
@@ -2655,7 +2702,7 @@ class TransformCodecTest(unittest.TestCase):
                 with self.assertRaisesRegex(LookupError, msg):
                     bytearray(encoded_data).decode(encoding)
 
-    def test_binary_to_text_blacklists_text_transforms(self):
+    def test_binary_to_text_denylists_text_transforms(self):
         # Check str -> str codec gives a good error for binary input
         for bad_input in (b"immutable", bytearray(b"mutable")):
             with self.subTest(bad_input=bad_input):
@@ -2719,29 +2766,14 @@ _TEST_CODECS = {}
 
 def _get_test_codec(codec_name):
     return _TEST_CODECS.get(codec_name)
-codecs.register(_get_test_codec) # Returns None, not usable as a decorator
-
-try:
-    # Issue #22166: Also need to clear the internal cache in CPython
-    from _codecs import _forget_codec
-except ImportError:
-    def _forget_codec(codec_name):
-        pass
 
 
 class ExceptionChainingTest(unittest.TestCase):
 
     def setUp(self):
-        # There's no way to unregister a codec search function, so we just
-        # ensure we render this one fairly harmless after the test
-        # case finishes by using the test case repr as the codec name
-        # The codecs module normalizes codec names, although this doesn't
-        # appear to be formally documented...
-        # We also make sure we use a truly unique id for the custom codec
-        # to avoid issues with the codec cache when running these tests
-        # multiple times (e.g. when hunting for refleaks)
-        unique_id = repr(self) + str(id(self))
-        self.codec_name = encodings.normalize_encoding(unique_id).lower()
+        self.codec_name = 'exception_chaining_test'
+        codecs.register(_get_test_codec)
+        self.addCleanup(codecs.unregister, _get_test_codec)
 
         # We store the object to raise on the instance because of a bad
         # interaction between the codec caching (which means we can't
@@ -2756,10 +2788,6 @@ class ExceptionChainingTest(unittest.TestCase):
         _TEST_CODECS.pop(self.codec_name, None)
         # Issue #22166: Also pop from caches to avoid appearance of ref leaks
         encodings._cache.pop(self.codec_name, None)
-        try:
-            _forget_codec(self.codec_name)
-        except KeyError:
-            pass
 
     def set_codec(self, encode, decode):
         codec_info = codecs.CodecInfo(encode, decode,
@@ -3075,13 +3103,13 @@ class CodePageTest(unittest.TestCase):
             self.assertEqual(codec.name, 'mbcs')
 
     @support.bigmemtest(size=2**31, memuse=7, dry_run=False)
-    def test_large_input(self):
+    def test_large_input(self, size):
         # Test input longer than INT_MAX.
         # Input should contain undecodable bytes before and after
         # the INT_MAX limit.
-        encoded = (b'01234567' * (2**28-1) +
+        encoded = (b'01234567' * ((size//8)-1) +
                    b'\x85\x86\xea\xeb\xec\xef\xfc\xfd\xfe\xff')
-        self.assertEqual(len(encoded), 2**31+2)
+        self.assertEqual(len(encoded), size+2)
         decoded = codecs.code_page_decode(932, encoded, 'surrogateescape', True)
         self.assertEqual(decoded[1], len(encoded))
         del encoded
@@ -3091,6 +3119,20 @@ class CodePageTest(unittest.TestCase):
                          '6701234567'
                          '\udc85\udc86\udcea\udceb\udcec'
                          '\udcef\udcfc\udcfd\udcfe\udcff')
+
+    @support.bigmemtest(size=2**31, memuse=6, dry_run=False)
+    def test_large_utf8_input(self, size):
+        # Test input longer than INT_MAX.
+        # Input should contain a decodable multi-byte character
+        # surrounding INT_MAX
+        encoded = (b'0123456\xed\x84\x80' * (size//8))
+        self.assertEqual(len(encoded), size // 8 * 10)
+        decoded = codecs.code_page_decode(65001, encoded, 'ignore', True)
+        self.assertEqual(decoded[1], len(encoded))
+        del encoded
+        self.assertEqual(len(decoded[0]), size)
+        self.assertEqual(decoded[0][:10], '0123456\ud10001')
+        self.assertEqual(decoded[0][-11:], '56\ud1000123456\ud100')
 
 
 class ASCIITest(unittest.TestCase):
@@ -3327,6 +3369,80 @@ class LocaleCodecTest(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             self.decode(b'', 'backslashreplace')
         self.assertEqual(str(cm.exception), 'unsupported error handler')
+
+
+class Rot13Test(unittest.TestCase):
+    """Test the educational ROT-13 codec."""
+    def test_encode(self):
+        ciphertext = codecs.encode("Caesar liked ciphers", 'rot-13')
+        self.assertEqual(ciphertext, 'Pnrfne yvxrq pvcuref')
+
+    def test_decode(self):
+        plaintext = codecs.decode('Rg gh, Oehgr?', 'rot-13')
+        self.assertEqual(plaintext, 'Et tu, Brute?')
+
+    def test_incremental_encode(self):
+        encoder = codecs.getincrementalencoder('rot-13')()
+        ciphertext = encoder.encode('ABBA nag Cheryl Baker')
+        self.assertEqual(ciphertext, 'NOON ant Purely Onxre')
+
+    def test_incremental_decode(self):
+        decoder = codecs.getincrementaldecoder('rot-13')()
+        plaintext = decoder.decode('terra Ares envy tha')
+        self.assertEqual(plaintext, 'green Nerf rail gun')
+
+
+class Rot13UtilTest(unittest.TestCase):
+    """Test the ROT-13 codec via rot13 function,
+    i.e. the user has done something like:
+    $ echo "Hello World" | python -m encodings.rot_13
+    """
+    def test_rot13_func(self):
+        infile = io.StringIO('Gb or, be abg gb or, gung vf gur dhrfgvba')
+        outfile = io.StringIO()
+        encodings.rot_13.rot13(infile, outfile)
+        outfile.seek(0)
+        plain_text = outfile.read()
+        self.assertEqual(
+            plain_text,
+            'To be, or not to be, that is the question')
+
+
+class CodecNameNormalizationTest(unittest.TestCase):
+    """Test codec name normalization"""
+    def test_codecs_lookup(self):
+        FOUND = (1, 2, 3, 4)
+        NOT_FOUND = (None, None, None, None)
+        def search_function(encoding):
+            if encoding == "aaa_8":
+                return FOUND
+            else:
+                return NOT_FOUND
+
+        codecs.register(search_function)
+        self.addCleanup(codecs.unregister, search_function)
+        self.assertEqual(FOUND, codecs.lookup('aaa_8'))
+        self.assertEqual(FOUND, codecs.lookup('AAA-8'))
+        self.assertEqual(FOUND, codecs.lookup('AAA---8'))
+        self.assertEqual(FOUND, codecs.lookup('AAA   8'))
+        self.assertEqual(FOUND, codecs.lookup('aaa\xe9\u20ac-8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('AAA.8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('AAA...8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('BBB-8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('BBB.8'))
+        self.assertEqual(NOT_FOUND, codecs.lookup('a\xe9\u20ac-8'))
+
+    def test_encodings_normalize_encoding(self):
+        # encodings.normalize_encoding() ignores non-ASCII characters.
+        normalize = encodings.normalize_encoding
+        self.assertEqual(normalize('utf_8'), 'utf_8')
+        self.assertEqual(normalize('utf\xE9\u20AC\U0010ffff-8'), 'utf_8')
+        self.assertEqual(normalize('utf   8'), 'utf_8')
+        # encodings.normalize_encoding() doesn't convert
+        # characters to lower case.
+        self.assertEqual(normalize('UTF 8'), 'UTF_8')
+        self.assertEqual(normalize('utf.8'), 'utf.8')
+        self.assertEqual(normalize('utf...8'), 'utf...8')
 
 
 if __name__ == "__main__":

@@ -40,11 +40,9 @@ bound into a function.
    can bind you to a precise Python version since the definition of the bytecode
    changes often.
 
-   .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags c.PyCode_New
-
 .. c:function:: PyCodeObject* PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, int firstlineno, PyObject *lnotab)
 
-   Similar to :c:func:`PyCode_New`, but with an extra "posonlyargcount" for positonal-only arguments.
+   Similar to :c:func:`PyCode_New`, but with an extra "posonlyargcount" for positional-only arguments.
 
    .. versionadded:: 3.8
 

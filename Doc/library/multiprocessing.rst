@@ -14,7 +14,8 @@ Introduction
 :mod:`multiprocessing` is a package that supports spawning processes using an
 API similar to the :mod:`threading` module.  The :mod:`multiprocessing` package
 offers both local and remote concurrency, effectively side-stepping the
-:term:`Global Interpreter Lock` by using subprocesses instead of threads.  Due
+:term:`Global Interpreter Lock <global interpreter lock>` by using
+subprocesses instead of threads.  Due
 to this, the :mod:`multiprocessing` module allows the programmer to fully
 leverage multiple processors on a given machine.  It runs on both Unix and
 Windows.
@@ -439,7 +440,8 @@ process which created it.
       >>> def f(x):
       ...     return x*x
       ...
-      >>> p.map(f, [1,2,3])
+      >>> with p:
+      ...   p.map(f, [1,2,3])
       Process PoolWorker-1:
       Process PoolWorker-2:
       Process PoolWorker-3:
@@ -859,7 +861,7 @@ For an example of the usage of queues for interprocess communication see
 
       A better name for this method might be
       ``allow_exit_without_flush()``.  It is likely to cause enqueued
-      data to lost, and you almost certainly will not need to use it.
+      data to be lost, and you almost certainly will not need to use it.
       It is really only there if you need the current process to exit
       immediately without waiting to flush enqueued data to the
       underlying pipe, and you don't care about lost data.
@@ -876,6 +878,16 @@ For an example of the usage of queues for interprocess communication see
 .. class:: SimpleQueue()
 
    It is a simplified :class:`Queue` type, very close to a locked :class:`Pipe`.
+
+   .. method:: close()
+
+      Close the queue: release internal resources.
+
+      A queue must not be used anymore after it is closed. For example,
+      :meth:`get`, :meth:`put` and :meth:`empty` methods must no longer be
+      called.
+
+      .. versionadded:: 3.9
 
    .. method:: empty()
 
@@ -2127,6 +2139,16 @@ with the :class:`Pool` class.
    Note that the methods of the pool object should only be called by
    the process which created the pool.
 
+   .. warning::
+      :class:`multiprocessing.pool` objects have internal resources that need to be
+      properly managed (like any other resource) by using the pool as a context manager
+      or by calling :meth:`close` and :meth:`terminate` manually. Failure to do this
+      can lead to the process hanging on finalization.
+
+      Note that it is **not correct** to rely on the garbage collector to destroy the pool
+      as CPython does not assure that the finalizer of the pool will be called
+      (see :meth:`object.__del__` for more information).
+
    .. versionadded:: 3.2
       *maxtasksperchild*
 
@@ -2152,7 +2174,8 @@ with the :class:`Pool` class.
 
    .. method:: apply_async(func[, args[, kwds[, callback[, error_callback]]]])
 
-      A variant of the :meth:`apply` method which returns a result object.
+      A variant of the :meth:`apply` method which returns a
+      :class:`~multiprocessing.pool.AsyncResult` object.
 
       If *callback* is specified then it should be a callable which accepts a
       single argument.  When the result becomes ready *callback* is applied to
@@ -2169,7 +2192,8 @@ with the :class:`Pool` class.
    .. method:: map(func, iterable[, chunksize])
 
       A parallel equivalent of the :func:`map` built-in function (it supports only
-      one *iterable* argument though).  It blocks until the result is ready.
+      one *iterable* argument though, for multiple iterables see :meth:`starmap`).
+      It blocks until the result is ready.
 
       This method chops the iterable into a number of chunks which it submits to
       the process pool as separate tasks.  The (approximate) size of these
@@ -2181,7 +2205,8 @@ with the :class:`Pool` class.
 
    .. method:: map_async(func, iterable[, chunksize[, callback[, error_callback]]])
 
-      A variant of the :meth:`.map` method which returns a result object.
+      A variant of the :meth:`.map` method which returns a
+      :class:`~multiprocessing.pool.AsyncResult` object.
 
       If *callback* is specified then it should be a callable which accepts a
       single argument.  When the result becomes ready *callback* is applied to
@@ -2278,7 +2303,7 @@ with the :class:`Pool` class.
    .. method:: successful()
 
       Return whether the call completed without raising an exception.  Will
-      raise :exc:`AssertionError` if the result is not ready.
+      raise :exc:`ValueError` if the result is not ready.
 
       .. versionchanged:: 3.7
          If the result is not ready, :exc:`ValueError` is raised instead of

@@ -27,12 +27,8 @@ not.
 
 The wrappers ensure that *str*[*size*-1] is always ``'\0'`` upon return. They
 never write more than *size* bytes (including the trailing ``'\0'``) into str.
-Both functions require that ``str != NULL``, ``size > 0`` and ``format !=
-NULL``.
-
-If the platform doesn't have :c:func:`vsnprintf` and the buffer size needed to
-avoid truncation exceeds *size* by more than 512 bytes, Python aborts with a
-*Py_FatalError*.
+Both functions require that ``str != NULL``, ``size > 0``, ``format != NULL``
+and ``size < INT_MAX``.
 
 The return value (*rv*) for these functions should be interpreted as follows:
 
@@ -48,8 +44,8 @@ The return value (*rv*) for these functions should be interpreted as follows:
   this case too, but the rest of *str* is undefined. The exact cause of the error
   depends on the underlying platform.
 
-The following functions provide locale-independent string to number conversions.
 
+The following functions provide locale-independent string to number conversions.
 
 .. c:function:: double PyOS_string_to_double(const char *s, char **endptr, PyObject *overflow_exception)
 
@@ -95,25 +91,25 @@ The following functions provide locale-independent string to number conversions.
    must be 0 and is ignored.  The ``'r'`` format code specifies the
    standard :func:`repr` format.
 
-   *flags* can be zero or more of the values *Py_DTSF_SIGN*,
-   *Py_DTSF_ADD_DOT_0*, or *Py_DTSF_ALT*, or-ed together:
+   *flags* can be zero or more of the values ``Py_DTSF_SIGN``,
+   ``Py_DTSF_ADD_DOT_0``, or ``Py_DTSF_ALT``, or-ed together:
 
-   * *Py_DTSF_SIGN* means to always precede the returned string with a sign
+   * ``Py_DTSF_SIGN`` means to always precede the returned string with a sign
      character, even if *val* is non-negative.
 
-   * *Py_DTSF_ADD_DOT_0* means to ensure that the returned string will not look
+   * ``Py_DTSF_ADD_DOT_0`` means to ensure that the returned string will not look
      like an integer.
 
-   * *Py_DTSF_ALT* means to apply "alternate" formatting rules.  See the
+   * ``Py_DTSF_ALT`` means to apply "alternate" formatting rules.  See the
      documentation for the :c:func:`PyOS_snprintf` ``'#'`` specifier for
      details.
 
-   If *ptype* is non-NULL, then the value it points to will be set to one of
-   *Py_DTST_FINITE*, *Py_DTST_INFINITE*, or *Py_DTST_NAN*, signifying that
+   If *ptype* is non-``NULL``, then the value it points to will be set to one of
+   ``Py_DTST_FINITE``, ``Py_DTST_INFINITE``, or ``Py_DTST_NAN``, signifying that
    *val* is a finite number, an infinite number, or not a number, respectively.
 
    The return value is a pointer to *buffer* with the converted string or
-   *NULL* if the conversion failed. The caller is responsible for freeing the
+   ``NULL`` if the conversion failed. The caller is responsible for freeing the
    returned string by calling :c:func:`PyMem_Free`.
 
    .. versionadded:: 3.1

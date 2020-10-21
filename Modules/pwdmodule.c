@@ -47,8 +47,21 @@ The uid and gid items are integers, all others are strings. An\n\
 exception is raised if the entry asked for cannot be found.");
 
 
-static int initialized;
-static PyTypeObject StructPwdType;
+typedef struct {
+    PyTypeObject *StructPwdType;
+} pwdmodulestate;
+
+static inline pwdmodulestate*
+get_pwd_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (pwdmodulestate *)state;
+}
+
+#define modulestate_global get_pwd_state(PyState_FindModule(&pwdmodule))
+
+static struct PyModuleDef pwdmodule;
 
 #define DEFAULT_BUFFER_SIZE 1024
 
@@ -69,7 +82,7 @@ static PyObject *
 mkpwent(struct passwd *p)
 {
     int setIndex = 0;
-    PyObject *v = PyStructSequence_New(&StructPwdType);
+    PyObject *v = PyStructSequence_New(modulestate_global->StructPwdType);
     if (v == NULL)
         return NULL;
 
@@ -310,16 +323,28 @@ static PyMethodDef pwd_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static int pwdmodule_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(get_pwd_state(m)->StructPwdType);
+    return 0;
+}
+static int pwdmodule_clear(PyObject *m) {
+    Py_CLEAR(get_pwd_state(m)->StructPwdType);
+    return 0;
+}
+static void pwdmodule_free(void *m) {
+    pwdmodule_clear((PyObject *)m);
+}
+
 static struct PyModuleDef pwdmodule = {
     PyModuleDef_HEAD_INIT,
     "pwd",
     pwd__doc__,
-    -1,
+    sizeof(pwdmodulestate),
     pwd_methods,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    pwdmodule_traverse,
+    pwdmodule_clear,
+    pwdmodule_free,
 };
 
 
@@ -327,17 +352,19 @@ PyMODINIT_FUNC
 PyInit_pwd(void)
 {
     PyObject *m;
-    m = PyModule_Create(&pwdmodule);
-    if (m == NULL)
+    if ((m = PyState_FindModule(&pwdmodule)) != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
+    if ((m = PyModule_Create(&pwdmodule)) == NULL)
         return NULL;
 
-    if (!initialized) {
-        if (PyStructSequence_InitType2(&StructPwdType,
-                                       &struct_pwd_type_desc) < 0)
-            return NULL;
-        initialized = 1;
+    pwdmodulestate *state = PyModule_GetState(m);
+    state->StructPwdType = PyStructSequence_NewType(&struct_pwd_type_desc);
+    if (state->StructPwdType == NULL) {
+        return NULL;
     }
-    Py_INCREF((PyObject *) &StructPwdType);
-    PyModule_AddObject(m, "struct_passwd", (PyObject *) &StructPwdType);
+    Py_INCREF(state->StructPwdType);
+    PyModule_AddObject(m, "struct_passwd", (PyObject *) state->StructPwdType);
     return m;
 }

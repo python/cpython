@@ -15,10 +15,8 @@ output written to the standard error stream ("stderr"), such as exception
 messages and their tracebacks.
 """
 import re
-import weakref
 
 import tkinter as tk
-from tkinter.font import Font
 import tkinter.messagebox as tkMessageBox
 
 from idlelib.config import idleConf
@@ -203,8 +201,6 @@ class Squeezer:
     This avoids IDLE's shell slowing down considerably, and even becoming
     completely unresponsive, when very long outputs are written.
     """
-    _instance_weakref = None
-
     @classmethod
     def reload(cls):
         """Load class variables from config."""
@@ -212,14 +208,6 @@ class Squeezer:
             "main", "PyShell", "auto-squeeze-min-lines",
             type="int", default=50,
         )
-
-        # Loading the font info requires a Tk root. IDLE doesn't rely
-        # on Tkinter's "default root", so the instance will reload
-        # font info using its editor windows's Tk root.
-        if cls._instance_weakref is not None:
-            instance = cls._instance_weakref()
-            if instance is not None:
-                instance.load_font()
 
     def __init__(self, editwin):
         """Initialize settings for Squeezer.
@@ -240,9 +228,6 @@ class Squeezer:
         # actually a wrapper for the actual Text widget. Squeezer,
         # however, needs to make such changes.
         self.base_text = editwin.per.bottom
-
-        Squeezer._instance_weakref = weakref.ref(self)
-        self.load_font()
 
         # Twice the text widget's border width and internal padding;
         # pre-calculated here for the get_line_width() method.
@@ -298,24 +283,7 @@ class Squeezer:
 
         Tabs are considered tabwidth characters long.
         """
-        linewidth = self.get_line_width()
-        return count_lines_with_wrapping(s, linewidth)
-
-    def get_line_width(self):
-        # The maximum line length in pixels: The width of the text
-        # widget, minus twice the border width and internal padding.
-        linewidth_pixels = \
-            self.base_text.winfo_width() - self.window_width_delta
-
-        # Divide the width of the Text widget by the font width,
-        # which is taken to be the width of '0' (zero).
-        # http://www.tcl.tk/man/tcl8.6/TkCmd/text.htm#M21
-        return linewidth_pixels // self.zero_char_width
-
-    def load_font(self):
-        text = self.base_text
-        self.zero_char_width = \
-            Font(text, font=text.cget('font')).measure('0')
+        return count_lines_with_wrapping(s, self.editwin.width)
 
     def squeeze_current_text_event(self, event):
         """squeeze-current-text event handler

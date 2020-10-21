@@ -89,6 +89,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_encoded_word('=?abc?=')
 
+    def test_get_encoded_word_invalid_cte(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_encoded_word('=?utf-8?X?somevalue?=')
+
     def test_get_encoded_word_valid_ew(self):
         self._test_get_x(parser.get_encoded_word,
                          '=?us-ascii?q?this_is_a_test?=  bird',
@@ -381,6 +385,30 @@ class TestParser(TestParserMixin, TestEmailBase):
             'somevaluenowhitespace',
             'somevaluenowhitespace',
             [errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_without_trailing_whitespace_hang_case(self):
+        self._test_get_x(self._get_unst,
+            '=?utf-8?q?somevalue?=aa',
+            'somevalueaa',
+            'somevalueaa',
+            [errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_invalid_ew(self):
+        self._test_get_x(self._get_unst,
+            '=?utf-8?q?=somevalue?=',
+            '=?utf-8?q?=somevalue?=',
+            '=?utf-8?q?=somevalue?=',
+            [],
+            '')
+
+    def test_get_unstructured_invalid_ew_cte(self):
+        self._test_get_x(self._get_unst,
+            '=?utf-8?X?=somevalue?=',
+            '=?utf-8?X?=somevalue?=',
+            '=?utf-8?X?=somevalue?=',
+            [],
             '')
 
     # get_qp_ctext
@@ -1700,6 +1728,14 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(display_name[3].comments, ['with trailing comment'])
         self.assertEqual(display_name.display_name, 'simple phrase.')
 
+    def test_get_display_name_for_invalid_address_field(self):
+        # bpo-32178: Test that address fields starting with `:` don't cause
+        # IndexError when parsing the display name.
+        display_name = self._test_get_x(
+            parser.get_display_name,
+            ':Foo ', '', '', [errors.InvalidHeaderDefect], ':Foo ')
+        self.assertEqual(display_name.value, '')
+
     # get_name_addr
 
     def test_get_name_addr_angle_addr_only(self):
@@ -2547,6 +2583,11 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_msg_id
 
+    def test_get_msg_id_empty(self):
+        # bpo-38708: Test that HeaderParseError is raised and not IndexError.
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id('')
+
     def test_get_msg_id_valid(self):
         msg_id = self._test_get_x(
             parser.get_msg_id,
@@ -2602,6 +2643,46 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
 
+    def test_get_msg_id_invalid_expected_msg_id_not_found(self):
+        text = "935-XPB-567:0:45327:9:90305:17843586-40@example.com"
+        msg_id = parser.parse_message_id(text)
+        self.assertDefectsEqual(
+            msg_id.all_defects,
+            [errors.InvalidHeaderDefect])
+
+    def test_parse_invalid_message_id(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "935-XPB-567:0:45327:9:90305:17843586-40@example.com",
+            "935-XPB-567:0:45327:9:90305:17843586-40@example.com",
+            "935-XPB-567:0:45327:9:90305:17843586-40@example.com",
+            [errors.InvalidHeaderDefect],
+            )
+        self.assertEqual(message_id.token_type, 'invalid-message-id')
+
+    def test_parse_valid_message_id(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "<aperson@somedomain>",
+            "<aperson@somedomain>",
+            "<aperson@somedomain>",
+            [],
+            )
+        self.assertEqual(message_id.token_type, 'message-id')
+
+    def test_parse_message_id_with_remaining(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "<validmessageid@example>thensomething",
+            "<validmessageid@example>",
+            "<validmessageid@example>",
+            [errors.InvalidHeaderDefect],
+            [],
+            )
+        self.assertEqual(message_id.token_type, 'message-id')
+        self.assertEqual(str(message_id.all_defects[0]),
+                         "Unexpected 'thensomething'")
+
     def test_get_msg_id_no_angle_start(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_msg_id("msgwithnoankle")
@@ -2616,6 +2697,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ""
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
+
 
 
 @parameterize

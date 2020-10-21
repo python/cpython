@@ -22,7 +22,7 @@ Virginia where he released several versions of the software.
 In May 2000, Guido and the Python core development team moved to BeOpen.com to
 form the BeOpen PythonLabs team.  In October of the same year, the PythonLabs
 team moved to Digital Creations (now Zope Corporation; see
-http://www.zope.com/).  In 2001, the Python Software Foundation (PSF, see
+https://www.zope.org/).  In 2001, the Python Software Foundation (PSF, see
 https://www.python.org/psf/) was formed, a non-profit organization created
 specifically to own Python-related Intellectual Property.  Zope Corporation is a
 sponsoring member of the PSF.
@@ -72,6 +72,19 @@ make these releases possible.
 Terms and conditions for accessing or otherwise using Python
 ============================================================
 
+Python software and documentation are licensed under the
+:ref:`PSF License Agreement <PSF-license>`.
+
+Starting with Python 3.8.6, examples, recipes, and other code in
+the documentation are dual licensed under the PSF License Agreement
+and the :ref:`Zero-Clause BSD license <BSD0>`.
+
+Some software incorporated into Python is under different licenses.
+The licenses are listed with code falling under that license.
+See :ref:`OtherLicenses` for an incomplete list of these licenses.
+
+
+.. _PSF-license:
 
 PSF LICENSE AGREEMENT FOR PYTHON |release|
 ------------------------------------------
@@ -87,7 +100,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       analyze, test, perform and/or display publicly, prepare derivative works,
       distribute, and otherwise use Python |release| alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2019 Python Software Foundation; All Rights
+      copyright, i.e., "Copyright © 2001-2020 Python Software Foundation; All Rights
       Reserved" are retained in Python |release| alone or in any derivative version
       prepared by Licensee.
 
@@ -257,6 +270,27 @@ CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2
    ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
    SOFTWARE.
 
+
+.. _BSD0:
+
+ZERO-CLAUSE BSD LICENSE FOR CODE IN THE PYTHON |release| DOCUMENTATION
+----------------------------------------------------------------------
+
+.. parsed-literal::
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
+
+
+.. _OtherLicenses:
 
 Licenses and Acknowledgements for Incorporated Software
 =======================================================
@@ -889,7 +923,7 @@ libmpdec
 The :mod:`_decimal` module is built using an included copy of the libmpdec
 library unless the build is configured ``--with-system-libmpdec``::
 
-   Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+   Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions

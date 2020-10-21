@@ -1,0 +1,72 @@
+#######################################
+# C Globals and CPython Runtime State.
+
+CPython's C code makes extensive use of global variables (whether static
+globals or static locals).  Each such variable falls into one of several
+categories:
+
+* strictly const data
+* used exclusively in main or in the REPL
+* process-global state (e.g. managing process-level resources
+  like signals and file descriptors)
+* Python "global" runtime state
+* per-interpreter runtime state
+
+The last one can be a problem as soon as anyone creates a second
+interpreter (AKA "subinterpreter") in a process.  It is definitely a
+problem under subinterpreters if they are no longer sharing the GIL,
+since the GIL protects us from a lot of race conditions.  Keep in mind
+that ultimately *all* objects (PyObject) should be treated as
+per-interpreter state.  This includes "static types", freelists,
+_PyIdentifier, and singletons.  Take that in for a second.  It has
+significant implications on where we use static variables!
+
+Be aware that module-global state (stored in C statics) is a kind of
+per-interpreter state.  There have been efforts across many years, and
+still going, to provide extension module authors mechanisms to store
+that state safely (see PEPs 3121, 489, etc.).
+
+(Note that there has been discussion around support for running multiple
+Python runtimes in the same process.  That would ends up with the same
+problems, relative to static variables, that subinterpreters have.)
+
+Historically we have been bad at keeping per-interpreter state out of
+static variables, mostly because until recently subinterpreters were
+not widely used nor even factored in to solutions.  However, the
+feature is growing in popularity and use in the community.
+
+Mandate: "Eliminate use of static variables for per-interpreter state."
+
+The "c-statics.py" script in this directory, along with its accompanying
+data files, are part of the effort to resolve existing problems with
+our use of static variables and to prevent future problems.
+
+#-------------------------
+## statics for actually-global state (and runtime state consolidation)
+
+In general, holding any kind of state in static variables
+increases maintenance burden and increases the complexity of code (e.g.
+we use TSS to identify the active thread state).  So it is a good idea
+to avoid using statics for state even if for the "global" runtime or
+for process-global state.
+
+Relative to maintenance burden, one problem is where the runtime
+state is spread throughout the codebase in dozens of individual
+globals.  Unlike the other globals, the runtime state represents a set
+of values that are constantly shifting in a complex way.  When they are
+spread out it's harder to get a clear picture of what the runtime
+involves.  Furthermore, when they are spread out it complicates efforts
+that change the runtime.
+
+Consequently, the globals for Python's runtime state have been
+consolidated under a single top-level _PyRuntime global. No new globals
+should be added for runtime state.  Instead, they should be added to
+_PyRuntimeState or one of its sub-structs.  The tools in this directory
+are run as part of the test suite to ensure that no new globals have
+been added.  The script can be run manually as well:
+
+  ./python Lib/test/test_c_statics/c-statics.py check
+
+If it reports any globals then they should be resolved.  If the globals
+are runtime state then they should be folded into _PyRuntimeState.
+Otherwise they should be marked as ignored.

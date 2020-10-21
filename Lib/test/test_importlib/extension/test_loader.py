@@ -267,29 +267,6 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
                 self.assertEqual(module.__name__, name)
                 self.assertEqual(module.__doc__, "Module named in %s" % lang)
 
-    @unittest.skipIf(not hasattr(sys, 'gettotalrefcount'),
-            '--with-pydebug has to be enabled for this test')
-    def test_bad_traverse(self):
-        ''' Issue #32374: Test that traverse fails when accessing per-module
-            state before Py_mod_exec was executed.
-            (Multiphase initialization modules only)
-        '''
-        script = """if True:
-                try:
-                    from test import support
-                    import importlib.util as util
-                    spec = util.find_spec('_testmultiphase')
-                    spec.name = '_testmultiphase_with_bad_traverse'
-
-                    with support.SuppressCrashReport():
-                        m = spec.loader.create_module(spec)
-                except:
-                    # Prevent Python-level exceptions from
-                    # ending the process with non-zero status
-                    # (We are testing for a crash in C-code)
-                    pass"""
-        assert_python_failure("-c", script)
-
 
 (Frozen_MultiPhaseExtensionModuleTests,
  Source_MultiPhaseExtensionModuleTests

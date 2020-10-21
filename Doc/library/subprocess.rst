@@ -40,7 +40,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   capture_output=False, shell=False, cwd=None, timeout=None, \
                   check=False, encoding=None, errors=None, text=None, env=None, \
-                  universal_newlines=None)
+                  universal_newlines=None, **other_popen_kwargs)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -339,11 +339,12 @@ functions.
                  stderr=None, preexec_fn=None, close_fds=True, shell=False, \
                  cwd=None, env=None, universal_newlines=None, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
-                 start_new_session=False, pass_fds=(), *, \
-                 encoding=None, errors=None, text=None)
+                 start_new_session=False, pass_fds=(), \*, group=None, \
+                 extra_groups=None, user=None, umask=-1, \
+                 encoding=None, errors=None, text=None, pipesize=-1)
 
    Execute a child program in a new process.  On POSIX, the class uses
-   :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
+   :meth:`os.execvpe`-like behavior to execute the child program.  On Windows,
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
 
@@ -355,14 +356,39 @@ functions.
    arguments for additional differences from the default behavior.  Unless
    otherwise stated, it is recommended to pass *args* as a sequence.
 
+   .. warning::
+
+      For maximum reliability, use a fully-qualified path for the executable.
+      To search for an unqualified name on :envvar:`PATH`, use
+      :meth:`shutil.which`. On all platforms, passing :data:`sys.executable`
+      is the recommended way to launch the current Python interpreter again,
+      and use the ``-m`` command-line format to launch an installed module.
+
+      Resolving the path of *executable* (or the first item of *args*) is
+      platform dependent. For POSIX, see :meth:`os.execvpe`, and note that
+      when resolving or searching for the executable path, *cwd* overrides the
+      current working directory and *env* can override the ``PATH``
+      environment variable. For Windows, see the documentation of the
+      ``lpApplicationName`` and ``lpCommandLine`` parameters of WinAPI
+      ``CreateProcess``, and note that when resolving or searching for the
+      executable path with ``shell=False``, *cwd* does not override the
+      current working directory and *env* cannot override the ``PATH``
+      environment variable. Using a full path avoids all of these variations.
+
+   An example of passing some arguments to an external program
+   as a sequence is::
+
+     Popen(["/usr/bin/git", "commit", "-m", "Fixes a bug."])
+
    On POSIX, if *args* is a string, the string is interpreted as the name or
    path of the program to execute.  However, this can only be done if not
    passing arguments to the program.
 
    .. note::
 
-      :meth:`shlex.split` can be useful when determining the correct
-      tokenization for *args*, especially in complex cases::
+      It may not be obvious how to break a shell command into a sequence of arguments,
+      especially in complex cases. :meth:`shlex.split` can illustrate how to
+      determine the correct tokenization for *args*::
 
          >>> import shlex, subprocess
          >>> command_line = input()
@@ -483,6 +509,13 @@ functions.
       The *start_new_session* parameter can take the place of a previously
       common use of *preexec_fn* to call os.setsid() in the child.
 
+   .. versionchanged:: 3.8
+
+      The *preexec_fn* parameter is no longer supported in subinterpreters.
+      The use of the parameter in a subinterpreter raises
+      :exc:`RuntimeError`. The new restriction may affect applications that
+      are deployed in mod_wsgi, uWSGI, and other embedded environments.
+
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
    :const:`2` will be closed before the child process is executed.  Otherwise
    when *close_fds* is false, file descriptors obey their inheritable flag
@@ -510,7 +543,7 @@ functions.
 
    If *cwd* is not ``None``, the function changes the working directory to
    *cwd* before executing the child.  *cwd* can be a string, bytes or
-   :term:`path-like <path-like object>` object.  In particular, the function
+   :term:`path-like <path-like object>` object.  In POSIX, the function
    looks for *executable* (or for the first item in *args*) relative to *cwd*
    if the executable path is a relative path.
 
@@ -536,6 +569,39 @@ functions.
 
    .. versionchanged:: 3.2
       *start_new_session* was added.
+
+   If *group* is not ``None``, the setregid() system call will be made in the
+   child process prior to the execution of the subprocess. If the provided
+   value is a string, it will be looked up via :func:`grp.getgrnam()` and
+   the value in ``gr_gid`` will be used. If the value is an integer, it
+   will be passed verbatim. (POSIX only)
+
+   .. availability:: POSIX
+   .. versionadded:: 3.9
+
+   If *extra_groups* is not ``None``, the setgroups() system call will be
+   made in the child process prior to the execution of the subprocess.
+   Strings provided in *extra_groups* will be looked up via
+   :func:`grp.getgrnam()` and the values in ``gr_gid`` will be used.
+   Integer values will be passed verbatim. (POSIX only)
+
+   .. availability:: POSIX
+   .. versionadded:: 3.9
+
+   If *user* is not ``None``, the setreuid() system call will be made in the
+   child process prior to the execution of the subprocess. If the provided
+   value is a string, it will be looked up via :func:`pwd.getpwnam()` and
+   the value in ``pw_uid`` will be used. If the value is an integer, it will
+   be passed verbatim. (POSIX only)
+
+   .. availability:: POSIX
+   .. versionadded:: 3.9
+
+   If *umask* is not negative, the umask() system call will be made in the
+   child process prior to the execution of the subprocess.
+
+   .. availability:: POSIX
+   .. versionadded:: 3.9
 
    If *env* is not ``None``, it must be a mapping that defines the environment
    variables for the new process; these are used instead of the default
@@ -578,6 +644,14 @@ functions.
       * :data:`CREATE_DEFAULT_ERROR_MODE`
       * :data:`CREATE_BREAKAWAY_FROM_JOB`
 
+   *pipesize* can be used to change the size of the pipe when
+   :data:`PIPE` is used for *stdin*, *stdout* or *stderr*. The size of the pipe
+   is only changed on platforms that support this (only Linux at this time of
+   writing). Other platforms will ignore this parameter.
+
+   .. versionadded:: 3.10
+      The ``pipesize`` parameter was added.
+
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
    ::
@@ -589,7 +663,7 @@ functions.
 
       Popen and the other functions in this module that use it raise an
       :ref:`auditing event <auditing>` ``subprocess.Popen`` with arguments
-      ``executable``, ``args``, ``cwd``, ``env``. The value for ``args``
+      ``executable``, ``args``, ``cwd``, and ``env``. The value for ``args``
       may be a single string or a list of strings, depending on platform.
 
    .. versionchanged:: 3.2
@@ -691,10 +765,11 @@ Instances of the :class:`Popen` class have the following methods:
 .. method:: Popen.communicate(input=None, timeout=None)
 
    Interact with process: Send data to stdin.  Read data from stdout and stderr,
-   until end-of-file is reached.  Wait for process to terminate.  The optional
-   *input* argument should be data to be sent to the child process, or
-   ``None``, if no data should be sent to the child.  If streams were opened in
-   text mode, *input* must be a string.  Otherwise, it must be bytes.
+   until end-of-file is reached.  Wait for process to terminate and set the
+   :attr:`~Popen.returncode` attribute.  The optional *input* argument should be
+   data to be sent to the child process, or ``None``, if no data should be sent
+   to the child.  If streams were opened in text mode, *input* must be a string.
+   Otherwise, it must be bytes.
 
    :meth:`communicate` returns a tuple ``(stdout_data, stderr_data)``.
    The data will be strings if streams were opened in text mode; otherwise,
@@ -733,6 +808,8 @@ Instances of the :class:`Popen` class have the following methods:
 
    Sends the signal *signal* to the child.
 
+   Do nothing if the process completed.
+
    .. note::
 
       On Windows, SIGTERM is an alias for :meth:`terminate`. CTRL_C_EVENT and
@@ -742,14 +819,14 @@ Instances of the :class:`Popen` class have the following methods:
 
 .. method:: Popen.terminate()
 
-   Stop the child. On Posix OSs the method sends SIGTERM to the
+   Stop the child. On POSIX OSs the method sends SIGTERM to the
    child. On Windows the Win32 API function :c:func:`TerminateProcess` is called
    to stop the child.
 
 
 .. method:: Popen.kill()
 
-   Kills the child. On Posix OSs the function sends SIGKILL to the child.
+   Kills the child. On POSIX OSs the function sends SIGKILL to the child.
    On Windows :meth:`kill` is an alias for :meth:`terminate`.
 
 
@@ -1036,12 +1113,13 @@ Prior to Python 3.5, these three functions comprised the high level API to
 subprocess. You can now use :func:`run` in many cases, but lots of existing code
 calls these functions.
 
-.. function:: call(args, *, stdin=None, stdout=None, stderr=None, shell=False, cwd=None, timeout=None)
+.. function:: call(args, *, stdin=None, stdout=None, stderr=None, \
+                   shell=False, cwd=None, timeout=None, **other_popen_kwargs)
 
    Run the command described by *args*.  Wait for command to complete, then
    return the :attr:`~Popen.returncode` attribute.
 
-   Code needing to capture stdout or stderr should use :func:`run` instead:
+   Code needing to capture stdout or stderr should use :func:`run` instead::
 
        run(...).returncode
 
@@ -1062,14 +1140,16 @@ calls these functions.
    .. versionchanged:: 3.3
       *timeout* was added.
 
-.. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, shell=False, cwd=None, timeout=None)
+.. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, \
+                         shell=False, cwd=None, timeout=None, \
+                         **other_popen_kwargs)
 
    Run command with arguments.  Wait for command to complete. If the return
    code was zero then return, otherwise raise :exc:`CalledProcessError`. The
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
 
-   Code needing to capture stdout or stderr should use :func:`run` instead:
+   Code needing to capture stdout or stderr should use :func:`run` instead::
 
        run(..., check=True)
 
@@ -1093,7 +1173,8 @@ calls these functions.
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
                            cwd=None, encoding=None, errors=None, \
-                           universal_newlines=None, timeout=None, text=None)
+                           universal_newlines=None, timeout=None, text=None, \
+                           **other_popen_kwargs)
 
    Run command with arguments and return its output.
 
@@ -1191,8 +1272,8 @@ becomes::
    p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
    output = p2.communicate()[0]
 
-The p1.stdout.close() call after starting the p2 is important in order for p1
-to receive a SIGPIPE if p2 exits before p1.
+The ``p1.stdout.close()`` call after starting the p2 is important in order for
+p1 to receive a SIGPIPE if p2 exits before p1.
 
 Alternatively, for trusted input, the shell's own pipeline support may still
 be used directly:

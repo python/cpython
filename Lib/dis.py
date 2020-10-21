@@ -454,6 +454,7 @@ def findlinestarts(code):
     """
     byte_increments = code.co_lnotab[0::2]
     line_increments = code.co_lnotab[1::2]
+    bytecode_len = len(code.co_code)
 
     lastlineno = None
     lineno = code.co_firstlineno
@@ -464,6 +465,10 @@ def findlinestarts(code):
                 yield (addr, lineno)
                 lastlineno = lineno
             addr += byte_incr
+            if addr >= bytecode_len:
+                # The rest of the lnotab byte offsets are past the end of
+                # the bytecode, so the lines were optimized away.
+                return
         if line_incr >= 0x80:
             # line_increments is an array of 8-bit signed integers
             line_incr -= 0x100
@@ -537,7 +542,7 @@ def _test():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('infile', type=argparse.FileType(), nargs='?', default='-')
+    parser.add_argument('infile', type=argparse.FileType('rb'), nargs='?', default='-')
     args = parser.parse_args()
     with args.infile as infile:
         source = infile.read()

@@ -163,7 +163,7 @@ def _sum(data, start=0):
     T = _coerce(int, type(start))
     for typ, values in groupby(data, type):
         T = _coerce(T, typ)  # or raise TypeError
-        for n,d in map(_exact_ratio, values):
+        for n, d in map(_exact_ratio, values):
             count += 1
             partials[d] = partials_get(d, 0) + n
     if None in partials:
@@ -261,7 +261,7 @@ def _convert(value, T):
         return T(value)
     except TypeError:
         if issubclass(T, Decimal):
-            return T(value.numerator)/T(value.denominator)
+            return T(value.numerator) / T(value.denominator)
         else:
             raise
 
@@ -277,8 +277,8 @@ def _find_lteq(a, x):
 def _find_rteq(a, l, x):
     'Locate the rightmost value exactly equal to x'
     i = bisect_right(a, x, lo=l)
-    if i != (len(a)+1) and a[i-1] == x:
-        return i-1
+    if i != (len(a) + 1) and a[i - 1] == x:
+        return i - 1
     raise ValueError
 
 
@@ -315,14 +315,13 @@ def mean(data):
         raise StatisticsError('mean requires at least one data point')
     T, total, count = _sum(data)
     assert count == n
-    return _convert(total/n, T)
+    return _convert(total / n, T)
 
 
 def fmean(data):
     """Convert data to floats and compute the arithmetic mean.
 
     This runs faster than the mean() function and it always returns a float.
-    The result is highly accurate but not as perfect as mean().
     If the input dataset is empty, it raises a StatisticsError.
 
     >>> fmean([3.5, 4.0, 5.25])
@@ -404,11 +403,11 @@ def harmonic_mean(data):
         else:
             raise TypeError('unsupported type')
     try:
-        T, total, count = _sum(1/x for x in _fail_neg(data, errmsg))
+        T, total, count = _sum(1 / x for x in _fail_neg(data, errmsg))
     except ZeroDivisionError:
         return 0
     assert count == n
-    return _convert(n/total, T)
+    return _convert(n / total, T)
 
 
 # FIXME: investigate ways to calculate medians without sorting? Quickselect?
@@ -429,11 +428,11 @@ def median(data):
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    if n%2 == 1:
-        return data[n//2]
+    if n % 2 == 1:
+        return data[n // 2]
     else:
-        i = n//2
-        return (data[i - 1] + data[i])/2
+        i = n // 2
+        return (data[i - 1] + data[i]) / 2
 
 
 def median_low(data):
@@ -452,10 +451,10 @@ def median_low(data):
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    if n%2 == 1:
-        return data[n//2]
+    if n % 2 == 1:
+        return data[n // 2]
     else:
-        return data[n//2 - 1]
+        return data[n // 2 - 1]
 
 
 def median_high(data):
@@ -474,7 +473,7 @@ def median_high(data):
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    return data[n//2]
+    return data[n // 2]
 
 
 def median_grouped(data, interval=1):
@@ -511,15 +510,15 @@ def median_grouped(data, interval=1):
         return data[0]
     # Find the value at the midpoint. Remember this corresponds to the
     # centre of the class interval.
-    x = data[n//2]
+    x = data[n // 2]
     for obj in (x, interval):
         if isinstance(obj, (str, bytes)):
             raise TypeError('expected number but got %r' % obj)
     try:
-        L = x - interval/2  # The lower limit of the median interval.
+        L = x - interval / 2  # The lower limit of the median interval.
     except TypeError:
         # Mixed type. For now we just coerce to float.
-        L = float(x) - float(interval)/2
+        L = float(x) - float(interval) / 2
 
     # Uses bisection search to search for x in data with log(n) time complexity
     # Find the position of leftmost occurrence of x in data
@@ -529,7 +528,7 @@ def median_grouped(data, interval=1):
     l2 = _find_rteq(data, l1, x)
     cf = l1
     f = l2 - l1 + 1
-    return L + interval*(n/2 - cf)/f
+    return L + interval * (n / 2 - cf) / f
 
 
 def mode(data):
@@ -538,15 +537,16 @@ def mode(data):
     ``mode`` assumes discrete data, and returns a single value. This is the
     standard treatment of the mode as commonly taught in schools:
 
-    >>> mode([1, 1, 2, 3, 3, 3, 3, 4])
-    3
+        >>> mode([1, 1, 2, 3, 3, 3, 3, 4])
+        3
 
     This also works with nominal (non-numeric) data:
 
-    >>> mode(["red", "blue", "blue", "red", "green", "red", "red"])
-    'red'
+        >>> mode(["red", "blue", "blue", "red", "green", "red", "red"])
+        'red'
 
-    If there are multiple modes, return the first one encountered.
+    If there are multiple modes with same frequency, return the first one
+    encountered:
 
         >>> mode(['red', 'red', 'green', 'blue', 'blue'])
         'red'
@@ -554,9 +554,9 @@ def mode(data):
     If *data* is empty, ``mode``, raises StatisticsError.
 
     """
-    data = iter(data)
+    pairs = Counter(iter(data)).most_common(1)
     try:
-        return Counter(data).most_common(1)[0][0]
+        return pairs[0][0]
     except IndexError:
         raise StatisticsError('no mode for empty data') from None
 
@@ -596,12 +596,13 @@ def multimode(data):
 # For sample data where there is a positive probability for values
 # beyond the range of the data, the R6 exclusive method is a
 # reasonable choice.  Consider a random sample of nine values from a
-# population with a uniform distribution from 0.0 to 100.0.  The
+# population with a uniform distribution from 0.0 to 1.0.  The
 # distribution of the third ranked sample point is described by
 # betavariate(alpha=3, beta=7) which has mode=0.250, median=0.286, and
 # mean=0.300.  Only the latter (which corresponds with R6) gives the
 # desired cut point with 30% of the population falling below that
 # value, making it comparable to a result from an inv_cdf() function.
+# The R6 exclusive method is also idempotent.
 
 # For describing population data where the end points are known to
 # be included in the data, the R7 inclusive method is a reasonable
@@ -615,28 +616,25 @@ def multimode(data):
 # position is that fewer options make for easier choices and that
 # external packages can be used for anything more advanced.
 
-def quantiles(dist, /, *, n=4, method='exclusive'):
-    """Divide *dist* into *n* continuous intervals with equal probability.
+def quantiles(data, *, n=4, method='exclusive'):
+    """Divide *data* into *n* continuous intervals with equal probability.
 
     Returns a list of (n - 1) cut points separating the intervals.
 
     Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
     Set *n* to 100 for percentiles which gives the 99 cuts points that
-    separate *dist* in to 100 equal sized groups.
+    separate *data* in to 100 equal sized groups.
 
-    The *dist* can be any iterable containing sample data or it can be
-    an instance of a class that defines an inv_cdf() method.  For sample
-    data, the cut points are linearly interpolated between data points.
+    The *data* can be any iterable containing sample.
+    The cut points are linearly interpolated between data points.
 
-    If *method* is set to *inclusive*, *dist* is treated as population
+    If *method* is set to *inclusive*, *data* is treated as population
     data.  The minimum value is treated as the 0th percentile and the
     maximum value is treated as the 100th percentile.
     """
     if n < 1:
         raise StatisticsError('n must be at least 1')
-    if hasattr(dist, 'inv_cdf'):
-        return [dist.inv_cdf(i / n) for i in range(1, n)]
-    data = sorted(dist)
+    data = sorted(data)
     ld = len(data)
     if ld < 2:
         raise StatisticsError('must have at least two data points')
@@ -644,9 +642,8 @@ def quantiles(dist, /, *, n=4, method='exclusive'):
         m = ld - 1
         result = []
         for i in range(1, n):
-            j = i * m // n
-            delta = i*m - j*n
-            interpolated = (data[j] * (n - delta) + data[j+1] * delta) / n
+            j, delta = divmod(i * m, n)
+            interpolated = (data[j] * (n - delta) + data[j + 1] * delta) / n
             result.append(interpolated)
         return result
     if method == 'exclusive':
@@ -656,7 +653,7 @@ def quantiles(dist, /, *, n=4, method='exclusive'):
             j = i * m // n                               # rescale i to m/n
             j = 1 if j < 1 else ld-1 if j > ld-1 else j  # clamp to 1 .. ld-1
             delta = i*m - j*n                            # exact integer math
-            interpolated = (data[j-1] * (n - delta) + data[j] * delta) / n
+            interpolated = (data[j - 1] * (n - delta) + data[j] * delta) / n
             result.append(interpolated)
         return result
     raise ValueError(f'Unknown method: {method!r}')
@@ -683,14 +680,16 @@ def _ss(data, c=None):
     calculated from ``c`` as given. Use the second case with care, as it can
     lead to garbage results.
     """
-    if c is None:
-        c = mean(data)
+    if c is not None:
+        T, total, count = _sum((x-c)**2 for x in data)
+        return (T, total)
+    c = mean(data)
     T, total, count = _sum((x-c)**2 for x in data)
     # The following sum should mathematically equal zero, but due to rounding
     # error may not.
-    U, total2, count2 = _sum((x-c) for x in data)
+    U, total2, count2 = _sum((x - c) for x in data)
     assert T == U and count == count2
-    total -=  total2**2/len(data)
+    total -= total2 ** 2 / len(data)
     assert not total < 0, 'negative sum of square deviations: %f' % total
     return (T, total)
 
@@ -739,13 +738,13 @@ def variance(data, xbar=None):
     if n < 2:
         raise StatisticsError('variance requires at least two data points')
     T, ss = _ss(data, xbar)
-    return _convert(ss/(n-1), T)
+    return _convert(ss / (n - 1), T)
 
 
 def pvariance(data, mu=None):
     """Return the population variance of ``data``.
 
-    data should be an iterable of Real-valued numbers, with at least one
+    data should be a sequence or iterable of Real-valued numbers, with at least one
     value. The optional argument mu, if given, should be the mean of
     the data. If it is missing or None, the mean is automatically calculated.
 
@@ -766,10 +765,6 @@ def pvariance(data, mu=None):
     >>> pvariance(data, mu)
     1.25
 
-    This function does not check that ``mu`` is actually the mean of ``data``.
-    Giving arbitrary values for ``mu`` may lead to invalid or impossible
-    results.
-
     Decimals and Fractions are supported:
 
     >>> from decimal import Decimal as D
@@ -787,7 +782,7 @@ def pvariance(data, mu=None):
     if n < 1:
         raise StatisticsError('pvariance requires at least one data point')
     T, ss = _ss(data, mu)
-    return _convert(ss/n, T)
+    return _convert(ss / n, T)
 
 
 def stdev(data, xbar=None):
@@ -824,6 +819,88 @@ def pstdev(data, mu=None):
 
 ## Normal Distribution #####################################################
 
+
+def _normal_dist_inv_cdf(p, mu, sigma):
+    # There is no closed-form solution to the inverse CDF for the normal
+    # distribution, so we use a rational approximation instead:
+    # Wichura, M.J. (1988). "Algorithm AS241: The Percentage Points of the
+    # Normal Distribution".  Applied Statistics. Blackwell Publishing. 37
+    # (3): 477–484. doi:10.2307/2347330. JSTOR 2347330.
+    q = p - 0.5
+    if fabs(q) <= 0.425:
+        r = 0.180625 - q * q
+        # Hash sum: 55.88319_28806_14901_4439
+        num = (((((((2.50908_09287_30122_6727e+3 * r +
+                     3.34305_75583_58812_8105e+4) * r +
+                     6.72657_70927_00870_0853e+4) * r +
+                     4.59219_53931_54987_1457e+4) * r +
+                     1.37316_93765_50946_1125e+4) * r +
+                     1.97159_09503_06551_4427e+3) * r +
+                     1.33141_66789_17843_7745e+2) * r +
+                     3.38713_28727_96366_6080e+0) * q
+        den = (((((((5.22649_52788_52854_5610e+3 * r +
+                     2.87290_85735_72194_2674e+4) * r +
+                     3.93078_95800_09271_0610e+4) * r +
+                     2.12137_94301_58659_5867e+4) * r +
+                     5.39419_60214_24751_1077e+3) * r +
+                     6.87187_00749_20579_0830e+2) * r +
+                     4.23133_30701_60091_1252e+1) * r +
+                     1.0)
+        x = num / den
+        return mu + (x * sigma)
+    r = p if q <= 0.0 else 1.0 - p
+    r = sqrt(-log(r))
+    if r <= 5.0:
+        r = r - 1.6
+        # Hash sum: 49.33206_50330_16102_89036
+        num = (((((((7.74545_01427_83414_07640e-4 * r +
+                     2.27238_44989_26918_45833e-2) * r +
+                     2.41780_72517_74506_11770e-1) * r +
+                     1.27045_82524_52368_38258e+0) * r +
+                     3.64784_83247_63204_60504e+0) * r +
+                     5.76949_72214_60691_40550e+0) * r +
+                     4.63033_78461_56545_29590e+0) * r +
+                     1.42343_71107_49683_57734e+0)
+        den = (((((((1.05075_00716_44416_84324e-9 * r +
+                     5.47593_80849_95344_94600e-4) * r +
+                     1.51986_66563_61645_71966e-2) * r +
+                     1.48103_97642_74800_74590e-1) * r +
+                     6.89767_33498_51000_04550e-1) * r +
+                     1.67638_48301_83803_84940e+0) * r +
+                     2.05319_16266_37758_82187e+0) * r +
+                     1.0)
+    else:
+        r = r - 5.0
+        # Hash sum: 47.52583_31754_92896_71629
+        num = (((((((2.01033_43992_92288_13265e-7 * r +
+                     2.71155_55687_43487_57815e-5) * r +
+                     1.24266_09473_88078_43860e-3) * r +
+                     2.65321_89526_57612_30930e-2) * r +
+                     2.96560_57182_85048_91230e-1) * r +
+                     1.78482_65399_17291_33580e+0) * r +
+                     5.46378_49111_64114_36990e+0) * r +
+                     6.65790_46435_01103_77720e+0)
+        den = (((((((2.04426_31033_89939_78564e-15 * r +
+                     1.42151_17583_16445_88870e-7) * r +
+                     1.84631_83175_10054_68180e-5) * r +
+                     7.86869_13114_56132_59100e-4) * r +
+                     1.48753_61290_85061_48525e-2) * r +
+                     1.36929_88092_27358_05310e-1) * r +
+                     5.99832_20655_58879_37690e-1) * r +
+                     1.0)
+    x = num / den
+    if q < 0.0:
+        x = -x
+    return mu + (x * sigma)
+
+
+# If available, use C implementation
+try:
+    from _statistics import _normal_dist_inv_cdf
+except ImportError:
+    pass
+
+
 class NormalDist:
     "Normal distribution of a random variable"
     # https://en.wikipedia.org/wiki/Normal_distribution
@@ -838,8 +915,8 @@ class NormalDist:
         "NormalDist where mu is the mean and sigma is the standard deviation."
         if sigma < 0.0:
             raise StatisticsError('sigma must be non-negative')
-        self._mu = mu
-        self._sigma = sigma
+        self._mu = float(mu)
+        self._sigma = float(sigma)
 
     @classmethod
     def from_samples(cls, data):
@@ -882,79 +959,18 @@ class NormalDist:
             raise StatisticsError('p must be in the range 0.0 < p < 1.0')
         if self._sigma <= 0.0:
             raise StatisticsError('cdf() not defined when sigma at or below zero')
+        return _normal_dist_inv_cdf(p, self._mu, self._sigma)
 
-        # There is no closed-form solution to the inverse CDF for the normal
-        # distribution, so we use a rational approximation instead:
-        # Wichura, M.J. (1988). "Algorithm AS241: The Percentage Points of the
-        # Normal Distribution".  Applied Statistics. Blackwell Publishing. 37
-        # (3): 477–484. doi:10.2307/2347330. JSTOR 2347330.
+    def quantiles(self, n=4):
+        """Divide into *n* continuous intervals with equal probability.
 
-        q = p - 0.5
-        if fabs(q) <= 0.425:
-            r = 0.180625 - q * q
-            # Hash sum: 55.88319_28806_14901_4439
-            num = (((((((2.50908_09287_30122_6727e+3 * r +
-                         3.34305_75583_58812_8105e+4) * r +
-                         6.72657_70927_00870_0853e+4) * r +
-                         4.59219_53931_54987_1457e+4) * r +
-                         1.37316_93765_50946_1125e+4) * r +
-                         1.97159_09503_06551_4427e+3) * r +
-                         1.33141_66789_17843_7745e+2) * r +
-                         3.38713_28727_96366_6080e+0) * q
-            den = (((((((5.22649_52788_52854_5610e+3 * r +
-                         2.87290_85735_72194_2674e+4) * r +
-                         3.93078_95800_09271_0610e+4) * r +
-                         2.12137_94301_58659_5867e+4) * r +
-                         5.39419_60214_24751_1077e+3) * r +
-                         6.87187_00749_20579_0830e+2) * r +
-                         4.23133_30701_60091_1252e+1) * r +
-                         1.0)
-            x = num / den
-            return self._mu + (x * self._sigma)
-        r = p if q <= 0.0 else 1.0 - p
-        r = sqrt(-log(r))
-        if r <= 5.0:
-            r = r - 1.6
-            # Hash sum: 49.33206_50330_16102_89036
-            num = (((((((7.74545_01427_83414_07640e-4 * r +
-                         2.27238_44989_26918_45833e-2) * r +
-                         2.41780_72517_74506_11770e-1) * r +
-                         1.27045_82524_52368_38258e+0) * r +
-                         3.64784_83247_63204_60504e+0) * r +
-                         5.76949_72214_60691_40550e+0) * r +
-                         4.63033_78461_56545_29590e+0) * r +
-                         1.42343_71107_49683_57734e+0)
-            den = (((((((1.05075_00716_44416_84324e-9 * r +
-                         5.47593_80849_95344_94600e-4) * r +
-                         1.51986_66563_61645_71966e-2) * r +
-                         1.48103_97642_74800_74590e-1) * r +
-                         6.89767_33498_51000_04550e-1) * r +
-                         1.67638_48301_83803_84940e+0) * r +
-                         2.05319_16266_37758_82187e+0) * r +
-                         1.0)
-        else:
-            r = r - 5.0
-            # Hash sum: 47.52583_31754_92896_71629
-            num = (((((((2.01033_43992_92288_13265e-7 * r +
-                         2.71155_55687_43487_57815e-5) * r +
-                         1.24266_09473_88078_43860e-3) * r +
-                         2.65321_89526_57612_30930e-2) * r +
-                         2.96560_57182_85048_91230e-1) * r +
-                         1.78482_65399_17291_33580e+0) * r +
-                         5.46378_49111_64114_36990e+0) * r +
-                         6.65790_46435_01103_77720e+0)
-            den = (((((((2.04426_31033_89939_78564e-15 * r +
-                         1.42151_17583_16445_88870e-7) * r +
-                         1.84631_83175_10054_68180e-5) * r +
-                         7.86869_13114_56132_59100e-4) * r +
-                         1.48753_61290_85061_48525e-2) * r +
-                         1.36929_88092_27358_05310e-1) * r +
-                         5.99832_20655_58879_37690e-1) * r +
-                         1.0)
-        x = num / den
-        if q < 0.0:
-            x = -x
-        return self._mu + (x * self._sigma)
+        Returns a list of (n - 1) cut points separating the intervals.
+
+        Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
+        Set *n* to 100 for percentiles which gives the 99 cuts points that
+        separate the normal distribution in to 100 equal sized groups.
+        """
+        return [self.inv_cdf(i / n) for i in range(1, n)]
 
     def overlap(self, other):
         """Compute the overlapping coefficient (OVL) between two normal distributions.
@@ -975,7 +991,7 @@ class NormalDist:
         if not isinstance(other, NormalDist):
             raise TypeError('Expected another NormalDist instance')
         X, Y = self, other
-        if (Y._sigma, Y._mu) < (X._sigma, X._mu):   # sort to assure commutativity
+        if (Y._sigma, Y._mu) < (X._sigma, X._mu):  # sort to assure commutativity
             X, Y = Y, X
         X_var, Y_var = X.variance, Y.variance
         if not X_var or not Y_var:
@@ -990,9 +1006,34 @@ class NormalDist:
         x2 = (a - b) / dv
         return 1.0 - (fabs(Y.cdf(x1) - X.cdf(x1)) + fabs(Y.cdf(x2) - X.cdf(x2)))
 
+    def zscore(self, x):
+        """Compute the Standard Score.  (x - mean) / stdev
+
+        Describes *x* in terms of the number of standard deviations
+        above or below the mean of the normal distribution.
+        """
+        # https://www.statisticshowto.com/probability-and-statistics/z-score/
+        if not self._sigma:
+            raise StatisticsError('zscore() not defined when sigma is zero')
+        return (x - self._mu) / self._sigma
+
     @property
     def mean(self):
         "Arithmetic mean of the normal distribution."
+        return self._mu
+
+    @property
+    def median(self):
+        "Return the median of the normal distribution"
+        return self._mu
+
+    @property
+    def mode(self):
+        """Return the mode of the normal distribution
+
+        The mode is the value x where which the probability density
+        function (pdf) takes its maximum value.
+        """
         return self._mu
 
     @property
@@ -1069,7 +1110,7 @@ class NormalDist:
         "Two NormalDist objects are equal if their mu and sigma are both equal."
         if not isinstance(x2, NormalDist):
             return NotImplemented
-        return (x1._mu, x2._sigma) == (x2._mu, x2._sigma)
+        return x1._mu == x2._mu and x1._sigma == x2._sigma
 
     def __hash__(self):
         "NormalDist objects hash equal if their mu and sigma are both equal."
@@ -1077,73 +1118,3 @@ class NormalDist:
 
     def __repr__(self):
         return f'{type(self).__name__}(mu={self._mu!r}, sigma={self._sigma!r})'
-
-
-if __name__ == '__main__':
-
-    # Show math operations computed analytically in comparsion
-    # to a monte carlo simulation of the same operations
-
-    from math import isclose
-    from operator import add, sub, mul, truediv
-    from itertools import repeat
-    import doctest
-
-    g1 = NormalDist(10, 20)
-    g2 = NormalDist(-5, 25)
-
-    # Test scaling by a constant
-    assert (g1 * 5 / 5).mean == g1.mean
-    assert (g1 * 5 / 5).stdev == g1.stdev
-
-    n = 100_000
-    G1 = g1.samples(n)
-    G2 = g2.samples(n)
-
-    for func in (add, sub):
-        print(f'\nTest {func.__name__} with another NormalDist:')
-        print(func(g1, g2))
-        print(NormalDist.from_samples(map(func, G1, G2)))
-
-    const = 11
-    for func in (add, sub, mul, truediv):
-        print(f'\nTest {func.__name__} with a constant:')
-        print(func(g1, const))
-        print(NormalDist.from_samples(map(func, G1, repeat(const))))
-
-    const = 19
-    for func in (add, sub, mul):
-        print(f'\nTest constant with {func.__name__}:')
-        print(func(const, g1))
-        print(NormalDist.from_samples(map(func, repeat(const), G1)))
-
-    def assert_close(G1, G2):
-        assert isclose(G1.mean, G1.mean, rel_tol=0.01), (G1, G2)
-        assert isclose(G1.stdev, G2.stdev, rel_tol=0.01), (G1, G2)
-
-    X = NormalDist(-105, 73)
-    Y = NormalDist(31, 47)
-    s = 32.75
-    n = 100_000
-
-    S = NormalDist.from_samples([x + s for x in X.samples(n)])
-    assert_close(X + s, S)
-
-    S = NormalDist.from_samples([x - s for x in X.samples(n)])
-    assert_close(X - s, S)
-
-    S = NormalDist.from_samples([x * s for x in X.samples(n)])
-    assert_close(X * s, S)
-
-    S = NormalDist.from_samples([x / s for x in X.samples(n)])
-    assert_close(X / s, S)
-
-    S = NormalDist.from_samples([x + y for x, y in zip(X.samples(n),
-                                                       Y.samples(n))])
-    assert_close(X + Y, S)
-
-    S = NormalDist.from_samples([x - y for x, y in zip(X.samples(n),
-                                                       Y.samples(n))])
-    assert_close(X - Y, S)
-
-    print(doctest.testmod())

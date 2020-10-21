@@ -1,1 +1,0 @@
-Make C-API docs clear about what the "main" interpreter is.

@@ -44,12 +44,12 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!PyObject_TypeCheck(fastargs[0], &PyCode_Type)) {
-        _PyArg_BadArgument("function", 1, (&PyCode_Type)->tp_name, fastargs[0]);
+        _PyArg_BadArgument("function", "argument 'code'", (&PyCode_Type)->tp_name, fastargs[0]);
         goto exit;
     }
     code = (PyCodeObject *)fastargs[0];
     if (!PyDict_Check(fastargs[1])) {
-        _PyArg_BadArgument("function", 2, "dict", fastargs[1]);
+        _PyArg_BadArgument("function", "argument 'globals'", "dict", fastargs[1]);
         goto exit;
     }
     globals = fastargs[1];
@@ -75,4 +75,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1d01072cd5620d7e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3d96afa3396e5c82 input=a9049054013a1b77]*/

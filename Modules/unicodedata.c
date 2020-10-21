@@ -17,7 +17,9 @@
 
 #include "Python.h"
 #include "ucnhash.h"
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
+
+#include <stdbool.h>
 
 _Py_IDENTIFIER(NFC);
 _Py_IDENTIFIER(NFD);
@@ -90,20 +92,34 @@ static PyMemberDef DB_members[] = {
 
 /* forward declaration */
 static PyTypeObject UCD_Type;
-#define UCD_Check(o) (Py_TYPE(o)==&UCD_Type)
+
+typedef struct {
+    // Borrowed reference to &UCD_Type. It is used to prepare the code
+    // to convert the UCD_Type static type to a heap type.
+    PyTypeObject *ucd_type;
+} unicodedata_module_state;
+
+// bpo-1635741: Temporary global state until the unicodedata module
+// gets a real module state.
+static unicodedata_module_state global_module_state;
+
+// Check if self is an instance of ucd_type.
+// Return 0 if self is NULL (when the PyCapsule C API is used).
+#define UCD_Check(self, ucd_type) (self != NULL && Py_IS_TYPE(self, ucd_type))
 
 static PyObject*
-new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4),
+new_previous_version(unicodedata_module_state *state,
+                     const char*name, const change_record* (*getrecord)(Py_UCS4),
                      Py_UCS4 (*normalization)(Py_UCS4))
 {
-        PreviousDBVersion *self;
-        self = PyObject_New(PreviousDBVersion, &UCD_Type);
-        if (self == NULL)
-                return NULL;
-        self->name = name;
-        self->getrecord = getrecord;
-        self->normalization = normalization;
-        return (PyObject*)self;
+    PreviousDBVersion *self;
+    self = PyObject_New(PreviousDBVersion, state->ucd_type);
+    if (self == NULL)
+        return NULL;
+    self->name = name;
+    self->getrecord = getrecord;
+    self->normalization = normalization;
+    return (PyObject*)self;
 }
 
 
@@ -129,11 +145,12 @@ unicodedata_UCD_decimal_impl(PyObject *self, int chr,
                              PyObject *default_value)
 /*[clinic end generated code: output=be23376e1a185231 input=933f8107993f23d0]*/
 {
+    unicodedata_module_state *state = &global_module_state;
     int have_old = 0;
     long rc;
     Py_UCS4 c = (Py_UCS4)chr;
 
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, state->ucd_type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0) {
             /* unassigned */
@@ -217,11 +234,12 @@ unicodedata_UCD_numeric_impl(PyObject *self, int chr,
                              PyObject *default_value)
 /*[clinic end generated code: output=53ce281fe85b10c4 input=fdf5871a5542893c]*/
 {
+    unicodedata_module_state *state = &global_module_state;
     int have_old = 0;
     double rc;
     Py_UCS4 c = (Py_UCS4)chr;
 
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, state->ucd_type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0) {
             /* unassigned */
@@ -263,10 +281,11 @@ static PyObject *
 unicodedata_UCD_category_impl(PyObject *self, int chr)
 /*[clinic end generated code: output=8571539ee2e6783a input=27d6f3d85050bc06]*/
 {
+    unicodedata_module_state *state = &global_module_state;
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->category;
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, state->ucd_type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed != 0xFF)
             index = old->category_changed;
@@ -290,10 +309,11 @@ static PyObject *
 unicodedata_UCD_bidirectional_impl(PyObject *self, int chr)
 /*[clinic end generated code: output=d36310ce2039bb92 input=b3d8f42cebfcf475]*/
 {
+    unicodedata_module_state *state = &global_module_state;
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->bidirectional;
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, state->ucd_type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
@@ -319,10 +339,11 @@ static int
 unicodedata_UCD_combining_impl(PyObject *self, int chr)
 /*[clinic end generated code: output=cad056d0cb6a5920 input=9f2d6b2a95d0a22a]*/
 {
+    unicodedata_module_state *state = &global_module_state;
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->combining;
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, state->ucd_type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
@@ -347,10 +368,11 @@ static int
 unicodedata_UCD_mirrored_impl(PyObject *self, int chr)
 /*[clinic end generated code: output=2532dbf8121b50e6 input=5dd400d351ae6f3b]*/
 {
+    unicodedata_module_state *state = &global_module_state;
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->mirrored;
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, state->ucd_type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
@@ -374,10 +396,11 @@ static PyObject *
 unicodedata_UCD_east_asian_width_impl(PyObject *self, int chr)
 /*[clinic end generated code: output=484e8537d9ee8197 input=c4854798aab026e0]*/
 {
+    unicodedata_module_state *state = &global_module_state;
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->east_asian_width;
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, state->ucd_type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
@@ -403,6 +426,7 @@ static PyObject *
 unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
 /*[clinic end generated code: output=7d699f3ec7565d27 input=e4c12459ad68507b]*/
 {
+    unicodedata_module_state *state = &global_module_state;
     char decomp[256];
     int code, index, count;
     size_t i;
@@ -411,7 +435,7 @@ unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
 
     code = (int)c;
 
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, state->ucd_type)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             return PyUnicode_FromString(""); /* unassigned */
@@ -454,11 +478,12 @@ unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
 }
 
 static void
-get_decomp_record(PyObject *self, Py_UCS4 code, int *index, int *prefix, int *count)
+get_decomp_record(unicodedata_module_state *state, PyObject *self,
+                  Py_UCS4 code, int *index, int *prefix, int *count)
 {
     if (code >= 0x110000) {
         *index = 0;
-    } else if (self && UCD_Check(self) &&
+    } else if (UCD_Check(self, state->ucd_type) &&
                get_old_record(self, code)->category_changed==0) {
         /* unassigned in old version */
         *index = 0;
@@ -488,13 +513,14 @@ get_decomp_record(PyObject *self, Py_UCS4 code, int *index, int *prefix, int *co
 #define SCount  (LCount*NCount)
 
 static PyObject*
-nfd_nfkd(PyObject *self, PyObject *input, int k)
+nfd_nfkd(unicodedata_module_state *state, PyObject *self,
+         PyObject *input, int k)
 {
     PyObject *result;
     Py_UCS4 *output;
     Py_ssize_t i, o, osize;
     int kind;
-    void *data;
+    const void *data;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
     Py_UCS4 stack[20];
     Py_ssize_t space, isize;
@@ -556,7 +582,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
                 continue;
             }
             /* normalization changes */
-            if (self && UCD_Check(self)) {
+            if (UCD_Check(self, state->ucd_type)) {
                 Py_UCS4 value = ((PreviousDBVersion*)self)->normalization(code);
                 if (value != 0) {
                     stack[stackptr++] = value;
@@ -565,7 +591,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
             }
 
             /* Other decompositions. */
-            get_decomp_record(self, code, &index, &prefix, &count);
+            get_decomp_record(state, self, code, &index, &prefix, &count);
 
             /* Copy character if it is not decomposable, or has a
                compatibility decomposition, but we do NFD. */
@@ -621,7 +647,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
 }
 
 static int
-find_nfc_index(PyObject *self, struct reindex* nfc, Py_UCS4 code)
+find_nfc_index(const struct reindex* nfc, Py_UCS4 code)
 {
     unsigned int index;
     for (index = 0; nfc[index].start; index++) {
@@ -637,11 +663,11 @@ find_nfc_index(PyObject *self, struct reindex* nfc, Py_UCS4 code)
 }
 
 static PyObject*
-nfc_nfkc(PyObject *self, PyObject *input, int k)
+nfc_nfkc(unicodedata_module_state *state, PyObject *self, PyObject *input, int k)
 {
     PyObject *result;
     int kind;
-    void *data;
+    const void *data;
     Py_UCS4 *output;
     Py_ssize_t i, i1, o, len;
     int f,l,index,index1,comb;
@@ -649,7 +675,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
     Py_ssize_t skipped[20];
     int cskipped = 0;
 
-    result = nfd_nfkd(self, input, k);
+    result = nfd_nfkd(state, self, input, k);
     if (!result)
         return NULL;
     /* result will be "ready". */
@@ -707,7 +733,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
       }
 
       /* code is still input[i] here */
-      f = find_nfc_index(self, nfc_first, code);
+      f = find_nfc_index(nfc_first, code);
       if (f == -1) {
           output[o++] = code;
           i++;
@@ -730,7 +756,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
                   continue;
               }
           }
-          l = find_nfc_index(self, nfc_last, code1);
+          l = find_nfc_index(nfc_last, code1);
           /* i1 cannot be combined with i. If i1
              is a starter, we don't need to look further.
              Otherwise, record the combining class. */
@@ -755,7 +781,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
           assert(cskipped < 20);
           skipped[cskipped++] = i1;
           i1++;
-          f = find_nfc_index(self, nfc_first, output[o]);
+          f = find_nfc_index(nfc_first, output[o]);
           if (f == -1)
               break;
       }
@@ -775,25 +801,40 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
     return result;
 }
 
-typedef enum {YES, NO, MAYBE} NormalMode;
+// This needs to match the logic in makeunicodedata.py
+// which constructs the quickcheck data.
+typedef enum {YES = 0, MAYBE = 1, NO = 2} QuickcheckResult;
 
-/* Return YES if the input is certainly normalized, NO or MAYBE if it might not be. */
-static NormalMode
-is_normalized(PyObject *self, PyObject *input, int nfc, int k)
+/* Run the Unicode normalization "quickcheck" algorithm.
+ *
+ * Return YES or NO if quickcheck determines the input is certainly
+ * normalized or certainly not, and MAYBE if quickcheck is unable to
+ * tell.
+ *
+ * If `yes_only` is true, then return MAYBE as soon as we determine
+ * the answer is not YES.
+ *
+ * For background and details on the algorithm, see UAX #15:
+ *   https://www.unicode.org/reports/tr15/#Detecting_Normalization_Forms
+ */
+static QuickcheckResult
+is_normalized_quickcheck(unicodedata_module_state *state, PyObject *self,
+                         PyObject *input, bool nfc, bool k, bool yes_only)
 {
-    Py_ssize_t i, len;
-    int kind;
-    void *data;
-    unsigned char prev_combining = 0, quickcheck_mask;
-
     /* An older version of the database is requested, quickchecks must be
        disabled. */
-    if (self && UCD_Check(self))
+    if (UCD_Check(self, state->ucd_type))
         return NO;
 
-    /* The two quickcheck bits at this shift mean 0=Yes, 1=Maybe, 2=No,
-       as described in http://unicode.org/reports/tr15/#Annex8. */
-    quickcheck_mask = 3 << ((nfc ? 4 : 0) + (k ? 2 : 0));
+    Py_ssize_t i, len;
+    int kind;
+    const void *data;
+    unsigned char prev_combining = 0;
+
+    /* The two quickcheck bits at this shift have type QuickcheckResult. */
+    int quickcheck_shift = (nfc ? 4 : 0) + (k ? 2 : 0);
+
+    QuickcheckResult result = YES; /* certainly normalized, unless we find something */
 
     i = 0;
     kind = PyUnicode_KIND(input);
@@ -802,16 +843,26 @@ is_normalized(PyObject *self, PyObject *input, int nfc, int k)
     while (i < len) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, i++);
         const _PyUnicode_DatabaseRecord *record = _getrecord_ex(ch);
-        unsigned char combining = record->combining;
-        unsigned char quickcheck = record->normalization_quick_check;
 
-        if (quickcheck & quickcheck_mask)
-            return MAYBE; /* this string might need normalization */
+        unsigned char combining = record->combining;
         if (combining && prev_combining > combining)
             return NO; /* non-canonical sort order, not normalized */
         prev_combining = combining;
+
+        unsigned char quickcheck_whole = record->normalization_quick_check;
+        if (yes_only) {
+            if (quickcheck_whole & (3 << quickcheck_shift))
+                return MAYBE;
+        } else {
+            switch ((quickcheck_whole >> quickcheck_shift) & 3) {
+            case NO:
+              return NO;
+            case MAYBE:
+              result = MAYBE; /* this string might need normalization */
+            }
+        }
     }
-    return YES; /* certainly normalized */
+    return result;
 }
 
 /*[clinic input]
@@ -832,6 +883,7 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
                                    PyObject *input)
 /*[clinic end generated code: output=11e5a3694e723ca5 input=a544f14cea79e508]*/
 {
+    unicodedata_module_state *state = &global_module_state;
     if (PyUnicode_READY(input) == -1) {
         return NULL;
     }
@@ -842,35 +894,35 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
     }
 
     PyObject *result;
-    int nfc = 0;
-    int k = 0;
-    NormalMode m;
+    bool nfc = false;
+    bool k = false;
+    QuickcheckResult m;
 
     PyObject *cmp;
     int match = 0;
 
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
-        nfc = 1;
+        nfc = true;
     }
     else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
-        nfc = 1;
-        k = 1;
+        nfc = true;
+        k = true;
     }
     else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
         /* matches default values for `nfc` and `k` */
     }
     else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
-        k = 1;
+        k = true;
     }
     else {
         PyErr_SetString(PyExc_ValueError, "invalid normalization form");
         return NULL;
     }
 
-    m = is_normalized(self, input, nfc, k);
+    m = is_normalized_quickcheck(state, self, input, nfc, k, false);
 
     if (m == MAYBE) {
-        cmp = (nfc ? nfc_nfkc : nfd_nfkd)(self, input, k);
+        cmp = (nfc ? nfc_nfkc : nfd_nfkd)(state, self, input, k);
         if (cmp == NULL) {
             return NULL;
         }
@@ -905,6 +957,7 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
                                PyObject *input)
 /*[clinic end generated code: output=05ca4385a2ad6983 input=3a5206c0ad2833fb]*/
 {
+    unicodedata_module_state *state = &global_module_state;
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* Special case empty input strings, since resizing
            them  later would cause internal errors. */
@@ -913,32 +966,36 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
     }
 
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
-        if (is_normalized(self, input, 1, 0) == YES) {
+        if (is_normalized_quickcheck(state, self, input,
+                                     true,  false, true) == YES) {
             Py_INCREF(input);
             return input;
         }
-        return nfc_nfkc(self, input, 0);
+        return nfc_nfkc(state, self, input, 0);
     }
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
-        if (is_normalized(self, input, 1, 1) == YES) {
+        if (is_normalized_quickcheck(state, self, input,
+                                     true,  true,  true) == YES) {
             Py_INCREF(input);
             return input;
         }
-        return nfc_nfkc(self, input, 1);
+        return nfc_nfkc(state, self, input, 1);
     }
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
-        if (is_normalized(self, input, 0, 0) == YES) {
+        if (is_normalized_quickcheck(state, self, input,
+                                     false, false, true) == YES) {
             Py_INCREF(input);
             return input;
         }
-        return nfd_nfkd(self, input, 0);
+        return nfd_nfkd(state, self, input, 0);
     }
     if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
-        if (is_normalized(self, input, 0, 1) == YES) {
+        if (is_normalized_quickcheck(state, self, input,
+                                     false, true,  true) == YES) {
             Py_INCREF(input);
             return input;
         }
-        return nfd_nfkd(self, input, 1);
+        return nfd_nfkd(state, self, input, 1);
     }
     PyErr_SetString(PyExc_ValueError, "invalid normalization form");
     return NULL;
@@ -960,7 +1017,7 @@ _gethash(const char *s, int len, int scale)
     unsigned long h = 0;
     unsigned long ix;
     for (i = 0; i < len; i++) {
-        h = (h * scale) + (unsigned char) Py_TOUPPER(Py_CHARMASK(s[i]));
+        h = (h * scale) + (unsigned char) Py_TOUPPER(s[i]);
         ix = h & 0xff000000;
         if (ix)
             h = (h ^ ((ix>>24) & 0xff)) & 0x00ffffff;
@@ -1004,13 +1061,14 @@ static int
 is_unified_ideograph(Py_UCS4 code)
 {
     return
-        (0x3400 <= code && code <= 0x4DB5)   || /* CJK Ideograph Extension A */
-        (0x4E00 <= code && code <= 0x9FEF)   || /* CJK Ideograph */
-        (0x20000 <= code && code <= 0x2A6D6) || /* CJK Ideograph Extension B */
+        (0x3400 <= code && code <= 0x4DBF)   || /* CJK Ideograph Extension A */
+        (0x4E00 <= code && code <= 0x9FFC)   || /* CJK Ideograph */
+        (0x20000 <= code && code <= 0x2A6DD) || /* CJK Ideograph Extension B */
         (0x2A700 <= code && code <= 0x2B734) || /* CJK Ideograph Extension C */
         (0x2B740 <= code && code <= 0x2B81D) || /* CJK Ideograph Extension D */
         (0x2B820 <= code && code <= 0x2CEA1) || /* CJK Ideograph Extension E */
-        (0x2CEB0 <= code && code <= 0x2EBEF);   /* CJK Ideograph Extension F */
+        (0x2CEB0 <= code && code <= 0x2EBE0) || /* CJK Ideograph Extension F */
+        (0x30000 <= code && code <= 0x3134A);   /* CJK Ideograph Extension G */
 }
 
 /* macros used to determine if the given code point is in the PUA range that
@@ -1020,8 +1078,8 @@ is_unified_ideograph(Py_UCS4 code)
                           (cp < named_sequences_end))
 
 static int
-_getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
-           int with_alias_and_seq)
+_getucname(unicodedata_module_state *state, PyObject *self,
+           Py_UCS4 code, char* buffer, int buflen, int with_alias_and_seq)
 {
     /* Find the name associated with the given code point.
      * If with_alias_and_seq is 1, check for names in the Private Use Area 15
@@ -1038,7 +1096,7 @@ _getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
     if (!with_alias_and_seq && (IS_ALIAS(code) || IS_NAMED_SEQ(code)))
         return 0;
 
-    if (self && UCD_Check(self)) {
+    if (UCD_Check(self, state->ucd_type)) {
         /* in 3.2.0 there are no aliases and named sequences */
         const change_record *old;
         if (IS_ALIAS(code) || IS_NAMED_SEQ(code))
@@ -1122,15 +1180,25 @@ _getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
 }
 
 static int
-_cmpname(PyObject *self, int code, const char* name, int namelen)
+capi_getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
+               int with_alias_and_seq)
+{
+    unicodedata_module_state *state = &global_module_state;
+    return _getucname(state, self, code, buffer, buflen, with_alias_and_seq);
+
+}
+
+static int
+_cmpname(unicodedata_module_state *state, PyObject *self,
+         int code, const char* name, int namelen)
 {
     /* check if code corresponds to the given name */
     int i;
     char buffer[NAME_MAXLEN+1];
-    if (!_getucname(self, code, buffer, NAME_MAXLEN, 1))
+    if (!_getucname(state, self, code, buffer, NAME_MAXLEN, 1))
         return 0;
     for (i = 0; i < namelen; i++) {
-        if (Py_TOUPPER(Py_CHARMASK(name[i])) != buffer[i])
+        if (Py_TOUPPER(name[i]) != buffer[i])
             return 0;
     }
     return buffer[namelen] == '\0';
@@ -1172,8 +1240,8 @@ _check_alias_and_seq(unsigned int cp, Py_UCS4* code, int with_named_seq)
 }
 
 static int
-_getcode(PyObject* self, const char* name, int namelen, Py_UCS4* code,
-         int with_named_seq)
+_getcode(unicodedata_module_state *state, PyObject* self,
+         const char* name, int namelen, Py_UCS4* code, int with_named_seq)
 {
     /* Return the code point associated with the given name.
      * Named aliases are resolved too (unless self != NULL (i.e. we are using
@@ -1234,8 +1302,9 @@ _getcode(PyObject* self, const char* name, int namelen, Py_UCS4* code,
     v = code_hash[i];
     if (!v)
         return 0;
-    if (_cmpname(self, v, name, namelen))
+    if (_cmpname(state, self, v, name, namelen)) {
         return _check_alias_and_seq(v, code, with_named_seq);
+    }
     incr = (h ^ (h >> 3)) & mask;
     if (!incr)
         incr = mask;
@@ -1244,19 +1313,29 @@ _getcode(PyObject* self, const char* name, int namelen, Py_UCS4* code,
         v = code_hash[i];
         if (!v)
             return 0;
-        if (_cmpname(self, v, name, namelen))
+        if (_cmpname(state, self, v, name, namelen)) {
             return _check_alias_and_seq(v, code, with_named_seq);
+        }
         incr = incr << 1;
         if (incr > mask)
             incr = incr ^ code_poly;
     }
 }
 
+static int
+capi_getcode(PyObject* self, const char* name, int namelen, Py_UCS4* code,
+             int with_named_seq)
+{
+    unicodedata_module_state *state = &global_module_state;
+    return _getcode(state, self, name, namelen, code, with_named_seq);
+
+}
+
 static const _PyUnicode_Name_CAPI hashAPI =
 {
     sizeof(_PyUnicode_Name_CAPI),
-    _getucname,
-    _getcode
+    capi_getucname,
+    capi_getcode
 };
 
 /* -------------------------------------------------------------------- */
@@ -1280,10 +1359,11 @@ static PyObject *
 unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value)
 /*[clinic end generated code: output=6bbb37a326407707 input=3e0367f534de56d9]*/
 {
+    unicodedata_module_state *state = &global_module_state;
     char name[NAME_MAXLEN+1];
     Py_UCS4 c = (Py_UCS4)chr;
 
-    if (!_getucname(self, c, name, NAME_MAXLEN, 0)) {
+    if (!_getucname(state, self, c, name, NAME_MAXLEN, 0)) {
         if (default_value == NULL) {
             PyErr_SetString(PyExc_ValueError, "no such name");
             return NULL;
@@ -1315,6 +1395,7 @@ unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
                             Py_ssize_clean_t name_length)
 /*[clinic end generated code: output=765cb8186788e6be input=a557be0f8607a0d6]*/
 {
+    unicodedata_module_state *state = &global_module_state;
     Py_UCS4 code;
     unsigned int index;
     if (name_length > NAME_MAXLEN) {
@@ -1322,7 +1403,7 @@ unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
         return NULL;
     }
 
-    if (!_getcode(self, name, (int)name_length, &code, 1)) {
+    if (!_getcode(state, self, name, (int)name_length, &code, 1)) {
         PyErr_Format(PyExc_KeyError, "undefined character name '%s'", name);
         return NULL;
     }
@@ -1427,19 +1508,22 @@ PyMODINIT_FUNC
 PyInit_unicodedata(void)
 {
     PyObject *m, *v;
+    unicodedata_module_state *state = &global_module_state;
 
-    Py_TYPE(&UCD_Type) = &PyType_Type;
+    Py_SET_TYPE(&UCD_Type, &PyType_Type);
+    state->ucd_type = &UCD_Type;
 
     m = PyModule_Create(&unicodedatamodule);
     if (!m)
         return NULL;
 
     PyModule_AddStringConstant(m, "unidata_version", UNIDATA_VERSION);
-    Py_INCREF(&UCD_Type);
-    PyModule_AddObject(m, "UCD", (PyObject*)&UCD_Type);
+    Py_INCREF(state->ucd_type);
+    PyModule_AddObject(m, "UCD", (PyObject*)state->ucd_type);
 
     /* Previous versions */
-    v = new_previous_version("3.2.0", get_change_3_2_0, normalization_3_2_0);
+    v = new_previous_version(state, "3.2.0",
+                             get_change_3_2_0, normalization_3_2_0);
     if (v != NULL)
         PyModule_AddObject(m, "ucd_3_2_0", v);
 

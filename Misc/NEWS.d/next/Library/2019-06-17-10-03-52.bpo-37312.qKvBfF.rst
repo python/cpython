@@ -1,2 +1,0 @@
-``_dummy_thread`` and ``dummy_threading`` modules have been removed. These
-modules were deprecated since Python 3.7 which requires threading support.
