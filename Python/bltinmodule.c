@@ -26,6 +26,11 @@ _Py_IDENTIFIER(stderr);
 
 #include "clinic/bltinmodule.c.h"
 
+/*[clinic input]
+class callable "callableobject *" "&PyCallable_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=186f9359829695da]*/
+
 static PyObject*
 update_bases(PyObject *bases, PyObject *const *args, Py_ssize_t nargs)
 {
@@ -454,9 +459,14 @@ builtin_bin(PyObject *module, PyObject *number)
     return PyNumber_ToBase(number, 2);
 }
 
+typedef struct {
+    PyObject_HEAD
+} callableobject;
+
 
 /*[clinic input]
-callable as builtin_callable
+@classmethod
+callable.__new__ as callable_new
 
     obj: object
     /
@@ -468,11 +478,33 @@ __call__() method.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_callable(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=2b095d59d934cb7e input=1423bab99cc41f58]*/
+callable_new_impl(PyTypeObject *type, PyObject *obj)
+/*[clinic end generated code: output=46784af2d6033e5a input=c0902a59d22a1a02]*/
 {
     return PyBool_FromLong((long)PyCallable_Check(obj));
 }
+
+static PyMethodDef callable_methods[] = {
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
+    {NULL,           NULL}           /* sentinel */
+};
+
+PyDoc_STRVAR(callable_doc,
+"Return whether the object is callable (i.e., some kind of function).\n\n\
+Note that classes are callable, as are instances of classes with a\n\
+__call__() method.");
+
+PyTypeObject PyCallable_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "callable",
+    .tp_basicsize = sizeof(callableobject),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_doc = callable_doc,
+    .tp_methods = callable_methods,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = callable_new,
+    .tp_free = PyObject_GC_Del,
+};
 
 static PyObject *
 builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
@@ -2791,7 +2823,6 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ASCII_METHODDEF
     BUILTIN_BIN_METHODDEF
     {"breakpoint",      (PyCFunction)(void(*)(void))builtin_breakpoint, METH_FASTCALL | METH_KEYWORDS, breakpoint_doc},
-    BUILTIN_CALLABLE_METHODDEF
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF
     BUILTIN_DELATTR_METHODDEF
@@ -2893,6 +2924,7 @@ _PyBuiltin_Init(PyThreadState *tstate)
     SETBUILTIN("complex",               &PyComplex_Type);
     SETBUILTIN("dict",                  &PyDict_Type);
     SETBUILTIN("enumerate",             &PyEnum_Type);
+    SETBUILTIN("callable",              &PyCallable_Type);
     SETBUILTIN("filter",                &PyFilter_Type);
     SETBUILTIN("float",                 &PyFloat_Type);
     SETBUILTIN("frozenset",             &PyFrozenSet_Type);

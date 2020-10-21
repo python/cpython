@@ -1774,6 +1774,7 @@ _PyTypes_Init(void)
     INIT_TYPE(&PyMemoryView_Type, "memoryview");
     INIT_TYPE(&PyTuple_Type, "tuple");
     INIT_TYPE(&PyEnum_Type, "enumerate");
+    INIT_TYPE(&PyCallable_Type, "callable");
     INIT_TYPE(&PyReversed_Type, "reversed");
     INIT_TYPE(&PyStdPrinter_Type, "StdPrinter");
     INIT_TYPE(&PyCode_Type, "code");

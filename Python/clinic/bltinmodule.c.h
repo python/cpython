@@ -59,8 +59,8 @@ PyDoc_STRVAR(builtin_bin__doc__,
 #define BUILTIN_BIN_METHODDEF    \
     {"bin", (PyCFunction)builtin_bin, METH_O, builtin_bin__doc__},
 
-PyDoc_STRVAR(builtin_callable__doc__,
-"callable($module, obj, /)\n"
+PyDoc_STRVAR(callable_new__doc__,
+"callable(obj, /)\n"
 "--\n"
 "\n"
 "Return whether the object is callable (i.e., some kind of function).\n"
@@ -68,8 +68,28 @@ PyDoc_STRVAR(builtin_callable__doc__,
 "Note that classes are callable, as are instances of classes with a\n"
 "__call__() method.");
 
-#define BUILTIN_CALLABLE_METHODDEF    \
-    {"callable", (PyCFunction)builtin_callable, METH_O, builtin_callable__doc__},
+static PyObject *
+callable_new_impl(PyTypeObject *type, PyObject *obj);
+
+static PyObject *
+callable_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *obj;
+
+    if ((type == &PyCallable_Type) &&
+        !_PyArg_NoKeywords("callable", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("callable", PyTuple_GET_SIZE(args), 1, 1)) {
+        goto exit;
+    }
+    obj = PyTuple_GET_ITEM(args, 0);
+    return_value = callable_new_impl(type, obj);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(builtin_format__doc__,
 "format($module, value, format_spec=\'\', /)\n"
@@ -830,4 +850,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e2fcf0201790367c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=502b941e1122b6a0 input=a9049054013a1b77]*/

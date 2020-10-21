@@ -4,6 +4,7 @@
 extern "C" {
 #endif
 
+PyAPI_DATA(PyTypeObject) PyCallable_Type;
 PyAPI_DATA(PyTypeObject) PyFilter_Type;
 PyAPI_DATA(PyTypeObject) PyMap_Type;
 PyAPI_DATA(PyTypeObject) PyZip_Type;
