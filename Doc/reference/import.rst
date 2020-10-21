@@ -680,7 +680,7 @@ Here are the exact rules used:
 Cached bytecode invalidation
 ----------------------------
 
-Before Python loads cached bytecode from ``.pyc`` file, it checks whether the
+Before Python loads cached bytecode from a ``.pyc`` file, it checks whether the
 cache is up-to-date with the source ``.py`` file. By default, Python does this
 by storing the source's last-modified timestamp and size in the cache file when
 writing it. At runtime, the import system then validates the cache file by
