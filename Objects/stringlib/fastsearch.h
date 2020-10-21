@@ -160,6 +160,215 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 
 #undef MEMCHR_CUT_OFF
 
+/* Change to a 1 to see logging comments walk through the algorithm. */
+#if 0 && STRINGLIB_SIZEOF_CHAR == 1
+# define LOG(...) printf(__VA_ARGS__)
+# define LOG_STRING(s, n) printf("\"%.*s\"", n, s)
+#else
+# define LOG(...)
+# define LOG_STRING(s, n)
+#endif
+
+Py_LOCAL_INLINE(Py_ssize_t)
+STRINGLIB(_lex_search)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
+                       Py_ssize_t *return_period, int invert_alphabet)
+{
+    /* Do a lexicographic search. Essentially this:
+           >>> max(needle[i:] for i in range(len(needle)+1))
+       Also find the period of the right half.
+    */
+    Py_ssize_t max_suffix = 0;
+    Py_ssize_t candidate = 1;
+    Py_ssize_t k = 0;
+    // the minimal local period around max_suffix
+    Py_ssize_t period = 1;
+
+    while (candidate + k < len_needle) {
+        STRINGLIB_CHAR a = needle[candidate + k];
+        STRINGLIB_CHAR b = needle[max_suffix + k];
+        if (invert_alphabet ? (b < a) : (a < b)) {
+            // Fell short of max_suffix.
+
+            // The next k + 1 characters are non-increasing
+            // from candidate, so they won't start a maximal suffix.
+            candidate += k + 1;
+            k = 0;
+
+            // We've ruled out any period smaller than what's
+            // been scanned since max_suffix.
+            period = candidate - max_suffix;
+        }
+        else if (a == b) {
+            if (k + 1 != period) {
+                // Keep scanning
+                k++;
+            }
+            else {
+                // Matched a whole period.
+                // Start matching the next period.
+                candidate += period;
+                k = 0;
+            }
+        }
+        else {
+            // Did better than max_suffix, so replace it.
+            max_suffix = candidate;
+            candidate++;
+            k = 0;
+            period = 1;
+        }
+    }
+    *return_period = period;
+    return max_suffix;
+}
+
+Py_LOCAL_INLINE(Py_ssize_t)
+STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
+                      Py_ssize_t len_needle,
+                      Py_ssize_t *return_period)
+{
+    /* Do a "critical factorization", making it so that:
+       >>> needle = (left := needle[:cut]) + (right := needle[cut:])
+       where the "local period" of the cut is maximal.
+
+       The local period of the cut is the minimal length of a string w
+       such that (left endswith w or w endswith left)
+       and (right startswith w or w startswith left).
+
+       The Critical Factorization Theorem says that this maximal local
+       period is the global period of the string.
+
+       Crochemore and Perrin (1991) show that this cut can be computed
+       as the later of two cuts: one that gives a lexicographically
+       maximal right half, and one that gives the same with the
+       with respect to a reversed alphabet-ordering.
+
+       This is what we want to happen:
+           >>> x = "GCAGAGAG"
+           >>> cut, period = factorize(x)
+           >>> x[:cut], (right := x[cut:])
+           ('GC', 'AGAGAG')
+           >>> period
+           2
+           >>> right[period:] == right[:-period]
+           True
+
+       This is how the local period lines up in the above example:
+                GC | AGAGAG
+           AGAGAGC = AGAGAGC
+       The length of this minimal repetition is 7, which is indeed the
+       period of the original string. */
+
+    Py_ssize_t cut1, period1, cut2, period2, cut, period;
+    cut1 = STRINGLIB(_lex_search)(needle, len_needle, &period1, 0);
+    cut2 = STRINGLIB(_lex_search)(needle, len_needle, &period2, 1);
+
+    // Take the later cut.
+    if (cut1 > cut2) {
+        period = period1;
+        cut = cut1;
+    }
+    else {
+        period = period2;
+        cut = cut2;
+    }
+
+    LOG("split: "); LOG_STRING(needle, cut);
+    LOG(" + "); LOG_STRING(needle + cut, len_needle - cut);
+    LOG("\n");
+
+    *return_period = period;
+    return cut;
+}
+
+
+Py_LOCAL_INLINE(Py_ssize_t)
+STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
+                    const STRINGLIB_CHAR *needle, Py_ssize_t len_needle)
+{
+    // Crochemore and Perrin's (1991) Two-Way algorithm.
+    // See http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
+    LOG("===== Checking \"%s\" in \"%s\". =====\n", needle, haystack);
+
+    Py_ssize_t cut, period;
+    cut = STRINGLIB(_factorize)(needle, len_needle, &period);
+
+    if (memcmp(needle, needle + period, cut * STRINGLIB_SIZEOF_CHAR) == 0) {
+        LOG("Needle is periodic.\n");
+        Py_ssize_t j = 0;
+        Py_ssize_t memory = 0;
+        while (j <= len_haystack - len_needle) {
+            Py_ssize_t i = Py_MAX(cut, memory);
+
+            // Visualize the line-up:
+            LOG("> "); LOG_STRING(haystack, len_haystack);
+            LOG("\n> "); LOG("%*s", j, ""); LOG_STRING(needle, len_needle);
+            LOG("\n> "); LOG("%*s", j + i, ""); LOG(" ^ <-- start\n");
+
+            while (i < len_needle && needle[i] == haystack[j + i]) {
+                i++;
+            }
+            if (i >= len_needle) {
+                LOG("Right half matches.\n");
+                i = cut - 1;
+                while (i >= memory && needle[i] == haystack[j + i]) {
+                    i--;
+                }
+                if (i < memory) {
+                    LOG("Left half matches. Returning %d.\n", j);
+                    return j;
+                }
+                LOG("Left half does not match. Jump ahead by period %d.\n", period);
+                j += period;
+                memory = len_needle - period;
+            }
+            else {
+                LOG("Right half does not match. Jump ahead by %d.\n", i - cut + 1);
+                j += i - cut + 1;
+                memory = 0;
+            }
+        }
+    }
+    else {
+        LOG("Needle is not periodic.\n");
+        period = Py_MAX(cut, len_needle - cut) + 1;
+        Py_ssize_t j = 0;
+        while (j <= len_haystack - len_needle) {
+
+            // Visualize the line-up:
+            LOG("> "); LOG_STRING(haystack, len_haystack);
+            LOG("\n> "); LOG("%*s", j, ""); LOG_STRING(needle, len_needle);
+            LOG("\n> "); LOG("%*s", j + cut, ""); LOG(" ^ <-- start\n");
+
+            Py_ssize_t i = cut;
+            while (i < len_needle && needle[i] == haystack[j + i]) {
+                i++;
+            }
+            if (i >= len_needle) {
+                LOG("Right half matches.\n");
+                i = cut - 1;
+                while (i >= 0 && needle[i] == haystack[j + i]) {
+                    i--;
+                }
+                if (i < 0){
+                    LOG("Left half matches. Returning %d.\n", j);
+                    return j;
+                }
+                LOG("Left half does not match. Advance by %d.\n", period);
+                j += period;
+            }
+            else {
+                LOG("Right half does not match. Advance by %d.\n", i - cut + 1);
+                j += i - cut + 1;
+            }
+        }
+    }
+    return -1;
+}
+
+#undef LOG
+#undef LOG_STRING
+
 Py_LOCAL_INLINE(Py_ssize_t)
 FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
            const STRINGLIB_CHAR* p, Py_ssize_t m,
@@ -199,6 +408,9 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
     mask = 0;
 
     if (mode != FAST_RSEARCH) {
+        if (mode == FAST_SEARCH) {
+            return STRINGLIB(_two_way)(s, n, p, m);
+        }
         const STRINGLIB_CHAR *ss = s + m - 1;
         const STRINGLIB_CHAR *pp = p + m - 1;
 
