@@ -191,7 +191,7 @@ Implementing functions and methods
 .. c:type:: PyCMethod
 
    Type of the functions used to implement Python callables in C
-   with signature :const:`METH_METHOD | METH_FASTCALL | METH_KEYWORDS`.
+   with signature :const:`METH_METHOD_ARGS_KWD`.
    The function signature is::
 
       PyObject *PyCMethod(PyObject *self,
@@ -285,7 +285,9 @@ There are these calling conventions:
    .. versionadded:: 3.7
 
 
-.. data:: METH_METHOD | METH_FASTCALL | METH_KEYWORDS
+.. data:: METH_METHOD_ARGS_KWD
+
+   Equivalent to ``METH_METHOD | METH_FASTCALL | METH_KEYWORDS``.
 
    Extension of :const:`METH_FASTCALL | METH_KEYWORDS` supporting the *defining
    class*, that is, the class that contains the method in question.

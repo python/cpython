@@ -89,10 +89,16 @@ PyAPI_FUNC(PyObject *) PyCMethod_New(PyMethodDef *, PyObject *,
  * both self and class are passed to it.
  * It uses PyCMethodObject instead of PyCFunctionObject.
  * May not be combined with METH_NOARGS, METH_O, METH_CLASS or METH_STATIC.
+ *
+ * METH_METHOD_ARGS_KWD exports a specific combination of flags
+ * for the limited API.
  */
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
 #define METH_METHOD 0x0200
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03100000
+#define METH_METHOD_ARGS_KWD (METH_METHOD | 0x0080 | METH_KEYWORDS)
 #endif
 
 
