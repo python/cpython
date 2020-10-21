@@ -1,1 +1,1 @@
-Fix the interact and the listener method use sys.stdout.buffer if exists
+Fix :mod:`telnetlib` crash while receiving un-printable characters in the :method:`Telnet.interact` and ``listener`` methods. 
