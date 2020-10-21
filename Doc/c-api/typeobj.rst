@@ -2443,7 +2443,7 @@ Slot Type typedefs
 
 .. c:type:: PyObject *(*binaryfunc)(PyObject *, PyObject *)
 
-.. c:type:: PySendResult *(*sendfunc)(PyObject *, PyObject *, PyObject **)
+.. c:type:: PySendResult (*sendfunc)(PyObject *, PyObject *, PyObject **)
 
    See :c:member:`~PyAsyncMethods.am_send`.
 
