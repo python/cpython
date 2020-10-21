@@ -10,7 +10,7 @@
     </PropertyGroup>
     <Import Project="..\msi.props" />
     <PropertyGroup>
-        <DocFilename>python$(MajorVersionNumber)_$(MinorVersionNumber)$(MicroVersionNumber)$(ReleaseLevelName).chm</DocFilename>
+        <DocFilename>python$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)$(ReleaseLevelName).chm</DocFilename>
         <IncludeDocFile>false</IncludeDocFile>
         <IncludeDocFile Condition="$(BuildForRelease) or Exists('$(PySourcePath)Doc\build\htmlhelp\$(DocFilename)')">true</IncludeDocFile>
     </PropertyGroup>
