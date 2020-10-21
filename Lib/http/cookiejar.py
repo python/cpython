@@ -37,7 +37,6 @@ import urllib.parse, urllib.request
 import threading as _threading
 import http.client  # only for the default HTTP port
 from calendar import timegm
-from copy import deepcopy
 
 debug = False   # set to True to enable debugging via the logging module
 logger = None
@@ -1217,14 +1216,9 @@ class DefaultCookiePolicy(CookiePolicy):
         _debug("  %s does not path-match %s", req_path, path)
         return False
 
-def vals_by_key(adict):
-    keys = deepcopy(adict).keys()
-    return map(adict.get, keys)
-
 def deepvalues(mapping):
     """Iterates over nested mapping, depth-first"""
-    values = vals_by_key(mapping)
-    for obj in values:
+    for obj in list(mapping.values()):
         mapping = False
         try:
             obj.items
