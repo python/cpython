@@ -835,34 +835,6 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 // Need these for pattern matching:
 
 static PyObject*
-get_seq_abc()
-{
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    if (!interp->seq_abc) {
-        PyObject *abc = PyImport_ImportModule("_collections_abc");
-        if (!abc) {
-            return NULL;
-        }
-        interp->seq_abc = PyObject_GetAttrString(abc, "Sequence");
-    }
-    return interp->seq_abc;
-}
-
-static PyObject*
-get_map_abc()
-{
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    if (!interp->map_abc) {
-        PyObject *abc = PyImport_ImportModule("_collections_abc");
-        if (!abc) {
-            return NULL;
-        }
-        interp->map_abc = PyObject_GetAttrString(abc, "Sequence");
-    }
-    return interp->map_abc;
-}
-
-static PyObject*
 match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
 {
     assert(PyTuple_CheckExact(keys));
@@ -3565,6 +3537,8 @@ main_loop:
             if (l < 0) {
                 goto error;
             }
+            // We might have one or more GET_INDEX_* instructions soon. Cache
+            // the length on the PyInterpreterState struct so they can reuse it:
             PyInterpreterState *interp = PyInterpreterState_Get();
             interp->get_len = l;
             PyObject *len = PyLong_FromSsize_t(l);
@@ -3594,16 +3568,26 @@ main_loop:
 
         case TARGET(MATCH_MAPPING): {
             PyObject *subject = TOP();
+            // Fast path for dicts:
             if (PyDict_Check(subject)) {
                 Py_INCREF(Py_True);
                 PUSH(Py_True);
                 DISPATCH();
             }
-            PyObject *map_abc = get_map_abc();
-            if (!map_abc) {
-                goto error;
+            // Lazily import _collections_abc.Mapping, and keep it handy on the
+            // PyInterpreterState struct (it gets cleaned up at exit):
+            PyInterpreterState *interp = PyInterpreterState_Get();
+            if (!interp->map_abc) {
+                PyObject *abc = PyImport_ImportModule("_collections_abc");
+                if (!abc) {
+                    goto error;
+                }
+                interp->map_abc = PyObject_GetAttrString(abc, "Mapping");
+                if (!interp->map_abc) {
+                    goto error;
+                }
             }
-            int match = PyObject_IsInstance(subject, map_abc);
+            int match = PyObject_IsInstance(subject, interp->map_abc);
             if (match < 0) {
                 goto error;
             }
@@ -3613,6 +3597,7 @@ main_loop:
 
         case TARGET(MATCH_SEQUENCE): {
             PyObject *subject = TOP();
+            // Fast path for lists and tuples:
             if (PyType_FastSubclass(Py_TYPE(subject),
                                     Py_TPFLAGS_LIST_SUBCLASS |
                                     Py_TPFLAGS_TUPLE_SUBCLASS))
@@ -3621,21 +3606,31 @@ main_loop:
                 PUSH(Py_True);
                 DISPATCH();
             }
+            // Bail on some possible Sequences that we intentionally exclude:
             if (PyType_FastSubclass(Py_TYPE(subject),
                                     Py_TPFLAGS_BYTES_SUBCLASS |
-                                    Py_TPFLAGS_UNICODE_SUBCLASS)
-                || PyIter_Check(subject)
-                || PyByteArray_Check(subject))
+                                    Py_TPFLAGS_UNICODE_SUBCLASS) ||
+                PyIter_Check(subject) ||
+                PyByteArray_Check(subject))
             {
                 Py_INCREF(Py_False);
                 PUSH(Py_False);
                 DISPATCH();
             }
-            PyObject *seq_abc = get_seq_abc();
-            if (!seq_abc) {
-                goto error;
+            // Lazily import _collections_abc.Sequence, and keep it handy on the
+            // PyInterpreterState struct (it gets cleaned up  at exit):
+            PyInterpreterState *interp = PyInterpreterState_Get();
+            if (!interp->seq_abc) {
+                PyObject *abc = PyImport_ImportModule("_collections_abc");
+                if (!abc) {
+                    goto error;
+                }
+                interp->seq_abc = PyObject_GetAttrString(abc, "Sequence");
+                if (!interp->seq_abc) {
+                    goto error;
+                }
             }
-            int match = PyObject_IsInstance(subject, seq_abc);
+            int match = PyObject_IsInstance(subject, interp->seq_abc);
             if (match < 0) {
                 goto error;
             }
@@ -3687,9 +3682,12 @@ main_loop:
             // PUSH(TOS[len(TOS) - 1 - oparg])
             // NOTE: We can't rely on support for negative indexing!
             // Although PySequence_GetItem tries to correct negative indexes, we
-            // just use the length we already cached from GET_LEN. In addition to
-            // avoiding tons of redundant __len__ calls, this also handles
-            // length changes during extraction more intuitively.
+            // just use the length we already have cached from GET_LEN on the
+            // PyInterpreterState struct. In addition to avoiding tons of
+            // redundant __len__ calls, this also handles length changes during
+            // extraction more intuitively. It's also much faster and simpler
+            // than trying to rotate it around on the stack and pop it off when
+            // we're done.
             PyInterpreterState *interp = PyInterpreterState_Get();
             assert(interp->get_len - 1 - oparg >= 0);
             PyObject *item = PySequence_GetItem(TOP(), interp->get_len - 1 - oparg);
@@ -3708,31 +3706,31 @@ main_loop:
             Py_ssize_t start = oparg & 0xFF;
             Py_ssize_t stop = interp->get_len - (oparg >> 8);
             assert(start <= stop);
+            PyObject *slice = PyList_New(stop - start);
+            if (!slice) {
+                goto error;
+            }
+            PyObject **slice_items = PySequence_Fast_ITEMS(slice);
             PyObject *subject = TOP();
-            PyObject *items;
-            if (PyList_CheckExact(subject)) {
-                items = PyList_GetSlice(subject, start, stop);
-                if (!items) {
-                    goto error;
+            if (PyList_CheckExact(subject) || PyTuple_CheckExact(subject)) {
+                // Fast path for lists and tuples: no errors!
+                assert(stop <= PySequence_Fast_GET_SIZE(subject));
+                PyObject **subject_items = PySequence_Fast_ITEMS(subject);
+                for (Py_ssize_t i = start; i < stop; i++) {
+                    slice_items[i - start] = subject_items[i];
+                    Py_INCREF(subject_items[i]);
                 }
-                assert(PyList_CheckExact(items));
             }
             else {
-                items = PyList_New(stop - start);
-                if (!items) {
-                    goto error;
-                }
-                PyObject *item;
                 for (Py_ssize_t i = start; i < stop; i++) {
-                    item = PySequence_GetItem(subject, i);
-                    if (!item) {
-                        Py_DECREF(items);
+                    slice_items[i - start] = PySequence_GetItem(subject, i);
+                    if (!slice_items[i - start]) {
+                        Py_DECREF(slice);
                         goto error;
                     }
-                    PyList_SET_ITEM(items, i - start, item);
                 }
             }
-            PUSH(items);
+            PUSH(slice);
             DISPATCH();
         }
 
