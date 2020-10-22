@@ -229,13 +229,6 @@ def macosx_sdk_specified():
     macosx_sdk_root()
     return MACOS_SDK_SPECIFIED
 
-def is_macosx_at_least(vers):
-    if MACOS:
-        dep_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
-        if dep_target:
-            return tuple(map(int, dep_target.split('.'))) >= vers
-    return False
-
 
 def is_macosx_sdk_path(path):
     """
@@ -2120,8 +2113,7 @@ class PyBuildExt(build_ext):
     def detect_ctypes(self):
         # Thomas Heller's _ctypes module
 
-        if (not sysconfig.get_config_var("LIBFFI_INCLUDEDIR") and MACOS and
-            (is_macosx_at_least((10,15)) or '-arch arm64' in sysconfig.get_config_var("CFLAGS"))):
+        if (not sysconfig.get_config_var("LIBFFI_INCLUDEDIR") and MACOS):
             self.use_system_libffi = True
         else:
             self.use_system_libffi = '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS")
@@ -2139,7 +2131,6 @@ class PyBuildExt(build_ext):
         if MACOS:
             sources.append('_ctypes/malloc_closure.c')
             extra_compile_args.append('-DUSING_MALLOC_CLOSURE_DOT_C=1')
-            #sources.append('_ctypes/darwin/dlfcn_simple.c')
             extra_compile_args.append('-DMACOSX')
             include_dirs.append('_ctypes/darwin')
 
