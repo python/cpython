@@ -25,9 +25,12 @@
 #  include <sanitizer/msan_interface.h>
 #endif
 
-#if defined(__APPLE__) && defined(__has_builtin) && __has_builtin(__builtin_available)
-#  define HAVE_GETENTRYPY_GETRANDOM_RUNTIME __builtin_available(macOS 10.12, iOS 10.10, tvOS 10.0, watchOS 3.0, *)
-#else
+#if defined(__APPLE__) && defined(__has_builtin) 
+#  if __has_builtin(__builtin_available)
+#    define HAVE_GETENTRYPY_GETRANDOM_RUNTIME __builtin_available(macOS 10.12, iOS 10.10, tvOS 10.0, watchOS 3.0, *)
+#  endif
+#endif
+#ifndef HAVE_GETENTRYPY_GETRANDOM_RUNTIME
 #  define HAVE_GETENTRYPY_GETRANDOM_RUNTIME 1
 #endif
 

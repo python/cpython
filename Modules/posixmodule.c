@@ -3939,8 +3939,9 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
                 dst_dir_fd, dst->narrow,
                 follow_symlinks ? AT_SYMLINK_FOLLOW : 0);
     
+        }
 #ifdef __APPLE__
-        } else {
+        else {
             if (src_dir_fd == DEFAULT_DIR_FD && dst_dir_fd == DEFAULT_DIR_FD) {
                 /* See issue 41355: This matches the behaviour of !HAVE_LINKAT */
                 result = link(src->narrow, dst->narrow);
@@ -3948,8 +3949,8 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
                 linkat_unavailable = 1;
             }
         }
-    }
 #endif
+    }
     else
 #endif /* HAVE_LINKAT */
         result = link(src->narrow, dst->narrow);
