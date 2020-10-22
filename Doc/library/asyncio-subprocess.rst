@@ -110,10 +110,8 @@ Creating Subprocesses
 
 .. note::
 
-   The default asyncio event loop implementation on **Windows** does not
-   support subprocesses. Subprocesses are available for Windows if a
-   :class:`ProactorEventLoop` is used.
-   See :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>`
+   Subprocesses are available for Windows if a :class:`ProactorEventLoop` is
+   used. See :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>`
    for details.
 
 .. seealso::

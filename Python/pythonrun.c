@@ -770,7 +770,7 @@ static void
 print_exception(PyObject *f, PyObject *value)
 {
     int err = 0;
-    PyObject *type, *tb;
+    PyObject *type, *tb, *tmp;
     _Py_IDENTIFIER(print_file_and_line);
 
     if (!PyExceptionInstance_Check(value)) {
@@ -789,10 +789,12 @@ print_exception(PyObject *f, PyObject *value)
     if (tb && tb != Py_None)
         err = PyTraceBack_Print(tb, f);
     if (err == 0 &&
-        _PyObject_HasAttrId(value, &PyId_print_file_and_line))
+        (err = _PyObject_LookupAttrId(value, &PyId_print_file_and_line, &tmp)) > 0)
     {
         PyObject *message, *filename, *text;
         Py_ssize_t lineno, offset;
+        err = 0;
+        Py_DECREF(tmp);
         if (!parse_syntax_error(value, &message, &filename,
                                 &lineno, &offset, &text))
             PyErr_Clear();

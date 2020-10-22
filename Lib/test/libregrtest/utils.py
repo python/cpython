@@ -72,7 +72,12 @@ def regrtest_unraisable_hook(unraisable):
     global orig_unraisablehook
     support.environment_altered = True
     print_warning("Unraisable exception")
-    orig_unraisablehook(unraisable)
+    old_stderr = sys.stderr
+    try:
+        sys.stderr = sys.__stderr__
+        orig_unraisablehook(unraisable)
+    finally:
+        sys.stderr = old_stderr
 
 
 def setup_unraisable_hook():

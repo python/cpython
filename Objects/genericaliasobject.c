@@ -487,11 +487,50 @@ ga_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
                          alias->origin, alias->args);
 }
 
+static PyObject *
+ga_dir(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    gaobject *alias = (gaobject *)self;
+    PyObject *dir = PyObject_Dir(alias->origin);
+    if (dir == NULL) {
+        return NULL;
+    }
+
+    PyObject *dir_entry = NULL;
+    for (const char * const *p = attr_exceptions; ; p++) {
+        if (*p == NULL) {
+            break;
+        }
+        else {
+            dir_entry = PyUnicode_FromString(*p);
+            if (dir_entry == NULL) {
+                goto error;
+            }
+            int contains = PySequence_Contains(dir, dir_entry);
+            if (contains < 0) {
+                goto error;
+            }
+            if (contains == 0 && PyList_Append(dir, dir_entry) < 0) {
+                goto error;
+            }
+
+            Py_CLEAR(dir_entry);
+        }
+    }
+    return dir;
+
+error:
+    Py_DECREF(dir);
+    Py_XDECREF(dir_entry);
+    return NULL;
+}
+
 static PyMethodDef ga_methods[] = {
     {"__mro_entries__", ga_mro_entries, METH_O},
     {"__instancecheck__", ga_instancecheck, METH_O},
     {"__subclasscheck__", ga_subclasscheck, METH_O},
     {"__reduce__", ga_reduce, METH_NOARGS},
+    {"__dir__", ga_dir, METH_NOARGS},
     {0}
 };
 
@@ -543,7 +582,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_name = "types.GenericAlias",
     .tp_doc = "Represent a PEP 585 generic type\n"
               "\n"
-              "E.g. for t = list[int], t.origin is list and t.args is (int,).",
+              "E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).",
     .tp_basicsize = sizeof(gaobject),
     .tp_dealloc = ga_dealloc,
     .tp_repr = ga_repr,

@@ -622,6 +622,9 @@ va_build_stack(PyObject **small_stack, Py_ssize_t small_stack_len,
     va_end(lva);
 
     if (res < 0) {
+        if (stack != small_stack) {
+            PyMem_Free(stack);
+        }
         return NULL;
     }
 

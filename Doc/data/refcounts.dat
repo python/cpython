@@ -1076,6 +1076,11 @@ PyIter_Check:PyObject*:o:0:
 PyIter_Next:PyObject*::+1:
 PyIter_Next:PyObject*:o:0:
 
+PyIter_Send:int:::
+PyIter_Send:PyObject*:iter:0:
+PyIter_Send:PyObject*:arg:0:
+PyIter_Send:PyObject**:presult:+1:
+
 PyList_Append:int:::
 PyList_Append:PyObject*:list:0:
 PyList_Append:PyObject*:item:+1:
@@ -2282,6 +2287,11 @@ PyType_CheckExact:PyObject*:o:0:
 
 PyType_FromSpec:PyObject*::+1:
 PyType_FromSpec:PyType_Spec*:spec::
+
+PyType_FromModuleAndSpec:PyObject*::+1:
+PyType_FromModuleAndSpec:PyObject*:module:+1:
+PyType_FromModuleAndSpec:PyType_Spec*:spec::
+PyType_FromModuleAndSpec:PyObject*:bases:0:
 
 PyType_FromSpecWithBases:PyObject*::+1:
 PyType_FromSpecWithBases:PyType_Spec*:spec::

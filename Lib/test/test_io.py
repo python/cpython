@@ -928,7 +928,7 @@ class IOTest(unittest.TestCase):
                 self.assertEqual(f.read(), "egg\n")
 
         check_path_succeeds(FakePath(os_helper.TESTFN))
-        check_path_succeeds(FakePath(os_helper.TESTFN.encode('utf-8')))
+        check_path_succeeds(FakePath(os.fsencode(os_helper.TESTFN)))
 
         with self.open(os_helper.TESTFN, "w") as f:
             bad_path = FakePath(f.fileno())
@@ -2529,10 +2529,6 @@ class StatefulIncrementalDecoder(codecs.IncrementalDecoder):
                 streamreader=None, streamwriter=None,
                 incrementaldecoder=cls)
 
-# Register the previous decoder for testing.
-# Disabled by default, tests will enable it.
-codecs.register(StatefulIncrementalDecoder.lookupTestDecoder)
-
 
 class StatefulIncrementalDecoderTest(unittest.TestCase):
     """
@@ -2583,6 +2579,9 @@ class TextIOWrapperTest(unittest.TestCase):
         self.testdata = b"AAA\r\nBBB\rCCC\r\nDDD\nEEE\r\n"
         self.normalized = b"AAA\nBBB\nCCC\nDDD\nEEE\n".decode("ascii")
         os_helper.unlink(os_helper.TESTFN)
+        codecs.register(StatefulIncrementalDecoder.lookupTestDecoder)
+        self.addCleanup(codecs.unregister,
+                        StatefulIncrementalDecoder.lookupTestDecoder)
 
     def tearDown(self):
         os_helper.unlink(os_helper.TESTFN)

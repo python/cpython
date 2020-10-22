@@ -134,6 +134,31 @@ typedef chtype attr_t;           /* No attr_t type is available */
 #define STRICT_SYSV_CURSES
 #endif
 
+#if defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS)
+#define _NCURSES_EXTENDED_COLOR_FUNCS   1
+#else
+#define _NCURSES_EXTENDED_COLOR_FUNCS   0
+#endif  /* defined(NCURSES_EXT_COLORS) && defined(NCURSES_EXT_FUNCS)  */
+
+#if _NCURSES_EXTENDED_COLOR_FUNCS
+#define _NCURSES_COLOR_VAL_TYPE         int
+#define _CURSES_INIT_COLOR_FUNC         init_extended_color
+#define _CURSES_INIT_PAIR_FUNC          init_extended_pair
+#define _COLOR_CONTENT_FUNC             extended_color_content
+#define _CURSES_PAIR_NUMBER_FUNC        extended_pair_content
+#else
+#define _NCURSES_COLOR_VAL_TYPE         short
+#define _CURSES_INIT_COLOR_FUNC         init_color
+#define _CURSES_INIT_PAIR_FUNC          init_pair
+#define _COLOR_CONTENT_FUNC             color_content
+#define _CURSES_PAIR_NUMBER_FUNC        pair_content
+#endif  /* _NCURSES_EXTENDED_COLOR_FUNCS */
+
+#define _CURSES_FUNC_NAME_STR(s)        #s
+
+#define _CURSES_INIT_COLOR_FUNC_NAME    _CURSES_FUNC_NAME_STR(_CURSES_INIT_COLOR_FUNC)
+#define _CURSES_INIT_PAIR_FUNC_NAME     _CURSES_FUNC_NAME_STR(_CURSES_INIT_PAIR_FUNC)
+
 /*[clinic input]
 module _curses
 class _curses.window "PyCursesWindowObject *" "&PyCursesWindow_Type"
@@ -386,6 +411,104 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
                  Py_TYPE(obj)->tp_name);
     return 0;
 }
+
+static int
+color_converter(PyObject *arg, void *ptr)
+{
+    long color_number;
+    int overflow;
+
+    color_number = PyLong_AsLongAndOverflow(arg, &overflow);
+    if (color_number == -1 && PyErr_Occurred())
+        return 0;
+
+    if (overflow > 0 || color_number > COLORS) {
+        PyErr_Format(PyExc_ValueError,
+                     "Color number is greater than COLORS (%d).",
+                     COLORS);
+        return 0;
+    }
+    else if (overflow < 0 || color_number < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Color number is less than 0.");
+        return 0;
+    }
+
+    *(int *)ptr = (int)color_number;
+    return 1;
+}
+
+/*[python input]
+class color_converter(CConverter):
+    type = 'int'
+    converter = 'color_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=4260d2b6e66b3709]*/
+
+static int
+pair_converter(PyObject *arg, void *ptr)
+{
+    long pair_number;
+    int overflow;
+
+    pair_number = PyLong_AsLongAndOverflow(arg, &overflow);
+    if (pair_number == -1 && PyErr_Occurred())
+        return 0;
+
+    if (overflow > 0 || pair_number > COLOR_PAIRS - 1) {
+        PyErr_Format(PyExc_ValueError,
+                     "Color pair is greater than COLOR_PAIRS-1 (%d).",
+                     COLOR_PAIRS - 1);
+        return 0;
+    }
+    else if (overflow < 0 || pair_number < 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Color pair is less than 1.");
+        return 0;
+    }
+
+    *(int *)ptr = (int)pair_number;
+    return 1;
+}
+
+/*[python input]
+class pair_converter(CConverter):
+    type = 'int'
+    converter = 'pair_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=1a918ae6a1b32af7]*/
+
+static int
+component_converter(PyObject *arg, void *ptr)
+{
+    long component;
+    int overflow;
+
+    component = PyLong_AsLongAndOverflow(arg, &overflow);
+    if (component == -1 && PyErr_Occurred())
+        return 0;
+
+    if (overflow > 0 || component > 1000) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Color component is greater than 1000");
+        return 0;
+    }
+    else if (overflow < 0 || component < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Color component is less than 0");
+        return 0;
+    }
+
+    *(short *)ptr = (short)component;
+    return 1;
+}
+
+/*[python input]
+class component_converter(CConverter):
+    type = 'short'
+    converter = 'component_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=38e9be01d33927fb]*/
 
 /* Function versions of the 3 functions for testing whether curses has been
    initialised or not. */
@@ -2585,7 +2708,7 @@ NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
 /*[clinic input]
 _curses.color_content
 
-    color_number: short
+    color_number: color
         The number of the color (0 - COLORS).
     /
 
@@ -2596,15 +2719,15 @@ which will be between 0 (no component) and 1000 (maximum amount of component).
 [clinic start generated code]*/
 
 static PyObject *
-_curses_color_content_impl(PyObject *module, short color_number)
-/*[clinic end generated code: output=cb15cf3120d4bfc1 input=5555abb1c11e11b7]*/
+_curses_color_content_impl(PyObject *module, int color_number)
+/*[clinic end generated code: output=17b466df7054e0de input=c10ef58f694b13ee]*/
 {
-    short r,g,b;
+    _NCURSES_COLOR_VAL_TYPE r,g,b;
 
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    if (color_content(color_number, &r, &g, &b) != ERR)
+    if (_COLOR_CONTENT_FUNC(color_number, &r, &g, &b) != ERR)
         return Py_BuildValue("(iii)", r, g, b);
     else {
         PyErr_SetString(PyCursesError,
@@ -2616,7 +2739,7 @@ _curses_color_content_impl(PyObject *module, short color_number)
 /*[clinic input]
 _curses.color_pair
 
-    color_number: short
+    color_number: color
         The number of the color (0 - COLORS).
     /
 
@@ -2627,8 +2750,8 @@ other A_* attributes.  pair_number() is the counterpart to this function.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_color_pair_impl(PyObject *module, short color_number)
-/*[clinic end generated code: output=6a84cb6b29ecaf9a input=a9d3eb6f50e4dc12]*/
+_curses_color_pair_impl(PyObject *module, int color_number)
+/*[clinic end generated code: output=3fd752e8e24c93fb input=b049033819ab4ef5]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
@@ -3027,13 +3150,13 @@ _curses_has_key_impl(PyObject *module, int key)
 /*[clinic input]
 _curses.init_color
 
-    color_number: short
+    color_number: color
         The number of the color to be changed (0 - COLORS).
-    r: short
+    r: component
         Red component (0 - 1000).
-    g: short
+    g: component
         Green component (0 - 1000).
-    b: short
+    b: component
         Blue component (0 - 1000).
     /
 
@@ -3045,24 +3168,24 @@ most terminals; it is active only if can_change_color() returns 1.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_init_color_impl(PyObject *module, short color_number, short r,
-                        short g, short b)
-/*[clinic end generated code: output=280236f5efe9776a input=f3a05bd38f619175]*/
+_curses_init_color_impl(PyObject *module, int color_number, short r, short g,
+                        short b)
+/*[clinic end generated code: output=d7ed71b2d818cdf2 input=8a2fe94ca9204aa5]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    return PyCursesCheckERR(init_color(color_number, r, g, b), "init_color");
+    return PyCursesCheckERR(_CURSES_INIT_COLOR_FUNC(color_number, r, g, b), _CURSES_INIT_COLOR_FUNC_NAME);
 }
 
 /*[clinic input]
 _curses.init_pair
 
-    pair_number: short
+    pair_number: pair
         The number of the color-pair to be changed (1 - (COLOR_PAIRS-1)).
-    fg: short
+    fg: color
         Foreground color number (0 - COLORS).
-    bg: short
+    bg: color
         Background color number (0 - COLORS).
     /
 
@@ -3073,14 +3196,13 @@ all occurrences of that color-pair are changed to the new definition.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_init_pair_impl(PyObject *module, short pair_number, short fg,
-                       short bg)
-/*[clinic end generated code: output=9c2ce39c22f376b6 input=c9f0b11b17a2ac6d]*/
+_curses_init_pair_impl(PyObject *module, int pair_number, int fg, int bg)
+/*[clinic end generated code: output=a0bba03d2bbc3ee6 input=b865583a18061c1f]*/
 {
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    return PyCursesCheckERR(init_pair(pair_number, fg, bg), "init_pair");
+    return PyCursesCheckERR(_CURSES_INIT_PAIR_FUNC(pair_number, fg, bg), _CURSES_INIT_PAIR_FUNC_NAME);
 }
 
 static PyObject *ModDict;
@@ -3697,7 +3819,7 @@ NoArgNoReturnFunctionBody(noraw)
 /*[clinic input]
 _curses.pair_content
 
-    pair_number: short
+    pair_number: pair
         The number of the color pair (1 - (COLOR_PAIRS-1)).
     /
 
@@ -3705,15 +3827,15 @@ Return a tuple (fg, bg) containing the colors for the requested color pair.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_pair_content_impl(PyObject *module, short pair_number)
-/*[clinic end generated code: output=5a72aa1a28bbacf3 input=f4d7fec5643b976b]*/
+_curses_pair_content_impl(PyObject *module, int pair_number)
+/*[clinic end generated code: output=4a726dd0e6885f3f input=b42eacf8a4103852]*/
 {
-    short f, b;
+    _NCURSES_COLOR_VAL_TYPE f, b;
 
     PyCursesInitialised;
     PyCursesInitialisedColor;
 
-    if (pair_content(pair_number, &f, &b)==ERR) {
+    if (_CURSES_PAIR_NUMBER_FUNC(pair_number, &f, &b)==ERR) {
         PyErr_SetString(PyCursesError,
                         "Argument 1 was out of range. (1..COLOR_PAIRS-1)");
         return NULL;
@@ -4450,6 +4572,21 @@ make_ncurses_version(void)
 
 #endif /* NCURSES_VERSION */
 
+/*[clinic input]
+_curses.has_extended_color_support
+
+Return True if the module supports extended colors; otherwise, return False.
+
+Extended color support allows more than 256 color-pairs for terminals
+that support more than 16 colors (e.g. xterm-256color).
+[clinic start generated code]*/
+
+static PyObject *
+_curses_has_extended_color_support_impl(PyObject *module)
+/*[clinic end generated code: output=68f1be2b57d92e22 input=4b905f046e35ee9f]*/
+{
+    return PyBool_FromLong(_NCURSES_EXTENDED_COLOR_FUNCS);
+}
 
 /* List of functions defined in the module */
 
@@ -4476,6 +4613,7 @@ static PyMethodDef PyCurses_methods[] = {
     _CURSES_GETSYX_METHODDEF
     _CURSES_GETWIN_METHODDEF
     _CURSES_HAS_COLORS_METHODDEF
+    _CURSES_HAS_EXTENDED_COLOR_SUPPORT_METHODDEF
     _CURSES_HAS_IC_METHODDEF
     _CURSES_HAS_IL_METHODDEF
     _CURSES_HAS_KEY_METHODDEF

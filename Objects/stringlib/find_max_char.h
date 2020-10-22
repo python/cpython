@@ -4,14 +4,14 @@
 # error "find_max_char.h is specific to Unicode"
 #endif
 
-/* Mask to quickly check whether a C 'long' contains a
+/* Mask to quickly check whether a C 'size_t' contains a
    non-ASCII, UTF8-encoded char. */
-#if (SIZEOF_LONG == 8)
-# define UCS1_ASCII_CHAR_MASK 0x8080808080808080UL
-#elif (SIZEOF_LONG == 4)
-# define UCS1_ASCII_CHAR_MASK 0x80808080UL
+#if (SIZEOF_SIZE_T == 8)
+# define UCS1_ASCII_CHAR_MASK 0x8080808080808080ULL
+#elif (SIZEOF_SIZE_T == 4)
+# define UCS1_ASCII_CHAR_MASK 0x80808080U
 #else
-# error C 'long' size should be either 4 or 8!
+# error C 'size_t' size should be either 4 or 8!
 #endif
 
 #if STRINGLIB_SIZEOF_CHAR == 1
@@ -21,17 +21,17 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 {
     const unsigned char *p = (const unsigned char *) begin;
     const unsigned char *aligned_end =
-            (const unsigned char *) _Py_ALIGN_DOWN(end, SIZEOF_LONG);
+            (const unsigned char *) _Py_ALIGN_DOWN(end, SIZEOF_SIZE_T);
 
     while (p < end) {
-        if (_Py_IS_ALIGNED(p, SIZEOF_LONG)) {
+        if (_Py_IS_ALIGNED(p, SIZEOF_SIZE_T)) {
             /* Help register allocation */
             const unsigned char *_p = p;
             while (_p < aligned_end) {
-                unsigned long value = *(const unsigned long *) _p;
+                size_t value = *(const size_t *) _p;
                 if (value & UCS1_ASCII_CHAR_MASK)
                     return 255;
-                _p += SIZEOF_LONG;
+                _p += SIZEOF_SIZE_T;
             }
             p = _p;
             if (p == end)
