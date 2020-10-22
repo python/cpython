@@ -451,8 +451,12 @@ class ShellSidebarTest(unittest.TestCase):
     def get_sidebar_lines(self):
         canvas = self.shell.shell_sidebar.canvas
         texts = list(canvas.find(tk.ALL))
-        texts.sort(key=lambda text: canvas.bbox(text)[1])
-        return [canvas.itemcget(text, 'text') for text in texts]
+        texts_by_y_coords = {
+            canvas.bbox(text)[1]: canvas.itemcget(text, 'text')
+            for text in texts
+        }
+        line_y_coords = self.get_shell_line_y_coords()
+        return [texts_by_y_coords.get(y, None) for y in line_y_coords]
 
     def assert_sidebar_lines_end_with(self, expected_lines):
         self.shell.shell_sidebar.update_sidebar()
@@ -480,9 +484,9 @@ class ShellSidebarTest(unittest.TestCase):
         return [canvas.bbox(text)[1] for text in texts]
 
     def assert_sidebar_lines_synced(self):
-        self.assertEqual(
-            self.get_sidebar_line_y_coords(),
-            self.get_shell_line_y_coords(),
+        self.assertLessEqual(
+            set(self.get_sidebar_line_y_coords()),
+            set(self.get_shell_line_y_coords()),
         )
 
     def do_input(self, input):
@@ -520,7 +524,7 @@ class ShellSidebarTest(unittest.TestCase):
         sidebar_lines = self.get_sidebar_lines()
         self.assertEqual(
             sidebar_lines,
-            ['   '] * (len(sidebar_lines) - 1) + ['>>>'],
+            [None] * (len(sidebar_lines) - 1) + ['>>>'],
         )
         self.assert_sidebar_lines_synced()
 
@@ -534,7 +538,7 @@ class ShellSidebarTest(unittest.TestCase):
     def test_single_line_command(self):
         self.do_input('1\n')
         yield
-        self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
+        self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
 
     @test_coroutine
     def test_multi_line_command(self):
@@ -550,7 +554,7 @@ class ShellSidebarTest(unittest.TestCase):
             '...',
             '...',
             '...',
-            '   ',
+            None,
             '>>>',
         ])
 
@@ -558,7 +562,7 @@ class ShellSidebarTest(unittest.TestCase):
     def test_single_long_line_wraps(self):
         self.do_input('1' * 200 + '\n')
         yield
-        self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
+        self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
         self.assert_sidebar_lines_synced()
 
     @test_coroutine
@@ -568,18 +572,18 @@ class ShellSidebarTest(unittest.TestCase):
 
         self.do_input('1\n')
         yield
-        self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
+        self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
 
         line = int(shell.text.index('insert -1line').split('.')[0])
         text.mark_set('insert', f"{line}.0")
         text.event_generate('<<squeeze-current-text>>')
         yield
-        self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
+        self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
         self.assert_sidebar_lines_synced()
 
         shell.squeezer.expandingbuttons[0].expand()
         yield
-        self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
+        self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
         self.assert_sidebar_lines_synced()
 
     @test_coroutine
@@ -600,13 +604,13 @@ class ShellSidebarTest(unittest.TestCase):
         # Control-C
         text.event_generate('<<interrupt-execution>>')
         yield
-        self.assert_sidebar_lines_end_with(['>>>', '...', '...', '   ', '>>>'])
+        self.assert_sidebar_lines_end_with(['>>>', '...', '...', None, '>>>'])
 
         # Recall previous via history
         text.event_generate('<<history-previous>>')
         text.event_generate('<<interrupt-execution>>')
         yield
-        self.assert_sidebar_lines_end_with(['>>>', '...', '   ', '>>>'])
+        self.assert_sidebar_lines_end_with(['>>>', '...', None, '>>>'])
 
         # Recall previous via recall
         text.mark_set('insert', text.index('insert -2l'))
@@ -625,7 +629,7 @@ class ShellSidebarTest(unittest.TestCase):
         text.event_generate('<<newline-and-indent>>')
         yield
         self.assert_sidebar_lines_end_with(
-            ['>>>', '...', '...', '...', '   ', '>>>']
+            ['>>>', '...', '...', '...', None, '>>>']
         )
 
     def test_font(self):

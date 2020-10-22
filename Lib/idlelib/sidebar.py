@@ -416,10 +416,11 @@ class ShellSidebar:
             prompt = (
                 '>>>' if "console" in prev_newline_tagnames else
                 '...' if "stdin" in prev_newline_tagnames else
-                '   '
+                None
             )
-            canvas.create_text(2, y, anchor=tk.NW, text=prompt,
-                               font=self.font, fill=self.colors[0])
+            if prompt:
+                canvas.create_text(2, y, anchor=tk.NW, text=prompt,
+                                   font=self.font, fill=self.colors[0])
             index = text.index(f'{index}+1line')
 
     def yscroll_event(self, *args, **kwargs):
