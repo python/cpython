@@ -623,7 +623,7 @@ def checkEnvironment():
                                                     ev, os.environ[ev]))
                 del os.environ[ev]
 
-    base_path = '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin'
+    base_path = '/bin:/sbin:/usr/bin:/usr/sbin'
     if 'SDK_TOOLS_BIN' in os.environ:
         base_path = os.environ['SDK_TOOLS_BIN'] + ':' + base_path
     # Xcode 2.5 on OS X 10.4 does not include SetFile in its usr/bin;
