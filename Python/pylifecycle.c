@@ -1364,15 +1364,24 @@ Py_FinalizeEx(void)
     runtime->interpreters.allow_new = 0;
     PyInterpreterState *curr_interp = PyInterpreterState_Head();
     PyInterpreterState *next_interp;
+    int64_t num_destroyed = 0;
     while (curr_interp != NULL) {
         next_interp = PyInterpreterState_Next(curr_interp);
-        if (curr_interp != PyInterpreterState_Main()) {
+        if (curr_interp != interp) {
             PyThreadState_Swap(curr_interp->tstate_head);
             Py_EndInterpreter(curr_interp->tstate_head);
+            num_destroyed++;
         }
         curr_interp = next_interp;
     }
     PyThreadState_Swap(tstate);
+
+    if (num_destroyed > 0) {
+        if (PyErr_ResourceWarning(Py_None, 1,
+                                  "extra %zd interpreters", num_destroyed)) {
+            PyErr_WriteUnraisable(Py_None);
+        }
+    }
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
