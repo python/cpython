@@ -81,7 +81,7 @@ struct _Py_float_state {
 };
 
 struct _Py_long_state {
-    // Special free list; same to _Py_float_state but for PyLongObjects.
+    // Special free list; similar to _Py_float_state but for PyLongObjects.
     int numfree;
     PyLongObject *free_list;
 };
@@ -297,4 +297,3 @@ PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
 }
 #endif
 #endif /* !Py_INTERNAL_INTERP_H */
-

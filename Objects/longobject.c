@@ -137,7 +137,7 @@ _PyLong_New(Py_ssize_t size)
 {
     struct _Py_long_state *state = &_PyInterpreterState_GET()->long_state;
 #ifdef Py_DEBUG
-    // _PyLong_New() must not be called after _PyFloat_Fini()
+    // _PyLong_New() must not be called after _PyLong_Fini()
     assert(state->numfree != -1);
 #endif
 
