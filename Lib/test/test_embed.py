@@ -1155,7 +1155,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             ver = sys.version_info
             return [
                 os.path.join(prefix, sys.platlibdir,
-                             f'python{ver.major}{ver.minor}.zip'),
+                             f'python{ver.major}.{ver.minor}.zip'),
                 os.path.join(prefix, sys.platlibdir,
                              f'python{ver.major}.{ver.minor}'),
                 os.path.join(exec_prefix, sys.platlibdir,
