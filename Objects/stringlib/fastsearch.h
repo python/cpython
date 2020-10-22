@@ -451,10 +451,12 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
 }
 
 Py_LOCAL_INLINE(Py_ssize_t)
-STRINGLIB(_find)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
-                 const STRINGLIB_CHAR *needle, Py_ssize_t len_needle)
+STRINGLIB(_two_way_find)(const STRINGLIB_CHAR *haystack,
+                         Py_ssize_t len_haystack,
+                         const STRINGLIB_CHAR *needle,
+                         Py_ssize_t len_needle)
 {
-    LOG(">>> Counting \"%s\" in \"%s\".\n", needle, haystack);
+    LOG("##### Counting \"%s\" in \"%s\".\n", needle, haystack);
     Py_ssize_t index;
     index = STRINGLIB(find_char)(haystack,
                                  len_haystack - len_needle + 1,
@@ -464,7 +466,8 @@ STRINGLIB(_find)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
     }
     if (0 == memcmp(haystack + index,
                     needle,
-                    len_needle * STRINGLIB_SIZEOF_CHAR)) {
+                    len_needle * STRINGLIB_SIZEOF_CHAR))
+    {
         return index;
     }
     else {
@@ -481,11 +484,13 @@ STRINGLIB(_find)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
 }
 
 Py_LOCAL_INLINE(Py_ssize_t)
-STRINGLIB(_count)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
-                  const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
-                  Py_ssize_t maxcount)
+STRINGLIB(_two_way_count)(const STRINGLIB_CHAR *haystack,
+                          Py_ssize_t len_haystack,
+                          const STRINGLIB_CHAR *needle,
+                          Py_ssize_t len_needle,
+                          Py_ssize_t maxcount)
 {
-    LOG(">>> Counting \"%s\" in \"%s\".\n", needle, haystack);
+    LOG("###### Counting \"%s\" in \"%s\".\n", needle, haystack);
     Py_ssize_t index;
     Py_ssize_t count = 0;
     index = STRINGLIB(find_char)(haystack,
@@ -496,7 +501,8 @@ STRINGLIB(_count)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
     }
     if (0 == memcmp(haystack + index,
                     needle,
-                    len_needle * STRINGLIB_SIZEOF_CHAR)) {
+                    len_needle * STRINGLIB_SIZEOF_CHAR))
+    {
         count++;
         index += len_needle;
         if (count == maxcount || index + len_needle > len_haystack) {
@@ -570,11 +576,14 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
     mask = 0;
 
     if (mode != FAST_RSEARCH) {
-        if (mode == FAST_SEARCH) {
-            return STRINGLIB(_find)(s, n, p, m);
-        }
-        if (mode == FAST_COUNT) {
-            return STRINGLIB(_count)(s, n, p, m, maxcount);
+        if (w >= 2000 && m >= 20) {
+            // For larger problems, use a worst-case-linear algorithm.
+            if (mode == FAST_SEARCH) {
+                return STRINGLIB(_two_way_find)(s, n, p, m);
+            }
+            else {
+                return STRINGLIB(_two_way_count)(s, n, p, m, maxcount);
+            }
         }
         const STRINGLIB_CHAR *ss = s + m - 1;
         const STRINGLIB_CHAR *pp = p + m - 1;
