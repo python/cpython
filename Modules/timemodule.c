@@ -1399,7 +1399,7 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 #elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_PROCESS_CPUTIME_ID)
 #define HAVE_THREAD_TIME
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)
 static int
 _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info) 
      __attribute__((availability(macos, introduced=10.12)))
@@ -1984,9 +1984,7 @@ static struct PyModuleDef timemodule = {
 PyMODINIT_FUNC
 PyInit_time(void)
 {
-    PyObject* module = PyModuleDef_Init(&timemodule);
-
-    return module;
+    return PyModuleDef_Init(&timemodule);
 }
 
 /* Implement pysleep() for various platforms.
