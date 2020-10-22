@@ -695,7 +695,7 @@ class ShellSidebarTest(unittest.TestCase):
         text = self.shell.text
 
         # Enter a 100-line string to scroll the shell screen down.
-        self.do_input('x = """' + ('\n'*100) + '"""\n')
+        self.do_input('x = """' + '\n'*100 + '"""\n')
         yield
         self.assertGreater(get_lineno(text, '@0,0'), 1)
 
