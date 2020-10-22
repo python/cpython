@@ -13,6 +13,10 @@
    it has actually checked for matches, but didn't find any.  callers
    beware! */
 
+/* If the needle is long enough, use Crochemore and Perrin's Two-Way
+   algorithm, which has guaranteed O(n) runtime. Also compute a table
+   of shifts to sometimes achieve O(n/m) runtime in the best cases. */
+
 #define FAST_COUNT 0
 #define FAST_SEARCH 1
 #define FAST_RSEARCH 2
@@ -281,12 +285,22 @@ STRINGLIB(_factorize)(const STRINGLIB_CHAR *needle,
     return cut;
 }
 
+#define USE_TABLE
+#define SHIFT_TYPE uint16_t
+#define NOT_FOUND ((1U<<(8*sizeof(SHIFT_TYPE))) - 1U)
+#define SHIFT_OVERFLOW (NOT_FOUND - 1U)
+
+#define TABLE_SIZE_BITS 7
+#define TABLE_SIZE (1U << TABLE_SIZE_BITS)
+#define TABLE_MASK (TABLE_SIZE - 1U)
+
 typedef struct STRINGLIB(_pre) {
     const STRINGLIB_CHAR *needle;
     Py_ssize_t len_needle;
     Py_ssize_t cut;
     Py_ssize_t period;
     int is_periodic;
+    SHIFT_TYPE table[TABLE_SIZE];
 } STRINGLIB(prework);
 
 
@@ -300,6 +314,17 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
     p->is_periodic = (0 == memcmp(needle,
                                   needle + p->period,
                                   p->cut * STRINGLIB_SIZEOF_CHAR));
+    // Now fill up a table
+    memset(&(p->table[0]), 0xff, TABLE_SIZE*sizeof(SHIFT_TYPE));
+    assert(p->table[0] == NOT_FOUND);
+    assert(p->table[TABLE_MASK] == NOT_FOUND);
+    for (Py_ssize_t i = 0; i < len_needle; i++) {
+        Py_ssize_t shift = len_needle - i;
+        if (shift > SHIFT_OVERFLOW) {
+            shift = SHIFT_OVERFLOW;
+        }
+        p->table[needle[i] & TABLE_MASK] = shift;
+    }
 }
 
 Py_LOCAL_INLINE(Py_ssize_t)
@@ -324,7 +349,25 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
             // Visualize the line-up:
             LOG("> "); LOG_STRING(haystack, len_haystack);
             LOG("\n> "); LOG("%*s", j, ""); LOG_STRING(needle, len_needle);
-            LOG("\n> "); LOG("%*s", j + i, ""); LOG(" ^ <-- start\n");
+            LOG("\n> "); LOG("%*s", j + i, ""); LOG(" ^ <-- cut\n");
+
+            if (haystack[j + i] != needle[i++]) {
+                // Sunday's trick: if we're going to jump, we might
+                // as well jump to line up the character *after* the
+                // current window.
+                STRINGLIB_CHAR first_outside = haystack[j + len_needle];
+                SHIFT_TYPE shift = p->table[first_outside & TABLE_MASK];
+                if (shift == NOT_FOUND) {
+                    LOG("\"%c\" not found. Skipping entirely.\n", first_outside);
+                    j += len_needle + 1;
+                }
+                else {
+                    LOG("Shifting to line up \"%c\".\n", first_outside);
+                    j += shift;
+                }
+                memory = 0;
+                continue;
+            }
 
             while (i < len_needle && needle[i] == haystack[j + i]) {
                 i++;
@@ -354,14 +397,33 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
         period = Py_MAX(cut, len_needle - cut) + 1;
         LOG("Needle is not periodic.\n");
         Py_ssize_t j = 0;
+        assert(cut < len_needle);
+        STRINGLIB_CHAR needle_cut = needle[cut];
         while (j <= len_haystack - len_needle) {
 
             // Visualize the line-up:
             LOG("> "); LOG_STRING(haystack, len_haystack);
             LOG("\n> "); LOG("%*s", j, ""); LOG_STRING(needle, len_needle);
-            LOG("\n> "); LOG("%*s", j + cut, ""); LOG(" ^ <-- start\n");
+            LOG("\n> "); LOG("%*s", j + cut, ""); LOG(" ^ <-- cut\n");
 
-            Py_ssize_t i = cut;
+            if (haystack[j + cut] != needle_cut) {
+                // Sunday's trick: if we're going to jump, we might
+                // as well jump to line up the character *after* the
+                // current window.
+                STRINGLIB_CHAR first_outside = haystack[j + len_needle];
+                SHIFT_TYPE shift = p->table[first_outside & TABLE_MASK];
+                if (shift == NOT_FOUND) {
+                    LOG("\"%c\" not found. Skipping entirely.\n", first_outside);
+                    j += len_needle + 1;
+                }
+                else {
+                    LOG("Shifting to line up \"%c\".\n", first_outside);
+                    j += shift;
+                }
+                continue;
+            }
+
+            Py_ssize_t i = cut + 1;
             while (i < len_needle && needle[i] == haystack[j + i]) {
                 i++;
             }
@@ -459,6 +521,12 @@ STRINGLIB(_count)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
     return count;
 }
 
+#undef SHIFT_TYPE
+#undef NOT_FOUND
+#undef SHIFT_OVERFLOW
+#undef TABLE_SIZE_BITS
+#undef TABLE_SIZE
+#undef TABLE_MASK
 
 #undef LOG
 #undef LOG_STRING
