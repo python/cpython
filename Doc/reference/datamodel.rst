@@ -1390,12 +1390,14 @@ Basic customization
    context (e.g., in the condition of an ``if`` statement), Python will call
    :func:`bool` on the value to determine if the result is true or false.
 
-   By default, :meth:`__ne__` delegates to :meth:`__eq__` and
-   inverts the result unless it is ``NotImplemented``.  There are no other
-   implied relationships among the comparison operators, for example,
-   the truth of ``(x<y or x==y)`` does not imply ``x<=y``.
-   To automatically generate ordering operations from a single root operation,
-   see :func:`functools.total_ordering`.
+   By default, ``object`` implements :meth:`__eq__` by using ``is``, returning
+   ``NotImplemented`` in the case of a false comparison:
+   ``True if x is y else NotImplemented``. For :meth:`__ne__`, by default it
+   delegates to :meth:`__eq__` and inverts the result unless it is
+   ``NotImplemented``.  There are no other implied relationships among the
+   comparison operators or default implementations; for example, the truth of
+   ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
+   operations from a single root operation, see :func:`functools.total_ordering`.
 
    See the paragraph on :meth:`__hash__` for
    some important notes on creating :term:`hashable` objects which support
