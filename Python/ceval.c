@@ -3670,10 +3670,10 @@ main_loop:
             // PUSH(TOS[TOS1 - 1 - oparg])
             // NOTE: We can't rely on support for negative indexing!
             // Although PySequence_GetItem tries to correct negative indexes, we
-            // just use the length we already have cached from GET_LEN on the
-            // PyInterpreterState struct. In addition to avoiding tons of
-            // redundant __len__ calls, this also handles length changes during
-            // extraction more intuitively.
+            // just use the length we already have at TOS1. In addition to
+            // avoiding tons of redundant __len__ calls, this also handles
+            // length changes during extraction more intuitively.
+            assert(PyLong_CheckExact(SECOND()));
             Py_ssize_t len = PyLong_AsSsize_t(SECOND());
             if (len < 0) {
                 goto error;
@@ -3691,6 +3691,7 @@ main_loop:
             // PUSH(list(TOS[oparg & 0xFF: TOS1 - (oparg >> 8)]))
             // NOTE: We can't rely on support for slicing or negative indexing!
             // Ditto GET_INDEX_END's length handling.
+            assert(PyLong_CheckExact(SECOND()));
             Py_ssize_t len = PyLong_AsSsize_t(SECOND());
             if (len < 0) {
                 goto error;
