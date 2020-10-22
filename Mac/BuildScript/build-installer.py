@@ -150,10 +150,6 @@ SRCDIR = os.path.dirname(
 # $MACOSX_DEPLOYMENT_TARGET -> minimum OS X level
 DEPTARGET = '10.5'
 
-# If true only builds the 3th-party dependencies
-# in $WORKDIR
-DEPS_ONLY=False
-
 def getDeptargetTuple():
     return tuple([int(n) for n in DEPTARGET.split('.')[0:2]])
 
@@ -649,7 +645,6 @@ def parseOptions(args=None):
     global UNIVERSALOPTS, UNIVERSALARCHS, ARCHLIST, CC, CXX
     global FW_VERSION_PREFIX
     global FW_SSL_DIRECTORY
-    global DEPS_ONLY
 
     if args is None:
         args = sys.argv[1:]
@@ -657,7 +652,7 @@ def parseOptions(args=None):
     try:
         options, args = getopt.getopt(args, '?hb',
                 [ 'build-dir=', 'third-party=', 'sdk-path=' , 'src-dir=',
-                  'dep-target=', 'universal-archs=', 'deps-only', 'help' ])
+                  'dep-target=', 'universal-archs=', 'help' ])
     except getopt.GetoptError:
         print(sys.exc_info()[1])
         sys.exit(1)
@@ -677,9 +672,6 @@ def parseOptions(args=None):
 
         elif k in ('--third-party',):
             DEPSRC=v
-
-        elif k in ('--deps-only',):
-            DEPS_ONLY=True
 
         elif k in ('--sdk-path',):
             print(" WARNING: --sdk-path is no longer supported")
@@ -726,8 +718,6 @@ def parseOptions(args=None):
     print(" -- Building a Python %s framework at patch level %s"
                 % (getVersion(), getFullVersion()))
     print("")
-    if DEPS_ONLY:
-        print("Stopping after building third-party libraries")
 
 def extractArchive(builddir, archiveName):
     """
@@ -1693,9 +1683,6 @@ def main():
 
     # Then build third-party libraries such as sleepycat DB4.
     buildLibraries()
-
-    if DEPS_ONLY:
-        sys.exit(1)
 
     # Now build python itself
     buildPython()
