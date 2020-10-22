@@ -1503,6 +1503,13 @@ Async and await
    fields as :class:`For` and :class:`With`, respectively. Only valid in the
    body of an :class:`AsyncFunctionDef`.
 
+.. note::
+   When a string is parsed by :func:`ast.parse`, operator nodes (subclasses
+   of :class:`ast.operator`, :class:`ast.unaryop`, :class:`ast.cmpop`,
+   :class:`ast.boolop` and :class:`ast.expr_context`) on the returned tree
+   will be singletons. Changes to one will be reflected in all other
+   occurrences of the same value (e.g. :class:`ast.Add`).
+
 
 :mod:`ast` Helpers
 ------------------
