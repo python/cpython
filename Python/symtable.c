@@ -1679,7 +1679,6 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case MatchAs_kind:
         VISIT(st, expr, e->v.MatchAs.pattern);
-        // "_" is not actually valid, but it's the compiler's job to complain:
         symtable_add_def(st, e->v.MatchAs.name, DEF_LOCAL);
         break;
     case MatchOr_kind:

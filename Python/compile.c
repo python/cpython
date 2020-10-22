@@ -5497,11 +5497,7 @@ pattern_load_constant(struct compiler *c, expr_ty p, pattern_context *pc)
 static int
 pattern_store_name(struct compiler *c, identifier n, pattern_context *pc)
 {
-    if (_PyUnicode_EqualToASCIIString(n, "_")) {
-        const char *e = "can't assign to '_' here "
-                        "(consider removing or renaming)";
-        return compiler_error(c, e);
-    }
+    assert(!_PyUnicode_EqualToASCIIString(n, "_"));
     if (!pc->stores) {
         CHECK(pc->stores = PySet_New(NULL));
     }
@@ -5830,6 +5826,10 @@ compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context *pc)
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
     if (!pc->allow_irrefutable) {
+        if (WILDCARD_CHECK(p)) {
+            const char *e = "wildcard makes remaining patterns unreachable";
+            return compiler_error(c, e);
+        }
         const char *e = "name capture %R makes remaining patterns unreachable";
         return compiler_error(c, e, p->v.Name.id);
     }
