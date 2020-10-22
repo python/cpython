@@ -4,6 +4,8 @@ import telnetlib
 import threading
 import contextlib
 import io
+import sys
+import os
 
 from test import support
 from test.support import socket_helper
@@ -400,28 +402,61 @@ class ExpectTests(ExpectAndReadTestCase):
         self.assertEqual(data, b''.join(want[:-1]))
 
 class InteractTests(ExpectAndReadTestCase):
-    @unittest.mock.patch('telnetlib.sys.stdin', new_callable=io.StringIO)
-    def test_interact(self, stdin):
-        encoding = 'ascii'
-        want = ['x'.encode(encoding)]
-        out = io.TextIOWrapper(io.BytesIO(), encoding)
+    def _call_and_redirect(self, want, encoding, funcname):
         telnet = test_telnet(want)
-        with contextlib.redirect_stdout(out):
-            telnet.interact()
-        out.seek(0)
-        self.assertEqual(out.read().encode(encoding), want[0])
+        output = io.TextIOWrapper(io.BytesIO(), encoding)
+        with contextlib.redirect_stdout(output):
+            getattr(telnet, funcname)()
+        output.seek(0)
+        return output
 
     @unittest.mock.patch('telnetlib.sys.stdin', new_callable=io.StringIO)
+    @unittest.skipUnless(not sys.platform.startswith('win'), 'not required on Windows')
+    def test_interact_ascii(self, stdin):
+        # bpo-37640
+        encoding = 'ascii'
+        want = ['x'.encode(encoding)]
+        output = self._call_and_redirect(want, encoding, 'interact')
+        self.assertEqual(output.buffer.getvalue(), want[0])
+
+    @unittest.mock.patch('telnetlib.sys.stdin', new_callable=io.StringIO)
+    @unittest.skipUnless(not sys.platform.startswith('win'), 'not required on Windows')
     def test_interact_utf8(self, stdin):
         # bpo-37640
         encoding = 'utf-8'
         want = ['\xff'.encode(encoding)]
-        out = io.TextIOWrapper(io.BytesIO(), encoding)
-        telnet = test_telnet(want)
-        with contextlib.redirect_stdout(out):
-            telnet.interact()
-        out.seek(0)
-        self.assertEqual(out.read().encode(encoding), want[0])
+        output = self._call_and_redirect(want, encoding, 'interact')
+        self.assertEqual(output.buffer.getvalue(), want[0])
+
+    @unittest.mock.patch('telnetlib.sys.stdin', new_callable=io.StringIO)
+    @unittest.skipUnless(sys.platform.startswith('win'), 'requires Windows')
+    def test_listener_ascii(self, stdin):
+        # bpo-37640
+        # sanitize error msg from output variable before any validation
+        err_msg = b'*** Connection closed by remote host ***' +\
+            os.linesep.encode()
+        encoding = 'ascii'
+        want = ['x'.encode(encoding)]
+        output = self._call_and_redirect(want, encoding, 'listener')
+        self.assertEqual(
+            output.buffer.getvalue().replace(err_msg, b""),
+            want[0]
+        )
+
+    @unittest.mock.patch('telnetlib.sys.stdin', new_callable=io.StringIO)
+    @unittest.skipUnless(sys.platform.startswith('win'), 'requires Windows')
+    def test_listener_utf8(self, stdin):
+        # bpo-37640
+        # sanitize error msg from output variable before any validation
+        err_msg = b'*** Connection closed by remote host ***' +\
+            os.linesep.encode()
+        encoding = 'utf-8'
+        want = ['\xff'.encode(encoding)]
+        output = self._call_and_redirect(want, encoding, 'listener')
+        self.assertEqual(
+            output.buffer.getvalue().replace(err_msg, b""),
+            want[0]
+        )
 
 if __name__ == '__main__':
     unittest.main()
