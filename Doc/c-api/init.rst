@@ -276,7 +276,8 @@ Initializing and finalizing the interpreter
    Undo all initializations made by :c:func:`Py_Initialize` and subsequent use of
    Python/C API functions, and destroy all sub-interpreters (see
    :c:func:`Py_NewInterpreter` below) that were created and not yet destroyed since
-   the last call to :c:func:`Py_Initialize`.  Ideally, this frees all memory
+   the last call to :c:func:`Py_Initialize`.  A resource warning is emitted if
+   there were remaining sub-interpreters.  Ideally, this frees all memory
    allocated by the Python interpreter.  This is a no-op when called for a second
    time (without calling :c:func:`Py_Initialize` again first).  Normally the
    return value is ``0``.  If there were errors during finalization
@@ -299,7 +300,8 @@ Initializing and finalizing the interpreter
    freed.  Some memory allocated by extension modules may not be freed.  Some
    extensions may not work properly if their initialization routine is called more
    than once; this can happen if an application calls :c:func:`Py_Initialize` and
-   :c:func:`Py_FinalizeEx` more than once.
+   :c:func:`Py_FinalizeEx` more than once.  Must be called from the main
+   interpreter, otherwise ``-1`` is returned and an error is output.
 
    .. audit-event:: cpython._PySys_ClearAuditHooks "" c.Py_FinalizeEx
 
