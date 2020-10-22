@@ -203,7 +203,7 @@ struct compiler {
 
 typedef struct {
     PyObject *stores;
-    int irrefutable;
+    int allow_irrefutable;
 } pattern_context;
 
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
@@ -5481,13 +5481,13 @@ static int
 pattern_load_constant(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Constant_kind);
-    assert(PyBool_Check(p->v.Constant.value) ||
+    assert(p->v.Constant.value == Py_None ||
+           PyBool_Check(p->v.Constant.value) ||
            PyBytes_CheckExact(p->v.Constant.value) ||
            PyComplex_CheckExact(p->v.Constant.value) ||
            PyFloat_CheckExact(p->v.Constant.value) ||
            PyLong_CheckExact(p->v.Constant.value) ||
-           PyUnicode_CheckExact(p->v.Constant.value) ||
-           p->v.Constant.value == Py_None);
+           PyUnicode_CheckExact(p->v.Constant.value));
     ADDOP_LOAD_CONST(c, p->v.Constant.value);
     return 1;
 }
@@ -5497,8 +5497,8 @@ static int
 pattern_store_name(struct compiler *c, identifier n, pattern_context *pc)
 {
     if (_PyUnicode_EqualToASCIIString(n, "_")) {
-        const char *e = "can't assign to '_' here; consider removing or "
-                        "renaming?";
+        const char *e = "can't assign to '_' here "
+                        "(consider removing or renaming)";
         return compiler_error(c, e);
     }
     if (!pc->stores) {
@@ -5544,19 +5544,15 @@ compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
     Py_ssize_t size = asdl_seq_LEN(p->v.BoolOp.values);
     assert(size > 1);
     PyObject *stores_init = pc->stores;
-    assert(!pc->irrefutable);
+    int allow_irrefutable = pc->allow_irrefutable;
     expr_ty alt;
     for (Py_ssize_t i = 0; i < size; i++) {
-        // Can't use our helpful returning macros here (they'll leak sets):
+        // Can't use our helpful returning macros here: they'll leak sets!
         alt = asdl_seq_GET(p->v.BoolOp.values, i);
         pc->stores = PySet_New(stores_init);
+        // An irrefutable sub-pattern must be last, if it is allowed at all:
+        pc->allow_irrefutable = allow_irrefutable && (i == size - 1);
         SET_LOC(c, alt);
-        if (pc->irrefutable) {
-            const char *e = "the previous pattern always matches, making this "
-                            "one unreachable";
-            compiler_error(c, e);
-            goto fail;
-        }
         if (!pc->stores ||
             !compiler_pattern(c, alt, pc) ||
             !compiler_addop_j(c, JUMP_IF_TRUE_OR_POP, end) ||
@@ -5584,6 +5580,7 @@ compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     Py_XDECREF(stores_init);
     pc->stores = control;
+    pc->allow_irrefutable = allow_irrefutable;
     ADDOP_LOAD_CONST(c, Py_False);
     compiler_use_next_block(c, end);
     return 1;
@@ -5601,7 +5598,8 @@ compiler_pattern_call(struct compiler *c, expr_ty p, pattern_context *pc) {
     Py_ssize_t nargs = asdl_seq_LEN(args);
     Py_ssize_t nkwargs = asdl_seq_LEN(kwargs);
     if (nargs + nkwargs > INT_MAX) {
-        return compiler_error(c, "too many sub-patterns in class pattern");
+        const char *e = "too many sub-patterns in class pattern %R";
+        return compiler_error(c, e, p->v.Call.func);
     }
     basicblock *block, *end;
     CHECK(!validate_keywords(c, kwargs));
@@ -5694,8 +5692,8 @@ compiler_pattern_dict(struct compiler *c, expr_ty p, pattern_context *pc)
         for (i = 0; i < size - star; i++) {
             expr_ty key = asdl_seq_GET(keys, i);
             if (!key) {
-                const char *e = "can't use starred pattern here; consider "
-                                "moving to end?";
+                const char *e = "can't use starred name here "
+                                "(consider moving to end)";
                 return compiler_error(c, e);
             }
             if (key->kind == Attribute_kind) {
@@ -5754,7 +5752,8 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
             continue;
         }
         if (star >= 0) {
-            return compiler_error(c, "multiple starred names in pattern");
+            const char *e = "multiple starred names in sequence pattern";
+            return compiler_error(c, e);
         }
         star = i;
     }
@@ -5817,7 +5816,10 @@ compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == Name_kind);
     assert(p->v.Name.ctx == Store);
-    pc->irrefutable = 1;
+    if (!pc->allow_irrefutable) {
+        const char *e = "name capture %R makes remaining patterns unreachable";
+        return compiler_error(c, e, p->v.Name.id);
+    }
     if (!WILDCARD_CHECK(p)) {
         ADDOP(c, DUP_TOP);
         CHECK(pattern_store_name(c, p->v.Name.id, pc));
@@ -5847,9 +5849,10 @@ compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
 static int
 compiler_subpattern(struct compiler *c, expr_ty p, pattern_context *pc)
 {
-    assert(!pc->irrefutable);
+    int allow_irrefutable = pc->allow_irrefutable;
+    pc->allow_irrefutable = 1;
     CHECK(compiler_pattern(c, p, pc));
-    pc->irrefutable = 0;
+    pc->allow_irrefutable = allow_irrefutable;
     return 1;
 }
 
@@ -5897,7 +5900,6 @@ compiler_match(struct compiler *c, stmt_ty s)
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases);
     pattern_context pc;
-    pc.irrefutable = 0;
     pc.stores = NULL;
     int result;
     match_case_ty m = asdl_seq_GET(s->v.Match.cases, cases - 1);
@@ -5905,19 +5907,15 @@ compiler_match(struct compiler *c, stmt_ty s)
     for (Py_ssize_t i = 0; i < cases - has_default; i++) {
         m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
-        if (pc.irrefutable) {
-            const char *e = "the previous case always matches, making this one "
-                            "unreachable";
-            CHECK(compiler_error(c, e));
-        }
         CHECK(next = compiler_new_block(c));
+        // An irrefutable case must be either guarded, last, or both:
+        pc.allow_irrefutable = !!m->guard || (i == cases - 1);
         result = compiler_pattern(c, m->pattern, &pc);
         Py_CLEAR(pc.stores);
         CHECK(result);
         ADDOP_JUMP(c, POP_JUMP_IF_FALSE, next);
         NEXT_BLOCK(c);
         if (m->guard) {
-            pc.irrefutable = 0;
             CHECK(compiler_jump_if(c, m->guard, next, 0));
         }
         ADDOP(c, POP_TOP);
@@ -5931,11 +5929,6 @@ compiler_match(struct compiler *c, stmt_ty s)
         // pushing and popping in the loop above:
         m = asdl_seq_GET(s->v.Match.cases, cases - 1);
         SET_LOC(c, m->pattern);
-        if (pc.irrefutable) {
-            const char *e = "the previous case always matches, making this one "
-                            "unreachable";
-            CHECK(compiler_error(c, e));
-        }
         if (m->guard) {
             CHECK(compiler_jump_if(c, m->guard, end, 0));
         }
