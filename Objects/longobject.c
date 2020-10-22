@@ -67,6 +67,11 @@ maybe_small_long(PyLongObject *v)
 #define maybe_small_long(val) (val)
 #endif
 
+/* Speed optimization to avoid frequent malloc/free of small ints */
+#ifndef PyLong_MAXFREELIST
+# define PyLong_MAXFREELIST  100
+#endif
+
 /* If a freshly-allocated int is already shared, it must
    be a small integer, so negating it must go to PyLong_FromLong */
 Py_LOCAL_INLINE(void)
@@ -130,22 +135,34 @@ long_normalize(PyLongObject *v)
 PyLongObject *
 _PyLong_New(Py_ssize_t size)
 {
+    struct _Py_long_state *state = &_PyInterpreterState_GET()->long_state;
+#ifdef Py_DEBUG
+    // _PyLong_New() must not be called after _PyFloat_Fini()
+    assert(state->numfree != -1);
+#endif
+
     PyLongObject *result;
-    /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
-       sizeof(digit)*size.  Previous incarnations of this code used
-       sizeof(PyVarObject) instead of the offsetof, but this risks being
-       incorrect in the presence of padding between the PyVarObject header
-       and the digits. */
-    if (size > (Py_ssize_t)MAX_LONG_DIGITS) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "too many digits in integer");
-        return NULL;
+    if (size == 1 && (result = (PyLongObject*)state->free_list) != NULL) {
+        state->free_list = (PyLongObject *)Py_TYPE(result);
+        state->numfree--;
     }
-    result = PyObject_MALLOC(offsetof(PyLongObject, ob_digit) +
-                             size*sizeof(digit));
-    if (!result) {
-        PyErr_NoMemory();
-        return NULL;
+    else {
+        /* Number of bytes needed is: offsetof(PyLongObject, ob_digit) +
+           sizeof(digit)*size.  Previous incarnations of this code used
+           sizeof(PyVarObject) instead of the offsetof, but this risks being
+           incorrect in the presence of padding between the PyVarObject header
+           and the digits. */
+        if (size > (Py_ssize_t)MAX_LONG_DIGITS) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "too many digits in integer");
+            return NULL;
+        }
+        result = PyObject_MALLOC(offsetof(PyLongObject, ob_digit) +
+                                 size*sizeof(digit));
+        if (!result) {
+            PyErr_NoMemory();
+            return NULL;
+        }
     }
     _PyObject_InitVar((PyVarObject*)result, &PyLong_Type, size);
     return result;
@@ -204,7 +221,7 @@ PyLong_FromLong(long ival)
     }
 
     /* Fast path for single-digit ints */
-    if (!(abs_ival >> PyLong_SHIFT)) {
+    if (abs_ival < (1UL << PyLong_SHIFT)) {
         v = _PyLong_New(1);
         if (v) {
             Py_SET_SIZE(v, sign);
@@ -214,9 +231,9 @@ PyLong_FromLong(long ival)
         return (PyObject*)v;
     }
 
-#if PyLong_SHIFT==15
+#if 2*PyLong_SHIFT < 8*PY_LONG_SIZE
     /* 2 digits */
-    if (!(abs_ival >> 2*PyLong_SHIFT)) {
+    if (abs_ival < (1UL << 2*PyLong_SHIFT)) {
         v = _PyLong_New(2);
         if (v) {
             Py_SET_SIZE(v, 2 * sign);
@@ -2883,6 +2900,27 @@ PyLong_AsDouble(PyObject *v)
         return -1.0;
     }
     return ldexp(x, (int)exponent);
+}
+
+static void
+long_dealloc(PyObject *v)
+{
+    if (PyLong_CheckExact(v)) {
+        struct _Py_long_state *state = &_PyInterpreterState_GET()->long_state;
+#ifdef Py_DEBUG
+        // long_dealloc() must not be called after _PyLong_Fini()
+        assert(state->numfree != -1);
+#endif
+        Py_ssize_t size = Py_SIZE(v);
+        if ((size == 1 || size == -1) &&
+            state->numfree < PyLong_MAXFREELIST) {
+            Py_SET_TYPE(v, (PyTypeObject *)state->free_list);
+            state->free_list = (PyLongObject *)v;
+            state->numfree++;
+            return;
+        }
+    }
+    Py_TYPE(v)->tp_free(v);
 }
 
 /* Methods */
@@ -5631,7 +5669,7 @@ PyTypeObject PyLong_Type = {
     "int",                                      /* tp_name */
     offsetof(PyLongObject, ob_digit),           /* tp_basicsize */
     sizeof(digit),                              /* tp_itemsize */
-    0,                                          /* tp_dealloc */
+    long_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -5752,6 +5790,20 @@ _PyLong_Init(PyThreadState *tstate)
 }
 
 void
+_PyLong_ClearFreeList(PyThreadState *tstate)
+{
+    struct _Py_long_state *state = &tstate->interp->long_state;
+    PyLongObject *f = state->free_list;
+    while (f != NULL) {
+        PyLongObject *next = (PyLongObject*) Py_TYPE(f);
+        PyObject_FREE(f);
+        f = next;
+    }
+    state->free_list = NULL;
+    state->numfree = 0;
+}
+
+void
 _PyLong_Fini(PyThreadState *tstate)
 {
     if (_Py_IsMainInterpreter(tstate)) {
@@ -5763,5 +5815,11 @@ _PyLong_Fini(PyThreadState *tstate)
     for (Py_ssize_t i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
         Py_CLEAR(tstate->interp->small_ints[i]);
     }
+#endif
+
+    _PyLong_ClearFreeList(tstate);
+#ifdef Py_DEBUG
+    struct _Py_long_state *state = &tstate->interp->long_state;
+    state->numfree = -1;
 #endif
 }
