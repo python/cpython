@@ -1320,8 +1320,10 @@ if test "$Py_OPT" = 'true' ; then
   DEF_MAKE_RULE="build_all"
   case $CC in
     *gcc*)
+      AX_CHECK_COMPILE_FLAG([-fno-semantic-interposition],[
       CFLAGS_NODIST="$CFLAGS_NODIST -fno-semantic-interposition"
       LDFLAGS_NODIST="$LDFLAGS_NODIST -fno-semantic-interposition"
+      ])
       ;;
   esac
 
