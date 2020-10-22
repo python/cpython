@@ -359,6 +359,7 @@ static int execfunc(PyObject *m)
         goto fail;
     }
     if (PyModule_AddObject(m, "Example", temp) != 0) {
+        Py_DECREF(temp);
         goto fail;
     }
 
@@ -369,6 +370,7 @@ static int execfunc(PyObject *m)
         goto fail;
     }
     if (PyModule_AddObject(m, "error", temp) != 0) {
+        Py_DECREF(temp);
         goto fail;
     }
 
@@ -378,6 +380,7 @@ static int execfunc(PyObject *m)
         goto fail;
     }
     if (PyModule_AddObject(m, "Str", temp) != 0) {
+        Py_DECREF(temp);
         goto fail;
     }
 
@@ -807,6 +810,7 @@ meth_state_access_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddObject(m, "StateAccessType", temp) != 0) {
+        Py_DECREF(temp);
         return -1;
     }
 
