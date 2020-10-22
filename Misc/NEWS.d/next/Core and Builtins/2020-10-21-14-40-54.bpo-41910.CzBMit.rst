@@ -1,0 +1,1 @@
+Document the default implementation of `object.__eq__`.
