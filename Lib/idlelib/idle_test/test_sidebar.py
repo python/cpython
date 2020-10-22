@@ -5,7 +5,7 @@ import sys
 from itertools import chain
 import unittest
 import unittest.mock
-from test.support import requires
+from test.support import requires, swap_attr
 import tkinter as tk
 
 from idlelib.delegator import Delegator
@@ -469,6 +469,8 @@ class ShellSidebarTest(unittest.TestCase):
         text = self.shell.text
         y_coords = []
         index = text.index("@0,0")
+        if index.split('.', 1)[1] != '0':
+            index = text.index(f"{index} +1line linestart")
         while True:
             lineinfo = text.dlineinfo(index)
             if lineinfo is None:
@@ -495,8 +497,7 @@ class ShellSidebarTest(unittest.TestCase):
         for line_index, line in enumerate(input.split('\n')):
             if line_index > 0:
                 text.event_generate('<<newline-and-indent>>')
-            for char in line:
-                text.insert('insert', char)
+            text.insert('insert', line)
 
     def run_test_coroutine(self, coroutine):
         root = self.root
@@ -630,6 +631,13 @@ class ShellSidebarTest(unittest.TestCase):
         self.assert_sidebar_lines_end_with(
             ['>>>', '...', '...', '...', None, '>>>']
         )
+
+    @test_coroutine
+    def test_very_long_wrapped_line(self):
+        with swap_attr(self.shell, 'squeezer', None):
+            self.do_input('x = ' + '1'*10_000 + '\n')
+            yield
+            self.assertEqual(self.get_sidebar_lines(), ['>>>'])
 
     def test_font(self):
         sidebar = self.shell.shell_sidebar
