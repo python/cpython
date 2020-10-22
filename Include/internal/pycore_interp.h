@@ -73,16 +73,15 @@ struct _Py_unicode_state {
 };
 
 struct _Py_float_state {
-    /* Special free list.
-       free_list is a singly-linked list of available PyFloatObjects.
-       linked via abuse of their ob_type members.
-      */
+    /* Special free list
+       free_list is a singly-linked list of available PyFloatObjects,
+       linked via abuse of their ob_type members. */
     int numfree;
     PyFloatObject *free_list;
 };
 
 struct _Py_long_state {
-    // Special free list; same to _Py_float_state.
+    // Special free list; same to _Py_float_state but for PyLongObjects.
     int numfree;
     PyLongObject *free_list;
 };
