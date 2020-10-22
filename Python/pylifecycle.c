@@ -1351,6 +1351,15 @@ Py_FinalizeEx(void)
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     PyInterpreterState *interp = tstate->interp;
 
+    /* Check we're running in the main interpreter (not yet supported to call
+     * from any interpreter).
+     */
+    if (interp != PyInterpreterState_Main()) {
+        fprintf(stderr,
+                "Py_FinalizeEx: error: must be called from the main interpreter\n");
+        return -1;
+    }
+
     // Finalize sub-interpreters.
     runtime->interpreters.allow_new = 0;
     PyInterpreterState *curr_interp = PyInterpreterState_Head();
