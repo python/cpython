@@ -141,7 +141,7 @@ def _supports_universal_builds():
     return bool(osx_version >= (10, 4)) if osx_version else False
 
 def _supports_arm64_builds():
-    """Returns jTrue if arm64 buids are supported on this system"""
+    """Returns True if arm64 builds are supported on this system"""
     # There are two sets of systems supporting macOS/arm64 builds:
     # 1. macOS 11 and later, unconditionally
     # 2. macOS 10.15 with Xcode 12.2 or later
