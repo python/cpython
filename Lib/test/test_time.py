@@ -1065,11 +1065,11 @@ class TestTimeWeaklinking(unittest.TestCase):
             "clock_settime_ns", "clock_getres"]
         if self.mac_ver >= (10, 16):
             for name in clock_names:
-                self.assertTrue(hasattr(time, name), "time.{name} is not available")
+                self.assertTrue(hasattr(time, name), f"time.{name} is not available")
 
         else:
             for name in clock_names:
-                self.assertFalse(hasattr(time, name), "time.{name} is available")
+                self.assertFalse(hasattr(time, name), f"time.{name} is available")
 
 
 if __name__ == "__main__":
