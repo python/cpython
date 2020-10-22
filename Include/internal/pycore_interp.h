@@ -193,7 +193,6 @@ struct _is {
     // Kept handy for pattern matching:
     PyObject *map_abc;  // _collections_abc.Mapping
     PyObject *seq_abc;  // _collections_abc.Sequence
-    Py_ssize_t get_len;  // Cached length of subject
 
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
