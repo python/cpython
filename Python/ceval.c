@@ -3523,11 +3523,6 @@ main_loop:
             if (len_i < 0) {
                 goto error;
             }
-            // We might have one or more GET_INDEX_* instructions coming up.
-            // Cache the length on the PyInterpreterState struct so they can
-            // reuse it:
-            PyInterpreterState *interp = PyInterpreterState_Get();
-            interp->get_len = len_i;
             PyObject *len_o = PyLong_FromSsize_t(len_i);
             if (!len_o) {
                 goto error;
@@ -3672,18 +3667,19 @@ main_loop:
         }
 
         case TARGET(GET_INDEX_END): {
-            // PUSH(TOS[len(TOS) - 1 - oparg])
+            // PUSH(TOS[TOS1 - 1 - oparg])
             // NOTE: We can't rely on support for negative indexing!
             // Although PySequence_GetItem tries to correct negative indexes, we
             // just use the length we already have cached from GET_LEN on the
             // PyInterpreterState struct. In addition to avoiding tons of
             // redundant __len__ calls, this also handles length changes during
-            // extraction more intuitively. It's also much faster and simpler
-            // than trying to rotate the length around on the stack and pop it
-            // off when we're done.
-            PyInterpreterState *interp = PyInterpreterState_Get();
-            assert(interp->get_len - 1 - oparg >= 0);
-            PyObject *item = PySequence_GetItem(TOP(), interp->get_len - 1 - oparg);
+            // extraction more intuitively.
+            Py_ssize_t len = PyLong_AsSsize_t(SECOND());
+            if (len < 0) {
+                goto error;
+            }
+            assert(0 <= len - 1 - oparg);
+            PyObject *item = PySequence_GetItem(TOP(), len - 1 - oparg);
             if (!item) {
                 goto error;
             }
@@ -3692,12 +3688,15 @@ main_loop:
         }
 
         case TARGET(GET_INDEX_SLICE): {
-            // PUSH(list(TOS[oparg & 0xFF: len(TOS) - (oparg >> 8)]))
+            // PUSH(list(TOS[oparg & 0xFF: TOS1 - (oparg >> 8)]))
             // NOTE: We can't rely on support for slicing or negative indexing!
             // Ditto GET_INDEX_END's length handling.
-            PyInterpreterState *interp = PyInterpreterState_Get();
+            Py_ssize_t len = PyLong_AsSsize_t(SECOND());
+            if (len < 0) {
+                goto error;
+            }
             Py_ssize_t start = oparg & 0xFF;
-            Py_ssize_t size = interp->get_len - (oparg >> 8) - start;
+            Py_ssize_t size = len - (oparg >> 8) - start;
             assert(0 <= size);
             PyObject *slice = PyList_New(size);
             if (!slice) {

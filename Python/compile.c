@@ -5743,7 +5743,8 @@ static int
 compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == List_kind || p->kind == Tuple_kind);
-    asdl_expr_seq *values = p->kind == Tuple_kind ? p->v.Tuple.elts : p->v.List.elts;
+    asdl_expr_seq *values = (p->kind == Tuple_kind) ? p->v.Tuple.elts
+                                                    : p->v.List.elts;
     Py_ssize_t size = asdl_seq_LEN(values);
     Py_ssize_t star = -1;
     for (Py_ssize_t i = 0; i < size; i++) {
@@ -5757,7 +5758,7 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
         }
         star = i;
     }
-    basicblock *end;
+    basicblock *wrong_size, *end, *fail;
     CHECK(end = compiler_new_block(c));
     ADDOP(c, MATCH_SEQUENCE);
     ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
@@ -5769,6 +5770,9 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
         compiler_use_next_block(c, end);
         return 1;
     }
+    CHECK(fail = compiler_new_block(c));
+    CHECK(wrong_size = compiler_new_block(c));
+    ADDOP(c, DUP_TOP)
     if (star < 0) {
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
         ADDOP_COMPARE(c, Eq);
@@ -5777,8 +5781,9 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - 1));
         ADDOP_COMPARE(c, GtE);
     }
-    ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
+    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, wrong_size);
     NEXT_BLOCK(c);
+    ADDOP(c, ROT_TWO);
     for (Py_ssize_t i = 0; i < size; i++) {
         // TODO: (i >= (1 << 8)) || (n-i-1 >= (INT_MAX >> 8))
         expr_ty value = asdl_seq_GET(values, i);
@@ -5800,12 +5805,20 @@ compiler_pattern_list_tuple(struct compiler *c, expr_ty p, pattern_context *pc)
             ADDOP_I(c, GET_INDEX_END, size - 1 - i);
         }
         CHECK(compiler_subpattern(c, value, pc));
-        ADDOP(c, ROT_TWO);
-        ADDOP(c, POP_TOP);
-        ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
+        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail)
         NEXT_BLOCK(c);
+        ADDOP(c, POP_TOP);
     }
+    ADDOP(c, ROT_TWO);
+    ADDOP(c, POP_TOP);
     ADDOP_LOAD_CONST(c, Py_True);
+    ADDOP_JUMP(c, JUMP_FORWARD, end);
+    compiler_use_next_block(c, fail);
+    ADDOP(c, POP_TOP);
+    ADDOP(c, ROT_TWO);
+    compiler_use_next_block(c, wrong_size);
+    ADDOP(c, POP_TOP);
+    ADDOP_LOAD_CONST(c, Py_False);
     compiler_use_next_block(c, end);
     return 1;
 }
