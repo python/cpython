@@ -1,0 +1,2 @@
+Fix peephole optimizer misoptimize conditional jump + JUMP_IF_NOT_EXC_MATCH
+pair.
