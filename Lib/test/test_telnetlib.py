@@ -404,22 +404,24 @@ class InteractTests(ExpectAndReadTestCase):
     def test_interact(self, stdin):
         encoding = 'ascii'
         want = ['x'.encode(encoding)]
-        f = io.TextIOWrapper(io.BytesIO(), encoding)
+        out = io.TextIOWrapper(io.BytesIO(), encoding)
         telnet = test_telnet(want)
-        with contextlib.redirect_stdout(f):
+        with contextlib.redirect_stdout(out):
             telnet.interact()
-        self.assertEqual(f.buffer.getvalue(), want[0])
+        out.seek(0)
+        self.assertEqual(out.read().encode(encoding), want[0])
 
     @unittest.mock.patch('telnetlib.sys.stdin', new_callable=io.StringIO)
     def test_interact_utf8(self, stdin):
         # bpo-37640
         encoding = 'utf-8'
         want = ['\xff'.encode(encoding)]
-        f = io.TextIOWrapper(io.BytesIO(), encoding)
+        out = io.TextIOWrapper(io.BytesIO(), encoding)
         telnet = test_telnet(want)
-        with contextlib.redirect_stdout(f):
+        with contextlib.redirect_stdout(out):
             telnet.interact()
-        self.assertEqual(f.buffer.getvalue(), want[0])
+        out.seek(0)
+        self.assertEqual(out.read().encode(encoding), want[0])
 
 if __name__ == '__main__':
     unittest.main()
