@@ -42,7 +42,7 @@
 /*
  * A number of APIs are available on macOS from a certain macOS version.
  * To support building with a new SDK while deploying to older versions
- * the availability test is split into two: 
+ * the availability test is split into two:
  *   - HAVE_<FUNCTION>:  The configure check for compile time availability
  *   - HAVE_<FUNCTION>_RUNTIME: Runtime check for availability
  *
@@ -52,10 +52,10 @@
  * Due to compiler restrictions there is one valid use of HAVE_<FUNCTION>_RUNTIME:
  *    if (HAVE_<FUNCTION>_RUNTIME) { ... }
  *
- * In mixing the test with other tests or using negations will result in compile 
+ * In mixing the test with other tests or using negations will result in compile
  * errors.
  */
-#if defined(__APPLE__) 
+#if defined(__APPLE__)
 
 #if defined(__has_builtin) && __has_builtin(__builtin_available)
 #  define HAVE_FSTATAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
@@ -3008,7 +3008,7 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
         }
         if (follow_symlinks_specified("access", follow_symlinks))
             return -1;
-    
+
         if (effective_ids) {
             argument_unavailable_error("access", "effective_ids");
             return -1;
@@ -3250,12 +3250,12 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     if (path->fd != -1)
         result = fchmod(path->fd, mode);
     else
-#endif
+#endif /* HAVE_CHMOD */
 #ifdef HAVE_LCHMOD
     if ((!follow_symlinks) && (dir_fd == DEFAULT_DIR_FD))
         result = lchmod(path->narrow, mode);
     else
-#endif
+#endif /* HAVE_LCHMOD */
 #ifdef HAVE_FCHMODAT
     if ((dir_fd != DEFAULT_DIR_FD) || !follow_symlinks) {
         if (HAVE_FCHMODAT_RUNTIME) {
@@ -3285,10 +3285,9 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 
             result = -1;
         }
-#endif
     }
     else
-#endif
+#endif /* HAVE_FHCMODAT */
         result = chmod(path->narrow, mode);
     Py_END_ALLOW_THREADS
 
@@ -3297,10 +3296,10 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
         if (fchmodat_unsupported) {
             if (dir_fd != DEFAULT_DIR_FD) {
                 argument_unavailable_error("chmod", "dir_fd");
-                return NULL; 
-            } 
+                return NULL;
+            }
         }
-                
+
         if (fchmodat_nofollow_unsupported) {
             if (dir_fd != DEFAULT_DIR_FD)
                 dir_fd_and_follow_symlinks_invalid("chmod",
@@ -3310,9 +3309,10 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
             return NULL;
         }
         else
-#endif
+#endif /* HAVE_FCHMODAT */
         return path_error(path);
     }
+#endif /* MS_WINDOWS */
 
     Py_RETURN_NONE;
 }
@@ -3633,7 +3633,7 @@ os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
       if (HAVE_FCHOWNAT_RUNTIME) {
         result = fchownat(dir_fd, path->narrow, uid, gid,
                           follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
-      } else { 
+      } else {
          fchownat_unsupported = 1;
       }
     } else
@@ -3940,14 +3940,14 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
             result = linkat(src_dir_fd, src->narrow,
                 dst_dir_fd, dst->narrow,
                 follow_symlinks ? AT_SYMLINK_FOLLOW : 0);
-    
+
         }
 #ifdef __APPLE__
         else {
             if (src_dir_fd == DEFAULT_DIR_FD && dst_dir_fd == DEFAULT_DIR_FD) {
                 /* See issue 41355: This matches the behaviour of !HAVE_LINKAT */
                 result = link(src->narrow, dst->narrow);
-            } else { 
+            } else {
                 linkat_unavailable = 1;
             }
         }
@@ -3964,7 +3964,7 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
         if (src_dir_fd  != DEFAULT_DIR_FD) {
             argument_unavailable_error("link", "src_dir_fd");
         } else {
-            argument_unavailable_error("link", "dst_dir_fd");  
+            argument_unavailable_error("link", "dst_dir_fd");
         }
         return NULL;
     }
@@ -5136,12 +5136,12 @@ utime_fd(utime_t *ut, int fd)
     UTIME_TO_TIMESPEC;
     return futimens(fd, time);
 
-    } else 
+    } else
 #ifndef HAVE_FUTIMES
     {
         /* Not sure if this can happen */
         PyErr_SetString(
-            PyExc_RuntimeError, 
+            PyExc_RuntimeError,
             "neither futimens nor futimes are supported"
             " on this system");
         return -1;
@@ -5175,12 +5175,12 @@ utime_nofollow_symlinks(utime_t *ut, const char *path)
     if (HAVE_UTIMENSAT_RUNTIME) {
         UTIME_TO_TIMESPEC;
         return utimensat(DEFAULT_DIR_FD, path, time, AT_SYMLINK_NOFOLLOW);
-    } else 
+    } else
 #ifndef HAVE_LUTIMES
     {
         /* Not sure if this can happen */
         PyErr_SetString(
-            PyExc_RuntimeError, 
+            PyExc_RuntimeError,
             "neither utimensat nor lutimes are supported"
             " on this system");
         return -1;
@@ -8756,7 +8756,7 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
         result = symlink(src->narrow, dst->narrow);
     Py_END_ALLOW_THREADS
 
-#ifdef HAVE_SYMLINKAT    
+#ifdef HAVE_SYMLINKAT
     if (symlinkat_unavailable) {
           argument_unavailable_error(NULL, "dir_fd");
           return NULL;
@@ -13267,7 +13267,7 @@ _Py_COMP_DIAG_POP
       if (HAVE_FSTATAT_RUNTIME) {
         result = fstatat(self->dir_fd, path, &st,
                          follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
-      } else 
+      } else
 
 #endif /* HAVE_FSTATAT */
       {
@@ -15367,7 +15367,7 @@ posixmodule_exec(PyObject *m)
 {
     _posixstate *state = get_posix_state(m);
 
-#if defined(HAVE_PWRITEV) 
+#if defined(HAVE_PWRITEV)
     if (HAVE_PWRITEV_RUNTIME) {} else {
         PyObject* dct = PyModule_GetDict(m);
 
