@@ -3766,6 +3766,12 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
+AC_MSG_CHECKING(for _dyld_shared_cache_contains_path)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <mach-o/dyld.h>]], [[void *x=_dyld_shared_cache_contains_path]])],
+  [AC_DEFINE(HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH, 1, Define if you have the '_dyld_shared_cache_contains_path' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)
+])
 
 AC_MSG_CHECKING(for memfd_create)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
