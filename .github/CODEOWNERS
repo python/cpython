@@ -76,6 +76,7 @@ Include/pytime.h              @pganssle @abalkin
 /Parser/                      @pablogsal @lysnikolaou
 /Tools/peg_generator/         @pablogsal @lysnikolaou
 /Lib/test/test_peg_generator/ @pablogsal @lysnikolaou
+/Grammar/python.gram          @pablogsal @lysnikolaou
 
 # SQLite 3
 **/*sqlite*                   @berkerpeksag
