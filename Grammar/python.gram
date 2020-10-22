@@ -1,4 +1,6 @@
 # PEG grammar for Python
+#It is the entire Python Grammar, that is directly derived from grammar that is used to generate CPython parser (see Grammar/python.gram). This version omits few details related to the error recovery and code generation.
+#The notation here is mixture of PEG and EBNF. Particularly, '&' followed by a token, symbol, or parenthesis group that depicts positive look-ahead (Basically, is required to match without getting consumed), while ! indicates a negative look-ahead (Basically, is required _not_ to match). Also, the | separator is used to mean PEG’s 'ordered choice' (which is written as / in traditional PEG grammar)
 
 @trailer '''
 void *
