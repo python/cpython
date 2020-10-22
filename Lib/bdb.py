@@ -540,20 +540,15 @@ class Bdb:
         line of code (if it exists).
 
         """
-        import linecache, reprlib
+        from linecache import getline
         frame, lineno = frame_lineno
         filename = self.canonic(frame.f_code.co_filename)
-        s = '%s(%r)' % (filename, lineno)
+        s = 'File "%s", line %r, in ' % (filename, lineno)
         if frame.f_code.co_name:
             s += frame.f_code.co_name
         else:
             s += "<lambda>"
-        s += '()'
-        if '__return__' in frame.f_locals:
-            rv = frame.f_locals['__return__']
-            s += '->'
-            s += reprlib.repr(rv)
-        line = linecache.getline(filename, lineno, frame.f_globals)
+        line = getline(filename, lineno, frame.f_globals)
         if line:
             s += lprefix + line.strip()
         return s
