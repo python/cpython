@@ -405,7 +405,7 @@ class ShellSidebarTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
 
-        idlelib.pyshell.use_subprocess = True
+        idlelib.pyshell.use_subprocess = False
 
         cls.root = root = tk.Tk()
         root.withdraw()
@@ -502,14 +502,14 @@ class ShellSidebarTest(unittest.TestCase):
         def after_callback():
             nonlocal exception
             try:
-                interval_multiplier = next(coroutine) or 1
+                next(coroutine)
             except StopIteration:
                 root.quit()
             except Exception as exc:
                 exception = exc
                 root.quit()
             else:
-                root.after(100 * interval_multiplier, after_callback)
+                root.after_idle(after_callback)
         root.after(0, after_callback)
         root.mainloop()
 
@@ -527,13 +527,13 @@ class ShellSidebarTest(unittest.TestCase):
     @test_coroutine
     def test_single_empty_input(self):
         self.do_input('\n')
-        yield 0
+        yield
         self.assert_sidebar_lines_end_with(['>>>', '>>>'])
 
     @test_coroutine
     def test_single_line_command(self):
         self.do_input('1\n')
-        yield 2
+        yield
         self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
 
     @test_coroutine
@@ -544,7 +544,7 @@ class ShellSidebarTest(unittest.TestCase):
             print(1)
 
             '''))
-        yield 2
+        yield
         self.assert_sidebar_lines_end_with([
             '>>>',
             '...',
@@ -557,7 +557,7 @@ class ShellSidebarTest(unittest.TestCase):
     @test_coroutine
     def test_single_long_line_wraps(self):
         self.do_input('1' * 200 + '\n')
-        yield 2
+        yield
         self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
         self.assert_sidebar_lines_synced()
 
@@ -567,18 +567,18 @@ class ShellSidebarTest(unittest.TestCase):
         text = shell.text
 
         self.do_input('1\n')
-        yield 2
+        yield
         self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
 
         line = int(shell.text.index('insert -1line').split('.')[0])
         text.mark_set('insert', f"{line}.0")
         text.event_generate('<<squeeze-current-text>>')
-        yield 0
+        yield
         self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
         self.assert_sidebar_lines_synced()
 
         shell.squeezer.expandingbuttons[0].expand()
-        yield 0
+        yield
         self.assert_sidebar_lines_end_with(['>>>', '   ', '>>>'])
         self.assert_sidebar_lines_synced()
 
@@ -592,38 +592,38 @@ class ShellSidebarTest(unittest.TestCase):
             if True:
             print(1)
             '''))
-        yield 0
+        yield
         self.assert_sidebar_lines_end_with(['>>>', '...', '...'])
         with_block_sidebar_lines = self.get_sidebar_lines()
         self.assertNotEqual(with_block_sidebar_lines, initial_sidebar_lines)
 
         # Control-C
         text.event_generate('<<interrupt-execution>>')
-        yield 0
+        yield
         self.assert_sidebar_lines_end_with(['>>>', '...', '...', '   ', '>>>'])
 
         # Recall previous via history
         text.event_generate('<<history-previous>>')
         text.event_generate('<<interrupt-execution>>')
-        yield 0
+        yield
         self.assert_sidebar_lines_end_with(['>>>', '...', '   ', '>>>'])
 
         # Recall previous via recall
         text.mark_set('insert', text.index('insert -2l'))
         text.event_generate('<<newline-and-indent>>')
-        yield 0
+        yield
 
         text.event_generate('<<undo>>')
-        yield 0
+        yield
         self.assert_sidebar_lines_end_with(['>>>'])
 
         text.event_generate('<<redo>>')
-        yield 0
+        yield
         self.assert_sidebar_lines_end_with(['>>>', '...'])
 
         text.event_generate('<<newline-and-indent>>')
         text.event_generate('<<newline-and-indent>>')
-        yield 2
+        yield
         self.assert_sidebar_lines_end_with(
             ['>>>', '...', '...', '...', '   ', '>>>']
         )
@@ -693,7 +693,7 @@ class ShellSidebarTest(unittest.TestCase):
 
         # Enter a 100-line string to scroll the shell screen down.
         self.do_input('x = """' + ('\n'*100) + '"""\n')
-        yield 0
+        yield
         self.assertGreater(get_lineno(text, '@0,0'), 1)
 
         last_lineno = get_end_linenumber(text)
@@ -703,12 +703,12 @@ class ShellSidebarTest(unittest.TestCase):
         # The meaning delta is platform-dependant.
         delta = -1 if sys.platform == 'darwin' else 120
         sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
-        yield 0
+        yield
         self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
         # Scroll back down using the <Button-5> event.
         sidebar.canvas.event_generate('<Button-5>', x=0, y=0)
-        yield 0
+        yield
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
 
