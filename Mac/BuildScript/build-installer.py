@@ -197,9 +197,9 @@ def tweak_tcl_build(basedir, archList):
     with open("Makefile", "r") as fp:
         contents = fp.readlines()
 
-    # For reasons I don't understand the tcl configure script 
-    # decides that some stdlib symbols aren't present, before 
-    # deciding that strtod is broken. 
+    # For reasons I don't understand the tcl configure script
+    # decides that some stdlib symbols aren't present, before
+    # deciding that strtod is broken.
     new_contents = []
     for line in contents:
         if line.startswith("COMPAT_OBJS"):
@@ -209,7 +209,7 @@ def tweak_tcl_build(basedir, archList):
             for nm in ("strstr.o", "strtoul.o", " strtod.o"):
                 line = line.replace(nm, "")
         new_contents.append(line)
-     
+
     with open("Makefile", "w") as fp:
         fp.writelines(new_contents)
 

@@ -1061,15 +1061,15 @@ class TestTimeWeaklinking(unittest.TestCase):
     def test_clock_functions(self):
         self._verify_available("HAVE_CLOCK_GETTIME")
         clock_names = [
-            "CLOCK_MONOTONIC", "clock_gettime", "clock_gettime_ns", "clock_settime", 
+            "CLOCK_MONOTONIC", "clock_gettime", "clock_gettime_ns", "clock_settime",
             "clock_settime_ns", "clock_getres"]
         if self.mac_ver >= (10, 16):
-           for name in clock_names:
-               self.assertTrue(hasattr(time, name), "time.{name} is not available")
+            for name in clock_names:
+                self.assertTrue(hasattr(time, name), "time.{name} is not available")
 
         else:
-           for name in clock_names:
-               self.assertFalse(hasattr(time, name), "time.{name} is available")
+            for name in clock_names:
+                self.assertFalse(hasattr(time, name), "time.{name} is available")
 
 
 if __name__ == "__main__":

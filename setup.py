@@ -2202,7 +2202,7 @@ class PyBuildExt(build_ext):
                 ext.extra_compile_args.append("-DHAVE_FFI_PREP_CLOSURE_LOC=1")
             if grep_headers_for('ffi_closure_alloc', ffi_headers):
                 ext.extra_compile_args.append("-DHAVE_FFI_CLOSURE_ALLOC=1")
-            
+
             ext.include_dirs.append(ffi_inc)
             ext.libraries.append(ffi_lib)
             self.use_system_libffi = True

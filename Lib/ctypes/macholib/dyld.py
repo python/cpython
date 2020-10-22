@@ -7,10 +7,10 @@ from ctypes.macholib.framework import framework_info
 from ctypes.macholib.dylib import dylib_info
 from itertools import *
 try:
-     from _ctypes import _dyld_shared_cache_contains_path
+    from _ctypes import _dyld_shared_cache_contains_path
 except ImportError:
-     def _dyld_shared_cache_contains_path(*args):
-         raise NotImplementedError
+    def _dyld_shared_cache_contains_path(*args):
+        raise NotImplementedError
 
 __all__ = [
     'dyld_find', 'framework_find',
@@ -134,7 +134,7 @@ def dyld_find(name, executable_path=None, env=None):
             if _dyld_shared_cache_contains_path(path):
                 return path
         except NotImplementedError:
-             pass
+            pass
 
     raise ValueError("dylib %s could not be found" % (name,))
 

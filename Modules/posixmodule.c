@@ -5137,7 +5137,7 @@ utime_fd(utime_t *ut, int fd)
     } else 
 #ifndef HAVE_FUTIMES
     {
-	/* Not sure if this can happen */
+        /* Not sure if this can happen */
         PyErr_SetString(
             PyExc_RuntimeError, 
             "neither futimens nor futimes are supported"
@@ -5176,7 +5176,7 @@ utime_nofollow_symlinks(utime_t *ut, const char *path)
     } else 
 #ifndef HAVE_LUTIMES
     {
-	/* Not sure if this can happen */
+        /* Not sure if this can happen */
         PyErr_SetString(
             PyExc_RuntimeError, 
             "neither utimensat nor lutimes are supported"
