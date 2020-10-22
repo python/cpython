@@ -110,9 +110,9 @@ may not work (though Borland seems to).  The rest of this section is MSVC++
 specific.
 
 When creating DLLs in Windows, the linker expects to see the import library
-:file:`pythonX_Y.lib` in order to find all the C-API functions available in
-:file:`pythonX_Y.dll` (or in the case of universal c-extensions,
-:file:`pythonX.lib` and :file:`pythonX.dll` respectively. This is handled with
+:file:`python3.X.lib` in order to find all the C-API functions available in
+:file:`python3.X.dll` (or in the case of universal c-extensions,
+:file:`python3.lib` and :file:`python3.dll` respectively. This is handled with
 a pragma in :file:`pyconfig.h` so you do not need to add anything special in
 your build.
 
