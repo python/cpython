@@ -5648,7 +5648,7 @@ PyTypeObject PyLong_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
         Py_TPFLAGS_LONG_SUBCLASS |
-        _Py_TPFLAGS_SIMPLE_MATCH,               /* tp_flags */
+        _Py_TPFLAGS_MATCH_SELF,               /* tp_flags */
     long_doc,                                   /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */

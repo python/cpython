@@ -359,7 +359,7 @@ given type object has a specified feature.
 // This undocumented flag gives certain built-ins their unique pattern-matching
 // behavior, which allows a single positional subpattern to match against the
 // match proxy itself (rather than a mapped attribute on it):
-#define _Py_TPFLAGS_SIMPLE_MATCH (1UL << 21)
+#define _Py_TPFLAGS_MATCH_SELF (1UL << 21)
 
 /* These flags are used to determine if a type is a subclass. */
 #define Py_TPFLAGS_LONG_SUBCLASS        (1UL << 24)

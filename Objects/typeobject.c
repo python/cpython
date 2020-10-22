@@ -5173,8 +5173,8 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
     else if (PyType_IsSubtype(base, &PyDict_Type))
         type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
 
-    if (PyType_HasFeature(base, _Py_TPFLAGS_SIMPLE_MATCH)) {
-        type->tp_flags |= _Py_TPFLAGS_SIMPLE_MATCH;
+    if (PyType_HasFeature(base, _Py_TPFLAGS_MATCH_SELF)) {
+        type->tp_flags |= _Py_TPFLAGS_MATCH_SELF;
     }
 }
 

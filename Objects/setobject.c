@@ -2092,10 +2092,9 @@ PyTypeObject PySet_Type = {
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT |
-        Py_TPFLAGS_HAVE_GC |
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE |
-        _Py_TPFLAGS_SIMPLE_MATCH,       /* tp_flags */
+        _Py_TPFLAGS_MATCH_SELF,       /* tp_flags */
     set_doc,                            /* tp_doc */
     (traverseproc)set_traverse,         /* tp_traverse */
     (inquiry)set_clear_internal,        /* tp_clear */
@@ -2196,7 +2195,7 @@ PyTypeObject PyFrozenSet_Type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE |
-        _Py_TPFLAGS_SIMPLE_MATCH,       /* tp_flags */
+        _Py_TPFLAGS_MATCH_SELF,       /* tp_flags */
     frozenset_doc,                      /* tp_doc */
     (traverseproc)set_traverse,         /* tp_traverse */
     (inquiry)set_clear_internal,        /* tp_clear */

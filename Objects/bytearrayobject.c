@@ -2341,7 +2341,7 @@ PyTypeObject PyByteArray_Type = {
     0,                                  /* tp_setattro */
     &bytearray_as_buffer,               /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        _Py_TPFLAGS_SIMPLE_MATCH,       /* tp_flags */
+        _Py_TPFLAGS_MATCH_SELF,       /* tp_flags */
     bytearray_doc,                      /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */

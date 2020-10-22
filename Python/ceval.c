@@ -984,7 +984,7 @@ do_match(PyThreadState *tstate, Py_ssize_t nargs, PyObject *kwargs, PyObject *ty
         if (!nmatch_args) {
             Py_DECREF(match_args);
             nmatch_args = PyType_HasFeature((PyTypeObject *)type,
-                                            _Py_TPFLAGS_SIMPLE_MATCH);
+                                            _Py_TPFLAGS_MATCH_SELF);
             args = NULL;
         }
         else {
