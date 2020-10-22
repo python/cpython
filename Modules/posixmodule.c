@@ -2521,10 +2521,12 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
 #endif /* MS_WINDOWS */
     Py_END_ALLOW_THREADS
 
+#ifdef HAVE_FSTATAT
     if (fstatat_unavailable) {
         argument_unavailable_error("stat", "dir_fd");
         return NULL;
     }
+#endif
 
     if (result != 0) {
         return path_error(path);
@@ -9074,10 +9076,12 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
     } while (fd < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     _Py_END_SUPPRESS_IPH
 
+#ifdef HAVE_OPENAT
     if (openat_unavailable) {
         argument_unavailable_error(NULL, "dir_fd");
         return -1;
     }
+#endif
 
     if (fd < 0) {
         if (!async_err)
