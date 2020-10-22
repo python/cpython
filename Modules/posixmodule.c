@@ -15557,9 +15557,7 @@ static struct PyModuleDef posixmodule = {
 PyMODINIT_FUNC
 INITFUNC(void)
 {
-    PyObject* module = PyModuleDef_Init(&posixmodule);
-
-    return module;
+    return PyModuleDef_Init(&posixmodule);
 }
 
 #ifdef __cplusplus
