@@ -83,8 +83,8 @@ typedef struct pyruntimestate {
            always have an ID of 0.  Overflow results in a RuntimeError.
            If that becomes a problem later then we can adjust, e.g. by
            using a Python int. */
-        int allow_new;
         int64_t next_id;
+        int allow_new;
     } interpreters;
     // XXX Remove this field once we have a tp_* slot.
     struct _xidregistry {
