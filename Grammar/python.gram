@@ -209,7 +209,8 @@ case_block[match_case_ty]:
 guard[expr_ty]: 'if' guard=named_expression { guard }
 
 patterns[expr_ty]:
-    | open_sequence_pattern
+    | values[asdl_expr_seq*]=open_sequence_pattern {
+        _Py_Tuple(values, Load, EXTRA) }
     | pattern
 pattern[expr_ty]:
     | as_pattern
@@ -263,11 +264,10 @@ group_pattern[expr_ty]:
 
 sequence_pattern[expr_ty]:
     | '[' values=maybe_sequence_pattern? ']' { _Py_List(values, Load, EXTRA) }
-    | '(' values=open_sequence_pattern? ')' {
-        values ? values : _Py_Tuple(values, Load, EXTRA) }
-open_sequence_pattern[expr_ty]:
+    | '(' values=open_sequence_pattern? ')' { _Py_Tuple(values, Load, EXTRA) }
+open_sequence_pattern[asdl_seq*]:
     | value=maybe_star_pattern ',' values=maybe_sequence_pattern? {
-        _Py_Tuple(CHECK(_PyPegen_seq_insert_in_front(p, value, values)), Load, EXTRA) }
+        _PyPegen_seq_insert_in_front(p, value, values) }
 maybe_sequence_pattern[asdl_seq*]:
     | values=','.maybe_star_pattern+ ','? { values }
 maybe_star_pattern[expr_ty]:

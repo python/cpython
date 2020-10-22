@@ -486,7 +486,7 @@ static expr_ty attr_rule(Parser *p);
 static expr_ty name_or_attr_rule(Parser *p);
 static expr_ty group_pattern_rule(Parser *p);
 static expr_ty sequence_pattern_rule(Parser *p);
-static expr_ty open_sequence_pattern_rule(Parser *p);
+static asdl_seq* open_sequence_pattern_rule(Parser *p);
 static asdl_seq* maybe_sequence_pattern_rule(Parser *p);
 static expr_ty maybe_star_pattern_rule(Parser *p);
 static expr_ty star_pattern_rule(Parser *p);
@@ -5041,19 +5041,42 @@ patterns_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
+    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
+        p->error_indicator = 1;
+        D(p->level--);
+        return NULL;
+    }
+    int _start_lineno = p->tokens[_mark]->lineno;
+    UNUSED(_start_lineno); // Only used by EXTRA macro
+    int _start_col_offset = p->tokens[_mark]->col_offset;
+    UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // open_sequence_pattern
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
         D(fprintf(stderr, "%*c> patterns[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "open_sequence_pattern"));
-        expr_ty open_sequence_pattern_var;
+        asdl_expr_seq* values;
         if (
-            (open_sequence_pattern_var = open_sequence_pattern_rule(p))  // open_sequence_pattern
+            (values = (asdl_expr_seq*)open_sequence_pattern_rule(p))  // open_sequence_pattern
         )
         {
             D(fprintf(stderr, "%*c+ patterns[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "open_sequence_pattern"));
-            _res = open_sequence_pattern_var;
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                D(p->level--);
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _Py_Tuple ( values , Load , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
             goto done;
         }
         p->mark = _mark;
@@ -6203,7 +6226,7 @@ sequence_pattern_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = values ? values : _Py_Tuple ( values , Load , EXTRA );
+            _res = _Py_Tuple ( values , Load , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -6222,7 +6245,7 @@ sequence_pattern_rule(Parser *p)
 }
 
 // open_sequence_pattern: maybe_star_pattern ',' maybe_sequence_pattern?
-static expr_ty
+static asdl_seq*
 open_sequence_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -6230,17 +6253,8 @@ open_sequence_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    expr_ty _res = NULL;
+    asdl_seq* _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        D(p->level--);
-        return NULL;
-    }
-    int _start_lineno = p->tokens[_mark]->lineno;
-    UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
-    UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // maybe_star_pattern ',' maybe_sequence_pattern?
         if (p->error_indicator) {
             D(p->level--);
@@ -6259,16 +6273,7 @@ open_sequence_pattern_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ open_sequence_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "maybe_star_pattern ',' maybe_sequence_pattern?"));
-            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
-            if (_token == NULL) {
-                D(p->level--);
-                return NULL;
-            }
-            int _end_lineno = _token->end_lineno;
-            UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
-            UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _Py_Tuple ( CHECK ( _PyPegen_seq_insert_in_front ( p , value , values ) ) , Load , EXTRA );
+            _res = _PyPegen_seq_insert_in_front ( p , value , values );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
