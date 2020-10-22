@@ -1,1 +1,1 @@
-Fix :mod:`telnetlib` crash while receiving un-printable characters in the :method:`Telnet.interact` and ``listener`` methods. 
+Fix :mod:`telnetlib` crash while receiving un-printable characters in the :meth:`Telnet.interact` and ``listener`` methods. 
