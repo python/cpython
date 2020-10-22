@@ -2167,17 +2167,17 @@ class PyBuildExt(build_ext):
 
         ffi_inc_dirs = self.inc_dirs.copy()
         if MACOS:
-            # XXX: The define should only be added when actually using the system
-            #      version (and not a locally compiled one)
-            ext.extra_compile_args.append("-DUSING_APPLE_OS_LIBFFI=1")
             ffi_in_sdk = os.path.join(macosx_sdk_root(), "usr/include/ffi")
-            if os.path.exists(ffi_in_sdk):
-                ffi_inc = ffi_in_sdk
-                ffi_lib = 'ffi'
-            else:
-                # OS X 10.5 comes with libffi.dylib; the include files are
-                # in /usr/include/ffi
-                ffi_inc_dirs.append('/usr/include/ffi')
+
+            if not ffi_inc:
+                if os.path.exists(ffi_in_sdk):
+                    ext.extra_compile_args.append("-DUSING_APPLE_OS_LIBFFI=1")
+                    ffi_inc = ffi_in_sdk
+                    ffi_lib = 'ffi'
+                else:
+                    # OS X 10.5 comes with libffi.dylib; the include files are
+                    # in /usr/include/ffi
+                    ffi_inc_dirs.append('/usr/include/ffi')
 
         if not ffi_inc:
             found = find_file('ffi.h', [], ffi_inc_dirs)
