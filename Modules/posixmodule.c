@@ -15283,7 +15283,7 @@ static const struct have_function {
 #endif
 
 #ifdef HAVE_FUTIMESAT
-    { "HAVE_FUTIMESAT", probe_futimesat },
+    { "HAVE_FUTIMESAT", NULL },
 #endif
 
 #ifdef HAVE_LINKAT
