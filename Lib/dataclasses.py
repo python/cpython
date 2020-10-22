@@ -158,9 +158,8 @@ __all__ = ['dataclass',
 # +=======+=======+
 # | add   |       |  <- the default
 # +=======+=======+
-# __match_args__ is always added unless the class already defines it.
-# __match_args__ contains the set of names of __init__ parameters.
-# Non-init fields must be matched by name.
+# __match_args__ is always added unless the class already defines it. It is a
+# tuple of __init__ parameter names; non-init fields must be matched by keyword.
 
 
 # Raised when an attempt is made to modify a frozen class.
@@ -1010,12 +1009,10 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
         cls.__doc__ = (cls.__name__ +
                        str(inspect.signature(cls)).replace(' -> NoneType', ''))
 
-    abc.update_abstractmethods(cls)
+    if '__match_args__' not in cls.__dict__:
+        cls.__match_args__ = tuple(f.name for f in flds if f.init)
 
-    match_args = cls.__dict__.get('__match_args__', MISSING)
-    if match_args is MISSING:
-        # Create a __match_args__ attribute.
-        _set_new_attribute(cls, '__match_args__', tuple(f.name for f in flds if f.init))
+    abc.update_abstractmethods(cls)
 
     return cls
 

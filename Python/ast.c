@@ -435,10 +435,8 @@ validate_stmt(stmt_ty stmt)
             || !validate_nonempty_seq(stmt->v.Match.cases, "cases", "Match")) {
             return 0;
         }
-        match_case_ty m;
-        Py_ssize_t cases = asdl_seq_LEN(stmt->v.Match.cases);
-        for (i = 0; i < cases; i++) {
-            m = asdl_seq_GET(stmt->v.Match.cases, i);
+        for (i = 0; i < asdl_seq_LEN(stmt->v.Match.cases); i++) {
+            match_case_ty m = asdl_seq_GET(stmt->v.Match.cases, i);
             if (!validate_pattern(m->pattern)
                 || (m->guard && !validate_expr(m->guard, Load))
                 || !validate_body(m->body, "match_case")) {

@@ -751,6 +751,7 @@ astfold_pattern_complex(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state
     }
     assert(left->kind = Constant_kind);
     assert(right->kind = Constant_kind);
+    // LHS must be real, RHS must be imaginary:
     if (!(PyFloat_CheckExact(left->v.Constant.value) ||
           PyLong_CheckExact(left->v.Constant.value)) ||
         !PyComplex_CheckExact(right->v.Constant.value))
@@ -784,6 +785,7 @@ static int
 astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     // Don't blindly optimize the pattern as an expr; it plays by its own rules!
+    // Currently, this is only used to form complex/negative numeric constants.
     switch (node_->kind) {
         case Attribute_kind:
             break;
