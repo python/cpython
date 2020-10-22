@@ -83,7 +83,7 @@ static const char usage_3[] = "\
              cumulative time (including nested imports) and self time (excluding\n\
              nested imports). Note that its output may be broken in multi-threaded\n\
              application. Typical usage is python3 -X importtime -c 'import asyncio'\n\
-         -X dev: enable CPython’s “development mode”, introducing additional runtime\n\
+         -X dev: enable CPython's \"development mode\", introducing additional runtime\n\
              checks which are too expensive to be enabled by default. Effect of the\n\
              developer mode:\n\
                 * Add default warning filter, as -W default\n\
@@ -2670,11 +2670,11 @@ init_dump_ascii_wstr(const wchar_t *str)
 
     PySys_WriteStderr("'");
     for (; *str != L'\0'; str++) {
-        wchar_t ch = *str;
+        unsigned int ch = (unsigned int)*str;
         if (ch == L'\'') {
             PySys_WriteStderr("\\'");
         } else if (0x20 <= ch && ch < 0x7f) {
-            PySys_WriteStderr("%lc", ch);
+            PySys_WriteStderr("%c", ch);
         }
         else if (ch <= 0xff) {
             PySys_WriteStderr("\\x%02x", ch);

@@ -1,1 +1,0 @@
-Convert :mod:`_operator` to use :c:func:`PyType_FromSpec`.

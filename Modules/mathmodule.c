@@ -2419,9 +2419,9 @@ To avoid overflow/underflow and to achieve high accuracy giving results
 that are almost always correctly rounded, four techniques are used:
 
 * lossless scaling using a power-of-two scaling factor
-* accurate squaring using Veltkamp-Dekker splitting
-* compensated summation using a variant of the Neumaier algorithm
-* differential correction of the square root
+* accurate squaring using Veltkamp-Dekker splitting [1]
+* compensated summation using a variant of the Neumaier algorithm [2]
+* differential correction of the square root [3]
 
 The usual presentation of the Neumaier summation algorithm has an
 expensive branch depending on which operand has the larger
@@ -2429,7 +2429,7 @@ magnitude.  We avoid this cost by arranging the calculation so that
 fabs(csum) is always as large as fabs(x).
 
 To establish the invariant, *csum* is initialized to 1.0 which is
-always larger than x**2 after scaling or division by *max*.
+always larger than x**2 after scaling or after division by *max*.
 After the loop is finished, the initial 1.0 is subtracted out for a
 net zero effect on the final sum.  Since *csum* will be greater than
 1.0, the subtraction of 1.0 will not cause fractional digits to be
@@ -2456,7 +2456,11 @@ Given that csum >= 1.0, we have:
 Since lo**2 is less than 1/2 ulp(csum), we have csum+lo*lo == csum.
 
 To minimize loss of information during the accumulation of fractional
-values, each term has a separate accumulator.
+values, each term has a separate accumulator.  This also breaks up
+sequential dependencies in the inner loop so the CPU can maximize
+floating point throughput. [4]  On a 2.6 GHz Haswell, adding one
+dimension has an incremental cost of only 5ns -- for example when
+moving from hypot(x,y) to hypot(x,y,z).
 
 The square root differential correction is needed because a
 correctly rounded square root of a correctly rounded sum of
@@ -2466,7 +2470,7 @@ The differential correction starts with a value *x* that is
 the difference between the square of *h*, the possibly inaccurately
 rounded square root, and the accurately computed sum of squares.
 The correction is the first order term of the Maclaurin series
-expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2).
+expansion of sqrt(h**2 + x) == h + x/(2*h) + O(x**2). [5]
 
 Essentially, this differential correction is equivalent to one
 refinement step in Newton's divide-and-average square root
@@ -2474,20 +2478,32 @@ algorithm, effectively doubling the number of accurate bits.
 This technique is used in Dekker's SQRT2 algorithm and again in
 Borges' ALGORITHM 4 and 5.
 
+Without proof for all cases, hypot() cannot claim to be always
+correctly rounded.  However for n <= 1000, prior to the final addition
+that rounds the overall result, the internal accuracy of "h" together
+with its correction of "x / (2.0 * h)" is at least 100 bits. [6]
+Also, hypot() was tested against a Decimal implementation with
+prec=300.  After 100 million trials, no incorrectly rounded examples
+were found.  In addition, perfect commutativity (all permutations are
+exactly equal) was verified for 1 billion random inputs with n=5. [7]
+
 References:
 
 1. Veltkamp-Dekker splitting: http://csclub.uwaterloo.ca/~pbarfuss/dekker1971.pdf
 2. Compensated summation:  http://www.ti3.tu-harburg.de/paper/rump/Ru08b.pdf
 3. Square root differential correction:  https://arxiv.org/pdf/1904.09481.pdf
-4. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+4. Data dependency graph:  https://bugs.python.org/file49439/hypot.png
+5. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+6. Analysis of internal accuracy:  https://bugs.python.org/file49484/best_frac.py
+7. Commutativity test:  https://bugs.python.org/file49448/test_hypot_commutativity.py
 
 */
 
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    const double T27 = 134217729.0;     /* ldexp(1.0, 27)+1.0) */
-    double x, csum = 1.0, oldcsum, scale, frac=0.0, frac_mid=0.0, frac_lo=0.0;
+    const double T27 = 134217729.0;     /* ldexp(1.0, 27) + 1.0) */
+    double x, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0, frac3 = 0.0;
     double t, hi, lo, h;
     int max_e;
     Py_ssize_t i;
@@ -2523,19 +2539,18 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             assert(fabs(csum) >= fabs(x));
             oldcsum = csum;
             csum += x;
-            frac += (oldcsum - csum) + x;
+            frac1 += (oldcsum - csum) + x;
 
             x = 2.0 * hi * lo;
             assert(fabs(csum) >= fabs(x));
             oldcsum = csum;
             csum += x;
-            frac_mid += (oldcsum - csum) + x;
+            frac2 += (oldcsum - csum) + x;
 
             assert(csum + lo * lo == csum);
-            frac_lo += lo * lo;
+            frac3 += lo * lo;
         }
-        frac += frac_lo + frac_mid;
-        h = sqrt(csum - 1.0 + frac);
+        h = sqrt(csum - 1.0 + (frac1 + frac2 + frac3));
 
         x = h;
         t = x * T27;
@@ -2547,21 +2562,21 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac1 += (oldcsum - csum) + x;
 
         x = -2.0 * hi * lo;
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac2 += (oldcsum - csum) + x;
 
         x = -lo * lo;
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac3 += (oldcsum - csum) + x;
 
-        x = csum - 1.0 + frac;
+        x = csum - 1.0 + (frac1 + frac2 + frac3);
         return (h + x / (2.0 * h)) / scale;
     }
     /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
@@ -2576,9 +2591,9 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac1 += (oldcsum - csum) + x;
     }
-    return max * sqrt(csum - 1.0 + frac);
+    return max * sqrt(csum - 1.0 + frac1);
 }
 
 #define NUM_STACK_ELEMS 16

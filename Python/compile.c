@@ -108,8 +108,8 @@ It's called a frame block to distinguish it from a basic block in the
 compiler IR.
 */
 
-enum fblocktype { WHILE_LOOP, FOR_LOOP, EXCEPT, FINALLY_TRY, FINALLY_END,
-                  WITH, ASYNC_WITH, HANDLER_CLEANUP, POP_VALUE };
+enum fblocktype { WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
+                  WITH, ASYNC_WITH, HANDLER_CLEANUP, POP_VALUE, EXCEPTION_HANDLER };
 
 struct fblockinfo {
     enum fblocktype fb_type;
@@ -222,27 +222,27 @@ static int compiler_subscript(struct compiler *, expr_ty);
 static int compiler_slice(struct compiler *, expr_ty);
 
 static int inplace_binop(operator_ty);
-static int are_all_items_const(asdl_seq *, Py_ssize_t, Py_ssize_t);
+static int are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
 static int expr_constant(expr_ty);
 
 static int compiler_with(struct compiler *, stmt_ty, int);
 static int compiler_async_with(struct compiler *, stmt_ty, int);
 static int compiler_async_for(struct compiler *, stmt_ty);
 static int compiler_call_helper(struct compiler *c, int n,
-                                asdl_seq *args,
-                                asdl_seq *keywords);
+                                asdl_expr_seq *args,
+                                asdl_keyword_seq *keywords);
 static int compiler_try_except(struct compiler *, stmt_ty);
 static int compiler_set_qualname(struct compiler *);
 
 static int compiler_sync_comprehension_generator(
                                       struct compiler *c,
-                                      asdl_seq *generators, int gen_index,
+                                      asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type);
 
 static int compiler_async_comprehension_generator(
                                       struct compiler *c,
-                                      asdl_seq *generators, int gen_index,
+                                      asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type);
 
@@ -1525,7 +1525,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 
 #define VISIT_SEQ(C, TYPE, SEQ) { \
     int _i; \
-    asdl_seq *seq = (SEQ); /* avoid variable capture */ \
+    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
     for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
         if (!compiler_visit_ ## TYPE((C), elt)) \
@@ -1535,7 +1535,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 
 #define VISIT_SEQ_IN_SCOPE(C, TYPE, SEQ) { \
     int _i; \
-    asdl_seq *seq = (SEQ); /* avoid variable capture */ \
+    asdl_ ## TYPE ## _seq *seq = (SEQ); /* avoid variable capture */ \
     for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
         TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
         if (!compiler_visit_ ## TYPE((C), elt)) { \
@@ -1559,7 +1559,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b)
 /* Search if variable annotations are present statically in a block. */
 
 static int
-find_ann(asdl_seq *stmts)
+find_ann(asdl_stmt_seq *stmts)
 {
     int i, j, res = 0;
     stmt_ty st;
@@ -1623,9 +1623,7 @@ compiler_push_fblock(struct compiler *c, enum fblocktype t, basicblock *b,
 {
     struct fblockinfo *f;
     if (c->u->u_nfblocks >= CO_MAXBLOCKS) {
-        PyErr_SetString(PyExc_SyntaxError,
-                        "too many statically nested blocks");
-        return 0;
+        return compiler_error(c, "too many statically nested blocks");
     }
     f = &c->u->u_fblock[c->u->u_nfblocks++];
     f->fb_type = t;
@@ -1665,6 +1663,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 {
     switch (info->fb_type) {
         case WHILE_LOOP:
+        case EXCEPTION_HANDLER:
             return 1;
 
         case FOR_LOOP:
@@ -1675,7 +1674,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             ADDOP(c, POP_TOP);
             return 1;
 
-        case EXCEPT:
+        case TRY_EXCEPT:
             ADDOP(c, POP_BLOCK);
             return 1;
 
@@ -1778,7 +1777,7 @@ compiler_unwind_fblock_stack(struct compiler *c, int preserve_tos, struct fblock
    and for annotations. */
 
 static int
-compiler_body(struct compiler *c, asdl_seq *stmts)
+compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
 {
     int i = 0;
     stmt_ty st;
@@ -1841,8 +1840,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
             ADDOP(c, SETUP_ANNOTATIONS);
         }
         c->c_interactive = 1;
-        VISIT_SEQ_IN_SCOPE(c, stmt,
-                                mod->v.Interactive.body);
+        VISIT_SEQ_IN_SCOPE(c, stmt, mod->v.Interactive.body);
         break;
     case Expression_kind:
         VISIT_IN_SCOPE(c, expr, mod->v.Expression.body);
@@ -1945,7 +1943,7 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, Py
 }
 
 static int
-compiler_decorators(struct compiler *c, asdl_seq* decos)
+compiler_decorators(struct compiler *c, asdl_expr_seq* decos)
 {
     int i;
 
@@ -1959,8 +1957,8 @@ compiler_decorators(struct compiler *c, asdl_seq* decos)
 }
 
 static int
-compiler_visit_kwonlydefaults(struct compiler *c, asdl_seq *kwonlyargs,
-                              asdl_seq *kw_defaults)
+compiler_visit_kwonlydefaults(struct compiler *c, asdl_arg_seq *kwonlyargs,
+                              asdl_expr_seq *kw_defaults)
 {
     /* Push a dict of keyword-only default values.
 
@@ -2028,12 +2026,7 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
 {
     if (annotation) {
         PyObject *mangled;
-        if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
-            VISIT(c, annexpr, annotation)
-        }
-        else {
-            VISIT(c, expr, annotation);
-        }
+        VISIT(c, annexpr, annotation);
         mangled = _Py_Mangle(c->u->u_private, id);
         if (!mangled)
             return 0;
@@ -2047,7 +2040,7 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
 }
 
 static int
-compiler_visit_argannotations(struct compiler *c, asdl_seq* args,
+compiler_visit_argannotations(struct compiler *c, asdl_arg_seq* args,
                               PyObject *names)
 {
     int i;
@@ -2173,7 +2166,7 @@ compiler_check_debug_one_arg(struct compiler *c, arg_ty arg)
 }
 
 static int
-compiler_check_debug_args_seq(struct compiler *c, asdl_seq *args)
+compiler_check_debug_args_seq(struct compiler *c, asdl_arg_seq *args)
 {
     if (args != NULL) {
         for (Py_ssize_t i = 0, n = asdl_seq_LEN(args); i < n; i++) {
@@ -2208,8 +2201,8 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     arguments_ty args;
     expr_ty returns;
     identifier name;
-    asdl_seq* decos;
-    asdl_seq *body;
+    asdl_expr_seq* decos;
+    asdl_stmt_seq *body;
     Py_ssize_t i, funcflags;
     int annotations;
     int scope_type;
@@ -2306,7 +2299,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     PyCodeObject *co;
     PyObject *str;
     int i, firstlineno;
-    asdl_seq* decos = s->v.ClassDef.decorator_list;
+    asdl_expr_seq *decos = s->v.ClassDef.decorator_list;
 
     if (!compiler_decorators(c, decos))
         return 0;
@@ -2418,9 +2411,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     ADDOP_LOAD_CONST(c, s->v.ClassDef.name);
 
     /* 5. generate the rest of the code for the call */
-    if (!compiler_call_helper(c, 2,
-                              s->v.ClassDef.bases,
-                              s->v.ClassDef.keywords))
+    if (!compiler_call_helper(c, 2, s->v.ClassDef.bases, s->v.ClassDef.keywords))
         return 0;
 
     /* 6. apply decorators */
@@ -2528,7 +2519,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
         /* fallback to general implementation */
         break;
     case BoolOp_kind: {
-        asdl_seq *s = e->v.BoolOp.values;
+        asdl_expr_seq *s = e->v.BoolOp.values;
         Py_ssize_t i, n = asdl_seq_LEN(s) - 1;
         assert(n >= 0);
         int cond2 = e->v.BoolOp.op == Or;
@@ -3063,14 +3054,17 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         return 0;
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     compiler_use_next_block(c, body);
-    if (!compiler_push_fblock(c, EXCEPT, body, NULL, NULL))
+    if (!compiler_push_fblock(c, TRY_EXCEPT, body, NULL, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.body);
     ADDOP(c, POP_BLOCK);
-    compiler_pop_fblock(c, EXCEPT, body);
+    compiler_pop_fblock(c, TRY_EXCEPT, body);
     ADDOP_JUMP(c, JUMP_FORWARD, orelse);
     n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
+    /* Runtime will push a block here, so we need to account for that */
+    if (!compiler_push_fblock(c, EXCEPTION_HANDLER, NULL, NULL, NULL))
+        return 0;
     for (i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
             s->v.Try.handlers, i);
@@ -3155,6 +3149,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         }
         compiler_use_next_block(c, except);
     }
+    compiler_pop_fblock(c, EXCEPTION_HANDLER, NULL);
     ADDOP(c, RERAISE);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.Try.orelse);
@@ -3645,7 +3640,7 @@ compiler_boolop(struct compiler *c, expr_ty e)
     basicblock *end;
     int jumpi;
     Py_ssize_t i, n;
-    asdl_seq *s;
+    asdl_expr_seq *s;
 
     assert(e->kind == BoolOp_kind);
     if (e->v.BoolOp.op == And)
@@ -3673,7 +3668,7 @@ compiler_boolop(struct compiler *c, expr_ty e)
 }
 
 static int
-starunpack_helper(struct compiler *c, asdl_seq *elts, int pushed,
+starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
                   int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
@@ -3750,7 +3745,7 @@ starunpack_helper(struct compiler *c, asdl_seq *elts, int pushed,
 }
 
 static int
-assignment_helper(struct compiler *c, asdl_seq *elts)
+assignment_helper(struct compiler *c, asdl_expr_seq *elts)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
     Py_ssize_t i;
@@ -3784,7 +3779,7 @@ assignment_helper(struct compiler *c, asdl_seq *elts)
 static int
 compiler_list(struct compiler *c, expr_ty e)
 {
-    asdl_seq *elts = e->v.List.elts;
+    asdl_expr_seq *elts = e->v.List.elts;
     if (e->v.List.ctx == Store) {
         return assignment_helper(c, elts);
     }
@@ -3800,7 +3795,7 @@ compiler_list(struct compiler *c, expr_ty e)
 static int
 compiler_tuple(struct compiler *c, expr_ty e)
 {
-    asdl_seq *elts = e->v.Tuple.elts;
+    asdl_expr_seq *elts = e->v.Tuple.elts;
     if (e->v.Tuple.ctx == Store) {
         return assignment_helper(c, elts);
     }
@@ -3821,7 +3816,7 @@ compiler_set(struct compiler *c, expr_ty e)
 }
 
 static int
-are_all_items_const(asdl_seq *seq, Py_ssize_t begin, Py_ssize_t end)
+are_all_items_const(asdl_expr_seq *seq, Py_ssize_t begin, Py_ssize_t end)
 {
     Py_ssize_t i;
     for (i = begin; i < end; i++) {
@@ -4084,7 +4079,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 {
     Py_ssize_t argsl, i;
     expr_ty meth = e->v.Call.func;
-    asdl_seq *args = e->v.Call.args;
+    asdl_expr_seq *args = e->v.Call.args;
 
     /* Check that the call node is an attribute access, and that
        the call doesn't have keyword parameters. */
@@ -4110,7 +4105,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 }
 
 static int
-validate_keywords(struct compiler *c, asdl_seq *keywords)
+validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
 {
     Py_ssize_t nkeywords = asdl_seq_LEN(keywords);
     for (Py_ssize_t i = 0; i < nkeywords; i++) {
@@ -4210,7 +4205,7 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
 }
 
 static int
-compiler_subkwargs(struct compiler *c, asdl_seq *keywords, Py_ssize_t begin, Py_ssize_t end)
+compiler_subkwargs(struct compiler *c, asdl_keyword_seq *keywords, Py_ssize_t begin, Py_ssize_t end)
 {
     Py_ssize_t i, n = end - begin;
     keyword_ty kw;
@@ -4249,8 +4244,8 @@ compiler_subkwargs(struct compiler *c, asdl_seq *keywords, Py_ssize_t begin, Py_
 static int
 compiler_call_helper(struct compiler *c,
                      int n, /* Args already pushed */
-                     asdl_seq *args,
-                     asdl_seq *keywords)
+                     asdl_expr_seq *args,
+                     asdl_keyword_seq *keywords)
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
 
@@ -4375,7 +4370,7 @@ ex_call:
 
 static int
 compiler_comprehension_generator(struct compiler *c,
-                                 asdl_seq *generators, int gen_index,
+                                 asdl_comprehension_seq *generators, int gen_index,
                                  int depth,
                                  expr_ty elt, expr_ty val, int type)
 {
@@ -4392,7 +4387,7 @@ compiler_comprehension_generator(struct compiler *c,
 
 static int
 compiler_sync_comprehension_generator(struct compiler *c,
-                                      asdl_seq *generators, int gen_index,
+                                      asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type)
 {
@@ -4424,7 +4419,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
         /* Fast path for the temporary variable assignment idiom:
              for y in [f(x)]
          */
-        asdl_seq *elts;
+        asdl_expr_seq *elts;
         switch (gen->iter->kind) {
             case List_kind:
                 elts = gen->iter->v.List.elts;
@@ -4511,7 +4506,7 @@ compiler_sync_comprehension_generator(struct compiler *c,
 
 static int
 compiler_async_comprehension_generator(struct compiler *c,
-                                      asdl_seq *generators, int gen_index,
+                                      asdl_comprehension_seq *generators, int gen_index,
                                       int depth,
                                       expr_ty elt, expr_ty val, int type)
 {
@@ -4602,7 +4597,7 @@ compiler_async_comprehension_generator(struct compiler *c,
 
 static int
 compiler_comprehension(struct compiler *c, expr_ty e, int type,
-                       identifier name, asdl_seq *generators, expr_ty elt,
+                       identifier name, asdl_comprehension_seq *generators, expr_ty elt,
                        expr_ty val)
 {
     PyCodeObject *co = NULL;
@@ -5226,7 +5221,7 @@ check_ann_subscr(struct compiler *c, expr_ty e)
         return 1;
     case Tuple_kind: {
         /* extended slice */
-        asdl_seq *elts = e->v.Tuple.elts;
+        asdl_expr_seq *elts = e->v.Tuple.elts;
         Py_ssize_t i, n = asdl_seq_LEN(elts);
         for (i = 0; i < n; i++) {
             if (!check_ann_subscr(c, asdl_seq_GET(elts, i))) {
@@ -5261,12 +5256,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
-            if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
-                VISIT(c, annexpr, s->v.AnnAssign.annotation)
-            }
-            else {
-                VISIT(c, expr, s->v.AnnAssign.annotation);
-            }
+            VISIT(c, annexpr, s->v.AnnAssign.annotation);
             ADDOP_NAME(c, LOAD_NAME, __annotations__, names);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
             ADDOP_LOAD_CONST_NEW(c, mangled);
@@ -6103,13 +6093,11 @@ fold_tuple_on_constants(struct instr *inst,
         PyTuple_SET_ITEM(newconst, i, constant);
     }
     Py_ssize_t index = PyList_GET_SIZE(consts);
-#if SIZEOF_SIZE_T > SIZEOF_INT
-    if ((size_t)index >= UINT_MAX - 1) {
+    if ((size_t)index >= (size_t)INT_MAX - 1) {
         Py_DECREF(newconst);
         PyErr_SetString(PyExc_OverflowError, "too many constants");
         return -1;
     }
-#endif
     if (PyList_Append(consts, newconst)) {
         Py_DECREF(newconst);
         return -1;
@@ -6119,7 +6107,7 @@ fold_tuple_on_constants(struct instr *inst,
         inst[i].i_opcode = NOP;
     }
     inst[n].i_opcode = LOAD_CONST;
-    inst[n].i_oparg = index;
+    inst[n].i_oparg = (int)index;
     return 0;
 }
 

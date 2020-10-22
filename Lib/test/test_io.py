@@ -2529,10 +2529,6 @@ class StatefulIncrementalDecoder(codecs.IncrementalDecoder):
                 streamreader=None, streamwriter=None,
                 incrementaldecoder=cls)
 
-# Register the previous decoder for testing.
-# Disabled by default, tests will enable it.
-codecs.register(StatefulIncrementalDecoder.lookupTestDecoder)
-
 
 class StatefulIncrementalDecoderTest(unittest.TestCase):
     """
@@ -2583,6 +2579,9 @@ class TextIOWrapperTest(unittest.TestCase):
         self.testdata = b"AAA\r\nBBB\rCCC\r\nDDD\nEEE\r\n"
         self.normalized = b"AAA\nBBB\nCCC\nDDD\nEEE\n".decode("ascii")
         os_helper.unlink(os_helper.TESTFN)
+        codecs.register(StatefulIncrementalDecoder.lookupTestDecoder)
+        self.addCleanup(codecs.unregister,
+                        StatefulIncrementalDecoder.lookupTestDecoder)
 
     def tearDown(self):
         os_helper.unlink(os_helper.TESTFN)

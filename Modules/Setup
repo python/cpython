@@ -226,7 +226,7 @@ _symtable symtablemodule.c
 #termios termios.c	# Steen Lumholt's termios module
 #resource resource.c	# Jeremy Hylton's rlimit interface
 
-#_posixsubprocess _posixsubprocess.c  # POSIX subprocess module helper
+#_posixsubprocess  -DPy_BUILD_CORE_BUILTIN _posixsubprocess.c  # POSIX subprocess module helper
 
 # Multimedia modules -- off by default.
 # These don't work for 64-bit platforms!!!

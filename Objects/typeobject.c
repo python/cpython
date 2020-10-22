@@ -6,6 +6,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_unionobject.h"   // _Py_Union()
 #include "frameobject.h"
 #include "structmember.h"         // PyMemberDef
 
@@ -2611,10 +2612,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     slots = NULL;
 
     /* Initialize tp_flags */
+    // All heap types need GC, since we can create a reference cycle by storing
+    // an instance on one of its parents:
     type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE |
-        Py_TPFLAGS_BASETYPE;
-    if (base->tp_flags & Py_TPFLAGS_HAVE_GC)
-        type->tp_flags |= Py_TPFLAGS_HAVE_GC;
+        Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC;
 
     /* Initialize essential fields */
     type->tp_as_async = &et->as_async;
@@ -2814,21 +2815,11 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     }
     type->tp_dealloc = subtype_dealloc;
 
-    /* Enable GC unless this class is not adding new instance variables and
-       the base class did not use GC. */
-    if ((base->tp_flags & Py_TPFLAGS_HAVE_GC) ||
-        type->tp_basicsize > base->tp_basicsize)
-        type->tp_flags |= Py_TPFLAGS_HAVE_GC;
-
     /* Always override allocation strategy to use regular heap */
     type->tp_alloc = PyType_GenericAlloc;
-    if (type->tp_flags & Py_TPFLAGS_HAVE_GC) {
-        type->tp_free = PyObject_GC_Del;
-        type->tp_traverse = subtype_traverse;
-        type->tp_clear = subtype_clear;
-    }
-    else
-        type->tp_free = PyObject_Del;
+    type->tp_free = PyObject_GC_Del;
+    type->tp_traverse = subtype_traverse;
+    type->tp_clear = subtype_clear;
 
     /* store type in class' cell if one is supplied */
     cell = _PyDict_GetItemIdWithError(dict, &PyId___classcell__);
@@ -3753,6 +3744,21 @@ type_is_gc(PyTypeObject *type)
     return type->tp_flags & Py_TPFLAGS_HEAPTYPE;
 }
 
+static PyObject *
+type_or(PyTypeObject* self, PyObject* param) {
+    PyObject *tuple = PyTuple_Pack(2, self, param);
+    if (tuple == NULL) {
+        return NULL;
+    }
+    PyObject *new_union = _Py_Union(tuple);
+    Py_DECREF(tuple);
+    return new_union;
+}
+
+static PyNumberMethods type_as_number = {
+        .nb_or = (binaryfunc)type_or, // Add __or__ function
+};
+
 PyTypeObject PyType_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "type",                                     /* tp_name */
@@ -3764,7 +3770,7 @@ PyTypeObject PyType_Type = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
     (reprfunc)type_repr,                        /* tp_repr */
-    0,                                          /* tp_as_number */
+    &type_as_number,                            /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
@@ -5598,7 +5604,6 @@ PyType_Ready(PyTypeObject *type)
             add_subclass((PyTypeObject *)b, type) < 0)
             goto error;
     }
-
     /* All done -- set the ready flag */
     type->tp_flags =
         (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
