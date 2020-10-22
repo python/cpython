@@ -48,18 +48,18 @@ typedef _Py_hashtable_entry_t* (*_Py_hashtable_get_entry_func)(_Py_hashtable_t *
                                                                const void *key);
 
 typedef struct {
-    /* allocate a memory block */
+    // Allocate a memory block
     void* (*malloc) (size_t size);
 
-    /* release a memory block */
+    // Release a memory block
     void (*free) (void *ptr);
 } _Py_hashtable_allocator_t;
 
 
 /* _Py_hashtable: table */
 struct _Py_hashtable_t {
-    size_t num_buckets;
-    size_t entries; /* Total number of entries in the table. */
+    size_t nentries; // Total number of entries in the table
+    size_t nbuckets;
     _Py_slist_t *buckets;
 
     _Py_hashtable_get_entry_func get_entry_func;
@@ -70,10 +70,10 @@ struct _Py_hashtable_t {
     _Py_hashtable_allocator_t alloc;
 };
 
-/* hash a pointer (void*) */
+/* Hash a pointer (void*) */
 PyAPI_FUNC(Py_uhash_t) _Py_hashtable_hash_ptr(const void *key);
 
-/* comparison using memcmp() */
+/* Comparison using memcmp() */
 PyAPI_FUNC(int) _Py_hashtable_compare_direct(
     const void *key1,
     const void *key2);
@@ -129,13 +129,14 @@ _Py_hashtable_get_entry(_Py_hashtable_t *ht, const void *key)
 
    Use _Py_hashtable_get_entry() to distinguish entry value equal to NULL
    and entry not found. */
-extern void *_Py_hashtable_get(_Py_hashtable_t *ht, const void *key);
+PyAPI_FUNC(void*) _Py_hashtable_get(_Py_hashtable_t *ht, const void *key);
 
 
-// Remove a key and its associated value without calling key and value destroy
-// functions.
-// Return the removed value if the key was found.
-// Return NULL if the key was not found.
+/* Remove a key and its associated value without calling key and value destroy
+   functions.
+
+   Return the removed value if the key was found.
+   Return NULL if the key was not found. */
 PyAPI_FUNC(void*) _Py_hashtable_steal(
     _Py_hashtable_t *ht,
     const void *key);

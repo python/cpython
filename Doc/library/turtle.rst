@@ -1069,6 +1069,7 @@ More drawing control
 ~~~~~~~~~~~~~~~~~~~~
 
 .. function:: reset()
+   :noindex:
 
    Delete the turtle's drawings from the screen, re-center the turtle and set
    variables to the default values.
@@ -1090,6 +1091,7 @@ More drawing control
 
 
 .. function:: clear()
+   :noindex:
 
    Delete the turtle's drawings from the screen.  Do not move turtle.  State and
    position of the turtle as well as drawings of other turtles are not affected.
@@ -1362,6 +1364,7 @@ Using events
 ------------
 
 .. function:: onclick(fun, btn=1, add=None)
+   :noindex:
 
    :param fun: a function with two arguments which will be called with the
                coordinates of the clicked point on the canvas

@@ -41,6 +41,8 @@ def walk_tree(root, *,
 def glob_tree(root, *,
               suffix=None,
               _glob=glob.iglob,
+              _escape=glob.escape,
+              _join=os.path.join,
               ):
     """Yield each file in the tree under the given directory name.
 
@@ -51,14 +53,14 @@ def glob_tree(root, *,
     if not isinstance(suffix, str):
         raise ValueError('suffix must be a string')
 
-    for filename in _glob(f'{root}/*{suffix}'):
+    for filename in _glob(_join(_escape(root), f'*{suffix}')):
         yield filename
-    for filename in _glob(f'{root}/**/*{suffix}'):
+    for filename in _glob(_join(_escape(root), f'**/*{suffix}')):
         yield filename
 
 
 def iter_files(root, suffix=None, relparent=None, *,
-               get_files=os.walk,
+               get_files=None,
                _glob=glob_tree,
                _walk=walk_tree,
                ):
@@ -73,6 +75,8 @@ def iter_files(root, suffix=None, relparent=None, *,
     if "relparent" is provided then it is used to resolve each
     filename as a relative path.
     """
+    if get_files is None:
+        get_files = os.walk
     if not isinstance(root, str):
         roots = root
         for root in roots:

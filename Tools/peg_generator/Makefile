@@ -5,7 +5,8 @@ endif
 ifeq ($(UNAME_S),Darwin)
 	PYTHON ?= ../../python.exe
 endif
-
+VENVDIR ?= ./venv
+VENVPYTHON ?= $(VENVDIR)/bin/python
 CPYTHON ?= ../../Lib
 MYPY ?= mypy
 
@@ -21,12 +22,13 @@ data/xxl.py:
 
 build: peg_extension/parse.c
 
-peg_extension/parse.c: $(GRAMMAR) $(TOKENS) pegen/*.py peg_extension/peg_extension.c ../../Parser/pegen/pegen.c ../../Parser/pegen/parse_string.c ../../Parser/pegen/*.h pegen/grammar_parser.py
+peg_extension/parse.c: $(GRAMMAR) $(TOKENS) pegen/*.py peg_extension/peg_extension.c ../../Parser/pegen.c ../../Parser/string_parser.c ../../Parser/*.h pegen/grammar_parser.py
 	$(PYTHON) -m pegen -q c $(GRAMMAR) $(TOKENS) -o peg_extension/parse.c --compile-extension
 
 clean:
 	-rm -f peg_extension/*.o peg_extension/*.so peg_extension/parse.c
 	-rm -f data/xxl.py
+	-rm -rf $(VENVDIR)
 
 dump: peg_extension/parse.c
 	cat -n $(TESTFILE)
@@ -40,6 +42,12 @@ regen-metaparser: pegen/metagrammar.gram pegen/*.py
 # parse.c by the use of --compile-extension.
 
 .PHONY: test
+
+venv:
+	$(PYTHON) -m venv $(VENVDIR)
+	$(VENVPYTHON) -m pip install -U pip setuptools
+	$(VENVPYTHON) -m pip install -r requirements.pip
+	@echo "The venv has been created in the $(VENVDIR) directory"
 
 test: run
 
@@ -61,41 +69,24 @@ stats: peg_extension/parse.c data/xxl.py
 
 time: time_compile
 
-time_compile: peg_extension/parse.c data/xxl.py
-	$(PYTHON) scripts/benchmark.py --parser=pegen --target=xxl compile
+time_compile: venv data/xxl.py
+	$(VENVPYTHON) scripts/benchmark.py --target=xxl compile
 
-time_parse: peg_extension/parse.c data/xxl.py
-	$(PYTHON) scripts/benchmark.py --parser=pegen --target=xxl parse
+time_parse: venv data/xxl.py
+	$(VENVPYTHON) scripts/benchmark.py --target=xxl parse
 
-time_check: peg_extension/parse.c data/xxl.py
-	$(PYTHON) scripts/benchmark.py --parser=pegen --target=xxl check
-
-time_stdlib: time_stdlib_compile
-
-time_stdlib_compile: data/xxl.py
-	$(PYTHON) scripts/benchmark.py --parser=cpython --target=xxl compile
-
-time_stdlib_parse: data/xxl.py
-	$(PYTHON) scripts/benchmark.py --parser=cpython --target=xxl parse
-
-test_local:
-	$(PYTHON) scripts/test_parse_directory.py \
-		--grammar-file $(GRAMMAR) \
-		--tokens-file $(TOKENS) \
+time_peg_dir: venv
+	$(VENVPYTHON) scripts/test_parse_directory.py \
 		-d $(TESTDIR) \
 		$(TESTFLAGS) \
 		--exclude "*/failset/*" \
 		--exclude "*/failset/**" \
 		--exclude "*/failset/**/*"
 
-test_global: $(CPYTHON)
-	$(PYTHON) scripts/test_parse_directory.py \
-		--grammar-file $(GRAMMAR) \
-		--tokens-file $(TOKENS) \
+time_stdlib: $(CPYTHON) venv
+	$(VENVPYTHON) scripts/test_parse_directory.py \
 		-d $(CPYTHON) \
 		$(TESTFLAGS) \
-		--exclude "*/test2to3/*" \
-		--exclude "*/test2to3/**/*" \
 		--exclude "*/bad*" \
 		--exclude "*/lib2to3/tests/data/*"
 
@@ -104,9 +95,6 @@ mypy: regen-metaparser
 
 format-python:
 	black pegen scripts
-
-bench:
-	$(PYTHON) scripts/benchmark.py --parser=pegen --target=stdlib check
 
 format: format-python
 

@@ -325,7 +325,7 @@ The *m_slots* array must be terminated by a slot with id 0.
 
 The available slot types are:
 
-.. c:var:: Py_mod_create
+.. c:macro:: Py_mod_create
 
    Specifies a function that is called to create the module object itself.
    The *value* pointer of this slot must point to a function of the signature:
@@ -357,7 +357,7 @@ The available slot types are:
    ``PyModuleDef`` has non-``NULL`` ``m_traverse``, ``m_clear``,
    ``m_free``; non-zero ``m_size``; or slots other than ``Py_mod_create``.
 
-.. c:var:: Py_mod_exec
+.. c:macro:: Py_mod_exec
 
    Specifies a function that is called to *execute* the module.
    This is equivalent to executing the code of a Python module: typically,

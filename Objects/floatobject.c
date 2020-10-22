@@ -4,7 +4,10 @@
    for any kind of float exception without losing portability. */
 
 #include "Python.h"
-#include "pycore_dtoa.h"
+#include "pycore_dtoa.h"          // _Py_dg_dtoa()
+#include "pycore_interp.h"        // _PyInterpreterState.float_state
+#include "pycore_object.h"        // _PyObject_Init()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include <ctype.h>
 #include <float.h>
@@ -16,16 +19,18 @@ class float "PyObject *" "&PyFloat_Type"
 
 #include "clinic/floatobject.c.h"
 
-/* Special free list
-   free_list is a singly-linked list of available PyFloatObjects, linked
-   via abuse of their ob_type members.
-*/
-
 #ifndef PyFloat_MAXFREELIST
-#define PyFloat_MAXFREELIST    100
+#  define PyFloat_MAXFREELIST   100
 #endif
-static int numfree = 0;
-static PyFloatObject *free_list = NULL;
+
+
+static struct _Py_float_state *
+get_float_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->float_state;
+}
+
 
 double
 PyFloat_GetMax(void)
@@ -59,12 +64,14 @@ static PyStructSequence_Field floatinfo_fields[] = {
                     "is a normalized float"},
     {"min_10_exp",      "DBL_MIN_10_EXP -- minimum int e such that 10**e is "
                     "a normalized"},
-    {"dig",             "DBL_DIG -- digits"},
+    {"dig",             "DBL_DIG -- maximum number of decimal digits that "
+                    "can be faithfully represented in a float"},
     {"mant_dig",        "DBL_MANT_DIG -- mantissa digits"},
     {"epsilon",         "DBL_EPSILON -- Difference between 1 and the next "
                     "representable float"},
     {"radix",           "FLT_RADIX -- radix of exponent"},
-    {"rounds",          "FLT_ROUNDS -- rounding mode"},
+    {"rounds",          "FLT_ROUNDS -- rounding mode used for arithmetic "
+                    "operations"},
     {0}
 };
 
@@ -115,17 +122,23 @@ PyFloat_GetInfo(void)
 PyObject *
 PyFloat_FromDouble(double fval)
 {
-    PyFloatObject *op = free_list;
+    struct _Py_float_state *state = get_float_state();
+    PyFloatObject *op = state->free_list;
     if (op != NULL) {
-        free_list = (PyFloatObject *) Py_TYPE(op);
-        numfree--;
-    } else {
-        op = (PyFloatObject*) PyObject_MALLOC(sizeof(PyFloatObject));
-        if (!op)
-            return PyErr_NoMemory();
+#ifdef Py_DEBUG
+        // PyFloat_FromDouble() must not be called after _PyFloat_Fini()
+        assert(state->numfree != -1);
+#endif
+        state->free_list = (PyFloatObject *) Py_TYPE(op);
+        state->numfree--;
     }
-    /* Inline PyObject_New */
-    (void)PyObject_INIT(op, &PyFloat_Type);
+    else {
+        op = PyObject_Malloc(sizeof(PyFloatObject));
+        if (!op) {
+            return PyErr_NoMemory();
+        }
+    }
+    _PyObject_Init((PyObject*)op, &PyFloat_Type);
     op->ob_fval = fval;
     return (PyObject *) op;
 }
@@ -202,7 +215,7 @@ PyFloat_FromString(PyObject *v)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-            "float() argument must be a string or a number, not '%.200s'",
+            "float() argument must be a string or a real number, not '%.200s'",
             Py_TYPE(v)->tp_name);
         return NULL;
     }
@@ -217,16 +230,22 @@ static void
 float_dealloc(PyFloatObject *op)
 {
     if (PyFloat_CheckExact(op)) {
-        if (numfree >= PyFloat_MAXFREELIST)  {
+        struct _Py_float_state *state = get_float_state();
+#ifdef Py_DEBUG
+        // float_dealloc() must not be called after _PyFloat_Fini()
+        assert(state->numfree != -1);
+#endif
+        if (state->numfree >= PyFloat_MAXFREELIST)  {
             PyObject_FREE(op);
             return;
         }
-        numfree++;
-        Py_SET_TYPE(op, (PyTypeObject *)free_list);
-        free_list = op;
+        state->numfree++;
+        Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
+        state->free_list = op;
     }
-    else
+    else {
         Py_TYPE(op)->tp_free((PyObject *)op);
+    }
 }
 
 double
@@ -248,7 +267,7 @@ PyFloat_AsDouble(PyObject *op)
     nb = Py_TYPE(op)->tp_as_number;
     if (nb == NULL || nb->nb_float == NULL) {
         if (nb && nb->nb_index) {
-            PyObject *res = PyNumber_Index(op);
+            PyObject *res = _PyNumber_Index(op);
             if (!res) {
                 return -1;
             }
@@ -1630,6 +1649,24 @@ float_subtype_new(PyTypeObject *type, PyObject *x)
     return newobj;
 }
 
+static PyObject *
+float_vectorcall(PyObject *type, PyObject * const*args,
+                 size_t nargsf, PyObject *kwnames)
+{
+    if (!_PyArg_NoKwnames("float", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("float", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    PyObject *x = nargs >= 1 ? args[0] : _PyLong_Zero;
+    return float_new_impl((PyTypeObject *)type, x);
+}
+
+
 /*[clinic input]
 float.__getnewargs__
 [clinic start generated code]*/
@@ -1918,6 +1955,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     float_new,                                  /* tp_new */
+    .tp_vectorcall = (vectorcallfunc)float_vectorcall,
 };
 
 int
@@ -1979,30 +2017,37 @@ _PyFloat_Init(void)
 }
 
 void
-_PyFloat_ClearFreeList(void)
+_PyFloat_ClearFreeList(PyThreadState *tstate)
 {
-    PyFloatObject *f = free_list, *next;
-    for (; f; f = next) {
-        next = (PyFloatObject*) Py_TYPE(f);
+    struct _Py_float_state *state = &tstate->interp->float_state;
+    PyFloatObject *f = state->free_list;
+    while (f != NULL) {
+        PyFloatObject *next = (PyFloatObject*) Py_TYPE(f);
         PyObject_FREE(f);
+        f = next;
     }
-    free_list = NULL;
-    numfree = 0;
+    state->free_list = NULL;
+    state->numfree = 0;
 }
 
 void
-_PyFloat_Fini(void)
+_PyFloat_Fini(PyThreadState *tstate)
 {
-    _PyFloat_ClearFreeList();
+    _PyFloat_ClearFreeList(tstate);
+#ifdef Py_DEBUG
+    struct _Py_float_state *state = &tstate->interp->float_state;
+    state->numfree = -1;
+#endif
 }
 
 /* Print summary info about the state of the optimized allocator */
 void
 _PyFloat_DebugMallocStats(FILE *out)
 {
+    struct _Py_float_state *state = get_float_state();
     _PyDebugAllocatorStats(out,
                            "free PyFloatObject",
-                           numfree, sizeof(PyFloatObject));
+                           state->numfree, sizeof(PyFloatObject));
 }
 
 

@@ -183,9 +183,6 @@ MULTILINE = {
     'float_format': 'static float_format_type ',
     'detected_double_format': 'static float_format_type ',
     'detected_float_format': 'static float_format_type ',
-    # Parser/listnode.c
-    'level': 'static int ',
-    'atbol': 'static int ',
     # Python/dtoa.c
     'private_mem': 'static double private_mem[PRIVATE_mem]',
     'pmem_next': 'static double *',

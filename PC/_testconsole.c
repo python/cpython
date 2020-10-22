@@ -63,7 +63,7 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
     for (DWORD i = 0; i < size; ++i, ++p, ++prec) {
         prec->EventType = KEY_EVENT;
         prec->Event.KeyEvent.bKeyDown = TRUE;
-        prec->Event.KeyEvent.wRepeatCount = 10;
+        prec->Event.KeyEvent.wRepeatCount = 1;
         prec->Event.KeyEvent.uChar.UnicodeChar = *p;
     }
 

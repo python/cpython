@@ -1,2 +1,0 @@
-Fixed support of nested type variables in GenericAlias (e.g.
-``list[list[T]]``).

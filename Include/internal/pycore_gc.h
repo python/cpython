@@ -165,13 +165,13 @@ PyAPI_FUNC(void) _PyGC_InitState(struct _gc_runtime_state *);
 
 
 // Functions to clear types free lists
-extern void _PyFrame_ClearFreeList(void);
-extern void _PyTuple_ClearFreeList(void);
-extern void _PyFloat_ClearFreeList(void);
-extern void _PyList_ClearFreeList(void);
-extern void _PyDict_ClearFreeList(void);
-extern void _PyAsyncGen_ClearFreeLists(void);
-extern void _PyContext_ClearFreeList(void);
+extern void _PyFrame_ClearFreeList(PyThreadState *tstate);
+extern void _PyTuple_ClearFreeList(PyThreadState *tstate);
+extern void _PyFloat_ClearFreeList(PyThreadState *tstate);
+extern void _PyList_ClearFreeList(PyThreadState *tstate);
+extern void _PyDict_ClearFreeList(PyThreadState *tstate);
+extern void _PyAsyncGen_ClearFreeLists(PyThreadState *tstate);
+extern void _PyContext_ClearFreeList(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }

@@ -113,7 +113,7 @@ PEP 616: New removeprefix() and removesuffix() string methods
 to easily remove an unneeded prefix or a suffix from a string. Corresponding
 ``bytes``, ``bytearray``, and ``collections.UserString`` methods have also been
 added. See :pep:`616` for a full description. (Contributed by Dennis Sweeney in
-:issue:`18939`.)
+:issue:`39939`.)
 
 PEP 585: Builtin Generic Types
 ------------------------------
@@ -156,7 +156,7 @@ back to the LL(1) parser using a command line switch (``-X
 oldparser``) or an environment variable (``PYTHONOLDPARSER=1``).
 
 See :pep:`617` for more details.  (Contributed by Guido van Rossum,
-Pablo Galindo and Lysandros Nikolau in :issue:`40334`.)
+Pablo Galindo and Lysandros Nikolaou in :issue:`40334`.)
 
 
 Other Language Changes
@@ -205,7 +205,52 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+zoneinfo
+--------
+
+The :mod:`zoneinfo` module brings support for the IANA time zone database to
+the standard library. It adds :class:`zoneinfo.ZoneInfo`, a concrete
+:class:`datetime.tzinfo` implementation backed by the system's time zone data.
+
+Example::
+
+    >>> from zoneinfo import ZoneInfo
+    >>> from datetime import datetime, timedelta
+
+    >>> # Daylight saving time
+    >>> dt = datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
+    >>> print(dt)
+    2020-10-31 12:00:00-07:00
+    >>> dt.tzname()
+    'PDT'
+
+    >>> # Standard time
+    >>> dt += timedelta(days=7)
+    >>> print(dt)
+    2020-11-07 12:00:00-08:00
+    >>> print(dt.tzname())
+    PST
+
+
+As a fall-back source of data for platforms that don't ship the IANA database,
+the |tzdata|_ module was released as a first-party package -- distributed via
+PyPI and maintained by the CPython core team.
+
+.. |tzdata| replace:: ``tzdata``
+.. _tzdata: https://pypi.org/project/tzdata/
+
+.. seealso::
+
+    :pep:`615` -- Support for the IANA Time Zone Database in the Standard Library
+        PEP written and implemented by Paul Ganssle
+
+
+graphlib
+---------
+
+Add the :mod:`graphlib` that contains the :class:`graphlib.TopologicalSorter` class
+to offer functionality to perform topological sorting of graphs. (Contributed by Pablo
+Galindo, Tim Peters and Larry Hastings in :issue:`17005`.)
 
 
 Improved Modules
@@ -245,6 +290,12 @@ that schedules a shutdown for the default executor that waits on the
 Added :class:`asyncio.PidfdChildWatcher`, a Linux-specific child watcher
 implementation that polls process file descriptors. (:issue:`38692`)
 
+Added a new :term:`coroutine` :func:`asyncio.to_thread`. It is mainly used for
+running IO-bound functions in a separate thread to avoid blocking the event
+loop, and essentially works as a high-level version of
+:meth:`~asyncio.loop.run_in_executor` that can directly take keyword arguments.
+(Contributed by Kyle Stanley and Yury Selivanov in :issue:`32309`.)
+
 compileall
 ----------
 
@@ -281,6 +332,20 @@ Add :func:`curses.get_escdelay`, :func:`curses.set_escdelay`,
 :func:`curses.get_tabsize`, and :func:`curses.set_tabsize` functions.
 (Contributed by Anthony Sottile in :issue:`38312`.)
 
+datetime
+--------
+The :meth:`~datetime.date.isocalendar()` of :class:`datetime.date`
+and :meth:`~datetime.datetime.isocalendar()` of :class:`datetime.datetime`
+methods now returns a :func:`~collections.namedtuple` instead of a :class:`tuple`.
+(Contributed by Dong-hee Na in :issue:`24416`.)
+
+distutils
+---------
+
+The :command:`upload` command now creates SHA2-256 and Blake2b-256 hash
+digests. It skips MD5 on platforms that block MD5 digest.
+(Contributed by Christian Heimes in :issue:`40698`.)
+
 fcntl
 -----
 
@@ -295,13 +360,6 @@ ftplib
 if the given timeout for their constructor is zero to prevent the creation of
 a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 
-functools
----------
-
-Add the :class:`functools.TopologicalSorter` class to offer functionality to perform
-topological sorting of graphs. (Contributed by Pablo Galindo, Tim Peters and Larry
-Hastings in :issue:`17005`.)
-
 gc
 --
 
@@ -314,11 +372,34 @@ Added a new function :func:`gc.is_finalized` to check if an object has been
 finalized by the garbage collector. (Contributed by Pablo Galindo in
 :issue:`39322`.)
 
+hashlib
+-------
+
+Builtin hash modules can now be disabled with
+``./configure --without-builtin-hashlib-hashes`` or selectively enabled with
+e.g. ``./configure --with-builtin-hashlib-hashes=sha3,blake2`` to force use
+of OpenSSL based implementation.
+(Contributed by Christian Heimes in :issue:`40479`)
+
 http
 ----
 
 HTTP status codes ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` are added to
 :class:`http.HTTPStatus`. (Contributed by Dong-hee Na in :issue:`39509` and Ross Rhodes in :issue:`39507`.)
+
+IDLE and idlelib
+----------------
+
+Add option to toggle cursor blink off.  (Contributed by Zackery Spytz
+in :issue:`4603`.)
+
+Escape key now closes IDLE completion windows.  (Contributed by Johnny
+Najera in :issue:`38944`.)
+
+Add keywords to module name completion list.  (Contributed by Terry J.
+Reedy in :issue:`37765`.)
+
+The changes above have been backported to 3.8 maintenance releases.
 
 imaplib
 -------
@@ -471,16 +552,36 @@ The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_JOIN_FILTERS`
 constant on Linux 4.1 and greater.
 (Contributed by Stefan Tatschner and Zackery Spytz in :issue:`25780`.)
 
+The socket module now supports the :data:`~socket.CAN_J1939` protocol on
+platforms that support it.  (Contributed by Karl Ding in :issue:`40291`.)
+
+time
+----
+
+On AIX, :func:`~time.thread_time` is now implemented with ``thread_cputime()``
+which has nanosecond resolution, rather than
+``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 ms.
+(Contributed by Batuhan Taskaya in :issue:`40192`)
+
 sys
 ---
 
 Add a new :attr:`sys.platlibdir` attribute: name of the platform-specific
-library directory. It is used to build the path of platform-specific dynamic
-libraries and the path of the standard library. It is equal to ``"lib"`` on
-most platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit
-platforms.
+library directory. It is used to build the path of standard library and the
+paths of installed extension modules. It is equal to ``"lib"`` on most
+platforms.  On Fedora and SuSE, it is equal to ``"lib64"`` on 64-bit platforms.
 (Contributed by Jan Matějek, Matěj Cepl, Charalampos Stratakis and Victor Stinner in :issue:`1294959`.)
 
+Previously, :attr:`sys.stderr` was block-buffered when non-interactive. Now
+``stderr`` defaults to always being line-buffered.
+(Contributed by Jendrik Seipp in :issue:`13601`.)
+
+tracemalloc
+-----------
+
+Added :func:`tracemalloc.reset_peak` to set the peak size of traced memory
+blocks to the current size, to measure the peak of specific pieces of code.
+(Contributed by Huon Wilson in :issue:`40630`.)
 
 typing
 ------
@@ -524,7 +625,7 @@ Optimizations
 
      sums = [s for s in [0] for x in data for s in [s + x]]
 
-  Unlike to the ``:=`` operator this idiom does not leak a variable to the
+  Unlike the ``:=`` operator this idiom does not leak a variable to the
   outer scope.
 
   (Contributed by Serhiy Storchaka in :issue:`32856`.)
@@ -543,6 +644,65 @@ Optimizations
   (Contributed by Ed Maste, Conrad Meyer, Kyle Evans, Kubilay Kocak and Victor
   Stinner in :issue:`38061`.)
 
+Here's a summary of performance improvements from Python 3.4 through Python 3.9:
+
+.. code-block:: none
+
+    Python version                       3.4     3.5     3.6     3.7     3.8    3.9
+    --------------                       ---     ---     ---     ---     ---    ---
+
+    Variable and attribute read access:
+        read_local                       7.1     7.1     5.4     5.1     3.9    3.9
+        read_nonlocal                    7.1     8.1     5.8     5.4     4.4    4.5
+        read_global                     15.5    19.0    14.3    13.6     7.6    7.8
+        read_builtin                    21.1    21.6    18.5    19.0     7.5    7.8
+        read_classvar_from_class        25.6    26.5    20.7    19.5    18.4   17.9
+        read_classvar_from_instance     22.8    23.5    18.8    17.1    16.4   16.9
+        read_instancevar                32.4    33.1    28.0    26.3    25.4   25.3
+        read_instancevar_slots          27.8    31.3    20.8    20.8    20.2   20.5
+        read_namedtuple                 73.8    57.5    45.0    46.8    18.4   18.7
+        read_boundmethod                37.6    37.9    29.6    26.9    27.7   41.1
+
+    Variable and attribute write access:
+        write_local                      8.7     9.3     5.5     5.3     4.3    4.3
+        write_nonlocal                  10.5    11.1     5.6     5.5     4.7    4.8
+        write_global                    19.7    21.2    18.0    18.0    15.8   16.7
+        write_classvar                  92.9    96.0   104.6   102.1    39.2   39.8
+        write_instancevar               44.6    45.8    40.0    38.9    35.5   37.4
+        write_instancevar_slots         35.6    36.1    27.3    26.6    25.7   25.8
+
+    Data structure read access:
+        read_list                       24.2    24.5    20.8    20.8    19.0   19.5
+        read_deque                      24.7    25.5    20.2    20.6    19.8   20.2
+        read_dict                       24.3    25.7    22.3    23.0    21.0   22.4
+        read_strdict                    22.6    24.3    19.5    21.2    18.9   21.5
+
+    Data structure write access:
+        write_list                      27.1    28.5    22.5    21.6    20.0   20.0
+        write_deque                     28.7    30.1    22.7    21.8    23.5   21.7
+        write_dict                      31.4    33.3    29.3    29.2    24.7   25.4
+        write_strdict                   28.4    29.9    27.5    25.2    23.1   24.5
+
+    Stack (or queue) operations:
+        list_append_pop                 93.4   112.7    75.4    74.2    50.8   50.6
+        deque_append_pop                43.5    57.0    49.4    49.2    42.5   44.2
+        deque_append_popleft            43.7    57.3    49.7    49.7    42.8   46.4
+
+    Timing loop:
+        loop_overhead                    0.5     0.6     0.4     0.3     0.3    0.3
+
+These results were generated from the variable access benchmark script at:
+``Tools/scripts/var_access_benchmark.py``. The benchmark script displays timings
+in nanoseconds.  The benchmarks were measured on an
+`Intel® Core™ i7-4960HQ processor
+<https://ark.intel.com/content/www/us/en/ark/products/76088/intel-core-i7-4960hq-processor-6m-cache-up-to-3-80-ghz.html>`_
+running the macOS 64-bit builds found at
+`python.org <https://www.python.org/downloads/mac-osx/>`_.
+
+* A number of Python builtins (:class:`range`, :class:`tuple`, :class:`set`, :class:`frozenset`, :class:`list`, :class:`dict`)
+  are now sped up by using :pep:`590` vectorcall protocol.
+  (Contributed by Dong-hee Na, Mark Shannon, Jeroen Demeyer and Petr Viktorin in :issue:`37207`.)
+
 
 Deprecated
 ==========
@@ -557,9 +717,15 @@ Deprecated
   Python versions it will raise a :exc:`TypeError` for all floats.
   (Contributed by Serhiy Storchaka in :issue:`37315`.)
 
-* The :mod:`parser` module is deprecated and will be removed in future versions
-  of Python. For the majority of use cases, users can leverage the Abstract Syntax
-  Tree (AST) generation and compilation stage, using the :mod:`ast` module.
+* The :mod:`parser` and :mod:`symbol` modules are deprecated and will be
+  removed in future versions of Python. For the majority of use cases,
+  users can leverage the Abstract Syntax Tree (AST) generation and compilation
+  stage, using the :mod:`ast` module.
+
+* The Public C API functions :c:func:`PyParser_SimpleParseStringFlags`,
+  :c:func:`PyParser_SimpleParseStringFlagsFilename`,
+  :c:func:`PyParser_SimpleParseFileFlags` and :c:func:`PyNode_Compile`
+  are deprecated and will be removed in Python 3.10 together with the old parser.
 
 * Using :data:`NotImplemented` in a boolean context has been deprecated,
   as it is almost exclusively the result of incorrect rich comparator
@@ -600,7 +766,7 @@ Deprecated
   and will be removed in future Python versions.  ``value`` itself should be
   used instead of ``Index(value)``.  ``Tuple(slices, Load())`` should be
   used instead of ``ExtSlice(slices)``.
-  (Contributed by Serhiy Storchaka in :issue:`32892`.)
+  (Contributed by Serhiy Storchaka in :issue:`34822`.)
 
 * :mod:`ast` classes ``Suite``, ``Param``, ``AugLoad`` and ``AugStore``
   are considered deprecated and will be removed in future Python versions.
@@ -625,6 +791,9 @@ Deprecated
   Python version. Consider third-party alternatives such as `LibCST`_ or
   `parso`_.
   (Contributed by Carl Meyer in :issue:`40360`.)
+
+* The *random* parameter of :func:`random.shuffle` has been deprecated.
+  (Contributed by Raymond Hettinger in :issue:`40465`)
 
 .. _LibCST: https://libcst.readthedocs.io/
 .. _parso: https://parso.readthedocs.io/
@@ -680,11 +849,6 @@ Removed
   module have been removed.  They were deprecated in Python 3.2.
   Use ``iter(x)`` or ``list(x)`` instead of ``x.getchildren()`` and
   ``x.iter()`` or ``list(x.iter())`` instead of ``x.getiterator()``.
-  The ``xml.etree.cElementTree`` module has been removed,
-  use the :mod:`xml.etree.ElementTree` module instead.
-  Since Python 3.3 the ``xml.etree.cElementTree`` module has been deprecated,
-  the ``xml.etree.ElementTree`` module uses a fast implementation whenever
-  available.
   (Contributed by Serhiy Storchaka in :issue:`36543`.)
 
 * The old :mod:`plistlib` API has been removed, it was deprecated since Python
@@ -692,9 +856,6 @@ Removed
   :func:`~plistlib.dumps` functions. Additionally, the *use_builtin_types* parameter was
   removed, standard :class:`bytes` objects are always used instead.
   (Contributed by Jon Janzen in :issue:`36409`.)
-
-* The C function ``PyThreadState_DeleteCurrent()`` has been removed. It was not documented.
-  (Contributed by Joannah Nanjekye in :issue:`37878`.)
 
 * The C function ``PyGen_NeedsFinalizing`` has been removed. It was not
   documented, tested, or used anywhere within CPython after the implementation
@@ -732,13 +893,23 @@ Removed
   (Contributed by Victor Stinner in :issue:`39489`.)
 
 * The ``_field_types`` attribute of the :class:`typing.NamedTuple` class
-  has been removed.  It was deprecated deprecated since Python 3.8.  Use
+  has been removed.  It was deprecated since Python 3.8.  Use
   the ``__annotations__`` attribute instead.
   (Contributed by Serhiy Storchaka in :issue:`40182`.)
 
 * The :meth:`symtable.SymbolTable.has_exec` method has been removed. It was
   deprecated since 2006, and only returning ``False`` when it's called.
   (Contributed by Batuhan Taskaya in :issue:`40208`)
+
+* The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks`
+  have been removed. They were deprecated since Python 3.7 and you can use
+  :func:`asyncio.current_task` and :func:`asyncio.all_tasks` instead.
+  (Contributed by Rémi Lapeyre in :issue:`40967`)
+
+* The ``unescape()`` method in the :class:`html.parser.HTMLParser` class
+  has been removed (it was deprecated since Python 3.4).  :func:`html.unescape`
+  should be used for converting character references to the corresponding
+  unicode characters.
 
 
 Porting to Python 3.9
@@ -781,11 +952,6 @@ Changes in the Python API
   :class:`ftplib.FTP_TLS` as a keyword-only parameter, and the default encoding
   is changed from Latin-1 to UTF-8 to follow :rfc:`2640`.
 
-* :func:`inspect.getdoc` no longer returns docstring inherited from the type
-  of the object or from parent class if it is a class if it is not defined
-  in the object itself.
-  (Contributed by Serhiy Storchaka in :issue:`40257`.)
-
 * :meth:`asyncio.loop.shutdown_default_executor` has been added to
   :class:`~asyncio.AbstractEventLoop`, meaning alternative event loops that
   inherit from it should have this method defined.
@@ -801,6 +967,55 @@ Changes in the Python API
   of ``wchar_t`` since Python 3.3.
   (Contributed by Inada Naoki in :issue:`34538`.)
 
+
+Changes in the C API
+--------------------
+
+* Instances of heap-allocated types (such as those created with
+  :c:func:`PyType_FromSpec` and similar APIs) hold a reference to their type
+  object since Python 3.8. As indicated in the "Changes in the C API" of Python
+  3.8, for the vast majority of cases, there should be no side effect but for
+  types that have a custom :c:member:`~PyTypeObject.tp_traverse` function,
+  ensure that all custom ``tp_traverse`` functions of heap-allocated types
+  visit the object's type.
+
+    Example:
+
+    .. code-block:: c
+
+        int
+        foo_traverse(foo_struct *self, visitproc visit, void *arg) {
+        // Rest of the traverse function
+        #if PY_VERSION_HEX >= 0x03090000
+            // This was not needed before Python 3.9 (Python issue 35810 and 40217)
+            Py_VISIT(Py_TYPE(self));
+        #endif
+        }
+
+  If your traverse function delegates to ``tp_traverse`` of its base class
+  (or another type), ensure that ``Py_TYPE(self)`` is visited only once.
+  Note that only heap types are expected to visit the type in ``tp_traverse``.
+
+    For example, if your ``tp_traverse`` function includes:
+
+    .. code-block:: c
+
+        base->tp_traverse(self, visit, arg)
+
+    then add:
+
+    .. code-block:: c
+
+        #if PY_VERSION_HEX >= 0x03090000
+            // This was not needed before Python 3.9 (Python issue 35810 and 40217)
+            if (base->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+                // a heap type's tp_traverse already visited Py_TYPE(self)
+            } else {
+                Py_VISIT(Py_TYPE(self));
+            }
+        #else
+
+  (See :issue:`35810` and :issue:`40217` for more information.)
 
 CPython bytecode changes
 ------------------------
@@ -833,6 +1048,13 @@ C API Changes
 
 New Features
 ------------
+
+* :pep:`573`: Add :c:func:`PyType_FromModuleAndSpec` to associate
+  a module with a class; :c:func:`PyType_GetModule` and
+  :c:func:`PyType_GetModuleState` to retrieve the module and its state; and
+  :c:data:`PyCMethod` and :c:data:`METH_METHOD` to allow a method to
+  access the class it was defined in.
+  (Contributed by Marcel Plch and Petr Viktorin in :issue:`38787`.)
 
 * Add :c:func:`PyFrame_GetCode` function: get a frame code.
   Add :c:func:`PyFrame_GetBack` function: get the frame next outer frame.
@@ -911,6 +1133,16 @@ Porting to Python 3.9
   and refers to a constant string.
   (Contributed by Serhiy Storchaka in :issue:`38650`.)
 
+* The :c:type:`PyGC_Head` structure is now opaque. It is only defined in the
+  internal C API (``pycore_gc.h``).
+  (Contributed by Victor Stinner in :issue:`40241`.)
+
+* The ``Py_UNICODE_COPY``, ``Py_UNICODE_FILL``, ``PyUnicode_WSTR_LENGTH``,
+  :c:func:`PyUnicode_FromUnicode`, :c:func:`PyUnicode_AsUnicode`,
+  ``_PyUnicode_AsUnicode``, and :c:func:`PyUnicode_AsUnicodeAndSize` are
+  marked as deprecated in C.  They have been deprecated by :pep:`393` since
+  Python 3.3.
+  (Contributed by Inada Naoki in :issue:`36346`.)
 
 Removed
 -------
@@ -928,6 +1160,8 @@ Removed
 
   * Exclude the following functions from the limited C API:
 
+    * ``PyThreadState_DeleteCurrent()``
+      (Contributed by Joannah Nanjekye in :issue:`37878`.)
     * ``_Py_CheckRecursionLimit``
     * ``_Py_NewReference()``
     * ``_Py_ForgetReference()``
@@ -977,3 +1211,8 @@ Removed
 
 * Remove ``_PyUnicode_ClearStaticStrings()`` function.
   (Contributed by Victor Stinner in :issue:`39465`.)
+
+* Remove ``Py_UNICODE_MATCH``. It has been deprecated by :pep:`393`, and
+  broken since Python 3.3. The :c:func:`PyUnicode_Tailmatch` function can be
+  used instead.
+  (Contributed by Inada Naoki in :issue:`36346`.)

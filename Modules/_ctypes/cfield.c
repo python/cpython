@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_byteswap.h"      // _Py_bswap32()
+#include "pycore_bitutils.h"      // _Py_bswap32()
 
 #include <ffi.h>
 #ifdef MS_WIN32
@@ -354,14 +354,7 @@ PyTypeObject PyCField_Type = {
 static int
 get_long(PyObject *v, long *p)
 {
-    long x;
-
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongMask(v);
+    long x = PyLong_AsUnsignedLongMask(v);
     if (x == -1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -373,14 +366,7 @@ get_long(PyObject *v, long *p)
 static int
 get_ulong(PyObject *v, unsigned long *p)
 {
-    unsigned long x;
-
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongMask(v);
+    unsigned long x = PyLong_AsUnsignedLongMask(v);
     if (x == (unsigned long)-1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -392,13 +378,7 @@ get_ulong(PyObject *v, unsigned long *p)
 static int
 get_longlong(PyObject *v, long long *p)
 {
-    long long x;
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongLongMask(v);
+    long long x = PyLong_AsUnsignedLongLongMask(v);
     if (x == -1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -410,13 +390,7 @@ get_longlong(PyObject *v, long long *p)
 static int
 get_ulonglong(PyObject *v, unsigned long long *p)
 {
-    unsigned long long x;
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongLongMask(v);
+    unsigned long long x = PyLong_AsUnsignedLongLongMask(v);
     if (x == (unsigned long long)-1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -684,7 +658,11 @@ i_get_sw(void *ptr, Py_ssize_t size)
     return PyLong_FromLong(val);
 }
 
-#ifdef MS_WIN32
+#ifndef MS_WIN32
+/* http://msdn.microsoft.com/en-us/library/cc237864.aspx */
+#define VARIANT_FALSE 0x0000
+#define VARIANT_TRUE 0xFFFF
+#endif
 /* short BOOL - VARIANT_BOOL */
 static PyObject *
 vBOOL_set(void *ptr, PyObject *value, Py_ssize_t size)
@@ -706,7 +684,6 @@ vBOOL_get(void *ptr, Py_ssize_t size)
 {
     return PyBool_FromLong((long)*(short int *)ptr);
 }
-#endif
 
 static PyObject *
 bool_set(void *ptr, PyObject *value, Py_ssize_t size)
@@ -1246,11 +1223,8 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
                      "string too long (%zd, maximum length %zd)",
                      size, length);
         return NULL;
-    } else if (size < length-1)
-        /* copy terminating NUL character if there is space */
-        size += 1;
-
-    if (PyUnicode_AsWideChar(value, (wchar_t *)ptr, size) == -1) {
+    }
+    if (PyUnicode_AsWideChar(value, (wchar_t *)ptr, length) == -1) {
         return NULL;
     }
 
@@ -1289,7 +1263,9 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
     }
 
     data = PyBytes_AS_STRING(value);
-    size = strlen(data); /* XXX Why not Py_SIZE(value)? */
+    // bpo-39593: Use strlen() to truncate the string at the first null character.
+    size = strlen(data);
+
     if (size < length) {
         /* This will copy the terminating NUL character
          * if there is space for it.
@@ -1538,8 +1514,8 @@ static struct fielddesc formattable[] = {
 #endif
 #ifdef MS_WIN32
     { 'X', BSTR_set, BSTR_get, &ffi_type_pointer},
-    { 'v', vBOOL_set, vBOOL_get, &ffi_type_sshort},
 #endif
+    { 'v', vBOOL_set, vBOOL_get, &ffi_type_sshort},
 #if SIZEOF__BOOL == 1
     { '?', bool_set, bool_get, &ffi_type_uchar}, /* Also fallback for no native _Bool support */
 #elif SIZEOF__BOOL == SIZEOF_SHORT

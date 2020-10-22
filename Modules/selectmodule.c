@@ -88,25 +88,6 @@ class select.kqueue "kqueue_queue_Object *" "_selectstate_global->kqueue_queue_T
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=41071028e0ede093]*/
 
-static int
-fildes_converter(PyObject *o, void *p)
-{
-    int fd;
-    int *pointer = (int *)p;
-    fd = PyObject_AsFileDescriptor(o);
-    if (fd == -1)
-        return 0;
-    *pointer = fd;
-    return 1;
-}
-
-/*[python input]
-class fildes_converter(CConverter):
-    type = 'int'
-    converter = 'fildes_converter'
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=ca54eb5aa476e20a]*/
-
 /* list of Python objects and their file descriptor */
 typedef struct {
     PyObject *obj;                           /* owned reference */
@@ -239,7 +220,7 @@ select.select
 
 Wait until one or more file descriptors are ready for some kind of I/O.
 
-The first three arguments are sequences of file descriptors to be waited for:
+The first three arguments are iterables of file descriptors to be waited for:
 rlist -- wait until ready for reading
 wlist -- wait until ready for writing
 xlist -- wait for an "exceptional condition"
@@ -264,7 +245,7 @@ descriptors can be used.
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj)
-/*[clinic end generated code: output=2b3cfa824f7ae4cf input=177e72184352df25]*/
+/*[clinic end generated code: output=2b3cfa824f7ae4cf input=e467f5d68033de00]*/
 {
 #ifdef SELECT_USES_HEAP
     pylist *rfd2obj, *wfd2obj, *efd2obj;
@@ -320,7 +301,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     }
 #endif /* SELECT_USES_HEAP */
 
-    /* Convert sequences to fd_sets, and get maximum fd number
+    /* Convert iterables to fd_sets, and get maximum fd number
      * propagates the Python exception set in seq2set()
      */
     rfd2obj[0].sentinel = -1;
@@ -458,7 +439,7 @@ select.poll.register
 
     fd: fildes
       either an integer, or an object with a fileno() method returning an int
-    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
+    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = select.POLLIN | select.POLLPRI | select.POLLOUT
       an optional bitmask describing the type of events to check for
     /
 
@@ -467,7 +448,7 @@ Register a file descriptor with the polling object.
 
 static PyObject *
 select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask)
-/*[clinic end generated code: output=0dc7173c800a4a65 input=f18711d9bb021e25]*/
+/*[clinic end generated code: output=0dc7173c800a4a65 input=34e16cfb28d3c900]*/
 {
     PyObject *key, *value;
     int err;
@@ -764,6 +745,8 @@ poll_dealloc(pollObject *self)
 
 
 #ifdef HAVE_SYS_DEVPOLL_H
+static PyMethodDef devpoll_methods[];
+
 typedef struct {
     PyObject_HEAD
     int fd_devpoll;
@@ -843,7 +826,7 @@ select.devpoll.register
     fd: fildes
         either an integer, or an object with a fileno() method returning
         an int
-    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
+    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = select.POLLIN | select.POLLPRI | select.POLLOUT
         an optional bitmask describing the type of events to check for
     /
 
@@ -853,7 +836,7 @@ Register a file descriptor with the polling object.
 static PyObject *
 select_devpoll_register_impl(devpollObject *self, int fd,
                              unsigned short eventmask)
-/*[clinic end generated code: output=6e07fe8b74abba0c input=5bd7cacc47a8ee46]*/
+/*[clinic end generated code: output=6e07fe8b74abba0c input=22006fabe9567522]*/
 {
     return internal_devpoll_register(self, fd, eventmask, 0);
 }
@@ -864,7 +847,7 @@ select.devpoll.modify
     fd: fildes
         either an integer, or an object with a fileno() method returning
         an int
-    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = POLLIN | POLLPRI | POLLOUT
+    eventmask: unsigned_short(c_default="POLLIN | POLLPRI | POLLOUT") = select.POLLIN | select.POLLPRI | select.POLLOUT
         an optional bitmask describing the type of events to check for
     /
 
@@ -874,7 +857,7 @@ Modify a possible already registered file descriptor.
 static PyObject *
 select_devpoll_modify_impl(devpollObject *self, int fd,
                            unsigned short eventmask)
-/*[clinic end generated code: output=bc2e6d23aaff98b4 input=48a820fc5967165d]*/
+/*[clinic end generated code: output=bc2e6d23aaff98b4 input=09fa335db7cdc09e]*/
 {
     return internal_devpoll_register(self, fd, eventmask, 1);
 }
@@ -1473,7 +1456,7 @@ select.epoll.register
 
     fd: fildes
       the target file descriptor of the operation
-    eventmask: unsigned_int(c_default="EPOLLIN | EPOLLPRI | EPOLLOUT", bitwise=True) = EPOLLIN | EPOLLPRI | EPOLLOUT
+    eventmask: unsigned_int(c_default="EPOLLIN | EPOLLPRI | EPOLLOUT", bitwise=True) = select.EPOLLIN | select.EPOLLPRI | select.EPOLLOUT
       a bit set composed of the various EPOLL constants
 
 Registers a new fd or raises an OSError if the fd is already registered.
@@ -1484,7 +1467,7 @@ The epoll interface supports all file descriptors that support poll.
 static PyObject *
 select_epoll_register_impl(pyEpoll_Object *self, int fd,
                            unsigned int eventmask)
-/*[clinic end generated code: output=318e5e6386520599 input=6cf699c152dd8ca9]*/
+/*[clinic end generated code: output=318e5e6386520599 input=a5071b71edfe3578]*/
 {
     return pyepoll_internal_ctl(self->epfd, EPOLL_CTL_ADD, fd, eventmask);
 }
@@ -2480,7 +2463,6 @@ PyInit_select(void)
         if (poll_Type == NULL)
             return NULL;
         get_select_state(m)->poll_Type = (PyTypeObject *)poll_Type;
-        Py_INCREF(poll_Type);
 
         PyModule_AddIntMacro(m, POLLIN);
         PyModule_AddIntMacro(m, POLLPRI);
@@ -2516,7 +2498,6 @@ PyInit_select(void)
     if (devpoll_Type == NULL)
         return NULL;
     get_select_state(m)->devpoll_Type = (PyTypeObject *)devpoll_Type;
-    Py_INCREF(devpoll_Type);
 #endif
 
 #ifdef HAVE_EPOLL

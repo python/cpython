@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "cpython/initconfig.h"
 
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
@@ -60,8 +56,6 @@ struct _ts {
     int recursion_depth;
     char overflowed; /* The stack has overflowed. Allow 50 more calls
                         to handle the runtime error. */
-    char recursion_critical; /* The current calls must not cause
-                                a stack overflow. */
     int stackcheck_counter;
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
@@ -257,7 +251,3 @@ typedef int (*crossinterpdatafunc)(PyObject *, struct _xid *);
 
 PyAPI_FUNC(int) _PyCrossInterpreterData_RegisterClass(PyTypeObject *, crossinterpdatafunc);
 PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
-
-#ifdef __cplusplus
-}
-#endif
