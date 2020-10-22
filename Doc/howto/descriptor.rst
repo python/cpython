@@ -7,6 +7,53 @@ Descriptor HowTo Guide
 
 .. Contents::
 
+Preview
+^^^^^^^
+
+Descriptors let objects customize attribute lookup, storage, and deletion.
+
+This howto guide has three major sections.  It starts with a "primer" that gives a basic overview.  The second section explains a complete, practical descriptor example.  The third section provides a more technical tutorial that goes into the detailed mechanics of how descriptors work.
+
+Primer
+^^^^^^
+
+In this primer, we start with most basic possible example and then we'll add new capabilities one by one.
+
+Super simple example: A descriptor that returns a constant
+----------------------------------------------------------
+
+The :class:`Ten` is a descriptor that always returns a constant ``10``::
+
+
+    class Ten:
+
+        def __get__(self, obj, objtype=None):
+            return 10
+
+To use the descriptor, it must be stored as a class variable in another class::
+
+    class A:
+        x = 5       # Regular attribute
+        y = Ten()   # Descriptor
+
+An interactive session shows the difference between normal attribute lookup and descriptor lookup::
+
+    >>> a = A()         # Make an instance of class A
+    >>> a.x             # Normal attribute lookup
+    5
+    >>> a.y             # Descriptor lookup
+    10
+
+In the ``a.x`` attribute lookup, the dot operator finds the value ``5`` stored in the class dictionary.  In the ``a.y`` descriptor lookup, the dot operator calls the :meth:`get()` on the descriptor.  That method returns ``10``.  Note that the value ``10`` is not stored in either the class dictionary or instance dictionary.  The value ``10`` is computed on demand.
+
+
+
+
+
+Technical Tutorial
+^^^^^^^^^^^^^^^^^^
+
+
 Abstract
 --------
 
