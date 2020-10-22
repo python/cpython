@@ -5,6 +5,10 @@
 
 #if defined(__APPLE__)
 #include <mach/mach_time.h>   /* mach_absolute_time(), mach_timebase_info() */
+
+#if defined(__APPLE__) && defined(__has_builtin) && __has_builtin(__builtin_available)
+#  define HAVE_CLOCK_GETTIME_RUNTIME __builtin_available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)
+#endif
 #endif
 
 #define _PyTime_check_mul_overflow(a, b) \
@@ -695,8 +699,8 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 
 #ifdef HAVE_CLOCK_GETTIME
 
-#if defined(__APPLE__) 
-    if (__builtin_available(macOS 10.12, iOS 10.0, tvOS 10.0, watchOS 3.0, *)) {
+#ifdef HAVE_CLOCK_GETTIME_RUNTIME
+    if (HAVE_CLOCK_GETTIME_RUNTIME) {
 #endif
 
     err = clock_gettime(CLOCK_REALTIME, &ts);
@@ -723,13 +727,13 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
         }
     }
 
-#ifdef __APPLE__
+#ifdef HAVE_CLOCK_GETTIME_RUNTIME
     } else { 
 #endif
 
 #endif
 
-#if !defined(HAVE_CLOCK_GETTIME) || defined(__APPLE__)
+#if !defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_GETTIME_RUNTIME)
 
      /* test gettimeofday() */
     err = gettimeofday(&tv, (struct timezone *)NULL);
@@ -750,7 +754,7 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
         info->adjustable = 1;
     }
 
-#if defined(__APPLE__) && defined(HAVE_CLOCK_GETTIME)
+#if defined(HAVE_CLOCK_GETTIME_RUNTIME) && defined(HAVE_CLOCK_GETTIME)
     } /* end of availibity block */
 #endif
 
