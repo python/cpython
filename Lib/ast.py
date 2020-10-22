@@ -673,7 +673,6 @@ class _Unparser(NodeVisitor):
         self._precedences = {}
         self._type_ignores = {}
         self._indent = 0
-        self._pattern = False
 
     def interleave(self, inter, f, seq):
         """Call f on each item in seq, calling inter() in between."""
@@ -734,18 +733,6 @@ class _Unparser(NodeVisitor):
         self._indent += 1
         yield
         self._indent -= 1
-
-    @contextmanager
-    def pattern(self):
-        assert not self._pattern
-        self._pattern = True
-        yield
-        assert self._pattern
-        self._pattern = False
-
-    @property
-    def in_pattern(self):
-        return self._pattern
 
     @contextmanager
     def delimit(self, start, end):
@@ -1347,12 +1334,8 @@ class _Unparser(NodeVisitor):
     boolop_precedence = {"and": _Precedence.AND, "or": _Precedence.OR}
 
     def visit_BoolOp(self, node):
-        if self.in_pattern:
-            operator = "|"
-            operator_precedence = _Precedence.OR
-        else:
-            operator = self.boolops[node.op.__class__.__name__]
-            operator_precedence = self.boolop_precedence[operator]
+        operator = self.boolops[node.op.__class__.__name__]
+        operator_precedence = self.boolop_precedence[operator]
 
         def increasing_level_traverse(node):
             nonlocal operator_precedence
@@ -1523,8 +1506,7 @@ class _Unparser(NodeVisitor):
 
     def visit_match_case(self, node):
         self.fill("case ")
-        with self.pattern():
-            self.traverse(node.pattern)
+        self.traverse(node.pattern)
         if node.guard:
             self.write(" if ")
             self.traverse(node.guard)
@@ -1532,9 +1514,15 @@ class _Unparser(NodeVisitor):
             self.traverse(node.body)
 
     def visit_MatchAs(self, node):
-        with self.require_parens(_Precedence.TUPLE, node):
+        with self.require_parens(_Precedence.TEST, node):
+            self.set_precedence(_Precedence.EXPR, node.pattern)
             self.traverse(node.pattern)
             self.write(f" as {node.name}")
+
+    def visit_MatchOr(self, node):
+        with self.require_parens(_Precedence.EXPR, node):
+            self.set_precedence(_Precedence.ATOM, *node.patterns)
+            self.interleave(lambda: self.write(" | "), self.traverse, node.patterns)
 
 def unparse(ast_obj):
     unparser = _Unparser()

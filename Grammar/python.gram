@@ -221,7 +221,7 @@ pattern[expr_ty]:
 
 or_pattern[expr_ty]:
     | values[asdl_expr_seq*]='|'.closed_pattern+ {
-        asdl_seq_LEN(values) == 1 ? asdl_seq_GET(values, 0) : _Py_BoolOp(Or, values, EXTRA) }
+        asdl_seq_LEN(values) == 1 ? asdl_seq_GET(values, 0) : _Py_MatchOr(values, EXTRA) }
 
 closed_pattern[expr_ty]:
     | name_pattern

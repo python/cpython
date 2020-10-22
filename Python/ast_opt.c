@@ -395,6 +395,7 @@ static int astfold_keyword(keyword_ty node_, PyArena *ctx_, _PyASTOptimizeState 
 static int astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 
 #define CALL(FUNC, TYPE, ARG) \
     if (!FUNC((ARG), ctx_, state)) \
@@ -773,29 +774,55 @@ astfold_pattern_complex(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state
 }
 
 static int
+astfold_pattern_keyword(keyword_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    CALL(astfold_pattern, expr_ty, node_->value);
+    return 1;
+}
+
+static int
 astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     // Don't blindly optimize the pattern as an expr; it plays by its own rules!
     switch (node_->kind) {
         case Attribute_kind:
-            return 1;
+            break;
         case BinOp_kind:
             CALL(astfold_pattern_complex, expr_ty, node_);
-            return 1;
-        case BoolOp_kind:
+            break;
         case Call_kind:
+            CALL_SEQ(astfold_pattern, expr, node_->v.Call.args);
+            CALL_SEQ(astfold_pattern_keyword, keyword, node_->v.Call.keywords);
+            break;
         case Constant_kind:
+            break;
         case Dict_kind:
+            CALL_SEQ(astfold_pattern, expr, node_->v.Dict.keys);
+            CALL_SEQ(astfold_pattern, expr, node_->v.Dict.values);
+            break;
         // Not actually valid, but it's the compiler's job to complain:
         case JoinedStr_kind:
+            break;
         case List_kind:
+            CALL_SEQ(astfold_pattern, expr, node_->v.List.elts);
+            break;
         case MatchAs_kind:
+            CALL(astfold_pattern, expr_ty, node_->v.MatchAs.pattern);
+            break;
+        case MatchOr_kind:
+            CALL_SEQ(astfold_pattern, expr, node_->v.MatchOr.patterns);
+            break;
         case Name_kind:
+            break;
+        case Starred_kind:
+            CALL(astfold_pattern, expr_ty, node_->v.Starred.value);
+            break;
         case Tuple_kind:
-            return 1;
+            CALL_SEQ(astfold_pattern, expr, node_->v.Tuple.elts);
+            break;
         case UnaryOp_kind:
             CALL(astfold_pattern_negative, expr_ty, node_);
-            return 1;
+            break;
         default:
             Py_UNREACHABLE();
     }

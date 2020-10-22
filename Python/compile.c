@@ -5133,6 +5133,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
     case Tuple_kind:
         return compiler_tuple(c, e);
     case MatchAs_kind:
+    case MatchOr_kind:
         // Can only occur in patterns, which are handled elsewhere.
         Py_UNREACHABLE();
     }
@@ -5533,22 +5534,21 @@ compiler_pattern_attribute(struct compiler *c, expr_ty p, pattern_context *pc)
 
 
 static int
-compiler_pattern_boolop(struct compiler *c, expr_ty p, pattern_context *pc)
+compiler_pattern_match_or(struct compiler *c, expr_ty p, pattern_context *pc)
 {
-    assert(p->kind == BoolOp_kind);
-    assert(p->v.BoolOp.op == Or);
+    assert(p->kind == MatchOr_kind);
     basicblock *end;
     PyObject *control = NULL;
     PyObject *diff;
     CHECK(end = compiler_new_block(c));
-    Py_ssize_t size = asdl_seq_LEN(p->v.BoolOp.values);
+    Py_ssize_t size = asdl_seq_LEN(p->v.MatchOr.patterns);
     assert(size > 1);
     PyObject *stores_init = pc->stores;
     int allow_irrefutable = pc->allow_irrefutable;
     expr_ty alt;
     for (Py_ssize_t i = 0; i < size; i++) {
         // Can't use our helpful returning macros here: they'll leak sets!
-        alt = asdl_seq_GET(p->v.BoolOp.values, i);
+        alt = asdl_seq_GET(p->v.MatchOr.patterns, i);
         pc->stores = PySet_New(stores_init);
         // An irrefutable sub-pattern must be last, if it is allowed at all:
         pc->allow_irrefutable = allow_irrefutable && (i == size - 1);
@@ -5843,7 +5843,7 @@ compiler_pattern_name(struct compiler *c, expr_ty p, pattern_context *pc)
 
 
 static int
-compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
+compiler_pattern_match_as(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchAs_kind);
     basicblock *end;
@@ -5880,8 +5880,6 @@ compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
         case BinOp_kind:
             // Because we allow "2+2j", things like "2+2" make it this far:
             return compiler_error(c, "patterns cannot include operators");
-        case BoolOp_kind:
-            return compiler_pattern_boolop(c, p, pc);
         case Call_kind:
             return compiler_pattern_call(c, p, pc);
         case Constant_kind:
@@ -5895,7 +5893,9 @@ compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
         case Tuple_kind:
             return compiler_pattern_list_tuple(c, p, pc);
         case MatchAs_kind:
-            return compiler_pattern_as(c, p, pc);
+            return compiler_pattern_match_as(c, p, pc);
+        case MatchOr_kind:
+            return compiler_pattern_match_or(c, p, pc);
         case Name_kind:
             return compiler_pattern_name(c, p, pc);
         default:

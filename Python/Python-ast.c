@@ -88,6 +88,7 @@ typedef struct {
     PyObject *MatMult_singleton;
     PyObject *MatMult_type;
     PyObject *MatchAs_type;
+    PyObject *MatchOr_type;
     PyObject *Match_type;
     PyObject *Mod_singleton;
     PyObject *Mod_type;
@@ -207,6 +208,7 @@ typedef struct {
     PyObject *optional_vars;
     PyObject *orelse;
     PyObject *pattern;
+    PyObject *patterns;
     PyObject *posonlyargs;
     PyObject *returns;
     PyObject *right;
@@ -341,6 +343,7 @@ void _PyAST_Fini(PyThreadState *tstate)
     Py_CLEAR(state->MatMult_singleton);
     Py_CLEAR(state->MatMult_type);
     Py_CLEAR(state->MatchAs_type);
+    Py_CLEAR(state->MatchOr_type);
     Py_CLEAR(state->Match_type);
     Py_CLEAR(state->Mod_singleton);
     Py_CLEAR(state->Mod_type);
@@ -460,6 +463,7 @@ void _PyAST_Fini(PyThreadState *tstate)
     Py_CLEAR(state->optional_vars);
     Py_CLEAR(state->orelse);
     Py_CLEAR(state->pattern);
+    Py_CLEAR(state->patterns);
     Py_CLEAR(state->posonlyargs);
     Py_CLEAR(state->returns);
     Py_CLEAR(state->right);
@@ -549,6 +553,7 @@ static int init_identifiers(astmodulestate *state)
     if ((state->optional_vars = PyUnicode_InternFromString("optional_vars")) == NULL) return 0;
     if ((state->orelse = PyUnicode_InternFromString("orelse")) == NULL) return 0;
     if ((state->pattern = PyUnicode_InternFromString("pattern")) == NULL) return 0;
+    if ((state->patterns = PyUnicode_InternFromString("patterns")) == NULL) return 0;
     if ((state->posonlyargs = PyUnicode_InternFromString("posonlyargs")) == NULL) return 0;
     if ((state->returns = PyUnicode_InternFromString("returns")) == NULL) return 0;
     if ((state->right = PyUnicode_InternFromString("right")) == NULL) return 0;
@@ -841,6 +846,9 @@ static const char * const Slice_fields[]={
 static const char * const MatchAs_fields[]={
     "pattern",
     "name",
+};
+static const char * const MatchOr_fields[]={
+    "patterns",
 };
 static PyObject* ast2obj_expr_context(astmodulestate *state, expr_context_ty);
 static PyObject* ast2obj_boolop(astmodulestate *state, boolop_ty);
@@ -1481,7 +1489,8 @@ static int init_types(astmodulestate *state)
         "     | List(expr* elts, expr_context ctx)\n"
         "     | Tuple(expr* elts, expr_context ctx)\n"
         "     | Slice(expr? lower, expr? upper, expr? step)\n"
-        "     | MatchAs(expr pattern, identifier name)");
+        "     | MatchAs(expr pattern, identifier name)\n"
+        "     | MatchOr(expr* patterns)");
     if (!state->expr_type) return 0;
     if (!add_attributes(state, state->expr_type, expr_attributes, 4)) return 0;
     if (PyObject_SetAttr(state->expr_type, state->end_lineno, Py_None) == -1)
@@ -1618,6 +1627,10 @@ static int init_types(astmodulestate *state)
                                     MatchAs_fields, 2,
         "MatchAs(expr pattern, identifier name)");
     if (!state->MatchAs_type) return 0;
+    state->MatchOr_type = make_type(state, "MatchOr", state->expr_type,
+                                    MatchOr_fields, 1,
+        "MatchOr(expr* patterns)");
+    if (!state->MatchOr_type) return 0;
     state->expr_context_type = make_type(state, "expr_context",
                                          state->AST_type, NULL, 0,
         "expr_context = Load | Store | Del");
@@ -3336,6 +3349,23 @@ MatchAs(expr_ty pattern, identifier name, int lineno, int col_offset, int
     return p;
 }
 
+expr_ty
+MatchOr(asdl_expr_seq * patterns, int lineno, int col_offset, int end_lineno,
+        int end_col_offset, PyArena *arena)
+{
+    expr_ty p;
+    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = MatchOr_kind;
+    p->v.MatchOr.patterns = patterns;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
 comprehension_ty
 comprehension(expr_ty target, expr_ty iter, asdl_expr_seq * ifs, int is_async,
               PyArena *arena)
@@ -4579,6 +4609,17 @@ ast2obj_expr(astmodulestate *state, void* _o)
         value = ast2obj_identifier(state, o->v.MatchAs.name);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->name, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case MatchOr_kind:
+        tp = (PyTypeObject *)state->MatchOr_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_list(state, (asdl_seq*)o->v.MatchOr.patterns,
+                             ast2obj_expr);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->patterns, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -8845,6 +8886,52 @@ obj2ast_expr(astmodulestate *state, PyObject* obj, expr_ty* out, PyArena* arena)
         if (*out == NULL) goto failed;
         return 0;
     }
+    tp = state->MatchOr_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        asdl_expr_seq* patterns;
+
+        if (_PyObject_LookupAttr(obj, state->patterns, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"patterns\" missing from MatchOr");
+            return 1;
+        }
+        else {
+            int res;
+            Py_ssize_t len;
+            Py_ssize_t i;
+            if (!PyList_Check(tmp)) {
+                PyErr_Format(PyExc_TypeError, "MatchOr field \"patterns\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                goto failed;
+            }
+            len = PyList_GET_SIZE(tmp);
+            patterns = _Py_asdl_expr_seq_new(len, arena);
+            if (patterns == NULL) goto failed;
+            for (i = 0; i < len; i++) {
+                expr_ty val;
+                PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
+                Py_INCREF(tmp2);
+                res = obj2ast_expr(state, tmp2, &val, arena);
+                Py_DECREF(tmp2);
+                if (res != 0) goto failed;
+                if (len != PyList_GET_SIZE(tmp)) {
+                    PyErr_SetString(PyExc_RuntimeError, "MatchOr field \"patterns\" changed size during iteration");
+                    goto failed;
+                }
+                asdl_seq_SET(patterns, i, val);
+            }
+            Py_CLEAR(tmp);
+        }
+        *out = MatchOr(patterns, lineno, col_offset, end_lineno,
+                       end_col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
 
     PyErr_Format(PyExc_TypeError, "expected some sort of expr, but got %R", obj);
     failed:
@@ -10307,6 +10394,10 @@ astmodule_exec(PyObject *m)
         return -1;
     }
     Py_INCREF(state->MatchAs_type);
+    if (PyModule_AddObject(m, "MatchOr", state->MatchOr_type) < 0) {
+        return -1;
+    }
+    Py_INCREF(state->MatchOr_type);
     if (PyModule_AddObject(m, "expr_context", state->expr_context_type) < 0) {
         return -1;
     }

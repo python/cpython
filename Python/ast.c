@@ -313,6 +313,10 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         PyErr_SetString(PyExc_ValueError,
                         "MatchAs is only valid in match_case patterns");
         return 0;
+    case MatchOr_kind:
+        PyErr_SetString(PyExc_ValueError,
+                        "MatchOr is only valid in match_case patterns");
+        return 0;
     /* This last case doesn't have any checking. */
     case Name_kind:
         return 1;

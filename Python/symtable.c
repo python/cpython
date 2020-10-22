@@ -1682,6 +1682,9 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         // "_" is not actually valid, but it's the compiler's job to complain:
         symtable_add_def(st, e->v.MatchAs.name, DEF_LOCAL);
         break;
+    case MatchOr_kind:
+        VISIT_SEQ(st, expr, e->v.MatchOr.patterns);
+        break;
     }
     VISIT_QUIT(st, 1);
 }
