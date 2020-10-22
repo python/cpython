@@ -351,6 +351,31 @@ class ParsedItem(namedtuple('ParsedItem', 'file kind parent name data')):
         else:
             raise TypeError(f'unsupported "raw": {raw:!r}')
 
+    @classmethod
+    def from_row(cls, row, columns=None):
+        if not columns:
+            colnames = 'filename funcname name kind data'.split()
+        else:
+            colnames = list(columns)
+            for i, column in enumerate(colnames):
+                if column == 'file':
+                    colnames[i] = 'filename'
+                elif column == 'funcname':
+                    colnames[i] = 'parent'
+        if len(row) != len(set(colnames)):
+            raise NotImplementedError(columns, row)
+        kwargs = {}
+        for column, value in zip(colnames, row):
+            if column == 'filename':
+                kwargs['file'] = FileInfo.from_raw(value)
+            elif column == 'kind':
+                kwargs['kind'] = KIND(value)
+            elif column in cls._fields:
+                kwargs[column] = value
+            else:
+                raise NotImplementedError(column)
+        return cls(**kwargs)
+
     @property
     def id(self):
         try:
@@ -382,6 +407,31 @@ class ParsedItem(namedtuple('ParsedItem', 'file kind parent name data')):
             return self.parent
         else:
             return self.parent.name
+
+    def as_row(self, columns=None):
+        if not columns:
+            columns = self._fields
+        row = []
+        for column in columns:
+            if column == 'file':
+                value = self.filename
+            elif column == 'kind':
+                value = self.kind.value
+            elif column == 'data':
+                value = self._render_data()
+            else:
+                value = getattr(self, column)
+            row.append(value)
+        return row
+
+    def _render_data(self):
+        if not self.data:
+            return None
+        elif isinstance(self.data, str):
+            return self.data
+        else:
+            # XXX
+            raise NotImplementedError
 
 
 def _get_vartype(data):
@@ -1350,7 +1400,7 @@ def resolve_parsed(parsed):
     try:
         cls = KIND_CLASSES[parsed.kind]
     except KeyError:
-        raise ValueError(f'unsupported kind in {item!r}')
+        raise ValueError(f'unsupported kind in {parsed!r}')
     return cls.from_parsed(parsed)
 
 

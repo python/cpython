@@ -20,6 +20,7 @@ from c_common.scriptutil import (
 from c_parser.info import KIND, is_type_decl
 from . import (
     analyze as _analyze,
+    check_all as _check_all,
     datafiles as _datafiles,
 )
 
@@ -35,14 +36,6 @@ KINDS = [
 ]
 
 logger = logging.getLogger(__name__)
-
-
-def show_failure(failure, data, *, verbosity=VERBOSITY):
-    if verbosity >= 3:
-        logger.info(f'failure: {failure}')
-        logger.info(f'data:    {data}')
-    else:
-        logger.warn(f'failure: {failure} (data: {data})')
 
 
 #######################################
@@ -149,6 +142,52 @@ def add_checks_cli(parser, checks=None, *, add_flags=None):
     ]
 
 
+def _get_check_handlers(fmt, printer, verbosity=VERBOSITY):
+    div = None
+    def handle_after():
+        pass
+    if not fmt:
+        div = ''
+        def handle_failure(failure, data):
+            data = repr(data)
+            if verbosity >= 3:
+                logger.info(f'failure: {failure}')
+                logger.info(f'data:    {data}')
+            else:
+                logger.warn(f'failure: {failure} (data: {data})')
+    elif fmt == 'raw':
+        def handle_failure(failure, data):
+            print(f'{failure!r} {data!r}')
+    elif fmt == 'brief':
+        def handle_failure(failure, data):
+            print(f'{data.filename}\t{data.parent or "-"}\t{data.name}\t{failure!r}')
+    elif fmt == 'summary':
+        failures = []
+        def handle_failure(failure, data):
+            failures.append((failure, data))
+        def handle_after():
+            # XXX
+            raise NotImplementedError
+    elif fmt == 'full':
+        div = ''
+        def handle_failure(failure, data):
+            name = data.shortkey if data.kind is KIND.VARIABLE else data.name
+            parent = data.parent or ''
+            funcname = parent if isinstance(parent, str) else parent.name
+            known = 'yes' if data.is_known else '*** NO ***'
+            print(f'{data.kind.value} {name!r} failed ({failure})')
+            print(f'  file:         {data.filename}')
+            print(f'  func:         {funcname or "-"}')
+            print(f'  name:         {data.name}')
+            print(f'  data:         ...')
+            print(f'  type unknown: {known}')
+    else:
+        if fmt in FORMATS:
+            raise NotImplementedError(fmt)
+        raise ValueError(f'unsupported fmt {fmt!r}')
+    return handle_failure, handle_after, div
+
+
 #######################################
 # the formats
 
@@ -207,8 +246,8 @@ FORMATS = {
 }
 
 
-def add_output_cli(parser):
-    parser.add_argument('--format', dest='fmt', default='summary', choices=tuple(FORMATS))
+def add_output_cli(parser, *, default='summary'):
+    parser.add_argument('--format', dest='fmt', default=default, choices=tuple(FORMATS))
 
     def process_args(args):
         pass
@@ -231,7 +270,7 @@ def _cli_check(parser, checks=None, **kwargs):
             args.checks = [check]
     else:
         process_checks = add_checks_cli(parser, checks=checks)
-    process_output = add_output_cli(parser)
+    process_output = add_output_cli(parser, default=None)
     process_files = add_files_cli(parser, **kwargs)
     return [
         process_checks,
@@ -243,6 +282,7 @@ def _cli_check(parser, checks=None, **kwargs):
 def cmd_check(filenames, *,
               checks=None,
               ignored=None,
+              fmt=None,
               failfast=False,
               iter_filenames=None,
               verbosity=VERBOSITY,
@@ -254,7 +294,11 @@ def cmd_check(filenames, *,
         checks = _CHECKS
     elif isinstance(checks, str):
         checks = [checks]
+    checks = [_CHECKS[c] if isinstance(c, str) else c
+              for c in checks]
     printer = Printer(verbosity)
+    (handle_failure, handle_after, div
+     ) = _get_check_handlers(fmt, printer, verbosity)
 
     filenames = filter_filenames(filenames, iter_filenames)
 
@@ -263,26 +307,20 @@ def cmd_check(filenames, *,
 
     logger.info('checking...')
     numfailed = 0
-    for check in checks:
-        if isinstance(check, str):
-            check = _CHECKS[check]
-        for data, failure in check(analyzed):
-            if failure is None:
-                continue
-            if numfailed > 0:
-                printer.info()
-            numfailed += 1
-            show_failure(failure, data, verbosity=verbosity)
-            if failfast:
-                printer.info('stopping after one failure')
-                break
-        else:
-            continue
-        # We failed fast.
-        break
+    for data, failure in _check_all(analyzed, checks, failfast=failfast):
+        if data is None:
+            printer.info('stopping after one failure')
+            break
+        if div is not None and numfailed > 0:
+            printer.info(div)
+        numfailed += 1
+        handle_failure(failure, data)
+    handle_after()
+
     printer.info('-------------------------')
     logger.info(f'total failures: {numfailed}')
     logger.info('done checking')
+
     if numfailed > 0:
         sys.exit(numfailed)
 

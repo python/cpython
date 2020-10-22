@@ -332,8 +332,10 @@ def check_globals(analysis):
     # yield (data, failure)
     ignored = read_ignored()
     for item in analysis:
+        if item.kind != KIND.VARIABLE:
+            continue
         if item.supported:
             continue
         if item.id in ignored:
             continue
-        yield repr(item), 'not supported'
+        yield item, 'not supported'

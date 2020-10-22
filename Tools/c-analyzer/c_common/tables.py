@@ -35,8 +35,51 @@ def fix_row(row, **markers):
             for val in row)
 
 
+def _fix_read_default(row):
+    for value in row:
+        yield value.strip()
+
+
+def _fix_write_default(row, empty=''):
+    for value in row:
+        yield empty if value is None else str(value)
+
+
+def _normalize_fix_read(fix):
+    if fix is None:
+        fix = ''
+    if callable(fix):
+        def fix_row(row):
+            values = fix(row)
+            return _fix_read_default(values)
+    elif isinstance(fix, str):
+        def fix_row(row):
+            values = _fix_read_default(row)
+            return (None if v == fix else v
+                    for v in values)
+    else:
+        raise NotImplementedError(fix)
+    return fix_row
+
+
+def _normalize_fix_write(fix, empty=''):
+    if fix is None:
+        fix = empty
+    if callable(fix):
+        def fix_row(row):
+            values = fix(row)
+            return _fix_write_default(values, empty)
+    elif isinstance(fix, str):
+        def fix_row(row):
+            return _fix_write_default(row, fix)
+    else:
+        raise NotImplementedError(fix)
+    return fix_row
+
+
 def read_table(infile, header, *,
                sep='\t',
+               fix=None,
                _open=open,
                _get_reader=csv.reader,
                ):
@@ -46,6 +89,8 @@ def read_table(infile, header, *,
             yield from read_table(
                 infile,
                 header,
+                sep=sep,
+                fix=fix,
                 _open=_open,
                 _get_reader=_get_reader,
             )
@@ -53,6 +98,8 @@ def read_table(infile, header, *,
     lines = strutil._iter_significant_lines(infile)
 
     # Validate the header.
+    if not isinstance(header, str):
+        header = sep.join(header)
     try:
         actualheader = next(lines).strip()
     except StopIteration:
@@ -60,12 +107,14 @@ def read_table(infile, header, *,
     if actualheader != header:
         raise ValueError(f'bad header {actualheader!r}')
 
+    fix_row = _normalize_fix_read(fix)
     for row in _get_reader(lines, delimiter=sep or '\t'):
-        yield tuple(v.strip() for v in row)
+        yield tuple(fix_row(row))
 
 
 def write_table(outfile, header, rows, *,
                 sep='\t',
+                fix=None,
                 backup=True,
                 _open=open,
                 _get_writer=csv.writer,
@@ -80,17 +129,21 @@ def write_table(outfile, header, rows, *,
                 header,
                 rows,
                 sep=sep,
+                fix=fix,
+                backup=backup,
                 _open=_open,
                 _get_writer=_get_writer,
             )
 
     if isinstance(header, str):
         header = header.split(sep or '\t')
+    fix_row = _normalize_fix_write(fix)
     writer = _get_writer(outfile, delimiter=sep or '\t')
     writer.writerow(header)
     for row in rows:
-        writer.writerow('' if v is None else str(v)
-                        for v in row)
+        writer.writerow(
+            tuple(fix_row(row))
+        )
 
 
 def parse_table(entries, sep, header=None, rawsep=None, *,

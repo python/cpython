@@ -20,7 +20,12 @@ def create_backup(old, backup=None):
         return None
     if not backup or backup is True:
         backup = f'{filename}.bak'
-    shutil.copyfile(filename, backup)
+    try:
+        shutil.copyfile(filename, backup)
+    except FileNotFoundError as exc:
+        if exc.filename != filename:
+            raise   # re-raise
+        backup = None
     return backup
 
 

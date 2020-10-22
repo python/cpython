@@ -82,3 +82,22 @@ def analyze_decls(decls, known, *,
                         raise NotImplementedError((decl, resolved))
 
         yield decl, resolved
+
+
+#######################################
+# checks
+
+def check_all(analysis, checks, *, failfast=False):
+    for check in checks or ():
+        for data, failure in check(analysis):
+            if failure is None:
+                continue
+
+            yield data, failure
+            if failfast:
+                yield None, None
+                break
+        else:
+            continue
+        # We failed fast.
+        break
