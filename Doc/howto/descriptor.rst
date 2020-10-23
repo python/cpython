@@ -279,6 +279,10 @@ Complete Practical Example
 In this example, we create a practical and powerful tool for locating
 notoriously hard to find data corruption bugs.
 
+
+Validator class
+---------------
+
 A validator is a descriptor for managed attribute access.  Prior to storing
 any data, it verifies that the new value meets various type and range
 restrictions.  If those restrictions aren't met, it raises an exception to
@@ -307,6 +311,10 @@ managed attribute descriptor::
 
 Custom validators need to subclass from :class:`Validator` and supply a
 :meth:`validate` method to test various restrictions as needed.
+
+
+Custom validators
+-----------------
 
 Here are three practical data validation utilities:
 
@@ -368,6 +376,10 @@ Here are three practical data validation utilities:
                     f'Expected {self.predicate} to be true for {value!r}'
                 )
 
+
+Practical use
+-------------
+
 Here's how the data validators can be used in a real class::
 
     class Component:
@@ -392,6 +404,9 @@ The descriptors prevent invalid instances from being created::
 
 Technical Tutorial
 ^^^^^^^^^^^^^^^^^^
+
+What follows is a more technical tutorial for the mechanics and details of how
+descriptors work.
 
 
 Abstract
