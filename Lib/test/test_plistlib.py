@@ -839,16 +839,19 @@ class TestPlistlib(unittest.TestCase):
 class TestBinaryPlistlib(unittest.TestCase):
 
     @staticmethod
-    def decode(*objects):
-        data = b'bplist00'
+    def decode(*objects, offset_size=1, ref_size=1):
+        data = [b'bplist00']
+        offset = 8
         offsets = []
         for x in objects:
-            offsets.append(len(data))
-            data += x
-        offset_table_offset = len(data)
-        data += bytes(offsets)
-        data += struct.pack('>6xBBQQQ', 1, 1, len(objects), 0, offset_table_offset)
-        return plistlib.loads(data, fmt=plistlib.FMT_BINARY)
+            offsets.append(offset.to_bytes(offset_size, 'big'))
+            data.append(x)
+            offset += len(x)
+        tail = struct.pack('>6xBBQQQ', offset_size, ref_size,
+                           len(objects), 0, offset)
+        data.extend(offsets)
+        data.append(tail)
+        return plistlib.loads(b''.join(data), fmt=plistlib.FMT_BINARY)
 
     def test_nonstandard_refs_size(self):
         # Issue #21538: Refs and offsets are 24-bit integers
@@ -900,6 +903,20 @@ class TestBinaryPlistlib(unittest.TestCase):
         a['x'] = a
         b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
         self.assertIs(b['x'], b)
+
+    def test_deep_nesting(self):
+        for N in [300, 100000]:
+            chunks = [b'\xa1' + (i + 1).to_bytes(4, 'big') for i in range(N)]
+            try:
+                result = self.decode(*chunks, b'\x54seed', offset_size=4, ref_size=4)
+            except RecursionError:
+                pass
+            else:
+                for i in range(N):
+                    self.assertIsInstance(result, list)
+                    self.assertEqual(len(result), 1)
+                    result = result[0]
+                self.assertEqual(result, 'seed')
 
     def test_large_timestamp(self):
         # Issue #26709: 32-bit timestamp out of range
