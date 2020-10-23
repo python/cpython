@@ -842,13 +842,17 @@ All of the following opcodes use their arguments.
       empty dictionary pre-sized to hold *count* items.
 
 
-.. opcode:: BUILD_CONST_KEY_MAP (count)
+.. opcode:: BUILD_CONST_KEY_MAP (count_flag)
 
    The version of :opcode:`BUILD_MAP` specialized for constant keys. Pops the
    top element on the stack which contains a tuple of keys, then starting from
-   ``TOS1``, pops *count* values to form values in the built dictionary.
+   ``TOS1``, pops *count_flag//2* values to form values in the built dictionary.
+   If *count_flag & 1* is true, keys must be distinct.
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.10
+      The oparg is changed from count to ``(count << 1) | distinct``.
 
 
 .. opcode:: BUILD_STRING (count)
