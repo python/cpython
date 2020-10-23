@@ -65,8 +65,7 @@ that the value ``10`` is not stored in either the class dictionary or instance
 dictionary.  Instead, the value ``10`` is computed on demand.
 
 This example shows how a simple descriptor works, but it isn't very useful.
-For retrieving constants, normal attribute lookup would almost always be
-better.
+For retrieving constants, normal attribute lookup would be better.
 
 In the next section, we'll create something more useful, a dynamic lookup.
 
@@ -150,15 +149,15 @@ the lookup or update::
             self.age = age                  # Calls the descriptor
 
         def birthday(self):
-            self.age += 1
+            self.age += 1                   # Calls both __get__() and __set__()
 
 
 An interactive session shows that all access to the managed attribute *age* is
 logged, but that the regular attribute *name* is not logged::
 
-    >>> mary = Person('Mary M', 30)         # __init__() triggers the descriptor
+    >>> mary = Person('Mary M', 30)         # The initial age update is logged
     INFO:root:Updating 'age' to 30
-    >>> dave = Person('David D', 40)        # So, the initial age update is logged
+    >>> dave = Person('David D', 40)
     INFO:root:Updating 'age' to 40
 
     >>> vars(mary)                          # The actual data is in private attributes
@@ -166,7 +165,7 @@ logged, but that the regular attribute *name* is not logged::
     >>> vars(dave)
     {'name': 'David D', '_age': 40}
 
-    >>> mary.age                            # Accesses the data and logs the lookup
+    >>> mary.age                            # Access the data and log the lookup
     INFO:root:Accessing 'age' giving 30
     30
     >>> mary.birthday()                     # Updates are logged as well
@@ -207,9 +206,9 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
             self.private_name = f'_{name}'
 
         def __get__(self, obj, objtype=None):
-            result = object.__getattribute__(obj, self.private_name)
-            logging.info('Accessing %r giving %r', self.public_name, result)
-            return result
+            value = object.__getattribute__(obj, self.private_name)
+            logging.info('Accessing %r giving %r', self.public_name, value)
+            return value
 
         def __set__(self, obj, value):
             logging.info('Updating %r to %r', self.public_name, value)
@@ -228,7 +227,7 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
             self.age += 1
 
 An interactive session shows that the :class:`Person` class has called
-:meth:`__set_name__` so that the exact field names can be recorded::
+:meth:`__set_name__` so that the field names would be recorded::
 
     >>> vars(vars(Person)['name'])
     {'public_name': 'name', 'private_name': '_name'}
