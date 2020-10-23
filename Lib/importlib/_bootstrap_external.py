@@ -278,7 +278,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.9a2  3424 (simplify bytecodes for *value unpacking)
 #     Python 3.9a2  3425 (simplify bytecodes for **value unpacking)
 #     Python 3.10a1 3430 (Make 'annotations' future by default)
-#     Python 3.10a1 3431 (PEP 634: Structural Pattern Matching)
+#     Python 3.10a2 3431 (PEP 634: Structural Pattern Matching)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no

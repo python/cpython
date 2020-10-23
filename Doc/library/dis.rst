@@ -1254,9 +1254,7 @@ All of the following opcodes use their arguments.
 
    TOS is a tuple of mapping keys, and TOS1 is the match subject.  If TOS1
    contains all of the keys in TOS, replace TOS with a tuple containing the
-   corresponding values and push ``True``. Otherwisem, push ``False``.
-
-   TODO: This next bit is weird. Just make two non-arg opcodes?
+   corresponding values and push ``True``. Otherwise, push ``False``.
 
    If *copy* is non-zero, gather remaining items into a :class:`dict` and put it
    on the stack where the subject used to be.

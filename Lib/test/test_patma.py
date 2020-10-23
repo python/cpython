@@ -2803,9 +2803,6 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 0)
         self.assertEqual(z, 0)
 
-    # TODO: Better use of assertIs
-    # TODO: Don't check side-effecty assignments
-
 
 class PerfPatma(TestPatma):
 
