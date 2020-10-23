@@ -709,7 +709,7 @@ patterns of binding functions into methods.
 
 To recap, functions have a :meth:`__get__` method so that they can be converted
 to a method when accessed as attributes.  The non-data descriptor transforms an
-``obj.f(*args)`` call into ``f(obj, *args)``.  Calling ``klass.f(*args)``
+``obj.f(*args)`` call into ``f(obj, *args)``.  Calling ``cls.f(*args)``
 becomes ``f(*args)``.
 
 This chart summarizes the binding and its two most useful variants:
@@ -722,7 +722,7 @@ This chart summarizes the binding and its two most useful variants:
       +-----------------+----------------------+------------------+
       | staticmethod    | f(\*args)            | f(\*args)        |
       +-----------------+----------------------+------------------+
-      | classmethod     | f(type(obj), \*args) | f(klass, \*args) |
+      | classmethod     | f(type(obj), \*args) | f(cls, \*args)   |
       +-----------------+----------------------+------------------+
 
 Static methods return the underlying function without changes.  Calling either
@@ -774,8 +774,8 @@ for whether the caller is an object or a class::
 
     >>> class E:
     ...     @classmethod
-    ...     def f(klass, x):
-    ...         return klass.__name__, x
+    ...     def f(cls, x):
+    ...         return cls.__name__, x
     ...
     >>> print(E.f(3))
     ('E', 3)
@@ -793,9 +793,9 @@ Python equivalent is::
         ...
 
         @classmethod
-        def fromkeys(klass, iterable, value=None):
+        def fromkeys(cls, iterable, value=None):
             "Emulate dict_fromkeys() in Objects/dictobject.c"
-            d = klass()
+            d = cls()
             for key in iterable:
                 d[key] = value
             return d
@@ -814,10 +814,10 @@ Using the non-data descriptor protocol, a pure Python version of
         def __init__(self, f):
             self.f = f
 
-        def __get__(self, obj, klass=None):
-            if klass is None:
-                klass = type(obj)
+        def __get__(self, obj, cls=None):
+            if cls is None:
+                cls = type(obj)
             def newfunc(*args):
-                return self.f(klass, *args)
+                return self.f(cls, *args)
             return newfunc
 
