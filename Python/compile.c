@@ -5747,7 +5747,7 @@ static int
 compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchOr_kind);
-    // control is the set of names bound by the first alternate. If all of the
+    // control is the set of names bound by the first alternative. If all of the
     // others bind the same names (they should), then this becomes pc->stores.
     PyObject *control = NULL;
     basicblock *end;
@@ -5773,7 +5773,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
             goto fail;
         }
         if (!i) {
-            // If this is the first alternate, save its stores as a "control"
+            // If this is the first alternative, save its stores as a "control"
             // for the others (they can't bind a different set names):
             control = pc->stores;
             continue;
@@ -5787,7 +5787,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
             if (PySet_GET_SIZE(diff)) {
                 // The names differ! Raise.
                 Py_DECREF(diff);
-                compiler_error(c, "alternate patterns bind different names");
+                compiler_error(c, "alternative patterns bind different names");
                 goto fail;
             }
             Py_DECREF(diff);
@@ -5991,7 +5991,7 @@ compiler_match(struct compiler *c, stmt_ty s)
     pattern_context pc;
     // We use pc.stores to track:
     // - Repeated name assignments in the same pattern.
-    // - Different name assignments in alternates.
+    // - Different name assignments in alternatives.
     // It's a set of names, but we don't create it until it's needed:
     pc.stores = NULL;
     match_case_ty m = asdl_seq_GET(s->v.Match.cases, cases - 1);
