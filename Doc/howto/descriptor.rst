@@ -321,9 +321,13 @@ Here are three practical data validation utilities:
 
 1) :class:`OneOf` verifies that a value is one of a restricted set of options.
 
-2) :class:`Number` verifies that a value is either an :class:`int` or :class:`float`.  Optionally, it verifies that a value is between a given minimum or maximum.
+2) :class:`Number` verifies that a value is either an :class:`int` or
+   :class:`float`.  Optionally, it verifies that a value is between a given
+   minimum or maximum.
 
-3) :class:`String` verifies that a value is a :class:`str`.  Optionally, it validates a given minimum or maximum length.  Optionally, it can test for another predicate as well.
+3) :class:`String` verifies that a value is a :class:`str`.  Optionally, it
+   validates a given minimum or maximum length.  Optionally, it can test for
+   another predicate as well.
 
 ::
 
@@ -553,7 +557,9 @@ is class variable the descriptor was assigned to.
 The implementation details are in :c:func:`type_new()` and
 :c:func:`set_names()` in :source:`Objects/typeobject.c`.
 
-Since the update logic is in :meth:`type.__new__`, notifications only take place at the time of class creation.  If descriptors are added to the class afterwards, :meth:`__set_name__` will need to be called manually.
+Since the update logic is in :meth:`type.__new__`, notifications only take
+place at the time of class creation.  If descriptors are added to the class
+afterwards, :meth:`__set_name__` will need to be called manually.
 
 
 Descriptor Example
