@@ -57,7 +57,7 @@ and descriptor lookup::
 
 In the ``a.x`` attribute lookup, the dot operator finds the value ``5`` stored
 in the class dictionary.  In the ``a.y`` descriptor lookup, the dot operator
-calls the descriptor's :meth:`get()` method.  That method returns ``10``.  Note
+calls the descriptor's :meth:`__get__()` method.  That method returns ``10``.  Note
 that the value ``10`` is not stored in either the class dictionary or instance
 dictionary.  Instead, the value ``10`` is computed on demand.
 
