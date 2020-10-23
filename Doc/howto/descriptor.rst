@@ -631,11 +631,12 @@ to wrap access to the value attribute in a property data descriptor::
 
     class Cell:
         ...
+
+        @property
         def getvalue(self):
             "Recalculate the cell before returning value"
             self.recalc()
             return self._value
-        value = property(getvalue)
 
 
 Functions and Methods
@@ -658,6 +659,7 @@ object.  In pure Python, it works like this::
 
     class Function:
         ...
+
         def __get__(self, obj, objtype=None):
             "Simulate func_descr_get() in Objects/funcobject.c"
             if obj is None:
@@ -745,9 +747,9 @@ Since staticmethods return the underlying function with no changes, the example
 calls are unexciting::
 
     >>> class E:
+    ...     @staticmethod
     ...     def f(x):
     ...         print(x)
-    ...     f = staticmethod(f)
     ...
     >>> E.f(3)
     3
@@ -771,9 +773,9 @@ argument list before calling the function.  This format is the same
 for whether the caller is an object or a class::
 
     >>> class E:
+    ...     @classmethod
     ...     def f(klass, x):
     ...         return klass.__name__, x
-    ...     f = classmethod(f)
     ...
     >>> print(E.f(3))
     ('E', 3)
@@ -789,13 +791,14 @@ Python equivalent is::
 
     class Dict:
         ...
+
+        @classmethod
         def fromkeys(klass, iterable, value=None):
             "Emulate dict_fromkeys() in Objects/dictobject.c"
             d = klass()
             for key in iterable:
                 d[key] = value
             return d
-        fromkeys = classmethod(fromkeys)
 
 Now a new dictionary of unique keys can be constructed like this::
 
