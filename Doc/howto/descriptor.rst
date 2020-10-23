@@ -26,6 +26,7 @@ The :class:`Ten` class is a descriptor that always returns a constant ``10``::
 
 
     class Ten:
+
         def __get__(self, obj, objtype=None):
             return 10
 
@@ -83,6 +84,68 @@ An interactive session shows that the lookup is dynamic — it computes differen
     20
 
 Besides showing how descriptors can run computations, this example also reveals the purpose of the parameters to :meth:`__get__`.  The *self* parameter is *size*, an instance of *DirectorySize*.  The *obj* parameter is either *g* or *s*, an instance of *Directory*.  It is *obj* parameter that lets the :meth:`__get__` method learn the target directory.  The *objtype* parameter is the class *Directory*.
+
+
+Managed attributes
+------------------
+
+A popular use for descriptors is managing access to instance data.  The descriptor is assigned to a public attribute while the actual data is stored as a private attribute in the instance dictionary.  The descriptor's :meth:`__get__` and :meth:`__set__` methods are triggered when the public attribute is accessed.
+
+In the following example, *age* is the public attribute and *_age* is the private attribute.  When the public attribute is accessed, the descriptor logs the lookup or update::
+
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
+
+    class LoggedAccess:
+
+        def __get__(self, obj, objtype=None):
+            result = object.__getattribute__(obj, '_age')
+            logging.info('Accessing %r giving %r', 'age', result)
+            return result
+
+        def __set__(self, obj, value):
+            logging.info('Updating %r to %r', 'age', value)
+            object.__setattr__(obj, '_age', 10)
+
+    class Person:
+
+        age = LoggedAccess()                 # Descriptor
+
+        def __init__(self, name, age):
+            self.name = name                 # Regular instance attribute
+            self.age = age                   # Calls the descriptor
+
+        def birthday(self):
+            self.age += 1
+
+
+An interactive session shows that all access to the managed attribute *age* is logged, but that the regular attribute *name* is not logged:
+
+    >>> mary = Person('Mary M', 30)          # __init__() triggers the descriptor
+    INFO:root:Updating 'age' to 30
+    >>> dave = Person('David D', 40)         # So, the initial age update is logged
+    INFO:root:Updating 'age' to 40
+
+    >>> vars(mary)                           # The actual data is in private attributes
+    {'name': 'Mary M', '_age': 10}
+    >>> vars(dave)
+    {'name': 'David D', '_age': 10}
+
+    >>> mary.age                             # Accesses the data and logs the lookup
+    INFO:root:Accessing 'age' giving 10
+    10
+    >>> mary.birthday()                      # Updates are logged as well
+    INFO:root:Accessing 'age' giving 10
+    INFO:root:Updating 'age' to 11
+
+    >>> dave.name                            # Regular attribute lookup isn't logged
+    'David D'
+    >>> dave.age                             # Only the managed attribute is logged
+    INFO:root:Accessing 'age' giving 10
+    10
+
+One major issue with this example is the private name *_age* is hardwired in the *LoggedAccess* class.  That means that each instance can only have one logged attribute and that its name is unchangeable.  In the next example, we'll fix that problem.
 
 
 Technical Tutorial
