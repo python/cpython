@@ -1,7 +1,6 @@
 """Access to Python's configuration information."""
 
 import os
-import re
 import sys
 from os.path import pardir, realpath
 from distutils.errors import DistutilsPlatformError
@@ -134,9 +133,13 @@ _USER_BASE = None
 
 # Regexes needed for parsing Makefile (and similar syntaxes,
 # like old-style Setup files).
-_variable_rx = re.compile(r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
-_findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
-_findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
+try:
+    import re
+    _variable_rx = re.compile(r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
+    _findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
+    _findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
+except ImportError:
+    pass
 
 
 def _safe_realpath(path):
