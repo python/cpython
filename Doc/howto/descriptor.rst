@@ -19,35 +19,70 @@ Primer
 
 In this primer, we start with most basic possible example and then we'll add new capabilities one by one.
 
-Super simple example: A descriptor that returns a constant
-----------------------------------------------------------
+Simple example: A descriptor that returns a constant
+----------------------------------------------------
 
-The :class:`Ten` is a descriptor that always returns a constant ``10``::
+The :class:`Ten` class is a descriptor that always returns a constant ``10``::
 
 
     class Ten:
-
         def __get__(self, obj, objtype=None):
             return 10
 
 To use the descriptor, it must be stored as a class variable in another class::
 
     class A:
-        x = 5       # Regular attribute
-        y = Ten()   # Descriptor
+        x = 5                       # Regular class attribute
+        y = Ten()                   # Descriptor
 
 An interactive session shows the difference between normal attribute lookup and descriptor lookup::
 
-    >>> a = A()         # Make an instance of class A
-    >>> a.x             # Normal attribute lookup
+    >>> a = A()                     # Make an instance of class A
+    >>> a.x                         # Normal attribute lookup
     5
-    >>> a.y             # Descriptor lookup
+    >>> a.y                         # Descriptor lookup
     10
 
 In the ``a.x`` attribute lookup, the dot operator finds the value ``5`` stored in the class dictionary.  In the ``a.y`` descriptor lookup, the dot operator calls the :meth:`get()` on the descriptor.  That method returns ``10``.  Note that the value ``10`` is not stored in either the class dictionary or instance dictionary.  The value ``10`` is computed on demand.
 
+This example shows how a simple descriptor works, but it isn't very useful.  For retrieving constants, normal attribute lookup would almost always be better.
+
+In the next section, we'll create something most useful, a dynamic lookup.
+
+Dynamic lookups
+---------------
+
+Interesting descriptors typically run computations instead of doing lookups::
 
 
+    import os
+
+    class DirectorySize:
+
+        def __get__(self, obj, objtype=None):
+            return len(os.listdir(obj.dirname))
+
+    class Directory:
+
+        size = DirectorySize()              # Descriptor
+
+        def __init__(self, dirname):
+            self.dirname = dirname          # Regular instance attribute
+
+An interactive session shows that the lookup is dynamic — it computes different, updated answers each time::
+
+    >>> g = Directory('games')
+    >>> s = Directory('songs')
+    >>> g.size                              # The games directory has three files
+    3
+    >>> os.system('touch games/newfile')    # Add a fourth file to the directory
+    0
+    >>> g.size:
+    4
+    >>> s.size                              # The songs directory has twenty files
+    20
+
+Besides showing how descriptors can run computations, this example also reveals the purpose of the parameters to :meth:`__get__`.  The *self* parameter is *size*, an instance of *DirectorySize*.  The *obj* parameter is either *g* or *s*, an instance of *Directory*.  It is *obj* parameter that lets the :meth:`__get__` method learn the target directory.  The *objtype* parameter is the class *Directory*.
 
 
 Technical Tutorial
