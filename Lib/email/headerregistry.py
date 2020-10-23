@@ -305,7 +305,7 @@ class DateHeader:
             kwds['decoded'] = value
             try:
                 value = utils.parsedate_to_datetime(value)
-            except (ValueError, TypeError):
+            except ValueError:
                 kwds['defects'].append(errors.InvalidDateDefect('Invalid date value or format'))
                 kwds['datetime'] = None
                 kwds['parse_tree'] = parser.TokenList()
