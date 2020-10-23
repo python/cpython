@@ -623,8 +623,8 @@ def _exec(spec, module):
 
 
 def _load_backward_compatible(spec):
-    # It is assumed that all callers have warned about using load_module()
-    # appropriately.
+    # It is assumed that all callers have been warned about using load_module()
+    # appropriately before calling this function.
     try:
         spec.loader.load_module(spec.name)
     except:
