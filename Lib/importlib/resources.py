@@ -1,8 +1,10 @@
 import os
+import sys
+import io
 
 from . import _common
 from ._common import as_file, files
-from contextlib import contextmanager, suppress
+from contextlib import suppress
 from importlib.abc import ResourceLoader
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
@@ -102,22 +104,26 @@ def path(
     """
     reader = _common.get_resource_reader(_common.get_package(package))
     return (
-        _path_from_reader(reader, resource)
+        _path_from_reader(reader, _common.normalize_path(resource))
         if reader else
         _common.as_file(
             _common.files(package).joinpath(_common.normalize_path(resource)))
         )
 
 
-@contextmanager
 def _path_from_reader(reader, resource):
-    norm_resource = _common.normalize_path(resource)
+    return _path_from_resource_path(reader, resource) or \
+        _path_from_open_resource(reader, resource)
+
+
+def _path_from_resource_path(reader, resource):
     with suppress(FileNotFoundError):
-        yield Path(reader.resource_path(norm_resource))
-        return
-    opener_reader = reader.open_resource(norm_resource)
-    with _common._tempfile(opener_reader.read, suffix=norm_resource) as res:
-        yield res
+        return Path(reader.resource_path(resource))
+
+
+def _path_from_open_resource(reader, resource):
+    saved = io.BytesIO(reader.open_resource(resource).read())
+    return _common._tempfile(saved.read, suffix=resource)
 
 
 def is_resource(package: Package, name: str) -> bool:
