@@ -132,13 +132,13 @@ the lookup or update::
     class LoggedAgeAccess:
 
         def __get__(self, obj, objtype=None):
-            result = object.__getattribute__(obj, '_age')
-            logging.info('Accessing %r giving %r', 'age', result)
-            return result
+            value = obj._age
+            logging.info('Accessing %r giving %r', 'age', value)
+            return value
 
         def __set__(self, obj, value):
             logging.info('Updating %r to %r', 'age', value)
-            object.__setattr__(obj, '_age', value)
+            obj._age = value
 
     class Person:
 
@@ -206,13 +206,13 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
             self.private_name = f'_{name}'
 
         def __get__(self, obj, objtype=None):
-            value = object.__getattribute__(obj, self.private_name)
+            value = getattr(obj, self.private_name)
             logging.info('Accessing %r giving %r', self.public_name, value)
             return value
 
         def __set__(self, obj, value):
             logging.info('Updating %r to %r', self.public_name, value)
-            object.__setattr__(obj, self.private_name, value)
+            setattr(obj, self.private_name, value)
 
     class Person:
 
@@ -249,6 +249,28 @@ The two *Person* instances contain only the private names::
     {'_name': 'Peter P', '_age': 10}
     >>> vars(kate)
     {'_name': 'Catherine C', '_age': 20}
+
+
+Closing thoughts
+----------------
+
+A :term:`descriptor` is any object that defines :meth:`__get__`,
+:meth:`__set__`, and/or :meth:`__delete__`.
+
+A descriptor gets invoked by the dot operator during attribute lookup.  If a
+descriptor is accessed indirectly with ``vars(some_class)[descriptor_name]``,
+it has no effect.
+
+Descriptors only work when used as class variables.  When put in instances,
+they have no effect.
+
+The main motivation for descriptors is that it lets objects control what
+happens to them during dotted lookup.
+
+Descriptors are used throughout the language.  It is how functions turn into
+bound methods.  Common tools like :func:`classmethod`, :func:`staticmethod`,
+:func:`property`, and :func:`functools.cached_property` are all implemented as
+descriptors.
 
 
 Complete Practical Example
