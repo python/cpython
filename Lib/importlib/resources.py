@@ -1,5 +1,4 @@
 import os
-import sys
 import io
 
 from . import _common
@@ -12,6 +11,8 @@ from types import ModuleType
 from typing import ContextManager, Iterable, Union
 from typing import cast
 from typing.io import BinaryIO, TextIO
+from collections.abc import Sequence
+from functools import singledispatch
 
 
 __all__ = [
@@ -152,7 +153,7 @@ def contents(package: Package) -> Iterable[str]:
     package = _common.get_package(package)
     reader = _common.get_resource_reader(package)
     if reader is not None:
-        return reader.contents()
+        return _ensure_sequence(reader.contents())
     # Is the package a namespace package?  By definition, namespace packages
     # cannot have resources.
     namespace = (
@@ -162,3 +163,13 @@ def contents(package: Package) -> Iterable[str]:
     if namespace or not package.__spec__.has_location:
         return ()
     return list(item.name for item in _common.from_package(package).iterdir())
+
+
+@singledispatch
+def _ensure_sequence(iterable):
+    return list(iterable)
+
+
+@_ensure_sequence.register(Sequence)
+def _(iterable):
+    return iterable
