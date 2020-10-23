@@ -203,6 +203,16 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             print(err)
         self.assertIn("ResourceWarning: extra 2 interpreters", err)
 
+    def test_finalize_from_subinterp(self):
+        """
+        bpo-38865: Py_Finalize() should not be called from a subinterpreter.
+        """
+        _, err = self.run_embedded_interpreter("test_finalize_from_subinterp",
+                                               returncode=255)
+        self.assertEqual(
+            err.strip(),
+            "Py_FinalizeEx: error: must be called from the main interpreter")
+
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
         env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")

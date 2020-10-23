@@ -119,6 +119,24 @@ static int test_finalize_subinterps(void)
     return 0;
 }
 
+/* bpo-38865: Py_Finalize() should not be called from a subinterpreter */
+static int test_finalize_from_subinterp(void)
+{
+    PyThreadState *subinterp_tstate;
+    int rc;
+
+    _testembed_Py_Initialize();
+    PyGILState_Ensure();
+    PyThreadState_Swap(NULL);
+
+    subinterp_tstate = Py_NewInterpreter();
+    PyThreadState_Swap(subinterp_tstate);
+
+    rc = Py_FinalizeEx();
+
+    return rc;
+}
+
 /*****************************************************
  * Test forcing a particular IO encoding
  *****************************************************/
@@ -1699,6 +1717,7 @@ static struct TestCase TestCases[] = {
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
     {"test_finalize_subinterps", test_finalize_subinterps},
+    {"test_finalize_from_subinterp", test_finalize_from_subinterp},
     {"test_pre_initialization_api", test_pre_initialization_api},
     {"test_pre_initialization_sys_options", test_pre_initialization_sys_options},
     {"test_bpo20891", test_bpo20891},
