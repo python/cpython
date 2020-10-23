@@ -265,8 +265,12 @@ the descriptor instance is returned without invoking it.
 Descriptors only work when used as class variables.  When put in instances,
 they have no effect.
 
-The main motivation for descriptors is to let objects control what happens
-during dotted lookup.
+The main motivation for descriptors is to provide a hook allowing objects
+stored in class variables to control what happens during dotted lookup.
+
+Traditionally, the calling class controls what happens during lookup.
+Descriptors invert that relationship and allow the data being looked-up to
+have a say in the matter.
 
 Descriptors are used throughout the language.  It is how functions turn into
 bound methods.  Common tools like :func:`classmethod`, :func:`staticmethod`,
