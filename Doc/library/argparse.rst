@@ -404,7 +404,7 @@ single non-whitespace character followed by a "."::
      -h, --help  show this help message and exit
 
 
-.. versionchanged:: 3.9
+.. versionadded:: 3.10
    :class:`FlexiHelpFormatter` class was added.
 
 :class:`ArgumentDefaultsHelpFormatter` automatically adds information about
