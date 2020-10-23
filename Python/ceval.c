@@ -858,27 +858,38 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     return 0;
 }
 
-// Need these for pattern matching:
 
-static PyObject*  // TODO
-match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
+// PEP 634: Structural Pattern Matching
+
+
+static PyObject*
+match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
 {
+    // Return a tuple of values corresponding to keys, with error checks for
+    // duplicate/missing keys.
     assert(PyTuple_CheckExact(keys));
     Py_ssize_t nkeys = PyTuple_GET_SIZE(keys);
     if (!nkeys) {
+        // No keys means no items.
         return PyTuple_New(0);
     }
-    PyObject *seen = NULL;
-    PyObject *values = NULL;
+    // We use the two argument form of map.get(key, default) for two reasons:
+    // - Atomically check for a key and get its value without error handling.
+    // - Don't cause key creation or resizing in dict subclasses like
+    //   collections.defaultdict that define __missing__ (or similar).
     _Py_IDENTIFIER(get);
     PyObject *get = _PyObject_GetAttrId(map, &PyId_get);
     if (!get) {
         return NULL;
     }
+    PyObject *seen = NULL;
+    PyObject *values = NULL;
+    // dummy = object()
     PyObject *dummy = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
     if (!dummy) {
         goto fail;
     }
+    // We need to keep track of what we've seen in order to catch duplicates:
     seen = PySet_New(NULL);
     if (!seen) {
         goto fail;
@@ -887,23 +898,25 @@ match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
     if (!values) {
         goto fail;
     }
-    PyObject *key, *value;
     for (Py_ssize_t i = 0; i < nkeys; i++) {
-        key = PyTuple_GET_ITEM(keys, i);
+        PyObject *key = PyTuple_GET_ITEM(keys, i);
         if (PySet_Contains(seen, key) || PySet_Add(seen, key)) {
             if (!_PyErr_Occurred(tstate)) {
+                // Seen it before!
                 _PyErr_Format(tstate, PyExc_ValueError,
                               "mapping pattern checks duplicate key (%R)", key);
             }
             goto fail;
         }
-        value = PyObject_CallFunctionObjArgs(get, key, dummy, NULL);
+        PyObject *value = PyObject_CallFunctionObjArgs(get, key, dummy, NULL);
         if (!value || value == dummy) {
+            // Key not in map.
             Py_XDECREF(value);
             goto fail;
         }
         PyTuple_SET_ITEM(values, i, value);
     }
+    // Success.
     Py_DECREF(get);
     Py_DECREF(dummy);
     Py_DECREF(seen);
@@ -916,7 +929,7 @@ fail:
     return NULL;
 }
 
-static PyObject *  // TODO
+static PyObject*
 dict_without_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
 {
     // copy = dict(map)
@@ -925,6 +938,7 @@ dict_without_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     // return copy
     PyObject *copy;
     if (PyDict_CheckExact(map)) {
+        // TODO: check this.
         copy = PyDict_Copy(map);
         if (!copy) {
             return NULL;
@@ -937,8 +951,8 @@ dict_without_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
             return NULL;
         }
     }
-    // This may seem a bit ineffient, but keys is rarely big enough to actually
-    // impact runtime.
+    // This may seem a bit inefficient, but keys is rarely big enough to
+    // actually impact runtime.
     for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(keys); i++) {
         if (PyDict_DelItem(copy, PyTuple_GET_ITEM(keys, i))) {
             Py_DECREF(copy);
@@ -948,7 +962,7 @@ dict_without_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     return copy;
 }
 
-static PyObject *
+static PyObject*
 get_match_args(PyThreadState *tstate, PyObject *type)
 {
     // match_args = getattr(type, "__match_args__", ())
@@ -978,8 +992,8 @@ get_match_args(PyThreadState *tstate, PyObject *type)
     return NULL;
 }
 
-static PyObject *  // TODO
-do_match(PyThreadState *tstate, Py_ssize_t nargs, PyObject *kwargs, PyObject *type, PyObject *subject)
+static PyObject*  // TODO
+match_class(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs)
 {
     // TODO: Break this up!
     if (!PyType_Check(type)) {
@@ -3748,12 +3762,16 @@ main_loop:
         }
 
         case TARGET(MATCH_CLASS): {
-            // TODO
+            // On success, replace TOS with True and TOS1 with a tuple of
+            // attributes. On failure, replace TOS with False.
             PyObject *names = TOP();
             PyObject *type = SECOND();
             PyObject *subject = THIRD();
-            PyObject *attrs = do_match(tstate, oparg, names, type, subject);
+            assert(PyTuple_CheckExact(names));
+            PyObject *attrs = match_class(tstate, subject, type, oparg, names);
             if (attrs) {
+                // Success!
+                assert(PyTuple_CheckExact(attrs));
                 Py_DECREF(type);
                 SET_SECOND(attrs);
             }
@@ -3796,9 +3814,9 @@ main_loop:
         }
 
         case TARGET(MATCH_SEQUENCE): {
-            // PUSH(isinstance(TOS, _collections_abc.Sequence)
-            //      and not isinstance(TOS, (bytearray, bytes, str))
-            //      and not hasattr(TOS, "__next__"))
+            // PUSH(isinstance(TOS, _collections_abc.Sequence) and
+            //      not isinstance(TOS, (bytearray, bytes, str)) and
+            //      not hasattr(TOS, "__next__"))
             PyObject *subject = TOP();
             // Fast path for lists and tuples:
             if (PyType_FastSubclass(Py_TYPE(subject),
@@ -3845,7 +3863,8 @@ main_loop:
             // TODO
             PyObject *keys = TOP();
             PyObject *subject = SECOND();
-            PyObject *values = match_map_items(tstate, subject, keys);
+            assert(PyTuple_CheckExact(keys));
+            PyObject *values = match_keys(tstate, subject, keys);
             if (!values) {
                 if (_PyErr_Occurred(tstate)) {
                     goto error;
@@ -3854,11 +3873,15 @@ main_loop:
                 PUSH(Py_False);
                 DISPATCH();
             }
+            // Success!
             if (oparg) {
+                // If oparg is nonzero, collect the remaining items into a dict
+                // and put it on the stack where the subject used to be:
                 PyObject *rest = dict_without_keys(tstate, subject, keys);
                 if (!rest) {
                     goto error;
                 }
+                assert(PyDict_CheckExact(rest));
                 SET_SECOND(rest);
                 Py_DECREF(subject);
             }
