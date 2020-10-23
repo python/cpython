@@ -398,11 +398,6 @@ To make a read-only data descriptor, define both :meth:`__get__` and
 called.  Defining the :meth:`__set__` method with an exception raising
 placeholder is enough to make it a data descriptor.
 
-Automatic Name Notification
----------------------------
-
-XXX:  Explain how set_name works.
-
 
 Invoking Descriptors
 --------------------
@@ -464,6 +459,17 @@ The details above show that the mechanism for descriptors is embedded in the
 :class:`object` or if they have a meta-class providing similar functionality.
 Likewise, classes can turn-off descriptor invocation by overriding
 :meth:`__getattribute__()`.
+
+
+Automatic Name Notification
+---------------------------
+
+Sometimes it desirable for a descriptor to know what class variable name it was assigned to.  When a new class is created, the :class:`type` metaclass scans the dictionary of the new class.  If any of the entries are descriptors and if they define :meth:`__set_name__`, that method is called with two arguments.  The *owner* is the class where the descriptor is used, the *name* is class variable the descriptor was assigned to.
+
+The implementation details are in :c:func:`type_new()` and :c:func:`set_names()` in
+:source:`Objects/typeobject.c`.
+
+Since the update logic is in :meth:`type.__new__`, notifications only take place at the time of class creation.  If descriptors are added to the class afterwards, :meth:`__set_name__` will need to be called manually.
 
 
 Descriptor Example
