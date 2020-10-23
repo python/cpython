@@ -60,9 +60,9 @@ and descriptor lookup::
 
 In the ``a.x`` attribute lookup, the dot operator finds the value ``5`` stored
 in the class dictionary.  In the ``a.y`` descriptor lookup, the dot operator
-calls the descriptor's :meth:`__get__()` method.  That method returns ``10``.  Note
-that the value ``10`` is not stored in either the class dictionary or instance
-dictionary.  Instead, the value ``10`` is computed on demand.
+calls the descriptor's :meth:`__get__()` method.  That method returns ``10``.
+Note that the value ``10`` is not stored in either the class dictionary or the
+instance dictionary.  Instead, the value ``10`` is computed on demand.
 
 This example shows how a simple descriptor works, but it isn't very useful.
 For retrieving constants, normal attribute lookup would be better.
@@ -116,10 +116,10 @@ Managed attributes
 ------------------
 
 A popular use for descriptors is managing access to instance data.  The
-descriptor is assigned to a public attribute while the actual data is stored
-as a private attribute in the instance dictionary.  The descriptor's
-:meth:`__get__` and :meth:`__set__` methods are triggered when the public
-attribute is accessed.
+descriptor is assigned to a public attribute in the class dictionary while the
+actual data is stored as a private attribute in the instance dictionary.  The
+descriptor's :meth:`__get__` and :meth:`__set__` methods are triggered when
+the public attribute is accessed.
 
 In the following example, *age* is the public attribute and *_age* is the
 private attribute.  When the public attribute is accessed, the descriptor logs
@@ -160,7 +160,7 @@ logged, but that the regular attribute *name* is not logged::
     >>> dave = Person('David D', 40)
     INFO:root:Updating 'age' to 40
 
-    >>> vars(mary)                          # The actual data is in private attributes
+    >>> vars(mary)                          # The actual data is in a private attribute
     {'name': 'Mary M', '_age': 30}
     >>> vars(dave)
     {'name': 'David D', '_age': 40}
@@ -227,7 +227,8 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
             self.age += 1
 
 An interactive session shows that the :class:`Person` class has called
-:meth:`__set_name__` so that the field names would be recorded::
+:meth:`__set_name__` so that the field names would be recorded.  Here
+we call :func:`vars` to lookup the descriptor without triggering it::
 
     >>> vars(vars(Person)['name'])
     {'public_name': 'name', 'private_name': '_name'}
@@ -254,18 +255,18 @@ The two *Person* instances contain only the private names::
 Closing thoughts
 ----------------
 
-A :term:`descriptor` is any object that defines :meth:`__get__`,
-:meth:`__set__`, and/or :meth:`__delete__`.
+A :term:`descriptor` is what we call any object that defines :meth:`__get__`,
+:meth:`__set__`, or :meth:`__delete__`.
 
-A descriptor gets invoked by the dot operator during attribute lookup.  If a
+Descriptors get invoked by the dot operator during attribute lookup.  If a
 descriptor is accessed indirectly with ``vars(some_class)[descriptor_name]``,
-it has no effect.
+the descriptor instance is returned without invoking it.
 
 Descriptors only work when used as class variables.  When put in instances,
 they have no effect.
 
-The main motivation for descriptors is that it lets objects control what
-happens to them during dotted lookup.
+The main motivation for descriptors is to let objects control what happens
+during dotted lookup.
 
 Descriptors are used throughout the language.  It is how functions turn into
 bound methods.  Common tools like :func:`classmethod`, :func:`staticmethod`,
