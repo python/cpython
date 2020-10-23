@@ -262,10 +262,22 @@ Optimizations
   with ``gcc`` by up to 30%. See `this article
   <https://developers.redhat.com/blog/2020/06/25/red-hat-enterprise-linux-8-2-brings-faster-python-3-8-run-speeds/>`_
   for more details. (Contributed by Victor Stinner and Pablo Galindo in
-  :issue:`38980`)
+  :issue:`38980`.)
+
 
 Deprecated
 ==========
+
+* The various ``load_module()`` methods of :mod:`importlib` have been
+  documented as deprecated since Python 3.6, but will now also trigger
+  a :exc:`DeprecationWarning`. Use
+  :meth:`~importlib.abc.Loader.exec_module` instead.
+  (Contributed by Brett Cannon in :issue:`26131`.)
+
+* The use of :meth:`~importlib.abc.Loader.load_module` by the import
+  system now triggers an :exc:`ImportWarning` as
+  :meth:`~importlib.abc.Loader.exec_module` is preferred.
+  (Contributed by Brett Cannon in :issue:`26131`.)
 
 
 Removed
