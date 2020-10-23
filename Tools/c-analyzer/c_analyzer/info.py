@@ -257,6 +257,9 @@ class Analyzed:
         else:
             return UNKNOWN not in self.typedecl
 
+    def fix_filename(self, relroot):
+        self.item.fix_filename(relroot)
+
     def as_rowdata(self, columns=None):
         # XXX finsih!
         return self.item.as_rowdata(columns)
@@ -339,6 +342,10 @@ class Analysis:
                 raise IndexError(key)
         else:
             return self._analyzed[key]
+
+    def fix_filenames(self, relroot):
+        for item in self._analyzed:
+            item.fix_filename(relroot)
 
     def _add_result(self, info, resolved):
         analyzed = type(self).build_item(info, resolved)

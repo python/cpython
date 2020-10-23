@@ -160,14 +160,16 @@ def _get_check_handlers(fmt, printer, verbosity=VERBOSITY):
             print(f'{failure!r} {data!r}')
     elif fmt == 'brief':
         def handle_failure(failure, data):
-            print(f'{data.filename}\t{data.parent or "-"}\t{data.name}\t{failure!r}')
+            parent = data.parent or ''
+            funcname = parent if isinstance(parent, str) else parent.name
+            name = f'({funcname}).{data.name}' if funcname else data.name
+            failure = failure.split('\t')[0]
+            print(f'{data.filename}:{name} - {failure}')
     elif fmt == 'summary':
-        failures = []
         def handle_failure(failure, data):
-            failures.append((failure, data))
-        def handle_after():
-            # XXX
-            raise NotImplementedError
+            parent = data.parent or ''
+            funcname = parent if isinstance(parent, str) else parent.name
+            print(f'{data.filename:35}\t{funcname or "-":35}\t{data.name:40}\t{failure}')
     elif fmt == 'full':
         div = ''
         def handle_failure(failure, data):
@@ -283,6 +285,7 @@ def cmd_check(filenames, *,
               checks=None,
               ignored=None,
               fmt=None,
+              relroot=None,
               failfast=False,
               iter_filenames=None,
               verbosity=VERBOSITY,
@@ -304,6 +307,8 @@ def cmd_check(filenames, *,
 
     logger.info('analyzing...')
     analyzed = _analyze(filenames, **kwargs)
+    if relroot:
+        analyzed.fix_filenames(relroot)
 
     logger.info('checking...')
     numfailed = 0

@@ -1,5 +1,6 @@
 from collections import namedtuple
 import enum
+import os.path
 import re
 
 from c_common.clsutil import classonly
@@ -286,6 +287,10 @@ class FileInfo(namedtuple('FileInfo', 'filename lno')):
 
     def __str__(self):
         return self.filename
+
+    def fix_filename(self, relroot):
+        filename = os.path.relpath(self.filename, relroot)
+        return self._replace(filename=filename)
 
 
 class SourceLine(namedtuple('Line', 'file kind data conditions')):
@@ -687,6 +692,10 @@ class HighlevelParsedItem:
                 self._raw_data(),
             )
             return self._parsed
+
+    def fix_filename(self, relroot):
+        if self.file:
+            self.file = self.file.fix_filename(relroot)
 
     def as_rowdata(self, columns=None):
         columns, datacolumns, colnames = self._parse_columns(columns)

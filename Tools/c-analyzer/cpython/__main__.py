@@ -114,6 +114,7 @@ def cmd_check(filenames=None, **kwargs):
     kwargs['get_file_preprocessor'] = _parser.get_preprocessor(log_err=print)
     c_analyzer.cmd_check(
         filenames,
+        relroot=REPO_ROOT,
         _analyze=_analyzer.analyze,
         _CHECKS=CHECKS,
         **kwargs
