@@ -834,7 +834,7 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 
 // Need these for pattern matching:
 
-static PyObject*
+static PyObject*  // TODO
 match_map_items(PyThreadState *tstate, PyObject *map, PyObject *keys)
 {
     assert(PyTuple_CheckExact(keys));
@@ -890,9 +890,13 @@ fail:
     return NULL;
 }
 
-static PyObject *
-match_map_copy(PyThreadState *tstate, PyObject *map, PyObject *keys)
+static PyObject *  // TODO
+dict_without_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
 {
+    // copy = dict(map)
+    // for key in keys:
+    //     del copy[key]
+    // return copy
     PyObject *copy;
     if (PyDict_CheckExact(map)) {
         copy = PyDict_Copy(map);
@@ -907,13 +911,10 @@ match_map_copy(PyThreadState *tstate, PyObject *map, PyObject *keys)
             return NULL;
         }
     }
-    Py_ssize_t nkeys = PyTuple_GET_SIZE(keys);
-    for (Py_ssize_t i = 0; i < nkeys; i++) {
+    // This may seem a bit ineffient, but keys is rarely big enough to actually
+    // impact runtime.
+    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(keys); i++) {
         if (PyDict_DelItem(copy, PyTuple_GET_ITEM(keys, i))) {
-            if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                _PyErr_Clear(tstate);
-                continue;
-            }
             Py_DECREF(copy);
             return NULL;
         }
@@ -924,6 +925,10 @@ match_map_copy(PyThreadState *tstate, PyObject *map, PyObject *keys)
 static PyObject *
 get_match_args(PyThreadState *tstate, PyObject *type)
 {
+    // match_args = getattr(type, "__match_args__", ())
+    // if match_args.__class__ in (list, tuple):
+    //     return tuple(match_args)
+    // raise TypeError
     PyObject *match_args = PyObject_GetAttrString(type, "__match_args__");
     if (!match_args) {
         if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
@@ -947,7 +952,7 @@ get_match_args(PyThreadState *tstate, PyObject *type)
     return NULL;
 }
 
-static PyObject *
+static PyObject *  // TODO
 do_match(PyThreadState *tstate, Py_ssize_t nargs, PyObject *kwargs, PyObject *type, PyObject *subject)
 {
     // TODO: Break this up!
@@ -3634,15 +3639,12 @@ main_loop:
                 if (_PyErr_Occurred(tstate)) {
                     goto error;
                 }
-                Py_INCREF(Py_None);
-                SET_TOP(Py_None);
-                Py_DECREF(keys);
                 Py_INCREF(Py_False);
                 PUSH(Py_False);
                 DISPATCH();
             }
             if (oparg) {
-                PyObject *rest = match_map_copy(tstate, subject, keys);
+                PyObject *rest = dict_without_keys(tstate, subject, keys);
                 if (!rest) {
                     goto error;
                 }

@@ -1239,31 +1239,27 @@ All of the following opcodes use their arguments.
 
 .. opcode:: MATCH_CLASS (count)
 
-   TODO
+   TOS is a tuple of keyword attribute names, TOS1 is the class being matched
+   against, and TOS2 is the match subject. *count* is the number of positional
+   sub-patterns.
 
-   TOS is a tuple of keyword attribute names.
-   TOS1 is the "class" being called.
-   TOS2 is the subject.
-   *oparg* is the number of positional sub-patterns.
-
-   On match, replaces TOS1 with a tuple extracted attributes, and TOS with True.
-   On no match, replaces TOS with False.
+   If TOS2 is an instance of TOS1 and has the positional and keyword attributes
+   required by *count* and TOS, replace TOS with ``True`` and TOS1 with a tuple
+   of extracted attributes. Otherwise, replace TOS with ``False``.
 
    .. versionadded:: 3.10
 
 
 .. opcode:: MATCH_KEYS (copy)
 
-   TODO
+   TOS is a tuple of mapping keys, and TOS1 is the match subject.  If TOS1
+   contains all of the keys in TOS, replace TOS with a tuple containing the
+   corresponding values and push ``True``. Otherwisem, push ``False``.
 
-   TOS is a tuple of keys.
-   TOS1 is the match subject.
+   TODO: This next bit is weird. Just make two non-arg opcodes?
 
-   On failure, replaces TOS with None and pushes False.
-
-   On success, replaces TOS with a tuple of keys and pushes TRUE. If *oparg* is
-   non-zero, gather remaining items into a dict and put it on the stack where
-   the subject used to be.
+   If *copy* is non-zero, gather remaining items into a :class:`dict` and put it
+   on the stack where the subject used to be.
 
    .. versionadded:: 3.10
 
