@@ -51,7 +51,6 @@ __all__ = [
 
 import binascii
 import codecs
-import contextlib
 import datetime
 import enum
 from io import BytesIO
@@ -59,7 +58,6 @@ import itertools
 import os
 import re
 import struct
-from warnings import warn
 from xml.parsers.expat import ParserCreate
 
 
@@ -175,8 +173,15 @@ class _PlistParser:
         self.parser.StartElementHandler = self.handle_begin_element
         self.parser.EndElementHandler = self.handle_end_element
         self.parser.CharacterDataHandler = self.handle_data
+        self.parser.EntityDeclHandler = self.handle_entity_decl
         self.parser.ParseFile(fileobj)
         return self.root
+
+    def handle_entity_decl(self, entity_name, is_parameter_entity, value, base, system_id, public_id, notation_name):
+        # Reject plist files with entity declarations to avoid XML vulnerabilies in expat.
+        # Regular plist files don't contain those declerations, and Apple's plutil tool does not
+        # accept them either.
+        raise InvalidFileException("XML entity declarations are not supported in plist files")
 
     def handle_begin_element(self, element, attrs):
         self.data = []
@@ -247,7 +252,11 @@ class _PlistParser:
         self.add_object(False)
 
     def end_integer(self):
-        self.add_object(int(self.get_data()))
+        raw = self.get_data()
+        if raw.startswith('0x') or raw.startswith('0X'):
+            self.add_object(int(raw, 16))
+        else:
+            self.add_object(int(raw))
 
     def end_real(self):
         self.add_object(float(self.get_data()))

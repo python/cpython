@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,14 +27,16 @@
 
 
 #include "mpdecimal.h"
+
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <signal.h>
 
 
 void
-mpd_dflt_traphandler(mpd_context_t *ctx UNUSED)
+mpd_dflt_traphandler(mpd_context_t *ctx)
 {
+    (void)ctx;
     raise(SIGFPE);
 }
 
@@ -282,5 +284,3 @@ mpd_addstatus_raise(mpd_context_t *ctx, uint32_t flags)
         mpd_traphandler(ctx);
     }
 }
-
-

@@ -27,9 +27,8 @@ What you get after installing is a number of things:
 
 * A :file:`Python 3.9` folder in your :file:`Applications` folder. In here
   you find IDLE, the development environment that is a standard part of official
-  Python distributions; PythonLauncher, which handles double-clicking Python
-  scripts from the Finder; and the "Build Applet" tool, which allows you to
-  package Python scripts as standalone applications on your system.
+  Python distributions; and PythonLauncher, which handles double-clicking Python
+  scripts from the Finder.
 
 * A framework :file:`/Library/Frameworks/Python.framework`, which includes the
   Python executable and libraries. The installer adds this location to your shell
@@ -158,11 +157,6 @@ https://riverbankcomputing.com/software/pyqt/intro.
 
 Distributing Python Applications on the Mac
 ===========================================
-
-The "Build Applet" tool that is placed in the MacPython 3.6 folder is fine for
-packaging small Python scripts on your own machine to run as a standard Mac
-application. This tool, however, is not robust enough to distribute Python
-applications to other users.
 
 The standard tool for deploying standalone Python applications on the Mac is
 :program:`py2app`. More information on installing and using py2app can be found

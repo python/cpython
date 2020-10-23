@@ -163,11 +163,14 @@ function:
    :class:`CodecInfo` object. In case a search function cannot find
    a given encoding, it should return ``None``.
 
-   .. note::
 
-      Search function registration is not currently reversible,
-      which may cause problems in some cases, such as unit testing or
-      module reloading.
+.. function:: unregister(search_function)
+
+   Unregister a codec search function and clear the registry's cache.
+   If the search function is not registered, do nothing.
+
+   .. versionadded:: 3.10
+
 
 While the builtin :func:`open` and the associated :mod:`io` module are the
 recommended approach for working with encoded text files, this module
@@ -196,9 +199,6 @@ wider range of codecs when working with binary files:
 
    *buffering* has the same meaning as for the built-in :func:`open` function.
    It defaults to -1 which means that the default buffer size will be used.
-
-   .. versionchanged:: 3.9
-      The ``'U'`` mode has been removed.
 
 
 .. function:: EncodedFile(file, data_encoding, file_encoding=None, errors='strict')

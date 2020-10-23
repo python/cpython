@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,12 +27,14 @@
 
 
 #include "mpdecimal.h"
-#include <stdio.h>
+
 #include <assert.h>
+
 #include "bits.h"
+#include "constants.h"
+#include "difradix2.h"
 #include "numbertheory.h"
 #include "umodarith.h"
-#include "difradix2.h"
 
 
 /* Bignum: The actual transform routine (decimation in frequency). */
@@ -169,5 +171,3 @@ fnt_dif2(mpd_uint_t a[], mpd_size_t n, struct fnt_params *tparams)
 
     bitreverse_permute(a, n);
 }
-
-

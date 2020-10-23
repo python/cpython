@@ -312,14 +312,12 @@ Running the interpreter shows how the function descriptor works in practice::
     >>> d.f
     <bound method D.f of <__main__.D object at 0x00B18C90>>
 
-    # Internally, the bound method stores the underlying function,
-    # the bound instance, and the class of the bound instance.
+    # Internally, the bound method stores the underlying function and
+    # the bound instance.
     >>> d.f.__func__
     <function D.f at 0x1012e5ae8>
     >>> d.f.__self__
     <__main__.D object at 0x1012e1f98>
-    >>> d.f.__class__
-    <class 'method'>
 
 
 Static Methods and Class Methods

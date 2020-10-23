@@ -82,14 +82,9 @@ array_array_pop(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -137,14 +132,9 @@ array_array_insert(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[0]);
+        PyObject *iobj = _PyNumber_Index(args[0]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -253,14 +243,9 @@ array_array_fromfile(arrayobject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     f = args[0];
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -310,54 +295,6 @@ static PyObject *
 array_array_tolist(arrayobject *self, PyObject *Py_UNUSED(ignored))
 {
     return array_array_tolist_impl(self);
-}
-
-PyDoc_STRVAR(array_array_fromstring__doc__,
-"fromstring($self, buffer, /)\n"
-"--\n"
-"\n"
-"Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method).\n"
-"\n"
-"This method is deprecated. Use frombytes instead.");
-
-#define ARRAY_ARRAY_FROMSTRING_METHODDEF    \
-    {"fromstring", (PyCFunction)array_array_fromstring, METH_O, array_array_fromstring__doc__},
-
-static PyObject *
-array_array_fromstring_impl(arrayobject *self, Py_buffer *buffer);
-
-static PyObject *
-array_array_fromstring(arrayobject *self, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    Py_buffer buffer = {NULL, NULL};
-
-    if (PyUnicode_Check(arg)) {
-        Py_ssize_t len;
-        const char *ptr = PyUnicode_AsUTF8AndSize(arg, &len);
-        if (ptr == NULL) {
-            goto exit;
-        }
-        PyBuffer_FillInfo(&buffer, arg, (void *)ptr, len, 1, 0);
-    }
-    else { /* any bytes-like object */
-        if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
-        if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-            _PyArg_BadArgument("fromstring", "argument", "contiguous buffer", arg);
-            goto exit;
-        }
-    }
-    return_value = array_array_fromstring_impl(self, &buffer);
-
-exit:
-    /* Cleanup for buffer */
-    if (buffer.obj) {
-       PyBuffer_Release(&buffer);
-    }
-
-    return return_value;
 }
 
 PyDoc_STRVAR(array_array_frombytes__doc__,
@@ -414,26 +351,6 @@ array_array_tobytes(arrayobject *self, PyObject *Py_UNUSED(ignored))
     return array_array_tobytes_impl(self);
 }
 
-PyDoc_STRVAR(array_array_tostring__doc__,
-"tostring($self, /)\n"
-"--\n"
-"\n"
-"Convert the array to an array of machine values and return the bytes representation.\n"
-"\n"
-"This method is deprecated. Use tobytes instead.");
-
-#define ARRAY_ARRAY_TOSTRING_METHODDEF    \
-    {"tostring", (PyCFunction)array_array_tostring, METH_NOARGS, array_array_tostring__doc__},
-
-static PyObject *
-array_array_tostring_impl(arrayobject *self);
-
-static PyObject *
-array_array_tostring(arrayobject *self, PyObject *Py_UNUSED(ignored))
-{
-    return array_array_tostring_impl(self);
-}
-
 PyDoc_STRVAR(array_array_fromunicode__doc__,
 "fromunicode($self, ustr, /)\n"
 "--\n"
@@ -448,20 +365,23 @@ PyDoc_STRVAR(array_array_fromunicode__doc__,
     {"fromunicode", (PyCFunction)array_array_fromunicode, METH_O, array_array_fromunicode__doc__},
 
 static PyObject *
-array_array_fromunicode_impl(arrayobject *self, const Py_UNICODE *ustr,
-                             Py_ssize_clean_t ustr_length);
+array_array_fromunicode_impl(arrayobject *self, PyObject *ustr);
 
 static PyObject *
 array_array_fromunicode(arrayobject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *ustr;
-    Py_ssize_clean_t ustr_length;
+    PyObject *ustr;
 
-    if (!PyArg_Parse(arg, "u#:fromunicode", &ustr, &ustr_length)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("fromunicode", "argument", "str", arg);
         goto exit;
     }
-    return_value = array_array_fromunicode_impl(self, ustr, ustr_length);
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    ustr = arg;
+    return_value = array_array_fromunicode_impl(self, ustr);
 
 exit:
     return return_value;
@@ -548,11 +468,6 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
     typecode = PyUnicode_READ_CHAR(args[1], 0);
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     mformat_code = _PyLong_AsInt(args[2]);
     if (mformat_code == -1 && PyErr_Occurred()) {
         goto exit;
@@ -599,4 +514,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=6aa421571e2c0756 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=91c1cded65a1285f input=a9049054013a1b77]*/

@@ -611,37 +611,33 @@ class IndentsTest(unittest.TestCase):
 
 class RstripTest(unittest.TestCase):
 
-    def test_rstrip_line(self):
-        editor = MockEditor()
-        text = editor.text
-        do_rstrip = ft.Rstrip(editor).do_rstrip
-        eq = self.assertEqual
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.text = Text(cls.root)
+        cls.editor = MockEditor(text=cls.text)
+        cls.do_rstrip = ft.Rstrip(cls.editor).do_rstrip
 
-        do_rstrip()
-        eq(text.get('1.0', 'insert'), '')
-        text.insert('1.0', '     ')
-        do_rstrip()
-        eq(text.get('1.0', 'insert'), '')
-        text.insert('1.0', '     \n')
-        do_rstrip()
-        eq(text.get('1.0', 'insert'), '\n')
+    @classmethod
+    def tearDownClass(cls):
+        del cls.text, cls.do_rstrip, cls.editor
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
 
-    def test_rstrip_multiple(self):
-        editor = MockEditor()
-        #  Comment above, uncomment 3 below to test with real Editor & Text.
-        #from idlelib.editor import EditorWindow as Editor
-        #from tkinter import Tk
-        #editor = Editor(root=Tk())
-        text = editor.text
-        do_rstrip = ft.Rstrip(editor).do_rstrip
+    def tearDown(self):
+        self.text.delete('1.0', 'end-1c')
 
+    def test_rstrip_lines(self):
         original = (
             "Line with an ending tab    \n"
             "Line ending in 5 spaces     \n"
             "Linewithnospaces\n"
             "    indented line\n"
             "    indented line with trailing space \n"
-            "    ")
+            "    \n")
         stripped = (
             "Line with an ending tab\n"
             "Line ending in 5 spaces\n"
@@ -649,9 +645,23 @@ class RstripTest(unittest.TestCase):
             "    indented line\n"
             "    indented line with trailing space\n")
 
-        text.insert('1.0', original)
-        do_rstrip()
-        self.assertEqual(text.get('1.0', 'insert'), stripped)
+        self.text.insert('1.0', original)
+        self.do_rstrip()
+        self.assertEqual(self.text.get('1.0', 'insert'), stripped)
+
+    def test_rstrip_end(self):
+        text = self.text
+        for code in ('', '\n', '\n\n\n'):
+            with self.subTest(code=code):
+                text.insert('1.0', code)
+                self.do_rstrip()
+                self.assertEqual(text.get('1.0','end-1c'), '')
+        for code in ('a\n', 'a\n\n', 'a\n\n\n'):
+            with self.subTest(code=code):
+                text.delete('1.0', 'end-1c')
+                text.insert('1.0', code)
+                self.do_rstrip()
+                self.assertEqual(text.get('1.0','end-1c'), 'a\n')
 
 
 if __name__ == '__main__':

@@ -9,9 +9,16 @@
 
 # Core
 **/*context*                  @1st1
-**/*genobject*                @1st1
+**/*genobject*                @1st1 @markshannon
 **/*hamt*                     @1st1
-Objects/dict*                 @methane
+Objects/set*                  @rhettinger
+Objects/dict*                 @methane @markshannon
+Objects/type*                 @markshannon
+Objects/codeobject.c          @markshannon
+Objects/frameobject.c         @markshannon
+Objects/call.c                @markshannon
+Python/ceval.c                @markshannon
+Python/compile.c              @markshannon
 
 # Hashing
 **/*hashlib*                  @python/crypto-team @tiran
@@ -71,8 +78,11 @@ Include/pytime.h              @pganssle @abalkin
 /Modules/gcmodule.c           @pablogsal
 /Doc/library/gc.rst           @pablogsal
 
-# Parser/Pgen
-/Parser/pgen/                 @pablogsal
+# Parser
+/Parser/                      @pablogsal @lysnikolaou
+/Tools/peg_generator/         @pablogsal @lysnikolaou
+/Lib/test/test_peg_generator/ @pablogsal @lysnikolaou
+/Grammar/python.gram          @pablogsal @lysnikolaou
 
 # SQLite 3
 **/*sqlite*                   @berkerpeksag
@@ -93,6 +103,7 @@ Include/pytime.h              @pganssle @abalkin
 /Tools/msi/                   @python/windows-team
 /Tools/nuget/                 @python/windows-team
 
+# Misc
 **/*itertools*                @rhettinger
 **/*collections*              @rhettinger
 **/*random*                   @rhettinger
@@ -107,6 +118,15 @@ Include/pytime.h              @pganssle @abalkin
 **/*idlelib*                  @terryjreedy
 
 **/*typing*                   @gvanrossum @ilevkivskyi
+
+**/*asyncore                  @giampaolo
+**/*asynchat                  @giampaolo
+**/*ftplib                    @giampaolo
+**/*shutil                    @giampaolo
+
+**/*enum*                     @ethanfurman
+**/*cgi*                      @ethanfurman
+**/*tarfile*                  @ethanfurman
 
 # macOS
 /Mac/                         @python/macos-team

@@ -12,7 +12,6 @@ extending/extending,,:myfunction,"PyArg_ParseTuple(args, ""D:myfunction"", &c);"
 extending/extending,,:set,"if (PyArg_ParseTuple(args, ""O:set_callback"", &temp)) {"
 extending/newtypes,,:call,"if (!PyArg_ParseTuple(args, ""sss:call"", &arg1, &arg2, &arg3)) {"
 faq/programming,,:chr,">=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr("
-faq/programming,,::,for x in sequence[::-1]:
 faq/programming,,:reduce,"print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,"
 faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
 faq/windows,,:d48eceb,"Python 3.6.4 (v3.6.4:d48eceb, Dec 19 2017, 06:04:45) [MSC v.1900 32 bit (Intel)] on win32"
@@ -108,9 +107,9 @@ howto/pyporting,,::,Programming Language :: Python :: 3
 howto/regex,,::,
 howto/regex,,:foo,(?:foo)
 howto/urllib2,,:password,"""joe:password@example.com"""
+library/ast,,:upper,lower:upper
+library/ast,,:step,lower:upper:step
 library/audioop,,:ipos,"# factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],"
-library/bisect,32,:hi,all(val >= x for val in a[i:hi])
-library/bisect,42,:hi,all(val > x for val in a[i:hi])
 library/configparser,,:home,my_dir: ${Common:home_dir}/twosheds
 library/configparser,,:option,${section:option}
 library/configparser,,:path,python_dir: ${Frameworks:path}/Python/Versions/${Frameworks:Python}
@@ -147,6 +146,8 @@ library/ipaddress,,:db8,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,::,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,:db8,IPv6Address('2001:db8::1000')
 library/ipaddress,,::,IPv6Address('2001:db8::1000')
+library/ipaddress,,::,IPv6Address('ff02::5678%1')
+library/ipaddress,,::,fe80::1234
 library/ipaddress,,:db8,">>> ipaddress.ip_address(""2001:db8::1"").reverse_pointer"
 library/ipaddress,,::,">>> ipaddress.ip_address(""2001:db8::1"").reverse_pointer"
 library/ipaddress,,::,"""::abc:7:def"""
@@ -201,7 +202,7 @@ library/readline,,:bind,"python:bind ^I rl_complete"
 library/smtplib,,:port,method must support that as well as a regular host:port
 library/socket,,::,'5aef:2b::8'
 library/socket,,:can,"return (can_id, can_dlc, data[:can_dlc])"
-library/socket,,:len,fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+library/socket,,:len,fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
 library/sqlite3,,:age,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
 library/sqlite3,,:memory,
 library/sqlite3,,:who,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"

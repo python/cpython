@@ -8,9 +8,15 @@
 .. moduleauthor:: Raymond Hettinger <python@rcn.com>
 .. moduleauthor:: Nick Coghlan <ncoghlan@gmail.com>
 .. moduleauthor:: Łukasz Langa <lukasz@langa.pl>
+.. moduleauthor:: Pablo Galindo <pablogsal@gmail.com>
 .. sectionauthor:: Peter Harris <scav@blueyonder.co.uk>
 
 **Source code:** :source:`Lib/functools.py`
+
+.. testsetup:: default
+
+   import functools
+   from functools import *
 
 --------------
 
@@ -19,6 +25,32 @@ or return other functions. In general, any callable object can be treated as a
 function for the purposes of this module.
 
 The :mod:`functools` module defines the following functions:
+
+.. decorator:: cache(user_function)
+
+   Simple lightweight unbounded function cache.  Sometimes called
+   `"memoize" <https://en.wikipedia.org/wiki/Memoization>`_.
+
+   Returns the same as ``lru_cache(maxsize=None)``, creating a thin
+   wrapper around a dictionary lookup for the function arguments.  Because it
+   never needs to evict old values, this is smaller and faster than
+   :func:`lru_cache()` with a size limit.
+
+   For example::
+
+        @cache
+        def factorial(n):
+            return n * factorial(n-1) if n else 1
+
+        >>> factorial(10)      # no previously cached result, makes 11 recursive calls
+        3628800
+        >>> factorial(5)       # just looks up cached value result
+        120
+        >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
+        479001600
+
+   .. versionadded:: 3.9
+
 
 .. decorator:: cached_property(func)
 
@@ -101,8 +133,7 @@ The :mod:`functools` module defines the following functions:
            return sum(sentence.count(vowel) for vowel in 'aeiou')
 
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
-   grow without bound.  The LRU feature performs best when *maxsize* is a
-   power-of-two.
+   grow without bound.
 
    If *typed* is set to true, function arguments of different types will be
    cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
@@ -127,11 +158,11 @@ The :mod:`functools` module defines the following functions:
    bypassing the cache, or for rewrapping the function with a different cache.
 
    An `LRU (least recently used) cache
-   <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_ works
-   best when the most recent calls are the best predictors of upcoming calls (for
-   example, the most popular articles on a news server tend to change each day).
-   The cache's size limit assures that the cache does not grow without bound on
-   long-running processes such as web servers.
+   <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)>`_
+   works best when the most recent calls are the best predictors of upcoming
+   calls (for example, the most popular articles on a news server tend to
+   change each day).  The cache's size limit assures that the cache does not
+   grow without bound on long-running processes such as web servers.
 
    In general, the LRU cache should only be used when you want to reuse
    previously computed values.  Accordingly, it doesn't make sense to cache
@@ -222,6 +253,13 @@ The :mod:`functools` module defines the following functions:
       performance benchmarking indicates this is a bottleneck for a given
       application, implementing all six rich comparison methods instead is
       likely to provide an easy speed boost.
+
+   .. note::
+
+      This decorator makes no attempt to override methods that have been
+      declared in the class *or its superclasses*. Meaning that if a
+      superclass defines a comparison operator, *total_ordering* will not
+      implement it again, even if the original method is abstract.
 
    .. versionadded:: 3.2
 

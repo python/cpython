@@ -1,5 +1,6 @@
 /* Authors: Gregory P. Smith & Jeffrey Yasskin */
 #include "Python.h"
+#include "pycore_fileutils.h"
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
@@ -68,8 +69,15 @@ typedef struct {
 
 static struct PyModuleDef _posixsubprocessmodule;
 
-#define _posixsubprocessstate(o) ((_posixsubprocessstate *)PyModule_GetState(o))
-#define _posixsubprocessstate_global _posixsubprocessstate(PyState_FindModule(&_posixsubprocessmodule))
+static inline _posixsubprocessstate*
+get_posixsubprocess_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_posixsubprocessstate *)state;
+}
+
+#define _posixsubprocessstate_global get_posixsubprocess_state(PyState_FindModule(&_posixsubprocessmodule))
 
 /* If gc was disabled, call gc.enable().  Return 0 on success. */
 static int
@@ -80,7 +88,7 @@ _enable_gc(int need_to_reenable_gc, PyObject *gc_module)
 
     if (need_to_reenable_gc) {
         PyErr_Fetch(&exctype, &val, &tb);
-        result = _PyObject_CallMethodNoArgs(
+        result = PyObject_CallMethodNoArgs(
             gc_module, _posixsubprocessstate_global->enable);
         if (exctype != NULL) {
             PyErr_Restore(exctype, val, tb);
@@ -243,7 +251,6 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
     long end_fd = safe_get_max_fd();
     Py_ssize_t num_fds_to_keep = PyTuple_GET_SIZE(py_fds_to_keep);
     Py_ssize_t keep_seq_idx;
-    int fd_num;
     /* As py_fds_to_keep is sorted we can loop through the list closing
      * fds in between any in the keep list falling within our range. */
     for (keep_seq_idx = 0; keep_seq_idx < num_fds_to_keep; ++keep_seq_idx) {
@@ -251,15 +258,11 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
         int keep_fd = PyLong_AsLong(py_keep_fd);
         if (keep_fd < start_fd)
             continue;
-        for (fd_num = start_fd; fd_num < keep_fd; ++fd_num) {
-            close(fd_num);
-        }
+        _Py_closerange(start_fd, keep_fd - 1);
         start_fd = keep_fd + 1;
     }
     if (start_fd <= end_fd) {
-        for (fd_num = start_fd; fd_num < end_fd; ++fd_num) {
-            close(fd_num);
-        }
+        _Py_closerange(start_fd, end_fd);
     }
 }
 
@@ -635,7 +638,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         return NULL;
 
     if ((preexec_fn != Py_None) &&
-            (_PyInterpreterState_Get() != PyInterpreterState_Main())) {
+            (PyInterpreterState_Get() != PyInterpreterState_Main())) {
         PyErr_SetString(PyExc_RuntimeError,
                         "preexec_fn not supported within subinterpreters");
         return NULL;
@@ -650,6 +653,14 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         return NULL;
     }
 
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    if (config->_isolated_interpreter) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "subprocess not supported for isolated subinterpreters");
+        return NULL;
+    }
+
     /* We need to call gc.disable() when we'll be calling preexec_fn */
     if (preexec_fn != Py_None) {
         PyObject *result;
@@ -657,7 +668,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         gc_module = PyImport_ImportModule("gc");
         if (gc_module == NULL)
             return NULL;
-        result = _PyObject_CallMethodNoArgs(
+        result = PyObject_CallMethodNoArgs(
             gc_module, _posixsubprocessstate_global->isenabled);
         if (result == NULL) {
             Py_DECREF(gc_module);
@@ -669,7 +680,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             Py_DECREF(gc_module);
             return NULL;
         }
-        result = _PyObject_CallMethodNoArgs(
+        result = PyObject_CallMethodNoArgs(
             gc_module, _posixsubprocessstate_global->disable);
         if (result == NULL) {
             Py_DECREF(gc_module);
@@ -872,6 +883,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     if (_enable_gc(need_to_reenable_gc, gc_module)) {
         pid = -1;
     }
+    PyMem_RawFree(groups);
     Py_XDECREF(preexec_fn_args_tuple);
     Py_XDECREF(gc_module);
 
@@ -944,16 +956,16 @@ static PyMethodDef module_methods[] = {
 
 
 static int _posixsubprocess_traverse(PyObject *m, visitproc visit, void *arg) {
-    Py_VISIT(_posixsubprocessstate(m)->disable);
-    Py_VISIT(_posixsubprocessstate(m)->enable);
-    Py_VISIT(_posixsubprocessstate(m)->isenabled);
+    Py_VISIT(get_posixsubprocess_state(m)->disable);
+    Py_VISIT(get_posixsubprocess_state(m)->enable);
+    Py_VISIT(get_posixsubprocess_state(m)->isenabled);
     return 0;
 }
 
 static int _posixsubprocess_clear(PyObject *m) {
-    Py_CLEAR(_posixsubprocessstate(m)->disable);
-    Py_CLEAR(_posixsubprocessstate(m)->enable);
-    Py_CLEAR(_posixsubprocessstate(m)->isenabled);
+    Py_CLEAR(get_posixsubprocess_state(m)->disable);
+    Py_CLEAR(get_posixsubprocess_state(m)->enable);
+    Py_CLEAR(get_posixsubprocess_state(m)->isenabled);
     return 0;
 }
 
@@ -989,9 +1001,9 @@ PyInit__posixsubprocess(void)
       return NULL;
     }
 
-    _posixsubprocessstate(m)->disable = PyUnicode_InternFromString("disable");
-    _posixsubprocessstate(m)->enable = PyUnicode_InternFromString("enable");
-    _posixsubprocessstate(m)->isenabled = PyUnicode_InternFromString("isenabled");
+    get_posixsubprocess_state(m)->disable = PyUnicode_InternFromString("disable");
+    get_posixsubprocess_state(m)->enable = PyUnicode_InternFromString("enable");
+    get_posixsubprocess_state(m)->isenabled = PyUnicode_InternFromString("isenabled");
 
     PyState_AddModule(m, &_posixsubprocessmodule);
     return m;
