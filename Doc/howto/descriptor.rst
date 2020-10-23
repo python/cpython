@@ -1,3 +1,5 @@
+.. _descriptorhowto:
+
 ======================
 Descriptor HowTo Guide
 ======================
@@ -8,7 +10,8 @@ Descriptor HowTo Guide
 .. Contents::
 
 
-Descriptors let objects customize attribute lookup, storage, and deletion.
+:term:`Decriptors <descriptor>` let objects customize attribute lookup,
+      storage, and deletion.
 
 This HowTo guide has three major sections:
 
