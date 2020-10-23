@@ -450,10 +450,10 @@ Where this occurs in the precedence chain depends on which descriptor methods
 were defined.
 
 Descriptors are a powerful, general purpose protocol.  They are the mechanism
-behind properties, methods, static methods, class methods, and :func:`super()`.
-They are used throughout Python itself to implement the new style classes
-introduced in version 2.2.  Descriptors simplify the underlying C-code and offer
-a flexible set of new tools for everyday Python programs.
+behind properties, methods, static methods, class methods, and
+:func:`super()`.  They are used throughout Python itself.  Descriptors
+simplify the underlying C code and offer a flexible set of new tools for
+everyday Python programs.
 
 
 Descriptor Protocol
@@ -839,8 +839,8 @@ for whether the caller is an object or a class::
 
 
 This behavior is useful whenever the function only needs to have a class
-reference and does not care about any underlying data.  One use for classmethods
-is to create alternate class constructors.  In Python 2.3, the classmethod
+reference and does not care about any underlying data.  One use for
+classmethods is to create alternate class constructors.  The classmethod
 :func:`dict.fromkeys` creates a new dictionary from a list of keys.  The pure
 Python equivalent is::
 
