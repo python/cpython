@@ -553,6 +553,8 @@ class _BinaryPlistParser:
         elif tokenH == 0x40:  # data
             s = self._get_size(tokenL)
             result = self._fp.read(s)
+            if len(result) != s:
+                raise InvalidFileException()
 
         elif tokenH == 0x50:  # ascii string
             s = self._get_size(tokenL)
