@@ -1164,7 +1164,7 @@ insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value
     Py_INCREF(key);
     Py_INCREF(value);
     MAINTAIN_TRACKING(mp, key, value);
-    
+
     if (! empty) {
         ix = keys->dk_lookup(mp, key, hash, &old_value);
         if (ix == DKIX_ERROR)
@@ -1174,7 +1174,7 @@ insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value
         
         empty = (ix == DKIX_EMPTY);
     }
-    
+
     if (empty) {
         /* Insert into new slot. */
         assert(old_value == NULL);
@@ -1735,7 +1735,7 @@ dict_set_item_init(PyObject *op, PyObject *key, PyObject *value, int empty)
         if (hash == -1)
             return -1;
     }
-    
+
     return insertdict_init(mp, key, hash, value, empty);
 }
 
@@ -3790,46 +3790,43 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
     assert(PyType_Check(type));
-    
+
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    
+
     if (!_PyArg_CheckPositional(__func__, nargs, 0, 1)) {
         return NULL;
     }
-    
+
     PyObject *self = dict_new((PyTypeObject *)type, NULL, NULL);
-    
+
     if (self == NULL) {
         return NULL;
     }
-    
+
     int empty = 1;
-    
+
     if (nargs == 1) {
         if (dict_update_arg_init(self, args[0]) < 0) {
             Py_DECREF(self);
             return NULL;
         }
-        
+
         empty = 0;
         args++;
     }
-    
-    Py_ssize_t kw_size = (kwnames == NULL
-        ? 0
-        : PyTuple_GET_SIZE(kwnames)
-    );
-    
+
     if (kwnames != NULL) {
         PyDictObject *mp = (PyDictObject *)self;
-        
+
+        Py_ssize_t kw_size = PyTuple_GET_SIZE(kwnames);
+    
         if (mp->ma_keys->dk_usable < kw_size) {
             if (dictresize(mp, estimate_keysize(mp->ma_used + kw_size))) {
                 Py_DECREF(self);
                 return NULL;
             }
         }
-        
+
         for (Py_ssize_t i = 0; i < kw_size; i++) {
             if (dict_set_item_init(self, PyTuple_GET_ITEM(kwnames, i), args[i], empty) < 0) {
                 Py_DECREF(self);
@@ -3837,7 +3834,7 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
             }
         }
     }
-    
+
     return self;
 }
 
