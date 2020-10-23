@@ -3578,8 +3578,8 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
         args++;
     }
 
-    if (kwnames != NULL) {
-        Py_ssize_t kw_size = PyTuple_GET_SIZE(kwnames);
+    Py_ssize_t kw_size;
+    if (kwnames != NULL && (kw_size = PyTuple_GET_SIZE(kwnames) > 0) {
         PyDictObject *mp = (PyDictObject *)self;
 
         if (mp->ma_keys->dk_usable < kw_size) {
