@@ -1,0 +1,3 @@
+``str()`` for the ``type`` attribute of the ``tkinter.Event`` object always
+returns now the numeric code returned by Tk instead of the name of the event
+type.

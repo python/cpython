@@ -2047,6 +2047,7 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
     assert(decimal_point != NULL);
     assert(thousands_sep != NULL);
 
+#ifndef MS_WINDOWS
     int change_locale = 0;
     if ((strlen(lc->decimal_point) > 1 || ((unsigned char)lc->decimal_point[0]) > 127)) {
         change_locale = 1;
@@ -2085,14 +2086,20 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
         }
     }
 
+#define GET_LOCALE_STRING(ATTR) PyUnicode_DecodeLocale(lc->ATTR, NULL)
+#else /* MS_WINDOWS */
+/* Use _W_* fields of Windows strcut lconv */
+#define GET_LOCALE_STRING(ATTR) PyUnicode_FromWideChar(lc->_W_ ## ATTR, -1)
+#endif /* MS_WINDOWS */
+
     int res = -1;
 
-    *decimal_point = PyUnicode_DecodeLocale(lc->decimal_point, NULL);
+    *decimal_point = GET_LOCALE_STRING(decimal_point);
     if (*decimal_point == NULL) {
         goto done;
     }
 
-    *thousands_sep = PyUnicode_DecodeLocale(lc->thousands_sep, NULL);
+    *thousands_sep = GET_LOCALE_STRING(thousands_sep);
     if (*thousands_sep == NULL) {
         goto done;
     }
@@ -2100,9 +2107,89 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
     res = 0;
 
 done:
+#ifndef MS_WINDOWS
     if (loc != NULL) {
         setlocale(LC_CTYPE, oldloc);
     }
     PyMem_Free(oldloc);
+#endif
     return res;
+
+#undef GET_LOCALE_STRING
+}
+
+/* Our selection logic for which function to use is as follows:
+ * 1. If close_range(2) is available, always prefer that; it's better for
+ *    contiguous ranges like this than fdwalk(3) which entails iterating over
+ *    the entire fd space and simply doing nothing for those outside the range.
+ * 2. If closefrom(2) is available, we'll attempt to use that next if we're
+ *    closing up to sysconf(_SC_OPEN_MAX).
+ * 2a. Fallback to fdwalk(3) if we're not closing up to sysconf(_SC_OPEN_MAX),
+ *    as that will be more performant if the range happens to have any chunk of
+ *    non-opened fd in the middle.
+ * 2b. If fdwalk(3) isn't available, just do a plain close(2) loop.
+ */
+#ifdef __FreeBSD__
+#  define USE_CLOSEFROM
+#endif /* __FreeBSD__ */
+
+#ifdef HAVE_FDWALK
+#  define USE_FDWALK
+#endif /* HAVE_FDWALK */
+
+#ifdef USE_FDWALK
+static int
+_fdwalk_close_func(void *lohi, int fd)
+{
+    int lo = ((int *)lohi)[0];
+    int hi = ((int *)lohi)[1];
+
+    if (fd >= hi) {
+        return 1;
+    }
+    else if (fd >= lo) {
+        /* Ignore errors */
+        (void)close(fd);
+    }
+    return 0;
+}
+#endif /* USE_FDWALK */
+
+/* Closes all file descriptors in [first, last], ignoring errors. */
+void
+_Py_closerange(int first, int last)
+{
+    first = Py_MAX(first, 0);
+    _Py_BEGIN_SUPPRESS_IPH
+#ifdef HAVE_CLOSE_RANGE
+    if (close_range(first, last, 0) == 0 || errno != ENOSYS) {
+        /* Any errors encountered while closing file descriptors are ignored;
+         * ENOSYS means no kernel support, though,
+         * so we'll fallback to the other methods. */
+    }
+    else
+#endif /* HAVE_CLOSE_RANGE */
+#ifdef USE_CLOSEFROM
+    if (last >= sysconf(_SC_OPEN_MAX)) {
+        /* Any errors encountered while closing file descriptors are ignored */
+        closefrom(first);
+    }
+    else
+#endif /* USE_CLOSEFROM */
+#ifdef USE_FDWALK
+    {
+        int lohi[2];
+        lohi[0] = first;
+        lohi[1] = last + 1;
+        fdwalk(_fdwalk_close_func, lohi);
+    }
+#else
+    {
+        for (int i = first; i <= last; i++) {
+            /* Ignore errors */
+            (void)close(i);
+        }
+    }
+#endif /* USE_FDWALK */
+    _Py_END_SUPPRESS_IPH
 }

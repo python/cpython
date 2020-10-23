@@ -510,23 +510,6 @@ complex_div(PyObject *v, PyObject *w)
 }
 
 static PyObject *
-complex_remainder(PyObject *v, PyObject *w)
-{
-    PyErr_SetString(PyExc_TypeError,
-                    "can't mod complex numbers.");
-    return NULL;
-}
-
-
-static PyObject *
-complex_divmod(PyObject *v, PyObject *w)
-{
-    PyErr_SetString(PyExc_TypeError,
-                    "can't take floor or mod of complex number.");
-    return NULL;
-}
-
-static PyObject *
 complex_pow(PyObject *v, PyObject *w, PyObject *z)
 {
     Py_complex p;
@@ -560,14 +543,6 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         return NULL;
     }
     return PyComplex_FromCComplex(p);
-}
-
-static PyObject *
-complex_int_div(PyObject *v, PyObject *w)
-{
-    PyErr_SetString(PyExc_TypeError,
-                    "can't take floor of complex number.");
-    return NULL;
 }
 
 static PyObject *
@@ -666,22 +641,6 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
 
 Unimplemented:
     Py_RETURN_NOTIMPLEMENTED;
-}
-
-static PyObject *
-complex_int(PyObject *v)
-{
-    PyErr_SetString(PyExc_TypeError,
-               "can't convert complex to int");
-    return NULL;
-}
-
-static PyObject *
-complex_float(PyObject *v)
-{
-    PyErr_SetString(PyExc_TypeError,
-               "can't convert complex to float");
-    return NULL;
 }
 
 /*[clinic input]
@@ -966,7 +925,9 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
 
     nbr = Py_TYPE(r)->tp_as_number;
-    if (nbr == NULL || (nbr->nb_float == NULL && nbr->nb_index == NULL)) {
+    if (nbr == NULL ||
+        (nbr->nb_float == NULL && nbr->nb_index == NULL && !PyComplex_Check(r)))
+    {
         PyErr_Format(PyExc_TypeError,
                      "complex() first argument must be a string or a number, "
                      "not '%.200s'",
@@ -978,7 +939,9 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
     if (i != NULL) {
         nbi = Py_TYPE(i)->tp_as_number;
-        if (nbi == NULL || (nbi->nb_float == NULL && nbi->nb_index == NULL)) {
+        if (nbi == NULL ||
+            (nbi->nb_float == NULL && nbi->nb_index == NULL && !PyComplex_Check(i)))
+        {
             PyErr_Format(PyExc_TypeError,
                          "complex() second argument must be a number, "
                          "not '%.200s'",
@@ -1057,8 +1020,8 @@ static PyNumberMethods complex_as_number = {
     (binaryfunc)complex_add,                    /* nb_add */
     (binaryfunc)complex_sub,                    /* nb_subtract */
     (binaryfunc)complex_mul,                    /* nb_multiply */
-    (binaryfunc)complex_remainder,              /* nb_remainder */
-    (binaryfunc)complex_divmod,                 /* nb_divmod */
+    0,                                          /* nb_remainder */
+    0,                                          /* nb_divmod */
     (ternaryfunc)complex_pow,                   /* nb_power */
     (unaryfunc)complex_neg,                     /* nb_negative */
     (unaryfunc)complex_pos,                     /* nb_positive */
@@ -1070,9 +1033,9 @@ static PyNumberMethods complex_as_number = {
     0,                                          /* nb_and */
     0,                                          /* nb_xor */
     0,                                          /* nb_or */
-    complex_int,                                /* nb_int */
+    0,                                          /* nb_int */
     0,                                          /* nb_reserved */
-    complex_float,                              /* nb_float */
+    0,                                          /* nb_float */
     0,                                          /* nb_inplace_add */
     0,                                          /* nb_inplace_subtract */
     0,                                          /* nb_inplace_multiply*/
@@ -1083,7 +1046,7 @@ static PyNumberMethods complex_as_number = {
     0,                                          /* nb_inplace_and */
     0,                                          /* nb_inplace_xor */
     0,                                          /* nb_inplace_or */
-    (binaryfunc)complex_int_div,                /* nb_floor_divide */
+    0,                                          /* nb_floor_divide */
     (binaryfunc)complex_div,                    /* nb_true_divide */
     0,                                          /* nb_inplace_floor_divide */
     0,                                          /* nb_inplace_true_divide */

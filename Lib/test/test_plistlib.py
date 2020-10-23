@@ -106,6 +106,19 @@ TESTDATA={
         AAABOQ=='''),
 }
 
+XML_PLIST_WITH_ENTITY=b'''\
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd" [
+   <!ENTITY entity "replacement text">
+  ]>
+<plist version="1.0">
+  <dict>
+    <key>A</key>
+    <string>&entity;</string>
+  </dict>
+</plist>
+'''
+
 
 class TestPlistlib(unittest.TestCase):
 
@@ -485,6 +498,19 @@ class TestPlistlib(unittest.TestCase):
         self.assertRaises(ValueError, plistlib.loads,
                           b"<plist><integer>not real</integer></plist>")
 
+    def test_integer_notations(self):
+        pl = b"<plist><integer>456</integer></plist>"
+        value = plistlib.loads(pl)
+        self.assertEqual(value, 456)
+
+        pl = b"<plist><integer>0xa</integer></plist>"
+        value = plistlib.loads(pl)
+        self.assertEqual(value, 10)
+
+        pl = b"<plist><integer>0123</integer></plist>"
+        value = plistlib.loads(pl)
+        self.assertEqual(value, 123)
+
     def test_xml_encodings(self):
         base = TESTDATA[plistlib.FMT_XML]
 
@@ -523,6 +549,11 @@ class TestPlistlib(unittest.TestCase):
         huge_uid.data = 2 ** 64  # dodge the size check in the constructor
         with self.assertRaises(OverflowError):
             plistlib.dumps(huge_uid, fmt=plistlib.FMT_BINARY)
+
+    def test_xml_plist_with_entity_decl(self):
+        with self.assertRaisesRegex(plistlib.InvalidFileException,
+                                    "XML entity declarations are not supported"):
+            plistlib.loads(XML_PLIST_WITH_ENTITY, fmt=plistlib.FMT_XML)
 
 
 class TestBinaryPlistlib(unittest.TestCase):

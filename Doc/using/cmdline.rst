@@ -558,7 +558,7 @@ conflict.
    the interactive session.  You can also change the prompts :data:`sys.ps1` and
    :data:`sys.ps2` and the hook :data:`sys.__interactivehook__` in this file.
 
-   .. audit-event:: cpython.run_startup filename PYTHONSTARTUP
+   .. audit-event:: cpython.run_startup filename envvar-PYTHONSTARTUP
 
       Raises an :ref:`auditing event <auditing>` ``cpython.run_startup`` with
       the filename as the argument when called on startup.
