@@ -357,7 +357,7 @@ Here's how the data validators can be used in a real class::
             self.kind = kind
             self.quantity = quantity
 
-The descriptors invalid instances from being created::
+The descriptors prevent invalid instances from being created::
 
     Component('WIDGET', 'metal', 5)     # Allowed.
     Component('Widget', 'metal', 5)     # Blocked: 'Widget' is not all uppercase
