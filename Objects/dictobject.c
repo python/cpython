@@ -1652,10 +1652,10 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
 
 // Same to insertdict but specialized for building new dict from known key set.
 //
-//  * Dict must be empty and presized.
+//  * Dict must be empty before first call, presized, and combined.
 //  * key must be distinct.
 //
-// You need to call dict_init_finish() after all keys are set.
+// You need to call dict_init_finish() after all items are set.
 static int
 dict_init_setitem(PyObject *op, PyObject *key, PyObject *value)
 {
@@ -3589,7 +3589,7 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
             }
         }
 
-        if (!nargs) {
+        if (!nargs && !_PyDict_HasSplitTable(mp)) {
             for (Py_ssize_t i = 0; i < kw_size; i++) {
                 if (dict_init_setitem(self, PyTuple_GET_ITEM(kwnames, i), args[i]) < 0) {
                     Py_DECREF(self);
