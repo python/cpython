@@ -87,6 +87,7 @@ static int test_repeated_init_and_subinterpreters(void)
 static int test_finalize_subinterps(void)
 {
     PyThreadState *mainstate;
+    PyThreadState *interp_tstate;
     PyGILState_STATE gilstate;
     int i, j;
 
@@ -101,11 +102,15 @@ static int test_finalize_subinterps(void)
         print_subinterp();
         PyThreadState_Swap(NULL);
 
-        for (j=0; j<2; j++) {
-            Py_NewInterpreter();
+        // Create 3 subinterpreters and destroy the last one.
+        for (j=0; j<3; j++) {
+            interp_tstate = Py_NewInterpreter();
             print_subinterp();
         }
+        PyThreadState_Swap(interp_tstate);
+        Py_EndInterpreter(interp_tstate);
 
+        // Switch back to the main interpreter and finalize the runtime.
         PyThreadState_Swap(mainstate);
         print_subinterp();
         PyGILState_Release(gilstate);
