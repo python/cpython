@@ -97,7 +97,7 @@ In the following example, *age* is the public attribute and *_age* is the privat
 
     logging.basicConfig(level=logging.INFO)
 
-    class LoggedAccess:
+    class LoggedAgeAccess:
 
         def __get__(self, obj, objtype=None):
             result = object.__getattribute__(obj, '_age')
@@ -110,11 +110,11 @@ In the following example, *age* is the public attribute and *_age* is the privat
 
     class Person:
 
-        age = LoggedAccess()                 # Descriptor
+        age = LoggedAgeAccess()             # Descriptor
 
         def __init__(self, name, age):
-            self.name = name                 # Regular instance attribute
-            self.age = age                   # Calls the descriptor
+            self.name = name                # Regular instance attribute
+            self.age = age                  # Calls the descriptor
 
         def birthday(self):
             self.age += 1
@@ -122,26 +122,26 @@ In the following example, *age* is the public attribute and *_age* is the privat
 
 An interactive session shows that all access to the managed attribute *age* is logged, but that the regular attribute *name* is not logged:
 
-    >>> mary = Person('Mary M', 30)          # __init__() triggers the descriptor
+    >>> mary = Person('Mary M', 30)         # __init__() triggers the descriptor
     INFO:root:Updating 'age' to 30
-    >>> dave = Person('David D', 40)         # So, the initial age update is logged
+    >>> dave = Person('David D', 40)        # So, the initial age update is logged
     INFO:root:Updating 'age' to 40
 
-    >>> vars(mary)                           # The actual data is in private attributes
+    >>> vars(mary)                          # The actual data is in private attributes
     {'name': 'Mary M', '_age': 30}
     >>> vars(dave)
     {'name': 'David D', '_age': 40}
 
-    >>> mary.age                             # Accesses the data and logs the lookup
+    >>> mary.age                            # Accesses the data and logs the lookup
     INFO:root:Accessing 'age' giving 30
     30
-    >>> mary.birthday()                      # Updates are logged as well
+    >>> mary.birthday()                     # Updates are logged as well
     INFO:root:Accessing 'age' giving 30
     INFO:root:Updating 'age' to 31
 
-    >>> dave.name                            # Regular attribute lookup isn't logged
+    >>> dave.name                           # Regular attribute lookup isn't logged
     'David D'
-    >>> dave.age                             # Only the managed attribute is logged
+    >>> dave.age                            # Only the managed attribute is logged
     INFO:root:Accessing 'age' giving 40
     40
 
@@ -150,7 +150,64 @@ One major issue with this example is the private name *_age* is hardwired in the
 Customized Names
 ----------------
 
-XXX:  Add the set_name example
+When a class uses descriptors, it can inform each descriptor about what variable name was used.
+
+In this example, the :class:`Person` class has two descriptor instances, *name* and *age*.  When the :class:`Person` class is defined, it makes a callback to :meth:`__set_name__` in *LoggedAccess* so that the field names can be recorded, giving each descriptor its own *public_name* and *private_name*::
+
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
+
+    class LoggedAccess:
+
+        def __set_name__(self, owner, name):
+            self.public_name = name
+            self.private_name = f'_{name}'
+
+        def __get__(self, obj, objtype=None):
+            result = object.__getattribute__(obj, self.private_name)
+            logging.info('Accessing %r giving %r', self.public_name, result)
+            return result
+
+        def __set__(self, obj, value):
+            logging.info('Updating %r to %r', self.public_name, value)
+            object.__setattr__(obj, self.private_name, value)
+
+    class Person:
+
+        name = LoggedAccess()                # First descriptor
+        age = LoggedAccess()                 # Second descriptor
+
+        def __init__(self, name, age):
+            self.name = name                 # Calls the first descriptor
+            self.age = age                   # Calls the second descriptor
+
+        def birthday(self):
+            self.age += 1
+
+An interactive session shows that the :class:`Person` class has called :meth:`__set_name__` so that the exact field names can be recorded::
+
+    >>> vars(vars(Person)['name'])
+    {'public_name': 'name', 'private_name': '_name'}
+    >>> vars(vars(Person)['age'])
+    {'public_name': 'age', 'private_name': '_age'}
+
+The new class now logs access to both *name* and *age*::
+
+    >>> pete = Person('Peter P', 10)
+    INFO:root:Updating 'name' to 'Peter P'
+    INFO:root:Updating 'age' to 10
+    >>> kate = Person('Catherine C', 20)
+    INFO:root:Updating 'name' to 'Catherine C'
+    INFO:root:Updating 'age' to 20
+
+The two *Person* instances contain only the private names::
+
+    >>> vars(pete)
+    {'_name': 'Peter P', '_age': 10}
+    >>> vars(kate)
+    {'_name': 'Catherine C', '_age': 20}
+
 
 
 Complete Practical Example
