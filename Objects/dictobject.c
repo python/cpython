@@ -1650,61 +1650,60 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
     return insertdict(mp, key, hash, value);
 }
 
-// Same to insertdict but specialized for building new dict from known key set.
-//
-//  * Dict must be empty before first call, presized, and combined.
-//  * key must be distinct.
-//
-// You need to call dict_init_finish() after all items are set.
+/* Initialize dict from keywords tuple and values array.
+ *
+ * - Dict must be empty before first call, presized, and combined.
+ * - keys must be distinct.
+ */
 static int
-dict_init_setitem(PyObject *op, PyObject *key, PyObject *value)
+dict_init_from_items(PyObject *op, PyObject *keys, PyObject * const *values)
 {
     assert(PyDict_Check(op));
-    assert(key);
-    assert(value);
+    assert(PyTuple_Check(keys));
 
     PyDictObject *mp = (PyDictObject *)op;
     assert(!_PyDict_HasSplitTable(mp));
 
-    Py_hash_t hash;
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1)
-    {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return -1;
+    Py_ssize_t size = PyTuple_GET_SIZE(keys);
+    assert(mp->ma_used == 0);
+    assert(mp->ma_keys->dk_usable >= size);
+
+    PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[0];
+
+    for (Py_ssize_t i = 0; i < size; i++) {
+        PyObject *key = PyTuple_GET_ITEM(keys, i);
+        Py_INCREF(key);
+
+        Py_hash_t hash;
+        if (!PyUnicode_CheckExact(key) ||
+            (hash = ((PyASCIIObject *) key)->hash) == -1)
+        {
+            hash = PyObject_Hash(key);
+            if (hash == -1) {
+                Py_DECREF(key);
+                return -1;
+            }
+        }
+
+        Py_INCREF(values[i]);
+        ep[i].me_key = key;
+        ep[i].me_hash = hash;
+        ep[i].me_value = values[i];
+        mp->ma_keys->dk_nentries++;
     }
 
-    PyDictKeysObject *keys = mp->ma_keys;
-    assert(keys->dk_usable > 0);
+    for (Py_ssize_t i = 0; i < size; i++) {
+        MAINTAIN_TRACKING(mp, ep[i].me_key, ep[i].me_value);
+    }
 
-    Py_INCREF(key);
-    Py_INCREF(value);
-    MAINTAIN_TRACKING(mp, key, value);
+    build_indices(mp->ma_keys, ep, size);
 
-    const Py_ssize_t dk_nentries = keys->dk_nentries;
-    PyDictKeyEntry *ep = &DK_ENTRIES(keys)[dk_nentries];
-    ep->me_key = key;
-    ep->me_hash = hash;
-    ep->me_value = value;
-
-    mp->ma_used++;
-    keys->dk_usable--;
-    keys->dk_nentries++;
-
-    return 0;
-}
-
-static void
-dict_init_finish(PyObject *op)
-{
-    assert(PyDict_Check(op));
-    PyDictObject *mp = (PyDictObject *)op;
-    PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[0];
-    build_indices(mp->ma_keys, ep, mp->ma_keys->dk_nentries);
+    mp->ma_keys->dk_usable -= size;
+    mp->ma_used = size;
     mp->ma_version_tag = DICT_NEXT_VERSION();
 
     ASSERT_CONSISTENT(op);
+    return 0;
 }
 
 int
@@ -3579,7 +3578,7 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     Py_ssize_t kw_size;
-    if (kwnames != NULL && (kw_size = PyTuple_GET_SIZE(kwnames) > 0) {
+    if (kwnames != NULL && (kw_size = PyTuple_GET_SIZE(kwnames)) > 0) {
         PyDictObject *mp = (PyDictObject *)self;
 
         if (mp->ma_keys->dk_usable < kw_size) {
@@ -3589,14 +3588,11 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
             }
         }
 
-        if (!nargs && !_PyDict_HasSplitTable(mp)) {
-            for (Py_ssize_t i = 0; i < kw_size; i++) {
-                if (dict_init_setitem(self, PyTuple_GET_ITEM(kwnames, i), args[i]) < 0) {
-                    Py_DECREF(self);
-                    return NULL;
-                }
+        if (mp->ma_used == 0 && !_PyDict_HasSplitTable(mp)) {
+            if (dict_init_from_items(self, kwnames, args)) {
+                Py_DECREF(self);
+                return NULL;
             }
-            dict_init_finish(self);
         }
         else {
             for (Py_ssize_t i = 0; i < kw_size; i++) {
