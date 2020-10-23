@@ -1515,13 +1515,13 @@ class _Unparser(NodeVisitor):
 
     def visit_MatchAs(self, node):
         with self.require_parens(_Precedence.TEST, node):
-            self.set_precedence(_Precedence.EXPR, node.pattern)
+            self.set_precedence(_Precedence.BOR, node.pattern)
             self.traverse(node.pattern)
             self.write(f" as {node.name}")
 
     def visit_MatchOr(self, node):
-        with self.require_parens(_Precedence.EXPR, node):
-            self.set_precedence(_Precedence.ATOM, *node.patterns)
+        with self.require_parens(_Precedence.BOR, node):
+            self.set_precedence(_Precedence.BOR.next(), *node.patterns)
             self.interleave(lambda: self.write(" | "), self.traverse, node.patterns)
 
 def unparse(ast_obj):
