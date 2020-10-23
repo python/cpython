@@ -357,6 +357,7 @@ PYTHON_OBJS=	\
 		Python/modsupport.o \
 		Python/mysnprintf.o \
 		Python/mystrtoul.o \
+		Python/opcode_cache.o \
 		Python/pathconfig.o \
 		Python/preconfig.o \
 		Python/pyarena.o \
@@ -946,7 +947,7 @@ regen-opcode-targets:
 	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 
 Python/ceval.o: $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/ceval_gil.h \
-		$(srcdir)/Python/condvar.h
+		$(srcdir)/Python/condvar.h $(srcdir)/Python/opcode_cache.h
 
 Python/frozen.o: $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib_external.h \
 		$(srcdir)/Python/importlib_zipimport.h
