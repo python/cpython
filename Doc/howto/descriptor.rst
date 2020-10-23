@@ -7,17 +7,23 @@ Descriptor HowTo Guide
 
 .. Contents::
 
-Preview
-^^^^^^^
 
 Descriptors let objects customize attribute lookup, storage, and deletion.
 
-This howto guide has three major sections.  It starts with a "primer" that gives a basic overview.  The second section explains a complete, practical descriptor example.  The third section provides a more technical tutorial that goes into the detailed mechanics of how descriptors work.
+This HowTo guide has three major sections:
+
+1) The "primer" gives a basic overview, moving gently from simple examples, adding one feature at a time.  It is a great place to start.
+
+2) The second section shows a complete, practical descriptor example.  If you already know the basics, start there.
+
+3) The third section provides a more technical tutorial that goes into the detailed mechanics of how descriptors work.  Most people don't need this level of detal.
+
 
 Primer
 ^^^^^^
 
 In this primer, we start with most basic possible example and then we'll add new capabilities one by one.
+
 
 Simple example: A descriptor that returns a constant
 ----------------------------------------------------
@@ -26,7 +32,6 @@ The :class:`Ten` class is a descriptor that always returns a constant ``10``::
 
 
     class Ten:
-
         def __get__(self, obj, objtype=None):
             return 10
 
@@ -48,7 +53,8 @@ In the ``a.x`` attribute lookup, the dot operator finds the value ``5`` stored i
 
 This example shows how a simple descriptor works, but it isn't very useful.  For retrieving constants, normal attribute lookup would almost always be better.
 
-In the next section, we'll create something most useful, a dynamic lookup.
+In the next section, we'll create something more useful, a dynamic lookup.
+
 
 Dynamic lookups
 ---------------
@@ -147,6 +153,7 @@ An interactive session shows that all access to the managed attribute *age* is l
 
 One major issue with this example is the private name *_age* is hardwired in the *LoggedAccess* class.  That means that each instance can only have one logged attribute and that its name is unchangeable.  In the next example, we'll fix that problem.
 
+
 Customized Names
 ----------------
 
@@ -207,7 +214,6 @@ The two *Person* instances contain only the private names::
     {'_name': 'Peter P', '_age': 10}
     >>> vars(kate)
     {'_name': 'Catherine C', '_age': 20}
-
 
 
 Complete Practical Example
@@ -574,7 +580,7 @@ affect existing client code accessing the attribute directly.  The solution is
 to wrap access to the value attribute in a property data descriptor::
 
     class Cell:
-        . . .
+        ...
         def getvalue(self):
             "Recalculate the cell before returning value"
             self.recalc()
@@ -601,7 +607,7 @@ non-data descriptors which return bound methods when they are invoked from an
 object.  In pure Python, it works like this::
 
     class Function:
-        . . .
+        ...
         def __get__(self, obj, objtype=None):
             "Simulate func_descr_get() in Objects/funcobject.c"
             if obj is None:
@@ -732,7 +738,7 @@ is to create alternate class constructors.  In Python 2.3, the classmethod
 Python equivalent is::
 
     class Dict:
-        . . .
+        ...
         def fromkeys(klass, iterable, value=None):
             "Emulate dict_fromkeys() in Objects/dictobject.c"
             d = klass()
