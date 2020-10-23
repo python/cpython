@@ -151,7 +151,7 @@ the lookup or update::
 
 
 An interactive session shows that all access to the managed attribute *age* is
-logged, but that the regular attribute *name* is not logged:
+logged, but that the regular attribute *name* is not logged::
 
     >>> mary = Person('Mary M', 30)         # __init__() triggers the descriptor
     INFO:root:Updating 'age' to 30
