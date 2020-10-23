@@ -442,7 +442,7 @@ ABC hierarchy::
             For packages, it is the same as :attr:`__name__`.
 
         - :attr:`__loader__`
-            The loader that was used to load the module.
+            The :term:`loader` that was used to load the module.
 
         When :meth:`exec_module` is available then backwards-compatible
         functionality is provided.
