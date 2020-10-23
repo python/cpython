@@ -33,7 +33,7 @@ new capabilities one by one.
 Simple example: A descriptor that returns a constant
 ----------------------------------------------------
 
-The :class:`Ten` class is a descriptor that always returns a constant ``10``::
+The :class:`Ten` class is a descriptor that always returns the constant ``10``::
 
 
     class Ten:
@@ -57,9 +57,9 @@ and descriptor lookup::
 
 In the ``a.x`` attribute lookup, the dot operator finds the value ``5`` stored
 in the class dictionary.  In the ``a.y`` descriptor lookup, the dot operator
-calls the :meth:`get()` on the descriptor.  That method returns ``10``.  Note
+calls the descriptor's :meth:`get()` method.  That method returns ``10``.  Note
 that the value ``10`` is not stored in either the class dictionary or instance
-dictionary.  The value ``10`` is computed on demand.
+dictionary.  Instead, the value ``10`` is computed on demand.
 
 This example shows how a simple descriptor works, but it isn't very useful.
 For retrieving constants, normal attribute lookup would almost always be
@@ -97,7 +97,7 @@ different, updated answers each time::
     3
     >>> os.system('touch games/newfile')    # Add a fourth file to the directory
     0
-    >>> g.size:
+    >>> g.size
     4
     >>> s.size                              # The songs directory has twenty files
     20
@@ -177,7 +177,7 @@ logged, but that the regular attribute *name* is not logged::
     40
 
 One major issue with this example is the private name *_age* is hardwired in
-the *LoggedAccess* class.  That means that each instance can only have one
+the *LoggedAgeAccess* class.  That means that each instance can only have one
 logged attribute and that its name is unchangeable.  In the next example,
 we'll fix that problem.
 
@@ -257,7 +257,7 @@ notoriously hard to find data corruption bugs.
 
 A validator is a descriptor for managed attribute access.  Prior to storing
 any data, it verifies that the new value meets various type and range
-restrictions.  If those restrictions aren't met, it raises an exception and
+restrictions.  If those restrictions aren't met, it raises an exception to
 prevents data corruption at its source.
 
 This :class:`Validator` class is both an :term:`abstract base class` and a
