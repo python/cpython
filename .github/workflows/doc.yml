@@ -38,7 +38,7 @@ jobs:
     - name: 'Build documentation'
       run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going -j4" doctest suspicious html
     - name: 'Upload'
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2.2.0
       with:
         name: doc-html
         path: Doc/build/html
