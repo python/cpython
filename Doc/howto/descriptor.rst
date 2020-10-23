@@ -10,7 +10,7 @@ Descriptor HowTo Guide
 .. Contents::
 
 
-:term:`Decriptors <descriptor>` let objects customize attribute lookup,
+:term:`Descriptors <descriptor>` let objects customize attribute lookup,
 storage, and deletion.
 
 This HowTo guide has three major sections:
@@ -823,4 +823,3 @@ Using the non-data descriptor protocol, a pure Python version of
             def newfunc(*args):
                 return self.f(cls, *args)
             return newfunc
-
