@@ -19,36 +19,37 @@ from functools import partial
 
 from .errors import DistutilsPlatformError
 
-from sysconfig import _PREFIX as PREFIX
-from sysconfig import _BASE_PREFIX as BASE_PREFIX
-from sysconfig import _EXEC_PREFIX as EXEC_PREFIX
-from sysconfig import _BASE_EXEC_PREFIX as BASE_EXEC_PREFIX
-from sysconfig import _PROJECT_BASE as project_base
-from sysconfig import _PYTHON_BUILD as python_build
-from sysconfig import _CONFIG_VARS as _config_vars
-from sysconfig import _init_posix as sysconfig_init_posix
-from sysconfig import parse_config_h as sysconfig_parse_config_h
-from sysconfig import _parse_makefile as sysconfig_parse_makefile
+from sysconfig import (
+    _PREFIX as PREFIX,
+    _BASE_PREFIX as BASE_PREFIX,
+    _EXEC_PREFIX as EXEC_PREFIX,
+    _BASE_EXEC_PREFIX as BASE_EXEC_PREFIX,
+    _PROJECT_BASE as project_base,
+    _PYTHON_BUILD as python_build,
+    _CONFIG_VARS as _config_vars,
+    _init_posix as sysconfig_init_posix,
+    parse_config_h as sysconfig_parse_config_h,
+    _parse_makefile as sysconfig_parse_makefile,
 
-from sysconfig import _init_non_posix
-from sysconfig import _is_python_source_dir
-from sysconfig import _sys_home
+    _init_non_posix,
+    _is_python_source_dir,
+    _sys_home,
 
-from sysconfig import _variable_rx
-from sysconfig import _findvar1_rx
-from sysconfig import _findvar2_rx
+    _variable_rx,
+    _findvar1_rx,
+    _findvar2_rx,
 
-from sysconfig import build_flags
-from sysconfig import customize_compiler
-from sysconfig import expand_makefile_vars
-from sysconfig import is_python_build
-from sysconfig import get_config_h_filename
-from sysconfig import get_config_var
-from sysconfig import get_config_vars
-from sysconfig import get_makefile_filename
-from sysconfig import get_python_inc
-from sysconfig import get_python_version
-from sysconfig import get_python_lib
+    customize_compiler,
+    expand_makefile_vars,
+    is_python_build,
+    get_config_h_filename,
+    get_config_var,
+    get_config_vars,
+    get_makefile_filename,
+    get_python_inc,
+    get_python_version,
+    get_python_lib,
+)
 
 if os.name == "nt":
     from sysconfig import _fix_pcbuild
