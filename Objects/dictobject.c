@@ -1670,9 +1670,14 @@ dict_init_from_items(PyObject *op, PyObject *keys, PyObject * const *values)
 
     PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[0];
 
+    int all_unicode = 1;
+
     for (Py_ssize_t i = 0; i < size; i++) {
         PyObject *key = PyTuple_GET_ITEM(keys, i);
         Py_INCREF(key);
+        if (!PyUnicode_CheckExact(key)) {
+            all_unicode = 0;
+        }
 
         Py_hash_t hash;
         if (!PyUnicode_CheckExact(key) ||
@@ -1692,16 +1697,18 @@ dict_init_from_items(PyObject *op, PyObject *keys, PyObject * const *values)
         mp->ma_keys->dk_nentries++;
     }
 
-    for (Py_ssize_t i = 0; i < size; i++) {
-        MAINTAIN_TRACKING(mp, ep[i].me_key, ep[i].me_value);
-    }
-
     build_indices(mp->ma_keys, ep, size);
 
+    if (!all_unicode) {
+        mp->ma_keys->dk_lookup = lookdict;
+    }
     mp->ma_keys->dk_usable -= size;
     mp->ma_used = size;
     mp->ma_version_tag = DICT_NEXT_VERSION();
 
+    for (Py_ssize_t i = 0; i < size; i++) {
+        MAINTAIN_TRACKING(mp, ep[i].me_key, ep[i].me_value);
+    }
     ASSERT_CONSISTENT(op);
     return 0;
 }
