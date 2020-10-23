@@ -12,17 +12,22 @@ Descriptors let objects customize attribute lookup, storage, and deletion.
 
 This HowTo guide has three major sections:
 
-1) The "primer" gives a basic overview, moving gently from simple examples, adding one feature at a time.  It is a great place to start.
+1) The "primer" gives a basic overview, moving gently from simple examples,
+   adding one feature at a time.  It is a great place to start.
 
-2) The second section shows a complete, practical descriptor example.  If you already know the basics, start there.
+2) The second section shows a complete, practical descriptor example.  If you
+   already know the basics, start there.
 
-3) The third section provides a more technical tutorial that goes into the detailed mechanics of how descriptors work.  Most people don't need this level of detal.
+3) The third section provides a more technical tutorial that goes into the
+   detailed mechanics of how descriptors work.  Most people don't need this
+   level of detail.
 
 
 Primer
 ^^^^^^
 
-In this primer, we start with most basic possible example and then we'll add new capabilities one by one.
+In this primer, we start with most basic possible example and then we'll add
+new capabilities one by one.
 
 
 Simple example: A descriptor that returns a constant
@@ -41,7 +46,8 @@ To use the descriptor, it must be stored as a class variable in another class::
         x = 5                       # Regular class attribute
         y = Ten()                   # Descriptor
 
-An interactive session shows the difference between normal attribute lookup and descriptor lookup::
+An interactive session shows the difference between normal attribute lookup
+and descriptor lookup::
 
     >>> a = A()                     # Make an instance of class A
     >>> a.x                         # Normal attribute lookup
@@ -49,9 +55,15 @@ An interactive session shows the difference between normal attribute lookup and 
     >>> a.y                         # Descriptor lookup
     10
 
-In the ``a.x`` attribute lookup, the dot operator finds the value ``5`` stored in the class dictionary.  In the ``a.y`` descriptor lookup, the dot operator calls the :meth:`get()` on the descriptor.  That method returns ``10``.  Note that the value ``10`` is not stored in either the class dictionary or instance dictionary.  The value ``10`` is computed on demand.
+In the ``a.x`` attribute lookup, the dot operator finds the value ``5`` stored
+in the class dictionary.  In the ``a.y`` descriptor lookup, the dot operator
+calls the :meth:`get()` on the descriptor.  That method returns ``10``.  Note
+that the value ``10`` is not stored in either the class dictionary or instance
+dictionary.  The value ``10`` is computed on demand.
 
-This example shows how a simple descriptor works, but it isn't very useful.  For retrieving constants, normal attribute lookup would almost always be better.
+This example shows how a simple descriptor works, but it isn't very useful.
+For retrieving constants, normal attribute lookup would almost always be
+better.
 
 In the next section, we'll create something more useful, a dynamic lookup.
 
@@ -76,7 +88,8 @@ Interesting descriptors typically run computations instead of doing lookups::
         def __init__(self, dirname):
             self.dirname = dirname          # Regular instance attribute
 
-An interactive session shows that the lookup is dynamic — it computes different, updated answers each time::
+An interactive session shows that the lookup is dynamic — it computes
+different, updated answers each time::
 
     >>> g = Directory('games')
     >>> s = Directory('songs')
@@ -89,15 +102,26 @@ An interactive session shows that the lookup is dynamic — it computes differen
     >>> s.size                              # The songs directory has twenty files
     20
 
-Besides showing how descriptors can run computations, this example also reveals the purpose of the parameters to :meth:`__get__`.  The *self* parameter is *size*, an instance of *DirectorySize*.  The *obj* parameter is either *g* or *s*, an instance of *Directory*.  It is *obj* parameter that lets the :meth:`__get__` method learn the target directory.  The *objtype* parameter is the class *Directory*.
+Besides showing how descriptors can run computations, this example also
+reveals the purpose of the parameters to :meth:`__get__`.  The *self*
+parameter is *size*, an instance of *DirectorySize*.  The *obj* parameter is
+either *g* or *s*, an instance of *Directory*.  It is *obj* parameter that
+lets the :meth:`__get__` method learn the target directory.  The *objtype*
+parameter is the class *Directory*.
 
 
 Managed attributes
 ------------------
 
-A popular use for descriptors is managing access to instance data.  The descriptor is assigned to a public attribute while the actual data is stored as a private attribute in the instance dictionary.  The descriptor's :meth:`__get__` and :meth:`__set__` methods are triggered when the public attribute is accessed.
+A popular use for descriptors is managing access to instance data.  The
+descriptor is assigned to a public attribute while the actual data is stored
+as a private attribute in the instance dictionary.  The descriptor's
+:meth:`__get__` and :meth:`__set__` methods are triggered when the public
+attribute is accessed.
 
-In the following example, *age* is the public attribute and *_age* is the private attribute.  When the public attribute is accessed, the descriptor logs the lookup or update::
+In the following example, *age* is the public attribute and *_age* is the
+private attribute.  When the public attribute is accessed, the descriptor logs
+the lookup or update::
 
     import logging
 
@@ -126,7 +150,8 @@ In the following example, *age* is the public attribute and *_age* is the privat
             self.age += 1
 
 
-An interactive session shows that all access to the managed attribute *age* is logged, but that the regular attribute *name* is not logged:
+An interactive session shows that all access to the managed attribute *age* is
+logged, but that the regular attribute *name* is not logged:
 
     >>> mary = Person('Mary M', 30)         # __init__() triggers the descriptor
     INFO:root:Updating 'age' to 30
@@ -151,15 +176,22 @@ An interactive session shows that all access to the managed attribute *age* is l
     INFO:root:Accessing 'age' giving 40
     40
 
-One major issue with this example is the private name *_age* is hardwired in the *LoggedAccess* class.  That means that each instance can only have one logged attribute and that its name is unchangeable.  In the next example, we'll fix that problem.
+One major issue with this example is the private name *_age* is hardwired in
+the *LoggedAccess* class.  That means that each instance can only have one
+logged attribute and that its name is unchangeable.  In the next example,
+we'll fix that problem.
 
 
 Customized Names
 ----------------
 
-When a class uses descriptors, it can inform each descriptor about what variable name was used.
+When a class uses descriptors, it can inform each descriptor about what
+variable name was used.
 
-In this example, the :class:`Person` class has two descriptor instances, *name* and *age*.  When the :class:`Person` class is defined, it makes a callback to :meth:`__set_name__` in *LoggedAccess* so that the field names can be recorded, giving each descriptor its own *public_name* and *private_name*::
+In this example, the :class:`Person` class has two descriptor instances,
+*name* and *age*.  When the :class:`Person` class is defined, it makes a
+callback to :meth:`__set_name__` in *LoggedAccess* so that the field names can
+be recorded, giving each descriptor its own *public_name* and *private_name*::
 
     import logging
 
@@ -192,7 +224,8 @@ In this example, the :class:`Person` class has two descriptor instances, *name* 
         def birthday(self):
             self.age += 1
 
-An interactive session shows that the :class:`Person` class has called :meth:`__set_name__` so that the exact field names can be recorded::
+An interactive session shows that the :class:`Person` class has called
+:meth:`__set_name__` so that the exact field names can be recorded::
 
     >>> vars(vars(Person)['name'])
     {'public_name': 'name', 'private_name': '_name'}
@@ -219,11 +252,16 @@ The two *Person* instances contain only the private names::
 Complete Practical Example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In this example, we create a practical and powerful tool for locating notoriously hard to find data corruption bugs.
+In this example, we create a practical and powerful tool for locating
+notoriously hard to find data corruption bugs.
 
-A validator is a descriptor for managed attribute access.  Prior to storing any data, it verifies that the new value meets various type and range restrictions.  If those restrictions aren't met, it raises an exception and prevents data corruption at its source.
+A validator is a descriptor for managed attribute access.  Prior to storing
+any data, it verifies that the new value meets various type and range
+restrictions.  If those restrictions aren't met, it raises an exception and
+prevents data corruption at its source.
 
-This :class:`Validator` class is both an :term:`abstract base class` and a managed attribute descriptor::
+This :class:`Validator` class is both an :term:`abstract base class` and a
+managed attribute descriptor::
 
     from abc import ABC, abstractmethod
 
@@ -243,7 +281,8 @@ This :class:`Validator` class is both an :term:`abstract base class` and a manag
         def validate(self, value):
             pass
 
-Custom validators need to subclass from :class:`Validator` and supply a :meth:`validate` method to test various restrictions as needed.
+Custom validators need to subclass from :class:`Validator` and supply a
+:meth:`validate` method to test various restrictions as needed.
 
 Here are three practical data validation utilities:
 
@@ -464,10 +503,15 @@ Likewise, classes can turn-off descriptor invocation by overriding
 Automatic Name Notification
 ---------------------------
 
-Sometimes it desirable for a descriptor to know what class variable name it was assigned to.  When a new class is created, the :class:`type` metaclass scans the dictionary of the new class.  If any of the entries are descriptors and if they define :meth:`__set_name__`, that method is called with two arguments.  The *owner* is the class where the descriptor is used, the *name* is class variable the descriptor was assigned to.
+Sometimes it desirable for a descriptor to know what class variable name it
+was assigned to.  When a new class is created, the :class:`type` metaclass
+scans the dictionary of the new class.  If any of the entries are descriptors
+and if they define :meth:`__set_name__`, that method is called with two
+arguments.  The *owner* is the class where the descriptor is used, the *name*
+is class variable the descriptor was assigned to.
 
-The implementation details are in :c:func:`type_new()` and :c:func:`set_names()` in
-:source:`Objects/typeobject.c`.
+The implementation details are in :c:func:`type_new()` and
+:c:func:`set_names()` in :source:`Objects/typeobject.c`.
 
 Since the update logic is in :meth:`type.__new__`, notifications only take place at the time of class creation.  If descriptors are added to the class afterwards, :meth:`__set_name__` will need to be called manually.
 
