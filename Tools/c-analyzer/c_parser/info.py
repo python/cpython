@@ -7,12 +7,14 @@ from c_common.clsutil import classonly
 import c_common.misc as _misc
 import c_common.strutil as _strutil
 import c_common.tables as _tables
-from .parser._regexes import SIMPLE_TYPE
+from .parser._regexes import SIMPLE_TYPE, _STORAGE
 
 
 FIXED_TYPE = _misc.Labeled('FIXED_TYPE')
 
 POTS_REGEX = re.compile(rf'^{SIMPLE_TYPE}$', re.VERBOSE)
+
+STORAGE = frozenset(_STORAGE)
 
 
 def is_pots(typespec):
@@ -482,6 +484,22 @@ def get_parsed_vartype(decl):
     else:
         raise NotImplementedError(decl)
     return kind, storage, typequal, typespec, abstract
+
+
+def get_actual_storage(decl):
+    # Note that "static" limits access to just that C module
+    # and "extern" (the default for module-level) allows access
+    # outside the C module.
+    if decl.kind not in (KIND.VARIABLE, KIND.FUNCTION):
+        return None
+    if isinstance(decl, ParsedItem):
+        storage, _ = _get_vartype(decl.data)
+    else:
+        storage = decl.storage
+    if storage:
+        return storage
+    # Fall back to the defaults.
+    return 'extern' if decl.parent is None else 'auto'
 
 
 #############################
@@ -997,7 +1015,7 @@ class Variable(Declaration):
 
     def __init__(self, file, name, data, parent=None, storage=None):
         super().__init__(file, name, data, parent,
-                         _extra={'storage': storage},
+                         _extra={'storage': storage or None},
                          _shortkey=f'({parent.name}).{name}' if parent else name,
                          _key=(str(file),
                                # Tilde comes after all other ascii characters.
@@ -1005,6 +1023,11 @@ class Variable(Declaration):
                                name,
                                ),
                          )
+        if storage:
+            if storage not in STORAGE:
+                # The parser must need an update.
+                raise NotImplementedError(storage)
+            # Otherwise we trust the compiler to have validated it.
 
     @property
     def vartype(self):
