@@ -1010,7 +1010,7 @@ stack_effect(int opcode, int oparg, int jump)
         case BUILD_MAP:
             return 1 - 2*oparg;
         case BUILD_CONST_KEY_MAP:
-            return -oparg;
+            return -(oparg >> 1);
         case LOAD_ATTR:
             return 0;
         case COMPARE_OP:
@@ -1957,6 +1957,37 @@ compiler_decorators(struct compiler *c, asdl_expr_seq* decos)
 }
 
 static int
+compiler_add_const_key_map(struct compiler *c, PyObject *keys)
+{
+    Py_ssize_t len = PyTuple_GET_SIZE(keys);
+
+    // To avoid bytes warning, do not optimize bytes key.
+    int bytes_found = 0;
+    for (Py_ssize_t i = 0; i < len; i++) {
+        if (PyBytes_Check(PyTuple_GET_ITEM(keys, i))) {
+            bytes_found = 1;
+            break;
+        }
+    }
+
+    int distinct = 0;
+    if (!bytes_found) {
+        PyObject *set = PySet_New(keys);
+        if (!set) {
+            return 0;
+        }
+        if (PySet_Size(set) == len) {
+            distinct = 1;
+        }
+        Py_DECREF(set);
+    }
+
+    ADDOP_LOAD_CONST_NEW(c, keys);
+    ADDOP_I(c, BUILD_CONST_KEY_MAP, (len << 1) | distinct);
+    return 1;
+}
+
+static int
 compiler_visit_kwonlydefaults(struct compiler *c, asdl_arg_seq *kwonlyargs,
                               asdl_expr_seq *kw_defaults)
 {
@@ -1999,8 +2030,9 @@ compiler_visit_kwonlydefaults(struct compiler *c, asdl_arg_seq *kwonlyargs,
         Py_ssize_t default_count = PyList_GET_SIZE(keys);
         PyObject *keys_tuple = PyList_AsTuple(keys);
         Py_DECREF(keys);
-        ADDOP_LOAD_CONST_NEW(c, keys_tuple);
-        ADDOP_I(c, BUILD_CONST_KEY_MAP, default_count);
+        if (!compiler_add_const_key_map(c, keys_tuple)) {
+            return 0;
+        }
         assert(default_count > 0);
         return 1;
     }
@@ -2100,8 +2132,9 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
     if (len) {
         PyObject *keytuple = PyList_AsTuple(names);
         Py_DECREF(names);
-        ADDOP_LOAD_CONST_NEW(c, keytuple);
-        ADDOP_I(c, BUILD_CONST_KEY_MAP, len);
+        if (!compiler_add_const_key_map(c, keytuple)) {
+            return 0;
+        }
         return 1;
     }
     else {
@@ -3845,8 +3878,9 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
             Py_INCREF(key);
             PyTuple_SET_ITEM(keys, i - begin, key);
         }
-        ADDOP_LOAD_CONST_NEW(c, keys);
-        ADDOP_I(c, BUILD_CONST_KEY_MAP, n);
+        if (!compiler_add_const_key_map(c, keys)) {
+            return 0;
+        }
     }
     else {
         for (i = begin; i < end; i++) {
@@ -4225,8 +4259,9 @@ compiler_subkwargs(struct compiler *c, asdl_keyword_seq *keywords, Py_ssize_t be
             Py_INCREF(key);
             PyTuple_SET_ITEM(keys, i - begin, key);
         }
-        ADDOP_LOAD_CONST_NEW(c, keys);
-        ADDOP_I(c, BUILD_CONST_KEY_MAP, n);
+        if (!compiler_add_const_key_map(c, keys)) {
+            return 0;
+        }
     }
     else {
         /* a for loop only executes once */

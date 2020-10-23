@@ -1680,6 +1680,9 @@ dict_init_from_items(PyObject *op, PyObject *keys, PyObject * const *values)
         }
 
         Py_hash_t hash;
+        if (!PyUnicode_CheckExact(key)) {
+            all_unicode = 0;
+        }
         if (!PyUnicode_CheckExact(key) ||
             (hash = ((PyASCIIObject *) key)->hash) == -1)
         {
@@ -1711,6 +1714,29 @@ dict_init_from_items(PyObject *op, PyObject *keys, PyObject * const *values)
     }
     ASSERT_CONSISTENT(op);
     return 0;
+}
+
+PyObject *
+_PyDict_FromItems(PyObject *keys, PyObject *const*values)
+{
+    Py_ssize_t len = PyTuple_GET_SIZE(keys);
+
+    PyDictKeysObject *dkeys = new_keys_object(estimate_keysize(len));
+    if (dkeys == NULL) {
+        return NULL;
+    }
+
+    PyObject *dict = new_dict(dkeys, NULL);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    if (dict_init_from_items(dict, keys, values)) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+
+    return dict;
 }
 
 int
