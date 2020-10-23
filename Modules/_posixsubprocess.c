@@ -441,6 +441,7 @@ reset_signal_handlers(const sigset_t *child_sigmask)
             continue;
         }
 
+        /* void *h works as these fields are both pointer types already. */
         void *h = (sa.sa_flags & SA_SIGINFO ? (void *)sa.sa_sigaction :
                                               (void *)sa.sa_handler);
         if (h == SIG_IGN || h == SIG_DFL) {
@@ -579,7 +580,7 @@ child_exec(char *const exec_array[],
 #ifdef VFORK_USABLE
     if (child_sigmask) {
         reset_signal_handlers(child_sigmask);
-        pthread_sigmask(SIG_SETMASK, child_sigmask, NULL);
+        POSIX_CALL(pthread_sigmask(SIG_SETMASK, child_sigmask, NULL));
     }
 #endif
 
@@ -707,6 +708,13 @@ do_fork_exec(char *const exec_array[],
 
 #ifdef VFORK_USABLE
     if (child_sigmask) {
+        /* These are checked by our caller; verify them in debug builds. */
+        assert(!call_setsid);
+        assert(!call_setuid);
+        assert(!call_setgid);
+        assert(!call_setgroups);
+        assert(preexec_fn == Py_None);
+
         pid = vfork();
     } else
 #endif
@@ -980,12 +988,13 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         need_after_fork = 1;
     }
 
+    /* NOTE: When old_sigmask is non-NULL, do_fork_exec() may use vfork(). */
     const void *old_sigmask = NULL;
 #ifdef VFORK_USABLE
     /* Use vfork() only if it's safe. See the comment above child_exec(). */
     sigset_t old_sigs;
     if (preexec_fn == Py_None &&
-        !call_setuid && !call_setgid && !call_setgroups) {
+        !call_setuid && !call_setgid && !call_setgroups && !call_setsid) {
         /* Block all signals to ensure that no signal handlers are run in the
          * child process while it shares memory with us. Note that signals
          * used internally by C libraries won't be blocked by
