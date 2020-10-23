@@ -584,10 +584,10 @@ class Telnet:
                 return
             if data:
                 try:
-                    sys.stdout.write(text.decode('ascii'))
+                    sys.stdout.write(data.decode('ascii'))
                 except UnicodeDecodeError:
                     # bpo-37640
-                    sys.stdout.buffer.write(text)
+                    sys.stdout.buffer.write(data)
             else:
                 sys.stdout.flush()
 
