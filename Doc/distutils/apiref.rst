@@ -1452,6 +1452,8 @@ name.
 
 .. module:: distutils.sysconfig
    :synopsis: Low-level access to configuration information of the Python interpreter.
+.. deprecated:: 3.10
+   :mod:`distutils.sysconfig` has been merged to :mod:`sysconfig`.
 .. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. moduleauthor:: Greg Ward <gward@python.net>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
