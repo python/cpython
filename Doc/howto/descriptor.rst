@@ -716,35 +716,40 @@ object.  In pure Python, it works like this::
                 return self
             return types.MethodType(self, obj)
 
-Running the interpreter shows how the function descriptor works in practice::
+Running the following in class in the interpreter shows how the function
+descriptor works in practice::
 
     class D:
         def f(self, x):
              return x
 
-    >>> d = D()
+Access through the class dictionary does not invoke :meth:`__get__`.  Instead,
+it just returns the underlying function object::
 
-    # Access through the class dictionary does not invoke __get__.
-    # It just returns the underlying function object.
     >>> D.__dict__['f']
     <function D.f at 0x00C45070>
 
-    # Dotted access from a class calls __get__() which just returns
-    # the underlying function unchanged.
+Dotted access from a class calls :meth:`__get__` which just returns the
+underlying function unchanged::
+
     >>> D.f
     <function D.f at 0x00C45070>
 
-    # The function has a __qualname__ attribute to support introspection
+The function has a :term:`qualified name` attribute to support introspection::
+
     >>> D.f.__qualname__
     'D.f'
 
-    # Dotted access from an instance calls __get__() which returns the
-    # function wrapped in a bound method object
+Dotted access from an instance calls :meth:`__get__` which returns a bound
+method object::
+
+    >>> d = D()
     >>> d.f
     <bound method D.f of <__main__.D object at 0x00B18C90>>
 
-    # Internally, the bound method stores the underlying function and
-    # the bound instance.
+Internally, the bound method stores the underlying function and the bound
+instance::
+
     >>> d.f.__func__
     <function D.f at 0x1012e5ae8>
     >>> d.f.__self__
