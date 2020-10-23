@@ -477,7 +477,7 @@ class _BinaryPlistParser:
             return self._read_object(top_object)
 
         except (OSError, IndexError, struct.error, OverflowError,
-                UnicodeDecodeError):
+                ValueError):
             raise InvalidFileException()
 
     def _get_size(self, tokenL):
@@ -591,9 +591,11 @@ class _BinaryPlistParser:
             obj_refs = self._read_refs(s)
             result = self._dict_type()
             self._objects[ref] = result
-            for k, o in zip(key_refs, obj_refs):
-                result[self._read_object(k)] = self._read_object(o)
-
+            try:
+                for k, o in zip(key_refs, obj_refs):
+                    result[self._read_object(k)] = self._read_object(o)
+            except TypeError:
+                raise InvalidFileException()
         else:
             raise InvalidFileException()
 

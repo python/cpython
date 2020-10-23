@@ -2,6 +2,7 @@
 import copy
 import operator
 import pickle
+import struct
 import unittest
 import plistlib
 import os
@@ -207,6 +208,13 @@ INVALID_BINARY_PLISTS = [
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x0b'
     ),
+    ('too large offset',
+        b'\x00\x2a'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x09'
+    ),
     ('integer overflow in offset',
         b'\x00\xff\xff\xff\xff\xff\xff\xff\xff'
         b'\x00\x00\x00\x00\x00\x00\x08\x01'
@@ -241,6 +249,20 @@ INVALID_BINARY_PLISTS = [
         b'\x00\x00\x00\x00\x00\x00\x00\x02'
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x14'
+    ),
+    ('too large reference index',
+        b'\xa1\x02\x00\x08\x0a'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x02'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x0b'
+    ),
+    ('integer overflow in reference index',
+        b'\xa1\xff\xff\xff\xff\xff\xff\xff\xff\x00\x08\x11'
+        b'\x00\x00\x00\x00\x00\x00\x01\x08'
+        b'\x00\x00\x00\x00\x00\x00\x00\x02'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x12'
     ),
     ('too large ASCII size',
         b'\x5f\x00\x23\x41\x08'
@@ -311,6 +333,41 @@ INVALID_BINARY_PLISTS = [
         b'\x00\x00\x00\x00\x00\x00\x00\x01'
         b'\x00\x00\x00\x00\x00\x00\x00\x00'
         b'\x00\x00\x00\x00\x00\x00\x00\x0b'
+    ),
+    ('non-hashable key',
+        b'\xd1\x01\x01\xa0\x08\x0b'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x02'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x0c'
+    ),
+    ('too large datetime (datetime overflow)',
+        b'\x33\x42\x50\x00\x00\x00\x00\x00\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x11'
+    ),
+    ('too large datetime (timedelta overflow)',
+        b'\x33\x42\xe0\x00\x00\x00\x00\x00\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x11'
+    ),
+    ('invalid datetime (Infinity)',
+        b'\x33\x7f\xf0\x00\x00\x00\x00\x00\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x11'
+    ),
+    ('invalid datetime (NaN)',
+        b'\x33\x7f\xf8\x00\x00\x00\x00\x00\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x11'
     ),
 ]
 
@@ -753,6 +810,18 @@ class TestPlistlib(unittest.TestCase):
 
 class TestBinaryPlistlib(unittest.TestCase):
 
+    @staticmethod
+    def decode(*objects):
+        data = b'bplist00'
+        offsets = []
+        for x in objects:
+            offsets.append(len(data))
+            data += x
+        offset_table_offset = len(data)
+        data += bytes(offsets)
+        data += struct.pack('>6xBBQQQ', 1, 1, len(objects), 0, offset_table_offset)
+        return plistlib.loads(data, fmt=plistlib.FMT_BINARY)
+
     def test_nonstandard_refs_size(self):
         # Issue #21538: Refs and offsets are 24-bit integers
         data = (b'bplist00'
@@ -767,7 +836,7 @@ class TestBinaryPlistlib(unittest.TestCase):
 
     def test_dump_duplicates(self):
         # Test effectiveness of saving duplicated objects
-        for x in (None, False, True, 12345, 123.45, 'abcde', b'abcde',
+        for x in (None, False, True, 12345, 123.45, 'abcde', 'абвгд', b'abcde',
                   datetime.datetime(2004, 10, 26, 10, 33, 33),
                   bytearray(b'abcde'), [12, 345], (12, 345), {'12': 345}):
             with self.subTest(x=x):
@@ -812,6 +881,32 @@ class TestBinaryPlistlib(unittest.TestCase):
                      datetime.timedelta(seconds=ts))
                 data = plistlib.dumps(d, fmt=plistlib.FMT_BINARY)
                 self.assertEqual(plistlib.loads(data), d)
+
+    def test_load_singletons(self):
+        self.assertIs(self.decode(b'\x00'), None)
+        self.assertIs(self.decode(b'\x08'), False)
+        self.assertIs(self.decode(b'\x09'), True)
+        self.assertEqual(self.decode(b'\x0f'), b'')
+
+    def test_load_int(self):
+        self.assertEqual(self.decode(b'\x10\x00'), 0)
+        self.assertEqual(self.decode(b'\x10\xfe'), 0xfe)
+        self.assertEqual(self.decode(b'\x11\xfe\xdc'), 0xfedc)
+        self.assertEqual(self.decode(b'\x12\xfe\xdc\xba\x98'), 0xfedcba98)
+        self.assertEqual(self.decode(b'\x13\x01\x23\x45\x67\x89\xab\xcd\xef'),
+                         0x0123456789abcdef)
+        self.assertEqual(self.decode(b'\x13\xfe\xdc\xba\x98\x76\x54\x32\x10'),
+                         -0x123456789abcdf0)
+
+    def test_unsupported(self):
+        unsupported = [*range(1, 8), *range(10, 15),
+                       0x20, 0x21, *range(0x24, 0x33), *range(0x34, 0x40)]
+        for i in [0x70, 0x90, 0xb0, 0xc0, 0xe0, 0xf0]:
+            unsupported.extend(i + j for j in range(16))
+        for token in unsupported:
+            with self.subTest(f'token {token:02x}'):
+                with self.assertRaises(plistlib.InvalidFileException):
+                    self.decode(bytes([token]) + b'\x00'*16)
 
     def test_invalid_binary(self):
         for name, data in INVALID_BINARY_PLISTS:
