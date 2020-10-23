@@ -317,8 +317,8 @@ Here are three practical data validation utilities:
                     f'Expected {value!r} to be at least {self.minvalue!r}'
                 )
             if self.maxvalue is not None and value > self.maxvalue:
-                raise ValueError
-                    (f'Expected {value!r} to be no more than {self.maxvalue!r}'
+                raise ValueError(
+                    f'Expected {value!r} to be no more than {self.maxvalue!r}'
                 )
 
     class String(Validator):
@@ -348,7 +348,7 @@ Here's how the data validators can be used in a real class::
 
     class Component:
 
-        name = String(minsize=3, maxsize=10, predicate=str.upper)
+        name = String(minsize=3, maxsize=10, predicate=str.isupper)
         kind = OneOf('plastic', 'metal')
         quantity = Number(minvalue=0)
 
@@ -503,7 +503,7 @@ Likewise, classes can turn-off descriptor invocation by overriding
 Automatic Name Notification
 ---------------------------
 
-Sometimes it desirable for a descriptor to know what class variable name it
+Sometimes it is desirable for a descriptor to know what class variable name it
 was assigned to.  When a new class is created, the :class:`type` metaclass
 scans the dictionary of the new class.  If any of the entries are descriptors
 and if they define :meth:`__set_name__`, that method is called with two
