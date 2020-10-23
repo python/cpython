@@ -543,7 +543,7 @@ The implementation details are in :c:func:`super_getattro()` in
 The details above show that the mechanism for descriptors is embedded in the
 :meth:`__getattribute__()` methods for :class:`object`, :class:`type`, and
 :func:`super`.  Classes inherit this machinery when they derive from
-:class:`object` or if they have a meta-class providing similar functionality.
+:class:`object` or if they have a metaclass providing similar functionality.
 Likewise, classes can turn-off descriptor invocation by overriding
 :meth:`__getattribute__()`.
 
@@ -583,7 +583,7 @@ descriptor is useful for monitoring just a few chosen attributes::
             self.val = initval
             self.name = name
 
-        def __get__(self, obj, objtype):
+        def __get__(self, obj, objtype=None):
             print('Retrieving', self.name)
             return self.val
 
@@ -591,11 +591,11 @@ descriptor is useful for monitoring just a few chosen attributes::
             print('Updating', self.name)
             self.val = val
 
-    >>> class MyClass:
-    ...     x = RevealAccess(10, 'var "x"')
-    ...     y = 5
-    ...
-    >>> m = MyClass()
+    class B:
+        x = RevealAccess(10, 'var "x"')
+        y = 5
+
+    >>> m = B()
     >>> m.x
     Retrieving var "x"
     10
@@ -683,7 +683,7 @@ to wrap access to the value attribute in a property data descriptor::
         ...
 
         @property
-        def getvalue(self):
+        def value(self):
             "Recalculate the cell before returning value"
             self.recalc()
             return self._value
@@ -718,10 +718,10 @@ object.  In pure Python, it works like this::
 
 Running the interpreter shows how the function descriptor works in practice::
 
-    >>> class D:
-    ...     def f(self, x):
-    ...         return x
-    ...
+    class D:
+        def f(self, x):
+             return x
+
     >>> d = D()
 
     # Access through the class dictionary does not invoke __get__.
@@ -766,7 +766,7 @@ This chart summarizes the binding and its two most useful variants:
 
       +-----------------+----------------------+------------------+
       | Transformation  | Called from an       | Called from a    |
-      |                 | Object               | Class            |
+      |                 | object               | class            |
       +=================+======================+==================+
       | function        | f(obj, \*args)       | f(\*args)        |
       +-----------------+----------------------+------------------+
@@ -796,11 +796,11 @@ It can be called either from an object or the class:  ``s.erf(1.5) --> .9332`` o
 Since staticmethods return the underlying function with no changes, the example
 calls are unexciting::
 
-    >>> class E:
-    ...     @staticmethod
-    ...     def f(x):
-    ...         print(x)
-    ...
+    class E:
+        @staticmethod
+        def f(x):
+            print(x)
+
     >>> E.f(3)
     3
     >>> E().f(3)
@@ -822,15 +822,15 @@ Unlike static methods, class methods prepend the class reference to the
 argument list before calling the function.  This format is the same
 for whether the caller is an object or a class::
 
-    >>> class E:
-    ...     @classmethod
-    ...     def f(cls, x):
-    ...         return cls.__name__, x
-    ...
-    >>> print(E.f(3))
-    ('E', 3)
-    >>> print(E().f(3))
-    ('E', 3)
+    class F:
+        @classmethod
+        def f(cls, x):
+            return cls.__name__, x
+
+    >>> print(F.f(3))
+    ('F', 3)
+    >>> print(F().f(3))
+    ('F', 3)
 
 
 This behavior is useful whenever the function only needs to have a class
