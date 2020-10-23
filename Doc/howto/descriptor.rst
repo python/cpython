@@ -147,6 +147,17 @@ An interactive session shows that all access to the managed attribute *age* is l
 
 One major issue with this example is the private name *_age* is hardwired in the *LoggedAccess* class.  That means that each instance can only have one logged attribute and that its name is unchangeable.  In the next example, we'll fix that problem.
 
+Customized Names
+----------------
+
+XXX:  Add the set_name example
+
+
+Complete Practical Example
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+XXX: Add the validators example
+
 
 Technical Tutorial
 ^^^^^^^^^^^^^^^^^^
@@ -218,6 +229,11 @@ To make a read-only data descriptor, define both :meth:`__get__` and
 :meth:`__set__` with the :meth:`__set__` raising an :exc:`AttributeError` when
 called.  Defining the :meth:`__set__` method with an exception raising
 placeholder is enough to make it a data descriptor.
+
+Automatic Name Notification
+---------------------------
+
+XXX:  Explain how set_name works.
 
 
 Invoking Descriptors
