@@ -39,3 +39,7 @@ class ZipReader(abc.TraversableResources):
 
     def files(self):
         return zipfile.Path(self.archive, self.prefix)
+
+    def contents(self):
+        # eagerly evaluate to release handle on the zipfile
+        return list(super().contents())
