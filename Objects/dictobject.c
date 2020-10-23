@@ -3569,15 +3569,12 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    int empty = 1;
-
     if (nargs == 1) {
         if (dict_update_arg(self, args[0]) < 0) {
             Py_DECREF(self);
             return NULL;
         }
 
-        empty = 0;
         args++;
     }
 
@@ -3592,7 +3589,7 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
             }
         }
 
-        if (empty) {
+        if (!nargs) {
             for (Py_ssize_t i = 0; i < kw_size; i++) {
                 if (dict_init_setitem(self, PyTuple_GET_ITEM(kwnames, i), args[i]) < 0) {
                     Py_DECREF(self);
