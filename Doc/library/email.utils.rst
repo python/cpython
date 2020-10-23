@@ -125,9 +125,9 @@ of the new API.
 
    The inverse of :func:`format_datetime`.  Performs the same function as
    :func:`parsedate`, but on success returns a :mod:`~datetime.datetime`;
-   otherwise ``None`` may be returned if parsing fails, or a ``ValueError``
-   raised if *date* contains an invalid value such as an hour greater than
-   23 or a timezone offset not between -24 and 24 hours.  If
+   otherwise ``TypeError`` is raised if parsing fails because of an invalid input,
+   or a ``ValueError`` raised if *date* contains an invalid value such as an hour
+   greater than 23 or a timezone offset not between -24 and 24 hours.  If
    the input date has a timezone of ``-0000``, the ``datetime`` will be a naive
    ``datetime``, and if the date is conforming to the RFCs it will represent a
    time in UTC but with no indication of the actual source timezone of the
