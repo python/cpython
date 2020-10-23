@@ -1,212 +1,280 @@
-import argparse
-import re
+import logging
 import sys
 
-from c_analyzer.common import show
-from c_analyzer.common.info import UNKNOWN
-
-from . import SOURCE_DIRS
-from .find import supported_vars
-from .known import (
-    from_file as known_from_file,
-    DATA_FILE as KNOWN_FILE,
-    )
-from .supported import IGNORED_FILE
-
-
-def _check_results(unknown, knownvars, used):
-    def _match_unused_global(variable):
-        found = []
-        for varid in knownvars:
-            if varid in used:
-                continue
-            if varid.funcname is not None:
-                continue
-            if varid.name != variable.name:
-                continue
-            if variable.filename and variable.filename != UNKNOWN:
-                if variable.filename == varid.filename:
-                    found.append(varid)
-            else:
-                found.append(varid)
-        return found
-
-    badknown = set()
-    for variable in sorted(unknown):
-        msg = None
-        if variable.funcname != UNKNOWN:
-            msg = f'could not find global symbol {variable.id}'
-        elif m := _match_unused_global(variable):
-            assert isinstance(m, list)
-            badknown.update(m)
-        elif variable.name in ('completed', 'id'):  # XXX Figure out where these variables are.
-            unknown.remove(variable)
-        else:
-            msg = f'could not find local symbol {variable.id}'
-        if msg:
-            #raise Exception(msg)
-            print(msg)
-    if badknown:
-        print('---')
-        print(f'{len(badknown)} globals in known.tsv, but may actually be local:')
-        for varid in sorted(badknown):
-            print(f'{varid.filename:30} {varid.name}')
-    unused = sorted(varid
-                    for varid in set(knownvars) - used
-                    if varid.name != 'id')  # XXX Figure out where these variables are.
-    if unused:
-        print('---')
-        print(f'did not use {len(unused)} known vars:')
-        for varid in unused:
-            print(f'{varid.filename:30} {varid.funcname or "-":20} {varid.name}')
-        raise Exception('not all known symbols used')
-    if unknown:
-        print('---')
-        raise Exception('could not find all symbols')
+from c_common.fsutil import expand_filenames, iter_files_by_suffix
+from c_common.scriptutil import (
+    add_verbosity_cli,
+    add_traceback_cli,
+    add_commands_cli,
+    add_kind_filtering_cli,
+    add_files_cli,
+    process_args_by_key,
+    configure_logger,
+    get_prog,
+)
+from c_parser.info import KIND
+import c_parser.__main__ as c_parser
+import c_analyzer.__main__ as c_analyzer
+import c_analyzer as _c_analyzer
+from c_analyzer.info import UNKNOWN
+from . import _analyzer, _parser, REPO_ROOT
 
 
-# XXX Move this check to its own command.
-def cmd_check_cache(cmd, *,
-                    known=KNOWN_FILE,
-                    ignored=IGNORED_FILE,
-                    _known_from_file=known_from_file,
-                    _find=supported_vars,
-                    ):
-    known = _known_from_file(known)
-
-    used = set()
-    unknown = set()
-    for var, supported in _find(known=known, ignored=ignored):
-        if supported is None:
-            unknown.add(var)
-            continue
-        used.add(var.id)
-    _check_results(unknown, known['variables'], used)
+logger = logging.getLogger(__name__)
 
 
-def cmd_check(cmd, *,
-              known=KNOWN_FILE,
-              ignored=IGNORED_FILE,
-              _find=supported_vars,
-              _show=show.basic,
-              _print=print,
-              ):
-    """
-    Fail if there are unsupported globals variables.
+def _resolve_filenames(filenames):
+    if filenames:
+        resolved = (_parser.resolve_filename(f) for f in filenames)
+    else:
+        resolved = _parser.iter_filenames()
+    return resolved
 
-    In the failure case, the list of unsupported variables
-    will be printed out.
-    """
+
+def fmt_summary(analysis):
+    # XXX Support sorting and grouping.
+    supported = []
     unsupported = []
-    for var, supported in _find(known=known, ignored=ignored):
-        if not supported:
-            unsupported.append(var)
+    for item in analysis:
+        if item.supported:
+            supported.append(item)
+        else:
+            unsupported.append(item)
+    total = 0
 
-    if not unsupported:
-        #_print('okay')
-        return
+    def section(name, groupitems):
+        nonlocal total
+        items, render = c_analyzer.build_section(name, groupitems,
+                                                 relroot=REPO_ROOT)
+        yield from render()
+        total += len(items)
 
-    _print('ERROR: found unsupported global variables')
-    _print()
-    _show(sorted(unsupported))
-    _print(f' ({len(unsupported)} total)')
-    sys.exit(1)
+    yield ''
+    yield '===================='
+    yield 'supported'
+    yield '===================='
 
+    yield from section('types', supported)
+    yield from section('variables', supported)
 
-def cmd_show(cmd, *,
-             known=KNOWN_FILE,
-             ignored=IGNORED_FILE,
-             skip_objects=False,
-              _find=supported_vars,
-             _show=show.basic,
-             _print=print,
-             ):
-    """
-    Print out the list of found global variables.
+    yield ''
+    yield '===================='
+    yield 'unsupported'
+    yield '===================='
 
-    The variables will be distinguished as "supported" or "unsupported".
-    """
-    allsupported = []
-    allunsupported = []
-    for found, supported in _find(known=known,
-                                  ignored=ignored,
-                                  skip_objects=skip_objects,
-                                  ):
-        if supported is None:
-            continue
-        (allsupported if supported else allunsupported
-         ).append(found)
+    yield from section('types', unsupported)
+    yield from section('variables', unsupported)
 
-    _print('supported:')
-    _print('----------')
-    _show(sorted(allsupported))
-    _print(f' ({len(allsupported)} total)')
-    _print()
-    _print('unsupported:')
-    _print('------------')
-    _show(sorted(allunsupported))
-    _print(f' ({len(allunsupported)} total)')
+    yield ''
+    yield f'grand total: {total}'
 
 
-#############################
-# the script
+#######################################
+# the checks
+
+CHECKS = dict(c_analyzer.CHECKS, **{
+    'globals': _analyzer.check_globals,
+})
+
+#######################################
+# the commands
+
+FILES_KWARGS = dict(excluded=_parser.EXCLUDED, nargs='*')
+
+
+def _cli_parse(parser):
+    process_output = c_parser.add_output_cli(parser)
+    process_kind = add_kind_filtering_cli(parser)
+    process_preprocessor = c_parser.add_preprocessor_cli(
+        parser,
+        get_preprocessor=_parser.get_preprocessor,
+    )
+    process_files = add_files_cli(parser, **FILES_KWARGS)
+    return [
+        process_output,
+        process_kind,
+        process_preprocessor,
+        process_files,
+    ]
+
+
+def cmd_parse(filenames=None, **kwargs):
+    filenames = _resolve_filenames(filenames)
+    if 'get_file_preprocessor' not in kwargs:
+        kwargs['get_file_preprocessor'] = _parser.get_preprocessor()
+    c_parser.cmd_parse(filenames, **kwargs)
+
+
+def _cli_check(parser, **kwargs):
+    return c_analyzer._cli_check(parser, CHECKS, **kwargs, **FILES_KWARGS)
+
+
+def cmd_check(filenames=None, **kwargs):
+    filenames = _resolve_filenames(filenames)
+    kwargs['get_file_preprocessor'] = _parser.get_preprocessor(log_err=print)
+    c_analyzer.cmd_check(
+        filenames,
+        relroot=REPO_ROOT,
+        _analyze=_analyzer.analyze,
+        _CHECKS=CHECKS,
+        **kwargs
+    )
+
+
+def cmd_analyze(filenames=None, **kwargs):
+    formats = dict(c_analyzer.FORMATS)
+    formats['summary'] = fmt_summary
+    filenames = _resolve_filenames(filenames)
+    kwargs['get_file_preprocessor'] = _parser.get_preprocessor(log_err=print)
+    c_analyzer.cmd_analyze(
+        filenames,
+        _analyze=_analyzer.analyze,
+        formats=formats,
+        **kwargs
+    )
+
+
+def _cli_data(parser):
+    filenames = False
+    known = True
+    return c_analyzer._cli_data(parser, filenames, known)
+
+
+def cmd_data(datacmd, **kwargs):
+    formats = dict(c_analyzer.FORMATS)
+    formats['summary'] = fmt_summary
+    filenames = (file
+                 for file in _resolve_filenames(None)
+                 if file not in _parser.EXCLUDED)
+    kwargs['get_file_preprocessor'] = _parser.get_preprocessor(log_err=print)
+    if datacmd == 'show':
+        types = _analyzer.read_known()
+        results = []
+        for decl, info in types.items():
+            if info is UNKNOWN:
+                if decl.kind in (KIND.STRUCT, KIND.UNION):
+                    extra = {'unsupported': ['type unknown'] * len(decl.members)}
+                else:
+                    extra = {'unsupported': ['type unknown']}
+                info = (info, extra)
+            results.append((decl, info))
+            if decl.shortkey == 'struct _object':
+                tempinfo = info
+        known = _analyzer.Analysis.from_results(results)
+        analyze = None
+    elif datacmd == 'dump':
+        known = _analyzer.KNOWN_FILE
+        def analyze(files, **kwargs):
+            decls = []
+            for decl in _analyzer.iter_decls(files, **kwargs):
+                if not KIND.is_type_decl(decl.kind):
+                    continue
+                if not decl.filename.endswith('.h'):
+                    if decl.shortkey not in _analyzer.KNOWN_IN_DOT_C:
+                        continue
+                decls.append(decl)
+            results = _c_analyzer.analyze_decls(
+                decls,
+                known={},
+                analyze_resolved=_analyzer.analyze_resolved,
+            )
+            return _analyzer.Analysis.from_results(results)
+    else:
+        known = _analyzer.read_known()
+        def analyze(files, **kwargs):
+            return _analyzer.iter_decls(files, **kwargs)
+    extracolumns = None
+    c_analyzer.cmd_data(
+        datacmd,
+        filenames,
+        known,
+        _analyze=analyze,
+        formats=formats,
+        extracolumns=extracolumns,
+        relroot=REPO_ROOT,
+        **kwargs
+    )
+
+
+# We do not define any other cmd_*() handlers here,
+# favoring those defined elsewhere.
 
 COMMANDS = {
-        'check': cmd_check,
-        'show': cmd_show,
-        }
+    'check': (
+        'analyze and fail if the CPython source code has any problems',
+        [_cli_check],
+        cmd_check,
+    ),
+    'analyze': (
+        'report on the state of the CPython source code',
+        [(lambda p: c_analyzer._cli_analyze(p, **FILES_KWARGS))],
+        cmd_analyze,
+    ),
+    'parse': (
+        'parse the CPython source files',
+        [_cli_parse],
+        cmd_parse,
+    ),
+    'data': (
+        'check/manage local data (e.g. knwon types, ignored vars, caches)',
+        [_cli_data],
+        cmd_data,
+    ),
+}
 
-PROG = sys.argv[0]
-PROG = 'c-globals.py'
 
+#######################################
+# the script
 
-def parse_args(prog=PROG, argv=sys.argv[1:], *, _fail=None):
-    common = argparse.ArgumentParser(add_help=False)
-    common.add_argument('--ignored', metavar='FILE',
-                        default=IGNORED_FILE,
-                        help='path to file that lists ignored vars')
-    common.add_argument('--known', metavar='FILE',
-                        default=KNOWN_FILE,
-                        help='path to file that lists known types')
-    #common.add_argument('dirs', metavar='DIR', nargs='*',
-    #                    default=SOURCE_DIRS,
-    #                    help='a directory to check')
-
+def parse_args(argv=sys.argv[1:], prog=None, *, subset=None):
+    import argparse
     parser = argparse.ArgumentParser(
-            prog=prog,
-            )
-    subs = parser.add_subparsers(dest='cmd')
+        prog=prog or get_prog(),
+    )
 
-    check = subs.add_parser('check', parents=[common])
+#    if subset == 'check' or subset == ['check']:
+#        if checks is not None:
+#            commands = dict(COMMANDS)
+#            commands['check'] = list(commands['check'])
+#            cli = commands['check'][1][0]
+#            commands['check'][1][0] = (lambda p: cli(p, checks=checks))
+    processors = add_commands_cli(
+        parser,
+        commands=COMMANDS,
+        commonspecs=[
+            add_verbosity_cli,
+            add_traceback_cli,
+        ],
+        subset=subset,
+    )
 
-    show = subs.add_parser('show', parents=[common])
-    show.add_argument('--skip-objects', action='store_true')
-
-    if _fail is None:
-        def _fail(msg):
-            parser.error(msg)
-
-    # Now parse the args.
     args = parser.parse_args(argv)
     ns = vars(args)
 
     cmd = ns.pop('cmd')
-    if not cmd:
-        _fail('missing command')
 
-    return cmd, ns
+    verbosity, traceback_cm = process_args_by_key(
+        args,
+        processors[cmd],
+        ['verbosity', 'traceback_cm'],
+    )
+    if cmd != 'parse':
+        # "verbosity" is sent to the commands, so we put it back.
+        args.verbosity = verbosity
+
+    return cmd, ns, verbosity, traceback_cm
 
 
-def main(cmd, cmdkwargs=None, *, _COMMANDS=COMMANDS):
+def main(cmd, cmd_kwargs):
     try:
-        cmdfunc = _COMMANDS[cmd]
+        run_cmd = COMMANDS[cmd][-1]
     except KeyError:
-        raise ValueError(
-            f'unsupported cmd {cmd!r}' if cmd else 'missing cmd')
-
-    cmdfunc(cmd, **cmdkwargs or {})
+        raise ValueError(f'unsupported cmd {cmd!r}')
+    run_cmd(**cmd_kwargs)
 
 
 if __name__ == '__main__':
-    cmd, cmdkwargs = parse_args()
-    main(cmd, cmdkwargs)
+    cmd, cmd_kwargs, verbosity, traceback_cm = parse_args()
+    configure_logger(verbosity)
+    with traceback_cm:
+        main(cmd, cmd_kwargs)
