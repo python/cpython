@@ -89,35 +89,33 @@ static int test_finalize_subinterps(void)
     PyThreadState *mainstate;
     PyThreadState *interp_tstate;
     PyGILState_STATE gilstate;
-    int i, j;
+    int i;
 
-    for (i=0; i<15; i++) {
-        printf("--- Pass %d ---\n", i);
-        _testembed_Py_Initialize();
-        mainstate = PyThreadState_Get();
+    _testembed_Py_Initialize();
+    mainstate = PyThreadState_Get();
 
-        PyEval_ReleaseThread(mainstate);
+    PyEval_ReleaseThread(mainstate);
 
-        gilstate = PyGILState_Ensure();
+    gilstate = PyGILState_Ensure();
+    print_subinterp();
+    PyThreadState_Swap(NULL);
+
+    // Create 3 subinterpreters and destroy the last one.
+    for (i=0; i<3; i++) {
+        interp_tstate = Py_NewInterpreter();
         print_subinterp();
-        PyThreadState_Swap(NULL);
-
-        // Create 3 subinterpreters and destroy the last one.
-        for (j=0; j<3; j++) {
-            interp_tstate = Py_NewInterpreter();
-            print_subinterp();
-        }
-        PyThreadState_Swap(interp_tstate);
-        Py_EndInterpreter(interp_tstate);
-
-        // Switch back to the main interpreter and finalize the runtime.
-        PyThreadState_Swap(mainstate);
-        print_subinterp();
-        PyGILState_Release(gilstate);
-
-        PyEval_RestoreThread(mainstate);
-        Py_Finalize();
     }
+    PyThreadState_Swap(interp_tstate);
+    Py_EndInterpreter(interp_tstate);
+
+    // Switch back to the main interpreter and finalize the runtime.
+    PyThreadState_Swap(mainstate);
+    print_subinterp();
+    PyGILState_Release(gilstate);
+
+    PyEval_RestoreThread(mainstate);
+    Py_Finalize();
+
     return 0;
 }
 

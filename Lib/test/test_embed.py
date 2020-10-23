@@ -197,10 +197,9 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         bpo-36225: Subinterpreters should implicitly be torn down by
         Py_Finalize().
         """
-        out, err = self.run_embedded_interpreter("test_finalize_subinterps")
+        _, err = self.run_embedded_interpreter("test_finalize_subinterps")
         if support.verbose > 1:
             print()
-            print(out)
             print(err)
         self.assertIn("ResourceWarning: extra 2 interpreters", err)
 
