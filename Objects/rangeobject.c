@@ -254,11 +254,17 @@ compute_item(rangeobject *r, PyObject *i)
     /* PyLong equivalent to:
      *    return r->start + (i * r->step)
      */
-    incr = PyNumber_Multiply(i, r->step);
-    if (!incr)
-        return NULL;
-    result = PyNumber_Add(r->start, incr);
-    Py_DECREF(incr);
+    if (r->step == _PyLong_One) {
+        result = PyNumber_Add(r->start, i);
+    }
+    else {
+        incr = PyNumber_Multiply(i, r->step);
+        if (!incr) {
+            return NULL;
+        }
+        result = PyNumber_Add(r->start, incr);
+        Py_DECREF(incr);
+    }
     return result;
 }
 
@@ -576,13 +582,19 @@ range_index(rangeobject *r, PyObject *ob)
         return NULL;
 
     if (contains) {
-        PyObject *idx, *tmp = PyNumber_Subtract(ob, r->start);
-        if (tmp == NULL)
+        PyObject *idx = PyNumber_Subtract(ob, r->start);
+        if (idx == NULL) {
             return NULL;
+        }
+
+        if (r->step == _PyLong_One) {
+            return idx;
+        }
+
         /* idx = (ob - r.start) // r.step */
-        idx = PyNumber_FloorDivide(tmp, r->step);
-        Py_DECREF(tmp);
-        return idx;
+        PyObject *sidx = PyNumber_FloorDivide(idx, r->step);
+        Py_DECREF(idx);
+        return sidx;
     }
 
     /* object is not in the range */

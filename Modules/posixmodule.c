@@ -22,6 +22,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_fileutils.h"
 #ifdef MS_WINDOWS
    /* include <windows.h> early to avoid conflict with pycore_condvar.h:
 
@@ -1634,18 +1635,6 @@ path_error2(path_t *path, path_t *path2)
 
 /* POSIX generic methods */
 
-static int
-fildes_converter(PyObject *o, void *p)
-{
-    int fd;
-    int *pointer = (int *)p;
-    fd = PyObject_AsFileDescriptor(o);
-    if (fd < 0)
-        return 0;
-    *pointer = fd;
-    return 1;
-}
-
 static PyObject *
 posix_fildes_fd(int fd, int (*func)(int))
 {
@@ -2642,10 +2631,6 @@ class dir_fd_converter(CConverter):
         else:
             self.converter = 'dir_fd_converter'
 
-class fildes_converter(CConverter):
-    type = 'int'
-    converter = 'fildes_converter'
-
 class uid_t_converter(CConverter):
     type = "uid_t"
     converter = '_Py_Uid_Converter'
@@ -2708,7 +2693,7 @@ class sysconf_confname_converter(path_confname_converter):
     converter="conv_sysconf_confname"
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=f1c8ae8d744f6c8b]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=3338733161aa7879]*/
 
 /*[clinic input]
 
@@ -8756,25 +8741,6 @@ os_close_impl(PyObject *module, int fd)
     Py_RETURN_NONE;
 }
 
-
-#ifdef HAVE_FDWALK
-static int
-_fdwalk_close_func(void *lohi, int fd)
-{
-    int lo = ((int *)lohi)[0];
-    int hi = ((int *)lohi)[1];
-
-    if (fd >= hi) {
-        return 1;
-    }
-    else if (fd >= lo) {
-        /* Ignore errors */
-        (void)close(fd);
-    }
-    return 0;
-}
-#endif /* HAVE_FDWALK */
-
 /*[clinic input]
 os.closerange
 
@@ -8789,32 +8755,8 @@ static PyObject *
 os_closerange_impl(PyObject *module, int fd_low, int fd_high)
 /*[clinic end generated code: output=0ce5c20fcda681c2 input=5855a3d053ebd4ec]*/
 {
-#ifdef HAVE_FDWALK
-    int lohi[2];
-#endif
     Py_BEGIN_ALLOW_THREADS
-    _Py_BEGIN_SUPPRESS_IPH
-#ifdef HAVE_FDWALK
-    lohi[0] = Py_MAX(fd_low, 0);
-    lohi[1] = fd_high;
-    fdwalk(_fdwalk_close_func, lohi);
-#else
-    fd_low = Py_MAX(fd_low, 0);
-#ifdef __FreeBSD__
-    if (fd_high >= sysconf(_SC_OPEN_MAX)) {
-        /* Any errors encountered while closing file descriptors are ignored */
-        closefrom(fd_low);
-    }
-    else
-#endif
-    {
-        for (int i = fd_low; i < fd_high; i++) {
-            /* Ignore errors */
-            (void)close(i);
-        }
-    }
-#endif
-    _Py_END_SUPPRESS_IPH
+    _Py_closerange(fd_low, fd_high - 1);
     Py_END_ALLOW_THREADS
     Py_RETURN_NONE;
 }

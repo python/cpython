@@ -223,6 +223,17 @@ PyObject_AsFileDescriptor(PyObject *o)
     return fd;
 }
 
+int
+_PyLong_FileDescriptor_Converter(PyObject *o, void *ptr)
+{
+    int fd = PyObject_AsFileDescriptor(o);
+    if (fd == -1) {
+        return 0;
+    }
+    *(int *)ptr = fd;
+    return 1;
+}
+
 /*
 ** Py_UniversalNewlineFgets is an fgets variation that understands
 ** all of \r, \n and \r\n conventions.

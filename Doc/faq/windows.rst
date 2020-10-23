@@ -140,7 +140,7 @@ offender.
 How do I make an executable from a Python script?
 -------------------------------------------------
 
-See `cx_Freeze <https://anthony-tuininga.github.io/cx_Freeze/>`_ for a distutils extension
+See `cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ for a distutils extension
 that allows you to create console and GUI executables from Python code.
 `py2exe <http://www.py2exe.org/>`_, the most popular extension for building
 Python 2.x-based executables, does not yet support Python 3 but a version that
@@ -279,7 +279,7 @@ in batch mode.
 How do I check for a keypress without blocking?
 -----------------------------------------------
 
-Use the msvcrt module.  This is a standard Windows-specific extension module.
+Use the :mod:`msvcrt` module.  This is a standard Windows-specific extension module.
 It defines a function ``kbhit()`` which checks whether a keyboard hit is
 present, and ``getch()`` which gets one character without echoing it.
 

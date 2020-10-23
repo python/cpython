@@ -1,2 +1,0 @@
-:meth:`asyncio.wait_for` now properly handles races between cancellation of
-itself and the completion of the wrapped awaitable.

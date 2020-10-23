@@ -162,6 +162,8 @@ ambiguities and allow common typos to pass uncaught.
 Displays for lists, sets and dictionaries
 -----------------------------------------
 
+.. index:: single: comprehensions
+
 For constructing a list, a set or a dictionary Python provides special syntax
 called "displays", each of them in two flavors:
 
@@ -260,6 +262,7 @@ Set displays
 
 .. index::
    pair: set; display
+   pair: set; comprehensions
    object: set
    single: {} (curly brackets); set expression
    single: , (comma); expression list
@@ -287,6 +290,7 @@ Dictionary displays
 
 .. index::
    pair: dictionary; display
+   pair: dictionary; comprehensions
    key, datum, key/datum pair
    object: dictionary
    single: {} (curly brackets); dictionary expression
@@ -796,8 +800,8 @@ Subscriptions
    object: dictionary
    pair: sequence; item
 
-A subscription selects an item of a sequence (string, tuple or list) or mapping
-(dictionary) object:
+Subscription of a sequence (string, tuple or list) or mapping (dictionary)
+object usually selects an item from the collection:
 
 .. productionlist:: python-grammar
    subscription: `primary` "[" `expression_list` "]"
@@ -832,6 +836,17 @@ this method will need to explicitly add that support.
 
 A string's items are characters.  A character is not a separate data type but a
 string of exactly one character.
+
+..
+   At the time of writing this, there is no documentation for generic alias
+   or PEP 585.  Thus the link currently points to PEP 585 itself.
+   Please change the link for generic alias to reference the correct
+   documentation once documentation for PEP 585 becomes available.
+
+Subscription of certain :term:`classes <class>` or :term:`types <type>`
+creates a `generic alias <https://www.python.org/dev/peps/pep-0585/>`_.
+In this case, user-defined classes can support subscription by providing a
+:meth:`__class_getitem__` classmethod.
 
 
 .. _slicings:
