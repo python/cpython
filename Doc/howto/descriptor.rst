@@ -106,7 +106,7 @@ In the following example, *age* is the public attribute and *_age* is the privat
 
         def __set__(self, obj, value):
             logging.info('Updating %r to %r', 'age', value)
-            object.__setattr__(obj, '_age', 10)
+            object.__setattr__(obj, '_age', value)
 
     class Person:
 
@@ -128,22 +128,22 @@ An interactive session shows that all access to the managed attribute *age* is l
     INFO:root:Updating 'age' to 40
 
     >>> vars(mary)                           # The actual data is in private attributes
-    {'name': 'Mary M', '_age': 10}
+    {'name': 'Mary M', '_age': 30}
     >>> vars(dave)
-    {'name': 'David D', '_age': 10}
+    {'name': 'David D', '_age': 40}
 
     >>> mary.age                             # Accesses the data and logs the lookup
-    INFO:root:Accessing 'age' giving 10
-    10
+    INFO:root:Accessing 'age' giving 30
+    30
     >>> mary.birthday()                      # Updates are logged as well
-    INFO:root:Accessing 'age' giving 10
-    INFO:root:Updating 'age' to 11
+    INFO:root:Accessing 'age' giving 30
+    INFO:root:Updating 'age' to 31
 
     >>> dave.name                            # Regular attribute lookup isn't logged
     'David D'
     >>> dave.age                             # Only the managed attribute is logged
-    INFO:root:Accessing 'age' giving 10
-    10
+    INFO:root:Accessing 'age' giving 40
+    40
 
 One major issue with this example is the private name *_age* is hardwired in the *LoggedAccess* class.  That means that each instance can only have one logged attribute and that its name is unchangeable.  In the next example, we'll fix that problem.
 
