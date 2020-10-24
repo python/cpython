@@ -19,8 +19,6 @@ class NameSpaceTest(unittest.TestCase):
         cls.root.destroy()
         del cls.root
 
-    def test_init(self):
-        debugger.NamespaceViewer(self.root, 'Test')
 
 
 # Other classes are Idb, Debugger, and StackViewer.

@@ -41,6 +41,14 @@ class FileList:
                 edit._close()
                 return None
 
+    def already_open(self, filename):
+        assert filename
+        filename = self.canonize(filename)
+        if not os.path.isdir(filename):
+            key = os.path.normcase(filename)
+            return key in self.dict
+        return False
+
     def gotofileline(self, filename, lineno=None):
         edit = self.open(filename)
         if edit is not None and lineno is not None:
