@@ -1031,7 +1031,7 @@ Glossary
       :meth:`index`, :meth:`__contains__`, and
       :meth:`__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
-      :func:`~abc.register`.
+      :func:`~abc.ABCMeta.register`.
 
    set comprehension
       A compact way to process all or part of the elements in an iterable and
