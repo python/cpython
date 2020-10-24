@@ -1,5 +1,4 @@
-from tkinter import Label
-from tkinter.ttk import Frame
+from tkinter.ttk import Label, Frame
 
 
 class MultiStatusBar(Frame):
