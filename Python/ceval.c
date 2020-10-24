@@ -936,20 +936,10 @@ dict_without_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     // for key in keys:
     //     del copy[key]
     // return copy
-    PyObject *copy;
-    if (PyDict_CheckExact(map)) {
-        // TODO: check this.
-        copy = PyDict_Copy(map);
-        if (!copy) {
-            return NULL;
-        }
-    }
-    else {
-        copy = PyDict_New();
-        if (!copy || PyDict_Update(copy, map)) {
-            Py_XDECREF(copy);
-            return NULL;
-        }
+    PyObject *copy = PyDict_New();
+    if (!copy || PyDict_Update(copy, map)) {
+        Py_XDECREF(copy);
+        return NULL;
     }
     // This may seem a bit inefficient, but keys is rarely big enough to
     // actually impact runtime.
@@ -992,19 +982,23 @@ get_match_args(PyThreadState *tstate, PyObject *type)
     return NULL;
 }
 
-static PyObject*  // TODO
-match_class(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs)
+static PyObject*
+match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
+            Py_ssize_t nargs, PyObject *kwargs)
 {
-    // TODO: Break this up!
+    // On success (match), return a tuple of extracted attributes. On failure
+    // (no match), return NULL. Use _PyErr_Occurred(tstate) to disambiguate.
     if (!PyType_Check(type)) {
         _PyErr_Format(tstate, PyExc_TypeError,
                      "called match pattern must be a type");
         return NULL;
     }
     assert(PyTuple_CheckExact(kwargs));
+    // First an isinstance check:
     if (PyObject_IsInstance(subject, type) <= 0) {
         return NULL;
     }
+    // Okay, now the tricky part...
     PyObject *args = NULL;
     PyObject *attrs = NULL;
     PyObject *seen = NULL;
@@ -1030,7 +1024,6 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t
             Py_DECREF(match_args);
             nmatch_args = PyType_HasFeature((PyTypeObject *)type,
                                             _Py_TPFLAGS_MATCH_SELF);
-            args = NULL;
         }
         else {
             args = PyTuple_GetSlice(match_args, 0, nargs);
@@ -1055,8 +1048,8 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t
     if (!seen) {
         goto error;
     }
-    PyObject *name, *attr;
     for (Py_ssize_t i = 0; i < count; i++) {
+        PyObject *name;
         if (i < nargs) {
             if (!args) {
                 assert(!i);
@@ -1067,8 +1060,8 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t
             name = PyTuple_GET_ITEM(args, i);
             if (!PyUnicode_CheckExact(name)) {
                 _PyErr_Format(tstate, PyExc_TypeError,
-                              "__match_args__ elements must be strings (got %s)",
-                              Py_TYPE(name)->tp_name);
+                              "__match_args__ elements must be strings "
+                              "(got %s)", Py_TYPE(name)->tp_name);
                 goto error;
             }
         }
@@ -1078,12 +1071,12 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t
         if (PySet_Contains(seen, name) || PySet_Add(seen, name)) {
             if (!_PyErr_Occurred(tstate)) {
                 _PyErr_Format(tstate, PyExc_TypeError,
-                    "%s() got multiple sub-patterns for attribute %R",
-                    ((PyTypeObject *)type)->tp_name, name);
+                              "%s() got multiple sub-patterns for attribute %R",
+                              ((PyTypeObject *)type)->tp_name, name);
             }
             goto error;
         }
-        attr = PyObject_GetAttr(subject, name);
+        PyObject *attr = PyObject_GetAttr(subject, name);
         if (!attr) {
             if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
                 _PyErr_Clear(tstate);
@@ -3860,7 +3853,8 @@ main_loop:
         }
 
         case TARGET(MATCH_KEYS): {
-            // TODO
+            // Final stage of mapping pattern matches (after Mapping and length
+            // checks): extract the desired values for further destructuring.
             PyObject *keys = TOP();
             PyObject *subject = SECOND();
             assert(PyTuple_CheckExact(keys));
