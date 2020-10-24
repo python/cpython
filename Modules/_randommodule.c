@@ -536,29 +536,12 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 
-/*[clinic input]
-
-_random.Random.__reduce__
-
-[clinic start generated code]*/
-
-static PyObject *
-_random_Random___reduce___impl(RandomObject *self)
-/*[clinic end generated code: output=ddea0dcdb60ffd6d input=bd38ec35fd157e0f]*/
-{
-    PyErr_Format(PyExc_TypeError,
-                 "cannot pickle %s object",
-                 Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 static PyMethodDef random_methods[] = {
     _RANDOM_RANDOM_RANDOM_METHODDEF
     _RANDOM_RANDOM_SEED_METHODDEF
     _RANDOM_RANDOM_GETSTATE_METHODDEF
     _RANDOM_RANDOM_SETSTATE_METHODDEF
     _RANDOM_RANDOM_GETRANDBITS_METHODDEF
-    _RANDOM_RANDOM___REDUCE___METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
