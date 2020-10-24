@@ -1322,8 +1322,8 @@ find and load modules.
 
    The list of paths where to find submodules within a package.
    The :term:`finder` should always set this attribute to ``None`` for
-   non-package modules and set it later to a special object for namespace
-   packages.
+   non-package modules.  It is set automatically later to a special object for 
+   namespace packages.
 
    .. attribute:: loader_state
 
