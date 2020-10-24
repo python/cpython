@@ -2854,7 +2854,7 @@ dict_merge_init(PyObject *a, PyObject *b, int not_empty)
     
     PyDictObject *mp = (PyDictObject*)a;
     if (PyDict_Check(b) && (Py_TYPE(b)->tp_iter == (getiterfunc)dict_iter)) {
-        const PyDictObject *other = (PyDictObject*)b;
+        PyDictObject *other = (PyDictObject*)b;
         const Py_ssize_t other_size = other->ma_used;
         
         if (other == mp || other_size == 0)
