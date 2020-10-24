@@ -9,8 +9,9 @@ from array import array
 from weakref import proxy
 from functools import wraps
 
-from test.support import (TESTFN, TESTFN_UNICODE, check_warnings, run_unittest,
-                          make_bad_fd, cpython_only, swap_attr)
+from test.support import (run_unittest, cpython_only, swap_attr)
+from test.support.os_helper import (TESTFN, TESTFN_UNICODE, make_bad_fd)
+from test.support.warnings_helper import check_warnings
 from collections import UserList
 
 import _io  # C implementation of io
@@ -565,6 +566,7 @@ class OtherFileTests:
         self.assertRaises(MyException, MyFileIO, fd)
         os.close(fd)  # should not raise OSError(EBADF)
 
+
 class COtherFileTests(OtherFileTests, unittest.TestCase):
     FileIO = _io.FileIO
     modulename = '_io'
@@ -576,9 +578,31 @@ class COtherFileTests(OtherFileTests, unittest.TestCase):
         self.assertRaises(TypeError, self.FileIO, _testcapi.INT_MAX + 1)
         self.assertRaises(TypeError, self.FileIO, _testcapi.INT_MIN - 1)
 
+    def test_open_code(self):
+        # Check that the default behaviour of open_code matches
+        # open("rb")
+        with self.FileIO(__file__, "rb") as f:
+            expected = f.read()
+        with _io.open_code(__file__) as f:
+            actual = f.read()
+        self.assertEqual(expected, actual)
+
+
 class PyOtherFileTests(OtherFileTests, unittest.TestCase):
     FileIO = _pyio.FileIO
     modulename = '_pyio'
+
+    def test_open_code(self):
+        # Check that the default behaviour of open_code matches
+        # open("rb")
+        with self.FileIO(__file__, "rb") as f:
+            expected = f.read()
+        with check_warnings(quiet=True) as w:
+            # Always test _open_code_with_warning
+            with _pyio._open_code_with_warning(__file__) as f:
+                actual = f.read()
+            self.assertEqual(expected, actual)
+            self.assertNotEqual(w.warnings, [])
 
 
 def test_main():

@@ -120,6 +120,18 @@ See :ref:`json-commandline` for detailed documentation.
    value) is also a subset of YAML 1.0 and 1.1.  This module can thus also be
    used as a YAML serializer.
 
+.. note::
+
+   This module's encoders and decoders preserve input and output order by
+   default.  Order is only lost if the underlying containers are unordered.
+
+   Prior to Python 3.7, :class:`dict` was not guaranteed to be ordered, so
+   inputs and outputs were typically scrambled unless
+   :class:`collections.OrderedDict` was specifically requested.  Starting
+   with Python 3.7, the regular :class:`dict` became order preserving, so
+   it is no longer necessary to specify :class:`collections.OrderedDict` for
+   JSON generation and parsing.
+
 
 Basic Usage
 -----------
@@ -188,6 +200,11 @@ Basic Usage
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
+   .. note::
+
+      Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol,
+      so trying to serialize multiple objects with repeated calls to
+      :func:`dump` using the same *fp* will result in an invalid JSON file.
 
 .. function:: dumps(obj, *, skipkeys=False, ensure_ascii=True, \
                     check_circular=True, allow_nan=True, cls=None, \
@@ -197,12 +214,6 @@ Basic Usage
    Serialize *obj* to a JSON formatted :class:`str` using this :ref:`conversion
    table <py-to-json-table>`.  The arguments have the same meaning as in
    :func:`dump`.
-
-   .. note::
-
-      Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol,
-      so trying to serialize multiple objects with repeated calls to
-      :func:`dump` using the same *fp* will result in an invalid JSON file.
 
    .. note::
 
@@ -266,14 +277,13 @@ Basic Usage
       *fp* can now be a :term:`binary file`. The input encoding should be
       UTF-8, UTF-16 or UTF-32.
 
-.. function:: loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
+.. function:: loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
    Deserialize *s* (a :class:`str`, :class:`bytes` or :class:`bytearray`
    instance containing a JSON document) to a Python object using this
    :ref:`conversion table <json-to-py-table>`.
 
-   The other arguments have the same meaning as in :func:`load`, except
-   *encoding* which is ignored and deprecated.
+   The other arguments have the same meaning as in :func:`load`.
 
    If the data being deserialized is not a valid JSON document, a
    :exc:`JSONDecodeError` will be raised.
@@ -281,6 +291,9 @@ Basic Usage
    .. versionchanged:: 3.6
       *s* can now be of type :class:`bytes` or :class:`bytearray`. The
       input encoding should be UTF-8, UTF-16 or UTF-32.
+
+   .. versionchanged:: 3.9
+      The keyword argument *encoding* has been removed.
 
 
 Encoders and Decoders
@@ -649,7 +662,9 @@ when serializing Python :class:`int` values of extremely large magnitude, or
 when serializing instances of "exotic" numerical types such as
 :class:`decimal.Decimal`.
 
+
 .. _json-commandline:
+.. program:: json.tool
 
 Command Line Interface
 ----------------------
@@ -680,6 +695,7 @@ specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively:
    The output is now in the same order as the input. Use the
    :option:`--sort-keys` option to sort the output of dictionaries
    alphabetically by key.
+
 
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
@@ -714,6 +730,24 @@ Command line options
    Sort the output of dictionaries alphabetically by key.
 
    .. versionadded:: 3.5
+
+.. cmdoption:: --no-ensure-ascii
+
+   Disable escaping of non-ascii characters, see :func:`json.dumps` for more information.
+
+   .. versionadded:: 3.9
+
+.. cmdoption:: --json-lines
+
+   Parse every input line as separate JSON object.
+
+   .. versionadded:: 3.8
+
+.. cmdoption:: --indent, --tab, --no-indent, --compact
+
+   Mutually exclusive options for whitespace control.
+
+   .. versionadded:: 3.9
 
 .. cmdoption:: -h, --help
 

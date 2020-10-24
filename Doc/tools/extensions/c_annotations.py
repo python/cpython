@@ -87,7 +87,7 @@ class Annotations(dict):
             entry = self.get(name)
             if not entry:
                 continue
-            elif entry.result_type not in ("PyObject*", "PyVarObject*"):
+            elif not entry.result_type.endswith("Object*"):
                 continue
             if entry.result_refs is None:
                 rc = 'Return value: Always NULL.'

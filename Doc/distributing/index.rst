@@ -40,7 +40,7 @@ Key terms
   evolution of the standard packaging tools and the associated metadata and
   file format standards. They maintain a variety of tools, documentation
   and issue trackers on both `GitHub <https://github.com/pypa>`__ and
-  `BitBucket <https://bitbucket.org/pypa/>`__.
+  `Bitbucket <https://bitbucket.org/pypa/>`__.
 * :mod:`distutils` is the original build and distribution system first added
   to the Python standard library in 1998. While direct use of :mod:`distutils`
   is being phased out, it still laid the foundation for the current packaging
@@ -113,15 +113,22 @@ recommended tools`_.
 
 .. _currently recommended tools: https://packaging.python.org/guides/tool-recommendations/#packaging-tool-recommendations
 
-Reading the guide
-=================
+.. index::
+   single: Python Package Index (PyPI)
+   single: PyPI; (see Python Package Index (PyPI))
+
+.. _publishing-python-packages:
+
+Reading the Python Packaging User Guide
+=======================================
 
 The Python Packaging User Guide covers the various key steps and elements
-involved in creating a project:
+involved in creating and publishing a project:
 
 * `Project structure`_
 * `Building and packaging the project`_
 * `Uploading the project to the Python Packaging Index`_
+* `The .pypirc file`_
 
 .. _Project structure: \
     https://packaging.python.org/tutorials/distributing-packages/
@@ -129,6 +136,8 @@ involved in creating a project:
    https://packaging.python.org/tutorials/distributing-packages/#packaging-your-project
 .. _Uploading the project to the Python Packaging Index: \
    https://packaging.python.org/tutorials/distributing-packages/#uploading-your-project-to-pypi
+.. _The .pypirc file: \
+   https://packaging.python.org/specifications/pypirc/
 
 
 How do I...?
@@ -142,7 +151,7 @@ These are quick answers or links for some common tasks.
 This isn't an easy topic, but here are a few tips:
 
 * check the Python Packaging Index to see if the name is already in use
-* check popular hosting sites like GitHub, BitBucket, etc to see if there
+* check popular hosting sites like GitHub, Bitbucket, etc to see if there
   is already a project with that name
 * check what comes up in a web search for the name you're considering
 * avoid particularly common words, especially ones with multiple meanings,

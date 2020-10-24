@@ -45,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.7, compared to 3.6.
-
+Python 3.7 was released on June 27, 2018.
 For full details, see the :ref:`changelog <changelog>`.
 
 
@@ -102,7 +102,7 @@ CPython implementation improvements:
   * :ref:`PEP 538 <whatsnew37-pep538>`, legacy C locale coercion
   * :ref:`PEP 540 <whatsnew37-pep540>`, forced UTF-8 runtime mode
 * :ref:`PEP 552 <whatsnew37-pep552>`, deterministic .pycs
-* :ref:`the new development runtime mode <whatsnew37-devmode>`
+* :ref:`New Python Development Mode <whatsnew37-devmode>`
 * :ref:`PEP 565 <whatsnew37-pep565>`, improved :exc:`DeprecationWarning`
   handling
 
@@ -171,7 +171,7 @@ on a per-module basis in Python 3.7 using a :mod:`__future__` import::
 
     from __future__ import annotations
 
-It will become the default in Python 4.0.
+It will become the default in Python 3.10.
 
 .. seealso::
 
@@ -320,7 +320,8 @@ PEP 562: Customization of Access to Module Attributes
 -----------------------------------------------------
 
 Python 3.7 allows defining :meth:`__getattr__` on modules and will call
-it whenever a module attribute is otherwise not found.
+it whenever a module attribute is otherwise not found.  Defining
+:meth:`__dir__` on modules is now also allowed.
 
 A typical example of where this may be useful is module attribute deprecation
 and lazy loading.
@@ -336,8 +337,11 @@ and lazy loading.
 PEP 564: New Time Functions With Nanosecond Resolution
 ------------------------------------------------------
 
-:pep:`564` adds six new "nanosecond" variants of existing functions
-to the :mod:`time` module:
+The resolution of clocks in modern systems can exceed the limited precision
+of a floating point number returned by the :func:`time.time` function
+and its variants.  To avoid loss of precision, :pep:`564` adds six new
+"nanosecond" variants of the existing timer functions to the :mod:`time`
+module:
 
 * :func:`time.clock_gettime_ns`
 * :func:`time.clock_settime_ns`
@@ -346,12 +350,11 @@ to the :mod:`time` module:
 * :func:`time.process_time_ns`
 * :func:`time.time_ns`
 
-The new functions are similar in function to the existing functions
-without the ``_ns`` suffix.  They differ by returning nanoseconds as
-integers instead of fractional seconds.
+The new functions return the number of nanoseconds as an integer value.
 
-On Linux and Windows the resolution of :func:`time.time_ns` is 3 times
-better than that of :func:`time.time`.
+`Measurements <https://www.python.org/dev/peps/pep-0564/#annex-clocks-resolution-in-python>`_
+show that on Linux and Windows the resolution of :func:`time.time_ns` is
+approximately 3 times better than that of :func:`time.time`.
 
 .. seealso::
 
@@ -418,19 +421,6 @@ fixed.
       PEP written and implemented by Ivan Levkivskyi
 
 
-.. _whatsnew37-devmode:
-
-Development Runtime Mode: -X dev
---------------------------------
-
-The new :option:`-X` ``dev`` command line option or the new
-:envvar:`PYTHONDEVMODE` environment variable can be used to enable
-CPython's *development mode*.  When in development mode, CPython performs
-additional runtime checks which are too expensive to be enabled by default.
-See :option:`-X` ``dev`` documentation for the full description of the effects
-of this mode.
-
-
 .. _whatsnew37-pep552:
 
 PEP 552: Hash-based .pyc Files
@@ -442,7 +432,7 @@ and size) with source metadata saved in the cache file header when it was
 generated. While effective, this invalidation method has its drawbacks.  When
 filesystem timestamps are too coarse, Python can miss source updates, leading to
 user confusion. Additionally, having a timestamp in the cache file is
-problematic for `build reproduciblity <https://reproducible-builds.org/>`_ and
+problematic for `build reproducibility <https://reproducible-builds.org/>`_ and
 content-based build systems.
 
 :pep:`552` extends the pyc format to allow the hash of the source file to be
@@ -459,6 +449,11 @@ where a system external to Python (e.g., the build system) is responsible for
 keeping ``.pyc`` files up-to-date.
 
 See :ref:`pyc-invalidation` for more information.
+
+.. seealso::
+
+   :pep:`552` -- Deterministic pycs
+      PEP written and implemented by Benjamin Peterson
 
 
 .. _whatsnew37-pep545:
@@ -482,8 +477,26 @@ Three new translations have been added:
       Victor Stinner.
 
 
+.. _whatsnew37-devmode:
+
+Python Development Mode (-X dev)
+--------------------------------
+
+The new :option:`-X` ``dev`` command line option or the new
+:envvar:`PYTHONDEVMODE` environment variable can be used to enable
+:ref:`Python Development Mode <devmode>`.  When in development mode, Python performs
+additional runtime checks that are too expensive to be enabled by default.
+See :ref:`Python Development Mode <devmode>` documentation for the full
+description.
+
+
 Other Language Changes
 ======================
+
+* An :keyword:`await` expression and comprehensions containing an
+  :keyword:`async for` clause were illegal in the expressions in
+  :ref:`formatted string literals <f-strings>` due to a problem with the
+  implementation.  In Python 3.7 this restriction was lifted.
 
 * More than 255 arguments can now be passed to a function, and a function can
   now have more than 255 parameters. (Contributed by Serhiy Storchaka in
@@ -623,16 +636,16 @@ The :mod:`asyncio` module has received many new features, usability and
 :ref:`performance improvements <whatsnew37-asyncio-perf>`.  Notable changes
 include:
 
-* The new :term:`provisional <provisional api>` :func:`asyncio.run` function can
+* The new :term:`provisional <provisional API>` :func:`asyncio.run` function can
   be used to run a coroutine from synchronous code by automatically creating and
   destroying the event loop.
   (Contributed by Yury Selivanov in :issue:`32314`.)
 
 * asyncio gained support for :mod:`contextvars`.
-  :meth:`loop.call_soon() <asyncio.AbstractEventLoop.call_soon>`,
-  :meth:`loop.call_soon_threadsafe() <asyncio.AbstractEventLoop.call_soon_threadsafe>`,
-  :meth:`loop.call_later() <asyncio.AbstractEventLoop.call_later>`,
-  :meth:`loop.call_at() <asyncio.AbstractEventLoop.call_at>`, and
+  :meth:`loop.call_soon() <asyncio.loop.call_soon>`,
+  :meth:`loop.call_soon_threadsafe() <asyncio.loop.call_soon_threadsafe>`,
+  :meth:`loop.call_later() <asyncio.loop.call_later>`,
+  :meth:`loop.call_at() <asyncio.loop.call_at>`, and
   :meth:`Future.add_done_callback() <asyncio.Future.add_done_callback>`
   have a new optional keyword-only *context* parameter.
   :class:`Tasks <asyncio.Task>` now track their context automatically.
@@ -643,11 +656,11 @@ include:
   to ``asyncio.get_event_loop().create_task()``.
   (Contributed by Andrew Svetlov in :issue:`32311`.)
 
-* The new :meth:`loop.start_tls() <asyncio.AbstractEventLoop.start_tls>`
+* The new :meth:`loop.start_tls() <asyncio.loop.start_tls>`
   method can be used to upgrade an existing connection to TLS.
   (Contributed by Yury Selivanov in :issue:`23749`.)
 
-* The new :meth:`loop.sock_recv_into() <asyncio.AbstractEventLoop.sock_recv_into>`
+* The new :meth:`loop.sock_recv_into() <asyncio.loop.sock_recv_into>`
   method allows reading data from a socket directly into a provided buffer making
   it possible to reduce data copies.
   (Contributed by Antoine Pitrou in :issue:`31819`.)
@@ -675,13 +688,13 @@ include:
   can be used to determine if the writer is closing.
   (Contributed by Andrew Svetlov in :issue:`32391`.)
 
-* The new :meth:`loop.sock_sendfile() <asyncio.AbstractEventLoop.sock_sendfile>`
+* The new :meth:`loop.sock_sendfile() <asyncio.loop.sock_sendfile>`
   coroutine method allows sending files using :mod:`os.sendfile` when possible.
   (Contributed by Andrew Svetlov in :issue:`32410`.)
 
-* The new :meth:`Task.get_loop() <asyncio.Task.get_loop>` and
-  :meth:`Future.get_loop() <asyncio.Future.get_loop>` methods
-  return the instance of the loop on which a task or a future were created.
+* The new :meth:`Future.get_loop() <asyncio.Future.get_loop>` and
+  ``Task.get_loop()`` methods return the instance of the loop on which a task or
+  a future were created.
   :meth:`Server.get_loop() <asyncio.Server.get_loop>` allows doing the same for
   :class:`asyncio.Server` objects.
   (Contributed by Yury Selivanov in :issue:`32415` and
@@ -690,8 +703,8 @@ include:
 * It is now possible to control how instances of :class:`asyncio.Server` begin
   serving.  Previously, the server would start serving immediately when created.
   The new *start_serving* keyword argument to
-  :meth:`loop.create_server() <asyncio.AbstractEventLoop.create_server>` and
-  :meth:`loop.create_unix_server() <asyncio.AbstractEventLoop.create_unix_server>`,
+  :meth:`loop.create_server() <asyncio.loop.create_server>` and
+  :meth:`loop.create_unix_server() <asyncio.loop.create_unix_server>`,
   as well as :meth:`Server.start_serving() <asyncio.Server.start_serving>`, and
   :meth:`Server.serve_forever() <asyncio.Server.serve_forever>`
   can be used to decouple server instantiation and serving.  The new
@@ -709,20 +722,20 @@ include:
   (Contributed by Yury Selivanov in :issue:`32662`.)
 
 * Callback objects returned by
-  :func:`loop.call_later() <asyncio.AbstractEventLoop.call_later>`
+  :func:`loop.call_later() <asyncio.loop.call_later>`
   gained the new :meth:`when() <asyncio.TimerHandle.when>` method which
   returns an absolute scheduled callback timestamp.
   (Contributed by Andrew Svetlov in :issue:`32741`.)
 
 * The :meth:`loop.create_datagram_endpoint() \
-  <asyncio.AbstractEventLoop.create_datagram_endpoint>` method
+  <asyncio.loop.create_datagram_endpoint>` method
   gained support for Unix sockets.
   (Contributed by Quentin Dawans in :issue:`31245`.)
 
 * The :func:`asyncio.open_connection`, :func:`asyncio.start_server` functions,
-  :meth:`loop.create_connection() <asyncio.AbstractEventLoop.create_connection>`,
-  :meth:`loop.create_server() <asyncio.AbstractEventLoop.create_server>`,
-  :meth:`loop.create_accepted_socket() <asyncio.BaseEventLoop.connect_accepted_socket>`
+  :meth:`loop.create_connection() <asyncio.loop.create_connection>`,
+  :meth:`loop.create_server() <asyncio.loop.create_server>`,
+  :meth:`loop.create_accepted_socket() <asyncio.loop.connect_accepted_socket>`
   methods and their corresponding UNIX socket variants now accept the
   *ssl_handshake_timeout* keyword argument.
   (Contributed by Neil Aspinall in :issue:`29970`.)
@@ -990,15 +1003,40 @@ Editor code context option revised.  Box displays all context lines up to
 maxlines.  Clicking on a context line jumps the editor to that line.  Context
 colors for custom themes is added to Highlights tab of Settings dialog.
 (Contributed by Cheryl Sabella and Terry Jan Reedy in :issue:`33642`,
-:issue:`33768`, and :issue:`33679`,
+:issue:`33768`, and :issue:`33679`.)
 
 On Windows, a new API call tells Windows that tk scales for DPI. On Windows
 8.1+ or 10, with DPI compatibility properties of the Python binary
 unchanged, and a monitor resolution greater than 96 DPI, this should
 make text and lines sharper.  It should otherwise have no effect.
-(Contributed by Terry Jan Reedy in :issue:`33656`).
+(Contributed by Terry Jan Reedy in :issue:`33656`.)
+
+New in 3.7.1:
+
+Output over N lines (50 by default) is squeezed down to a button.
+N can be changed in the PyShell section of the General page of the
+Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
+right clicking on the output.  Squeezed output can be expanded in place
+by double-clicking the button or into the clipboard or a separate window
+by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
 
 The changes above have been backported to 3.6 maintenance releases.
+
+NEW in 3.7.4:
+
+Add "Run Customized" to the Run menu to run a module with customized
+settings. Any command line arguments entered are added to sys.argv.
+They re-appear in the box for the next customized run.  One can also
+suppress the normal Shell main module restart.  (Contributed by Cheryl
+Sabella, Terry Jan Reedy, and others in :issue:`5680` and :issue:`37627`.)
+
+New in 3.7.5:
+
+Add optional line numbers for IDLE editor windows. Windows
+open without line numbers unless set otherwise in the General
+tab of the configuration dialog.  Line numbers for an existing
+window are shown and hidden in the Options menu.
+(Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
 
 
 importlib
@@ -1013,7 +1051,7 @@ support the loading of resources from packages.  See also
 lacks a spec.
 (Contributed by Garvit Khatri in :issue:`29851`.)
 
-:func:`importlib.find_spec` now raises ``ModuleNotFoundError`` instead of
+:func:`importlib.find_spec` now raises :exc:`ModuleNotFoundError` instead of
 :exc:`AttributeError` if the specified parent module is not a package (i.e.
 lacks a ``__path__`` attribute).
 (Contributed by Milan Oberkirch in :issue:`30436`.)
@@ -1290,21 +1328,20 @@ including failing the host name check now raises
 :exc:`~ssl.SSLCertVerificationError` and aborts the handshake with a proper
 TLS Alert message.  The new exception contains additional information.
 Host name validation can be customized with
-:attr:`SSLContext.host_flags <ssl.SSLContext.host_flags>`.
+:attr:`SSLContext.hostname_checks_common_name <ssl.SSLContext.hostname_checks_common_name>`.
 (Contributed by Christian Heimes in :issue:`31399`.)
 
 .. note::
    The improved host name check requires a *libssl* implementation compatible
    with OpenSSL 1.0.2 or 1.1.  Consequently, OpenSSL 0.9.8 and 1.0.1 are no
-   longer supported.  The ssl module is mostly compatible with LibreSSL 2.7.2
-   and newer.
+   longer supported (see :ref:`37-platform-support-removals` for more details).
+   The ssl module is mostly compatible with LibreSSL 2.7.2 and newer.
 
 The ``ssl`` module no longer sends IP addresses in SNI TLS extension.
 (Contributed by Christian Heimes in :issue:`32185`.)
 
 :func:`~ssl.match_hostname` no longer supports partial wildcards like
-``www*.example.org``. :attr:`SSLContext.host_flags <ssl.SSLContext.host_flags>`
-has partial wildcard matching disabled by default.
+``www*.example.org``.
 (Contributed by Mandeep Singh in :issue:`23033` and Christian Heimes in
 :issue:`31399`.)
 
@@ -1338,7 +1375,7 @@ feature.  Instances must be created with :class:`~ssl.SSLContext` methods
 OpenSSL 1.1 APIs for setting the minimum and maximum TLS protocol version are
 available as :attr:`SSLContext.minimum_version <ssl.SSLContext.minimum_version>`
 and :attr:`SSLContext.maximum_version <ssl.SSLContext.maximum_version>`.
-Supported protocols are indicated by serveral new flags, such as
+Supported protocols are indicated by several new flags, such as
 :data:`~ssl.HAS_TLSv1_1`.
 (Contributed by Christian Heimes in :issue:`32609`.)
 
@@ -1675,7 +1712,7 @@ The type of results of :c:func:`PyThread_start_new_thread` and
 (Contributed by Serhiy Storchaka in :issue:`6532`.)
 
 :c:func:`PyUnicode_AsWideCharString` now raises a :exc:`ValueError` if the
-second argument is *NULL* and the :c:type:`wchar_t*` string contains null
+second argument is ``NULL`` and the :c:type:`wchar_t*` string contains null
 characters.  (Contributed by Serhiy Storchaka in :issue:`30708`.)
 
 Changes to the startup sequence and the management of dynamic memory
@@ -1879,7 +1916,7 @@ Deprecated Python Behavior
 
 Yield expressions (both ``yield`` and ``yield from`` clauses) are now deprecated
 in comprehensions and generator expressions (aside from the iterable expression
-in the leftmost :keyword:`for` clause). This ensures that comprehensions
+in the leftmost :keyword:`!for` clause). This ensures that comprehensions
 always immediately return a container of the appropriate type (rather than
 potentially returning a :term:`generator iterator` object), while generator
 expressions won't attempt to interleave their implicit output with the output
@@ -1915,8 +1952,7 @@ asyncio
 Support for directly ``await``-ing instances of :class:`asyncio.Lock` and
 other asyncio synchronization primitives has been deprecated.  An
 asynchronous context manager must be used in order to acquire and release
-the synchronization resource.  See :ref:`async-with-locks` for more
-information.
+the synchronization resource.
 (Contributed by Andrew Svetlov in :issue:`32253`.)
 
 The :meth:`asyncio.Task.current_task` and :meth:`asyncio.Task.all_tasks`
@@ -2007,7 +2043,7 @@ Use :mod:`threading` instead.
 socket
 ------
 
-The silent argument value trunctation in :func:`socket.htons` and
+The silent argument value truncation in :func:`socket.htons` and
 :func:`socket.ntohs` has been deprecated.  In future versions of Python,
 if the passed argument is larger than 16 bits, an exception will be raised.
 (Contributed by Oren Milman in :issue:`28332`.)
@@ -2061,10 +2097,33 @@ or higher.  (Contributed by Serhiy Storchaka in :issue:`27867`.)
 (Contributed by Antoine Pitrou in :issue:`16500`.)
 
 
+.. _37-platform-support-removals:
+
 Platform Support Removals
 =========================
 
-FreeBSD 9 and older are no longer officially supported.
+* FreeBSD 9 and older are no longer officially supported.
+* For full Unicode support, including within extension modules, \*nix platforms
+  are now expected to provide at least one of ``C.UTF-8`` (full locale),
+  ``C.utf8`` (full locale) or ``UTF-8`` (``LC_CTYPE``-only locale) as an
+  alternative to the legacy ``ASCII``-based ``C`` locale.
+* OpenSSL 0.9.8 and 1.0.1 are no longer supported, which means building CPython
+  3.7 with SSL/TLS support on older platforms still using these versions
+  requires custom build options that link to a more recent version of OpenSSL.
+
+  Notably, this issue affects the Debian 8 (aka "jessie") and Ubuntu 14.04
+  (aka "Trusty") LTS Linux distributions, as they still use OpenSSL 1.0.1 by
+  default.
+
+  Debian 9 ("stretch") and Ubuntu 16.04 ("xenial"), as well as recent releases
+  of other LTS Linux releases (e.g. RHEL/CentOS 7.5, SLES 12-SP3), use OpenSSL
+  1.0.2 or later, and remain supported in the default build configuration.
+
+  CPython's own :source:`CI configuration file <.travis.yml>` provides an
+  example of using the SSL
+  :source:`compatibility testing infrastructure <Tools/ssl/multissltests.py>` in
+  CPython's test suite to build and link against OpenSSL 1.1.0 rather than an
+  outdated system provided OpenSSL.
 
 
 API and Feature Removals
@@ -2329,11 +2388,11 @@ Changes in the Python API
   (Contributed by Brett Cannon in :issue:`33169`.)
 
 * In :mod:`asyncio`,
-  :meth:`loop.sock_recv() <asyncio.AbstractEventLoop.sock_recv>`,
-  :meth:`loop.sock_sendall() <asyncio.AbstractEventLoop.sock_sendall>`,
-  :meth:`loop.sock_accept() <asyncio.AbstractEventLoop.sock_accept>`,
-  :meth:`loop.getaddrinfo() <asyncio.AbstractEventLoop.getaddrinfo>`,
-  :meth:`loop.getnameinfo() <asyncio.AbstractEventLoop.getnameinfo>`
+  :meth:`loop.sock_recv() <asyncio.loop.sock_recv>`,
+  :meth:`loop.sock_sendall() <asyncio.loop.sock_sendall>`,
+  :meth:`loop.sock_accept() <asyncio.loop.sock_accept>`,
+  :meth:`loop.getaddrinfo() <asyncio.loop.getaddrinfo>`,
+  :meth:`loop.getnameinfo() <asyncio.loop.getnameinfo>`
   have been changed to be proper coroutine methods to match their
   documentation.  Previously, these methods returned :class:`asyncio.Future`
   instances.
@@ -2346,6 +2405,10 @@ Changes in the Python API
 * :attr:`Struct.format <struct.Struct.format>` is now a :class:`str` instance
   instead of a :class:`bytes` instance.
   (Contributed by Victor Stinner in :issue:`21071`.)
+
+* :mod:`argparse` subparsers can now be made mandatory by passing ``required=True``
+  to :meth:`ArgumentParser.add_subparsers() <argparse.ArgumentParser.add_subparsers>`.
+  (Contributed by Anthony Sottile in :issue:`26510`.)
 
 * :meth:`ast.literal_eval()` is now stricter.  Addition and subtraction of
   arbitrary numbers are no longer allowed.
@@ -2374,6 +2437,12 @@ Changes in the Python API
   rest of the parser.  Non-string keys and values in the defaults
   dictionary are now being implicitly converted to strings.
   (Contributed by James Tocknell in :issue:`23835`.)
+
+* Several undocumented internal imports were removed.
+  One example is that ``os.errno`` is no longer available; use ``import errno``
+  directly instead.
+  Note that such undocumented internal imports may be removed any time without
+  notice, even in micro version releases.
 
 
 Changes in the C API
@@ -2448,3 +2517,42 @@ The current exception state has been moved from the frame object to the co-routi
 This simplified the interpreter and fixed a couple of obscure bugs caused by
 having swap exception state when entering or exiting a generator.
 (Contributed by Mark Shannon in :issue:`25612`.)
+
+Notable changes in Python 3.7.1
+===============================
+
+Starting in 3.7.1, :c:func:`Py_Initialize` now consistently reads and respects
+all of the same environment settings as :c:func:`Py_Main` (in earlier Python
+versions, it respected an ill-defined subset of those environment variables,
+while in Python 3.7.0 it didn't read any of them due to :issue:`34247`). If
+this behavior is unwanted, set :c:data:`Py_IgnoreEnvironmentFlag` to 1 before
+calling :c:func:`Py_Initialize`.
+
+In 3.7.1 the C API for Context Variables
+:ref:`was updated <contextvarsobjects_pointertype_change>` to use
+:c:type:`PyObject` pointers.  See also :issue:`34762`.
+
+In 3.7.1 the :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token
+when provided with input that does not have a trailing new line.  This behavior
+now matches what the C tokenizer does internally.
+(Contributed by Ammar Askar in :issue:`33899`.)
+
+Notable changes in Python 3.7.2
+===============================
+
+In 3.7.2, :mod:`venv` on Windows no longer copies the original binaries, but
+creates redirector scripts named ``python.exe`` and ``pythonw.exe`` instead.
+This resolves a long standing issue where all virtual environments would have
+to be upgraded or recreated with each Python update. However, note that this
+release will still require recreation of virtual environments in order to get
+the new scripts.
+
+Notable changes in Python 3.7.6
+===============================
+
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
+because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
+details, see the documentation for ``loop.create_datagram_endpoint()``.
+(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
+:issue:`37228`.)

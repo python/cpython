@@ -1,2 +1,0 @@
-Added support for the ``SameSite`` cookie flag to the ``http.cookies``
-module.

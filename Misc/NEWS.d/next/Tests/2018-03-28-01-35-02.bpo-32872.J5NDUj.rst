@@ -1,1 +1,0 @@
-Avoid regrtest compatibility issue with namespace packages.

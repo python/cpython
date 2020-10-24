@@ -70,11 +70,16 @@ Iterator                                         Arguments                  Resu
 :func:`permutations`                             p[, r]                     r-length tuples, all possible orderings, no repeated elements
 :func:`combinations`                             p, r                       r-length tuples, in sorted order, no repeated elements
 :func:`combinations_with_replacement`            p, r                       r-length tuples, in sorted order, with repeated elements
-``product('ABCD', repeat=2)``                                               ``AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD``
-``permutations('ABCD', 2)``                                                 ``AB AC AD BA BC BD CA CB CD DA DB DC``
-``combinations('ABCD', 2)``                                                 ``AB AC AD BC BD CD``
-``combinations_with_replacement('ABCD', 2)``                                ``AA AB AC AD BB BC BD CC CD DD``
 ==============================================   ====================       =============================================================
+
+==============================================   =============================================================
+Examples                                         Results
+==============================================   =============================================================
+``product('ABCD', repeat=2)``                    ``AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD``
+``permutations('ABCD', 2)``                      ``AB AC AD BA BC BD CA CB CD DA DB DC``
+``combinations('ABCD', 2)``                      ``AB AC AD BC BD CD``
+``combinations_with_replacement('ABCD', 2)``      ``AA AB AC AD BB BC BD CC CD DD``
+==============================================   =============================================================
 
 
 .. _itertools-functions:
@@ -86,29 +91,38 @@ The following module functions all construct and return iterators. Some provide
 streams of infinite length, so they should only be accessed by functions or
 loops that truncate the stream.
 
-.. function:: accumulate(iterable[, func])
+.. function:: accumulate(iterable[, func, *, initial=None])
 
     Make an iterator that returns accumulated sums, or accumulated
     results of other binary functions (specified via the optional
-    *func* argument).  If *func* is supplied, it should be a function
+    *func* argument).
+
+    If *func* is supplied, it should be a function
     of two arguments. Elements of the input *iterable* may be any type
     that can be accepted as arguments to *func*. (For example, with
     the default operation of addition, elements may be any addable
     type including :class:`~decimal.Decimal` or
-    :class:`~fractions.Fraction`.) If the input iterable is empty, the
-    output iterable will also be empty.
+    :class:`~fractions.Fraction`.)
+
+    Usually, the number of elements output matches the input iterable.
+    However, if the keyword argument *initial* is provided, the
+    accumulation leads off with the *initial* value so that the output
+    has one more element than the input iterable.
 
     Roughly equivalent to::
 
-        def accumulate(iterable, func=operator.add):
+        def accumulate(iterable, func=operator.add, *, initial=None):
             'Return running totals'
             # accumulate([1,2,3,4,5]) --> 1 3 6 10 15
+            # accumulate([1,2,3,4,5], initial=100) --> 100 101 103 106 110 115
             # accumulate([1,2,3,4,5], operator.mul) --> 1 2 6 24 120
             it = iter(iterable)
-            try:
-                total = next(it)
-            except StopIteration:
-                return
+            total = initial
+            if initial is None:
+                try:
+                    total = next(it)
+                except StopIteration:
+                    return
             yield total
             for element in it:
                 total = func(total, element)
@@ -152,6 +166,9 @@ loops that truncate the stream.
     .. versionchanged:: 3.3
        Added the optional *func* parameter.
 
+    .. versionchanged:: 3.8
+       Added the optional *initial* parameter.
+
 .. function:: chain(*iterables)
 
    Make an iterator that returns elements from the first iterable until it is
@@ -182,9 +199,9 @@ loops that truncate the stream.
 
    Return *r* length subsequences of elements from the input *iterable*.
 
-   Combinations are emitted in lexicographic sort order.  So, if the
-   input *iterable* is sorted, the combination tuples will be produced
-   in sorted order.
+   The combination tuples are emitted in lexicographic ordering according to
+   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the combination tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
    value.  So if the input elements are unique, there will be no repeat
@@ -231,9 +248,9 @@ loops that truncate the stream.
    Return *r* length subsequences of elements from the input *iterable*
    allowing individual elements to be repeated more than once.
 
-   Combinations are emitted in lexicographic sort order.  So, if the
-   input *iterable* is sorted, the combination tuples will be produced
-   in sorted order.
+   The combination tuples are emitted in lexicographic ordering according to
+   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the combination tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
    value.  So if the input elements are unique, the generated combinations
@@ -467,9 +484,9 @@ loops that truncate the stream.
    of the *iterable* and all possible full-length permutations
    are generated.
 
-   Permutations are emitted in lexicographic sort order.  So, if the
-   input *iterable* is sorted, the permutation tuples will be produced
-   in sorted order.
+   The permutation tuples are emitted in lexicographic ordering according to
+   the order of the input *iterable*. So, if the input *iterable* is sorted,
+   the combination tuples will be produced in sorted order.
 
    Elements are treated as unique based on their position, not on their
    value.  So if the input elements are unique, there will be no repeat
@@ -546,6 +563,9 @@ loops that truncate the stream.
            for prod in result:
                yield tuple(prod)
 
+   Before :func:`product` runs, it completely consumes the input iterables,
+   keeping pools of values in memory to generate the products.  Accordingly,
+   it only useful with finite inputs.
 
 .. function:: repeat(object[, times])
 
@@ -628,6 +648,10 @@ loops that truncate the stream.
    used anywhere else; otherwise, the *iterable* could get advanced without
    the tee objects being informed.
 
+   ``tee`` iterators are not threadsafe. A :exc:`RuntimeError` may be
+   raised when using simultaneously iterators returned by the same :func:`tee`
+   call, even if the original *iterable* is threadsafe.
+
    This itertool may require significant auxiliary storage (depending on how
    much temporary data needs to be stored). In general, if one iterator uses
    most or all of the data before another iterator starts, it is faster to use
@@ -673,6 +697,12 @@ Itertools Recipes
 
 This section shows recipes for creating an extended toolset using the existing
 itertools as building blocks.
+
+Substantially all of these recipes and many, many others can be installed from
+the `more-itertools project <https://pypi.org/project/more-itertools/>`_ found
+on the Python Package Index::
+
+    pip install more-itertools
 
 The extended tools offer the same high performance as the underlying toolset.
 The superior memory performance is kept by processing elements one at a time
@@ -739,9 +769,9 @@ which incur interpreter overhead.
    def dotproduct(vec1, vec2):
        return sum(map(operator.mul, vec1, vec2))
 
-   def flatten(listOfLists):
+   def flatten(list_of_lists):
        "Flatten one level of nesting"
-       return chain.from_iterable(listOfLists)
+       return chain.from_iterable(list_of_lists)
 
    def repeatfunc(func, times=None, *args):
        """Repeat calls to func with specified arguments.
@@ -810,7 +840,7 @@ which incur interpreter overhead.
        "List unique elements, preserving order. Remember only the element just seen."
        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
        # unique_justseen('ABBCcAD', str.lower) --> A B C A D
-       return map(next, map(itemgetter(1), groupby(iterable, key)))
+       return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
 
    def iter_except(func, exception, first=None):
        """ Call a function repeatedly until an exception is raised.
@@ -896,9 +926,3 @@ which incur interpreter overhead.
            result.append(pool[-1-n])
        return tuple(result)
 
-Note, many of the above recipes can be optimized by replacing global lookups
-with local variables defined as default values.  For example, the
-*dotproduct* recipe can be written as::
-
-   def dotproduct(vec1, vec2, sum=sum, map=map, mul=operator.mul):
-       return sum(map(mul, vec1, vec2))

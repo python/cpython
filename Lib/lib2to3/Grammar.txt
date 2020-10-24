@@ -49,7 +49,7 @@ pass_stmt: 'pass'
 flow_stmt: break_stmt | continue_stmt | return_stmt | raise_stmt | yield_stmt
 break_stmt: 'break'
 continue_stmt: 'continue'
-return_stmt: 'return' [testlist]
+return_stmt: 'return' [testlist_star_expr]
 yield_stmt: yield_expr
 raise_stmt: 'raise' [test ['from' test | ',' test [',' test]]]
 import_stmt: import_name | import_from
@@ -67,8 +67,8 @@ assert_stmt: 'assert' test [',' test]
 
 compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated | async_stmt
 async_stmt: ASYNC (funcdef | with_stmt | for_stmt)
-if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
-while_stmt: 'while' test ':' suite ['else' ':' suite]
+if_stmt: 'if' namedexpr_test ':' suite ('elif' namedexpr_test ':' suite)* ['else' ':' suite]
+while_stmt: 'while' namedexpr_test ':' suite ['else' ':' suite]
 for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
 try_stmt: ('try' ':' suite
            ((except_clause ':' suite)+
@@ -91,6 +91,7 @@ testlist_safe: old_test [(',' old_test)+ [',']]
 old_test: or_test | old_lambdef
 old_lambdef: 'lambda' [varargslist] ':' old_test
 
+namedexpr_test: test [':=' test]
 test: or_test ['if' or_test 'else' test] | lambdef
 or_test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
@@ -111,8 +112,8 @@ atom: ('(' [yield_expr|testlist_gexp] ')' |
        '{' [dictsetmaker] '}' |
        '`' testlist1 '`' |
        NAME | NUMBER | STRING+ | '.' '.' '.')
-listmaker: (test|star_expr) ( old_comp_for | (',' (test|star_expr))* [','] )
-testlist_gexp: (test|star_expr) ( old_comp_for | (',' (test|star_expr))* [','] )
+listmaker: (namedexpr_test|star_expr) ( comp_for | (',' (namedexpr_test|star_expr))* [','] )
+testlist_gexp: (namedexpr_test|star_expr) ( comp_for | (',' (namedexpr_test|star_expr))* [','] )
 lambdef: 'lambda' [varargslist] ':' test
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']
@@ -137,32 +138,14 @@ arglist: argument (',' argument)* [',']
 # multiple (test comp_for) arguments are blocked; keyword unpackings
 # that precede iterable unpackings are blocked; etc.
 argument: ( test [comp_for] |
+            test ':=' test |
             test '=' test |
-	    '**' expr |
-	    star_expr )
+            '**' test |
+	        '*' test )
 
 comp_iter: comp_for | comp_if
-comp_for: [ASYNC] 'for' exprlist 'in' or_test [comp_iter]
+comp_for: [ASYNC] 'for' exprlist 'in' testlist_safe [comp_iter]
 comp_if: 'if' old_test [comp_iter]
-
-# As noted above, testlist_safe extends the syntax allowed in list
-# comprehensions and generators. We can't use it indiscriminately in all
-# derivations using a comp_for-like pattern because the testlist_safe derivation
-# contains comma which clashes with trailing comma in arglist.
-#
-# This was an issue because the parser would not follow the correct derivation
-# when parsing syntactically valid Python code. Since testlist_safe was created
-# specifically to handle list comprehensions and generator expressions enclosed
-# with parentheses, it's safe to only use it in those. That avoids the issue; we
-# can parse code like set(x for x in [],).
-#
-# The syntax supported by this set of rules is not a valid Python 3 syntax,
-# hence the prefix "old".
-#
-# See https://bugs.python.org/issue27494
-old_comp_iter: old_comp_for | old_comp_if
-old_comp_for: [ASYNC] 'for' exprlist 'in' testlist_safe [old_comp_iter]
-old_comp_if: 'if' old_test [old_comp_iter]
 
 testlist1: test (',' test)*
 
@@ -170,4 +153,4 @@ testlist1: test (',' test)*
 encoding_decl: NAME
 
 yield_expr: 'yield' [yield_arg]
-yield_arg: 'from' test | testlist
+yield_arg: 'from' test | testlist_star_expr

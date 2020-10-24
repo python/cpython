@@ -250,7 +250,6 @@
     <Compile Include="distutils\_msvccompiler.py" />
     <Compile Include="distutils\__init__.py" />
     <Compile Include="doctest.py" />
-    <Compile Include="dummy_threading.py" />
     <Compile Include="email\base64mime.py" />
     <Compile Include="email\charset.py" />
     <Compile Include="email\contentmanager.py" />
@@ -392,7 +391,6 @@
     <Compile Include="encodings\tis_620.py" />
     <Compile Include="encodings\undefined.py" />
     <Compile Include="encodings\unicode_escape.py" />
-    <Compile Include="encodings\unicode_internal.py" />
     <Compile Include="encodings\utf_16.py" />
     <Compile Include="encodings\utf_16_be.py" />
     <Compile Include="encodings\utf_16_le.py" />
@@ -421,6 +419,7 @@
     <Compile Include="getpass.py" />
     <Compile Include="gettext.py" />
     <Compile Include="glob.py" />
+    <Compile Include="graphlib.py" />
     <Compile Include="gzip.py" />
     <Compile Include="hashlib.py" />
     <Compile Include="heapq.py" />
@@ -655,7 +654,6 @@
     <Compile Include="logging\handlers.py" />
     <Compile Include="logging\__init__.py" />
     <Compile Include="lzma.py" />
-    <Compile Include="macpath.py" />
     <Compile Include="mailbox.py" />
     <Compile Include="mailcap.py" />
     <Compile Include="mimetypes.py" />
@@ -680,7 +678,7 @@
     <Compile Include="multiprocessing\queues.py" />
     <Compile Include="multiprocessing\reduction.py" />
     <Compile Include="multiprocessing\resource_sharer.py" />
-    <Compile Include="multiprocessing\semaphore_tracker.py" />
+    <Compile Include="multiprocessing\resource_tracker.py" />
     <Compile Include="multiprocessing\sharedctypes.py" />
     <Compile Include="multiprocessing\spawn.py" />
     <Compile Include="multiprocessing\synchronize.py" />
@@ -833,7 +831,6 @@
     <Compile Include="test\mp_fork_bomb.py" />
     <Compile Include="test\mp_preload.py" />
     <Compile Include="test\multibytecodec_support.py" />
-    <Compile Include="test\outstanding_bugs.py" />
     <Compile Include="test\pickletester.py" />
     <Compile Include="test\profilee.py" />
     <Compile Include="test\pyclbr_input.py" />
@@ -978,8 +975,6 @@
     <Compile Include="test\test_doctest2.py" />
     <Compile Include="test\test_docxmlrpc.py" />
     <Compile Include="test\test_dtrace.py" />
-    <Compile Include="test\test_dummy_thread.py" />
-    <Compile Include="test\test_dummy_threading.py" />
     <Compile Include="test\test_dynamic.py" />
     <Compile Include="test\test_dynamicclassattribute.py" />
     <Compile Include="test\test_eintr.py" />
@@ -1131,6 +1126,8 @@
     <Compile Include="test\test_import\data\package\submodule.py" />
     <Compile Include="test\test_import\data\package2\submodule1.py" />
     <Compile Include="test\test_import\data\package2\submodule2.py" />
+    <Compile Include="test\test_import\data\unwritable\__init__.py" />
+    <Compile Include="test\test_import\data\unwritable\x.py" />
     <Compile Include="test\test_import\__init__.py" />
     <Compile Include="test\test_import\__main__.py" />
     <Compile Include="test\test_index.py" />
@@ -1176,7 +1173,6 @@
     <Compile Include="test\test_long.py" />
     <Compile Include="test\test_longexp.py" />
     <Compile Include="test\test_lzma.py" />
-    <Compile Include="test\test_macpath.py" />
     <Compile Include="test\test_mailbox.py" />
     <Compile Include="test\test_mailcap.py" />
     <Compile Include="test\test_marshal.py" />
@@ -1198,7 +1194,6 @@
     <Compile Include="test\test_netrc.py" />
     <Compile Include="test\test_nis.py" />
     <Compile Include="test\test_nntplib.py" />
-    <Compile Include="test\test_normalization.py" />
     <Compile Include="test\test_ntpath.py" />
     <Compile Include="test\test_numeric_tower.py" />
     <Compile Include="test\test_opcodes.py" />
@@ -1213,6 +1208,12 @@
     <Compile Include="test\test_pathlib.py" />
     <Compile Include="test\test_pdb.py" />
     <Compile Include="test\test_peepholer.py" />
+    <Compile Include="test\test_peg_generator\__init__.py" />
+    <Compile Include="test\test_peg_generator\__main__.py" />
+    <Compile Include="test\test_peg_generator\ast_dump.py" />
+    <Compile Include="test\test_peg_generator\test_c_parser.py" />
+    <Compile Include="test\test_peg_generator\test_first_sets.py" />
+    <Compile Include="test\test_peg_generator\test_pegen.py" />
     <Compile Include="test\test_pickle.py" />
     <Compile Include="test\test_pickletools.py" />
     <Compile Include="test\test_pipes.py" />
@@ -1396,6 +1397,10 @@
     <Compile Include="test\test_zipimport.py" />
     <Compile Include="test\test_zipimport_support.py" />
     <Compile Include="test\test_zlib.py" />
+    <Compile Include="test\test_zoneinfo\__init__.py" />
+    <Compile Include="test\test_zoneinfo\__main__.py" />
+    <Compile Include="test\test_zoneinfo\_support.py" />
+    <Compile Include="test\test_zoneinfo\test_zoneinfo.py" />
     <Compile Include="test\test__locale.py" />
     <Compile Include="test\test__opcode.py" />
     <Compile Include="test\test__osx_support.py" />
@@ -1563,11 +1568,14 @@
     <Compile Include="xml\__init__.py" />
     <Compile Include="zipapp.py" />
     <Compile Include="zipfile.py" />
+    <Compile Include="zoneinfo\_common.py" />
+    <Compile Include="zoneinfo\__init__.py" />
+    <Compile Include="zoneinfo\_tzpath.py" />
+    <Compile Include="zoneinfo\_zoneinfo.py" />
     <Compile Include="_bootlocale.py" />
     <Compile Include="_collections_abc.py" />
     <Compile Include="_compat_pickle.py" />
     <Compile Include="_compression.py" />
-    <Compile Include="_dummy_thread.py" />
     <Compile Include="_markupbase.py" />
     <Compile Include="_osx_support.py" />
     <Compile Include="_pydecimal.py" />
@@ -1592,6 +1600,7 @@
     <Content Include="idlelib\Icons\idle_32.png" />
     <Content Include="idlelib\Icons\idle_48.gif" />
     <Content Include="idlelib\Icons\idle_48.png" />
+    <Content Include="idlelib\Icons\idle_256.png" />
     <Content Include="idlelib\Icons\minusnode.gif" />
     <Content Include="idlelib\Icons\openfolder.gif" />
     <Content Include="idlelib\Icons\plusnode.gif" />
@@ -1793,6 +1802,7 @@
     <Folder Include="test\test_import\data\package" />
     <Folder Include="test\test_import\data\package2" />
     <Folder Include="test\test_json" />
+    <Folder Include="test\test_peg_generator" />
     <Folder Include="test\test_tools" />
     <Folder Include="test\test_warnings" />
     <Folder Include="test\test_warnings\data" />

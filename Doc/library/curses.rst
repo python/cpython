@@ -214,7 +214,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: getmouse()
 
    After :meth:`~window.getch` returns :const:`KEY_MOUSE` to signal a mouse event, this
-   method should be call to retrieve the queued mouse event, represented as a
+   method should be called to retrieve the queued mouse event, represented as a
    5-tuple ``(id, x, y, z, bstate)``. *id* is an ID value used to distinguish
    multiple devices, and *x*, *y*, *z* are the event's coordinates.  (*z* is
    currently unused.)  *bstate* is an integer value whose bits will be set to
@@ -242,6 +242,15 @@ The module :mod:`curses` defines the following functions:
 
    Return ``True`` if the terminal can display colors; otherwise, return ``False``.
 
+.. function:: has_extended_color_support()
+
+   Return ``True`` if the module supports extended colors; otherwise, return
+   ``False``. Extended color support allows more than 256 color pairs for
+   terminals that support more than 16 colors (e.g. xterm-256color).
+
+   Extended color support requires ncurses version 6.1 or later.
+
+   .. versionadded:: 3.10
 
 .. function:: has_ic()
 
@@ -511,6 +520,32 @@ The module :mod:`curses` defines the following functions:
    Save the current state of the terminal modes in a buffer, usable by
    :func:`resetty`.
 
+.. function:: get_escdelay()
+
+   Retrieves the value set by :func:`set_escdelay`.
+
+   .. versionadded:: 3.9
+
+.. function:: set_escdelay(ms)
+
+   Sets the number of milliseconds to wait after reading an escape character,
+   to distinguish between an individual escape character entered on the
+   keyboard from escape sequences sent by cursor and function keys.
+
+   .. versionadded:: 3.9
+
+.. function:: get_tabsize()
+
+   Retrieves the value set by :func:`set_tabsize`.
+
+   .. versionadded:: 3.9
+
+.. function:: set_tabsize(size)
+
+   Sets the number of columns used by the curses library when converting a tab
+   character to spaces as it adds the tab to a window.
+
+   .. versionadded:: 3.9
 
 .. function:: setsyx(y, x)
 
@@ -656,7 +691,7 @@ The module :mod:`curses` defines the following functions:
    foreground color on the default background.
 
 
-.. function:: wrapper(func, ...)
+.. function:: wrapper(func, /, *args, **kwargs)
 
    Initialize curses and call another callable object, *func*, which should be the
    rest of your curses-using application.  If the application raises an exception,
@@ -682,7 +717,7 @@ the following methods and attributes:
             window.addch(y, x, ch[, attr])
 
    Paint character *ch* at ``(y, x)`` with attributes *attr*, overwriting any
-   character previously painter at that location.  By default, the character
+   character previously painted at that location.  By default, the character
    position and attributes are the current settings for the window object.
 
    .. note::
@@ -708,9 +743,16 @@ the following methods and attributes:
 
    .. note::
 
-      Writing outside the window, subwindow, or pad raises :exc:`curses.error`.
-      Attempting to write to the lower right corner of a window, subwindow,
-      or pad will cause an exception to be raised after the string is printed.
+      * Writing outside the window, subwindow, or pad raises :exc:`curses.error`.
+        Attempting to write to the lower right corner of a window, subwindow,
+        or pad will cause an exception to be raised after the string is printed.
+
+      * A `bug in ncurses <https://bugs.python.org/issue35924>`_, the backend
+        for this Python module, can cause SegFaults when resizing windows. This
+        is fixed in ncurses-6.1-20190511.  If you are stuck with an earlier
+        ncurses, you can avoid triggering this if you do not call :func:`addstr`
+        with a *str* that has embedded newlines.  Instead, call :func:`addstr`
+        separately for each line.
 
 
 .. method:: window.attroff(attr)
@@ -1276,7 +1318,7 @@ The :mod:`curses` module defines the following data members:
 
 .. data:: ERR
 
-   Some curses routines  that  return  an integer, such as  :func:`getch`, return
+   Some curses routines  that  return  an integer, such as :meth:`~window.getch`, return
    :const:`ERR` upon failure.
 
 
@@ -1290,6 +1332,19 @@ The :mod:`curses` module defines the following data members:
 
    A bytes object representing the current version of the module.  Also available as
    :const:`__version__`.
+
+
+.. data:: ncurses_version
+
+   A named tuple containing the three components of the ncurses library
+   version: *major*, *minor*, and *patch*.  All values are integers.  The
+   components can also be accessed by name,  so ``curses.ncurses_version[0]``
+   is equivalent to ``curses.ncurses_version.major`` and so on.
+
+   Availability: if the ncurses library is used.
+
+   .. versionadded:: 3.8
+
 
 Some constants are available to specify character cell attributes.
 The exact constants available are system dependent.

@@ -4,7 +4,7 @@ import functools
 from test import support
 import unittest
 
-from .test_contextlib import TestBaseExitStack
+from test.test_contextlib import TestBaseExitStack
 
 
 def _async_test(func):
@@ -351,6 +351,16 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
                 self.assertIsNone(wrapper[1].__doc__, _exit.__doc__)
 
         self.assertEqual(result, expected)
+
+        result = []
+        async with AsyncExitStack() as stack:
+            with self.assertRaises(TypeError):
+                stack.push_async_callback(arg=1)
+            with self.assertRaises(TypeError):
+                self.exit_stack.push_async_callback(arg=2)
+            with self.assertRaises(TypeError):
+                stack.push_async_callback(callback=_exit, arg=3)
+        self.assertEqual(result, [])
 
     @_async_test
     async def test_async_push(self):

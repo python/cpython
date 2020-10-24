@@ -1,5 +1,6 @@
-from test import support
-support.import_module("dbm.ndbm") #skip if not supported
+from test.support import import_helper
+from test.support import os_helper
+import_helper.import_module("dbm.ndbm") #skip if not supported
 import os
 import unittest
 import dbm.ndbm
@@ -8,13 +9,13 @@ from dbm.ndbm import error
 class DbmTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.filename = support.TESTFN
+        self.filename = os_helper.TESTFN
         self.d = dbm.ndbm.open(self.filename, 'c')
         self.d.close()
 
     def tearDown(self):
         for suffix in ['', '.pag', '.dir', '.db']:
-            support.unlink(self.filename + suffix)
+            os_helper.unlink(self.filename + suffix)
 
     def test_keys(self):
         self.d = dbm.ndbm.open(self.filename, 'c')
@@ -90,12 +91,23 @@ class DbmTestCase(unittest.TestCase):
             self.assertEqual(db['Unicode key \U0001f40d'],
                              'Unicode value \U0001f40d'.encode())
 
-    @unittest.skipUnless(support.TESTFN_NONASCII,
+    def test_write_readonly_file(self):
+        with dbm.ndbm.open(self.filename, 'c') as db:
+            db[b'bytes key'] = b'bytes value'
+        with dbm.ndbm.open(self.filename, 'r') as db:
+            with self.assertRaises(error):
+                del db[b'not exist key']
+            with self.assertRaises(error):
+                del db[b'bytes key']
+            with self.assertRaises(error):
+                db[b'not exist key'] = b'not exist value'
+
+    @unittest.skipUnless(os_helper.TESTFN_NONASCII,
                          'requires OS support of non-ASCII encodings')
     def test_nonascii_filename(self):
-        filename = support.TESTFN_NONASCII
+        filename = os_helper.TESTFN_NONASCII
         for suffix in ['', '.pag', '.dir', '.db']:
-            self.addCleanup(support.unlink, filename + suffix)
+            self.addCleanup(os_helper.unlink, filename + suffix)
         with dbm.ndbm.open(filename, 'c') as db:
             db[b'key'] = b'value'
         self.assertTrue(any(os.path.exists(filename + suffix)
@@ -105,6 +117,12 @@ class DbmTestCase(unittest.TestCase):
             self.assertTrue(b'key' in db)
             self.assertEqual(db[b'key'], b'value')
 
+    def test_nonexisting_file(self):
+        nonexisting_file = 'nonexisting-file'
+        with self.assertRaises(dbm.ndbm.error) as cm:
+            dbm.ndbm.open(nonexisting_file)
+        self.assertIn(nonexisting_file, str(cm.exception))
+        self.assertEqual(cm.exception.filename, nonexisting_file)
 
 
 if __name__ == '__main__':

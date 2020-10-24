@@ -1,1 +1,0 @@
-Make sure sys.argv remains as a list when running trace.

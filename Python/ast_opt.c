@@ -1,50 +1,8 @@
 /* AST Optimizer */
 #include "Python.h"
 #include "Python-ast.h"
-#include "node.h"
 #include "ast.h"
 
-
-/* TODO: is_const and get_const_value are copied from Python/compile.c.
-   It should be deduped in the future.  Maybe, we can include this file
-   from compile.c?
-*/
-static int
-is_const(expr_ty e)
-{
-    switch (e->kind) {
-    case Constant_kind:
-    case Num_kind:
-    case Str_kind:
-    case Bytes_kind:
-    case Ellipsis_kind:
-    case NameConstant_kind:
-        return 1;
-    default:
-        return 0;
-    }
-}
-
-static PyObject *
-get_const_value(expr_ty e)
-{
-    switch (e->kind) {
-    case Constant_kind:
-        return e->v.Constant.value;
-    case Num_kind:
-        return e->v.Num.n;
-    case Str_kind:
-        return e->v.Str.s;
-    case Bytes_kind:
-        return e->v.Bytes.s;
-    case Ellipsis_kind:
-        return Py_Ellipsis;
-    case NameConstant_kind:
-        return e->v.NameConstant.value;
-    default:
-        Py_UNREACHABLE();
-    }
-}
 
 static int
 make_const(expr_ty node, PyObject *val, PyArena *arena)
@@ -61,6 +19,7 @@ make_const(expr_ty node, PyObject *val, PyArena *arena)
         return 0;
     }
     node->kind = Constant_kind;
+    node->v.Constant.kind = NULL;
     node->v.Constant.value = val;
     return 1;
 }
@@ -77,11 +36,11 @@ unary_not(PyObject *v)
 }
 
 static int
-fold_unaryop(expr_ty node, PyArena *arena, int optimize)
+fold_unaryop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
     expr_ty arg = node->v.UnaryOp.operand;
 
-    if (!is_const(arg)) {
+    if (arg->kind != Constant_kind) {
         /* Fold not into comparison */
         if (node->v.UnaryOp.op == Not && arg->kind == Compare_kind &&
                 asdl_seq_LEN(arg->v.Compare.ops) == 1) {
@@ -123,7 +82,7 @@ fold_unaryop(expr_ty node, PyArena *arena, int optimize)
         [UAdd] = PyNumber_Positive,
         [USub] = PyNumber_Negative,
     };
-    PyObject *newval = ops[node->v.UnaryOp.op](get_const_value(arg));
+    PyObject *newval = ops[node->v.UnaryOp.op](arg->v.Constant.value);
     return make_const(node, newval, arena);
 }
 
@@ -254,17 +213,17 @@ safe_mod(PyObject *v, PyObject *w)
 }
 
 static int
-fold_binop(expr_ty node, PyArena *arena, int optimize)
+fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
     expr_ty lhs, rhs;
     lhs = node->v.BinOp.left;
     rhs = node->v.BinOp.right;
-    if (!is_const(lhs) || !is_const(rhs)) {
+    if (lhs->kind != Constant_kind || rhs->kind != Constant_kind) {
         return 1;
     }
 
-    PyObject *lv = get_const_value(lhs);
-    PyObject *rv = get_const_value(rhs);
+    PyObject *lv = lhs->v.Constant.value;
+    PyObject *rv = rhs->v.Constant.value;
     PyObject *newval;
 
     switch (node->v.BinOp.op) {
@@ -312,11 +271,11 @@ fold_binop(expr_ty node, PyArena *arena, int optimize)
 }
 
 static PyObject*
-make_const_tuple(asdl_seq *elts)
+make_const_tuple(asdl_expr_seq *elts)
 {
     for (int i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
-        if (!is_const(e)) {
+        if (e->kind != Constant_kind) {
             return NULL;
         }
     }
@@ -328,7 +287,7 @@ make_const_tuple(asdl_seq *elts)
 
     for (int i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
-        PyObject *v = get_const_value(e);
+        PyObject *v = e->v.Constant.value;
         Py_INCREF(v);
         PyTuple_SET_ITEM(newval, i, v);
     }
@@ -336,7 +295,7 @@ make_const_tuple(asdl_seq *elts)
 }
 
 static int
-fold_tuple(expr_ty node, PyArena *arena, int optimize)
+fold_tuple(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
     PyObject *newval;
 
@@ -348,25 +307,21 @@ fold_tuple(expr_ty node, PyArena *arena, int optimize)
 }
 
 static int
-fold_subscr(expr_ty node, PyArena *arena, int optimize)
+fold_subscr(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
     PyObject *newval;
     expr_ty arg, idx;
-    slice_ty slice;
 
     arg = node->v.Subscript.value;
-    slice = node->v.Subscript.slice;
+    idx = node->v.Subscript.slice;
     if (node->v.Subscript.ctx != Load ||
-            !is_const(arg) ||
-            /* TODO: handle other types of slices */
-            slice->kind != Index_kind ||
-            !is_const(slice->v.Index.value))
+            arg->kind != Constant_kind ||
+            idx->kind != Constant_kind)
     {
         return 1;
     }
 
-    idx = slice->v.Index.value;
-    newval = PyObject_GetItem(get_const_value(arg), get_const_value(idx));
+    newval = PyObject_GetItem(arg->v.Constant.value, idx->v.Constant.value);
     return make_const(node, newval, arena);
 }
 
@@ -377,12 +332,12 @@ fold_subscr(expr_ty node, PyArena *arena, int optimize)
    in "for" loop and comprehensions.
 */
 static int
-fold_iter(expr_ty arg, PyArena *arena, int optimize)
+fold_iter(expr_ty arg, PyArena *arena, _PyASTOptimizeState *state)
 {
     PyObject *newval;
     if (arg->kind == List_kind) {
         /* First change a list into tuple. */
-        asdl_seq *elts = arg->v.List.elts;
+        asdl_expr_seq *elts = arg->v.List.elts;
         Py_ssize_t n = asdl_seq_LEN(elts);
         for (Py_ssize_t i = 0; i < n; i++) {
             expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
@@ -410,10 +365,10 @@ fold_iter(expr_ty arg, PyArena *arena, int optimize)
 }
 
 static int
-fold_compare(expr_ty node, PyArena *arena, int optimize)
+fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
     asdl_int_seq *ops;
-    asdl_seq *args;
+    asdl_expr_seq *args;
     Py_ssize_t i;
 
     ops = node->v.Compare.ops;
@@ -424,37 +379,35 @@ fold_compare(expr_ty node, PyArena *arena, int optimize)
     i = asdl_seq_LEN(ops) - 1;
     int op = asdl_seq_GET(ops, i);
     if (op == In || op == NotIn) {
-        if (!fold_iter((expr_ty)asdl_seq_GET(args, i), arena, optimize)) {
+        if (!fold_iter((expr_ty)asdl_seq_GET(args, i), arena, state)) {
             return 0;
         }
     }
     return 1;
 }
 
-static int astfold_mod(mod_ty node_, PyArena *ctx_, int optimize_);
-static int astfold_stmt(stmt_ty node_, PyArena *ctx_, int optimize_);
-static int astfold_expr(expr_ty node_, PyArena *ctx_, int optimize_);
-static int astfold_arguments(arguments_ty node_, PyArena *ctx_, int optimize_);
-static int astfold_comprehension(comprehension_ty node_, PyArena *ctx_, int optimize_);
-static int astfold_keyword(keyword_ty node_, PyArena *ctx_, int optimize_);
-static int astfold_slice(slice_ty node_, PyArena *ctx_, int optimize_);
-static int astfold_arg(arg_ty node_, PyArena *ctx_, int optimize_);
-static int astfold_withitem(withitem_ty node_, PyArena *ctx_, int optimize_);
-static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, int optimize_);
+static int astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_arguments(arguments_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_keyword(keyword_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 #define CALL(FUNC, TYPE, ARG) \
-    if (!FUNC((ARG), ctx_, optimize_)) \
+    if (!FUNC((ARG), ctx_, state)) \
         return 0;
 
 #define CALL_OPT(FUNC, TYPE, ARG) \
-    if ((ARG) != NULL && !FUNC((ARG), ctx_, optimize_)) \
+    if ((ARG) != NULL && !FUNC((ARG), ctx_, state)) \
         return 0;
 
 #define CALL_SEQ(FUNC, TYPE, ARG) { \
     int i; \
-    asdl_seq *seq = (ARG); /* avoid variable capture */ \
+    asdl_ ## TYPE ## _seq *seq = (ARG); /* avoid variable capture */ \
     for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        TYPE elt = (TYPE)asdl_seq_GET(seq, i); \
-        if (elt != NULL && !FUNC(elt, ctx_, optimize_)) \
+        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
+        if (elt != NULL && !FUNC(elt, ctx_, state)) \
             return 0; \
     } \
 }
@@ -464,24 +417,25 @@ static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, int opti
     asdl_int_seq *seq = (ARG); /* avoid variable capture */ \
     for (i = 0; i < asdl_seq_LEN(seq); i++) { \
         TYPE elt = (TYPE)asdl_seq_GET(seq, i); \
-        if (!FUNC(elt, ctx_, optimize_)) \
+        if (!FUNC(elt, ctx_, state)) \
             return 0; \
     } \
 }
 
 static int
-astfold_body(asdl_seq *stmts, PyArena *ctx_, int optimize_)
+astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     int docstring = _PyAST_GetDocString(stmts) != NULL;
-    CALL_SEQ(astfold_stmt, stmt_ty, stmts);
+    CALL_SEQ(astfold_stmt, stmt, stmts);
     if (!docstring && _PyAST_GetDocString(stmts) != NULL) {
         stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
-        asdl_seq *values = _Py_asdl_seq_new(1, ctx_);
+        asdl_expr_seq *values = _Py_asdl_expr_seq_new(1, ctx_);
         if (!values) {
             return 0;
         }
         asdl_seq_SET(values, 0, st->v.Expr.value);
-        expr_ty expr = JoinedStr(values, st->lineno, st->col_offset, ctx_);
+        expr_ty expr = JoinedStr(values, st->lineno, st->col_offset,
+                                 st->end_lineno, st->end_col_offset, ctx_);
         if (!expr) {
             return 0;
         }
@@ -491,20 +445,17 @@ astfold_body(asdl_seq *stmts, PyArena *ctx_, int optimize_)
 }
 
 static int
-astfold_mod(mod_ty node_, PyArena *ctx_, int optimize_)
+astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     switch (node_->kind) {
     case Module_kind:
         CALL(astfold_body, asdl_seq, node_->v.Module.body);
         break;
     case Interactive_kind:
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.Interactive.body);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.Interactive.body);
         break;
     case Expression_kind:
         CALL(astfold_expr, expr_ty, node_->v.Expression.body);
-        break;
-    case Suite_kind:
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.Suite.body);
         break;
     default:
         break;
@@ -513,11 +464,11 @@ astfold_mod(mod_ty node_, PyArena *ctx_, int optimize_)
 }
 
 static int
-astfold_expr(expr_ty node_, PyArena *ctx_, int optimize_)
+astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     switch (node_->kind) {
     case BoolOp_kind:
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.BoolOp.values);
+        CALL_SEQ(astfold_expr, expr, node_->v.BoolOp.values);
         break;
     case BinOp_kind:
         CALL(astfold_expr, expr_ty, node_->v.BinOp.left);
@@ -538,28 +489,28 @@ astfold_expr(expr_ty node_, PyArena *ctx_, int optimize_)
         CALL(astfold_expr, expr_ty, node_->v.IfExp.orelse);
         break;
     case Dict_kind:
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.Dict.keys);
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.Dict.values);
+        CALL_SEQ(astfold_expr, expr, node_->v.Dict.keys);
+        CALL_SEQ(astfold_expr, expr, node_->v.Dict.values);
         break;
     case Set_kind:
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.Set.elts);
+        CALL_SEQ(astfold_expr, expr, node_->v.Set.elts);
         break;
     case ListComp_kind:
         CALL(astfold_expr, expr_ty, node_->v.ListComp.elt);
-        CALL_SEQ(astfold_comprehension, comprehension_ty, node_->v.ListComp.generators);
+        CALL_SEQ(astfold_comprehension, comprehension, node_->v.ListComp.generators);
         break;
     case SetComp_kind:
         CALL(astfold_expr, expr_ty, node_->v.SetComp.elt);
-        CALL_SEQ(astfold_comprehension, comprehension_ty, node_->v.SetComp.generators);
+        CALL_SEQ(astfold_comprehension, comprehension, node_->v.SetComp.generators);
         break;
     case DictComp_kind:
         CALL(astfold_expr, expr_ty, node_->v.DictComp.key);
         CALL(astfold_expr, expr_ty, node_->v.DictComp.value);
-        CALL_SEQ(astfold_comprehension, comprehension_ty, node_->v.DictComp.generators);
+        CALL_SEQ(astfold_comprehension, comprehension, node_->v.DictComp.generators);
         break;
     case GeneratorExp_kind:
         CALL(astfold_expr, expr_ty, node_->v.GeneratorExp.elt);
-        CALL_SEQ(astfold_comprehension, comprehension_ty, node_->v.GeneratorExp.generators);
+        CALL_SEQ(astfold_comprehension, comprehension, node_->v.GeneratorExp.generators);
         break;
     case Await_kind:
         CALL(astfold_expr, expr_ty, node_->v.Await.value);
@@ -572,42 +523,48 @@ astfold_expr(expr_ty node_, PyArena *ctx_, int optimize_)
         break;
     case Compare_kind:
         CALL(astfold_expr, expr_ty, node_->v.Compare.left);
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.Compare.comparators);
+        CALL_SEQ(astfold_expr, expr, node_->v.Compare.comparators);
         CALL(fold_compare, expr_ty, node_);
         break;
     case Call_kind:
         CALL(astfold_expr, expr_ty, node_->v.Call.func);
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.Call.args);
-        CALL_SEQ(astfold_keyword, keyword_ty, node_->v.Call.keywords);
+        CALL_SEQ(astfold_expr, expr, node_->v.Call.args);
+        CALL_SEQ(astfold_keyword, keyword, node_->v.Call.keywords);
         break;
     case FormattedValue_kind:
         CALL(astfold_expr, expr_ty, node_->v.FormattedValue.value);
         CALL_OPT(astfold_expr, expr_ty, node_->v.FormattedValue.format_spec);
         break;
     case JoinedStr_kind:
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.JoinedStr.values);
+        CALL_SEQ(astfold_expr, expr, node_->v.JoinedStr.values);
         break;
     case Attribute_kind:
         CALL(astfold_expr, expr_ty, node_->v.Attribute.value);
         break;
     case Subscript_kind:
         CALL(astfold_expr, expr_ty, node_->v.Subscript.value);
-        CALL(astfold_slice, slice_ty, node_->v.Subscript.slice);
+        CALL(astfold_expr, expr_ty, node_->v.Subscript.slice);
         CALL(fold_subscr, expr_ty, node_);
         break;
     case Starred_kind:
         CALL(astfold_expr, expr_ty, node_->v.Starred.value);
         break;
+    case Slice_kind:
+        CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.lower);
+        CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.upper);
+        CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.step);
+        break;
     case List_kind:
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.List.elts);
+        CALL_SEQ(astfold_expr, expr, node_->v.List.elts);
         break;
     case Tuple_kind:
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.Tuple.elts);
+        CALL_SEQ(astfold_expr, expr, node_->v.Tuple.elts);
         CALL(fold_tuple, expr_ty, node_);
         break;
     case Name_kind:
-        if (_PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
-            return make_const(node_, PyBool_FromLong(!optimize_), ctx_);
+        if (node_->v.Name.ctx == Load &&
+                _PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
+            return make_const(node_, PyBool_FromLong(!state->optimize), ctx_);
         }
         break;
     default:
@@ -617,93 +574,59 @@ astfold_expr(expr_ty node_, PyArena *ctx_, int optimize_)
 }
 
 static int
-astfold_slice(slice_ty node_, PyArena *ctx_, int optimize_)
-{
-    switch (node_->kind) {
-    case Slice_kind:
-        CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.lower);
-        CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.upper);
-        CALL_OPT(astfold_expr, expr_ty, node_->v.Slice.step);
-        break;
-    case ExtSlice_kind:
-        CALL_SEQ(astfold_slice, slice_ty, node_->v.ExtSlice.dims);
-        break;
-    case Index_kind:
-        CALL(astfold_expr, expr_ty, node_->v.Index.value);
-        break;
-    default:
-        break;
-    }
-    return 1;
-}
-
-static int
-astfold_keyword(keyword_ty node_, PyArena *ctx_, int optimize_)
+astfold_keyword(keyword_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     CALL(astfold_expr, expr_ty, node_->value);
     return 1;
 }
 
 static int
-astfold_comprehension(comprehension_ty node_, PyArena *ctx_, int optimize_)
+astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     CALL(astfold_expr, expr_ty, node_->target);
     CALL(astfold_expr, expr_ty, node_->iter);
-    CALL_SEQ(astfold_expr, expr_ty, node_->ifs);
+    CALL_SEQ(astfold_expr, expr, node_->ifs);
 
     CALL(fold_iter, expr_ty, node_->iter);
     return 1;
 }
 
 static int
-astfold_arguments(arguments_ty node_, PyArena *ctx_, int optimize_)
+astfold_arguments(arguments_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    CALL_SEQ(astfold_arg, arg_ty, node_->args);
-    CALL_OPT(astfold_arg, arg_ty, node_->vararg);
-    CALL_SEQ(astfold_arg, arg_ty, node_->kwonlyargs);
-    CALL_SEQ(astfold_expr, expr_ty, node_->kw_defaults);
-    CALL_OPT(astfold_arg, arg_ty, node_->kwarg);
-    CALL_SEQ(astfold_expr, expr_ty, node_->defaults);
+    CALL_SEQ(astfold_expr, expr, node_->kw_defaults);
+    CALL_SEQ(astfold_expr, expr, node_->defaults);
     return 1;
 }
 
 static int
-astfold_arg(arg_ty node_, PyArena *ctx_, int optimize_)
-{
-    CALL_OPT(astfold_expr, expr_ty, node_->annotation);
-    return 1;
-}
-
-static int
-astfold_stmt(stmt_ty node_, PyArena *ctx_, int optimize_)
+astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     switch (node_->kind) {
     case FunctionDef_kind:
         CALL(astfold_arguments, arguments_ty, node_->v.FunctionDef.args);
         CALL(astfold_body, asdl_seq, node_->v.FunctionDef.body);
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.FunctionDef.decorator_list);
-        CALL_OPT(astfold_expr, expr_ty, node_->v.FunctionDef.returns);
+        CALL_SEQ(astfold_expr, expr, node_->v.FunctionDef.decorator_list);
         break;
     case AsyncFunctionDef_kind:
         CALL(astfold_arguments, arguments_ty, node_->v.AsyncFunctionDef.args);
         CALL(astfold_body, asdl_seq, node_->v.AsyncFunctionDef.body);
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.AsyncFunctionDef.decorator_list);
-        CALL_OPT(astfold_expr, expr_ty, node_->v.AsyncFunctionDef.returns);
+        CALL_SEQ(astfold_expr, expr, node_->v.AsyncFunctionDef.decorator_list);
         break;
     case ClassDef_kind:
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.ClassDef.bases);
-        CALL_SEQ(astfold_keyword, keyword_ty, node_->v.ClassDef.keywords);
+        CALL_SEQ(astfold_expr, expr, node_->v.ClassDef.bases);
+        CALL_SEQ(astfold_keyword, keyword, node_->v.ClassDef.keywords);
         CALL(astfold_body, asdl_seq, node_->v.ClassDef.body);
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.ClassDef.decorator_list);
+        CALL_SEQ(astfold_expr, expr, node_->v.ClassDef.decorator_list);
         break;
     case Return_kind:
         CALL_OPT(astfold_expr, expr_ty, node_->v.Return.value);
         break;
     case Delete_kind:
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.Delete.targets);
+        CALL_SEQ(astfold_expr, expr, node_->v.Delete.targets);
         break;
     case Assign_kind:
-        CALL_SEQ(astfold_expr, expr_ty, node_->v.Assign.targets);
+        CALL_SEQ(astfold_expr, expr, node_->v.Assign.targets);
         CALL(astfold_expr, expr_ty, node_->v.Assign.value);
         break;
     case AugAssign_kind:
@@ -712,50 +635,49 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, int optimize_)
         break;
     case AnnAssign_kind:
         CALL(astfold_expr, expr_ty, node_->v.AnnAssign.target);
-        CALL(astfold_expr, expr_ty, node_->v.AnnAssign.annotation);
         CALL_OPT(astfold_expr, expr_ty, node_->v.AnnAssign.value);
         break;
     case For_kind:
         CALL(astfold_expr, expr_ty, node_->v.For.target);
         CALL(astfold_expr, expr_ty, node_->v.For.iter);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.For.body);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.For.orelse);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.For.body);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.For.orelse);
 
         CALL(fold_iter, expr_ty, node_->v.For.iter);
         break;
     case AsyncFor_kind:
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.target);
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.iter);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.AsyncFor.body);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.AsyncFor.orelse);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFor.body);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFor.orelse);
         break;
     case While_kind:
         CALL(astfold_expr, expr_ty, node_->v.While.test);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.While.body);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.While.orelse);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.While.body);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.While.orelse);
         break;
     case If_kind:
         CALL(astfold_expr, expr_ty, node_->v.If.test);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.If.body);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.If.orelse);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.If.body);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.If.orelse);
         break;
     case With_kind:
-        CALL_SEQ(astfold_withitem, withitem_ty, node_->v.With.items);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.With.body);
+        CALL_SEQ(astfold_withitem, withitem, node_->v.With.items);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.With.body);
         break;
     case AsyncWith_kind:
-        CALL_SEQ(astfold_withitem, withitem_ty, node_->v.AsyncWith.items);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.AsyncWith.body);
+        CALL_SEQ(astfold_withitem, withitem, node_->v.AsyncWith.items);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncWith.body);
         break;
     case Raise_kind:
         CALL_OPT(astfold_expr, expr_ty, node_->v.Raise.exc);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Raise.cause);
         break;
     case Try_kind:
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.Try.body);
-        CALL_SEQ(astfold_excepthandler, excepthandler_ty, node_->v.Try.handlers);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.Try.orelse);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.Try.finalbody);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.Try.body);
+        CALL_SEQ(astfold_excepthandler, excepthandler, node_->v.Try.handlers);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.Try.orelse);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.Try.finalbody);
         break;
     case Assert_kind:
         CALL(astfold_expr, expr_ty, node_->v.Assert.test);
@@ -771,12 +693,12 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, int optimize_)
 }
 
 static int
-astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, int optimize_)
+astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     switch (node_->kind) {
     case ExceptHandler_kind:
         CALL_OPT(astfold_expr, expr_ty, node_->v.ExceptHandler.type);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.ExceptHandler.body);
+        CALL_SEQ(astfold_stmt, stmt, node_->v.ExceptHandler.body);
         break;
     default:
         break;
@@ -785,7 +707,7 @@ astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, int optimize_)
 }
 
 static int
-astfold_withitem(withitem_ty node_, PyArena *ctx_, int optimize_)
+astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     CALL(astfold_expr, expr_ty, node_->context_expr);
     CALL_OPT(astfold_expr, expr_ty, node_->optional_vars);
@@ -798,9 +720,9 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, int optimize_)
 #undef CALL_INT_SEQ
 
 int
-_PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize)
+_PyAST_Optimize(mod_ty mod, PyArena *arena, _PyASTOptimizeState *state)
 {
-    int ret = astfold_mod(mod, arena, optimize);
+    int ret = astfold_mod(mod, arena, state);
     assert(ret || PyErr_Occurred());
     return ret;
 }

@@ -253,6 +253,13 @@ class TestUnpackingGeneralizations(GrammarTest):
     def test_double_star_dict_literal_after_keywords(self):
         self.validate("""func(spam='fried', **{'eggs':'scrambled'})""")
 
+    def test_double_star_expression(self):
+        self.validate("""func(**{'a':2} or {})""")
+        self.validate("""func(**() or {})""")
+
+    def test_star_expression(self):
+        self.validate("""func(*[] or [2])""")
+
     def test_list_display(self):
         self.validate("""[*{2}, 3, *[4]]""")
 
@@ -529,6 +536,16 @@ class TestSetLiteral(GrammarTest):
         self.validate("""x = {2, 3, 4,}""")
 
 
+# Adapted from Python 3's Lib/test/test_unicode_identifiers.py and
+# Lib/test/test_tokenize.py:TokenizeTest.test_non_ascii_identifiers
+class TestIdentifier(GrammarTest):
+    def test_non_ascii_identifiers(self):
+        self.validate("Örter = 'places'\ngrün = 'green'")
+        self.validate("蟒 = a蟒 = 锦蛇 = 1")
+        self.validate("µ = aµ = µµ = 1")
+        self.validate("𝔘𝔫𝔦𝔠𝔬𝔡𝔢 = a_𝔘𝔫𝔦𝔠𝔬𝔡𝔢 = 1")
+
+
 class TestNumericLiterals(GrammarTest):
     def test_new_octal_notation(self):
         self.validate("""0o7777777777777""")
@@ -612,11 +629,31 @@ class TestLiterals(GrammarTest):
         self.validate(s)
 
 
-class TestGeneratorExpressions(GrammarTest):
+class TestNamedAssignments(GrammarTest):
 
-    def test_trailing_comma_after_generator_expression_argument_works(self):
-        # BPO issue 27494
-        self.validate("set(x for x in [],)")
+    def test_named_assignment_if(self):
+        driver.parse_string("if f := x(): pass\n")
+
+    def test_named_assignment_while(self):
+        driver.parse_string("while f := x(): pass\n")
+
+    def test_named_assignment_generator(self):
+        driver.parse_string("any((lastNum := num) == 1 for num in [1, 2, 3])\n")
+
+    def test_named_assignment_listcomp(self):
+        driver.parse_string("[(lastNum := num) == 1 for num in [1, 2, 3]]\n")
+
+
+class TestPickleableException(unittest.TestCase):
+    def test_ParseError(self):
+        err = ParseError('msg', 2, None, (1, 'context'))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            err2 = pickle.loads(pickle.dumps(err, protocol=proto))
+            self.assertEqual(err.args, err2.args)
+            self.assertEqual(err.msg, err2.msg)
+            self.assertEqual(err.type, err2.type)
+            self.assertEqual(err.value, err2.value)
+            self.assertEqual(err.context, err2.context)
 
 
 def diff_texts(a, b, filename):

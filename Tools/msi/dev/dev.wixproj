@@ -7,12 +7,6 @@
         <OutputType>Package</OutputType>
     </PropertyGroup>
     <Import Project="..\msi.props" />
-    <PropertyGroup>
-        <DefineConstants Condition="$(BuildForRelease)">
-            $(DefineConstants);
-            IncludeMinGWLib=1;
-        </DefineConstants>
-    </PropertyGroup>
     <ItemGroup>
         <Compile Include="dev.wxs" />
         <Compile Include="dev_files.wxs" />
@@ -21,7 +15,8 @@
         <EmbeddedResource Include="*.wxl" />
     </ItemGroup>
     <ItemGroup>
-        <InstallFiles Include="$(PySourcePath)include\*.h">
+        <InstallFiles Include="$(PySourcePath)include\**\*.h"
+                      Exclude="$(PySourcePath)include\pyconfig.h">
             <SourceBase>$(PySourcePath)</SourceBase>
             <Source>!(bindpath.src)</Source>
             <TargetBase>$(PySourcePath)</TargetBase>
@@ -29,21 +24,6 @@
             <Group>dev_include</Group>
         </InstallFiles>
     </ItemGroup>
-    
-    <Target Name="BuildMinGWLib"
-            Inputs="$(BuildPath)$(PyDllName).dll"
-            Outputs="$(BuildPath)lib$(PyDllName).a"
-            AfterTargets="PrepareForBuild"
-            Condition="$(BuildForRelease)">
-        <!-- Build libpython##.a as part of this project. This requires gendef and dlltool on the path. -->
-        <PropertyGroup>
-            <_DllToolOpts>-m i386 --as-flags=--32</_DllToolOpts>
-            <_DllToolOpts Condition="$(Platform) == 'x64'">-m i386:x86-64</_DllToolOpts>
-        </PropertyGroup>
-
-        <Exec Command='gendef - "$(BuildPath)$(PyDllName).dll" &gt; "$(IntermediateOutputPath)mingwlib.def"' ContinueOnError="false" />
-        <Exec Command='dlltool --dllname $(PyDllName).dll --def "$(IntermediateOutputPath)mingwlib.def" --output-lib "$(BuildPath)lib$(PyDllName).a" $(_DllToolOpts)' />
-    </Target>
 
     <Import Project="..\msi.targets" />
 </Project>

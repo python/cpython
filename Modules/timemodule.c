@@ -24,15 +24,32 @@
 #  include <pthread.h>
 #endif
 
+#if defined(_AIX)
+#   include <sys/thread.h>
+#endif
+
 #if defined(__WATCOMC__) && !defined(__QNX__)
-#include <i86.h>
+#  include <i86.h>
 #else
-#ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include "pythread.h"
-#endif /* MS_WINDOWS */
+#  ifdef MS_WINDOWS
+#    define WIN32_LEAN_AND_MEAN
+#    include <windows.h>
+#  endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
+
+#ifdef _Py_MEMORY_SANITIZER
+# include <sanitizer/msan_interface.h>
+#endif
+
+#ifdef _MSC_VER
+#define _Py_timezone _timezone
+#define _Py_daylight _daylight
+#define _Py_tzname _tzname
+#else
+#define _Py_timezone timezone
+#define _Py_daylight daylight
+#define _Py_tzname tzname
+#endif
 
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
@@ -131,53 +148,20 @@ perf_counter(_Py_clock_info_t *info)
     return _PyFloat_FromPyTime(t);
 }
 
-#if defined(MS_WINDOWS) || defined(HAVE_CLOCK)
-#define PYCLOCK
-static PyObject*
-pyclock(_Py_clock_info_t *info)
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                      "time.clock has been deprecated in Python 3.3 and will "
-                      "be removed from Python 3.8: "
-                      "use time.perf_counter or time.process_time "
-                      "instead", 1) < 0) {
-        return NULL;
-    }
-
-#ifdef MS_WINDOWS
-    return perf_counter(info);
-#else
-    _PyTime_t t;
-    if (_PyTime_GetClockWithInfo(&t, info) < 0) {
-        return NULL;
-    }
-    return _PyFloat_FromPyTime(t);
-#endif
-}
-
-static PyObject *
-time_clock(PyObject *self, PyObject *unused)
-{
-    return pyclock(NULL);
-}
-
-PyDoc_STRVAR(clock_doc,
-"clock() -> floating point number\n\
-\n\
-Return the CPU time or real time since the start of the process or since\n\
-the first call to clock().  This has as much precision as the system\n\
-records.");
-#endif
-
 #ifdef HAVE_CLOCK_GETTIME
 static PyObject *
 time_clock_gettime(PyObject *self, PyObject *args)
 {
     int ret;
-    int clk_id;
     struct timespec tp;
 
+#if defined(_AIX) && (SIZEOF_LONG == 8)
+    long clk_id;
+    if (!PyArg_ParseTuple(args, "l:clock_gettime", &clk_id)) {
+#else
+    int clk_id;
     if (!PyArg_ParseTuple(args, "i:clock_gettime", &clk_id)) {
+#endif
         return NULL;
     }
 
@@ -331,6 +315,9 @@ time_pthread_getcpuclockid(PyObject *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
+#ifdef _Py_MEMORY_SANITIZER
+    __msan_unpoison(&clk_id, sizeof(clk_id));
+#endif
     return PyLong_FromLong(clk_id);
 }
 
@@ -523,6 +510,10 @@ time_localtime(PyObject *self, PyObject *args)
 #endif
 }
 
+#if defined(__linux__) && !defined(__GLIBC__)
+static const char *utc_string = NULL;
+#endif
+
 PyDoc_STRVAR(localtime_doc,
 "localtime([seconds]) -> (tm_year,tm_mon,tm_mday,tm_hour,tm_min,\n\
                           tm_sec,tm_wday,tm_yday,tm_isdst)\n\
@@ -551,19 +542,46 @@ gettmarg(PyObject *args, struct tm *p, const char *format)
                           &p->tm_hour, &p->tm_min, &p->tm_sec,
                           &p->tm_wday, &p->tm_yday, &p->tm_isdst))
         return 0;
+
+    if (y < INT_MIN + 1900) {
+        PyErr_SetString(PyExc_OverflowError, "year out of range");
+        return 0;
+    }
+
     p->tm_year = y - 1900;
     p->tm_mon--;
     p->tm_wday = (p->tm_wday + 1) % 7;
     p->tm_yday--;
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    if (Py_TYPE(args) == &StructTimeType) {
+    if (Py_IS_TYPE(args, &StructTimeType)) {
         PyObject *item;
-        item = PyTuple_GET_ITEM(args, 9);
-        p->tm_zone = item == Py_None ? NULL : (char*)PyUnicode_AsUTF8(item);
-        item = PyTuple_GET_ITEM(args, 10);
-        p->tm_gmtoff = item == Py_None ? 0 : PyLong_AsLong(item);
-        if (PyErr_Occurred())
-            return 0;
+        item = PyStructSequence_GET_ITEM(args, 9);
+        if (item != Py_None) {
+            p->tm_zone = (char *)PyUnicode_AsUTF8(item);
+            if (p->tm_zone == NULL) {
+                return 0;
+            }
+#if defined(__linux__) && !defined(__GLIBC__)
+            // Make an attempt to return the C library's own timezone strings to
+            // it. musl refuses to process a tm_zone field unless it produced
+            // it. See issue #34672.
+            if (utc_string && strcmp(p->tm_zone, utc_string) == 0) {
+                p->tm_zone = utc_string;
+            }
+            else if (tzname[0] && strcmp(p->tm_zone, tzname[0]) == 0) {
+                p->tm_zone = tzname[0];
+            }
+            else if (tzname[1] && strcmp(p->tm_zone, tzname[1]) == 0) {
+                p->tm_zone = tzname[1];
+            }
+#endif
+        }
+        item = PyStructSequence_GET_ITEM(args, 10);
+        if (item != Py_None) {
+            p->tm_gmtoff = PyLong_AsLong(item);
+            if (PyErr_Occurred())
+                return 0;
+        }
     }
 #endif /* HAVE_STRUCT_TM_TM_ZONE */
     return 1;
@@ -712,7 +730,7 @@ time_strftime(PyObject *self, PyObject *args)
         return NULL;
     }
 
-#if defined(_MSC_VER) || defined(sun) || defined(_AIX)
+#if defined(_MSC_VER) || (defined(__sun) && defined(__SVR4)) || defined(_AIX) || defined(__VXWORKS__)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
         PyErr_SetString(PyExc_ValueError,
                         "strftime() requires year in [1; 9999]");
@@ -758,7 +776,7 @@ time_strftime(PyObject *self, PyObject *args)
             return NULL;
         }
     }
-#elif (defined(_AIX) || defined(sun)) && defined(HAVE_WCSFTIME)
+#elif (defined(_AIX) || (defined(__sun) && defined(__SVR4))) && defined(HAVE_WCSFTIME)
     for (outbuf = wcschr(fmt, '%');
         outbuf != NULL;
         outbuf = wcschr(outbuf+2, '%'))
@@ -770,6 +788,7 @@ time_strftime(PyObject *self, PyObject *args)
         if (outbuf[1] == L'y' && buf.tm_year < 0) {
             PyErr_SetString(PyExc_ValueError,
                             "format %y requires year >= 1900 on AIX");
+            PyMem_Free(format);
             return NULL;
         }
     }
@@ -936,44 +955,71 @@ not present, current time as returned by localtime() is used.");
 
 #ifdef HAVE_MKTIME
 static PyObject *
-time_mktime(PyObject *self, PyObject *tup)
+time_mktime(PyObject *self, PyObject *tm_tuple)
 {
-    struct tm buf;
+    struct tm tm;
     time_t tt;
-    if (!gettmarg(tup, &buf,
+
+    if (!gettmarg(tm_tuple, &tm,
                   "iiiiiiiii;mktime(): illegal time tuple argument"))
     {
         return NULL;
     }
-#ifdef _AIX
-    /* year < 1902 or year > 2037 */
-    if (buf.tm_year < 2 || buf.tm_year > 137) {
-        /* Issue #19748: On AIX, mktime() doesn't report overflow error for
-         * timestamp < -2^31 or timestamp > 2**31-1. */
+
+#if defined(_AIX) || (defined(__VXWORKS__) && !defined(_WRS_CONFIG_LP64))
+    /* bpo-19748: AIX mktime() valid range is 00:00:00 UTC, January 1, 1970
+       to 03:14:07 UTC, January 19, 2038. Thanks to the workaround below,
+       it is possible to support years in range [1902; 2037] */
+    if (tm.tm_year < 2 || tm.tm_year > 137) {
+        /* bpo-19748: On AIX, mktime() does not report overflow error
+           for timestamp < -2^31 or timestamp > 2**31-1. VxWorks has the
+           same issue when working in 32 bit mode. */
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");
         return NULL;
     }
-#else
-    buf.tm_wday = -1;  /* sentinel; original value ignored */
 #endif
-    tt = mktime(&buf);
+
+#ifdef _AIX
+    /* bpo-34373: AIX mktime() has an integer overflow for years in range
+       [1902; 1969]. Workaround the issue by using a year greater or equal than
+       1970 (tm_year >= 70): mktime() behaves correctly in that case
+       (ex: properly report errors). tm_year and tm_wday are adjusted after
+       mktime() call. */
+    int orig_tm_year = tm.tm_year;
+    int delta_days = 0;
+    while (tm.tm_year < 70) {
+        /* Use 4 years to account properly leap years */
+        tm.tm_year += 4;
+        delta_days -= (366 + (365 * 3));
+    }
+#endif
+
+    tm.tm_wday = -1;  /* sentinel; original value ignored */
+    tt = mktime(&tm);
+
     /* Return value of -1 does not necessarily mean an error, but tm_wday
      * cannot remain set to -1 if mktime succeeded. */
     if (tt == (time_t)(-1)
-#ifndef _AIX
         /* Return value of -1 does not necessarily mean an error, but
          * tm_wday cannot remain set to -1 if mktime succeeded. */
-        && buf.tm_wday == -1
-#else
-        /* on AIX, tm_wday is always sets, even on error */
-#endif
-       )
+        && tm.tm_wday == -1)
     {
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");
         return NULL;
     }
+
+#ifdef _AIX
+    if (delta_days != 0) {
+        tm.tm_year = orig_tm_year;
+        if (tm.tm_wday != -1) {
+            tm.tm_wday = (tm.tm_wday + delta_days) % 7;
+        }
+        tt += delta_days * (24 * 3600);
+    }
+#endif
+
     return PyFloat_FromDouble((double)tt);
 }
 
@@ -987,7 +1033,7 @@ of the timezone or altzone attributes on the time module.");
 #endif /* HAVE_MKTIME */
 
 #ifdef HAVE_WORKING_TZSET
-static void PyInit_timezone(PyObject *module);
+static int init_timezone(PyObject *module);
 
 static PyObject *
 time_tzset(PyObject *self, PyObject *unused)
@@ -1002,7 +1048,9 @@ time_tzset(PyObject *self, PyObject *unused)
     tzset();
 
     /* Reset timezone, altzone, daylight and tzname */
-    PyInit_timezone(m);
+    if (init_timezone(m) < 0) {
+         return NULL;
+    }
     Py_DECREF(m);
     if (PyErr_Occurred())
         return NULL;
@@ -1163,7 +1211,7 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
             return -1;
         }
 
-        _PyTime_t total = utime + utime;
+        _PyTime_t total = utime + stime;
         *tp = total;
         return 0;
     }
@@ -1299,6 +1347,30 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     return 0;
 }
 
+#elif defined(_AIX)
+#define HAVE_THREAD_TIME
+static int
+_PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
+{
+    /* bpo-40192: On AIX, thread_cputime() is preferred: it has nanosecond
+       resolution, whereas clock_gettime(CLOCK_THREAD_CPUTIME_ID)
+       has a resolution of 10 ms. */
+    thread_cputime_t tc;
+    if (thread_cputime(-1, &tc) != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+
+    if (info) {
+        info->implementation = "thread_cputime()";
+        info->monotonic = 1;
+        info->adjustable = 0;
+        info->resolution = 1e-9;
+    }
+    *tp = _PyTime_FromNanoseconds(tc.stime + tc.utime);
+    return 0;
+}
+
 #elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_PROCESS_CPUTIME_ID)
 #define HAVE_THREAD_TIME
 static int
@@ -1394,15 +1466,6 @@ time_get_clock_info(PyObject *self, PyObject *args)
             return NULL;
         }
     }
-#ifdef PYCLOCK
-    else if (strcmp(name, "clock") == 0) {
-        obj = pyclock(&info);
-        if (obj == NULL) {
-            return NULL;
-        }
-        Py_DECREF(obj);
-    }
-#endif
     else if (strcmp(name, "monotonic") == 0) {
         if (_PyTime_GetMonotonicClockWithInfo(&t, &info) < 0) {
             return NULL;
@@ -1491,7 +1554,7 @@ PyDoc_STRVAR(get_clock_info_doc,
 \n\
 Get information of the specified clock.");
 
-#if !defined(HAVE_TZNAME) || defined(__GLIBC__) || defined(__CYGWIN__)
+#ifndef HAVE_DECL_TZNAME
 static void
 get_zone(char *zone, int n, struct tm *p)
 {
@@ -1503,7 +1566,7 @@ get_zone(char *zone, int n, struct tm *p)
 #endif
 }
 
-static int
+static time_t
 get_gmtoff(time_t t, struct tm *p)
 {
 #ifdef HAVE_STRUCT_TM_TM_ZONE
@@ -1512,10 +1575,13 @@ get_gmtoff(time_t t, struct tm *p)
     return timegm(p) - t;
 #endif
 }
-#endif /* !defined(HAVE_TZNAME) || defined(__GLIBC__) || defined(__CYGWIN__) */
+#endif // !HAVE_DECL_TZNAME
 
-static void
-PyInit_timezone(PyObject *m) {
+static int
+init_timezone(PyObject *m)
+{
+    assert(!PyErr_Occurred());
+
     /* This code moved from PyInit_time wholesale to allow calling it from
     time_tzset. In the future, some parts of it can be moved back
     (for platforms that don't HAVE_WORKING_TZSET, when we know what they
@@ -1532,74 +1598,102 @@ PyInit_timezone(PyObject *m) {
 
     And I'm lazy and hate C so nyer.
      */
-#if defined(HAVE_TZNAME) && !defined(__GLIBC__) && !defined(__CYGWIN__)
+#ifdef HAVE_DECL_TZNAME
     PyObject *otz0, *otz1;
     tzset();
-    PyModule_AddIntConstant(m, "timezone", timezone);
+    PyModule_AddIntConstant(m, "timezone", _Py_timezone);
 #ifdef HAVE_ALTZONE
     PyModule_AddIntConstant(m, "altzone", altzone);
 #else
-    PyModule_AddIntConstant(m, "altzone", timezone-3600);
+    PyModule_AddIntConstant(m, "altzone", _Py_timezone-3600);
 #endif
-    PyModule_AddIntConstant(m, "daylight", daylight);
-    otz0 = PyUnicode_DecodeLocale(tzname[0], "surrogateescape");
-    otz1 = PyUnicode_DecodeLocale(tzname[1], "surrogateescape");
-    PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));
-#else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
-    {
-#define YEAR ((time_t)((365 * 24 + 6) * 3600))
-        time_t t;
-        struct tm p;
-        long janzone, julyzone;
-        char janname[10], julyname[10];
-        t = (time((time_t *)0) / YEAR) * YEAR;
-        _PyTime_localtime(t, &p);
-        get_zone(janname, 9, &p);
-        janzone = -get_gmtoff(t, &p);
-        janname[9] = '\0';
-        t += YEAR/2;
-        _PyTime_localtime(t, &p);
-        get_zone(julyname, 9, &p);
-        julyzone = -get_gmtoff(t, &p);
-        julyname[9] = '\0';
-
-        if( janzone < julyzone ) {
-            /* DST is reversed in the southern hemisphere */
-            PyModule_AddIntConstant(m, "timezone", julyzone);
-            PyModule_AddIntConstant(m, "altzone", janzone);
-            PyModule_AddIntConstant(m, "daylight",
-                                    janzone != julyzone);
-            PyModule_AddObject(m, "tzname",
-                               Py_BuildValue("(zz)",
-                                             julyname, janname));
-        } else {
-            PyModule_AddIntConstant(m, "timezone", janzone);
-            PyModule_AddIntConstant(m, "altzone", julyzone);
-            PyModule_AddIntConstant(m, "daylight",
-                                    janzone != julyzone);
-            PyModule_AddObject(m, "tzname",
-                               Py_BuildValue("(zz)",
-                                             janname, julyname));
-        }
+    PyModule_AddIntConstant(m, "daylight", _Py_daylight);
+#ifdef MS_WINDOWS
+    TIME_ZONE_INFORMATION tzinfo = {0};
+    GetTimeZoneInformation(&tzinfo);
+    otz0 = PyUnicode_FromWideChar(tzinfo.StandardName, -1);
+    if (otz0 == NULL) {
+        return -1;
     }
-#ifdef __CYGWIN__
-    tzset();
-    PyModule_AddIntConstant(m, "timezone", _timezone);
-    PyModule_AddIntConstant(m, "altzone", _timezone-3600);
-    PyModule_AddIntConstant(m, "daylight", _daylight);
-    PyModule_AddObject(m, "tzname",
-                       Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
-#endif /* __CYGWIN__ */
-#endif /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
+    otz1 = PyUnicode_FromWideChar(tzinfo.DaylightName, -1);
+    if (otz1 == NULL) {
+        Py_DECREF(otz0);
+        return -1;
+    }
+#else
+    otz0 = PyUnicode_DecodeLocale(_Py_tzname[0], "surrogateescape");
+    if (otz0 == NULL) {
+        return -1;
+    }
+    otz1 = PyUnicode_DecodeLocale(_Py_tzname[1], "surrogateescape");
+    if (otz1 == NULL) {
+        Py_DECREF(otz0);
+        return -1;
+    }
+#endif // MS_WINDOWS
+    PyObject *tzname_obj = Py_BuildValue("(NN)", otz0, otz1);
+    if (tzname_obj == NULL) {
+        return -1;
+    }
+    PyModule_AddObject(m, "tzname", tzname_obj);
+#else // !HAVE_DECL_TZNAME
+    static const time_t YEAR = (365 * 24 + 6) * 3600;
+    time_t t;
+    struct tm p;
+    time_t janzone_t, julyzone_t;
+    char janname[10], julyname[10];
+    t = (time((time_t *)0) / YEAR) * YEAR;
+    _PyTime_localtime(t, &p);
+    get_zone(janname, 9, &p);
+    janzone_t = -get_gmtoff(t, &p);
+    janname[9] = '\0';
+    t += YEAR/2;
+    _PyTime_localtime(t, &p);
+    get_zone(julyname, 9, &p);
+    julyzone_t = -get_gmtoff(t, &p);
+    julyname[9] = '\0';
+
+    /* Sanity check, don't check for the validity of timezones.
+       In practice, it should be more in range -12 hours .. +14 hours. */
+#define MAX_TIMEZONE (48 * 3600)
+    if (janzone_t < -MAX_TIMEZONE || janzone_t > MAX_TIMEZONE
+        || julyzone_t < -MAX_TIMEZONE || julyzone_t > MAX_TIMEZONE)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "invalid GMT offset");
+        return -1;
+    }
+    int janzone = (int)janzone_t;
+    int julyzone = (int)julyzone_t;
+
+    PyObject *tzname_obj;
+    if (janzone < julyzone) {
+        /* DST is reversed in the southern hemisphere */
+        PyModule_AddIntConstant(m, "timezone", julyzone);
+        PyModule_AddIntConstant(m, "altzone", janzone);
+        PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
+        tzname_obj = Py_BuildValue("(zz)", julyname, janname);
+    } else {
+        PyModule_AddIntConstant(m, "timezone", janzone);
+        PyModule_AddIntConstant(m, "altzone", julyzone);
+        PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
+        tzname_obj = Py_BuildValue("(zz)", janname, julyname);
+    }
+    if (tzname_obj == NULL) {
+        return -1;
+    }
+    PyModule_AddObject(m, "tzname", tzname_obj);
+#endif // !HAVE_DECL_TZNAME
+
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+    return 0;
 }
 
 
 static PyMethodDef time_methods[] = {
     {"time",            time_time, METH_NOARGS, time_doc},
     {"time_ns",         time_time_ns, METH_NOARGS, time_ns_doc},
-#ifdef PYCLOCK
-    {"clock",           time_clock, METH_NOARGS, clock_doc},
-#endif
 #ifdef HAVE_CLOCK_GETTIME
     {"clock_gettime",   time_clock_gettime, METH_VARARGS, clock_gettime_doc},
     {"clock_gettime_ns",time_clock_gettime_ns, METH_VARARGS, clock_gettime_ns_doc},
@@ -1669,14 +1763,112 @@ if it is 1, the time is given in the DST time zone;\n\
 if it is -1, mktime() should guess based on the date and time.\n");
 
 
+static int
+time_exec(PyObject *module)
+{
+    /* Set, or reset, module variables like time.timezone */
+    if (init_timezone(module) < 0) {
+        return -1;
+    }
+
+#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES)
+
+#ifdef CLOCK_REALTIME
+    if (PyModule_AddIntMacro(module, CLOCK_REALTIME) < 0) {
+        return -1;
+    }
+#endif
+#ifdef CLOCK_MONOTONIC
+    if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC) < 0) {
+        return -1;
+    }
+#endif
+#ifdef CLOCK_MONOTONIC_RAW
+    if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC_RAW) < 0) {
+        return -1;
+    }
+#endif
+#ifdef CLOCK_HIGHRES
+    if (PyModule_AddIntMacro(module, CLOCK_HIGHRES) < 0) {
+        return -1;
+    }
+#endif
+#ifdef CLOCK_PROCESS_CPUTIME_ID
+    if (PyModule_AddIntMacro(module, CLOCK_PROCESS_CPUTIME_ID) < 0) {
+        return -1;
+    }
+#endif
+#ifdef CLOCK_THREAD_CPUTIME_ID
+    if (PyModule_AddIntMacro(module, CLOCK_THREAD_CPUTIME_ID) < 0) {
+        return -1;
+    }
+#endif
+#ifdef CLOCK_PROF
+    if (PyModule_AddIntMacro(module, CLOCK_PROF) < 0) {
+        return -1;
+    }
+#endif
+#ifdef CLOCK_BOOTTIME
+    if (PyModule_AddIntMacro(module, CLOCK_BOOTTIME) < 0) {
+        return -1;
+    }
+#endif
+#ifdef CLOCK_TAI
+    if (PyModule_AddIntMacro(module, CLOCK_TAI) < 0) {
+        return -1;
+    }
+#endif
+#ifdef CLOCK_UPTIME
+    if (PyModule_AddIntMacro(module, CLOCK_UPTIME) < 0) {
+        return -1;
+    }
+#endif
+#ifdef CLOCK_UPTIME_RAW
+    if (PyModule_AddIntMacro(module, CLOCK_UPTIME_RAW) < 0) {
+        return -1;
+    }
+#endif
+
+#endif  /* defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES) */
+
+    if (!initialized) {
+        if (PyStructSequence_InitType2(&StructTimeType,
+                                       &struct_time_type_desc) < 0) {
+            return -1;
+        }
+    }
+    if (PyModule_AddIntConstant(module, "_STRUCT_TM_ITEMS", 11)) {
+        return -1;
+    }
+    Py_INCREF(&StructTimeType);
+    if (PyModule_AddObject(module, "struct_time", (PyObject*) &StructTimeType)) {
+        Py_DECREF(&StructTimeType);
+        return -1;
+    }
+    initialized = 1;
+
+#if defined(__linux__) && !defined(__GLIBC__)
+    struct tm tm;
+    const time_t zero = 0;
+    if (gmtime_r(&zero, &tm) != NULL)
+        utc_string = tm.tm_zone;
+#endif
+
+    return 0;
+}
+
+static struct PyModuleDef_Slot time_slots[] = {
+    {Py_mod_exec, time_exec},
+    {0, NULL}
+};
 
 static struct PyModuleDef timemodule = {
     PyModuleDef_HEAD_INIT,
     "time",
     module_doc,
-    -1,
+    0,
     time_methods,
-    NULL,
+    time_slots,
     NULL,
     NULL,
     NULL
@@ -1685,52 +1877,7 @@ static struct PyModuleDef timemodule = {
 PyMODINIT_FUNC
 PyInit_time(void)
 {
-    PyObject *m;
-    m = PyModule_Create(&timemodule);
-    if (m == NULL)
-        return NULL;
-
-    /* Set, or reset, module variables like time.timezone */
-    PyInit_timezone(m);
-
-#ifdef CLOCK_REALTIME
-    PyModule_AddIntMacro(m, CLOCK_REALTIME);
-#endif
-#ifdef CLOCK_MONOTONIC
-    PyModule_AddIntMacro(m, CLOCK_MONOTONIC);
-#endif
-#ifdef CLOCK_MONOTONIC_RAW
-    PyModule_AddIntMacro(m, CLOCK_MONOTONIC_RAW);
-#endif
-#ifdef CLOCK_HIGHRES
-    PyModule_AddIntMacro(m, CLOCK_HIGHRES);
-#endif
-#ifdef CLOCK_PROCESS_CPUTIME_ID
-    PyModule_AddIntMacro(m, CLOCK_PROCESS_CPUTIME_ID);
-#endif
-#ifdef CLOCK_THREAD_CPUTIME_ID
-    PyModule_AddIntMacro(m, CLOCK_THREAD_CPUTIME_ID);
-#endif
-#ifdef CLOCK_PROF
-    PyModule_AddIntMacro(m, CLOCK_PROF);
-#endif
-#ifdef CLOCK_BOOTTIME
-    PyModule_AddIntMacro(m, CLOCK_BOOTTIME);
-#endif
-#ifdef CLOCK_UPTIME
-    PyModule_AddIntMacro(m, CLOCK_UPTIME);
-#endif
-
-    if (!initialized) {
-        if (PyStructSequence_InitType2(&StructTimeType,
-                                       &struct_time_type_desc) < 0)
-            return NULL;
-    }
-    Py_INCREF(&StructTimeType);
-    PyModule_AddIntConstant(m, "_STRUCT_TM_ITEMS", 11);
-    PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
-    initialized = 1;
-    return m;
+    return PyModuleDef_Init(&timemodule);
 }
 
 /* Implement pysleep() for various platforms.

@@ -3,10 +3,13 @@ import re
 import subprocess
 import sys
 import os
+import warnings
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 
 # Skip this test if the _tkinter module wasn't built.
-_tkinter = support.import_module('_tkinter')
+_tkinter = import_helper.import_module('_tkinter')
 
 import tkinter
 from tkinter import Tcl
@@ -190,26 +193,26 @@ class TclTest(unittest.TestCase):
 
     def testEvalFile(self):
         tcl = self.interp
-        with open(support.TESTFN, 'w') as f:
-            self.addCleanup(support.unlink, support.TESTFN)
+        with open(os_helper.TESTFN, 'w') as f:
+            self.addCleanup(os_helper.unlink, os_helper.TESTFN)
             f.write("""set a 1
             set b 2
             set c [ expr $a + $b ]
             """)
-        tcl.evalfile(support.TESTFN)
+        tcl.evalfile(os_helper.TESTFN)
         self.assertEqual(tcl.eval('set a'),'1')
         self.assertEqual(tcl.eval('set b'),'2')
         self.assertEqual(tcl.eval('set c'),'3')
 
     def test_evalfile_null_in_result(self):
         tcl = self.interp
-        with open(support.TESTFN, 'w') as f:
-            self.addCleanup(support.unlink, support.TESTFN)
+        with open(os_helper.TESTFN, 'w') as f:
+            self.addCleanup(os_helper.unlink, os_helper.TESTFN)
             f.write("""
             set a "a\0b"
             set b "a\\0b"
             """)
-        tcl.evalfile(support.TESTFN)
+        tcl.evalfile(os_helper.TESTFN)
         self.assertEqual(tcl.eval('set a'), 'a\x00b')
         self.assertEqual(tcl.eval('set b'), 'a\x00b')
 
@@ -241,7 +244,7 @@ class TclTest(unittest.TestCase):
         if not os.path.exists(unc_name):
             raise unittest.SkipTest('Cannot connect to UNC Path')
 
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env.unset("TCL_LIBRARY")
             stdout = subprocess.check_output(
                     [unc_name, '-c', 'import tkinter; print(tkinter)'])
@@ -429,9 +432,12 @@ class TclTest(unittest.TestCase):
         self.assertEqual(passValue(False), False if self.wantobjects else '0')
         self.assertEqual(passValue('string'), 'string')
         self.assertEqual(passValue('string\u20ac'), 'string\u20ac')
+        self.assertEqual(passValue('string\U0001f4bb'), 'string\U0001f4bb')
         self.assertEqual(passValue('str\x00ing'), 'str\x00ing')
         self.assertEqual(passValue('str\x00ing\xbd'), 'str\x00ing\xbd')
         self.assertEqual(passValue('str\x00ing\u20ac'), 'str\x00ing\u20ac')
+        self.assertEqual(passValue('str\x00ing\U0001f4bb'),
+                         'str\x00ing\U0001f4bb')
         self.assertEqual(passValue(b'str\x00ing'),
                          b'str\x00ing' if self.wantobjects else 'str\x00ing')
         self.assertEqual(passValue(b'str\xc0\x80ing'),
@@ -490,6 +496,7 @@ class TclTest(unittest.TestCase):
         check('string')
         check('string\xbd')
         check('string\u20ac')
+        check('string\U0001f4bb')
         check('')
         check(b'string', 'string')
         check(b'string\xe2\x82\xac', 'string\xe2\x82\xac')
@@ -531,6 +538,7 @@ class TclTest(unittest.TestCase):
             ('a\n b\t\r c\n ', ('a', 'b', 'c')),
             (b'a\n b\t\r c\n ', ('a', 'b', 'c')),
             ('a \u20ac', ('a', '\u20ac')),
+            ('a \U0001f4bb', ('a', '\U0001f4bb')),
             (b'a \xe2\x82\xac', ('a', '\u20ac')),
             (b'a\xc0\x80b c\xc0\x80d', ('a\x00b', 'c\x00d')),
             ('a {b c}', ('a', 'b c')),
@@ -568,9 +576,12 @@ class TclTest(unittest.TestCase):
     def test_split(self):
         split = self.interp.tk.split
         call = self.interp.tk.call
-        self.assertRaises(TypeError, split)
-        self.assertRaises(TypeError, split, 'a', 'b')
-        self.assertRaises(TypeError, split, 2)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', r'\bsplit\b.*\bsplitlist\b',
+                                    DeprecationWarning)
+            self.assertRaises(TypeError, split)
+            self.assertRaises(TypeError, split, 'a', 'b')
+            self.assertRaises(TypeError, split, 2)
         testcases = [
             ('2', '2'),
             ('', ''),
@@ -612,7 +623,8 @@ class TclTest(unittest.TestCase):
                     expected),
             ]
         for arg, res in testcases:
-            self.assertEqual(split(arg), res, msg=arg)
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(split(arg), res, msg=arg)
 
     def test_splitdict(self):
         splitdict = tkinter._splitdict
@@ -648,6 +660,43 @@ class TclTest(unittest.TestCase):
             else:
                 expected = {'a': (1, 2, 3), 'something': 'foo', 'status': ''}
             self.assertEqual(splitdict(tcl, arg), expected)
+
+    def test_join(self):
+        join = tkinter._join
+        tcl = self.interp.tk
+        def unpack(s):
+            return tcl.call('lindex', s, 0)
+        def check(value):
+            self.assertEqual(unpack(join([value])), value)
+            self.assertEqual(unpack(join([value, 0])), value)
+            self.assertEqual(unpack(unpack(join([[value]]))), value)
+            self.assertEqual(unpack(unpack(join([[value, 0]]))), value)
+            self.assertEqual(unpack(unpack(join([[value], 0]))), value)
+            self.assertEqual(unpack(unpack(join([[value, 0], 0]))), value)
+        check('')
+        check('spam')
+        check('sp am')
+        check('sp\tam')
+        check('sp\nam')
+        check(' \t\n')
+        check('{spam}')
+        check('{sp am}')
+        check('"spam"')
+        check('"sp am"')
+        check('{"spam"}')
+        check('"{spam}"')
+        check('sp\\am')
+        check('"sp\\am"')
+        check('"{}" "{}"')
+        check('"\\')
+        check('"{')
+        check('"}')
+        check('\n\\')
+        check('\n{')
+        check('\n}')
+        check('\\\n')
+        check('{\n')
+        check('}\n')
 
     def test_new_tcl_obj(self):
         self.assertRaises(TypeError, _tkinter.Tcl_Obj)

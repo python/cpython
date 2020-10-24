@@ -2,6 +2,7 @@ __all__ = ('Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty')
 
 import collections
 import heapq
+import warnings
 
 from . import events
 from . import locks
@@ -34,6 +35,9 @@ class Queue:
             self._loop = events.get_event_loop()
         else:
             self._loop = loop
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
         self._maxsize = maxsize
 
         # Futures.
@@ -41,7 +45,7 @@ class Queue:
         # Futures.
         self._putters = collections.deque()
         self._unfinished_tasks = 0
-        self._finished = locks.Event(loop=self._loop)
+        self._finished = locks.Event(loop=loop)
         self._finished.set()
         self._init(maxsize)
 
@@ -71,6 +75,9 @@ class Queue:
 
     def __str__(self):
         return f'<{type(self).__name__} {self._format()}>'
+
+    def __class_getitem__(cls, type):
+        return cls
 
     def _format(self):
         result = f'maxsize={self._maxsize!r}'

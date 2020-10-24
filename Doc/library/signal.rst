@@ -16,7 +16,8 @@ The :func:`signal.signal` function allows defining custom handlers to be
 executed when a signal is received.  A small number of default handlers are
 installed: :const:`SIGPIPE` is ignored (so write errors on pipes and sockets
 can be reported as ordinary Python exceptions) and :const:`SIGINT` is
-translated into a :exc:`KeyboardInterrupt` exception.
+translated into a :exc:`KeyboardInterrupt` exception if the parent process
+has not changed it.
 
 A handler for a particular signal, once set, remains installed until it is
 explicitly reset (Python emulates the BSD style interface regardless of the
@@ -52,12 +53,12 @@ This has consequences:
 Signals and threads
 ^^^^^^^^^^^^^^^^^^^
 
-Python signal handlers are always executed in the main Python thread,
+Python signal handlers are always executed in the main Python thread of the main interpreter,
 even if the signal was received in another thread.  This means that signals
 can't be used as a means of inter-thread communication.  You can use
 the synchronization primitives from the :mod:`threading` module instead.
 
-Besides, only the main thread is allowed to set a new signal handler.
+Besides, only the main thread of the main interpreter is allowed to set a new signal handler.
 
 
 Module contents
@@ -90,11 +91,115 @@ The variables defined in the :mod:`signal` module are:
    signal.
 
 
+.. data:: SIGABRT
+
+   Abort signal from :manpage:`abort(3)`.
+
+.. data:: SIGALRM
+
+   Timer signal from :manpage:`alarm(2)`.
+
+   .. availability:: Unix.
+
+.. data:: SIGBREAK
+
+   Interrupt from keyboard (CTRL + BREAK).
+
+   .. availability:: Windows.
+
+.. data:: SIGBUS
+
+   Bus error (bad memory access).
+
+   .. availability:: Unix.
+
+.. data:: SIGCHLD
+
+   Child process stopped or terminated.
+
+   .. availability:: Windows.
+
+.. data:: SIGCLD
+
+   Alias to :data:`SIGCHLD`.
+
+.. data:: SIGCONT
+
+   Continue the process if it is currently stopped
+
+   .. availability:: Unix.
+
+.. data:: SIGFPE
+
+   Floating-point exception. For example, division by zero.
+
+   .. seealso::
+      :exc:`ZeroDivisionError` is raised when the second argument of a division
+      or modulo operation is zero.
+
+.. data:: SIGHUP
+
+   Hangup detected on controlling terminal or death of controlling process.
+
+   .. availability:: Unix.
+
+.. data:: SIGILL
+
+   Illegal instruction.
+
+.. data:: SIGINT
+
+   Interrupt from keyboard (CTRL + C).
+
+   Default action is to raise :exc:`KeyboardInterrupt`.
+
+.. data:: SIGKILL
+
+   Kill signal.
+
+   It cannot be caught, blocked, or ignored.
+
+   .. availability:: Unix.
+
+.. data:: SIGPIPE
+
+   Broken pipe: write to pipe with no readers.
+
+   Default action is to ignore the signal.
+
+   .. availability:: Unix.
+
+.. data:: SIGSEGV
+
+   Segmentation fault: invalid memory reference.
+
+.. data:: SIGTERM
+
+   Termination signal.
+
+.. data:: SIGUSR1
+
+   User-defined signal 1.
+
+   .. availability:: Unix.
+
+.. data:: SIGUSR2
+
+   User-defined signal 2.
+
+   .. availability:: Unix.
+
+.. data:: SIGWINCH
+
+   Window resize signal.
+
+   .. availability:: Unix.
+
 .. data:: SIG*
 
    All the signal numbers are defined symbolically.  For example, the hangup signal
    is defined as :const:`signal.SIGHUP`; the variable names are identical to the
-   names used in C programs, as found in ``<signal.h>``. The Unix man page for
+   names used in C programs, as found in ``<signal.h>``.  The Unix man page for
    ':c:func:`signal`' lists the existing signals (on some systems this is
    :manpage:`signal(2)`, on others the list is in :manpage:`signal(7)`). Note that
    not all systems define the same set of signal names; only those names defined by
@@ -106,7 +211,7 @@ The variables defined in the :mod:`signal` module are:
    The signal corresponding to the :kbd:`Ctrl+C` keystroke event. This signal can
    only be used with :func:`os.kill`.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionadded:: 3.2
 
@@ -116,7 +221,7 @@ The variables defined in the :mod:`signal` module are:
    The signal corresponding to the :kbd:`Ctrl+Break` keystroke event. This signal can
    only be used with :func:`os.kill`.
 
-   Availability: Windows.
+   .. availability:: Windows.
 
    .. versionadded:: 3.2
 
@@ -192,8 +297,10 @@ The :mod:`signal` module defines the following functions:
    canceled (only one alarm can be scheduled at any time).  The returned value is
    then the number of seconds before any previously set alarm was to have been
    delivered. If *time* is zero, no alarm is scheduled, and any scheduled alarm is
-   canceled.  If the return value is zero, no alarm is currently scheduled.  (See
-   the Unix man page :manpage:`alarm(2)`.) Availability: Unix.
+   canceled.  If the return value is zero, no alarm is currently scheduled.
+
+   .. availability:: Unix.  See the man page :manpage:`alarm(2)` for further
+      information.
 
 
 .. function:: getsignal(signalnum)
@@ -228,11 +335,33 @@ The :mod:`signal` module defines the following functions:
 .. function:: pause()
 
    Cause the process to sleep until a signal is received; the appropriate handler
-   will then be called.  Returns nothing.  Not on Windows. (See the Unix man page
-   :manpage:`signal(2)`.)
+   will then be called.  Returns nothing.
+
+   .. availability:: Unix.  See the man page :manpage:`signal(2)` for further
+      information.
 
    See also :func:`sigwait`, :func:`sigwaitinfo`, :func:`sigtimedwait` and
    :func:`sigpending`.
+
+
+.. function:: raise_signal(signum)
+
+   Sends a signal to the calling process. Returns nothing.
+
+   .. versionadded:: 3.8
+
+
+.. function:: pidfd_send_signal(pidfd, sig, siginfo=None, flags=0)
+
+   Send signal *sig* to the process referred to by file descriptor *pidfd*.
+   Python does not currently support the *siginfo* parameter; it must be
+   ``None``.  The *flags* argument is provided for future extensions; no flag
+   values are currently defined.
+
+   See the :manpage:`pidfd_send_signal(2)` man page for more information.
+
+   .. availability:: Linux 5.1+
+   .. versionadded:: 3.9
 
 
 .. function:: pthread_kill(thread_id, signalnum)
@@ -241,7 +370,7 @@ The :mod:`signal` module defines the following functions:
    same process as the caller.  The target thread can be executing any code
    (Python or not).  However, if the target thread is executing the Python
    interpreter, the Python signal handlers will be :ref:`executed by the main
-   thread <signals-and-threads>`.  Therefore, the only point of sending a
+   thread of the main interpreter <signals-and-threads>`.  Therefore, the only point of sending a
    signal to a particular Python thread would be to force a running system call
    to fail with :exc:`InterruptedError`.
 
@@ -252,8 +381,10 @@ The :mod:`signal` module defines the following functions:
    If *signalnum* is 0, then no signal is sent, but error checking is still
    performed; this can be used to check if the target thread is still running.
 
-   Availability: Unix (see the man page :manpage:`pthread_kill(3)` for further
-   information).
+   .. audit-event:: signal.pthread_kill thread_id,signalnum signal.pthread_kill
+
+   .. availability:: Unix.  See the man page :manpage:`pthread_kill(3)` for further
+      information.
 
    See also :func:`os.kill`.
 
@@ -283,8 +414,10 @@ The :mod:`signal` module defines the following functions:
    For example, ``signal.pthread_sigmask(signal.SIG_BLOCK, [])`` reads the
    signal mask of the calling thread.
 
-   Availability: Unix. See the man page :manpage:`sigprocmask(3)` and
-   :manpage:`pthread_sigmask(3)` for further information.
+   :data:`SIGKILL` and :data:`SIGSTOP` cannot be blocked.
+
+   .. availability:: Unix.  See the man page :manpage:`sigprocmask(2)` and
+      :manpage:`pthread_sigmask(3)` for further information.
 
    See also :func:`pause`, :func:`sigpending` and :func:`sigwait`.
 
@@ -309,13 +442,16 @@ The :mod:`signal` module defines the following functions:
    The old values are returned as a tuple: (delay, interval).
 
    Attempting to pass an invalid interval timer will cause an
-   :exc:`ItimerError`.  Availability: Unix.
+   :exc:`ItimerError`.
+
+   .. availability:: Unix.
 
 
 .. function:: getitimer(which)
 
    Returns current value of a given interval timer specified by *which*.
-   Availability: Unix.
+
+   .. availability:: Unix.
 
 
 .. function:: set_wakeup_fd(fd, *, warn_on_full_buffer=True)
@@ -330,7 +466,8 @@ The :mod:`signal` module defines the following functions:
    If not -1, *fd* must be non-blocking.  It is up to the library to remove
    any bytes from *fd* before calling poll or select again.
 
-   When threads are enabled, this function can only be called from the main thread;
+   When threads are enabled, this function can only be called
+   from :ref:`the main thread of the main interpreter <signals-and-threads>`;
    attempting to call it from other threads will cause a :exc:`ValueError`
    exception to be raised.
 
@@ -365,8 +502,10 @@ The :mod:`signal` module defines the following functions:
 
    Change system call restart behaviour: if *flag* is :const:`False`, system
    calls will be restarted when interrupted by signal *signalnum*, otherwise
-   system calls will be interrupted.  Returns nothing.  Availability: Unix (see
-   the man page :manpage:`siginterrupt(3)` for further information).
+   system calls will be interrupted.  Returns nothing.
+
+   .. availability:: Unix.  See the man page :manpage:`siginterrupt(3)`
+      for further information.
 
    Note that installing a signal handler with :func:`signal` will reset the
    restart behaviour to interruptible by implicitly calling
@@ -379,9 +518,10 @@ The :mod:`signal` module defines the following functions:
    be a callable Python object taking two arguments (see below), or one of the
    special values :const:`signal.SIG_IGN` or :const:`signal.SIG_DFL`.  The previous
    signal handler will be returned (see the description of :func:`getsignal`
-   above).  (See the Unix man page :manpage:`signal(2)`.)
+   above).  (See the Unix man page :manpage:`signal(2)` for further information.)
 
-   When threads are enabled, this function can only be called from the main thread;
+   When threads are enabled, this function can only be called
+   from :ref:`the main thread of the main interpreter <signals-and-threads>`;
    attempting to call it from other threads will cause a :exc:`ValueError`
    exception to be raised.
 
@@ -405,8 +545,8 @@ The :mod:`signal` module defines the following functions:
    thread (i.e., the signals which have been raised while blocked).  Return the
    set of the pending signals.
 
-   Availability: Unix (see the man page :manpage:`sigpending(2)` for further
-   information).
+   .. availability:: Unix.  See the man page :manpage:`sigpending(2)` for further
+      information.
 
    See also :func:`pause`, :func:`pthread_sigmask` and :func:`sigwait`.
 
@@ -419,8 +559,8 @@ The :mod:`signal` module defines the following functions:
    signals specified in the signal set *sigset*.  The function accepts the signal
    (removes it from the pending list of signals), and returns the signal number.
 
-   Availability: Unix (see the man page :manpage:`sigwait(3)` for further
-   information).
+   .. availability:: Unix.  See the man page :manpage:`sigwait(3)` for further
+      information.
 
    See also :func:`pause`, :func:`pthread_sigmask`, :func:`sigpending`,
    :func:`sigwaitinfo` and :func:`sigtimedwait`.
@@ -444,8 +584,8 @@ The :mod:`signal` module defines the following functions:
    :attr:`si_errno`, :attr:`si_pid`, :attr:`si_uid`, :attr:`si_status`,
    :attr:`si_band`.
 
-   Availability: Unix (see the man page :manpage:`sigwaitinfo(2)` for further
-   information).
+   .. availability:: Unix.  See the man page :manpage:`sigwaitinfo(2)` for further
+      information.
 
    See also :func:`pause`, :func:`sigwait` and :func:`sigtimedwait`.
 
@@ -463,8 +603,8 @@ The :mod:`signal` module defines the following functions:
    specifying a timeout. If *timeout* is specified as :const:`0`, a poll is
    performed. Returns :const:`None` if a timeout occurs.
 
-   Availability: Unix (see the man page :manpage:`sigtimedwait(2)` for further
-   information).
+   .. availability:: Unix.  See the man page :manpage:`sigtimedwait(2)` for further
+      information.
 
    See also :func:`pause`, :func:`sigwait` and :func:`sigwaitinfo`.
 
@@ -503,3 +643,37 @@ be sent, and the handler raises an exception. ::
 
    signal.alarm(0)          # Disable the alarm
 
+Note on SIGPIPE
+---------------
+
+Piping output of your program to tools like :manpage:`head(1)` will
+cause a :const:`SIGPIPE` signal to be sent to your process when the receiver
+of its standard output closes early.  This results in an exception
+like :code:`BrokenPipeError: [Errno 32] Broken pipe`.  To handle this
+case, wrap your entry point to catch this exception as follows::
+
+    import os
+    import sys
+
+    def main():
+        try:
+            # simulate large output (your code replaces this loop)
+            for x in range(10000):
+                print("y")
+            # flush output here to force SIGPIPE to be triggered
+            # while inside this try block.
+            sys.stdout.flush()
+        except BrokenPipeError:
+            # Python flushes standard streams on exit; redirect remaining output
+            # to devnull to avoid another BrokenPipeError at shutdown
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+            sys.exit(1)  # Python exits with error code 1 on EPIPE
+
+    if __name__ == '__main__':
+        main()
+
+Do not set :const:`SIGPIPE`'s disposition to :const:`SIG_DFL`
+in order to avoid :exc:`BrokenPipeError`.  Doing that would cause
+your program to exit unexpectedly also whenever any socket connection
+is interrupted while your program is still writing to it.

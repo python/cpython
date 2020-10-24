@@ -3,6 +3,7 @@ import marshal
 import os
 import sys
 from test import support
+from test.support import import_helper
 import types
 import unittest
 from unittest import mock
@@ -357,12 +358,26 @@ class MetaPathFinderFindModuleTests:
 
         return MetaPathSpecFinder()
 
-    def test_no_spec(self):
+    def test_find_module(self):
         finder = self.finder(None)
         path = ['a', 'b', 'c']
         name = 'blah'
         with self.assertWarns(DeprecationWarning):
             found = finder.find_module(name, path)
+        self.assertIsNone(found)
+
+    def test_find_spec_with_explicit_target(self):
+        loader = object()
+        spec = self.util.spec_from_loader('blah', loader)
+        finder = self.finder(spec)
+        found = finder.find_spec('blah', 'blah', None)
+        self.assertEqual(found, spec)
+
+    def test_no_spec(self):
+        finder = self.finder(None)
+        path = ['a', 'b', 'c']
+        name = 'blah'
+        found = finder.find_spec(name, path, None)
         self.assertIsNone(found)
         self.assertEqual(name, finder.called_for[0])
         self.assertEqual(path, finder.called_for[1])
@@ -371,9 +386,8 @@ class MetaPathFinderFindModuleTests:
         loader = object()
         spec = self.util.spec_from_loader('blah', loader)
         finder = self.finder(spec)
-        with self.assertWarns(DeprecationWarning):
-            found = finder.find_module('blah', None)
-        self.assertIs(found, spec.loader)
+        found = finder.find_spec('blah', None)
+        self.assertIs(found, spec)
 
 
 (Frozen_MPFFindModuleTests,
@@ -566,8 +580,8 @@ class InspectLoaderLoadModuleTests:
     module_name = 'blah'
 
     def setUp(self):
-        support.unload(self.module_name)
-        self.addCleanup(support.unload, self.module_name)
+        import_helper.unload(self.module_name)
+        self.addCleanup(import_helper.unload, self.module_name)
 
     def load(self, loader):
         spec = self.util.spec_from_loader(self.module_name, loader)
@@ -712,9 +726,9 @@ class SourceLoader(SourceOnlyLoader):
         if magic is None:
             magic = self.util.MAGIC_NUMBER
         data = bytearray(magic)
-        data.extend(self.init._w_long(0))
-        data.extend(self.init._w_long(self.source_mtime))
-        data.extend(self.init._w_long(self.source_size))
+        data.extend(self.init._pack_uint32(0))
+        data.extend(self.init._pack_uint32(self.source_mtime))
+        data.extend(self.init._pack_uint32(self.source_size))
         code_object = compile(self.source, self.path, 'exec',
                                 dont_inherit=True)
         data.extend(marshal.dumps(code_object))
@@ -876,9 +890,9 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
         if bytecode_written:
             self.assertIn(self.cached, self.loader.written)
             data = bytearray(self.util.MAGIC_NUMBER)
-            data.extend(self.init._w_long(0))
-            data.extend(self.init._w_long(self.loader.source_mtime))
-            data.extend(self.init._w_long(self.loader.source_size))
+            data.extend(self.init._pack_uint32(0))
+            data.extend(self.init._pack_uint32(self.loader.source_mtime))
+            data.extend(self.init._pack_uint32(self.loader.source_size))
             data.extend(marshal.dumps(code_object))
             self.assertEqual(self.loader.written[self.cached], bytes(data))
 

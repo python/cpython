@@ -12,6 +12,8 @@ Functions:
 socket() -- create a new socket object
 socketpair() -- create a pair of new socket objects [*]
 fromfd() -- create a socket object from an open file descriptor [*]
+send_fds() -- Send file descriptor to the socket.
+recv_fds() -- Recieve file descriptors from the socket.
 fromshare() -- create a socket object from data received from socket.share() [*]
 gethostname() -- return the current hostname
 gethostbyname() -- map a hostname to its IP number
@@ -60,8 +62,8 @@ EBADF = getattr(errno, 'EBADF', 9)
 EAGAIN = getattr(errno, 'EAGAIN', 11)
 EWOULDBLOCK = getattr(errno, 'EWOULDBLOCK', 11)
 
-__all__ = ["fromfd", "getfqdn", "create_connection",
-        "AddressFamily", "SocketKind"]
+__all__ = ["fromfd", "getfqdn", "create_connection", "create_server",
+           "has_dualstack_ipv6", "AddressFamily", "SocketKind"]
 __all__.extend(os._get_exports_list(_socket))
 
 # Set up the socket.AF_* socket.SOCK_* constants as members of IntEnums for
@@ -70,22 +72,22 @@ __all__.extend(os._get_exports_list(_socket))
 # in this module understands the enums and translates them back from integers
 # where needed (e.g. .family property of a socket object).
 
-IntEnum._convert(
+IntEnum._convert_(
         'AddressFamily',
         __name__,
         lambda C: C.isupper() and C.startswith('AF_'))
 
-IntEnum._convert(
+IntEnum._convert_(
         'SocketKind',
         __name__,
         lambda C: C.isupper() and C.startswith('SOCK_'))
 
-IntFlag._convert(
+IntFlag._convert_(
         'MsgFlag',
         __name__,
         lambda C: C.isupper() and C.startswith('MSG_'))
 
-IntFlag._convert(
+IntFlag._convert_(
         'AddressInfo',
         __name__,
         lambda C: C.isupper() and C.startswith('AI_'))
@@ -104,26 +106,105 @@ def _intenum_converter(value, enum_klass):
     except ValueError:
         return value
 
-_realsocket = socket
 
 # WSA error codes
 if sys.platform.lower().startswith("win"):
     errorTab = {}
+    errorTab[6] = "Specified event object handle is invalid."
+    errorTab[8] = "Insufficient memory available."
+    errorTab[87] = "One or more parameters are invalid."
+    errorTab[995] = "Overlapped operation aborted."
+    errorTab[996] = "Overlapped I/O event object not in signaled state."
+    errorTab[997] = "Overlapped operation will complete later."
     errorTab[10004] = "The operation was interrupted."
     errorTab[10009] = "A bad file handle was passed."
     errorTab[10013] = "Permission denied."
-    errorTab[10014] = "A fault occurred on the network??" # WSAEFAULT
+    errorTab[10014] = "A fault occurred on the network??"  # WSAEFAULT
     errorTab[10022] = "An invalid operation was attempted."
+    errorTab[10024] = "Too many open files."
     errorTab[10035] = "The socket operation would block"
     errorTab[10036] = "A blocking operation is already in progress."
+    errorTab[10037] = "Operation already in progress."
+    errorTab[10038] = "Socket operation on nonsocket."
+    errorTab[10039] = "Destination address required."
+    errorTab[10040] = "Message too long."
+    errorTab[10041] = "Protocol wrong type for socket."
+    errorTab[10042] = "Bad protocol option."
+    errorTab[10043] = "Protocol not supported."
+    errorTab[10044] = "Socket type not supported."
+    errorTab[10045] = "Operation not supported."
+    errorTab[10046] = "Protocol family not supported."
+    errorTab[10047] = "Address family not supported by protocol family."
     errorTab[10048] = "The network address is in use."
+    errorTab[10049] = "Cannot assign requested address."
+    errorTab[10050] = "Network is down."
+    errorTab[10051] = "Network is unreachable."
+    errorTab[10052] = "Network dropped connection on reset."
+    errorTab[10053] = "Software caused connection abort."
     errorTab[10054] = "The connection has been reset."
+    errorTab[10055] = "No buffer space available."
+    errorTab[10056] = "Socket is already connected."
+    errorTab[10057] = "Socket is not connected."
     errorTab[10058] = "The network has been shut down."
+    errorTab[10059] = "Too many references."
     errorTab[10060] = "The operation timed out."
     errorTab[10061] = "Connection refused."
+    errorTab[10062] = "Cannot translate name."
     errorTab[10063] = "The name is too long."
     errorTab[10064] = "The host is down."
     errorTab[10065] = "The host is unreachable."
+    errorTab[10066] = "Directory not empty."
+    errorTab[10067] = "Too many processes."
+    errorTab[10068] = "User quota exceeded."
+    errorTab[10069] = "Disk quota exceeded."
+    errorTab[10070] = "Stale file handle reference."
+    errorTab[10071] = "Item is remote."
+    errorTab[10091] = "Network subsystem is unavailable."
+    errorTab[10092] = "Winsock.dll version out of range."
+    errorTab[10093] = "Successful WSAStartup not yet performed."
+    errorTab[10101] = "Graceful shutdown in progress."
+    errorTab[10102] = "No more results from WSALookupServiceNext."
+    errorTab[10103] = "Call has been canceled."
+    errorTab[10104] = "Procedure call table is invalid."
+    errorTab[10105] = "Service provider is invalid."
+    errorTab[10106] = "Service provider failed to initialize."
+    errorTab[10107] = "System call failure."
+    errorTab[10108] = "Service not found."
+    errorTab[10109] = "Class type not found."
+    errorTab[10110] = "No more results from WSALookupServiceNext."
+    errorTab[10111] = "Call was canceled."
+    errorTab[10112] = "Database query was refused."
+    errorTab[11001] = "Host not found."
+    errorTab[11002] = "Nonauthoritative host not found."
+    errorTab[11003] = "This is a nonrecoverable error."
+    errorTab[11004] = "Valid name, no data record requested type."
+    errorTab[11005] = "QoS receivers."
+    errorTab[11006] = "QoS senders."
+    errorTab[11007] = "No QoS senders."
+    errorTab[11008] = "QoS no receivers."
+    errorTab[11009] = "QoS request confirmed."
+    errorTab[11010] = "QoS admission error."
+    errorTab[11011] = "QoS policy failure."
+    errorTab[11012] = "QoS bad style."
+    errorTab[11013] = "QoS bad object."
+    errorTab[11014] = "QoS traffic control error."
+    errorTab[11015] = "QoS generic error."
+    errorTab[11016] = "QoS service type error."
+    errorTab[11017] = "QoS flowspec error."
+    errorTab[11018] = "Invalid QoS provider buffer."
+    errorTab[11019] = "Invalid QoS filter style."
+    errorTab[11020] = "Invalid QoS filter style."
+    errorTab[11021] = "Incorrect QoS filter count."
+    errorTab[11022] = "Invalid QoS object length."
+    errorTab[11023] = "Incorrect QoS flow count."
+    errorTab[11024] = "Unrecognized QoS object."
+    errorTab[11025] = "Invalid QoS policy object."
+    errorTab[11026] = "Invalid QoS flow descriptor."
+    errorTab[11027] = "Invalid QoS provider-specific flowspec."
+    errorTab[11028] = "Invalid QoS provider-specific filterspec."
+    errorTab[11029] = "Invalid QoS shape discard mode object."
+    errorTab[11030] = "Invalid QoS shaping rate object."
+    errorTab[11031] = "Reserved policy QoS element type."
     __all__.append("errorTab")
 
 
@@ -189,7 +270,7 @@ class socket(_socket.socket):
         return s
 
     def __getstate__(self):
-        raise TypeError("Cannot serialize socket object")
+        raise TypeError(f"cannot pickle {self.__class__.__name__!r} object")
 
     def dup(self):
         """dup() -> socket object
@@ -275,8 +356,8 @@ class socket(_socket.socket):
                 raise _GiveupOnSendfile(err)  # not a regular file
             if not fsize:
                 return 0  # empty file
-            blocksize = fsize if not count else count
-
+            # Truncate to 1GiB to avoid OverflowError, see bpo-38319.
+            blocksize = min(count or fsize, 2 ** 30)
             timeout = self.gettimeout()
             if timeout == 0:
                 raise ValueError("non-blocking sockets are not supported")
@@ -462,6 +543,40 @@ def fromfd(fd, family, type, proto=0):
     """
     nfd = dup(fd)
     return socket(family, type, proto, nfd)
+
+if hasattr(_socket.socket, "sendmsg"):
+    import array
+
+    def send_fds(sock, buffers, fds, flags=0, address=None):
+        """ send_fds(sock, buffers, fds[, flags[, address]]) -> integer
+
+        Send the list of file descriptors fds over an AF_UNIX socket.
+        """
+        return sock.sendmsg(buffers, [(_socket.SOL_SOCKET,
+            _socket.SCM_RIGHTS, array.array("i", fds))])
+    __all__.append("send_fds")
+
+if hasattr(_socket.socket, "recvmsg"):
+    import array
+
+    def recv_fds(sock, bufsize, maxfds, flags=0):
+        """ recv_fds(sock, bufsize, maxfds[, flags]) -> (data, list of file
+        descriptors, msg_flags, address)
+
+        Receive up to maxfds file descriptors returning the message
+        data and a list containing the descriptors.
+        """
+        # Array of ints
+        fds = array.array("i")
+        msg, ancdata, flags, addr = sock.recvmsg(bufsize,
+            _socket.CMSG_LEN(maxfds * fds.itemsize))
+        for cmsg_level, cmsg_type, cmsg_data in ancdata:
+            if (cmsg_level == _socket.SOL_SOCKET and cmsg_type == _socket.SCM_RIGHTS):
+                fds.frombytes(cmsg_data[:
+                        len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+
+        return msg, list(fds), flags, addr
+    __all__.append("recv_fds")
 
 if hasattr(_socket.socket, "share"):
     def fromshare(info):
@@ -724,9 +839,99 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
                 sock.close()
 
     if err is not None:
-        raise err
+        try:
+            raise err
+        finally:
+            # Break explicitly a reference cycle
+            err = None
     else:
         raise error("getaddrinfo returns an empty list")
+
+
+def has_dualstack_ipv6():
+    """Return True if the platform supports creating a SOCK_STREAM socket
+    which can handle both AF_INET and AF_INET6 (IPv4 / IPv6) connections.
+    """
+    if not has_ipv6 \
+            or not hasattr(_socket, 'IPPROTO_IPV6') \
+            or not hasattr(_socket, 'IPV6_V6ONLY'):
+        return False
+    try:
+        with socket(AF_INET6, SOCK_STREAM) as sock:
+            sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
+            return True
+    except error:
+        return False
+
+
+def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
+                  dualstack_ipv6=False):
+    """Convenience function which creates a SOCK_STREAM type socket
+    bound to *address* (a 2-tuple (host, port)) and return the socket
+    object.
+
+    *family* should be either AF_INET or AF_INET6.
+    *backlog* is the queue size passed to socket.listen().
+    *reuse_port* dictates whether to use the SO_REUSEPORT socket option.
+    *dualstack_ipv6*: if true and the platform supports it, it will
+    create an AF_INET6 socket able to accept both IPv4 or IPv6
+    connections. When false it will explicitly disable this option on
+    platforms that enable it by default (e.g. Linux).
+
+    >>> with create_server(('', 8000)) as server:
+    ...     while True:
+    ...         conn, addr = server.accept()
+    ...         # handle new connection
+    """
+    if reuse_port and not hasattr(_socket, "SO_REUSEPORT"):
+        raise ValueError("SO_REUSEPORT not supported on this platform")
+    if dualstack_ipv6:
+        if not has_dualstack_ipv6():
+            raise ValueError("dualstack_ipv6 not supported on this platform")
+        if family != AF_INET6:
+            raise ValueError("dualstack_ipv6 requires AF_INET6 family")
+    sock = socket(family, SOCK_STREAM)
+    try:
+        # Note about Windows. We don't set SO_REUSEADDR because:
+        # 1) It's unnecessary: bind() will succeed even in case of a
+        # previous closed socket on the same address and still in
+        # TIME_WAIT state.
+        # 2) If set, another socket is free to bind() on the same
+        # address, effectively preventing this one from accepting
+        # connections. Also, it may set the process in a state where
+        # it'll no longer respond to any signals or graceful kills.
+        # See: msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
+        if os.name not in ('nt', 'cygwin') and \
+                hasattr(_socket, 'SO_REUSEADDR'):
+            try:
+                sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+            except error:
+                # Fail later on bind(), for platforms which may not
+                # support this option.
+                pass
+        if reuse_port:
+            sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
+        if has_ipv6 and family == AF_INET6:
+            if dualstack_ipv6:
+                sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 0)
+            elif hasattr(_socket, "IPV6_V6ONLY") and \
+                    hasattr(_socket, "IPPROTO_IPV6"):
+                sock.setsockopt(IPPROTO_IPV6, IPV6_V6ONLY, 1)
+        try:
+            sock.bind(address)
+        except error as err:
+            msg = '%s (while attempting to bind on address %r)' % \
+                (err.strerror, address)
+            raise error(err.errno, msg) from None
+        if backlog is None:
+            sock.listen()
+        else:
+            sock.listen(backlog)
+        return sock
+    except error:
+        sock.close()
+        raise
+
 
 def getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
     """Resolve host and port into list of address info entries.

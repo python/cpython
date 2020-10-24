@@ -56,8 +56,7 @@ The constants defined in this module are:
 .. data:: punctuation
 
    String of ASCII characters which are considered punctuation characters
-   in the ``C`` locale.
-
+   in the ``C`` locale: ``!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~``.
 
 .. data:: printable
 
@@ -89,7 +88,7 @@ implementation as the built-in :meth:`~str.format` method.
 
    The :class:`Formatter` class has the following public methods:
 
-   .. method:: format(format_string, *args, **kwargs)
+   .. method:: format(format_string, /, *args, **kwargs)
 
       The primary API method.  It takes a format string and
       an arbitrary set of positional and keyword arguments.
@@ -147,7 +146,7 @@ implementation as the built-in :meth:`~str.format` method.
       keyword arguments.
 
       For compound field names, these functions are only called for the first
-      component of the field name; Subsequent components are handled through
+      component of the field name; subsequent components are handled through
       normal attribute and indexing operations.
 
       So for example, the field expression '0.name' would cause
@@ -192,6 +191,13 @@ subclasses can define their own format string syntax).  The syntax is
 related to that of :ref:`formatted string literals <f-strings>`, but
 there are differences.
 
+.. index::
+   single: {} (curly brackets); in string formatting
+   single: . (dot); in string formatting
+   single: [] (square brackets); in string formatting
+   single: ! (exclamation); in string formatting
+   single: : (colon); in string formatting
+
 Format strings contain "replacement fields" surrounded by curly braces ``{}``.
 Anything that is not contained in braces is considered literal text, which is
 copied unchanged to the output.  If you need to include a brace character in the
@@ -199,7 +205,7 @@ literal text, it can be escaped by doubling: ``{{`` and ``}}``.
 
 The grammar for a replacement field is as follows:
 
-   .. productionlist:: sf
+   .. productionlist:: format-string
       replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
       field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
       arg_name: [`identifier` | `digit`+]
@@ -296,13 +302,13 @@ specification is to be interpreted.
 Most built-in types implement the following options for format specifications,
 although some of the formatting options are only supported by the numeric types.
 
-A general convention is that an empty format string (``""``) produces
+A general convention is that an empty format specification produces
 the same result as if you had called :func:`str` on the value. A
-non-empty format string typically modifies the result.
+non-empty format specification typically modifies the result.
 
 The general form of a *standard format specifier* is:
 
-.. productionlist:: sf
+.. productionlist:: format-spec
    format_spec: [[`fill`]`align`][`sign`][#][0][`width`][`grouping_option`][.`precision`][`type`]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
@@ -322,6 +328,12 @@ with a nested replacement field.  This limitation doesn't
 affect the :func:`format` function.
 
 The meaning of the various alignment options is as follows:
+
+   .. index::
+      single: < (less); in string formatting
+      single: > (greater); in string formatting
+      single: = (equals); in string formatting
+      single: ^ (caret); in string formatting
 
    +---------+----------------------------------------------------------+
    | Option  | Meaning                                                  |
@@ -349,6 +361,11 @@ meaning in this case.
 The *sign* option is only valid for number types, and can be one of the
 following:
 
+   .. index::
+      single: + (plus); in string formatting
+      single: - (minus); in string formatting
+      single: space; in string formatting
+
    +---------+----------------------------------------------------------+
    | Option  | Meaning                                                  |
    +=========+==========================================================+
@@ -363,6 +380,8 @@ following:
    +---------+----------------------------------------------------------+
 
 
+.. index:: single: # (hash); in string formatting
+
 The ``'#'`` option causes the "alternate form" to be used for the
 conversion.  The alternate form is defined differently for different
 types.  This option is only valid for integer, float, complex and
@@ -375,12 +394,16 @@ decimal-point character appears in the result of these conversions
 only if a digit follows it. In addition, for ``'g'`` and ``'G'``
 conversions, trailing zeros are not removed from the result.
 
+.. index:: single: , (comma); in string formatting
+
 The ``','`` option signals the use of a comma for a thousands separator.
 For a locale aware separator, use the ``'n'`` integer presentation type
 instead.
 
 .. versionchanged:: 3.1
    Added the ``','`` option (see also :pep:`378`).
+
+.. index:: single: _ (underscore); in string formatting
 
 The ``'_'`` option signals the use of an underscore for a thousands
 separator for floating point presentation types and for integer
@@ -392,8 +415,9 @@ error.
 .. versionchanged:: 3.6
    Added the ``'_'`` option (see also :pep:`515`).
 
-*width* is a decimal integer defining the minimum field width.  If not
-specified, then the field width will be determined by the content.
+*width* is a decimal integer defining the minimum total field width,
+including any prefixes, separators, and other formatting characters.
+If not specified, then the field width will be determined by the content.
 
 When no explicit alignment is given, preceding the *width* field by a zero
 (``'0'``) character enables
@@ -434,11 +458,11 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | ``'o'`` | Octal format. Outputs the number in base 8.              |
    +---------+----------------------------------------------------------+
-   | ``'x'`` | Hex format. Outputs the number in base 16, using lower-  |
-   |         | case letters for the digits above 9.                     |
+   | ``'x'`` | Hex format. Outputs the number in base 16, using         |
+   |         | lower-case letters for the digits above 9.               |
    +---------+----------------------------------------------------------+
-   | ``'X'`` | Hex format. Outputs the number in base 16, using upper-  |
-   |         | case letters for the digits above 9.                     |
+   | ``'X'`` | Hex format. Outputs the number in base 16, using         |
+   |         | upper-case letters for the digits above 9.               |
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
@@ -464,11 +488,11 @@ The available presentation types for floating point and decimal values are:
    | ``'E'`` | Exponent notation. Same as ``'e'`` except it uses an     |
    |         | upper case 'E' as the separator character.               |
    +---------+----------------------------------------------------------+
-   | ``'f'`` | Fixed point. Displays the number as a fixed-point        |
-   |         | number.  The default precision is ``6``.                 |
+   | ``'f'`` | Fixed-point notation. Displays the number as a           |
+   |         | fixed-point number.  The default precision is ``6``.     |
    +---------+----------------------------------------------------------+
-   | ``'F'`` | Fixed point. Same as ``'f'``, but converts ``nan`` to    |
-   |         | ``NAN`` and ``inf`` to ``INF``.                          |
+   | ``'F'`` | Fixed-point notation. Same as ``'f'``, but converts      |
+   |         | ``nan`` to  ``NAN`` and ``inf`` to ``INF``.              |
    +---------+----------------------------------------------------------+
    | ``'g'`` | General format.  For a given precision ``p >= 1``,       |
    |         | this rounds the number to ``p`` significant digits and   |
@@ -477,14 +501,16 @@ The available presentation types for floating point and decimal values are:
    |         |                                                          |
    |         | The precise rules are as follows: suppose that the       |
    |         | result formatted with presentation type ``'e'`` and      |
-   |         | precision ``p-1`` would have exponent ``exp``.  Then     |
-   |         | if ``-4 <= exp < p``, the number is formatted            |
-   |         | with presentation type ``'f'`` and precision             |
+   |         | precision ``p-1`` would have exponent ``exp``.  Then,    |
+   |         | if ``m <= exp < p``, where ``m`` is -4 for floats and -6 |
+   |         | for :class:`Decimals <decimal.Decimal>`, the number is   |
+   |         | formatted with presentation type ``'f'`` and precision   |
    |         | ``p-1-exp``.  Otherwise, the number is formatted         |
    |         | with presentation type ``'e'`` and precision ``p-1``.    |
    |         | In both cases insignificant trailing zeros are removed   |
    |         | from the significand, and the decimal point is also      |
-   |         | removed if there are no remaining digits following it.   |
+   |         | removed if there are no remaining digits following it,   |
+   |         | unless the ``'#'`` option is used.                       |
    |         |                                                          |
    |         | Positive and negative infinity, positive and negative    |
    |         | zero, and nans, are formatted as ``inf``, ``-inf``,      |
@@ -527,7 +553,7 @@ addition of the ``{}`` and with ``:`` used instead of ``%``.
 For example, ``'%03.2f'`` can be translated to ``'{:03.2f}'``.
 
 The new format syntax also supports new and different options, shown in the
-follow examples.
+following examples.
 
 Accessing arguments by position::
 
@@ -668,6 +694,8 @@ formatting facilities in Python.  As an example of a library built on template
 strings for i18n, see the
 `flufl.i18n <http://flufli18n.readthedocs.io/en/latest/>`_ package.
 
+.. index:: single: $ (dollar); in template strings
+
 Template strings support ``$``-based substitutions, using the following rules:
 
 * ``$$`` is an escape; it is replaced with a single ``$``.
@@ -695,7 +723,7 @@ these rules.  The methods of :class:`Template` are:
    The constructor takes a single argument which is the template string.
 
 
-   .. method:: substitute(mapping, **kwds)
+   .. method:: substitute(mapping={}, /, **kwds)
 
       Performs the template substitution, returning a new string.  *mapping* is
       any dictionary-like object with keys that match the placeholders in the
@@ -704,7 +732,7 @@ these rules.  The methods of :class:`Template` are:
       and there are duplicates, the placeholders from *kwds* take precedence.
 
 
-   .. method:: safe_substitute(mapping, **kwds)
+   .. method:: safe_substitute(mapping={}, /, **kwds)
 
       Like :meth:`substitute`, except that if placeholders are missing from
       *mapping* and *kwds*, instead of raising a :exc:`KeyError` exception, the
@@ -713,7 +741,7 @@ these rules.  The methods of :class:`Template` are:
       simply return ``$`` instead of raising :exc:`ValueError`.
 
       While other exceptions may still occur, this method is called "safe"
-      because substitutions always tries to return a usable string instead of
+      because it always tries to return a usable string instead of
       raising an exception.  In another sense, :meth:`safe_substitute` may be
       anything other than safe, since it will silently ignore malformed
       templates containing dangling delimiters, unmatched braces, or

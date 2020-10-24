@@ -7,6 +7,7 @@ import collections
 import logging
 import threading
 import time
+import types
 
 FIRST_COMPLETED = 'FIRST_COMPLETED'
 FIRST_EXCEPTION = 'FIRST_EXCEPTION'
@@ -216,7 +217,7 @@ def as_completed(fs, timeout=None):
             before the given timeout.
     """
     if timeout is not None:
-        end_time = timeout + time.time()
+        end_time = timeout + time.monotonic()
 
     fs = set(fs)
     total_futures = len(fs)
@@ -235,7 +236,7 @@ def as_completed(fs, timeout=None):
             if timeout is None:
                 wait_timeout = None
             else:
-                wait_timeout = end_time - time.time()
+                wait_timeout = end_time - time.monotonic()
                 if wait_timeout < 0:
                     raise TimeoutError(
                             '%d (of %d) futures unfinished' % (
@@ -404,7 +405,10 @@ class Future(object):
             if self._state not in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]:
                 self._done_callbacks.append(fn)
                 return
-        fn(self)
+        try:
+            fn(self)
+        except Exception:
+            LOGGER.exception('exception calling callback for %r', self)
 
     def result(self, timeout=None):
         """Return the result of the call that the future represents.
@@ -541,10 +545,12 @@ class Future(object):
             self._condition.notify_all()
         self._invoke_callbacks()
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 class Executor(object):
     """This is an abstract base class for concrete asynchronous executors."""
 
-    def submit(self, fn, *args, **kwargs):
+    def submit(self, fn, /, *args, **kwargs):
         """Submits a callable to be executed with the given arguments.
 
         Schedules the callable to be executed as fn(*args, **kwargs) and returns
@@ -578,7 +584,7 @@ class Executor(object):
             Exception: If fn(*args) raises for any values.
         """
         if timeout is not None:
-            end_time = timeout + time.time()
+            end_time = timeout + time.monotonic()
 
         fs = [self.submit(fn, *args) for args in zip(*iterables)]
 
@@ -593,13 +599,13 @@ class Executor(object):
                     if timeout is None:
                         yield fs.pop().result()
                     else:
-                        yield fs.pop().result(end_time - time.time())
+                        yield fs.pop().result(end_time - time.monotonic())
             finally:
                 for future in fs:
                     future.cancel()
         return result_iterator()
 
-    def shutdown(self, wait=True):
+    def shutdown(self, wait=True, *, cancel_futures=False):
         """Clean-up the resources associated with the Executor.
 
         It is safe to call this method several times. Otherwise, no other
@@ -609,6 +615,9 @@ class Executor(object):
             wait: If True then shutdown will not return until all running
                 futures have finished executing and the resources used by the
                 executor have been reclaimed.
+            cancel_futures: If True then shutdown will cancel all pending
+                futures. Futures that are completed or running will not be
+                cancelled.
         """
         pass
 

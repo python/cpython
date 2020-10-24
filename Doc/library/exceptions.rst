@@ -52,7 +52,7 @@ will be set as :attr:`__cause__` on the raised exception. Setting
 :attr:`__cause__` also implicitly sets the :attr:`__suppress_context__`
 attribute to ``True``, so that using ``raise new_exc from None``
 effectively replaces the old exception with the new one for display
-purposes (e.g. converting :exc:`KeyError` to :exc:`AttributeError`, while
+purposes (e.g. converting :exc:`KeyError` to :exc:`AttributeError`), while
 leaving the old exception available in :attr:`__context__` for introspection
 when debugging.
 
@@ -525,7 +525,7 @@ The following exceptions are the exceptions that are usually raised.
 
 .. exception:: ValueError
 
-   Raised when a built-in operation or function receives an argument that has the
+   Raised when an operation or function receives an argument that has the
    right type but an inappropriate value, and the situation is not described by a
    more precise exception such as :exc:`IndexError`.
 
@@ -688,11 +688,23 @@ The following exceptions are used as warning categories; see the
    Base class for warnings about deprecated features when those warnings are
    intended for other Python developers.
 
+   Ignored by the default warning filters, except in the ``__main__`` module
+   (:pep:`565`). Enabling the :ref:`Python Development Mode <devmode>` shows
+   this warning.
+
 
 .. exception:: PendingDeprecationWarning
 
-   Base class for warnings about features which will be deprecated in the
-   future.
+   Base class for warnings about features which are obsolete and
+   expected to be deprecated in the future, but are not deprecated
+   at the moment.
+
+   This class is rarely used as emitting a warning about a possible
+   upcoming deprecation is unusual, and :exc:`DeprecationWarning`
+   is preferred for already active deprecations.
+
+   Ignored by the default warning filters. Enabling the :ref:`Python
+   Development Mode <devmode>` shows this warning.
 
 
 .. exception:: SyntaxWarning
@@ -715,6 +727,9 @@ The following exceptions are used as warning categories; see the
 
    Base class for warnings about probable mistakes in module imports.
 
+   Ignored by the default warning filters. Enabling the :ref:`Python
+   Development Mode <devmode>` shows this warning.
+
 
 .. exception:: UnicodeWarning
 
@@ -728,8 +743,10 @@ The following exceptions are used as warning categories; see the
 
 .. exception:: ResourceWarning
 
-   Base class for warnings related to resource usage. Ignored by the default
-   warning filters.
+   Base class for warnings related to resource usage.
+
+   Ignored by the default warning filters. Enabling the :ref:`Python
+   Development Mode <devmode>` shows this warning.
 
    .. versionadded:: 3.2
 

@@ -16,6 +16,7 @@ Based on the J. Myers POP3 draft, Jan. 96
 import errno
 import re
 import socket
+import sys
 
 try:
     import ssl
@@ -99,16 +100,20 @@ class POP3:
         self.host = host
         self.port = port
         self._tls_established = False
+        sys.audit("poplib.connect", self, host, port)
         self.sock = self._create_socket(timeout)
         self.file = self.sock.makefile('rb')
         self._debugging = 0
         self.welcome = self._getresp()
 
     def _create_socket(self, timeout):
+        if timeout is not None and not timeout:
+            raise ValueError('Non-blocking socket (timeout=0) is not supported')
         return socket.create_connection((self.host, self.port), timeout)
 
     def _putline(self, line):
         if self._debugging > 1: print('*put*', repr(line))
+        sys.audit("poplib.putline", self, line)
         self.sock.sendall(line + CRLF)
 
 
@@ -382,7 +387,7 @@ class POP3:
             for capline in rawcaps:
                 capnm, capargs = _parsecap(capline)
                 caps[capnm] = capargs
-        except error_proto as _err:
+        except error_proto:
             raise error_proto('-ERR CAPA not supported by server')
         return caps
 
@@ -436,7 +441,7 @@ if HAVE_SSL:
                                  "exclusive")
             if keyfile is not None or certfile is not None:
                 import warnings
-                warnings.warn("keyfile and certfile are deprecated, use a"
+                warnings.warn("keyfile and certfile are deprecated, use a "
                               "custom context instead", DeprecationWarning, 2)
             self.keyfile = keyfile
             self.certfile = certfile

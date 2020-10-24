@@ -3,14 +3,13 @@
    Nick Mathewson
 '''
 
-import os
 import sys
 from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase, main as unittest_main
-from test import support
-from functools import partial
+from test.test_importlib import util as test_importlib_util
+
 
 StaticMethodType = type(staticmethod(lambda: None))
 ClassMethodType = type(classmethod(lambda c: None))
@@ -144,7 +143,8 @@ class PyclbrTest(TestCase):
 
     def test_easy(self):
         self.checkModule('pyclbr')
-        self.checkModule('ast')
+        # XXX: Metaclasses are not supported
+        # self.checkModule('ast')
         self.checkModule('doctest', ignore=("TestResults", "_SpoofOut",
                                             "DocTestCase", '_DocTestSuite'))
         self.checkModule('difflib', ignore=("Match",))
@@ -222,10 +222,8 @@ class PyclbrTest(TestCase):
         # These were once about the 10 longest modules
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('cgi', ignore=('log',))      # set with = in module
-        cm('pickle', ignore=('partial',))
-        # TODO(briancurtin): openfp is deprecated as of 3.7.
-        # Update this once it has been removed.
-        cm('aifc', ignore=('openfp', '_aifc_params'))  # set with = in module
+        cm('pickle', ignore=('partial', 'PickleBuffer'))
+        cm('aifc', ignore=('_aifc_params',))  # set with = in module
         cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
         cm('pdb')
         cm('pydoc', ignore=('input', 'output',)) # properties
@@ -234,10 +232,29 @@ class PyclbrTest(TestCase):
         cm('email.parser')
         cm('test.test_pyclbr')
 
-    def test_issue_14798(self):
+
+class ReadmoduleTests(TestCase):
+
+    def setUp(self):
+        self._modules = pyclbr._modules.copy()
+
+    def tearDown(self):
+        pyclbr._modules = self._modules
+
+
+    def test_dotted_name_not_a_package(self):
         # test ImportError is raised when the first part of a dotted name is
-        # not a package
-        self.assertRaises(ImportError, pyclbr.readmodule_ex, 'asyncore.foo')
+        # not a package.
+        #
+        # Issue #14798.
+        self.assertRaises(ImportError, pyclbr.readmodule_ex, 'asyncio.foo')
+
+    def test_module_has_no_spec(self):
+        module_name = "doesnotexist"
+        assert module_name not in pyclbr._modules
+        with test_importlib_util.uncache(module_name):
+            with self.assertRaises(ModuleNotFoundError):
+                pyclbr.readmodule_ex(module_name)
 
 
 if __name__ == "__main__":

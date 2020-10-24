@@ -2,7 +2,7 @@
 /* Python interpreter main program for frozen scripts */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_runtime.h"  // _PyRuntime_Initialize()
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -16,11 +16,9 @@ extern int PyInitFrozenExtensions(void);
 int
 Py_FrozenMain(int argc, char **argv)
 {
-    _PyInitError err = _PyRuntime_Initialize();
-    if (_Py_INIT_FAILED(err)) {
-        fprintf(stderr, "Fatal Python error: %s\n", err.msg);
-        fflush(stderr);
-        exit(1);
+    PyStatus status = _PyRuntime_Initialize();
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
     }
 
     const char *p;
@@ -41,7 +39,9 @@ Py_FrozenMain(int argc, char **argv)
         }
     }
 
-    Py_FrozenFlag = 1; /* Suppress errors from getpath.c */
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+    config.pathconfig_warnings = 0;   /* Suppress errors from getpath.c */
 
     if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
         inspect = 1;
@@ -80,7 +80,13 @@ Py_FrozenMain(int argc, char **argv)
 #endif /* MS_WINDOWS */
     if (argc >= 1)
         Py_SetProgramName(argv_copy[0]);
-    Py_Initialize();
+
+    status = Py_InitializeFromConfig(&config);
+    PyConfig_Clear(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
 #ifdef MS_WINDOWS
     PyWinFreeze_ExeInit();
 #endif
@@ -93,7 +99,7 @@ Py_FrozenMain(int argc, char **argv)
 
     n = PyImport_ImportFrozenModule("__main__");
     if (n == 0)
-        Py_FatalError("__main__ not frozen");
+        Py_FatalError("the __main__ module is not frozen");
     if (n < 0) {
         PyErr_Print();
         sts = 1;

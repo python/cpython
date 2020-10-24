@@ -1,6 +1,6 @@
 #include "Python.h"
 #ifdef MS_WINDOWS
-#include <windows.h>
+#include <winsock2.h>         /* struct timeval */
 #endif
 
 #if defined(__APPLE__)
@@ -718,11 +718,7 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 #else   /* HAVE_CLOCK_GETTIME */
 
      /* test gettimeofday() */
-#ifdef GETTIMEOFDAY_NO_TZ
-    err = gettimeofday(&tv);
-#else
     err = gettimeofday(&tv, (struct timezone *)NULL);
-#endif
     if (err) {
         if (raise) {
             PyErr_SetFromErrno(PyExc_OSError);
@@ -750,7 +746,7 @@ _PyTime_GetSystemClock(void)
     _PyTime_t t;
     if (pygettimeofday(&t, NULL, 0) < 0) {
         /* should not happen, _PyTime_Init() checked the clock at startup */
-        Py_UNREACHABLE();
+        Py_FatalError("pygettimeofday() failed");
     }
     return t;
 }
@@ -780,7 +776,7 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
             return -1;
         }
         /* Hello, time traveler! */
-        Py_UNREACHABLE();
+        Py_FatalError("pymonotonic: integer overflow");
     }
     *tp = t * MS_TO_NS;
 
@@ -922,7 +918,7 @@ _PyTime_GetMonotonicClock(void)
     if (pymonotonic(&t, NULL, 0) < 0) {
         /* should not happen, _PyTime_Init() checked that monotonic clock at
            startup */
-        Py_UNREACHABLE();
+        Py_FatalError("pymonotonic() failed");
     }
     return t;
 }
@@ -1023,7 +1019,7 @@ _PyTime_GetPerfCounter(void)
 {
     _PyTime_t t;
     if (_PyTime_GetPerfCounterWithInfo(&t, NULL)) {
-        Py_UNREACHABLE();
+        Py_FatalError("_PyTime_GetPerfCounterWithInfo() failed");
     }
     return t;
 }
@@ -1062,12 +1058,23 @@ _PyTime_localtime(time_t t, struct tm *tm)
     }
     return 0;
 #else /* !MS_WINDOWS */
+
+#if defined(_AIX) && (SIZEOF_TIME_T < 8)
+    /* bpo-34373: AIX does not return NULL if t is too small or too large */
+    if (t < -2145916800 /* 1902-01-01 */
+       || t > 2145916800 /* 2038-01-01 */) {
+        errno = EINVAL;
+        PyErr_SetString(PyExc_OverflowError,
+                        "localtime argument out of range");
+        return -1;
+    }
+#endif
+
+    errno = 0;
     if (localtime_r(&t, tm) == NULL) {
-#ifdef EINVAL
         if (errno == 0) {
             errno = EINVAL;
         }
-#endif
         PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }

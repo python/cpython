@@ -1,6 +1,5 @@
 #include "Python.h"
-#include "structmember.h" /* offsetof */
-#include "pythread.h"
+#include <stddef.h>               // offsetof()
 
 /*[clinic input]
 module _queue
@@ -8,7 +7,7 @@ class _queue.SimpleQueue "simplequeueobject *" "&PySimpleQueueType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=cf49af81bcbbbea6]*/
 
-extern PyTypeObject PySimpleQueueType;  /* forward decl */
+static PyTypeObject PySimpleQueueType;  /* forward decl */
 
 static PyObject *EmptyError;
 
@@ -26,7 +25,7 @@ typedef struct {
 static void
 simplequeue_dealloc(simplequeueobject *self)
 {
-    _PyObject_GC_UNTRACK(self);
+    PyObject_GC_UnTrack(self);
     if (self->lock != NULL) {
         /* Unlock the lock so it's safe to free it */
         if (self->locked > 0)
@@ -302,21 +301,23 @@ static PyMethodDef simplequeue_methods[] = {
     _QUEUE_SIMPLEQUEUE_PUT_METHODDEF
     _QUEUE_SIMPLEQUEUE_PUT_NOWAIT_METHODDEF
     _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF
+    {"__class_getitem__",    (PyCFunction)Py_GenericAlias,
+    METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,           NULL}              /* sentinel */
 };
 
 
-PyTypeObject PySimpleQueueType = {
+static PyTypeObject PySimpleQueueType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_queue.SimpleQueue",               /*tp_name*/
-    sizeof(simplequeueobject),          /*tp_size*/
+    sizeof(simplequeueobject),          /*tp_basicsize*/
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)simplequeue_dealloc,    /*tp_dealloc*/
-    0,                                  /*tp_print*/
+    0,                                  /*tp_vectorcall_offset*/
     0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
+    0,                                  /*tp_as_async*/
     0,                                  /*tp_repr*/
     0,                                  /*tp_as_number*/
     0,                                  /*tp_as_sequence*/
@@ -390,11 +391,9 @@ PyInit__queue(void)
     if (PyModule_AddObject(m, "Empty", EmptyError) < 0)
         return NULL;
 
-    if (PyType_Ready(&PySimpleQueueType) < 0)
+    if (PyModule_AddType(m, &PySimpleQueueType) < 0) {
         return NULL;
-    Py_INCREF(&PySimpleQueueType);
-    if (PyModule_AddObject(m, "SimpleQueue", (PyObject *)&PySimpleQueueType) < 0)
-        return NULL;
+    }
 
     return m;
 }

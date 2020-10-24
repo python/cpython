@@ -938,7 +938,8 @@ static BOOL SystemError(int error, char *msg)
         LPVOID lpMsgBuf;
         FormatMessage(
             FORMAT_MESSAGE_ALLOCATE_BUFFER |
-            FORMAT_MESSAGE_FROM_SYSTEM,
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
             NULL,
             error,
             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -2540,7 +2541,7 @@ int DoUninstall(int argc, char **argv)
     if (!lines)
         return SystemError(0, "Out of memory");
 
-    /* Read the whole logfile, realloacting the buffer */
+    /* Read the whole logfile, reallocating the buffer */
     while (fgets(buffer, sizeof(buffer), logfile)) {
         int len = strlen(buffer);
         /* remove trailing white space */

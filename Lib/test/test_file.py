@@ -7,8 +7,9 @@ from weakref import proxy
 import io
 import _pyio as pyio
 
-from test.support import TESTFN
-from test import support
+from test.support.os_helper import TESTFN
+from test.support import os_helper
+from test.support import warnings_helper
 from collections import UserList
 
 class AutoFileTests:
@@ -20,7 +21,7 @@ class AutoFileTests:
     def tearDown(self):
         if self.f:
             self.f.close()
-        support.unlink(TESTFN)
+        os_helper.unlink(TESTFN)
 
     def testWeakRefs(self):
         # verify weak references
@@ -139,7 +140,7 @@ class PyAutoFileTests(AutoFileTests, unittest.TestCase):
 class OtherFileTests:
 
     def tearDown(self):
-        support.unlink(TESTFN)
+        os_helper.unlink(TESTFN)
 
     def testModeStrings(self):
         # check invalid mode strings
@@ -169,22 +170,33 @@ class OtherFileTests:
             f.close()
             self.fail("no error for invalid mode: %s" % bad_mode)
 
+    def _checkBufferSize(self, s):
+        try:
+            f = self.open(TESTFN, 'wb', s)
+            f.write(str(s).encode("ascii"))
+            f.close()
+            f.close()
+            f = self.open(TESTFN, 'rb', s)
+            d = int(f.read().decode("ascii"))
+            f.close()
+            f.close()
+        except OSError as msg:
+            self.fail('error setting buffer size %d: %s' % (s, str(msg)))
+        self.assertEqual(d, s)
+
     def testSetBufferSize(self):
         # make sure that explicitly setting the buffer size doesn't cause
         # misbehaviour especially with repeated close() calls
-        for s in (-1, 0, 1, 512):
-            try:
-                f = self.open(TESTFN, 'wb', s)
-                f.write(str(s).encode("ascii"))
-                f.close()
-                f.close()
-                f = self.open(TESTFN, 'rb', s)
-                d = int(f.read().decode("ascii"))
-                f.close()
-                f.close()
-            except OSError as msg:
-                self.fail('error setting buffer size %d: %s' % (s, str(msg)))
-            self.assertEqual(d, s)
+        for s in (-1, 0, 512):
+            with warnings_helper.check_no_warnings(self,
+                                           message='line buffering',
+                                           category=RuntimeWarning):
+                self._checkBufferSize(s)
+
+        # test that attempts to use line buffering in binary mode cause
+        # a warning
+        with self.assertWarnsRegex(RuntimeWarning, 'line buffering'):
+            self._checkBufferSize(1)
 
     def testTruncateOnWindows(self):
         # SF bug <http://www.python.org/sf/801631>
@@ -241,8 +253,7 @@ class OtherFileTests:
         # Test for appropriate errors mixing read* and iteration
         for methodname, args in methods:
             f = self.open(TESTFN, 'rb')
-            if next(f) != filler:
-                self.fail, "Broken testfile"
+            self.assertEqual(next(f), filler)
             meth = getattr(f, methodname)
             meth(*args)  # This simply shouldn't fail
             f.close()

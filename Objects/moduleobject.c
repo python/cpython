@@ -2,10 +2,15 @@
 /* Module object implementation */
 
 #include "Python.h"
-#include "internal/pystate.h"
-#include "structmember.h"
+#include "pycore_interp.h"        // PyInterpreterState.importlib
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "structmember.h"         // PyMemberDef
 
 static Py_ssize_t max_module_number;
+
+_Py_IDENTIFIER(__doc__);
+_Py_IDENTIFIER(__name__);
+_Py_IDENTIFIER(__spec__);
 
 typedef struct {
     PyObject_HEAD
@@ -22,20 +27,10 @@ static PyMemberDef module_members[] = {
 };
 
 
-/* Helper for sanity check for traverse not handling m_state == NULL
- * Issue #32374 */
-#ifdef Py_DEBUG
-static int
-bad_traverse_test(PyObject *self, void *arg) {
-    assert(self != NULL);
-    return 0;
-}
-#endif
-
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */
-    sizeof(struct PyModuleDef),                 /* tp_size */
+    sizeof(struct PyModuleDef),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
 };
 
@@ -47,8 +42,8 @@ PyModuleDef_Init(struct PyModuleDef* def)
          return NULL;
     if (def->m_base.m_index == 0) {
         max_module_number++;
-        Py_REFCNT(def) = 1;
-        Py_TYPE(def) = &PyModuleDef_Type;
+        Py_SET_REFCNT(def, 1);
+        Py_SET_TYPE(def, &PyModuleDef_Type);
         def->m_base.m_index = max_module_number;
     }
     return (PyObject*)def;
@@ -58,11 +53,8 @@ static int
 module_init_dict(PyModuleObject *mod, PyObject *md_dict,
                  PyObject *name, PyObject *doc)
 {
-    _Py_IDENTIFIER(__name__);
-    _Py_IDENTIFIER(__doc__);
     _Py_IDENTIFIER(__package__);
     _Py_IDENTIFIER(__loader__);
-    _Py_IDENTIFIER(__spec__);
 
     if (md_dict == NULL)
         return -1;
@@ -173,8 +165,11 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
 PyObject *
 PyModule_Create2(struct PyModuleDef* module, int module_api_version)
 {
-    if (!_PyImport_IsInitialized(PyThreadState_GET()->interp))
-        Py_FatalError("Python import machinery not initialized");
+    if (!_PyImport_IsInitialized(_PyInterpreterState_GET())) {
+        PyErr_SetString(PyExc_SystemError,
+                        "Python import machinery not initialized");
+        return NULL;
+    }
     return _PyModule_CreateInitialized(module, module_api_version);
 }
 
@@ -356,16 +351,6 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
         }
     }
 
-    /* Sanity check for traverse not handling m_state == NULL
-     * This doesn't catch all possible cases, but in many cases it should
-     * make many cases of invalid code crash or raise Valgrind issues
-     * sooner than they would otherwise.
-     * Issue #32374 */
-#ifdef Py_DEBUG
-    if (def->m_traverse != NULL) {
-        def->m_traverse(m, bad_traverse_test, NULL);
-    }
-#endif
     Py_DECREF(nameobj);
     return m;
 
@@ -458,7 +443,6 @@ int
 PyModule_SetDocString(PyObject *m, const char *doc)
 {
     PyObject *v;
-    _Py_IDENTIFIER(__doc__);
 
     v = PyUnicode_FromString(doc);
     if (v == NULL || _PyObject_SetAttrId(m, &PyId___doc__, v) != 0) {
@@ -485,7 +469,6 @@ PyModule_GetDict(PyObject *m)
 PyObject*
 PyModule_GetNameObject(PyObject *m)
 {
-    _Py_IDENTIFIER(__name__);
     PyObject *d;
     PyObject *name;
     if (!PyModule_Check(m)) {
@@ -590,13 +573,15 @@ _PyModule_ClearDict(PyObject *d)
     Py_ssize_t pos;
     PyObject *key, *value;
 
+    int verbose = _Py_GetConfig()->verbose;
+
     /* First, clear only names starting with a single underscore */
     pos = 0;
     while (PyDict_Next(d, &pos, &key, &value)) {
         if (value != Py_None && PyUnicode_Check(key)) {
             if (PyUnicode_READ_CHAR(key, 0) == '_' &&
                 PyUnicode_READ_CHAR(key, 1) != '_') {
-                if (Py_VerboseFlag > 1) {
+                if (verbose > 1) {
                     const char *s = PyUnicode_AsUTF8(key);
                     if (s != NULL)
                         PySys_WriteStderr("#   clear[1] %s\n", s);
@@ -617,7 +602,7 @@ _PyModule_ClearDict(PyObject *d)
             if (PyUnicode_READ_CHAR(key, 0) != '_' ||
                 !_PyUnicode_EqualToASCIIString(key, "__builtins__"))
             {
-                if (Py_VerboseFlag > 1) {
+                if (verbose > 1) {
                     const char *s = PyUnicode_AsUTF8(key);
                     if (s != NULL)
                         PySys_WriteStderr("#   clear[2] %s\n", s);
@@ -675,14 +660,20 @@ module___init___impl(PyModuleObject *self, PyObject *name, PyObject *doc)
 static void
 module_dealloc(PyModuleObject *m)
 {
+    int verbose = _Py_GetConfig()->verbose;
+
     PyObject_GC_UnTrack(m);
-    if (Py_VerboseFlag && m->md_name) {
-        PySys_FormatStderr("# destroy %S\n", m->md_name);
+    if (verbose && m->md_name) {
+        PySys_FormatStderr("# destroy %U\n", m->md_name);
     }
     if (m->md_weaklist != NULL)
         PyObject_ClearWeakRefs((PyObject *) m);
-    if (m->md_def && m->md_def->m_free)
+    /* bpo-39824: Don't call m_free() if m_size > 0 and md_state=NULL */
+    if (m->md_def && m->md_def->m_free
+        && (m->md_def->m_size <= 0 || m->md_state != NULL))
+    {
         m->md_def->m_free(m);
+    }
     Py_XDECREF(m->md_dict);
     Py_XDECREF(m->md_name);
     if (m->md_state != NULL)
@@ -693,10 +684,30 @@ module_dealloc(PyModuleObject *m)
 static PyObject *
 module_repr(PyModuleObject *m)
 {
-    PyThreadState *tstate = PyThreadState_GET();
-    PyInterpreterState *interp = tstate->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
+}
+
+/* Check if the "_initializing" attribute of the module spec is set to true.
+   Clear the exception and return 0 if spec is NULL.
+ */
+int
+_PyModuleSpec_IsInitializing(PyObject *spec)
+{
+    if (spec != NULL) {
+        _Py_IDENTIFIER(_initializing);
+        PyObject *value = _PyObject_GetAttrId(spec, &PyId__initializing);
+        if (value != NULL) {
+            int initializing = PyObject_IsTrue(value);
+            Py_DECREF(value);
+            if (initializing >= 0) {
+                return initializing;
+            }
+        }
+    }
+    PyErr_Clear();
+    return 0;
 }
 
 static PyObject*
@@ -712,14 +723,27 @@ module_getattro(PyModuleObject *m, PyObject *name)
         _Py_IDENTIFIER(__getattr__);
         getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
         if (getattr) {
-            PyObject* stack[1] = {name};
-            return _PyObject_FastCall(getattr, stack, 1);
+            return PyObject_CallOneArg(getattr, name);
         }
-        _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {
-            PyErr_Format(PyExc_AttributeError,
-                        "module '%U' has no attribute '%U'", mod_name, name);
+            Py_INCREF(mod_name);
+            PyObject *spec = _PyDict_GetItemId(m->md_dict, &PyId___spec__);
+            Py_XINCREF(spec);
+            if (_PyModuleSpec_IsInitializing(spec)) {
+                PyErr_Format(PyExc_AttributeError,
+                             "partially initialized "
+                             "module '%U' has no attribute '%U' "
+                             "(most likely due to a circular import)",
+                             mod_name, name);
+            }
+            else {
+                PyErr_Format(PyExc_AttributeError,
+                             "module '%U' has no attribute '%U'",
+                             mod_name, name);
+            }
+            Py_XDECREF(spec);
+            Py_DECREF(mod_name);
             return NULL;
         }
     }
@@ -731,7 +755,10 @@ module_getattro(PyModuleObject *m, PyObject *name)
 static int
 module_traverse(PyModuleObject *m, visitproc visit, void *arg)
 {
-    if (m->md_def && m->md_def->m_traverse) {
+    /* bpo-39824: Don't call m_traverse() if m_size > 0 and md_state=NULL */
+    if (m->md_def && m->md_def->m_traverse
+        && (m->md_def->m_size <= 0 || m->md_state != NULL))
+    {
         int res = m->md_def->m_traverse((PyObject*)m, visit, arg);
         if (res)
             return res;
@@ -743,8 +770,17 @@ module_traverse(PyModuleObject *m, visitproc visit, void *arg)
 static int
 module_clear(PyModuleObject *m)
 {
-    if (m->md_def && m->md_def->m_clear) {
+    /* bpo-39824: Don't call m_clear() if m_size > 0 and md_state=NULL */
+    if (m->md_def && m->md_def->m_clear
+        && (m->md_def->m_size <= 0 || m->md_state != NULL))
+    {
         int res = m->md_def->m_clear((PyObject*)m);
+        if (PyErr_Occurred()) {
+            PySys_FormatStderr("Exception ignored in m_clear of module%s%V\n",
+                               m->md_name ? " " : "",
+                               m->md_name, "");
+            PyErr_WriteUnraisable(NULL);
+        }
         if (res)
             return res;
     }
@@ -756,16 +792,17 @@ static PyObject *
 module_dir(PyObject *self, PyObject *args)
 {
     _Py_IDENTIFIER(__dict__);
+    _Py_IDENTIFIER(__dir__);
     PyObject *result = NULL;
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
 
     if (dict != NULL) {
         if (PyDict_Check(dict)) {
-            PyObject *dirfunc = PyDict_GetItemString(dict, "__dir__");
+            PyObject *dirfunc = _PyDict_GetItemIdWithError(dict, &PyId___dir__);
             if (dirfunc) {
                 result = _PyObject_CallNoArg(dirfunc);
             }
-            else {
+            else if (!PyErr_Occurred()) {
                 result = PyDict_Keys(dict);
             }
         }
@@ -791,13 +828,13 @@ static PyMethodDef module_methods[] = {
 PyTypeObject PyModule_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "module",                                   /* tp_name */
-    sizeof(PyModuleObject),                     /* tp_size */
+    sizeof(PyModuleObject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)module_dealloc,                 /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)module_repr,                      /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

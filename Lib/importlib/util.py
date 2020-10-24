@@ -1,5 +1,5 @@
 """Utility code for constructing importers, etc."""
-from . import abc
+from ._abc import Loader
 from ._bootstrap import module_from_spec
 from ._bootstrap import _resolve_name
 from ._bootstrap import spec_from_loader
@@ -29,8 +29,8 @@ def resolve_name(name, package):
     if not name.startswith('.'):
         return name
     elif not package:
-        raise ValueError(f'no package specified for {repr(name)} '
-                         '(required for relative module names)')
+        raise ImportError(f'no package specified for {repr(name)} '
+                          '(required for relative module names)')
     level = 0
     for character in name:
         if character != '.':
@@ -263,7 +263,7 @@ class _LazyModule(types.ModuleType):
         delattr(self, attr)
 
 
-class LazyLoader(abc.Loader):
+class LazyLoader(Loader):
 
     """A loader that creates a module which defers loading until attribute access."""
 

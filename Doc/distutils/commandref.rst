@@ -4,6 +4,8 @@
 Command Reference
 *****************
 
+.. include:: ./_setuptools_disclaimer.rst
+
 .. % \section{Building modules: the \protect\command{build} command family}
 .. % \label{build-cmds}
 .. % \subsubsection{\protect\command{build}}

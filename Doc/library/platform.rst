@@ -79,6 +79,11 @@ Cross Platform
    Setting *terse* to true causes the function to return only the absolute minimum
    information needed to identify the platform.
 
+   .. versionchanged:: 3.8
+      On macOS, the function now uses :func:`mac_ver`, if it returns a
+      non-empty release string, to get the macOS version rather than the darwin
+      version.
+
 
 .. function:: processor()
 
@@ -140,8 +145,8 @@ Cross Platform
 
 .. function:: system()
 
-   Returns the system/OS name, e.g. ``'Linux'``, ``'Windows'``, or ``'Java'``. An
-   empty string is returned if the value cannot be determined.
+   Returns the system/OS name, such as ``'Linux'``, ``'Darwin'``, ``'Java'``,
+   ``'Windows'``. An empty string is returned if the value cannot be determined.
 
 
 .. function:: system_alias(system, release, version)
@@ -211,19 +216,20 @@ Windows Platform
       later (support for this was added in Python 2.6). It obviously
       only runs on Win32 compatible platforms.
 
+.. function:: win32_edition()
 
-Win95/98 specific
-^^^^^^^^^^^^^^^^^
+   Returns a string representing the current Windows edition.  Possible
+   values include but are not limited to ``'Enterprise'``, ``'IoTUAP'``,
+   ``'ServerStandard'``, and ``'nanoserver'``.
 
-.. function:: popen(cmd, mode='r', bufsize=-1)
+   .. versionadded:: 3.8
 
-   Portable :func:`popen` interface.  Find a working popen implementation
-   preferring :func:`win32pipe.popen`.  On Windows NT, :func:`win32pipe.popen`
-   should work; on Windows 9x it hangs due to bugs in the MS C library.
+.. function:: win32_is_iot()
 
-   .. deprecated:: 3.3
-      This function is obsolete.  Use the :mod:`subprocess` module.  Check
-      especially the :ref:`subprocess-replacements` section.
+   Return ``True`` if the Windows edition returned by :func:`win32_edition`
+   is recognized as an IoT edition.
+
+   .. versionadded:: 3.8
 
 
 Mac OS Platform
@@ -243,7 +249,7 @@ Mac OS Platform
 Unix Platforms
 --------------
 
-.. function:: libc_ver(executable=sys.executable, lib='', version='', chunksize=2048)
+.. function:: libc_ver(executable=sys.executable, lib='', version='', chunksize=16384)
 
    Tries to determine the libc version against which the file executable (defaults
    to the Python interpreter) is linked.  Returns a tuple of strings ``(lib,
@@ -254,4 +260,3 @@ Unix Platforms
    using :program:`gcc`.
 
    The file is read and scanned in chunks of *chunksize* bytes.
-

@@ -148,10 +148,8 @@ The :mod:`locale` module defines the following exception and functions:
    +--------------+-----------------------------------------+
 
    The function sets temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC``
-   locale to decode ``decimal_point`` and ``thousands_sep`` byte strings if
-   they are non-ASCII or longer than 1 byte, and the ``LC_NUMERIC`` locale is
-   different than the ``LC_CTYPE`` locale. This temporary change affects other
-   threads.
+   locale or the ``LC_MONETARY`` locale if locales are different and numeric or
+   monetary strings are non-ASCII. This temporary change affects other threads.
 
    .. versionchanged:: 3.7
       The function now sets temporarily the ``LC_CTYPE`` locale to the
@@ -510,7 +508,7 @@ Background, details, hints, tips and caveats
 --------------------------------------------
 
 The C standard defines the locale as a program-wide property that may be
-relatively expensive to change.  On top of that, some implementation are broken
+relatively expensive to change.  On top of that, some implementations are broken
 in such a way that frequent locale changes may cause core dumps.  This makes the
 locale somewhat painful to use correctly.
 

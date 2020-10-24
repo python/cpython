@@ -27,7 +27,7 @@ object-oriented way:
 
 test fixture
    A :dfn:`test fixture` represents the preparation needed to perform one or more
-   tests, and any associate cleanup actions.  This may involve, for example,
+   tests, and any associated cleanup actions.  This may involve, for example,
    creating temporary or proxy databases, directories, or starting a server
    process.
 
@@ -56,8 +56,8 @@ test runner
       Kent Beck's original paper on testing frameworks using the pattern shared
       by :mod:`unittest`.
 
-   `Nose <https://nose.readthedocs.io/>`_ and `py.test <https://docs.pytest.org/>`_
-      Third-party unittest frameworks with a lighter-weight syntax for writing
+   `pytest <https://docs.pytest.org/>`_
+      Third-party unittest framework with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
    `The Python Testing Tools Taxonomy <https://wiki.python.org/moin/PythonTestingToolsTaxonomy>`_
@@ -73,7 +73,7 @@ test runner
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
    `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_
-   or  `Hudson <http://hudson-ci.org/>`_.
+   or `Travis-CI <https://travis-ci.com>`_, or `AppVeyor <https://www.appveyor.com/>`_.
 
 
 .. _unittest-minimal-example:
@@ -412,7 +412,7 @@ run whether the test method succeeded or not.
 Such a working environment for the testing code is called a
 :dfn:`test fixture`.  A new TestCase instance is created as a unique
 test fixture used to execute each individual test method.  Thus
-`~TestCase.setUp`, `~TestCase.tearDown`, and `~TestCase.__init__`
+:meth:`~TestCase.setUp`, :meth:`~TestCase.tearDown`, and :meth:`~TestCase.__init__`
 will be called once per test.
 
 It is recommended that you use TestCase implementations to group tests together
@@ -510,7 +510,8 @@ that is broken and will fail, but shouldn't be counted as a failure on a
 :class:`TestResult`.
 
 Skipping a test is simply a matter of using the :func:`skip` :term:`decorator`
-or one of its conditional variants.
+or one of its conditional variants, calling :meth:`TestCase.skipTest` within a
+:meth:`~TestCase.setUp` or test method, or raising :exc:`SkipTest` directly.
 
 Basic skipping looks like this::
 
@@ -531,16 +532,23 @@ Basic skipping looks like this::
            # windows specific testing code
            pass
 
+       def test_maybe_skipped(self):
+           if not external_resource_available():
+               self.skipTest("external resource not available")
+           # test code that depends on the external resource
+           pass
+
 This is the output of running the example above in verbose mode::
 
    test_format (__main__.MyTestCase) ... skipped 'not supported in this library version'
    test_nothing (__main__.MyTestCase) ... skipped 'demonstrating skipping'
+   test_maybe_skipped (__main__.MyTestCase) ... skipped 'external resource not available'
    test_windows_support (__main__.MyTestCase) ... skipped 'requires Windows'
 
    ----------------------------------------------------------------------
-   Ran 3 tests in 0.005s
+   Ran 4 tests in 0.005s
 
-   OK (skipped=3)
+   OK (skipped=4)
 
 Classes can be skipped just like methods::
 
@@ -568,7 +576,7 @@ the test unless the passed object has a certain attribute::
            return lambda func: func
        return unittest.skip("{!r} doesn't have {!r}".format(obj, attr))
 
-The following decorators implement test skipping and expected failures:
+The following decorators and exception implement test skipping and expected failures:
 
 .. decorator:: skip(reason)
 
@@ -585,8 +593,9 @@ The following decorators implement test skipping and expected failures:
 
 .. decorator:: expectedFailure
 
-   Mark the test as an expected failure.  If the test fails when run, the test
-   is not counted as a failure.
+   Mark the test as an expected failure or error.  If the test fails or errors
+   it will be considered a success.  If the test passes, it will be considered
+   a failure.
 
 .. exception:: SkipTest(reason)
 
@@ -607,7 +616,7 @@ Distinguishing test iterations using subtests
 
 .. versionadded:: 3.4
 
-When some of your tests differ only by a some very small differences, for
+When there are very small differences among your tests, for
 instance some parameters, unittest allows you to distinguish them inside
 the body of a test method using the :meth:`~TestCase.subTest` context manager.
 
@@ -724,7 +733,7 @@ Test cases
 
    .. method:: setUpClass()
 
-      A class method called before tests in an individual class run.
+      A class method called before tests in an individual class are run.
       ``setUpClass`` is called with the class as the only argument
       and must be decorated as a :func:`classmethod`::
 
@@ -902,10 +911,10 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertIn(first, second, msg=None)
-               assertNotIn(first, second, msg=None)
+   .. method:: assertIn(member, container, msg=None)
+               assertNotIn(member, container, msg=None)
 
-      Test that *first* is (or is not) in *second*.
+      Test that *member* is (or is not) in *container*.
 
       .. versionadded:: 3.1
 
@@ -942,9 +951,12 @@ Test cases
    | :meth:`assertLogs(logger, level)                        | The ``with`` block logs on *logger*  | 3.4        |
    | <TestCase.assertLogs>`                                  | with minimum *level*                 |            |
    +---------------------------------------------------------+--------------------------------------+------------+
+   | :meth:`assertNoLogs(logger, level)                      | The ``with`` block does not log on   | 3.10       |
+   | <TestCase.assertNoLogs>`                                |  *logger* with minimum *level*       |            |
+   +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
-               assertRaises(exception, msg=None)
+               assertRaises(exception, *, msg=None)
 
       Test that an exception is raised when *callable* is called with any
       positional or keyword arguments that are also passed to
@@ -984,7 +996,7 @@ Test cases
 
 
    .. method:: assertRaisesRegex(exception, regex, callable, *args, **kwds)
-               assertRaisesRegex(exception, regex, msg=None)
+               assertRaisesRegex(exception, regex, *, msg=None)
 
       Like :meth:`assertRaises` but also tests that *regex* matches
       on the string representation of the raised exception.  *regex* may be
@@ -1000,7 +1012,7 @@ Test cases
             int('XYZ')
 
       .. versionadded:: 3.1
-         under the name ``assertRaisesRegexp``.
+         Added under the name ``assertRaisesRegexp``.
 
       .. versionchanged:: 3.2
          Renamed to :meth:`assertRaisesRegex`.
@@ -1010,7 +1022,7 @@ Test cases
 
 
    .. method:: assertWarns(warning, callable, *args, **kwds)
-               assertWarns(warning, msg=None)
+               assertWarns(warning, *, msg=None)
 
       Test that a warning is triggered when *callable* is called with any
       positional or keyword arguments that are also passed to
@@ -1051,7 +1063,7 @@ Test cases
 
 
    .. method:: assertWarnsRegex(warning, regex, callable, *args, **kwds)
-               assertWarnsRegex(warning, regex, msg=None)
+               assertWarnsRegex(warning, regex, *, msg=None)
 
       Like :meth:`assertWarns` but also tests that *regex* matches on the
       message of the triggered warning.  *regex* may be a regular expression
@@ -1080,7 +1092,8 @@ Test cases
 
       If given, *logger* should be a :class:`logging.Logger` object or a
       :class:`str` giving the name of a logger.  The default is the root
-      logger, which will catch all messages.
+      logger, which will catch all messages that were not blocked by a
+      non-propagating descendent logger.
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
@@ -1113,6 +1126,24 @@ Test cases
 
       .. versionadded:: 3.4
 
+   .. method:: assertNoLogs(logger=None, level=None)
+
+      A context manager to test that no messages are logged on
+      the *logger* or one of its children, with at least the given
+      *level*.
+
+      If given, *logger* should be a :class:`logging.Logger` object or a
+      :class:`str` giving the name of a logger.  The default is the root
+      logger, which will catch all messages.
+
+      If given, *level* should be either a numeric logging level or
+      its string equivalent (for example either ``"ERROR"`` or
+      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+
+      Unlike :meth:`assertLogs`, nothing will be returned by the context
+      manager.
+
+      .. versionadded:: 3.10
 
    There are also other methods used to perform more specific checks, such as:
 
@@ -1145,7 +1176,7 @@ Test cases
    +---------------------------------------+--------------------------------+--------------+
    | :meth:`assertCountEqual(a, b)         | *a* and *b* have the same      | 3.2          |
    | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
-   |                                       | regardless of their order      |              |
+   |                                       | regardless of their order.     |              |
    +---------------------------------------+--------------------------------+--------------+
 
 
@@ -1161,7 +1192,7 @@ Test cases
       If *delta* is supplied instead of *places* then the difference
       between *first* and *second* must be less or equal to (or greater than) *delta*.
 
-      Supplying both *delta* and *places* raises a ``TypeError``.
+      Supplying both *delta* and *places* raises a :exc:`TypeError`.
 
       .. versionchanged:: 3.2
          :meth:`assertAlmostEqual` automatically considers almost equal objects
@@ -1193,7 +1224,7 @@ Test cases
       expression suitable for use by :func:`re.search`.
 
       .. versionadded:: 3.1
-         under the name ``assertRegexpMatches``.
+         Added under the name ``assertRegexpMatches``.
       .. versionchanged:: 3.2
          The method ``assertRegexpMatches()`` has been renamed to
          :meth:`.assertRegex`.
@@ -1419,7 +1450,7 @@ Test cases
          :class:`TextTestResult` in Python 3.2.
 
 
-   .. method:: addCleanup(function, *args, **kwargs)
+   .. method:: addCleanup(function, /, *args, **kwargs)
 
       Add a function to be called after :meth:`tearDown` to cleanup resources
       used during the test. Functions will be called in reverse order to the
@@ -1447,6 +1478,115 @@ Test cases
       functions one at a time, so it can be called at any time.
 
       .. versionadded:: 3.1
+
+   .. classmethod:: addClassCleanup(function, /, *args, **kwargs)
+
+      Add a function to be called after :meth:`tearDownClass` to cleanup
+      resources used during the test class. Functions will be called in reverse
+      order to the order they are added (:abbr:`LIFO (last-in, first-out)`).
+      They are called with any arguments and keyword arguments passed into
+      :meth:`addClassCleanup` when they are added.
+
+      If :meth:`setUpClass` fails, meaning that :meth:`tearDownClass` is not
+      called, then any cleanup functions added will still be called.
+
+      .. versionadded:: 3.8
+
+
+   .. classmethod:: doClassCleanups()
+
+      This method is called unconditionally after :meth:`tearDownClass`, or
+      after :meth:`setUpClass` if :meth:`setUpClass` raises an exception.
+
+      It is responsible for calling all the cleanup functions added by
+      :meth:`addCleanupClass`. If you need cleanup functions to be called
+      *prior* to :meth:`tearDownClass` then you can call
+      :meth:`doCleanupsClass` yourself.
+
+      :meth:`doCleanupsClass` pops methods off the stack of cleanup
+      functions one at a time, so it can be called at any time.
+
+      .. versionadded:: 3.8
+
+
+.. class:: IsolatedAsyncioTestCase(methodName='runTest')
+
+   This class provides an API similar to :class:`TestCase` and also accepts
+   coroutines as test functions.
+
+   .. versionadded:: 3.8
+
+   .. coroutinemethod:: asyncSetUp()
+
+      Method called to prepare the test fixture. This is called after :meth:`setUp`.
+      This is called immediately before calling the test method; other than
+      :exc:`AssertionError` or :exc:`SkipTest`, any exception raised by this method
+      will be considered an error rather than a test failure. The default implementation
+      does nothing.
+
+   .. coroutinemethod:: asyncTearDown()
+
+      Method called immediately after the test method has been called and the
+      result recorded.  This is called before :meth:`tearDown`. This is called even if
+      the test method raised an exception, so the implementation in subclasses may need
+      to be particularly careful about checking internal state.  Any exception, other than
+      :exc:`AssertionError` or :exc:`SkipTest`, raised by this method will be
+      considered an additional error rather than a test failure (thus increasing
+      the total number of reported errors). This method will only be called if
+      the :meth:`asyncSetUp` succeeds, regardless of the outcome of the test method.
+      The default implementation does nothing.
+
+   .. method:: addAsyncCleanup(function, /, *args, **kwargs)
+
+      This method accepts a coroutine that can be used as a cleanup function.
+
+   .. method:: run(result=None)
+
+      Sets up a new event loop to run the test, collecting the result into
+      the :class:`TestResult` object passed as *result*.  If *result* is
+      omitted or ``None``, a temporary result object is created (by calling
+      the :meth:`defaultTestResult` method) and used. The result object is
+      returned to :meth:`run`'s caller. At the end of the test all the tasks
+      in the event loop are cancelled.
+
+
+   An example illustrating the order::
+
+      from unittest import IsolatedAsyncioTestCase
+
+      events = []
+
+
+      class Test(IsolatedAsyncioTestCase):
+
+
+          def setUp(self):
+              events.append("setUp")
+
+          async def asyncSetUp(self):
+              self._async_connection = await AsyncConnection()
+              events.append("asyncSetUp")
+
+          async def test_response(self):
+              events.append("test_response")
+              response = await self._async_connection.get("https://example.com")
+              self.assertEqual(response.status_code, 200)
+              self.addAsyncCleanup(self.on_cleanup)
+
+          def tearDown(self):
+              events.append("tearDown")
+
+          async def asyncTearDown(self):
+              await self._async_connection.close()
+              events.append("asyncTearDown")
+
+          async def on_cleanup(self):
+              events.append("cleanup")
+
+      if __name__ == "__main__":
+          unittest.main()
+
+   After running the test, ``events`` would contain ``["setUp", "asyncSetUp", "test_response", "asyncTearDown", "tearDown", "cleanup"]``.
 
 
 .. class:: FunctionTestCase(testFunc, setUp=None, tearDown=None, description=None)
@@ -1483,14 +1623,14 @@ along with their deprecated aliases:
    ==============================  ====================== =======================
 
    .. deprecated:: 3.1
-         the fail* aliases listed in the second column.
+         The fail* aliases listed in the second column have been deprecated.
    .. deprecated:: 3.2
-         the assert* aliases listed in the third column.
+         The assert* aliases listed in the third column have been deprecated.
    .. deprecated:: 3.2
          ``assertRegexpMatches`` and ``assertRaisesRegexp`` have been renamed to
          :meth:`.assertRegex` and :meth:`.assertRaisesRegex`.
    .. deprecated:: 3.5
-         the ``assertNotRegexpMatches`` name in favor of :meth:`.assertNotRegex`.
+         The ``assertNotRegexpMatches`` name is deprecated in favor of :meth:`.assertNotRegex`.
 
 .. _testsuite-objects:
 
@@ -1828,7 +1968,7 @@ Loading and running tests
 
       A list containing 2-tuples of :class:`TestCase` instances and strings
       holding formatted tracebacks.  Each tuple represents an expected failure
-      of the test case.
+      or error of the test case.
 
    .. attribute:: unexpectedSuccesses
 
@@ -1954,8 +2094,8 @@ Loading and running tests
 
    .. method:: addExpectedFailure(test, err)
 
-      Called when the test case *test* fails, but was marked with the
-      :func:`expectedFailure` decorator.
+      Called when the test case *test* fails or errors, but was marked with
+      the :func:`expectedFailure` decorator.
 
       The default implementation appends a tuple ``(test, formatted_err)`` to
       the instance's :attr:`expectedFailures` attribute, where *formatted_err*
@@ -2050,7 +2190,7 @@ Loading and running tests
 
    .. method:: run(test)
 
-      This method is the main public interface to the `TextTestRunner`. This
+      This method is the main public interface to the ``TextTestRunner``. This
       method takes a :class:`TestSuite` or :class:`TestCase` instance. A
       :class:`TestResult` is created by calling
       :func:`_makeResult` and the test(s) are run and the
@@ -2268,6 +2408,38 @@ module will be run and the ``tearDownModule`` will not be run. If the exception 
 :exc:`SkipTest` exception then the module will be reported as having been skipped
 instead of as an error.
 
+To add cleanup code that must be run even in the case of an exception, use
+``addModuleCleanup``:
+
+
+.. function:: addModuleCleanup(function, /, *args, **kwargs)
+
+   Add a function to be called after :func:`tearDownModule` to cleanup
+   resources used during the test class. Functions will be called in reverse
+   order to the order they are added (:abbr:`LIFO (last-in, first-out)`).
+   They are called with any arguments and keyword arguments passed into
+   :meth:`addModuleCleanup` when they are added.
+
+   If :meth:`setUpModule` fails, meaning that :func:`tearDownModule` is not
+   called, then any cleanup functions added will still be called.
+
+   .. versionadded:: 3.8
+
+
+.. function:: doModuleCleanups()
+
+   This function is called unconditionally after :func:`tearDownModule`, or
+   after :func:`setUpModule` if :func:`setUpModule` raises an exception.
+
+   It is responsible for calling all the cleanup functions added by
+   :func:`addCleanupModule`. If you need cleanup functions to be called
+   *prior* to :func:`tearDownModule` then you can call
+   :func:`doModuleCleanups` yourself.
+
+   :func:`doModuleCleanups` pops methods off the stack of cleanup
+   functions one at a time, so it can be called at any time.
+
+   .. versionadded:: 3.8
 
 Signal Handling
 ---------------

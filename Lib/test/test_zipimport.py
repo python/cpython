@@ -6,8 +6,11 @@ import importlib.util
 import struct
 import time
 import unittest
+import unittest.mock
 
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 
 from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
 
@@ -67,14 +70,14 @@ class ImportHooksBaseTestCase(unittest.TestCase):
         self.meta_path = sys.meta_path[:]
         self.path_hooks = sys.path_hooks[:]
         sys.path_importer_cache.clear()
-        self.modules_before = support.modules_setup()
+        self.modules_before = import_helper.modules_setup()
 
     def tearDown(self):
         sys.path[:] = self.path
         sys.meta_path[:] = self.meta_path
         sys.path_hooks[:] = self.path_hooks
         sys.path_importer_cache.clear()
-        support.modules_cleanup(*self.modules_before)
+        import_helper.modules_cleanup(*self.modules_before)
 
 
 class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
@@ -91,7 +94,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
     def makeTree(self, files, dirName=TEMP_DIR):
         # Create a filesystem based set of modules/packages
         # defined by files under the directory dirName.
-        self.addCleanup(support.rmtree, dirName)
+        self.addCleanup(os_helper.rmtree, dirName)
 
         for name, (mtime, data) in files.items():
             path = os.path.join(dirName, name)
@@ -109,13 +112,16 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # Create a zip archive based set of modules/packages
         # defined by files in the zip file zipName.  If the
         # key 'stuff' exists in kw it is prepended to the archive.
-        self.addCleanup(support.unlink, zipName)
+        self.addCleanup(os_helper.unlink, zipName)
 
         with ZipFile(zipName, "w") as z:
             for name, (mtime, data) in files.items():
                 zinfo = ZipInfo(name, time.localtime(mtime))
                 zinfo.compress_type = self.compression
                 z.writestr(zinfo, data)
+            comment = kw.get("comment", None)
+            if comment is not None:
+                z.comment = comment
 
         stuff = kw.get("stuff", None)
         if stuff is not None:
@@ -199,6 +205,21 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  TESTMOD + ".pyc": (NOW - 20, bytecode)}
         def check(mod):
             self.assertEqual(mod.state, 'old')
+        self.doTest(None, files, TESTMOD, call=check)
+
+    @unittest.mock.patch('_imp.check_hash_based_pycs', 'always')
+    def test_checked_hash_based_change_pyc(self):
+        source = b"state = 'old'"
+        source_hash = importlib.util.source_hash(source)
+        bytecode = importlib._bootstrap_external._code_to_hash_pyc(
+            compile(source, "???", "exec"),
+            source_hash,
+            False,
+        )
+        files = {TESTMOD + ".py": (NOW, "state = 'new'"),
+                 TESTMOD + ".pyc": (NOW - 20, bytecode)}
+        def check(mod):
+            self.assertEqual(mod.state, 'new')
         self.doTest(None, files, TESTMOD, call=check)
 
     def testEmptyPy(self):
@@ -419,57 +440,53 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc),
                  "spam" + pyc_ext: (NOW, test_pyc)}
 
-        z = ZipFile(TEMP_ZIP, "w")
-        try:
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
+        with ZipFile(TEMP_ZIP, "w") as z:
             for name, (mtime, data) in files.items():
                 zinfo = ZipInfo(name, time.localtime(mtime))
                 zinfo.compress_type = self.compression
                 zinfo.comment = b"spam"
                 z.writestr(zinfo, data)
-            z.close()
 
-            zi = zipimport.zipimporter(TEMP_ZIP)
-            self.assertEqual(zi.archive, TEMP_ZIP)
-            self.assertEqual(zi.is_package(TESTPACK), True)
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        self.assertEqual(zi.archive, TEMP_ZIP)
+        self.assertEqual(zi.is_package(TESTPACK), True)
 
-            find_mod = zi.find_module('spam')
-            self.assertIsNotNone(find_mod)
-            self.assertIsInstance(find_mod, zipimport.zipimporter)
-            self.assertFalse(find_mod.is_package('spam'))
-            load_mod = find_mod.load_module('spam')
-            self.assertEqual(find_mod.get_filename('spam'), load_mod.__file__)
+        find_mod = zi.find_module('spam')
+        self.assertIsNotNone(find_mod)
+        self.assertIsInstance(find_mod, zipimport.zipimporter)
+        self.assertFalse(find_mod.is_package('spam'))
+        load_mod = find_mod.load_module('spam')
+        self.assertEqual(find_mod.get_filename('spam'), load_mod.__file__)
 
-            mod = zi.load_module(TESTPACK)
-            self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
+        mod = zi.load_module(TESTPACK)
+        self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
 
-            existing_pack_path = importlib.import_module(TESTPACK).__path__[0]
-            expected_path_path = os.path.join(TEMP_ZIP, TESTPACK)
-            self.assertEqual(existing_pack_path, expected_path_path)
+        existing_pack_path = importlib.import_module(TESTPACK).__path__[0]
+        expected_path_path = os.path.join(TEMP_ZIP, TESTPACK)
+        self.assertEqual(existing_pack_path, expected_path_path)
 
-            self.assertEqual(zi.is_package(packdir + '__init__'), False)
-            self.assertEqual(zi.is_package(packdir + TESTPACK2), True)
-            self.assertEqual(zi.is_package(packdir2 + TESTMOD), False)
+        self.assertEqual(zi.is_package(packdir + '__init__'), False)
+        self.assertEqual(zi.is_package(packdir + TESTPACK2), True)
+        self.assertEqual(zi.is_package(packdir2 + TESTMOD), False)
 
-            mod_path = packdir2 + TESTMOD
-            mod_name = module_path_to_dotted_name(mod_path)
-            mod = importlib.import_module(mod_name)
-            self.assertTrue(mod_name in sys.modules)
-            self.assertEqual(zi.get_source(TESTPACK), None)
-            self.assertEqual(zi.get_source(mod_path), None)
-            self.assertEqual(zi.get_filename(mod_path), mod.__file__)
-            # To pass in the module name instead of the path, we must use the
-            # right importer
-            loader = mod.__loader__
-            self.assertEqual(loader.get_source(mod_name), None)
-            self.assertEqual(loader.get_filename(mod_name), mod.__file__)
+        mod_path = packdir2 + TESTMOD
+        mod_name = module_path_to_dotted_name(mod_path)
+        mod = importlib.import_module(mod_name)
+        self.assertTrue(mod_name in sys.modules)
+        self.assertEqual(zi.get_source(TESTPACK), None)
+        self.assertEqual(zi.get_source(mod_path), None)
+        self.assertEqual(zi.get_filename(mod_path), mod.__file__)
+        # To pass in the module name instead of the path, we must use the
+        # right importer
+        loader = mod.__loader__
+        self.assertEqual(loader.get_source(mod_name), None)
+        self.assertEqual(loader.get_filename(mod_name), mod.__file__)
 
-            # test prefix and archivepath members
-            zi2 = zipimport.zipimporter(TEMP_ZIP + os.sep + TESTPACK)
-            self.assertEqual(zi2.archive, TEMP_ZIP)
-            self.assertEqual(zi2.prefix, TESTPACK + os.sep)
-        finally:
-            z.close()
-            os.remove(TEMP_ZIP)
+        # test prefix and archivepath members
+        zi2 = zipimport.zipimporter(TEMP_ZIP + os.sep + TESTPACK)
+        self.assertEqual(zi2.archive, TEMP_ZIP)
+        self.assertEqual(zi2.prefix, TESTPACK + os.sep)
 
     def testZipImporterMethodsInSubDirectory(self):
         packdir = TESTPACK + os.sep
@@ -477,84 +494,60 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         files = {packdir2 + "__init__" + pyc_ext: (NOW, test_pyc),
                  packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc)}
 
-        z = ZipFile(TEMP_ZIP, "w")
-        try:
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
+        with ZipFile(TEMP_ZIP, "w") as z:
             for name, (mtime, data) in files.items():
                 zinfo = ZipInfo(name, time.localtime(mtime))
                 zinfo.compress_type = self.compression
                 zinfo.comment = b"eggs"
                 z.writestr(zinfo, data)
-            z.close()
 
-            zi = zipimport.zipimporter(TEMP_ZIP + os.sep + packdir)
-            self.assertEqual(zi.archive, TEMP_ZIP)
-            self.assertEqual(zi.prefix, packdir)
-            self.assertEqual(zi.is_package(TESTPACK2), True)
-            mod = zi.load_module(TESTPACK2)
-            self.assertEqual(zi.get_filename(TESTPACK2), mod.__file__)
+        zi = zipimport.zipimporter(TEMP_ZIP + os.sep + packdir)
+        self.assertEqual(zi.archive, TEMP_ZIP)
+        self.assertEqual(zi.prefix, packdir)
+        self.assertEqual(zi.is_package(TESTPACK2), True)
+        mod = zi.load_module(TESTPACK2)
+        self.assertEqual(zi.get_filename(TESTPACK2), mod.__file__)
 
-            self.assertEqual(
-                zi.is_package(TESTPACK2 + os.sep + '__init__'), False)
-            self.assertEqual(
-                zi.is_package(TESTPACK2 + os.sep + TESTMOD), False)
+        self.assertEqual(
+            zi.is_package(TESTPACK2 + os.sep + '__init__'), False)
+        self.assertEqual(
+            zi.is_package(TESTPACK2 + os.sep + TESTMOD), False)
 
-            pkg_path = TEMP_ZIP + os.sep + packdir + TESTPACK2
-            zi2 = zipimport.zipimporter(pkg_path)
-            find_mod_dotted = zi2.find_module(TESTMOD)
-            self.assertIsNotNone(find_mod_dotted)
-            self.assertIsInstance(find_mod_dotted, zipimport.zipimporter)
-            self.assertFalse(zi2.is_package(TESTMOD))
-            load_mod = find_mod_dotted.load_module(TESTMOD)
-            self.assertEqual(
-                find_mod_dotted.get_filename(TESTMOD), load_mod.__file__)
+        pkg_path = TEMP_ZIP + os.sep + packdir + TESTPACK2
+        zi2 = zipimport.zipimporter(pkg_path)
+        find_mod_dotted = zi2.find_module(TESTMOD)
+        self.assertIsNotNone(find_mod_dotted)
+        self.assertIsInstance(find_mod_dotted, zipimport.zipimporter)
+        self.assertFalse(zi2.is_package(TESTMOD))
+        load_mod = find_mod_dotted.load_module(TESTMOD)
+        self.assertEqual(
+            find_mod_dotted.get_filename(TESTMOD), load_mod.__file__)
 
-            mod_path = TESTPACK2 + os.sep + TESTMOD
-            mod_name = module_path_to_dotted_name(mod_path)
-            mod = importlib.import_module(mod_name)
-            self.assertTrue(mod_name in sys.modules)
-            self.assertEqual(zi.get_source(TESTPACK2), None)
-            self.assertEqual(zi.get_source(mod_path), None)
-            self.assertEqual(zi.get_filename(mod_path), mod.__file__)
-            # To pass in the module name instead of the path, we must use the
-            # right importer.
-            loader = mod.__loader__
-            self.assertEqual(loader.get_source(mod_name), None)
-            self.assertEqual(loader.get_filename(mod_name), mod.__file__)
-        finally:
-            z.close()
-            os.remove(TEMP_ZIP)
+        mod_path = TESTPACK2 + os.sep + TESTMOD
+        mod_name = module_path_to_dotted_name(mod_path)
+        mod = importlib.import_module(mod_name)
+        self.assertTrue(mod_name in sys.modules)
+        self.assertEqual(zi.get_source(TESTPACK2), None)
+        self.assertEqual(zi.get_source(mod_path), None)
+        self.assertEqual(zi.get_filename(mod_path), mod.__file__)
+        # To pass in the module name instead of the path, we must use the
+        # right importer.
+        loader = mod.__loader__
+        self.assertEqual(loader.get_source(mod_name), None)
+        self.assertEqual(loader.get_filename(mod_name), mod.__file__)
 
     def testGetData(self):
-        z = ZipFile(TEMP_ZIP, "w")
-        z.compression = self.compression
-        try:
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
+        with ZipFile(TEMP_ZIP, "w") as z:
+            z.compression = self.compression
             name = "testdata.dat"
             data = bytes(x for x in range(256))
             z.writestr(name, data)
-            z.close()
-            zi = zipimport.zipimporter(TEMP_ZIP)
-            self.assertEqual(data, zi.get_data(name))
-            self.assertIn('zipimporter object', repr(zi))
-        finally:
-            z.close()
-            os.remove(TEMP_ZIP)
 
-    def test_issue31291(self):
-        # There shouldn't be an assertion failure in get_data().
-        class FunnyStr(str):
-            def replace(self, old, new):
-                return 42
-        z = ZipFile(TEMP_ZIP, "w")
-        try:
-            name = "test31291.dat"
-            data = b'foo'
-            z.writestr(name, data)
-            z.close()
-            zi = zipimport.zipimporter(TEMP_ZIP)
-            self.assertEqual(data, zi.get_data(FunnyStr(name)))
-        finally:
-            z.close()
-            os.remove(TEMP_ZIP)
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        self.assertEqual(data, zi.get_data(name))
+        self.assertIn('zipimporter object', repr(zi))
 
     def testImporterAttr(self):
         src = """if 1:  # indent hack
@@ -653,23 +646,20 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         files = {TESTMOD + ".py": (NOW, raise_src)}
         self.doTest(None, files, TESTMOD, call=self.doTraceback)
 
-    @unittest.skipIf(support.TESTFN_UNENCODABLE is None,
+    @unittest.skipIf(os_helper.TESTFN_UNENCODABLE is None,
                      "need an unencodable filename")
     def testUnencodable(self):
-        filename = support.TESTFN_UNENCODABLE + ".zip"
-        z = ZipFile(filename, "w")
-        zinfo = ZipInfo(TESTMOD + ".py", time.localtime(NOW))
-        zinfo.compress_type = self.compression
-        z.writestr(zinfo, test_src)
-        z.close()
-        try:
-            zipimport.zipimporter(filename).load_module(TESTMOD)
-        finally:
-            os.remove(filename)
+        filename = os_helper.TESTFN_UNENCODABLE + ".zip"
+        self.addCleanup(os_helper.unlink, filename)
+        with ZipFile(filename, "w") as z:
+            zinfo = ZipInfo(TESTMOD + ".py", time.localtime(NOW))
+            zinfo.compress_type = self.compression
+            z.writestr(zinfo, test_src)
+        zipimport.zipimporter(filename).load_module(TESTMOD)
 
     def testBytesPath(self):
-        filename = support.TESTFN + ".zip"
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN + ".zip"
+        self.addCleanup(os_helper.unlink, filename)
         with ZipFile(filename, "w") as z:
             zinfo = ZipInfo(TESTMOD + ".py", time.localtime(NOW))
             zinfo.compress_type = self.compression
@@ -677,42 +667,27 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
         zipimport.zipimporter(filename)
         zipimport.zipimporter(os.fsencode(filename))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             zipimport.zipimporter(bytearray(os.fsencode(filename)))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             zipimport.zipimporter(memoryview(os.fsencode(filename)))
 
-    @support.cpython_only
-    def testUninitializedZipimporter(self):
-        # The interpreter shouldn't crash in case of calling methods of an
-        # uninitialized zipimport.zipimporter object.
-        zi = zipimport.zipimporter.__new__(zipimport.zipimporter)
-        self.assertRaises(ValueError, zi.find_module, 'foo')
-        self.assertRaises(ValueError, zi.find_loader, 'foo')
-        self.assertRaises(ValueError, zi.load_module, 'foo')
-        self.assertRaises(ValueError, zi.get_filename, 'foo')
-        self.assertRaises(ValueError, zi.is_package, 'foo')
-        self.assertRaises(ValueError, zi.get_data, 'foo')
-        self.assertRaises(ValueError, zi.get_code, 'foo')
-        self.assertRaises(ValueError, zi.get_source, 'foo')
+    def testComment(self):
+        files = {TESTMOD + ".py": (NOW, test_src)}
+        self.doTest(".py", files, TESTMOD, comment=b"comment")
+
+    def testBeginningCruftAndComment(self):
+        files = {TESTMOD + ".py": (NOW, test_src)}
+        self.doTest(".py", files, TESTMOD, stuff=b"cruft" * 64, comment=b"hi")
+
+    def testLargestPossibleComment(self):
+        files = {TESTMOD + ".py": (NOW, test_src)}
+        self.doTest(".py", files, TESTMOD, comment=b"c" * ((1 << 16) - 1))
 
 
-@support.requires_zlib
+@support.requires_zlib()
 class CompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
-
-    @support.cpython_only
-    def test_issue31602(self):
-        # There shouldn't be an assertion failure in zipimporter.get_source()
-        # in case of a bad zlib.decompress().
-        def bad_decompress(*args):
-            return None
-        with ZipFile(TEMP_ZIP, 'w') as zip_file:
-            self.addCleanup(support.unlink, TEMP_ZIP)
-            zip_file.writestr('bar.py', b'print("hello world")', ZIP_DEFLATED)
-        zi = zipimport.zipimporter(TEMP_ZIP)
-        with support.swap_attr(zlib, 'decompress', bad_decompress):
-            self.assertRaises(TypeError, zi.get_source, 'bar')
 
 
 class BadFileZipImportTestCase(unittest.TestCase):
@@ -736,12 +711,12 @@ class BadFileZipImportTestCase(unittest.TestCase):
         self.assertZipFailure('A' * 33000)
 
     def testEmptyFile(self):
-        support.unlink(TESTMOD)
-        support.create_empty_file(TESTMOD)
+        os_helper.unlink(TESTMOD)
+        os_helper.create_empty_file(TESTMOD)
         self.assertZipFailure(TESTMOD)
 
     def testFileUnreadable(self):
-        support.unlink(TESTMOD)
+        os_helper.unlink(TESTMOD)
         fd = os.open(TESTMOD, os.O_CREAT, 000)
         try:
             os.close(fd)
@@ -752,10 +727,10 @@ class BadFileZipImportTestCase(unittest.TestCase):
             # If we leave "the read-only bit" set on Windows, nothing can
             # delete TESTMOD, and later tests suffer bogus failures.
             os.chmod(TESTMOD, 0o666)
-            support.unlink(TESTMOD)
+            os_helper.unlink(TESTMOD)
 
     def testNotZipFile(self):
-        support.unlink(TESTMOD)
+        os_helper.unlink(TESTMOD)
         fp = open(TESTMOD, 'w+')
         fp.write('a' * 22)
         fp.close()
@@ -763,7 +738,7 @@ class BadFileZipImportTestCase(unittest.TestCase):
 
     # XXX: disabled until this works on Big-endian machines
     def _testBogusZipFile(self):
-        support.unlink(TESTMOD)
+        os_helper.unlink(TESTMOD)
         fp = open(TESTMOD, 'w+')
         fp.write(struct.pack('=I', 0x06054B50))
         fp.write('a' * 18)
@@ -798,7 +773,7 @@ def test_main():
               BadFileZipImportTestCase,
             )
     finally:
-        support.unlink(TESTMOD)
+        os_helper.unlink(TESTMOD)
 
 if __name__ == "__main__":
     test_main()

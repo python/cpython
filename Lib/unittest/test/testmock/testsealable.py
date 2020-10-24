@@ -3,15 +3,10 @@ from unittest import mock
 
 
 class SampleObject:
-    def __init__(self):
-        self.attr_sample1 = 1
-        self.attr_sample2 = 1
 
-    def method_sample1(self):
-        pass
+    def method_sample1(self): pass
 
-    def method_sample2(self):
-        pass
+    def method_sample2(self): pass
 
 
 class TestSealable(unittest.TestCase):

@@ -13,10 +13,14 @@ Glossary
       examples which can be executed interactively in the interpreter.
 
    ``...``
-      The default Python prompt of the interactive shell when entering code for
-      an indented code block, when within a pair of matching left and right
-      delimiters (parentheses, square brackets, curly braces or triple quotes),
-      or after specifying a decorator.
+      Can refer to:
+
+      * The default Python prompt of the interactive shell when entering the
+        code for an indented code block, when within a pair of matching left and
+        right delimiters (parentheses, square brackets, curly braces or triple
+        quotes), or after specifying a decorator.
+
+      * The :const:`Ellipsis` built-in constant.
 
    2to3
       A tool that tries to convert Python 2.x code to Python 3.x code by
@@ -95,7 +99,7 @@ Glossary
       that it contains :keyword:`yield` expressions for producing a series of
       values usable in an :keyword:`async for` loop.
 
-      Usually refers to a asynchronous generator function, but may refer to an
+      Usually refers to an asynchronous generator function, but may refer to an
       *asynchronous generator iterator* in some contexts.  In cases where the
       intended meaning isn't clear, using the full terms avoids ambiguity.
 
@@ -108,8 +112,8 @@ Glossary
 
       This is an :term:`asynchronous iterator` which when called using the
       :meth:`__anext__` method returns an awaitable object which will execute
-      that the body of the asynchronous generator function until the
-      next :keyword:`yield` expression.
+      the body of the asynchronous generator function until the next
+      :keyword:`yield` expression.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
       location execution state (including local variables and pending
@@ -123,10 +127,10 @@ Glossary
       :meth:`__aiter__` method.  Introduced by :pep:`492`.
 
    asynchronous iterator
-      An object that implements :meth:`__aiter__` and :meth:`__anext__`
+      An object that implements the :meth:`__aiter__` and :meth:`__anext__`
       methods.  ``__anext__`` must return an :term:`awaitable` object.
-      :keyword:`async for` resolves awaitable returned from asynchronous
-      iterator's :meth:`__anext__` method until it raises
+      :keyword:`async for` resolves the awaitables returned by an asynchronous
+      iterator's :meth:`__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
    attribute
@@ -185,6 +189,10 @@ Glossary
       A list of bytecode instructions can be found in the documentation for
       :ref:`the dis module <bytecodes>`.
 
+   callback
+      A subroutine function which is passed as an argument to be executed at
+      some point in the future.
+
    class
       A template for creating user-defined objects. Class definitions
       normally contain method definitions which operate on instances of the
@@ -200,7 +208,7 @@ Glossary
       ``int(3.15)`` converts the floating point number to the integer ``3``, but
       in ``3+4.5``, each argument is of a different type (one int, one float),
       and both must be converted to the same type before they can be added or it
-      will raise a ``TypeError``.  Without coercion, all arguments of even
+      will raise a :exc:`TypeError`.  Without coercion, all arguments of even
       compatible types would have to be normalized to the same value by the
       programmer, e.g., ``float(3)+4.5`` rather than just ``3+4.5``.
 
@@ -221,6 +229,15 @@ Glossary
       statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
       See :pep:`343`.
 
+   context variable
+      A variable which can have different values depending on its context.
+      This is similar to Thread-Local Storage in which each execution
+      thread may have a different value for a variable. However, with context
+      variables, there may be several contexts in one execution thread and the
+      main usage for context variables is to keep track of variables in
+      concurrent asynchronous tasks.
+      See :mod:`contextvars`.
+
    contiguous
       .. index:: C-contiguous, Fortran contiguous
 
@@ -234,7 +251,7 @@ Glossary
       Fortran contiguous arrays, the first index varies the fastest.
 
    coroutine
-      Coroutines is a more generalized form of subroutines. Subroutines are
+      Coroutines are a more generalized form of subroutines. Subroutines are
       entered at one point and exited at another point.  Coroutines can be
       entered, exited, and resumed at many different points.  They can be
       implemented with the :keyword:`async def` statement.  See also
@@ -284,12 +301,19 @@ Glossary
       including functions, methods, properties, class methods, static methods,
       and reference to super classes.
 
-      For more information about descriptors' methods, see :ref:`descriptors`.
+      For more information about descriptors' methods, see :ref:`descriptors`
+      or the :ref:`Descriptor How To Guide <descriptorhowto>`.
 
    dictionary
       An associative array, where arbitrary keys are mapped to values.  The
       keys can be any object with :meth:`__hash__` and :meth:`__eq__` methods.
       Called a hash in Perl.
+
+   dictionary comprehension
+      A compact way to process all or part of the elements in an iterable and
+      return a dictionary with the results. ``results = {n: n ** 2 for n in
+      range(10)}`` generates a dictionary containing key ``n`` mapped to
+      value ``n ** 2``. See :ref:`comprehensions`.
 
    dictionary view
       The objects returned from :meth:`dict.keys`, :meth:`dict.values`, and
@@ -332,7 +356,7 @@ Glossary
       names, attribute access, operators or function calls which all return a
       value.  In contrast to many other languages, not all language constructs
       are expressions.  There are also :term:`statement`\s which cannot be used
-      as expressions, such as :keyword:`if`.  Assignments are also statements,
+      as expressions, such as :keyword:`while`.  Assignments are also statements,
       not expressions.
 
    extension module
@@ -389,7 +413,7 @@ Glossary
       An :term:`annotation` of a function parameter or return value.
 
       Function annotations are usually used for
-      :term:`type hints <type hint>`: for example this function is expected to take two
+      :term:`type hints <type hint>`: for example, this function is expected to take two
       :class:`int` arguments and is also expected to have an :class:`int`
       return value::
 
@@ -444,8 +468,8 @@ Glossary
 
    generator expression
       An expression that returns an iterator.  It looks like a normal expression
-      followed by a :keyword:`for` expression defining a loop variable, range,
-      and an optional :keyword:`if` expression.  The combined expression
+      followed by a :keyword:`!for` clause defining a loop variable, range,
+      and an optional :keyword:`!if` clause.  The combined expression
       generates values for an enclosing function::
 
          >>> sum(i*i for i in range(10))         # sum of squares 0, 1, 4, ... 81
@@ -499,8 +523,10 @@ Glossary
       Hashability makes an object usable as a dictionary key and a set member,
       because these data structures use the hash value internally.
 
-      All of Python's immutable built-in objects are hashable; mutable
-      containers (such as lists or dictionaries) are not.  Objects which are
+      Most of Python's immutable built-in objects are hashable; mutable
+      containers (such as lists or dictionaries) are not; immutable
+      containers (such as tuples and frozensets) are only hashable if
+      their elements are hashable.  Objects which are
       instances of user-defined classes are hashable by default.  They all
       compare unequal (except with themselves), and their hash value is derived
       from their :func:`id`.
@@ -568,7 +594,7 @@ Glossary
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
       with an :meth:`__iter__` method or with a :meth:`__getitem__` method
-      that implements :term:`Sequence` semantics.
+      that implements :term:`Sequence <sequence>` semantics.
 
       Iterables can be
       used in a :keyword:`for` loop and in many other places where a sequence is
@@ -659,6 +685,11 @@ Glossary
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
 
+   magic method
+      .. index:: pair: magic; method
+
+      An informal synonym for :term:`special method`.
+
    mapping
       A container object that supports arbitrary key lookups and implements the
       methods specified in the :class:`~collections.abc.Mapping` or
@@ -719,17 +750,28 @@ Glossary
       also :term:`immutable`.
 
    named tuple
-      Any tuple-like class whose indexable elements are also accessible using
-      named attributes (for example, :func:`time.localtime` returns a
-      tuple-like object where the *year* is accessible either with an
-      index such as ``t[0]`` or with a named attribute like ``t.tm_year``).
+      The term "named tuple" applies to any type or class that inherits from
+      tuple and whose indexable elements are also accessible using named
+      attributes.  The type or class may have other features as well.
 
-      A named tuple can be a built-in type such as :class:`time.struct_time`,
-      or it can be created with a regular class definition.  A full featured
-      named tuple can also be created with the factory function
-      :func:`collections.namedtuple`.  The latter approach automatically
-      provides extra features such as a self-documenting representation like
-      ``Employee(name='jones', title='programmer')``.
+      Several built-in types are named tuples, including the values returned
+      by :func:`time.localtime` and :func:`os.stat`.  Another example is
+      :data:`sys.float_info`::
+
+           >>> sys.float_info[1]                   # indexed access
+           1024
+           >>> sys.float_info.max_exp              # named field access
+           1024
+           >>> isinstance(sys.float_info, tuple)   # kind of tuple
+           True
+
+      Some named tuples are built-in types (such as the above examples).
+      Alternatively, a named tuple can be created from a regular class
+      definition that inherits from :class:`tuple` and that defines named
+      fields.  Such a class can be written by hand or it can be created with
+      the factory function :func:`collections.namedtuple`.  The latter
+      technique also adds some extra methods that may not be found in
+      hand-written or built-in named tuples.
 
    namespace
       The place where a variable is stored.  Namespaces are implemented as
@@ -793,9 +835,11 @@ Glossary
       .. _positional-only_parameter:
 
       * :dfn:`positional-only`: specifies an argument that can be supplied only
-        by position.  Python has no syntax for defining positional-only
-        parameters.  However, some built-in functions have positional-only
-        parameters (e.g. :func:`abs`).
+        by position. Positional-only parameters can be defined by including a
+        ``/`` character in the parameter list of the function definition after
+        them, for example *posonly1* and *posonly2* in the following::
+
+           def func(posonly1, posonly2, /, positional_or_keyword): ...
 
       .. _keyword-only_parameter:
 
@@ -987,7 +1031,13 @@ Glossary
       :meth:`index`, :meth:`__contains__`, and
       :meth:`__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
-      :func:`~abc.register`.
+      :func:`~abc.ABCMeta.register`.
+
+   set comprehension
+      A compact way to process all or part of the elements in an iterable and
+      return a set with the results. ``results = {c for c in 'abracadabra' if
+      c not in 'abc'}`` generates the set of strings ``{'r', 'd'}``.  See
+      :ref:`comprehensions`.
 
    single dispatch
       A form of :term:`generic function` dispatch where the implementation is
@@ -1000,6 +1050,8 @@ Glossary
       (subscript) notation uses :class:`slice` objects internally.
 
    special method
+      .. index:: pair: special; method
+
       A method that is called implicitly by Python to execute a certain
       operation on a type, such as addition.  Such methods have names starting
       and ending with double underscores.  Special methods are documented in
@@ -1009,14 +1061,6 @@ Glossary
       A statement is part of a suite (a "block" of code).  A statement is either
       an :term:`expression` or one of several constructs with a keyword, such
       as :keyword:`if`, :keyword:`while` or :keyword:`for`.
-
-   struct sequence
-      A tuple with named elements. Struct sequences expose an interface similar
-      to :term:`named tuple` in that elements can either be accessed either by
-      index or as an attribute. However, they do not have any of the named tuple
-      methods like :meth:`~collections.somenamedtuple._make` or
-      :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences
-      include :data:`sys.float_info` and the return value of :func:`os.stat`.
 
    text encoding
       A codec which encodes Unicode strings to bytes.
@@ -1053,19 +1097,15 @@ Glossary
       Type aliases are useful for simplifying :term:`type hints <type hint>`.
       For example::
 
-         from typing import List, Tuple
-
          def remove_gray_shades(
-                 colors: List[Tuple[int, int, int]]) -> List[Tuple[int, int, int]]:
+                 colors: list[tuple[int, int, int]]) -> list[tuple[int, int, int]]:
              pass
 
       could be made more readable like this::
 
-         from typing import List, Tuple
+         Color = tuple[int, int, int]
 
-         Color = Tuple[int, int, int]
-
-         def remove_gray_shades(colors: List[Color]) -> List[Color]:
+         def remove_gray_shades(colors: list[Color]) -> list[Color]:
              pass
 
       See :mod:`typing` and :pep:`484`, which describe this functionality.

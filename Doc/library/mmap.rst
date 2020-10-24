@@ -65,8 +65,9 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    *offset* may be specified as a non-negative integer offset. mmap references
    will be relative to the offset from the beginning of the file. *offset*
-   defaults to 0.  *offset* must be a multiple of the ALLOCATIONGRANULARITY.
+   defaults to 0.  *offset* must be a multiple of the :const:`ALLOCATIONGRANULARITY`.
 
+   .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
 
 .. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, access=ACCESS_DEFAULT[, offset])
    :noindex:
@@ -80,7 +81,9 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    private copy-on-write mapping, so changes to the contents of the mmap
    object will be private to this process, and :const:`MAP_SHARED` creates a
    mapping that's shared with all other processes mapping the same areas of
-   the file.  The default value is :const:`MAP_SHARED`.
+   the file.  The default value is :const:`MAP_SHARED`. Some systems have
+   additional possible flags with the full list specified in
+   :ref:`MAP_* constants <map-constants>`.
 
    *prot*, if specified, gives the desired memory protection; the two most
    useful values are :const:`PROT_READ` and :const:`PROT_WRITE`, to specify
@@ -94,8 +97,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    *offset* may be specified as a non-negative integer offset. mmap references
    will be relative to the offset from the beginning of the file. *offset*
-   defaults to 0.  *offset* must be a multiple of the PAGESIZE or
-   ALLOCATIONGRANULARITY.
+   defaults to 0. *offset* must be a multiple of :const:`ALLOCATIONGRANULARITY`
+   which is equal to :const:`PAGESIZE` on Unix systems.
 
    To ensure validity of the created memory mapping the file specified
    by the descriptor *fileno* is internally automatically synchronized
@@ -155,6 +158,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
           mm.close()
 
+   .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
 
    Memory-mapped file objects support the following methods:
 
@@ -189,13 +193,30 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       use of this call there is no guarantee that changes are written back before
       the object is destroyed.  If *offset* and *size* are specified, only
       changes to the given range of bytes will be flushed to disk; otherwise, the
-      whole extent of the mapping is flushed.
+      whole extent of the mapping is flushed.  *offset* must be a multiple of the
+      :const:`PAGESIZE` or :const:`ALLOCATIONGRANULARITY`.
 
-      **(Windows version)** A nonzero value returned indicates success; zero
-      indicates failure.
+      ``None`` is returned to indicate success.  An exception is raised when the
+      call failed.
 
-      **(Unix version)** A zero value is returned to indicate success. An
-      exception is raised when the call failed.
+      .. versionchanged:: 3.8
+         Previously, a nonzero value was returned on success; zero was returned
+         on error under Windows.  A zero value was returned on success; an
+         exception was raised on error under Unix.
+
+
+   .. method:: madvise(option[, start[, length]])
+
+      Send advice *option* to the kernel about the memory region beginning at
+      *start* and extending *length* bytes.  *option* must be one of the
+      :ref:`MADV_* constants <madvise-constants>` available on the system.  If
+      *start* and *length* are omitted, the entire mapping is spanned.  On
+      some systems (including Linux), *start* must be a multiple of the
+      :const:`PAGESIZE`.
+
+      Availability: Systems with the ``madvise()`` system call.
+
+      .. versionadded:: 3.8
 
 
    .. method:: move(dest, src, count)
@@ -225,7 +246,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    .. method:: readline()
 
       Returns a single line, starting at the current file position and up to the
-      next newline.
+      next newline. The file position is updated to point after the bytes that were
+      returned.
 
 
    .. method:: resize(newsize)
@@ -287,3 +309,56 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       position of the file pointer; the file position is advanced by ``1``. If
       the mmap was created with :const:`ACCESS_READ`, then writing to it will
       raise a :exc:`TypeError` exception.
+
+.. _madvise-constants:
+
+MADV_* Constants
+++++++++++++++++
+
+.. data:: MADV_NORMAL
+          MADV_RANDOM
+          MADV_SEQUENTIAL
+          MADV_WILLNEED
+          MADV_DONTNEED
+          MADV_REMOVE
+          MADV_DONTFORK
+          MADV_DOFORK
+          MADV_HWPOISON
+          MADV_MERGEABLE
+          MADV_UNMERGEABLE
+          MADV_SOFT_OFFLINE
+          MADV_HUGEPAGE
+          MADV_NOHUGEPAGE
+          MADV_DONTDUMP
+          MADV_DODUMP
+          MADV_FREE
+          MADV_NOSYNC
+          MADV_AUTOSYNC
+          MADV_NOCORE
+          MADV_CORE
+          MADV_PROTECT
+
+   These options can be passed to :meth:`mmap.madvise`.  Not every option will
+   be present on every system.
+
+   Availability: Systems with the madvise() system call.
+
+   .. versionadded:: 3.8
+
+.. _map-constants:
+
+MAP_* Constants
++++++++++++++++
+
+.. data:: MAP_SHARED
+          MAP_PRIVATE
+          MAP_DENYWRITE
+          MAP_EXECUTABLE
+          MAP_ANON
+          MAP_ANONYMOUS
+          MAP_POPULATE
+
+    These are the various flags that can be passed to :meth:`mmap.mmap`. Note that some options might not be present on some systems.
+
+    .. versionchanged:: 3.10
+       Added MAP_POPULATE constant.

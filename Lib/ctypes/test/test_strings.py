@@ -54,6 +54,13 @@ class StringArrayTestCase(unittest.TestCase):
 ##        print BUF.from_param(c_char_p("python"))
 ##        print BUF.from_param(BUF(*"pyth"))
 
+    def test_del_segfault(self):
+        BUF = c_char * 4
+        buf = BUF()
+        with self.assertRaises(AttributeError):
+            del buf.raw
+
+
 @need_symbol('c_wchar')
 class WStringArrayTestCase(unittest.TestCase):
     def test(self):

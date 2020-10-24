@@ -1,21 +1,28 @@
-This is Python version 3.8.0 alpha 0
-====================================
+This is Python version 3.10.0 alpha 1
+=====================================
 
-.. image:: https://travis-ci.org/python/cpython.svg?branch=master
+.. image:: https://travis-ci.com/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
-   :target: https://travis-ci.org/python/cpython
+   :target: https://travis-ci.com/python/cpython
 
-.. image:: https://ci.appveyor.com/api/projects/status/4mew1a93xdkbf5ua/branch/master?svg=true
-   :alt: CPython build status on Appveyor
-   :target: https://ci.appveyor.com/project/python/cpython/branch/master
+.. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
+   :alt: CPython build status on GitHub Actions
+   :target: https://github.com/python/cpython/actions
+
+.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=master
+   :alt: CPython build status on Azure DevOps
+   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=master
 
 .. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
-reserved.
+.. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
+   :alt: Python Zulip chat
+   :target: https://python.zulipchat.com
+
+
+Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -56,21 +63,23 @@ On Unix, Linux, BSD, macOS, and Cygwin::
     make test
     sudo make install
 
-This will install Python as python3.
+This will install Python as ``python3``.
 
 You can pass many options to the configure script; run ``./configure --help``
-to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
-elsewhere it's just ``python``.
+to find out more.  On macOS case-insensitive file systems and on Cygwin,
+the executable is called ``python.exe``; elsewhere it's just ``python``.
 
-If you are running on macOS with the latest updates installed, make sure to install
-openSSL or some other SSL software along with Homebrew or another package manager.
-If issues persist, see https://devguide.python.org/setup/#macos-and-os-x for more 
-information. 
+Building a complete Python installation requires the use of various
+additional third-party libraries, depending on your build platform and
+configure options.  Not all standard library modules are buildable or
+useable on all platforms.  Refer to the
+`Install dependencies <https://devguide.python.org/setup/#install-dependencies>`_
+section of the `Developer Guide`_ for current detailed information on
+dependencies for various Linux distributions and macOS.
 
-On macOS, if you have configured Python with ``--enable-framework``, you
-should use ``make frameworkinstall`` to do the installation.  Note that this
-installs the Python executable in a place that is not normally on your PATH,
-you may want to set up a symlink in ``/usr/local/bin``.
+On macOS, there are additional configure and build options related
+to macOS framework and universal builds.  Refer to `Mac/README.rst
+<https://github.com/python/cpython/blob/master/Mac/README.rst>`_.
 
 On Windows, see `PCbuild/readme.txt
 <https://github.com/python/cpython/blob/master/PCbuild/readme.txt>`_.
@@ -85,14 +94,13 @@ For example::
     make test
 
 (This will fail if you *also* built at the top-level directory.  You should do
-a ``make clean`` at the toplevel first.)
+a ``make clean`` at the top-level first.)
 
 To get an optimized build of Python, ``configure --enable-optimizations``
 before you run ``make``.  This sets the default make targets up to enable
 Profile Guided Optimization (PGO) and may be used to auto-enable Link Time
 Optimization (LTO) on some platforms.  For more details, see the sections
 below.
-
 
 Profile Guided Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -133,20 +141,20 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.8 <https://docs.python.org/3.8/whatsnew/3.8.html>`_ document.  For a more
+3.10 <https://docs.python.org/3.10/whatsnew/3.10.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
 <https://github.com/python/cpython/commits/master>`_.
 
-If you want to install multiple versions of Python see the section below
+If you want to install multiple versions of Python, see the section below
 entitled "Installing multiple versions".
 
 
 Documentation
 -------------
 
-`Documentation for Python 3.8 <https://docs.python.org/3.8/>`_ is online,
+`Documentation for Python 3.10 <https://docs.python.org/3.10/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -188,6 +196,8 @@ If the failure persists and appears to be a problem with Python rather than
 your environment, you can `file a bug report <https://bugs.python.org>`_ and
 include relevant output from that command to show the issue.
 
+See `Running & Writing Tests <https://devguide.python.org/runtests/>`_
+for more on running tests.
 
 Installing multiple versions
 ----------------------------
@@ -203,8 +213,8 @@ intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.8 with 3.8 being the
-primary version, you would execute ``make install`` in your 3.8 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.10 with 3.10 being the
+primary version, you would execute ``make install`` in your 3.10 build directory
 and ``make altinstall`` in the others.
 
 
@@ -234,15 +244,13 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`569` for Python 3.8 release details.
+See :pep:`619` for Python 3.10 release details.
 
 
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013, 2014, 2015, 2016, 2017, 2018 Python Software Foundation.  All rights
-reserved.
+Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 
@@ -251,8 +259,9 @@ rights reserved.
 
 Copyright (c) 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
 
-See the file "LICENSE" for information on the history of this software, terms &
-conditions for usage, and a DISCLAIMER OF ALL WARRANTIES.
+See the `LICENSE <https://github.com/python/cpython/blob/master/LICENSE>`_ for
+information on the history of this software, terms & conditions for usage, and a
+DISCLAIMER OF ALL WARRANTIES.
 
 This Python distribution contains *no* GNU General Public License (GPL) code,
 so it may be used in proprietary projects.  There are interfaces to some GNU

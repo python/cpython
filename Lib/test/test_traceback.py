@@ -7,7 +7,8 @@ import sys
 import unittest
 import re
 from test import support
-from test.support import TESTFN, Error, captured_output, unlink, cpython_only
+from test.support import Error, captured_output, cpython_only, ALWAYS_EQ
+from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
 import textwrap
 
@@ -58,13 +59,13 @@ class TracebackCases(unittest.TestCase):
                                         SyntaxError)
         self.assertIn("^", err[2]) # third line has caret
         self.assertEqual(err[2].count('\n'), 1)   # and no additional newline
-        self.assertEqual(err[1].find("+"), err[2].find("^"))  # in the right place
+        self.assertEqual(err[1].find("+") + 1, err[2].find("^"))  # in the right place
 
         err = self.get_exception_format(self.syntax_error_with_caret_non_ascii,
                                         SyntaxError)
         self.assertIn("^", err[2]) # third line has caret
         self.assertEqual(err[2].count('\n'), 1)   # and no additional newline
-        self.assertEqual(err[1].find("+"), err[2].find("^"))  # in the right place
+        self.assertEqual(err[1].find("+") + 1, err[2].find("^"))  # in the right place
 
     def test_nocaret(self):
         exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
@@ -78,14 +79,13 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(len(err), 4)
         self.assertEqual(err[1].strip(), "print(2)")
         self.assertIn("^", err[2])
-        self.assertEqual(err[1].find(")"), err[2].find("^"))
+        self.assertEqual(err[1].find(")") + 1, err[2].find("^"))
 
+        # No caret for "unexpected indent"
         err = self.get_exception_format(self.syntax_error_bad_indentation2,
                                         IndentationError)
-        self.assertEqual(len(err), 4)
+        self.assertEqual(len(err), 3)
         self.assertEqual(err[1].strip(), "print(2)")
-        self.assertIn("^", err[2])
-        self.assertEqual(err[1].find("p"), err[2].find("^"))
 
     def test_base_exception(self):
         # Test that exceptions derived from BaseException are formatted right
@@ -110,7 +110,7 @@ class TracebackCases(unittest.TestCase):
         # Test that tracebacks are correctly printed for encoded source files:
         # - correct line number (Issue2384)
         # - respect file encoding (Issue3975)
-        import tempfile, sys, subprocess, os
+        import sys, subprocess
 
         # The spawned subprocess has its stdout redirected to a PIPE, and its
         # encoding may be different from the current interpreter, on Windows
@@ -174,7 +174,6 @@ class TracebackCases(unittest.TestCase):
         # Issue #18960: coding spec should have no effect
         do_test("x=0\n# coding: GBK\n", "h\xe9 ho", 'utf-8', 5)
 
-    @support.requires_type_collecting
     def test_print_traceback_at_exit(self):
         # Issue #22599: Ensure that it is possible to use the traceback module
         # to display an exception at Python exit
@@ -313,7 +312,7 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr_f:
             try:
                 f()
-            except RecursionError as exc:
+            except RecursionError:
                 render_exc()
             else:
                 self.fail("no recursion occurred")
@@ -360,7 +359,7 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr_g:
             try:
                 g()
-            except ValueError as exc:
+            except ValueError:
                 render_exc()
             else:
                 self.fail("no value error was raised")
@@ -373,7 +372,7 @@ class TracebackFormatTests(unittest.TestCase):
             '    return g(count-1)\n'
             f'  File "{__file__}", line {lineno_g+2}, in g\n'
             '    return g(count-1)\n'
-            '  [Previous line repeated 6 more times]\n'
+            '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_g+3}, in g\n'
             '    raise ValueError\n'
             'ValueError\n'
@@ -396,7 +395,7 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr_h:
             try:
                 h()
-            except ValueError as exc:
+            except ValueError:
                 render_exc()
             else:
                 self.fail("no value error was raised")
@@ -412,12 +411,69 @@ class TracebackFormatTests(unittest.TestCase):
             '    return h(count-1)\n'
             f'  File "{__file__}", line {lineno_h+2}, in h\n'
             '    return h(count-1)\n'
-            '  [Previous line repeated 6 more times]\n'
+            '  [Previous line repeated 7 more times]\n'
             f'  File "{__file__}", line {lineno_h+3}, in h\n'
             '    g()\n'
         )
         expected = (result_h + result_g).splitlines()
         actual = stderr_h.getvalue().splitlines()
+        self.assertEqual(actual, expected)
+
+        # Check the boundary conditions. First, test just below the cutoff.
+        with captured_output("stderr") as stderr_g:
+            try:
+                g(traceback._RECURSIVE_CUTOFF)
+            except ValueError:
+                render_exc()
+            else:
+                self.fail("no error raised")
+        result_g = (
+            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            '    return g(count-1)\n'
+            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            '    return g(count-1)\n'
+            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            '    return g(count-1)\n'
+            f'  File "{__file__}", line {lineno_g+3}, in g\n'
+            '    raise ValueError\n'
+            'ValueError\n'
+        )
+        tb_line = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {lineno_g+71}, in _check_recursive_traceback_display\n'
+            '    g(traceback._RECURSIVE_CUTOFF)\n'
+        )
+        expected = (tb_line + result_g).splitlines()
+        actual = stderr_g.getvalue().splitlines()
+        self.assertEqual(actual, expected)
+
+        # Second, test just above the cutoff.
+        with captured_output("stderr") as stderr_g:
+            try:
+                g(traceback._RECURSIVE_CUTOFF + 1)
+            except ValueError:
+                render_exc()
+            else:
+                self.fail("no error raised")
+        result_g = (
+            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            '    return g(count-1)\n'
+            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            '    return g(count-1)\n'
+            f'  File "{__file__}", line {lineno_g+2}, in g\n'
+            '    return g(count-1)\n'
+            '  [Previous line repeated 1 more time]\n'
+            f'  File "{__file__}", line {lineno_g+3}, in g\n'
+            '    raise ValueError\n'
+            'ValueError\n'
+        )
+        tb_line = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {lineno_g+99}, in _check_recursive_traceback_display\n'
+            '    g(traceback._RECURSIVE_CUTOFF + 1)\n'
+        )
+        expected = (tb_line + result_g).splitlines()
+        actual = stderr_g.getvalue().splitlines()
         self.assertEqual(actual, expected)
 
     def test_recursive_traceback_python(self):
@@ -609,7 +665,7 @@ class BaseExceptionReportingTests:
         def e():
             exec("x = 5 | 4 |")
         msg = self.get_report(e).splitlines()
-        self.assertEqual(msg[-2], '              ^')
+        self.assertEqual(msg[-2], '               ^')
 
     def test_message_none(self):
         # A message that looks like "None" should not be treated specially
@@ -621,6 +677,25 @@ class BaseExceptionReportingTests:
         self.assertIn('Exception\n', err)
         err = self.get_report(Exception(''))
         self.assertIn('Exception\n', err)
+
+    def test_syntax_error_various_offsets(self):
+        for offset in range(-5, 10):
+            for add in [0, 2]:
+                text = " "*add + "text%d" % offset
+                expected = ['  File "file.py", line 1']
+                if offset < 1:
+                    expected.append("    %s" % text.lstrip())
+                elif offset <= 6:
+                    expected.append("    %s" % text.lstrip())
+                    expected.append("    %s^" % (" "*(offset-1)))
+                else:
+                    expected.append("    %s" % text.lstrip())
+                    expected.append("    %s^" % (" "*5))
+                expected.append("SyntaxError: msg")
+                expected.append("")
+                err = self.get_report(SyntaxError("msg", ("file.py", 1, offset+add, text)))
+                exp = "\n".join(expected)
+                self.assertEqual(exp, err)
 
 
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
@@ -811,6 +886,7 @@ class MiscTracebackCases(unittest.TestCase):
             (__file__, lineno+2, 'test_extract_stack', 'result = extract()'),
             (__file__, lineno+1, 'extract', 'return traceback.extract_stack()'),
             ])
+        self.assertEqual(len(result[0]), 4)
 
 
 class TestFrame(unittest.TestCase):
@@ -829,6 +905,8 @@ class TestFrame(unittest.TestCase):
         # operator fallbacks to FrameSummary.__eq__.
         self.assertEqual(tuple(f), f)
         self.assertIsNone(f.locals)
+        self.assertNotEqual(f, object())
+        self.assertEqual(f, ALWAYS_EQ)
 
     def test_lazy_lines(self):
         linecache.clearcache()
@@ -842,6 +920,10 @@ class TestFrame(unittest.TestCase):
     def test_explicit_line(self):
         f = traceback.FrameSummary("f", 1, "dummy", line="line")
         self.assertEqual("line", f.line)
+
+    def test_len(self):
+        f = traceback.FrameSummary("f", 1, "dummy", line="line")
+        self.assertEqual(len(f), 4)
 
 
 class TestStack(unittest.TestCase):
@@ -933,11 +1015,11 @@ class TestStack(unittest.TestCase):
         s = some_inner(3, 4)
         self.assertEqual(
             ['  File "%s", line %d, in some_inner\n'
-             '    traceback.walk_stack(None), capture_locals=True, limit=1)\n'
+             '    return traceback.StackSummary.extract(\n'
              '    a = 1\n'
              '    b = 2\n'
              '    k = 3\n'
-             '    v = 4\n' % (__file__, some_inner.__code__.co_firstlineno + 4)
+             '    v = 4\n' % (__file__, some_inner.__code__.co_firstlineno + 3)
             ], s.format())
 
 class TestTracebackException(unittest.TestCase):
@@ -1021,6 +1103,18 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(exc_info[0], exc.exc_type)
         self.assertEqual(str(exc_info[1]), str(exc))
 
+    def test_comparison(self):
+        try:
+            1/0
+        except Exception:
+            exc_info = sys.exc_info()
+            exc = traceback.TracebackException(*exc_info)
+            exc2 = traceback.TracebackException(*exc_info)
+        self.assertIsNot(exc, exc2)
+        self.assertEqual(exc, exc2)
+        self.assertNotEqual(exc, object())
+        self.assertEqual(exc, ALWAYS_EQ)
+
     def test_unhashable(self):
         class UnhashableException(Exception):
             def __eq__(self, other):
@@ -1097,9 +1191,9 @@ class MiscTest(unittest.TestCase):
 
     def test_all(self):
         expected = set()
-        blacklist = {'print_list'}
+        denylist = {'print_list'}
         for name in dir(traceback):
-            if name.startswith('_') or name in blacklist:
+            if name.startswith('_') or name in denylist:
                 continue
             module_object = getattr(traceback, name)
             if getattr(module_object, '__module__', None) == 'traceback':
