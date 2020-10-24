@@ -3690,7 +3690,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
  sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy strsignal symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unlinkat utimensat utimes waitid waitpid wait3 wait4 \
+ truncate uname unlinkat utimensat utimes vfork waitid waitpid wait3 wait4 \
  wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn)
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
