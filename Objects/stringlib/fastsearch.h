@@ -323,7 +323,8 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
         if (shift > SHIFT_OVERFLOW) {
             shift = SHIFT_OVERFLOW;
         }
-        p->table[needle[i] & TABLE_MASK] = shift;
+        p->table[needle[i] & TABLE_MASK] = Py_SAFE_DOWNCAST(shift,
+                                                    Py_ssize_t, SHIFT_TYPE);
     }
 }
 
@@ -666,4 +667,3 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
         return -1;
     return count;
 }
-
