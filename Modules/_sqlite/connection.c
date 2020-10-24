@@ -155,14 +155,6 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
         return -1;
     }
 
-    /* By default, the Cache class INCREFs the factory in its initializer, and
-     * decrefs it in its deallocator method. Since this would create a circular
-     * reference here, we're breaking it by decrementing self, and telling the
-     * cache class to not decref the factory (self) in its deallocator.
-     */
-    self->statement_cache->decref_factory = 0;
-    Py_DECREF(self);
-
     self->detect_types = detect_types;
     self->timeout = timeout;
     (void)sqlite3_busy_timeout(self->db, (int)(timeout*1000));
@@ -225,11 +217,23 @@ void pysqlite_do_all_statements(pysqlite_Connection* self, int action, int reset
     }
 }
 
+static int connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->statement_cache);
+    return 0;
+}
+
+static int connection_clear(pysqlite_Connection *self)
+{
+    Py_CLEAR(self->statement_cache);
+    return 0;
+}
+
 void pysqlite_connection_dealloc(pysqlite_Connection* self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
-    Py_XDECREF(self->statement_cache);
+    PyObject_GC_UnTrack(self);
 
     /* Clean up if user has not called .close() explicitly. */
     if (self->db) {
@@ -246,6 +250,7 @@ void pysqlite_connection_dealloc(pysqlite_Connection* self)
     Py_XDECREF(self->statements);
     Py_XDECREF(self->cursors);
 
+    tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1920,16 +1925,17 @@ static PyType_Slot connection_slots[] = {
     {Py_tp_methods, connection_methods},
     {Py_tp_members, connection_members},
     {Py_tp_getset, connection_getset},
-    {Py_tp_new, PyType_GenericNew},
     {Py_tp_init, pysqlite_connection_init},
     {Py_tp_call, pysqlite_connection_call},
+    {Py_tp_traverse, connection_traverse},
+    {Py_tp_clear, connection_clear},
     {0, NULL},
 };
 
 static PyType_Spec connection_spec = {
     .name = MODULE_NAME ".Connection",
     .basicsize = sizeof(pysqlite_Connection),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = connection_slots,
 };
 
