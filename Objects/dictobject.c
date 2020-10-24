@@ -1600,7 +1600,7 @@ _PyDict_GetItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
    This returns NULL *with* an exception set if an exception occurred.
    It returns NULL *without* an exception set if the key wasn't present.
 */
-static PyObject *
+PyObject *
 PyDict_GetItemWithError(PyObject *op, PyObject *key)
 {
     Py_ssize_t ix;
@@ -3792,7 +3792,6 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
     assert(PyType_Check(type));
-
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (!_PyArg_CheckPositional("dict", nargs, 0, 1)) {
         return NULL;
@@ -3809,7 +3808,6 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
         }
         args++;
     }
-
     if (kwnames != NULL) {
         PyDictObject *mp = (PyDictObject *)self;
 
@@ -3940,7 +3938,7 @@ PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
     if (kv == NULL)
         return -1;
     PyUnicode_InternInPlace(&kv); /* XXX Should we really? */
-    err = dict_set_item(v, kv, item);
+    err = PyDict_SetItem(v, kv, item);
     Py_DECREF(kv);
     return err;
 }
@@ -5357,11 +5355,11 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
         }
         else {
             int was_shared = (cached == ((PyDictObject *)dict)->ma_keys);
-            res = dict_set_item(dict, key, value);
+            res = PyDict_SetItem(dict, key, value);
             if (was_shared &&
                     (cached = CACHED_KEYS(tp)) != NULL &&
                     cached != ((PyDictObject *)dict)->ma_keys) {
-                /* dict_set_item() may call dictresize and convert split table
+                /* PyDict_SetItem() may call dictresize and convert split table
                  * into combined table.  In such case, convert it to split
                  * table again and update type's shared key only when this is
                  * the only dict sharing key with the type.
@@ -5397,7 +5395,7 @@ _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr,
         if (value == NULL) {
             res = PyDict_DelItem(dict, key);
         } else {
-            res = dict_set_item(dict, key, value);
+            res = PyDict_SetItem(dict, key, value);
         }
     }
     return res;
