@@ -569,47 +569,70 @@ afterwards, :meth:`__set_name__` will need to be called manually.
 Descriptor Example
 ------------------
 
-The following code creates a class whose objects are data descriptors which
-print a message for each get or set.  Overriding :meth:`__getattribute__` is
-alternate approach that could do this for every attribute.  However, this
-descriptor is useful for monitoring just a few chosen attributes::
+The following code is simplified skeleton showing how data descriptors could
+be used to implement an `object relational mapping
+<https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping>`_.
 
-    class RevealAccess:
-        """A data descriptor that sets and returns values
-           normally and prints a message logging their access.
-        """
+The essential idea is that instances only hold keys to a database table.  The
+actual data is stored in an external table that is being dynamically updated::
 
-        def __init__(self, initval=None, name='var'):
-            self.val = initval
-            self.name = name
+    class Field:
+
+        def __set_name__(self, owner, name):
+            self.fetch = f'SELECT {name} FROM {owner.table} WHERE {owner.key}=?;'
+            self.store = f'UPDATE {owner.table} SET {name}=? WHERE {owner.key}=?;'
 
         def __get__(self, obj, objtype=None):
-            print('Retrieving', self.name)
-            return self.val
+            return conn.execute(self.fetch, [obj.key]).fetchone()[0]
 
-        def __set__(self, obj, val):
-            print('Updating', self.name)
-            self.val = val
+        def __set__(self, obj, value):
+            conn.execute(self.store, [value, obj.key])
+            conn.commit()
 
-    class B:
-        x = RevealAccess(10, 'var "x"')
-        y = 5
+We can use the :class:`Field` to define "models" that describe the schema for
+each table in a database::
 
-    >>> m = B()
-    >>> m.x
-    Retrieving var "x"
-    10
-    >>> m.x = 20
-    Updating var "x"
-    >>> m.x
-    Retrieving var "x"
-    20
-    >>> m.y
-    5
+    class Movie:
+        table = 'Movies'                    # Table name
+        key = 'title'                       # Primary key
+        director = Field()
+        year = Field()
 
-The protocol is simple and offers exciting possibilities.  Several use cases are
-so common that they have been packaged into individual function calls.
-Properties, bound methods, static methods, and class methods are all
+        def __init__(self, key):
+            self.key = key
+
+    class Song:
+        table = 'Music'
+        key = 'title'
+        artist = Field()
+        year = Field()
+        genre = Field()
+
+        def __init__(self, key):
+            self.key = key
+
+An interactive session shows how data is retrieved from the database and how
+it can be updated::
+
+    >>> import sqlite3
+    >>> conn = sqlite3.connect('entertainment.db')
+
+    >>> Movie('Star Wars').director
+    'George Lucas'
+    >>> jaws = Movie('Jaws')
+    >>> f'Released in {jaws.year} by {jaws.director}'
+    'Released in 1975 by Steven Spielberg'
+
+    >>> Song('Country Roads').artist
+    'John Denver'
+
+    >>> Movie('Star Wars').director = 'J.J. Abrams'
+    >>> Movie('Star Wars').director
+    'J.J. Abrams'
+
+The descriptor protocol is simple and offers exciting possibilities.  Several
+use cases are so common that they have been packaged into individual function
+calls.  Properties, bound methods, static methods, and class methods are all
 based on the descriptor protocol.
 
 
