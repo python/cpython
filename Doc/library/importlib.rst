@@ -370,11 +370,11 @@ ABC hierarchy::
     See :pep:`302` for the exact definition for a loader.
 
     Loaders that wish to support resource reading should implement a
-    ``get_resource_reader(fullname)`` method as specified by
+    :meth:`get_resource_reader(fullname)` method as specified by
     :class:`importlib.abc.ResourceReader`.
 
     .. versionchanged:: 3.7
-       Introduced the optional ``get_resource_reader()`` method.
+       Introduced the optional :meth:`get_resource_reader` method.
 
     .. method:: create_module(spec)
 
@@ -392,17 +392,17 @@ ABC hierarchy::
 
        An abstract method that executes the module in its own namespace
        when a module is imported or reloaded.  The module should already
-       be initialized when ``exec_module()`` is called. When this method exists,
-       :meth:`~importlib.abc.Loader.create_module` must be defined.
+       be initialized when :meth:`exec_module` is called.  When this method exists,
+       :meth:`create_module` must be defined.
 
        .. versionadded:: 3.4
 
        .. versionchanged:: 3.6
-          :meth:`~importlib.abc.Loader.create_module` must also be defined.
+          :meth:`create_module` must also be defined.
 
     .. method:: load_module(fullname)
 
-        A legacy method for loading a module. If the module cannot be
+        A legacy method for loading a module.  If the module cannot be
         loaded, :exc:`ImportError` is raised, otherwise the loaded module is
         returned.
 
@@ -410,60 +410,61 @@ ABC hierarchy::
         module should be used and reloaded.
         Otherwise the loader should create a new module and insert it into
         :data:`sys.modules` before any loading begins, to prevent recursion
-        from the import. If the loader inserted a module and the load fails, it
+        from the import.  If the loader inserted a module and the load fails, it
         must be removed by the loader from :data:`sys.modules`; modules already
         in :data:`sys.modules` before the loader began execution should be left
         alone (see :func:`importlib.util.module_for_loader`).
 
-        The loader should set several attributes on the module.
-        (Note that some of these attributes can change when a module is
+        The loader should set several attributes on the module
+        (note that some of these attributes can change when a module is
         reloaded):
 
         - :attr:`__name__`
             The module's fully-qualified name.
+            It is ``'__main__'`` for the top-level module.
 
         - :attr:`__file__`
             The location from which the module was loaded (usually the path).
             It is not set on all modules (e.g. built-in modules).
 
         - :attr:`__cached__`
-            The path to a compiled version of the code.
-            It is not set when the attribute would be inappropriate.
+            The path to a compiled version of the module's code.
+            It is not set on all modules (e.g. built-in modules).
 
         - :attr:`__path__`
-            For packages, the list of strings specifying where to look for submodules.
-            This is used in the same way as :attr:`sys.path`, but just for the package.
-            Effectively, it is the indicator that the module is a package.  For
-            non-package modules, it is not set.
+            The list of paths where to find submodules within a package.
+            It is used in the same way as :attr:`sys.path` but just for the
+            package.  It is not set on non-package modules so it is the
+            indicator that a module is a package.
 
         - :attr:`__package__`
-            The fully-qualified name of the package under which the module was
-            loaded as a submodule (or an empty string for top-level modules).
-            For packages, it is the same as :attr:`__name__`.
+            The fully-qualified name of the package the module is in (or the
+            empty string for the top-level module).
+            It is the same as :attr:`__name__` for packages.
 
         - :attr:`__loader__`
-            The :term:`loader` that was used to load the module.
+            The :term:`loader` used to load the module.
 
         When :meth:`exec_module` is available then backwards-compatible
         functionality is provided.
 
         .. versionchanged:: 3.4
            Raise :exc:`ImportError` when called instead of
-           :exc:`NotImplementedError`. Functionality provided when
+           :exc:`NotImplementedError`.  Functionality provided when
            :meth:`exec_module` is available.
 
         .. deprecated:: 3.4
            The recommended API for loading a module is :meth:`exec_module`
-           (and :meth:`create_module`).  Loaders should implement
-           it instead of load_module().  The import machinery takes care of
-           all the other responsibilities of load_module() when exec_module()
-           is implemented.
+           (and :meth:`create_module`).  Loaders should implement it instead of
+           :meth:`load_module`.  The import machinery takes care of all the
+           other responsibilities of :meth:`load_module` when
+           :meth:`exec_module` is implemented.
 
     .. method:: module_repr(module)
 
-        A legacy method which when implemented calculates and returns the
-        given module's repr, as a string. The module type's default repr() will
-        use the result of this method as appropriate.
+        A legacy method which when implemented calculates and returns the given
+        module's representation, as a string.  The module type's default
+        :meth:`__repr__` will use the result of this method as appropriate.
 
         .. versionadded:: 3.3
 
@@ -1286,10 +1287,10 @@ find and load modules.
    attribute available directly on the module object, e.g.
    ``module.__spec__.origin == module.__file__``.  Note, however, that while
    the *values* are usually equivalent, they can differ since there is no
-   synchronization between the two objects.  For example, it is possible
-   to update the module's :attr:`__file__` at runtime and this will not be
-   automatically reflected in the module's :attr:`__spec__.origin`, and
-   vice versa.
+   synchronization between the two objects.  For example, it is possible to
+   update the module's :attr:`__file__` at runtime and this will not be
+   automatically reflected in the module's :attr:`__spec__.origin`, and vice
+   versa.
 
    .. versionadded:: 3.4
 
@@ -1297,65 +1298,63 @@ find and load modules.
 
    (:attr:`__name__`)
 
-   The module's fully-qualified name.  Finders should always set this to a
-   non-empty (identifier) string.
+   The module's fully-qualified name.
+   The :term:`finder` should always set this attribute to a non-empty string.
 
    .. attribute:: loader
 
    (:attr:`__loader__`)
 
-   The :class:`Loader <importlib.abc.Loader>` that should be used when
-   loading the module.  Finders should always set this.
+   The :term:`loader` used to load the module.
+   The :term:`finder` should always set this attribute.
 
    .. attribute:: origin
 
    (:attr:`__file__`)
 
-   The name of where the module should be loaded from (e.g. ``'builtin'``
-   for built-in modules and the path for modules loaded from source).
-   Finders should normally set this attribute, but it may be ``None`` (the
-   default) which indicates it is unspecified (like for namespace packages).
+   The location from which the module was loaded (usually the path).
+   The :term:`finder` should always set this attribute but it may be ``None``
+   when unspecified (like for namespace packages).
 
    .. attribute:: submodule_search_locations
 
    (:attr:`__path__`)
 
-   For packages, the Finder must set this to the iterable specifying the
-   locations where submodules may be found for the package, even if
-   it's just an empty list.
-   For non-package modules, this should be set to ``None``.
-   For namespace packages (where :attr:`origin` is ``None``), this
-   is later set to a special object by the import system.
+   The list of paths where to find submodules within a package.
+   The :term:`finder` should always set this attribute to ``None`` for
+   non-package modules and set it later to a special object for namespace
+   packages.
 
    .. attribute:: loader_state
 
-   The Finder may set this to an object containing additional,
-   module-specific data to use when loading the module.  Otherwise it
-   should be set to ``None``.
+   The :term:`finder` may set this to an object containing additional,
+   module-specific data to use when loading the module.  Otherwise it should be
+   set to ``None``.
 
    .. attribute:: cached
 
    (:attr:`__cached__`)
 
-   Where a compiled version of the code should be stored.  For modules
-   that do not need compiled code stored, ``cached`` should be ``None``.
-   This is typically a filename as provided by
-   :func:`importlib.util.cache_from_source`.
+   The path to a compiled version of the module's code.
+   The :term:`finder` should always set this attribute but it may be ``None``
+   for modules that do not need compiled code stored.  It is usually the same
+   as the path provided by :func:`importlib.util.cache_from_source`.
 
    .. attribute:: parent
 
    (:attr:`__package__`)
 
-   (Read-only) The fully-qualified name of the package under which the
-   module should be loaded as a submodule (or the empty string for top-level
-   modules).  For packages, it is the same as :attr:`__name__` (since in
-   that case ``parent`` relates to the package's ``__init__`` module).
+   (Read-only) The fully-qualified name of the package the module is in (or the
+   empty string for the top-level module).
+   It is the same as :attr:`__name__` for packages (since ``parent`` refers to
+   the package's ``__init__`` module).
 
    .. attribute:: has_location
 
-   True if the spec's :attr:`origin` refers to a loadable location.  False
-   otherwise.  This value impacts how :attr:`origin` is interpreted and how
-   the module's :attr:`__file__` is populated.
+   ``True`` if the spec's :attr:`origin` refers to a loadable location.
+    ``False`` otherwise.  This value impacts how :attr:`origin` is interpreted
+    and how the module's :attr:`__file__` is populated.
+
 
 :mod:`importlib.util` -- Utility code for importers
 ---------------------------------------------------
