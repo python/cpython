@@ -197,7 +197,7 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
 
     import logging
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, force=True)
 
     class LoggedAccess:
 
@@ -291,7 +291,7 @@ Validator class
 A validator is a descriptor for managed attribute access.  Prior to storing
 any data, it verifies that the new value meets various type and range
 restrictions.  If those restrictions aren't met, it raises an exception to
-prevents data corruption at its source.
+prevent data corruption at its source.
 
 This :class:`Validator` class is both an :term:`abstract base class` and a
 managed attribute descriptor::
@@ -443,7 +443,7 @@ said to be a descriptor.
 The default behavior for attribute access is to get, set, or delete the
 attribute from an object's dictionary.  For instance, ``a.x`` has a lookup chain
 starting with ``a.__dict__['x']``, then ``type(a).__dict__['x']``, and
-continuing through the base classes of ``type(a)`` excluding metaclasses. If the
+continuing through the base classes of ``type(a)``. If the
 looked-up value is an object defining one of the descriptor methods, then Python
 may override the default behavior and invoke the descriptor method instead.
 Where this occurs in the precedence chain depends on which descriptor methods
@@ -511,11 +511,11 @@ For classes, the machinery is in :meth:`type.__getattribute__` which transforms
 ``B.x`` into ``B.__dict__['x'].__get__(None, B)``.  In pure Python, it looks
 like::
 
-    def __getattribute__(self, key):
+    def __getattribute__(cls, key):
         "Emulate type_getattro() in Objects/typeobject.c"
-        v = object.__getattribute__(self, key)
+        v = object.__getattribute__(cls, key)
         if hasattr(v, '__get__'):
-            return v.__get__(None, self)
+            return v.__get__(None, cls)
         return v
 
 The important points to remember are:
@@ -619,7 +619,7 @@ Properties
 Calling :func:`property` is a succinct way of building a data descriptor that
 triggers function calls upon access to an attribute.  Its signature is::
 
-    property(fget=None, fset=None, fdel=None, doc=None) -> property attribute
+    property(fget=None, fset=None, fdel=None, doc=None) -> property
 
 The documentation shows a typical use to define a managed attribute ``x``::
 
