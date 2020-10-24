@@ -4,3 +4,6 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    labels:
+      - "skip issue"
+      - "skip news"
