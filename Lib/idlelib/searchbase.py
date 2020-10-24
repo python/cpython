@@ -86,6 +86,8 @@ class SearchDialogBase:
         self.top = top
         self.frame = Frame(top, padding="5px")
         self.frame.grid(sticky="nwes")
+        top.grid_columnconfigure(0, weight=100)
+        top.grid_rowconfigure(0, weight=100)
 
         self.row = 0
         self.frame.grid_columnconfigure(0, pad=2, weight=0)
