@@ -1177,7 +1177,7 @@ CPython bytecode changes
 
   * ``COMPARE_OP`` for rich comparisons
   * ``IS_OP`` for 'is' and 'is not' tests
-  * ``CONTAINS_OP`` for 'in' and 'is not' tests
+  * ``CONTAINS_OP`` for 'in' and 'not in' tests
   * ``JUMP_IF_NOT_EXC_MATCH`` for checking exceptions in 'try-except'
     statements.
 
