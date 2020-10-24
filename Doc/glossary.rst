@@ -1024,7 +1024,7 @@ Glossary
       :meth:`index`, :meth:`__contains__`, and
       :meth:`__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
-      :func:`~abc.register`.
+      :func:`~abc.ABCMeta.register`.
 
    single dispatch
       A form of :term:`generic function` dispatch where the implementation is
