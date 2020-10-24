@@ -312,7 +312,7 @@ Changes in the Python API
 
 * :func:`divmod` and :c:func:`PyNumber_Divmod` will check the result of special
   methods ``__divmod__`` and ``__rdivmod__`` and emit a deprecation warning if
-  it is not a tuple or raise an error if it's size is not 2.
+  it is not a tuple or raise an error if its size is not 2.
   (Contributed by Serhiy Storchaka in :issue:`34676`.)
 
 
