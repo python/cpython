@@ -1154,7 +1154,7 @@ Fail:
 }
 
 static int
-insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value, int empty)
+insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value, int not_empty)
 {
     PyObject *old_value = NULL;
     PyDictKeyEntry *ep;
@@ -1165,17 +1165,17 @@ insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value
     Py_INCREF(value);
     MAINTAIN_TRACKING(mp, key, value);
 
-    if (! empty) {
+    if (not_empty) {
         ix = keys->dk_lookup(mp, key, hash, &old_value);
         if (ix == DKIX_ERROR)
             goto Fail;
 
         assert(PyUnicode_CheckExact(key) || keys->dk_lookup == lookdict);
         
-        empty = (ix == DKIX_EMPTY);
+        not_empty = (ix != DKIX_EMPTY);
     }
 
-    if (empty) {
+    if (! not_empty) {
         /* Insert into new slot. */
         assert(old_value == NULL);
         const Py_ssize_t hashpos = find_empty_slot(keys, hash);
@@ -1721,7 +1721,7 @@ dict_set_item(PyObject *op, PyObject *key, PyObject *value)
 }
 
 static int
-dict_set_item_init(PyObject *op, PyObject *key, PyObject *value, int empty)
+dict_set_item_init(PyObject *op, PyObject *key, PyObject *value, int not_empty)
 {
     Py_hash_t hash;
     assert(PyDict_Check(op));
@@ -1736,7 +1736,7 @@ dict_set_item_init(PyObject *op, PyObject *key, PyObject *value, int empty)
             return -1;
     }
 
-    return insertdict_init(mp, key, hash, value, empty);
+    return insertdict_init(mp, key, hash, value, not_empty);
 }
 
 int
@@ -2111,11 +2111,12 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             }
 
             while (_PyDict_Next(iterable, &pos, &key, &oldvalue, &hash)) {
-                if (insertdict(mp, key, hash, value)) {
+                if (insertdict_init(mp, key, hash, value, 0)) {
                     Py_DECREF(d);
                     return NULL;
                 }
             }
+            mp->ma_version_tag = DICT_NEXT_VERSION();
             return d;
         }
         if (PyAnySet_CheckExact(iterable)) {
@@ -2130,11 +2131,12 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             }
 
             while (_PySet_NextEntry(iterable, &pos, &key, &hash)) {
-                if (insertdict(mp, key, hash, value)) {
+                if (insertdict_init(mp, key, hash, value, 0)) {
                     Py_DECREF(d);
                     return NULL;
                 }
             }
+            mp->ma_version_tag = DICT_NEXT_VERSION();
             return d;
         }
     }
@@ -2791,7 +2793,7 @@ dict_merge(PyObject *a, PyObject *b, int override)
 }
 
 static int
-dict_merge_init(PyObject *a, PyObject *b, int empty)
+dict_merge_init(PyObject *a, PyObject *b, int not_empty)
 {
     /* We accept for the argument either a concrete dictionary object,
      * or an abstract "mapping" object.  For the former, we can do
@@ -2876,7 +2878,7 @@ dict_merge_init(PyObject *a, PyObject *b, int empty)
             if (value != NULL) {
                 Py_INCREF(key);
                 Py_INCREF(value);
-                err = insertdict_init(mp, key, hash, value, empty);
+                err = insertdict_init(mp, key, hash, value, not_empty);
                 Py_DECREF(value);
                 Py_DECREF(key);
                 if (err != 0)
@@ -2958,7 +2960,7 @@ static int
 dict_update_arg_init(PyObject *self, PyObject *arg)
 {
     if (PyDict_CheckExact(arg)) {
-        return dict_merge_init(self, arg, 1);
+        return dict_merge_init(self, arg, 0);
     }
     _Py_IDENTIFIER(keys);
     PyObject *func;
@@ -2967,7 +2969,7 @@ dict_update_arg_init(PyObject *self, PyObject *arg)
     }
     if (func != NULL) {
         Py_DECREF(func);
-        return dict_merge_init(self, arg, 1);
+        return dict_merge_init(self, arg, 0);
     }
     return PyDict_MergeFromSeq2(self, arg, 1);
 }
@@ -2999,14 +3001,14 @@ dict_update_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *arg = NULL;
     int result = 0;
-    int empty = 1;
+    int not_empty = 0;
     if (! PyArg_UnpackTuple(args, __func__, 0, 1, &arg)) {
         return -1;
     }
     
     if (arg != NULL) {
         result = dict_update_arg_init(self, arg);
-        empty = 0;
+        not_empty = 1;
     }
 
     if (result == 0 && kwds != NULL) {
@@ -3020,7 +3022,7 @@ dict_update_init(PyObject *self, PyObject *args, PyObject *kwds)
                    return -1;
                 }
             }
-            result = dict_merge_init(self, kwds, empty);
+            result = dict_merge_init(self, kwds, not_empty);
         }
         else {
             result = -1;
@@ -3147,7 +3149,7 @@ PyDict_Copy(PyObject *o)
     PyObject *copy = PyDict_New();
     if (copy == NULL)
         return NULL;
-    if (dict_merge_init(copy, o, 1) == 0)
+    if (dict_merge_init(copy, o, 0) == 0)
         return copy;
     Py_DECREF(copy);
     return NULL;
@@ -3803,15 +3805,12 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    int empty = 1;
-
     if (nargs == 1) {
         if (dict_update_arg_init(self, args[0]) < 0) {
             Py_DECREF(self);
             return NULL;
         }
 
-        empty = 0;
         args++;
     }
 
@@ -3828,7 +3827,7 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
         }
 
         for (Py_ssize_t i = 0; i < kw_size; i++) {
-            if (dict_set_item_init(self, PyTuple_GET_ITEM(kwnames, i), args[i], empty) < 0) {
+            if (dict_set_item_init(self, PyTuple_GET_ITEM(kwnames, i), args[i], nargs) < 0) {
                 Py_DECREF(self);
                 return NULL;
             }
