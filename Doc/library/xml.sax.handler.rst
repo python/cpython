@@ -11,12 +11,12 @@
 
 --------------
 
-The SAX API defines four kinds of handlers: content handlers, DTD handlers,
-error handlers, and entity resolvers. Applications normally only need to
-implement those interfaces whose events they are interested in; they can
-implement the interfaces in a single object or in multiple objects. Handler
-implementations should inherit from the base classes provided in the module
-:mod:`xml.sax.handler`, so that all methods get default implementations.
+The SAX API defines five kinds of handlers: content handlers, DTD handlers,
+error handlers, entity resolvers and lexical handlers. Applications normally
+only need to implement those interfaces whose events they are interested in;
+they can implement the interfaces in a single object or in multiple objects.
+Handler implementations should inherit from the base classes provided in the
+module :mod:`xml.sax.handler`, so that all methods get default implementations.
 
 
 .. class:: ContentHandler
@@ -46,6 +46,12 @@ implementations should inherit from the base classes provided in the module
    Interface used by the parser to present error and warning messages to the
    application.  The methods of this object control whether errors are immediately
    converted to exceptions or are handled in some other way.
+
+
+.. class:: LexicalHandler
+
+   Interface used by the parser to represent low freqency events which may not
+   be of interest to many applications.
 
 In addition to these classes, :mod:`xml.sax.handler` provides symbolic constants
 for the feature and property names.
@@ -114,7 +120,7 @@ for the feature and property names.
 .. data:: property_lexical_handler
 
    | value: ``"http://xml.org/sax/properties/lexical-handler"``
-   | data type: xml.sax.sax2lib.LexicalHandler (not supported in Python 2)
+   | data type: xml.sax.handler.LexicalHandler (not supported in Python 2)
    | description: An optional extension handler for lexical events like
      comments.
    | access: read/write
@@ -413,3 +419,45 @@ the passed-in exception object.
    information will continue to be passed to the application. Raising an exception
    in this method will cause parsing to end.
 
+
+.. _lexical-handler-objects:
+
+LexicalHandler Objects
+----------------------
+Optional SAX2 handler for lexical events.
+
+This handler is used to obtain lexical information about an XML
+document. Lexical information includes information describing the
+document encoding used and XML comments embedded in the document, as
+well as section boundaries for the DTD and for any CDATA sections.
+The lexical handlers are used in the same manner as content handlers.
+
+Set the LexicalHandler of an XMLReader by using the setProperty method
+with the property identifier
+``'http://xml.org/sax/properties/lexical-handler'``.
+
+
+.. method:: LexicalHandler.comment(content)
+
+   Reports a comment anywhere in the document (including the DTD and
+   outside the document element).
+
+.. method:: LexicalHandler.startDTD(name, public_id, system_id)
+
+   Reports the start of the DTD declarations if the document has an
+   associated DTD.
+
+.. method:: LexicalHandler.endDTD()
+
+   Reports the end of DTD declaration.
+
+.. method:: LexicalHandler.startCDATA()
+
+   Reports the start of a CDATA marked section.
+
+   The contents of the CDATA marked section will be reported through
+   the characters handler.
+
+.. method:: LexicalHandler.endCDATA()
+
+   Reports the end of a CDATA marked section.

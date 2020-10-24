@@ -1,7 +1,9 @@
 import ast
+import builtins
 import dis
 import os
 import sys
+import types
 import unittest
 import warnings
 import weakref
@@ -402,6 +404,15 @@ class AST_Tests(unittest.TestCase):
         self.assertRaises(TypeError, ast.Num, 1, None, 2)
         self.assertRaises(TypeError, ast.Num, 1, None, 2, lineno=0)
 
+        # Arbitrary keyword arguments are supported
+        self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
+        self.assertEqual(ast.Num(1, foo='bar').foo, 'bar')
+
+        with self.assertRaisesRegex(TypeError, "Num got multiple values for argument 'n'"):
+            ast.Num(1, n=2)
+        with self.assertRaisesRegex(TypeError, "Constant got multiple values for argument 'value'"):
+            ast.Constant(1, value=2)
+
         self.assertEqual(ast.Num(42).n, 42)
         self.assertEqual(ast.Num(4.25).n, 4.25)
         self.assertEqual(ast.Num(4.25j).n, 4.25j)
@@ -597,7 +608,7 @@ class AST_Tests(unittest.TestCase):
         empty_yield_from.body[0].body[0].value.value = None
         with self.assertRaises(ValueError) as cm:
             compile(empty_yield_from, "<test>", "exec")
-        self.assertIn("field value is required", str(cm.exception))
+        self.assertIn("field 'value' is required", str(cm.exception))
 
     @support.cpython_only
     def test_issue31592(self):
@@ -653,6 +664,18 @@ class AST_Tests(unittest.TestCase):
         expressions = [f"     | {node.__doc__}" for node in ast.expr.__subclasses__()]
         expressions[0] = f"expr = {ast.expr.__subclasses__()[0].__doc__}"
         self.assertCountEqual(ast.expr.__doc__.split("\n"), expressions)
+
+    def test_issue40614_feature_version(self):
+        ast.parse('f"{x=}"', feature_version=(3, 8))
+        with self.assertRaises(SyntaxError):
+            ast.parse('f"{x=}"', feature_version=(3, 7))
+
+    def test_constant_as_name(self):
+        for constant in "True", "False", "None":
+            expr = ast.Expression(ast.Name(constant, ast.Load()))
+            ast.fix_missing_locations(expr)
+            with self.assertRaisesRegex(ValueError, f"Name node can't be used with '{constant}' constant"):
+                compile(expr, "<test>", "eval")
 
 
 class ASTHelpers_Test(unittest.TestCase):
@@ -791,6 +814,12 @@ Module(
             'lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, '
             'col_offset=0, end_lineno=1, end_col_offset=5))'
         )
+        src = ast.Call(col_offset=1, lineno=1, end_lineno=1, end_col_offset=1)
+        new = ast.copy_location(src, ast.Call(col_offset=None, lineno=None))
+        self.assertIsNone(new.end_lineno)
+        self.assertIsNone(new.end_col_offset)
+        self.assertEqual(new.lineno, 1)
+        self.assertEqual(new.col_offset, 1)
 
     def test_fix_missing_locations(self):
         src = ast.parse('write("spam")')
@@ -830,6 +859,11 @@ Module(
             'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
             'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
+        src = ast.Call(
+            func=ast.Name("test", ast.Load()), args=[], keywords=[], lineno=1
+        )
+        self.assertEqual(ast.increment_lineno(src).lineno, 2)
+        self.assertIsNone(ast.increment_lineno(src).end_lineno)
 
     def test_iter_fields(self):
         node = ast.parse('foo()', mode='eval')
@@ -964,6 +998,18 @@ Module(
         self.assertRaises(ValueError, ast.literal_eval, '3+-6j')
         self.assertRaises(ValueError, ast.literal_eval, '3+(0+6j)')
         self.assertRaises(ValueError, ast.literal_eval, '-(3+6j)')
+
+    def test_literal_eval_malformed_dict_nodes(self):
+        malformed = ast.Dict(keys=[ast.Constant(1), ast.Constant(2)], values=[ast.Constant(3)])
+        self.assertRaises(ValueError, ast.literal_eval, malformed)
+        malformed = ast.Dict(keys=[ast.Constant(1)], values=[ast.Constant(2), ast.Constant(3)])
+        self.assertRaises(ValueError, ast.literal_eval, malformed)
+
+    def test_literal_eval_trailing_ws(self):
+        self.assertEqual(ast.literal_eval("    -1"), -1)
+        self.assertEqual(ast.literal_eval("\t\t-1"), -1)
+        self.assertEqual(ast.literal_eval(" \t -1"), -1)
+        self.assertRaises(IndentationError, ast.literal_eval, "\n -1")
 
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values
@@ -1845,6 +1891,17 @@ class EndPositionTests(unittest.TestCase):
         cdef = ast.parse(s).body[0]
         self.assertEqual(ast.get_source_segment(s, cdef.body[0], padded=True), s_method)
 
+    def test_source_segment_missing_info(self):
+        s = 'v = 1\r\nw = 1\nx = 1\n\ry = 1\r\n'
+        v, w, x, y = ast.parse(s).body
+        del v.lineno
+        del w.end_lineno
+        del x.col_offset
+        del y.end_col_offset
+        self.assertIsNone(ast.get_source_segment(s, v))
+        self.assertIsNone(ast.get_source_segment(s, w))
+        self.assertIsNone(ast.get_source_segment(s, x))
+        self.assertIsNone(ast.get_source_segment(s, y))
 
 class NodeVisitorTests(unittest.TestCase):
     def test_old_constant_nodes(self):
@@ -1894,6 +1951,88 @@ class NodeVisitorTests(unittest.TestCase):
             'visit_NameConstant is deprecated; add visit_Constant',
             'visit_Ellipsis is deprecated; add visit_Constant',
         ])
+
+
+@support.cpython_only
+class ModuleStateTests(unittest.TestCase):
+    # bpo-41194, bpo-41261, bpo-41631: The _ast module uses a global state.
+
+    def check_ast_module(self):
+        # Check that the _ast module still works as expected
+        code = 'x + 1'
+        filename = '<string>'
+        mode = 'eval'
+
+        # Create _ast.AST subclasses instances
+        ast_tree = compile(code, filename, mode, flags=ast.PyCF_ONLY_AST)
+
+        # Call PyAST_Check()
+        code = compile(ast_tree, filename, mode)
+        self.assertIsInstance(code, types.CodeType)
+
+    def test_reload_module(self):
+        # bpo-41194: Importing the _ast module twice must not crash.
+        with support.swap_item(sys.modules, '_ast', None):
+            del sys.modules['_ast']
+            import _ast as ast1
+
+            del sys.modules['_ast']
+            import _ast as ast2
+
+            self.check_ast_module()
+
+        # Unloading the two _ast module instances must not crash.
+        del ast1
+        del ast2
+        support.gc_collect()
+
+        self.check_ast_module()
+
+    def test_sys_modules(self):
+        # bpo-41631: Test reproducing a Mercurial crash when PyAST_Check()
+        # imported the _ast module internally.
+        lazy_mod = object()
+
+        def my_import(name, *args, **kw):
+            sys.modules[name] = lazy_mod
+            return lazy_mod
+
+        with support.swap_item(sys.modules, '_ast', None):
+            del sys.modules['_ast']
+
+            with support.swap_attr(builtins, '__import__', my_import):
+                # Test that compile() does not import the _ast module
+                self.check_ast_module()
+                self.assertNotIn('_ast', sys.modules)
+
+                # Sanity check of the test itself
+                import _ast
+                self.assertIs(_ast, lazy_mod)
+
+    def test_subinterpreter(self):
+        # bpo-41631: Importing and using the _ast module in a subinterpreter
+        # must not crash.
+        code = dedent('''
+            import _ast
+            import ast
+            import gc
+            import sys
+            import types
+
+            # Create _ast.AST subclasses instances and call PyAST_Check()
+            ast_tree = compile('x+1', '<string>', 'eval',
+                               flags=ast.PyCF_ONLY_AST)
+            code = compile(ast_tree, 'string', 'eval')
+            if not isinstance(code, types.CodeType):
+                raise AssertionError
+
+            # Unloading the _ast module must not crash.
+            del ast, _ast
+            del sys.modules['ast'], sys.modules['_ast']
+            gc.collect()
+        ''')
+        res = support.run_in_subinterp(code)
+        self.assertEqual(res, 0)
 
 
 def main():
@@ -2006,7 +2145,7 @@ eval_results = [
 ('Expression', ('GeneratorExp', (1, 0, 1, 22), ('Tuple', (1, 1, 1, 6), [('Name', (1, 2, 1, 3), 'a', ('Load',)), ('Name', (1, 4, 1, 5), 'b', ('Load',))], ('Load',)), [('comprehension', ('Tuple', (1, 11, 1, 16), [('Name', (1, 12, 1, 13), 'a', ('Store',)), ('Name', (1, 14, 1, 15), 'b', ('Store',))], ('Store',)), ('Name', (1, 20, 1, 21), 'c', ('Load',)), [], 0)])),
 ('Expression', ('GeneratorExp', (1, 0, 1, 22), ('Tuple', (1, 1, 1, 6), [('Name', (1, 2, 1, 3), 'a', ('Load',)), ('Name', (1, 4, 1, 5), 'b', ('Load',))], ('Load',)), [('comprehension', ('List', (1, 11, 1, 16), [('Name', (1, 12, 1, 13), 'a', ('Store',)), ('Name', (1, 14, 1, 15), 'b', ('Store',))], ('Store',)), ('Name', (1, 20, 1, 21), 'c', ('Load',)), [], 0)])),
 ('Expression', ('Compare', (1, 0, 1, 9), ('Constant', (1, 0, 1, 1), 1, None), [('Lt',), ('Lt',)], [('Constant', (1, 4, 1, 5), 2, None), ('Constant', (1, 8, 1, 9), 3, None)])),
-('Expression', ('Call', (1, 0, 1, 17), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('Constant', (1, 2, 1, 3), 1, None), ('Constant', (1, 4, 1, 5), 2, None), ('Starred', (1, 10, 1, 12), ('Name', (1, 11, 1, 12), 'd', ('Load',)), ('Load',))], [('keyword', 'c', ('Constant', (1, 8, 1, 9), 3, None)), ('keyword', None, ('Name', (1, 15, 1, 16), 'e', ('Load',)))])),
+('Expression', ('Call', (1, 0, 1, 17), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('Constant', (1, 2, 1, 3), 1, None), ('Constant', (1, 4, 1, 5), 2, None), ('Starred', (1, 10, 1, 12), ('Name', (1, 11, 1, 12), 'd', ('Load',)), ('Load',))], [('keyword', (1, 6, 1, 9), 'c', ('Constant', (1, 8, 1, 9), 3, None)), ('keyword', (1, 13, 1, 16), None, ('Name', (1, 15, 1, 16), 'e', ('Load',)))])),
 ('Expression', ('Call', (1, 0, 1, 10), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('Starred', (1, 2, 1, 9), ('List', (1, 3, 1, 9), [('Constant', (1, 4, 1, 5), 0, None), ('Constant', (1, 7, 1, 8), 1, None)], ('Load',)), ('Load',))], [])),
 ('Expression', ('Call', (1, 0, 1, 15), ('Name', (1, 0, 1, 1), 'f', ('Load',)), [('GeneratorExp', (1, 1, 1, 15), ('Name', (1, 2, 1, 3), 'a', ('Load',)), [('comprehension', ('Name', (1, 8, 1, 9), 'a', ('Store',)), ('Name', (1, 13, 1, 14), 'b', ('Load',)), [], 0)])], [])),
 ('Expression', ('Constant', (1, 0, 1, 2), 10, None)),

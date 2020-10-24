@@ -11,22 +11,22 @@ extern "C" {
 /* Forward declarations */
 struct pyruntimestate;
 struct _ceval_runtime_state;
-struct _frame;
 
-#include "pycore_pystate.h"   /* PyInterpreterState.eval_frame */
+#include "pycore_interp.h"   /* PyInterpreterState.eval_frame */
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
-extern void _PyEval_InitState(struct _ceval_state *);
-extern void _PyEval_FiniThreads(PyThreadState *tstate);
-PyAPI_FUNC(void) _PyEval_SignalReceived(PyThreadState *tstate);
+extern int _PyEval_InitState(struct _ceval_state *ceval);
+extern void _PyEval_FiniState(struct _ceval_state *ceval);
+PyAPI_FUNC(void) _PyEval_SignalReceived(PyInterpreterState *interp);
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
-    PyThreadState *tstate,
+    PyInterpreterState *interp,
     int (*func)(void *),
     void *arg);
 PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyThreadState *tstate);
-PyAPI_FUNC(void) _PyEval_ReInitThreads(
-    struct pyruntimestate *runtime);
+#ifdef HAVE_FORK
+extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
+#endif
 PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
     PyThreadState *tstate,
     int new_depth);
@@ -35,7 +35,7 @@ PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
 void _PyEval_Fini(void);
 
 static inline PyObject*
-_PyEval_EvalFrame(PyThreadState *tstate, struct _frame *f, int throwflag)
+_PyEval_EvalFrame(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 {
     return tstate->interp->eval_frame(tstate, f, throwflag);
 }
@@ -50,26 +50,29 @@ extern PyObject *_PyEval_EvalCode(
     PyObject *kwdefs, PyObject *closure,
     PyObject *name, PyObject *qualname);
 
-extern int _PyEval_ThreadsInitialized(_PyRuntimeState *runtime);
-extern PyStatus _PyEval_InitThreads(PyThreadState *tstate);
+#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
+extern int _PyEval_ThreadsInitialized(PyInterpreterState *interp);
+#else
+extern int _PyEval_ThreadsInitialized(struct pyruntimestate *runtime);
+#endif
+extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
+extern void _PyEval_FiniGIL(PyThreadState *tstate);
 
 extern void _PyEval_ReleaseLock(PyThreadState *tstate);
 
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-PyAPI_DATA(int) _Py_CheckRecursionLimit;
-
 #ifdef USE_STACKCHECK
 /* With USE_STACKCHECK macro defined, trigger stack checks in
    _Py_CheckRecursiveCall() on every 64th call to Py_EnterRecursiveCall. */
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
-    return (++tstate->recursion_depth > _Py_CheckRecursionLimit
+    return (++tstate->recursion_depth > tstate->interp->ceval.recursion_limit
             || ++tstate->stackcheck_counter > 64);
 }
 #else
 static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
-    return (++tstate->recursion_depth > _Py_CheckRecursionLimit);
+    return (++tstate->recursion_depth > tstate->interp->ceval.recursion_limit);
 }
 #endif
 
@@ -89,20 +92,22 @@ static inline int _Py_EnterRecursiveCall_inline(const char *where) {
 
 #define Py_EnterRecursiveCall(where) _Py_EnterRecursiveCall_inline(where)
 
-
 /* Compute the "lower-water mark" for a recursion limit. When
  * Py_LeaveRecursiveCall() is called with a recursion depth below this mark,
  * the overflowed flag is reset to 0. */
-#define _Py_RecursionLimitLowerWaterMark(limit) \
-    (((limit) > 200) \
-        ? ((limit) - 50) \
-        : (3 * ((limit) >> 2)))
-
-#define _Py_MakeEndRecCheck(x) \
-    (--(x) < _Py_RecursionLimitLowerWaterMark(_Py_CheckRecursionLimit))
+static inline int _Py_RecursionLimitLowerWaterMark(int limit) {
+    if (limit > 200) {
+        return (limit - 50);
+    }
+    else {
+        return (3 * (limit >> 2));
+    }
+}
 
 static inline void _Py_LeaveRecursiveCall(PyThreadState *tstate)  {
-    if (_Py_MakeEndRecCheck(tstate->recursion_depth)) {
+    tstate->recursion_depth--;
+    int limit = tstate->interp->ceval.recursion_limit;
+    if (tstate->recursion_depth < _Py_RecursionLimitLowerWaterMark(limit)) {
         tstate->overflowed = 0;
     }
 }

@@ -103,11 +103,23 @@ If you instantiate any of these types, note that signatures may vary between Pyt
 
 Standard names are defined for the following types:
 
+.. data:: NoneType
+
+   The type of :data:`None`.
+
+   .. versionadded:: 3.10
+
+
 .. data:: FunctionType
           LambdaType
 
    The type of user-defined functions and functions created by
    :keyword:`lambda`  expressions.
+
+   .. audit-event:: function.__new__ code types.FunctionType
+
+   The audit event only occurs for direct instantiation of function objects,
+   and is not raised for normal compilation.
 
 
 .. data:: GeneratorType
@@ -138,10 +150,11 @@ Standard names are defined for the following types:
 
    The type for code objects such as returned by :func:`compile`.
 
-   .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags CodeType
+   .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags types.CodeType
 
    Note that the audited arguments may not match the names or positions
-   required by the initializer.
+   required by the initializer.  The audit event only occurs for direct
+   instantiation of code objects, and is not raised for normal compilation.
 
    .. method:: CodeType.replace(**kwargs)
 
@@ -184,6 +197,13 @@ Standard names are defined for the following types:
    For example it is the type of :code:`object().__str__`.
 
    .. versionadded:: 3.7
+
+
+.. data:: NotImplementedType
+
+   The type of :data:`NotImplemented`.
+
+   .. versionadded:: 3.10
 
 
 .. data:: MethodDescriptorType
@@ -235,6 +255,18 @@ Standard names are defined for the following types:
       .. versionchanged:: 3.4
          Defaults to ``None``. Previously the attribute was optional.
 
+
+.. data:: EllipsisType
+
+   The type of :data:`Ellipsis`.
+
+   .. versionadded:: 3.10
+
+.. data:: Union
+
+   The type of :ref:`union type expressions<types-union>`.
+
+   .. versionadded:: 3.10
 
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
@@ -329,6 +361,12 @@ Standard names are defined for the following types:
 
       Return a new view of the underlying mapping's values.
 
+   .. describe:: reversed(proxy)
+
+      Return a reverse iterator over the keys of the underlying mapping.
+
+      .. versionadded:: 3.9
+
 
 Additional Utility Classes and Functions
 ----------------------------------------
@@ -349,8 +387,7 @@ Additional Utility Classes and Functions
                self.__dict__.update(kwargs)
 
            def __repr__(self):
-               keys = sorted(self.__dict__)
-               items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
+               items = (f"{k}={v!r}" for k, v in self.__dict__.items())
                return "{}({})".format(type(self).__name__, ", ".join(items))
 
            def __eq__(self, other):
@@ -362,6 +399,9 @@ Additional Utility Classes and Functions
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.9
+      Attribute order in the repr changed from alphabetical to insertion (like
+      ``dict``).
 
 .. function:: DynamicClassAttribute(fget=None, fset=None, fdel=None, doc=None)
 
@@ -373,7 +413,7 @@ Additional Utility Classes and Functions
    class's __getattr__ method; this is done by raising AttributeError.
 
    This allows one to have properties active on an instance, and have virtual
-   attributes on the class with the same name (see Enum for an example).
+   attributes on the class with the same name (see :class:`enum.Enum` for an example).
 
    .. versionadded:: 3.4
 

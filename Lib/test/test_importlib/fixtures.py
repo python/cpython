@@ -1,24 +1,12 @@
-from __future__ import unicode_literals
-
 import os
 import sys
 import shutil
+import pathlib
 import tempfile
 import textwrap
 import contextlib
 
-try:
-    from contextlib import ExitStack
-except ImportError:
-    from contextlib2 import ExitStack
-
-try:
-    import pathlib
-except ImportError:
-    import pathlib2 as pathlib
-
-
-__metaclass__ = type
+from test.support.os_helper import FS_NONASCII
 
 
 @contextlib.contextmanager
@@ -58,7 +46,7 @@ def install_finder(finder):
 
 class Fixtures:
     def setUp(self):
-        self.fixtures = ExitStack()
+        self.fixtures = contextlib.ExitStack()
         self.addCleanup(self.fixtures.close)
 
 
@@ -175,6 +163,21 @@ class EggInfoFile(OnSysPath, SiteDir):
         build_files(EggInfoFile.files, prefix=self.site_dir)
 
 
+class LocalPackage:
+    files = {
+        "setup.py": """
+            import setuptools
+            setuptools.setup(name="local-pkg", version="2.0.1")
+            """,
+        }
+
+    def setUp(self):
+        self.fixtures = contextlib.ExitStack()
+        self.addCleanup(self.fixtures.close)
+        self.fixtures.enter_context(tempdir_as_cwd())
+        build_files(self.files)
+
+
 def build_files(file_defs, prefix=pathlib.Path()):
     """Build a set of files/directories, as described by the
 
@@ -207,6 +210,12 @@ def build_files(file_defs, prefix=pathlib.Path()):
             else:
                 with full_name.open('w') as f:
                     f.write(DALS(contents))
+
+
+class FileBuilder:
+    def unicode_filename(self):
+        return FS_NONASCII or \
+            self.skip("File system does not support non-ascii.")
 
 
 def DALS(str):

@@ -69,7 +69,7 @@ Number Protocol
    See the built-in function :func:`divmod`. Returns ``NULL`` on failure.  This is
    the equivalent of the Python expression ``divmod(o1, o2)``.
 
-   .. versionchanged:: 3.9
+   .. versionchanged:: 3.10
       Always returns a tuple of size 2 on success.
 
 
@@ -258,6 +258,10 @@ Number Protocol
 
    Returns the *o* converted to a Python int on success or ``NULL`` with a
    :exc:`TypeError` exception raised on failure.
+
+   .. versionchanged:: 3.10
+      The result always has exact type :class:`int`.  Previously, the result
+      could have been an instance of a subclass of ``int``.
 
 
 .. c:function:: PyObject* PyNumber_ToBase(PyObject *n, int base)

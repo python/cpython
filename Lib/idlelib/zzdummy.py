@@ -28,7 +28,7 @@ class ZzDummy:
         text = self.text
         text.undo_block_start()
         for line in range(1, text.index('end')):
-            text.insert('%d.0', ztest)
+            text.insert('%d.0', ztext)
         text.undo_block_stop()
         return "break"
 

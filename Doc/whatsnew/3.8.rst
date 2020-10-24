@@ -428,8 +428,8 @@ Other Language Changes
             lastname, *members = family.split()
             return lastname.upper(), *members
 
-    >>> parse('simpsons homer marge bart lisa sally')
-    ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'sally')
+    >>> parse('simpsons homer marge bart lisa maggie')
+    ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'maggie')
 
   (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
 
@@ -646,7 +646,8 @@ loop on every invocation:
 (Contributed by Yury Selivanov in :issue:`37028`.)
 
 The exception :class:`asyncio.CancelledError` now inherits from
-:class:`BaseException` rather than :class:`Exception`.
+:class:`BaseException` rather than :class:`Exception` and no longer inherits
+from :class:`concurrent.futures.CancelledError`.
 (Contributed by Yury Selivanov in :issue:`32528`.)
 
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
@@ -869,8 +870,18 @@ clipboard.  Converting strings from Tcl to Python and back now never fails.
 (Many people worked on this for eight years but the problem was finally
 solved by Serhiy Storchaka in :issue:`13153`.)
 
+New in 3.8.1:
+
+Add option to toggle cursor blink off.  (Contributed by Zackery Spytz
+in :issue:`4603`.)
+
+Escape key now closes IDLE completion windows.  (Contributed by Johnny
+Najera in :issue:`38944`.)
+
 The changes above have been backported to 3.7 maintenance releases.
 
+Add keywords to module name completion list.  (Contributed by Terry J.
+Reedy in :issue:`37765`.)
 
 inspect
 -------
@@ -1692,7 +1703,7 @@ Deprecated
   :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
   parameter of functions :func:`~gettext.translation` and
   :func:`~gettext.install` are also deprecated, since they are only used for
-  for the ``l*gettext()`` functions.
+  the ``l*gettext()`` functions.
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
 * The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
@@ -1951,7 +1962,8 @@ Changes in the Python API
   (Contributed by Anthony Sottile in :issue:`36264`.)
 
 * The exception :class:`asyncio.CancelledError` now inherits from
-  :class:`BaseException` rather than :class:`Exception`.
+  :class:`BaseException` rather than :class:`Exception` and no longer inherits
+  from :class:`concurrent.futures.CancelledError`.
   (Contributed by Yury Selivanov in :issue:`32528`.)
 
 * The function :func:`asyncio.wait_for` now correctly waits for cancellation
@@ -2208,7 +2220,13 @@ Here's a summary of performance improvements since Python 3.3:
     Timing loop:
         loop_overhead                    0.3     0.5     0.6     0.4     0.3     0.3
 
-    (Measured from the macOS 64-bit builds found at python.org)
+The benchmarks were measured on an
+`Intel® Core™ i7-4960HQ processor
+<https://ark.intel.com/content/www/us/en/ark/products/76088/intel-core-i7-4960hq-processor-6m-cache-up-to-3-80-ghz.html>`_
+running the macOS 64-bit builds found at
+`python.org <https://www.python.org/downloads/mac-osx/>`_.
+The benchmark script displays timings in nanoseconds.
+
 
 Notable changes in Python 3.8.1
 ===============================

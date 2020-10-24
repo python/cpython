@@ -307,6 +307,10 @@ class OptionMenuTest(MenubuttonTest, unittest.TestCase):
     def create(self, default='b', values=('a', 'b', 'c'), **kwargs):
         return tkinter.OptionMenu(self.root, None, default, *values, **kwargs)
 
+    def test_bad_kwarg(self):
+        with self.assertRaisesRegex(TclError, r"^unknown option -image$"):
+            tkinter.OptionMenu(self.root, None, 'b', image='')
+
 
 @add_standard_options(IntegerSizeTests, StandardOptionsTests)
 class EntryTest(AbstractWidgetTest, unittest.TestCase):
@@ -936,7 +940,8 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_from(self):
         widget = self.create()
-        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=float_round)
+        conv = False if get_tk_patchlevel() >= (8, 6, 10) else float_round
+        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=conv)
 
     def test_label(self):
         widget = self.create()

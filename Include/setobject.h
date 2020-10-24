@@ -70,7 +70,6 @@ PyAPI_DATA(PyObject *) _PySet_Dummy;
 
 PyAPI_FUNC(int) _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash);
 PyAPI_FUNC(int) _PySet_Update(PyObject *set, PyObject *iterable);
-PyAPI_FUNC(int) PySet_ClearFreeList(void);
 
 #endif /* Section excluded by Py_LIMITED_API */
 

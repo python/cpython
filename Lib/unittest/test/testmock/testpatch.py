@@ -774,7 +774,7 @@ class PatchTest(unittest.TestCase):
         d = {'foo': 'bar'}
         original = d.copy()
         patcher = patch.dict(d, [('spam', 'eggs')], clear=True)
-        self.assertEqual(patcher.stop(), False)
+        self.assertFalse(patcher.stop())
         self.assertEqual(d, original)
 
 

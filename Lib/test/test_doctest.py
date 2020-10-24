@@ -3,6 +3,8 @@ Test script for doctest.
 """
 
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 import doctest
 import functools
 import os
@@ -441,7 +443,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from ...:25 (1 example)>]
+    [<DocTest sample_func from ...:27 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -665,11 +667,11 @@ plain ol' Python and is guaranteed to be available.
 
     >>> import builtins
     >>> tests = doctest.DocTestFinder().find(builtins)
-    >>> 800 < len(tests) < 820 # approximate number of objects with docstrings
+    >>> 816 < len(tests) < 836 # approximate number of objects with docstrings
     True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
     >>> len(real_tests) # objects that actually have doctests
-    12
+    14
     >>> for t in real_tests:
     ...     print('{}  {}'.format(len(t.examples), t.name))
     ...
@@ -682,9 +684,11 @@ plain ol' Python and is guaranteed to be available.
     1  builtins.hex
     1  builtins.int
     3  builtins.int.as_integer_ratio
+    2  builtins.int.bit_count
     2  builtins.int.bit_length
     5  builtins.memoryview.hex
     1  builtins.oct
+    1  builtins.zip
 
 Note here that 'bin', 'oct', and 'hex' are functions; 'float.as_integer_ratio',
 'float.hex', and 'int.bit_length' are methods; 'float.fromhex' is a classmethod,
@@ -703,7 +707,7 @@ class TestDocTestFinder(unittest.TestCase):
             try:
                 mod = importlib.import_module(pkg_name)
             finally:
-                support.forget(pkg_name)
+                import_helper.forget(pkg_name)
                 sys.path.pop()
 
             include_empty_finder = doctest.DocTestFinder(exclude_empty=False)
@@ -2756,7 +2760,7 @@ whitespace if doctest does not correctly do the newline conversion.
     >>> dn = tempfile.mkdtemp()
     >>> pkg = os.path.join(dn, "doctest_testpkg")
     >>> os.mkdir(pkg)
-    >>> support.create_empty_file(os.path.join(pkg, "__init__.py"))
+    >>> os_helper.create_empty_file(os.path.join(pkg, "__init__.py"))
     >>> fn = os.path.join(pkg, "doctest_testfile.txt")
     >>> with open(fn, 'wb') as f:
     ...     f.write(
@@ -2838,7 +2842,8 @@ With those preliminaries out of the way, we'll start with a file with two
 simple tests and no errors.  We'll run both the unadorned doctest command, and
 the verbose version, and then check the output:
 
-    >>> from test.support import script_helper, temp_dir
+    >>> from test.support import script_helper
+    >>> from test.support.os_helper import temp_dir
     >>> with temp_dir() as tmpdir:
     ...     fn = os.path.join(tmpdir, 'myfile.doc')
     ...     with open(fn, 'w') as f:
@@ -2889,7 +2894,8 @@ ability to process more than one file on the command line and, since the second
 file ends in '.py', its handling of python module files (as opposed to straight
 text files).
 
-    >>> from test.support import script_helper, temp_dir
+    >>> from test.support import script_helper
+    >>> from test.support.os_helper import temp_dir
     >>> with temp_dir() as tmpdir:
     ...     fn = os.path.join(tmpdir, 'myfile.doc')
     ...     with open(fn, 'w') as f:
@@ -3107,7 +3113,7 @@ def test_main():
 
 
 def test_coverage(coverdir):
-    trace = support.import_module('trace')
+    trace = import_helper.import_module('trace')
     tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,],
                          trace=0, count=1)
     tracer.run('test_main()')

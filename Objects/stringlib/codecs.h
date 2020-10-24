@@ -4,14 +4,16 @@
 # error "codecs.h is specific to Unicode"
 #endif
 
-/* Mask to quickly check whether a C 'long' contains a
+#include "pycore_bitutils.h"      // _Py_bswap32()
+
+/* Mask to quickly check whether a C 'size_t' contains a
    non-ASCII, UTF8-encoded char. */
-#if (SIZEOF_LONG == 8)
-# define ASCII_CHAR_MASK 0x8080808080808080UL
-#elif (SIZEOF_LONG == 4)
-# define ASCII_CHAR_MASK 0x80808080UL
+#if (SIZEOF_SIZE_T == 8)
+# define ASCII_CHAR_MASK 0x8080808080808080ULL
+#elif (SIZEOF_SIZE_T == 4)
+# define ASCII_CHAR_MASK 0x80808080U
 #else
-# error C 'long' size should be either 4 or 8!
+# error C 'size_t' size should be either 4 or 8!
 #endif
 
 /* 10xxxxxx */
@@ -24,7 +26,7 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
 {
     Py_UCS4 ch;
     const char *s = *inptr;
-    const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_LONG);
+    const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_SIZE_T);
     STRINGLIB_CHAR *p = dest + *outpos;
 
     while (s < end) {
@@ -34,19 +36,19 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
             /* Fast path for runs of ASCII characters. Given that common UTF-8
                input will consist of an overwhelming majority of ASCII
                characters, we try to optimize for this case by checking
-               as many characters as a C 'long' can contain.
+               as many characters as a C 'size_t' can contain.
                First, check if we can do an aligned read, as most CPUs have
                a penalty for unaligned reads.
             */
-            if (_Py_IS_ALIGNED(s, SIZEOF_LONG)) {
+            if (_Py_IS_ALIGNED(s, SIZEOF_SIZE_T)) {
                 /* Help register allocation */
                 const char *_s = s;
                 STRINGLIB_CHAR *_p = p;
                 while (_s < aligned_end) {
-                    /* Read a whole long at a time (either 4 or 8 bytes),
+                    /* Read a whole size_t at a time (either 4 or 8 bytes),
                        and do a fast unrolled copy if it only contains ASCII
                        characters. */
-                    unsigned long value = *(const unsigned long *) _s;
+                    size_t value = *(const size_t *) _s;
                     if (value & ASCII_CHAR_MASK)
                         break;
 #if PY_LITTLE_ENDIAN
@@ -54,14 +56,14 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                     _p[1] = (STRINGLIB_CHAR)((value >> 8) & 0xFFu);
                     _p[2] = (STRINGLIB_CHAR)((value >> 16) & 0xFFu);
                     _p[3] = (STRINGLIB_CHAR)((value >> 24) & 0xFFu);
-# if SIZEOF_LONG == 8
+# if SIZEOF_SIZE_T == 8
                     _p[4] = (STRINGLIB_CHAR)((value >> 32) & 0xFFu);
                     _p[5] = (STRINGLIB_CHAR)((value >> 40) & 0xFFu);
                     _p[6] = (STRINGLIB_CHAR)((value >> 48) & 0xFFu);
                     _p[7] = (STRINGLIB_CHAR)((value >> 56) & 0xFFu);
 # endif
 #else
-# if SIZEOF_LONG == 8
+# if SIZEOF_SIZE_T == 8
                     _p[0] = (STRINGLIB_CHAR)((value >> 56) & 0xFFu);
                     _p[1] = (STRINGLIB_CHAR)((value >> 48) & 0xFFu);
                     _p[2] = (STRINGLIB_CHAR)((value >> 40) & 0xFFu);
@@ -77,8 +79,8 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                     _p[3] = (STRINGLIB_CHAR)(value & 0xFFu);
 # endif
 #endif
-                    _s += SIZEOF_LONG;
-                    _p += SIZEOF_LONG;
+                    _s += SIZEOF_SIZE_T;
+                    _p += SIZEOF_SIZE_T;
                 }
                 s = _s;
                 p = _p;
@@ -259,7 +261,7 @@ InvalidContinuation3:
 Py_LOCAL_INLINE(char *)
 STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
                         PyObject *unicode,
-                        STRINGLIB_CHAR *data,
+                        const STRINGLIB_CHAR *data,
                         Py_ssize_t size,
                         _Py_error_handler error_handler,
                         const char *errors)
@@ -732,24 +734,28 @@ STRINGLIB(utf16_encode)(const STRINGLIB_CHAR *in,
 #endif
 }
 
+static inline uint32_t
+STRINGLIB(SWAB4)(STRINGLIB_CHAR ch)
+{
+    uint32_t word = ch;
 #if STRINGLIB_SIZEOF_CHAR == 1
-# define SWAB4(CH, tmp)  ((CH) << 24) /* high bytes are zero */
+    /* high bytes are zero */
+    return (word << 24);
 #elif STRINGLIB_SIZEOF_CHAR == 2
-# define SWAB4(CH, tmp)  (tmp = (CH), \
-            ((tmp & 0x00FFu) << 24) + ((tmp & 0xFF00u) << 8))
-            /* high bytes are zero */
+    /* high bytes are zero */
+    return ((word & 0x00FFu) << 24) | ((word & 0xFF00u) << 8);
 #else
-# define SWAB4(CH, tmp)  (tmp = (CH), \
-            tmp = ((tmp & 0x00FF00FFu) << 8) + ((tmp >> 8) & 0x00FF00FFu), \
-            ((tmp & 0x0000FFFFu) << 16) + ((tmp >> 16) & 0x0000FFFFu))
+    return _Py_bswap32(word);
 #endif
+}
+
 Py_LOCAL_INLINE(Py_ssize_t)
 STRINGLIB(utf32_encode)(const STRINGLIB_CHAR *in,
                         Py_ssize_t len,
-                        PY_UINT32_T **outptr,
+                        uint32_t **outptr,
                         int native_ordering)
 {
-    PY_UINT32_T *out = *outptr;
+    uint32_t *out = *outptr;
     const STRINGLIB_CHAR *end = in + len;
     if (native_ordering) {
         const STRINGLIB_CHAR *unrolled_end = in + _Py_SIZE_ROUND_DOWN(len, 4);
@@ -783,7 +789,6 @@ STRINGLIB(utf32_encode)(const STRINGLIB_CHAR *in,
         const STRINGLIB_CHAR *unrolled_end = in + _Py_SIZE_ROUND_DOWN(len, 4);
         while (in < unrolled_end) {
 #if STRINGLIB_SIZEOF_CHAR > 1
-            Py_UCS4 ch1, ch2, ch3, ch4;
             /* check if any character is a surrogate character */
             if (((in[0] ^ 0xd800) &
                  (in[1] ^ 0xd800) &
@@ -791,10 +796,10 @@ STRINGLIB(utf32_encode)(const STRINGLIB_CHAR *in,
                  (in[3] ^ 0xd800) & 0xf800) == 0)
                 break;
 #endif
-            out[0] = SWAB4(in[0], ch1);
-            out[1] = SWAB4(in[1], ch2);
-            out[2] = SWAB4(in[2], ch3);
-            out[3] = SWAB4(in[3], ch4);
+            out[0] = STRINGLIB(SWAB4)(in[0]);
+            out[1] = STRINGLIB(SWAB4)(in[1]);
+            out[2] = STRINGLIB(SWAB4)(in[2]);
+            out[3] = STRINGLIB(SWAB4)(in[3]);
             in += 4; out += 4;
         }
         while (in < end) {
@@ -805,7 +810,7 @@ STRINGLIB(utf32_encode)(const STRINGLIB_CHAR *in,
                 goto fail;
             }
 #endif
-            *out++ = SWAB4(ch, ch);
+            *out++ = STRINGLIB(SWAB4)(ch);
         }
     }
     *outptr = out;
@@ -816,6 +821,5 @@ STRINGLIB(utf32_encode)(const STRINGLIB_CHAR *in,
     return len - (end - in + 1);
 #endif
 }
-#undef SWAB4
 
 #endif
