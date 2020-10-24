@@ -889,7 +889,6 @@ match_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     if (!dummy) {
         goto fail;
     }
-    // We need to keep track of what we've seen in order to catch duplicates:
     seen = PySet_New(NULL);
     if (!seen) {
         goto fail;
@@ -952,34 +951,75 @@ dict_without_keys(PyThreadState *tstate, PyObject *map, PyObject *keys)
     return copy;
 }
 
-static PyObject*
-get_match_args(PyThreadState *tstate, PyObject *type)
+static int
+get_match_args(PyThreadState *tstate, PyObject *type, PyObject **match_args,
+               int *match_self)
 {
-    // match_args = getattr(type, "__match_args__", ())
-    // if match_args.__class__ in (list, tuple):
-    //     return tuple(match_args)
-    // raise TypeError
-    PyObject *match_args = PyObject_GetAttrString(type, "__match_args__");
-    if (!match_args) {
+    // try:
+    //    match_args = type.__match_args__
+    // except AttributeError:
+    //    match_self = type.__flags__ & _Py_TPFLAGS_MATCH_SELF
+    //    match_args = ()
+    // else:
+    //     match_self = 0
+    //     if match_args.__class__ is list:
+    //         match_args = tuple(match_args)
+    //     elif match_args.__class__ is not tuple:
+    //         raise TypeError
+    *match_args = PyObject_GetAttrString(type, "__match_args__");
+    if (!*match_args) {
         if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
             _PyErr_Clear(tstate);
-            return PyTuple_New(0);
+            // _Py_TPFLAGS_MATCH_SELF is only acknowledged if the type does not
+            // define __match_args__. This is natural behavior for subclasses:
+            // it's as if __match_args__ is some "magic" value that is lost as
+            // soon as they redefine it.
+            *match_self = PyType_HasFeature((PyTypeObject*)type,
+                                            _Py_TPFLAGS_MATCH_SELF);
+            *match_args = PyTuple_New(0);
+            return 0;
+        }
+        return 1;
+    }
+    *match_self = 0;
+    if (PyTuple_CheckExact(*match_args)) {
+        return 0;
+    }
+    if (PyList_CheckExact(*match_args)) {
+        Py_SETREF(*match_args, PyList_AsTuple(*match_args));
+        return 0;
+    }
+    const char *e = "%s.__match_args__ must be a list or tuple (got %s)";
+    _PyErr_Format(tstate, PyExc_TypeError, e, ((PyTypeObject *)type)->tp_name,
+                  Py_TYPE(*match_args)->tp_name);
+    Py_CLEAR(*match_args);
+    return 1;
+}
+
+static PyObject*
+match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
+                 PyObject *name, PyObject *seen)
+{
+    // Extract a named attribute from the subject, with additional bookkeeping
+    // to raise TypeErrors for repeated lookups. On failure, return NULL (with
+    // no error set). Use _PyErr_Occurred(tstate) to disambiguate.
+    assert(PyUnicode_CheckExact(name));
+    // XXX: Why doesn't PySet_CheckExact exist?
+    assert(Py_IS_TYPE(seen, &PySet_Type));
+    if (PySet_Contains(seen, name) || PySet_Add(seen, name)) {
+        if (!_PyErr_Occurred(tstate)) {
+            // Seen it before!
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "%s() got multiple sub-patterns for attribute %R",
+                          ((PyTypeObject*)type)->tp_name, name);
         }
         return NULL;
     }
-    if (PyTuple_CheckExact(match_args)) {
-        return match_args;
+    PyObject *attr = PyObject_GetAttr(subject, name);
+    if (!attr && _PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+        _PyErr_Clear(tstate);
     }
-    if (PyList_CheckExact(match_args)) {
-        PyObject *tuple = PyList_AsTuple(match_args);
-        Py_DECREF(match_args);
-        return tuple;
-    }
-    _PyErr_Format(tstate, PyExc_TypeError,
-        "%s.__match_args__ must be a list or tuple (got %s)",
-        ((PyTypeObject *)type)->tp_name, Py_TYPE(match_args)->tp_name);
-    Py_DECREF(match_args);
-    return NULL;
+    return attr;
 }
 
 static PyObject*
@@ -989,111 +1029,87 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
     // On success (match), return a tuple of extracted attributes. On failure
     // (no match), return NULL. Use _PyErr_Occurred(tstate) to disambiguate.
     if (!PyType_Check(type)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                     "called match pattern must be a type");
+        const char *e = "called match pattern must be a type";
+        _PyErr_Format(tstate, PyExc_TypeError, e);
         return NULL;
     }
     assert(PyTuple_CheckExact(kwargs));
-    // First an isinstance check:
+    // First, an isinstance check:
     if (PyObject_IsInstance(subject, type) <= 0) {
         return NULL;
     }
-    // Okay, now the tricky part...
-    PyObject *args = NULL;
-    PyObject *attrs = NULL;
-    PyObject *seen = NULL;
-    Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwargs);
-    Py_ssize_t count = nargs + nkwargs;
-    Py_ssize_t nmatch_args;
-    // TODO: Just build attrs in two passes (nargs and nkwargs)?
-    if (!nargs) {
-        nmatch_args = 0;
-        args = PyTuple_New(0);
-        if (!args) {
-            goto error;
-        }
+    // So far so good:
+    PyObject *attrs = PyTuple_New(nargs + PyTuple_GET_SIZE(kwargs));
+    if (!attrs) {
+        return NULL;
     }
-    else {
-        PyObject *match_args = get_match_args(tstate, type);
-        if (!match_args) {
-            goto error;
+    PyObject *seen = PySet_New(NULL);
+    if (!seen) {
+        Py_DECREF(attrs);
+        return NULL;
+    }
+    // NOTE: From this point on, goto fail on failure:
+    PyObject *match_args = NULL;
+    // First, the positional subpatterns:
+    if (nargs) {
+        int match_self;
+        if (get_match_args(tstate, type, &match_args, &match_self)) {
+            goto fail;
         }
         assert(PyTuple_CheckExact(match_args));
-        nmatch_args = PyTuple_GET_SIZE(match_args);
-        if (!nmatch_args) {
-            Py_DECREF(match_args);
-            nmatch_args = PyType_HasFeature((PyTypeObject *)type,
-                                            _Py_TPFLAGS_MATCH_SELF);
+        // If match_self, no __match_args__:
+        assert(match_self ? !PyTuple_GET_SIZE(match_args) : 1);
+        Py_ssize_t allowed = PyTuple_GET_SIZE(match_args) + match_self;
+        if (allowed < nargs) {
+            const char *plural = (allowed == 1) ? "" : "s";
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "%s() accepts %d positional sub-pattern%s (%d given)",
+                          ((PyTypeObject*)type)->tp_name,
+                          allowed, plural, nargs);
+            goto fail;
+        }
+        if (match_self) {
+            // Easy. Copy the subject itself, and move on to kwargs.
+            assert(!PyTuple_GET_SIZE(match_args));
+            Py_INCREF(subject);
+            PyTuple_SET_ITEM(attrs, 0, subject);
         }
         else {
-            args = PyTuple_GetSlice(match_args, 0, nargs);
-            Py_DECREF(match_args);
-            if (!args) {
-                goto error;
+            for (Py_ssize_t i = 0; i < nargs; i++) {
+                PyObject *name = PyTuple_GET_ITEM(match_args, i);
+                if (!PyUnicode_CheckExact(name)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "__match_args__ elements must be strings "
+                                  "(got %s)", Py_TYPE(name)->tp_name);
+                    goto fail;
+                }
+                PyObject *attr = match_class_attr(tstate, subject, type, name,
+                                                  seen);
+                if (!attr) {
+                    goto fail;
+                }
+                PyTuple_SET_ITEM(attrs, i, attr);
             }
         }
+        Py_CLEAR(match_args);
     }
-    if (nmatch_args < nargs) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "%s() accepts %d positional sub-patterns (%d given)",
-                      ((PyTypeObject *)type)->tp_name, nmatch_args, nargs);
-        goto error;
-    }
-    assert(!args || PyTuple_CheckExact(args));
-    attrs = PyTuple_New(count);
-    if (!attrs) {
-        goto error;
-    }
-    seen = PySet_New(NULL);
-    if (!seen) {
-        goto error;
-    }
-    for (Py_ssize_t i = 0; i < count; i++) {
-        PyObject *name;
-        if (i < nargs) {
-            if (!args) {
-                assert(!i);
-                Py_INCREF(subject);
-                PyTuple_SET_ITEM(attrs, 0, subject);
-                continue;
-            }
-            name = PyTuple_GET_ITEM(args, i);
-            if (!PyUnicode_CheckExact(name)) {
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "__match_args__ elements must be strings "
-                              "(got %s)", Py_TYPE(name)->tp_name);
-                goto error;
-            }
-        }
-        else {
-            name = PyTuple_GET_ITEM(kwargs, i - nargs);
-        }
-        if (PySet_Contains(seen, name) || PySet_Add(seen, name)) {
-            if (!_PyErr_Occurred(tstate)) {
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "%s() got multiple sub-patterns for attribute %R",
-                              ((PyTypeObject *)type)->tp_name, name);
-            }
-            goto error;
-        }
-        PyObject *attr = PyObject_GetAttr(subject, name);
+    // Finally, the keyword subpatterns:
+    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwargs); i++) {
+        PyObject *name = PyTuple_GET_ITEM(kwargs, i);
+        PyObject *attr = match_class_attr(tstate, subject, type, name, seen);
         if (!attr) {
-            if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-                _PyErr_Clear(tstate);
-                Py_CLEAR(attrs);
-                break;
-            }
-            goto error;
+            goto fail;
         }
-        PyTuple_SET_ITEM(attrs, i, attr);
+        PyTuple_SET_ITEM(attrs, nargs + i, attr);
     }
-    Py_XDECREF(args);
     Py_DECREF(seen);
     return attrs;
-error:
-    Py_XDECREF(args);
-    Py_XDECREF(seen);
-    Py_XDECREF(attrs);
+fail:
+    // We really don't care whether an error was raised or not... that's our
+    // caller's problem. All we know is that the match failed.
+    Py_DECREF(attrs);
+    Py_DECREF(seen);
+    Py_XDECREF(match_args);
     return NULL;
 }
 
