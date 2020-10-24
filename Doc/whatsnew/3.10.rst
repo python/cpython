@@ -267,6 +267,23 @@ Optimizations
 Deprecated
 ==========
 
+* Starting in this release, there will be a concerted effort to begin
+  cleaning up old import semantics that were kept for Python 2.7
+  compatibility. Specifically,
+  :meth:`~importlib.abc.PathEntryFinder.find_loader`/:meth:`~importlib.abc.Finder.find_module`
+  (superseded by :meth:`~importlib.abc.Finder.find_spec`),
+  :meth:`~importlib.abc.Loader.load_module`
+  (superseded by :meth:`~importlib.abc.Loader.exec_module`),
+  :meth:`~importlib.abc.Loader.module_repr` (which the import system
+  takes care of for you), the ``__package__`` attribute
+  (superseded by ``__spec__.parent``), the ``__loader__`` attribute
+  (superseded by ``__spec__.loader``), and the ``__cached__`` attribute
+  (superseded by ``__spec__.cached``) will slowly be removed (as well
+  as other classes and methods in :mod:`importlib`).
+  :exc:`ImportWarning` and/or :exc:`DeprecationWarning` will be raised
+  as appropriate to help identify code which needs updating during
+  this transition.
+
 
 Removed
 =======
