@@ -872,6 +872,16 @@ Using the non-data descriptor protocol, a pure Python version of
         def __get__(self, obj, cls=None):
             if cls is None:
                 cls = type(obj)
-            def newfunc(*args):
-                return self.f(cls, *args)
-            return newfunc
+            if hasattr(obj, '__get__'):
+                return self.f.__get__(cls)
+            return types.MethodType(self.f, cls)
+
+The code path for ``hasattr(obj, '__get__')`` was added in Python 3.9 and
+makes it possible for :func:`classmethod` to support chained decorators.
+For example, a classmethod and property could be chained together::
+
+    class G:
+        @classmethod
+        @property
+        def __doc__(cls):
+            return f'A doc for {cls.__name__!r}'
