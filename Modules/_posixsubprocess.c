@@ -581,7 +581,9 @@ child_exec(char *const exec_array[],
 #ifdef VFORK_USABLE
     if (child_sigmask) {
         reset_signal_handlers(child_sigmask);
-        POSIX_CALL(pthread_sigmask(SIG_SETMASK, child_sigmask, NULL));
+        if ((errno = pthread_sigmask(SIG_SETMASK, child_sigmask, NULL))) {
+            goto error;
+        }
     }
 #endif
 
@@ -1007,7 +1009,11 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
          */
         sigset_t all_sigs;
         sigfillset(&all_sigs);
-        pthread_sigmask(SIG_BLOCK, &all_sigs, &old_sigs);
+        if ((saved_errno = pthread_sigmask(SIG_BLOCK, &all_sigs, &old_sigs))) {
+            errno = saved_errno;
+            PyErr_SetFromErrno(PyExc_OSError);
+            goto cleanup;
+        }
         old_sigmask = &old_sigs;
     }
 #endif
@@ -1034,8 +1040,13 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
          * Note that in environments where vfork() is implemented as fork(),
          * such as QEMU user-mode emulation, the parent won't be blocked,
          * but it won't share the address space with the child,
-         * so it's still safe to unblock the signals. */
-        pthread_sigmask(SIG_SETMASK, old_sigmask, NULL);
+         * so it's still safe to unblock the signals.
+         *
+         * We don't handle errors here because this call can't fail
+         * if valid arguments are given, and because there is no good
+         * way for the caller to deal with a failure to restore
+         * the thread signal mask. */
+        (void) pthread_sigmask(SIG_SETMASK, old_sigmask, NULL);
     }
 #endif
 
