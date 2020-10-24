@@ -38,6 +38,8 @@
 
 #if defined(__linux__) && defined(HAVE_VFORK) && defined(HAVE_SIGNAL_H) && \
     defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
+/* If this is ever expanded to non-Linux platforms, verify what calls are
+ * allowed after vfork(). Ex: setsid() may be disallowed on macOS? */
 # include <signal.h>
 # define VFORK_USABLE 1
 #endif
@@ -712,7 +714,6 @@ do_fork_exec(char *const exec_array[],
 #ifdef VFORK_USABLE
     if (child_sigmask) {
         /* These are checked by our caller; verify them in debug builds. */
-        assert(!call_setsid);
         assert(!call_setuid);
         assert(!call_setgid);
         assert(!call_setgroups);
@@ -997,7 +998,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     /* Use vfork() only if it's safe. See the comment above child_exec(). */
     sigset_t old_sigs;
     if (preexec_fn == Py_None &&
-        !call_setuid && !call_setgid && !call_setgroups && !call_setsid) {
+        !call_setuid && !call_setgid && !call_setgroups) {
         /* Block all signals to ensure that no signal handlers are run in the
          * child process while it shares memory with us. Note that signals
          * used internally by C libraries won't be blocked by
