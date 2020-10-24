@@ -1,5 +1,3 @@
-:keepdoctest:
-
 :mod:`doctest` --- Test interactive Python examples
 ===================================================
 
@@ -1531,7 +1529,7 @@ OutputChecker objects
 
    A class used to check the whether the actual output from a doctest example
    matches the expected output.  :class:`OutputChecker` defines two methods:
-   :meth:`check_output`, which compares a given pair of outputs, and returns true
+   :meth:`check_output`, which compares a given pair of outputs, and returns ``True``
    if they match; and :meth:`output_difference`, which returns a string describing
    the differences between two outputs.
 

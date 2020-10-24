@@ -6,7 +6,9 @@
 Implements the bdist_msi command.
 """
 
-import sys, os
+import os
+import sys
+import warnings
 from distutils.core import Command
 from distutils.dir_util import remove_tree
 from distutils.sysconfig import get_python_version
@@ -121,6 +123,12 @@ class bdist_msi(Command):
                     '3.0', '3.1', '3.2', '3.3', '3.4',
                     '3.5', '3.6', '3.7', '3.8', '3.9']
     other_version = 'X'
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        warnings.warn("bdist_msi command is deprecated since Python 3.9, "
+                      "use bdist_wheel (wheel packages) instead",
+                      DeprecationWarning, 2)
 
     def initialize_options(self):
         self.bdist_dir = None

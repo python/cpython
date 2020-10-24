@@ -1,9 +1,0 @@
-Update optional extension module detection for AIX.
-ossaudiodev and spwd are not applicable for AIX, and
-are no longer reported as missing.
-3rd-party packaging of ncurses (with ASIS support)
-conflicts with officially supported AIX curses library,
-so configure AIX to use libcurses.a. However, skip
-trying to build _curses_panel.
-
-patch by M Felt

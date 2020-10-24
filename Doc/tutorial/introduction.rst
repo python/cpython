@@ -394,7 +394,8 @@ indexed and sliced::
    [9, 16, 25]
 
 All slice operations return a new list containing the requested elements.  This
-means that the following slice returns a new (shallow) copy of the list::
+means that the following slice returns a
+:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
 
    >>> squares[:]
    [1, 4, 9, 16, 25]

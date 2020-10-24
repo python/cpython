@@ -100,8 +100,14 @@ class Font:
     def __str__(self):
         return self.name
 
+    def __repr__(self):
+        return f"<{self.__class__.__module__}.{self.__class__.__qualname__}" \
+               f" object {self.name!r}>"
+
     def __eq__(self, other):
-        return isinstance(other, Font) and self.name == other.name
+        if not isinstance(other, Font):
+            return NotImplemented
+        return self.name == other.name
 
     def __getitem__(self, key):
         return self.cget(key)

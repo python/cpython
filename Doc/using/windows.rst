@@ -103,14 +103,12 @@ paths longer than this would not resolve and errors would result.
 
 In the latest versions of Windows, this limitation can be expanded to
 approximately 32,000 characters. Your administrator will need to activate the
-"Enable Win32 long paths" group policy, or set the registry value
-``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem@LongPathsEnabled``
-to ``1``.
+"Enable Win32 long paths" group policy, or set ``LongPathsEnabled`` to ``1``
+in the registry key
+``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem``.
 
 This allows the :func:`open` function, the :mod:`os` module and most other
-path functionality to accept and return paths longer than 260 characters when
-using strings. (Use of bytes as paths is deprecated on Windows, and this feature
-is not available when using bytes.)
+path functionality to accept and return paths longer than 260 characters.
 
 After changing the above option, no further configuration is required.
 
@@ -293,12 +291,6 @@ The Microsoft Store package
 
 .. versionadded:: 3.7.2
 
-.. note::
-   The Microsoft Store package is currently considered unstable while its
-   interactions with other tools and other copies of Python are evaluated.
-   While Python itself is stable, this installation method may change its
-   behavior and capabilities during Python 3.7 releases.
-
 The Microsoft Store package is an easily installable Python interpreter that
 is intended mainly for interactive use, for example, by students.
 
@@ -318,7 +310,10 @@ session by typing ``python``. Further, pip and IDLE may be used by typing
 All three commands are also available with version number suffixes, for
 example, as ``python3.exe`` and ``python3.x.exe`` as well as
 ``python.exe`` (where ``3.x`` is the specific version you want to launch,
-such as |version|).
+such as |version|). Open "Manage App Execution Aliases" through Start to
+select which version of Python is associated with each command. It is
+recommended to make sure that ``pip`` and ``idle`` are consistent with
+whichever version of ``python`` is selected.
 
 Virtual environments can be created with ``python -m venv`` and activated
 and used as normal.
@@ -328,6 +323,9 @@ If you have installed another version of Python and added it to your
 one from the Microsoft Store. To access the new installation, use
 ``python3.exe`` or ``python3.x.exe``.
 
+The ``py.exe`` launcher will detect this Python installation, but will prefer
+installations from the traditional installer.
+
 To remove Python, open Settings and use Apps and Features, or else find
 Python in Start and right-click to select Uninstall. Uninstalling will
 remove all packages you installed directly into this Python installation, but
@@ -335,9 +333,6 @@ will not remove any virtual environments
 
 Known Issues
 ------------
-
-Currently, the ``py.exe`` launcher cannot be used to start Python when it
-has been installed from the Microsoft Store.
 
 Because of restrictions on Microsoft Store apps, Python scripts may not have
 full write access to shared locations such as ``TEMP`` and the registry.
@@ -604,6 +599,50 @@ example variable could look like this (assuming the first two entries already
 existed)::
 
     C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Python 3.9
+
+.. _win-utf8-mode:
+
+UTF-8 mode
+==========
+
+.. versionadded:: 3.7
+
+Windows still uses legacy encodings for the system encoding (the ANSI Code
+Page).  Python uses it for the default encoding of text files (e.g.
+:func:`locale.getpreferredencoding`).
+
+This may cause issues because UTF-8 is widely used on the internet
+and most Unix systems, including WSL (Windows Subsystem for Linux).
+
+You can use UTF-8 mode to change the default text encoding to UTF-8.
+You can enable UTF-8 mode via the ``-X utf8`` command line option, or
+the ``PYTHONUTF8=1`` environment variable.  See :envvar:`PYTHONUTF8` for
+enabling UTF-8 mode, and :ref:`setting-envvars` for how to modify
+environment variables.
+
+When UTF-8 mode is enabled:
+
+* :func:`locale.getpreferredencoding` returns ``'UTF-8'`` instead of
+  the system encoding.  This function is used for the default text
+  encoding in many places, including :func:`open`, :class:`Popen`,
+  :meth:`Path.read_text`, etc.
+* :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr`
+  all use UTF-8 as their text encoding.
+* You can still use the system encoding via the "mbcs" codec.
+
+Note that adding ``PYTHONUTF8=1`` to the default environment variables
+will affect all Python 3.7+ applications on your system.
+If you have any Python 3.7+ applications which rely on the legacy
+system encoding, it is recommended to set the environment variable
+temporarily or use the ``-X utf8`` command line option.
+
+.. note::
+   Even when UTF-8 mode is disabled, Python uses UTF-8 by default
+   on Windows for:
+
+   * Console I/O including standard I/O (see :pep:`528` for details).
+   * The filesystem encoding (see :pep:`529` for details).
+
 
 .. _launcher:
 

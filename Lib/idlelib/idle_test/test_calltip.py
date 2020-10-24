@@ -61,18 +61,16 @@ class Get_argspecTest(unittest.TestCase):
 
         if List.__doc__ is not None:
             tiptest(List,
-                    f'(iterable=(), /){calltip._argument_positional}'
+                    f'(iterable=(), /)'
                     f'\n{List.__doc__}')
         tiptest(list.__new__,
               '(*args, **kwargs)\n'
               'Create and return a new object.  '
               'See help(type) for accurate signature.')
         tiptest(list.__init__,
-              '(self, /, *args, **kwargs)'
-              + calltip._argument_positional + '\n' +
+              '(self, /, *args, **kwargs)\n'
               'Initialize self.  See help(type(self)) for accurate signature.')
-        append_doc = (calltip._argument_positional
-                      + "\nAppend object to the end of the list.")
+        append_doc = "\nAppend object to the end of the list."
         tiptest(list.append, '(self, object, /)' + append_doc)
         tiptest(List.append, '(self, object, /)' + append_doc)
         tiptest([].append, '(object, /)' + append_doc)
@@ -219,20 +217,30 @@ bytes() -> empty bytes object''')
             with self.subTest(meth=meth, mtip=mtip):
                 self.assertEqual(get_spec(meth), mtip)
 
-    def test_attribute_exception(self):
+    def test_buggy_getattr_class(self):
         class NoCall:
-            def __getattr__(self, name):
-                raise BaseException
+            def __getattr__(self, name):  # Not invoked for class attribute.
+                raise IndexError  # Bug.
         class CallA(NoCall):
-            def __call__(oui, a, b, c):
+            def __call__(self, ci):  # Bug does not matter.
                 pass
         class CallB(NoCall):
-            def __call__(self, ci):
+            def __call__(oui, a, b, c):  # Non-standard 'self'.
                 pass
 
         for meth, mtip  in ((NoCall, default_tip), (CallA, default_tip),
-                            (NoCall(), ''), (CallA(), '(a, b, c)'),
-                            (CallB(), '(ci)')):
+                            (NoCall(), ''), (CallA(), '(ci)'),
+                            (CallB(), '(a, b, c)')):
+            with self.subTest(meth=meth, mtip=mtip):
+                self.assertEqual(get_spec(meth), mtip)
+
+    def test_metaclass_class(self):  # Failure case for issue 38689.
+        class Type(type):  # Type() requires 3 type args, returns class.
+            __class__ = property({}.__getitem__, {}.__setitem__)
+        class Object(metaclass=Type):
+            __slots__ = '__class__'
+        for meth, mtip  in ((Type, default_tip), (Object, default_tip),
+                            (Object(), '')):
             with self.subTest(meth=meth, mtip=mtip):
                 self.assertEqual(get_spec(meth), mtip)
 

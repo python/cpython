@@ -17,6 +17,7 @@ def public(f):
 OPTIONS = {
     "stable": {"help": "stable ABI stub"},
     "pip": {"help": "pip"},
+    "pip-user": {"help": "pip.ini file for default --user"},
     "distutils": {"help": "distutils"},
     "tcltk": {"help": "Tcl, Tk and tkinter"},
     "idle": {"help": "Idle"},
@@ -42,6 +43,7 @@ PRESETS = {
         "options": [
             "stable",
             "pip",
+            "pip-user",
             "distutils",
             "tcltk",
             "idle",

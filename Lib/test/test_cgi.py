@@ -128,6 +128,20 @@ class CgiTests(unittest.TestCase):
                     'file': [b'Testing 123.\n'], 'title': ['']}
         self.assertEqual(result, expected)
 
+    def test_parse_multipart_without_content_length(self):
+        POSTDATA = '''--JfISa01
+Content-Disposition: form-data; name="submit-name"
+
+just a string
+
+--JfISa01--
+'''
+        fp = BytesIO(POSTDATA.encode('latin1'))
+        env = {'boundary': 'JfISa01'.encode('latin1')}
+        result = cgi.parse_multipart(fp, env)
+        expected = {'submit-name': ['just a string\n']}
+        self.assertEqual(result, expected)
+
     def test_parse_multipart_invalid_encoding(self):
         BOUNDARY = "JfISa01"
         POSTDATA = """--JfISa01
@@ -352,6 +366,23 @@ Larry
         self.assertEqual(fs.list[0].name, 'submit-name')
         self.assertEqual(fs.list[0].value, 'Larry')
 
+    def test_field_storage_multipart_no_content_length(self):
+        fp = BytesIO(b"""--MyBoundary
+Content-Disposition: form-data; name="my-arg"; filename="foo"
+
+Test
+
+--MyBoundary--
+""")
+        env = {
+            "REQUEST_METHOD": "POST",
+            "CONTENT_TYPE": "multipart/form-data; boundary=MyBoundary",
+            "wsgi.input": fp,
+        }
+        fields = cgi.FieldStorage(fp, environ=env)
+
+        self.assertEqual(len(fields["my-arg"].file.read()), 5)
+
     def test_fieldstorage_as_context_manager(self):
         fp = BytesIO(b'x' * 10)
         env = {'REQUEST_METHOD': 'PUT'}
@@ -522,9 +553,10 @@ this is the content of the fake file
             ("form-data", {"name": "files", "filename": 'fo"o;bar'}))
 
     def test_all(self):
-        blacklist = {"logfile", "logfp", "initlog", "dolog", "nolog",
-                     "closelog", "log", "maxlen", "valid_boundary"}
-        support.check__all__(self, cgi, blacklist=blacklist)
+        not_exported = {
+            "logfile", "logfp", "initlog", "dolog", "nolog", "closelog", "log",
+            "maxlen", "valid_boundary"}
+        support.check__all__(self, cgi, not_exported=not_exported)
 
 
 BOUNDARY = "---------------------------721837373350705526688164684"

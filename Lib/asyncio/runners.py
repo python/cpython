@@ -5,8 +5,8 @@ from . import events
 from . import tasks
 
 
-def run(main, *, debug=False):
-    """Run a coroutine.
+def run(main, *, debug=None):
+    """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
     managing the asyncio event loop and finalizing asynchronous
@@ -39,12 +39,14 @@ def run(main, *, debug=False):
     loop = events.new_event_loop()
     try:
         events.set_event_loop(loop)
-        loop.set_debug(debug)
+        if debug is not None:
+            loop.set_debug(debug)
         return loop.run_until_complete(main)
     finally:
         try:
             _cancel_all_tasks(loop)
             loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(loop.shutdown_default_executor())
         finally:
             events.set_event_loop(None)
             loop.close()

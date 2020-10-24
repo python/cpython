@@ -35,7 +35,9 @@
 /* See http://www.python.org/2.4/license for licensing details. */
 
 #include "Python.h"
-#include "structmember.h"
+#include "moduleobject.h"         // PyModuleDef_Slot
+#include "structmember.h"         // PyMemberDef
+
 
 #define WINDOWS_LEAN_AND_MEAN
 #include "windows.h"
@@ -78,6 +80,17 @@ check_CancelIoEx()
     return has_CancelIoEx;
 }
 
+typedef struct {
+    PyTypeObject *overlapped_type;
+} WinApiState;
+
+static inline WinApiState*
+winapi_get_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (WinApiState *)state;
+}
 
 /*
  * A Python object wrapping an OVERLAPPED structure and other useful data
@@ -140,7 +153,9 @@ overlapped_dealloc(OverlappedObject *self)
     if (self->write_buffer.obj)
         PyBuffer_Release(&self->write_buffer);
     Py_CLEAR(self->read_buffer);
-    PyObject_Del(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 /*[clinic input]
@@ -164,9 +179,10 @@ create_converter('LPCVOID', '" F_POINTER "')
 create_converter('BOOL', 'i') # F_BOOL used previously (always 'i')
 create_converter('DWORD', 'k') # F_DWORD is always "k" (which is much shorter)
 create_converter('LPCTSTR', 's')
-create_converter('LPCWSTR', 'u')
-create_converter('LPWSTR', 'u')
 create_converter('UINT', 'I') # F_UINT used previously (always 'I')
+
+class LPCWSTR_converter(Py_UNICODE_converter):
+    type = 'LPCWSTR'
 
 class HANDLE_return_converter(CReturnConverter):
     type = 'HANDLE'
@@ -197,7 +213,7 @@ class LPVOID_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = HANDLE_TO_PYNUM(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=79464c61a31ae932]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=011ee0c3a2244bfe]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -304,55 +320,29 @@ static PyMemberDef overlapped_members[] = {
     {NULL}
 };
 
-PyTypeObject OverlappedType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    /* tp_name           */ "_winapi.Overlapped",
-    /* tp_basicsize      */ sizeof(OverlappedObject),
-    /* tp_itemsize       */ 0,
-    /* tp_dealloc        */ (destructor) overlapped_dealloc,
-    /* tp_vectorcall_offset */ 0,
-    /* tp_getattr        */ 0,
-    /* tp_setattr        */ 0,
-    /* tp_as_async       */ 0,
-    /* tp_repr           */ 0,
-    /* tp_as_number      */ 0,
-    /* tp_as_sequence    */ 0,
-    /* tp_as_mapping     */ 0,
-    /* tp_hash           */ 0,
-    /* tp_call           */ 0,
-    /* tp_str            */ 0,
-    /* tp_getattro       */ 0,
-    /* tp_setattro       */ 0,
-    /* tp_as_buffer      */ 0,
-    /* tp_flags          */ Py_TPFLAGS_DEFAULT,
-    /* tp_doc            */ "OVERLAPPED structure wrapper",
-    /* tp_traverse       */ 0,
-    /* tp_clear          */ 0,
-    /* tp_richcompare    */ 0,
-    /* tp_weaklistoffset */ 0,
-    /* tp_iter           */ 0,
-    /* tp_iternext       */ 0,
-    /* tp_methods        */ overlapped_methods,
-    /* tp_members        */ overlapped_members,
-    /* tp_getset         */ 0,
-    /* tp_base           */ 0,
-    /* tp_dict           */ 0,
-    /* tp_descr_get      */ 0,
-    /* tp_descr_set      */ 0,
-    /* tp_dictoffset     */ 0,
-    /* tp_init           */ 0,
-    /* tp_alloc          */ 0,
-    /* tp_new            */ 0,
+static PyType_Slot winapi_overlapped_type_slots[] = {
+    {Py_tp_dealloc, overlapped_dealloc},
+    {Py_tp_doc, "OVERLAPPED structure wrapper"},
+    {Py_tp_methods, overlapped_methods},
+    {Py_tp_members, overlapped_members},
+    {0,0}
+};
+
+static PyType_Spec winapi_overlapped_type_spec = {
+    .name = "_winapi.Overlapped",
+    .basicsize = sizeof(OverlappedObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = winapi_overlapped_type_slots,
 };
 
 static OverlappedObject *
-new_overlapped(HANDLE handle)
+new_overlapped(PyObject *module, HANDLE handle)
 {
-    OverlappedObject *self;
-
-    self = PyObject_New(OverlappedObject, &OverlappedType);
+    WinApiState *st = winapi_get_state(module);
+    OverlappedObject *self = PyObject_New(OverlappedObject, st->overlapped_type);
     if (!self)
         return NULL;
+
     self->handle = handle;
     self->read_buffer = NULL;
     self->pending = 0;
@@ -408,7 +398,7 @@ _winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
     OverlappedObject *overlapped = NULL;
 
     if (use_overlapped) {
-        overlapped = new_overlapped(handle);
+        overlapped = new_overlapped(module, handle);
         if (!overlapped)
             return NULL;
     }
@@ -520,15 +510,15 @@ _winapi_CreateFileMapping_impl(PyObject *module, HANDLE file_handle,
 /*[clinic input]
 _winapi.CreateJunction
 
-    src_path: LPWSTR
-    dst_path: LPWSTR
+    src_path: LPCWSTR
+    dst_path: LPCWSTR
     /
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
-                            LPWSTR dst_path)
-/*[clinic end generated code: output=66b7eb746e1dfa25 input=8cd1f9964b6e3d36]*/
+_winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
+                            LPCWSTR dst_path)
+/*[clinic end generated code: output=44b3f5e9bbcc4271 input=963d29b44b9384a7]*/
 {
     /* Privilege adjustment */
     HANDLE token = NULL;
@@ -603,11 +593,10 @@ _winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
         sizeof(rdb->MountPointReparseBuffer.PathBuffer) +
         /* Two +1's for NUL terminators. */
         (prefix_len + print_len + 1 + print_len + 1) * sizeof(WCHAR);
-    rdb = (_Py_PREPARSE_DATA_BUFFER)PyMem_RawMalloc(rdb_size);
+    rdb = (_Py_PREPARSE_DATA_BUFFER)PyMem_RawCalloc(1, rdb_size);
     if (rdb == NULL)
         goto cleanup;
 
-    memset(rdb, 0, rdb_size);
     rdb->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
     rdb->ReparseDataLength = rdb_size - _Py_REPARSE_DATA_BUFFER_HEADER_SIZE;
     rdb->MountPointReparseBuffer.SubstituteNameOffset = 0;
@@ -1081,6 +1070,14 @@ _winapi_CreateProcess_impl(PyObject *module,
         return NULL;
     }
 
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    if (config->_isolated_interpreter) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "subprocess not supported for isolated subinterpreters");
+        return NULL;
+    }
+
     ZeroMemory(&si, sizeof(si));
     si.StartupInfo.cb = sizeof(si);
 
@@ -1111,8 +1108,8 @@ _winapi_CreateProcess_impl(PyObject *module,
         }
     }
     else if (command_line != Py_None) {
-        PyErr_Format(PyExc_TypeError, 
-                     "CreateProcess() argument 2 must be str or None, not %s", 
+        PyErr_Format(PyExc_TypeError,
+                     "CreateProcess() argument 2 must be str or None, not %s",
                      Py_TYPE(command_line)->tp_name);
         goto cleanup;
     }
@@ -1519,7 +1516,7 @@ _winapi_ReadFile_impl(PyObject *module, HANDLE handle, DWORD size,
     if (!buf)
         return NULL;
     if (use_overlapped) {
-        overlapped = new_overlapped(handle);
+        overlapped = new_overlapped(module, handle);
         if (!overlapped) {
             Py_DECREF(buf);
             return NULL;
@@ -1802,7 +1799,7 @@ _winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
     OverlappedObject *overlapped = NULL;
 
     if (use_overlapped) {
-        overlapped = new_overlapped(handle);
+        overlapped = new_overlapped(module, handle);
         if (!overlapped)
             return NULL;
         buf = &overlapped->write_buffer;
@@ -1913,36 +1910,33 @@ static PyMethodDef winapi_functions[] = {
     {NULL, NULL}
 };
 
-static struct PyModuleDef winapi_module = {
-    PyModuleDef_HEAD_INIT,
-    "_winapi",
-    NULL,
-    -1,
-    winapi_functions,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
 #define WINAPI_CONSTANT(fmt, con) \
-    PyDict_SetItemString(d, #con, Py_BuildValue(fmt, con))
+    do { \
+        PyObject *value = Py_BuildValue(fmt, con); \
+        if (value == NULL) { \
+            return -1; \
+        } \
+        if (PyDict_SetItemString(d, #con, value) < 0) { \
+            Py_DECREF(value); \
+            return -1; \
+        } \
+        Py_DECREF(value); \
+    } while (0)
 
-PyMODINIT_FUNC
-PyInit__winapi(void)
+static int winapi_exec(PyObject *m)
 {
-    PyObject *d;
-    PyObject *m;
+    WinApiState *st = winapi_get_state(m);
 
-    if (PyType_Ready(&OverlappedType) < 0)
-        return NULL;
+    st->overlapped_type = (PyTypeObject *)PyType_FromModuleAndSpec(m, &winapi_overlapped_type_spec, NULL);
+    if (st->overlapped_type == NULL) {
+        return -1;
+    }
 
-    m = PyModule_Create(&winapi_module);
-    if (m == NULL)
-        return NULL;
-    d = PyModule_GetDict(m);
+    if (PyModule_AddType(m, st->overlapped_type) < 0) {
+        return -1;
+    }
 
-    PyDict_SetItemString(d, "Overlapped", (PyObject *) &OverlappedType);
+    PyObject *d = PyModule_GetDict(m);
 
     /* constants */
     WINAPI_CONSTANT(F_DWORD, CREATE_NEW_CONSOLE);
@@ -2041,5 +2035,24 @@ PyInit__winapi(void)
 
     WINAPI_CONSTANT("i", NULL);
 
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot winapi_slots[] = {
+    {Py_mod_exec, winapi_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef winapi_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_winapi",
+    .m_size = sizeof(WinApiState),
+    .m_methods = winapi_functions,
+    .m_slots = winapi_slots,
+};
+
+PyMODINIT_FUNC
+PyInit__winapi(void)
+{
+    return PyModuleDef_Init(&winapi_module);
 }

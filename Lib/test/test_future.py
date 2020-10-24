@@ -1,10 +1,14 @@
 # Test various flavors of legal and illegal future statements
 
+import __future__
+import ast
 import unittest
 from test import support
+from test.support import import_helper
 from textwrap import dedent
 import os
 import re
+import sys
 
 rx = re.compile(r'\((\S+).py, line (\d+)')
 
@@ -21,17 +25,17 @@ class FutureTest(unittest.TestCase):
         self.assertEqual(err.offset, offset)
 
     def test_future1(self):
-        with support.CleanImport('future_test1'):
+        with import_helper.CleanImport('future_test1'):
             from test import future_test1
             self.assertEqual(future_test1.result, 6)
 
     def test_future2(self):
-        with support.CleanImport('future_test2'):
+        with import_helper.CleanImport('future_test2'):
             from test import future_test2
             self.assertEqual(future_test2.result, 6)
 
     def test_future3(self):
-        with support.CleanImport('test_future3'):
+        with import_helper.CleanImport('test_future3'):
             from test import test_future3
 
     def test_badfuture3(self):
@@ -74,6 +78,21 @@ class FutureTest(unittest.TestCase):
             from test import badsyntax_future10
         self.check_syntax_error(cm.exception, "badsyntax_future10", 3)
 
+    def test_ensure_flags_dont_clash(self):
+        # bpo-39562: test that future flags and compiler flags doesn't clash
+
+        # obtain future flags (CO_FUTURE_***) from the __future__ module
+        flags = {
+            f"CO_FUTURE_{future.upper()}": getattr(__future__, future).compiler_flag
+            for future in __future__.all_feature_names
+        }
+        # obtain some of the exported compiler flags (PyCF_***) from the ast module
+        flags |= {
+            flag: getattr(ast, flag)
+            for flag in dir(ast) if flag.startswith("PyCF_")
+        }
+        self.assertCountEqual(set(flags.values()), flags.values())
+
     def test_parserhack(self):
         # test that the parser.c::future_hack function works as expected
         # Note: although this test must pass, it's not testing the original
@@ -95,7 +114,7 @@ class FutureTest(unittest.TestCase):
             self.fail("syntax error didn't occur")
 
     def test_multiple_features(self):
-        with support.CleanImport("test.test_future5"):
+        with import_helper.CleanImport("test.test_future5"):
             from test import test_future5
 
     def test_unicode_literals_exec(self):
@@ -111,6 +130,10 @@ class AnnotationsFutureTestCase(unittest.TestCase):
             ...
         def g(arg: {ann}) -> None:
             ...
+        async def f2() -> {ann}:
+            ...
+        async def g2(arg: {ann}) -> None:
+            ...
         var: {ann}
         var2: {ann} = None
         """
@@ -121,9 +144,13 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         exec(self.template.format(ann=annotation), {}, scope)
         func_ret_ann = scope['f'].__annotations__['return']
         func_arg_ann = scope['g'].__annotations__['arg']
+        async_func_ret_ann = scope['f2'].__annotations__['return']
+        async_func_arg_ann = scope['g2'].__annotations__['arg']
         var_ann1 = scope['__annotations__']['var']
         var_ann2 = scope['__annotations__']['var2']
         self.assertEqual(func_ret_ann, func_arg_ann)
+        self.assertEqual(func_ret_ann, async_func_ret_ann)
+        self.assertEqual(func_ret_ann, async_func_arg_ann)
         self.assertEqual(func_ret_ann, var_ann1)
         self.assertEqual(func_ret_ann, var_ann2)
         return func_ret_ann
@@ -144,6 +171,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq = self.assertAnnotationEqual
         eq('...')
         eq("'some_string'")
+        eq("u'some_string'")
         eq("b'\\xa3'")
         eq('Name')
         eq('None')
@@ -248,6 +276,9 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("dict[str, int]")
         eq("set[str,]")
         eq("tuple[str, ...]")
+        eq("tuple[(str, *types)]")
+        eq("tuple[str, int, (str, int)]")
+        eq("tuple[(*int, str, str, (str, int))]")
         eq("tuple[str, int, float, dict[str, int]]")
         eq("slice[0]")
         eq("slice[0:1]")
@@ -256,6 +287,11 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("slice[:-1]")
         eq("slice[1:]")
         eq("slice[::-1]")
+        eq("slice[:,]")
+        eq("slice[1:2,]")
+        eq("slice[1:2:3,]")
+        eq("slice[1:2, 1]")
+        eq("slice[1:2, 2, 3]")
         eq("slice[()]")
         eq("slice[a, b:c, d:e:f]")
         eq("slice[(x for x in a)]")
@@ -281,8 +317,9 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('f((x for x in a), 2)')
         eq('(((a)))', 'a')
         eq('(((a, b)))', '(a, b)')
-        eq("(x:=10)")
-        eq("f'{(x:=10):=10}'")
+        eq("(x := 10)")
+        eq("f'{(x := 10):=10}'")
+        eq("1 + 2 + 3")
 
     def test_fstring_debug_annotations(self):
         # f-strings with '=' don't round trip very well, so set the expected
@@ -293,6 +330,18 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         self.assertAnnotationEqual("f'{x=!r}'", expected="f'x={x!r}'")
         self.assertAnnotationEqual("f'{x=!a}'", expected="f'x={x!a}'")
         self.assertAnnotationEqual("f'{x=!s:*^20}'", expected="f'x={x!s:*^20}'")
+
+    def test_infinity_numbers(self):
+        inf = "1e" + repr(sys.float_info.max_10_exp + 1)
+        infj = f"{inf}j"
+        self.assertAnnotationEqual("1e1000", expected=inf)
+        self.assertAnnotationEqual("1e1000j", expected=infj)
+        self.assertAnnotationEqual("-1e1000", expected=f"-{inf}")
+        self.assertAnnotationEqual("3+1e1000j", expected=f"3 + {infj}")
+        self.assertAnnotationEqual("(1e1000, 1e1000j)", expected=f"({inf}, {infj})")
+        self.assertAnnotationEqual("'inf'")
+        self.assertAnnotationEqual("('inf', 1e1000, 'infxxx', 1e1000j)", expected=f"('inf', {inf}, 'infxxx', {infj})")
+        self.assertAnnotationEqual("(1e1000, (1e1000j,))", expected=f"({inf}, ({infj},))")
 
 
 if __name__ == "__main__":

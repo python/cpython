@@ -111,16 +111,12 @@ class TransactionTests(unittest.TestCase):
         res = self.cur2.fetchall()
         self.assertEqual(len(res), 1)
 
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 2, 2),
-                     'test hangs on sqlite versions older than 3.2.2')
     def CheckRaiseTimeout(self):
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
         with self.assertRaises(sqlite.OperationalError):
             self.cur2.execute("insert into test(i) values (5)")
 
-    @unittest.skipIf(sqlite.sqlite_version_info < (3, 2, 2),
-                     'test hangs on sqlite versions older than 3.2.2')
     def CheckLocking(self):
         """
         This tests the improved concurrency with pysqlite 2.3.4. You needed

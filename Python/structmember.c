@@ -2,8 +2,7 @@
 /* Map C struct members to Python object attributes */
 
 #include "Python.h"
-
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 
 PyObject *
 PyMember_GetOne(const char *addr, PyMemberDef *l)

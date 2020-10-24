@@ -1,2 +1,0 @@
-Handle correctly negative line offsets in the peephole optimizer. Patch by
-Pablo Galindo.

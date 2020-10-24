@@ -1,8 +1,8 @@
 import faulthandler
-import test.support
+from test.support import import_helper
 import unittest
 
-_xxtestfuzz = test.support.import_module('_xxtestfuzz')
+_xxtestfuzz = import_helper.import_module('_xxtestfuzz')
 
 
 class TestFuzzer(unittest.TestCase):

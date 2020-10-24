@@ -1,3 +1,0 @@
-test_distutils.test_build_ext() is now able to remove the temporary
-directory on Windows: don't import the newly built C extension ("xx") in the
-current process, but test it in a separated process.

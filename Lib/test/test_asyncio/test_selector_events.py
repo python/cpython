@@ -78,7 +78,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop._add_writer = mock.Mock()
         self.loop._remove_reader = mock.Mock()
         self.loop._remove_writer = mock.Mock()
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         with test_utils.disable_logger():
             transport = self.loop._make_ssl_transport(
                 m, asyncio.Protocol(), m, waiter)
@@ -154,7 +154,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop.close()
 
         # operation blocked when the loop is closed
-        f = asyncio.Future(loop=self.loop)
+        f = self.loop.create_future()
         self.assertRaises(RuntimeError, self.loop.run_forever)
         self.assertRaises(RuntimeError, self.loop.run_until_complete, f)
         fd = 0
@@ -516,7 +516,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         return transport
 
     def test_ctor(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         tr = self.socket_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 
@@ -525,7 +525,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.protocol.connection_made.assert_called_with(tr)
 
     def test_ctor_with_waiter(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         self.socket_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 
@@ -911,7 +911,7 @@ class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
         return transport
 
     def test_ctor(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         tr = self.socket_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 

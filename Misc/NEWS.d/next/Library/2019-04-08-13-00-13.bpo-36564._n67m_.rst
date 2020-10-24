@@ -1,3 +1,0 @@
-Fix infinite loop in email header folding logic that would be triggered when
-an email policy's max_line_length is not long enough to include the required
-markup and any values in the message. Patch by Paul Ganssle

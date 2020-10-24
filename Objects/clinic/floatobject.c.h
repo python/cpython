@@ -38,6 +38,42 @@ float___trunc__(PyObject *self, PyObject *Py_UNUSED(ignored))
     return float___trunc___impl(self);
 }
 
+PyDoc_STRVAR(float___floor____doc__,
+"__floor__($self, /)\n"
+"--\n"
+"\n"
+"Return the floor as an Integral.");
+
+#define FLOAT___FLOOR___METHODDEF    \
+    {"__floor__", (PyCFunction)float___floor__, METH_NOARGS, float___floor____doc__},
+
+static PyObject *
+float___floor___impl(PyObject *self);
+
+static PyObject *
+float___floor__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return float___floor___impl(self);
+}
+
+PyDoc_STRVAR(float___ceil____doc__,
+"__ceil__($self, /)\n"
+"--\n"
+"\n"
+"Return the ceiling as an Integral.");
+
+#define FLOAT___CEIL___METHODDEF    \
+    {"__ceil__", (PyCFunction)float___ceil__, METH_NOARGS, float___ceil____doc__},
+
+static PyObject *
+float___ceil___impl(PyObject *self);
+
+static PyObject *
+float___ceil__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return float___ceil___impl(self);
+}
+
 PyDoc_STRVAR(float___round____doc__,
 "__round__($self, ndigits=None, /)\n"
 "--\n"
@@ -56,7 +92,7 @@ static PyObject *
 float___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *o_ndigits = NULL;
+    PyObject *o_ndigits = Py_None;
 
     if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
         goto exit;
@@ -235,7 +271,7 @@ float___getformat__(PyTypeObject *type, PyObject *arg)
     const char *typestr;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("__getformat__", 0, "str", arg);
+        _PyArg_BadArgument("__getformat__", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t typestr_length;
@@ -289,7 +325,7 @@ float___set_format__(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("__set_format__", 1, "str", args[0]);
+        _PyArg_BadArgument("__set_format__", "argument 1", "str", args[0]);
         goto exit;
     }
     Py_ssize_t typestr_length;
@@ -302,7 +338,7 @@ float___set_format__(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("__set_format__", 2, "str", args[1]);
+        _PyArg_BadArgument("__set_format__", "argument 2", "str", args[1]);
         goto exit;
     }
     Py_ssize_t fmt_length;
@@ -339,7 +375,7 @@ float___format__(PyObject *self, PyObject *arg)
     PyObject *format_spec;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("__format__", 0, "str", arg);
+        _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -351,4 +387,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c183029d87dd41fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=25fbbe253f44e2df input=a9049054013a1b77]*/

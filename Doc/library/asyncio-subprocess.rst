@@ -6,6 +6,11 @@
 Subprocesses
 ============
 
+**Source code:** :source:`Lib/asyncio/subprocess.py`,
+:source:`Lib/asyncio/base_subprocess.py`
+
+----------------------------------------
+
 This section describes high-level async/await asyncio APIs to
 create and manage subprocesses.
 
@@ -71,6 +76,10 @@ Creating Subprocesses
    See the documentation of :meth:`loop.subprocess_exec` for other
    parameters.
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The *loop* parameter.
+
 .. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
                           stdout=None, stderr=None, loop=None, \
                           limit=None, \*\*kwds)
@@ -86,21 +95,23 @@ Creating Subprocesses
    See the documentation of :meth:`loop.subprocess_shell` for other
    parameters.
 
-.. important::
+   .. important::
 
-   It is the application's responsibility to ensure that all whitespace and
-   special characters are quoted appropriately to avoid `shell injection
-   <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
-   vulnerabilities. The :func:`shlex.quote` function can be used to properly
-   escape whitespace and special shell characters in strings that are going
-   to be used to construct shell commands.
+      It is the application's responsibility to ensure that all whitespace and
+      special characters are quoted appropriately to avoid `shell injection
+      <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
+      vulnerabilities. The :func:`shlex.quote` function can be used to properly
+      escape whitespace and special shell characters in strings that are going
+      to be used to construct shell commands.
+
+   .. deprecated-removed:: 3.8 3.10
+
+      The *loop* parameter.
 
 .. note::
 
-   The default asyncio event loop implementation on **Windows** does not
-   support subprocesses. Subprocesses are available for Windows if a
-   :class:`ProactorEventLoop` is used.
-   See :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>`
+   Subprocesses are available for Windows if a :class:`ProactorEventLoop` is
+   used. See :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>`
    for details.
 
 .. seealso::

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,15 +27,17 @@
 
 
 #include "mpdecimal.h"
-#include <stdio.h>
-#include <stdlib.h>
+
 #include <assert.h>
+#include <stdio.h>
+
 #include "bits.h"
+#include "constants.h"
 #include "difradix2.h"
 #include "numbertheory.h"
+#include "sixstep.h"
 #include "transpose.h"
 #include "umodarith.h"
-#include "sixstep.h"
 
 
 /* Bignum: Cache efficient Matrix Fourier Transform for arrays of the
@@ -210,5 +212,3 @@ inv_six_step_fnt(mpd_uint_t *a, mpd_size_t n, int modnum)
 
     return 1;
 }
-
-

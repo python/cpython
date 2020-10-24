@@ -70,6 +70,9 @@ attributes:
 |           |                   | method is bound, or       |
 |           |                   | ``None``                  |
 +-----------+-------------------+---------------------------+
+|           | __module__        | name of module in which   |
+|           |                   | this method was defined   |
++-----------+-------------------+---------------------------+
 | function  | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
@@ -97,6 +100,9 @@ attributes:
 |           |                   | ``"return"`` key is       |
 |           |                   | reserved for return       |
 |           |                   | annotations.              |
++-----------+-------------------+---------------------------+
+|           | __module__        | name of module in which   |
+|           |                   | this function was defined |
 +-----------+-------------------+---------------------------+
 | traceback | tb_frame          | frame object at this      |
 |           |                   | level                     |
@@ -277,55 +283,55 @@ attributes:
 
 .. function:: ismodule(object)
 
-   Return true if the object is a module.
+   Return ``True`` if the object is a module.
 
 
 .. function:: isclass(object)
 
-   Return true if the object is a class, whether built-in or created in Python
+   Return ``True`` if the object is a class, whether built-in or created in Python
    code.
 
 
 .. function:: ismethod(object)
 
-   Return true if the object is a bound method written in Python.
+   Return ``True`` if the object is a bound method written in Python.
 
 
 .. function:: isfunction(object)
 
-   Return true if the object is a Python function, which includes functions
+   Return ``True`` if the object is a Python function, which includes functions
    created by a :term:`lambda` expression.
 
 
 .. function:: isgeneratorfunction(object)
 
-   Return true if the object is a Python generator function.
+   Return ``True`` if the object is a Python generator function.
 
    .. versionchanged:: 3.8
-      Functions wrapped in :func:`functools.partial` now return true if the
+      Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a Python generator function.
 
 
 .. function:: isgenerator(object)
 
-   Return true if the object is a generator.
+   Return ``True`` if the object is a generator.
 
 
 .. function:: iscoroutinefunction(object)
 
-   Return true if the object is a :term:`coroutine function`
+   Return ``True`` if the object is a :term:`coroutine function`
    (a function defined with an :keyword:`async def` syntax).
 
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.8
-      Functions wrapped in :func:`functools.partial` now return true if the
+      Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`coroutine function`.
 
 
 .. function:: iscoroutine(object)
 
-   Return true if the object is a :term:`coroutine` created by an
+   Return ``True`` if the object is a :term:`coroutine` created by an
    :keyword:`async def` function.
 
    .. versionadded:: 3.5
@@ -333,7 +339,7 @@ attributes:
 
 .. function:: isawaitable(object)
 
-   Return true if the object can be used in :keyword:`await` expression.
+   Return ``True`` if the object can be used in :keyword:`await` expression.
 
    Can also be used to distinguish generator-based coroutines from regular
    generators::
@@ -352,7 +358,7 @@ attributes:
 
 .. function:: isasyncgenfunction(object)
 
-   Return true if the object is an :term:`asynchronous generator` function,
+   Return ``True`` if the object is an :term:`asynchronous generator` function,
    for example::
 
     >>> async def agen():
@@ -364,50 +370,50 @@ attributes:
    .. versionadded:: 3.6
 
    .. versionchanged:: 3.8
-      Functions wrapped in :func:`functools.partial` now return true if the
+      Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`asynchronous generator` function.
 
 
 .. function:: isasyncgen(object)
 
-   Return true if the object is an :term:`asynchronous generator iterator`
+   Return ``True`` if the object is an :term:`asynchronous generator iterator`
    created by an :term:`asynchronous generator` function.
 
    .. versionadded:: 3.6
 
 .. function:: istraceback(object)
 
-   Return true if the object is a traceback.
+   Return ``True`` if the object is a traceback.
 
 
 .. function:: isframe(object)
 
-   Return true if the object is a frame.
+   Return ``True`` if the object is a frame.
 
 
 .. function:: iscode(object)
 
-   Return true if the object is a code.
+   Return ``True`` if the object is a code.
 
 
 .. function:: isbuiltin(object)
 
-   Return true if the object is a built-in function or a bound built-in method.
+   Return ``True`` if the object is a built-in function or a bound built-in method.
 
 
 .. function:: isroutine(object)
 
-   Return true if the object is a user-defined or built-in function or method.
+   Return ``True`` if the object is a user-defined or built-in function or method.
 
 
 .. function:: isabstract(object)
 
-   Return true if the object is an abstract base class.
+   Return ``True`` if the object is an abstract base class.
 
 
 .. function:: ismethoddescriptor(object)
 
-   Return true if the object is a method descriptor, but not if
+   Return ``True`` if the object is a method descriptor, but not if
    :func:`ismethod`, :func:`isclass`, :func:`isfunction` or :func:`isbuiltin`
    are true.
 
@@ -418,16 +424,16 @@ attributes:
    sensible, and :attr:`__doc__` often is.
 
    Methods implemented via descriptors that also pass one of the other tests
-   return false from the :func:`ismethoddescriptor` test, simply because the
+   return ``False`` from the :func:`ismethoddescriptor` test, simply because the
    other tests promise more -- you can, e.g., count on having the
    :attr:`__func__` attribute (etc) when an object passes :func:`ismethod`.
 
 
 .. function:: isdatadescriptor(object)
 
-   Return true if the object is a data descriptor.
+   Return ``True`` if the object is a data descriptor.
 
-   Data descriptors have both a :attr:`~object.__get__` and a :attr:`~object.__set__` method.
+   Data descriptors have a :attr:`~object.__set__` or a :attr:`~object.__delete__` method.
    Examples are properties (defined in Python), getsets, and members.  The
    latter two are defined in C and there are more specific tests available for
    those types, which is robust across Python implementations.  Typically, data
@@ -438,7 +444,7 @@ attributes:
 
 .. function:: isgetsetdescriptor(object)
 
-   Return true if the object is a getset descriptor.
+   Return ``True`` if the object is a getset descriptor.
 
    .. impl-detail::
 
@@ -449,7 +455,7 @@ attributes:
 
 .. function:: ismemberdescriptor(object)
 
-   Return true if the object is a member descriptor.
+   Return ``True`` if the object is a member descriptor.
 
    .. impl-detail::
 
@@ -815,10 +821,9 @@ function.
 
    .. attribute:: BoundArguments.arguments
 
-      An ordered, mutable mapping (:class:`collections.OrderedDict`) of
-      parameters' names to arguments' values.  Contains only explicitly bound
-      arguments.  Changes in :attr:`arguments` will reflect in :attr:`args` and
-      :attr:`kwargs`.
+      A mutable mapping of parameters' names to arguments' values.
+      Contains only explicitly bound arguments.  Changes in :attr:`arguments`
+      will reflect in :attr:`args` and :attr:`kwargs`.
 
       Should be used in conjunction with :attr:`Signature.parameters` for any
       argument processing purposes.
@@ -829,6 +834,10 @@ function.
          :meth:`Signature.bind_partial` relied on a default value are skipped.
          However, if needed, use :meth:`BoundArguments.apply_defaults` to add
          them.
+
+      .. versionchanged:: 3.9
+         :attr:`arguments` is now of type :class:`dict`. Formerly, it was of
+         type :class:`collections.OrderedDict`.
 
    .. attribute:: BoundArguments.args
 
@@ -860,7 +869,7 @@ function.
         >>> ba = inspect.signature(foo).bind('spam')
         >>> ba.apply_defaults()
         >>> ba.arguments
-        OrderedDict([('a', 'spam'), ('b', 'ham'), ('args', ())])
+        {'a': 'spam', 'b': 'ham', 'args': ()}
 
       .. versionadded:: 3.5
 

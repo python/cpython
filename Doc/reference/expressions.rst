@@ -13,7 +13,7 @@ This chapter explains the meaning of the elements of expressions in Python.
 be used to describe syntax, not lexical analysis.  When (one alternative of) a
 syntax rule has the form
 
-.. productionlist:: *
+.. productionlist:: python-grammar
    name: `othername`
 
 and no semantics are given, the semantics of this form of ``name`` are the same
@@ -28,7 +28,7 @@ Arithmetic conversions
 .. index:: pair: arithmetic; conversion
 
 When a description of an arithmetic operator below uses the phrase "the numeric
-arguments are converted to a common type," this means that the operator
+arguments are converted to a common type", this means that the operator
 implementation for built-in types works as follows:
 
 * If either argument is a complex number, the other is converted to complex;
@@ -54,7 +54,7 @@ Atoms are the most basic elements of expressions.  The simplest atoms are
 identifiers or literals.  Forms enclosed in parentheses, brackets or braces are
 also categorized syntactically as atoms.  The syntax for atoms is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    atom: `identifier` | `literal` | `enclosure`
    enclosure: `parenth_form` | `list_display` | `dict_display` | `set_display`
             : | `generator_expression` | `yield_atom`
@@ -103,7 +103,7 @@ Literals
 
 Python supports string and bytes literals and various numeric literals:
 
-.. productionlist::
+.. productionlist:: python-grammar
    literal: `stringliteral` | `bytesliteral`
           : | `integer` | `floatnumber` | `imagnumber`
 
@@ -134,7 +134,7 @@ Parenthesized forms
 
 A parenthesized form is an optional expression list enclosed in parentheses:
 
-.. productionlist::
+.. productionlist:: python-grammar
    parenth_form: "(" [`starred_expression`] ")"
 
 A parenthesized expression list yields whatever that expression list yields: if
@@ -148,9 +148,8 @@ immutable, the same rules as for literals apply (i.e., two occurrences of the em
 tuple may or may not yield the same object).
 
 .. index::
-   single: comma; tuple display
-   pair: tuple; display
-   single: , (comma); tuple display
+   single: comma
+   single: , (comma)
 
 Note that tuples are not formed by the parentheses, but rather by use of the
 comma operator.  The exception is the empty tuple, for which parentheses *are*
@@ -162,6 +161,8 @@ ambiguities and allow common typos to pass uncaught.
 
 Displays for lists, sets and dictionaries
 -----------------------------------------
+
+.. index:: single: comprehensions
 
 For constructing a list, a set or a dictionary Python provides special syntax
 called "displays", each of them in two flavors:
@@ -178,8 +179,8 @@ called "displays", each of them in two flavors:
 
 Common syntax elements for comprehensions are:
 
-.. productionlist::
-   comprehension: `expression` `comp_for`
+.. productionlist:: python-grammar
+   comprehension: `assignment_expression` `comp_for`
    comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
    comp_if: "if" `expression_nocond` [`comp_iter`]
@@ -244,7 +245,7 @@ List displays
 A list display is a possibly empty series of expressions enclosed in square
 brackets:
 
-.. productionlist::
+.. productionlist:: python-grammar
    list_display: "[" [`starred_list` | `comprehension`] "]"
 
 A list display yields a new list object, the contents being specified by either
@@ -261,6 +262,7 @@ Set displays
 
 .. index::
    pair: set; display
+   pair: set; comprehensions
    object: set
    single: {} (curly brackets); set expression
    single: , (comma); expression list
@@ -268,7 +270,7 @@ Set displays
 A set display is denoted by curly braces and distinguishable from dictionary
 displays by the lack of colons separating keys and values:
 
-.. productionlist::
+.. productionlist:: python-grammar
    set_display: "{" (`starred_list` | `comprehension`) "}"
 
 A set display yields a new mutable set object, the contents being specified by
@@ -288,6 +290,7 @@ Dictionary displays
 
 .. index::
    pair: dictionary; display
+   pair: dictionary; comprehensions
    key, datum, key/datum pair
    object: dictionary
    single: {} (curly brackets); dictionary expression
@@ -297,7 +300,7 @@ Dictionary displays
 A dictionary display is a possibly empty series of key/datum pairs enclosed in
 curly braces:
 
-.. productionlist::
+.. productionlist:: python-grammar
    dict_display: "{" [`key_datum_list` | `dict_comprehension`] "}"
    key_datum_list: `key_datum` ("," `key_datum`)* [","]
    key_datum: `expression` ":" `expression` | "**" `or_expr`
@@ -356,7 +359,7 @@ Generator expressions
 
 A generator expression is a compact generator notation in parentheses:
 
-.. productionlist::
+.. productionlist:: python-grammar
    generator_expression: "(" `expression` `comp_for` ")"
 
 A generator expression yields a new generator object.  Its syntax is the same as
@@ -410,7 +413,7 @@ Yield expressions
    pair: yield; expression
    pair: generator; function
 
-.. productionlist::
+.. productionlist:: python-grammar
    yield_atom: "(" `yield_expression` ")"
    yield_expression: "yield" [`expression_list` | "from" `expression`]
 
@@ -747,7 +750,7 @@ Primaries
 Primaries represent the most tightly bound operations of the language. Their
 syntax is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    primary: `atom` | `attributeref` | `subscription` | `slicing` | `call`
 
 
@@ -762,7 +765,7 @@ Attribute references
 
 An attribute reference is a primary followed by a period and a name:
 
-.. productionlist::
+.. productionlist:: python-grammar
    attributeref: `primary` "." `identifier`
 
 .. index::
@@ -797,10 +800,10 @@ Subscriptions
    object: dictionary
    pair: sequence; item
 
-A subscription selects an item of a sequence (string, tuple or list) or mapping
-(dictionary) object:
+Subscription of a sequence (string, tuple or list) or mapping (dictionary)
+object usually selects an item from the collection:
 
-.. productionlist::
+.. productionlist:: python-grammar
    subscription: `primary` "[" `expression_list` "]"
 
 The primary must evaluate to an object that supports subscription (lists or
@@ -834,6 +837,17 @@ this method will need to explicitly add that support.
 A string's items are characters.  A character is not a separate data type but a
 string of exactly one character.
 
+..
+   At the time of writing this, there is no documentation for generic alias
+   or PEP 585.  Thus the link currently points to PEP 585 itself.
+   Please change the link for generic alias to reference the correct
+   documentation once documentation for PEP 585 becomes available.
+
+Subscription of certain :term:`classes <class>` or :term:`types <type>`
+creates a `generic alias <https://www.python.org/dev/peps/pep-0585/>`_.
+In this case, user-defined classes can support subscription by providing a
+:meth:`__class_getitem__` classmethod.
+
 
 .. _slicings:
 
@@ -856,7 +870,7 @@ A slicing selects a range of items in a sequence object (e.g., a string, tuple
 or list).  Slicings may be used as expressions or as targets in assignment or
 :keyword:`del` statements.  The syntax for a slicing:
 
-.. productionlist::
+.. productionlist:: python-grammar
    slicing: `primary` "[" `slice_list` "]"
    slice_list: `slice_item` ("," `slice_item`)* [","]
    slice_item: `expression` | `proper_slice`
@@ -906,13 +920,14 @@ Calls
 A call calls a callable object (e.g., a :term:`function`) with a possibly empty
 series of :term:`arguments <argument>`:
 
-.. productionlist::
+.. productionlist:: python-grammar
    call: `primary` "(" [`argument_list` [","] | `comprehension`] ")"
    argument_list: `positional_arguments` ["," `starred_and_keywords`]
                 :   ["," `keywords_arguments`]
                 : | `starred_and_keywords` ["," `keywords_arguments`]
                 : | `keywords_arguments`
-   positional_arguments: ["*"] `expression` ("," ["*"] `expression`)*
+   positional_arguments: positional_item ("," positional_item)*
+   positional_item: `assignment_expression` | "*" `expression`
    starred_and_keywords: ("*" `expression` | `keyword_item`)
                 : ("," "*" `expression` | "," `keyword_item`)*
    keywords_arguments: (`keyword_item` | "**" `expression`)
@@ -1088,7 +1103,7 @@ Await expression
 Suspend the execution of :term:`coroutine` on an :term:`awaitable` object.
 Can only be used inside a :term:`coroutine function`.
 
-.. productionlist::
+.. productionlist:: python-grammar
    await_expr: "await" `primary`
 
 .. versionadded:: 3.5
@@ -1106,7 +1121,7 @@ The power operator
 The power operator binds more tightly than unary operators on its left; it binds
 less tightly than unary operators on its right.  The syntax is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    power: (`await_expr` | `primary`) ["**" `u_expr`]
 
 Thus, in an unparenthesized sequence of power and unary operators, the operators
@@ -1139,7 +1154,7 @@ Unary arithmetic and bitwise operations
 
 All unary arithmetic and bitwise operations have the same priority:
 
-.. productionlist::
+.. productionlist:: python-grammar
    u_expr: `power` | "-" `u_expr` | "+" `u_expr` | "~" `u_expr`
 
 .. index::
@@ -1183,7 +1198,7 @@ that some of these operations also apply to certain non-numeric types.  Apart
 from the power operator, there are only two levels, one for multiplicative
 operators and one for additive operators:
 
-.. productionlist::
+.. productionlist:: python-grammar
    m_expr: `u_expr` | `m_expr` "*" `u_expr` | `m_expr` "@" `m_expr` |
          : `m_expr` "//" `u_expr` | `m_expr` "/" `u_expr` |
          : `m_expr` "%" `u_expr`
@@ -1279,7 +1294,7 @@ Shifting operations
 
 The shifting operations have lower priority than the arithmetic operations:
 
-.. productionlist::
+.. productionlist:: python-grammar
    shift_expr: `a_expr` | `shift_expr` ("<<" | ">>") `a_expr`
 
 These operators accept integers as arguments.  They shift the first argument to
@@ -1300,7 +1315,7 @@ Binary bitwise operations
 
 Each of the three bitwise operations has a different priority level:
 
-.. productionlist::
+.. productionlist:: python-grammar
    and_expr: `shift_expr` | `and_expr` "&" `shift_expr`
    xor_expr: `and_expr` | `xor_expr` "^" `and_expr`
    or_expr: `xor_expr` | `or_expr` "|" `xor_expr`
@@ -1349,7 +1364,7 @@ lower than that of any arithmetic, shifting or bitwise operation.  Also unlike
 C, expressions like ``a < b < c`` have the interpretation that is conventional
 in mathematics:
 
-.. productionlist::
+.. productionlist:: python-grammar
    comparison: `or_expr` (`comp_operator` `or_expr`)*
    comp_operator: "<" | ">" | "==" | ">=" | "<=" | "!="
                 : | "is" ["not"] | ["not"] "in"
@@ -1422,8 +1437,13 @@ built-in types.
   The not-a-number values ``float('NaN')`` and ``decimal.Decimal('NaN')`` are
   special.  Any ordered comparison of a number to a not-a-number value is false.
   A counter-intuitive implication is that not-a-number values are not equal to
-  themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3``, ``x
-  == x``, ``x != x`` are all false.  This behavior is compliant with IEEE 754.
+  themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3`` and
+  ``x == x`` are all false, while ``x != x`` is true.  This behavior is
+  compliant with IEEE 754.
+
+* ``None`` and ``NotImplemented`` are singletons.  :PEP:`8` advises that
+  comparisons for singletons should always be done with ``is`` or ``is not``,
+  never the equality operators.
 
 * Binary sequences (instances of :class:`bytes` or :class:`bytearray`) can be
   compared within and across their types.  They compare lexicographically using
@@ -1442,25 +1462,9 @@ built-in types.
   :exc:`TypeError`.
 
   Sequences compare lexicographically using comparison of corresponding
-  elements, whereby reflexivity of the elements is enforced.
-
-  In enforcing reflexivity of elements, the comparison of collections assumes
-  that for a collection element ``x``, ``x == x`` is always true.  Based on
-  that assumption, element identity is compared first, and element comparison
-  is performed only for distinct elements.  This approach yields the same
-  result as a strict element comparison would, if the compared elements are
-  reflexive.  For non-reflexive elements, the result is different than for
-  strict element comparison, and may be surprising:  The non-reflexive
-  not-a-number values for example result in the following comparison behavior
-  when used in a list::
-
-    >>> nan = float('NaN')
-    >>> nan is nan
-    True
-    >>> nan == nan
-    False                 <-- the defined non-reflexive behavior of NaN
-    >>> [nan] == [nan]
-    True                  <-- list enforces reflexivity and tests identity first
+  elements.  The built-in containers typically assume identical objects are
+  equal to themselves.  That lets them bypass equality tests for identical
+  objects to improve performance and to maintain their internal invariants.
 
   Lexicographical comparison between built-in collections works as follows:
 
@@ -1619,7 +1623,7 @@ Boolean operations
    pair: Conditional; expression
    pair: Boolean; operation
 
-.. productionlist::
+.. productionlist:: python-grammar
    or_test: `and_test` | `or_test` "or" `and_test`
    and_test: `not_test` | `and_test` "and" `not_test`
    not_test: `comparison` | "not" `not_test`
@@ -1655,6 +1659,34 @@ returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
 
 
+Assignment expressions
+======================
+
+.. productionlist:: python-grammar
+   assignment_expression: [`identifier` ":="] `expression`
+
+An assignment expression (sometimes also called a "named expression" or
+"walrus") assigns an :token:`expression` to an :token:`identifier`, while also
+returning the value of the :token:`expression`.
+
+One common use case is when handling matched regular expressions:
+
+.. code-block:: python
+
+   if matching := pattern.search(data):
+       do_something(matching)
+
+Or, when processing a file stream in chunks:
+
+.. code-block:: python
+
+   while chunk := file.read(9000):
+       process(chunk)
+
+.. versionadded:: 3.8
+   See :pep:`572` for more details about assignment expressions.
+
+
 .. _if_expr:
 
 Conditional expressions
@@ -1666,7 +1698,7 @@ Conditional expressions
    single: if; conditional expression
    single: else; conditional expression
 
-.. productionlist::
+.. productionlist:: python-grammar
    conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
    expression: `conditional_expression` | `lambda_expr`
    expression_nocond: `or_test` | `lambda_expr_nocond`
@@ -1693,7 +1725,7 @@ Lambdas
    pair: anonymous; function
    single: : (colon); lambda expression
 
-.. productionlist::
+.. productionlist:: python-grammar
    lambda_expr: "lambda" [`parameter_list`] ":" `expression`
    lambda_expr_nocond: "lambda" [`parameter_list`] ":" `expression_nocond`
 
@@ -1720,11 +1752,11 @@ Expression lists
    pair: expression; list
    single: , (comma); expression list
 
-.. productionlist::
+.. productionlist:: python-grammar
    expression_list: `expression` ("," `expression`)* [","]
    starred_list: `starred_item` ("," `starred_item`)* [","]
    starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
-   starred_item: `expression` | "*" `or_expr`
+   starred_item: `assignment_expression` | "*" `or_expr`
 
 .. index:: object: tuple
 
@@ -1797,6 +1829,8 @@ precedence and have a left-to-right chaining feature as described in the
 +-----------------------------------------------+-------------------------------------+
 | Operator                                      | Description                         |
 +===============================================+=====================================+
+| ``:=``                                        | Assignment expression               |
++-----------------------------------------------+-------------------------------------+
 | :keyword:`lambda`                             | Lambda expression                   |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`if <if_expr>` -- :keyword:`!else`   | Conditional expression              |
@@ -1834,7 +1868,8 @@ precedence and have a left-to-right chaining feature as described in the
 | ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
 | ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
 +-----------------------------------------------+-------------------------------------+
-| ``(expressions...)``,                         | Binding or tuple display,           |
+| ``(expressions...)``,                         | Binding or parenthesized            |
+|                                               | expression,                         |
 | ``[expressions...]``,                         | list display,                       |
 | ``{key: value...}``,                          | dictionary display,                 |
 | ``{expressions...}``                          | set display                         |

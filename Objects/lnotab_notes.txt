@@ -3,7 +3,9 @@ All about co_lnotab, the line number table.
 Code objects store a field named co_lnotab.  This is an array of unsigned bytes
 disguised as a Python bytes object.  It is used to map bytecode offsets to
 source code line #s for tracebacks and to identify line number boundaries for
-line tracing.
+line tracing. Because of internals of the peephole optimizer, it's possible
+for lnotab to contain bytecode offsets that are no longer valid (for example
+if the optimizer removed the last line in a function).
 
 The array is conceptually a compressed list of
     (bytecode offset increment, line number increment)

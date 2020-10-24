@@ -1,2 +1,0 @@
-Record calls to parent when autospecced object is attached to a mock using
-:func:`unittest.mock.attach_mock`. Patch by Karthikeyan Singaravelan.

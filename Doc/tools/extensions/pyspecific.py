@@ -22,13 +22,21 @@ from docutils import nodes, utils
 
 from sphinx import addnodes
 from sphinx.builders import Builder
+try:
+    from sphinx.errors import NoUri
+except ImportError:
+    from sphinx.environment import NoUri
 from sphinx.locale import translators
 from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
-from sphinx.writers.html import HTMLTranslator
 from sphinx.writers.text import TextWriter, TextTranslator
 from sphinx.writers.latex import LaTeXTranslator
-from sphinx.domains.python import PyModulelevel, PyClassmember
+
+try:
+    from sphinx.domains.python import PyFunction, PyMethod
+except ImportError:
+    from sphinx.domains.python import PyClassmember as PyMethod
+    from sphinx.domains.python import PyModulelevel as PyFunction
 
 # Support for checking for suspicious markup
 
@@ -44,37 +52,6 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['upperalpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
-
-# monkey-patch HTML and LaTeX translators to keep doctest blocks in the
-# doctest docs themselves
-orig_visit_literal_block = HTMLTranslator.visit_literal_block
-orig_depart_literal_block = LaTeXTranslator.depart_literal_block
-
-
-def new_visit_literal_block(self, node):
-    meta = self.builder.env.metadata[self.builder.current_docname]
-    old_trim_doctest_flags = self.highlighter.trim_doctest_flags
-    if 'keepdoctest' in meta:
-        self.highlighter.trim_doctest_flags = False
-    try:
-        orig_visit_literal_block(self, node)
-    finally:
-        self.highlighter.trim_doctest_flags = old_trim_doctest_flags
-
-
-def new_depart_literal_block(self, node):
-    meta = self.builder.env.metadata[self.curfilestack[-1]]
-    old_trim_doctest_flags = self.highlighter.trim_doctest_flags
-    if 'keepdoctest' in meta:
-        self.highlighter.trim_doctest_flags = False
-    try:
-        orig_depart_literal_block(self, node)
-    finally:
-        self.highlighter.trim_doctest_flags = old_trim_doctest_flags
-
-
-HTMLTranslator.visit_literal_block = new_visit_literal_block
-LaTeXTranslator.depart_literal_block = new_depart_literal_block
 
 
 # Support for marking up and linking to bugs.python.org issues
@@ -152,6 +129,39 @@ class Availability(Directive):
 
 
 # Support for documenting audit event
+
+def audit_events_purge(app, env, docname):
+    """This is to remove from env.all_audit_events old traces of removed
+    documents.
+    """
+    if not hasattr(env, 'all_audit_events'):
+        return
+    fresh_all_audit_events = {}
+    for name, event in env.all_audit_events.items():
+        event["source"] = [(d, t) for d, t in event["source"] if d != docname]
+        if event["source"]:
+            # Only keep audit_events that have at least one source.
+            fresh_all_audit_events[name] = event
+    env.all_audit_events = fresh_all_audit_events
+
+
+def audit_events_merge(app, env, docnames, other):
+    """In Sphinx parallel builds, this merges env.all_audit_events from
+    subprocesses.
+
+    all_audit_events is a dict of names, with values like:
+    {'source': [(docname, target), ...], 'args': args}
+    """
+    if not hasattr(other, 'all_audit_events'):
+        return
+    if not hasattr(env, 'all_audit_events'):
+        env.all_audit_events = {}
+    for name, value in other.all_audit_events.items():
+        if name in env.all_audit_events:
+            env.all_audit_events[name]["source"].extend(value["source"])
+        else:
+            env.all_audit_events[name] = value
+
 
 class AuditEvent(Directive):
 
@@ -266,17 +276,18 @@ class PyDecoratorMixin(object):
         return False
 
 
-class PyDecoratorFunction(PyDecoratorMixin, PyModulelevel):
+class PyDecoratorFunction(PyDecoratorMixin, PyFunction):
     def run(self):
         # a decorator function is a function after all
         self.name = 'py:function'
-        return PyModulelevel.run(self)
+        return PyFunction.run(self)
 
 
-class PyDecoratorMethod(PyDecoratorMixin, PyClassmember):
+# TODO: Use sphinx.domains.python.PyDecoratorMethod when possible
+class PyDecoratorMethod(PyDecoratorMixin, PyMethod):
     def run(self):
         self.name = 'py:method'
-        return PyClassmember.run(self)
+        return PyMethod.run(self)
 
 
 class PyCoroutineMixin(object):
@@ -293,31 +304,31 @@ class PyAwaitableMixin(object):
         return ret
 
 
-class PyCoroutineFunction(PyCoroutineMixin, PyModulelevel):
+class PyCoroutineFunction(PyCoroutineMixin, PyFunction):
     def run(self):
         self.name = 'py:function'
-        return PyModulelevel.run(self)
+        return PyFunction.run(self)
 
 
-class PyCoroutineMethod(PyCoroutineMixin, PyClassmember):
+class PyCoroutineMethod(PyCoroutineMixin, PyMethod):
     def run(self):
         self.name = 'py:method'
-        return PyClassmember.run(self)
+        return PyMethod.run(self)
 
 
-class PyAwaitableFunction(PyAwaitableMixin, PyClassmember):
+class PyAwaitableFunction(PyAwaitableMixin, PyFunction):
     def run(self):
         self.name = 'py:function'
-        return PyClassmember.run(self)
+        return PyFunction.run(self)
 
 
-class PyAwaitableMethod(PyAwaitableMixin, PyClassmember):
+class PyAwaitableMethod(PyAwaitableMixin, PyMethod):
     def run(self):
         self.name = 'py:method'
-        return PyClassmember.run(self)
+        return PyMethod.run(self)
 
 
-class PyAbstractMethod(PyClassmember):
+class PyAbstractMethod(PyMethod):
 
     def handle_signature(self, sig, signode):
         ret = super(PyAbstractMethod, self).handle_signature(sig, signode)
@@ -327,7 +338,7 @@ class PyAbstractMethod(PyClassmember):
 
     def run(self):
         self.name = 'py:method'
-        return PyClassmember.run(self)
+        return PyMethod.run(self)
 
 
 # Support for documenting version of removal in deprecations
@@ -339,7 +350,8 @@ class DeprecatedRemoved(Directive):
     final_argument_whitespace = True
     option_spec = {}
 
-    _label = 'Deprecated since version {deprecated}, will be removed in version {removed}'
+    _deprecated_label = 'Deprecated since version {deprecated}, will be removed in version {removed}'
+    _removed_label = 'Deprecated since version {deprecated}, removed in version {removed}'
 
     def run(self):
         node = addnodes.versionmodified()
@@ -347,7 +359,15 @@ class DeprecatedRemoved(Directive):
         node['type'] = 'deprecated-removed'
         version = (self.arguments[0], self.arguments[1])
         node['version'] = version
-        label = translators['sphinx'].gettext(self._label)
+        env = self.state.document.settings.env
+        current_version = tuple(int(e) for e in env.config.version.split('.'))
+        removed_version = tuple(int(e) for e in self.arguments[1].split('.'))
+        if current_version < removed_version:
+            label = self._deprecated_label
+        else:
+            label = self._removed_label
+
+        label = translators['sphinx'].gettext(label)
         text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
@@ -536,6 +556,7 @@ def process_audit_events(app, doctree, fromdocname):
         nodes.colspec(colwidth=30),
         nodes.colspec(colwidth=55),
         nodes.colspec(colwidth=15),
+        cols=3,
     )
     head = nodes.thead()
     body = nodes.tbody()
@@ -569,10 +590,13 @@ def process_audit_events(app, doctree, fromdocname):
         for i, (doc, label) in backlinks:
             if isinstance(label, str):
                 ref = nodes.reference("", nodes.Text("[{}]".format(i)), internal=True)
-                ref['refuri'] = "{}#{}".format(
-                    app.builder.get_relative_uri(fromdocname, doc),
-                    label,
-                )
+                try:
+                    ref['refuri'] = "{}#{}".format(
+                        app.builder.get_relative_uri(fromdocname, doc),
+                        label,
+                    )
+                except NoUri:
+                    continue
                 node += ref
         row += nodes.entry('', node)
 
@@ -604,4 +628,6 @@ def setup(app):
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
     app.connect('doctree-resolved', process_audit_events)
+    app.connect('env-merge-info', audit_events_merge)
+    app.connect('env-purge-doc', audit_events_purge)
     return {'version': '1.0', 'parallel_read_safe': True}

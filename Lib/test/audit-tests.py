@@ -44,28 +44,6 @@ class TestHook:
             raise self.exc_type("saw event " + event)
 
 
-class TestFinalizeHook:
-    """Used in the test_finalize_hooks function to ensure that hooks
-    are correctly cleaned up, that they are notified about the cleanup,
-    and are unable to prevent it.
-    """
-
-    def __init__(self):
-        print("Created", id(self), file=sys.stdout, flush=True)
-
-    def __call__(self, event, args):
-        # Avoid recursion when we call id() below
-        if event == "builtins.id":
-            return
-
-        print(event, id(self), file=sys.stdout, flush=True)
-
-        if event == "cpython._PySys_ClearAuditHooks":
-            raise RuntimeError("Should be ignored")
-        elif event == "cpython.PyInterpreterState_Clear":
-            raise RuntimeError("Should be ignored")
-
-
 # Simple helpers, since we are not in unittest here
 def assertEqual(x, y):
     if x != y:
@@ -126,10 +104,6 @@ def test_block_add_hook_baseexception():
             # Adding this next hook should raise BaseException
             with TestHook() as hook2:
                 pass
-
-
-def test_finalize_hooks():
-    sys.addaudithook(TestFinalizeHook())
 
 
 def test_pickle():
@@ -263,14 +237,96 @@ def test_cantrace():
 
 def test_mmap():
     import mmap
+
     with TestHook() as hook:
         mmap.mmap(-1, 8)
         assertEqual(hook.seen[0][1][:2], (-1, 8))
 
 
+def test_excepthook():
+    def excepthook(exc_type, exc_value, exc_tb):
+        if exc_type is not RuntimeError:
+            sys.__excepthook__(exc_type, exc_value, exc_tb)
+
+    def hook(event, args):
+        if event == "sys.excepthook":
+            if not isinstance(args[2], args[1]):
+                raise TypeError(f"Expected isinstance({args[2]!r}, " f"{args[1]!r})")
+            if args[0] != excepthook:
+                raise ValueError(f"Expected {args[0]} == {excepthook}")
+            print(event, repr(args[2]))
+
+    sys.addaudithook(hook)
+    sys.excepthook = excepthook
+    raise RuntimeError("fatal-error")
+
+
+def test_unraisablehook():
+    from _testcapi import write_unraisable_exc
+
+    def unraisablehook(hookargs):
+        pass
+
+    def hook(event, args):
+        if event == "sys.unraisablehook":
+            if args[0] != unraisablehook:
+                raise ValueError(f"Expected {args[0]} == {unraisablehook}")
+            print(event, repr(args[1].exc_value), args[1].err_msg)
+
+    sys.addaudithook(hook)
+    sys.unraisablehook = unraisablehook
+    write_unraisable_exc(RuntimeError("nonfatal-error"), "for audit hook test", None)
+
+
+def test_winreg():
+    from winreg import OpenKey, EnumKey, CloseKey, HKEY_LOCAL_MACHINE
+
+    def hook(event, args):
+        if not event.startswith("winreg."):
+            return
+        print(event, *args)
+
+    sys.addaudithook(hook)
+
+    k = OpenKey(HKEY_LOCAL_MACHINE, "Software")
+    EnumKey(k, 0)
+    try:
+        EnumKey(k, 10000)
+    except OSError:
+        pass
+    else:
+        raise RuntimeError("Expected EnumKey(HKLM, 10000) to fail")
+
+    kv = k.Detach()
+    CloseKey(kv)
+
+
+def test_socket():
+    import socket
+
+    def hook(event, args):
+        if event.startswith("socket."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+
+    socket.gethostname()
+
+    # Don't care if this fails, we just want the audit message
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        # Don't care if this fails, we just want the audit message
+        sock.bind(('127.0.0.1', 8080))
+    except Exception:
+        pass
+    finally:
+        sock.close()
+
+
 if __name__ == "__main__":
-    from test.libregrtest.setup import suppress_msvcrt_asserts
-    suppress_msvcrt_asserts(False)
+    from test.support import suppress_msvcrt_asserts
+
+    suppress_msvcrt_asserts()
 
     test = sys.argv[1]
     globals()[test]()
