@@ -782,6 +782,24 @@ instance::
     >>> d.f.__self__
     <__main__.D object at 0x1012e1f98>
 
+Bound methods are instances of :class:`types.MethodType`.  The implementation
+is roughly equivalent to::
+
+    class Method:
+        "Emulate MethodType in Objects/classobject.c"
+        # Prepend an object to arguments for a function call.
+        # This is used for both bound methods and class methods.
+
+        def __init__(self, func, obj):
+            self.func = func
+            self.obj = obj
+
+        def __call__(self, *args, **kwargs):
+            return self.func(self.obj, *args, **kwargs)
+
+If you have ever wondered where *self* comes from in regular methods or where
+*cls* comes from in class methods, this is it!
+
 
 Static Methods and Class Methods
 --------------------------------
