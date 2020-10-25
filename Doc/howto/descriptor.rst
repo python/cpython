@@ -25,11 +25,10 @@ This HowTo guide has four major sections:
    detailed mechanics of how descriptors work.  Most people don't need this
    level of detail.
 
-4) The last section has pure Python equivalents for builtin descriptors
-   that are written in C.  Read this if you're curious about how
-   how functions turn into bound methods or about how to implement
-   common tools like :func:`classmethod`, :func:`staticmethod`,
-   :func:`property`.
+4) The last section has pure Python equivalents for builtin descriptors that
+   are written in C.  Read this if you're curious about how how functions turn
+   into bound methods or about how to implement common tools like
+   :func:`classmethod`, :func:`staticmethod`, and :func:`property`.
 
 
 Primer
