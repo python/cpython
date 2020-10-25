@@ -15,9 +15,10 @@ from tkinter import (Toplevel, Listbox, Scale, Canvas,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
-                     HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
+                     HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END, TclError)
 from tkinter.ttk import (Frame, LabelFrame, Button, Checkbutton, Entry, Label,
-                         OptionMenu, Notebook, Radiobutton, Scrollbar, Style)
+                         OptionMenu, Notebook, Radiobutton, Scrollbar, Style,
+                         Spinbox, Combobox)
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
 from tkinter import messagebox
@@ -510,7 +511,7 @@ class FontPage(Frame):
         font_sample and to highlight_sample on the highlight page.
 
         Tabs: Enable users to change spaces entered for indent tabs.
-        Changing indent_scale value with the mouse sets Var space_num,
+        Changing indent_chooser value with the mouse sets Var space_num,
         which invokes the default callback to add an entry to
         changes.  Load_tab_cfg initializes space_num to default.
 
@@ -528,7 +529,7 @@ class FontPage(Frame):
                 (*)font_sample: Label
             frame_indent: LabelFrame
                     indent_title: Label
-                    (*)indent_scale: Scale - space_num
+                    (*)indent_chooser: Spinbox (Combobox on Tk < 8.5.9) - space_num
         """
         self.font_name = tracers.add(StringVar(self), self.var_changed_font)
         self.font_size = tracers.add(StringVar(self), self.var_changed_font)
@@ -570,9 +571,14 @@ class FontPage(Frame):
         indent_title = Label(
                 frame_indent, justify=LEFT,
                 text='Python Standard: 4 Spaces!')
-        self.indent_scale = Scale(
-                frame_indent, variable=self.space_num,
-                orient='horizontal', tickinterval=2, from_=2, to=16)
+        try:
+            self.indent_chooser = Spinbox(
+                    frame_indent, textvariable=self.space_num, from_=2, to=16)
+        except TclError:
+            self.indent_chooser = Combobox(
+                    frame_indent, textvariable=self.space_num, 
+                    state="readonly", values=list(range(2,17)))
+            
 
         # Grid and pack widgets:
         self.columnconfigure(1, weight=1)
@@ -594,7 +600,7 @@ class FontPage(Frame):
         font_sample_frame.pack(expand=TRUE, fill=BOTH)
         # frame_indent.
         indent_title.pack(side=TOP, anchor=W, padx=5)
-        self.indent_scale.pack(side=TOP, padx=5, fill=X)
+        self.indent_chooser.pack(side=TOP, padx=5, fill=X)
 
     def load_font_cfg(self):
         """Load current configuration settings for the font options.

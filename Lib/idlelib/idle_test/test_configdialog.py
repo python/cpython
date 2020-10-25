@@ -273,12 +273,12 @@ class IndentTest(unittest.TestCase):
         d.load_tab_cfg()
         self.assertEqual(d.space_num.get(), 4)
 
-    def test_indent_scale(self):
+    def test_indent_chooser(self):
         d = self.page
         changes.clear()
-        d.indent_scale.set(20)
-        self.assertEqual(d.space_num.get(), 16)
-        self.assertEqual(mainpage, {'Indent': {'num-spaces': '16'}})
+        d.indent_chooser.set(10)
+        self.assertEqual(d.space_num.get(), 10)
+        self.assertEqual(mainpage, {'Indent': {'num-spaces': '10'}})
 
 
 class HighPageTest(unittest.TestCase):
