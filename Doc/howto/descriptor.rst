@@ -22,8 +22,9 @@ This HowTo guide has three major sections:
    already know the basics, start there.
 
 3) The third section provides a more technical tutorial that goes into the
-   detailed mechanics of how descriptors work.  Most people don't need this
-   level of detail.
+   detailed mechanics of how descriptors work.  It also has pure Python
+   equivalents for builtin descriptors that are written in C.  Most people don't
+   need this level of detail.
 
 
 Primer
@@ -197,7 +198,7 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
 
     import logging
 
-    logging.basicConfig(level=logging.INFO, force=True)
+    logging.basicConfig(level=logging.INFO)
 
     class LoggedAccess:
 
