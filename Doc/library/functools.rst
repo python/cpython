@@ -73,16 +73,31 @@ The :mod:`functools` module defines the following functions:
            def variance(self):
                return statistics.variance(self._data)
 
+   Note, this decorator interferes with the operation of :pep:`412`
+   key-sharing dictionaries.  This means that instance dictionaries
+   can take more space than usual.
+
+   Also, this decorator requires that the ``__dict__`` attribute on each instance
+   be a mutable mapping. This means it will not work with some types, such as
+   metaclasses (since the ``__dict__`` attributes on type instances are
+   read-only proxies for the class namespace), and those that specify
+   ``__slots__`` without including ``__dict__`` as one of the defined slots
+   (as such classes don't provide a ``__dict__`` attribute at all).
+
+   If a mutable mapping is not available or if space-efficient key sharing
+   is desired, an effect similar to :func:`cached_property` can be achieved
+   by a stacking :func:`property` on top of :func:`cache`::
+
+       class DataSet:
+           def __init__(self, sequence_of_numbers):
+               self._data = sequence_of_numbers
+
+           @property
+           @cache
+           def stdev(self):
+               return statistics.stdev(self._data)
+
    .. versionadded:: 3.8
-
-   .. note::
-
-      This decorator requires that the ``__dict__`` attribute on each instance
-      be a mutable mapping. This means it will not work with some types, such as
-      metaclasses (since the ``__dict__`` attributes on type instances are
-      read-only proxies for the class namespace), and those that specify
-      ``__slots__`` without including ``__dict__`` as one of the defined slots
-      (as such classes don't provide a ``__dict__`` attribute at all).
 
 
 .. function:: cmp_to_key(func)
