@@ -587,6 +587,37 @@ def _safe_repr(object, context, maxlevels, level, sort_dicts):
         del context[objid]
         return format % ", ".join(components), readable, recursive
 
+    if (issubclass(typ, set) and r is set.__repr__) or \
+        (issubclass(typ, frozenset) and r is frozenset.__repr__):
+        if not object:
+            return repr(object), True, False
+        if typ is set:
+            format = "{%s}"
+        else:
+            format = typ.__name__ + "({%s})"
+        objid = id(object)
+        if maxlevels and level >= maxlevels:
+            return "{...}", False, objid in context
+        if objid in context:
+            return _recursion(object), False, True
+        context[objid] = 1
+        readable = True
+        recursive = False
+        components = []
+        append = components.append
+        level += 1
+        saferepr = _safe_repr
+        items = sorted(object, key=_safe_key)
+        for item in items:
+            orepr, oreadable, orecur = saferepr(item, context, maxlevels, level, sort_dicts)
+            append("%s" % orepr)
+            if not oreadable:
+                readable = False
+            if orecur:
+                recursive = True
+        del context[objid]
+        return format % ", ".join(components), readable, recursive
+
     rep = repr(object)
     return rep, (rep and not rep.startswith('<')), False
 
