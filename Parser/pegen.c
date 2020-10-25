@@ -990,7 +990,8 @@ bad_single_statement(Parser *p)
 
     /* Newlines are allowed if preceded by a line continuation character
        or if they appear inside a string. */
-    if (!cur || *(cur - 1) == '\\' || newline_in_string(p, cur)) {
+    if (!cur || (cur != p->tok->buf && *(cur - 1) == '\\')
+             || newline_in_string(p, cur)) {
         return 0;
     }
     char c = *cur;
