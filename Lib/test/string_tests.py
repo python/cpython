@@ -321,9 +321,8 @@ class BaseTest:
     def test_find_periodic_pattern(self):
         """Cover the special path for periodic patterns."""
         def reference_find(p, s):
-            m = len(p)
             for i in range(len(s)):
-                if s[i:i+m] == p:
+                if s.startswith(p, i):
                     return i
             return -1
 
@@ -332,8 +331,8 @@ class BaseTest:
         for _ in range(1000):
             p0 = ''.join(choices('abcde', k=rr(10))) * rr(10, 20)
             p = p0[:len(p0) - rr(10)] # pop off some characters
-            left = ''.join(choices('abcdef', k=rr(200)))
-            right = ''.join(choices('abcdef', k=rr(200)))
+            left = ''.join(choices('abcdef', k=rr(2000)))
+            right = ''.join(choices('abcdef', k=rr(2000)))
             text = left + p + right
             with self.subTest(p=p, text=text):
                 self.checkequal(reference_find(p, text),
@@ -344,14 +343,14 @@ class BaseTest:
         N = 2**16 + 100 # Overflow the 16-bit shift table
 
         # first check the periodic case
-        # here, the shift for 'b' is N.
+        # here, the shift for 'b' is N + 1.
         pattern1 = 'a' * N + 'b' + 'a' * N
         text1 = 'babbaa' * N + pattern1
         self.checkequal(len(text1)-len(pattern1),
                         text1, 'find', pattern1)
 
         # now check the non-periodic case
-        # here, the shift for 'd' is 3*(N+1)
+        # here, the shift for 'd' is 3*(N+1)+1
         pattern2 = 'ddd' + 'abc' * N + "eee"
         text2 = pattern2[:-1] + "ddeede" * 2 * N + pattern2 + "de" * N
         self.checkequal(len(text2) - N*len("de") - len(pattern2),

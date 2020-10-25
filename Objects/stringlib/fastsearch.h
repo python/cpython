@@ -357,7 +357,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
             LOG("\n> "); LOG("%*s", window - haystack + i, "");
             LOG(" ^ <-- cut\n");
 
-            if (window[i] != needle[i++]) {
+            if (window[i] != needle[i]) {
                 // Sunday's trick: if we're going to jump, we might
                 // as well jump to line up the character *after* the
                 // current window.
@@ -376,6 +376,7 @@ STRINGLIB(_two_way)(const STRINGLIB_CHAR *haystack, Py_ssize_t len_haystack,
                 continue;
             }
 
+            i++;
             while (i < len_needle && needle[i] == window[i]) {
                 i++;
             }
@@ -681,3 +682,4 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
         return -1;
     return count;
 }
+
