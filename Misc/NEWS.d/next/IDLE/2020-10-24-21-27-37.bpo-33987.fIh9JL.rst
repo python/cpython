@@ -1,3 +1,3 @@
-Finish conversion to ttk widgets, mainly for editor, settings,
+Mostly finish using ttk widgets, mainly for editor, settings,
 and searches.  Some patches by Mark Roseman.
 
