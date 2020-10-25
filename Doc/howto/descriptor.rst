@@ -29,8 +29,8 @@ This HowTo guide has three major sections:
 Primer
 ^^^^^^
 
-In this primer, we start with most basic possible example and then we'll add
-new capabilities one by one.
+In this primer, we start with the most basic possible example and then we'll
+add new capabilities one by one.
 
 
 Simple example: A descriptor that returns a constant
@@ -842,8 +842,8 @@ in statistical work but does not directly depend on a particular dataset.
 It can be called either from an object or the class:  ``s.erf(1.5) --> .9332`` or
 ``Sample.erf(1.5) --> .9332``.
 
-Since staticmethods return the underlying function with no changes, the example
-calls are unexciting::
+Since static methods return the underlying function with no changes, the
+example calls are unexciting::
 
     class E:
         @staticmethod
@@ -884,7 +884,7 @@ for whether the caller is an object or a class::
 
 This behavior is useful whenever the function only needs to have a class
 reference and does not care about any underlying data.  One use for
-classmethods is to create alternate class constructors.  The classmethod
+class methods is to create alternate class constructors.  The classmethod
 :func:`dict.fromkeys` creates a new dictionary from a list of keys.  The pure
 Python equivalent is::
 
