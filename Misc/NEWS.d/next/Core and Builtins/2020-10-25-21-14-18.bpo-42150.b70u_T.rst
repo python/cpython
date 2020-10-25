@@ -1,0 +1,2 @@
+Fix possible buffer overflow in the new parser when checking for
+continuation lines. Patch by Pablo Galindo.
