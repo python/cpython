@@ -590,8 +590,9 @@ The following code is simplified skeleton showing how data descriptors could
 be used to implement an `object relational mapping
 <https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping>`_.
 
-The essential idea is that instances only store keys to a table in a database.
-The rest of the data is stored in the external table::
+The essential idea is that the data is stored in an external database.  The
+Python instances only hold keys to the database's tables.  Descriptors take
+care of lookups or updates::
 
     class Field:
 
@@ -606,8 +607,8 @@ The rest of the data is stored in the external table::
             conn.execute(self.store, [value, obj.key])
             conn.commit()
 
-We can use the :class:`Field` to define "models" that describe the schema for
-each table in a database::
+We can use the :class:`Field` class to define "models" that describe the schema
+for each table in a database::
 
     class Movie:
         table = 'Movies'                    # Table name
