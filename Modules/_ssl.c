@@ -899,6 +899,7 @@ _ssl_configure_hostname(PySSLSocket *self, const char* server_hostname)
     if (ip == NULL) {
         if (!SSL_set_tlsext_host_name(self->ssl, server_hostname)) {
             _setSSLError(NULL, 0, __FILE__, __LINE__);
+            goto error;
         }
     }
     if (self->ctx->check_hostname) {
