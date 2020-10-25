@@ -13,7 +13,7 @@ Descriptor HowTo Guide
 :term:`Descriptors <descriptor>` let objects customize attribute lookup,
 storage, and deletion.
 
-This HowTo guide has three major sections:
+This HowTo guide has four major sections:
 
 1) The "primer" gives a basic overview, moving gently from simple examples,
    adding one feature at a time.  It is a great place to start.
@@ -22,9 +22,14 @@ This HowTo guide has three major sections:
    already know the basics, start there.
 
 3) The third section provides a more technical tutorial that goes into the
-   detailed mechanics of how descriptors work.  It also has pure Python
-   equivalents for builtin descriptors that are written in C.  Most people don't
-   need this level of detail.
+   detailed mechanics of how descriptors work.  Most people don't need this
+   level of detail.
+
+4) The last section has pure Python equivalents for builtin descriptors
+   that are written in C.  Read this if you're curious about how
+   how functions turn into bound methods or about how to implement
+   common tools like :func:`classmethod`, :func:`staticmethod`,
+   :func:`property`.
 
 
 Primer
@@ -520,24 +525,17 @@ The full C implementation can be found in :c:func:`PyObject_GenericGetAttr()` in
 
 It transforms ``A.x`` into ``A.__dict__['x'].__get__(None, A)``.
 
-In pure Python, it looks like this::
-
-    def __getattribute__(cls, key):
-        "Emulate type_getattro() in Objects/typeobject.c"
-        v = object.__getattribute__(cls, key)
-        if hasattr(v, '__get__'):
-            return v.__get__(None, cls)
-        return v
+The full C implementation can be found in :c:func:`type_getattro()` in
+:source:`Objects/typeobject.c`.
 
 **Super**:  The machinery is in the custom :meth:`__getattribute__` method for
 object returned by :class:`super()`.
 
 The attribute lookup ``super(A, obj).m`` searches ``obj.__class__.__mro__`` for
 the base class ``B`` immediately following ``A`` and then returns
-``B.__dict__['m'].__get__(obj, A)``.
-
-If not a descriptor, ``m`` is returned unchanged.  If not in the dictionary,
-``m`` reverts to a search using :meth:`object.__getattribute__`.
+``B.__dict__['m'].__get__(obj, A)``.  If not a descriptor, ``m`` is returned
+unchanged.  If not in the dictionary, ``m`` reverts to a search using
+:meth:`object.__getattribute__`.
 
 The implementation details are in :c:func:`super_getattro()` in
 :source:`Objects/typeobject.c`.  A pure Python equivalent can be found in
@@ -651,10 +649,13 @@ it can be updated::
     >>> Movie('Star Wars').director
     'J.J. Abrams'
 
+Pure Python Equivalents
+^^^^^^^^^^^^^^^^^^^^^^^
+
 The descriptor protocol is simple and offers exciting possibilities.  Several
-use cases are so common that they have been packaged into individual function
-calls.  Properties, bound methods, static methods, and class methods are all
-based on the descriptor protocol.
+use cases are so common that they have been prepackaged into builtin tools.
+Properties, bound methods, static methods, and class methods are all based on
+the descriptor protocol.
 
 
 Properties
@@ -747,7 +748,7 @@ prepended to the other arguments.  By convention, the instance is called
 Methods can be created manually with :class:`types.MethodType` which is
 roughly equivalent to::
 
-    class Method:
+    class MethodType:
         "Emulate Py_MethodType in Objects/classobject.c"
 
         def __init__(self, func, obj):
@@ -771,7 +772,7 @@ during dotted lookup from an instance.  Here's how it works::
             "Simulate func_descr_get() in Objects/funcobject.c"
             if obj is None:
                 return self
-            return types.MethodType(self, obj)
+            return MethodType(self, obj)
 
 Running the following class in the interpreter shows how the function
 descriptor works in practice::
@@ -935,7 +936,7 @@ Using the non-data descriptor protocol, a pure Python version of
                 cls = type(obj)
             if hasattr(obj, '__get__'):
                 return self.f.__get__(cls)
-            return types.MethodType(self.f, cls)
+            return MethodType(self.f, cls)
 
 The code path for ``hasattr(obj, '__get__')`` was added in Python 3.9 and
 makes it possible for :func:`classmethod` to support chained decorators.
