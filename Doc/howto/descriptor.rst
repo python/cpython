@@ -13,7 +13,7 @@ Descriptor HowTo Guide
 :term:`Descriptors <descriptor>` let objects customize attribute lookup,
 storage, and deletion.
 
-This HowTo guide has three major sections:
+This guide has four major sections:
 
 1) The "primer" gives a basic overview, moving gently from simple examples,
    adding one feature at a time.  It is a great place to start.
@@ -24,6 +24,11 @@ This HowTo guide has three major sections:
 3) The third section provides a more technical tutorial that goes into the
    detailed mechanics of how descriptors work.  Most people don't need this
    level of detail.
+
+4) The last section has pure Python equivalents for built-in descriptors that
+   are written in C.  Read this if you're curious about how functions turn
+   into bound methods or about how to implement common tools like
+   :func:`classmethod`, :func:`staticmethod`, and :func:`property`.
 
 
 Primer
@@ -99,7 +104,7 @@ different, updated answers each time::
     3
     >>> os.system('touch games/newfile')    # Add a fourth file to the directory
     0
-    >>> g.size
+    >>> g.size                              # Automatically updated
     4
     >>> s.size                              # The songs directory has twenty files
     20
@@ -197,7 +202,7 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
 
     import logging
 
-    logging.basicConfig(level=logging.INFO, force=True)
+    logging.basicConfig(level=logging.INFO)
 
     class LoggedAccess:
 
@@ -259,7 +264,7 @@ A :term:`descriptor` is what we call any object that defines :meth:`__get__`,
 :meth:`__set__`, or :meth:`__delete__`.
 
 Optionally, descriptors can have a :meth:`__set_name__` method.  This is only
-used in cases where a descriptor needs to know either the class where it is
+used in cases where a descriptor needs to know either the class where it was
 created or the name of class variable it was assigned to.
 
 Descriptors get invoked by the dot operator during attribute lookup.  If a
@@ -318,7 +323,7 @@ managed attribute descriptor::
         def validate(self, value):
             pass
 
-Custom validators need to subclass from :class:`Validator` and supply a
+Custom validators need to inherit from :class:`Validator` and must supply a
 :meth:`validate` method to test various restrictions as needed.
 
 
@@ -334,8 +339,9 @@ Here are three practical data validation utilities:
    minimum or maximum.
 
 3) :class:`String` verifies that a value is a :class:`str`.  Optionally, it
-   validates a given minimum or maximum length.  Optionally, it can test for
-   another predicate as well.
+   validates a given minimum or maximum length.  It can validate a
+   user-defined `predicate
+   <https://en.wikipedia.org/wiki/Predicate_(mathematical_logic)>`_ as well.
 
 ::
 
@@ -398,7 +404,7 @@ Here's how the data validators can be used in a real class::
     class Component:
 
         name = String(minsize=3, maxsize=10, predicate=str.isupper)
-        kind = OneOf('plastic', 'metal')
+        kind = OneOf('wood', 'metal', 'plastic')
         quantity = Number(minvalue=0)
 
         def __init__(self, name, kind, quantity):
@@ -426,9 +432,7 @@ Abstract
 --------
 
 Defines descriptors, summarizes the protocol, and shows how descriptors are
-called.  Examines a custom descriptor and several built-in Python descriptors
-including functions, properties, static methods, and class methods.  Shows how
-each works by giving a pure Python equivalent and a sample application.
+called.  Provides an example showing how object relational mappings work.
 
 Learning about descriptors not only provides access to a larger toolset, it
 creates a deeper understanding of how Python works and an appreciation for the
@@ -519,24 +523,17 @@ The full C implementation can be found in :c:func:`PyObject_GenericGetAttr()` in
 
 It transforms ``A.x`` into ``A.__dict__['x'].__get__(None, A)``.
 
-In pure Python, it looks like this::
-
-    def __getattribute__(cls, key):
-        "Emulate type_getattro() in Objects/typeobject.c"
-        v = object.__getattribute__(cls, key)
-        if hasattr(v, '__get__'):
-            return v.__get__(None, cls)
-        return v
+The full C implementation can be found in :c:func:`type_getattro()` in
+:source:`Objects/typeobject.c`.
 
 **Super**:  The machinery is in the custom :meth:`__getattribute__` method for
 object returned by :class:`super()`.
 
 The attribute lookup ``super(A, obj).m`` searches ``obj.__class__.__mro__`` for
 the base class ``B`` immediately following ``A`` and then returns
-``B.__dict__['m'].__get__(obj, A)``.
-
-If not a descriptor, ``m`` is returned unchanged.  If not in the dictionary,
-``m`` reverts to a search using :meth:`object.__getattribute__`.
+``B.__dict__['m'].__get__(obj, A)``.  If not a descriptor, ``m`` is returned
+unchanged.  If not in the dictionary, ``m`` reverts to a search using
+:meth:`object.__getattribute__`.
 
 The implementation details are in :c:func:`super_getattro()` in
 :source:`Objects/typeobject.c`.  A pure Python equivalent can be found in
@@ -544,9 +541,9 @@ The implementation details are in :c:func:`super_getattro()` in
 
 .. _`Guido's Tutorial`: https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
 
-**Summary**:  The details listed above show that the mechanism for descriptors is
-embedded in the :meth:`__getattribute__()` methods for :class:`object`,
-:class:`type`, and :func:`super`.
+**Summary**: The mechanism for descriptors is embedded in the
+:meth:`__getattribute__()` methods for :class:`object`, :class:`type`, and
+:func:`super`.
 
 The important points to remember are:
 
@@ -586,15 +583,16 @@ place at the time of class creation.  If descriptors are added to the class
 afterwards, :meth:`__set_name__` will need to be called manually.
 
 
-Descriptor Example
-------------------
+ORM Example
+-----------
 
 The following code is simplified skeleton showing how data descriptors could
 be used to implement an `object relational mapping
 <https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping>`_.
 
-The essential idea is that instances only hold keys to a database table.  The
-actual data is stored in an external table that is being dynamically updated::
+The essential idea is that the data is stored in an external database.  The
+Python instances only hold keys to the database's tables.  Descriptors take
+care of lookups or updates::
 
     class Field:
 
@@ -609,8 +607,8 @@ actual data is stored in an external table that is being dynamically updated::
             conn.execute(self.store, [value, obj.key])
             conn.commit()
 
-We can use the :class:`Field` to define "models" that describe the schema for
-each table in a database::
+We can use the :class:`Field` class to define "models" that describe the schema
+for each table in a database::
 
     class Movie:
         table = 'Movies'                    # Table name
@@ -650,10 +648,13 @@ it can be updated::
     >>> Movie('Star Wars').director
     'J.J. Abrams'
 
+Pure Python Equivalents
+^^^^^^^^^^^^^^^^^^^^^^^
+
 The descriptor protocol is simple and offers exciting possibilities.  Several
-use cases are so common that they have been packaged into individual function
-calls.  Properties, bound methods, static methods, and class methods are all
-based on the descriptor protocol.
+use cases are so common that they have been prepackaged into builtin tools.
+Properties, bound methods, static methods, and class methods are all based on
+the descriptor protocol.
 
 
 Properties
@@ -746,7 +747,7 @@ prepended to the other arguments.  By convention, the instance is called
 Methods can be created manually with :class:`types.MethodType` which is
 roughly equivalent to::
 
-    class Method:
+    class MethodType:
         "Emulate Py_MethodType in Objects/classobject.c"
 
         def __init__(self, func, obj):
@@ -770,7 +771,7 @@ during dotted lookup from an instance.  Here's how it works::
             "Simulate func_descr_get() in Objects/funcobject.c"
             if obj is None:
                 return self
-            return types.MethodType(self, obj)
+            return MethodType(self, obj)
 
 Running the following class in the interpreter shows how the function
 descriptor works in practice::
@@ -816,8 +817,8 @@ If you have ever wondered where *self* comes from in regular methods or where
 *cls* comes from in class methods, this is it!
 
 
-Static Methods and Class Methods
---------------------------------
+Static Methods
+--------------
 
 Non-data descriptors provide a simple mechanism for variations on the usual
 patterns of binding functions into methods.
@@ -883,6 +884,10 @@ Using the non-data descriptor protocol, a pure Python version of
         def __get__(self, obj, objtype=None):
             return self.f
 
+
+Class Methods
+-------------
+
 Unlike static methods, class methods prepend the class reference to the
 argument list before calling the function.  This format is the same
 for whether the caller is an object or a class::
@@ -897,12 +902,11 @@ for whether the caller is an object or a class::
     >>> print(F().f(3))
     ('F', 3)
 
-
-This behavior is useful whenever the function only needs to have a class
-reference and does not care about any underlying data.  One use for
-class methods is to create alternate class constructors.  The classmethod
-:func:`dict.fromkeys` creates a new dictionary from a list of keys.  The pure
-Python equivalent is::
+This behavior is useful whenever the method only needs to have a class
+reference and does rely on data stored in a specific instance.  One use for
+class methods is to create alternate class constructors.  For example, the
+classmethod :func:`dict.fromkeys` creates a new dictionary from a list of
+keys.  The pure Python equivalent is::
 
     class Dict:
         ...
@@ -934,7 +938,7 @@ Using the non-data descriptor protocol, a pure Python version of
                 cls = type(obj)
             if hasattr(obj, '__get__'):
                 return self.f.__get__(cls)
-            return types.MethodType(self.f, cls)
+            return MethodType(self.f, cls)
 
 The code path for ``hasattr(obj, '__get__')`` was added in Python 3.9 and
 makes it possible for :func:`classmethod` to support chained decorators.
