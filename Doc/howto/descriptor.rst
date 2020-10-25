@@ -583,8 +583,8 @@ place at the time of class creation.  If descriptors are added to the class
 afterwards, :meth:`__set_name__` will need to be called manually.
 
 
-Descriptor Example
-------------------
+ORM Example
+-----------
 
 The following code is simplified skeleton showing how data descriptors could
 be used to implement an `object relational mapping
