@@ -576,9 +576,8 @@ class FontPage(Frame):
                     frame_indent, textvariable=self.space_num, from_=2, to=16)
         except TclError:
             self.indent_chooser = Combobox(
-                    frame_indent, textvariable=self.space_num, 
+                    frame_indent, textvariable=self.space_num,
                     state="readonly", values=list(range(2,17)))
-            
 
         # Grid and pack widgets:
         self.columnconfigure(1, weight=1)
