@@ -13,7 +13,7 @@ Descriptor HowTo Guide
 :term:`Descriptors <descriptor>` let objects customize attribute lookup,
 storage, and deletion.
 
-This HowTo guide has four major sections:
+This guide has four major sections:
 
 1) The "primer" gives a basic overview, moving gently from simple examples,
    adding one feature at a time.  It is a great place to start.
@@ -26,7 +26,7 @@ This HowTo guide has four major sections:
    level of detail.
 
 4) The last section has pure Python equivalents for builtin descriptors that
-   are written in C.  Read this if you're curious about how how functions turn
+   are written in C.  Read this if you're curious about how functions turn
    into bound methods or about how to implement common tools like
    :func:`classmethod`, :func:`staticmethod`, and :func:`property`.
 
