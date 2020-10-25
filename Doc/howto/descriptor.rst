@@ -442,7 +442,7 @@ In general, a descriptor is an object attribute with "binding behavior", one
 whose attribute access has been overridden by methods in the descriptor
 protocol.  Those methods are :meth:`__get__`, :meth:`__set__`, and
 :meth:`__delete__`.  If any of those methods are defined for an object, it is
-said to be a descriptor.
+said to be a :term:`descriptor`.
 
 The default behavior for attribute access is to get, set, or delete the
 attribute from an object's dictionary.  For instance, ``a.x`` has a lookup chain
@@ -496,24 +496,30 @@ Invoking Descriptors
 A descriptor can be called directly by its method name.  For example,
 ``d.__get__(obj)``.
 
-Alternatively, it is more common for a descriptor to be invoked automatically
-upon attribute access.  For example, ``obj.d`` looks up ``d`` in the dictionary
-of ``obj``.  If ``d`` defines the method :meth:`__get__`, then ``d.__get__(obj)``
+But it is more common for a descriptor to be invoked automatically from
+attribute access.  The expression ``obj.d`` looks up ``d`` in the dictionary of
+``obj``.  If ``d`` defines the method :meth:`__get__`, then ``d.__get__(obj)``
 is invoked according to the precedence rules listed below.
 
-The details of invocation depend on whether ``obj`` is an object or a class.
+The details of invocation depend on whether ``obj`` is an object, class, or
+instance of super.
 
-For objects, the machinery is in :meth:`object.__getattribute__` which
-transforms ``b.x`` into ``type(b).__dict__['x'].__get__(b, type(b))``.  The
-implementation works through a precedence chain that gives data descriptors
+**Objects**:  The machinery is in :meth:`object.__getattribute__`.
+
+It transforms ``b.x`` into ``type(b).__dict__['x'].__get__(b, type(b))``.
+
+The implementation works through a precedence chain that gives data descriptors
 priority over instance variables, instance variables priority over non-data
 descriptors, and assigns lowest priority to :meth:`__getattr__` if provided.
+
 The full C implementation can be found in :c:func:`PyObject_GenericGetAttr()` in
 :source:`Objects/object.c`.
 
-For classes, the machinery is in :meth:`type.__getattribute__` which transforms
-``B.x`` into ``B.__dict__['x'].__get__(None, B)``.  In pure Python, it looks
-like::
+**Classes**:  The machinery is in :meth:`type.__getattribute__`.
+
+It transforms ``A.x`` into ``A.__dict__['x'].__get__(None, A)``.
+
+In pure Python, it looks like this::
 
     def __getattribute__(cls, key):
         "Emulate type_getattro() in Objects/typeobject.c"
@@ -522,34 +528,44 @@ like::
             return v.__get__(None, cls)
         return v
 
-The important points to remember are:
+**Super**:  The machinery is in the custom :meth:`__getattribute__` method for
+object returned by :class:`super()`.
 
-* descriptors are invoked by the :meth:`__getattribute__` method
-* overriding :meth:`__getattribute__` prevents automatic descriptor calls
-* :meth:`object.__getattribute__` and :meth:`type.__getattribute__` make
-  different calls to :meth:`__get__`.
-* data descriptors always override instance dictionaries.
-* non-data descriptors may be overridden by instance dictionaries.
+The attribute lookup ``super(A, obj).m`` searches ``obj.__class__.__mro__`` for
+the base class ``B`` immediately following ``A`` and then returns
+``B.__dict__['m'].__get__(obj, A)``.
 
-The object returned by ``super()`` also has a custom :meth:`__getattribute__`
-method for invoking descriptors.  The attribute lookup ``super(B, obj).m`` searches
-``obj.__class__.__mro__`` for the base class ``A`` immediately following ``B``
-and then returns ``A.__dict__['m'].__get__(obj, B)``.  If not a descriptor,
-``m`` is returned unchanged.  If not in the dictionary, ``m`` reverts to a
-search using :meth:`object.__getattribute__`.
+If not a descriptor, ``m`` is returned unchanged.  If not in the dictionary,
+``m`` reverts to a search using :meth:`object.__getattribute__`.
 
 The implementation details are in :c:func:`super_getattro()` in
-:source:`Objects/typeobject.c`.  and a pure Python equivalent can be found in
+:source:`Objects/typeobject.c`.  A pure Python equivalent can be found in
 `Guido's Tutorial`_.
 
 .. _`Guido's Tutorial`: https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
 
-The details above show that the mechanism for descriptors is embedded in the
-:meth:`__getattribute__()` methods for :class:`object`, :class:`type`, and
-:func:`super`.  Classes inherit this machinery when they derive from
-:class:`object` or if they have a metaclass providing similar functionality.
-Likewise, classes can turn-off descriptor invocation by overriding
-:meth:`__getattribute__()`.
+**Summary**:  The details listed above show that the mechanism for descriptors is
+embedded in the :meth:`__getattribute__()` methods for :class:`object`,
+:class:`type`, and :func:`super`.
+
+The important points to remember are:
+
+* Descriptors are invoked by the :meth:`__getattribute__` method.
+
+* Classes inherit this machinery from :class:`object`, :class:`type`, or
+  :func:`super`.
+
+* Overriding :meth:`__getattribute__` prevents automatic descriptor calls
+  because all the descriptor logic is in that method.
+
+* :meth:`object.__getattribute__` and :meth:`type.__getattribute__` make
+  different calls to :meth:`__get__`.  The first includes the instance and may
+  include the class.  The second puts in ``None`` for the instance and always
+  includes the class.
+
+* Data descriptors always override instance dictionaries.
+
+* Non-data descriptors may be overridden by instance dictionaries.
 
 
 Automatic Name Notification
