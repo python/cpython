@@ -1,0 +1,3 @@
+In ``importlib.resources``, ``.path`` method is more aggressive about
+releasing handles to zipfile objects early, enabling use-cases like certifi
+to leave the context open but delete the underlying zip file.
