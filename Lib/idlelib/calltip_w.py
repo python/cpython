@@ -48,7 +48,7 @@ class CalltipWindow(TooltipBase):
         return box[0] + 2, box[1] + box[3]
 
     def position_window(self):
-        """Reposition the window if needed."""
+        "Reposition the window if needed."
         curline = int(self.anchor_widget.index("insert").split('.')[0])
         if curline == self.lastline:
             return
