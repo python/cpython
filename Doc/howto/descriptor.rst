@@ -722,17 +722,30 @@ Functions and Methods
 Python's object oriented features are built upon a function based environment.
 Using non-data descriptors, the two are merged seamlessly.
 
-Class dictionaries store methods as functions.  In a class definition, methods
-are written using :keyword:`def` or :keyword:`lambda`, the usual tools for
-creating functions.  Methods only differ from regular functions in that the
-first argument is reserved for the object instance.  By Python convention, the
-instance reference is called *self* but may be called *this* or any other
-variable name.
+Functions stored in class dictionaries get turned into methods when invoked.
+Methods only differ from regular functions in that the object instance is
+prepended to the other arguments.  By convention, the instance is called
+*self* but could be called *this* or any other variable name.
 
-To support method calls, functions include the :meth:`__get__` method for
-binding methods during attribute access.  This means that all functions are
-non-data descriptors which return bound methods when they are invoked from an
-object.  In pure Python, it works like this::
+Methods can be created manually with :class:`types.MethodType` which is
+roughly equivalent to::
+
+    class Method:
+        "Emulate Py_MethodType in Objects/classobject.c"
+
+        def __init__(self, func, obj):
+            self.__func__ = func
+            self.__self__ = obj
+
+        def __call__(self, *args, **kwargs):
+            func = self.__func__
+            obj = self.__self__
+            return func(obj, *args, **kwargs)
+
+To support automatic creation of methods, functions include the
+:meth:`__get__` method for binding methods during attribute access.  This
+means that functions are non-data descriptors which return bound methods
+during dotted lookup from an instance.  Here's how it works::
 
     class Function:
         ...
@@ -743,15 +756,20 @@ object.  In pure Python, it works like this::
                 return self
             return types.MethodType(self, obj)
 
-Running the following in class in the interpreter shows how the function
+Running the following class in the interpreter shows how the function
 descriptor works in practice::
 
     class D:
         def f(self, x):
              return x
 
-Access through the class dictionary does not invoke :meth:`__get__`.  Instead,
-it just returns the underlying function object::
+The function has a :term:`qualified name` attribute to support introspection::
+
+    >>> D.f.__qualname__
+    'D.f'
+
+Accessing the function through the class dictionary does not invoke
+:meth:`__get__`.  Instead, it just returns the underlying function object::
 
     >>> D.__dict__['f']
     <function D.f at 0x00C45070>
@@ -762,13 +780,8 @@ underlying function unchanged::
     >>> D.f
     <function D.f at 0x00C45070>
 
-The function has a :term:`qualified name` attribute to support introspection::
-
-    >>> D.f.__qualname__
-    'D.f'
-
-Dotted access from an instance calls :meth:`__get__` which returns a bound
-method object::
+The interesting behavior occurs during dotted access from an instance.  The
+dotted lookup calls :meth:`__get__` which returns a bound method object::
 
     >>> d = D()
     >>> d.f
@@ -779,23 +792,9 @@ instance::
 
     >>> d.f.__func__
     <function D.f at 0x1012e5ae8>
+
     >>> d.f.__self__
     <__main__.D object at 0x1012e1f98>
-
-Bound methods are instances of :class:`types.MethodType`.  The implementation
-is roughly equivalent to::
-
-    class Method:
-        "Emulate MethodType in Objects/classobject.c"
-        # Prepend an object to arguments for a function call.
-        # This is used for both bound methods and class methods.
-
-        def __init__(self, func, obj):
-            self.func = func
-            self.obj = obj
-
-        def __call__(self, *args, **kwargs):
-            return self.func(self.obj, *args, **kwargs)
 
 If you have ever wondered where *self* comes from in regular methods or where
 *cls* comes from in class methods, this is it!
