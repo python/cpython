@@ -1448,7 +1448,7 @@ _PyDict_GetItemHint(PyDictObject *mp, PyObject *key,
     assert(PyDict_CheckExact((PyObject*)mp));
     assert(PyUnicode_CheckExact(key));
 
-    if (hint >= 0 && hint < _PyDict_KeysSize(mp->ma_keys)) {
+    if (hint >= 0 && hint < mp->ma_keys->dk_nentries) {
         PyObject *res = NULL;
 
         PyDictKeyEntry *ep = DK_ENTRIES(mp->ma_keys) + (size_t)hint;
