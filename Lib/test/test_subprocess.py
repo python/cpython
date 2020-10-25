@@ -1895,6 +1895,10 @@ class POSIXProcessTestCase(BaseTestCase):
         with self.assertRaises(ValueError):
             subprocess.check_call(ZERO_RETURN_CMD, user=-1)
 
+        with self.assertRaises(OverflowError):
+            subprocess.check_call(ZERO_RETURN_CMD,
+                                  cwd=os.curdir, env=os.environ, user=2**64)
+
         if pwd is None and name_uid is not None:
             with self.assertRaises(ValueError):
                 subprocess.check_call(ZERO_RETURN_CMD, user=name_uid)
