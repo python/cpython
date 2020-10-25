@@ -79,7 +79,8 @@ def expectedFailureIfStdinIsTTY(fun):
     return fun
 
 def expectedFailureOnBSD(fun):
-    if platform.system().endswith("BSD"):
+    PLATFORM = platform.system()
+    if PLATFORM.endswith("BSD") or PLATFORM == "Darwin":
         return unittest.expectedFailure(fun)
     return fun
 
@@ -209,9 +210,9 @@ class PtyTest(unittest.TestCase):
         os.close(master_fd)
 
         if winsz:
-                winsz = struct.pack("HHHH", current_stdin_winsz.lines,
-                                    current_stdin_winsz.columns, 0, 0)
-                fcntl.ioctl(pty.STDIN_FILENO, TIOCSWINSZ, winsz)
+            winsz = struct.pack("HHHH", current_stdin_winsz.lines,
+                                current_stdin_winsz.columns, 0, 0)
+            fcntl.ioctl(pty.STDIN_FILENO, TIOCSWINSZ, winsz)
 
         # pty.openpty() passed.
 
