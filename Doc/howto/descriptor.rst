@@ -104,7 +104,7 @@ different, updated answers each time::
     3
     >>> os.system('touch games/newfile')    # Add a fourth file to the directory
     0
-    >>> g.size
+    >>> g.size                              # Automatically updated
     4
     >>> s.size                              # The songs directory has twenty files
     20
@@ -264,7 +264,7 @@ A :term:`descriptor` is what we call any object that defines :meth:`__get__`,
 :meth:`__set__`, or :meth:`__delete__`.
 
 Optionally, descriptors can have a :meth:`__set_name__` method.  This is only
-used in cases where a descriptor needs to know either the class where it is
+used in cases where a descriptor needs to know either the class where it was
 created or the name of class variable it was assigned to.
 
 Descriptors get invoked by the dot operator during attribute lookup.  If a
@@ -323,7 +323,7 @@ managed attribute descriptor::
         def validate(self, value):
             pass
 
-Custom validators need to subclass from :class:`Validator` and supply a
+Custom validators need to inherit from :class:`Validator` and must supply a
 :meth:`validate` method to test various restrictions as needed.
 
 
@@ -339,8 +339,9 @@ Here are three practical data validation utilities:
    minimum or maximum.
 
 3) :class:`String` verifies that a value is a :class:`str`.  Optionally, it
-   validates a given minimum or maximum length.  Optionally, it can test for
-   another predicate as well.
+   validates a given minimum or maximum length.  It can validate a
+   user-defined `predicate
+   <https://en.wikipedia.org/wiki/Predicate_(mathematical_logic)>`_ as well.
 
 ::
 
@@ -403,7 +404,7 @@ Here's how the data validators can be used in a real class::
     class Component:
 
         name = String(minsize=3, maxsize=10, predicate=str.isupper)
-        kind = OneOf('plastic', 'metal')
+        kind = OneOf('wood', 'metal', 'plastic')
         quantity = Number(minvalue=0)
 
         def __init__(self, name, kind, quantity):
@@ -431,9 +432,7 @@ Abstract
 --------
 
 Defines descriptors, summarizes the protocol, and shows how descriptors are
-called.  Examines a custom descriptor and several built-in Python descriptors
-including functions, properties, static methods, and class methods.  Shows how
-each works by giving a pure Python equivalent and a sample application.
+called.  Provides an example showing how object relational mappings work.
 
 Learning about descriptors not only provides access to a larger toolset, it
 creates a deeper understanding of how Python works and an appreciation for the
@@ -542,9 +541,9 @@ The implementation details are in :c:func:`super_getattro()` in
 
 .. _`Guido's Tutorial`: https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
 
-**Summary**:  The details listed above show that the mechanism for descriptors is
-embedded in the :meth:`__getattribute__()` methods for :class:`object`,
-:class:`type`, and :func:`super`.
+**Summary**: The mechanism for descriptors is embedded in the
+:meth:`__getattribute__()` methods for :class:`object`, :class:`type`, and
+:func:`super`.
 
 The important points to remember are:
 
@@ -591,8 +590,8 @@ The following code is simplified skeleton showing how data descriptors could
 be used to implement an `object relational mapping
 <https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping>`_.
 
-The essential idea is that instances only hold keys to a database table.  The
-actual data is stored in an external table that is being dynamically updated::
+The essential idea is that instances only store keys to a table in a database.
+The rest of the data is stored in the external table::
 
     class Field:
 
@@ -817,8 +816,8 @@ If you have ever wondered where *self* comes from in regular methods or where
 *cls* comes from in class methods, this is it!
 
 
-Static Methods and Class Methods
---------------------------------
+Static Methods
+--------------
 
 Non-data descriptors provide a simple mechanism for variations on the usual
 patterns of binding functions into methods.
@@ -884,6 +883,10 @@ Using the non-data descriptor protocol, a pure Python version of
         def __get__(self, obj, objtype=None):
             return self.f
 
+
+Class Methods
+-------------
+
 Unlike static methods, class methods prepend the class reference to the
 argument list before calling the function.  This format is the same
 for whether the caller is an object or a class::
@@ -898,12 +901,11 @@ for whether the caller is an object or a class::
     >>> print(F().f(3))
     ('F', 3)
 
-
-This behavior is useful whenever the function only needs to have a class
-reference and does not care about any underlying data.  One use for
-class methods is to create alternate class constructors.  The classmethod
-:func:`dict.fromkeys` creates a new dictionary from a list of keys.  The pure
-Python equivalent is::
+This behavior is useful whenever the method only needs to have a class
+reference and does rely on data stored in a specific instance.  One use for
+class methods is to create alternate class constructors.  For example, the
+classmethod :func:`dict.fromkeys` creates a new dictionary from a list of
+keys.  The pure Python equivalent is::
 
     class Dict:
         ...
