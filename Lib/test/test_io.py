@@ -2520,7 +2520,8 @@ class StatefulIncrementalDecoder(codecs.IncrementalDecoder):
     codecEnabled = False
 
 
-# bpo-41919: Split from StatefulIncrementalDecoder to avoid resource leak.
+# bpo-41919: This method is separated from StatefulIncrementalDecoder to avoid a resource leak
+# when registering codecs and cleanup functions.
 def lookupTestDecoder(name):
     if StatefulIncrementalDecoder.codecEnabled and name == 'test_decoder':
         latin1 = codecs.lookup('latin-1')
