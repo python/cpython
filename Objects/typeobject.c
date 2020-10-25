@@ -57,8 +57,8 @@ static unsigned int next_version_tag = 0;
 
 typedef struct PySlot_Offset {
     int slot;
-    short offset;
-    short parent_offset;
+    short subslot_offset;
+    short slot_offset;
 } PySlot_Offset;
 
 #define MCACHE_STATS 0
@@ -2883,287 +2883,9 @@ error:
     return NULL;
 }
 
-static const short slotoffsets[] = {
-    -1, /* invalid slot */
-#include "typeslots.inc"
-};
-
 static const PySlot_Offset pyslot_offsets[] = {
-    {Py_bf_getbuffer, offsetof(PyBufferProcs, bf_getbuffer),
-     offsetof(PyHeapTypeObject, as_buffer)},
-    {Py_bf_releasebuffer, offsetof(PyBufferProcs, bf_releasebuffer),
-     offsetof(PyHeapTypeObject, as_buffer)},
-    {Py_mp_ass_subscript, offsetof(PyMappingMethods, mp_ass_subscript),
-     offsetof(PyHeapTypeObject, as_mapping)},
-    {Py_mp_length, offsetof(PyMappingMethods, mp_length),
-     offsetof(PyHeapTypeObject, as_mapping)},
-    {Py_mp_subscript, offsetof(PyMappingMethods, mp_subscript),
-     offsetof(PyHeapTypeObject, as_mapping)},
-    {Py_nb_absolute, offsetof(PyNumberMethods, nb_absolute),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_add, offsetof(PyNumberMethods, nb_add),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_and, offsetof(PyNumberMethods, nb_and),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_bool, offsetof(PyNumberMethods, nb_bool),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_divmod, offsetof(PyNumberMethods, nb_divmod),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_float, offsetof(PyNumberMethods, nb_float),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_floor_divide, offsetof(PyNumberMethods, nb_floor_divide),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_index, offsetof(PyNumberMethods, nb_index),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_inplace_add, offsetof(PyNumberMethods, nb_inplace_add),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_inplace_and, offsetof(PyNumberMethods, nb_inplace_and),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_inplace_floor_divide,
-     offsetof(PyNumberMethods, nb_inplace_floor_divide),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_inplace_lshift, offsetof(PyNumberMethods, nb_inplace_lshift),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_inplace_multiply, offsetof(PyNumberMethods, nb_inplace_multiply),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_inplace_or, offsetof(PyNumberMethods, nb_inplace_or),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_inplace_power, offsetof(PyNumberMethods, nb_inplace_power),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_inplace_remainder, offsetof(PyNumberMethods, nb_inplace_remainder),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_inplace_rshift, offsetof(PyNumberMethods, nb_inplace_rshift),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_inplace_subtract, offsetof(PyNumberMethods, nb_inplace_subtract),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_inplace_true_divide,
-     offsetof(PyNumberMethods, nb_inplace_true_divide),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_inplace_xor, offsetof(PyNumberMethods, nb_inplace_xor),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_int, offsetof(PyNumberMethods, nb_int),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_invert, offsetof(PyNumberMethods, nb_invert),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_lshift, offsetof(PyNumberMethods, nb_lshift),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_multiply, offsetof(PyNumberMethods, nb_multiply),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_negative, offsetof(PyNumberMethods, nb_negative),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_or, offsetof(PyNumberMethods, nb_or),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_positive, offsetof(PyNumberMethods, nb_positive),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_power, offsetof(PyNumberMethods, nb_power),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_remainder, offsetof(PyNumberMethods, nb_remainder),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_rshift, offsetof(PyNumberMethods, nb_rshift),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_subtract, offsetof(PyNumberMethods, nb_subtract),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_true_divide, offsetof(PyNumberMethods, nb_true_divide),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_xor, offsetof(PyNumberMethods, nb_xor),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_sq_ass_item, offsetof(PySequenceMethods, sq_ass_item),
-     offsetof(PyHeapTypeObject, as_sequence)},
-    {Py_sq_concat, offsetof(PySequenceMethods, sq_concat),
-     offsetof(PyHeapTypeObject, as_sequence)},
-    {Py_sq_contains, offsetof(PySequenceMethods, sq_contains),
-     offsetof(PyHeapTypeObject, as_sequence)},
-    {Py_sq_inplace_concat, offsetof(PySequenceMethods, sq_inplace_concat),
-     offsetof(PyHeapTypeObject, as_sequence)},
-    {Py_sq_inplace_repeat, offsetof(PySequenceMethods, sq_inplace_repeat),
-     offsetof(PyHeapTypeObject, as_sequence)},
-    {Py_sq_item, offsetof(PySequenceMethods, sq_item),
-     offsetof(PyHeapTypeObject, as_sequence)},
-    {Py_sq_length, offsetof(PySequenceMethods, sq_length),
-     offsetof(PyHeapTypeObject, as_sequence)},
-    {Py_sq_repeat, offsetof(PySequenceMethods, sq_repeat),
-     offsetof(PyHeapTypeObject, as_sequence)},
-    {Py_tp_alloc, offsetof(PyTypeObject, tp_alloc),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_base, offsetof(PyTypeObject, tp_base),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_bases, offsetof(PyTypeObject, tp_bases),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_call, offsetof(PyTypeObject, tp_call),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_clear, offsetof(PyTypeObject, tp_clear),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_dealloc, offsetof(PyTypeObject, tp_dealloc),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_del, offsetof(PyTypeObject, tp_del),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_descr_get, offsetof(PyTypeObject, tp_descr_get),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_descr_set, offsetof(PyTypeObject, tp_descr_set),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_doc, offsetof(PyTypeObject, tp_doc),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_getattr, offsetof(PyTypeObject, tp_getattr),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_getattro, offsetof(PyTypeObject, tp_getattro),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_hash, offsetof(PyTypeObject, tp_hash),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_init, offsetof(PyTypeObject, tp_init),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_is_gc, offsetof(PyTypeObject, tp_is_gc),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_iter, offsetof(PyTypeObject, tp_iter),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_iternext, offsetof(PyTypeObject, tp_iternext),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_methods, offsetof(PyTypeObject, tp_methods),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_new, offsetof(PyTypeObject, tp_new),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_repr, offsetof(PyTypeObject, tp_repr),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_richcompare, offsetof(PyTypeObject, tp_richcompare),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_setattr, offsetof(PyTypeObject, tp_setattr),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_setattro, offsetof(PyTypeObject, tp_setattro),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_str, offsetof(PyTypeObject, tp_str),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_traverse, offsetof(PyTypeObject, tp_traverse),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_members, offsetof(PyTypeObject, tp_members),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_getset, offsetof(PyTypeObject, tp_getset),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_free, offsetof(PyTypeObject, tp_free),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_nb_matrix_multiply, offsetof(PyNumberMethods, nb_matrix_multiply),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_nb_inplace_matrix_multiply,
-     offsetof(PyNumberMethods, nb_inplace_matrix_multiply),
-     offsetof(PyHeapTypeObject, as_number)},
-    {Py_am_await, offsetof(PyAsyncMethods, am_await),
-     offsetof(PyHeapTypeObject, as_async)},
-    {Py_am_aiter, offsetof(PyAsyncMethods, am_aiter),
-     offsetof(PyHeapTypeObject, as_async)},
-    {Py_am_anext, offsetof(PyAsyncMethods, am_anext),
-     offsetof(PyHeapTypeObject, as_async)},
-    {Py_tp_finalize, offsetof(PyTypeObject, tp_finalize),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_name, offsetof(PyTypeObject, tp_name),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_basicsize, offsetof(PyTypeObject, tp_basicsize),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_itemsize, offsetof(PyTypeObject, tp_itemsize),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_vectorcall_offset, offsetof(PyTypeObject, tp_vectorcall_offset),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_flags, offsetof(PyTypeObject, tp_flags),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_weaklistoffset, offsetof(PyTypeObject, tp_weaklistoffset),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_dict, offsetof(PyTypeObject, tp_dict),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_dictoffset, offsetof(PyTypeObject, tp_dictoffset),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_mro, offsetof(PyTypeObject, tp_mro),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_cache, offsetof(PyTypeObject, tp_cache),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_subclasses, offsetof(PyTypeObject, tp_subclasses),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_weaklist, offsetof(PyTypeObject, tp_weaklist),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_add, offsetof(PyNumberMethods, nb_add),
-     offsetof(PyTypeObject, tp_as_number)},
-    {Py_tp_nb_subtract, offsetof(PyNumberMethods, nb_subtract),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_multiply, offsetof(PyNumberMethods, nb_multiply),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_remainder, offsetof(PyNumberMethods, nb_remainder),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_divmod, offsetof(PyNumberMethods, nb_divmod),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_power, offsetof(PyNumberMethods, nb_power),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_negative, offsetof(PyNumberMethods, nb_negative),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_positive, offsetof(PyNumberMethods, nb_positive),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_absolute, offsetof(PyNumberMethods, nb_absolute),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_bool, offsetof(PyNumberMethods, nb_bool),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_invert, offsetof(PyNumberMethods, nb_invert),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_lshift, offsetof(PyNumberMethods, nb_lshift),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_rshift, offsetof(PyNumberMethods, nb_rshift),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_and, offsetof(PyNumberMethods, nb_and),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_xor, offsetof(PyNumberMethods, nb_xor),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_or, offsetof(PyNumberMethods, nb_or),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_int, offsetof(PyNumberMethods, nb_int),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_reserved, offsetof(PyNumberMethods, nb_reserved),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_float, offsetof(PyNumberMethods, nb_float),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_inplace_add, offsetof(PyNumberMethods, nb_inplace_add),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_inplace_subtract,
-     offsetof(PyNumberMethods, nb_inplace_subtract),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_inplace_multiply,
-     offsetof(PyNumberMethods, nb_inplace_multiply),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_inplace_remainder,
-     offsetof(PyNumberMethods, nb_inplace_remainder),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_inplace_power,
-     offsetof(PyNumberMethods, nb_inplace_power),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_inplace_lshift,
-     offsetof(PyNumberMethods, nb_inplace_lshift),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_inplace_rshift,
-     offsetof(PyNumberMethods, nb_inplace_rshift),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_inplace_and,
-     offsetof(PyNumberMethods, nb_inplace_and),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_inplace_xor,
-     offsetof(PyNumberMethods, nb_inplace_xor),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_inplace_or,
-     offsetof(PyNumberMethods, nb_inplace_or),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_floor_divide,
-     offsetof(PyNumberMethods, nb_floor_divide),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_true_divide,
-     offsetof(PyNumberMethods, nb_true_divide),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_inplace_floor_divide,
-     offsetof(PyNumberMethods, nb_inplace_floor_divide),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_inplace_true_divide,
-     offsetof(PyNumberMethods, nb_inplace_true_divide),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_index, offsetof(PyNumberMethods, nb_index),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_matrix_multiply,
-     offsetof(PyNumberMethods, nb_matrix_multiply),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {Py_tp_nb_inplace_matrix_multiply,
-     offsetof(PyNumberMethods, nb_inplace_matrix_multiply),
-     offsetof(PyHeapTypeObject, ht_type)},
-    {0, 0, 0} /* sentinel */
+    {0, 0, 0},
+#include "typeslots.inc"
 };
 
 PyObject *
@@ -3182,6 +2904,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     const PyType_Slot *slot;
     Py_ssize_t nmembers, weaklistoffset, dictoffset, vectorcalloffset;
     char *res_start;
+    short slot_offset, subslot_offset;
 
     nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
@@ -3291,7 +3014,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 
     for (slot = spec->slots; slot->slot; slot++) {
         if (slot->slot < 0
-            || (size_t)slot->slot >= Py_ARRAY_LENGTH(slotoffsets)) {
+            || (size_t)slot->slot >= Py_ARRAY_LENGTH(pyslot_offsets)) {
             PyErr_SetString(PyExc_RuntimeError, "invalid slot offset");
             goto fail;
         }
@@ -3320,7 +3043,14 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         }
         else {
             /* Copy other slots directly */
-            *(void**)(res_start + slotoffsets[slot->slot]) = slot->pfunc;
+            slot_offset = pyslot_offsets[slot->slot].slot_offset;
+            void *parent_slot = *(void**)((char*)res_start + slot_offset);
+            if (parent_slot == NULL) {
+                *(void**)((char*)res_start + slot_offset) = slot->pfunc;
+            } else {
+                subslot_offset = pyslot_offsets[slot->slot].subslot_offset;
+                *(void**)((char*)parent_slot + subslot_offset) = slot->pfunc;
+            }
         }
     }
     if (type->tp_dealloc == NULL) {
@@ -3403,22 +3133,27 @@ PyType_FromSpec(PyType_Spec *spec)
 void *
 PyType_GetSlot(PyTypeObject *type, int slot)
 {
-    const PySlot_Offset *cur_offset;
     void *parent_slot;
+    int slots_len = Py_ARRAY_LENGTH(pyslot_offsets);
 
-    if (slot < 0) {
+    if (slot < 0 || slot >= slots_len) {
         PyErr_BadInternalCall();
         return NULL;
     }
 
-    for (cur_offset = pyslot_offsets; cur_offset->slot; cur_offset++) {
-        if (cur_offset->slot == slot) {
-            parent_slot = *(void**)((char*)type + cur_offset->parent_offset);
-            if (parent_slot == NULL) {
-                return NULL;
-            }
-            return *(void**)((char*)parent_slot + cur_offset->offset);
+    for (int i = 1; i < slots_len; i++) {
+        if (pyslot_offsets[i].slot != slot) {
+            continue;
         }
+        parent_slot = *(void**)((char*)type + pyslot_offsets[i].slot_offset);
+        if (parent_slot == NULL) {
+            return NULL;
+        }
+        /* Return slot directly if there have no sub slot. */
+        if (pyslot_offsets[i].subslot_offset == -1) {
+            return parent_slot;
+        }
+        return *(void**)((char*)parent_slot + pyslot_offsets[i].subslot_offset);
     }
     return NULL;
 }
