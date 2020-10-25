@@ -319,6 +319,13 @@ be found in any statistics text.
    deviation.  This is slightly faster than the :func:`normalvariate` function
    defined below.
 
+   Multithreading note:  When two threads call this function
+   simultaneously, it is possible that they will receive the
+   same return value.  This can be avoided in three ways.
+   1) Have each thread use a different instance of the random
+   number generator. 2) Put locks around all calls. 3) Use the
+   slower, but thread-safe :func:`normalvariate` function instead.
+
 
 .. function:: lognormvariate(mu, sigma)
 
