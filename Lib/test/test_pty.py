@@ -69,6 +69,15 @@ def _readline(fd):
     reader = io.FileIO(fd, mode='rb', closefd=False)
     return reader.readline()
 
+def expectedFailureIfStdinIsTTY(fun):
+    # avoid isatty() for now
+    try:
+        tty.tcgetattr(pty.STDIN_FILENO)
+        return unittest.expectedFailure(fun)
+    except tty.error:
+        pass
+    return fun
+
 def expectedFailureOnBSD(fun):
     if platform.system().endswith("BSD"):
         return unittest.expectedFailure(fun)
@@ -103,7 +112,7 @@ class PtyTest(unittest.TestCase):
         # signal: just ignore the signal.
         pass
 
-    @unittest.expectedFailure
+    @expectedFailureIfStdinIsTTY
     def test_openpty(self):
         try:
             mode = tty.tcgetattr(pty.STDIN_FILENO)
