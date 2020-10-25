@@ -114,21 +114,4 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-
-PyDoc_STRVAR(_random_Random___reduce____doc__,
-"__reduce__($self, /)\n"
-"--\n"
-"\n");
-
-#define _RANDOM_RANDOM___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)_random_Random___reduce__, METH_NOARGS, _random_Random___reduce____doc__},
-
-static PyObject *
-_random_Random___reduce___impl(RandomObject *self);
-
-static PyObject *
-_random_Random___reduce__(RandomObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return _random_Random___reduce___impl(self);
-}
-/*[clinic end generated code: output=d8a99be3f1192219 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a7feb0c9c8d1b627 input=a9049054013a1b77]*/
