@@ -680,7 +680,7 @@ Here are the exact rules used:
 Cached bytecode invalidation
 ----------------------------
 
-Before Python loads cached bytecode from ``.pyc`` file, it checks whether the
+Before Python loads cached bytecode from a ``.pyc`` file, it checks whether the
 cache is up-to-date with the source ``.py`` file. By default, Python does this
 by storing the source's last-modified timestamp and size in the cache file when
 writing it. At runtime, the import system then validates the cache file by
@@ -857,9 +857,8 @@ module.  ``find_spec()`` returns a fully populated spec for the module.
 This spec will always have "loader" set (with one exception).
 
 To indicate to the import machinery that the spec represents a namespace
-:term:`portion`, the path entry finder sets "loader" on the spec to
-``None`` and "submodule_search_locations" to a list containing the
-portion.
+:term:`portion`, the path entry finder sets "submodule_search_locations" to
+a list containing the portion.
 
 .. versionchanged:: 3.4
    :meth:`~importlib.abc.PathEntryFinder.find_spec` replaced
@@ -875,18 +874,7 @@ portion.
    :meth:`~importlib.abc.PathEntryFinder.find_loader` takes one argument, the
    fully qualified name of the module being imported.  ``find_loader()``
    returns a 2-tuple where the first item is the loader and the second item
-   is a namespace :term:`portion`.  When the first item (i.e. the loader) is
-   ``None``, this means that while the path entry finder does not have a
-   loader for the named module, it knows that the path entry contributes to
-   a namespace portion for the named module.  This will almost always be the
-   case where Python is asked to import a namespace package that has no
-   physical presence on the file system.  When a path entry finder returns
-   ``None`` for the loader, the second item of the 2-tuple return value must
-   be a sequence, although it can be empty.
-
-   If ``find_loader()`` returns a non-``None`` loader value, the portion is
-   ignored and the loader is returned from the path based finder, terminating
-   the search through the path entries.
+   is a namespace :term:`portion`.
 
    For backwards compatibility with other implementations of the import
    protocol, many path entry finders also support the same,

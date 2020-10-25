@@ -57,3 +57,13 @@ Doc/library/token-list.inc  linguist-generated=true
 Include/token.h             linguist-generated=true
 Lib/token.py                linguist-generated=true
 Parser/token.c              linguist-generated=true
+
+# Language aware diff headers
+# https://tekin.co.uk/2020/10/better-git-diff-output-for-ruby-python-elixir-and-more
+# https://gist.github.com/tekin/12500956bd56784728e490d8cef9cb81
+*.c     diff=cpp
+*.h     diff=cpp
+*.css   diff=css
+*.html  diff=html
+*.py    diff=python
+*.md    diff=markdown

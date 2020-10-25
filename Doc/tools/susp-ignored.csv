@@ -12,7 +12,6 @@ extending/extending,,:myfunction,"PyArg_ParseTuple(args, ""D:myfunction"", &c);"
 extending/extending,,:set,"if (PyArg_ParseTuple(args, ""O:set_callback"", &temp)) {"
 extending/newtypes,,:call,"if (!PyArg_ParseTuple(args, ""sss:call"", &arg1, &arg2, &arg3)) {"
 faq/programming,,:chr,">=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr("
-faq/programming,,::,for x in sequence[::-1]:
 faq/programming,,:reduce,"print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,"
 faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
 faq/windows,,:d48eceb,"Python 3.6.4 (v3.6.4:d48eceb, Dec 19 2017, 06:04:45) [MSC v.1900 32 bit (Intel)] on win32"
@@ -24,6 +23,9 @@ howto/curses,,:blue,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white. 
 howto/curses,,:magenta,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
 howto/curses,,:cyan,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
 howto/curses,,:white,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
+howto/descriptor,,:root,"INFO:root"
+howto/descriptor,,:Updating,"root:Updating"
+howto/descriptor,,:Accessing,"root:Accessing"
 howto/instrumentation,,::,python$target:::function-entry
 howto/instrumentation,,:function,python$target:::function-entry
 howto/instrumentation,,::,python$target:::function-return
@@ -111,8 +113,6 @@ howto/urllib2,,:password,"""joe:password@example.com"""
 library/ast,,:upper,lower:upper
 library/ast,,:step,lower:upper:step
 library/audioop,,:ipos,"# factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],"
-library/bisect,32,:hi,all(val >= x for val in a[i:hi])
-library/bisect,42,:hi,all(val > x for val in a[i:hi])
 library/configparser,,:home,my_dir: ${Common:home_dir}/twosheds
 library/configparser,,:option,${section:option}
 library/configparser,,:path,python_dir: ${Frameworks:path}/Python/Versions/${Frameworks:Python}

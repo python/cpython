@@ -3710,8 +3710,8 @@ written in Python, such as a mail server's external command delivery program.
    The positional-only arguments *path*, *args*, and *env* are similar to
    :func:`execve`.
 
-   The *path* parameter is the path to the executable file.The *path* should
-   contain a directory.Use :func:`posix_spawnp` to pass an executable file
+   The *path* parameter is the path to the executable file.  The *path* should
+   contain a directory.  Use :func:`posix_spawnp` to pass an executable file
    without directory.
 
    The *file_actions* argument may be a sequence of tuples describing actions
