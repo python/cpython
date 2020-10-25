@@ -29,8 +29,8 @@ This HowTo guide has three major sections:
 Primer
 ^^^^^^
 
-In this primer, we start with most basic possible example and then we'll add
-new capabilities one by one.
+In this primer, we start with the most basic possible example and then we'll
+add new capabilities one by one.
 
 
 Simple example: A descriptor that returns a constant
@@ -197,7 +197,7 @@ be recorded, giving each descriptor its own *public_name* and *private_name*::
 
     import logging
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, force=True)
 
     class LoggedAccess:
 
@@ -258,6 +258,10 @@ Closing thoughts
 A :term:`descriptor` is what we call any object that defines :meth:`__get__`,
 :meth:`__set__`, or :meth:`__delete__`.
 
+Optionally, descriptors can have a :meth:`__set_name__` method.  This is only
+used in cases where a descriptor needs to know either the class where it is
+created or the name of class variable it was assigned to.
+
 Descriptors get invoked by the dot operator during attribute lookup.  If a
 descriptor is accessed indirectly with ``vars(some_class)[descriptor_name]``,
 the descriptor instance is returned without invoking it.
@@ -291,7 +295,7 @@ Validator class
 A validator is a descriptor for managed attribute access.  Prior to storing
 any data, it verifies that the new value meets various type and range
 restrictions.  If those restrictions aren't met, it raises an exception to
-prevents data corruption at its source.
+prevent data corruption at its source.
 
 This :class:`Validator` class is both an :term:`abstract base class` and a
 managed attribute descriptor::
@@ -438,12 +442,12 @@ In general, a descriptor is an object attribute with "binding behavior", one
 whose attribute access has been overridden by methods in the descriptor
 protocol.  Those methods are :meth:`__get__`, :meth:`__set__`, and
 :meth:`__delete__`.  If any of those methods are defined for an object, it is
-said to be a descriptor.
+said to be a :term:`descriptor`.
 
 The default behavior for attribute access is to get, set, or delete the
 attribute from an object's dictionary.  For instance, ``a.x`` has a lookup chain
 starting with ``a.__dict__['x']``, then ``type(a).__dict__['x']``, and
-continuing through the base classes of ``type(a)`` excluding metaclasses. If the
+continuing through the base classes of ``type(a)``. If the
 looked-up value is an object defining one of the descriptor methods, then Python
 may override the default behavior and invoke the descriptor method instead.
 Where this occurs in the precedence chain depends on which descriptor methods
@@ -492,60 +496,76 @@ Invoking Descriptors
 A descriptor can be called directly by its method name.  For example,
 ``d.__get__(obj)``.
 
-Alternatively, it is more common for a descriptor to be invoked automatically
-upon attribute access.  For example, ``obj.d`` looks up ``d`` in the dictionary
-of ``obj``.  If ``d`` defines the method :meth:`__get__`, then ``d.__get__(obj)``
+But it is more common for a descriptor to be invoked automatically from
+attribute access.  The expression ``obj.d`` looks up ``d`` in the dictionary of
+``obj``.  If ``d`` defines the method :meth:`__get__`, then ``d.__get__(obj)``
 is invoked according to the precedence rules listed below.
 
-The details of invocation depend on whether ``obj`` is an object or a class.
+The details of invocation depend on whether ``obj`` is an object, class, or
+instance of super.
 
-For objects, the machinery is in :meth:`object.__getattribute__` which
-transforms ``b.x`` into ``type(b).__dict__['x'].__get__(b, type(b))``.  The
-implementation works through a precedence chain that gives data descriptors
+**Objects**:  The machinery is in :meth:`object.__getattribute__`.
+
+It transforms ``b.x`` into ``type(b).__dict__['x'].__get__(b, type(b))``.
+
+The implementation works through a precedence chain that gives data descriptors
 priority over instance variables, instance variables priority over non-data
 descriptors, and assigns lowest priority to :meth:`__getattr__` if provided.
+
 The full C implementation can be found in :c:func:`PyObject_GenericGetAttr()` in
 :source:`Objects/object.c`.
 
-For classes, the machinery is in :meth:`type.__getattribute__` which transforms
-``B.x`` into ``B.__dict__['x'].__get__(None, B)``.  In pure Python, it looks
-like::
+**Classes**:  The machinery is in :meth:`type.__getattribute__`.
 
-    def __getattribute__(self, key):
+It transforms ``A.x`` into ``A.__dict__['x'].__get__(None, A)``.
+
+In pure Python, it looks like this::
+
+    def __getattribute__(cls, key):
         "Emulate type_getattro() in Objects/typeobject.c"
-        v = object.__getattribute__(self, key)
+        v = object.__getattribute__(cls, key)
         if hasattr(v, '__get__'):
-            return v.__get__(None, self)
+            return v.__get__(None, cls)
         return v
 
-The important points to remember are:
+**Super**:  The machinery is in the custom :meth:`__getattribute__` method for
+object returned by :class:`super()`.
 
-* descriptors are invoked by the :meth:`__getattribute__` method
-* overriding :meth:`__getattribute__` prevents automatic descriptor calls
-* :meth:`object.__getattribute__` and :meth:`type.__getattribute__` make
-  different calls to :meth:`__get__`.
-* data descriptors always override instance dictionaries.
-* non-data descriptors may be overridden by instance dictionaries.
+The attribute lookup ``super(A, obj).m`` searches ``obj.__class__.__mro__`` for
+the base class ``B`` immediately following ``A`` and then returns
+``B.__dict__['m'].__get__(obj, A)``.
 
-The object returned by ``super()`` also has a custom :meth:`__getattribute__`
-method for invoking descriptors.  The attribute lookup ``super(B, obj).m`` searches
-``obj.__class__.__mro__`` for the base class ``A`` immediately following ``B``
-and then returns ``A.__dict__['m'].__get__(obj, B)``.  If not a descriptor,
-``m`` is returned unchanged.  If not in the dictionary, ``m`` reverts to a
-search using :meth:`object.__getattribute__`.
+If not a descriptor, ``m`` is returned unchanged.  If not in the dictionary,
+``m`` reverts to a search using :meth:`object.__getattribute__`.
 
 The implementation details are in :c:func:`super_getattro()` in
-:source:`Objects/typeobject.c`.  and a pure Python equivalent can be found in
+:source:`Objects/typeobject.c`.  A pure Python equivalent can be found in
 `Guido's Tutorial`_.
 
 .. _`Guido's Tutorial`: https://www.python.org/download/releases/2.2.3/descrintro/#cooperation
 
-The details above show that the mechanism for descriptors is embedded in the
-:meth:`__getattribute__()` methods for :class:`object`, :class:`type`, and
-:func:`super`.  Classes inherit this machinery when they derive from
-:class:`object` or if they have a metaclass providing similar functionality.
-Likewise, classes can turn-off descriptor invocation by overriding
-:meth:`__getattribute__()`.
+**Summary**:  The details listed above show that the mechanism for descriptors is
+embedded in the :meth:`__getattribute__()` methods for :class:`object`,
+:class:`type`, and :func:`super`.
+
+The important points to remember are:
+
+* Descriptors are invoked by the :meth:`__getattribute__` method.
+
+* Classes inherit this machinery from :class:`object`, :class:`type`, or
+  :func:`super`.
+
+* Overriding :meth:`__getattribute__` prevents automatic descriptor calls
+  because all the descriptor logic is in that method.
+
+* :meth:`object.__getattribute__` and :meth:`type.__getattribute__` make
+  different calls to :meth:`__get__`.  The first includes the instance and may
+  include the class.  The second puts in ``None`` for the instance and always
+  includes the class.
+
+* Data descriptors always override instance dictionaries.
+
+* Non-data descriptors may be overridden by instance dictionaries.
 
 
 Automatic Name Notification
@@ -569,47 +589,70 @@ afterwards, :meth:`__set_name__` will need to be called manually.
 Descriptor Example
 ------------------
 
-The following code creates a class whose objects are data descriptors which
-print a message for each get or set.  Overriding :meth:`__getattribute__` is
-alternate approach that could do this for every attribute.  However, this
-descriptor is useful for monitoring just a few chosen attributes::
+The following code is simplified skeleton showing how data descriptors could
+be used to implement an `object relational mapping
+<https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping>`_.
 
-    class RevealAccess:
-        """A data descriptor that sets and returns values
-           normally and prints a message logging their access.
-        """
+The essential idea is that instances only hold keys to a database table.  The
+actual data is stored in an external table that is being dynamically updated::
 
-        def __init__(self, initval=None, name='var'):
-            self.val = initval
-            self.name = name
+    class Field:
+
+        def __set_name__(self, owner, name):
+            self.fetch = f'SELECT {name} FROM {owner.table} WHERE {owner.key}=?;'
+            self.store = f'UPDATE {owner.table} SET {name}=? WHERE {owner.key}=?;'
 
         def __get__(self, obj, objtype=None):
-            print('Retrieving', self.name)
-            return self.val
+            return conn.execute(self.fetch, [obj.key]).fetchone()[0]
 
-        def __set__(self, obj, val):
-            print('Updating', self.name)
-            self.val = val
+        def __set__(self, obj, value):
+            conn.execute(self.store, [value, obj.key])
+            conn.commit()
 
-    class B:
-        x = RevealAccess(10, 'var "x"')
-        y = 5
+We can use the :class:`Field` to define "models" that describe the schema for
+each table in a database::
 
-    >>> m = B()
-    >>> m.x
-    Retrieving var "x"
-    10
-    >>> m.x = 20
-    Updating var "x"
-    >>> m.x
-    Retrieving var "x"
-    20
-    >>> m.y
-    5
+    class Movie:
+        table = 'Movies'                    # Table name
+        key = 'title'                       # Primary key
+        director = Field()
+        year = Field()
 
-The protocol is simple and offers exciting possibilities.  Several use cases are
-so common that they have been packaged into individual function calls.
-Properties, bound methods, static methods, and class methods are all
+        def __init__(self, key):
+            self.key = key
+
+    class Song:
+        table = 'Music'
+        key = 'title'
+        artist = Field()
+        year = Field()
+        genre = Field()
+
+        def __init__(self, key):
+            self.key = key
+
+An interactive session shows how data is retrieved from the database and how
+it can be updated::
+
+    >>> import sqlite3
+    >>> conn = sqlite3.connect('entertainment.db')
+
+    >>> Movie('Star Wars').director
+    'George Lucas'
+    >>> jaws = Movie('Jaws')
+    >>> f'Released in {jaws.year} by {jaws.director}'
+    'Released in 1975 by Steven Spielberg'
+
+    >>> Song('Country Roads').artist
+    'John Denver'
+
+    >>> Movie('Star Wars').director = 'J.J. Abrams'
+    >>> Movie('Star Wars').director
+    'J.J. Abrams'
+
+The descriptor protocol is simple and offers exciting possibilities.  Several
+use cases are so common that they have been packaged into individual function
+calls.  Properties, bound methods, static methods, and class methods are all
 based on the descriptor protocol.
 
 
@@ -619,7 +662,7 @@ Properties
 Calling :func:`property` is a succinct way of building a data descriptor that
 triggers function calls upon access to an attribute.  Its signature is::
 
-    property(fget=None, fset=None, fdel=None, doc=None) -> property attribute
+    property(fget=None, fset=None, fdel=None, doc=None) -> property
 
 The documentation shows a typical use to define a managed attribute ``x``::
 
@@ -695,17 +738,30 @@ Functions and Methods
 Python's object oriented features are built upon a function based environment.
 Using non-data descriptors, the two are merged seamlessly.
 
-Class dictionaries store methods as functions.  In a class definition, methods
-are written using :keyword:`def` or :keyword:`lambda`, the usual tools for
-creating functions.  Methods only differ from regular functions in that the
-first argument is reserved for the object instance.  By Python convention, the
-instance reference is called *self* but may be called *this* or any other
-variable name.
+Functions stored in class dictionaries get turned into methods when invoked.
+Methods only differ from regular functions in that the object instance is
+prepended to the other arguments.  By convention, the instance is called
+*self* but could be called *this* or any other variable name.
 
-To support method calls, functions include the :meth:`__get__` method for
-binding methods during attribute access.  This means that all functions are
-non-data descriptors which return bound methods when they are invoked from an
-object.  In pure Python, it works like this::
+Methods can be created manually with :class:`types.MethodType` which is
+roughly equivalent to::
+
+    class Method:
+        "Emulate Py_MethodType in Objects/classobject.c"
+
+        def __init__(self, func, obj):
+            self.__func__ = func
+            self.__self__ = obj
+
+        def __call__(self, *args, **kwargs):
+            func = self.__func__
+            obj = self.__self__
+            return func(obj, *args, **kwargs)
+
+To support automatic creation of methods, functions include the
+:meth:`__get__` method for binding methods during attribute access.  This
+means that functions are non-data descriptors which return bound methods
+during dotted lookup from an instance.  Here's how it works::
 
     class Function:
         ...
@@ -716,15 +772,20 @@ object.  In pure Python, it works like this::
                 return self
             return types.MethodType(self, obj)
 
-Running the following in class in the interpreter shows how the function
+Running the following class in the interpreter shows how the function
 descriptor works in practice::
 
     class D:
         def f(self, x):
              return x
 
-Access through the class dictionary does not invoke :meth:`__get__`.  Instead,
-it just returns the underlying function object::
+The function has a :term:`qualified name` attribute to support introspection::
+
+    >>> D.f.__qualname__
+    'D.f'
+
+Accessing the function through the class dictionary does not invoke
+:meth:`__get__`.  Instead, it just returns the underlying function object::
 
     >>> D.__dict__['f']
     <function D.f at 0x00C45070>
@@ -735,13 +796,8 @@ underlying function unchanged::
     >>> D.f
     <function D.f at 0x00C45070>
 
-The function has a :term:`qualified name` attribute to support introspection::
-
-    >>> D.f.__qualname__
-    'D.f'
-
-Dotted access from an instance calls :meth:`__get__` which returns a bound
-method object::
+The interesting behavior occurs during dotted access from an instance.  The
+dotted lookup calls :meth:`__get__` which returns a bound method object::
 
     >>> d = D()
     >>> d.f
@@ -752,8 +808,12 @@ instance::
 
     >>> d.f.__func__
     <function D.f at 0x1012e5ae8>
+
     >>> d.f.__self__
     <__main__.D object at 0x1012e1f98>
+
+If you have ever wondered where *self* comes from in regular methods or where
+*cls* comes from in class methods, this is it!
 
 
 Static Methods and Class Methods
@@ -798,8 +858,8 @@ in statistical work but does not directly depend on a particular dataset.
 It can be called either from an object or the class:  ``s.erf(1.5) --> .9332`` or
 ``Sample.erf(1.5) --> .9332``.
 
-Since staticmethods return the underlying function with no changes, the example
-calls are unexciting::
+Since static methods return the underlying function with no changes, the
+example calls are unexciting::
 
     class E:
         @staticmethod
@@ -840,7 +900,7 @@ for whether the caller is an object or a class::
 
 This behavior is useful whenever the function only needs to have a class
 reference and does not care about any underlying data.  One use for
-classmethods is to create alternate class constructors.  The classmethod
+class methods is to create alternate class constructors.  The classmethod
 :func:`dict.fromkeys` creates a new dictionary from a list of keys.  The pure
 Python equivalent is::
 
