@@ -534,7 +534,7 @@ class FontPage(Frame):
         self.font_name = tracers.add(StringVar(self), self.var_changed_font)
         self.font_size = tracers.add(StringVar(self), self.var_changed_font)
         self.font_bold = tracers.add(BooleanVar(self), self.var_changed_font)
-        self.space_num = tracers.add(IntVar(self), ('main', 'Indent', 'num-spaces'))
+        self.space_num = tracers.add(IntVar(self), self.var_changed_space_num)
 
         # Define frames and widgets.
         frame_font = LabelFrame(
@@ -573,7 +573,8 @@ class FontPage(Frame):
                 text='Python Standard: 4 Spaces!')
         try:
             self.indent_chooser = Spinbox(
-                    frame_indent, textvariable=self.space_num, from_=2, to=16)
+                    frame_indent, textvariable=self.space_num,
+                    state="readonly", from_=2, to=16)
         except TclError:
             self.indent_chooser = Combobox(
                     frame_indent, textvariable=self.space_num,
@@ -688,6 +689,7 @@ class FontPage(Frame):
         "Store change to indentation size."
         value = self.space_num.get()
         changes.add_option('main', 'Indent', 'num-spaces', value)
+        self.after_idle(self.indent_chooser.selection_clear)
 
 
 class HighPage(Frame):
