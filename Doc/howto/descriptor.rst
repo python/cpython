@@ -259,7 +259,7 @@ A :term:`descriptor` is what we call any object that defines :meth:`__get__`,
 :meth:`__set__`, or :meth:`__delete__`.
 
 Optionally, descriptors can have a :meth:`__set_name__` method.  This is only
-used in cases where the descriptor needs to know either the class where it is
+used in cases where a descriptor needs to know either the class where it is
 created or the name of class variable it was assigned to.
 
 Descriptors get invoked by the dot operator during attribute lookup.  If a
