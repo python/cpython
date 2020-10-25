@@ -176,7 +176,6 @@ class Debugger:
         self.pane.add(left, weight=1)
         controls = ttk.Frame(left)
         col = 0
-        f = ('helvetica', 9)
         self.buttondata = {}
         self.buttons = ['go', 'step', 'over', 'out', 'stop', 'prefs']
         self.button_names = {'go':'Go', 'step':'Step', 'over':'Over',
@@ -188,12 +187,15 @@ class Debugger:
             normal = self.getimage('debug_'+key+'.gif')
             disabled = self.getimage('debug_'+key+'_disabled.gif')
             b = ttk.Label(controls, image=normal, text=self.button_names[key],
-                          compound='top', font=f)
+                          compound='top', font='TkIconFont')
             b.grid(column=col, row=0, padx=[0,5])
             self.buttondata[key] = (b, normal, disabled)
             col += 1
         self.enable_buttons(['prefs'])
-        self.status = ttk.Label(controls, text=' ', font=('helvetica', 13))
+        self.status_normal_font = Font(root=self.root, name='TkDefaultFont', exists=True)
+        self.status_error_font = self.status_normal_font.copy()
+        self.status_error_font['slant'] = 'italic'
+        self.status = ttk.Label(controls, text=' ', font=self.status_normal_font)
         self.status.grid(column=6, row=0, sticky='nw', padx=[25,0])
         controls.grid(column=0, row=0, sticky='new', pady=[0,6])
         controls.grid_columnconfigure(7, weight=1)
@@ -292,8 +294,8 @@ class Debugger:
     def show_status(self, msg, error=False):
         self.status['text'] = msg
         self.status['foreground'] = '#ff0000' if error else '#006600'
-        self.status['font'] = ('helvetica', 13, 'italic') if error \
-                            else ('helvetica', 13)
+        self.status['font'] = self.status_error_font if error \
+                            else self.status_normal_font
 
     def clear_stack(self):
         self.stack.delete(*self.stack.get_children(''))
