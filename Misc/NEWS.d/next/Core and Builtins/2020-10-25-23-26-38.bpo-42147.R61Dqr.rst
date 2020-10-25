@@ -1,0 +1,2 @@
+Micro optimization for longrange_iterator if step is 1. Patch by Dong-hee
+Na.

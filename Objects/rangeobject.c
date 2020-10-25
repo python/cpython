@@ -1018,22 +1018,29 @@ longrangeiter_dealloc(longrangeiterobject *r)
 static PyObject *
 longrangeiter_next(longrangeiterobject *r)
 {
-    PyObject *product, *new_index, *result;
-    if (PyObject_RichCompareBool(r->index, r->len, Py_LT) != 1)
-        return NULL;
-
-    new_index = PyNumber_Add(r->index, _PyLong_One);
-    if (!new_index)
-        return NULL;
-
-    product = PyNumber_Multiply(r->index, r->step);
-    if (!product) {
-        Py_DECREF(new_index);
+    PyObject *new_index, *result;
+    if (PyObject_RichCompareBool(r->index, r->len, Py_LT) != 1) {
         return NULL;
     }
 
-    result = PyNumber_Add(r->start, product);
-    Py_DECREF(product);
+    new_index = PyNumber_Add(r->index, _PyLong_One);
+    if (!new_index) {
+        return NULL;
+    }
+
+    if (r->step == _PyLong_One) {
+        result = PyNumber_Add(r->start, r->index);
+    }
+    else {
+        PyObject *product = PyNumber_Multiply(r->index, r->step);
+        if (!product) {
+            Py_DECREF(new_index);
+            return NULL;
+        }
+        result = PyNumber_Add(r->start, product);
+        Py_DECREF(product);
+    }
+
     if (result) {
         Py_SETREF(r->index, new_index);
     }
