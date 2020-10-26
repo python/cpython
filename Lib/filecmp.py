@@ -12,13 +12,12 @@ Functions:
 
 import os
 import stat
-from io import DEFAULT_BUFFER_SIZE
+from io import DEFAULT_BUFFER_SIZE as BUFSIZE
 from itertools import filterfalse
 
 __all__ = ['clear_cache', 'cmp', 'dircmp', 'cmpfiles', 'DEFAULT_IGNORES']
 
 _cache = {}
-BUFSIZE = DEFAULT_BUFFER_SIZE
 
 DEFAULT_IGNORES = [
     'RCS', 'CVS', 'tags', '.git', '.hg', '.bzr', '_darcs', '__pycache__']
