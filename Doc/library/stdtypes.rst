@@ -4759,46 +4759,47 @@ Generic Alias Type
    object: GenericAlias
    pair: Generic; Alias
 
-Most of the time, the :ref:`subscription expression <subscriptions>` calls the
-:term:`method` :meth:`__getitem__` of an :term:`object`. However, the
-subscription of a :term:`class` itself calls the :func:`classmethod
-<classmethod>` :meth:`__class_getitem__` of the class instead. The classmethod
-:meth:`__class_getitem__` returns a ``GenericAlias`` object.
+Usually, the :ref:`subscription <subscriptions>` of builtin containers
+objects calls the method :meth:`__getitem__` of the object.  However, the
+subscription of some builtin containers' classes may call the classmethod
+:meth:`__class_getitem__` of the class instead. The classmethod
+:meth:`__class_getitem__` returns a ``GenericAlias`` object. An example of this
+is the expression ``list[int]``.
+
+.. note::
+   When :meth:`__class_getitem__` of the class is not present, the
+   :meth:`__getitem__` is still called.
 
 The ``GenericAlias`` object acts as a proxy for :term:`generic types
 <generic type>`, implementing *parameterized generics* - a specific instance
-of a generic with the types for container elements provided. It is intended
-primarily for type :term:`annotations <annotation>`.  ``GenericAlias`` objects
-are created by expressions like ``list[int]``.
+of a generic which provides the types for container elements.  It is intended
+primarily for :term:`type annotations <annotation>`.
 
-The type for the ``GenericAlias`` object is :data:`types.GenericAlias`.
+The user-exposed type for the ``GenericAlias`` object can be accessed from
+:data:`types.GenericAlias` and used for :func:`isinstance` checks.
 
-.. impl-detail::
+.. describe:: GenericType[X, Y, ...]
 
-   The C equivalent of :meth:`__getitem__` - :c:func:`PyObject_GetItem` - is
-   called first for builtin classes and types. When :c:func:`PyObject_GetItem`
-   detects that it was called on a type, it then calls :meth:`__class_getitem__`
-   and returns the ``GenericAlias`` object.
-
-.. describe:: generic[X, Y, ...]
-
-   Defines a generic containing elements of types *X*, *Y*, and more depending
-   on the *generic* used.  For example, for a function expecting a :class:`list`
-   containing :class:`float` elements::
+   Creates a ``GenericAlias`` representing a ``GenericType`` containing elements
+   of types *X*, *Y*, and more depending on the ``GenericType`` used.
+   For example, for a function expecting a :class:`list` containing
+   :class:`float` elements::
 
       def average(values: list[float]) -> float:
           return sum(values) / len(values)
 
-   Another example for :term:`mapping` objects, using a :class:`dict`.  In this
-   case, the function expects a ``dict`` for its ``body`` argument. The ``body``
-   has keys of type :class:`str` and their corresponding values are lists which
-   hold :class:`int` elements::
+   Another example for :term:`mapping` objects, using a :class:`dict`. A
+   :class:`dict` is a generic type expecting two type parameters representing
+   the key type and the value type.  In this case, the function expects a
+   ``dict`` for its ``body`` argument.  The ``body`` has keys of type
+   :class:`str` and their corresponding values are lists which hold :class:`int`
+   elements::
 
       def send_post_request(url: str, body: dict[str, list[int]]) -> None:
           ...
 
 The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
-parameterized generic types for their second argument::
+``GenericAlias`` types for their second argument::
 
    >>> isinstance([1, 2], list[str])
    Traceback (most recent call last):
@@ -4810,9 +4811,9 @@ parameterized generic types for their second argument::
      File "<stdin>", line 1, in <module>
    TypeError: issubclass() argument 2 cannot be a parameterized generic
 
-The Python runtime does not enforce type :term:`annotations <annotation>`.
+The Python runtime does not enforce :term:`type annotations <annotation>`.
 This extends to generic types and their type parameters. When creating
-an object from a parameterized generic, container elements are not checked
+an object from a ``GenericAlias``, container elements are not checked
 against their type. For example, the following code is discouraged, but will
 run without errors::
 
@@ -4831,9 +4832,12 @@ creation::
    >>> type(l)
    <class 'list'>
 
-Calling :func:`repr` on a generic shows the parameterized type::
+Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
 
    >>> repr(list[int])
+   'list[int]'
+   >>>
+   >>> str(list[int])
    'list[int]'
 
 The :meth:`__getitem__` method of generics will raise an exception to disallow
@@ -4844,19 +4848,22 @@ mistakes like ``dict[str][str]``::
      File "<stdin>", line 1, in <module>
    TypeError: There are no type variables left in dict[str]
 
-However, that syntax is valid when type variables are used::
+However, that expression is valid when :ref:`type variables <generics>` are
+used.  ``GenericAlias`` can only be indexed if it has type variables.  The index
+must have as many elements as there are type variable items in the
+``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
 
    >>> from typing import TypeVar
-   >>> T = TypeVar('T')
-   >>> dict[str, T][int]
+   >>> X = TypeVar('X')
+   >>> Y = TypeVar('Y')
+   >>> dict[X, Y][str, int]
    dict[str, int]
 
 
 Standard Generic Collections
 ----------------------------
 
-These standard library collections support parameterized generics.  Most of
-their type parameters can be found in the :mod:`typing` module:
+These standard library collections support parameterized generics.
 
 * :class:`tuple`
 * :class:`list`
@@ -4929,7 +4936,7 @@ All parameterized generics implement special read-only attributes.
       >>> from typing import TypeVar
       >>>
       >>> T = TypeVar('T')
-      >>> list[t].__parameters__
+      >>> list[T].__parameters__
       (~T,)
 
 
@@ -4937,6 +4944,7 @@ All parameterized generics implement special read-only attributes.
 
    * :pep:`585` -- "Type Hinting Generics In Standard Collections"
    * :meth:`__class_getitem__` -- Used to implement parameterized generics.
+   * :ref:`generics` -- Generics in the :mod:`typing` module.
 
 .. versionadded:: 3.9
 
