@@ -15,25 +15,15 @@ extern "C" {
 
 typedef struct {
 
-    /* Size of this struct */
-    int size;
-
-    // state which must be passed as the first parameter to getname()
-    // and getcode()
-    void *state;
-
-    /* Get name for a given character code.  Returns non-zero if
-       success, zero if not.  Does not set Python exceptions.
-       If self is NULL, data come from the default version of the database.
-       If it is not NULL, it should be a unicodedata.ucd_X_Y_Z object */
-    int (*getname)(void *state, PyObject *self, Py_UCS4 code,
-                   char* buffer, int buflen,
+    /* Get name for a given character code.
+       Returns non-zero if success, zero if not.
+       Does not set Python exceptions. */
+    int (*getname)(Py_UCS4 code, char* buffer, int buflen,
                    int with_alias_and_seq);
 
-    /* Get character code for a given name.  Same error handling
-       as for getname. */
-    int (*getcode)(void *state, PyObject *self,
-                   const char* name, int namelen, Py_UCS4* code,
+    /* Get character code for a given name.
+       Same error handling as for getname(). */
+    int (*getcode)(const char* name, int namelen, Py_UCS4* code,
                    int with_named_seq);
 
 } _PyUnicode_Name_CAPI;
