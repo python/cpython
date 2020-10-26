@@ -5,10 +5,6 @@ from test.support.import_helper import import_module
 import_module('termios')
 
 import errno
-# try:
-#     import pty2 as pty
-# except ModuleNotFoundError:
-#     import pty
 import pty
 import os
 import sys
