@@ -1463,7 +1463,7 @@ unicodedata_exec(PyObject *module)
         return -1;
     }
 
-    /* Previous versions */
+    // Unicode database version 3.2.0 used by the IDNA encoding
     PyObject *v;
     v = new_previous_version(ucd_type, "3.2.0",
                              get_change_3_2_0, normalization_3_2_0);
