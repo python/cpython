@@ -626,7 +626,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     uid_t uid;
     gid_t gid, *groups = NULL;
     int child_umask;
-    PyObject *cwd_obj, *cwd_obj2;
+    PyObject *cwd_obj, *cwd_obj2 = NULL;
     const char *cwd;
     pid_t pid;
     int need_to_reenable_gc = 0;
@@ -748,7 +748,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         cwd = PyBytes_AsString(cwd_obj2);
     } else {
         cwd = NULL;
-        cwd_obj2 = NULL;
     }
 
     if (groups_list != Py_None) {
@@ -908,6 +907,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     return PyLong_FromPid(pid);
 
 cleanup:
+    Py_XDECREF(cwd_obj2);
     if (envp)
         _Py_FreeCharPArray(envp);
     if (argv)
