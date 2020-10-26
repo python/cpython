@@ -1,0 +1,2 @@
+Fix memory leak in :func:`subprocess.Popen` in case an uid (gid) specified in
+`user` (`group`, `extra_groups`) overflows `uid_t` (`gid_t`).
