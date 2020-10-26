@@ -28,9 +28,9 @@ _Py_IDENTIFIER(NFKD);
 
 /*[clinic input]
 module unicodedata
-class unicodedata.UCD 'PreviousDBVersion *' '&UCD_Type'
+class unicodedata.UCD 'PreviousDBVersion *' '<not used>'
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6dac153082d150bc]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e47113e05924be43]*/
 
 /* character properties */
 
@@ -89,9 +89,6 @@ static PyMemberDef DB_members[] = {
         {"unidata_version", T_STRING, offsetof(PreviousDBVersion, name), READONLY},
         {NULL}
 };
-
-/* forward declaration */
-static PyTypeObject UCD_Type;
 
 // Check if self is an unicodedata.UCD instance.
 // If self is NULL (when the PyCapsule C API is used), return 0.
@@ -1417,50 +1414,27 @@ static PyMethodDef unicodedata_functions[] = {
     {NULL, NULL}                /* sentinel */
 };
 
-static PyTypeObject UCD_Type = {
-        /* The ob_type field must be initialized in the module init function
-         * to be portable to Windows without using C++. */
-        PyVarObject_HEAD_INIT(NULL, 0)
-        "unicodedata.UCD",              /*tp_name*/
-        sizeof(PreviousDBVersion),      /*tp_basicsize*/
-        0,                      /*tp_itemsize*/
-        /* methods */
-        (destructor)PyObject_Del, /*tp_dealloc*/
-        0,                      /*tp_vectorcall_offset*/
-        0,                      /*tp_getattr*/
-        0,                      /*tp_setattr*/
-        0,                      /*tp_as_async*/
-        0,                      /*tp_repr*/
-        0,                      /*tp_as_number*/
-        0,                      /*tp_as_sequence*/
-        0,                      /*tp_as_mapping*/
-        0,                      /*tp_hash*/
-        0,                      /*tp_call*/
-        0,                      /*tp_str*/
-        PyObject_GenericGetAttr,/*tp_getattro*/
-        0,                      /*tp_setattro*/
-        0,                      /*tp_as_buffer*/
-        Py_TPFLAGS_DEFAULT,     /*tp_flags*/
-        0,                      /*tp_doc*/
-        0,                      /*tp_traverse*/
-        0,                      /*tp_clear*/
-        0,                      /*tp_richcompare*/
-        0,                      /*tp_weaklistoffset*/
-        0,                      /*tp_iter*/
-        0,                      /*tp_iternext*/
-        unicodedata_functions,  /*tp_methods*/
-        DB_members,             /*tp_members*/
-        0,                      /*tp_getset*/
-        0,                      /*tp_base*/
-        0,                      /*tp_dict*/
-        0,                      /*tp_descr_get*/
-        0,                      /*tp_descr_set*/
-        0,                      /*tp_dictoffset*/
-        0,                      /*tp_init*/
-        0,                      /*tp_alloc*/
-        0,                      /*tp_new*/
-        0,                      /*tp_free*/
-        0,                      /*tp_is_gc*/
+static void
+ucd_dealloc(PreviousDBVersion *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_Del(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot ucd_type_slots[] = {
+    {Py_tp_dealloc, ucd_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_methods, unicodedata_functions},
+    {Py_tp_members, DB_members},
+    {0, 0}
+};
+
+static PyType_Spec ucd_type_spec = {
+    .name = "unicodedata.UCD",
+    .basicsize = sizeof(PreviousDBVersion),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = ucd_type_slots
 };
 
 PyDoc_STRVAR(unicodedata_docstring,
@@ -1472,30 +1446,20 @@ this database is based on the UnicodeData.txt file version\n\
 The module uses the same names and symbols as defined by the\n\
 UnicodeData File Format " UNIDATA_VERSION ".");
 
-static struct PyModuleDef unicodedatamodule = {
-        PyModuleDef_HEAD_INIT,
-        "unicodedata",
-        unicodedata_docstring,
-        -1,
-        unicodedata_functions,
-        NULL,
-        NULL,
-        NULL,
-        NULL
-};
-
-
 static int
 unicodedata_exec(PyObject *module)
 {
-    Py_SET_TYPE(&UCD_Type, &PyType_Type);
-    PyTypeObject *ucd_type = &UCD_Type;
-
     if (PyModule_AddStringConstant(module, "unidata_version", UNIDATA_VERSION) < 0) {
         return -1;
     }
 
+    PyTypeObject *ucd_type = (PyTypeObject *)PyType_FromSpec(&ucd_type_spec);
+    if (ucd_type == NULL) {
+        return -1;
+    }
+
     if (PyModule_AddType(module, ucd_type) < 0) {
+        Py_DECREF(ucd_type);
         return -1;
     }
 
@@ -1503,6 +1467,7 @@ unicodedata_exec(PyObject *module)
     PyObject *v;
     v = new_previous_version(ucd_type, "3.2.0",
                              get_change_3_2_0, normalization_3_2_0);
+    Py_DECREF(ucd_type);
     if (v == NULL) {
         return -1;
     }
@@ -1524,21 +1489,24 @@ unicodedata_exec(PyObject *module)
     return 0;
 }
 
+static PyModuleDef_Slot unicodedata_slots[] = {
+    {Py_mod_exec, unicodedata_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef unicodedata_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "unicodedata",
+    .m_doc = unicodedata_docstring,
+    .m_size = 0,
+    .m_methods = unicodedata_functions,
+    .m_slots = unicodedata_slots,
+};
 
 PyMODINIT_FUNC
 PyInit_unicodedata(void)
 {
-    PyObject *module = PyModule_Create(&unicodedatamodule);
-    if (!module) {
-        return NULL;
-    }
-
-    if (unicodedata_exec(module) < 0) {
-        Py_DECREF(module);
-        return NULL;
-    }
-
-    return module;
+    return PyModuleDef_Init(&unicodedata_module);
 }
 
 
