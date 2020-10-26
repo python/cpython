@@ -111,7 +111,7 @@ static long dxp[256];
 #else
 #define OPCACHE_MIN_RUNS 1024  /* create opcache when code executed this time */
 #endif
-#define OPCODE_CACHE_MAX_TRIES 20
+#define OPCACHE_MAX_TRIES 20
 #define OPCACHE_STATS 0  /* Enable stats */
 
 #if OPCACHE_STATS
@@ -127,6 +127,13 @@ static size_t opcache_attr_hits = 0;
 static size_t opcache_attr_misses = 0;
 static size_t opcache_attr_deopts = 0;
 static size_t opcache_attr_total = 0;
+
+static size_t opcache_method_opts = 0;
+static size_t opcache_method_hits = 0;
+static size_t opcache_method_misses = 0;
+static size_t opcache_method_deopts = 0;
+static size_t opcache_method_dict_checks = 0;
+static size_t opcache_method_total = 0;
 #endif
 
 
@@ -396,6 +403,30 @@ _PyEval_Fini(void)
 
     fprintf(stderr, "-- Opcode cache LOAD_ATTR total    = %zd\n",
             opcache_attr_total);
+
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "-- Opcode cache LOAD_METHOD hits   = %zd (%d%%)\n",
+            opcache_method_hits,
+            (int) (100.0 * opcache_method_hits /
+                opcache_method_total));
+
+    fprintf(stderr, "-- Opcode cache LOAD_METHOD misses = %zd (%d%%)\n",
+            opcache_method_misses,
+            (int) (100.0 * opcache_method_misses /
+                opcache_method_total));
+
+    fprintf(stderr, "-- Opcode cache LOAD_METHOD opts   = %zd\n",
+            opcache_method_opts);
+
+    fprintf(stderr, "-- Opcode cache LOAD_METHOD deopts = %zd\n",
+            opcache_method_deopts);
+
+    fprintf(stderr, "-- Opcode cache LOAD_METHOD dct-chk= %zd\n",
+            opcache_method_dict_checks);
+
+    fprintf(stderr, "-- Opcode cache LOAD_METHOD total  = %zd\n",
+            opcache_method_total);
 #endif
 }
 
@@ -1358,6 +1389,37 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         if (co->co_opcache != NULL) opcache_attr_total++; \
     } while (0)
 
+#define OPCACHE_STAT_METHOD_HIT() \
+    do { \
+        if (co->co_opcache != NULL) opcache_method_hits++; \
+    } while (0)
+
+#define OPCACHE_STAT_METHOD_MISS() \
+    do { \
+        if (co->co_opcache != NULL) opcache_method_misses++; \
+    } while (0)
+
+#define OPCACHE_STAT_METHOD_OPT() \
+    do { \
+        if (co->co_opcache != NULL) opcache_method_opts++; \
+    } while (0)
+
+#define OPCACHE_STAT_METHOD_DEOPT() \
+    do { \
+        if (co->co_opcache != NULL) opcache_method_deopts++; \
+    } while (0)
+
+#define OPCACHE_STAT_METHOD_DICT_CHECK() \
+    do { \
+        if (co->co_opcache != NULL) opcache_method_dict_checks++; \
+    } while (0)
+
+#define OPCACHE_STAT_METHOD_TOTAL() \
+    do { \
+        if (co->co_opcache != NULL) opcache_method_total++; \
+    } while (0)
+
+
 #else /* OPCACHE_STATS */
 
 #define OPCACHE_STAT_GLOBAL_HIT()
@@ -1369,6 +1431,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 #define OPCACHE_STAT_ATTR_OPT()
 #define OPCACHE_STAT_ATTR_DEOPT()
 #define OPCACHE_STAT_ATTR_TOTAL()
+
+#define OPCACHE_STAT_METHOD_HIT()
+#define OPCACHE_STAT_METHOD_MISS()
+#define OPCACHE_STAT_METHOD_OPT()
+#define OPCACHE_STAT_METHOD_DEOPT()
+#define OPCACHE_STAT_METHOD_DICT_CHECK()
+#define OPCACHE_STAT_METHOD_TOTAL()
 
 #endif
 
@@ -3239,7 +3308,7 @@ main_loop:
                                     if (co_opcache->optimized == 0) {
                                         // First time we optimize this opcode. */
                                         OPCACHE_STAT_ATTR_OPT();
-                                        co_opcache->optimized = OPCODE_CACHE_MAX_TRIES;
+                                        co_opcache->optimized = OPCACHE_MAX_TRIES;
                                     }
 
                                     la = &co_opcache->u.la;
@@ -3703,9 +3772,82 @@ main_loop:
 
         case TARGET(LOAD_METHOD): {
             /* Designed to work in tandem with CALL_METHOD. */
-            PyObject *name = GETITEM(names, oparg);
             PyObject *obj = TOP();
             PyObject *meth = NULL;
+            PyTypeObject *type = Py_TYPE(obj);
+
+            OPCACHE_STAT_METHOD_TOTAL();
+            OPCACHE_CHECK();
+            if (co_opcache != NULL && co_opcache->optimized > 0) {
+                _PyOpCodeOpt_LoadMethod *lm = &co_opcache->u.lm;
+
+                if (PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG) &&
+                    type->tp_version_tag == lm->tp_version_tag &&
+                    type == lm->type)
+                {
+                    PyObject **dictptr;
+                    PyObject *dict;
+                    Py_ssize_t dictoffset;
+
+                    assert(lm->meth != NULL);
+
+                    dictoffset = type->tp_dictoffset;
+                    if (dictoffset != 0) {
+                        if (dictoffset < 0) {
+                            Py_ssize_t tsize;
+                            size_t size;
+
+                            tsize = ((PyVarObject *)obj)->ob_size;
+                            if (tsize < 0) {
+                                tsize = -tsize;
+                            }
+                            size = _PyObject_VAR_SIZE(type, tsize);
+
+                            dictoffset += (long)size;
+                            assert(dictoffset > 0);
+                            assert(dictoffset % SIZEOF_VOID_P == 0);
+                        }
+                        dictptr = (PyObject **) ((char *)obj + dictoffset);
+                        dict = *dictptr;
+                        if (dict != NULL) {
+                            OPCACHE_STAT_METHOD_DICT_CHECK();
+                            Py_INCREF(dict);
+                            PyObject *name = GETITEM(names, oparg);
+                            meth = _PyDict_GetItem_KnownHash(dict, name, lm->hash);
+                            if (meth != NULL) {
+                                OPCACHE_STAT_METHOD_MISS();
+                                OPCACHE_STAT_METHOD_DEOPT();
+                                OPCACHE_DEOPT();
+
+                                Py_INCREF(meth);
+                                SET_TOP(NULL);
+                                Py_DECREF(obj);
+                                PUSH(meth);
+                                DISPATCH();
+                            } else {
+                                Py_DECREF(dict);
+                            }
+                        }
+                    }
+
+                    OPCACHE_STAT_METHOD_HIT();
+                    meth = lm->meth;
+                    Py_INCREF(meth);
+                    SET_TOP(meth);
+                    PUSH(obj);
+                    DISPATCH();
+                } else if (type != lm->type) {
+                    OPCACHE_STAT_METHOD_DEOPT();
+                    OPCACHE_DEOPT();
+                } else if (--co_opcache->optimized <= 0) {
+                    OPCACHE_STAT_METHOD_DEOPT();
+                    OPCACHE_DEOPT();
+                }
+                OPCACHE_STAT_METHOD_MISS();
+            }
+
+
+            PyObject *name = GETITEM(names, oparg);
 
             int meth_found = _PyObject_GetMethod(obj, name, &meth);
 
@@ -3722,6 +3864,17 @@ main_loop:
                  */
                 SET_TOP(meth);
                 PUSH(obj);  // self
+
+                if (co_opcache != NULL && PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
+                {
+                    _PyOpCodeOpt_LoadMethod *lm = &co_opcache->u.lm;
+                    co_opcache->optimized = OPCACHE_MAX_TRIES;
+                    lm->type = type;
+                    lm->tp_version_tag = type->tp_version_tag;
+                    lm->meth = meth; /* borrowed */
+                    lm->hash = PyObject_Hash(name);
+                    OPCACHE_STAT_METHOD_OPT();
+                }
             }
             else {
                 /* meth is not an unbound method (but a regular attr, or
