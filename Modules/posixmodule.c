@@ -1526,13 +1526,11 @@ convertenviron(void)
             Py_DECREF(d);
             return NULL;
         }
-        if (PyDict_GetItemWithError(d, k) == NULL) {
-            if (PyErr_Occurred() || PyDict_SetItem(d, k, v) != 0) {
-                Py_DECREF(v);
-                Py_DECREF(k);
-                Py_DECREF(d);
-                return NULL;
-            }
+        if (PyDict_SetDefault(d, k, v) == NULL) {
+            Py_DECREF(v);
+            Py_DECREF(k);
+            Py_DECREF(d);
+            return NULL;
         }
         Py_DECREF(k);
         Py_DECREF(v);

@@ -2388,7 +2388,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     PyHeapTypeObject *et;
     PyMemberDef *mp;
     Py_ssize_t i, nbases, nslots, slotoffset, name_size;
-    int j, may_add_dict, may_add_weak, add_dict, add_weak;
+    int j, r, may_add_dict, may_add_weak, add_dict, add_weak;
     _Py_IDENTIFIER(__qualname__);
     _Py_IDENTIFIER(__slots__);
     _Py_IDENTIFIER(__classcell__);
@@ -2542,7 +2542,12 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                 goto error;
             }
             PyList_SET_ITEM(newslots, j, tmp);
-            if (PyDict_GetItemWithError(dict, tmp)) {
+            r = PyDict_Contains(dict, tmp);
+            if (r < 0) {
+                Py_DECREF(newslots);
+                goto error;
+            }
+            if (r > 0) {
                 /* CPython inserts __qualname__ and __classcell__ (when needed)
                    into the namespace when creating a class.  They will be deleted
                    below so won't act as class variables. */
@@ -2554,10 +2559,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
                     Py_DECREF(newslots);
                     goto error;
                 }
-            }
-            else if (PyErr_Occurred()) {
-                Py_DECREF(newslots);
-                goto error;
             }
             j++;
         }
@@ -2643,10 +2644,11 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     type->tp_dict = dict;
 
     /* Set __module__ in the dict */
-    if (_PyDict_GetItemIdWithError(dict, &PyId___module__) == NULL) {
-        if (PyErr_Occurred()) {
-            goto error;
-        }
+    r = _PyDict_ContainsId(dict, &PyId___module__);
+    if (r < 0) {
+        goto error;
+    }
+    if (r == 0) {
         tmp = PyEval_GetGlobals();
         if (tmp != NULL) {
             tmp = _PyDict_GetItemIdWithError(tmp, &PyId___name__);
@@ -2885,6 +2887,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     PyHeapTypeObject *res;
     PyObject *modname;
     PyTypeObject *type, *base;
+    int r;
 
     const PyType_Slot *slot;
     Py_ssize_t nmembers, weaklistoffset, dictoffset, vectorcalloffset;
@@ -3052,9 +3055,9 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         PyObject *__doc__ = PyUnicode_FromString(_PyType_DocWithoutSignature(type->tp_name, type->tp_doc));
         if (!__doc__)
             goto fail;
-        int ret = _PyDict_SetItemId(type->tp_dict, &PyId___doc__, __doc__);
+        r = _PyDict_SetItemId(type->tp_dict, &PyId___doc__, __doc__);
         Py_DECREF(__doc__);
-        if (ret < 0)
+        if (r < 0)
             goto fail;
     }
 
@@ -3070,21 +3073,21 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     }
 
     /* Set type.__module__ */
-    if (_PyDict_GetItemIdWithError(type->tp_dict, &PyId___module__) == NULL) {
-        if (PyErr_Occurred()) {
-            goto fail;
-        }
+    r = _PyDict_ContainsId(type->tp_dict, &PyId___module__);
+    if (r < 0) {
+        goto fail;
+    }
+    if (r == 0) {
         s = strrchr(spec->name, '.');
         if (s != NULL) {
-            int err;
             modname = PyUnicode_FromStringAndSize(
                     spec->name, (Py_ssize_t)(s - spec->name));
             if (modname == NULL) {
                 goto fail;
             }
-            err = _PyDict_SetItemId(type->tp_dict, &PyId___module__, modname);
+            r = _PyDict_SetItemId(type->tp_dict, &PyId___module__, modname);
             Py_DECREF(modname);
-            if (err != 0)
+            if (r != 0)
                 goto fail;
         } else {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
@@ -5035,26 +5038,16 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
         }
 
         if (!(meth->ml_flags & METH_COEXIST)) {
-            if (PyDict_GetItemWithError(dict, name)) {
-                if (!isdescr) {
-                    Py_DECREF(name);
-                }
-                Py_DECREF(descr);
-                continue;
-            }
-            else if (PyErr_Occurred()) {
-                if (!isdescr) {
-                    Py_DECREF(name);
-                }
-                return -1;
-            }
+            err = PyDict_SetDefault(dict, name, descr) == NULL;
         }
-        err = PyDict_SetItem(dict, name, descr);
+        else {
+            err = PyDict_SetItem(dict, name, descr) < 0;
+        }
         if (!isdescr) {
             Py_DECREF(name);
         }
         Py_DECREF(descr);
-        if (err < 0)
+        if (err)
             return -1;
     }
     return 0;
@@ -5070,15 +5063,7 @@ add_members(PyTypeObject *type, PyMemberDef *memb)
         if (descr == NULL)
             return -1;
 
-        if (PyDict_GetItemWithError(dict, PyDescr_NAME(descr))) {
-            Py_DECREF(descr);
-            continue;
-        }
-        else if (PyErr_Occurred()) {
-            Py_DECREF(descr);
-            return -1;
-        }
-        if (PyDict_SetItem(dict, PyDescr_NAME(descr), descr) < 0) {
+        if (PyDict_SetDefault(dict, PyDescr_NAME(descr), descr) == NULL) {
             Py_DECREF(descr);
             return -1;
         }
@@ -5097,15 +5082,7 @@ add_getset(PyTypeObject *type, PyGetSetDef *gsp)
         if (descr == NULL)
             return -1;
 
-        if (PyDict_GetItemWithError(dict, PyDescr_NAME(descr))) {
-            Py_DECREF(descr);
-            continue;
-        }
-        else if (PyErr_Occurred()) {
-            Py_DECREF(descr);
-            return -1;
-        }
-        if (PyDict_SetItem(dict, PyDescr_NAME(descr), descr) < 0) {
+        if (PyDict_SetDefault(dict, PyDescr_NAME(descr), descr) == NULL) {
             Py_DECREF(descr);
             return -1;
         }
@@ -5553,10 +5530,11 @@ PyType_Ready(PyTypeObject *type)
     /* if the type dictionary doesn't contain a __doc__, set it from
        the tp_doc slot.
      */
-    if (_PyDict_GetItemIdWithError(type->tp_dict, &PyId___doc__) == NULL) {
-        if (PyErr_Occurred()) {
-            goto error;
-        }
+    int r = _PyDict_ContainsId(type->tp_dict, &PyId___doc__);
+    if (r < 0) {
+        goto error;
+    }
+    if (r == 0) {
         if (type->tp_doc != NULL) {
             const char *old_doc = _PyType_DocWithoutSignature(type->tp_name,
                 type->tp_doc);
@@ -5582,10 +5560,12 @@ PyType_Ready(PyTypeObject *type)
        This signals that __hash__ is not inherited.
      */
     if (type->tp_hash == NULL) {
-        if (_PyDict_GetItemIdWithError(type->tp_dict, &PyId___hash__) == NULL) {
-            if (PyErr_Occurred() ||
-               _PyDict_SetItemId(type->tp_dict, &PyId___hash__, Py_None) < 0)
-            {
+        r = _PyDict_ContainsId(type->tp_dict, &PyId___hash__);
+        if (r < 0) {
+            goto error;
+        }
+        if (r == 0) {
+            if (_PyDict_SetItemId(type->tp_dict, &PyId___hash__, Py_None) < 0) {
                 goto error;
             }
             type->tp_hash = PyObject_HashNotImplemented;
@@ -6270,19 +6250,17 @@ add_tp_new_wrapper(PyTypeObject *type)
 {
     PyObject *func;
 
-    if (_PyDict_GetItemIdWithError(type->tp_dict, &PyId___new__) != NULL)
+    int r = _PyDict_ContainsId(type->tp_dict, &PyId___new__);
+    if (r > 0)
         return 0;
-    if (PyErr_Occurred())
+    if (r < 0)
         return -1;
     func = PyCFunction_NewEx(tp_new_methoddef, (PyObject *)type, NULL);
     if (func == NULL)
         return -1;
-    if (_PyDict_SetItemId(type->tp_dict, &PyId___new__, func)) {
-        Py_DECREF(func);
-        return -1;
-    }
+    r = _PyDict_SetItemId(type->tp_dict, &PyId___new__, func);
     Py_DECREF(func);
-    return 0;
+    return r;
 }
 
 /* Slot wrappers that call the corresponding __foo__ slot.  See comments
@@ -7795,10 +7773,11 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *name,
         /* Avoid recursing down into unaffected classes */
         dict = subclass->tp_dict;
         if (dict != NULL && PyDict_Check(dict)) {
-            if (PyDict_GetItemWithError(dict, name) != NULL) {
+            int r = PyDict_Contains(dict, name);
+            if (r > 0) {
                 continue;
             }
-            if (PyErr_Occurred()) {
+            if (r < 0) {
                 return -1;
             }
         }
@@ -7853,9 +7832,10 @@ add_operators(PyTypeObject *type)
         ptr = slotptr(type, p->offset);
         if (!ptr || !*ptr)
             continue;
-        if (PyDict_GetItemWithError(dict, p->name_strobj))
+        int r = PyDict_Contains(dict, p->name_strobj);
+        if (r > 0)
             continue;
-        if (PyErr_Occurred()) {
+        if (r < 0) {
             return -1;
         }
         if (*ptr == (void *)PyObject_HashNotImplemented) {

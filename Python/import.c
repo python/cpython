@@ -1018,14 +1018,14 @@ module_dict_for_exec(PyThreadState *tstate, PyObject *name)
     /* If the module is being reloaded, we get the old module back
        and re-use its dict to exec the new code. */
     d = PyModule_GetDict(m);
-    if (_PyDict_GetItemIdWithError(d, &PyId___builtins__) == NULL) {
-        if (_PyErr_Occurred(tstate) ||
-            _PyDict_SetItemId(d, &PyId___builtins__,
-                              PyEval_GetBuiltins()) != 0)
-        {
-            remove_module(tstate, name);
-            return NULL;
-        }
+    int r = _PyDict_ContainsId(d, &PyId___builtins__);
+    if (r == 0) {
+        r = _PyDict_SetItemId(d, &PyId___builtins__,
+                              PyEval_GetBuiltins());
+    }
+    if (r < 0) {
+        remove_module(tstate, name);
+        return NULL;
     }
 
     return d;  /* Return a borrowed reference. */
@@ -1660,10 +1660,14 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             goto error;
         }
 
-        if (_PyDict_GetItemIdWithError(globals, &PyId___path__) == NULL) {
+        int haspath = _PyDict_ContainsId(globals, &PyId___path__);
+        if (haspath < 0) {
+            goto error;
+        }
+        if (!haspath) {
             Py_ssize_t dot;
 
-            if (_PyErr_Occurred(tstate) || PyUnicode_READY(package) < 0) {
+            if (PyUnicode_READY(package) < 0) {
                 goto error;
             }
 

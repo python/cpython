@@ -924,12 +924,12 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         return NULL;
     }
 
-    if (_PyDict_GetItemIdWithError(globals, &PyId___builtins__) == NULL) {
-        if (_PyDict_SetItemId(globals, &PyId___builtins__,
-                              PyEval_GetBuiltins()) != 0)
-            return NULL;
+    int r = _PyDict_ContainsId(globals, &PyId___builtins__);
+    if (r == 0) {
+        r = _PyDict_SetItemId(globals, &PyId___builtins__,
+                              PyEval_GetBuiltins());
     }
-    else if (PyErr_Occurred()) {
+    if (r < 0) {
         return NULL;
     }
 
@@ -1012,12 +1012,12 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             Py_TYPE(locals)->tp_name);
         return NULL;
     }
-    if (_PyDict_GetItemIdWithError(globals, &PyId___builtins__) == NULL) {
-        if (_PyDict_SetItemId(globals, &PyId___builtins__,
-                              PyEval_GetBuiltins()) != 0)
-            return NULL;
+    int r = _PyDict_ContainsId(globals, &PyId___builtins__);
+    if (r == 0) {
+        r = _PyDict_SetItemId(globals, &PyId___builtins__,
+                              PyEval_GetBuiltins());
     }
-    else if (PyErr_Occurred()) {
+    if (r < 0) {
         return NULL;
     }
 
