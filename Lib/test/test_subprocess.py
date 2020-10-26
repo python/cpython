@@ -1826,6 +1826,10 @@ class POSIXProcessTestCase(BaseTestCase):
         with self.assertRaises(ValueError):
             subprocess.check_call(ZERO_RETURN_CMD, user=-1)
 
+        with self.assertRaises(OverflowError):
+            subprocess.check_call(ZERO_RETURN_CMD,
+                                  cwd=os.curdir, env=os.environ, user=2**64)
+
         if pwd is None and name_uid is not None:
             with self.assertRaises(ValueError):
                 subprocess.check_call(ZERO_RETURN_CMD, user=name_uid)
@@ -1868,6 +1872,10 @@ class POSIXProcessTestCase(BaseTestCase):
         # make sure we bomb on negative values
         with self.assertRaises(ValueError):
             subprocess.check_call(ZERO_RETURN_CMD, group=-1)
+
+        with self.assertRaises(OverflowError):
+            subprocess.check_call(ZERO_RETURN_CMD,
+                                  cwd=os.curdir, env=os.environ, group=2**64)
 
         if grp is None:
             with self.assertRaises(ValueError):
@@ -1916,6 +1924,11 @@ class POSIXProcessTestCase(BaseTestCase):
         # make sure we bomb on negative values
         with self.assertRaises(ValueError):
             subprocess.check_call(ZERO_RETURN_CMD, extra_groups=[-1])
+
+        with self.assertRaises(ValueError):
+            subprocess.check_call(ZERO_RETURN_CMD,
+                                  cwd=os.curdir, env=os.environ,
+                                  extra_groups=[2**64])
 
         if grp is None:
             with self.assertRaises(ValueError):
