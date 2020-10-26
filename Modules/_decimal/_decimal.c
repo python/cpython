@@ -3186,6 +3186,31 @@ dotsep_as_utf8(const char *s)
     return utf8;
 }
 
+static int
+dict_get_item_string(PyObject *dict, const char *key, PyObject **valueobj, const char **valuestr)
+{
+    *valueobj = NULL;
+    PyObject *keyobj = PyUnicode_FromString(key);
+    if (keyobj == NULL) {
+        return -1;
+    }
+    PyObject *value = PyDict_GetItemWithError(dict, keyobj);
+    Py_DECREF(keyobj);
+    if (value == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+    value = PyUnicode_AsUTF8String(value);
+    if (value == NULL) {
+        return -1;
+    }
+    *valueobj = value;
+    *valuestr = PyBytes_AS_STRING(value);
+    return 0;
+}
+
 /* Formatted representation of a PyDecObject. */
 static PyObject *
 dec_format(PyObject *dec, PyObject *args)
@@ -3256,23 +3281,11 @@ dec_format(PyObject *dec, PyObject *args)
                 "optional argument must be a dict");
             goto finish;
         }
-        if ((dot = PyDict_GetItemString(override, "decimal_point"))) {
-            if ((dot = PyUnicode_AsUTF8String(dot)) == NULL) {
-                goto finish;
-            }
-            spec.dot = PyBytes_AS_STRING(dot);
-        }
-        if ((sep = PyDict_GetItemString(override, "thousands_sep"))) {
-            if ((sep = PyUnicode_AsUTF8String(sep)) == NULL) {
-                goto finish;
-            }
-            spec.sep = PyBytes_AS_STRING(sep);
-        }
-        if ((grouping = PyDict_GetItemString(override, "grouping"))) {
-            if ((grouping = PyUnicode_AsUTF8String(grouping)) == NULL) {
-                goto finish;
-            }
-            spec.grouping = PyBytes_AS_STRING(grouping);
+        if (dict_get_item_string(override, "decimal_point", &dot, &spec.dot) ||
+            dict_get_item_string(override, "thousands_sep", &sep, &spec.sep) ||
+            dict_get_item_string(override, "grouping", &grouping, &spec.grouping))
+        {
+            goto finish;
         }
         if (mpd_validate_lconv(&spec) < 0) {
             PyErr_SetString(PyExc_ValueError,
