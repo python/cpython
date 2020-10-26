@@ -129,15 +129,19 @@ class _RandomNameSequence:
 
     _RandomNameSequence is an iterator."""
 
-    characters = "abcdefghijklmnopqrstuvwxyz0123456789_"
+    def __init__(self, characters="abcdefghijklmnopqrstuvwxyz0123456789_", length=8, rng=None):
+        if rng is None:
+            rng = _Random()
+        if hasattr(_os, "fork"):
+            # prevent same state after fork
+            _os.register_at_fork(after_in_child=rng.seed)
+        self.rng = rng
+        self.characters = characters
+        self.length = length
 
     @property
-    def rng(self):
-        cur_pid = _os.getpid()
-        if cur_pid != getattr(self, '_rng_pid', None):
-            self._rng = _Random()
-            self._rng_pid = cur_pid
-        return self._rng
+    def variants(self):
+        return len(self.characters) ** self.length
 
     def __iter__(self):
         return self
@@ -145,8 +149,7 @@ class _RandomNameSequence:
     def __next__(self):
         c = self.characters
         choose = self.rng.choice
-        letters = [choose(c) for dummy in range(8)]
-        return ''.join(letters)
+        return ''.join(choose(c) for _ in range(self.length))
 
 def _candidate_tempdir_list():
     """Generate a list of candidate temporary directories which
@@ -227,12 +230,9 @@ def _get_candidate_names():
 
     global _name_sequence
     if _name_sequence is None:
-        _once_lock.acquire()
-        try:
+        with _once_lock:
             if _name_sequence is None:
                 _name_sequence = _RandomNameSequence()
-        finally:
-            _once_lock.release()
     return _name_sequence
 
 
