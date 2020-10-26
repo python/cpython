@@ -1,9 +1,12 @@
 /* Unicode name database interface */
-#ifndef Py_LIMITED_API
-#ifndef Py_UCNHASH_H
-#define Py_UCNHASH_H
+#ifndef Py_INTERNAL_UCNHASH_H
+#define Py_INTERNAL_UCNHASH_H
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
 /* revised ucnhash CAPI interface (exported through a "wrapper") */
@@ -15,16 +18,22 @@ typedef struct {
     /* Size of this struct */
     int size;
 
+    // state which must be passed as the first parameter to getname()
+    // and getcode()
+    void *state;
+
     /* Get name for a given character code.  Returns non-zero if
        success, zero if not.  Does not set Python exceptions.
        If self is NULL, data come from the default version of the database.
        If it is not NULL, it should be a unicodedata.ucd_X_Y_Z object */
-    int (*getname)(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
+    int (*getname)(void *state, PyObject *self, Py_UCS4 code,
+                   char* buffer, int buflen,
                    int with_alias_and_seq);
 
     /* Get character code for a given name.  Same error handling
        as for getname. */
-    int (*getcode)(PyObject *self, const char* name, int namelen, Py_UCS4* code,
+    int (*getcode)(void *state, PyObject *self,
+                   const char* name, int namelen, Py_UCS4* code,
                    int with_named_seq);
 
 } _PyUnicode_Name_CAPI;
@@ -32,5 +41,4 @@ typedef struct {
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_UCNHASH_H */
-#endif /* !Py_LIMITED_API */
+#endif /* !Py_INTERNAL_UCNHASH_H */
