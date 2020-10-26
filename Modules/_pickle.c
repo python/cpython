@@ -2004,26 +2004,21 @@ fast_save_enter(PicklerObject *self, PyObject *obj)
             self->fast_nesting = -1;
             return 0;
         }
-        if (PyDict_GetItemWithError(self->fast_memo, key)) {
-            Py_DECREF(key);
+        int r = PyDict_Contains(self->fast_memo, key);
+        if (r > 0) {
             PyErr_Format(PyExc_ValueError,
                          "fast mode: can't pickle cyclic objects "
                          "including object type %.200s at %p",
                          Py_TYPE(obj)->tp_name, obj);
-            self->fast_nesting = -1;
-            return 0;
         }
-        if (PyErr_Occurred()) {
-            Py_DECREF(key);
-            self->fast_nesting = -1;
-            return 0;
-        }
-        if (PyDict_SetItem(self->fast_memo, key, Py_None) < 0) {
-            Py_DECREF(key);
-            self->fast_nesting = -1;
-            return 0;
+        else if (r == 0) {
+            r = PyDict_SetItem(self->fast_memo, key, Py_None);
         }
         Py_DECREF(key);
+        if (r != 0) {
+            self->fast_nesting = -1;
+            return 0;
+        }
     }
     return 1;
 }

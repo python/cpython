@@ -492,9 +492,10 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         return NULL;
 
     /* keep this for bw compatibility */
-    if (_PyDict_GetItemIdWithError(result->tp_dict, &PyId__abstract_))
+    int r = _PyDict_ContainsId(result->tp_dict, &PyId__abstract_);
+    if (r > 0)
         return (PyObject *)result;
-    if (PyErr_Occurred()) {
+    if (r < 0) {
         Py_DECREF(result);
         return NULL;
     }
@@ -4397,15 +4398,13 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
         }
         val = PyTuple_GET_ITEM(args, i + index);
         if (kwds) {
-            if (PyDict_GetItemWithError(kwds, name)) {
-                PyErr_Format(PyExc_TypeError,
-                            "duplicate values for field %R",
-                            name);
-                Py_DECREF(pair);
-                Py_DECREF(name);
-                return -1;
-            }
-            else if (PyErr_Occurred()) {
+            res = PyDict_Contains(kwds, name);
+            if (res != 0) {
+                if (res > 0) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "duplicate values for field %R",
+                                 name);
+                }
                 Py_DECREF(pair);
                 Py_DECREF(name);
                 return -1;
