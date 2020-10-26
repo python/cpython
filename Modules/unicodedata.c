@@ -1482,7 +1482,7 @@ unicodedata_exec(PyObject *module)
     if (v == NULL) {
         return -1;
     }
-    if (PyModule_AddObject(module, "ucnhash_CAPI", v) < 0) {
+    if (PyModule_AddObject(module, "_ucnhash_CAPI", v) < 0) {
         Py_DECREF(v);
         return -1;
     }
