@@ -163,6 +163,11 @@ struct _Py_exc_state {
 #define _PY_NSMALLPOSINTS           257
 #define _PY_NSMALLNEGINTS           5
 
+// _PyLong_GetZero() and _PyLong_GetOne() must always be available
+#if _PY_NSMALLPOSINTS < 2
+#  error "_PY_NSMALLPOSINTS must be greater than 1"
+#endif
+
 // The PyInterpreterState typedef is in Include/pystate.h.
 struct _is {
 
@@ -233,14 +238,12 @@ struct _is {
 
     PyObject *audit_hooks;
 
-#if _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS > 0
     /* Small integers are preallocated in this array so that they
        can be shared.
        The integers that are preallocated are those in the range
        -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
     */
     PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
-#endif
     struct _Py_bytes_state bytes;
     struct _Py_unicode_state unicode;
     struct _Py_float_state float_state;
