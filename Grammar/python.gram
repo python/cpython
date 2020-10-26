@@ -551,7 +551,7 @@ yield_expr[expr_ty]:
 
 arguments[expr_ty] (memo):
     | a=args [','] &')' { a }
-    | incorrect_arguments
+    | invalid_arguments
 args[expr_ty]:
     | a[asdl_expr_seq*]=','.(starred_expression | named_expression !'=')+ b=[',' k=kwargs {k}] { _PyPegen_collect_call_seqs(p, a, b, EXTRA) }
     | a=kwargs { _Py_Call(_PyPegen_dummy_name(p),
@@ -637,7 +637,7 @@ t_atom[expr_ty]:
 
 
 # From here on, there are rules for invalid syntax with specialised error messages
-incorrect_arguments:
+invalid_arguments:
     | args ',' '*' { RAISE_SYNTAX_ERROR("iterable argument unpacking follows keyword argument unpacking") }
     | a=expression for_if_clauses ',' [args | expression for_if_clauses] {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "Generator expression must be parenthesized") }
