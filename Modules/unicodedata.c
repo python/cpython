@@ -16,7 +16,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "ucnhash.h"
+#include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "structmember.h"         // PyMemberDef
 
 #include <stdbool.h>
@@ -97,6 +97,8 @@ typedef struct {
     // Borrowed reference to &UCD_Type. It is used to prepare the code
     // to convert the UCD_Type static type to a heap type.
     PyTypeObject *ucd_type;
+
+    _PyUnicode_Name_CAPI capi;
 } unicodedata_module_state;
 
 // bpo-1635741: Temporary global state until the unicodedata module
@@ -1180,10 +1182,11 @@ _getucname(unicodedata_module_state *state, PyObject *self,
 }
 
 static int
-capi_getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
+capi_getucname(void *state_raw, PyObject *self, Py_UCS4 code,
+               char* buffer, int buflen,
                int with_alias_and_seq)
 {
-    unicodedata_module_state *state = &global_module_state;
+    unicodedata_module_state *state = (unicodedata_module_state *)state_raw;
     return _getucname(state, self, code, buffer, buflen, with_alias_and_seq);
 
 }
@@ -1323,20 +1326,14 @@ _getcode(unicodedata_module_state *state, PyObject* self,
 }
 
 static int
-capi_getcode(PyObject* self, const char* name, int namelen, Py_UCS4* code,
+capi_getcode(void *state_raw, PyObject* self,
+             const char* name, int namelen, Py_UCS4* code,
              int with_named_seq)
 {
-    unicodedata_module_state *state = &global_module_state;
+    unicodedata_module_state *state = (unicodedata_module_state *)state_raw;
     return _getcode(state, self, name, namelen, code, with_named_seq);
 
 }
-
-static const _PyUnicode_Name_CAPI hashAPI =
-{
-    sizeof(_PyUnicode_Name_CAPI),
-    capi_getucname,
-    capi_getcode
-};
 
 /* -------------------------------------------------------------------- */
 /* Python bindings */
@@ -1510,6 +1507,11 @@ PyInit_unicodedata(void)
     PyObject *m, *v;
     unicodedata_module_state *state = &global_module_state;
 
+    state->capi.size = sizeof(_PyUnicode_Name_CAPI);
+    state->capi.state = state;
+    state->capi.getname = capi_getucname;
+    state->capi.getcode = capi_getcode;
+
     Py_SET_TYPE(&UCD_Type, &PyType_Type);
     state->ucd_type = &UCD_Type;
 
@@ -1528,7 +1530,7 @@ PyInit_unicodedata(void)
         PyModule_AddObject(m, "ucd_3_2_0", v);
 
     /* Export C API */
-    v = PyCapsule_New((void *)&hashAPI, PyUnicodeData_CAPSULE_NAME, NULL);
+    v = PyCapsule_New((void *)&state->capi, PyUnicodeData_CAPSULE_NAME, NULL);
     if (v != NULL)
         PyModule_AddObject(m, "ucnhash_CAPI", v);
     return m;

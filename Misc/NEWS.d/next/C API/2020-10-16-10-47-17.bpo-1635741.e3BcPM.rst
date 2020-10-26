@@ -1,0 +1,4 @@
+The private ``_PyUnicode_Name_CAPI`` structure of the PyCapsule API
+``unicodedata.ucnhash_CAPI`` moves to the internal C API. Moreover, the
+structure gets a new ``state`` member which must be passed to the
+``getcode()`` and ``getname()`` functions. Patch by Victor Stinner.
