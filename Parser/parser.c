@@ -209,7 +209,7 @@ static KeywordToken *reserved_keywords[] = {
 #define t_primary_type 1140  // Left-recursive
 #define t_lookahead_type 1141
 #define t_atom_type 1142
-#define incorrect_arguments_type 1143
+#define invalid_arguments_type 1143
 #define invalid_kwarg_type 1144
 #define invalid_named_expression_type 1145
 #define invalid_assignment_type 1146
@@ -527,7 +527,7 @@ static expr_ty target_rule(Parser *p);
 static expr_ty t_primary_rule(Parser *p);
 static void *t_lookahead_rule(Parser *p);
 static expr_ty t_atom_rule(Parser *p);
-static void *incorrect_arguments_rule(Parser *p);
+static void *invalid_arguments_rule(Parser *p);
 static void *invalid_kwarg_rule(Parser *p);
 static void *invalid_named_expression_rule(Parser *p);
 static void *invalid_assignment_rule(Parser *p);
@@ -2218,7 +2218,7 @@ assignment_rule(Parser *p)
             return NULL;
         }
     }
-    { // invalid_assignment
+    if (p->call_invalid_rules) { // invalid_assignment
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -2891,7 +2891,7 @@ del_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c%s del_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'del' del_targets &(';' | NEWLINE)"));
     }
-    { // invalid_del_stmt
+    if (p->call_invalid_rules) { // invalid_del_stmt
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -3242,7 +3242,7 @@ import_from_targets_rule(Parser *p)
         D(fprintf(stderr, "%*c%s import_from_targets[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*'"));
     }
-    { // invalid_import_from_targets
+    if (p->call_invalid_rules) { // invalid_import_from_targets
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -4035,7 +4035,7 @@ for_stmt_rule(Parser *p)
             return NULL;
         }
     }
-    { // invalid_for_target
+    if (p->call_invalid_rules) { // invalid_for_target
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -4336,7 +4336,7 @@ with_item_rule(Parser *p)
         D(fprintf(stderr, "%*c%s with_item[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression 'as' star_target &(',' | ')' | ':')"));
     }
-    { // invalid_with_item
+    if (p->call_invalid_rules) { // invalid_with_item
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -5071,7 +5071,7 @@ func_type_comment_rule(Parser *p)
         D(fprintf(stderr, "%*c%s func_type_comment[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NEWLINE TYPE_COMMENT &(NEWLINE INDENT)"));
     }
-    { // invalid_double_type_comments
+    if (p->call_invalid_rules) { // invalid_double_type_comments
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -5126,7 +5126,7 @@ params_rule(Parser *p)
     }
     arguments_ty _res = NULL;
     int _mark = p->mark;
-    { // invalid_parameters
+    if (p->call_invalid_rules) { // invalid_parameters
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -5601,7 +5601,7 @@ star_etc_rule(Parser *p)
         D(fprintf(stderr, "%*c%s star_etc[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "kwds"));
     }
-    { // invalid_star_etc
+    if (p->call_invalid_rules) { // invalid_star_etc
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -6304,7 +6304,7 @@ block_rule(Parser *p)
         D(fprintf(stderr, "%*c%s block[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "simple_stmt"));
     }
-    { // invalid_block
+    if (p->call_invalid_rules) { // invalid_block
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -6798,7 +6798,7 @@ named_expression_rule(Parser *p)
         D(fprintf(stderr, "%*c%s named_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression !':='"));
     }
-    { // invalid_named_expression
+    if (p->call_invalid_rules) { // invalid_named_expression
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -7192,7 +7192,7 @@ lambda_params_rule(Parser *p)
     }
     arguments_ty _res = NULL;
     int _mark = p->mark;
-    { // invalid_lambda_parameters
+    if (p->call_invalid_rules) { // invalid_lambda_parameters
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -7669,7 +7669,7 @@ lambda_star_etc_rule(Parser *p)
         D(fprintf(stderr, "%*c%s lambda_star_etc[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "lambda_kwds"));
     }
-    { // invalid_lambda_star_etc
+    if (p->call_invalid_rules) { // invalid_lambda_star_etc
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -11163,7 +11163,7 @@ listcomp_rule(Parser *p)
             return NULL;
         }
     }
-    { // invalid_comprehension
+    if (p->call_invalid_rules) { // invalid_comprehension
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -11294,7 +11294,7 @@ group_rule(Parser *p)
         D(fprintf(stderr, "%*c%s group[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' (yield_expr | named_expression) ')'"));
     }
-    { // invalid_group
+    if (p->call_invalid_rules) { // invalid_group
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -11388,7 +11388,7 @@ genexp_rule(Parser *p)
             return NULL;
         }
     }
-    { // invalid_comprehension
+    if (p->call_invalid_rules) { // invalid_comprehension
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -11547,7 +11547,7 @@ setcomp_rule(Parser *p)
             return NULL;
         }
     }
-    { // invalid_comprehension
+    if (p->call_invalid_rules) { // invalid_comprehension
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -11699,7 +11699,7 @@ dictcomp_rule(Parser *p)
         D(fprintf(stderr, "%*c%s dictcomp[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'{' kvpair for_if_clauses '}'"));
     }
-    { // invalid_dict_comprehension
+    if (p->call_invalid_rules) { // invalid_dict_comprehension
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -12023,7 +12023,7 @@ for_if_clause_rule(Parser *p)
             return NULL;
         }
     }
-    { // invalid_for_target
+    if (p->call_invalid_rules) { // invalid_for_target
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -12149,7 +12149,7 @@ yield_expr_rule(Parser *p)
     return _res;
 }
 
-// arguments: args ','? &')' | incorrect_arguments
+// arguments: args ','? &')' | invalid_arguments
 static expr_ty
 arguments_rule(Parser *p)
 {
@@ -12194,24 +12194,24 @@ arguments_rule(Parser *p)
         D(fprintf(stderr, "%*c%s arguments[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "args ','? &')'"));
     }
-    { // incorrect_arguments
+    if (p->call_invalid_rules) { // invalid_arguments
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "incorrect_arguments"));
-        void *incorrect_arguments_var;
+        D(fprintf(stderr, "%*c> arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "invalid_arguments"));
+        void *invalid_arguments_var;
         if (
-            (incorrect_arguments_var = incorrect_arguments_rule(p))  // incorrect_arguments
+            (invalid_arguments_var = invalid_arguments_rule(p))  // invalid_arguments
         )
         {
-            D(fprintf(stderr, "%*c+ arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "incorrect_arguments"));
-            _res = incorrect_arguments_var;
+            D(fprintf(stderr, "%*c+ arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "invalid_arguments"));
+            _res = invalid_arguments_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s arguments[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "incorrect_arguments"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_arguments"));
     }
     _res = NULL;
   done:
@@ -12548,7 +12548,7 @@ kwarg_or_starred_rule(Parser *p)
         D(fprintf(stderr, "%*c%s kwarg_or_starred[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "starred_expression"));
     }
-    { // invalid_kwarg
+    if (p->call_invalid_rules) { // invalid_kwarg
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -12668,7 +12668,7 @@ kwarg_or_double_starred_rule(Parser *p)
         D(fprintf(stderr, "%*c%s kwarg_or_double_starred[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'**' expression"));
     }
-    { // invalid_kwarg
+    if (p->call_invalid_rules) { // invalid_kwarg
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
@@ -14380,14 +14380,14 @@ t_atom_rule(Parser *p)
     return _res;
 }
 
-// incorrect_arguments:
+// invalid_arguments:
 //     | args ',' '*'
 //     | expression for_if_clauses ',' [args | expression for_if_clauses]
 //     | args for_if_clauses
 //     | args ',' expression for_if_clauses
 //     | args ',' args
 static void *
-incorrect_arguments_rule(Parser *p)
+invalid_arguments_rule(Parser *p)
 {
     D(p->level++);
     if (p->error_indicator) {
@@ -14401,7 +14401,7 @@ incorrect_arguments_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> incorrect_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args ',' '*'"));
+        D(fprintf(stderr, "%*c> invalid_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args ',' '*'"));
         Token * _literal;
         Token * _literal_1;
         expr_ty args_var;
@@ -14413,7 +14413,7 @@ incorrect_arguments_rule(Parser *p)
             (_literal_1 = _PyPegen_expect_token(p, 16))  // token='*'
         )
         {
-            D(fprintf(stderr, "%*c+ incorrect_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "args ',' '*'"));
+            D(fprintf(stderr, "%*c+ invalid_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "args ',' '*'"));
             _res = RAISE_SYNTAX_ERROR ( "iterable argument unpacking follows keyword argument unpacking" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -14423,7 +14423,7 @@ incorrect_arguments_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s incorrect_arguments[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s invalid_arguments[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "args ',' '*'"));
     }
     { // expression for_if_clauses ',' [args | expression for_if_clauses]
@@ -14431,7 +14431,7 @@ incorrect_arguments_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> incorrect_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression for_if_clauses ',' [args | expression for_if_clauses]"));
+        D(fprintf(stderr, "%*c> invalid_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression for_if_clauses ',' [args | expression for_if_clauses]"));
         Token * _literal;
         void *_opt_var;
         UNUSED(_opt_var); // Silence compiler warnings
@@ -14447,7 +14447,7 @@ incorrect_arguments_rule(Parser *p)
             (_opt_var = _tmp_127_rule(p), 1)  // [args | expression for_if_clauses]
         )
         {
-            D(fprintf(stderr, "%*c+ incorrect_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression for_if_clauses ',' [args | expression for_if_clauses]"));
+            D(fprintf(stderr, "%*c+ invalid_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression for_if_clauses ',' [args | expression for_if_clauses]"));
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "Generator expression must be parenthesized" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -14457,7 +14457,7 @@ incorrect_arguments_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s incorrect_arguments[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s invalid_arguments[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression for_if_clauses ',' [args | expression for_if_clauses]"));
     }
     { // args for_if_clauses
@@ -14465,7 +14465,7 @@ incorrect_arguments_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> incorrect_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args for_if_clauses"));
+        D(fprintf(stderr, "%*c> invalid_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args for_if_clauses"));
         expr_ty a;
         asdl_comprehension_seq* for_if_clauses_var;
         if (
@@ -14474,7 +14474,7 @@ incorrect_arguments_rule(Parser *p)
             (for_if_clauses_var = for_if_clauses_rule(p))  // for_if_clauses
         )
         {
-            D(fprintf(stderr, "%*c+ incorrect_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "args for_if_clauses"));
+            D(fprintf(stderr, "%*c+ invalid_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "args for_if_clauses"));
             _res = _PyPegen_nonparen_genexp_in_call ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -14484,7 +14484,7 @@ incorrect_arguments_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s incorrect_arguments[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s invalid_arguments[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "args for_if_clauses"));
     }
     { // args ',' expression for_if_clauses
@@ -14492,7 +14492,7 @@ incorrect_arguments_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> incorrect_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args ',' expression for_if_clauses"));
+        D(fprintf(stderr, "%*c> invalid_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args ',' expression for_if_clauses"));
         Token * _literal;
         expr_ty a;
         expr_ty args_var;
@@ -14507,7 +14507,7 @@ incorrect_arguments_rule(Parser *p)
             (for_if_clauses_var = for_if_clauses_rule(p))  // for_if_clauses
         )
         {
-            D(fprintf(stderr, "%*c+ incorrect_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "args ',' expression for_if_clauses"));
+            D(fprintf(stderr, "%*c+ invalid_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "args ',' expression for_if_clauses"));
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "Generator expression must be parenthesized" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -14517,7 +14517,7 @@ incorrect_arguments_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s incorrect_arguments[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s invalid_arguments[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "args ',' expression for_if_clauses"));
     }
     { // args ',' args
@@ -14525,7 +14525,7 @@ incorrect_arguments_rule(Parser *p)
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> incorrect_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args ',' args"));
+        D(fprintf(stderr, "%*c> invalid_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "args ',' args"));
         Token * _literal;
         expr_ty a;
         expr_ty args_var;
@@ -14537,7 +14537,7 @@ incorrect_arguments_rule(Parser *p)
             (args_var = args_rule(p))  // args
         )
         {
-            D(fprintf(stderr, "%*c+ incorrect_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "args ',' args"));
+            D(fprintf(stderr, "%*c+ invalid_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "args ',' args"));
             _res = _PyPegen_arguments_parsing_error ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -14547,7 +14547,7 @@ incorrect_arguments_rule(Parser *p)
             goto done;
         }
         p->mark = _mark;
-        D(fprintf(stderr, "%*c%s incorrect_arguments[%d-%d]: %s failed!\n", p->level, ' ',
+        D(fprintf(stderr, "%*c%s invalid_arguments[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "args ',' args"));
     }
     _res = NULL;
