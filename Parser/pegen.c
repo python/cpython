@@ -1102,8 +1102,19 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->feature_version = feature_version;
     p->known_err_token = NULL;
     p->level = 0;
+    p->call_invalid_rules = 0;
 
     return p;
+}
+
+static void
+reset_parser_state(Parser *p)
+{
+    for (int i = 0; i < p->fill; i++) {
+        p->tokens[i]->memo = NULL;
+    }
+    p->mark = 0;
+    p->call_invalid_rules = 1;
 }
 
 void *
@@ -1111,6 +1122,8 @@ _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     if (res == NULL) {
+        reset_parser_state(p);
+        _PyPegen_parse(p);
         if (PyErr_Occurred()) {
             return NULL;
         }
