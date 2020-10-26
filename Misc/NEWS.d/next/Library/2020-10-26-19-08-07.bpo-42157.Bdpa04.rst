@@ -1,0 +1,4 @@
+Convert the :mod:`unicodedata` extension module to the multiphase
+initialization API (:pep:`489`) and convert the ``unicodedata.UCD``
+static type to a heap type.
+Patch by Mohamed Koubaa and Victor Stinner.
