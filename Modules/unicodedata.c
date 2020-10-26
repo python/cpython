@@ -30,7 +30,7 @@ _Py_IDENTIFIER(NFKD);
 module unicodedata
 class unicodedata.UCD 'PreviousDBVersion *' '<not used>'
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6dac153082d150bc]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e47113e05924be43]*/
 
 /* character properties */
 
