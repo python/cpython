@@ -38,6 +38,8 @@
 
 #if defined(__linux__) && defined(HAVE_VFORK) && defined(HAVE_SIGNAL_H) && \
     defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
+/* If this is ever expanded to non-Linux platforms, verify what calls are
+ * allowed after vfork(). Ex: setsid() may be disallowed on macOS? */
 # include <signal.h>
 # define VFORK_USABLE 1
 #endif
@@ -581,7 +583,9 @@ child_exec(char *const exec_array[],
 #ifdef VFORK_USABLE
     if (child_sigmask) {
         reset_signal_handlers(child_sigmask);
-        POSIX_CALL(pthread_sigmask(SIG_SETMASK, child_sigmask, NULL));
+        if ((errno = pthread_sigmask(SIG_SETMASK, child_sigmask, NULL))) {
+            goto error;
+        }
     }
 #endif
 
@@ -710,7 +714,6 @@ do_fork_exec(char *const exec_array[],
 #ifdef VFORK_USABLE
     if (child_sigmask) {
         /* These are checked by our caller; verify them in debug builds. */
-        assert(!call_setsid);
         assert(!call_setuid);
         assert(!call_setgid);
         assert(!call_setgroups);
@@ -769,7 +772,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     uid_t uid;
     gid_t gid, *groups = NULL;
     int child_umask;
-    PyObject *cwd_obj, *cwd_obj2;
+    PyObject *cwd_obj, *cwd_obj2 = NULL;
     const char *cwd;
     pid_t pid;
     int need_to_reenable_gc = 0;
@@ -891,7 +894,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         cwd = PyBytes_AsString(cwd_obj2);
     } else {
         cwd = NULL;
-        cwd_obj2 = NULL;
     }
 
     if (groups_list != Py_None) {
@@ -995,7 +997,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     /* Use vfork() only if it's safe. See the comment above child_exec(). */
     sigset_t old_sigs;
     if (preexec_fn == Py_None &&
-        !call_setuid && !call_setgid && !call_setgroups && !call_setsid) {
+        !call_setuid && !call_setgid && !call_setgroups) {
         /* Block all signals to ensure that no signal handlers are run in the
          * child process while it shares memory with us. Note that signals
          * used internally by C libraries won't be blocked by
@@ -1007,7 +1009,11 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
          */
         sigset_t all_sigs;
         sigfillset(&all_sigs);
-        pthread_sigmask(SIG_BLOCK, &all_sigs, &old_sigs);
+        if ((saved_errno = pthread_sigmask(SIG_BLOCK, &all_sigs, &old_sigs))) {
+            errno = saved_errno;
+            PyErr_SetFromErrno(PyExc_OSError);
+            goto cleanup;
+        }
         old_sigmask = &old_sigs;
     }
 #endif
@@ -1034,8 +1040,13 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
          * Note that in environments where vfork() is implemented as fork(),
          * such as QEMU user-mode emulation, the parent won't be blocked,
          * but it won't share the address space with the child,
-         * so it's still safe to unblock the signals. */
-        pthread_sigmask(SIG_SETMASK, old_sigmask, NULL);
+         * so it's still safe to unblock the signals.
+         *
+         * We don't handle errors here because this call can't fail
+         * if valid arguments are given, and because there is no good
+         * way for the caller to deal with a failure to restore
+         * the thread signal mask. */
+        (void) pthread_sigmask(SIG_SETMASK, old_sigmask, NULL);
     }
 #endif
 
@@ -1068,6 +1079,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     return PyLong_FromPid(pid);
 
 cleanup:
+    Py_XDECREF(cwd_obj2);
     if (envp)
         _Py_FreeCharPArray(envp);
     if (argv)

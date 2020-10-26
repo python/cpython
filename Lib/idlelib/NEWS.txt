@@ -3,6 +3,9 @@ Released on 2021-10-04?
 ======================================
 
 
+bpo-33987: Mostly finish using ttk widgets, mainly for editor,
+settings, and searches.  Some patches by Mark Roseman.
+
 bpo-41775: Make 'IDLE Shell' the shell title.
 
 bpo-35764: Rewrite the Calltips doc section.
