@@ -987,8 +987,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
         for (i = start, ressize = 0; i < end; ++i) {
             /* object is guaranteed to be "ready" */
             c = PyUnicode_READ_CHAR(object, i);
-            if (ucnhash_capi->getname(ucnhash_capi->state, NULL,
-                                      c, buffer, sizeof(buffer), 1)) {
+            if (ucnhash_capi->getname(c, buffer, sizeof(buffer), 1)) {
                 replsize = 1+1+1+(int)strlen(buffer)+1;
             }
             else if (c >= 0x10000) {
@@ -1011,8 +1010,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
             i < end; ++i) {
             c = PyUnicode_READ_CHAR(object, i);
             *outp++ = '\\';
-            if (ucnhash_capi->getname(ucnhash_capi->state, NULL,
-                                      c, buffer, sizeof(buffer), 1)) {
+            if (ucnhash_capi->getname(c, buffer, sizeof(buffer), 1)) {
                 *outp++ = 'N';
                 *outp++ = '{';
                 strcpy((char *)outp, buffer);

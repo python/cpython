@@ -6523,8 +6523,7 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
                     s++;
                     ch = 0xffffffff; /* in case 'getcode' messes up */
                     if (namelen <= INT_MAX &&
-                        ucnhash_capi->getcode(ucnhash_capi->state, NULL,
-                                              start, (int)namelen,
+                        ucnhash_capi->getcode(start, (int)namelen,
                                               &ch, 0)) {
                         assert(ch <= MAX_UNICODE);
                         WRITE_CHAR(ch);
