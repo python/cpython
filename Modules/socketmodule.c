@@ -324,7 +324,7 @@ static FlagRuntimeInfo win_runtime_flags[] = {
     {14393, "TCP_FASTOPEN"}
 };
 
-static void
+static int
 remove_unusable_flags(PyObject *m)
 {
     PyObject *dict;
@@ -333,7 +333,7 @@ remove_unusable_flags(PyObject *m)
 
     dict = PyModule_GetDict(m);
     if (dict == NULL) {
-        return;
+        return -1;
     }
 
     /* set to Windows 10, except BuildNumber. */
@@ -359,19 +359,19 @@ remove_unusable_flags(PyObject *m)
             break;
         }
         else {
-            if (PyDict_GetItemString(
-                    dict,
-                    win_runtime_flags[i].flag_name) != NULL)
-            {
-                if (PyDict_DelItemString(
-                        dict,
-                        win_runtime_flags[i].flag_name))
-                {
-                    PyErr_Clear();
-                }
+            PyObject *flag_name = PyUnicode_FromString(win_runtime_flags[i].flag_name);
+            if (flag_name == NULL) {
+                return -1;
             }
+            PyObject *v = _PyDict_Pop(dict, flag_name, Py_None);
+            Py_DECREF(flag_name);
+            if (v == NULL) {
+                return -1;
+            }
+            Py_DECREF(v);
         }
     }
+    return 0;
 }
 
 #endif
@@ -8382,7 +8382,10 @@ PyInit__socket(void)
 
 #ifdef MS_WINDOWS
     /* remove some flags on older version Windows during run-time */
-    remove_unusable_flags(m);
+    if (remove_unusable_flags(m) < 0) {
+        Py_DECREF(m);
+        return NULL;
+    }
 #endif
 
     return m;

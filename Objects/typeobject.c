@@ -4767,8 +4767,11 @@ object___reduce_ex___impl(PyObject *self, int protocol)
     _Py_IDENTIFIER(__reduce__);
 
     if (objreduce == NULL) {
-        objreduce = _PyDict_GetItemId(PyBaseObject_Type.tp_dict,
-                                      &PyId___reduce__);
+        objreduce = _PyDict_GetItemIdWithError(PyBaseObject_Type.tp_dict,
+                                               &PyId___reduce__);
+        if (objreduce == NULL && PyErr_Occurred()) {
+            return NULL;
+        }
     }
 
     if (_PyObject_LookupAttrId(self, &PyId___reduce__, &reduce) < 0) {
@@ -5181,14 +5184,14 @@ overrides_hash(PyTypeObject *type)
     _Py_IDENTIFIER(__eq__);
 
     assert(dict != NULL);
-    if (_PyDict_GetItemId(dict, &PyId___eq__) != NULL)
-        return 1;
-    if (_PyDict_GetItemId(dict, &PyId___hash__) != NULL)
-        return 1;
-    return 0;
+    int r = _PyDict_ContainsId(dict, &PyId___eq__);
+    if (r == 0) {
+        r = _PyDict_ContainsId(dict, &PyId___hash__);
+    }
+    return r;
 }
 
-static void
+static int
 inherit_slots(PyTypeObject *type, PyTypeObject *base)
 {
     PyTypeObject *basebase;
@@ -5331,11 +5334,16 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         /* Copy comparison-related slots only when
            not overriding them anywhere */
         if (type->tp_richcompare == NULL &&
-            type->tp_hash == NULL &&
-            !overrides_hash(type))
+            type->tp_hash == NULL)
         {
-            type->tp_richcompare = base->tp_richcompare;
-            type->tp_hash = base->tp_hash;
+            int r = overrides_hash(type);
+            if (r < 0) {
+                return -1;
+            }
+            if (!r) {
+                type->tp_richcompare = base->tp_richcompare;
+                type->tp_hash = base->tp_hash;
+            }
         }
     }
     {
@@ -5378,6 +5386,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
          * obvious to be done -- the type is on its own.
          */
     }
+    return 0;
 }
 
 static int add_operators(PyTypeObject *);
@@ -5507,8 +5516,11 @@ PyType_Ready(PyTypeObject *type)
     n = PyTuple_GET_SIZE(bases);
     for (i = 1; i < n; i++) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
-        if (PyType_Check(b))
-            inherit_slots(type, (PyTypeObject *)b);
+        if (PyType_Check(b)) {
+            if (inherit_slots(type, (PyTypeObject *)b) < 0) {
+                goto error;
+            }
+        }
     }
 
     /* All bases of statically allocated type should be statically allocated */

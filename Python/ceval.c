@@ -1446,11 +1446,18 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     }
 
 #ifdef LLTRACE
-    lltrace = _PyDict_GetItemId(f->f_globals, &PyId___ltrace__) != NULL;
+    {
+        int r = _PyDict_ContainsId(f->f_globals, &PyId___ltrace__);
+        if (r < 0) {
+            goto exit_eval_frame;
+        }
+        lltrace = r;
+    }
 #endif
 
-    if (throwflag) /* support for generator.throw() */
+    if (throwflag) { /* support for generator.throw() */
         goto error;
+    }
 
 #ifdef Py_DEBUG
     /* _PyEval_EvalFrameDefault() must not be called with an exception set,

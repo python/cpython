@@ -392,7 +392,7 @@ PySymtable_Lookup(struct symtable *st, void *key)
 static long
 _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
 {
-    PyObject *v = PyDict_GetItem(ste->ste_symbols, name);
+    PyObject *v = PyDict_GetItemWithError(ste->ste_symbols, name);
     if (!v)
         return 0;
     assert(PyLong_Check(v));
@@ -634,7 +634,7 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         long scope, flags;
         assert(PyLong_Check(v));
         flags = PyLong_AS_LONG(v);
-        v_scope = PyDict_GetItem(scopes, name);
+        v_scope = PyDict_GetItemWithError(scopes, name);
         assert(v_scope && PyLong_Check(v_scope));
         scope = PyLong_AS_LONG(v_scope);
         flags |= (scope << SCOPE_OFFSET);
@@ -1071,8 +1071,11 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
         /* XXX need to update DEF_GLOBAL for other flags too;
            perhaps only DEF_FREE_GLOBAL */
         val = flag;
-        if ((o = PyDict_GetItem(st->st_global, mangled))) {
+        if ((o = PyDict_GetItemWithError(st->st_global, mangled))) {
             val |= PyLong_AS_LONG(o);
+        }
+        else if (PyErr_Occurred()) {
+            goto error;
         }
         o = PyLong_FromLong(val);
         if (o == NULL)
