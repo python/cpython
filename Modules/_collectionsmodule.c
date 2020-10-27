@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "structmember.h"         // PyMemberDef
 
 #ifdef STDC_HEADERS
@@ -2323,10 +2324,10 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             if (oldval == NULL) {
                 if (PyErr_Occurred())
                     goto done;
-                if (_PyDict_SetItem_KnownHash(mapping, key, _PyLong_One, hash) < 0)
+                if (_PyDict_SetItem_KnownHash(mapping, key, _PyLong_GetOne(), hash) < 0)
                     goto done;
             } else {
-                newval = PyNumber_Add(oldval, _PyLong_One);
+                newval = PyNumber_Add(oldval, _PyLong_GetOne());
                 if (newval == NULL)
                     goto done;
                 if (_PyDict_SetItem_KnownHash(mapping, key, newval, hash) < 0)
@@ -2340,14 +2341,16 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
         if (bound_get == NULL)
             goto done;
 
+        PyObject *zero = _PyLong_GetZero();  // borrowed reference
+        PyObject *one = _PyLong_GetOne();  // borrowed reference
         while (1) {
             key = PyIter_Next(it);
             if (key == NULL)
                 break;
-            oldval = PyObject_CallFunctionObjArgs(bound_get, key, _PyLong_Zero, NULL);
+            oldval = PyObject_CallFunctionObjArgs(bound_get, key, zero, NULL);
             if (oldval == NULL)
                 break;
-            newval = PyNumber_Add(oldval, _PyLong_One);
+            newval = PyNumber_Add(oldval, one);
             Py_DECREF(oldval);
             if (newval == NULL)
                 break;
