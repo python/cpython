@@ -11,7 +11,7 @@ extern "C" {
 
 /* revised ucnhash CAPI interface (exported through a "wrapper") */
 
-#define PyUnicodeData_CAPSULE_NAME "unicodedata.ucnhash_CAPI"
+#define PyUnicodeData_CAPSULE_NAME "unicodedata._ucnhash_CAPI"
 
 typedef struct {
 

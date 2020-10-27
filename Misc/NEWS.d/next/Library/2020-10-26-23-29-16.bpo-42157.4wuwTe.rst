@@ -1,0 +1,3 @@
+Removed the ``unicodedata.ucnhash_CAPI`` attribute which was an internal
+PyCapsule object. The related private ``_PyUnicode_Name_CAPI`` structure was
+moved to the internal C API. Patch by Victor Stinner.
