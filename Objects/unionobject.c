@@ -15,7 +15,7 @@ unionobject_dealloc(PyObject *self)
     unionobject *alias = (unionobject *)self;
 
     Py_XDECREF(alias->args);
-    self->ob_type->tp_free(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static Py_hash_t
