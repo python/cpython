@@ -1,6 +1,7 @@
 /* enumerate object */
 
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetOne()
 
 #include "clinic/enumobject.c.h"
 
@@ -115,7 +116,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
     }
     next_index = en->en_longindex;
     assert(next_index != NULL);
-    stepped_up = PyNumber_Add(next_index, _PyLong_One);
+    stepped_up = PyNumber_Add(next_index, _PyLong_GetOne());
     if (stepped_up == NULL) {
         Py_DECREF(next_item);
         return NULL;
