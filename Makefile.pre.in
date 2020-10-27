@@ -749,7 +749,7 @@ regen-importlib: Programs/_freeze_importlib
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-importlib clinic \
-	regen-pegen-metaparser regen-pegen
+	regen-pegen-metaparser regen-pegen regen-keyword
 
 ############################################################################
 # Special rules for object files
