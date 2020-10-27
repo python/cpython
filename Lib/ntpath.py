@@ -140,16 +140,20 @@ def splitdrive(p):
     Paths cannot contain both a drive letter and a UNC path.
 
     """
+    # Reference for long paths:
+    # https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
     p = os.fspath(p)
     if len(p) >= 2:
         if isinstance(p, bytes):
             sep = b'\\'
             altsep = b'/'
             colon = b':'
+            long_UNC_prefix = b'\\\\?\\UNC'
         else:
             sep = '\\'
             altsep = '/'
             colon = ':'
+            long_UNC_prefix = '\\\\?\\UNC'
         normp = p.replace(altsep, sep)
         if (normp[0:2] == sep*2) and (normp[2:3] != sep):
             # is a UNC path:
@@ -166,7 +170,13 @@ def splitdrive(p):
                 return p[:0], p
             if index2 == -1:
                 index2 = len(p)
-            return p[:index2], p[index2:]
+            if p[:index2] != long_UNC_prefix:
+                return p[:index2], p[index2:]
+            # \\machine\mountpoint\ and \\?\UNC\machine\mountpoint\ are the same
+            p_drive, p_path = splitdrive(sep + p[index2:])
+            if p_drive:
+                return long_UNC_prefix + p_drive[1:], p_path
+            return p[:0], p
         if normp[1:2] == colon:
             return p[:2], p[2:]
     return p[:0], p
