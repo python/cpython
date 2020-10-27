@@ -176,6 +176,14 @@ class PlatformTest(unittest.TestCase):
         )
         self.assertEqual(tuple(res), expected)
 
+    def test_uname_replace(self):
+        res = platform.uname()
+        new = res._replace(
+            system='system', node='node', release='release',
+            version='version', machine='machine', processor='processor')
+        self.assertEqual(new.system, 'system')
+        self.assertEqual(new.processor, 'processor')
+
     @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
     def test_uname_processor(self):
         """
