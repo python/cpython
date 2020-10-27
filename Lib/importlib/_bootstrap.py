@@ -20,6 +20,12 @@ work. One should use importlib as the public-facing version of this module.
 # reference any injected objects! This includes not only global code but also
 # anything specified at the class level.
 
+def _object_name(obj):
+    try:
+        return obj.__qualname__
+    except AttributeError:
+        return type(obj).__qualname__
+
 # Bootstrap-related code ######################################################
 
 _bootstrap_external = None
@@ -608,7 +614,7 @@ def _exec(spec, module):
             else:
                 _init_module_attrs(spec, module, override=True)
                 if not hasattr(spec.loader, 'exec_module'):
-                    msg = ("loader.exec_module() not found; "
+                    msg = (f"{_object_name(spec.loader)}.exec_module() not found; "
                            "falling back to load_module()")
                     _warnings.warn(msg, ImportWarning)
                     spec.loader.load_module(name)
@@ -663,7 +669,8 @@ def _load_unlocked(spec):
     if spec.loader is not None:
         # Not a namespace package.
         if not hasattr(spec.loader, 'exec_module'):
-            msg = "loader.exec_module() not found; falling back to load_module()"
+            msg = (f"{_object_name(spec.loader)}.exec_module() not found; "
+                    "falling back to load_module()")
             _warnings.warn(msg, ImportWarning)
             return _load_backward_compatible(spec)
 
