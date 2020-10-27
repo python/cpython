@@ -32,9 +32,6 @@ _Py_IDENTIFIER(big);
              (Py_SIZE(x) == 0 ? (sdigit)0 :                             \
               (sdigit)(x)->ob_digit[0]))
 
-PyObject *_PyLong_Zero = NULL;
-PyObject *_PyLong_One = NULL;
-
 #define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
 
@@ -5723,16 +5720,6 @@ _PyLong_Init(PyThreadState *tstate)
     }
 
     if (_Py_IsMainInterpreter(tstate)) {
-        _PyLong_Zero = PyLong_FromLong(0);
-        if (_PyLong_Zero == NULL) {
-            return 0;
-        }
-
-        _PyLong_One = PyLong_FromLong(1);
-        if (_PyLong_One == NULL) {
-            return 0;
-        }
-
         /* initialize int_info */
         if (Int_InfoType.tp_name == NULL) {
             if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
@@ -5747,11 +5734,6 @@ _PyLong_Init(PyThreadState *tstate)
 void
 _PyLong_Fini(PyThreadState *tstate)
 {
-    if (_Py_IsMainInterpreter(tstate)) {
-        Py_CLEAR(_PyLong_One);
-        Py_CLEAR(_PyLong_Zero);
-    }
-
     for (Py_ssize_t i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
         Py_CLEAR(tstate->interp->small_ints[i]);
     }
