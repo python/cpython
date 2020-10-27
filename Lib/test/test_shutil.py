@@ -118,7 +118,7 @@ def rlistdir(path):
     return res
 
 def supports_file2file_sendfile():
-    # ...apparently Linux and Solaris are the only ones
+    # ...apparently Linux is the only one
     if not hasattr(os, "sendfile"):
         return False
     srcname = None

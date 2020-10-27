@@ -3158,9 +3158,7 @@ class SendfileTestServer(asyncore.dispatcher, threading.Thread):
 class TestSendfile(unittest.TestCase):
 
     DATA = b"12345abcde" * 16 * 1024  # 160 KiB
-    SUPPORT_HEADERS_TRAILERS = not sys.platform.startswith("linux") and \
-                               not sys.platform.startswith("solaris") and \
-                               not sys.platform.startswith("sunos")
+    SUPPORT_HEADERS_TRAILERS = not sys.platform.startswith("linux")
     requires_headers_trailers = unittest.skipUnless(SUPPORT_HEADERS_TRAILERS,
             'requires headers and trailers support')
     requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
@@ -3260,14 +3258,8 @@ class TestSendfile(unittest.TestCase):
     def test_offset_overflow(self):
         # specify an offset > file size
         offset = len(self.DATA) + 4096
-        try:
-            sent = os.sendfile(self.sockno, self.fileno, offset, 4096)
-        except OSError as e:
-            # Solaris can raise EINVAL if offset >= file length, ignore.
-            if e.errno != errno.EINVAL:
-                raise
-        else:
-            self.assertEqual(sent, 0)
+        sent = os.sendfile(self.sockno, self.fileno, offset, 4096)
+        self.assertEqual(sent, 0)
         self.client.shutdown(socket.SHUT_RDWR)
         self.client.close()
         self.server.wait()

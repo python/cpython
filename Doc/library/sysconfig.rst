@@ -181,7 +181,6 @@ Other functions
 
    - linux-i586
    - linux-alpha (?)
-   - solaris-2.6-sun4u
 
    Windows will return one of:
 

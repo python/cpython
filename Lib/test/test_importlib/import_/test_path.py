@@ -172,7 +172,7 @@ class FinderTests:
             try:
                 os.rmdir(new_dir)
             except OSError:
-                # EINVAL on Solaris, EBUSY on AIX, ENOTEMPTY on Windows
+                # EBUSY on AIX, ENOTEMPTY on Windows
                 self.skipTest("platform does not allow "
                               "the deletion of the cwd")
         except:

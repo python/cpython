@@ -56,7 +56,7 @@ class bdist(Command):
     no_format_option = ('bdist_rpm',)
 
     # This won't do in reality: will need to distinguish RPM-ish Linux,
-    # Debian-ish Linux, Solaris, FreeBSD, ..., Windows, Mac OS.
+    # Debian-ish Linux, FreeBSD, ..., Windows, Mac OS.
     default_format = {'posix': 'gztar',
                       'nt': 'zip'}
 

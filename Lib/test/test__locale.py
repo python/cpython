@@ -28,30 +28,6 @@ candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
 
 def setUpModule():
     global candidate_locales
-    # Issue #13441: Skip some locales (e.g. cs_CZ and hu_HU) on Solaris to
-    # workaround a mbstowcs() bug. For example, on Solaris, the hu_HU locale uses
-    # the locale encoding ISO-8859-2, the thousands separator is b'\xA0' and it is
-    # decoded as U+30000020 (an invalid character) by mbstowcs().
-    if sys.platform == 'sunos5':
-        old_locale = locale.setlocale(locale.LC_ALL)
-        try:
-            locales = []
-            for loc in candidate_locales:
-                try:
-                    locale.setlocale(locale.LC_ALL, loc)
-                except Error:
-                    continue
-                encoding = locale.getpreferredencoding(False)
-                try:
-                    localeconv()
-                except Exception as err:
-                    print("WARNING: Skip locale %s (encoding %s): [%s] %s"
-                        % (loc, encoding, type(err), err))
-                else:
-                    locales.append(loc)
-            candidate_locales = locales
-        finally:
-            locale.setlocale(locale.LC_ALL, old_locale)
 
     # Workaround for MSVC6(debug) crash bug
     if "MSC v.1200" in sys.version:

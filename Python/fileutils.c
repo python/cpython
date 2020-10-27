@@ -1179,8 +1179,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
         else {
             /* Issue #22258: Here, ENOTTY means "Inappropriate ioctl for
                device". The ioctl is declared but not supported by the kernel.
-               Remember that ioctl() doesn't work. It is the case on
-               Illumos-based OS for example.
+               Remember that ioctl() doesn't work.
 
                Issue #27057: When SELinux policy disallows ioctl it will fail
                with EACCES. While FIOCLEX is safe operation it may be

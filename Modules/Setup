@@ -274,8 +274,6 @@ _symtable symtablemodule.c
 #	-I/usr/local/include \
 # *** Uncomment and edit to reflect where your X11 header files are:
 #	-I/usr/X11R6/include \
-# *** Or uncomment this for Solaris:
-#	-I/usr/openwin/include \
 # *** Uncomment and edit for Tix extension only:
 #	-DWITH_TIX -ltix8.1.8.2 \
 # *** Uncomment and edit for BLT extension only:
@@ -289,8 +287,6 @@ _symtable symtablemodule.c
 #	-ltk8.2 -ltcl8.2 \
 # *** Uncomment and edit to reflect where your X11 libraries are:
 #	-L/usr/X11R6/lib \
-# *** Or uncomment this for Solaris:
-#	-L/usr/openwin/lib \
 # *** Uncomment these for TOGL extension only:
 #	-lGL -lGLU -lXext -lXmu \
 # *** Uncomment for AIX:

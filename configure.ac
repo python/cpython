@@ -485,13 +485,6 @@ case $ac_sys_system/$ac_sys_release in
   # Marc Recht
   NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6@<:@A-S@:>@)
     define_xopen_source=no;;
-  # From the perspective of Solaris, _XOPEN_SOURCE is not so much a
-  # request to enable features supported by the standard as a request
-  # to disable features not supported by the standard.  The best way
-  # for Python to use Solaris is simply to leave _XOPEN_SOURCE out
-  # entirely and define __EXTENSIONS__ instead.
-  SunOS/*)
-    define_xopen_source=no;;
   # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
   # but used in /usr/include/netinet/tcp.h. Reported by Tim Rice.
   # Reconfirmed for 7.1.4 by Martin v. Loewis.
@@ -1135,16 +1128,6 @@ if test $enable_shared = "yes"; then
     CYGWIN*)
           LDLIBRARY='libpython$(LDVERSION).dll.a'
           DLLLIBRARY='libpython$(LDVERSION).dll'
-          ;;
-    SunOS*)
-	  LDLIBRARY='libpython$(LDVERSION).so'
-	  BLDLIBRARY='-Wl,-R,$(LIBDIR) -L. -lpython$(LDVERSION)'
-	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-	  INSTSONAME="$LDLIBRARY".$SOVERSION
-	  if test "$with_pydebug" != yes
-	  then
-	      PY3LIBRARY=libpython3.so
-	  fi
           ;;
     Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*)
 	  LDLIBRARY='libpython$(LDVERSION).so'
@@ -2200,7 +2183,7 @@ utime.h \
 poll.h sys/devpoll.h sys/epoll.h sys/poll.h \
 sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
 sys/kern_control.h sys/loadavg.h sys/lock.h sys/mkdev.h sys/modem.h \
-sys/param.h sys/random.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
+sys/param.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
 sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
@@ -2379,7 +2362,7 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
   [Defined to enable large file support when an off_t is bigger than a long
    and long long is at least as big as an off_t. You may need
    to add some flags for configuration and compilation to enable this mode.
-   (For Solaris and Linux, the necessary defines are already defined.)])
+   (For Linux, the necessary defines are already defined.)])
   AC_MSG_RESULT(yes)
 else
   AC_MSG_RESULT(no)
@@ -2569,7 +2552,6 @@ fi
 AC_MSG_RESULT($SHLIB_SUFFIX)
 
 # LDSHARED is the ld *command* used to create shared library
-# -- "cc -G" on SunOS 5.x.
 # (Shared libraries in this instance are shared modules to be loaded into
 # Python, as opposed to building Python itself as a shared library.)
 AC_MSG_CHECKING(LDSHARED)
@@ -2580,14 +2562,6 @@ then
 		BLDSHARED="Modules/ld_so_aix \$(CC) -bI:Modules/python.exp"
 		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
-	SunOS/5*)
-		if test "$GCC" = "yes" ; then
-			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
-		else
-			LDSHARED='$(CC) -G'
-			LDCXXSHARED='$(CXX) -G'
-		fi ;;
 	hp*|HP*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
@@ -2711,12 +2685,6 @@ AC_MSG_CHECKING(CCSHARED)
 if test -z "$CCSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	SunOS*) if test "$GCC" = yes;
-		then CCSHARED="-fPIC";
-		elif test `uname -p` = sparc;
-		then CCSHARED="-xcode=pic32";
-		else CCSHARED="-Kpic";
-		fi;;
 	hp*|HP*) if test "$GCC" = yes;
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
@@ -2775,13 +2743,6 @@ then
 		then
 			LINKFORSHARED="-Wl,--export-dynamic"
 		fi;;
-	SunOS/5*) case $CC in
-		  *gcc*)
-		    if $CC -Xlinker --help 2>&1 | grep export-dynamic >/dev/null
-		    then
-			LINKFORSHARED="-Xlinker --export-dynamic"
-		    fi;;
-		  esac;;
 	CYGWIN*)
 		if test $enable_shared = "no"
 		then
@@ -2835,7 +2796,7 @@ AC_MSG_RESULT($SHLIBS)
 
 # checks for libraries
 AC_CHECK_LIB(sendfile, sendfile)
-AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
+AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
 # checks for uuid.h location
@@ -2878,10 +2839,8 @@ void *x = uuid_enc_be
   [AC_MSG_RESULT(no)]
 )
 
-# 'Real Time' functions on Solaris
-# posix4 on Solaris 2.6
 # pthread (first!) on Linux
-AC_SEARCH_LIBS(sem_init, pthread rt posix4)
+AC_SEARCH_LIBS(sem_init, pthread rt)
 
 # check if we need libintl for locale functions
 AC_CHECK_LIB(intl, textdomain,
@@ -3041,10 +3000,6 @@ LDFLAGS="-fsanitize=undefined $LDFLAGS"
 ],
 [AC_MSG_RESULT(no)])
 
-# Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
-AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
-AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
-
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,
             AS_HELP_STRING([--with-libs='lib1 ...'], [link against additional libs (default is no)]),
@@ -3189,9 +3144,6 @@ then
     # Defining _REENTRANT on system with POSIX threads should not hurt.
     AC_DEFINE(_REENTRANT)
     posix_threads=yes
-    if test "$ac_sys_system" = "SunOS"; then
-        CFLAGS="$CFLAGS -D_REENTRANT"
-    fi
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
@@ -3284,14 +3236,7 @@ if test "$posix_threads" = "yes"; then
           and your system does not define that.])
       fi
 
-      # Bug 662787: Using semaphores causes unexplicable hangs on Solaris 8.
       case  $ac_sys_system/$ac_sys_release in
-      SunOS/5.6) AC_DEFINE(HAVE_PTHREAD_DESTRUCTOR, 1,
-                       [Defined for Solaris 2.6 bug in pthread header.])
-		       ;;
-      SunOS/5.8) AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
-		       [Define if the Posix semaphores do not work on your system])
-		       ;;
       AIX/*) AC_DEFINE(HAVE_BROKEN_POSIX_SEMAPHORES, 1,
 		       [Define if the Posix semaphores do not work on your system])
 		       ;;
@@ -3843,12 +3788,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 
 dnl check for true
 AC_CHECK_PROGS(TRUE, true, /bin/true)
-
-dnl On some systems (e.g. Solaris 9), hstrerror and inet_aton are in -lresolv
-dnl On others, they are in the C library, so we to take no action
-AC_CHECK_LIB(c, inet_aton, [$ac_cv_prog_TRUE],
-  AC_CHECK_LIB(resolv, inet_aton)
-)
 
 # On Tru64, chflags seems to be present, but calling it will
 # exit Python
@@ -5121,7 +5060,7 @@ fi
 
 AC_CHECK_HEADERS(curses.h ncurses.h)
 
-# On Solaris, term.h requires curses.h
+# On Linux, term.h requires curses.h
 AC_CHECK_HEADERS(term.h,,,[
 #ifdef HAVE_CURSES_H
 #include <curses.h>
@@ -5648,31 +5587,6 @@ AC_MSG_RESULT($have_getrandom_syscall)
 if test "$have_getrandom_syscall" = yes; then
     AC_DEFINE(HAVE_GETRANDOM_SYSCALL, 1,
               [Define to 1 if the Linux getrandom() syscall is available])
-fi
-
-# check if the getrandom() function is available
-# the test was written for the Solaris function of <sys/random.h>
-AC_MSG_CHECKING(for the getrandom() function)
-AC_LINK_IFELSE(
-[
-  AC_LANG_SOURCE([[
-    #include <sys/random.h>
-
-    int main() {
-        char buffer[1];
-        const size_t buflen = sizeof(buffer);
-        const int flags = 0;
-        /* ignore the result, Python checks for ENOSYS at runtime */
-        (void)getrandom(buffer, buflen, flags);
-        return 0;
-    }
-  ]])
-],[have_getrandom=yes],[have_getrandom=no])
-AC_MSG_RESULT($have_getrandom)
-
-if test "$have_getrandom" = yes; then
-    AC_DEFINE(HAVE_GETRANDOM, 1,
-              [Define to 1 if the getrandom() function is available])
 fi
 
 # checks for POSIX shared memory, used by Modules/_multiprocessing/posixshmem.c

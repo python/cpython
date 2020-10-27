@@ -5129,10 +5129,6 @@ class NetworkConnectionNoServer(unittest.TestCase):
         # create_connection() enumerates through all the addresses returned
         # and if it doesn't successfully bind to any of them, it propagates
         # the last exception it encountered.
-        #
-        # On Solaris, ENETUNREACH is returned in this circumstance instead
-        # of ECONNREFUSED.  So, if that errno exists, add it to our list of
-        # expected errnos.
         expected_errnos = socket_helper.get_socket_conn_refused_errs()
         self.assertIn(cm.exception.errno, expected_errnos)
 

@@ -1,8 +1,8 @@
 #! /usr/local/bin/python
 
 # NOTE: the above "/usr/local/bin/python" is NOT a mistake.  It is
-# intentionally NOT "/usr/bin/env python".  On many systems
-# (e.g. Solaris), /usr/local/bin is not in $PATH as passed to CGI
+# intentionally NOT "/usr/bin/env python".  On many systems,
+# /usr/local/bin is not in $PATH as passed to CGI
 # scripts, and /usr/local/bin is the default directory where Python is
 # installed, so /usr/bin/env would be unable to find python.  Granted,
 # binary installations by Linux vendors often install Python in

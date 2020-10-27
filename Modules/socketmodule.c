@@ -182,8 +182,6 @@ if_indextoname(index) -- return the corresponding interface name\n\
 #ifdef HAVE_GETHOSTBYNAME_R
 # if defined(_AIX) && !defined(_LINUX_SOURCE_COMPAT)
 #  define HAVE_GETHOSTBYNAME_R_3_ARG
-# elif defined(__sun) || defined(__sgi)
-#  define HAVE_GETHOSTBYNAME_R_5_ARG
 # elif defined(__linux__)
 /* Rely on the configure script */
 # elif defined(_LINUX_SOURCE_COMPAT) /* Linux compatibility on AIX */
@@ -223,11 +221,6 @@ if_indextoname(index) -- return the corresponding interface name\n\
 
 #define HAVE_INET_PTON
 #include <netdb.h>
-#endif
-
-/* Solaris fails to define this variable at all. */
-#if (defined(__sun) && defined(__SVR4)) && !defined(INET_ADDRSTRLEN)
-#define INET_ADDRSTRLEN 16
 #endif
 
 /* Generic includes */

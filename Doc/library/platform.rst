@@ -72,9 +72,8 @@ Cross Platform
    may look different on different platforms and this is intended.
 
    If *aliased* is true, the function will use aliases for various platforms that
-   report system names which differ from their common names, for example SunOS will
-   be reported as Solaris.  The :func:`system_alias` function is used to implement
-   this.
+   report system names which differ from their common names.  The
+   :func:`system_alias` function is used to implement this.
 
    Setting *terse* to true causes the function to return only the absolute minimum
    information needed to identify the platform.

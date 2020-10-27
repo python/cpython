@@ -18,7 +18,7 @@ Introduction
 
     Pynche should work with any variant of Python after 1.5.2
     (e.g. 2.0.1 and 2.1.1), using Tk 8.0.x.  It's been tested on
-    Solaris 2.6, Windows NT 4, and various Linux distros.  You'll want
+    Windows NT 4, and various Linux distros.  You'll want
     to be sure to have at least Tk 8.0.3 for Windows.  Also, Pynche is
     very colormap intensive, so it doesn't work very well on 8-bit
     graphics cards; 24bit+ graphics cards are so cheap these days,

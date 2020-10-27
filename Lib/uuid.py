@@ -528,11 +528,6 @@ def _arp_getnode():
     except OSError:
         return None
 
-    # Try getting the MAC addr from arp based on our IP address (Solaris).
-    mac = _find_mac_near_keyword('arp', '-an', [os.fsencode(ip_addr)], lambda i: -1)
-    if mac:
-        return mac
-
     # This works on OpenBSD
     mac = _find_mac_near_keyword('arp', '-an', [os.fsencode(ip_addr)], lambda i: i+1)
     if mac:

@@ -522,7 +522,7 @@ class SysModuleTest(unittest.TestCase):
     def test_thread_info(self):
         info = sys.thread_info
         self.assertEqual(len(info), 3)
-        self.assertIn(info.name, ('nt', 'pthread', 'solaris', None))
+        self.assertIn(info.name, ('nt', 'pthread', None))
         self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
 
     def test_43581(self):

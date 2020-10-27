@@ -1115,7 +1115,6 @@ other utility module.
 
    * ``linux-i586``
    * ``linux-alpha``
-   * ``solaris-2.6-sun4u``
 
    For non-POSIX platforms, currently just returns ``sys.platform``.
 

@@ -350,8 +350,8 @@ extern char        *ctermid_r(char *);
 #  define WAIT_STATUS_INT(s) (s)
 #endif /* UNION_WAIT */
 
-/* Don't use the "_r" form if we don't need it (also, won't have a
-   prototype for it, at least on Solaris -- maybe others as well?). */
+/* Don't use the "_r" form if we don't need it
+   (also, won't have a prototype for it. */
 #if defined(HAVE_CTERMID_R)
 #  define USE_CTERMID_R
 #endif
@@ -389,11 +389,6 @@ extern char        *ctermid_r(char *);
 #else
 #  define INITFUNC PyInit_posix
 #  define MODNAME "posix"
-#endif
-
-#if defined(__sun)
-/* Something to implement in autoconf, not present in autoconf 2.69 */
-#  define HAVE_STRUCT_STAT_ST_FSTYPE 1
 #endif
 
 /* memfd_create is either defined in sys/mman.h or sys/memfd.h
@@ -788,16 +783,9 @@ _Py_Dev_Converter(PyObject *obj, void *p)
 
 
 #ifdef AT_FDCWD
-/*
- * Why the (int) cast?  Solaris 10 defines AT_FDCWD as 0xffd19553 (-3041965);
- * without the int cast, the value gets interpreted as uint (4291925331),
- * which doesn't play nicely with all the initializer lines in this file that
- * look like this:
- *      int dir_fd = DEFAULT_DIR_FD;
- */
-#define DEFAULT_DIR_FD (int)AT_FDCWD
+#  define DEFAULT_DIR_FD AT_FDCWD
 #else
-#define DEFAULT_DIR_FD (-100)
+#  define DEFAULT_DIR_FD (-100)
 #endif
 
 static int
@@ -2001,9 +1989,6 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
     {"st_file_attributes", "Windows file attribute bits"},
 #endif
-#ifdef HAVE_STRUCT_STAT_ST_FSTYPE
-    {"st_fstype",  "Type of filesystem"},
-#endif
 #ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
     {"st_reparse_tag", "Windows reparse tag"},
 #endif
@@ -2052,16 +2037,10 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_FILE_ATTRIBUTES_IDX ST_BIRTHTIME_IDX
 #endif
 
-#ifdef HAVE_STRUCT_STAT_ST_FSTYPE
-#define ST_FSTYPE_IDX (ST_FILE_ATTRIBUTES_IDX+1)
-#else
-#define ST_FSTYPE_IDX ST_FILE_ATTRIBUTES_IDX
-#endif
-
 #ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
-#define ST_REPARSE_TAG_IDX (ST_FSTYPE_IDX+1)
+#define ST_REPARSE_TAG_IDX (ST_FILE_ATTRIBUTES_IDX+1)
 #else
-#define ST_REPARSE_TAG_IDX ST_FSTYPE_IDX
+#define ST_REPARSE_TAG_IDX ST_FILE_ATTRIBUTES_IDX
 #endif
 
 static PyStructSequence_Desc stat_result_desc = {
@@ -2332,10 +2311,6 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
     PyStructSequence_SET_ITEM(v, ST_FILE_ATTRIBUTES_IDX,
                               PyLong_FromUnsignedLong(st->st_file_attributes));
-#endif
-#ifdef HAVE_STRUCT_STAT_ST_FSTYPE
-   PyStructSequence_SET_ITEM(v, ST_FSTYPE_IDX,
-                              PyUnicode_FromString(st->st_fstype));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
     PyStructSequence_SET_ITEM(v, ST_REPARSE_TAG_IDX,
@@ -6472,7 +6447,7 @@ os_sched_setscheduler_impl(PyObject *module, pid_t pid, int policy,
 
     /*
     ** sched_setscheduler() returns 0 in Linux, but the previous
-    ** scheduling policy under Solaris/Illumos, and others.
+    ** scheduling policy under others.
     ** On error, -1 is returned in all Operating Systems.
     */
     if (sched_setscheduler(pid, policy, &param) == -1)
@@ -6809,9 +6784,6 @@ os_openpty_impl(PyObject *module)
 #endif
 #if defined(HAVE_DEV_PTMX) && !defined(HAVE_OPENPTY) && !defined(HAVE__GETPTY)
     PyOS_sighandler_t sig_saved;
-#if defined(__sun) && defined(__SVR4)
-    extern char *ptsname(int fildes);
-#endif
 #endif
 
 #ifdef HAVE_OPENPTY
@@ -6995,10 +6967,9 @@ os_getpid_impl(PyObject *module)
 #endif /* HAVE_GETPID */
 
 #ifdef NGROUPS_MAX
-#define MAX_GROUPS NGROUPS_MAX
+#  define MAX_GROUPS NGROUPS_MAX
 #else
-    /* defined to be 16 on Solaris7, so this should be a small number */
-#define MAX_GROUPS 64
+#  define MAX_GROUPS 64
 #endif
 
 #ifdef HAVE_GETGROUPLIST
@@ -9457,24 +9428,6 @@ done:
     off_t offset;
     if (!Py_off_t_converter(offobj, &offset))
         return NULL;
-
-#if defined(__sun) && defined(__SVR4)
-    // On Solaris, sendfile raises EINVAL rather than returning 0
-    // when the offset is equal or bigger than the in_fd size.
-    struct stat st;
-
-    do {
-        Py_BEGIN_ALLOW_THREADS
-        ret = fstat(in_fd, &st);
-        Py_END_ALLOW_THREADS
-    } while (ret != 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    if (ret < 0)
-        return (!async_err) ? posix_error() : NULL;
-
-    if (offset >= st.st_size) {
-        return Py_BuildValue("i", 0);
-    }
-#endif
 
     do {
         Py_BEGIN_ALLOW_THREADS

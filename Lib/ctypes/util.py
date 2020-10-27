@@ -149,46 +149,27 @@ elif os.name == "posix":
             return os.fsdecode(file)
 
 
-    if sys.platform == "sunos5":
-        # use /usr/ccs/bin/dump on solaris
-        def _get_soname(f):
-            if not f:
-                return None
+    def _get_soname(f):
+        # assuming GNU binutils / ELF
+        if not f:
+            return None
+        objdump = shutil.which('objdump')
+        if not objdump:
+            # objdump is not available, give up
+            return None
 
-            try:
-                proc = subprocess.Popen(("/usr/ccs/bin/dump", "-Lpv", f),
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.DEVNULL)
-            except OSError:  # E.g. command not found
-                return None
-            with proc:
-                data = proc.stdout.read()
-            res = re.search(br'\[.*\]\sSONAME\s+([^\s]+)', data)
-            if not res:
-                return None
-            return os.fsdecode(res.group(1))
-    else:
-        def _get_soname(f):
-            # assuming GNU binutils / ELF
-            if not f:
-                return None
-            objdump = shutil.which('objdump')
-            if not objdump:
-                # objdump is not available, give up
-                return None
-
-            try:
-                proc = subprocess.Popen((objdump, '-p', '-j', '.dynamic', f),
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.DEVNULL)
-            except OSError:  # E.g. bad executable
-                return None
-            with proc:
-                dump = proc.stdout.read()
-            res = re.search(br'\sSONAME\s+([^\s]+)', dump)
-            if not res:
-                return None
-            return os.fsdecode(res.group(1))
+        try:
+            proc = subprocess.Popen((objdump, '-p', '-j', '.dynamic', f),
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.DEVNULL)
+        except OSError:  # E.g. bad executable
+            return None
+        with proc:
+            dump = proc.stdout.read()
+        res = re.search(br'\sSONAME\s+([^\s]+)', dump)
+        if not res:
+            return None
+        return os.fsdecode(res.group(1))
 
     if sys.platform.startswith(("freebsd", "openbsd", "dragonfly")):
 
@@ -223,47 +204,6 @@ elif os.name == "posix":
                 return _get_soname(_findLib_gcc(name))
             res.sort(key=_num_version)
             return os.fsdecode(res[-1])
-
-    elif sys.platform == "sunos5":
-
-        def _findLib_crle(name, is64):
-            if not os.path.exists('/usr/bin/crle'):
-                return None
-
-            env = dict(os.environ)
-            env['LC_ALL'] = 'C'
-
-            if is64:
-                args = ('/usr/bin/crle', '-64')
-            else:
-                args = ('/usr/bin/crle',)
-
-            paths = None
-            try:
-                proc = subprocess.Popen(args,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.DEVNULL,
-                                        env=env)
-            except OSError:  # E.g. bad executable
-                return None
-            with proc:
-                for line in proc.stdout:
-                    line = line.strip()
-                    if line.startswith(b'Default Library Path (ELF):'):
-                        paths = os.fsdecode(line).split()[4]
-
-            if not paths:
-                return None
-
-            for dir in paths.split(":"):
-                libfile = os.path.join(dir, "lib%s.so" % name)
-                if os.path.exists(libfile):
-                    return libfile
-
-            return None
-
-        def find_library(name, is64 = False):
-            return _get_soname(_findLib_crle(name, is64) or _findLib_gcc(name))
 
     else:
 

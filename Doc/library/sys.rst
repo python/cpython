@@ -1121,7 +1121,7 @@ always available.
 
    For Unix systems, except on Linux and AIX, this is the lowercased OS name as
    returned by ``uname -s`` with the first part of the version as returned by
-   ``uname -r`` appended, e.g. ``'sunos5'`` or ``'freebsd8'``, *at the time
+   ``uname -r`` appended, e.g. ``'freebsd8'``, *at the time
    when Python was built*.  Unless you want to test for a specific system
    version, it is therefore recommended to use the following idiom::
 
@@ -1561,7 +1561,6 @@ always available.
    |                  |                                                         |
    |                  |  * ``'nt'``: Windows threads                            |
    |                  |  * ``'pthread'``: POSIX threads                         |
-   |                  |  * ``'solaris'``: Solaris threads                       |
    +------------------+---------------------------------------------------------+
    | :const:`lock`    | Name of the lock implementation:                        |
    |                  |                                                         |

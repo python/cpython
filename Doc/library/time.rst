@@ -685,7 +685,7 @@ Functions
       >>> time.strftime('%X %x %Z')
       '16:08:12 05/08/03 AEST'
 
-   On many Unix systems (including \*BSD, Linux, Solaris, and Darwin), it is more
+   On many Unix systems (including \*BSD, Linux, and Darwin), it is more
    convenient to use the system's zoneinfo (:manpage:`tzfile(5)`)  database to
    specify the timezone rules. To do this, set the  :envvar:`TZ` environment
    variable to the path of the required timezone  datafile, relative to the root of
@@ -724,17 +724,6 @@ These constants are used as parameters for :func:`clock_getres` and
    .. availability:: Linux 2.6.39 or later.
 
    .. versionadded:: 3.7
-
-
-.. data:: CLOCK_HIGHRES
-
-   The Solaris OS has a ``CLOCK_HIGHRES`` timer that attempts to use an optimal
-   hardware source, and may give close to nanosecond resolution.
-   ``CLOCK_HIGHRES`` is the nonadjustable, high-resolution clock.
-
-   .. availability:: Solaris.
-
-   .. versionadded:: 3.3
 
 
 .. data:: CLOCK_MONOTONIC

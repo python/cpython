@@ -745,7 +745,6 @@ class SysLogHandler(logging.Handler):
     LOG_NTP       = 12      #  NTP subsystem
     LOG_SECURITY  = 13      #  Log audit
     LOG_CONSOLE   = 14      #  Log alert
-    LOG_SOLCRON   = 15      #  Scheduling daemon (Solaris)
 
     #  other codes through 15 reserved for system use
     LOG_LOCAL0    = 16      #  reserved for local use
@@ -785,7 +784,6 @@ class SysLogHandler(logging.Handler):
         "news":         LOG_NEWS,
         "ntp":          LOG_NTP,
         "security":     LOG_SECURITY,
-        "solaris-cron": LOG_SOLCRON,
         "syslog":       LOG_SYSLOG,
         "user":         LOG_USER,
         "uucp":         LOG_UUCP,

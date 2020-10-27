@@ -652,8 +652,6 @@ class BaseTestAPI:
         client = TestClient(self.family, server.address)
         self.loop_waiting_for_flag(client)
 
-    @unittest.skipIf(sys.platform.startswith("sunos"),
-                     "OOB support is broken on Solaris")
     def test_handle_expt(self):
         # Make sure handle_expt is called on OOB data received.
         # Note: this might fail on some platforms as OOB data is

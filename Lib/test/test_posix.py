@@ -402,7 +402,7 @@ class PosixTester(unittest.TestCase):
             # issue33655: Also ignore EINVAL on *BSD since ZFS is also
             # often used there.
             if inst.errno == errno.EINVAL and sys.platform.startswith(
-                ('sunos', 'freebsd', 'netbsd', 'openbsd', 'gnukfreebsd')):
+                ('freebsd', 'netbsd', 'openbsd', 'gnukfreebsd')):
                 raise unittest.SkipTest("test may fail on ZFS filesystems")
             else:
                 raise
@@ -740,9 +740,8 @@ class PosixTester(unittest.TestCase):
             check_stat(big_value, big_value)
             chown_func(first_param, uid, gid)
             check_stat(uid, gid)
-        elif platform.system() in ('HP-UX', 'SunOS'):
-            # HP-UX and Solaris can allow a non-root user to chown() to root
-            # (issue #5113)
+        elif platform.system() == 'HP-UX':
+            # HP-UX can allow a non-root user to chown() to root (issue #5113)
             raise unittest.SkipTest("Skipping because of non-standard chown() "
                                     "behavior")
         else:

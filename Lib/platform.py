@@ -502,29 +502,7 @@ def system_alias(system, release, version):
         where it would otherwise cause confusion.
 
     """
-    if system == 'SunOS':
-        # Sun's OS
-        if release < '5':
-            # These releases use the old name SunOS
-            return system, release, version
-        # Modify release (marketing release = SunOS release - 3)
-        l = release.split('.')
-        if l:
-            try:
-                major = int(l[0])
-            except ValueError:
-                pass
-            else:
-                major = major - 3
-                l[0] = str(major)
-                release = '.'.join(l)
-        if release < '6':
-            system = 'Solaris'
-        else:
-            # XXX Whatever the new SunOS marketing name is...
-            system = 'Solaris'
-
-    elif system == 'IRIX64':
+    if system == 'IRIX64':
         # IRIX reports IRIX64 on platforms with 64-bit support; yet it
         # is really a version and not a different platform, since 32-bit
         # apps are also supported..
@@ -1180,8 +1158,7 @@ def platform(aliased=0, terse=0):
 
         If "aliased" is true, the function will use aliases for
         various platforms that report system names which differ from
-        their common names, e.g. SunOS will be reported as
-        Solaris. The system_alias() function is used to implement
+        their common names. The system_alias() function is used to implement
         this.
 
         Setting terse to true causes the function to return only the

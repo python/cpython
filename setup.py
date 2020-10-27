@@ -2048,10 +2048,7 @@ class PyBuildExt(build_ext):
                 include_dirs.append(dir)
 
         # Check for various platform-specific directories
-        if HOST_PLATFORM == 'sunos5':
-            include_dirs.append('/usr/openwin/include')
-            added_lib_dirs.append('/usr/openwin/lib')
-        elif os.path.exists('/usr/X11R6/include'):
+        if os.path.exists('/usr/X11R6/include'):
             include_dirs.append('/usr/X11R6/include')
             added_lib_dirs.append('/usr/X11R6/lib64')
             added_lib_dirs.append('/usr/X11R6/lib')
@@ -2156,17 +2153,6 @@ class PyBuildExt(build_ext):
             include_dirs.append('_ctypes/darwin')
             # XXX Is this still needed?
             # extra_link_args.extend(['-read_only_relocs', 'warning'])
-
-        elif HOST_PLATFORM == 'sunos5':
-            # XXX This shouldn't be necessary; it appears that some
-            # of the assembler code is non-PIC (i.e. it has relocations
-            # when it shouldn't. The proper fix would be to rewrite
-            # the assembler code to be PIC.
-            # This only works with GCC; the Sun compiler likely refuses
-            # this option. If you want to compile ctypes with the Sun
-            # compiler, please research a proper solution, instead of
-            # finding some -z option for the Sun compiler.
-            extra_link_args.append('-mimpure-text')
 
         elif HOST_PLATFORM.startswith('hp-ux'):
             extra_link_args.append('-fPIC')
@@ -2300,9 +2286,7 @@ class PyBuildExt(build_ext):
                 define_macros = config['ansi64']
         elif sizeof_size_t == 4:
             ppro = sysconfig.get_config_var('HAVE_GCC_ASM_FOR_X87')
-            if ppro and ('gcc' in cc or 'clang' in cc) and \
-               not 'sunos' in HOST_PLATFORM:
-                # solaris: problems with register allocation.
+            if ppro and ('gcc' in cc or 'clang' in cc):
                 # icc >= 11.0 works as well.
                 define_macros = config['ppro']
                 extra_compile_args.append('-Wno-unknown-pragmas')

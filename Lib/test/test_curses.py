@@ -185,7 +185,7 @@ class TestCurses(unittest.TestCase):
         stdscr.setscrreg(10,15)
         win3 = stdscr.subwin(10,10)
         win3 = stdscr.subwin(10,10, 5,5)
-        if hasattr(stdscr, 'syncok') and not sys.platform.startswith("sunos"):
+        if hasattr(stdscr, 'syncok'):
             stdscr.syncok(1)
         stdscr.timeout(5)
         stdscr.touchline(5,5)

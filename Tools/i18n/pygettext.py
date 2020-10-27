@@ -22,7 +22,7 @@ except ImportError:
 
 __doc__ = _("""pygettext -- Python equivalent of xgettext(1)
 
-Many systems (Solaris, Linux, Gnu) provide extensive tools that ease the
+Many systems (Linux, Gnu) provide extensive tools that ease the
 internationalization of C programs. Most of these tools are independent of
 the programming language and can be used from within Python programs.
 Martin von Loewis' work[1] helps considerably in this regard.
@@ -123,7 +123,6 @@ Options:
         Specify which style to use for location comments.  Two styles are
         supported:
 
-        Solaris  # File: filename, line: line-number
         GNU      #: filename:line
 
         The style name is case insensitive.  GNU style is the default.

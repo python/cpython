@@ -238,7 +238,7 @@ class Test(unittest.TestCase):
         # So, we have to align using pad bytes.
         #
         # Unaligned accesses will crash Python (on those platforms that
-        # don't allow it, like sparc solaris).
+        # don't allow it, like sparc).
         if sys.byteorder == "little":
             base = BigEndianStructure
             fmt = ">bxhid"

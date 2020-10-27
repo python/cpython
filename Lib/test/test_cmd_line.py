@@ -182,7 +182,7 @@ class CmdLineTest(unittest.TestCase):
             pattern = b"Unable to decode the command from the command line:"
         elif p.returncode == 0:
             # _Py_char2wchar() decoded b'\xff' as '\xff' even if the locale is
-            # C and the locale encoding is ASCII. It occurs on FreeBSD, Solaris
+            # C and the locale encoding is ASCII. It occurs on FreeBSD
             # and Mac OS X.
             pattern = b"'\\xff' "
             # The output is followed by the encoding name, an alias to ASCII.

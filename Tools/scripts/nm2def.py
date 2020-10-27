@@ -3,7 +3,7 @@
 
 Helpers to extract symbols from Unix libs and auto-generate
 Windows definition files from them. Depends on nm(1). Tested
-on Linux and Solaris only (-p option to nm is for Solaris only).
+on Linux only (-p option to nm is for Solaris only).
 
 By Marc-Andre Lemburg, Aug 1998.
 

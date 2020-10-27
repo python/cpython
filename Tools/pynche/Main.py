@@ -67,8 +67,6 @@ AUTHEMAIL = 'barry@python.org'
 
 # Default locations of rgb.txt or other textual color database
 RGB_TXT = [
-    # Solaris OpenWindows
-    '/usr/openwin/lib/rgb.txt',
     # Linux
     '/usr/lib/X11/rgb.txt',
     # The X11R6.4 rgb.txt file

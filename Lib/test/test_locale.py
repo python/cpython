@@ -159,7 +159,7 @@ class BaseFormattingTest(object):
 
 class EnUSNumberFormatting(BaseFormattingTest):
     # XXX there is a grouping + padding bug when the thousands separator
-    # is empty but the grouping array contains values (e.g. Solaris 10)
+    # is empty but the grouping array contains values
 
     def setUp(self):
         self.sep = locale.localeconv()['thousands_sep']

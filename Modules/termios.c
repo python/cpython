@@ -8,12 +8,6 @@
 #define CTRL(c) ((c)&037)
 #endif
 
-#if defined(__sun)
-/* We could do better. Check issue-32660 */
-#include <sys/filio.h>
-#include <sys/sockio.h>
-#endif
-
 #include <termios.h>
 #include <sys/ioctl.h>
 
@@ -1004,7 +998,7 @@ static void termiosmodule_free(void *m) {
     termiosmodule_clear((PyObject *)m);
 }
 
-static int 
+static int
 termios_exec(PyObject *mod)
 {
     struct constant *constant = termios_constants;

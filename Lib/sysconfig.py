@@ -618,7 +618,6 @@ def get_platform():
     Examples of returned values:
        linux-i586
        linux-alpha (?)
-       solaris-2.6-sun4u
 
     Windows will return one of:
        win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
@@ -658,16 +657,6 @@ def get_platform():
         # i386, etc.
         # XXX what about Alpha, SPARC, etc?
         return  "%s-%s" % (osname, machine)
-    elif osname[:5] == "sunos":
-        if release[0] >= "5":           # SunOS 5 == Solaris 2
-            osname = "solaris"
-            release = "%d.%s" % (int(release[0]) - 3, release[2:])
-            # We can't use "platform.architecture()[0]" because a
-            # bootstrap problem. We use a dict to get an error
-            # if some suspicious happens.
-            bitness = {2147483647:"32bit", 9223372036854775807:"64bit"}
-            machine += ".%s" % bitness[sys.maxsize]
-        # fall through to standard osname-release-machine representation
     elif osname[:3] == "aix":
         from _aix_support import aix_platform
         return aix_platform()

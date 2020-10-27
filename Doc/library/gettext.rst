@@ -466,14 +466,6 @@ unexpected, or if other problems occur while reading the file, instantiating a
       .. deprecated-removed:: 3.8 3.10
 
 
-Solaris message catalog support
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The Solaris operating system defines its own binary :file:`.mo` file format, but
-since no documentation can be found on this format, it is not supported at this
-time.
-
-
 The Catalog constructor
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -722,7 +714,7 @@ implementations, and valuable experience to the creation of this module:
 .. rubric:: Footnotes
 
 .. [#] The default locale directory is system dependent; for example, on RedHat Linux
-   it is :file:`/usr/share/locale`, but on Solaris it is :file:`/usr/lib/locale`.
+   it is :file:`/usr/share/locale`.
    The :mod:`gettext` module does not try to support these system dependent
    defaults; instead its default is :file:`{sys.base_prefix}/share/locale` (see
    :data:`sys.base_prefix`). For this reason, it is always best to call

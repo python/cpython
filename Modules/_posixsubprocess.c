@@ -44,17 +44,6 @@
 # define VFORK_USABLE 1
 #endif
 
-#if defined(__sun) && defined(__SVR4)
-/* readdir64 is used to work around Solaris 9 bug 6395699. */
-# define readdir readdir64
-# define dirent dirent64
-# if !defined(HAVE_DIRFD)
-/* Some versions of Solaris lack dirfd(). */
-#  define dirfd(dirp) ((dirp)->dd_fd)
-#  define HAVE_DIRFD
-# endif
-#endif
-
 #if defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__))
 # define FD_DIR "/dev/fd"
 #else

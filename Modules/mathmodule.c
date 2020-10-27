@@ -721,7 +721,7 @@ m_remainder(double x, double y)
 
 
 /*
-    Various platforms (Solaris, OpenBSD) do nonstandard things for log(0),
+    Various platforms (OpenBSD) do nonstandard things for log(0),
     log(-ve), log(NaN).  Here are wrappers for log and log10 that deal with
     special values directly, passing positive non-special values through to
     the system log/log10.

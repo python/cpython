@@ -13,9 +13,6 @@
 #  ifdef HAVE_LINUX_RANDOM_H
 #    include <linux/random.h>
 #  endif
-#  if defined(HAVE_SYS_RANDOM_H) && (defined(HAVE_GETRANDOM) || defined(HAVE_GETENTROPY))
-#    include <sys/random.h>
-#  endif
 #  if !defined(HAVE_GETRANDOM) && defined(HAVE_GETRANDOM_SYSCALL)
 #    include <sys/syscall.h>
 #  endif
@@ -101,8 +98,7 @@ static int
 py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 {
     /* Is getrandom() supported by the running kernel? Set to 0 if getrandom()
-       failed with ENOSYS or EPERM. Need Linux kernel 3.17 or newer, or Solaris
-       11.3 or newer */
+       failed with ENOSYS or EPERM. Need Linux kernel 3.17 or newer. */
     static int getrandom_works = 1;
     int flags;
     char *dest;
@@ -115,14 +111,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
     flags = blocking ? 0 : GRND_NONBLOCK;
     dest = buffer;
     while (0 < size) {
-#if defined(__sun) && defined(__SVR4)
-        /* Issue #26735: On Solaris, getrandom() is limited to returning up
-           to 1024 bytes. Call it multiple times if more bytes are
-           requested. */
-        n = Py_MIN(size, 1024);
-#else
         n = Py_MIN(size, LONG_MAX);
-#endif
 
         errno = 0;
 #ifdef HAVE_GETRANDOM
@@ -265,7 +254,7 @@ py_getentropy(char *buffer, Py_ssize_t size, int raise)
     }
     return 1;
 }
-#endif /* defined(HAVE_GETENTROPY) && !(defined(__sun) && defined(__SVR4)) */
+#endif /* defined(HAVE_GETENTROPY) */
 
 
 static struct {
@@ -439,7 +428,7 @@ lcg_urandom(unsigned int x0, unsigned char *buffer, size_t size)
    Used sources of entropy ordered by preference, preferred source first:
 
    - CryptGenRandom() on Windows
-   - getrandom() function (ex: Linux and Solaris): call py_getrandom()
+   - getrandom() function (ex: Linux): call py_getrandom()
    - getentropy() function (ex: OpenBSD): call py_getentropy()
    - /dev/urandom device
 

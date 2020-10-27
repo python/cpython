@@ -498,9 +498,6 @@
 /* Define to 1 if you have the `getpwuid_r' function. */
 #undef HAVE_GETPWUID_R
 
-/* Define to 1 if the getrandom() function is available */
-#undef HAVE_GETRANDOM
-
 /* Define to 1 if the Linux getrandom() syscall is available */
 #undef HAVE_GETRANDOM_SYSCALL
 
@@ -576,8 +573,8 @@
 
 /* Defined to enable large file support when an off_t is bigger than a long
    and long long is at least as big as an off_t. You may need to add some
-   flags for configuration and compilation to enable this mode. (For Solaris
-   and Linux, the necessary defines are already defined.) */
+   flags for configuration and compilation to enable this mode. (For Linux,
+   the necessary defines are already defined.) */
 #undef HAVE_LARGEFILE_SUPPORT
 
 /* Define to 1 if you have the 'lchflags' function. */
@@ -606,9 +603,6 @@
 
 /* Define if you have the readline library (-lreadline). */
 #undef HAVE_LIBREADLINE
-
-/* Define to 1 if you have the `resolv' library (-lresolv). */
-#undef HAVE_LIBRESOLV
 
 /* Define to 1 if you have the `sendfile' library (-lsendfile). */
 #undef HAVE_LIBSENDFILE
@@ -792,9 +786,6 @@
 
 /* Define to 1 if you have the `pthread_condattr_setclock' function. */
 #undef HAVE_PTHREAD_CONDATTR_SETCLOCK
-
-/* Defined for Solaris 2.6 bug in pthread header. */
-#undef HAVE_PTHREAD_DESTRUCTOR
 
 /* Define to 1 if you have the `pthread_getcpuclockid' function. */
 #undef HAVE_PTHREAD_GETCPUCLOCKID
@@ -1155,9 +1146,6 @@
 
 /* Define to 1 if you have the <sys/poll.h> header file. */
 #undef HAVE_SYS_POLL_H
-
-/* Define to 1 if you have the <sys/random.h> header file. */
-#undef HAVE_SYS_RANDOM_H
 
 /* Define to 1 if you have the <sys/resource.h> header file. */
 #undef HAVE_SYS_RESOURCE_H

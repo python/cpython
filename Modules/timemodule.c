@@ -730,7 +730,7 @@ time_strftime(PyObject *self, PyObject *args)
         return NULL;
     }
 
-#if defined(_MSC_VER) || (defined(__sun) && defined(__SVR4)) || defined(_AIX) || defined(__VXWORKS__)
+#if defined(_MSC_VER) || defined(_AIX) || defined(__VXWORKS__)
     if (buf.tm_year + 1900 < 1 || 9999 < buf.tm_year + 1900) {
         PyErr_SetString(PyExc_ValueError,
                         "strftime() requires year in [1; 9999]");
@@ -776,7 +776,7 @@ time_strftime(PyObject *self, PyObject *args)
             return NULL;
         }
     }
-#elif (defined(_AIX) || (defined(__sun) && defined(__SVR4))) && defined(HAVE_WCSFTIME)
+#elif defined(_AIX) && defined(HAVE_WCSFTIME)
     for (outbuf = wcschr(fmt, '%');
         outbuf != NULL;
         outbuf = wcschr(outbuf+2, '%'))
@@ -1785,11 +1785,6 @@ time_exec(PyObject *module)
 #endif
 #ifdef CLOCK_MONOTONIC_RAW
     if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC_RAW) < 0) {
-        return -1;
-    }
-#endif
-#ifdef CLOCK_HIGHRES
-    if (PyModule_AddIntMacro(module, CLOCK_HIGHRES) < 0) {
         return -1;
     }
 #endif

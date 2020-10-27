@@ -112,27 +112,6 @@ class BuildExtTestCase(TempdirManager,
         """)
         assert_python_ok('-c', code)
 
-    def test_solaris_enable_shared(self):
-        dist = Distribution({'name': 'xx'})
-        cmd = self.build_ext(dist)
-        old = sys.platform
-
-        sys.platform = 'sunos' # fooling finalize_options
-        from distutils.sysconfig import  _config_vars
-        old_var = _config_vars.get('Py_ENABLE_SHARED')
-        _config_vars['Py_ENABLE_SHARED'] = 1
-        try:
-            cmd.ensure_finalized()
-        finally:
-            sys.platform = old
-            if old_var is None:
-                del _config_vars['Py_ENABLE_SHARED']
-            else:
-                _config_vars['Py_ENABLE_SHARED'] = old_var
-
-        # make sure we get some library dirs under solaris
-        self.assertGreater(len(cmd.library_dirs), 0)
-
     def test_user_site(self):
         import site
         dist = Distribution({'name': 'xx'})

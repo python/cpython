@@ -100,8 +100,7 @@ errno_exec(PyObject *module)
 
     /*
      * The names and comments are borrowed from linux/include/errno.h,
-     * which should be pretty all-inclusive.  However, the Solaris specific
-     * names and comments are borrowed from sys/errno.h in Solaris.
+     * which should be pretty all-inclusive.
      * MacOSX specific names and comments are borrowed from sys/errno.h in
      * MacOSX.
      */
@@ -846,26 +845,6 @@ errno_exec(PyObject *module)
 #endif
 #ifdef ERFKILL
     add_errcode("ERFKILL", ERFKILL, "Operation not possible due to RF-kill");
-#endif
-
-    /* Solaris-specific errnos */
-#ifdef ECANCELED
-    add_errcode("ECANCELED", ECANCELED, "Operation canceled");
-#endif
-#ifdef ENOTSUP
-    add_errcode("ENOTSUP", ENOTSUP, "Operation not supported");
-#endif
-#ifdef EOWNERDEAD
-    add_errcode("EOWNERDEAD", EOWNERDEAD, "Process died with the lock");
-#endif
-#ifdef ENOTRECOVERABLE
-    add_errcode("ENOTRECOVERABLE", ENOTRECOVERABLE, "Lock is not recoverable");
-#endif
-#ifdef ELOCKUNMAPPED
-    add_errcode("ELOCKUNMAPPED", ELOCKUNMAPPED, "Locked lock was unmapped");
-#endif
-#ifdef ENOTACTIVE
-    add_errcode("ENOTACTIVE", ENOTACTIVE, "Facility is not active");
 #endif
 
     /* MacOSX specific errnos */

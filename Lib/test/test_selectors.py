@@ -469,7 +469,7 @@ class ScalableSelectorMixIn:
                 rd, wr = self.make_socketpair()
             except OSError:
                 # too many FDs, skip - note that we should only catch EMFILE
-                # here, but apparently *BSD and Solaris can fail upon connect()
+                # here, but apparently *BSD can fail upon connect()
                 # or bind() with EADDRNOTAVAIL, so let's be safe
                 self.skipTest("FD limit reached")
 

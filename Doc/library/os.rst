@@ -2663,14 +2663,6 @@ features:
 
       Time of file creation.
 
-   On Solaris and derivatives, the following attributes may also be
-   available:
-
-   .. attribute:: st_fstype
-
-      String that uniquely identifies the type of the filesystem that
-      contains the file.
-
    On Mac OS systems, the following attributes may also be available:
 
    .. attribute:: st_rsize
@@ -2734,6 +2726,10 @@ features:
       On Windows, the :attr:`st_mode` member now identifies special
       files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
       as appropriate.
+
+   .. versionadded:: 3.10
+      Removed the :attr:`st_fstype` member of Solaris/derivatives.
+
 
 .. function:: statvfs(path)
 

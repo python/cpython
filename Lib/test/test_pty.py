@@ -103,10 +103,6 @@ class PtyTest(unittest.TestCase):
 
         self.assertTrue(os.isatty(slave_fd), 'slave_fd is not a tty')
 
-        # Solaris requires reading the fd before anything is returned.
-        # My guess is that since we open and close the slave fd
-        # in master_open(), we need to read the EOF.
-
         # Ensure the fd is non-blocking in case there's nothing to read.
         blocking = os.get_blocking(master_fd)
         try:

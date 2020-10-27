@@ -3403,13 +3403,6 @@ $as_echo "#define _BSD_SOURCE 1" >>confdefs.h
   # Marc Recht
   NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6[A-S])
     define_xopen_source=no;;
-  # From the perspective of Solaris, _XOPEN_SOURCE is not so much a
-  # request to enable features supported by the standard as a request
-  # to disable features not supported by the standard.  The best way
-  # for Python to use Solaris is simply to leave _XOPEN_SOURCE out
-  # entirely and define __EXTENSIONS__ instead.
-  SunOS/*)
-    define_xopen_source=no;;
   # On UnixWare 7, u_long is never defined with _XOPEN_SOURCE,
   # but used in /usr/include/netinet/tcp.h. Reported by Tim Rice.
   # Reconfirmed for 7.1.4 by Martin v. Loewis.
@@ -5940,16 +5933,6 @@ $as_echo "#define Py_ENABLE_SHARED 1" >>confdefs.h
           LDLIBRARY='libpython$(LDVERSION).dll.a'
           DLLLIBRARY='libpython$(LDVERSION).dll'
           ;;
-    SunOS*)
-	  LDLIBRARY='libpython$(LDVERSION).so'
-	  BLDLIBRARY='-Wl,-R,$(LIBDIR) -L. -lpython$(LDVERSION)'
-	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-	  INSTSONAME="$LDLIBRARY".$SOVERSION
-	  if test "$with_pydebug" != yes
-	  then
-	      PY3LIBRARY=libpython3.so
-	  fi
-          ;;
     Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*)
 	  LDLIBRARY='libpython$(LDVERSION).so'
 	  BLDLIBRARY='-L. -lpython$(LDVERSION)'
@@ -8022,7 +8005,7 @@ utime.h \
 poll.h sys/devpoll.h sys/epoll.h sys/poll.h \
 sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
 sys/kern_control.h sys/loadavg.h sys/lock.h sys/mkdev.h sys/modem.h \
-sys/param.h sys/random.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
+sys/param.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
 sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
@@ -9469,7 +9452,6 @@ fi
 $as_echo "$SHLIB_SUFFIX" >&6; }
 
 # LDSHARED is the ld *command* used to create shared library
-# -- "cc -G" on SunOS 5.x.
 # (Shared libraries in this instance are shared modules to be loaded into
 # Python, as opposed to building Python itself as a shared library.)
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking LDSHARED" >&5
@@ -9481,14 +9463,6 @@ then
 		BLDSHARED="Modules/ld_so_aix \$(CC) -bI:Modules/python.exp"
 		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
-	SunOS/5*)
-		if test "$GCC" = "yes" ; then
-			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
-		else
-			LDSHARED='$(CC) -G'
-			LDCXXSHARED='$(CXX) -G'
-		fi ;;
 	hp*|HP*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
@@ -9614,12 +9588,6 @@ $as_echo_n "checking CCSHARED... " >&6; }
 if test -z "$CCSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	SunOS*) if test "$GCC" = yes;
-		then CCSHARED="-fPIC";
-		elif test `uname -p` = sparc;
-		then CCSHARED="-xcode=pic32";
-		else CCSHARED="-Kpic";
-		fi;;
 	hp*|HP*) if test "$GCC" = yes;
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
@@ -9680,13 +9648,6 @@ then
 		then
 			LINKFORSHARED="-Wl,--export-dynamic"
 		fi;;
-	SunOS/5*) case $CC in
-		  *gcc*)
-		    if $CC -Xlinker --help 2>&1 | grep export-dynamic >/dev/null
-		    then
-			LINKFORSHARED="-Xlinker --export-dynamic"
-		    fi;;
-		  esac;;
 	CYGWIN*)
 		if test $enable_shared = "no"
 		then
@@ -9833,7 +9794,7 @@ _ACEOF
   LIBS="-ldl $LIBS"
 
 fi
-	# Dynamic linking for SunOS/Solaris and SYSV
+	# Dynamic linking for SYSV
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for shl_load in -ldld" >&5
 $as_echo_n "checking for shl_load in -ldld... " >&6; }
 if ${ac_cv_lib_dld_shl_load+:} false; then :
@@ -9989,8 +9950,6 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-# 'Real Time' functions on Solaris
-# posix4 on Solaris 2.6
 # pthread (first!) on Linux
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sem_init" >&5
 $as_echo_n "checking for library containing sem_init... " >&6; }
@@ -10016,7 +9975,7 @@ return sem_init ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' pthread rt posix4; do
+for ac_lib in '' pthread rt; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -10315,88 +10274,6 @@ else
 $as_echo "no" >&6; }
 fi
 
-
-# Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for t_open in -lnsl" >&5
-$as_echo_n "checking for t_open in -lnsl... " >&6; }
-if ${ac_cv_lib_nsl_t_open+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lnsl  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char t_open ();
-int
-main ()
-{
-return t_open ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_nsl_t_open=yes
-else
-  ac_cv_lib_nsl_t_open=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_nsl_t_open" >&5
-$as_echo "$ac_cv_lib_nsl_t_open" >&6; }
-if test "x$ac_cv_lib_nsl_t_open" = xyes; then :
-  LIBS="-lnsl $LIBS"
-fi
- # SVR4
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for socket in -lsocket" >&5
-$as_echo_n "checking for socket in -lsocket... " >&6; }
-if ${ac_cv_lib_socket_socket+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lsocket $LIBS $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char socket ();
-int
-main ()
-{
-return socket ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_socket_socket=yes
-else
-  ac_cv_lib_socket_socket=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_socket_socket" >&5
-$as_echo "$ac_cv_lib_socket_socket" >&6; }
-if test "x$ac_cv_lib_socket_socket" = xyes; then :
-  LIBS="-lsocket $LIBS"
-fi
- # SVR4 sockets
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-libs" >&5
 $as_echo_n "checking for --with-libs... " >&6; }
@@ -10716,9 +10593,6 @@ then
     $as_echo "#define _REENTRANT 1" >>confdefs.h
 
     posix_threads=yes
-    if test "$ac_sys_system" = "SunOS"; then
-        CFLAGS="$CFLAGS -D_REENTRANT"
-    fi
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
@@ -11052,16 +10926,7 @@ $as_echo "#define _POSIX_THREADS 1" >>confdefs.h
 
       fi
 
-      # Bug 662787: Using semaphores causes unexplicable hangs on Solaris 8.
       case  $ac_sys_system/$ac_sys_release in
-      SunOS/5.6)
-$as_echo "#define HAVE_PTHREAD_DESTRUCTOR 1" >>confdefs.h
-
-		       ;;
-      SunOS/5.8)
-$as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
-
-		       ;;
       AIX/*)
 $as_echo "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 
@@ -12286,94 +12151,6 @@ fi
   test -n "$TRUE" && break
 done
 test -n "$TRUE" || TRUE="/bin/true"
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_aton in -lc" >&5
-$as_echo_n "checking for inet_aton in -lc... " >&6; }
-if ${ac_cv_lib_c_inet_aton+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lc  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char inet_aton ();
-int
-main ()
-{
-return inet_aton ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_c_inet_aton=yes
-else
-  ac_cv_lib_c_inet_aton=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_inet_aton" >&5
-$as_echo "$ac_cv_lib_c_inet_aton" >&6; }
-if test "x$ac_cv_lib_c_inet_aton" = xyes; then :
-  $ac_cv_prog_TRUE
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inet_aton in -lresolv" >&5
-$as_echo_n "checking for inet_aton in -lresolv... " >&6; }
-if ${ac_cv_lib_resolv_inet_aton+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lresolv  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char inet_aton ();
-int
-main ()
-{
-return inet_aton ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_resolv_inet_aton=yes
-else
-  ac_cv_lib_resolv_inet_aton=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_resolv_inet_aton" >&5
-$as_echo "$ac_cv_lib_resolv_inet_aton" >&6; }
-if test "x$ac_cv_lib_resolv_inet_aton" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBRESOLV 1
-_ACEOF
-
-  LIBS="-lresolv $LIBS"
-
-fi
-
-
-fi
 
 
 # On Tru64, chflags seems to be present, but calling it will
@@ -17148,43 +16925,6 @@ $as_echo "$have_getrandom_syscall" >&6; }
 if test "$have_getrandom_syscall" = yes; then
 
 $as_echo "#define HAVE_GETRANDOM_SYSCALL 1" >>confdefs.h
-
-fi
-
-# check if the getrandom() function is available
-# the test was written for the Solaris function of <sys/random.h>
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for the getrandom() function" >&5
-$as_echo_n "checking for the getrandom() function... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-    #include <sys/random.h>
-
-    int main() {
-        char buffer[1];
-        const size_t buflen = sizeof(buffer);
-        const int flags = 0;
-        /* ignore the result, Python checks for ENOSYS at runtime */
-        (void)getrandom(buffer, buflen, flags);
-        return 0;
-    }
-
-
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  have_getrandom=yes
-else
-  have_getrandom=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_getrandom" >&5
-$as_echo "$have_getrandom" >&6; }
-
-if test "$have_getrandom" = yes; then
-
-$as_echo "#define HAVE_GETRANDOM 1" >>confdefs.h
 
 fi
 

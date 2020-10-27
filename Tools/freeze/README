@@ -121,11 +121,6 @@ elif sys.platform == "linux2":
    os.environ['TCL_LIBRARY'] = RootDir + '/lib/tcl8.2'
    os.environ['TK_LIBRARY'] = RootDir + '/lib/tk8.2'
    os.environ['TIX_LIBRARY'] = RootDir + '/lib/tix8.1'
-elif sys.platform == "solaris":
-   sys.path = ['', '../../lib/python-2.0']
-   os.environ['TCL_LIBRARY'] = RootDir + '/lib/tcl8.2'
-   os.environ['TK_LIBRARY'] = RootDir + '/lib/tk8.2'
-   os.environ['TIX_LIBRARY'] = RootDir + '/lib/tix8.1'
 
 This also adds <root>/lib/python-2.0 to your Python path
 for any Python files such as _tkinter.pyd you may need.
