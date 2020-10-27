@@ -11,7 +11,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "Python.h"
 #include "pycore_interp.h"        // PyInterpreterState.codec_search_path
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "ucnhash.h"
+#include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include <ctype.h>
 
 const char *Py_hexdigits = "0123456789abcdef";
@@ -954,7 +954,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     return Py_BuildValue("(Nn)", res, end);
 }
 
-static _PyUnicode_Name_CAPI *ucnhash_CAPI = NULL;
+static _PyUnicode_Name_CAPI *ucnhash_capi = NULL;
 
 PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
 {
@@ -976,17 +976,18 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
             return NULL;
         if (!(object = PyUnicodeEncodeError_GetObject(exc)))
             return NULL;
-        if (!ucnhash_CAPI) {
+        if (!ucnhash_capi) {
             /* load the unicode data module */
-            ucnhash_CAPI = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
+            ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
                                             PyUnicodeData_CAPSULE_NAME, 1);
-            if (!ucnhash_CAPI)
+            if (!ucnhash_capi) {
                 return NULL;
+            }
         }
         for (i = start, ressize = 0; i < end; ++i) {
             /* object is guaranteed to be "ready" */
             c = PyUnicode_READ_CHAR(object, i);
-            if (ucnhash_CAPI->getname(NULL, c, buffer, sizeof(buffer), 1)) {
+            if (ucnhash_capi->getname(c, buffer, sizeof(buffer), 1)) {
                 replsize = 1+1+1+(int)strlen(buffer)+1;
             }
             else if (c >= 0x10000) {
@@ -1009,7 +1010,7 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
             i < end; ++i) {
             c = PyUnicode_READ_CHAR(object, i);
             *outp++ = '\\';
-            if (ucnhash_CAPI->getname(NULL, c, buffer, sizeof(buffer), 1)) {
+            if (ucnhash_capi->getname(c, buffer, sizeof(buffer), 1)) {
                 *outp++ = 'N';
                 *outp++ = '{';
                 strcpy((char *)outp, buffer);

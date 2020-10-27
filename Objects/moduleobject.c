@@ -477,10 +477,12 @@ PyModule_GetNameObject(PyObject *m)
     }
     d = ((PyModuleObject *)m)->md_dict;
     if (d == NULL ||
-        (name = _PyDict_GetItemId(d, &PyId___name__)) == NULL ||
+        (name = _PyDict_GetItemIdWithError(d, &PyId___name__)) == NULL ||
         !PyUnicode_Check(name))
     {
-        PyErr_SetString(PyExc_SystemError, "nameless module");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_SystemError, "nameless module");
+        }
         return NULL;
     }
     Py_INCREF(name);
@@ -509,10 +511,12 @@ PyModule_GetFilenameObject(PyObject *m)
     }
     d = ((PyModuleObject *)m)->md_dict;
     if (d == NULL ||
-        (fileobj = _PyDict_GetItemId(d, &PyId___file__)) == NULL ||
+        (fileobj = _PyDict_GetItemIdWithError(d, &PyId___file__)) == NULL ||
         !PyUnicode_Check(fileobj))
     {
-        PyErr_SetString(PyExc_SystemError, "module filename missing");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_SystemError, "module filename missing");
+        }
         return NULL;
     }
     Py_INCREF(fileobj);
@@ -721,14 +725,21 @@ module_getattro(PyModuleObject *m, PyObject *name)
     PyErr_Clear();
     if (m->md_dict) {
         _Py_IDENTIFIER(__getattr__);
-        getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
+        getattr = _PyDict_GetItemIdWithError(m->md_dict, &PyId___getattr__);
         if (getattr) {
             return PyObject_CallOneArg(getattr, name);
         }
-        mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        mod_name = _PyDict_GetItemIdWithError(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {
             Py_INCREF(mod_name);
-            PyObject *spec = _PyDict_GetItemId(m->md_dict, &PyId___spec__);
+            PyObject *spec = _PyDict_GetItemIdWithError(m->md_dict, &PyId___spec__);
+            if (spec == NULL && PyErr_Occurred()) {
+                Py_DECREF(mod_name);
+                return NULL;
+            }
             Py_XINCREF(spec);
             if (_PyModuleSpec_IsInitializing(spec)) {
                 PyErr_Format(PyExc_AttributeError,
@@ -744,6 +755,9 @@ module_getattro(PyModuleObject *m, PyObject *name)
             }
             Py_XDECREF(spec);
             Py_DECREF(mod_name);
+            return NULL;
+        }
+        else if (PyErr_Occurred()) {
             return NULL;
         }
     }

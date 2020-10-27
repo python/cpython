@@ -268,6 +268,23 @@ Optimizations
 Deprecated
 ==========
 
+* Starting in this release, there will be a concerted effort to begin
+  cleaning up old import semantics that were kept for Python 2.7
+  compatibility. Specifically,
+  :meth:`~importlib.abc.PathEntryFinder.find_loader`/:meth:`~importlib.abc.Finder.find_module`
+  (superseded by :meth:`~importlib.abc.Finder.find_spec`),
+  :meth:`~importlib.abc.Loader.load_module`
+  (superseded by :meth:`~importlib.abc.Loader.exec_module`),
+  :meth:`~importlib.abc.Loader.module_repr` (which the import system
+  takes care of for you), the ``__package__`` attribute
+  (superseded by ``__spec__.parent``), the ``__loader__`` attribute
+  (superseded by ``__spec__.loader``), and the ``__cached__`` attribute
+  (superseded by ``__spec__.cached``) will slowly be removed (as well
+  as other classes and methods in :mod:`importlib`).
+  :exc:`ImportWarning` and/or :exc:`DeprecationWarning` will be raised
+  as appropriate to help identify code which needs updating during
+  this transition.
+
 * The various ``load_module()`` methods of :mod:`importlib` have been
   documented as deprecated since Python 3.6, but will now also trigger
   a :exc:`DeprecationWarning`. Use
@@ -294,6 +311,11 @@ Removed
   ``ParserBase`` and its ``error()`` implementation has already been removed in
   Python 3.5.
   (Contributed by Berker Peksag in :issue:`31844`.)
+
+* Removed the ``unicodedata.ucnhash_CAPI`` attribute which was an internal
+  PyCapsule object. The related private ``_PyUnicode_Name_CAPI`` structure was
+  moved to the internal C API.
+  (Contributed by Victor Stinner in :issue:`42157`.)
 
 
 Porting to Python 3.10
@@ -401,6 +423,10 @@ Porting to Python 3.10
   raise ``DeprecationWarning`` now.  Use :c:func:`PyUnicode_New` to allocate
   Unicode object without initial data.
   (Contributed by Inada Naoki in :issue:`36346`.)
+
+* The private ``_PyUnicode_Name_CAPI`` structure of the PyCapsule API
+  ``unicodedata.ucnhash_CAPI`` has been moved to the internal C API.
+  (Contributed by Victor Stinner in :issue:`42157`.)
 
 Deprecated
 ----------

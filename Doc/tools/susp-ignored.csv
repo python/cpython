@@ -23,6 +23,9 @@ howto/curses,,:blue,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white. 
 howto/curses,,:magenta,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
 howto/curses,,:cyan,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
 howto/curses,,:white,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
+howto/descriptor,,:root,"INFO:root"
+howto/descriptor,,:Updating,"root:Updating"
+howto/descriptor,,:Accessing,"root:Accessing"
 howto/instrumentation,,::,python$target:::function-entry
 howto/instrumentation,,:function,python$target:::function-entry
 howto/instrumentation,,::,python$target:::function-return
