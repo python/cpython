@@ -5,14 +5,9 @@ import ast
 import os
 import sys
 import time
-import traceback
 import tokenize
-<<<<<<< HEAD
 import _peg_parser
-from glob import glob
-=======
 from glob import glob, escape
->>>>>>> 9355868458... bpo-41043: Escape literal part of the path for glob(). (GH-20994)
 from pathlib import PurePath
 
 from typing import List, Optional, Any, Tuple
