@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.warnings
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"          // PyFrame_GetBack()
@@ -73,7 +74,7 @@ create_filter(PyObject *category, _Py_Identifier *id, const char *modname)
 
     /* This assumes the line number is zero for now. */
     return PyTuple_Pack(5, action_str, Py_None,
-                        category, modname_obj, _PyLong_Zero);
+                        category, modname_obj, _PyLong_GetZero());
 }
 #endif
 
@@ -472,7 +473,7 @@ update_registry(PyObject *registry, PyObject *text, PyObject *category,
     int rc;
 
     if (add_zero)
-        altkey = PyTuple_Pack(3, text, category, _PyLong_Zero);
+        altkey = PyTuple_Pack(3, text, category, _PyLong_GetZero());
     else
         altkey = PyTuple_Pack(2, text, category);
 

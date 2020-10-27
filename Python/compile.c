@@ -22,6 +22,7 @@
  */
 
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 
 #include "Python-ast.h"
 #include "ast.h"
@@ -603,7 +604,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
             compiler_unit_free(u);
             return 0;
         }
-        res = PyDict_SetItem(u->u_cellvars, name, _PyLong_Zero);
+        res = PyDict_SetItem(u->u_cellvars, name, _PyLong_GetZero());
         if (res < 0) {
             compiler_unit_free(u);
             return 0;
@@ -3218,11 +3219,12 @@ compiler_import(struct compiler *c, stmt_ty s)
      */
     Py_ssize_t i, n = asdl_seq_LEN(s->v.Import.names);
 
+    PyObject *zero = _PyLong_GetZero();  // borrowed reference
     for (i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.Import.names, i);
         int r;
 
-        ADDOP_LOAD_CONST(c, _PyLong_Zero);
+        ADDOP_LOAD_CONST(c, zero);
         ADDOP_LOAD_CONST(c, Py_None);
         ADDOP_NAME(c, IMPORT_NAME, alias->name, names);
 

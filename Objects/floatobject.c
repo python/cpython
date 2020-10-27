@@ -6,6 +6,7 @@
 #include "Python.h"
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
 #include "pycore_interp.h"        // _PyInterpreterState.float_state
+#include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
@@ -504,7 +505,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                 Py_DECREF(vv);
                 vv = temp;
 
-                temp = PyNumber_Or(vv, _PyLong_One);
+                temp = PyNumber_Or(vv, _PyLong_GetOne());
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(vv);
@@ -1605,7 +1606,7 @@ float_subtype_new(PyTypeObject *type, PyObject *x);
 /*[clinic input]
 @classmethod
 float.__new__ as float_new
-    x: object(c_default="_PyLong_Zero") = 0
+    x: object(c_default="NULL") = 0
     /
 
 Convert a string or number to a floating point number, if possible.
@@ -1613,10 +1614,18 @@ Convert a string or number to a floating point number, if possible.
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x)
-/*[clinic end generated code: output=ccf1e8dc460ba6ba input=540ee77c204ff87a]*/
+/*[clinic end generated code: output=ccf1e8dc460ba6ba input=f43661b7de03e9d8]*/
 {
-    if (type != &PyFloat_Type)
+    if (type != &PyFloat_Type) {
+        if (x == NULL) {
+            x = _PyLong_GetZero();
+        }
         return float_subtype_new(type, x); /* Wimp out */
+    }
+
+    if (x == NULL) {
+        return PyFloat_FromDouble(0.0);
+    }
     /* If it's a string, but not a string subclass, use
        PyFloat_FromString. */
     if (PyUnicode_CheckExact(x))
@@ -1662,7 +1671,7 @@ float_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    PyObject *x = nargs >= 1 ? args[0] : _PyLong_Zero;
+    PyObject *x = nargs >= 1 ? args[0] : NULL;
     return float_new_impl((PyTypeObject *)type, x);
 }
 
