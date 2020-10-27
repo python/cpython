@@ -1,0 +1,1 @@
+replaced pid check in tempfile._RandomNameSequence with os.register_at_fork to reduce overhead
