@@ -799,9 +799,11 @@ class uname_result(
 
     @classmethod
     def _make(cls, iterable):
-        result = tuple.__new__(cls, itertools.islice(iterable, 5))
-        if len(result) != 6:
-            raise TypeError(f'Expected 5 arguments, got {len(result)}')
+        num_fields = len(cls._fields)
+        result = tuple.__new__(cls, itertools.islice(iterable, num_fields))
+        if len(result) != num_fields + 1:
+            msg = f'Expected {num_fields} arguments, got {len(result)}'
+            raise TypeError(msg)
         return result
 
     def __getitem__(self, key):
