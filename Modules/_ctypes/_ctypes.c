@@ -102,6 +102,7 @@ bytes(cdata)
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "structmember.h"         // PyMemberDef
 
 #include <ffi.h>
@@ -3929,8 +3930,9 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
         case PARAMFLAG_FIN | PARAMFLAG_FLCID:
             /* ['in', 'lcid'] parameter.  Always taken from defval,
              if given, else the integer 0. */
-            if (defval == NULL)
-                defval = _PyLong_Zero;
+            if (defval == NULL) {
+                defval = _PyLong_GetZero();
+            }
             Py_INCREF(defval);
             PyTuple_SET_ITEM(callargs, i, defval);
             break;

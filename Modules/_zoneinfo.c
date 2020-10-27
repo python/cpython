@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetOne()
 #include "structmember.h"
 
 #include <ctype.h>
@@ -585,7 +586,7 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
             }
 
             dt = NULL;
-            if (!PyDict_SetItemString(kwargs, "fold", _PyLong_One)) {
+            if (!PyDict_SetItemString(kwargs, "fold", _PyLong_GetOne())) {
                 dt = PyObject_Call(replace, args, kwargs);
             }
 
