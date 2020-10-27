@@ -1,1 +1,0 @@
-Replace references to ob_type with Py_TYPE() in unionobject and in ceval.
