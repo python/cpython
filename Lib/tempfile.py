@@ -230,9 +230,12 @@ def _get_candidate_names():
 
     global _name_sequence
     if _name_sequence is None:
-        with _once_lock:
+        _once_lock.acquire()
+        try:
             if _name_sequence is None:
                 _name_sequence = _RandomNameSequence()
+        finally:
+            _once_lock.release()
     return _name_sequence
 
 
