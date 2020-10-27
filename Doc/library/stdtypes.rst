@@ -4772,19 +4772,7 @@ class instead. The classmethod :meth:`__class_getitem__` should return a
 .. note::
    If the :meth:`__getitem__` of the class' metaclass is present, it will take
    precedence over the :meth:`__class_getitem__` defined in the class (see
-   :pep:`560` for more details)::
-
-      >>> class M(type):
-      ...     def __getitem__(self, key):
-      ...         print('__getitem__ was called')
-
-      >>> class T(metaclass=M):
-      ...     def __class_getitem__(cls, key):
-      ...         print('__class_getitem__ was called')
-
-      >>> T[int]
-      '__getitem__ was called'
-
+   :pep:`560` for more details).
 
 The ``GenericAlias`` object acts as a proxy for :term:`generic types
 <generic type>`, implementing *parameterized generics* - a specific instance
@@ -4805,9 +4793,8 @@ The user-exposed type for the ``GenericAlias`` object can be accessed from
 
    Another example for :term:`mapping` objects, using a :class:`dict`, which
    is a generic type expecting two type parameters representing the key type
-   and the value type.  In this case, the function expects a ``dict`` for its
-   ``body`` argument.  The ``body`` has keys of type :class:`str` and their
-   corresponding values are of type :class:`int`::
+   and the value type.  In this example, the function expects a ``dict`` with
+   keys of type :class:`str` and values of type :class:`int`::
 
       def send_post_request(url: str, body: dict[str, int]) -> None:
           ...
@@ -4819,11 +4806,6 @@ The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    TypeError: isinstance() argument 2 cannot be a parameterized generic
-
-   >>> issubclass(list, list[str])
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   TypeError: issubclass() argument 2 cannot be a parameterized generic
 
 The Python runtime does not enforce :term:`type annotations <annotation>`.
 This extends to generic types and their type parameters. When creating
