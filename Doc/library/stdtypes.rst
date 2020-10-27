@@ -4763,6 +4763,200 @@ define these methods must provide them as a normal Python accessible method.
 Compared to the overhead of setting up the runtime context, the overhead of a
 single class dictionary lookup is negligible.
 
+
+.. _types-genericalias:
+
+Generic Alias Type
+==================
+
+.. index::
+   object: GenericAlias
+   pair: Generic; Alias
+
+``GenericAlias`` objects are created by subscripting a class (usually a
+container), such as ``list[int]``.  They are intended primarily for
+:term:`type annotations <annotation>`.
+
+Usually, the :ref:`subscription <subscriptions>` of container objects calls the
+method :meth:`__getitem__` of the object.  However, the subscription of some
+containers' classes may call the classmethod :meth:`__class_getitem__` of the
+class instead. The classmethod :meth:`__class_getitem__` should return a
+``GenericAlias`` object.
+
+.. note::
+   If the :meth:`__getitem__` of the class' metaclass is present, it will take
+   precedence over the :meth:`__class_getitem__` defined in the class (see
+   :pep:`560` for more details).
+
+The ``GenericAlias`` object acts as a proxy for :term:`generic types
+<generic type>`, implementing *parameterized generics* - a specific instance
+of a generic which provides the types for container elements.
+
+The user-exposed type for the ``GenericAlias`` object can be accessed from
+:data:`types.GenericAlias` and used for :func:`isinstance` checks.
+
+.. describe:: T[X, Y, ...]
+
+   Creates a ``GenericAlias`` representing a type ``T`` containing elements
+   of types *X*, *Y*, and more depending on the ``T`` used.
+   For example, a function expecting a :class:`list` containing
+   :class:`float` elements::
+
+      def average(values: list[float]) -> float:
+          return sum(values) / len(values)
+
+   Another example for :term:`mapping` objects, using a :class:`dict`, which
+   is a generic type expecting two type parameters representing the key type
+   and the value type.  In this example, the function expects a ``dict`` with
+   keys of type :class:`str` and values of type :class:`int`::
+
+      def send_post_request(url: str, body: dict[str, int]) -> None:
+          ...
+
+The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
+``GenericAlias`` types for their second argument::
+
+   >>> isinstance([1, 2], list[str])
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: isinstance() argument 2 cannot be a parameterized generic
+
+The Python runtime does not enforce :term:`type annotations <annotation>`.
+This extends to generic types and their type parameters. When creating
+an object from a ``GenericAlias``, container elements are not checked
+against their type. For example, the following code is discouraged, but will
+run without errors::
+
+   >>> t = list[str]
+   >>> t([1, 2, 3])
+   [1, 2, 3]
+
+Furthermore, parameterized generics erase type parameters during object
+creation::
+
+   >>> t = list[str]
+   >>> type(t)
+   <class 'types.GenericAlias'>
+
+   >>> l = t()
+   >>> type(l)
+   <class 'list'>
+
+Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
+
+   >>> repr(list[int])
+   'list[int]'
+
+   >>> str(list[int])
+   'list[int]'
+
+The :meth:`__getitem__` method of generics will raise an exception to disallow
+mistakes like ``dict[str][str]``::
+
+   >>> dict[str][str]
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: There are no type variables left in dict[str]
+
+However, such expressions are valid when :ref:`type variables <generics>` are
+used.  The index must have as many elements as there are type variable items
+in the ``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
+
+   >>> from typing import TypeVar
+   >>> Y = TypeVar('Y')
+   >>> dict[str, Y][int]
+   dict[str, int]
+
+
+Standard Generic Collections
+----------------------------
+
+These standard library collections support parameterized generics.
+
+* :class:`tuple`
+* :class:`list`
+* :class:`dict`
+* :class:`set`
+* :class:`frozenset`
+* :class:`type`
+* :class:`collections.deque`
+* :class:`collections.defaultdict`
+* :class:`collections.OrderedDict`
+* :class:`collections.Counter`
+* :class:`collections.ChainMap`
+* :class:`collections.abc.Awaitable`
+* :class:`collections.abc.Coroutine`
+* :class:`collections.abc.AsyncIterable`
+* :class:`collections.abc.AsyncIterator`
+* :class:`collections.abc.AsyncGenerator`
+* :class:`collections.abc.Iterable`
+* :class:`collections.abc.Iterator`
+* :class:`collections.abc.Generator`
+* :class:`collections.abc.Reversible`
+* :class:`collections.abc.Container`
+* :class:`collections.abc.Collection`
+* :class:`collections.abc.Callable`
+* :class:`collections.abc.Set`
+* :class:`collections.abc.MutableSet`
+* :class:`collections.abc.Mapping`
+* :class:`collections.abc.MutableMapping`
+* :class:`collections.abc.Sequence`
+* :class:`collections.abc.MutableSequence`
+* :class:`collections.abc.ByteString`
+* :class:`collections.abc.MappingView`
+* :class:`collections.abc.KeysView`
+* :class:`collections.abc.ItemsView`
+* :class:`collections.abc.ValuesView`
+* :class:`contextlib.AbstractContextManager`
+* :class:`contextlib.AbstractAsyncContextManager`
+* :ref:`re.Pattern <re-objects>`
+* :ref:`re.Match <match-objects>`
+
+
+Special Attributes of Generic Alias
+-----------------------------------
+
+All parameterized generics implement special read-only attributes.
+
+.. attribute:: genericalias.__origin__
+
+   This attribute points at the non-parameterized generic class::
+
+      >>> list[int].__origin__
+      <class 'list'>
+
+
+.. attribute:: genericalias.__args__
+
+   This attribute is a :class:`tuple` (possibly of length 1) of generic
+   types passed to the original :meth:`__class_getitem__`
+   of the generic container::
+
+      >>> dict[str, list[int]].__args__
+      (<class 'str'>, list[int])
+
+
+.. attribute:: genericalias.__parameters__
+
+   This attribute is a lazily computed tuple (possibly empty) of unique type
+   variables found in ``__args__``::
+
+      >>> from typing import TypeVar
+
+      >>> T = TypeVar('T')
+      >>> list[T].__parameters__
+      (~T,)
+
+
+.. seealso::
+
+   * :pep:`585` -- "Type Hinting Generics In Standard Collections"
+   * :meth:`__class_getitem__` -- Used to implement parameterized generics.
+   * :ref:`generics` -- Generics in the :mod:`typing` module.
+
+.. versionadded:: 3.9
+
+
 .. _types-union:
 
 Union Type
