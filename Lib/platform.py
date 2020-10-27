@@ -797,6 +797,13 @@ class uname_result(
             (self.processor,)
         )
 
+    @classmethod
+    def _make(cls, iterable):
+        result = tuple.__new__(cls, itertools.islice(iterable, 5))
+        if len(result) != 6:
+            raise TypeError(f'Expected 5 arguments, got {len(result)}')
+        return result
+
     def __getitem__(self, key):
         return tuple(iter(self))[key]
 

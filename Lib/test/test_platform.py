@@ -180,9 +180,14 @@ class PlatformTest(unittest.TestCase):
         res = platform.uname()
         new = res._replace(
             system='system', node='node', release='release',
-            version='version', machine='machine', processor='processor')
+            version='version', machine='machine')
         self.assertEqual(new.system, 'system')
-        self.assertEqual(new.processor, 'processor')
+        self.assertEqual(new.node, 'node')
+        self.assertEqual(new.release, 'release')
+        self.assertEqual(new.version, 'version')
+        self.assertEqual(new.machine, 'machine')
+        # processor cannot be replaced
+        self.assertEqual(new.processor, res.processor)
 
     @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
     def test_uname_processor(self):
