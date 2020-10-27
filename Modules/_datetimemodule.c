@@ -8,6 +8,7 @@
 #define _PY_DATETIME_IMPL
 
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "datetime.h"
 #include "structmember.h"         // PyMemberDef
@@ -2448,7 +2449,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         goto Done
 
     if (us) {
-        y = accum("microseconds", x, us, _PyLong_One, &leftover_us);
+        y = accum("microseconds", x, us, _PyLong_GetOne(), &leftover_us);
         CLEANUP;
     }
     if (ms) {
@@ -2487,7 +2488,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
              * is odd. Note that x is odd when it's last bit is 1. The
              * code below uses bitwise and operation to check the last
              * bit. */
-            temp = PyNumber_And(x, _PyLong_One);  /* temp <- x & 1 */
+            temp = PyNumber_And(x, _PyLong_GetOne());  /* temp <- x & 1 */
             if (temp == NULL) {
                 Py_DECREF(x);
                 goto Done;

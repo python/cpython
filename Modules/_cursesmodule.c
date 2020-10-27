@@ -103,6 +103,7 @@ static const char PyCursesVersion[] = "2.2";
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 
 
 #ifdef __hpux
@@ -1094,9 +1095,9 @@ _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
 _curses.window.box
 
     [
-    verch: object(c_default="_PyLong_Zero") = 0
+    verch: object(c_default="_PyLong_GetZero()") = 0
         Left and right side.
-    horch: object(c_default="_PyLong_Zero") = 0
+    horch: object(c_default="_PyLong_GetZero()") = 0
         Top and bottom side.
     ]
     /
@@ -1110,7 +1111,7 @@ horch.  The default corner characters are always used by this function.
 static PyObject *
 _curses_window_box_impl(PyCursesWindowObject *self, int group_right_1,
                         PyObject *verch, PyObject *horch)
-/*[clinic end generated code: output=f3fcb038bb287192 input=465a121741c1efdf]*/
+/*[clinic end generated code: output=f3fcb038bb287192 input=f00435f9c8c98f60]*/
 {
     chtype ch1 = 0, ch2 = 0;
     if (group_right_1) {

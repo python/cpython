@@ -1,6 +1,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include <stddef.h>               // offsetof()
 
@@ -4040,13 +4041,14 @@ itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
         }
     } else {
         cnt = 0;
-        long_cnt = _PyLong_Zero;
+        long_cnt = _PyLong_GetZero();
     }
     Py_INCREF(long_cnt);
 
     /* If not specified, step defaults to 1 */
-    if (long_step == NULL)
-        long_step = _PyLong_One;
+    if (long_step == NULL) {
+        long_step = _PyLong_GetOne();
+    }
     Py_INCREF(long_step);
 
     assert(long_cnt != NULL && long_step != NULL);

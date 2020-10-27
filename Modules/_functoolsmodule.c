@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
@@ -596,7 +597,7 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
         return NULL;
     }
 
-    answer = PyObject_RichCompare(res, _PyLong_Zero, op);
+    answer = PyObject_RichCompare(res, _PyLong_GetZero(), op);
     Py_DECREF(res);
     return answer;
 }

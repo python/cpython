@@ -41,6 +41,7 @@ static const char copyright[] =
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "structmember.h"         // PyMemberDef
 
 #include "sre.h"
@@ -1999,7 +2000,7 @@ match_group(MatchObject* self, PyObject* args)
 
     switch (size) {
     case 0:
-        result = match_getslice(self, _PyLong_Zero, Py_None);
+        result = match_getslice(self, _PyLong_GetZero(), Py_None);
         break;
     case 1:
         result = match_getslice(self, PyTuple_GET_ITEM(args, 0), Py_None);

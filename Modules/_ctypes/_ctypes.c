@@ -116,6 +116,8 @@ bytes(cdata)
 #endif
 #include "ctypes.h"
 
+#include "pycore_long.h"          // _PyLong_GetZero()
+
 PyObject *PyExc_ArgError = NULL;
 
 /* This dict maps ctypes types to POINTER types */
@@ -3929,8 +3931,9 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
         case PARAMFLAG_FIN | PARAMFLAG_FLCID:
             /* ['in', 'lcid'] parameter.  Always taken from defval,
              if given, else the integer 0. */
-            if (defval == NULL)
-                defval = _PyLong_Zero;
+            if (defval == NULL) {
+                defval = _PyLong_GetZero();
+            }
             Py_INCREF(defval);
             PyTuple_SET_ITEM(callargs, i, defval);
             break;
