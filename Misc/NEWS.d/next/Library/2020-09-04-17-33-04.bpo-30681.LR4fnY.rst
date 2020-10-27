@@ -1,0 +1,2 @@
+Handle exceptions caused by unparseable date headers when using email
+"default" policy.  Patch by Tim Bell, Georges Toth
