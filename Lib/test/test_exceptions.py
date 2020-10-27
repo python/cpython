@@ -208,6 +208,7 @@ class ExceptionTests(unittest.TestCase):
         check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
         check('x = "a', 1, 7)
         check('lambda x: x = 2', 1, 1)
+        check('f{a + b + c}', 1, 2)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
