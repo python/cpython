@@ -30,8 +30,10 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     }
 
     op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
-    if (op == NULL)
+    if (op == NULL) {
+        Py_XDECREF(module);
         return NULL;
+    }
     /* Note: No failures from this point on, since func_dealloc() does not
        expect a partially-created object. */
 
