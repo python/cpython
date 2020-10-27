@@ -4759,43 +4759,57 @@ Generic Alias Type
    object: GenericAlias
    pair: Generic; Alias
 
-Usually, the :ref:`subscription <subscriptions>` of builtin containers
-objects calls the method :meth:`__getitem__` of the object.  However, the
-subscription of some builtin containers' classes may call the classmethod
-:meth:`__class_getitem__` of the class instead. The classmethod
-:meth:`__class_getitem__` returns a ``GenericAlias`` object. An example of this
-is the expression ``list[int]``.
+``GenericAlias`` objects are created by subscripting a class (usually a
+container), such as ``list[int]``.  They are intended primarily for
+:term:`type annotations <annotation>`.
+
+Usually, the :ref:`subscription <subscriptions>` of container objects calls the
+method :meth:`__getitem__` of the object.  However, the subscription of some
+containers' classes may call the classmethod :meth:`__class_getitem__` of the
+class instead. The classmethod :meth:`__class_getitem__` should return a
+``GenericAlias`` object.
 
 .. note::
-   When :meth:`__class_getitem__` of the class is not present, the
-   :meth:`__getitem__` is still called.
+   If the :meth:`__getitem__` of the class' metaclass is present, it will take
+   precedence over the :meth:`__class_getitem__` defined in the class (see
+   :pep:`560` for more details) ::
+
+      >>> class M(type):
+      ...     def __getitem__(self, key):
+      ...         print('__getitem__ was called')
+
+      >>> class T(metaclass=M):
+      ...     def __class_getitem__(cls, key):
+      ...         print('__class_getitem__ was called')
+
+      >>> T[int]
+      '__getitem__ was called'
+
 
 The ``GenericAlias`` object acts as a proxy for :term:`generic types
 <generic type>`, implementing *parameterized generics* - a specific instance
-of a generic which provides the types for container elements.  It is intended
-primarily for :term:`type annotations <annotation>`.
+of a generic which provides the types for container elements.
 
 The user-exposed type for the ``GenericAlias`` object can be accessed from
 :data:`types.GenericAlias` and used for :func:`isinstance` checks.
 
-.. describe:: GenericType[X, Y, ...]
+.. describe:: T[X, Y, ...]
 
-   Creates a ``GenericAlias`` representing a ``GenericType`` containing elements
-   of types *X*, *Y*, and more depending on the ``GenericType`` used.
-   For example, for a function expecting a :class:`list` containing
+   Creates a ``GenericAlias`` representing a type ``T`` containing elements
+   of types *X*, *Y*, and more depending on the ``T`` used.
+   For example, a function expecting a :class:`list` containing
    :class:`float` elements::
 
       def average(values: list[float]) -> float:
           return sum(values) / len(values)
 
-   Another example for :term:`mapping` objects, using a :class:`dict`. A
-   :class:`dict` is a generic type expecting two type parameters representing
-   the key type and the value type.  In this case, the function expects a
-   ``dict`` for its ``body`` argument.  The ``body`` has keys of type
-   :class:`str` and their corresponding values are lists which hold :class:`int`
-   elements::
+   Another example for :term:`mapping` objects, using a :class:`dict`, which
+   is a generic type expecting two type parameters representing the key type
+   and the value type.  In this case, the function expects a ``dict`` for its
+   ``body`` argument.  The ``body`` has keys of type :class:`str` and their
+   corresponding values are of type :class:`int`::
 
-      def send_post_request(url: str, body: dict[str, list[int]]) -> None:
+      def send_post_request(url: str, body: dict[str, int]) -> None:
           ...
 
 The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
@@ -4805,7 +4819,7 @@ The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    TypeError: isinstance() argument 2 cannot be a parameterized generic
-   >>>
+
    >>> issubclass(list, list[str])
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
@@ -4827,7 +4841,7 @@ creation::
    >>> t = list[str]
    >>> type(t)
    <class 'types.GenericAlias'>
-   >>>
+
    >>> l = t()
    >>> type(l)
    <class 'list'>
@@ -4836,7 +4850,7 @@ Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
 
    >>> repr(list[int])
    'list[int]'
-   >>>
+
    >>> str(list[int])
    'list[int]'
 
@@ -4848,15 +4862,13 @@ mistakes like ``dict[str][str]``::
      File "<stdin>", line 1, in <module>
    TypeError: There are no type variables left in dict[str]
 
-However, that expression is valid when :ref:`type variables <generics>` are
-used.  ``GenericAlias`` can only be indexed if it has type variables.  The index
-must have as many elements as there are type variable items in the
-``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
+However, such expressions are valid when :ref:`type variables <generics>` are
+used.  The index must have as many elements as there are type variable items
+in the ``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
 
    >>> from typing import TypeVar
-   >>> X = TypeVar('X')
    >>> Y = TypeVar('Y')
-   >>> dict[X, Y][str, int]
+   >>> dict[str, Y][int]
    dict[str, int]
 
 
