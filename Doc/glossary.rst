@@ -301,7 +301,8 @@ Glossary
       including functions, methods, properties, class methods, static methods,
       and reference to super classes.
 
-      For more information about descriptors' methods, see :ref:`descriptors`.
+      For more information about descriptors' methods, see :ref:`descriptors`
+      or the :ref:`Descriptor How To Guide <descriptorhowto>`.
 
    dictionary
       An associative array, where arbitrary keys are mapped to values.  The
@@ -1030,7 +1031,7 @@ Glossary
       :meth:`index`, :meth:`__contains__`, and
       :meth:`__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
-      :func:`~abc.register`.
+      :func:`~abc.ABCMeta.register`.
 
    set comprehension
       A compact way to process all or part of the elements in an iterable and
