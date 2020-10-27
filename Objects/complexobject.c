@@ -6,6 +6,7 @@
 /* Submitted by Jim Hugunin */
 
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "structmember.h"         // PyMemberDef
 
@@ -870,7 +871,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 /*[clinic input]
 @classmethod
 complex.__new__ as complex_new
-    real as r: object(c_default="_PyLong_Zero") = 0
+    real as r: object(c_default="NULL") = 0
     imag as i: object(c_default="NULL") = 0
 
 Create a complex number from a real part and an optional imaginary part.
@@ -880,7 +881,7 @@ This is equivalent to (real + imag*1j) where imag defaults to 0.
 
 static PyObject *
 complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
-/*[clinic end generated code: output=b6c7dd577b537dc1 input=6f6b0bedba29bcb5]*/
+/*[clinic end generated code: output=b6c7dd577b537dc1 input=f4c667f2596d4fd1]*/
 {
     PyObject *tmp;
     PyNumberMethods *nbr, *nbi = NULL;
@@ -888,6 +889,10 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     int own_r = 0;
     int cr_is_complex = 0;
     int ci_is_complex = 0;
+
+    if (r == NULL) {
+        r = _PyLong_GetZero();
+    }
 
     /* Special-case for a single argument when type(arg) is complex. */
     if (PyComplex_CheckExact(r) && i == NULL &&
