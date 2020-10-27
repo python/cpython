@@ -4772,7 +4772,7 @@ class instead. The classmethod :meth:`__class_getitem__` should return a
 .. note::
    If the :meth:`__getitem__` of the class' metaclass is present, it will take
    precedence over the :meth:`__class_getitem__` defined in the class (see
-   :pep:`560` for more details) ::
+   :pep:`560` for more details)::
 
       >>> class M(type):
       ...     def __getitem__(self, key):
@@ -4946,7 +4946,7 @@ All parameterized generics implement special read-only attributes.
    variables found in ``__args__``::
 
       >>> from typing import TypeVar
-      >>>
+
       >>> T = TypeVar('T')
       >>> list[T].__parameters__
       (~T,)
