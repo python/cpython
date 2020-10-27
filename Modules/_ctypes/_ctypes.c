@@ -102,7 +102,6 @@ bytes(cdata)
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_long.h"          // _PyLong_GetZero()
 #include "structmember.h"         // PyMemberDef
 
 #include <ffi.h>
@@ -116,6 +115,8 @@ bytes(cdata)
 #include "ctypes_dlfcn.h"
 #endif
 #include "ctypes.h"
+
+#include "pycore_long.h"          // _PyLong_GetZero()
 
 PyObject *PyExc_ArgError = NULL;
 
