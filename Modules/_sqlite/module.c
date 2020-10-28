@@ -112,7 +112,6 @@ RAM instead of on disk.");
 _sqlite3.complete_statement as pysqlite_complete_statement
 
     statement: str
-    /
 
 Checks if a string contains a complete SQL statement. Non-standard.
 [clinic start generated code]*/
