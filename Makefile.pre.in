@@ -161,6 +161,10 @@ BLDSHARED=	@BLDSHARED@ $(PY_CORE_LDFLAGS)
 LDCXXSHARED=	@LDCXXSHARED@
 DESTSHARED=	$(BINLIBDEST)/lib-dynload
 
+# List of exported symbols for AIX
+EXPORTSYMS=	@EXPORTSYMS@
+EXPORTSFROM=	@EXPORTSFROM@
+
 # Executable suffix (.exe on Windows and Mac OS X)
 EXE=		@EXEEXT@
 BUILDEXE=	@BUILDEXEEXT@
@@ -307,7 +311,7 @@ PEGEN_OBJS=		\
 
 
 PEGEN_HEADERS= \
-		$(srcdir)/Include/internal/pegen_interface.h \
+		$(srcdir)/Include/parser_interface.h \
 		$(srcdir)/Parser/pegen.h \
 		$(srcdir)/Parser/string_parser.h
 
@@ -344,7 +348,6 @@ PYTHON_OBJS=	\
 		Python/getcopyright.o \
 		Python/getplatform.o \
 		Python/getversion.o \
-		Python/graminit.o \
 		Python/hamt.o \
 		Python/hashtable.o \
 		Python/import.o \
@@ -355,7 +358,6 @@ PYTHON_OBJS=	\
 		Python/mysnprintf.o \
 		Python/mystrtoul.o \
 		Python/pathconfig.o \
-		Python/peephole.o \
 		Python/preconfig.o \
 		Python/pyarena.o \
 		Python/pyctype.o \
@@ -430,6 +432,7 @@ OBJECT_OBJS=	\
 		Objects/typeobject.o \
 		Objects/unicodeobject.o \
 		Objects/unicodectype.o \
+		Objects/unionobject.o \
 		Objects/weakrefobject.o
 
 ##########################################################################
@@ -546,7 +549,6 @@ coverage-lcov:
 	    '*/Modules/zlib/*' \
 	    '*/Include/*' \
 	    '*/Modules/xx*.c' \
-	    '*/Parser/listnode.c' \
 	    '*/Python/pyfpe.c' \
 	    '*/Python/pystrcmp.c' \
 	    '/usr/include/*' \
@@ -574,7 +576,7 @@ clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
 
 # Build the interpreter
-$(BUILDPYTHON):	Programs/python.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
+$(BUILDPYTHON):	Programs/python.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY) $(EXPORTSYMS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 platform: $(BUILDPYTHON) pybuilddir.txt
@@ -646,6 +648,10 @@ libpython$(LDVERSION).dylib: $(LIBRARY_OBJS)
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
 	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM)
 
+# List of exported symbols for AIX
+Modules/python.exp: $(LIBRARY)
+	$(srcdir)/Modules/makexp_aix $@ "$(EXPORTSFROM)" $?
+
 # Copy up the gdb python hooks into a position where they can be automatically
 # loaded by gdb during Lib/test/test_gdb.py
 #
@@ -705,7 +711,7 @@ Makefile Modules/config.c: Makefile.pre \
 	@echo "The Makefile was updated, you may need to re-run make."
 
 
-Programs/_testembed: Programs/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
+Programs/_testembed: Programs/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY) $(EXPORTSYMS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
@@ -742,7 +748,7 @@ regen-importlib: Programs/_freeze_importlib
 # Regenerate all generated files
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
-	regen-token regen-symbol regen-ast regen-importlib clinic \
+	regen-token regen-ast regen-importlib clinic \
 	regen-pegen-metaparser regen-pegen
 
 ############################################################################
@@ -881,15 +887,7 @@ regen-keyword:
 		$(srcdir)/Lib/keyword.py.new
 	$(UPDATE_FILE) $(srcdir)/Lib/keyword.py $(srcdir)/Lib/keyword.py.new
 
-.PHONY: regen-symbol
-regen-symbol: $(srcdir)/Include/graminit.h
-	# Regenerate Lib/symbol.py from Include/graminit.h
-	# using Tools/scripts/generate_symbol_py.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/scripts/generate_symbol_py.py \
-		$(srcdir)/Include/graminit.h \
-		$(srcdir)/Lib/symbol.py
-
-Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o Parser/parsetok.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
+Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o: $(srcdir)/Include/Python-ast.h
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
 		$(CC) -c $(PY_CORE_CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
@@ -989,7 +987,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/abstract.h \
 		$(srcdir)/Include/asdl.h \
 		$(srcdir)/Include/ast.h \
-		$(srcdir)/Include/bitset.h \
 		$(srcdir)/Include/bltinmodule.h \
 		$(srcdir)/Include/boolobject.h \
 		$(srcdir)/Include/bytearrayobject.h \
@@ -1027,7 +1024,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/modsupport.h \
 		$(srcdir)/Include/moduleobject.h \
 		$(srcdir)/Include/namespaceobject.h \
-		$(srcdir)/Include/node.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
 		$(srcdir)/Include/odictobject.h \
@@ -1069,7 +1065,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/traceback.h \
 		$(srcdir)/Include/tracemalloc.h \
 		$(srcdir)/Include/tupleobject.h \
-		$(srcdir)/Include/ucnhash.h \
 		$(srcdir)/Include/unicodeobject.h \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \
@@ -1086,6 +1081,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
 		$(srcdir)/Include/cpython/fileutils.h \
+		$(srcdir)/Include/cpython/frameobject.h \
 		$(srcdir)/Include/cpython/import.h \
 		$(srcdir)/Include/cpython/initconfig.h \
 		$(srcdir)/Include/cpython/interpreteridobject.h \
@@ -1121,6 +1117,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_import.h \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_interp.h \
+		$(srcdir)/Include/internal/pycore_list.h \
+		$(srcdir)/Include/internal/pycore_long.h \
 		$(srcdir)/Include/internal/pycore_object.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
@@ -1131,7 +1129,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_runtime.h \
 		$(srcdir)/Include/internal/pycore_sysmodule.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
-		$(srcdir)/Include/internal/pycore_tupleobject.h \
+		$(srcdir)/Include/internal/pycore_tuple.h \
+		$(srcdir)/Include/internal/pycore_ucnhash.h \
+		$(srcdir)/Include/internal/pycore_unionobject.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(DTRACE_HEADERS)
 

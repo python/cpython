@@ -1,5 +1,6 @@
 /* Authors: Gregory P. Smith & Jeffrey Yasskin */
 #include "Python.h"
+#include "pycore_fileutils.h"
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
@@ -33,6 +34,14 @@
 #if defined(__ANDROID__) && __ANDROID_API__ < 21 && !defined(SYS_getdents64)
 # include <sys/linux-syscalls.h>
 # define SYS_getdents64  __NR_getdents64
+#endif
+
+#if defined(__linux__) && defined(HAVE_VFORK) && defined(HAVE_SIGNAL_H) && \
+    defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
+/* If this is ever expanded to non-Linux platforms, verify what calls are
+ * allowed after vfork(). Ex: setsid() may be disallowed on macOS? */
+# include <signal.h>
+# define VFORK_USABLE 1
 #endif
 
 #if defined(__sun) && defined(__SVR4)
@@ -250,7 +259,6 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
     long end_fd = safe_get_max_fd();
     Py_ssize_t num_fds_to_keep = PyTuple_GET_SIZE(py_fds_to_keep);
     Py_ssize_t keep_seq_idx;
-    int fd_num;
     /* As py_fds_to_keep is sorted we can loop through the list closing
      * fds in between any in the keep list falling within our range. */
     for (keep_seq_idx = 0; keep_seq_idx < num_fds_to_keep; ++keep_seq_idx) {
@@ -258,21 +266,11 @@ _close_fds_by_brute_force(long start_fd, PyObject *py_fds_to_keep)
         int keep_fd = PyLong_AsLong(py_keep_fd);
         if (keep_fd < start_fd)
             continue;
-        for (fd_num = start_fd; fd_num < keep_fd; ++fd_num) {
-            close(fd_num);
-        }
+        _Py_closerange(start_fd, keep_fd - 1);
         start_fd = keep_fd + 1;
     }
     if (start_fd <= end_fd) {
-#if defined(__FreeBSD__)
-        /* Any errors encountered while closing file descriptors are ignored */
-        closefrom(start_fd);
-#else
-        for (fd_num = start_fd; fd_num < end_fd; ++fd_num) {
-            /* Ignore errors */
-            (void)close(fd_num);
-        }
-#endif
+        _Py_closerange(start_fd, end_fd);
     }
 }
 
@@ -417,9 +415,53 @@ _close_open_fds_maybe_unsafe(long start_fd, PyObject* py_fds_to_keep)
 #endif  /* else NOT (defined(__linux__) && defined(HAVE_SYS_SYSCALL_H)) */
 
 
+#ifdef VFORK_USABLE
+/* Reset dispositions for all signals to SIG_DFL except for ignored
+ * signals. This way we ensure that no signal handlers can run
+ * after we unblock signals in a child created by vfork().
+ */
+static void
+reset_signal_handlers(const sigset_t *child_sigmask)
+{
+    struct sigaction sa_dfl = {.sa_handler = SIG_DFL};
+    for (int sig = 1; sig < _NSIG; sig++) {
+        /* Dispositions for SIGKILL and SIGSTOP can't be changed. */
+        if (sig == SIGKILL || sig == SIGSTOP) {
+            continue;
+        }
+
+        /* There is no need to reset the disposition of signals that will
+         * remain blocked across execve() since the kernel will do it. */
+        if (sigismember(child_sigmask, sig) == 1) {
+            continue;
+        }
+
+        struct sigaction sa;
+        /* C libraries usually return EINVAL for signals used
+         * internally (e.g. for thread cancellation), so simply
+         * skip errors here. */
+        if (sigaction(sig, NULL, &sa) == -1) {
+            continue;
+        }
+
+        /* void *h works as these fields are both pointer types already. */
+        void *h = (sa.sa_flags & SA_SIGINFO ? (void *)sa.sa_sigaction :
+                                              (void *)sa.sa_handler);
+        if (h == SIG_IGN || h == SIG_DFL) {
+            continue;
+        }
+
+        /* This call can't reasonably fail, but if it does, terminating
+         * the child seems to be too harsh, so ignore errors. */
+        (void) sigaction(sig, &sa_dfl, NULL);
+    }
+}
+#endif /* VFORK_USABLE */
+
+
 /*
- * This function is code executed in the child process immediately after fork
- * to set things up and call exec().
+ * This function is code executed in the child process immediately after
+ * (v)fork to set things up and call exec().
  *
  * All of the code in this function must only use async-signal-safe functions,
  * listed at `man 7 signal` or
@@ -427,8 +469,28 @@ _close_open_fds_maybe_unsafe(long start_fd, PyObject* py_fds_to_keep)
  *
  * This restriction is documented at
  * http://www.opengroup.org/onlinepubs/009695399/functions/fork.html.
+ *
+ * If this function is called after vfork(), even more care must be taken.
+ * The lack of preparations that C libraries normally take on fork(),
+ * as well as sharing the address space with the parent, might make even
+ * async-signal-safe functions vfork-unsafe. In particular, on Linux,
+ * set*id() and setgroups() library functions must not be called, since
+ * they have to interact with the library-level thread list and send
+ * library-internal signals to implement per-process credentials semantics
+ * required by POSIX but not supported natively on Linux. Another reason to
+ * avoid this family of functions is that sharing an address space between
+ * processes running with different privileges is inherently insecure.
+ * See bpo-35823 for further discussion and references.
+ *
+ * In some C libraries, setrlimit() has the same thread list/signalling
+ * behavior since resource limits were per-thread attributes before
+ * Linux 2.6.10. Musl, as of 1.2.1, is known to have this issue
+ * (https://www.openwall.com/lists/musl/2020/10/15/6).
+ *
+ * If vfork-unsafe functionality is desired after vfork(), consider using
+ * syscall() to obtain it.
  */
-static void
+_Py_NO_INLINE static void
 child_exec(char *const exec_array[],
            char *const argv[],
            char *const envp[],
@@ -442,6 +504,7 @@ child_exec(char *const exec_array[],
            int call_setgid, gid_t gid,
            int call_setgroups, size_t groups_size, const gid_t *groups,
            int call_setuid, uid_t uid, int child_umask,
+           const void *child_sigmask,
            PyObject *py_fds_to_keep,
            PyObject *preexec_fn,
            PyObject *preexec_fn_args_tuple)
@@ -516,6 +579,15 @@ child_exec(char *const exec_array[],
 
     if (restore_signals)
         _Py_RestoreSignals();
+
+#ifdef VFORK_USABLE
+    if (child_sigmask) {
+        reset_signal_handlers(child_sigmask);
+        if ((errno = pthread_sigmask(SIG_SETMASK, child_sigmask, NULL))) {
+            goto error;
+        }
+    }
+#endif
 
 #ifdef HAVE_SETSID
     if (call_setsid)
@@ -609,6 +681,80 @@ error:
 }
 
 
+/* The main purpose of this wrapper function is to isolate vfork() from both
+ * subprocess_fork_exec() and child_exec(). A child process created via
+ * vfork() executes on the same stack as the parent process while the latter is
+ * suspended, so this function should not be inlined to avoid compiler bugs
+ * that might clobber data needed by the parent later. Additionally,
+ * child_exec() should not be inlined to avoid spurious -Wclobber warnings from
+ * GCC (see bpo-35823).
+ */
+_Py_NO_INLINE static pid_t
+do_fork_exec(char *const exec_array[],
+             char *const argv[],
+             char *const envp[],
+             const char *cwd,
+             int p2cread, int p2cwrite,
+             int c2pread, int c2pwrite,
+             int errread, int errwrite,
+             int errpipe_read, int errpipe_write,
+             int close_fds, int restore_signals,
+             int call_setsid,
+             int call_setgid, gid_t gid,
+             int call_setgroups, size_t groups_size, const gid_t *groups,
+             int call_setuid, uid_t uid, int child_umask,
+             const void *child_sigmask,
+             PyObject *py_fds_to_keep,
+             PyObject *preexec_fn,
+             PyObject *preexec_fn_args_tuple)
+{
+
+    pid_t pid;
+
+#ifdef VFORK_USABLE
+    if (child_sigmask) {
+        /* These are checked by our caller; verify them in debug builds. */
+        assert(!call_setuid);
+        assert(!call_setgid);
+        assert(!call_setgroups);
+        assert(preexec_fn == Py_None);
+
+        pid = vfork();
+    } else
+#endif
+    {
+        pid = fork();
+    }
+
+    if (pid != 0) {
+        return pid;
+    }
+
+    /* Child process.
+     * See the comment above child_exec() for restrictions imposed on
+     * the code below.
+     */
+
+    if (preexec_fn != Py_None) {
+        /* We'll be calling back into Python later so we need to do this.
+         * This call may not be async-signal-safe but neither is calling
+         * back into Python.  The user asked us to use hope as a strategy
+         * to avoid deadlock... */
+        PyOS_AfterFork_Child();
+    }
+
+    child_exec(exec_array, argv, envp, cwd,
+               p2cread, p2cwrite, c2pread, c2pwrite,
+               errread, errwrite, errpipe_read, errpipe_write,
+               close_fds, restore_signals, call_setsid,
+               call_setgid, gid, call_setgroups, groups_size, groups,
+               call_setuid, uid, child_umask, child_sigmask,
+               py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
+    _exit(255);
+    return 0;  /* Dead code to avoid a potential compiler warning. */
+}
+
+
 static PyObject *
 subprocess_fork_exec(PyObject* self, PyObject *args)
 {
@@ -626,7 +772,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     uid_t uid;
     gid_t gid, *groups = NULL;
     int child_umask;
-    PyObject *cwd_obj, *cwd_obj2;
+    PyObject *cwd_obj, *cwd_obj2 = NULL;
     const char *cwd;
     pid_t pid;
     int need_to_reenable_gc = 0;
@@ -748,7 +894,6 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         cwd = PyBytes_AsString(cwd_obj2);
     } else {
         cwd = NULL;
-        cwd_obj2 = NULL;
     }
 
     if (groups_list != Py_None) {
@@ -846,38 +991,64 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         need_after_fork = 1;
     }
 
-    pid = fork();
-    if (pid == 0) {
-        /* Child process */
-        /*
-         * Code from here to _exit() must only use async-signal-safe functions,
-         * listed at `man 7 signal` or
-         * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
+    /* NOTE: When old_sigmask is non-NULL, do_fork_exec() may use vfork(). */
+    const void *old_sigmask = NULL;
+#ifdef VFORK_USABLE
+    /* Use vfork() only if it's safe. See the comment above child_exec(). */
+    sigset_t old_sigs;
+    if (preexec_fn == Py_None &&
+        !call_setuid && !call_setgid && !call_setgroups) {
+        /* Block all signals to ensure that no signal handlers are run in the
+         * child process while it shares memory with us. Note that signals
+         * used internally by C libraries won't be blocked by
+         * pthread_sigmask(), but signal handlers installed by C libraries
+         * normally service only signals originating from *within the process*,
+         * so it should be sufficient to consider any library function that
+         * might send such a signal to be vfork-unsafe and do not call it in
+         * the child.
          */
-
-        if (preexec_fn != Py_None) {
-            /* We'll be calling back into Python later so we need to do this.
-             * This call may not be async-signal-safe but neither is calling
-             * back into Python.  The user asked us to use hope as a strategy
-             * to avoid deadlock... */
-            PyOS_AfterFork_Child();
+        sigset_t all_sigs;
+        sigfillset(&all_sigs);
+        if ((saved_errno = pthread_sigmask(SIG_BLOCK, &all_sigs, &old_sigs))) {
+            errno = saved_errno;
+            PyErr_SetFromErrno(PyExc_OSError);
+            goto cleanup;
         }
-
-        child_exec(exec_array, argv, envp, cwd,
-                   p2cread, p2cwrite, c2pread, c2pwrite,
-                   errread, errwrite, errpipe_read, errpipe_write,
-                   close_fds, restore_signals, call_setsid,
-                   call_setgid, gid, call_setgroups, num_groups, groups,
-                   call_setuid, uid, child_umask,
-                   py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
-        _exit(255);
-        return NULL;  /* Dead code to avoid a potential compiler warning. */
+        old_sigmask = &old_sigs;
     }
+#endif
+
+    pid = do_fork_exec(exec_array, argv, envp, cwd,
+                       p2cread, p2cwrite, c2pread, c2pwrite,
+                       errread, errwrite, errpipe_read, errpipe_write,
+                       close_fds, restore_signals, call_setsid,
+                       call_setgid, gid, call_setgroups, num_groups, groups,
+                       call_setuid, uid, child_umask, old_sigmask,
+                       py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
+
     /* Parent (original) process */
     if (pid == -1) {
         /* Capture errno for the exception. */
         saved_errno = errno;
     }
+
+#ifdef VFORK_USABLE
+    if (old_sigmask) {
+        /* vfork() semantics guarantees that the parent is blocked
+         * until the child performs _exit() or execve(), so it is safe
+         * to unblock signals once we're here.
+         * Note that in environments where vfork() is implemented as fork(),
+         * such as QEMU user-mode emulation, the parent won't be blocked,
+         * but it won't share the address space with the child,
+         * so it's still safe to unblock the signals.
+         *
+         * We don't handle errors here because this call can't fail
+         * if valid arguments are given, and because there is no good
+         * way for the caller to deal with a failure to restore
+         * the thread signal mask. */
+        (void) pthread_sigmask(SIG_SETMASK, old_sigmask, NULL);
+    }
+#endif
 
     Py_XDECREF(cwd_obj2);
 
@@ -908,6 +1079,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     return PyLong_FromPid(pid);
 
 cleanup:
+    Py_XDECREF(cwd_obj2);
     if (envp)
         _Py_FreeCharPArray(envp);
     if (argv)

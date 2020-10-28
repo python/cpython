@@ -1,9 +1,10 @@
 """Test script for the grp module."""
 
 import unittest
-from test import support
+from test.support import import_helper
 
-grp = support.import_module('grp')
+
+grp = import_helper.import_module('grp')
 
 class GroupDatabaseTestCase(unittest.TestCase):
 

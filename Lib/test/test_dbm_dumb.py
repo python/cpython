@@ -10,9 +10,11 @@ import stat
 import unittest
 import dbm.dumb as dumbdbm
 from test import support
+from test.support import os_helper
 from functools import partial
 
-_fname = support.TESTFN
+_fname = os_helper.TESTFN
+
 
 def _delete_files():
     for ext in [".dir", ".dat", ".bak"]:
@@ -264,7 +266,7 @@ class DumbDBMTestCase(unittest.TestCase):
                 dumbdbm.open(_fname, flag)
 
     def test_readonly_files(self):
-        with support.temp_dir() as dir:
+        with os_helper.temp_dir() as dir:
             fname = os.path.join(dir, 'db')
             with dumbdbm.open(fname, 'n') as f:
                 self.assertEqual(list(f.keys()), [])
@@ -277,12 +279,12 @@ class DumbDBMTestCase(unittest.TestCase):
                 self.assertEqual(sorted(f.keys()), sorted(self._dict))
                 f.close()  # don't write
 
-    @unittest.skipUnless(support.TESTFN_NONASCII,
+    @unittest.skipUnless(os_helper.TESTFN_NONASCII,
                          'requires OS support of non-ASCII encodings')
     def test_nonascii_filename(self):
-        filename = support.TESTFN_NONASCII
+        filename = os_helper.TESTFN_NONASCII
         for suffix in ['.dir', '.dat', '.bak']:
-            self.addCleanup(support.unlink, filename + suffix)
+            self.addCleanup(os_helper.unlink, filename + suffix)
         with dumbdbm.open(filename, 'c') as db:
             db[b'key'] = b'value'
         self.assertTrue(os.path.exists(filename + '.dat'))

@@ -296,7 +296,7 @@ Unicode Character Database as included in the :mod:`unicodedata` module.
 
 Identifiers are unlimited in length.  Case is significant.
 
-.. productionlist::
+.. productionlist:: python-grammar
    identifier: `xid_start` `xid_continue`*
    id_start: <all characters in general categories Lu, Ll, Lt, Lm, Lo, Nl, the underscore, and characters with the Other_ID_Start property>
    id_continue: <all characters in `id_start`, plus characters in the categories Mn, Mc, Nd, Pc and others with the Other_ID_Continue property>
@@ -412,7 +412,7 @@ String and Bytes literals
 
 String literals are described by the following lexical definitions:
 
-.. productionlist::
+.. productionlist:: python-grammar
    stringliteral: [`stringprefix`](`shortstring` | `longstring`)
    stringprefix: "r" | "u" | "R" | "U" | "f" | "F"
                : | "fr" | "Fr" | "fR" | "FR" | "rf" | "rF" | "Rf" | "RF"
@@ -424,7 +424,7 @@ String literals are described by the following lexical definitions:
    longstringchar: <any source character except "\">
    stringescapeseq: "\" <any source character>
 
-.. productionlist::
+.. productionlist:: python-grammar
    bytesliteral: `bytesprefix`(`shortbytes` | `longbytes`)
    bytesprefix: "b" | "B" | "br" | "Br" | "bR" | "BR" | "rb" | "rB" | "Rb" | "RB"
    shortbytes: "'" `shortbytesitem`* "'" | '"' `shortbytesitem`* '"'
@@ -637,9 +637,11 @@ and formatted string literals may be concatenated with plain string literals.
    single: string; formatted literal
    single: string; interpolated literal
    single: f-string
+   single: fstring
    single: {} (curly brackets); in formatted string literal
    single: ! (exclamation); in formatted string literal
    single: : (colon); in formatted string literal
+   single: = (equals); for help in debugging using string literals
 .. _f-strings:
 
 Formatted string literals
@@ -657,9 +659,9 @@ Escape sequences are decoded like in ordinary string literals (except when
 a literal is also marked as a raw string).  After decoding, the grammar
 for the contents of the string is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    f_string: (`literal_char` | "{{" | "}}" | `replacement_field`)*
-   replacement_field: "{" `f_expression` ["!" `conversion`] [":" `format_spec`] "}"
+   replacement_field: "{" `f_expression` ["="] ["!" `conversion`] [":" `format_spec`] "}"
    f_expression: (`conditional_expression` | "*" `or_expr`)
                :   ("," `conditional_expression` | "," "*" `or_expr`)* [","]
                : | `yield_expression`
@@ -671,10 +673,11 @@ The parts of the string outside curly braces are treated literally,
 except that any doubled curly braces ``'{{'`` or ``'}}'`` are replaced
 with the corresponding single curly brace.  A single opening curly
 bracket ``'{'`` marks a replacement field, which starts with a
-Python expression.  After the expression, there may be a conversion field,
-introduced by an exclamation point ``'!'``.  A format specifier may also
-be appended, introduced by a colon ``':'``.  A replacement field ends
-with a closing curly bracket ``'}'``.
+Python expression. To display both the expression text and its value after
+evaluation, (useful in debugging), an equal sign ``'='`` may be added after the
+expression. A conversion field, introduced by an exclamation point ``'!'`` may
+follow.  A format specifier may also be appended, introduced by a colon ``':'``.
+A replacement field ends with a closing curly bracket ``'}'``.
 
 Expressions in formatted string literals are treated like regular
 Python expressions surrounded by parentheses, with a few exceptions.
@@ -689,6 +692,17 @@ left to right.
    Prior to Python 3.7, an :keyword:`await` expression and comprehensions
    containing an :keyword:`async for` clause were illegal in the expressions
    in formatted string literals due to a problem with the implementation.
+
+When the equal sign ``'='`` is provided, the output will have the expression
+text, the ``'='`` and the evaluated value. Spaces after the opening brace
+``'{'``, within the expression and after the ``'='`` are all retained in the
+output. By default, the ``'='`` causes the :func:`repr` of the expression to be
+provided, unless there is a format specified. When a format is specified it
+defaults to the :func:`str` of the expression unless a conversion ``'!r'`` is
+declared.
+
+.. versionadded:: 3.8
+   The equal sign ``'='``.
 
 If a conversion is specified, the result of evaluating the expression
 is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
@@ -724,9 +738,22 @@ Some examples of formatted string literals::
    >>> today = datetime(year=2017, month=1, day=27)
    >>> f"{today:%B %d, %Y}"  # using date format specifier
    'January 27, 2017'
+   >>> f"{today=:%B %d, %Y}" # using date format specifier and debugging
+   'today=January 27, 2017'
    >>> number = 1024
    >>> f"{number:#0x}"  # using integer format specifier
    '0x400'
+   >>> foo = "bar"
+   >>> f"{ foo = }" # preserves whitespace
+   " foo = 'bar'"
+   >>> line = "The mill's closed"
+   >>> f"{line = }"
+   'line = "The mill\'s closed"'
+   >>> f"{line = :20}"
+   "line = The mill's closed   "
+   >>> f"{line = !r:20}"
+   'line = "The mill\'s closed" '
+
 
 A consequence of sharing the same syntax as regular string literals is
 that characters in the replacement fields must not conflict with the
@@ -793,7 +820,7 @@ Integer literals
 
 Integer literals are described by the following lexical definitions:
 
-.. productionlist::
+.. productionlist:: python-grammar
    integer: `decinteger` | `bininteger` | `octinteger` | `hexinteger`
    decinteger: `nonzerodigit` (["_"] `digit`)* | "0"+ (["_"] "0")*
    bininteger: "0" ("b" | "B") (["_"] `bindigit`)+
@@ -837,7 +864,7 @@ Floating point literals
 
 Floating point literals are described by the following lexical definitions:
 
-.. productionlist::
+.. productionlist:: python-grammar
    floatnumber: `pointfloat` | `exponentfloat`
    pointfloat: [`digitpart`] `fraction` | `digitpart` "."
    exponentfloat: (`digitpart` | `pointfloat`) `exponent`
@@ -867,7 +894,7 @@ Imaginary literals
 
 Imaginary literals are described by the following lexical definitions:
 
-.. productionlist::
+.. productionlist:: python-grammar
    imagnumber: (`floatnumber` | `digitpart`) ("j" | "J")
 
 An imaginary literal yields a complex number with a real part of 0.0.  Complex

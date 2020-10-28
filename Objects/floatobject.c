@@ -6,6 +6,7 @@
 #include "Python.h"
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
 #include "pycore_interp.h"        // _PyInterpreterState.float_state
+#include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
@@ -22,6 +23,15 @@ class float "PyObject *" "&PyFloat_Type"
 #ifndef PyFloat_MAXFREELIST
 #  define PyFloat_MAXFREELIST   100
 #endif
+
+
+static struct _Py_float_state *
+get_float_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->float_state;
+}
+
 
 double
 PyFloat_GetMax(void)
@@ -113,8 +123,7 @@ PyFloat_GetInfo(void)
 PyObject *
 PyFloat_FromDouble(double fval)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_float_state *state = &interp->float_state;
+    struct _Py_float_state *state = get_float_state();
     PyFloatObject *op = state->free_list;
     if (op != NULL) {
 #ifdef Py_DEBUG
@@ -207,7 +216,7 @@ PyFloat_FromString(PyObject *v)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-            "float() argument must be a string or a number, not '%.200s'",
+            "float() argument must be a string or a real number, not '%.200s'",
             Py_TYPE(v)->tp_name);
         return NULL;
     }
@@ -222,8 +231,7 @@ static void
 float_dealloc(PyFloatObject *op)
 {
     if (PyFloat_CheckExact(op)) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        struct _Py_float_state *state = &interp->float_state;
+        struct _Py_float_state *state = get_float_state();
 #ifdef Py_DEBUG
         // float_dealloc() must not be called after _PyFloat_Fini()
         assert(state->numfree != -1);
@@ -236,8 +244,9 @@ float_dealloc(PyFloatObject *op)
         Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
         state->free_list = op;
     }
-    else
+    else {
         Py_TYPE(op)->tp_free((PyObject *)op);
+    }
 }
 
 double
@@ -496,7 +505,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                 Py_DECREF(vv);
                 vv = temp;
 
-                temp = PyNumber_Or(vv, _PyLong_One);
+                temp = PyNumber_Or(vv, _PyLong_GetOne());
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(vv);
@@ -1597,7 +1606,7 @@ float_subtype_new(PyTypeObject *type, PyObject *x);
 /*[clinic input]
 @classmethod
 float.__new__ as float_new
-    x: object(c_default="_PyLong_Zero") = 0
+    x: object(c_default="NULL") = 0
     /
 
 Convert a string or number to a floating point number, if possible.
@@ -1605,10 +1614,18 @@ Convert a string or number to a floating point number, if possible.
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x)
-/*[clinic end generated code: output=ccf1e8dc460ba6ba input=540ee77c204ff87a]*/
+/*[clinic end generated code: output=ccf1e8dc460ba6ba input=f43661b7de03e9d8]*/
 {
-    if (type != &PyFloat_Type)
+    if (type != &PyFloat_Type) {
+        if (x == NULL) {
+            x = _PyLong_GetZero();
+        }
         return float_subtype_new(type, x); /* Wimp out */
+    }
+
+    if (x == NULL) {
+        return PyFloat_FromDouble(0.0);
+    }
     /* If it's a string, but not a string subclass, use
        PyFloat_FromString. */
     if (PyUnicode_CheckExact(x))
@@ -1640,6 +1657,24 @@ float_subtype_new(PyTypeObject *type, PyObject *x)
     Py_DECREF(tmp);
     return newobj;
 }
+
+static PyObject *
+float_vectorcall(PyObject *type, PyObject * const*args,
+                 size_t nargsf, PyObject *kwnames)
+{
+    if (!_PyArg_NoKwnames("float", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (!_PyArg_CheckPositional("float", nargs, 0, 1)) {
+        return NULL;
+    }
+
+    PyObject *x = nargs >= 1 ? args[0] : NULL;
+    return float_new_impl((PyTypeObject *)type, x);
+}
+
 
 /*[clinic input]
 float.__getnewargs__
@@ -1929,6 +1964,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     float_new,                                  /* tp_new */
+    .tp_vectorcall = (vectorcallfunc)float_vectorcall,
 };
 
 int
@@ -2017,8 +2053,7 @@ _PyFloat_Fini(PyThreadState *tstate)
 void
 _PyFloat_DebugMallocStats(FILE *out)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_float_state *state = &interp->float_state;
+    struct _Py_float_state *state = get_float_state();
     _PyDebugAllocatorStats(out,
                            "free PyFloatObject",
                            state->numfree, sizeof(PyFloatObject));

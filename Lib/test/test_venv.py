@@ -15,8 +15,8 @@ import subprocess
 import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, requires_zlib,
-                          can_symlink, EnvironmentVarGuard, rmtree,
-                          import_module)
+                          skip_if_broken_multiprocessing_synchronize)
+from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
 from unittest.mock import patch
@@ -79,8 +79,8 @@ class BaseTest(unittest.TestCase):
     def get_env_file(self, *args):
         return os.path.join(self.env_dir, *args)
 
-    def get_text_file_contents(self, *args):
-        with open(self.get_env_file(*args), 'r') as f:
+    def get_text_file_contents(self, *args, encoding='utf-8'):
+        with open(self.get_env_file(*args), 'r', encoding=encoding) as f:
             result = f.read()
         return result
 
@@ -357,10 +357,11 @@ class BasicTest(BaseTest):
         """
         Test that the multiprocessing is able to spawn.
         """
-        # Issue bpo-36342: Instantiation of a Pool object imports the
+        # bpo-36342: Instantiation of a Pool object imports the
         # multiprocessing.synchronize module. Skip the test if this module
         # cannot be imported.
-        import_module('multiprocessing.synchronize')
+        skip_if_broken_multiprocessing_synchronize()
+
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         envpy = os.path.join(os.path.realpath(self.env_dir),

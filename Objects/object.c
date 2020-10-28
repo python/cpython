@@ -855,17 +855,6 @@ _PyObject_GetAttrId(PyObject *v, _Py_Identifier *name)
 }
 
 int
-_PyObject_HasAttrId(PyObject *v, _Py_Identifier *name)
-{
-    int result;
-    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
-    if (!oname)
-        return -1;
-    result = PyObject_HasAttr(v, oname);
-    return result;
-}
-
-int
 _PyObject_SetAttrId(PyObject *v, _Py_Identifier *name, PyObject *w)
 {
     int result;
@@ -1169,7 +1158,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     /* Make sure the logic of _PyObject_GetMethod is in sync with
        this method.
 
-       When suppress=1, this function suppress AttributeError.
+       When suppress=1, this function suppresses AttributeError.
     */
 
     PyTypeObject *tp = Py_TYPE(obj);
@@ -1387,7 +1376,7 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
 }
 
 
-/* Test a value used as condition, e.g., in a for or if statement.
+/* Test a value used as condition, e.g., in a while or if statement.
    Return -1 if an error occurred */
 
 int

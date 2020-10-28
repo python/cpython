@@ -535,6 +535,7 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
+
 static PyMethodDef random_methods[] = {
     _RANDOM_RANDOM_RANDOM_METHODDEF
     _RANDOM_RANDOM_SEED_METHODDEF

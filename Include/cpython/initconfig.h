@@ -408,13 +408,15 @@ typedef struct {
        Default: 0. */
     int _isolated_interpreter;
 
-    /* Original command line arguments. If _orig_argv is empty and _argv is
-       not equal to [''], PyConfig_Read() copies the configuration 'argv' list
-       into '_orig_argv' list before modifying 'argv' list (if parse_argv
-       is non-zero).
+    /* The list of the original command line arguments passed to the Python
+       executable.
+
+       If 'orig_argv' list is empty and 'argv' is not a list only containing an
+       empty string, PyConfig_Read() copies 'argv' into 'orig_argv' before
+       modifying 'argv' (if 'parse_argv is non-zero).
 
        _PyConfig_Write() initializes Py_GetArgcArgv() to this list. */
-    PyWideStringList _orig_argv;
+    PyWideStringList orig_argv;
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
@@ -445,7 +447,7 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
 
 /* Get the original command line arguments, before Python modified them.
 
-   See also PyConfig._orig_argv. */
+   See also PyConfig.orig_argv. */
 PyAPI_FUNC(void) Py_GetArgcArgv(int *argc, wchar_t ***argv);
 
 #endif /* !Py_LIMITED_API */

@@ -2,6 +2,142 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(code_new__doc__,
+"code(argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,\n"
+"     flags, codestring, constants, names, varnames, filename, name,\n"
+"     firstlineno, lnotab, freevars=(), cellvars=(), /)\n"
+"--\n"
+"\n"
+"Create a code object.  Not for the faint of heart.");
+
+static PyObject *
+code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
+              int kwonlyargcount, int nlocals, int stacksize, int flags,
+              PyObject *code, PyObject *consts, PyObject *names,
+              PyObject *varnames, PyObject *filename, PyObject *name,
+              int firstlineno, PyObject *lnotab, PyObject *freevars,
+              PyObject *cellvars);
+
+static PyObject *
+code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    int argcount;
+    int posonlyargcount;
+    int kwonlyargcount;
+    int nlocals;
+    int stacksize;
+    int flags;
+    PyObject *code;
+    PyObject *consts;
+    PyObject *names;
+    PyObject *varnames;
+    PyObject *filename;
+    PyObject *name;
+    int firstlineno;
+    PyObject *lnotab;
+    PyObject *freevars = NULL;
+    PyObject *cellvars = NULL;
+
+    if ((type == &PyCode_Type) &&
+        !_PyArg_NoKeywords("code", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("code", PyTuple_GET_SIZE(args), 14, 16)) {
+        goto exit;
+    }
+    argcount = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    if (argcount == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    posonlyargcount = _PyLong_AsInt(PyTuple_GET_ITEM(args, 1));
+    if (posonlyargcount == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    kwonlyargcount = _PyLong_AsInt(PyTuple_GET_ITEM(args, 2));
+    if (kwonlyargcount == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    nlocals = _PyLong_AsInt(PyTuple_GET_ITEM(args, 3));
+    if (nlocals == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    stacksize = _PyLong_AsInt(PyTuple_GET_ITEM(args, 4));
+    if (stacksize == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    flags = _PyLong_AsInt(PyTuple_GET_ITEM(args, 5));
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!PyBytes_Check(PyTuple_GET_ITEM(args, 6))) {
+        _PyArg_BadArgument("code", "argument 7", "bytes", PyTuple_GET_ITEM(args, 6));
+        goto exit;
+    }
+    code = PyTuple_GET_ITEM(args, 6);
+    if (!PyTuple_Check(PyTuple_GET_ITEM(args, 7))) {
+        _PyArg_BadArgument("code", "argument 8", "tuple", PyTuple_GET_ITEM(args, 7));
+        goto exit;
+    }
+    consts = PyTuple_GET_ITEM(args, 7);
+    if (!PyTuple_Check(PyTuple_GET_ITEM(args, 8))) {
+        _PyArg_BadArgument("code", "argument 9", "tuple", PyTuple_GET_ITEM(args, 8));
+        goto exit;
+    }
+    names = PyTuple_GET_ITEM(args, 8);
+    if (!PyTuple_Check(PyTuple_GET_ITEM(args, 9))) {
+        _PyArg_BadArgument("code", "argument 10", "tuple", PyTuple_GET_ITEM(args, 9));
+        goto exit;
+    }
+    varnames = PyTuple_GET_ITEM(args, 9);
+    if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 10))) {
+        _PyArg_BadArgument("code", "argument 11", "str", PyTuple_GET_ITEM(args, 10));
+        goto exit;
+    }
+    if (PyUnicode_READY(PyTuple_GET_ITEM(args, 10)) == -1) {
+        goto exit;
+    }
+    filename = PyTuple_GET_ITEM(args, 10);
+    if (!PyUnicode_Check(PyTuple_GET_ITEM(args, 11))) {
+        _PyArg_BadArgument("code", "argument 12", "str", PyTuple_GET_ITEM(args, 11));
+        goto exit;
+    }
+    if (PyUnicode_READY(PyTuple_GET_ITEM(args, 11)) == -1) {
+        goto exit;
+    }
+    name = PyTuple_GET_ITEM(args, 11);
+    firstlineno = _PyLong_AsInt(PyTuple_GET_ITEM(args, 12));
+    if (firstlineno == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!PyBytes_Check(PyTuple_GET_ITEM(args, 13))) {
+        _PyArg_BadArgument("code", "argument 14", "bytes", PyTuple_GET_ITEM(args, 13));
+        goto exit;
+    }
+    lnotab = PyTuple_GET_ITEM(args, 13);
+    if (PyTuple_GET_SIZE(args) < 15) {
+        goto skip_optional;
+    }
+    if (!PyTuple_Check(PyTuple_GET_ITEM(args, 14))) {
+        _PyArg_BadArgument("code", "argument 15", "tuple", PyTuple_GET_ITEM(args, 14));
+        goto exit;
+    }
+    freevars = PyTuple_GET_ITEM(args, 14);
+    if (PyTuple_GET_SIZE(args) < 16) {
+        goto skip_optional;
+    }
+    if (!PyTuple_Check(PyTuple_GET_ITEM(args, 15))) {
+        _PyArg_BadArgument("code", "argument 16", "tuple", PyTuple_GET_ITEM(args, 15));
+        goto exit;
+    }
+    cellvars = PyTuple_GET_ITEM(args, 15);
+skip_optional:
+    return_value = code_new_impl(type, argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize, flags, code, consts, names, varnames, filename, name, firstlineno, lnotab, freevars, cellvars);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(code_replace__doc__,
 "replace($self, /, *, co_argcount=-1, co_posonlyargcount=-1,\n"
 "        co_kwonlyargcount=-1, co_nlocals=-1, co_stacksize=-1,\n"
@@ -218,4 +354,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f9f23e912a3955b9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=18c31941ec09e9ca input=a9049054013a1b77]*/

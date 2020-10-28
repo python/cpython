@@ -164,6 +164,73 @@ SyntaxError: 'tuple' is an illegal expression for augmented assignment
 Traceback (most recent call last):
 SyntaxError: 'list' is an illegal expression for augmented assignment
 
+Invalid targets in `for` loops and `with` statements should also
+produce a specialized error message
+
+>>> for a() in b: pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to function call
+
+>>> for (a, b()) in b: pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to function call
+
+>>> for [a, b()] in b: pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to function call
+
+>>> for (*a, b, c+1) in b: pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to operator
+
+>>> for (x, *(y, z.d())) in b: pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to function call
+
+>>> for a, b() in c: pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to function call
+
+>>> for a, b, (c + 1, d()): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to operator
+
+>>> for i < (): pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> for a, b
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> with a as b(): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to function call
+
+>>> with a as (b, c()): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to function call
+
+>>> with a as [b, c()]: pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to function call
+
+>>> with a as (*b, c, d+1): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to operator
+
+>>> with a as (x, *(y, z.d())): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to function call
+
+>>> with a as b, c as d(): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to function call
+
+>>> with a as b
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
 >>> p = p =
 Traceback (most recent call last):
 SyntaxError: invalid syntax
@@ -666,17 +733,22 @@ SyntaxError: trailing comma not allowed without surrounding parentheses
 Traceback (most recent call last):
 SyntaxError: trailing comma not allowed without surrounding parentheses
 
+>>> (): int
+Traceback (most recent call last):
+SyntaxError: only single target (not tuple) can be annotated
+>>> []: int
+Traceback (most recent call last):
+SyntaxError: only single target (not list) can be annotated
+>>> (()): int
+Traceback (most recent call last):
+SyntaxError: only single target (not tuple) can be annotated
+>>> ([]): int
+Traceback (most recent call last):
+SyntaxError: only single target (not list) can be annotated
+
 Corner-cases that used to fail to raise the correct error:
 
     >>> def f(*, x=lambda __debug__:0): pass
-    Traceback (most recent call last):
-    SyntaxError: cannot assign to __debug__
-
-    >>> def f(*args:(lambda __debug__:0)): pass
-    Traceback (most recent call last):
-    SyntaxError: cannot assign to __debug__
-
-    >>> def f(**kwargs:(lambda __debug__:0)): pass
     Traceback (most recent call last):
     SyntaxError: cannot assign to __debug__
 
@@ -730,6 +802,9 @@ class SyntaxTestCase(unittest.TestCase):
         else:
             self.fail("compile() did not raise SyntaxError")
 
+    def test_curly_brace_after_primary_raises_immediately(self):
+        self._check_error("f{", "invalid syntax", mode="single")
+
     def test_assign_call(self):
         self._check_error("f() = 1", "assign")
 
@@ -739,7 +814,7 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error("del (1, 2)", "delete literal")
         self._check_error("del None", "delete None")
         self._check_error("del *x", "delete starred")
-        self._check_error("del (*x)", "delete starred")
+        self._check_error("del (*x)", "use starred expression")
         self._check_error("del (*x,)", "delete starred")
         self._check_error("del [*x,]", "delete starred")
         self._check_error("del f()", "delete function call")
@@ -870,6 +945,15 @@ pass
         except SyntaxError:
             self.fail("Empty line after a line continuation character is valid.")
 
+    @support.cpython_only
+    def test_nested_named_except_blocks(self):
+        code = ""
+        for i in range(12):
+            code += f"{'    '*i}try:\n"
+            code += f"{'    '*(i+1)}raise Exception\n"
+            code += f"{'    '*i}except Exception as e:\n"
+        code += f"{' '*4*12}pass"
+        self._check_error(code, "too many statically nested blocks")
 
 def test_main():
     support.run_unittest(SyntaxTestCase)

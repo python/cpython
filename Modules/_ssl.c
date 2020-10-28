@@ -805,10 +805,11 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
                         errno = err.c;
                         return PyErr_SetFromErrno(PyExc_OSError);
                     }
-                    Py_INCREF(s);
-                    s->errorhandler();
-                    Py_DECREF(s);
-                    return NULL;
+                    else {
+                        p = PY_SSL_ERROR_EOF;
+                        type = PySSLEOFErrorObject;
+                        errstr = "EOF occurred in violation of protocol";
+                    }
                 } else { /* possible? */
                     p = PY_SSL_ERROR_SYSCALL;
                     type = PySSLSyscallErrorObject;
@@ -898,6 +899,7 @@ _ssl_configure_hostname(PySSLSocket *self, const char* server_hostname)
     if (ip == NULL) {
         if (!SSL_set_tlsext_host_name(self->ssl, server_hostname)) {
             _setSSLError(NULL, 0, __FILE__, __LINE__);
+            goto error;
         }
     }
     if (self->ctx->check_hostname) {
@@ -3746,6 +3748,15 @@ PyDoc_STRVAR(PySSLContext_num_tickets_doc,
 "Control the number of TLSv1.3 session tickets");
 #endif /* OpenSSL 1.1.1 */
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
+static PyObject *
+get_security_level(PySSLContext *self, void *c)
+{
+    return PyLong_FromLong(SSL_CTX_get_security_level(self->ctx));
+}
+PyDoc_STRVAR(PySSLContext_security_level_doc, "The current security level");
+#endif /* OpenSSL 1.1.0 */
+
 static PyObject *
 get_options(PySSLContext *self, void *c)
 {
@@ -4309,8 +4320,10 @@ _ssl__SSLContext_load_dh_params(PySSLContext *self, PyObject *filepath)
         }
         return NULL;
     }
-    if (SSL_CTX_set_tmp_dh(self->ctx, dh) == 0)
-        _setSSLError(NULL, 0, __FILE__, __LINE__);
+    if (!SSL_CTX_set_tmp_dh(self->ctx, dh)) {
+        DH_free(dh);
+        return _setSSLError(NULL, 0, __FILE__, __LINE__);
+    }
     DH_free(dh);
     Py_RETURN_NONE;
 }
@@ -4543,11 +4556,12 @@ _servername_callback(SSL *s, int *al, void *args)
          * back into a str object, but still as an A-label (bpo-28414)
          */
         servername_str = PyUnicode_FromEncodedObject(servername_bytes, "ascii", NULL);
-        Py_DECREF(servername_bytes);
         if (servername_str == NULL) {
             PyErr_WriteUnraisable(servername_bytes);
+            Py_DECREF(servername_bytes);
             goto error;
         }
+        Py_DECREF(servername_bytes);
         result = PyObject_CallFunctionObjArgs(
             ssl_ctx->set_sni_cb, ssl_socket, servername_str,
             ssl_ctx, NULL);
@@ -4790,6 +4804,10 @@ static PyGetSetDef context_getsetlist[] = {
                      (setter) set_verify_flags, NULL},
     {"verify_mode", (getter) get_verify_mode,
                     (setter) set_verify_mode, NULL},
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
+    {"security_level", (getter) get_security_level,
+                       NULL, PySSLContext_security_level_doc},
+#endif
     {NULL},            /* sentinel */
 };
 

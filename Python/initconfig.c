@@ -83,7 +83,7 @@ static const char usage_3[] = "\
              cumulative time (including nested imports) and self time (excluding\n\
              nested imports). Note that its output may be broken in multi-threaded\n\
              application. Typical usage is python3 -X importtime -c 'import asyncio'\n\
-         -X dev: enable CPython’s “development mode”, introducing additional runtime\n\
+         -X dev: enable CPython's \"development mode\", introducing additional runtime\n\
              checks which are too expensive to be enabled by default. Effect of the\n\
              developer mode:\n\
                 * Add default warning filter, as -W default\n\
@@ -601,7 +601,7 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->run_filename);
     CLEAR(config->check_hash_pycs_mode);
 
-    _PyWideStringList_Clear(&config->_orig_argv);
+    _PyWideStringList_Clear(&config->orig_argv);
 #undef CLEAR
 }
 
@@ -856,7 +856,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(pathconfig_warnings);
     COPY_ATTR(_init_main);
     COPY_ATTR(_isolated_interpreter);
-    COPY_WSTRLIST(_orig_argv);
+    COPY_WSTRLIST(orig_argv);
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -868,9 +868,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
 static PyObject *
 config_as_dict(const PyConfig *config)
 {
-    PyObject *dict;
-
-    dict = PyDict_New();
+    PyObject *dict = PyDict_New();
     if (dict == NULL) {
         return NULL;
     }
@@ -957,7 +955,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(pathconfig_warnings);
     SET_ITEM_INT(_init_main);
     SET_ITEM_INT(_isolated_interpreter);
-    SET_ITEM_WSTRLIST(_orig_argv);
+    SET_ITEM_WSTRLIST(orig_argv);
 
     return dict;
 
@@ -1864,8 +1862,8 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
     preconfig->use_environment = config->use_environment;
     preconfig->dev_mode = config->dev_mode;
 
-    if (_Py_SetArgcArgv(config->_orig_argv.length,
-                        config->_orig_argv.items) < 0)
+    if (_Py_SetArgcArgv(config->orig_argv.length,
+                        config->orig_argv.items) < 0)
     {
         return _PyStatus_NO_MEMORY();
     }
@@ -2501,11 +2499,11 @@ PyConfig_Read(PyConfig *config)
 
     config_get_global_vars(config);
 
-    if (config->_orig_argv.length == 0
+    if (config->orig_argv.length == 0
         && !(config->argv.length == 1
              && wcscmp(config->argv.items[0], L"") == 0))
     {
-        if (_PyWideStringList_Copy(&config->_orig_argv, &config->argv) < 0) {
+        if (_PyWideStringList_Copy(&config->orig_argv, &config->argv) < 0) {
             return _PyStatus_NO_MEMORY();
         }
     }
@@ -2589,7 +2587,7 @@ PyConfig_Read(PyConfig *config)
     assert(config->check_hash_pycs_mode != NULL);
     assert(config->_install_importlib >= 0);
     assert(config->pathconfig_warnings >= 0);
-    assert(_PyWideStringList_CheckConsistency(&config->_orig_argv));
+    assert(_PyWideStringList_CheckConsistency(&config->orig_argv));
 
     status = _PyStatus_OK();
 
@@ -2643,6 +2641,16 @@ _Py_GetConfigsAsDict(void)
     }
     Py_CLEAR(dict);
 
+    /* path config */
+    dict = _PyPathConfig_AsDict();
+    if (dict == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(result, "path_config", dict) < 0) {
+        goto error;
+    }
+    Py_CLEAR(dict);
+
     return result;
 
 error:
@@ -2662,11 +2670,11 @@ init_dump_ascii_wstr(const wchar_t *str)
 
     PySys_WriteStderr("'");
     for (; *str != L'\0'; str++) {
-        wchar_t ch = *str;
+        unsigned int ch = (unsigned int)*str;
         if (ch == L'\'') {
             PySys_WriteStderr("\\'");
         } else if (0x20 <= ch && ch < 0x7f) {
-            PySys_WriteStderr("%lc", ch);
+            PySys_WriteStderr("%c", ch);
         }
         else if (ch <= 0xff) {
             PySys_WriteStderr("\\x%02x", ch);

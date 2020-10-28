@@ -3103,6 +3103,19 @@ class size_t_converter(CConverter):
         return super().parse_arg(argname, displayname)
 
 
+class fildes_converter(CConverter):
+    type = 'int'
+    converter = '_PyLong_FileDescriptor_Converter'
+
+    def _parse_arg(self, argname, displayname):
+        return """
+            {paramname} = PyObject_AsFileDescriptor({argname});
+            if ({paramname} == -1) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.name)
+
+
 class float_converter(CConverter):
     type = 'float'
     default_type = float
@@ -3374,20 +3387,75 @@ class unicode_converter(CConverter):
                            displayname=displayname)
         return super().parse_arg(argname, displayname)
 
+@add_legacy_c_converter('u')
 @add_legacy_c_converter('u#', zeroes=True)
 @add_legacy_c_converter('Z', accept={str, NoneType})
 @add_legacy_c_converter('Z#', accept={str, NoneType}, zeroes=True)
 class Py_UNICODE_converter(CConverter):
     type = 'const Py_UNICODE *'
     default_type = (str, Null, NoneType)
-    format_unit = 'u'
 
     def converter_init(self, *, accept={str}, zeroes=False):
         format_unit = 'Z' if accept=={str, NoneType} else 'u'
         if zeroes:
             format_unit += '#'
             self.length = True
-        self.format_unit = format_unit
+            self.format_unit = format_unit
+        else:
+            self.accept = accept
+            if accept == {str}:
+                self.converter = '_PyUnicode_WideCharString_Converter'
+            elif accept == {str, NoneType}:
+                self.converter = '_PyUnicode_WideCharString_Opt_Converter'
+            else:
+                fail("Py_UNICODE_converter: illegal 'accept' argument " + repr(accept))
+
+    def cleanup(self):
+        if not self.length:
+            return """\
+#if !USE_UNICODE_WCHAR_CACHE
+PyMem_Free((void *){name});
+#endif /* USE_UNICODE_WCHAR_CACHE */
+""".format(name=self.name)
+
+    def parse_arg(self, argname, argnum):
+        if not self.length:
+            if self.accept == {str}:
+                return """
+                    if (!PyUnicode_Check({argname})) {{{{
+                        _PyArg_BadArgument("{{name}}", {argnum}, "str", {argname});
+                        goto exit;
+                    }}}}
+                    #if USE_UNICODE_WCHAR_CACHE
+                    {paramname} = _PyUnicode_AsUnicode({argname});
+                    #else /* USE_UNICODE_WCHAR_CACHE */
+                    {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
+                    #endif /* USE_UNICODE_WCHAR_CACHE */
+                    if ({paramname} == NULL) {{{{
+                        goto exit;
+                    }}}}
+                    """.format(argname=argname, paramname=self.name, argnum=argnum)
+            elif self.accept == {str, NoneType}:
+                return """
+                    if ({argname} == Py_None) {{{{
+                        {paramname} = NULL;
+                    }}}}
+                    else if (PyUnicode_Check({argname})) {{{{
+                        #if USE_UNICODE_WCHAR_CACHE
+                        {paramname} = _PyUnicode_AsUnicode({argname});
+                        #else /* USE_UNICODE_WCHAR_CACHE */
+                        {paramname} = PyUnicode_AsWideCharString({argname}, NULL);
+                        #endif /* USE_UNICODE_WCHAR_CACHE */
+                        if ({paramname} == NULL) {{{{
+                            goto exit;
+                        }}}}
+                    }}}}
+                    else {{{{
+                        _PyArg_BadArgument("{{name}}", {argnum}, "str or None", {argname});
+                        goto exit;
+                    }}}}
+                    """.format(argname=argname, paramname=self.name, argnum=argnum)
+        return super().parse_arg(argname, argnum)
 
 @add_legacy_c_converter('s*', accept={str, buffer})
 @add_legacy_c_converter('z*', accept={str, buffer, NoneType})
@@ -4378,7 +4446,7 @@ class DSLParser:
 
                 if 'c_default' not in kwargs:
                     # we can only represent very simple data values in C.
-                    # detect whether default is okay, via a blacklist
+                    # detect whether default is okay, via a denylist
                     # of disallowed ast nodes.
                     class DetectBadNodes(ast.NodeVisitor):
                         bad = False
@@ -4401,9 +4469,9 @@ class DSLParser:
                         # "starred": "a = [1, 2, 3]; *a"
                         visit_Starred = bad_node
 
-                    blacklist = DetectBadNodes()
-                    blacklist.visit(module)
-                    bad = blacklist.bad
+                    denylist = DetectBadNodes()
+                    denylist.visit(module)
+                    bad = denylist.bad
                 else:
                     # if they specify a c_default, we can be more lenient about the default value.
                     # but at least make an attempt at ensuring it's a valid expression.

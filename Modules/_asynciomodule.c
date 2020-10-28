@@ -13,12 +13,9 @@ module _asyncio
 _Py_IDENTIFIER(__asyncio_running_event_loop__);
 _Py_IDENTIFIER(_asyncio_future_blocking);
 _Py_IDENTIFIER(add_done_callback);
-_Py_IDENTIFIER(_all_tasks_compat);
 _Py_IDENTIFIER(call_soon);
 _Py_IDENTIFIER(cancel);
-_Py_IDENTIFIER(current_task);
 _Py_IDENTIFIER(get_event_loop);
-_Py_IDENTIFIER(send);
 _Py_IDENTIFIER(throw);
 
 
@@ -95,11 +92,6 @@ typedef struct {
     TaskObj *sw_task;
     PyObject *sw_arg;
 } TaskStepMethWrapper;
-
-typedef struct {
-    PyObject_HEAD
-    TaskObj *ww_task;
-} TaskWakeupMethWrapper;
 
 typedef struct {
     PyObject_HEAD
@@ -293,10 +285,13 @@ error:
 static int
 set_running_loop(PyObject *loop)
 {
-    cached_running_holder = NULL;
-    cached_running_holder_tsid = 0;
+    PyObject *ts_dict = NULL;
 
-    PyObject *ts_dict = PyThreadState_GetDict();  // borrowed
+    PyThreadState *tstate = PyThreadState_Get();
+    if (tstate != NULL) {
+        ts_dict = _PyThreadState_GetDict(tstate);  // borrowed
+    }
+
     if (ts_dict == NULL) {
         PyErr_SetString(
             PyExc_RuntimeError, "thread-local storage is not available");
@@ -315,6 +310,9 @@ set_running_loop(PyObject *loop)
         return -1;
     }
     Py_DECREF(rl);
+
+    cached_running_holder = (PyObject *)rl;
+    cached_running_holder_tsid = PyThreadState_GetID(tstate);
 
     return 0;
 }
@@ -1867,92 +1865,14 @@ TaskStepMethWrapper_new(TaskObj *task, PyObject *arg)
     return (PyObject*) o;
 }
 
-/* ----- Task._wakeup wrapper */
+/* ----- Task._wakeup implementation */
 
-static PyObject *
-TaskWakeupMethWrapper_call(TaskWakeupMethWrapper *o,
-                           PyObject *args, PyObject *kwds)
-{
-    PyObject *fut;
-
-    if (kwds != NULL && PyDict_GET_SIZE(kwds) != 0) {
-        PyErr_SetString(PyExc_TypeError, "function takes no keyword arguments");
-        return NULL;
-    }
-    if (!PyArg_ParseTuple(args, "O", &fut)) {
-        return NULL;
-    }
-
-    return task_wakeup(o->ww_task, fut);
-}
-
-static int
-TaskWakeupMethWrapper_clear(TaskWakeupMethWrapper *o)
-{
-    Py_CLEAR(o->ww_task);
-    return 0;
-}
-
-static int
-TaskWakeupMethWrapper_traverse(TaskWakeupMethWrapper *o,
-                               visitproc visit, void *arg)
-{
-    Py_VISIT(o->ww_task);
-    return 0;
-}
-
-static void
-TaskWakeupMethWrapper_dealloc(TaskWakeupMethWrapper *o)
-{
-    PyObject_GC_UnTrack(o);
-    (void)TaskWakeupMethWrapper_clear(o);
-    Py_TYPE(o)->tp_free(o);
-}
-
-static PyObject *
-TaskWakeupMethWrapper_get___self__(TaskWakeupMethWrapper *o, void *Py_UNUSED(ignored))
-{
-    if (o->ww_task) {
-        Py_INCREF(o->ww_task);
-        return (PyObject*)o->ww_task;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyGetSetDef TaskWakeupMethWrapper_getsetlist[] = {
-    {"__self__", (getter)TaskWakeupMethWrapper_get___self__, NULL, NULL},
-    {NULL} /* Sentinel */
+static  PyMethodDef TaskWakeupDef = {
+    "task_wakeup",
+    (PyCFunction)task_wakeup,
+    METH_O,
+    NULL
 };
-
-static PyTypeObject TaskWakeupMethWrapper_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "TaskWakeupMethWrapper",
-    .tp_basicsize = sizeof(TaskWakeupMethWrapper),
-    .tp_itemsize = 0,
-    .tp_dealloc = (destructor)TaskWakeupMethWrapper_dealloc,
-    .tp_call = (ternaryfunc)TaskWakeupMethWrapper_call,
-    .tp_getattro = PyObject_GenericGetAttr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)TaskWakeupMethWrapper_traverse,
-    .tp_clear = (inquiry)TaskWakeupMethWrapper_clear,
-    .tp_getset = TaskWakeupMethWrapper_getsetlist,
-};
-
-static PyObject *
-TaskWakeupMethWrapper_new(TaskObj *task)
-{
-    TaskWakeupMethWrapper *o;
-    o = PyObject_GC_New(TaskWakeupMethWrapper, &TaskWakeupMethWrapper_Type);
-    if (o == NULL) {
-        return NULL;
-    }
-
-    Py_INCREF(task);
-    o->ww_task = task;
-
-    PyObject_GC_Track(o);
-    return (PyObject*) o;
-}
 
 /* ----- Task introspection helpers */
 
@@ -2180,91 +2100,6 @@ TaskObj_get_fut_waiter(TaskObj *task, void *Py_UNUSED(ignored))
     }
 
     Py_RETURN_NONE;
-}
-
-/*[clinic input]
-@classmethod
-_asyncio.Task.current_task
-
-    loop: object = None
-
-Return the currently running task in an event loop or None.
-
-By default the current task for the current event loop is returned.
-
-None is returned when called not in the context of a Task.
-[clinic start generated code]*/
-
-static PyObject *
-_asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop)
-/*[clinic end generated code: output=99fbe7332c516e03 input=cd14770c5b79c7eb]*/
-{
-    PyObject *ret;
-    PyObject *current_task_func;
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Task.current_task() is deprecated, " \
-                     "use asyncio.current_task() instead",
-                     1) < 0) {
-        return NULL;
-    }
-
-    current_task_func = _PyObject_GetAttrId(asyncio_mod, &PyId_current_task);
-    if (current_task_func == NULL) {
-        return NULL;
-    }
-
-    if (loop == Py_None) {
-        loop = get_event_loop();
-        if (loop == NULL) {
-            Py_DECREF(current_task_func);
-            return NULL;
-        }
-        ret = PyObject_CallOneArg(current_task_func, loop);
-        Py_DECREF(current_task_func);
-        Py_DECREF(loop);
-        return ret;
-    }
-    else {
-        ret = PyObject_CallOneArg(current_task_func, loop);
-        Py_DECREF(current_task_func);
-        return ret;
-    }
-}
-
-/*[clinic input]
-@classmethod
-_asyncio.Task.all_tasks
-
-    loop: object = None
-
-Return a set of all tasks for an event loop.
-
-By default all tasks for the current event loop are returned.
-[clinic start generated code]*/
-
-static PyObject *
-_asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
-/*[clinic end generated code: output=11f9b20749ccca5d input=497f80bc9ce726b5]*/
-{
-    PyObject *res;
-    PyObject *all_tasks_func;
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Task.all_tasks() is deprecated, " \
-                     "use asyncio.all_tasks() instead",
-                     1) < 0) {
-        return NULL;
-    }
-
-    all_tasks_func = _PyObject_GetAttrId(asyncio_mod, &PyId__all_tasks_compat);
-    if (all_tasks_func == NULL) {
-        return NULL;
-    }
-
-    res = PyObject_CallOneArg(all_tasks_func, loop);
-    Py_DECREF(all_tasks_func);
-    return res;
 }
 
 /*[clinic input]
@@ -2587,8 +2422,6 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_FUTURE_DONE_METHODDEF
     _ASYNCIO_TASK_SET_RESULT_METHODDEF
     _ASYNCIO_TASK_SET_EXCEPTION_METHODDEF
-    _ASYNCIO_TASK_CURRENT_TASK_METHODDEF
-    _ASYNCIO_TASK_ALL_TASKS_METHODDEF
     _ASYNCIO_TASK_CANCEL_METHODDEF
     _ASYNCIO_TASK_GET_STACK_METHODDEF
     _ASYNCIO_TASK_PRINT_STACK_METHODDEF
@@ -2704,6 +2537,20 @@ task_set_error_soon(TaskObj *task, PyObject *et, const char *format, ...)
     Py_RETURN_NONE;
 }
 
+static inline int
+gen_status_from_result(PyObject **result)
+{
+    if (*result != NULL) {
+        return PYGEN_NEXT;
+    }
+    if (_PyGen_FetchStopIterationValue(result) == 0) {
+        return PYGEN_RETURN;
+    }
+
+    assert(PyErr_Occurred());
+    return PYGEN_ERROR;
+}
+
 static PyObject *
 task_step_impl(TaskObj *task, PyObject *exc)
 {
@@ -2762,26 +2609,23 @@ task_step_impl(TaskObj *task, PyObject *exc)
         return NULL;
     }
 
+    int gen_status = PYGEN_ERROR;
     if (exc == NULL) {
-        if (PyGen_CheckExact(coro) || PyCoro_CheckExact(coro)) {
-            result = _PyGen_Send((PyGenObject*)coro, Py_None);
-        }
-        else {
-            result = _PyObject_CallMethodIdOneArg(coro, &PyId_send, Py_None);
-        }
+        gen_status = PyIter_Send(coro, Py_None, &result);
     }
     else {
         result = _PyObject_CallMethodIdOneArg(coro, &PyId_throw, exc);
+        gen_status = gen_status_from_result(&result);
         if (clear_exc) {
             /* We created 'exc' during this call */
             Py_DECREF(exc);
         }
     }
 
-    if (result == NULL) {
+    if (gen_status == PYGEN_RETURN || gen_status == PYGEN_ERROR) {
         PyObject *et, *ev, *tb;
 
-        if (_PyGen_FetchStopIterationValue(&o) == 0) {
+        if (result != NULL) {
             /* The error is StopIteration and that means that
                the underlying coroutine has resolved */
 
@@ -2792,10 +2636,10 @@ task_step_impl(TaskObj *task, PyObject *exc)
                 res = future_cancel((FutureObj*)task, task->task_cancel_msg);
             }
             else {
-                res = future_set_result((FutureObj*)task, o);
+                res = future_set_result((FutureObj*)task, result);
             }
 
-            Py_DECREF(o);
+            Py_DECREF(result);
 
             if (res == NULL) {
                 return NULL;
@@ -2876,7 +2720,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
         fut->fut_blocking = 0;
 
         /* result.add_done_callback(task._wakeup) */
-        wrapper = TaskWakeupMethWrapper_new(task);
+        wrapper = PyCFunction_New(&TaskWakeupDef, (PyObject *)task);
         if (wrapper == NULL) {
             goto fail;
         }
@@ -2957,7 +2801,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
             goto fail;
         }
 
-        wrapper = TaskWakeupMethWrapper_new(task);
+        wrapper = PyCFunction_New(&TaskWakeupDef, (PyObject *)task);
         if (wrapper == NULL) {
             goto fail;
         }
@@ -3529,9 +3373,6 @@ PyInit__asyncio(void)
         return NULL;
     }
     if (PyType_Ready(&TaskStepMethWrapper_Type) < 0) {
-        return NULL;
-    }
-    if (PyType_Ready(&TaskWakeupMethWrapper_Type) < 0) {
         return NULL;
     }
     if (PyType_Ready(&PyRunningLoopHolder_Type) < 0) {

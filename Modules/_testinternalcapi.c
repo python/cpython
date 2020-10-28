@@ -197,8 +197,8 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
     for (key='a'; key <= 'z'; key++) {
         _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(table, TO_PTR(key));
         assert(entry != NULL);
-        assert(entry->key = TO_PTR(key));
-        assert(entry->value = TO_PTR(VALUE(key)));
+        assert(entry->key == TO_PTR(key));
+        assert(entry->value == TO_PTR(VALUE(key)));
     }
 
     // Test _Py_hashtable_get()

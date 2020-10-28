@@ -130,7 +130,7 @@ Number-theoretic and representation functions
 
    Return the greatest common divisor of the specified integer arguments.
    If any of the arguments is nonzero, then the returned value is the largest
-   positive integer that is a divisor af all arguments.  If all arguments
+   positive integer that is a divisor of all arguments.  If all arguments
    are zero, then the returned value is ``0``.  ``gcd()`` without arguments
    returns ``0``.
 
@@ -480,6 +480,11 @@ Trigonometric functions
    .. versionchanged:: 3.8
       Added support for n-dimensional points. Formerly, only the two
       dimensional case was supported.
+
+   .. versionchanged:: 3.10
+      Improved the algorithm's accuracy so that the maximum error is
+      under 1 ulp (unit in the last place).  More typically, the result
+      is almost always correctly rounded to within 1/2 ulp.
 
 
 .. function:: sin(x)

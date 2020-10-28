@@ -18,7 +18,8 @@ import threading
 import unittest
 import warnings
 from test import support
-from test.support import _4G, bigmemtest, import_fresh_module
+from test.support import _4G, bigmemtest
+from test.support.import_helper import import_fresh_module
 from test.support import threading_helper
 from http.client import HTTPException
 
@@ -103,7 +104,7 @@ class HashLibTestCase(unittest.TestCase):
         try:
             return importlib.import_module(module_name)
         except ModuleNotFoundError as error:
-            if self._warn_on_extension_import:
+            if self._warn_on_extension_import and module_name in builtin_hashes:
                 warnings.warn('Did a C extension fail to compile? %s' % error)
         return None
 

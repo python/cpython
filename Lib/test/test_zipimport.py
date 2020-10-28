@@ -9,6 +9,8 @@ import unittest
 import unittest.mock
 
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 
 from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
 
@@ -68,14 +70,14 @@ class ImportHooksBaseTestCase(unittest.TestCase):
         self.meta_path = sys.meta_path[:]
         self.path_hooks = sys.path_hooks[:]
         sys.path_importer_cache.clear()
-        self.modules_before = support.modules_setup()
+        self.modules_before = import_helper.modules_setup()
 
     def tearDown(self):
         sys.path[:] = self.path
         sys.meta_path[:] = self.meta_path
         sys.path_hooks[:] = self.path_hooks
         sys.path_importer_cache.clear()
-        support.modules_cleanup(*self.modules_before)
+        import_helper.modules_cleanup(*self.modules_before)
 
 
 class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
@@ -92,7 +94,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
     def makeTree(self, files, dirName=TEMP_DIR):
         # Create a filesystem based set of modules/packages
         # defined by files under the directory dirName.
-        self.addCleanup(support.rmtree, dirName)
+        self.addCleanup(os_helper.rmtree, dirName)
 
         for name, (mtime, data) in files.items():
             path = os.path.join(dirName, name)
@@ -110,7 +112,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # Create a zip archive based set of modules/packages
         # defined by files in the zip file zipName.  If the
         # key 'stuff' exists in kw it is prepended to the archive.
-        self.addCleanup(support.unlink, zipName)
+        self.addCleanup(os_helper.unlink, zipName)
 
         with ZipFile(zipName, "w") as z:
             for name, (mtime, data) in files.items():
@@ -438,7 +440,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc),
                  "spam" + pyc_ext: (NOW, test_pyc)}
 
-        self.addCleanup(support.unlink, TEMP_ZIP)
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
         with ZipFile(TEMP_ZIP, "w") as z:
             for name, (mtime, data) in files.items():
                 zinfo = ZipInfo(name, time.localtime(mtime))
@@ -492,7 +494,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         files = {packdir2 + "__init__" + pyc_ext: (NOW, test_pyc),
                  packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc)}
 
-        self.addCleanup(support.unlink, TEMP_ZIP)
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
         with ZipFile(TEMP_ZIP, "w") as z:
             for name, (mtime, data) in files.items():
                 zinfo = ZipInfo(name, time.localtime(mtime))
@@ -536,7 +538,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(loader.get_filename(mod_name), mod.__file__)
 
     def testGetData(self):
-        self.addCleanup(support.unlink, TEMP_ZIP)
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
         with ZipFile(TEMP_ZIP, "w") as z:
             z.compression = self.compression
             name = "testdata.dat"
@@ -644,11 +646,11 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         files = {TESTMOD + ".py": (NOW, raise_src)}
         self.doTest(None, files, TESTMOD, call=self.doTraceback)
 
-    @unittest.skipIf(support.TESTFN_UNENCODABLE is None,
+    @unittest.skipIf(os_helper.TESTFN_UNENCODABLE is None,
                      "need an unencodable filename")
     def testUnencodable(self):
-        filename = support.TESTFN_UNENCODABLE + ".zip"
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN_UNENCODABLE + ".zip"
+        self.addCleanup(os_helper.unlink, filename)
         with ZipFile(filename, "w") as z:
             zinfo = ZipInfo(TESTMOD + ".py", time.localtime(NOW))
             zinfo.compress_type = self.compression
@@ -656,8 +658,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         zipimport.zipimporter(filename).load_module(TESTMOD)
 
     def testBytesPath(self):
-        filename = support.TESTFN + ".zip"
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN + ".zip"
+        self.addCleanup(os_helper.unlink, filename)
         with ZipFile(filename, "w") as z:
             zinfo = ZipInfo(TESTMOD + ".py", time.localtime(NOW))
             zinfo.compress_type = self.compression
@@ -709,12 +711,12 @@ class BadFileZipImportTestCase(unittest.TestCase):
         self.assertZipFailure('A' * 33000)
 
     def testEmptyFile(self):
-        support.unlink(TESTMOD)
-        support.create_empty_file(TESTMOD)
+        os_helper.unlink(TESTMOD)
+        os_helper.create_empty_file(TESTMOD)
         self.assertZipFailure(TESTMOD)
 
     def testFileUnreadable(self):
-        support.unlink(TESTMOD)
+        os_helper.unlink(TESTMOD)
         fd = os.open(TESTMOD, os.O_CREAT, 000)
         try:
             os.close(fd)
@@ -725,10 +727,10 @@ class BadFileZipImportTestCase(unittest.TestCase):
             # If we leave "the read-only bit" set on Windows, nothing can
             # delete TESTMOD, and later tests suffer bogus failures.
             os.chmod(TESTMOD, 0o666)
-            support.unlink(TESTMOD)
+            os_helper.unlink(TESTMOD)
 
     def testNotZipFile(self):
-        support.unlink(TESTMOD)
+        os_helper.unlink(TESTMOD)
         fp = open(TESTMOD, 'w+')
         fp.write('a' * 22)
         fp.close()
@@ -736,7 +738,7 @@ class BadFileZipImportTestCase(unittest.TestCase):
 
     # XXX: disabled until this works on Big-endian machines
     def _testBogusZipFile(self):
-        support.unlink(TESTMOD)
+        os_helper.unlink(TESTMOD)
         fp = open(TESTMOD, 'w+')
         fp.write(struct.pack('=I', 0x06054B50))
         fp.write('a' * 18)
@@ -771,7 +773,7 @@ def test_main():
               BadFileZipImportTestCase,
             )
     finally:
-        support.unlink(TESTMOD)
+        os_helper.unlink(TESTMOD)
 
 if __name__ == "__main__":
     test_main()

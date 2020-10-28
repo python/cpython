@@ -7,7 +7,8 @@ import sys
 import unittest
 import re
 from test import support
-from test.support import TESTFN, Error, captured_output, unlink, cpython_only, ALWAYS_EQ
+from test.support import Error, captured_output, cpython_only, ALWAYS_EQ
+from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
 import textwrap
 
@@ -1190,9 +1191,9 @@ class MiscTest(unittest.TestCase):
 
     def test_all(self):
         expected = set()
-        blacklist = {'print_list'}
+        denylist = {'print_list'}
         for name in dir(traceback):
-            if name.startswith('_') or name in blacklist:
+            if name.startswith('_') or name in denylist:
                 continue
             module_object = getattr(traceback, name)
             if getattr(module_object, '__module__', None) == 'traceback':

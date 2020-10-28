@@ -11,17 +11,17 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_call.h"
-#include "pycore_ceval.h"
-#include "pycore_code.h"
-#include "pycore_initconfig.h"
-#include "pycore_object.h"
-#include "pycore_pyerrors.h"
-#include "pycore_pylifecycle.h"
+#include "pycore_call.h"          // _PyObject_FastCallDictTstate()
+#include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
+#include "pycore_code.h"          // _PyCode_InitOpcache()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_pyerrors.h"      // _PyErr_Fetch()
+#include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_sysmodule.h"
-#include "pycore_tupleobject.h"
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 #include "code.h"
 #include "dictobject.h"
@@ -111,6 +111,7 @@ static long dxp[256];
 #else
 #define OPCACHE_MIN_RUNS 1024  /* create opcache when code executed this time */
 #endif
+#define OPCODE_CACHE_MAX_TRIES 20
 #define OPCACHE_STATS 0  /* Enable stats */
 
 #if OPCACHE_STATS
@@ -120,6 +121,12 @@ static size_t opcache_code_objects_extra_mem = 0;
 static size_t opcache_global_opts = 0;
 static size_t opcache_global_hits = 0;
 static size_t opcache_global_misses = 0;
+
+static size_t opcache_attr_opts = 0;
+static size_t opcache_attr_hits = 0;
+static size_t opcache_attr_misses = 0;
+static size_t opcache_attr_deopts = 0;
+static size_t opcache_attr_total = 0;
 #endif
 
 
@@ -365,6 +372,25 @@ _PyEval_Fini(void)
             opcache_global_opts);
 
     fprintf(stderr, "\n");
+
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR hits     = %zd (%d%%)\n",
+            opcache_attr_hits,
+            (int) (100.0 * opcache_attr_hits /
+                opcache_attr_total));
+
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR misses   = %zd (%d%%)\n",
+            opcache_attr_misses,
+            (int) (100.0 * opcache_attr_misses /
+                opcache_attr_total));
+
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR opts     = %zd\n",
+            opcache_attr_opts);
+
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR deopts   = %zd\n",
+            opcache_attr_deopts);
+
+    fprintf(stderr, "-- Opcode cache LOAD_ATTR total    = %zd\n",
+            opcache_attr_total);
 #endif
 }
 
@@ -741,15 +767,12 @@ Py_MakePendingCalls(void)
 /* The interpreter's recursion limit */
 
 #ifndef Py_DEFAULT_RECURSION_LIMIT
-#define Py_DEFAULT_RECURSION_LIMIT 1000
+#  define Py_DEFAULT_RECURSION_LIMIT 1000
 #endif
-
-int _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
 
 void
 _PyEval_InitRuntimeState(struct _ceval_runtime_state *ceval)
 {
-    _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
 #ifndef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     _gil_initialize(&ceval->gil);
 #endif
@@ -797,14 +820,11 @@ Py_SetRecursionLimit(int new_limit)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     tstate->interp->ceval.recursion_limit = new_limit;
-    if (_Py_IsMainInterpreter(tstate)) {
-        _Py_CheckRecursionLimit = new_limit;
-    }
 }
 
 /* The function _Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
-   if the recursion_depth reaches _Py_CheckRecursionLimit.
-   If USE_STACKCHECK, the macro decrements _Py_CheckRecursionLimit
+   if the recursion_depth reaches recursion_limit.
+   If USE_STACKCHECK, the macro decrements recursion_limit
    to guarantee that _Py_CheckRecursiveCall() is regularly called.
    Without USE_STACKCHECK, there is no need for this. */
 int
@@ -819,14 +839,7 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         _PyErr_SetString(tstate, PyExc_MemoryError, "Stack overflow");
         return -1;
     }
-    if (_Py_IsMainInterpreter(tstate)) {
-        /* Needed for ABI backwards-compatibility (see bpo-31857) */
-        _Py_CheckRecursionLimit = recursion_limit;
-    }
 #endif
-    if (tstate->recursion_critical)
-        /* Somebody asked that we don't check for recursion. */
-        return 0;
     if (tstate->overflowed) {
         if (tstate->recursion_depth > recursion_limit + 50) {
             /* Overflowing while handling an overflow. Give up. */
@@ -1237,13 +1250,40 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     do { \
         co_opcache = NULL; \
         if (co->co_opcache != NULL) { \
-            unsigned char co_opt_offset = \
+            unsigned char co_opcache_offset = \
                 co->co_opcache_map[next_instr - first_instr]; \
-            if (co_opt_offset > 0) { \
-                assert(co_opt_offset <= co->co_opcache_size); \
-                co_opcache = &co->co_opcache[co_opt_offset - 1]; \
+            if (co_opcache_offset > 0) { \
+                assert(co_opcache_offset <= co->co_opcache_size); \
+                co_opcache = &co->co_opcache[co_opcache_offset - 1]; \
                 assert(co_opcache != NULL); \
             } \
+        } \
+    } while (0)
+
+#define OPCACHE_DEOPT() \
+    do { \
+        if (co_opcache != NULL) { \
+            co_opcache->optimized = -1; \
+            unsigned char co_opcache_offset = \
+                co->co_opcache_map[next_instr - first_instr]; \
+            assert(co_opcache_offset <= co->co_opcache_size); \
+            co->co_opcache_map[co_opcache_offset] = 0; \
+            co_opcache = NULL; \
+        } \
+    } while (0)
+
+#define OPCACHE_DEOPT_LOAD_ATTR() \
+    do { \
+        if (co_opcache != NULL) { \
+            OPCACHE_STAT_ATTR_DEOPT(); \
+            OPCACHE_DEOPT(); \
+        } \
+    } while (0)
+
+#define OPCACHE_MAYBE_DEOPT_LOAD_ATTR() \
+    do { \
+        if (co_opcache != NULL && --co_opcache->optimized <= 0) { \
+            OPCACHE_DEOPT_LOAD_ATTR(); \
         } \
     } while (0)
 
@@ -1264,11 +1304,42 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         if (co->co_opcache != NULL) opcache_global_opts++; \
     } while (0)
 
+#define OPCACHE_STAT_ATTR_HIT() \
+    do { \
+        if (co->co_opcache != NULL) opcache_attr_hits++; \
+    } while (0)
+
+#define OPCACHE_STAT_ATTR_MISS() \
+    do { \
+        if (co->co_opcache != NULL) opcache_attr_misses++; \
+    } while (0)
+
+#define OPCACHE_STAT_ATTR_OPT() \
+    do { \
+        if (co->co_opcache!= NULL) opcache_attr_opts++; \
+    } while (0)
+
+#define OPCACHE_STAT_ATTR_DEOPT() \
+    do { \
+        if (co->co_opcache != NULL) opcache_attr_deopts++; \
+    } while (0)
+
+#define OPCACHE_STAT_ATTR_TOTAL() \
+    do { \
+        if (co->co_opcache != NULL) opcache_attr_total++; \
+    } while (0)
+
 #else /* OPCACHE_STATS */
 
 #define OPCACHE_STAT_GLOBAL_HIT()
 #define OPCACHE_STAT_GLOBAL_MISS()
 #define OPCACHE_STAT_GLOBAL_OPT()
+
+#define OPCACHE_STAT_ATTR_HIT()
+#define OPCACHE_STAT_ATTR_MISS()
+#define OPCACHE_STAT_ATTR_OPT()
+#define OPCACHE_STAT_ATTR_DEOPT()
+#define OPCACHE_STAT_ATTR_TOTAL()
 
 #endif
 
@@ -1349,10 +1420,15 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         assert(f->f_lasti % sizeof(_Py_CODEUNIT) == 0);
         next_instr += f->f_lasti / sizeof(_Py_CODEUNIT) + 1;
     }
-    stack_pointer = f->f_stacktop;
-    assert(stack_pointer != NULL);
-    f->f_stacktop = NULL;       /* remains NULL unless yield suspends frame */
-    f->f_executing = 1;
+    stack_pointer = f->f_valuestack + f->f_stackdepth;
+    /* Set f->f_stackdepth to -1.
+     * Update when returning or calling trace function.
+       Having f_stackdepth <= 0 ensures that invalid
+       values are not visible to the cycle GC.
+       We choose -1 rather than 0 to assist debugging.
+     */
+    f->f_stackdepth = -1;
+    f->f_state = FRAME_EXECUTING;
 
     if (co->co_opcache_flag < OPCACHE_MIN_RUNS) {
         co->co_opcache_flag++;
@@ -1370,11 +1446,18 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     }
 
 #ifdef LLTRACE
-    lltrace = _PyDict_GetItemId(f->f_globals, &PyId___ltrace__) != NULL;
+    {
+        int r = _PyDict_ContainsId(f->f_globals, &PyId___ltrace__);
+        if (r < 0) {
+            goto exit_eval_frame;
+        }
+        lltrace = r;
+    }
 #endif
 
-    if (throwflag) /* support for generator.throw() */
+    if (throwflag) { /* support for generator.throw() */
         goto error;
+    }
 
 #ifdef Py_DEBUG
     /* _PyEval_EvalFrameDefault() must not be called with an exception set,
@@ -1438,9 +1521,9 @@ main_loop:
         if (_Py_TracingPossible(ceval2) &&
             tstate->c_tracefunc != NULL && !tstate->tracing) {
             int err;
-            /* see maybe_call_line_trace
+            /* see maybe_call_line_trace()
                for expository comments */
-            f->f_stacktop = stack_pointer;
+            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
@@ -1448,10 +1531,8 @@ main_loop:
                                         &instr_lb, &instr_ub, &instr_prev);
             /* Reload possibly changed frame fields */
             JUMPTO(f->f_lasti);
-            if (f->f_stacktop != NULL) {
-                stack_pointer = f->f_stacktop;
-                f->f_stacktop = NULL;
-            }
+            stack_pointer = f->f_valuestack+f->f_stackdepth;
+            f->f_stackdepth = -1;
             if (err)
                 /* trace function raised an exception */
                 goto error;
@@ -1708,7 +1789,7 @@ main_loop:
             PyObject *right = POP();
             PyObject *left = TOP();
             PyObject *sum;
-            /* NOTE(haypo): Please don't try to micro-optimize int+int on
+            /* NOTE(vstinner): Please don't try to micro-optimize int+int on
                CPython using bytecode, it is simply worthless.
                See http://bugs.python.org/issue21955 and
                http://bugs.python.org/issue10044 for the discussion. In short,
@@ -2076,6 +2157,8 @@ main_loop:
             retval = POP();
             assert(f->f_iblock == 0);
             assert(EMPTY());
+            f->f_state = FRAME_RETURNED;
+            f->f_stackdepth = 0;
             goto exiting;
         }
 
@@ -2218,34 +2301,52 @@ main_loop:
         case TARGET(YIELD_FROM): {
             PyObject *v = POP();
             PyObject *receiver = TOP();
-            int err;
-            if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) {
-                retval = _PyGen_Send((PyGenObject *)receiver, v);
+            PySendResult gen_status;
+            if (tstate->c_tracefunc == NULL) {
+                gen_status = PyIter_Send(receiver, v, &retval);
             } else {
                 _Py_IDENTIFIER(send);
-                if (v == Py_None)
+                if (v == Py_None && PyIter_Check(receiver)) {
                     retval = Py_TYPE(receiver)->tp_iternext(receiver);
-                else
+                }
+                else {
                     retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
+                }
+                if (retval == NULL) {
+                    if (tstate->c_tracefunc != NULL
+                            && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
+                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
+                    if (_PyGen_FetchStopIterationValue(&retval) == 0) {
+                        gen_status = PYGEN_RETURN;
+                    }
+                    else {
+                        gen_status = PYGEN_ERROR;
+                    }
+                }
+                else {
+                    gen_status = PYGEN_NEXT;
+                }
             }
             Py_DECREF(v);
-            if (retval == NULL) {
-                PyObject *val;
-                if (tstate->c_tracefunc != NULL
-                        && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
-                err = _PyGen_FetchStopIterationValue(&val);
-                if (err < 0)
-                    goto error;
+            if (gen_status == PYGEN_ERROR) {
+                assert (retval == NULL);
+                goto error;
+            }
+            if (gen_status == PYGEN_RETURN) {
+                assert (retval != NULL);
+
                 Py_DECREF(receiver);
-                SET_TOP(val);
+                SET_TOP(retval);
+                retval = NULL;
                 DISPATCH();
             }
+            assert (gen_status == PYGEN_NEXT);
             /* receiver remains on stack, retval is value to be yielded */
-            f->f_stacktop = stack_pointer;
             /* and repeat... */
             assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
+            f->f_state = FRAME_SUSPENDED;
+            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
             goto exiting;
         }
 
@@ -2261,8 +2362,8 @@ main_loop:
                 }
                 retval = w;
             }
-
-            f->f_stacktop = stack_pointer;
+            f->f_state = FRAME_SUSPENDED;
+            f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
             goto exiting;
         }
 
@@ -2291,7 +2392,6 @@ main_loop:
         }
 
         case TARGET(POP_BLOCK): {
-            PREDICTED(POP_BLOCK);
             PyFrame_BlockPop(f);
             DISPATCH();
         }
@@ -3014,7 +3114,134 @@ main_loop:
         case TARGET(LOAD_ATTR): {
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
-            PyObject *res = PyObject_GetAttr(owner, name);
+
+            PyTypeObject *type = Py_TYPE(owner);
+            PyObject *res;
+            PyObject **dictptr;
+            PyObject *dict;
+            _PyOpCodeOpt_LoadAttr *la;
+
+            OPCACHE_STAT_ATTR_TOTAL();
+
+            OPCACHE_CHECK();
+            if (co_opcache != NULL && PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
+            {
+                if (co_opcache->optimized > 0) {
+                    /* Fast path -- cache hit makes LOAD_ATTR ~30% faster */
+                    la = &co_opcache->u.la;
+                    if (la->type == type && la->tp_version_tag == type->tp_version_tag)
+                    {
+                        assert(type->tp_dict != NULL);
+                        assert(type->tp_dictoffset > 0);
+
+                        dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
+                        dict = *dictptr;
+                        if (dict != NULL && PyDict_CheckExact(dict)) {
+                            Py_ssize_t hint = la->hint;
+                            Py_INCREF(dict);
+                            res = NULL;
+                            la->hint = _PyDict_GetItemHint((PyDictObject*)dict, name, hint, &res);
+
+                            if (res != NULL) {
+                                if (la->hint == hint && hint >= 0) {
+                                    /* Our hint has helped -- cache hit. */
+                                    OPCACHE_STAT_ATTR_HIT();
+                                } else {
+                                    /* The hint we provided didn't work.
+                                       Maybe next time? */
+                                    OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
+                                }
+
+                                Py_INCREF(res);
+                                SET_TOP(res);
+                                Py_DECREF(owner);
+                                Py_DECREF(dict);
+                                DISPATCH();
+                            } else {
+                                // This attribute can be missing sometimes -- we
+                                // don't want to optimize this lookup.
+                                OPCACHE_DEOPT_LOAD_ATTR();
+                                Py_DECREF(dict);
+                            }
+                        } else {
+                            // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact
+                            OPCACHE_DEOPT_LOAD_ATTR();
+                        }
+                    } else {
+                        // The type of the object has either been updated,
+                        // or is different.  Maybe it will stabilize?
+                        OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
+                    }
+
+                    OPCACHE_STAT_ATTR_MISS();
+                }
+
+                if (co_opcache != NULL && /* co_opcache can be NULL after a DEOPT() call. */
+                    type->tp_getattro == PyObject_GenericGetAttr)
+                {
+                    PyObject *descr;
+                    Py_ssize_t ret;
+
+                    if (type->tp_dictoffset > 0) {
+                        if (type->tp_dict == NULL) {
+                            if (PyType_Ready(type) < 0) {
+                                Py_DECREF(owner);
+                                SET_TOP(NULL);
+                                goto error;
+                            }
+                        }
+
+                        descr = _PyType_Lookup(type, name);
+                        if (descr == NULL ||
+                            Py_TYPE(descr)->tp_descr_get == NULL ||
+                            !PyDescr_IsData(descr))
+                        {
+                            dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
+                            dict = *dictptr;
+
+                            if (dict != NULL && PyDict_CheckExact(dict)) {
+                                Py_INCREF(dict);
+                                res = NULL;
+                                ret = _PyDict_GetItemHint((PyDictObject*)dict, name, -1, &res);
+                                if (res != NULL) {
+                                    Py_INCREF(res);
+                                    Py_DECREF(dict);
+                                    Py_DECREF(owner);
+                                    SET_TOP(res);
+
+                                    if (co_opcache->optimized == 0) {
+                                        // First time we optimize this opcode. */
+                                        OPCACHE_STAT_ATTR_OPT();
+                                        co_opcache->optimized = OPCODE_CACHE_MAX_TRIES;
+                                    }
+
+                                    la = &co_opcache->u.la;
+                                    la->type = type;
+                                    la->tp_version_tag = type->tp_version_tag;
+                                    la->hint = ret;
+
+                                    DISPATCH();
+                                }
+                                Py_DECREF(dict);
+                            } else {
+                                // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact
+                                OPCACHE_DEOPT_LOAD_ATTR();
+                            }
+                        } else {
+                            // We failed to find an attribute without a data-like descriptor
+                            OPCACHE_DEOPT_LOAD_ATTR();
+                        }
+                    } else {
+                        // The object's class does not have a tp_dictoffset we can use
+                        OPCACHE_DEOPT_LOAD_ATTR();
+                    }
+                } else if (type->tp_getattro != PyObject_GenericGetAttr) {
+                    OPCACHE_DEOPT_LOAD_ATTR();
+                }
+            }
+
+            /* slow path */
+            res = PyObject_GetAttr(owner, name);
             Py_DECREF(owner);
             SET_TOP(res);
             if (res == NULL)
@@ -3346,7 +3573,6 @@ main_loop:
             STACK_SHRINK(1);
             Py_DECREF(iter);
             JUMPBY(oparg);
-            PREDICT(POP_BLOCK);
             DISPATCH();
         }
 
@@ -3762,11 +3988,15 @@ error:
         /* Log traceback info. */
         PyTraceBack_Here(f);
 
-        if (tstate->c_tracefunc != NULL)
+        if (tstate->c_tracefunc != NULL) {
+            /* Make sure state is set to FRAME_EXECUTING for tracing */
+            assert(f->f_state == FRAME_EXECUTING);
+            f->f_state = FRAME_UNWINDING;
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
                            tstate, f);
-
+        }
 exception_unwind:
+        f->f_state = FRAME_UNWINDING;
         /* Unwind stacks if an exception occurred */
         while (f->f_iblock > 0) {
             /* Pop the current block. */
@@ -3825,6 +4055,7 @@ exception_unwind:
                     }
                 }
                 /* Resume normal execution */
+                f->f_state = FRAME_EXECUTING;
                 goto main_loop;
             }
         } /* unwind stack */
@@ -3841,7 +4072,8 @@ exception_unwind:
         PyObject *o = POP();
         Py_XDECREF(o);
     }
-
+    f->f_stackdepth = 0;
+    f->f_state = FRAME_RAISED;
 exiting:
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
@@ -3863,7 +4095,6 @@ exit_eval_frame:
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(f);
     _Py_LeaveRecursiveCall(tstate);
-    f->f_executing = 0;
     tstate->frame = f->f_back;
 
     return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);

@@ -146,7 +146,7 @@ def skip_unless_bind_unix_socket(test):
         return unittest.skip('No UNIX Sockets')(test)
     global _bind_nix_socket_error
     if _bind_nix_socket_error is None:
-        from test.support import TESTFN, unlink
+        from .os_helper import TESTFN, unlink
         path = TESTFN + "can_bind_unix_socket"
         with socket.socket(socket.AF_UNIX) as sock:
             try:

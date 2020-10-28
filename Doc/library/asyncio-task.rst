@@ -387,6 +387,14 @@ Running Tasks Concurrently
       #     Task C: Compute factorial(4)...
       #     Task C: factorial(4) = 24
 
+   .. note::
+      If *return_exceptions* is False, cancelling gather() after it
+      has been marked done won't cancel any submitted awaitables.
+      For instance, gather can be marked done after propagating an
+      exception to the caller, therefore, calling ``gather.cancel()``
+      after catching an exception (raised by one of the awaitables) from
+      gather won't cancel any other awaitables.
+
    .. versionchanged:: 3.7
       If the *gather* itself is cancelled, the cancellation is
       propagated regardless of *return_exceptions*.
@@ -961,31 +969,6 @@ Task Object
       in the :func:`repr` output of a task object.
 
       .. versionadded:: 3.8
-
-   .. classmethod:: all_tasks(loop=None)
-
-      Return a set of all tasks for an event loop.
-
-      By default all tasks for the current event loop are returned.
-      If *loop* is ``None``, the :func:`get_event_loop` function
-      is used to get the current loop.
-
-      .. deprecated-removed:: 3.7 3.9
-
-         Do not call this as a task method. Use the :func:`asyncio.all_tasks`
-         function instead.
-
-   .. classmethod:: current_task(loop=None)
-
-      Return the currently running task or ``None``.
-
-      If *loop* is ``None``, the :func:`get_event_loop` function
-      is used to get the current loop.
-
-      .. deprecated-removed:: 3.7 3.9
-
-         Do not call this as a task method.  Use the
-         :func:`asyncio.current_task` function instead.
 
 
 .. _asyncio_generator_based_coro:

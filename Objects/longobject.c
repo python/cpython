@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_popcount32()
 #include "pycore_interp.h"        // _PY_NSMALLPOSINTS
+#include "pycore_long.h"          // __PyLong_GetSmallInt_internal()
 #include "pycore_object.h"        // _PyObject_InitVar()
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "longintrepr.h"
@@ -19,8 +20,8 @@ class int "PyObject *" "&PyLong_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
 
-#define NSMALLPOSINTS           _PY_NSMALLPOSINTS
 #define NSMALLNEGINTS           _PY_NSMALLNEGINTS
+#define NSMALLPOSINTS           _PY_NSMALLPOSINTS
 
 _Py_IDENTIFIER(little);
 _Py_IDENTIFIER(big);
@@ -31,10 +32,6 @@ _Py_IDENTIFIER(big);
              (Py_SIZE(x) == 0 ? (sdigit)0 :                             \
               (sdigit)(x)->ob_digit[0]))
 
-PyObject *_PyLong_Zero = NULL;
-PyObject *_PyLong_One = NULL;
-
-#if NSMALLNEGINTS + NSMALLPOSINTS > 0
 #define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
 
@@ -42,8 +39,7 @@ static PyObject *
 get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *v = (PyObject*)interp->small_ints[ival + NSMALLNEGINTS];
+    PyObject *v = __PyLong_GetSmallInt_internal(ival);
     Py_INCREF(v);
     return v;
 }
@@ -60,12 +56,6 @@ maybe_small_long(PyLongObject *v)
     }
     return v;
 }
-#else
-#define IS_SMALL_INT(ival) 0
-#define IS_SMALL_UINT(ival) 0
-#define get_small_int(ival) (Py_UNREACHABLE(), NULL)
-#define maybe_small_long(val) (val)
-#endif
 
 /* If a freshly-allocated int is already shared, it must
    be a small integer, so negating it must go to PyLong_FromLong */
@@ -2504,17 +2494,6 @@ _PyLong_FromBytes(const char *s, Py_ssize_t len, int base)
 }
 
 PyObject *
-PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
-{
-    PyObject *v, *unicode = PyUnicode_FromWideChar(u, length);
-    if (unicode == NULL)
-        return NULL;
-    v = PyLong_FromUnicodeObject(unicode, base);
-    Py_DECREF(unicode);
-    return v;
-}
-
-PyObject *
 PyLong_FromUnicodeObject(PyObject *u, int base)
 {
     PyObject *result, *asciidig;
@@ -2570,8 +2549,9 @@ long_divrem(PyLongObject *a, PyLongObject *b,
         if (*prem == NULL) {
             return -1;
         }
-        Py_INCREF(_PyLong_Zero);
-        *pdiv = (PyLongObject*)_PyLong_Zero;
+        PyObject *zero = _PyLong_GetZero();
+        Py_INCREF(zero);
+        *pdiv = (PyLongObject*)zero;
         return 0;
     }
     if (size_b == 1) {
@@ -3680,7 +3660,7 @@ l_divmod(PyLongObject *v, PyLongObject *w,
             Py_DECREF(div);
             return -1;
         }
-        temp = (PyLongObject *) long_sub(div, (PyLongObject *)_PyLong_One);
+        temp = (PyLongObject *) long_sub(div, (PyLongObject *)_PyLong_GetOne());
         if (temp == NULL) {
             Py_DECREF(mod);
             Py_DECREF(div);
@@ -4089,7 +4069,7 @@ long_invmod(PyLongObject *a, PyLongObject *n)
 
     Py_DECREF(c);
     Py_DECREF(n);
-    if (long_compare(a, (PyLongObject *)_PyLong_One)) {
+    if (long_compare(a, (PyLongObject *)_PyLong_GetOne())) {
         /* a != 1; we don't have an inverse. */
         Py_DECREF(a);
         Py_DECREF(b);
@@ -4324,7 +4304,7 @@ long_invert(PyLongObject *v)
     PyLongObject *x;
     if (Py_ABS(Py_SIZE(v)) <=1)
         return PyLong_FromLong(-(MEDIUM_VALUE(v)+1));
-    x = (PyLongObject *) long_add(v, (PyLongObject *)_PyLong_One);
+    x = (PyLongObject *) long_add(v, (PyLongObject *)_PyLong_GetOne());
     if (x == NULL)
         return NULL;
     _PyLong_Negate(&x);
@@ -5116,7 +5096,8 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
 
     /* compare twice the remainder with the divisor, to see
        if we need to adjust the quotient and remainder */
-    twice_rem = long_lshift((PyObject *)rem, _PyLong_One);
+    PyObject *one = _PyLong_GetOne();  // borrowed reference
+    twice_rem = long_lshift((PyObject *)rem, one);
     if (twice_rem == NULL)
         goto error;
     if (quo_is_neg) {
@@ -5133,9 +5114,9 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
     if ((Py_SIZE(b) < 0 ? cmp < 0 : cmp > 0) || (cmp == 0 && quo_is_odd)) {
         /* fix up quotient */
         if (quo_is_neg)
-            temp = long_sub(quo, (PyLongObject *)_PyLong_One);
+            temp = long_sub(quo, (PyLongObject *)one);
         else
-            temp = long_add(quo, (PyLongObject *)_PyLong_One);
+            temp = long_add(quo, (PyLongObject *)one);
         Py_DECREF(quo);
         quo = (PyLongObject *)temp;
         if (quo == NULL)
@@ -5166,10 +5147,22 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
     return NULL;
 }
 
+/*[clinic input]
+int.__round__
+
+    ndigits as o_ndigits: object = NULL
+    /
+
+Rounding an Integral returns itself.
+
+Rounding with an ndigits argument also returns an integer.
+[clinic start generated code]*/
+
 static PyObject *
-long_round(PyObject *self, PyObject *args)
+int___round___impl(PyObject *self, PyObject *o_ndigits)
+/*[clinic end generated code: output=954fda6b18875998 input=1614cf23ec9e18c3]*/
 {
-    PyObject *o_ndigits=NULL, *temp, *result, *ndigits;
+    PyObject *temp, *result, *ndigits;
 
     /* To round an integer m to the nearest 10**n (n positive), we make use of
      * the divmod_near operation, defined by:
@@ -5185,8 +5178,6 @@ long_round(PyObject *self, PyObject *args)
      *
      *   m - divmod_near(m, 10**n)[1].
      */
-    if (!PyArg_ParseTuple(args, "|O", &o_ndigits))
-        return NULL;
     if (o_ndigits == NULL)
         return long_long(self);
 
@@ -5407,7 +5398,7 @@ int_as_integer_ratio_impl(PyObject *self)
     if (numerator == NULL) {
         return NULL;
     }
-    ratio_tuple = PyTuple_Pack(2, numerator, _PyLong_One);
+    ratio_tuple = PyTuple_Pack(2, numerator, _PyLong_GetOne());
     Py_DECREF(numerator);
     return ratio_tuple;
 }
@@ -5547,9 +5538,7 @@ static PyMethodDef long_methods[] = {
      "Flooring an Integral returns itself."},
     {"__ceil__",        long_long_meth, METH_NOARGS,
      "Ceiling of an Integral returns itself."},
-    {"__round__",       (PyCFunction)long_round, METH_VARARGS,
-     "Rounding an Integral returns itself.\n"
-     "Rounding with an ndigits argument also returns an integer."},
+    INT___ROUND___METHODDEF
     INT___GETNEWARGS___METHODDEF
     INT___FORMAT___METHODDEF
     INT___SIZEOF___METHODDEF
@@ -5715,7 +5704,6 @@ PyLong_GetInfo(void)
 int
 _PyLong_Init(PyThreadState *tstate)
 {
-#if NSMALLNEGINTS + NSMALLPOSINTS > 0
     for (Py_ssize_t i=0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
         sdigit ival = (sdigit)i - NSMALLNEGINTS;
         int size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
@@ -5730,19 +5718,8 @@ _PyLong_Init(PyThreadState *tstate)
 
         tstate->interp->small_ints[i] = v;
     }
-#endif
 
     if (_Py_IsMainInterpreter(tstate)) {
-        _PyLong_Zero = PyLong_FromLong(0);
-        if (_PyLong_Zero == NULL) {
-            return 0;
-        }
-
-        _PyLong_One = PyLong_FromLong(1);
-        if (_PyLong_One == NULL) {
-            return 0;
-        }
-
         /* initialize int_info */
         if (Int_InfoType.tp_name == NULL) {
             if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
@@ -5757,14 +5734,7 @@ _PyLong_Init(PyThreadState *tstate)
 void
 _PyLong_Fini(PyThreadState *tstate)
 {
-    if (_Py_IsMainInterpreter(tstate)) {
-        Py_CLEAR(_PyLong_One);
-        Py_CLEAR(_PyLong_Zero);
-    }
-
-#if NSMALLNEGINTS + NSMALLPOSINTS > 0
     for (Py_ssize_t i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
         Py_CLEAR(tstate->interp->small_ints[i]);
     }
-#endif
 }

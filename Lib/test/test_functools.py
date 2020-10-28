@@ -19,15 +19,18 @@ import gc
 from weakref import proxy
 import contextlib
 
+from test.support import import_helper
 from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 
 import functools
 
-py_functools = support.import_fresh_module('functools', blocked=['_functools'])
-c_functools = support.import_fresh_module('functools', fresh=['_functools'])
+py_functools = import_helper.import_fresh_module('functools',
+                                                 blocked=['_functools'])
+c_functools = import_helper.import_fresh_module('functools',
+                                                fresh=['_functools'])
 
-decimal = support.import_fresh_module('decimal', fresh=['_decimal'])
+decimal = import_helper.import_fresh_module('decimal', fresh=['_decimal'])
 
 @contextlib.contextmanager
 def replaced_module(name, replacement):
@@ -615,7 +618,7 @@ class TestUpdateWrapper(unittest.TestCase):
 
 
     def _default_update(self):
-        def f(a:'This is a new annotation'):
+        def f(a: int):
             """This is a test"""
             pass
         f.attr = 'This is also a test'
@@ -632,7 +635,7 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertEqual(wrapper.__name__, 'f')
         self.assertEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.attr, 'This is also a test')
-        self.assertEqual(wrapper.__annotations__['a'], 'This is a new annotation')
+        self.assertEqual(wrapper.__annotations__['a'], 'int')
         self.assertNotIn('b', wrapper.__annotations__)
 
     @unittest.skipIf(sys.flags.optimize >= 2,

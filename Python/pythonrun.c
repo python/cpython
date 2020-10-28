@@ -20,16 +20,13 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 
-#include "node.h"                 // node
 #include "token.h"                // INDENT
-#include "parsetok.h"             // perrdetail
 #include "errcode.h"              // E_EOF
 #include "code.h"                 // PyCodeObject
 #include "symtable.h"             // PySymtable_BuildObject()
-#include "ast.h"                  // PyAST_FromNodeObject()
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
 
-#include "pegen_interface.h"      // PyPegen_ASTFrom*
+#include "parser_interface.h"      // PyParser_ASTFrom*
 
 #ifdef MS_WINDOWS
 #  include "malloc.h"             // alloca()
@@ -208,8 +205,8 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         return -1;
     }
 
-    mod = PyPegen_ASTFromFileObject(fp, filename, Py_single_input,
-                                    enc, ps1, ps2, flags, &errcode, arena);
+    mod = PyParser_ASTFromFileObject(fp, filename, enc, Py_single_input,
+                                     ps1, ps2, flags, &errcode, arena);
 
     Py_XDECREF(v);
     Py_XDECREF(w);
@@ -354,7 +351,10 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
         return -1;
     Py_INCREF(m);
     d = PyModule_GetDict(m);
-    if (PyDict_GetItemString(d, "__file__") == NULL) {
+    if (_PyDict_GetItemStringWithError(d, "__file__") == NULL) {
+        if (PyErr_Occurred()) {
+            goto done;
+        }
         PyObject *f;
         f = PyUnicode_DecodeFSDefault(filename);
         if (f == NULL)
@@ -773,7 +773,7 @@ static void
 print_exception(PyObject *f, PyObject *value)
 {
     int err = 0;
-    PyObject *type, *tb;
+    PyObject *type, *tb, *tmp;
     _Py_IDENTIFIER(print_file_and_line);
 
     if (!PyExceptionInstance_Check(value)) {
@@ -792,10 +792,12 @@ print_exception(PyObject *f, PyObject *value)
     if (tb && tb != Py_None)
         err = PyTraceBack_Print(tb, f);
     if (err == 0 &&
-        _PyObject_HasAttrId(value, &PyId_print_file_and_line))
+        (err = _PyObject_LookupAttrId(value, &PyId_print_file_and_line, &tmp)) > 0)
     {
         PyObject *message, *filename, *text;
         Py_ssize_t lineno, offset;
+        err = 0;
+        Py_DECREF(tmp);
         if (!parse_syntax_error(value, &message, &filename,
                                 &lineno, &offset, &text))
             PyErr_Clear();
@@ -1029,7 +1031,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     if (arena == NULL)
         return NULL;
 
-    mod = PyPegen_ASTFromStringObject(str, filename, start, flags, arena);
+    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
 
     if (mod != NULL)
         ret = run_mod(mod, filename, globals, locals, flags, arena);
@@ -1054,8 +1056,8 @@ PyRun_FileExFlags(FILE *fp, const char *filename_str, int start, PyObject *globa
     if (arena == NULL)
         goto exit;
 
-    mod = PyPegen_ASTFromFileObject(fp, filename, start, NULL, NULL, NULL,
-                                        flags, NULL, arena);
+    mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, NULL, NULL,
+                                     flags, NULL, arena);
 
     if (closeit)
         fclose(fp);
@@ -1117,9 +1119,11 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     _Py_UnhandledKeyboardInterrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (globals != NULL && PyDict_GetItemString(globals, "__builtins__") == NULL) {
-        if (PyDict_SetItemString(globals, "__builtins__",
-                                 tstate->interp->builtins) < 0) {
+    if (globals != NULL && _PyDict_GetItemStringWithError(globals, "__builtins__") == NULL) {
+        if (PyErr_Occurred() ||
+            PyDict_SetItemString(globals, "__builtins__",
+                                 tstate->interp->builtins) < 0)
+        {
             return NULL;
         }
     }
@@ -1203,7 +1207,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
     if (arena == NULL)
         return NULL;
 
-    mod = PyPegen_ASTFromStringObject(str, filename, start, flags, arena);
+    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;
@@ -1306,7 +1310,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename, int start, Py
     if (arena == NULL)
         return NULL;
 
-    mod = PyPegen_ASTFromStringObject(str, filename, start, flags, arena);
+    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;

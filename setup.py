@@ -8,7 +8,7 @@ import os
 import re
 import sys
 import sysconfig
-from glob import glob
+from glob import glob, escape
 
 
 try:
@@ -401,7 +401,7 @@ class PyBuildExt(build_ext):
 
         # Python header files
         headers = [sysconfig.get_config_h_filename()]
-        headers += glob(os.path.join(sysconfig.get_path('include'), "*.h"))
+        headers += glob(os.path.join(escape(sysconfig.get_path('include')), "*.h"))
 
         for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
@@ -856,14 +856,16 @@ class PyBuildExt(build_ext):
                            libraries=['m'],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # zoneinfo module
-        self.add(Extension('_zoneinfo', ['_zoneinfo.c'])),
+        self.add(Extension('_zoneinfo', ['_zoneinfo.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # random number generator implemented in C
         self.add(Extension("_random", ["_randommodule.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # bisect
         self.add(Extension("_bisect", ["_bisectmodule.c"]))
         # heapq
-        self.add(Extension("_heapq", ["_heapqmodule.c"]))
+        self.add(Extension("_heapq", ["_heapqmodule.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # C-optimized pickle replacement
         self.add(Extension("_pickle", ["_pickle.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
@@ -877,7 +879,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
         # static Unicode character database
         self.add(Extension('unicodedata', ['unicodedata.c'],
-                           depends=['unicodedata_db.h', 'unicodename_db.h']))
+                           depends=['unicodedata_db.h', 'unicodename_db.h'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _opcode module
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
@@ -949,7 +952,8 @@ class PyBuildExt(build_ext):
         self.add(Extension('_csv', ['_csv.c']))
 
         # POSIX subprocess module helper.
-        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c']))
+        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
     def detect_test_extensions(self):
         # Python C API test module
@@ -1091,6 +1095,7 @@ class PyBuildExt(build_ext):
         if curses_library.startswith('ncurses'):
             curses_libs = [curses_library]
             self.add(Extension('_curses', ['_cursesmodule.c'],
+                               extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                                include_dirs=curses_includes,
                                define_macros=curses_defines,
                                libraries=curses_libs))
@@ -1105,6 +1110,7 @@ class PyBuildExt(build_ext):
                 curses_libs = ['curses']
 
             self.add(Extension('_curses', ['_cursesmodule.c'],
+                               extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                                define_macros=curses_defines,
                                libraries=curses_libs))
         else:
@@ -1451,7 +1457,6 @@ class PyBuildExt(build_ext):
         sqlite_setup_debug = False   # verbose debug prints from this script?
 
         # We hunt for #define SQLITE_VERSION "n.n.n"
-        # We need to find >= sqlite version 3.3.9, for sqlite3_prepare_v2
         sqlite_incdir = sqlite_libdir = None
         sqlite_inc_paths = [ '/usr/include',
                              '/usr/include/sqlite',
@@ -1462,7 +1467,8 @@ class PyBuildExt(build_ext):
                              ]
         if CROSS_COMPILING:
             sqlite_inc_paths = []
-        MIN_SQLITE_VERSION_NUMBER = (3, 7, 2)
+        # We need to find >= sqlite version 3.7.3, for sqlite3_create_function_v2()
+        MIN_SQLITE_VERSION_NUMBER = (3, 7, 3)
         MIN_SQLITE_VERSION = ".".join([str(x)
                                     for x in MIN_SQLITE_VERSION_NUMBER])
 
@@ -1880,9 +1886,9 @@ class PyBuildExt(build_ext):
         # you want to build and link with a framework build of Tcl and Tk
         # that is not in /Library/Frameworks, say, in your private
         # $HOME/Library/Frameworks directory or elsewhere. It turns
-        # out to be difficult to make that work automtically here
+        # out to be difficult to make that work automatically here
         # without bringing into play more tools and magic. That case
-        # can be hamdled using a recipe with the right arguments
+        # can be handled using a recipe with the right arguments
         # to detect_tkinter_explicitly().
         #
         # Note also that the fallback case here is to try to use the
@@ -1890,7 +1896,7 @@ class PyBuildExt(build_ext):
         # be forewarned that they are deprecated by Apple and typically
         # out-of-date and buggy; their use should be avoided if at
         # all possible by installing a newer version of Tcl and Tk in
-        # /Library/Frameworks before bwfore building Python without
+        # /Library/Frameworks before building Python without
         # an explicit SDK or by configuring build arguments explicitly.
 
         from os.path import join, exists
@@ -1907,7 +1913,7 @@ class PyBuildExt(build_ext):
         else:
             # Use case #1: no explicit SDK selected.
             # Search the local system-wide /Library/Frameworks,
-            # not the one in the default SDK, othewise fall back to
+            # not the one in the default SDK, otherwise fall back to
             # /System/Library/Frameworks whose header files may be in
             # the default SDK or, on older systems, actually installed.
             framework_dirs = [
@@ -1923,7 +1929,7 @@ class PyBuildExt(build_ext):
                 if not exists(join(F, fw + '.framework')):
                     break
             else:
-                # ok, F is now directory with both frameworks. Continure
+                # ok, F is now directory with both frameworks. Continue
                 # building
                 break
         else:
@@ -2431,7 +2437,7 @@ class PyBuildExt(build_ext):
 
         if "blake2" in configured:
             blake2_deps = glob(
-                os.path.join(self.srcdir, 'Modules/_blake2/impl/*')
+                os.path.join(escape(self.srcdir), 'Modules/_blake2/impl/*')
             )
             blake2_deps.append('hashlib.h')
             self.add(Extension(
@@ -2446,7 +2452,7 @@ class PyBuildExt(build_ext):
 
         if "sha3" in configured:
             sha3_deps = glob(
-                os.path.join(self.srcdir, 'Modules/_sha3/kcp/*')
+                os.path.join(escape(self.srcdir), 'Modules/_sha3/kcp/*')
             )
             sha3_deps.append('hashlib.h')
             self.add(Extension(

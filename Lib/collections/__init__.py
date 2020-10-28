@@ -27,7 +27,6 @@ __all__ = [
 ]
 
 import _collections_abc
-import heapq as _heapq
 import sys as _sys
 
 from itertools import chain as _chain
@@ -608,7 +607,10 @@ class Counter(dict):
         # Emulate Bag.sortedByCount from Smalltalk
         if n is None:
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
-        return _heapq.nlargest(n, self.items(), key=_itemgetter(1))
+
+        # Lazy import to speedup Python startup time
+        import heapq
+        return heapq.nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):
         '''Iterator over elements repeating each as many times as its count.

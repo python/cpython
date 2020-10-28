@@ -700,6 +700,8 @@ ARFLAGS
 ac_ct_AR
 AR
 GNULD
+EXPORTSFROM
+EXPORTSYMS
 LINKCC
 LDVERSION
 RUNSHARED
@@ -2739,7 +2741,7 @@ if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
-    #   Include/ -> Python-ast.h, graminit.h
+    #   Include/ -> Python-ast.h
     #   Python/  -> importlib.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
@@ -3426,7 +3428,7 @@ $as_echo "#define _BSD_SOURCE 1" >>confdefs.h
   # has no effect, don't bother defining them
   Darwin/[6789].*)
     define_xopen_source=no;;
-  Darwin/1[0-9].*)
+  Darwin/[12][0-9].*)
     define_xopen_source=no;;
   # On AIX 4 and 5.1, mbstate_t is defined only when _XOPEN_SOURCE == 500 but
   # used in wcsnrtombs() and mbsnrtowcs() even if _XOPEN_SOURCE is not defined
@@ -5799,8 +5801,6 @@ LDVERSION="$VERSION"
 # If CXX is set, and if it is needed to link a main function that was
 # compiled with CXX, LINKCC is CXX instead. Always using CXX is undesirable:
 # python might then depend on the C++ runtime
-# This is altered for AIX in order to build the export list before
-# linking.
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking LINKCC" >&5
 $as_echo_n "checking LINKCC... " >&6; }
@@ -5808,13 +5808,6 @@ if test -z "$LINKCC"
 then
 	LINKCC='$(PURIFY) $(MAINCC)'
 	case $ac_sys_system in
-	AIX*)
-	   exp_extra="\"\""
-	   if test $ac_sys_release -ge 5 -o \
-		   $ac_sys_release -eq 4 -a `uname -r` -ge 2 ; then
-	       exp_extra="."
-	   fi
-	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp $exp_extra \$(LIBRARY); $LINKCC";;
 	QNX*)
 	   # qcc must be used because the other compilers do not
 	   # support -N.
@@ -5823,6 +5816,26 @@ then
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LINKCC" >&5
 $as_echo "$LINKCC" >&6; }
+
+# EXPORTSYMS holds the list of exported symbols for AIX.
+# EXPORTSFROM holds the module name exporting symbols on AIX.
+EXPORTSYMS=
+EXPORTSFROM=
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking EXPORTSYMS" >&5
+$as_echo_n "checking EXPORTSYMS... " >&6; }
+case $ac_sys_system in
+AIX*)
+	EXPORTSYMS="Modules/python.exp"
+	if test $ac_sys_release -ge 5 -o \
+		$ac_sys_release -eq 4 -a `uname -r` -ge 2 ; then
+	    EXPORTSFROM=. # the main executable
+	fi
+	;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $EXPORTSYMS" >&5
+$as_echo "$EXPORTSYMS" >&6; }
 
 # GNULD is set to "yes" if the GNU linker is used.  If this goes wrong
 # make sure we default having it set to "no": this is used by
@@ -6469,6 +6482,50 @@ if test "$Py_OPT" = 'true' ; then
   DEF_MAKE_ALL_RULE="profile-opt"
   REQUIRE_PGO="yes"
   DEF_MAKE_RULE="build_all"
+  case $CC in
+    *gcc*)
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-semantic-interposition" >&5
+$as_echo_n "checking whether C compiler accepts -fno-semantic-interposition... " >&6; }
+if ${ax_cv_check_cflags___fno_semantic_interposition+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -fno-semantic-interposition"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___fno_semantic_interposition=yes
+else
+  ax_cv_check_cflags___fno_semantic_interposition=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fno_semantic_interposition" >&5
+$as_echo "$ax_cv_check_cflags___fno_semantic_interposition" >&6; }
+if test "x$ax_cv_check_cflags___fno_semantic_interposition" = xyes; then :
+
+      CFLAGS_NODIST="$CFLAGS_NODIST -fno-semantic-interposition"
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -fno-semantic-interposition"
+
+else
+  :
+fi
+
+      ;;
+  esac
+
+
 else
   DEF_MAKE_ALL_RULE="build_all"
   REQUIRE_PGO="no"
@@ -7579,10 +7636,13 @@ $as_echo "$MACOSX_DEPLOYMENT_TARGET" >&6; }
     ;;
 esac
 
-# ICC needs -fp-model strict or floats behave badly
 case "$CC" in
 *icc*)
+    # ICC needs -fp-model strict or floats behave badly
     CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
+    ;;
+*xlc*)
+    CFLAGS_NODIST="$CFLAGS_NODIST -qalias=noansi -qmaxmem=-1"
     ;;
 esac
 
@@ -11609,12 +11669,6 @@ $as_echo_n "checking DYNLOADFILE... " >&6; }
 if test -z "$DYNLOADFILE"
 then
 	case $ac_sys_system/$ac_sys_release in
-	AIX*) # Use dynload_shlib.c and dlopen() if we have it; otherwise dynload_aix.c
-	if test "$ac_cv_func_dlopen" = yes
-	then DYNLOADFILE="dynload_shlib.o"
-	else DYNLOADFILE="dynload_aix.o"
-	fi
-	;;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
@@ -11656,8 +11710,8 @@ fi
 
 # checks for library functions
 for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
- clock confstr copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
- faccessat fchmod fchmodat fchown fchownat \
+ clock confstr close_range copy_file_range ctermid dup3 execv explicit_bzero \
+ explicit_memset faccessat fchmod fchmodat fchown fchownat \
  fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
  getgrgid_r getgrnam_r \
@@ -11678,7 +11732,7 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
  sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy strsignal symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unlinkat utimensat utimes waitid waitpid wait3 wait4 \
+ truncate uname unlinkat utimensat utimes vfork waitid waitpid wait3 wait4 \
  wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
@@ -12824,19 +12878,6 @@ else
   case " $LIBOBJS " in
   *" dup2.$ac_objext "* ) ;;
   *) LIBOBJS="$LIBOBJS dup2.$ac_objext"
- ;;
-esac
-
-fi
-
-ac_fn_c_check_func "$LINENO" "strdup" "ac_cv_func_strdup"
-if test "x$ac_cv_func_strdup" = xyes; then :
-  $as_echo "#define HAVE_STRDUP 1" >>confdefs.h
-
-else
-  case " $LIBOBJS " in
-  *" strdup.$ac_objext "* ) ;;
-  *) LIBOBJS="$LIBOBJS strdup.$ac_objext"
  ;;
 esac
 
@@ -16806,7 +16847,7 @@ do
 done
 
 
-SRCDIRS="Parser Parser/pegen Objects Python Modules Modules/_io Programs"
+SRCDIRS="Parser Objects Python Modules Modules/_io Programs"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build directories" >&5
 $as_echo_n "checking for build directories... " >&6; }
 for dir in $SRCDIRS; do

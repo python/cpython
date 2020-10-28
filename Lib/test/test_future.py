@@ -4,6 +4,7 @@ import __future__
 import ast
 import unittest
 from test import support
+from test.support import import_helper
 from textwrap import dedent
 import os
 import re
@@ -24,17 +25,17 @@ class FutureTest(unittest.TestCase):
         self.assertEqual(err.offset, offset)
 
     def test_future1(self):
-        with support.CleanImport('future_test1'):
+        with import_helper.CleanImport('future_test1'):
             from test import future_test1
             self.assertEqual(future_test1.result, 6)
 
     def test_future2(self):
-        with support.CleanImport('future_test2'):
+        with import_helper.CleanImport('future_test2'):
             from test import future_test2
             self.assertEqual(future_test2.result, 6)
 
     def test_future3(self):
-        with support.CleanImport('test_future3'):
+        with import_helper.CleanImport('test_future3'):
             from test import test_future3
 
     def test_badfuture3(self):
@@ -113,7 +114,7 @@ class FutureTest(unittest.TestCase):
             self.fail("syntax error didn't occur")
 
     def test_multiple_features(self):
-        with support.CleanImport("test.test_future5"):
+        with import_helper.CleanImport("test.test_future5"):
             from test import test_future5
 
     def test_unicode_literals_exec(self):

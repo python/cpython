@@ -902,7 +902,11 @@ PyImport_AddModule(const char *name)
 }
 
 
-/* Remove name from sys.modules, if it's there. */
+/* Remove name from sys.modules, if it's there.
+ * Can be called with an exception raised.
+ * If fail to remove name a new exception will be chained with the old
+ * exception, otherwise the old exception is preserved.
+ */
 static void
 remove_module(PyThreadState *tstate, PyObject *name)
 {
@@ -910,18 +914,17 @@ remove_module(PyThreadState *tstate, PyObject *name)
     _PyErr_Fetch(tstate, &type, &value, &traceback);
 
     PyObject *modules = tstate->interp->modules;
-    if (!PyMapping_HasKey(modules, name)) {
-        goto out;
+    if (PyDict_CheckExact(modules)) {
+        PyObject *mod = _PyDict_Pop(modules, name, Py_None);
+        Py_XDECREF(mod);
     }
-    if (PyMapping_DelItem(modules, name) < 0) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                         "deleting key in sys.modules failed");
-        _PyErr_ChainExceptions(type, value, traceback);
-        return;
+    else if (PyMapping_DelItem(modules, name) < 0) {
+        if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+            _PyErr_Clear(tstate);
+        }
     }
 
-out:
-    _PyErr_Restore(tstate, type, value, traceback);
+    _PyErr_ChainExceptions(type, value, traceback);
 }
 
 
@@ -1015,14 +1018,14 @@ module_dict_for_exec(PyThreadState *tstate, PyObject *name)
     /* If the module is being reloaded, we get the old module back
        and re-use its dict to exec the new code. */
     d = PyModule_GetDict(m);
-    if (_PyDict_GetItemIdWithError(d, &PyId___builtins__) == NULL) {
-        if (_PyErr_Occurred(tstate) ||
-            _PyDict_SetItemId(d, &PyId___builtins__,
-                              PyEval_GetBuiltins()) != 0)
-        {
-            remove_module(tstate, name);
-            return NULL;
-        }
+    int r = _PyDict_ContainsId(d, &PyId___builtins__);
+    if (r == 0) {
+        r = _PyDict_SetItemId(d, &PyId___builtins__,
+                              PyEval_GetBuiltins());
+    }
+    if (r < 0) {
+        remove_module(tstate, name);
+        return NULL;
     }
 
     return d;  /* Return a borrowed reference. */
@@ -1657,10 +1660,14 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             goto error;
         }
 
-        if (_PyDict_GetItemIdWithError(globals, &PyId___path__) == NULL) {
+        int haspath = _PyDict_ContainsId(globals, &PyId___path__);
+        if (haspath < 0) {
+            goto error;
+        }
+        if (!haspath) {
             Py_ssize_t dot;
 
-            if (_PyErr_Occurred(tstate) || PyUnicode_READY(package) < 0) {
+            if (PyUnicode_READY(package) < 0) {
                 goto error;
             }
 
