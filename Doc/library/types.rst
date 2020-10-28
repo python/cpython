@@ -242,6 +242,14 @@ Standard names are defined for the following types:
          Defaults to ``None``. Previously the attribute was optional.
 
 
+.. data:: GenericAlias
+
+   The type of :ref:`parameterized generics <types-genericalias>` such as
+   ``list[int]``.
+
+   .. versionadded:: 3.9
+
+
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
    The type of traceback objects such as found in ``sys.exc_info()[2]``.
