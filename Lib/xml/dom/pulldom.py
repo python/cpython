@@ -175,6 +175,8 @@ class PullDOM(xml.sax.ContentHandler):
                 _,target,data = e[0]
                 n = self.document.createProcessingInstruction(target, data)
                 e[0] = (PROCESSING_INSTRUCTION, n)
+                if isinstance(self, SAX2DOM):
+                    node.appendChild(n)
             elif e[0][0] == COMMENT:
                 n = self.document.createComment(e[0][1])
                 e[0] = (COMMENT, n)
@@ -309,9 +311,10 @@ class SAX2DOM(PullDOM):
 
     def processingInstruction(self, target, data):
         PullDOM.processingInstruction(self, target, data)
-        node = self.lastEvent[0][1]
-        parentNode = self.elementStack[-1]
-        parentNode.appendChild(node)
+        if self.lastEvent[0] is not None:
+            node = self.lastEvent[0][1]
+            parentNode = self.elementStack[-1]
+            parentNode.appendChild(node)
 
     def ignorableWhitespace(self, chars):
         PullDOM.ignorableWhitespace(self, chars)
