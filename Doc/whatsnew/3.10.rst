@@ -210,6 +210,12 @@ py_compile
 Added ``--quiet`` option to command-line interface of :mod:`py_compile`.
 (Contributed by Gregory Schevchenko in :issue:`38731`.)
 
+shutil
+------
+
+Added :func:`shutil.link` and :func:`shutil.symlink` as wrappers for :func:`os.link` and :func:`os.symlink` respectively. Multiple sources and atomic overwriting of existing destinations are supported.
+(Contributed by Tom Hale in :issue:`36656`.)
+
 sys
 ---
 

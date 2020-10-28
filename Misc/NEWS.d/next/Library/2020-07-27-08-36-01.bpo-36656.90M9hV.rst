@@ -1,0 +1,1 @@
+Added :func:`shutil.link` and :func:`shutil.symlink` as wrappers for :func:`os.link` and :func:`os.symlink` respectively. Multiple sources and atomic overwriting of existing destinations are supported.
