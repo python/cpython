@@ -1,1 +1,0 @@
-Ignore the Windows registry when the ``-E`` option is used.

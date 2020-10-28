@@ -1,1 +1,0 @@
-Set expected default encoding in test_c_locale_coercion.py for VxWorks RTOS.

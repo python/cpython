@@ -1,2 +1,0 @@
-Speed up calls to ``dict()`` by using the :pep:`590` ``vectorcall`` calling
-convention.

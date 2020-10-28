@@ -1,1 +1,0 @@
-Port _uuid module to multiphase initialization (:pep:`489`).

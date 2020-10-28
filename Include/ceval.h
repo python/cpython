@@ -28,12 +28,10 @@ Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallFunction(
 Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyEval_CallMethod(
     PyObject *obj, const char *name, const char *format, ...);
 
-struct _frame; /* Avoid including frameobject.h */
-
 PyAPI_FUNC(PyObject *) PyEval_GetBuiltins(void);
 PyAPI_FUNC(PyObject *) PyEval_GetGlobals(void);
 PyAPI_FUNC(PyObject *) PyEval_GetLocals(void);
-PyAPI_FUNC(struct _frame *) PyEval_GetFrame(void);
+PyAPI_FUNC(PyFrameObject *) PyEval_GetFrame(void);
 
 PyAPI_FUNC(int) Py_AddPendingCall(int (*func)(void *), void *arg);
 PyAPI_FUNC(int) Py_MakePendingCalls(void);
@@ -69,19 +67,11 @@ PyAPI_FUNC(int) Py_GetRecursionLimit(void);
 PyAPI_FUNC(int) Py_EnterRecursiveCall(const char *where);
 PyAPI_FUNC(void) Py_LeaveRecursiveCall(void);
 
-#define Py_ALLOW_RECURSION \
-  do { unsigned char _old = PyThreadState_GET()->recursion_critical;\
-    PyThreadState_GET()->recursion_critical = 1;
-
-#define Py_END_ALLOW_RECURSION \
-    PyThreadState_GET()->recursion_critical = _old; \
-  } while(0);
-
 PyAPI_FUNC(const char *) PyEval_GetFuncName(PyObject *);
 PyAPI_FUNC(const char *) PyEval_GetFuncDesc(PyObject *);
 
-PyAPI_FUNC(PyObject *) PyEval_EvalFrame(struct _frame *);
-PyAPI_FUNC(PyObject *) PyEval_EvalFrameEx(struct _frame *f, int exc);
+PyAPI_FUNC(PyObject *) PyEval_EvalFrame(PyFrameObject *);
+PyAPI_FUNC(PyObject *) PyEval_EvalFrameEx(PyFrameObject *f, int exc);
 
 /* Interface for threads.
 
@@ -130,8 +120,12 @@ PyAPI_FUNC(void) PyEval_RestoreThread(PyThreadState *);
 
 Py_DEPRECATED(3.9) PyAPI_FUNC(int) PyEval_ThreadsInitialized(void);
 Py_DEPRECATED(3.9) PyAPI_FUNC(void) PyEval_InitThreads(void);
+/* PyEval_AcquireLock() and PyEval_ReleaseLock() are part of stable ABI.
+ * They will be removed from this header file in the future version.
+ * But they will be remained in ABI until Python 4.0.
+ */
 Py_DEPRECATED(3.2) PyAPI_FUNC(void) PyEval_AcquireLock(void);
-/* Py_DEPRECATED(3.2) */ PyAPI_FUNC(void) PyEval_ReleaseLock(void);
+Py_DEPRECATED(3.2) PyAPI_FUNC(void) PyEval_ReleaseLock(void);
 PyAPI_FUNC(void) PyEval_AcquireThread(PyThreadState *tstate);
 PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
 

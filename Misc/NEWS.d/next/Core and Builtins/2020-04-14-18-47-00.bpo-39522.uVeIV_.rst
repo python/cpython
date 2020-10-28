@@ -1,2 +1,0 @@
-Correctly unparse explicit ``u`` prefix for strings when postponed
-evaluation for annotations activated. Patch by Batuhan Taskaya.

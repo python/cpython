@@ -39,7 +39,6 @@ class ConfigTestCase(support.LoggingSilencer,
 
     @unittest.skipIf(sys.platform == 'win32', "can't test on Windows")
     def test_search_cpp(self):
-        import shutil
         cmd = missing_compiler_executable(['preprocessor'])
         if cmd is not None:
             self.skipTest('The %r command is not found' % cmd)

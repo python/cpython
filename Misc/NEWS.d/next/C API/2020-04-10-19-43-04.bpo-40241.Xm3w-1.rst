@@ -1,4 +1,0 @@
-Add the functions :c:func:`PyObject_GC_IsTracked` and
-:c:func:`PyObject_GC_IsFinalized` to the public API to allow to query if
-Python objects are being currently tracked or have been already finalized by
-the garbage collector respectively. Patch by Pablo Galindo.

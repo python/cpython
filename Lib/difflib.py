@@ -130,7 +130,7 @@ class SequenceMatcher:
     set_seq2(b)
         Set the second sequence to be compared.
 
-    find_longest_match(alo, ahi, blo, bhi)
+    find_longest_match(alo=0, ahi=None, blo=0, bhi=None)
         Find longest matching block in a[alo:ahi] and b[blo:bhi].
 
     get_matching_blocks()
@@ -334,8 +334,10 @@ class SequenceMatcher:
             for elt in popular: # ditto; as fast for 1% deletion
                 del b2j[elt]
 
-    def find_longest_match(self, alo, ahi, blo, bhi):
+    def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None):
         """Find longest matching block in a[alo:ahi] and b[blo:bhi].
+
+        By default it will find the longest match in the entirety of a and b.
 
         If isjunk is not defined:
 
@@ -391,6 +393,10 @@ class SequenceMatcher:
         # the unique 'b's and then matching the first two 'a's.
 
         a, b, b2j, isbjunk = self.a, self.b, self.b2j, self.bjunk.__contains__
+        if ahi is None:
+            ahi = len(a)
+        if bhi is None:
+            bhi = len(b)
         besti, bestj, bestsize = alo, blo, 0
         # find longest junk-free match
         # during an iteration of the loop, j2len[j] = length of longest

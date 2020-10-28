@@ -100,11 +100,6 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int k;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     k = _PyLong_AsInt(arg);
     if (k == -1 && PyErr_Occurred()) {
         goto exit;
@@ -114,45 +109,4 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-
-PyDoc_STRVAR(_random_Random_randbytes__doc__,
-"randbytes($self, n, /)\n"
-"--\n"
-"\n"
-"Generate n random bytes.");
-
-#define _RANDOM_RANDOM_RANDBYTES_METHODDEF    \
-    {"randbytes", (PyCFunction)_random_Random_randbytes, METH_O, _random_Random_randbytes__doc__},
-
-static PyObject *
-_random_Random_randbytes_impl(RandomObject *self, Py_ssize_t n);
-
-static PyObject *
-_random_Random_randbytes(RandomObject *self, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    Py_ssize_t n;
-
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(arg);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        n = ival;
-    }
-    return_value = _random_Random_randbytes_impl(self, n);
-
-exit:
-    return return_value;
-}
-/*[clinic end generated code: output=e515c651860c4001 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cc8a23b2757dc6ba input=a9049054013a1b77]*/

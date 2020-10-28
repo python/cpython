@@ -2040,7 +2040,7 @@ element_attrib_setter(ElementObject *self, PyObject *value, void *closure)
     if (!PyDict_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "attrib must be dict, not %.200s",
-                     value->ob_type->tp_name);
+                     Py_TYPE(value)->tp_name);
         return -1;
     }
     if (!self->extra) {

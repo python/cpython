@@ -1597,7 +1597,7 @@ to filter block traces by their address space (domain).
 typing
 ------
 
-Since the :mod:`typing` module is :term:`provisional <provisional api>`,
+Since the :mod:`typing` module is :term:`provisional <provisional API>`,
 all changes introduced in Python 3.6 have also been
 backported to Python 3.5.x.
 

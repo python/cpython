@@ -7,6 +7,7 @@ import subprocess
 import sys
 import sysconfig
 from test import support
+from test.support import os_helper
 from test.support import script_helper, is_android
 import tempfile
 import unittest
@@ -51,7 +52,7 @@ def temporary_filename():
     try:
         yield filename
     finally:
-        support.unlink(filename)
+        os_helper.unlink(filename)
 
 class FaultHandlerTests(unittest.TestCase):
     def get_output(self, code, filename=None, fd=None):

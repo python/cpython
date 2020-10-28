@@ -4,6 +4,7 @@ import glob
 import pickle
 
 from test import support
+from test.support import os_helper
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
 
@@ -47,7 +48,7 @@ class TestCase(unittest.TestCase):
 
     def tearDown(self):
         for f in glob.glob(self.fn+"*"):
-            support.unlink(f)
+            os_helper.unlink(f)
 
     def test_close(self):
         d1 = {}
@@ -188,7 +189,7 @@ class TestShelveBase(mapping_tests.BasicTestMappingProtocol):
         self._db = []
         if not self._in_mem:
             for f in glob.glob(self.fn+"*"):
-                support.unlink(f)
+                os_helper.unlink(f)
 
 class TestAsciiFileShelve(TestShelveBase):
     _args={'protocol':0}

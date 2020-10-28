@@ -1,6 +1,0 @@
-Add a private ``_at_fork_reinit()`` method to :class:`_thread.Lock`,
-:class:`_thread.RLock`, :class:`threading.RLock` and
-:class:`threading.Condition` classes: reinitialize the lock at fork in the
-child process, reset the lock to the unlocked state.
-Rename also the private ``_reset_internal_locks()`` method of
-:class:`threading.Event` to ``_at_fork_reinit()``.

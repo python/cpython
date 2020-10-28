@@ -1,9 +1,10 @@
 #include "Python.h"
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.warnings
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "frameobject.h"
+#include "frameobject.h"          // PyFrame_GetBack()
 #include "clinic/_warnings.c.h"
 
 #define MODULE_NAME "_warnings"
@@ -32,14 +33,14 @@ _Py_IDENTIFIER(__name__);
 static WarningsState *
 warnings_get_state(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate == NULL) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                          "warnings_get_state: could not identify "
-                          "current interpreter");
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "warnings_get_state: could not identify "
+                        "current interpreter");
         return NULL;
     }
-    return &tstate->interp->warnings;
+    return &interp->warnings;
 }
 
 /* Clear the given warnings module state. */
@@ -73,7 +74,7 @@ create_filter(PyObject *category, _Py_Identifier *id, const char *modname)
 
     /* This assumes the line number is zero for now. */
     return PyTuple_Pack(5, action_str, Py_None,
-                        category, modname_obj, _PyLong_Zero);
+                        category, modname_obj, _PyLong_GetZero());
 }
 #endif
 
@@ -472,7 +473,7 @@ update_registry(PyObject *registry, PyObject *text, PyObject *category,
     int rc;
 
     if (add_zero)
-        altkey = PyTuple_Pack(3, text, category, _PyLong_Zero);
+        altkey = PyTuple_Pack(3, text, category, _PyLong_GetZero());
     else
         altkey = PyTuple_Pack(2, text, category);
 
@@ -762,7 +763,6 @@ is_internal_frame(PyFrameObject *frame)
 {
     static PyObject *importlib_string = NULL;
     static PyObject *bootstrap_string = NULL;
-    PyObject *filename;
     int contains;
 
     if (importlib_string == NULL) {
@@ -780,14 +780,21 @@ is_internal_frame(PyFrameObject *frame)
         Py_INCREF(bootstrap_string);
     }
 
-    if (frame == NULL || frame->f_code == NULL ||
-            frame->f_code->co_filename == NULL) {
+    if (frame == NULL) {
         return 0;
     }
-    filename = frame->f_code->co_filename;
+
+    PyCodeObject *code = PyFrame_GetCode(frame);
+    PyObject *filename = code->co_filename;
+    Py_DECREF(code);
+
+    if (filename == NULL) {
+        return 0;
+    }
     if (!PyUnicode_Check(filename)) {
         return 0;
     }
+
     contains = PyUnicode_Contains(filename, importlib_string);
     if (contains < 0) {
         return 0;
@@ -809,7 +816,9 @@ static PyFrameObject *
 next_external_frame(PyFrameObject *frame)
 {
     do {
-        frame = frame->f_back;
+        PyFrameObject *back = PyFrame_GetBack(frame);
+        Py_DECREF(frame);
+        frame = back;
     } while (frame != NULL && is_internal_frame(frame));
 
     return frame;
@@ -825,12 +834,15 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     PyObject *globals;
 
     /* Setup globals, filename and lineno. */
-    PyFrameObject *f = _PyThreadState_GET()->frame;
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyFrameObject *f = PyThreadState_GetFrame(tstate);
     // Stack level comparisons to Python code is off by one as there is no
     // warnings-related stack level to avoid.
     if (stack_level <= 0 || is_internal_frame(f)) {
         while (--stack_level > 0 && f != NULL) {
-            f = f->f_back;
+            PyFrameObject *back = PyFrame_GetBack(f);
+            Py_DECREF(f);
+            f = back;
         }
     }
     else {
@@ -846,9 +858,12 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
     else {
         globals = f->f_globals;
-        *filename = f->f_code->co_filename;
+        PyCodeObject *code = PyFrame_GetCode(f);
+        *filename = code->co_filename;
+        Py_DECREF(code);
         Py_INCREF(*filename);
         *lineno = PyFrame_GetLineNumber(f);
+        Py_DECREF(f);
     }
 
     *module = NULL;
@@ -860,7 +875,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     if (*registry == NULL) {
         int rc;
 
-        if (PyErr_Occurred()) {
+        if (_PyErr_Occurred(tstate)) {
             goto handle_error;
         }
         *registry = PyDict_New();
@@ -879,7 +894,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     if (*module == Py_None || (*module != NULL && PyUnicode_Check(*module))) {
         Py_INCREF(*module);
     }
-    else if (PyErr_Occurred()) {
+    else if (_PyErr_Occurred(tstate)) {
         goto handle_error;
     }
     else {

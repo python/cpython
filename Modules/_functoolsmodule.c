@@ -1,6 +1,7 @@
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_tupleobject.h"
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
 
 /* _functools module written and maintained
@@ -484,8 +485,7 @@ static int
 keyobject_traverse(keyobject *ko, visitproc visit, void *arg)
 {
     Py_VISIT(ko->cmp);
-    if (ko->object)
-        Py_VISIT(ko->object);
+    Py_VISIT(ko->object);
     return 0;
 }
 
@@ -597,7 +597,7 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
         return NULL;
     }
 
-    answer = PyObject_RichCompare(res, _PyLong_Zero, op);
+    answer = PyObject_RichCompare(res, _PyLong_GetZero(), op);
     Py_DECREF(res);
     return answer;
 }
@@ -680,7 +680,7 @@ functools_reduce(PyObject *self, PyObject *args)
 
     if (result == NULL)
         PyErr_SetString(PyExc_TypeError,
-                   "reduce() of empty sequence with no initial value");
+                   "reduce() of empty iterable with no initial value");
 
     Py_DECREF(it);
     return result;
@@ -693,14 +693,14 @@ Fail:
 }
 
 PyDoc_STRVAR(functools_reduce_doc,
-"reduce(function, sequence[, initial]) -> value\n\
+"reduce(function, iterable[, initial]) -> value\n\
 \n\
-Apply a function of two arguments cumulatively to the items of a sequence,\n\
-from left to right, so as to reduce the sequence to a single value.\n\
-For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates\n\
+Apply a function of two arguments cumulatively to the items of a sequence\n\
+or iterable, from left to right, so as to reduce the iterable to a single\n\
+value.  For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates\n\
 ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items\n\
-of the sequence in the calculation, and serves as a default when the\n\
-sequence is empty.");
+of the iterable in the calculation, and serves as a default when the\n\
+iterable is empty.");
 
 /* lru_cache object **********************************************************/
 
@@ -783,6 +783,7 @@ typedef struct lru_cache_object {
     Py_ssize_t misses;
     PyObject *cache_info_type;
     PyObject *dict;
+    PyObject *weakreflist;
 } lru_cache_object;
 
 static PyTypeObject lru_cache_type;
@@ -1196,6 +1197,7 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     Py_INCREF(cache_info_type);
     obj->cache_info_type = cache_info_type;
     obj->dict = NULL;
+    obj->weakreflist = NULL;
     return (PyObject *)obj;
 }
 
@@ -1227,6 +1229,8 @@ lru_cache_dealloc(lru_cache_object *obj)
     lru_list_elem *list;
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(obj);
+    if (obj->weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject*)obj);
 
     list = lru_cache_unlink_list(obj);
     Py_XDECREF(obj->cache);
@@ -1384,7 +1388,8 @@ static PyTypeObject lru_cache_type = {
     (traverseproc)lru_cache_tp_traverse,/* tp_traverse */
     (inquiry)lru_cache_tp_clear,        /* tp_clear */
     0,                                  /* tp_richcompare */
-    0,                                  /* tp_weaklistoffset */
+    offsetof(lru_cache_object, weakreflist),
+                                        /* tp_weaklistoffset */
     0,                                  /* tp_iter */
     0,                                  /* tp_iternext */
     lru_cache_methods,                  /* tp_methods */

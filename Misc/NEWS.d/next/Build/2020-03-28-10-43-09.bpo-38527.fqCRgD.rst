@@ -1,2 +1,0 @@
-Fix configure check on Solaris for "float word ordering": sometimes, the correct "grep" command was not being used.
-Patch by Arnon Yaari.
