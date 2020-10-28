@@ -41,7 +41,7 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    determine which accessed entries are mutable, nor which ones were actually
    mutated).
 
-   .. versionchanged:: 3.9
+   .. versionchanged:: 3.10
       :data:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
       protocol.
 
@@ -136,7 +136,7 @@ Restrictions
    .. versionchanged:: 3.4
       Added context manager support.
 
-   .. versionchanged:: 3.9
+   .. versionchanged:: 3.10
       :data:`pickle.DEFAULT_PROTOCOL` is now used as the default pickle
       protocol.
 

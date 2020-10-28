@@ -627,13 +627,6 @@ random
 Added a new :attr:`random.Random.randbytes` method: generate random bytes.
 (Contributed by Victor Stinner in :issue:`40286`.)
 
-shelve
-------
-
-The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
-instead of :mod:`pickle` protocol ``3`` when creating shelves.
-(Contributed by Zackery Spytz in :issue:`34204`.)
-
 signal
 ------
 
