@@ -5838,7 +5838,7 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
     ADDOP(c, GET_LEN);
     if (!size) {
         // Empty sequences only require a length check:
-        ADDOP_LOAD_CONST(c, _PyLong_Zero);
+        ADDOP_LOAD_CONST(c, _PyLong_GetZero());
         ADDOP_COMPARE(c, Eq);
         compiler_use_next_block(c, end);
         return 1;
