@@ -3830,9 +3830,8 @@ main_loop:
         }
 
         case TARGET(MATCH_SEQUENCE): {
-            // PUSH(isinstance(TOS, _collections_abc.Sequence) and
-            //      not isinstance(TOS, (bytearray, bytes, str)) and
-            //      not hasattr(TOS, "__next__"))
+            // PUSH(not isinstance(TOS, (bytearray, bytes, str))
+            //      and isinstance(TOS, _collections_abc.Sequence))
             PyObject *subject = TOP();
             // Fast path for lists and tuples:
             if (PyType_FastSubclass(Py_TYPE(subject),
@@ -3847,7 +3846,6 @@ main_loop:
             if (PyType_FastSubclass(Py_TYPE(subject),
                                     Py_TPFLAGS_BYTES_SUBCLASS |
                                     Py_TPFLAGS_UNICODE_SUBCLASS) ||
-                PyIter_Check(subject) ||
                 PyByteArray_Check(subject))
             {
                 Py_INCREF(Py_False);
