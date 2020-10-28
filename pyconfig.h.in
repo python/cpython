@@ -1356,9 +1356,6 @@
 /* Define to 1 if you have the `writev' function. */
 #undef HAVE_WRITEV
 
-/* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
-#undef HAVE_X509_VERIFY_PARAM_SET1_HOST
-
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
 
