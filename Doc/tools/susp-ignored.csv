@@ -147,6 +147,8 @@ library/ipaddress,,:db8,IPv6Address('2001:db8::')
 library/ipaddress,,::,IPv6Address('2001:db8::')
 library/ipaddress,,:db8,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,::,>>> ipaddress.IPv6Address('2001:db8::1000')
+library/ipaddress,,:db8,'2001:db8::1000'
+library/ipaddress,,::,'2001:db8::1000'
 library/ipaddress,,:db8,IPv6Address('2001:db8::1000')
 library/ipaddress,,::,IPv6Address('2001:db8::1000')
 library/ipaddress,,::,IPv6Address('ff02::5678%1')
