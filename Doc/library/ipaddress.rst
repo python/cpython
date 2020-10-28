@@ -317,6 +317,32 @@ the :func:`str` and :func:`int` builtin functions::
 Note that IPv6 scoped addresses are converted to integers without scope zone ID.
 
 
+Other formatting options
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+String representations can be formatted using ``format(address[, spec])``.
+The first argument is an IPv4 or IPv6 address object. *spec* can be one of the
+following: ``'s'``, the default option, equivalent to :func:`str`, ``'b'``
+for a zero-padded binary string, ``'X'`` or ``'x'`` for an uppercase or
+lowercase hexadecimal representation, or ``'n'``, which is equivalent to
+``'b'`` for IPv4 addresses and ``'x'`` for IPv6. For binary and hexadecimal
+representations, the form specifier ``'#'`` and the grouping option
+``'_'`` are available::
+
+   >>> format(ipaddress.IPv4Address('192.168.0.1', 's'))
+   '192.168.0.1'
+   >>> format(ipaddress.IPv4Address('192.168.0.1', '#b'))
+   '0b11000000101010000000000000000001'
+   >>> format(ipaddress.IPv6Address('2001:db8::1000'))
+   '2001:db8::1000'
+   >>> format(ipaddress.IPv6Address('2001:db8::1000'), '_X')
+   '2001_0DB8_0000_0000_0000_0000_0000_1000'
+   >>> format(ipaddress.IPv6Address('2001:db8::1000'), '#_n')
+   '0x2001_0db8_0000_0000_0000_0000_0000_1000'
+
+.. versionadded:: 3.9
+
+
 Operators
 ^^^^^^^^^
 
