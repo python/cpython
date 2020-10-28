@@ -137,7 +137,6 @@ pysqlite_complete_statement_impl(PyObject *module, const char *statement)
 _sqlite3.enable_shared_cache as pysqlite_enable_shared_cache
 
     enable as do_enable: int
-    /
 
 Enable or disable shared cache mode for the calling thread.
 
