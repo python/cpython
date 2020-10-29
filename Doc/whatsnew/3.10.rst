@@ -210,6 +210,13 @@ py_compile
 Added ``--quiet`` option to command-line interface of :mod:`py_compile`.
 (Contributed by Gregory Schevchenko in :issue:`38731`.)
 
+shelve
+------
+
+The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
+instead of :mod:`pickle` protocol ``3`` when creating shelves.
+(Contributed by Zackery Spytz in :issue:`34204`.)
+
 sys
 ---
 
