@@ -199,33 +199,35 @@ write code that handles both IP versions correctly.  Address objects are
       ``True`` if the address is reserved for link-local usage.  See
       :RFC:`3927`.
 
-   .. method:: __format__(fmt)
-
-      Returns a string representation of the IP address, controlled by
-      an explicit format string.
-      *fmt* can be one of the following: ``'s'``, the default option,
-      equivalent to :func:`str`, ``'b'`` for a zero-padded binary string,
-      ``'X'`` or ``'x'`` for an uppercase or lowercase hexadecimal
-      representation, or ``'n'``, which is equivalent to ``'b'`` for IPv4
-      addresses and ``'x'`` for IPv6. For binary and hexadecimal
-      representations, the form specifier ``'#'`` and the grouping option
-      ``'_'`` are available.
-
-         >>> ipaddress.IPv4Address('192.168.0.1').__format__('s')
-         '192.168.0.1'
-         >>> ipaddress.IPv4Address('192.168.0.1').__format__('#b')
-         '0b11000000101010000000000000000001'
-         >>> ipaddress.IPv6Address('2001:db8::1000').__format__('s')
-         '2001:db8::1000'
-         >>> ipaddress.IPv6Address('2001:db8::1000').__format__('_X')
-         '2001_0DB8_0000_0000_0000_0000_0000_1000'
-         >>> ipaddress.IPv6Address('2001:db8::1000').__format__('#_n')
-         '0x2001_0db8_0000_0000_0000_0000_0000_1000'
-
-      .. versionadded:: 3.9
-
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
+
+.. method:: ipaddress.__format__(fmt)
+
+   Returns a string representation of the IP address, controlled by
+   an explicit format string.
+   *fmt* can be one of the following: ``'s'``, the default option,
+   equivalent to :func:`str`, ``'b'`` for a zero-padded binary string,
+   ``'X'`` or ``'x'`` for an uppercase or lowercase hexadecimal
+   representation, or ``'n'``, which is equivalent to ``'b'`` for IPv4
+   addresses and ``'x'`` for IPv6. For binary and hexadecimal
+   representations, the form specifier ``'#'`` and the grouping option
+   ``'_'`` are available. ``__format__`` is used by ``format``, ``str.format``
+   and f-strings.
+
+      >>> format(ipaddress.IPv4Address('192.168.0.1'))
+      '192.168.0.1'
+      >>> '{:#b}'.format(ipaddress.IPv4Address('192.168.0.1'))
+      '0b11000000101010000000000000000001'
+      >>> ipv6_address = ipaddress.IPv6Address('2001:db8::1000')
+      >>> f'{ipv6_address:'s'}'
+      '2001:db8::1000'
+      >>> format(ipaddress.IPv6Address('2001:db8::1000'), '_X')
+      '2001_0DB8_0000_0000_0000_0000_0000_1000'
+      >>> '{:#_n}'.format(ipaddress.IPv6Address('2001:db8::1000'))
+      '0x2001_0db8_0000_0000_0000_0000_0000_1000'
+
+   .. versionadded:: 3.9
 
 
 .. class:: IPv6Address(address)
@@ -289,10 +291,6 @@ write code that handles both IP versions correctly.  Address objects are
       .. versionadded:: 3.4
          is_global
 
-   .. method:: __format__(fmt)
-
-      .. versionadded:: 3.9
-
    .. attribute:: is_site_local
 
       ``True`` if the address is reserved for site-local usage.  Note that
@@ -326,6 +324,12 @@ write code that handles both IP versions correctly.  Address objects are
       the embedded ``(server, client)`` IP address pair.  For any other
       address, this property will be ``None``.
 
+.. method:: ipaddress.__format__(fmt)
+
+   Refer to the corresponding method documentation in
+   :class:`IPv4Address`.
+
+   .. versionadded:: 3.9
 
 Conversion to Strings and Integers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
