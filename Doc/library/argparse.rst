@@ -853,6 +853,8 @@ is available in ``argparse`` and adds support for boolean actions such as
     >>> parser.parse_args(['--no-foo'])
     Namespace(foo=False)
 
+.. versionadded:: 3.9
+
 The recommended way to create a custom action is to extend :class:`Action`,
 overriding the ``__call__`` method and optionally the ``__init__`` and
 ``format_usage`` methods.
