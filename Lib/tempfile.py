@@ -144,8 +144,7 @@ class _RandomNameSequence:
 
     def __next__(self):
         c = self.characters
-        choose = self.rng.choice
-        return ''.join(choose(c) for _ in range(self.length))
+        return ''.join(self.rng.choices(c, k=self.length))
 
 def _candidate_tempdir_list():
     """Generate a list of candidate temporary directories which
