@@ -88,25 +88,6 @@ class select.kqueue "kqueue_queue_Object *" "_selectstate_global->kqueue_queue_T
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=41071028e0ede093]*/
 
-static int
-fildes_converter(PyObject *o, void *p)
-{
-    int fd;
-    int *pointer = (int *)p;
-    fd = PyObject_AsFileDescriptor(o);
-    if (fd == -1)
-        return 0;
-    *pointer = fd;
-    return 1;
-}
-
-/*[python input]
-class fildes_converter(CConverter):
-    type = 'int'
-    converter = 'fildes_converter'
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=ca54eb5aa476e20a]*/
-
 /* list of Python objects and their file descriptor */
 typedef struct {
     PyObject *obj;                           /* owned reference */
@@ -518,11 +499,14 @@ select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask)
     key = PyLong_FromLong(fd);
     if (key == NULL)
         return NULL;
-    if (PyDict_GetItemWithError(self->dict, key) == NULL) {
-        if (!PyErr_Occurred()) {
-            errno = ENOENT;
-            PyErr_SetFromErrno(PyExc_OSError);
-        }
+    err = PyDict_Contains(self->dict, key);
+    if (err < 0) {
+        Py_DECREF(key);
+        return NULL;
+    }
+    if (err == 0) {
+        errno = ENOENT;
+        PyErr_SetFromErrno(PyExc_OSError);
         Py_DECREF(key);
         return NULL;
     }

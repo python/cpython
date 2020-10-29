@@ -491,7 +491,7 @@ in the settings dialog.  (To prevent auto popups, set the delay to a
 large number of milliseconds, such as 100000000.) For imported module
 names or class or function attributes, type '.'.
 For filenames in the root directory, type :data:`os.sep` or
-data:`os.altsep` immediately after an opening quote.  (On Windows,
+:data:`os.altsep` immediately after an opening quote.  (On Windows,
 one can specify a drive first.)  Move into subdirectories by typing a
 directory name and a separator.
 
@@ -527,30 +527,33 @@ by typing '_' after '.', either before or after the box is opened.
 Calltips
 ^^^^^^^^
 
-A calltip is shown when one types :kbd:`(` after the name of an *accessible*
-function.  A name expression may include dots and subscripts.  A calltip
-remains until it is clicked, the cursor is moved out of the argument area,
-or :kbd:`)` is typed.  When the cursor is in the argument part of a definition,
-the menu or shortcut display a calltip.
+A calltip is shown automatically when one types :kbd:`(` after the name
+of an *accessible* function.  A function name expression may include
+dots and subscripts.  A calltip remains until it is clicked, the cursor
+is moved out of the argument area, or :kbd:`)` is typed.  Whenever the
+cursor is in the argument part of a definition, select Edit and "Show
+Call Tip" on the menu or enter its shortcut to display a calltip.
 
-A calltip consists of the function signature and the first line of the
-docstring.  For builtins without an accessible signature, the calltip
-consists of all lines up the fifth line or the first blank line.  These
-details may change.
+The calltip consists of the function's signature and docstring up to
+the latter's first blank line or the fifth non-blank line.  (Some builtin
+functions lack an accessible signature.)  A '/' or '*' in the signature
+indicates that the preceding or following arguments are passed by
+position or name (keyword) only.  Details are subject to change.
 
-The set of *accessible* functions depends on what modules have been imported
-into the user process, including those imported by Idle itself,
-and what definitions have been run, all since the last restart.
+In Shell, the accessible functions depends on what modules have been
+imported into the user process, including those imported by Idle itself,
+and which definitions have been run, all since the last restart.
 
 For example, restart the Shell and enter ``itertools.count(``.  A calltip
-appears because Idle imports itertools into the user process for its own use.
-(This could change.)  Enter ``turtle.write(`` and nothing appears.  Idle does
-not import turtle.  The menu or shortcut do nothing either.  Enter
-``import turtle`` and then ``turtle.write(`` will work.
+appears because Idle imports itertools into the user process for its own
+use.  (This could change.)  Enter ``turtle.write(`` and nothing appears.
+Idle does not itself import turtle.  The menu entry and shortcut also do
+nothing.  Enter ``import turtle``.  Thereafter, ``turtle.write(``
+will display a calltip.
 
-In an editor, import statements have no effect until one runs the file.  One
-might want to run a file after writing the import statements at the top,
-or immediately run an existing file before editing.
+In an editor, import statements have no effect until one runs the file.
+One might want to run a file after writing import statements, after
+adding function definitions, or after opening an existing file.
 
 .. _code-context:
 

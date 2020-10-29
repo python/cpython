@@ -1,5 +1,12 @@
-# Requirements for docs build on netlify
-# Pin sphinx to version specified in .travis.yml
-sphinx==2.2.0
+# Requirements to build the Python documentation
+
+# Sphinx version is pinned so that new versions that introduce new warnings
+# won't suddenly cause build failures. Updating the version is fine as long
+# as no warnings are raised by doing so.
+sphinx==3.2.1
+
 blurb
+
+# The theme used by the documentation is stored separately, so we need
+# to install that as well.
 python-docs-theme

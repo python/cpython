@@ -1,0 +1,2 @@
+:c:data:`Py_FileSystemDefaultEncodeErrors` and :c:data:`Py_UTF8Mode` are
+available again in limited API.

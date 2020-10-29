@@ -793,8 +793,17 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             f.add_done_callback(self._loop_self_reading)
 
     def _write_to_self(self):
+        # This may be called from a different thread, possibly after
+        # _close_self_pipe() has been called or even while it is
+        # running.  Guard for self._csock being None or closed.  When
+        # a socket is closed, send() raises OSError (with errno set to
+        # EBADF, but let's not rely on the exact error code).
+        csock = self._csock
+        if csock is None:
+            return
+
         try:
-            self._csock.send(b'\0')
+            csock.send(b'\0')
         except OSError:
             if self._debug:
                 logger.debug("Fail to write a null byte into the "

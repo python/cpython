@@ -2321,7 +2321,8 @@ MemoryError_dealloc(PyBaseExceptionObject *self)
     /* If this is a subclass of MemoryError, we don't need to
      * do anything in the free-list*/
     if (!Py_IS_TYPE(self, (PyTypeObject *) PyExc_MemoryError)) {
-        return Py_TYPE(self)->tp_free((PyObject *)self);
+        Py_TYPE(self)->tp_free((PyObject *)self);
+        return;
     }
 
     _PyObject_GC_UNTRACK(self);

@@ -185,6 +185,7 @@
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
     <ClInclude Include="..\Include\internal\pycore_list.h" />
+    <ClInclude Include="..\Include\internal\pycore_long.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
@@ -196,6 +197,8 @@
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h" />
     <ClInclude Include="..\Include\internal\pycore_traceback.h" />
     <ClInclude Include="..\Include\internal\pycore_tuple.h" />
+    <ClInclude Include="..\Include\internal\pycore_ucnhash.h" />
+    <ClInclude Include="..\Include\internal\pycore_unionobject.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
     <ClInclude Include="..\Include\interpreteridobject.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
@@ -251,7 +254,6 @@
     <ClInclude Include="..\Include\traceback.h" />
     <ClInclude Include="..\Include\tracemalloc.h" />
     <ClInclude Include="..\Include\tupleobject.h" />
-    <ClInclude Include="..\Include\ucnhash.h" />
     <ClInclude Include="..\Include\unicodeobject.h" />
     <ClInclude Include="..\Include\weakrefobject.h" />
     <ClInclude Include="..\Modules\_math.h" />
@@ -412,6 +414,7 @@
     <ClCompile Include="..\Objects\typeobject.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
+    <ClCompile Include="..\Objects\unionobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
     <ClCompile Include="..\Parser\myreadline.c" />
     <ClCompile Include="..\Parser\tokenizer.c" />

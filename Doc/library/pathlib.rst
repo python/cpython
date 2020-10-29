@@ -1008,6 +1008,10 @@ call fails (for example because the path doesn't exist).
       >>> target.open().read()
       'some text'
 
+   The target path may be absolute or relative. Relative paths are interpreted
+   relative to the current working directory, *not* the directory of the Path
+   object.
+
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.
 
@@ -1017,6 +1021,10 @@ call fails (for example because the path doesn't exist).
    Rename this file or directory to the given *target*, and return a new Path
    instance pointing to *target*.  If *target* points to an existing file or
    directory, it will be unconditionally replaced.
+
+   The target path may be absolute or relative. Relative paths are interpreted
+   relative to the current working directory, *not* the directory of the Path
+   object.
 
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.
@@ -1158,7 +1166,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.write_text(data, encoding=None, errors=None)
+.. method:: Path.write_text(data, encoding=None, errors=None, newline=None)
 
    Open the file pointed to in text mode, write *data* to it, and close the
    file::
@@ -1173,6 +1181,9 @@ call fails (for example because the path doesn't exist).
    have the same meaning as in :func:`open`.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.10
+      The *newline* parameter was added.
 
 Correspondence to tools in the :mod:`os` module
 -----------------------------------------------

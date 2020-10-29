@@ -73,6 +73,7 @@ typedef struct {
     growable_comment_array type_ignore_comments;
     Token *known_err_token;
     int level;
+    int call_invalid_rules;
 } Parser;
 
 typedef struct {
@@ -91,7 +92,7 @@ typedef struct {
 } NameDefaultPair;
 
 typedef struct {
-    asdl_seq *plain_names;
+    asdl_arg_seq *plain_names;
     asdl_seq *names_with_defaults; // asdl_seq* of NameDefaultsPair's
 } SlashWithDefault;
 
@@ -178,8 +179,8 @@ CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
     return result;
 }
 
-#define CHECK(result) CHECK_CALL(p, result)
-#define CHECK_NULL_ALLOWED(result) CHECK_CALL_NULL_ALLOWED(p, result)
+#define CHECK(type, result) ((type) CHECK_CALL(p, result))
+#define CHECK_NULL_ALLOWED(type, result) ((type) CHECK_CALL_NULL_ALLOWED(p, result))
 
 PyObject *_PyPegen_new_type_comment(Parser *, char *);
 
@@ -218,7 +219,7 @@ INVALID_VERSION_CHECK(Parser *p, int version, char *msg, void *node)
     return node;
 }
 
-#define CHECK_VERSION(version, msg, node) INVALID_VERSION_CHECK(p, version, msg, node)
+#define CHECK_VERSION(type, version, msg, node) ((type) INVALID_VERSION_CHECK(p, version, msg, node))
 
 arg_ty _PyPegen_add_type_comment_to_arg(Parser *, arg_ty, Token *);
 PyObject *_PyPegen_new_identifier(Parser *, char *);
@@ -229,7 +230,7 @@ mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char
 void *_PyPegen_run_parser(Parser *);
 mod_ty _PyPegen_run_parser_from_file(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
 mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
-void *_PyPegen_interactive_exit(Parser *);
+asdl_stmt_seq *_PyPegen_interactive_exit(Parser *);
 asdl_seq *_PyPegen_singleton_seq(Parser *, void *);
 asdl_seq *_PyPegen_seq_insert_in_front(Parser *, void *, asdl_seq *);
 asdl_seq *_PyPegen_seq_append_to_end(Parser *, asdl_seq *, void *);
@@ -237,33 +238,33 @@ asdl_seq *_PyPegen_seq_flatten(Parser *, asdl_seq *);
 expr_ty _PyPegen_join_names_with_dot(Parser *, expr_ty, expr_ty);
 int _PyPegen_seq_count_dots(asdl_seq *);
 alias_ty _PyPegen_alias_for_star(Parser *);
-asdl_seq *_PyPegen_map_names_to_ids(Parser *, asdl_seq *);
+asdl_identifier_seq *_PyPegen_map_names_to_ids(Parser *, asdl_expr_seq *);
 CmpopExprPair *_PyPegen_cmpop_expr_pair(Parser *, cmpop_ty, expr_ty);
 asdl_int_seq *_PyPegen_get_cmpops(Parser *p, asdl_seq *);
-asdl_seq *_PyPegen_get_exprs(Parser *, asdl_seq *);
+asdl_expr_seq *_PyPegen_get_exprs(Parser *, asdl_seq *);
 expr_ty _PyPegen_set_expr_context(Parser *, expr_ty, expr_context_ty);
 KeyValuePair *_PyPegen_key_value_pair(Parser *, expr_ty, expr_ty);
-asdl_seq *_PyPegen_get_keys(Parser *, asdl_seq *);
-asdl_seq *_PyPegen_get_values(Parser *, asdl_seq *);
+asdl_expr_seq *_PyPegen_get_keys(Parser *, asdl_seq *);
+asdl_expr_seq *_PyPegen_get_values(Parser *, asdl_seq *);
 NameDefaultPair *_PyPegen_name_default_pair(Parser *, arg_ty, expr_ty, Token *);
-SlashWithDefault *_PyPegen_slash_with_default(Parser *, asdl_seq *, asdl_seq *);
+SlashWithDefault *_PyPegen_slash_with_default(Parser *, asdl_arg_seq *, asdl_seq *);
 StarEtc *_PyPegen_star_etc(Parser *, arg_ty, asdl_seq *, arg_ty);
-arguments_ty _PyPegen_make_arguments(Parser *, asdl_seq *, SlashWithDefault *,
-                            asdl_seq *, asdl_seq *, StarEtc *);
+arguments_ty _PyPegen_make_arguments(Parser *, asdl_arg_seq *, SlashWithDefault *,
+                                     asdl_arg_seq *, asdl_seq *, StarEtc *);
 arguments_ty _PyPegen_empty_arguments(Parser *);
 AugOperator *_PyPegen_augoperator(Parser*, operator_ty type);
-stmt_ty _PyPegen_function_def_decorators(Parser *, asdl_seq *, stmt_ty);
-stmt_ty _PyPegen_class_def_decorators(Parser *, asdl_seq *, stmt_ty);
+stmt_ty _PyPegen_function_def_decorators(Parser *, asdl_expr_seq *, stmt_ty);
+stmt_ty _PyPegen_class_def_decorators(Parser *, asdl_expr_seq *, stmt_ty);
 KeywordOrStarred *_PyPegen_keyword_or_starred(Parser *, void *, int);
-asdl_seq *_PyPegen_seq_extract_starred_exprs(Parser *, asdl_seq *);
-asdl_seq *_PyPegen_seq_delete_starred_exprs(Parser *, asdl_seq *);
-expr_ty _PyPegen_collect_call_seqs(Parser *, asdl_seq *, asdl_seq *,
+asdl_expr_seq *_PyPegen_seq_extract_starred_exprs(Parser *, asdl_seq *);
+asdl_keyword_seq *_PyPegen_seq_delete_starred_exprs(Parser *, asdl_seq *);
+expr_ty _PyPegen_collect_call_seqs(Parser *, asdl_expr_seq *, asdl_seq *,
                      int lineno, int col_offset, int end_lineno,
                      int end_col_offset, PyArena *arena);
 expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_seq *);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
 int _PyPegen_check_barry_as_flufl(Parser *);
-mod_ty _PyPegen_make_module(Parser *, asdl_seq *);
+mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 
 // Error reporting helpers
 typedef enum {
@@ -277,7 +278,7 @@ expr_ty _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type);
 Py_LOCAL_INLINE(void *)
 _RAISE_SYNTAX_ERROR_INVALID_TARGET(Parser *p, TARGETS_TYPE type, void *e)
 {
-    expr_ty invalid_target = CHECK_NULL_ALLOWED(_PyPegen_get_invalid_target(e, type));
+    expr_ty invalid_target = CHECK_NULL_ALLOWED(expr_ty, _PyPegen_get_invalid_target(e, type));
     if (invalid_target != NULL) {
         const char *msg;
         if (type == STAR_TARGETS || type == FOR_TARGETS) {

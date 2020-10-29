@@ -18,6 +18,7 @@ At large scale, the structure of the module is following:
 """
 
 from abc import abstractmethod, ABCMeta
+import ast
 import collections
 import collections.abc
 import contextlib
@@ -103,6 +104,7 @@ __all__ = [
     'get_args',
     'get_origin',
     'get_type_hints',
+    'is_typeddict',
     'NewType',
     'no_type_check',
     'no_type_check_decorator',
@@ -111,12 +113,12 @@ __all__ = [
     'runtime_checkable',
     'Text',
     'TYPE_CHECKING',
+    'TypeAlias',
 ]
 
 # The pseudo-submodules 're' and 'io' are part of the public
 # namespace, but excluded from __all__ because they might stomp on
 # legitimate imports of those modules.
-
 
 def _type_check(arg, msg, is_argument=True):
     """Check that the argument is a type, and return it (internal helper).
@@ -145,7 +147,7 @@ def _type_check(arg, msg, is_argument=True):
         return arg
     if isinstance(arg, _SpecialForm) or arg in (Generic, Protocol):
         raise TypeError(f"Plain {arg} is not valid as type argument")
-    if isinstance(arg, (type, TypeVar, ForwardRef)):
+    if isinstance(arg, (type, TypeVar, ForwardRef, types.Union)):
         return arg
     if not callable(arg):
         raise TypeError(f"{msg} Got {arg!r:.100}.")
@@ -205,7 +207,7 @@ def _remove_dups_flatten(parameters):
     # Flatten out Union[Union[...], ...].
     params = []
     for p in parameters:
-        if isinstance(p, _UnionGenericAlias):
+        if isinstance(p, (_UnionGenericAlias, types.Union)):
             params.extend(p.__args__)
         elif isinstance(p, tuple) and len(p) > 0 and p[0] is Union:
             params.extend(p[1:])
@@ -245,7 +247,7 @@ def _tp_cache(func):
 
 
 def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
-    """Evaluate all forward reverences in the given type t.
+    """Evaluate all forward references in the given type t.
     For use of globalns and localns see the docstring for get_type_hints().
     recursive_guard is used to prevent prevent infinite recursion
     with recursive ForwardRef.
@@ -459,6 +461,21 @@ def Literal(self, parameters):
     return _GenericAlias(self, parameters)
 
 
+@_SpecialForm
+def TypeAlias(self, parameters):
+    """Special marker indicating that an assignment should
+    be recognized as a proper type alias definition by type
+    checkers.
+
+    For example::
+
+        Predicate: TypeAlias = Callable[..., bool]
+
+    It's invalid when used anywhere except as in the example above.
+    """
+    raise TypeError(f"{self} is not subscriptable")
+
+
 class ForwardRef(_Final, _root=True):
     """Internal wrapper to hold a forward reference."""
 
@@ -469,6 +486,13 @@ class ForwardRef(_Final, _root=True):
     def __init__(self, arg, is_argument=True):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
+
+        # Double-stringified forward references is a result of activating
+        # the 'annotations' future by default. This way, we eliminate them in
+        # the runtime.
+        if arg.startswith(("'", '\"')) and arg.endswith(("'", '"')):
+            arg = arg[1:-1]
+
         try:
             code = compile(arg, '<string>', 'eval')
         except SyntaxError:
@@ -586,6 +610,12 @@ class TypeVar(_Final, _Immutable, _root=True):
         if def_mod != 'typing':
             self.__module__ = def_mod
 
+    def __or__(self, right):
+        return Union[self, right]
+
+    def __ror__(self, right):
+        return Union[self, right]
+
     def __repr__(self):
         if self.__covariant__:
             prefix = '+'
@@ -693,6 +723,12 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     def __hash__(self):
         return hash((self.__origin__, self.__args__))
 
+    def __or__(self, right):
+        return Union[self, right]
+
+    def __ror__(self, right):
+        return Union[self, right]
+
     @_tp_cache
     def __getitem__(self, params):
         if self.__origin__ in (Generic, Protocol):
@@ -792,6 +828,11 @@ class _SpecialGenericAlias(_BaseGenericAlias, _root=True):
     def __reduce__(self):
         return self._name
 
+    def __or__(self, right):
+        return Union[self, right]
+
+    def __ror__(self, right):
+        return Union[self, right]
 
 class _CallableGenericAlias(_GenericAlias, _root=True):
     def __repr__(self):
@@ -877,6 +918,15 @@ class _UnionGenericAlias(_GenericAlias, _root=True):
             elif args[1] is type(None):
                 return f'typing.Optional[{_type_repr(args[0])}]'
         return super().__repr__()
+
+    def __instancecheck__(self, obj):
+        return self.__subclasscheck__(type(obj))
+
+    def __subclasscheck__(self, cls):
+        for arg in self.__args__:
+            if issubclass(cls, arg):
+                return True
+
 
 
 class Generic:
@@ -1452,6 +1502,20 @@ def get_args(tp):
     if isinstance(tp, GenericAlias):
         return tp.__args__
     return ()
+
+
+def is_typeddict(tp):
+    """Check if an annotation is a TypedDict class
+
+    For example::
+        class Film(TypedDict):
+            title: str
+            year: int
+
+        is_typeddict(Film)  # => True
+        is_typeddict(Union[list, str])  # => False
+    """
+    return isinstance(tp, _TypedDictMeta)
 
 
 def no_type_check(arg):

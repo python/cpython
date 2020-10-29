@@ -4,7 +4,7 @@
   <PropertyGroup>
     <TclMajorVersion>8</TclMajorVersion>
     <TclMinorVersion>6</TclMinorVersion>
-    <TclPatchLevel>9</TclPatchLevel>
+    <TclPatchLevel>10</TclPatchLevel>
     <TclRevision>0</TclRevision>
     <TkMajorVersion>$(TclMajorVersion)</TkMajorVersion>
     <TkMinorVersion>$(TclMinorVersion)</TkMinorVersion>
@@ -36,8 +36,7 @@
     <BuildDirTop>Release</BuildDirTop>
     <BuildDirTop Condition="$(Configuration) == 'Debug'">Debug</BuildDirTop>
     <BuildDirTop Condition="$(TclMachine) != 'IX86'">$(BuildDirTop)_$(TclMachine)</BuildDirTop>
-    <BuildDirTop Condition="$(PlatformToolset) == 'v141'">$(BuildDirTop)_VC13</BuildDirTop>
-    <BuildDirTop Condition="$(PlatformToolset) == 'v140'">$(BuildDirTop)_VC13</BuildDirTop>
+    <BuildDirTop Condition="$(PlatformToolset.StartsWith('v14'))">$(BuildDirTop)_VC13</BuildDirTop>
     <BuildDirTop Condition="$(PlatformToolset) == 'v120'">$(BuildDirTop)_VC12</BuildDirTop>
     <BuildDirTop Condition="$(PlatformToolset) == 'v110'">$(BuildDirTop)_VC11</BuildDirTop>
     <BuildDirTop Condition="$(PlatformToolset) == 'v100'">$(BuildDirTop)_VC10</BuildDirTop>

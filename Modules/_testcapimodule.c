@@ -2702,8 +2702,9 @@ test_PyDateTime_DATE_GET(PyObject *self, PyObject *obj)
     minute = PyDateTime_DATE_GET_MINUTE(obj);
     second = PyDateTime_DATE_GET_SECOND(obj);
     microsecond = PyDateTime_DATE_GET_MICROSECOND(obj);
+    PyObject *tzinfo = PyDateTime_DATE_GET_TZINFO(obj);
 
-    return Py_BuildValue("(llll)", hour, minute, second, microsecond);
+    return Py_BuildValue("(llllO)", hour, minute, second, microsecond, tzinfo);
 }
 
 static PyObject *
@@ -2715,8 +2716,9 @@ test_PyDateTime_TIME_GET(PyObject *self, PyObject *obj)
     minute = PyDateTime_TIME_GET_MINUTE(obj);
     second = PyDateTime_TIME_GET_SECOND(obj);
     microsecond = PyDateTime_TIME_GET_MICROSECOND(obj);
+    PyObject *tzinfo = PyDateTime_TIME_GET_TZINFO(obj);
 
-    return Py_BuildValue("(llll)", hour, minute, second, microsecond);
+    return Py_BuildValue("(llllO)", hour, minute, second, microsecond, tzinfo);
 }
 
 static PyObject *
@@ -3911,6 +3913,25 @@ with_tp_del(PyObject *self, PyObject *args)
     return obj;
 }
 
+static PyObject *
+without_gc(PyObject *Py_UNUSED(self), PyObject *obj)
+{
+    PyTypeObject *tp = (PyTypeObject*)obj;
+    if (!PyType_Check(obj) || !PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
+        return PyErr_Format(PyExc_TypeError, "heap type expected, got %R", obj);
+    }
+    if (PyType_IS_GC(tp)) {
+        // Don't try this at home, kids:
+        tp->tp_flags -= Py_TPFLAGS_HAVE_GC;
+        tp->tp_free = PyObject_Del;
+        tp->tp_traverse = NULL;
+        tp->tp_clear = NULL;
+    }
+    assert(!PyType_IS_GC(tp));
+    Py_INCREF(obj);
+    return obj;
+}
+
 static PyMethodDef ml;
 
 static PyObject *
@@ -5051,6 +5072,7 @@ dict_get_version(PyObject *self, PyObject *args)
 static PyObject *
 raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
 {
+    _Py_IDENTIFIER(send);
     PyGenObject *gen;
 
     if (!PyArg_ParseTuple(args, "O!", &PyGen_Type, &gen))
@@ -5067,7 +5089,7 @@ raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
          because we check for signals before every bytecode operation.
      */
     raise(SIGINT);
-    return _PyGen_Send(gen, Py_None);
+    return _PyObject_CallMethodIdOneArg((PyObject *)gen, &PyId_send, Py_None);
 }
 
 
@@ -5828,6 +5850,7 @@ static PyMethodDef TestMethods[] = {
     {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL},
     {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS},
     {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
+    {"without_gc", without_gc, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

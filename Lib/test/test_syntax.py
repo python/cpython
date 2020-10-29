@@ -752,14 +752,6 @@ Corner-cases that used to fail to raise the correct error:
     Traceback (most recent call last):
     SyntaxError: cannot assign to __debug__
 
-    >>> def f(*args:(lambda __debug__:0)): pass
-    Traceback (most recent call last):
-    SyntaxError: cannot assign to __debug__
-
-    >>> def f(**kwargs:(lambda __debug__:0)): pass
-    Traceback (most recent call last):
-    SyntaxError: cannot assign to __debug__
-
     >>> with (lambda *:0): pass
     Traceback (most recent call last):
     SyntaxError: named arguments must follow bare *
@@ -809,6 +801,9 @@ class SyntaxTestCase(unittest.TestCase):
                 self.assertEqual(err.offset, offset)
         else:
             self.fail("compile() did not raise SyntaxError")
+
+    def test_curly_brace_after_primary_raises_immediately(self):
+        self._check_error("f{", "invalid syntax", mode="single")
 
     def test_assign_call(self):
         self._check_error("f() = 1", "assign")
@@ -950,6 +945,15 @@ pass
         except SyntaxError:
             self.fail("Empty line after a line continuation character is valid.")
 
+    @support.cpython_only
+    def test_nested_named_except_blocks(self):
+        code = ""
+        for i in range(12):
+            code += f"{'    '*i}try:\n"
+            code += f"{'    '*(i+1)}raise Exception\n"
+            code += f"{'    '*i}except Exception as e:\n"
+        code += f"{' '*4*12}pass"
+        self._check_error(code, "too many statically nested blocks")
 
 def test_main():
     support.run_unittest(SyntaxTestCase)

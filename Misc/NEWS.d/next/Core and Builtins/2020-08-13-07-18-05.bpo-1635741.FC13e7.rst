@@ -1,1 +1,0 @@
-Port the :mod:`_blake2` extension module to the multi-phase initialization API (:pep:`489`).
