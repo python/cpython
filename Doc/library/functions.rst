@@ -259,7 +259,7 @@ are always available.  They are listed here in alphabetical order.
    interactive statement (in the latter case, expression statements that
    evaluate to something other than ``None`` will be printed).
 
-   The optional argument *flags* and *dont_inherit* controls which
+   The optional arguments *flags* and *dont_inherit* control which
    :ref:`compiler options <ast-compiler-flags>` should be activated
    and which :ref:`future features <future>` should be allowed. If neither
    is present (or both are zero) the code is compiled with the same flags that
