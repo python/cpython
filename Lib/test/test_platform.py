@@ -1,4 +1,5 @@
 import os
+import copy
 import platform
 import subprocess
 import sys
@@ -188,6 +189,10 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(new.machine, 'machine')
         # processor cannot be replaced
         self.assertEqual(new.processor, res.processor)
+
+    def test_uname_deepcopy(self):
+        res = platform.uname()
+        self.assertEqual(copy.deepcopy(res), res)
 
     @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
     def test_uname_processor(self):
