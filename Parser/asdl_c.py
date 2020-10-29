@@ -1348,6 +1348,27 @@ def generate_ast_state(module_state, f):
         f.write('    PyObject *' + s + ';\n')
     f.write('};')
 
+
+def generate_ast_fini(module_state, f):
+    f.write("""
+void _PyAST_Fini(PyThreadState *tstate)
+{
+#ifdef Py_BUILD_CORE
+    struct ast_state* state = &tstate->interp->ast;
+#else
+    struct ast_state *state = &global_ast_state;
+#endif
+
+""")
+    for s in module_state:
+        f.write("    Py_CLEAR(state->" + s + ');\n')
+    f.write("""
+    state->initialized = 0;
+}
+
+""")
+
+
 def generate_module_def(mod, f, internal_h):
     # Gather all the data needed for ModuleSpec
     visitor_list = set()
@@ -1423,24 +1444,18 @@ get_ast_state(void)
     return state;
 }
 #endif
-
-
-void _PyAST_Fini(PyThreadState *tstate)
-{
-#ifdef Py_BUILD_CORE
-    struct ast_state* state = &tstate->interp->ast;
-#else
-    struct ast_state *state = &global_ast_state;
-#endif
-
 """)
-    for s in module_state:
-        f.write("    Py_CLEAR(state->" + s + ');\n')
-    f.write("""
-    state->initialized = 0;
-}
 
+    # f-string for {mod.name}
+    f.write(f"""
+// Include {mod.name}-ast.h after pycore_interp.h to avoid conflicts
+// with the Yield macro redefined by <winbase.h>
+#include "{mod.name}-ast.h"
+#include "structmember.h"
 """)
+
+    generate_ast_fini(module_state, f)
+
     f.write('static int init_identifiers(struct ast_state *state)\n')
     f.write('{\n')
     for identifier in state_strings:
@@ -1509,8 +1524,6 @@ def write_source(mod, f, internal_h_file):
         #include <stddef.h>
 
         #include "Python.h"
-        #include "{mod.name}-ast.h"
-        #include "structmember.h"
     """), file=f)
 
     generate_module_def(mod, f, internal_h_file)

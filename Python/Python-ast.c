@@ -4,8 +4,6 @@
 #include <stddef.h>
 
 #include "Python.h"
-#include "Python-ast.h"
-#include "structmember.h"
 
 #ifdef Py_BUILD_CORE
 #  include "pycore_ast.h"           // struct ast_state
@@ -258,6 +256,10 @@ get_ast_state(void)
 }
 #endif
 
+// Include Python-ast.h after pycore_interp.h to avoid conflicts
+// with the Yield macro redefined by <winbase.h>
+#include "Python-ast.h"
+#include "structmember.h"
 
 void _PyAST_Fini(PyThreadState *tstate)
 {
