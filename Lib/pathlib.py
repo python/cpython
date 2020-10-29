@@ -548,9 +548,7 @@ class _PreciseSelector(_Selector):
                 return
         except PermissionError:
             return
-
-        for p in self.successor._select_from(path, is_dir, exists, scandir):
-            yield p
+        yield from self.successor._select_from(path, is_dir, exists, scandir)
 
 
 class _WildcardSelector(_Selector):
@@ -571,8 +569,7 @@ class _WildcardSelector(_Selector):
             name = entry.name
             if self.match(name):
                 path = parent_path._make_child_relpath(name)
-                for p in self.successor._select_from(path, is_dir, exists, scandir):
-                    yield p
+                yield from self.successor._select_from(path, is_dir, exists, scandir)
 
 
 class _RecursiveWildcardSelector(_Selector):
@@ -592,8 +589,7 @@ class _RecursiveWildcardSelector(_Selector):
                 continue
             if not entry.is_symlink():
                 path = parent_path._make_child_relpath(entry.name)
-                for p in self._iterate_directories(path, is_dir, scandir):
-                    yield p
+                yield from self._iterate_directories(path, is_dir, scandir)
 
     def _select_from(self, parent_path, is_dir, exists, scandir):
         yielded = set()
@@ -1164,8 +1160,7 @@ class Path(PurePath):
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
         selector = _make_selector(tuple(pattern_parts), self._flavour)
-        for p in selector.select_from(self):
-            yield p
+        yield from selector.select_from(self)
 
     def rglob(self, pattern):
         """Recursively yield all existing files (of any kind, including
@@ -1177,8 +1172,7 @@ class Path(PurePath):
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
         selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour)
-        for p in selector.select_from(self):
-            yield p
+        yield from selector.select_from(self)
 
     def absolute(self):
         """Return an absolute version of this path.  This function works
