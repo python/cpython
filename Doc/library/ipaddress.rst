@@ -219,8 +219,7 @@ write code that handles both IP versions correctly.  Address objects are
       '192.168.0.1'
       >>> '{:#b}'.format(ipaddress.IPv4Address('192.168.0.1'))
       '0b11000000101010000000000000000001'
-      >>> ipv6_address = ipaddress.IPv6Address('2001:db8::1000')
-      >>> f'{ipv6_address:'s'}'
+      >>> f'{ipaddress.IPv6Address("2001:db8::1000"):s}'
       '2001:db8::1000'
       >>> format(ipaddress.IPv6Address('2001:db8::1000'), '_X')
       '2001_0DB8_0000_0000_0000_0000_0000_1000'
