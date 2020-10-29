@@ -1,0 +1,2 @@
+Fix a stack overflow error when repr() is given for task or future that
+recursively returns itself.
