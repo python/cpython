@@ -199,9 +199,34 @@ write code that handles both IP versions correctly.  Address objects are
       ``True`` if the address is reserved for link-local usage.  See
       :RFC:`3927`.
 
+   .. method:: __format__(fmt)
+
+      Returns a string representation of the IP address, controlled by
+      an explicit format string.
+      *fmt* can be one of the following: ``'s'``, the default option,
+      equivalent to :func:`str`, ``'b'`` for a zero-padded binary string,
+      ``'X'`` or ``'x'`` for an uppercase or lowercase hexadecimal 
+      representation, or ``'n'``, which is equivalent to ``'b'`` for IPv4
+      addresses and ``'x'`` for IPv6. For binary and hexadecimal
+      representations, the form specifier ``'#'`` and the grouping option
+      ``'_'`` are available.
+
+         >>> ipaddress.IPv4Address('192.168.0.1').__format__('s')
+         '192.168.0.1'
+         >>> ipaddress.IPv4Address('192.168.0.1').__format__('#b')
+         '0b11000000101010000000000000000001'
+         >>> ipaddress.IPv6Address('2001:db8::1000').__format__('s')
+         '2001:db8::1000'
+         >>> ipaddress.IPv6Address('2001:db8::1000').__format__('_X')
+         '2001_0DB8_0000_0000_0000_0000_0000_1000'
+         >>> ipaddress.IPv6Address('2001:db8::1000').__format__('#_n')
+         '0x2001_0db8_0000_0000_0000_0000_0000_1000'
+
+      .. versionadded:: 3.9
+
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
-
+   
 
 .. class:: IPv6Address(address)
 
@@ -246,8 +271,8 @@ write code that handles both IP versions correctly.  Address objects are
    groups consisting entirely of zeroes included.
 
 
-   For the following attributes, see the corresponding documentation of the
-   :class:`IPv4Address` class:
+   For the following attributes and methods, see the corresponding 
+   documentation of the :class:`IPv4Address` class:
 
    .. attribute:: packed
    .. attribute:: reverse_pointer
@@ -263,6 +288,10 @@ write code that handles both IP versions correctly.  Address objects are
 
       .. versionadded:: 3.4
          is_global
+
+   .. method:: __format__(fmt)
+
+      .. versionadded:: 3.9
 
    .. attribute:: is_site_local
 
@@ -315,32 +344,6 @@ the :func:`str` and :func:`int` builtin functions::
    1
 
 Note that IPv6 scoped addresses are converted to integers without scope zone ID.
-
-
-Other formatting options
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-String representations can be formatted using ``format(address[, spec])``.
-The first argument is an IPv4 or IPv6 address object. *spec* can be one of the
-following: ``'s'``, the default option, equivalent to :func:`str`, ``'b'``
-for a zero-padded binary string, ``'X'`` or ``'x'`` for an uppercase or
-lowercase hexadecimal representation, or ``'n'``, which is equivalent to
-``'b'`` for IPv4 addresses and ``'x'`` for IPv6. For binary and hexadecimal
-representations, the form specifier ``'#'`` and the grouping option
-``'_'`` are available::
-
-   >>> format(ipaddress.IPv4Address('192.168.0.1', 's'))
-   '192.168.0.1'
-   >>> format(ipaddress.IPv4Address('192.168.0.1', '#b'))
-   '0b11000000101010000000000000000001'
-   >>> format(ipaddress.IPv6Address('2001:db8::1000'))
-   '2001:db8::1000'
-   >>> format(ipaddress.IPv6Address('2001:db8::1000'), '_X')
-   '2001_0DB8_0000_0000_0000_0000_0000_1000'
-   >>> format(ipaddress.IPv6Address('2001:db8::1000'), '#_n')
-   '0x2001_0db8_0000_0000_0000_0000_0000_1000'
-
-.. versionadded:: 3.9
 
 
 Operators
