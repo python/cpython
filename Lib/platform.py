@@ -782,10 +782,15 @@ class uname_result(
         ):
     """
     A uname_result that's largely compatible with a
-    simple namedtuple except that 'platform' is
+    simple namedtuple except that 'processor' is
     resolved late and cached to avoid calling "uname"
     except when needed.
     """
+
+    def __new__(cls, *args):
+        # exclude 'processor' arg
+        args = args[:5] + args[6:]
+        return super().__new__(cls, *args)
 
     @functools.cached_property
     def processor(self):
