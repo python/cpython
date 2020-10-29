@@ -264,7 +264,7 @@ get_ast_state(void)
 void _PyAST_Fini(PyThreadState *tstate)
 {
 #ifdef Py_BUILD_CORE
-    struct ast_state* state = &tstate->interp->ast;
+    struct ast_state *state = &tstate->interp->ast;
 #else
     struct ast_state *state = &global_ast_state;
 #endif
@@ -9696,6 +9696,9 @@ static int
 astmodule_exec(PyObject *m)
 {
     struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return -1;
+    }
     if (PyModule_AddObject(m, "AST", state->AST_type) < 0) {
         return -1;
     }

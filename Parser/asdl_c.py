@@ -1095,6 +1095,9 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("astmodule_exec(PyObject *m)", 0)
         self.emit("{", 0)
         self.emit('struct ast_state *state = get_ast_state();', 1)
+        self.emit('if (state == NULL) {', 1)
+        self.emit('return -1;', 2)
+        self.emit('}', 1)
         self.emit('if (PyModule_AddObject(m, "AST", state->AST_type) < 0) {', 1)
         self.emit('return -1;', 2)
         self.emit('}', 1)
@@ -1354,7 +1357,7 @@ def generate_ast_fini(module_state, f):
 void _PyAST_Fini(PyThreadState *tstate)
 {
 #ifdef Py_BUILD_CORE
-    struct ast_state* state = &tstate->interp->ast;
+    struct ast_state *state = &tstate->interp->ast;
 #else
     struct ast_state *state = &global_ast_state;
 #endif
