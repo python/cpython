@@ -524,16 +524,6 @@ def system_alias(system, release, version):
             # XXX Whatever the new SunOS marketing name is...
             system = 'Solaris'
 
-    elif system == 'IRIX64':
-        # IRIX reports IRIX64 on platforms with 64-bit support; yet it
-        # is really a version and not a different platform, since 32-bit
-        # apps are also supported..
-        system = 'IRIX'
-        if version:
-            version = version + ' (64bit)'
-        else:
-            version = '64bit'
-
     elif system in ('win32', 'win16'):
         # In case one of the other tricks
         system = 'Windows'
@@ -698,9 +688,6 @@ def architecture(executable=sys.executable, bits='', linkage=''):
     # Bits
     if '32-bit' in fileout:
         bits = '32bit'
-    elif 'N32' in fileout:
-        # On Irix only
-        bits = 'n32bit'
     elif '64-bit' in fileout:
         bits = '64bit'
 
