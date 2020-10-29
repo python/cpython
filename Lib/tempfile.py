@@ -139,10 +139,6 @@ class _RandomNameSequence:
         self.characters = characters
         self.length = length
 
-    @property
-    def variants(self):
-        return len(self.characters) ** self.length
-
     def __iter__(self):
         return self
 
