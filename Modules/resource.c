@@ -313,13 +313,10 @@ resource_getpagesize_impl(PyObject *module)
     long pagesize = 0;
 #if defined(HAVE_GETPAGESIZE)
     pagesize = getpagesize();
-#elif defined(HAVE_SYSCONF)
-#if defined(_SC_PAGE_SIZE)
+#elif defined(HAVE_SYSCONF) && defined(_SC_PAGE_SIZE)
     pagesize = sysconf(_SC_PAGE_SIZE);
 #else
-    /* Irix 5.3 has _SC_PAGESIZE, but not _SC_PAGE_SIZE */
-    pagesize = sysconf(_SC_PAGESIZE);
-#endif
+#   error "unsupported platform: resource.getpagesize()"
 #endif
     return pagesize;
 }

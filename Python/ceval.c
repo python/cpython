@@ -3193,7 +3193,7 @@ main_loop:
 
                         descr = _PyType_Lookup(type, name);
                         if (descr == NULL ||
-                            descr->ob_type->tp_descr_get == NULL ||
+                            Py_TYPE(descr)->tp_descr_get == NULL ||
                             !PyDescr_IsData(descr))
                         {
                             dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
