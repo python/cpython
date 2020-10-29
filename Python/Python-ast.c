@@ -226,7 +226,7 @@ struct ast_state {
     PyObject *vararg;
     PyObject *withitem_type;
 };
-#endif
+#endif   // Py_BUILD_CORE
 
 // Forward declaration
 static int init_types(struct ast_state *state);
@@ -254,7 +254,7 @@ get_ast_state(void)
     }
     return state;
 }
-#endif
+#endif   // Py_BUILD_CORE
 
 // Include Python-ast.h after pycore_interp.h to avoid conflicts
 // with the Yield macro redefined by <winbase.h>

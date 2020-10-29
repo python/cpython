@@ -1413,7 +1413,7 @@ def generate_module_def(mod, f, internal_h):
     generate_ast_state(module_state, f)
 
     print(textwrap.dedent(f"""
-        #endif
+        #endif   // Py_BUILD_CORE
     """).rstrip(), file=f)
 
     f.write("""
@@ -1443,7 +1443,7 @@ get_ast_state(void)
     }
     return state;
 }
-#endif
+#endif   // Py_BUILD_CORE
 """)
 
     # f-string for {mod.name}
