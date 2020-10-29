@@ -202,7 +202,7 @@ write code that handles both IP versions correctly.  Address objects are
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
 
-.. method:: ipaddress.__format__(fmt)
+.. method:: IPv4Address.__format__(fmt)
 
    Returns a string representation of the IP address, controlled by
    an explicit format string.
@@ -324,7 +324,7 @@ write code that handles both IP versions correctly.  Address objects are
       the embedded ``(server, client)`` IP address pair.  For any other
       address, this property will be ``None``.
 
-.. method:: ipaddress.__format__(fmt)
+.. method:: IPv6Address.__format__(fmt)
 
    Refer to the corresponding method documentation in
    :class:`IPv4Address`.
