@@ -804,8 +804,9 @@ class uname_result(
 
     @classmethod
     def _make(cls, iterable):
+        # override factory to affect length check
         num_fields = len(cls._fields)
-        result = tuple.__new__(cls, itertools.islice(iterable, num_fields))
+        result = cls.__new__(cls, *iterable)
         if len(result) != num_fields + 1:
             msg = f'Expected {num_fields} arguments, got {len(result)}'
             raise TypeError(msg)
