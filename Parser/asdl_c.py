@@ -1341,6 +1341,13 @@ class ChainOfVisitors:
             v.emit("", 0)
 
 
+def generate_ast_state(module_state, f):
+    f.write('struct ast_state {\n')
+    f.write('    int initialized;\n')
+    for s in module_state:
+        f.write('    PyObject *' + s + ';\n')
+    f.write('};')
+
 def generate_module_def(mod, f, internal_h):
     # Gather all the data needed for ModuleSpec
     visitor_list = set()
@@ -1372,16 +1379,27 @@ def generate_module_def(mod, f, internal_h):
     state_strings = sorted(state_strings)
     module_state = sorted(module_state)
 
-    internal_h.write('struct ast_state {\n')
-    internal_h.write('    int initialized;\n')
-    for s in module_state:
-        internal_h.write('    PyObject *' + s + ';\n')
-    internal_h.write('};\n')
+    generate_ast_state(module_state, internal_h)
+
+    print(textwrap.dedent(f"""
+        #ifdef Py_BUILD_CORE
+        #  include "pycore_ast.h"           // struct ast_state
+        #  include "pycore_interp.h"        // _PyInterpreterState.ast
+        #  include "pycore_pystate.h"       // _PyInterpreterState_GET()
+        #else
+    """).strip(), file=f)
+
+    generate_ast_state(module_state, f)
+
+    print(textwrap.dedent(f"""
+        #endif
+    """).rstrip(), file=f)
 
     f.write("""
 // Forward declaration
 static int init_types(struct ast_state *state);
 
+#ifdef Py_BUILD_CORE
 static struct ast_state*
 get_ast_state(void)
 {
@@ -1392,10 +1410,29 @@ get_ast_state(void)
     }
     return state;
 }
+#else
+static struct ast_state global_ast_state;
+
+static struct ast_state*
+get_ast_state(void)
+{
+    struct ast_state *state = &global_ast_state;
+    if (!init_types(state)) {
+        return NULL;
+    }
+    return state;
+}
+#endif
+
 
 void _PyAST_Fini(PyThreadState *tstate)
 {
+#ifdef Py_BUILD_CORE
     struct ast_state* state = &tstate->interp->ast;
+#else
+    struct ast_state *state = &global_ast_state;
+#endif
+
 """)
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
@@ -1459,6 +1496,7 @@ def write_internal_h_header(mod, f):
 
 def write_internal_h_footer(mod, f):
     print(textwrap.dedent("""
+
         #ifdef __cplusplus
         }
         #endif
@@ -1467,15 +1505,13 @@ def write_internal_h_footer(mod, f):
 
 
 def write_source(mod, f, internal_h_file):
-    f.write('#include <stddef.h>\n')
-    f.write('\n')
-    f.write('#include "Python.h"\n')
-    f.write('#include "pycore_ast.h"           // struct ast_state\n')
-    f.write('#include "pycore_interp.h"        // _PyInterpreterState.ast\n')
-    f.write('#include "pycore_pystate.h"       // _PyInterpreterState_GET()\n')
-    f.write('#include "%s-ast.h"\n' % mod.name)
-    f.write('#include "structmember.h"         // PyMemberDef\n')
-    f.write('\n')
+    print(textwrap.dedent(f"""
+        #include <stddef.h>
+
+        #include "Python.h"
+        #include "{mod.name}-ast.h"
+        #include "structmember.h"
+    """), file=f)
 
     generate_module_def(mod, f, internal_h_file)
 
