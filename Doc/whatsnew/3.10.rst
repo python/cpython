@@ -366,6 +366,8 @@ New Features
 * Added :c:func:`PyUnicode_AsUTF8AndSize` to the limited C API.
   (Contributed by Alex Gaynor in :issue:`41784`.)
 
+* The :c:func:`PyType_GetSlot` function can accept static types.
+  (Contributed by Hai Shi in :issue:`41073`.)
 
 Porting to Python 3.10
 ----------------------
