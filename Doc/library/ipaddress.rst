@@ -205,7 +205,7 @@ write code that handles both IP versions correctly.  Address objects are
       an explicit format string.
       *fmt* can be one of the following: ``'s'``, the default option,
       equivalent to :func:`str`, ``'b'`` for a zero-padded binary string,
-      ``'X'`` or ``'x'`` for an uppercase or lowercase hexadecimal 
+      ``'X'`` or ``'x'`` for an uppercase or lowercase hexadecimal
       representation, or ``'n'``, which is equivalent to ``'b'`` for IPv4
       addresses and ``'x'`` for IPv6. For binary and hexadecimal
       representations, the form specifier ``'#'`` and the grouping option
@@ -226,7 +226,7 @@ write code that handles both IP versions correctly.  Address objects are
 
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
-   
+
 
 .. class:: IPv6Address(address)
 
@@ -271,7 +271,7 @@ write code that handles both IP versions correctly.  Address objects are
    groups consisting entirely of zeroes included.
 
 
-   For the following attributes and methods, see the corresponding 
+   For the following attributes and methods, see the corresponding
    documentation of the :class:`IPv4Address` class:
 
    .. attribute:: packed
