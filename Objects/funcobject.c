@@ -19,9 +19,23 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
             return NULL;
     }
 
-    op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
-    if (op == NULL)
+    /* __module__: If module name is in globals, use it.
+       Otherwise, use None. */
+    module = PyDict_GetItemWithError(globals, __name__);
+    if (module) {
+        Py_INCREF(module);
+    }
+    else if (PyErr_Occurred()) {
         return NULL;
+    }
+
+    op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
+    if (op == NULL) {
+        Py_XDECREF(module);
+        return NULL;
+    }
+    /* Note: No failures from this point on, since func_dealloc() does not
+       expect a partially-created object. */
 
     op->func_weakreflist = NULL;
     Py_INCREF(code);
@@ -34,6 +48,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_kwdefaults = NULL; /* No keyword only defaults */
     op->func_closure = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
+    op->func_module = module;
 
     consts = ((PyCodeObject *)code)->co_consts;
     if (PyTuple_Size(consts) >= 1) {
@@ -47,20 +62,8 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_doc = doc;
 
     op->func_dict = NULL;
-    op->func_module = NULL;
     op->func_annotations = NULL;
 
-    /* __module__: If module name is in globals, use it.
-       Otherwise, use None. */
-    module = PyDict_GetItemWithError(globals, __name__);
-    if (module) {
-        Py_INCREF(module);
-        op->func_module = module;
-    }
-    else if (PyErr_Occurred()) {
-        Py_DECREF(op);
-        return NULL;
-    }
     if (qualname)
         op->func_qualname = qualname;
     else
