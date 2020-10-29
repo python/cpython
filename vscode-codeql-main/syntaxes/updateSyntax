@@ -1,0 +1,4 @@
+#!/bin/bash
+
+
+perl -0777 -pe 's/{\s*"include"\s*:\s*"text.html.markdown#[a-zA-Z_]+\"\s*}\s*,//igs' ../extensions/ql-vscode/out/syntaxes/ql.tmLanguage.json > ./ql.tmLanguage.json

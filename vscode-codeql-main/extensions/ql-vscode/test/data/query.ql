@@ -1,0 +1,1 @@
+select 42, 3.14159, "hello world", true

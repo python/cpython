@@ -1,0 +1,972 @@
+[
+  {
+    "columns": [
+      {
+        "name": "node",
+        "kind": "Entity"
+      },
+      {
+        "name": "key",
+        "kind": "String"
+      },
+      {
+        "name": "value",
+        "kind": "String"
+      }
+    ],
+    "tuples": [
+      [
+        {
+          "id": 26359,
+          "label": "",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 19,
+            "startColumn": 5,
+            "endLine": 19,
+            "endColumn": 22
+          }
+        },
+        "semmle.label",
+        ""
+      ],
+      [
+        {
+          "id": 26360,
+          "label": "",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 15,
+            "startColumn": 6,
+            "endLine": 15,
+            "endColumn": 22
+          }
+        },
+        "semmle.label",
+        ""
+      ],
+      [
+        {
+          "id": 26361,
+          "label": "",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 10,
+            "startColumn": 5,
+            "endLine": 10,
+            "endColumn": 18
+          }
+        },
+        "semmle.label",
+        ""
+      ],
+      [
+        {
+          "id": 0,
+          "label": "[TopLevelFunction] int disable_interrupts()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 19,
+            "startColumn": 5,
+            "endLine": 19,
+            "endColumn": 22
+          }
+        },
+        "semmle.label",
+        "[TopLevelFunction] int disable_interrupts()"
+      ],
+      [
+        {
+          "id": 0,
+          "label": "[TopLevelFunction] int disable_interrupts()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 19,
+            "startColumn": 5,
+            "endLine": 19,
+            "endColumn": 22
+          }
+        },
+        "semmle.order",
+        "3"
+      ],
+      [
+        {
+          "id": 26363,
+          "label": "[TopLevelFunction] void enable_interrupts()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 15,
+            "startColumn": 6,
+            "endLine": 15,
+            "endColumn": 22
+          }
+        },
+        "semmle.label",
+        "[TopLevelFunction] void enable_interrupts()"
+      ],
+      [
+        {
+          "id": 26363,
+          "label": "[TopLevelFunction] void enable_interrupts()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 15,
+            "startColumn": 6,
+            "endLine": 15,
+            "endColumn": 22
+          }
+        },
+        "semmle.order",
+        "2"
+      ],
+      [
+        {
+          "id": 26364,
+          "label": "[TopLevelFunction] int interrupt_init()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 10,
+            "startColumn": 5,
+            "endLine": 10,
+            "endColumn": 18
+          }
+        },
+        "semmle.label",
+        "[TopLevelFunction] int interrupt_init()"
+      ],
+      [
+        {
+          "id": 26364,
+          "label": "[TopLevelFunction] int interrupt_init()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 10,
+            "startColumn": 5,
+            "endLine": 10,
+            "endColumn": 18
+          }
+        },
+        "semmle.order",
+        "1"
+      ],
+      [
+        {
+          "id": 26365,
+          "label": "[Literal] 0",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 21,
+            "startColumn": 9,
+            "endLine": 21,
+            "endColumn": 9
+          }
+        },
+        "Type",
+        "[IntType] int"
+      ],
+      [
+        {
+          "id": 26365,
+          "label": "[Literal] 0",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 21,
+            "startColumn": 9,
+            "endLine": 21,
+            "endColumn": 9
+          }
+        },
+        "semmle.label",
+        "[Literal] 0"
+      ],
+      [
+        {
+          "id": 26365,
+          "label": "[Literal] 0",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 21,
+            "startColumn": 9,
+            "endLine": 21,
+            "endColumn": 9
+          }
+        },
+        "Value",
+        "[Literal] 0"
+      ],
+      [
+        {
+          "id": 26365,
+          "label": "[Literal] 0",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 21,
+            "startColumn": 9,
+            "endLine": 21,
+            "endColumn": 9
+          }
+        },
+        "ValueCategory",
+        "prvalue"
+      ],
+      [
+        {
+          "id": 26366,
+          "label": "[ReturnStmt] return ...",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 21,
+            "startColumn": 2,
+            "endLine": 21,
+            "endColumn": 10
+          }
+        },
+        "semmle.label",
+        "[ReturnStmt] return ..."
+      ],
+      [
+        {
+          "id": 26367,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 20,
+            "startColumn": 1,
+            "endLine": 22,
+            "endColumn": 1
+          }
+        },
+        "semmle.label",
+        "[Block] { ... }"
+      ],
+      [
+        {
+          "id": 26368,
+          "label": "[ReturnStmt] return ...",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 17,
+            "startColumn": 2,
+            "endLine": 17,
+            "endColumn": 8
+          }
+        },
+        "semmle.label",
+        "[ReturnStmt] return ..."
+      ],
+      [
+        {
+          "id": 26369,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 16,
+            "startColumn": 1,
+            "endLine": 18,
+            "endColumn": 1
+          }
+        },
+        "semmle.label",
+        "[Block] { ... }"
+      ],
+      [
+        {
+          "id": 26370,
+          "label": "[Literal] 0",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 12,
+            "startColumn": 9,
+            "endLine": 12,
+            "endColumn": 9
+          }
+        },
+        "Type",
+        "[IntType] int"
+      ],
+      [
+        {
+          "id": 26370,
+          "label": "[Literal] 0",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 12,
+            "startColumn": 9,
+            "endLine": 12,
+            "endColumn": 9
+          }
+        },
+        "semmle.label",
+        "[Literal] 0"
+      ],
+      [
+        {
+          "id": 26370,
+          "label": "[Literal] 0",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 12,
+            "startColumn": 9,
+            "endLine": 12,
+            "endColumn": 9
+          }
+        },
+        "Value",
+        "[Literal] 0"
+      ],
+      [
+        {
+          "id": 26370,
+          "label": "[Literal] 0",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 12,
+            "startColumn": 9,
+            "endLine": 12,
+            "endColumn": 9
+          }
+        },
+        "ValueCategory",
+        "prvalue"
+      ],
+      [
+        {
+          "id": 26371,
+          "label": "[ReturnStmt] return ...",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 12,
+            "startColumn": 2,
+            "endLine": 12,
+            "endColumn": 10
+          }
+        },
+        "semmle.label",
+        "[ReturnStmt] return ..."
+      ],
+      [
+        {
+          "id": 26372,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 11,
+            "startColumn": 1,
+            "endLine": 13,
+            "endColumn": 1
+          }
+        },
+        "semmle.label",
+        "[Block] { ... }"
+      ]
+    ]
+  },
+  {
+    "columns": [
+      {
+        "name": "source",
+        "kind": "Entity"
+      },
+      {
+        "name": "target",
+        "kind": "Entity"
+      },
+      {
+        "name": "key",
+        "kind": "String"
+      },
+      {
+        "name": "value",
+        "kind": "String"
+      }
+    ],
+    "tuples": [
+      [
+        {
+          "id": 0,
+          "label": "[TopLevelFunction] int disable_interrupts()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 19,
+            "startColumn": 5,
+            "endLine": 19,
+            "endColumn": 22
+          }
+        },
+        {
+          "id": 26359,
+          "label": "",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 19,
+            "startColumn": 5,
+            "endLine": 19,
+            "endColumn": 22
+          }
+        },
+        "semmle.label",
+        "params"
+      ],
+      [
+        {
+          "id": 0,
+          "label": "[TopLevelFunction] int disable_interrupts()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 19,
+            "startColumn": 5,
+            "endLine": 19,
+            "endColumn": 22
+          }
+        },
+        {
+          "id": 26359,
+          "label": "",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 19,
+            "startColumn": 5,
+            "endLine": 19,
+            "endColumn": 22
+          }
+        },
+        "semmle.order",
+        "0"
+      ],
+      [
+        {
+          "id": 0,
+          "label": "[TopLevelFunction] int disable_interrupts()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 19,
+            "startColumn": 5,
+            "endLine": 19,
+            "endColumn": 22
+          }
+        },
+        {
+          "id": 26367,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 20,
+            "startColumn": 1,
+            "endLine": 22,
+            "endColumn": 1
+          }
+        },
+        "semmle.label",
+        "body"
+      ],
+      [
+        {
+          "id": 0,
+          "label": "[TopLevelFunction] int disable_interrupts()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 19,
+            "startColumn": 5,
+            "endLine": 19,
+            "endColumn": 22
+          }
+        },
+        {
+          "id": 26367,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 20,
+            "startColumn": 1,
+            "endLine": 22,
+            "endColumn": 1
+          }
+        },
+        "semmle.order",
+        "2"
+      ],
+      [
+        {
+          "id": 26363,
+          "label": "[TopLevelFunction] void enable_interrupts()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 15,
+            "startColumn": 6,
+            "endLine": 15,
+            "endColumn": 22
+          }
+        },
+        {
+          "id": 26360,
+          "label": "",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 15,
+            "startColumn": 6,
+            "endLine": 15,
+            "endColumn": 22
+          }
+        },
+        "semmle.label",
+        "params"
+      ],
+      [
+        {
+          "id": 26363,
+          "label": "[TopLevelFunction] void enable_interrupts()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 15,
+            "startColumn": 6,
+            "endLine": 15,
+            "endColumn": 22
+          }
+        },
+        {
+          "id": 26360,
+          "label": "",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 15,
+            "startColumn": 6,
+            "endLine": 15,
+            "endColumn": 22
+          }
+        },
+        "semmle.order",
+        "0"
+      ],
+      [
+        {
+          "id": 26363,
+          "label": "[TopLevelFunction] void enable_interrupts()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 15,
+            "startColumn": 6,
+            "endLine": 15,
+            "endColumn": 22
+          }
+        },
+        {
+          "id": 26369,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 16,
+            "startColumn": 1,
+            "endLine": 18,
+            "endColumn": 1
+          }
+        },
+        "semmle.label",
+        "body"
+      ],
+      [
+        {
+          "id": 26363,
+          "label": "[TopLevelFunction] void enable_interrupts()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 15,
+            "startColumn": 6,
+            "endLine": 15,
+            "endColumn": 22
+          }
+        },
+        {
+          "id": 26369,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 16,
+            "startColumn": 1,
+            "endLine": 18,
+            "endColumn": 1
+          }
+        },
+        "semmle.order",
+        "2"
+      ],
+      [
+        {
+          "id": 26364,
+          "label": "[TopLevelFunction] int interrupt_init()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 10,
+            "startColumn": 5,
+            "endLine": 10,
+            "endColumn": 18
+          }
+        },
+        {
+          "id": 26361,
+          "label": "",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 10,
+            "startColumn": 5,
+            "endLine": 10,
+            "endColumn": 18
+          }
+        },
+        "semmle.label",
+        "params"
+      ],
+      [
+        {
+          "id": 26364,
+          "label": "[TopLevelFunction] int interrupt_init()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 10,
+            "startColumn": 5,
+            "endLine": 10,
+            "endColumn": 18
+          }
+        },
+        {
+          "id": 26361,
+          "label": "",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 10,
+            "startColumn": 5,
+            "endLine": 10,
+            "endColumn": 18
+          }
+        },
+        "semmle.order",
+        "0"
+      ],
+      [
+        {
+          "id": 26364,
+          "label": "[TopLevelFunction] int interrupt_init()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 10,
+            "startColumn": 5,
+            "endLine": 10,
+            "endColumn": 18
+          }
+        },
+        {
+          "id": 26372,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 11,
+            "startColumn": 1,
+            "endLine": 13,
+            "endColumn": 1
+          }
+        },
+        "semmle.label",
+        "body"
+      ],
+      [
+        {
+          "id": 26364,
+          "label": "[TopLevelFunction] int interrupt_init()",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 10,
+            "startColumn": 5,
+            "endLine": 10,
+            "endColumn": 18
+          }
+        },
+        {
+          "id": 26372,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 11,
+            "startColumn": 1,
+            "endLine": 13,
+            "endColumn": 1
+          }
+        },
+        "semmle.order",
+        "2"
+      ],
+      [
+        {
+          "id": 26366,
+          "label": "[ReturnStmt] return ...",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 21,
+            "startColumn": 2,
+            "endLine": 21,
+            "endColumn": 10
+          }
+        },
+        {
+          "id": 26365,
+          "label": "[Literal] 0",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 21,
+            "startColumn": 9,
+            "endLine": 21,
+            "endColumn": 9
+          }
+        },
+        "semmle.label",
+        "0"
+      ],
+      [
+        {
+          "id": 26366,
+          "label": "[ReturnStmt] return ...",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 21,
+            "startColumn": 2,
+            "endLine": 21,
+            "endColumn": 10
+          }
+        },
+        {
+          "id": 26365,
+          "label": "[Literal] 0",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 21,
+            "startColumn": 9,
+            "endLine": 21,
+            "endColumn": 9
+          }
+        },
+        "semmle.order",
+        "0"
+      ],
+      [
+        {
+          "id": 26367,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 20,
+            "startColumn": 1,
+            "endLine": 22,
+            "endColumn": 1
+          }
+        },
+        {
+          "id": 26366,
+          "label": "[ReturnStmt] return ...",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 21,
+            "startColumn": 2,
+            "endLine": 21,
+            "endColumn": 10
+          }
+        },
+        "semmle.label",
+        "0"
+      ],
+      [
+        {
+          "id": 26367,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 20,
+            "startColumn": 1,
+            "endLine": 22,
+            "endColumn": 1
+          }
+        },
+        {
+          "id": 26366,
+          "label": "[ReturnStmt] return ...",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 21,
+            "startColumn": 2,
+            "endLine": 21,
+            "endColumn": 10
+          }
+        },
+        "semmle.order",
+        "0"
+      ],
+      [
+        {
+          "id": 26369,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 16,
+            "startColumn": 1,
+            "endLine": 18,
+            "endColumn": 1
+          }
+        },
+        {
+          "id": 26368,
+          "label": "[ReturnStmt] return ...",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 17,
+            "startColumn": 2,
+            "endLine": 17,
+            "endColumn": 8
+          }
+        },
+        "semmle.label",
+        "0"
+      ],
+      [
+        {
+          "id": 26369,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 16,
+            "startColumn": 1,
+            "endLine": 18,
+            "endColumn": 1
+          }
+        },
+        {
+          "id": 26368,
+          "label": "[ReturnStmt] return ...",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 17,
+            "startColumn": 2,
+            "endLine": 17,
+            "endColumn": 8
+          }
+        },
+        "semmle.order",
+        "0"
+      ],
+      [
+        {
+          "id": 26371,
+          "label": "[ReturnStmt] return ...",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 12,
+            "startColumn": 2,
+            "endLine": 12,
+            "endColumn": 10
+          }
+        },
+        {
+          "id": 26370,
+          "label": "[Literal] 0",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 12,
+            "startColumn": 9,
+            "endLine": 12,
+            "endColumn": 9
+          }
+        },
+        "semmle.label",
+        "0"
+      ],
+      [
+        {
+          "id": 26371,
+          "label": "[ReturnStmt] return ...",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 12,
+            "startColumn": 2,
+            "endLine": 12,
+            "endColumn": 10
+          }
+        },
+        {
+          "id": 26370,
+          "label": "[Literal] 0",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 12,
+            "startColumn": 9,
+            "endLine": 12,
+            "endColumn": 9
+          }
+        },
+        "semmle.order",
+        "0"
+      ],
+      [
+        {
+          "id": 26372,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 11,
+            "startColumn": 1,
+            "endLine": 13,
+            "endColumn": 1
+          }
+        },
+        {
+          "id": 26371,
+          "label": "[ReturnStmt] return ...",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 12,
+            "startColumn": 2,
+            "endLine": 12,
+            "endColumn": 10
+          }
+        },
+        "semmle.label",
+        "0"
+      ],
+      [
+        {
+          "id": 26372,
+          "label": "[Block] { ... }",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 11,
+            "startColumn": 1,
+            "endLine": 13,
+            "endColumn": 1
+          }
+        },
+        {
+          "id": 26371,
+          "label": "[ReturnStmt] return ...",
+          "url": {
+            "uri": "file:/opt/src/arch/sandbox/lib/interrupts.c",
+            "startLine": 12,
+            "startColumn": 2,
+            "endLine": 12,
+            "endColumn": 10
+          }
+        },
+        "semmle.order",
+        "0"
+      ]
+    ]
+  },
+  {
+    "columns": [
+      {
+        "name": "key",
+        "kind": "String"
+      },
+      {
+        "name": "value",
+        "kind": "String"
+      }
+    ],
+    "tuples": [["semmle.graphKind", "tree"]]
+  }
+]

@@ -1,0 +1,21 @@
+# Logs
+*.log
+
+# Generated files
+/dist/
+out/
+server/
+node_modules/
+gen/
+artifacts/
+
+# Integration test artifacts
+**/.vscode-test/**
+
+# Visual Studio workspace state
+.vs/
+
+# Rush files
+/common/temp/**
+package-deps.json
+**/.rush/temp

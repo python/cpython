@@ -1,0 +1,132 @@
+# Build and release a new version of the extension.
+# Based on example workflow at https://github.com/actions/upload-release-asset
+# licensed under https://github.com/actions/upload-release-asset/blob/master/LICENSE.
+# Reference for passing data between steps:
+# https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+
+name: Release
+on:
+  push:
+    # Path filters are not evaluated for pushes to tags.
+    # (source: https://help.github.com/en/github/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#onpushpull_requestpaths)
+    # So this workflow is triggered in the following events:
+    # - Release event: a SemVer tag, e.g. v1.0.0 or v1.0.0-alpha, is pushed
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+    # OR
+    # - Test event: this file is modified on a branch in the main repo containing `/actions/` in the name.
+    branches:
+      - '**/actions/**'
+    paths:
+      - '**/workflows/release.yml'
+
+jobs:
+  build:
+    name: Release
+    runs-on: ubuntu-latest
+    # TODO Share steps with the main workflow.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '10.18.1'
+
+      - name: Install dependencies
+        run: |
+          cd extensions/ql-vscode
+          npm install
+        shell: bash
+
+      - name: Build
+        run: |
+          cd extensions/ql-vscode
+          npm run build -- --release
+        shell: bash
+
+      - name: Prepare artifacts
+        id: prepare-artifacts
+        run: |
+          mkdir artifacts
+          cp dist/*.vsix artifacts
+          # Record the VSIX path as an output of this step.
+          # This will be used later when uploading a release asset.
+          VSIX_PATH="$(ls dist/*.vsix)"
+          echo "::set-output name=vsix_path::$VSIX_PATH"
+          # Transform the GitHub ref so it can be used in a filename.
+          # The last sed invocation is used for testing branches that modify this workflow.
+          REF_NAME="$(echo ${{ github.ref }} | sed -e 's:^refs/tags/::' | sed -e 's:/:-:g')"
+          echo "::set-output name=ref_name::$REF_NAME"
+
+      # Uploading artifacts is not necessary to create a release.
+      # This is just in case the release itself fails and we want to access the built artifacts from Actions.
+      # TODO Remove if not useful.
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vscode-codeql-extension
+          path: artifacts
+
+        # TODO Run tests, or check that a test run on the same branch succeeded.
+
+      - name: Create release
+        id: create-release
+        uses: actions/create-release@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          # This gives us a chance to manually review the created release before publishing it,
+          # as well as to test the release workflow by pushing temporary tags.
+          # Once we have set all required release metadata in this step, we can set this to `false`.
+          draft: true
+          prerelease: false
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1.0.1
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Get the `upload_url` from the `create-release` step above.
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          # Get the `vsix_path` and `ref_name` from the `prepare-artifacts` step above.
+          asset_path: ${{ steps.prepare-artifacts.outputs.vsix_path }}
+          asset_name: ${{ format('vscode-codeql-{0}.vsix', steps.prepare-artifacts.outputs.ref_name) }}
+          asset_content_type: application/zip
+
+      # The checkout action does not fetch the main branch.
+      # Fetch the main branch so that we can base the version bump PR against main.
+      - name: Fetch main branch
+        run: |
+          git fetch --depth=1 origin main:main
+          git checkout main
+
+      - name: Bump patch version
+        id: bump-patch-version
+        if: success()
+        run: |
+          cd extensions/ql-vscode
+          # Bump to the next patch version. Major or minor version bumps will have to be done manually.
+          # Record the next version number as an output of this step.
+          NEXT_VERSION="$(npm version patch)"
+          echo "::set-output name=next_version::$NEXT_VERSION"
+
+      - name: Add changelog for next release
+        if: success()
+        run: |
+          cd extensions/ql-vscode
+          perl -i -pe 's/^/## \[UNRELEASED\]\n\n/ if($.==3)' CHANGELOG.md
+
+      - name: Create version bump PR
+        uses: peter-evans/create-pull-request@c7f493a8000b8aeb17a1332e326ba76b57cb83eb # v3.4.1
+        if: success()
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Bump version to ${{ steps.bump-patch-version.outputs.next_version }}
+          title: Bump version to ${{ steps.bump-patch-version.outputs.next_version }}
+          body: This PR was automatically generated by the GitHub Actions release workflow in this repository.
+          branch: ${{ format('version/bump-to-{0}', steps.bump-patch-version.outputs.next_version) }}
+          base: main

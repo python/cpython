@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "declaration": true,
+    "strict": true,
+    "module": "commonjs",
+    "target": "es2017",
+    "outDir": "out",
+    "lib": [
+      "es6"
+    ],
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "rootDir": "src",
+    "strictNullChecks": true,
+    "noFallthroughCasesInSwitch": true,
+    "preserveWatchOutput": true,
+    "newLine": "lf",
+    "noImplicitReturns": true,
+    "experimentalDecorators": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "test",
+    "**/view"
+  ]
+}

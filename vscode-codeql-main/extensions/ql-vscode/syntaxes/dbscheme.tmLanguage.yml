@@ -1,0 +1,353 @@
+---
+# This file is transformed into the equivalent JSON TextMate grammar, with the following additional
+# features available:
+#
+# The `regexOptions` Property
+# A top-level property named `regexOptions` may be defined with a string value. This string
+# represents the set of regular expression options to apply to all regular expressions throughout
+# the file.
+#
+# Macros
+# The `macros` element defines a map of macro names to replacement text. When a `match`, `begin`, or
+# `end` property has a value that is a single-key map, the value is replaced with the value of the
+# macro named by the key, with any use of `(?#)` in the macro text replaced with the text of the
+# value of the key, surrounded by a non-capturing group (`(?:)`). For example:
+#
+# The `beginPattern` and `endPattern` Properties
+# A rule can have a `beginPattern` or `endPattern` property whose value is a reference to another
+# rule (e.g. `#other-rule`). The `beginPattern` property is replaced as follows:
+#
+# my-rule:
+#   beginPattern: '#other-rule'
+#
+# would be transformed to
+#
+# my-rule:
+#   begin: '(?#other-rule)'
+#   beginCaptures:
+#     '0':
+#       patterns:
+#       - include: '#other-rule'
+#
+# An `endPattern` property is transformed similary.
+#
+# macros:
+#   repeat: '(?#)*'
+# repository:
+#   multi-letter:
+#     match:
+#       repeat: '[A-Za-z]'
+#     name: scope.multi-letter
+# 
+# would be transformed to
+#
+# repository:
+#   multi-letter:
+#     match: '(?:[A-Za-z])*'
+#     name: scope.multi-letter
+#
+# Reference Expansion
+# Any comment of the form `(?#ref-id)` in a `match`, `begin`, or `end` property will be replaced
+# with the match text of the rule named "ref-id". If the rule named "ref-id" consists of just a
+# `patterns` property with a list of `include` directives, the replacement pattern is the
+# disjunction of the match patterns of all of the included rules.
+
+name: DBScheme
+scopeName: source.dbscheme
+fileTypes: [dbscheme]
+uuid: BE08929D-CEAC-4B88-9844-57475F4E8A82
+regexOptions: 'x' # Ignore pattern whitespace
+
+# Macros are parameterized patterns that can be used as a match elsewhere in the file.
+# To use a macro, replace the string for a `match`, `begin`, or `end` property with a single-element
+# map whose key is the name of the macro to invoke, and whose value is a string to be substituted for
+# any usage of `(?#)` in the macro pattern definition.
+macros:
+  keyword: '\b(?#)(?#end-of-id)'
+  annotation: '\#(?#)(?#end-of-id)'
+
+patterns:
+- include: '#table-column-list'
+- include: '#case-declaration-head'
+- include: '#annotation'
+- include: '#non-context-sensitive'
+- include: '#table-name' 
+- include: '#type-name'
+
+repository:
+  # A character that can appear somewhere in an identifier.
+  id-letter:
+    match: '[0-9A-Za-z_]'
+
+  # Matches a position containing a non-identifier character. Used to ensure we do not match partial
+  # identifiers/keywords in other rules.
+  end-of-id:
+    match: '(?!(?#id-letter))'
+
+  id:
+    match: '\b [A-Za-z][0-9A-Za-z_]* (?#end-of-id)'
+
+  at-id:
+    match: '@[A-Za-z][0-9A-Za-z_]* (?#end-of-id)'
+
+  # An integer literal.
+  integer-literal:
+    match: '[0-9]+(?![0-9])'
+    name: constant.numeric.decimal.dbscheme
+
+  # A pattern that can start a comment.
+  comment-start:
+    match: '// | /\*'
+
+  # A QL comment, regardless of form.
+  comment:
+    patterns:
+      # A QLDoc (`/** */`) comment.
+    - begin: '/\*\*'
+      end: '\*/'
+      name: comment.block.documentation.dbscheme
+      # Highlight tag names within the QLDoc.
+      patterns:
+      - begin: '(?<=/\*\*)([^*]|\*(?!/))*$'
+        while: '(^|\G)\s*\*(?!/)(?=([^*]|[*](?!/))*$)'
+        patterns:
+        - include: 'text.html.markdown#fenced_code_block'
+        - include: 'text.html.markdown#lists'
+        - include: 'text.html.markdown#inline'
+        - match: '\G\s* (@\S+)'
+          name: keyword.tag.dbscheme
+      # A block (`/* */`) comment.
+    - begin: '/\*'
+      end: '\*/'
+      name: comment.block.dbscheme
+      # A single line (`//`) comment.
+    - match: //.*$
+      name: comment.line.double-slash.dbscheme
+
+# Operators and punctuation
+  sub:
+    match: '<:'
+    name: punctuation.sub.sub.dbscheme
+  
+  pipe:
+    match: '\|'
+    name: punctuation.separator.pipe.dbscheme
+
+  open-paren:
+    match: '\('
+    name: punctuation.parenthesis.open.dbscheme
+
+  close-paren:
+    match: '\)'
+    name: punctuation.parenthesis.close.dbscheme
+
+  semicolon:
+    match: ';'
+    name: punctuation.separator.statement.dbscheme
+  
+  colon:
+    match: ':'
+    name: punctuation.separator.colon.dbscheme
+  
+  comma:
+    match: ','
+    name: punctuation.separator.comma.dbscheme
+  
+  equals:
+    match: '='
+    name: punctuation.separator.equals.dbscheme
+
+  dot:
+    match: '\.'
+    name: punctuation.accessor.dbscheme
+
+  open-bracket:
+    match: '\['
+    name: punctuation.squarebracket.open.dbscheme
+
+  close-bracket:
+    match: '\]'
+    name: punctuation.squarebracket.close.dbscheme
+
+  operator-or-punctuation:
+    patterns:
+    - include: '#sub'
+    - include: '#pipe'
+    - include: '#open-paren'
+    - include: '#close-paren'
+    - include: '#semicolon'
+    - include: '#colon'
+    - include: '#comma'
+    - include: '#equals'
+    - include: '#dot'
+    - include: '#open-bracket'
+    - include: '#close-bracket'
+
+# Annotations
+  keyset:
+    match:
+      annotation: 'keyset'
+    name: storage.modifier.keyset.dbscheme
+
+  computed:
+    match:
+      annotation: 'computed'
+    name: storage.modifier.computed.dbscheme
+
+  annotation-keyword:
+    patterns:
+    - include: '#keyset'
+    - include: '#computed'
+
+# Keywords
+  type:
+    match:
+      keyword: 'type'
+    name: keyword.other.type.dbscheme
+  
+  subtype:
+    match:
+      keyword: 'subtype'
+    name: keyword.other.subtype.dbscheme
+
+  case:
+    match:
+      keyword: 'case'
+    name: keyword.other.case.dbscheme
+
+  of:
+    match:
+      keyword: 'of'
+    name: keyword.other.of.dbscheme
+
+  order:
+    match:
+      keyword: 'order'
+    name: keyword.other.order.dbscheme
+    
+  key:
+    match:
+      keyword: 'key'
+    name: keyword.other.key.dbscheme
+    
+  ref:
+    match:
+      keyword: 'ref'
+    name: storage.modifier.ref.dbscheme
+
+  int:
+    match:
+      keyword: 'int'
+    name: keyword.type.boolean.dbscheme
+
+  float:
+    match:
+      keyword: 'float'
+    name: keyword.type.float.dbscheme
+
+  boolean:
+    match:
+      keyword: 'boolean'
+    name: keyword.type.boolean.dbscheme
+
+  date:
+    match:
+      keyword: 'date'
+    name: keyword.type.date.dbscheme
+
+  varchar:
+    match:
+      keyword: 'varchar'
+    name: keyword.type.varchar.dbscheme
+
+  string:
+    match:
+      keyword: 'string'
+    name: keyword.type.string.dbscheme
+
+  unique:
+    match:
+      keyword: 'unique'
+    name: storage.modifier.unique.dbscheme
+
+  # Any "true" keyword (not including annotations).
+  keyword:
+    patterns:
+    - include: '#type'
+    - include: '#subtype'
+    - include: '#case'
+    - include: '#of'
+    - include: '#order'
+    - include: '#key'
+    - include: '#ref'
+    - include: '#int'
+    - include: '#float'
+    - include: '#boolean'
+    - include: '#date'
+    - include: '#varchar'
+    - include: '#string'
+    - include: '#unique'
+  
+  # All tokens that can appear in any context.
+  non-context-sensitive:
+    patterns:
+    - include: '#comment'
+    - include: '#integer-literal'
+    - include: '#operator-or-punctuation'
+    - include: '#keyword'
+
+  # An annotation on a table declaration.
+  annotation:
+    patterns:
+    - include: '#keyset-annotation'
+    - include: '#annotation-keyword'
+
+  # A `#keyset` annotation, including its arguments.
+  keyset-annotation:
+    beginPattern: '#keyset'
+    # Ends after the next `]`, or when we encounter something other than a `[`.
+    end: '(?! \s | (?#comment-start) | \[ ) |
+          (?<=\])'
+    name: meta.block.keyset-annotation.dbscheme
+    patterns:
+    - include: '#keyset-annotation-body'
+    - include: '#non-context-sensitive'
+
+  # The bracket-enclosed body of a `#keyset` annotation.
+  keyset-annotation-body:
+    beginPattern: '#open-bracket'
+    endPattern: '#close-bracket'
+    name: meta.block.keyset-annotation-body.dbscheme
+    patterns:
+    - include: '#non-context-sensitive'
+    - include: '#column-name'
+
+  table-column-list:
+    beginPattern: '#open-paren'
+    endPattern: '#close-paren'
+    name: meta.block.table-column-list.dbscheme
+    patterns:
+    - include: '#non-context-sensitive'
+    - include: '#column-name'
+    - include: '#type-name'
+
+  case-declaration-head:
+    beginPattern: '#case'
+    end: '(?!\s|(?#id)|(?#at-id)|(?#dot)|(?#comment-start))'
+    name: meta.block.case-declaration-head.dbscheme
+    patterns:
+    - include: '#non-context-sensitive'
+    - include: '#column-name'
+    - include: '#type-name'
+
+  column-name:
+    match: '(?#id)'
+    name: entity.name.variable.parameter.dbscheme
+
+  type-name:
+    match: '(?#at-id)'
+    name: entity.name.type.dbscheme
+
+  table-name:
+    match: '(?#id)'
+    name: entity.name.function.dbscheme

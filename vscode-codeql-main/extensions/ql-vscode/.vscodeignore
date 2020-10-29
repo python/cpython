@@ -1,0 +1,16 @@
+.vs/**
+.vscode/**
+.vscode-test/**
+typings/**
+out/test/**
+out/vscode-tests/**
+**/@types/**
+**/*.ts
+test/**
+src/**
+**/*.map
+.gitignore
+gulpfile.js/**
+tsconfig.json
+tsfmt.json
+vsc-extension-quickstart.md

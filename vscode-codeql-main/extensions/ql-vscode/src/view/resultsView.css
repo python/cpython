@@ -1,0 +1,216 @@
+.vscode-codeql__result-table {
+  display: table;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.vscode-codeql__table-selection-header {
+  display: flex;
+  padding: 0.5em 0;
+  align-items: center;
+}
+
+.vscode-codeql__table-selection-header select {
+  border: 0;
+}
+
+.vscode-codeql__table-selection-header button {
+  padding: 0.3rem;
+  margin: 0.2rem;
+  border: 0;
+  font-size: large;
+  color: var(--vscode-editor-foreground);
+  background-color: var(--vscode-editorGutter-background);
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.vscode-codeql__table-selection-header button:hover {
+  opacity: 1;
+}
+
+.vscode-codeql__table-selection-header input[type="number"] {
+  border-radius: 0;
+  padding: 0.3rem;
+  margin: 0.2rem;
+  width: 2rem;
+  border-radius: 0;
+  color: var(--vscode-editor-foreground);
+  border: 0;
+  border-bottom: 1px solid var(--vscode-editor-foreground);
+  background-color: var(--vscode-editorGutter-background);
+  border-radius: 0;
+  outline: none;
+}
+
+.vscode-codeql__result-table-alert-extras {
+  display: inline-block;
+  text-align: left;
+  margin-left: auto;
+  background-color: transparent;
+  color: inherit;
+}
+
+.vscode-codeql__result-table-toggle-diagnostics {
+  display: inline-block;
+}
+
+/* Keep the checkbox and its label in horizontal alignment. */
+.vscode-codeql__result-table-toggle-diagnostics label,
+.vscode-codeql__result-table-toggle-diagnostics input {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.vscode-codeql__result-table-toggle-diagnostics input {
+  margin: 3px 3px 1px 13px;
+}
+
+.vscode-codeql__result-table th {
+  border-top: 1px solid rgba(88, 96, 105, 0.25);
+  border-bottom: 1px solid rgba(88, 96, 105, 0.25);
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial,
+    sans-serif, Apple Color Emoji, Segoe UI Emoji;
+  background: rgba(225, 228, 232, 0.25);
+  padding: 0.25em 0.5em;
+  text-align: center;
+  font-weight: normal;
+  opacity: 0.6;
+}
+
+.vscode-codeql__result-table .sort-asc,
+.vscode-codeql__result-table .sort-desc,
+.vscode-codeql__result-table .sort-none {
+  cursor: pointer;
+  user-select: none;
+}
+
+.vscode-codeql__result-table .sort-none::after {
+  /* Want to take up the same space as the other sort directions */
+  content: " ▲";
+  visibility: hidden;
+}
+
+.vscode-codeql__result-table .sort-asc::after {
+  content: " ▲";
+}
+
+.vscode-codeql__result-table .sort-desc::after {
+  content: " ▼";
+}
+
+.vscode-codeql__result-table td {
+  margin: 0;
+  padding: 0;
+  padding: 0.25em 0.5em;
+  white-space: pre-wrap;
+  text-align: left;
+}
+
+.vscode-codeql__result-table-location-link {
+  text-decoration: none;
+}
+
+select {
+  background-color: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border-color: var(--vscode-dropdown-border);
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.vscode-codeql__result-tables-updating-text {
+  margin-left: 1em;
+}
+
+.vscode-codeql__result-table-row--odd {
+  background-color: inherit;
+}
+
+.vscode-codeql__result-table-row--even {
+  background-color: var(--vscode-textBlockQuote-background);
+}
+
+.vscode-codeql__result-table-row--selected {
+  background-color: var(--vscode-editor-findMatchBackground);
+}
+
+td.vscode-codeql__icon-cell {
+  text-align: center;
+  position: relative;
+  white-space: nowrap;
+  margin: 0;
+  padding: 0;
+  width: 24px;
+}
+
+td.vscode-codeql__dropdown-cell:hover {
+  cursor: pointer;
+}
+
+td.vscode-codeql__path-index-cell {
+  text-align: right;
+}
+
+/* Both of these are !important to override the
+   .vscode-codeql__result-table th { text-align: center } above */
+.vscode-codeql__alert-message-cell {
+  text-align: left !important;
+}
+
+.vscode-codeql__location-cell {
+  text-align: right !important;
+}
+
+.vscode-codeql__vertical-rule {
+  border-left: 1px solid var(--vscode-dropdown-border);
+  height: 100%;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.vscode-codeql__title {
+  /* Something that isn't a link, but which has a title attribute */
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+}
+
+.octicon {
+  fill: var(--vscode-editor-foreground);
+  margin-top: 0.25em;
+}
+
+.octicon-light {
+  opacity: 0.6;
+}
+
+.number-of-results {
+  padding-left: 3em;
+}
+
+.vscode-codeql__compare-header {
+  display: flex;
+}
+
+.vscode-codeql__compare-header-item {
+  margin: 0 1.5rem;
+}
+
+.vscode-codeql__compare-message {
+  padding: 1.5rem;
+}
+
+.vscode-codeql__compare-body {
+  margin: 20px 0;
+  width: 100%;
+}
+
+.vscode-codeql__compare-open {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.vscode-codeql__compare-body > tbody {
+  vertical-align: top;
+}

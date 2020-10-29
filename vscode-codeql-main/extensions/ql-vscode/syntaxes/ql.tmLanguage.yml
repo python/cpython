@@ -1,0 +1,1044 @@
+---
+# This file is transformed into the equivalent JSON TextMate grammar, with the following additional
+# features available:
+#
+# The `regexOptions` Property
+# A top-level property named `regexOptions` may be defined with a string value. This string
+# represents the set of regular expression options to apply to all regular expressions throughout
+# the file.
+#
+# Macros
+# The `macros` element defines a map of macro names to replacement text. When a `match`, `begin`, or
+# `end` property has a value that is a single-key map, the value is replaced with the value of the
+# macro named by the key, with any use of `(?#)` in the macro text replaced with the text of the
+# value of the key, surrounded by a non-capturing group (`(?:)`). For example:
+#
+# The `beginPattern` and `endPattern` Properties
+# A rule can have a `beginPattern` or `endPattern` property whose value is a reference to another
+# rule (e.g. `#other-rule`). The `beginPattern` property is replaced as follows:
+#
+# my-rule:
+#   beginPattern: '#other-rule'
+#
+# would be transformed to
+#
+# my-rule:
+#   begin: '(?#other-rule)'
+#   beginCaptures:
+#     '0':
+#       patterns:
+#       - include: '#other-rule'
+#
+# An `endPattern` property is transformed similary.
+#
+# macros:
+#   repeat: '(?#)*'
+# repository:
+#   multi-letter:
+#     match:
+#       repeat: '[A-Za-z]'
+#     name: scope.multi-letter
+# 
+# would be transformed to
+#
+# repository:
+#   multi-letter:
+#     match: '(?:[A-Za-z])*'
+#     name: scope.multi-letter
+#
+# Reference Expansion
+# Any comment of the form `(?#ref-id)` in a `match`, `begin`, or `end` property will be replaced
+# with the match text of the rule named "ref-id". If the rule named "ref-id" consists of just a
+# `patterns` property with a list of `include` directives, the replacement pattern is the
+# disjunction of the match patterns of all of the included rules.
+
+name: QL
+scopeName: source.ql
+fileTypes: [ql, qll]
+uuid: 7F6926BF-1C6C-468A-A7AA-215EBAC86A4E
+regexOptions: 'x' # Ignore pattern whitespace
+
+# Macros are parameterized patterns that can be used as a match elsewhere in the file.
+# To use a macro, replace the string for a `match`, `begin`, or `end` property with a single-element
+# map whose key is the name of the macro to invoke, and whose value is a string to be substituted for
+# any usage of `(?#)` in the macro pattern definition.
+macros:
+  keyword: '\b(?#)(?#end-of-id)'
+
+patterns:
+- include: '#module-member'
+
+repository:
+  # A character that can appear somewhere in an identifier.
+  id-character:
+    match: '[0-9A-Za-z_]'
+
+  # Matches a position containing a non-identifier character. Used to ensure we do not match partial
+  # identifiers/keywords in other rules.
+  end-of-id:
+    match: '(?!(?#id-character))'
+
+  # A QL "simple identifier", which can begin with either an uppercase or a lowercase letter.
+  simple-id:
+    match: '\b [A-Za-z][0-9A-Za-z_]* (?#end-of-id)'
+
+  # An identifier beginning with a lowercase letter.
+  lower-id: 
+    match: '\b [a-z][0-9A-Za-z_]* (?#end-of-id)'
+
+  # An identifier beginning with an uppercase letter.
+  upper-id:
+    match: '\b [A-Z][0-9A-Za-z_]* (?#end-of-id)'
+
+  # An identifier beginning with an `@` followed by a lowercase letter. Used to represent database
+  # types.
+  at-lower-id:
+    match: '@[a-z][0-9A-Za-z_]* (?#end-of-id)'
+
+  # A pattern that can start a comment.
+  comment-start:
+    match: '// | /\*'
+
+  # A pattern that can start a run of whitespace or a comment.
+  # Commonly used as a negative lookahead in the `end` regex of a nonterminal, when searching for
+  # tokens that can't start a child of that nonterminal.
+  whitespace-or-comment-start:
+    match: '\s | $ | (?#comment-start)'
+
+  # All tokens that can appear in any context.
+  non-context-sensitive:
+    patterns:
+    - include: '#comment'
+    - include: '#literal'
+    - include: '#operator-or-punctuation'
+    - include: '#keyword'
+
+# Operators and punctuation
+  relational-operator:
+    match: '<=|<|>=|>'
+    name: keyword.operator.relational.ql
+  
+  comparison-operator:
+    match: '=|\!\='
+    name: keyword.operator.comparison.ql
+  
+  arithmetic-operator:
+    match: '\+|-|\*|/|%'
+    name: keyword.operator.arithmetic.ql
+
+  comma:
+    match: ','
+    name: punctuation.separator.comma.ql
+  
+  semicolon:
+    match: ';'
+    name: punctuation.separator.statement.ql
+  
+  dot:
+    match: '\.'
+    name: punctuation.accessor.ql
+
+  dotdot:
+    match: '\.\.'
+    name: punctuation.operator.range.ql
+  
+  pipe:
+    match: '\|'
+    name: punctuation.separator.pipe.ql
+
+  open-paren:
+    match: '\('
+    name: punctuation.parenthesis.open.ql
+
+  close-paren:
+    match: '\)'
+    name: punctuation.parenthesis.close.ql
+
+  open-brace:
+    match: '\{'
+    name: punctuation.curlybrace.open.ql
+
+  close-brace:
+    match: '\}'
+    name: punctuation.curlybrace.close.ql
+
+  open-bracket:
+    match: '\['
+    name: punctuation.squarebracket.open.ql
+
+  close-bracket:
+    match: '\]'
+    name: punctuation.squarebracket.close.ql
+
+  operator-or-punctuation:
+    patterns:
+    - include: '#relational-operator'
+    - include: '#comparison-operator'
+    - include: '#arithmetic-operator'
+    - include: '#comma'
+    - include: '#semicolon'
+    - include: '#dot'
+    - include: '#dotdot'
+    - include: '#pipe'
+    - include: '#open-paren'
+    - include: '#close-paren'
+    - include: '#open-brace'
+    - include: '#close-brace'
+    - include: '#open-bracket'
+    - include: '#close-bracket'
+
+# Keywords
+  dont-care:
+    match:
+      keyword: '_'
+    name: variable.language.dont-care.ql
+  
+  and:
+    match:
+      keyword: 'and'
+    name: keyword.other.and.ql
+
+  any:
+    match:
+      keyword: 'any'
+    name: keyword.quantifier.any.ql
+
+  as:
+    match:
+      keyword: 'as'
+    name: keyword.other.as.ql
+
+  asc:
+    match:
+      keyword: 'asc'
+    name: keyword.order.asc.ql
+    
+  avg:
+    match:
+      keyword: 'avg'
+    name: keyword.aggregate.avg.ql
+    
+  boolean:
+    match:
+      keyword: 'boolean'
+    name: keyword.type.boolean.ql
+
+  by:
+    match:
+      keyword: 'by'
+    name: keyword.order.by.ql
+
+  class:
+    match:
+      keyword: 'class'
+    name: keyword.other.class.ql
+
+  concat:
+    match:
+      keyword: 'concat'
+    name: keyword.aggregate.concat.ql
+
+  count:
+    match:
+      keyword: 'count'
+    name: keyword.aggregate.count.ql
+    
+  date:
+    match:
+      keyword: 'date'
+    name: keyword.type.date.ql
+    
+  desc:
+    match:
+      keyword: 'desc'
+    name: keyword.order.desc.ql
+    
+  else:
+    match:
+      keyword: 'else'
+    name: keyword.other.else.ql
+
+  exists:
+    match:
+      keyword: 'exists'
+    name: keyword.quantifier.exists.ql
+  
+  extends:
+    match:
+      keyword: 'extends'
+    name: keyword.other.extends.ql
+
+  false:
+    match:
+      keyword: 'false'
+    name: constant.language.boolean.false.ql
+
+  float:
+    match:
+      keyword: 'float'
+    name: keyword.type.float.ql
+
+  forall:
+    match:
+      keyword: 'forall'
+    name: keyword.quantifier.forall.ql
+
+  forex:
+    match:
+      keyword: 'forex'
+    name: keyword.quantifier.forex.ql
+
+  from:
+    match:
+      keyword: 'from'
+    name: keyword.other.from.ql
+
+  if:
+    match:
+      keyword: 'if'
+    name: keyword.other.if.ql
+    
+  implies:
+    match:
+      keyword: 'implies'
+    name: keyword.other.implies.ql
+    
+  import:
+    match:
+      keyword: 'import'
+    name: keyword.other.import.ql
+
+  in:
+    match:
+      keyword: 'in'
+    name: keyword.other.in.ql
+
+  instanceof:
+    match:
+      keyword: 'instanceof'
+    name: keyword.other.instanceof.ql
+
+  int:
+    match:
+      keyword: 'int'
+    name: keyword.type.int.ql
+  
+  max:
+    match:
+      keyword: 'max'
+    name: keyword.aggregate.max.ql
+
+  min:
+    match:
+      keyword: 'min'
+    name: keyword.aggregate.min.ql
+
+  module:
+    match:
+      keyword: 'module'
+    name: keyword.other.module.ql
+    
+  newtype:
+    match:
+      keyword: 'newtype'
+    name: keyword.other.newtype.ql
+
+  none:
+    match:
+      keyword: 'none'
+    name: keyword.quantifier.none.ql
+
+  not:
+    match:
+      keyword: 'not'
+    name: keyword.other.not.ql
+
+  or:
+    match:
+      keyword: 'or'
+    name: keyword.other.or.ql
+
+  order:
+    match:
+      keyword: 'order'
+    name: keyword.order.order.ql
+
+  predicate:
+    match:
+      keyword: 'predicate'
+    name: keyword.other.predicate.ql
+
+  rank:
+    match:
+      keyword: 'rank'
+    name: keyword.aggregate.rank.ql
+
+  result:
+    match:
+      keyword: 'result'
+    name: variable.language.result.ql
+
+  select:
+    match:
+      keyword: 'select'
+    name: keyword.query.select.ql
+
+  strictconcat:
+    match:
+      keyword: 'strictconcat'
+    name: keyword.aggregate.strictconcat.ql
+
+  strictcount:
+    match:
+      keyword: 'strictcount'
+    name: keyword.aggregate.strictcount.ql
+
+  strictsum:
+    match:
+      keyword: 'strictsum'
+    name: keyword.aggregate.strictsum.ql
+
+  string:
+    match:
+      keyword: 'string'
+    name: keyword.type.string.ql
+  
+  sum:
+    match:
+      keyword: 'sum'
+    name: keyword.aggregate.sum.ql
+
+  super:
+    match:
+      keyword: 'super'
+    name: variable.language.super.ql
+  
+  then:
+    match:
+      keyword: 'then'
+    name: keyword.other.then.ql
+
+  this:
+    match:
+      keyword: 'this'
+    name: variable.language.this.ql
+
+  true:
+    match:
+      keyword: 'true'
+    name: constant.language.boolean.true.ql
+
+  unique:
+    match:
+      keyword: 'unique'
+    name: keyword.aggregate.unique.ql
+
+  where:
+    match:
+      keyword: 'where'
+    name: keyword.query.where.ql
+
+  # Any "true" keyword (not including annotations).
+  keyword:
+    patterns:
+    - include: '#dont-care'
+    - include: '#and'
+    - include: '#any'
+    - include: '#as'
+    - include: '#asc'
+    - include: '#avg'
+    - include: '#boolean'
+    - include: '#by'
+    - include: '#class'
+    - include: '#concat'
+    - include: '#count'
+    - include: '#date'
+    - include: '#desc'
+    - include: '#else'
+    - include: '#exists'
+    - include: '#extends'
+    - include: '#false'
+    - include: '#float'
+    - include: '#forall'
+    - include: '#forex'
+    - include: '#from'
+    - include: '#if'
+    - include: '#implies'
+    - include: '#import'
+    - include: '#in'
+    - include: '#instanceof'
+    - include: '#int'
+    - include: '#max'
+    - include: '#min'
+    - include: '#module'
+    - include: '#newtype'
+    - include: '#none'
+    - include: '#not'
+    - include: '#or'
+    - include: '#order'
+    - include: '#predicate'
+    - include: '#rank'
+    - include: '#result'
+    - include: '#select'
+    - include: '#strictconcat'
+    - include: '#strictcount'
+    - include: '#strictsum'
+    - include: '#string'
+    - include: '#sum'
+    - include: '#super'
+    - include: '#then'
+    - include: '#this'
+    - include: '#true'
+    # `unique` is not really a keyword, but we'll highlight it as if it is.
+    - include: '#unique'
+    - include: '#where'
+
+  # A keyword that can be the first token of a predicate declaration.
+  predicate-start-keyword:
+    patterns:
+    - include: '#boolean'
+    - include: '#date'
+    - include: '#float'
+    - include: '#int'
+    - include: '#predicate'
+    - include: '#string'
+
+# Annotation keywords
+  abstract:
+    match:
+      keyword: 'abstract'
+    name: storage.modifier.abstract.ql
+  
+  bindingset:
+    match:
+      keyword: 'bindingset'
+    name: storage.modifier.bindingset.ql
+
+  cached:
+    match:
+      keyword: 'cached'
+    name: storage.modifier.cached.ql
+  
+  deprecated:
+    match:
+      keyword: 'deprecated'
+    name: storage.modifier.deprecated.ql
+    
+  external:
+    match:
+      keyword: 'external'
+    name: storage.modifier.external.ql
+  
+  final:
+    match:
+      keyword: 'final'
+    name: storage.modifier.final.ql
+    
+  language:
+    match:
+      keyword: 'language'
+    name: storage.modifier.language.ql
+
+  library:
+    match:
+      keyword: 'library'
+    name: storage.modifier.library.ql
+  
+  override:
+    match:
+      keyword: 'override'
+    name: storage.modifier.override.ql
+  
+  pragma:
+    match:
+      keyword: 'pragma'
+    name: storage.modifier.pragma.ql
+
+  private:
+    match:
+      keyword: 'private'
+    name: storage.modifier.private.ql
+
+  query:
+    match:
+      keyword: 'query'
+    name: storage.modifier.query.ql
+
+  transient:
+    match:
+      keyword: 'transient'
+    name: storage.modifier.transient.ql
+
+  annotation-keyword:
+    patterns:
+    - include: '#abstract'
+    - include: '#bindingset'
+    - include: '#cached'
+    - include: '#deprecated'
+    - include: '#external'
+    - include: '#final'
+    - include: '#language'
+    - include: '#library'
+    - include: '#override'
+    - include: '#pragma'
+    - include: '#private'
+    - include: '#query'
+    - include: '#transient'
+
+  # A QL comment, regardless of form.
+  comment:
+    patterns:
+      # A QLDoc (`/** */`) comment.
+    - begin: '/\*\*'
+      end: '\*/'
+      name: comment.block.documentation.ql
+      # Highlight tag names within the QLDoc.
+      patterns:
+      - begin: '(?<=/\*\*)([^*]|\*(?!/))*$'
+        while: '(^|\G)\s*([^*]|\*(?!/))(?=([^*]|[*](?!/))*$)'
+        patterns:
+        - include: 'text.html.markdown#fenced_code_block'
+        - include: 'text.html.markdown#lists'
+        - include: 'text.html.markdown#inline'
+        - match: '\G\s* (@\S+)'
+          name: keyword.tag.ql
+      # A block (`/* */`) comment.
+    - begin: '/\*'
+      end: '\*/'
+      name: comment.block.ql
+      # A single line (`//`) comment.
+    - match: //.*$
+      name: comment.line.double-slash.ql
+
+  # List of rules that can be matched within the body of a module, including at file scope.
+  module-member:
+    patterns:
+    - include: '#import-directive'
+    - include: '#import-as-clause'
+    - include: '#module-declaration'
+    - include: '#newtype-declaration'
+    # See the comment on newtype-declaration for why we include these next three nonterminals at the
+    # module-member level instead of as part of the newtype-declaration.
+    - include: '#newtype-branch-name-with-prefix'
+    - include: '#predicate-parameter-list'
+    - include: '#predicate-body'
+    - include: '#class-declaration'
+    - include: '#select-clause'
+    - include: '#predicate-or-field-declaration'
+    - include: '#non-context-sensitive'
+    - include: '#annotation'
+
+  # An `import` directive. Note that we parse the optional `as` clause as a separate top-level
+  # directive, because otherwise it's too hard to figure out where the `import` directive ends.
+  import-directive:
+    beginPattern: '#import'
+    # Ends with a simple-id that is not followed by a `.` or a `::`. This does not handle comments or
+    # line breaks between the simple-id and the `.` or `::`. 
+    end: '(?#simple-id) (?!\s*(\.|\:\:))'
+    endCaptures:
+      '0':
+        name: entity.name.type.namespace.ql
+    name: meta.block.import-directive.ql
+    patterns:
+    - include: '#non-context-sensitive'
+    - match: '(?#simple-id)'
+      name: entity.name.type.namespace.ql
+
+  # The end pattern for an `as` clause, whether on an `import` directive, in an aggregate, or on a
+  # `select`.
+  end-of-as-clause:
+    match: '(?: (?<=(?#id-character)) (?!(?#id-character)) (?<!(?<!(?#id-character))as)) |
+            (?=\s* (?!(?#comment-start) | (?#simple-id)) \S) |
+            (?=\s* (?#keyword))' 
+
+  # The `as` clause of an `import` directive. We treat this as a separate module-scope directive.
+  import-as-clause:
+    # Start at the `as` keyword.
+    beginPattern: '#as'
+    # The end pattern is tricky.
+    # We want to allow an aribtrary amount of whitespace and comments, followed by a single
+    # simple-id. To do this, we end when one of the following matches:
+    # - We are at the end of an identifier, and that identifier is not `as`.
+    # - The next non-whitespace character is not the start of a comment or a simple-id.
+    # - The next non-whitespace character is a keyword.
+    end:  '(?#end-of-as-clause)'
+    name: meta.block.import-as-clause.ql
+    patterns:
+    - include: '#non-context-sensitive'
+    - match: '(?#simple-id)'
+      name: entity.name.type.namespace.ql
+
+  # A `module` declaration, whether a module definition or an alias declaration.
+  module-declaration:
+    # Starts with the `module` keyword.
+    beginPattern: '#module'
+    # Ends after a `}` or `;`
+    end: '(?<=\}|;)'
+    name: meta.block.module-declaration.ql
+    patterns:
+    - include: '#module-body'
+    - include: '#non-context-sensitive'
+      # Any simple-id within a module head is part of a module name.
+    - match: '(?#simple-id)'
+      name: entity.name.type.namespace.ql
+
+  # The body of a `module` definition.
+  module-body:
+    beginPattern: '#open-brace'
+    endPattern: '#close-brace'
+    name: meta.block.module-body.ql
+    patterns:
+    - include: '#module-member'
+
+  # A simple-id followed by a `::` is a module qualifier.
+  module-qualifier:
+    match: '(?#simple-id) (?=\s*\:\:)'
+    name: entity.name.type.namespace.ql
+
+  # The declaration of a predicate or field.
+  predicate-or-field-declaration:
+    # Starts with one of the following:
+    # - A simpleId that is neither a keyword nor an annotation keyword.
+    # - A keyword that can start a predicate (e.g. a primitive type, or `predicate`).
+    # = An atLowerId.
+    begin: '(?:(?=(?#simple-id))(?!(?#keyword)|(?#annotation-keyword))) |
+            (?=(?#predicate-start-keyword)) |
+            (?=(?#at-lower-id))'
+    # Ends after a `}` or `;`
+    end: '(?<=\}|;)'
+    name: meta.block.predicate-or-field-declaration.ql
+    patterns:
+    - include: '#predicate-parameter-list'
+    - include: '#predicate-body'
+    - include: '#non-context-sensitive'
+      # An identifier followed by a `::` is a module.
+    - include: '#module-qualifier'
+      # A lower-id followed by a `;` is a field name.
+    - match: '(?#lower-id)(?=\s*;)'
+      name: variable.field.ql
+      # Any other lower-id is assumed to be a predicate name.
+    - match: '(?#lower-id)'
+      name: entity.name.function.ql
+      # Any other upper-id or at-lower-id is a type name.
+    - match: '(?#upper-id)|(?#at-lower-id)'
+      name: entity.name.type.ql
+
+  # The parenthesized parameter list of a predicate.
+  predicate-parameter-list:
+    beginPattern: '#open-paren'
+    endPattern: '#close-paren'
+    name: meta.block.predicate-parameter-list.ql
+    # Figuring out which kind of identifier we're looking at is tricky in a parameter declaration,
+    # because variable names can be upper-ids or lower-ids. We'll use some heuristics.
+    patterns:
+    - include: '#non-context-sensitive'
+      # An upper-id followed by a `,` or a `)` is assumed to be a variable name.
+    - match: '(?#upper-id)(?=\s*(?:,|\)))'
+      name: variable.parameter.ql
+      # A simple-id followed by a `::` is a module qualifier.
+    - include: '#module-qualifier'
+      # Any other upper-id is assumed to be part of a type name.
+    - match: '(?#upper-id)|(?#at-lower-id)'
+      name: entity.name.type.ql
+      # Any other lower-id is assumed to be a variable name.
+    - match: '(?#lower-id)'
+      name: variable.parameter.ql
+
+  # An `as` clause in an aggregate or `select`.
+  expr-as-clause:
+    # Start at the `as` keyword.
+    beginPattern: '#as'
+    end:  '(?#end-of-as-clause)'
+    name: meta.block.expr-as-clause.ql
+    patterns:
+    - include: '#non-context-sensitive'
+    - match: '(?#simple-id)'
+      name: variable.other.ql
+
+  # The contents of a predicate body.
+  predicate-body-contents:
+    patterns:
+    - include: '#expr-as-clause'
+    - include: '#non-context-sensitive'
+      # A simple-id followed by a `::` is a module qualifier.
+    - include: '#module-qualifier'
+      # Any lower-id followed by a `(`, optionally with a `*` or `+` in between,
+      # is a predicate name.
+    - match: '(?#lower-id)\s*(?:\*|\+)?\s*(?=\()'
+      name: entity.name.function.ql
+      # Any other lower-id is assumed to be a variable name.
+    - match: '(?#lower-id)'
+      name: variable.other.ql
+      # Any other upper-id is assumed to be part of a type name.
+    - match: '(?#upper-id)|(?#at-lower-id)'
+      name: entity.name.type.ql
+
+  # The brace-enclosed body of a predicate definition.
+  predicate-body:
+    beginPattern: '#open-brace'
+    endPattern: '#close-brace'
+    name: meta.block.predicate-body.ql
+    patterns:
+    - include: '#predicate-body-contents'
+
+  # An annotation on a declaration.
+  annotation:
+    patterns:
+    - include: '#bindingset-annotation'
+    - include: '#language-annotation'
+    - include: '#pragma-annotation'
+    - include: '#annotation-keyword'
+
+  # A `pragma` annotation, including its arguments.
+  bindingset-annotation:
+    beginPattern: '#bindingset'
+    # Ends after the next `]`, or when we encounter something other than a `[`.
+    end: '(?! (?#whitespace-or-comment-start) | \[ ) |
+          (?<=\])'
+    name: meta.block.bindingset-annotation.ql
+    patterns:
+    - include: '#bindingset-annotation-body'
+    - include: '#non-context-sensitive'
+
+  # The bracket-enclosed body of a `bindingset` annotation.
+  bindingset-annotation-body:
+    beginPattern: '#open-bracket'
+    endPattern: '#close-bracket'
+    name: meta.block.bindingset-annotation-body.ql
+    patterns:
+    - include: '#non-context-sensitive'
+    - match: '(?#simple-id)'
+      name: variable.parameter.ql
+
+  # A `language` annotation, including its arguments.
+  language-annotation:
+    beginPattern: '#language'
+    # Ends after the next `]`, or when we encounter something other than a `[`.
+    end: '(?! (?#whitespace-or-comment-start) | \[ ) |
+          (?<=\])'
+    name: meta.block.language-annotation.ql
+    patterns:
+    - include: '#language-annotation-body'
+    - include: '#non-context-sensitive'
+
+  # The bracket-enclosed body of a `language` annotation.
+  language-annotation-body:
+    beginPattern: '#open-bracket'
+    endPattern: '#close-bracket'
+    name: meta.block.language-annotation-body.ql
+    patterns:
+    - include: '#non-context-sensitive'
+    - match:
+        keyword: 'monotonicAggregates'
+      name: storage.modifier.ql
+
+  # A `pragma` annotation, including its arguments.
+  pragma-annotation:
+    beginPattern: '#pragma'
+    # Ends after the next `]`, or when we encounter something other than a `[`.
+    end: '(?! (?#whitespace-or-comment-start) | \[ ) |
+          (?<=\])'
+    name: meta.block.pragma-annotation.ql
+    patterns:
+    - include: '#pragma-annotation-body'
+    - include: '#non-context-sensitive'
+
+  # The bracket-enclosed body of a `pragma` annotation.
+  pragma-annotation-body:
+    beginPattern: '#open-bracket'
+    endPattern: '#close-bracket'
+    name: meta.block.pragma-annotation-body.ql
+    patterns:
+    - match: '\b(?:inline|noinline|nomagic|noopt)\b'
+      name: storage.modifier.ql
+
+  # The declaration of an IPA type.
+  # This only includes the `newtype` keyword and the identifier for the IPA type itself. The
+  # branches of the IPA type are modeled as separate nonterminals contained directly in the module
+  # body. This is kind of hacky, but without it, we don't seem to have a way to get TextMate to
+  # handle this:
+  # ```ql
+  # newtype TRoot =
+  #   TBranch1(int x) {
+  #     x = 5
+  #   } or
+  #   TBranch2()  // No body
+  #
+  # TOther getOther() { any() }
+  # ```
+  # If the branches are within the newtype declaration node, it's very hard to get the upper-id for
+  # the name of the IPA type to be included in the newtype declaration node, without also including
+  # the `TOther` upper-id in the declaration node.
+  newtype-declaration:
+    beginPattern: '#newtype'
+    # We're expecting a newtype-declaration-without-keyword immediately after the `newtype` keyword,
+    # so end if we see anything other than the upper-id that starts it, or whitespace, or a comment.
+    # An upper-id can't start anything else at module scope, so once we see the rest of this
+    # newtype-declaration, whatever comes next should end this block.
+    end: '(?#upper-id)'
+    endCaptures:
+      '0':
+        name: entity.name.type.ql
+    name: meta.block.newtype-declaration.ql
+    patterns:
+    - include: '#non-context-sensitive'
+
+  # A branch of an IPA type, including just the `=` or `or` prefix and the name of the branch.
+  # The parameter list and body are separate nonterminals contained directly within the module body.
+  # See the comment for newtype-declaration for why.
+  newtype-branch-name-with-prefix:
+    begin: '\= | (?#or)'
+    beginCaptures:
+      '0':
+        patterns:
+        - include: '#or'
+        - include: '#comparison-operator'
+    end: '(?#upper-id)'
+    endCaptures:
+      '0':
+        name: entity.name.type.ql
+    name: meta.block.newtype-branch-name-with-prefix.ql
+    patterns:
+    - include: '#non-context-sensitive'
+
+  # The declaration of a class, include an alias.
+  class-declaration:
+    beginPattern: '#class'
+    # Ends after a `}` or `;`.
+    end: '(?<= \} | ; )'
+    name: meta.block.class-declaration.ql
+    patterns:
+    - include: '#class-body'
+    - include: '#extends-clause'
+    - include: '#non-context-sensitive'
+    - match: '(?#upper-id)'
+      name: entity.name.type.class.ql
+
+  # The `extends` clause of a class definition.
+  extends-clause:
+    beginPattern: '#extends'
+    # Ends at the first `{`.
+    # REVIEW: This could be any token not allowed in a type.
+    end: '(?= \{ )'
+    name: meta.block.extends-clause.ql
+    patterns:
+    - include: '#non-context-sensitive'
+    - match: '(?#simple-id)|(?#at-lower-id)'
+      name: entity.name.type.ql
+
+  # The body of a class definition.
+  class-body:
+    beginPattern: '#open-brace'
+    endPattern: '#close-brace'
+    name: meta.block.class-body.ql
+    patterns:
+    - include: '#class-member'
+
+  # A declaration within a class definition.
+  class-member:
+    patterns:
+    - include: '#predicate-or-field-declaration'
+    - include: '#annotation'
+    - include: '#non-context-sensitive'
+
+  # An entire `select` clause, including the `from`, `where`, and `select` sections.
+  select-clause:
+    # Starts just before the `from`, `where`, or `select` keyword.
+    begin: '(?=(?#from)|(?#where)|(?#select))'
+    # Ends when we encounter anything other than `from`, `where`, or `select`.
+    end: '(?!(?#from)|(?#where)|(?#select))'
+    name: meta.block.select-clause.ql
+    patterns:
+    - include: '#from-section'
+    - include: '#where-section'
+    - include: '#select-section'
+
+  # The `from` section of a `select` clause.
+  from-section:
+    # Starts just before the `from` keyword.
+    beginPattern: '#from'
+    # Ends at the subsequent `select` or `where` keyword.
+    end: '(?= (?#select) | (?#where) )'
+    name: meta.block.from-section.ql
+    # Figuring out which kind of identifier we're looking at is tricky in a `from` section,
+    # because variable names can be upper-ids or lower-ids. We'll use some heuristics.
+    patterns:
+    - include: '#non-context-sensitive'
+      # An upper-id followed by a `,`, `where`, `select`, or newline is assumed to be a variable
+      # name.
+    - match: '(?#upper-id)(?=\s*(?:,|(?#where)|(?#select)|$))'
+      name: variable.parameter.ql
+      # A simple-id followed by a `::` is a module qualifier.
+    - include: '#module-qualifier'
+      # Any other upper-id is assumed to be part of a type name.
+    - match: '(?#upper-id)|(?#at-lower-id)'
+      name: entity.name.type.ql
+      # Any other lower-id is assumed to be a variable name.
+    - match: '(?#lower-id)'
+      name: variable.parameter.ql
+
+  # The `where` section of a `select` clause.
+  where-section:
+    beginPattern: '#where'
+    end: '(?=(?#select))'
+    name: meta.block.where-section.ql
+    patterns:
+    - include: '#predicate-body-contents'
+
+  # The `select` section of a `select` clause.
+  select-section:
+    beginPattern: '#select'
+    # REVIEW: It's hard to figure out where the `select` section ends, but we should be able to do
+    # bettern than this.
+    end: '(?=\n)'
+    name: meta.block.select-section.ql
+    patterns:
+    - include: '#predicate-body-contents'
+    - include: '#select-as-clause'
+
+  # The `as` clause within a `select` expression.
+  select-as-clause:
+    beginPattern: '#as'
+    # Ends after the first identifier we encounter.
+    # REVIEW: Make similar to import-as-clause.
+    end: '(?<=(?#id-character)(?#end-of-id))'
+    match: meta.block.select-as-clause.ql
+    patterns:
+    - include: '#non-context-sensitive'
+    - match: '(?#simple-id)'
+      name: variable.other.ql
+  
+  # A literal (not including Boolean literals, which are keywords).
+  literal:
+    patterns:
+    - include: '#float-literal'
+    - include: '#int-literal'
+    - include: '#string-literal'
+
+  # An integer literal.
+  int-literal:
+    match: '-?[0-9]+(?![0-9])'
+    name: constant.numeric.decimal.ql
+
+  # A float literal.
+  float-literal:
+    match: '-?[0-9]+\.[0-9]+(?![0-9])'
+    name: constant.numeric.decimal.ql
+
+  # A string literal.
+  string-literal:
+    name: string.quoted.double.ql
+    begin: '"'
+    beginCaptures:
+      '0': { name: punctuation.definition.string.begin.ql }
+    end: '(") | ((?:[^\\\n])$)'
+    endCaptures:
+      '1': { name: punctuation.definition.string.end.ql }
+      '2': { name: invalid.illegal.newline.ql }
+    patterns:
+    - include: '#string-escape'
+
+  # An escape sequence in a string.
+  string-escape:
+    match: '\\["\\nrt]'
+    name: constant.character.escape.ql

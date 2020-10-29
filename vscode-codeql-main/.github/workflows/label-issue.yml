@@ -1,0 +1,15 @@
+name: Label issue
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  label:
+    name: Label issue
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo '{"labels": ["VSCode"]}' | gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/labels --input -
