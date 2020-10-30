@@ -21288,7 +21288,7 @@ _tmp_93_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_93[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'!='"));
-            _res = _PyPegen_check_barry_as_flufl ( p ) ? NULL : tok;
+            _res = _PyPegen_check_barry_as_flufl ( p , tok ) ? NULL : tok;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
