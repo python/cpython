@@ -8,7 +8,6 @@
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
-#include "pycore_import.h"        // _PyImport_Cleanup()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_pathconfig.h"    // _PyConfig_WritePathConfig()
@@ -1192,6 +1191,292 @@ Py_Initialize(void)
 }
 
 
+static void
+finalize_modules_delete_special(PyThreadState *tstate, int verbose)
+{
+    // List of names to clear in sys
+    static const char * const sys_deletes[] = {
+        "path", "argv", "ps1", "ps2",
+        "last_type", "last_value", "last_traceback",
+        "path_hooks", "path_importer_cache", "meta_path",
+        "__interactivehook__",
+        NULL
+    };
+
+    static const char * const sys_files[] = {
+        "stdin", "__stdin__",
+        "stdout", "__stdout__",
+        "stderr", "__stderr__",
+        NULL
+    };
+
+    PyInterpreterState *interp = tstate->interp;
+    if (verbose) {
+        PySys_WriteStderr("# clear builtins._\n");
+    }
+    if (PyDict_SetItemString(interp->builtins, "_", Py_None) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
+
+    const char * const *p;
+    for (p = sys_deletes; *p != NULL; p++) {
+        if (verbose) {
+            PySys_WriteStderr("# clear sys.%s\n", *p);
+        }
+        if (PyDict_SetItemString(interp->sysdict, *p, Py_None) < 0) {
+            PyErr_WriteUnraisable(NULL);
+        }
+    }
+    for (p = sys_files; *p != NULL; p+=2) {
+        const char *name = p[0];
+        const char *orig_name = p[1];
+        if (verbose) {
+            PySys_WriteStderr("# restore sys.%s\n", name);
+        }
+        PyObject *value = _PyDict_GetItemStringWithError(interp->sysdict,
+                                                         orig_name);
+        if (value == NULL) {
+            if (_PyErr_Occurred(tstate)) {
+                PyErr_WriteUnraisable(NULL);
+            }
+            value = Py_None;
+        }
+        if (PyDict_SetItemString(interp->sysdict, name, value) < 0) {
+            PyErr_WriteUnraisable(NULL);
+        }
+    }
+}
+
+
+static PyObject*
+finalize_remove_modules(PyObject *modules, int verbose)
+{
+    PyObject *weaklist = PyList_New(0);
+    if (weaklist == NULL) {
+        PyErr_WriteUnraisable(NULL);
+    }
+
+#define STORE_MODULE_WEAKREF(name, mod) \
+        if (weaklist != NULL) { \
+            PyObject *wr = PyWeakref_NewRef(mod, NULL); \
+            if (wr) { \
+                PyObject *tup = PyTuple_Pack(2, name, wr); \
+                if (!tup || PyList_Append(weaklist, tup) < 0) { \
+                    PyErr_WriteUnraisable(NULL); \
+                } \
+                Py_XDECREF(tup); \
+                Py_DECREF(wr); \
+            } \
+            else { \
+                PyErr_WriteUnraisable(NULL); \
+            } \
+        }
+
+#define CLEAR_MODULE(name, mod) \
+        if (PyModule_Check(mod)) { \
+            if (verbose && PyUnicode_Check(name)) { \
+                PySys_FormatStderr("# cleanup[2] removing %U\n", name); \
+            } \
+            STORE_MODULE_WEAKREF(name, mod); \
+            if (PyObject_SetItem(modules, name, Py_None) < 0) { \
+                PyErr_WriteUnraisable(NULL); \
+            } \
+        }
+
+    if (PyDict_CheckExact(modules)) {
+        Py_ssize_t pos = 0;
+        PyObject *key, *value;
+        while (PyDict_Next(modules, &pos, &key, &value)) {
+            CLEAR_MODULE(key, value);
+        }
+    }
+    else {
+        PyObject *iterator = PyObject_GetIter(modules);
+        if (iterator == NULL) {
+            PyErr_WriteUnraisable(NULL);
+        }
+        else {
+            PyObject *key;
+            while ((key = PyIter_Next(iterator))) {
+                PyObject *value = PyObject_GetItem(modules, key);
+                if (value == NULL) {
+                    PyErr_WriteUnraisable(NULL);
+                    continue;
+                }
+                CLEAR_MODULE(key, value);
+                Py_DECREF(value);
+                Py_DECREF(key);
+            }
+            if (PyErr_Occurred()) {
+                PyErr_WriteUnraisable(NULL);
+            }
+            Py_DECREF(iterator);
+        }
+    }
+#undef CLEAR_MODULE
+#undef STORE_MODULE_WEAKREF
+
+    return weaklist;
+}
+
+
+static void
+finalize_clear_modules_dict(PyObject *modules)
+{
+    if (PyDict_CheckExact(modules)) {
+        PyDict_Clear(modules);
+    }
+    else {
+        _Py_IDENTIFIER(clear);
+        if (_PyObject_CallMethodIdNoArgs(modules, &PyId_clear) == NULL) {
+            PyErr_WriteUnraisable(NULL);
+        }
+    }
+}
+
+
+static void
+finalize_restore_builtins(PyThreadState *tstate)
+{
+    PyInterpreterState *interp = tstate->interp;
+    PyObject *dict = PyDict_Copy(interp->builtins);
+    if (dict == NULL) {
+        PyErr_WriteUnraisable(NULL);
+    }
+    PyDict_Clear(interp->builtins);
+    if (PyDict_Update(interp->builtins, interp->builtins_copy)) {
+        _PyErr_Clear(tstate);
+    }
+    Py_XDECREF(dict);
+}
+
+
+static void
+finalize_modules_clear_weaklist(PyInterpreterState *interp,
+                                PyObject *weaklist, int verbose)
+{
+    // First clear modules imported later
+    for (Py_ssize_t i = PyList_GET_SIZE(weaklist) - 1; i >= 0; i--) {
+        PyObject *tup = PyList_GET_ITEM(weaklist, i);
+        PyObject *name = PyTuple_GET_ITEM(tup, 0);
+        PyObject *mod = PyWeakref_GET_OBJECT(PyTuple_GET_ITEM(tup, 1));
+        if (mod == Py_None) {
+            continue;
+        }
+        assert(PyModule_Check(mod));
+        PyObject *dict = PyModule_GetDict(mod);
+        if (dict == interp->builtins || dict == interp->sysdict) {
+            continue;
+        }
+        Py_INCREF(mod);
+        if (verbose && PyUnicode_Check(name)) {
+            PySys_FormatStderr("# cleanup[3] wiping %U\n", name);
+        }
+        _PyModule_Clear(mod);
+        Py_DECREF(mod);
+    }
+}
+
+
+static void
+finalize_clear_sys_builtins_dict(PyInterpreterState *interp, int verbose)
+{
+    // Clear sys dict
+    if (verbose) {
+        PySys_FormatStderr("# cleanup[3] wiping sys\n");
+    }
+    _PyModule_ClearDict(interp->sysdict);
+
+    // Clear builtins dict
+    if (verbose) {
+        PySys_FormatStderr("# cleanup[3] wiping builtins\n");
+    }
+    _PyModule_ClearDict(interp->builtins);
+}
+
+
+/* Clear modules, as good as we can */
+static void
+finalize_modules(PyThreadState *tstate)
+{
+    PyInterpreterState *interp = tstate->interp;
+    PyObject *modules = interp->modules;
+    if (modules == NULL) {
+        // Already done
+        return;
+    }
+    int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
+
+    // Delete some special builtins._ and sys attributes first.  These are
+    // common places where user values hide and people complain when their
+    // destructors fail.  Since the modules containing them are
+    // deleted *last* of all, they would come too late in the normal
+    // destruction order.  Sigh.
+    //
+    // XXX Perhaps these precautions are obsolete. Who knows?
+    finalize_modules_delete_special(tstate, verbose);
+
+    // Remove all modules from sys.modules, hoping that garbage collection
+    // can reclaim most of them: set all sys.modules values to None.
+    //
+    // We prepare a list which will receive (name, weakref) tuples of
+    // modules when they are removed from sys.modules.  The name is used
+    // for diagnosis messages (in verbose mode), while the weakref helps
+    // detect those modules which have been held alive.
+    PyObject *weaklist = finalize_remove_modules(modules, verbose);
+
+    // Clear the modules dict
+    finalize_clear_modules_dict(modules);
+
+    // Restore the original builtins dict, to ensure that any
+    // user data gets cleared.
+    finalize_restore_builtins(tstate);
+
+    // Collect garbage
+    _PyGC_CollectNoFail(tstate);
+
+    // Dump GC stats before it's too late, since it uses the warnings
+    // machinery.
+    _PyGC_DumpShutdownStats(tstate);
+
+    if (weaklist != NULL) {
+        // Now, if there are any modules left alive, clear their globals to
+        // minimize potential leaks.  All C extension modules actually end
+        // up here, since they are kept alive in the interpreter state.
+        //
+        // The special treatment of "builtins" here is because even
+        // when it's not referenced as a module, its dictionary is
+        // referenced by almost every module's __builtins__.  Since
+        // deleting a module clears its dictionary (even if there are
+        // references left to it), we need to delete the "builtins"
+        // module last.  Likewise, we don't delete sys until the very
+        // end because it is implicitly referenced (e.g. by print).
+        //
+        // Since dict is ordered in CPython 3.6+, modules are saved in
+        // importing order.  First clear modules imported later.
+        finalize_modules_clear_weaklist(interp, weaklist, verbose);
+        Py_DECREF(weaklist);
+    }
+
+    // Clear sys and builtins modules dict
+    finalize_clear_sys_builtins_dict(interp, verbose);
+
+    // Clear module dict copies stored in the interpreter state:
+    // clear PyInterpreterState.modules_by_index and
+    // clear PyModuleDef.m_base.m_copy (of extensions not using the multi-phase
+    // initialization API)
+    _PyInterpreterState_ClearModules(interp);
+
+    // Clear and delete the modules directory.  Actual modules will
+    // still be there only if imported during the execution of some
+    // destructor.
+    Py_SETREF(interp->modules, NULL);
+
+    // Collect garbage once more
+    _PyGC_CollectNoFail(tstate);
+}
+
+
 /* Flush stdout and stderr */
 
 static int
@@ -1209,6 +1494,7 @@ file_is_closed(PyObject *fobj)
         PyErr_Clear();
     return r > 0;
 }
+
 
 static int
 flush_std_files(void)
@@ -1417,7 +1703,7 @@ Py_FinalizeEx(void)
     PyGC_Collect();
 
     /* Destroy all modules */
-    _PyImport_Cleanup(tstate);
+    finalize_modules(tstate);
 
     /* Print debug stats if any */
     _PyEval_Fini();
@@ -1660,7 +1946,8 @@ Py_EndInterpreter(PyThreadState *tstate)
         Py_FatalError("not the last thread");
     }
 
-    _PyImport_Cleanup(tstate);
+    finalize_modules(tstate);
+
     finalize_interp_clear(tstate);
     finalize_interp_delete(tstate);
 }
