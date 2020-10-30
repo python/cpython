@@ -789,7 +789,8 @@ class uname_result(
 
     def __new__(cls, *args):
         # exclude 'processor' arg
-        args = args[:5] + args[6:]
+        num_fields = len(cls._fields)
+        args = args[:num_fields] + args[num_fields + 1:]
         return super().__new__(cls, *args)
 
     @functools.cached_property
