@@ -141,6 +141,23 @@ def filter_by_kind(items, kind):
 ##################################
 # grouping with matchers
 
+def group_by_category(decls, categories, *, ignore_non_match=True):
+    collated = {}
+    for decl in decls:
+        # Matchers should be mutually exclusive.  (First match wins.)
+        for category, match in categories.items():
+            if match(decl):
+                if category not in collated:
+                    collated[category] = [decl]
+                else:
+                    collated[category].append(decl)
+                break
+        else:
+            if not ignore_non_match:
+                raise Exception(f'no match for {decl!r}')
+    return collated
+
+
 def group_by_kind(items):
     collated = {kind: [] for kind in _KIND}
     for item in items:

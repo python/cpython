@@ -21,6 +21,7 @@ from c_common.scriptutil import (
 )
 from c_parser.info import KIND
 from c_parser.match import is_type_decl
+from .match import filter_forward
 from . import (
     analyze as _analyze,
     datafiles as _datafiles,
@@ -324,25 +325,38 @@ def cmd_check(filenames, *,
     analyzed = _analyze(filenames, **kwargs)
     if relroot:
         analyzed.fix_filenames(relroot)
+    decls = filter_forward(analyzed, markpublic=True)
 
     logger.info('checking analysis results...')
-    numfailed = 0
-    for data, failure in _check_all(analyzed, checks, failfast=failfast):
+    failed = []
+    for data, failure in _check_all(decls, checks, failfast=failfast):
         if data is None:
             printer.info('stopping after one failure')
             break
-        if div is not None and numfailed > 0:
+        if div is not None and len(failed) > 0:
             printer.info(div)
-        numfailed += 1
+        failed.append(data)
         handle_failure(failure, data)
     handle_after()
 
     printer.info('-------------------------')
-    logger.info(f'total failures: {numfailed}')
+    logger.info(f'total failures: {len(failed)}')
     logger.info('done checking')
 
-    if numfailed > 0:
-        sys.exit(numfailed)
+    if fmt == 'summary':
+        print('Categorized by storage:')
+        print()
+        from .match import group_by_storage
+        grouped = group_by_storage(failed, ignore_non_match=False)
+        for group, decls in grouped.items():
+            print()
+            print(group)
+            for decl in decls:
+                print(' ', _fmt_one_summary(decl))
+            print(f'subtotal: {len(decls)}')
+
+    if len(failed) > 0:
+        sys.exit(len(failed))
 
 
 def _cli_analyze(parser, **kwargs):
@@ -379,8 +393,9 @@ def cmd_analyze(filenames, *,
 
     logger.info('analyzing files...')
     analyzed = _analyze(filenames, **kwargs)
+    decls = filter_forward(analyzed, markpublic=True)
 
-    for line in do_fmt(analyzed):
+    for line in do_fmt(decls):
         print(line)
 
 

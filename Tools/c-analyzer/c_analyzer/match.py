@@ -135,3 +135,78 @@ def is_public_definition(decl):
         return not _match.is_forward_decl(decl)
     else:
         return not _match.is_external_reference(decl)
+
+
+def is_public_impl(decl):
+    if not _KIND.is_decl(decl.kind):
+        return False
+    # See filter_forward() about "is_public".
+    return getattr(decl, 'is_public', False)
+
+
+def is_module_global_decl(decl):
+    if is_public_impl(decl):
+        return False
+    if _match.is_forward_decl(decl):
+        return False
+    return not _match.is_local_var(decl)
+
+
+##################################
+# filtering with matchers
+
+def filter_forward(items, *, markpublic=False):
+    if markpublic:
+        public = set()
+        actual = []
+        for item in items:
+            if is_public_api(item):
+                public.add(item.id)
+            elif not _match.is_forward_decl(item):
+                actual.append(item)
+            else:
+                # non-public duplicate!
+                # XXX
+                raise Exception(item)
+        for item in actual:
+            _info.set_flag(item, 'is_public', item.id in public)
+            yield item
+    else:
+        for item in items:
+            if _match.is_forward_decl(item):
+                continue
+            yield item
+
+
+##################################
+# grouping with matchers
+
+def group_by_storage(decls, **kwargs):
+    def is_module_global(decl):
+        if not is_module_global_decl(decl):
+            return False
+        if decl.kind == _KIND.VARIABLE:
+            if _info.get_effective_storage(decl) == 'static':
+                # This is covered by is_static_module_global().
+                return False
+        return True
+    def is_static_module_global(decl):
+        if not _match.is_global_var(decl):
+            return False
+        return _info.get_effective_storage(decl) == 'static'
+    def is_static_local(decl):
+        if not _match.is_local_var(decl):
+            return False
+        return _info.get_effective_storage(decl) == 'static'
+    #def is_local(decl):
+    #    if not _match.is_local_var(decl):
+    #        return False
+    #    return _info.get_effective_storage(decl) != 'static'
+    categories = {
+        #'extern': is_extern,
+        'published': is_public_impl,
+        'module-global': is_module_global,
+        'static-module-global': is_static_module_global,
+        'static-local': is_static_local,
+    }
+    return _match.group_by_category(decls, categories, **kwargs)
