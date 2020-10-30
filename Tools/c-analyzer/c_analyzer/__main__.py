@@ -168,9 +168,7 @@ def _get_check_handlers(fmt, printer, verbosity=VERBOSITY):
             print(f'{data.filename}:{name} - {failure}')
     elif fmt == 'summary':
         def handle_failure(failure, data):
-            parent = data.parent or ''
-            funcname = parent if isinstance(parent, str) else parent.name
-            print(f'{data.filename:35}\t{funcname or "-":35}\t{data.name:40}\t{failure}')
+            print(_fmt_one_summary(data, failure))
     elif fmt == 'full':
         div = ''
         def handle_failure(failure, data):
@@ -229,6 +227,15 @@ def fmt_summary(analysis):
     yield ''
 #    yield f'grand total: {len(supported) + len(unsupported)}'
     yield f'grand total: {total}'
+
+
+def _fmt_one_summary(item, extra=None):
+    parent = item.parent or ''
+    funcname = parent if isinstance(parent, str) else parent.name
+    if extra:
+        return f'{item.filename:35}\t{funcname or "-":35}\t{item.name:40}\t{extra}'
+    else:
+        return f'{item.filename:35}\t{funcname or "-":35}\t{item.name}'
 
 
 def fmt_full(analysis):
