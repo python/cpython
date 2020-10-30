@@ -31,6 +31,9 @@ def _resolve_filenames(filenames):
     return resolved
 
 
+#######################################
+# the formats
+
 def fmt_summary(analysis):
     # XXX Support sorting and grouping.
     supported = []
