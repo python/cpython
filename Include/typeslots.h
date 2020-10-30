@@ -88,6 +88,3 @@
 /* New in 3.5 */
 #define Py_tp_finalize 80
 #endif
-#define Py_tp_dict 81
-#define Py_tp_mro 82
-#define Py_tp_subclasses 83

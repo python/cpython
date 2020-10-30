@@ -79,6 +79,3 @@
 {Py_am_aiter, offsetof(PyAsyncMethods, am_aiter), offsetof(PyTypeObject, tp_as_async)},
 {Py_am_anext, offsetof(PyAsyncMethods, am_anext), offsetof(PyTypeObject, tp_as_async)},
 {Py_tp_finalize, -1, offsetof(PyTypeObject, tp_finalize)},
-{Py_tp_dict, -1, offsetof(PyTypeObject, tp_dict)},
-{Py_tp_mro, -1, offsetof(PyTypeObject, tp_mro)},
-{Py_tp_subclasses, -1, offsetof(PyTypeObject, tp_subclasses)},
