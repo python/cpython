@@ -619,53 +619,49 @@ def resetlocale(category=LC_ALL):
     """
     _setlocale(category, _build_localename(getdefaultlocale()))
 
-if sys.platform.startswith("win"):
-    # On Win32, this will return the ANSI code page
-    def getpreferredencoding(do_setlocale = True):
-        """Return the charset that the user is likely using."""
-        if sys.flags.utf8_mode:
-            return 'UTF-8'
-        import _bootlocale
-        return _bootlocale.getpreferredencoding(False)
-else:
-    # On Unix, if CODESET is available, use that.
-    try:
-        CODESET
-    except NameError:
+
+try:
+    from _locale import _get_locale_encoding
+except ImportError:
+    def _get_locale_encoding():
         if hasattr(sys, 'getandroidapilevel'):
             # On Android langinfo.h and CODESET are missing, and UTF-8 is
             # always used in mbstowcs() and wcstombs().
-            def getpreferredencoding(do_setlocale = True):
-                return 'UTF-8'
-        else:
-            # Fall back to parsing environment variables :-(
-            def getpreferredencoding(do_setlocale = True):
-                """Return the charset that the user is likely using,
-                by looking at environment variables."""
-                if sys.flags.utf8_mode:
-                    return 'UTF-8'
-                res = getdefaultlocale()[1]
-                if res is None:
-                    # LANG not set, default conservatively to ASCII
-                    res = 'ascii'
-                return res
-    else:
-        def getpreferredencoding(do_setlocale = True):
-            """Return the charset that the user is likely using,
-            according to the system configuration."""
-            if sys.flags.utf8_mode:
-                return 'UTF-8'
-            import _bootlocale
-            if do_setlocale:
-                oldloc = setlocale(LC_CTYPE)
-                try:
-                    setlocale(LC_CTYPE, "")
-                except Error:
-                    pass
-            result = _bootlocale.getpreferredencoding(False)
-            if do_setlocale:
-                setlocale(LC_CTYPE, oldloc)
-            return result
+            return 'UTF-8'
+        if sys.flags.utf8_mode:
+            return 'UTF-8'
+        encoding = getdefaultlocale()[1]
+        if encoding is None:
+            # LANG not set, default conservatively to ASCII
+            encoding = 'ascii'
+        return encoding
+
+try:
+    CODESET
+except NameError:
+    def getpreferredencoding(do_setlocale=True):
+        """Return the charset that the user is likely using."""
+        return _get_locale_encoding()
+else:
+    # On Unix, if CODESET is available, use that.
+    def getpreferredencoding(do_setlocale=True):
+        """Return the charset that the user is likely using,
+        according to the system configuration."""
+        if sys.flags.utf8_mode:
+            return 'UTF-8'
+
+        if not do_setlocale:
+            return _get_locale_encoding()
+
+        old_loc = setlocale(LC_CTYPE)
+        try:
+            try:
+                setlocale(LC_CTYPE, "")
+            except Error:
+                pass
+            return _get_locale_encoding()
+        finally:
+            setlocale(LC_CTYPE, old_loc)
 
 
 ### Database
