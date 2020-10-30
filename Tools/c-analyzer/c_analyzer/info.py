@@ -7,51 +7,17 @@ from c_parser.info import (
     HighlevelParsedItem,
     Declaration,
     TypeDeclaration,
+)
+from c_parser.match import (
     is_type_decl,
+)
+from .match import (
     is_process_global,
 )
 
 
 IGNORED = _misc.Labeled('IGNORED')
 UNKNOWN = _misc.Labeled('UNKNOWN')
-
-
-# XXX Use known.tsv for these?
-SYSTEM_TYPES = {
-    'int8_t',
-    'uint8_t',
-    'int16_t',
-    'uint16_t',
-    'int32_t',
-    'uint32_t',
-    'int64_t',
-    'uint64_t',
-    'size_t',
-    'ssize_t',
-    'intptr_t',
-    'uintptr_t',
-    'wchar_t',
-    '',
-    # OS-specific
-    'pthread_cond_t',
-    'pthread_mutex_t',
-    'pthread_key_t',
-    'atomic_int',
-    'atomic_uintptr_t',
-    '',
-    # lib-specific
-    'WINDOW',  # curses
-    'XML_LChar',
-    'XML_Size',
-    'XML_Parser',
-    'enum XML_Error',
-    'enum XML_Status',
-    '',
-}
-
-
-def is_system_type(typespec):
-    return typespec in SYSTEM_TYPES
 
 
 class SystemType(TypeDeclaration):

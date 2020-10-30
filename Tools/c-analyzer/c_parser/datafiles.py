@@ -92,7 +92,7 @@ def write_decls_tsv(decls, outfile, extracolumns=None, *,
                     **kwargs
                     ):
     # XXX Move the row rendering here.
-    _write_decls_tsv(rows, outfile, extracolumns, relroot, kwargs)
+    _write_decls_tsv(decls, outfile, extracolumns, relroot, kwargs)
 
 
 def _iter_decls_tsv(infile, extracolumns=None, relroot=None):
