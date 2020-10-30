@@ -1157,7 +1157,9 @@ _PyPegen_run_parser(Parser *p)
         p->start_rule == Py_file_input ||
         p->start_rule == Py_eval_input)
     {
-        assert(PyAST_Validate(res));
+        if (!PyAST_Validate(res)) {
+            return NULL;
+        }
     }
 #endif
     return res;
