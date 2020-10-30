@@ -62,8 +62,7 @@ init_normalization(Parser *p)
 /* Checks if the NOTEQUAL token is valid given the current parser flags
 0 indicates success and nonzero indicates failure (an exception may be set) */
 int
-_PyPegen_check_barry_as_flufl(Parser *p) {
-    Token *t = p->tokens[p->fill - 1];
+_PyPegen_check_barry_as_flufl(Parser *p, Token* t) {
     assert(t->bytes != NULL);
     assert(t->type == NOTEQUAL);
 
