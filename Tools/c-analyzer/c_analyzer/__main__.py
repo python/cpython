@@ -1,5 +1,6 @@
 import io
 import logging
+import os
 import os.path
 import re
 import sys
@@ -9,6 +10,7 @@ from c_common.scriptutil import (
     add_verbosity_cli,
     add_traceback_cli,
     add_sepval_cli,
+    add_progress_cli,
     add_files_cli,
     add_commands_cli,
     process_args_by_key,
@@ -280,10 +282,12 @@ def _cli_check(parser, checks=None, **kwargs):
             args.checks = [check]
     else:
         process_checks = add_checks_cli(parser, checks=checks)
+    process_progress = add_progress_cli(parser)
     process_output = add_output_cli(parser, default=None)
     process_files = add_files_cli(parser, **kwargs)
     return [
         process_checks,
+        process_progress,
         process_output,
         process_files,
     ]
@@ -296,6 +300,7 @@ def cmd_check(filenames, *,
               relroot=None,
               failfast=False,
               iter_filenames=None,
+              track_progress=None,
               verbosity=VERBOSITY,
               _analyze=_analyze,
               _CHECKS=CHECKS,
@@ -312,6 +317,8 @@ def cmd_check(filenames, *,
      ) = _get_check_handlers(fmt, printer, verbosity)
 
     filenames = filter_filenames(filenames, iter_filenames)
+    if track_progress:
+        filenames = track_progress(filenames)
 
     logger.info('analyzing...')
     analyzed = _analyze(filenames, **kwargs)
@@ -339,9 +346,11 @@ def cmd_check(filenames, *,
 
 
 def _cli_analyze(parser, **kwargs):
+    process_progress = add_progress_cli(parser)
     process_output = add_output_cli(parser)
     process_files = add_files_cli(parser, **kwargs)
     return [
+        process_progress,
         process_output,
         process_files,
     ]
@@ -351,6 +360,7 @@ def _cli_analyze(parser, **kwargs):
 def cmd_analyze(filenames, *,
                 fmt=None,
                 iter_filenames=None,
+                track_progress=None,
                 verbosity=None,
                 _analyze=_analyze,
                 formats=FORMATS,
@@ -364,19 +374,8 @@ def cmd_analyze(filenames, *,
         raise ValueError(f'unsupported fmt {fmt!r}')
 
     filenames = filter_filenames(filenames, iter_filenames)
-    if verbosity == 2:
-        def iter_filenames(filenames=filenames):
-            marks = iter_marks()
-            for filename in filenames:
-                print(next(marks), end='')
-                yield filename
-        filenames = iter_filenames()
-    elif verbosity > 2:
-        def iter_filenames(filenames=filenames):
-            for filename in filenames:
-                print(f'<{filename}>')
-                yield filename
-        filenames = iter_filenames()
+    if track_progress:
+        filenames = track_progress(filenames)
 
     logger.info('analyzing...')
     analyzed = _analyze(filenames, **kwargs)
@@ -388,25 +387,32 @@ def cmd_analyze(filenames, *,
 def _cli_data(parser, filenames=None, known=None):
     ArgumentParser = type(parser)
     common = ArgumentParser(add_help=False)
-    if filenames is None:
-        common.add_argument('filenames', metavar='FILE', nargs='+')
+    # These flags will get processed by the top-level parse_args().
+    add_verbosity_cli(common)
+    add_traceback_cli(common)
 
     subs = parser.add_subparsers(dest='datacmd')
 
     sub = subs.add_parser('show', parents=[common])
     if known is None:
         sub.add_argument('--known', required=True)
+    if filenames is None:
+        sub.add_argument('filenames', metavar='FILE', nargs='+')
 
-    sub = subs.add_parser('dump')
+    sub = subs.add_parser('dump', parents=[common])
     if known is None:
         sub.add_argument('--known')
     sub.add_argument('--show', action='store_true')
+    process_progress = add_progress_cli(sub)
 
-    sub = subs.add_parser('check')
+    sub = subs.add_parser('check', parents=[common])
     if known is None:
         sub.add_argument('--known', required=True)
 
-    return None
+    def process_args(args):
+        if args.datacmd == 'dump':
+            process_progress(args)
+    return process_args
 
 
 def cmd_data(datacmd, filenames, known=None, *,
@@ -414,6 +420,7 @@ def cmd_data(datacmd, filenames, known=None, *,
              formats=FORMATS,
              extracolumns=None,
              relroot=None,
+             track_progress=None,
              **kwargs
              ):
     kwargs.pop('verbosity', None)
@@ -425,6 +432,8 @@ def cmd_data(datacmd, filenames, known=None, *,
         for line in do_fmt(known):
             print(line)
     elif datacmd == 'dump':
+        if track_progress:
+            filenames = track_progress(filenames)
         analyzed = _analyze(filenames, **kwargs)
         if known is None or usestdout:
             outfile = io.StringIO()

@@ -182,7 +182,7 @@ def cmd_data(datacmd, **kwargs):
                 analyze_resolved=_analyzer.analyze_resolved,
             )
             return _analyzer.Analysis.from_results(results)
-    else:
+    else:  # check
         known = _analyzer.read_known()
         def analyze(files, **kwargs):
             return _analyzer.iter_decls(files, **kwargs)
