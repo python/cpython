@@ -183,7 +183,7 @@ def _iter_source(lines, *, maxtext=20_000, maxlines=700, showtext=False):
         srcinfo._add_line(line, fileinfo.lno)
         if len(srcinfo.text) > maxtext:
             break
-        if srcinfo.end - srcinfo.start > maxlines:
+        if maxlines and srcinfo.end - srcinfo.start > maxlines:
             break
         while srcinfo._used():
             yield srcinfo

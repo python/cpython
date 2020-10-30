@@ -46,10 +46,14 @@ def clean_lines(text):
 GLOBS = [
     'Include/*.h',
     'Include/internal/*.h',
+    'Modules/**/*.h',
     'Modules/**/*.c',
+    'Objects/**/*.h',
     'Objects/**/*.c',
+    'Python/**/*.h',
     'Parser/**/*.c',
-    'Python/**/*.c',
+    'Python/**/*.h',
+    'Parser/**/*.c',
 ]
 
 EXCLUDED = clean_lines('''
@@ -79,6 +83,23 @@ Python/dynload_aix.c            # sys/ldr.h
 # XXX Fix the parser.
 EXCLUDED += clean_lines('''
 # The tool should be able to parse these...
+
+Modules/unicodedata_db.h
+Modules/unicodename_db.h
+Modules/cjkcodecs/mappings_*.h
+Objects/unicodetype_db.h
+Objects/stringlib/unicode_format.h
+
+Modules/clinic/*.c.h
+Objects/clinic/*.c.h
+Python/clinic/*.c.h
+
+Python/importlib.h
+Python/importlib_external.h
+Python/importlib_zipimport.h
+
+Modules/_ssl_data.h
+Modules/sre_lib.h
 
 Modules/_dbmmodule.c
 Modules/cjkcodecs/_codecs_*.c
