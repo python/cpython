@@ -262,18 +262,18 @@ Standard names are defined for the following types:
 
    .. versionadded:: 3.10
 
-.. class:: GenericAlias(T_origin, T_args)
+.. class:: GenericAlias(t_origin, t_args)
 
    The type of :ref:`parameterized generics <types-genericalias>` such as
    ``list[int]``.
 
-   ``T_origin`` should be a non-parameterized generic class, such as ``list``,
-   ``tuple`` or ``dict``.  ``T_args`` should be a :class:`tuple` (possibly of
-   length 1) of types which parameterize ``T_origin``::
+   ``t_origin`` should be a non-parameterized generic class, such as ``list``,
+   ``tuple`` or ``dict``.  ``t_args`` should be a :class:`tuple` (possibly of
+   length 1) of types which parameterize ``t_origin``::
 
       >>> from types import GenericAlias
 
-      >>> list[int] == GenericAlias(list, (int, ))
+      >>> list[int] == GenericAlias(list, (int,))
       True
       >>> dict[str, int] == GenericAlias(dict, (str, int))
       True
