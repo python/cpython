@@ -1293,7 +1293,7 @@ finalize_interp_clear(PyThreadState *tstate)
     PyInterpreterState_Clear(tstate->interp);
 
     /* Last explicit GC collection */
-    _PyGC_CollectNoFail();
+    _PyGC_CollectNoFail(tstate);
 
     /* Clear all loghooks */
     /* Both _PySys_Audit function and users still need PyObject, such as tuple.
@@ -1414,7 +1414,7 @@ Py_FinalizeEx(void)
      * XXX but I'm unclear on exactly how that one happens.  In any case,
      * XXX I haven't seen a real-life report of either of these.
      */
-    _PyGC_CollectIfEnabled();
+    PyGC_Collect();
 
     /* Destroy all modules */
     _PyImport_Cleanup(tstate);

@@ -566,7 +566,7 @@ _PyImport_Cleanup(PyThreadState *tstate)
     }
     Py_XDECREF(dict);
     /* Collect references */
-    _PyGC_CollectNoFail();
+    _PyGC_CollectNoFail(tstate);
     /* Dump GC stats before it's too late, since it uses the warnings
        machinery. */
     _PyGC_DumpShutdownStats(tstate);
@@ -626,7 +626,7 @@ _PyImport_Cleanup(PyThreadState *tstate)
     Py_DECREF(modules);
 
     /* Once more */
-    _PyGC_CollectNoFail();
+    _PyGC_CollectNoFail(tstate);
 
 #undef CLEAR_MODULE
 #undef STORE_MODULE_WEAKREF
