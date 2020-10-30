@@ -42,6 +42,13 @@ def _format_callbacks(cb):
     return f'cb=[{cb}]'
 
 
+# bpo-42183: _repr_running is needed for repr protection
+# when a Future or Task result contains itself directly or indirectly.
+# The logic is borrowed from @reprlib.recursive_repr decorator.
+# Unfortunately, the direct decorator usage is impossible because of
+# AttributeError: '_asyncio.Task' object has no attribute '__module__' error.
+#
+# After fixing this thing we can return to the decorator based approach.
 _repr_running = set()
 
 
