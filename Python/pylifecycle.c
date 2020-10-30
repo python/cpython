@@ -1576,10 +1576,7 @@ finalize_interp_clear(PyThreadState *tstate)
     int is_main_interp = _Py_IsMainInterpreter(tstate);
 
     /* Clear interpreter state and all thread states */
-    PyInterpreterState_Clear(tstate->interp);
-
-    /* Last explicit GC collection */
-    _PyGC_CollectNoFail(tstate);
+    _PyInterpreterState_Clear(tstate);
 
     /* Clear all loghooks */
     /* Both _PySys_Audit function and users still need PyObject, such as tuple.
@@ -1587,8 +1584,6 @@ finalize_interp_clear(PyThreadState *tstate)
     if (is_main_interp) {
         _PySys_ClearAuditHooks(tstate);
     }
-
-    _PyGC_Fini(tstate);
 
     if (is_main_interp) {
         _Py_HashRandomization_Fini();

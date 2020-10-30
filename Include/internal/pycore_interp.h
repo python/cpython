@@ -267,6 +267,7 @@ extern PyStatus _PyInterpreterState_SetConfig(
     PyInterpreterState *interp,
     const PyConfig *config);
 
+extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 
 
 /* cross-interpreter data registry */

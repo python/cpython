@@ -268,14 +268,11 @@ out_of_memory:
 }
 
 
-void
-PyInterpreterState_Clear(PyInterpreterState *interp)
+static void
+interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 {
     _PyRuntimeState *runtime = interp->runtime;
 
-    /* Use the current Python thread state to call audit hooks,
-       not the current Python thread state of 'interp'. */
-    PyThreadState *tstate = _PyThreadState_GET();
     if (_PySys_Audit(tstate, "cpython.PyInterpreterState_Clear", NULL) < 0) {
         _PyErr_Clear(tstate);
     }
@@ -306,6 +303,12 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     if (_PyRuntimeState_GetFinalizing(runtime) == NULL) {
         _PyWarnings_Fini(interp);
     }
+
+    /* Last garbage collection on this interpreter */
+    _PyGC_CollectNoFail(tstate);
+
+    _PyGC_Fini(tstate);
+
     /* We don't clear sysdict and builtins until the end of this function.
        Because clearing other attributes can execute arbitrary Python code
        which requires sysdict and builtins. */
@@ -317,6 +320,25 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     // XXX Once we have one allocator per interpreter (i.e.
     // per-interpreter GC) we must ensure that all of the interpreter's
     // objects have been cleaned up at the point.
+}
+
+
+void
+PyInterpreterState_Clear(PyInterpreterState *interp)
+{
+    // Use the current Python thread state to call audit hooks and to collect
+    // garbage. It can be different than the current Python thread state
+    // of 'interp'.
+    PyThreadState *current_tstate = _PyThreadState_GET();
+
+    interpreter_clear(interp, current_tstate);
+}
+
+
+void
+_PyInterpreterState_Clear(PyThreadState *tstate)
+{
+    interpreter_clear(tstate->interp, tstate);
 }
 
 
