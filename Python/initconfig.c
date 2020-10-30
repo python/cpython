@@ -1517,10 +1517,9 @@ config_get_locale_encoding(PyConfig *config, const PyPreConfig *preconfig,
     const char *encoding = nl_langinfo(CODESET);
     if (!encoding || encoding[0] == '\0') {
 #ifdef _Py_FORCE_UTF8_FS_ENCODING
-        // nl_langinfo() can return an empty string when the setting has an
-        // invalid value. Default to UTF-8 in that case, because UTF-8 is the
-        // default charset on macOS and returning nothing will crash the
-        // interpreter.
+        // nl_langinfo() can return an empty string when the LC_CTYPE locale is
+        // not supported. Default to UTF-8 in that case, because UTF-8 is the
+        // default charset on macOS.
         encoding = "UTF-8";
 #else
         return _PyStatus_ERR("failed to get the locale encoding: "
