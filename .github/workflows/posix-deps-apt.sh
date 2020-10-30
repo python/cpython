@@ -3,19 +3,19 @@ apt-get update
 
 apt-get -yq install \
     build-essential \
-    zlib1g-dev \
+    gdb \
+    lcov \
     libbz2-dev \
+    libffi-dev \
+    libgdbm-dev \
     liblzma-dev \
     libncurses5-dev \
     libreadline6-dev \
     libsqlite3-dev \
     libssl-dev \
-    libgdbm-dev \
-    tk-dev \
     lzma \
     lzma-dev \
-    liblzma-dev \
-    libffi-dev \
+    tk-dev \
     uuid-dev \
     xvfb \
-    lcov
+    zlib1g-dev
