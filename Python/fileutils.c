@@ -821,6 +821,7 @@ _Py_EncodeLocaleEx(const wchar_t *text, char **str,
 }
 
 
+// See also config_get_locale_encoding()
 PyObject *
 _Py_GetLocaleEncoding(void)
 {
@@ -844,7 +845,7 @@ _Py_GetLocaleEncoding(void)
         // invalid value. Default to UTF-8 in that case, because UTF-8 is the
         // default charset on macOS and returning nothing will crash the
         // interpreter.
-        return PyUnicode_FromString("UTF-8");
+        encoding = "UTF-8";
 #else
         PyErr_SetString(PyExc_ValueError,
                         "failed to get the locale encoding: "
@@ -852,6 +853,7 @@ _Py_GetLocaleEncoding(void)
         return NULL;
 #endif
     }
+    // Decode from UTF-8
     return PyUnicode_FromString(encoding);
 #endif  // !CODESET
 
