@@ -320,12 +320,12 @@ def cmd_check(filenames, *,
     if track_progress:
         filenames = track_progress(filenames)
 
-    logger.info('analyzing...')
+    logger.info('analyzing files...')
     analyzed = _analyze(filenames, **kwargs)
     if relroot:
         analyzed.fix_filenames(relroot)
 
-    logger.info('checking...')
+    logger.info('checking analysis results...')
     numfailed = 0
     for data, failure in _check_all(analyzed, checks, failfast=failfast):
         if data is None:
@@ -377,7 +377,7 @@ def cmd_analyze(filenames, *,
     if track_progress:
         filenames = track_progress(filenames)
 
-    logger.info('analyzing...')
+    logger.info('analyzing files...')
     analyzed = _analyze(filenames, **kwargs)
 
     for line in do_fmt(analyzed):
