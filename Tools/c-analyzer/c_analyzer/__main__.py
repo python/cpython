@@ -17,11 +17,12 @@ from c_common.scriptutil import (
     filter_filenames,
     iter_marks,
 )
-from c_parser.info import KIND, is_type_decl
+from c_parser.info import KIND
+from c_parser.match import is_type_decl
 from . import (
     analyze as _analyze,
-    check_all as _check_all,
     datafiles as _datafiles,
+    check_all as _check_all,
 )
 
 
@@ -44,7 +45,7 @@ logger = logging.getLogger(__name__)
 TABLE_SECTIONS = {
     'types': (
         ['kind', 'name', 'data', 'file'],
-        is_type_decl,
+        KIND.is_type_decl,
         (lambda v: (v.kind.value, v.filename or '', v.name)),
     ),
     'typedefs': 'types',
