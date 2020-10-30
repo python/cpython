@@ -1199,10 +1199,14 @@ insertdict_init(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value
         return 0;
     }
 
+#ifdef Py_DEBUG
     if (old_value != value) {
         assert(old_value != NULL);
-        DK_ENTRIES(keys)[ix].me_value = value;
     }
+#endif
+
+    DK_ENTRIES(keys)[ix].me_value = value;
+
     Py_XDECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
     ASSERT_CONSISTENT(mp);
     Py_DECREF(key);
