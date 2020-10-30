@@ -190,9 +190,17 @@ class PlatformTest(unittest.TestCase):
         # processor cannot be replaced
         self.assertEqual(new.processor, res.processor)
 
-    def test_uname_deepcopy(self):
-        res = platform.uname()
-        self.assertEqual(copy.deepcopy(res), res)
+    def test_uname_copy(self):
+        uname = platform.uname()
+        self.assertEqual(copy.copy(uname), uname)
+        self.assertEqual(copy.deepcopy(uname), uname)
+
+    def test_uname_pickle(self):
+        uname = platform.uname()
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                pickled = pickle.dumps(uname, proto)
+                self.assertEqual(pickle.loads(pickled), uname)
 
     def test_uname_slices(self):
         res = platform.uname()
