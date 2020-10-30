@@ -118,7 +118,7 @@ Checks if a string contains a complete SQL statement. Non-standard.
 
 static PyObject *
 pysqlite_complete_statement_impl(PyObject *module, const char *statement)
-/*[clinic end generated code: output=e55f1ff1952df558 input=b15b778a9c1b557b]*/
+/*[clinic end generated code: output=e55f1ff1952df558 input=f6b24996b31c5c33]*/
 {
     PyObject* result;
 
@@ -145,7 +145,7 @@ Experimental/Non-standard.
 
 static PyObject *
 pysqlite_enable_shared_cache_impl(PyObject *module, int do_enable)
-/*[clinic end generated code: output=259c74eedee1516b input=6c608c515bd7caba]*/
+/*[clinic end generated code: output=259c74eedee1516b input=8400e41bc58b6b24]*/
 {
     int rc;
 

@@ -3,29 +3,36 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(pysqlite_complete_statement__doc__,
-"complete_statement($module, statement, /)\n"
+"complete_statement($module, /, statement)\n"
 "--\n"
 "\n"
 "Checks if a string contains a complete SQL statement. Non-standard.");
 
 #define PYSQLITE_COMPLETE_STATEMENT_METHODDEF    \
-    {"complete_statement", (PyCFunction)pysqlite_complete_statement, METH_O, pysqlite_complete_statement__doc__},
+    {"complete_statement", (PyCFunction)(void(*)(void))pysqlite_complete_statement, METH_FASTCALL|METH_KEYWORDS, pysqlite_complete_statement__doc__},
 
 static PyObject *
 pysqlite_complete_statement_impl(PyObject *module, const char *statement);
 
 static PyObject *
-pysqlite_complete_statement(PyObject *module, PyObject *arg)
+pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"statement", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "complete_statement", 0};
+    PyObject *argsbuf[1];
     const char *statement;
 
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("complete_statement", "argument", "str", arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("complete_statement", "argument 'statement'", "str", args[0]);
         goto exit;
     }
     Py_ssize_t statement_length;
-    statement = PyUnicode_AsUTF8AndSize(arg, &statement_length);
+    statement = PyUnicode_AsUTF8AndSize(args[0], &statement_length);
     if (statement == NULL) {
         goto exit;
     }
@@ -40,7 +47,7 @@ exit:
 }
 
 PyDoc_STRVAR(pysqlite_enable_shared_cache__doc__,
-"enable_shared_cache($module, enable, /)\n"
+"enable_shared_cache($module, /, do_enable)\n"
 "--\n"
 "\n"
 "Enable or disable shared cache mode for the calling thread.\n"
@@ -48,18 +55,25 @@ PyDoc_STRVAR(pysqlite_enable_shared_cache__doc__,
 "Experimental/Non-standard.");
 
 #define PYSQLITE_ENABLE_SHARED_CACHE_METHODDEF    \
-    {"enable_shared_cache", (PyCFunction)pysqlite_enable_shared_cache, METH_O, pysqlite_enable_shared_cache__doc__},
+    {"enable_shared_cache", (PyCFunction)(void(*)(void))pysqlite_enable_shared_cache, METH_FASTCALL|METH_KEYWORDS, pysqlite_enable_shared_cache__doc__},
 
 static PyObject *
 pysqlite_enable_shared_cache_impl(PyObject *module, int do_enable);
 
 static PyObject *
-pysqlite_enable_shared_cache(PyObject *module, PyObject *arg)
+pysqlite_enable_shared_cache(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"do_enable", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "enable_shared_cache", 0};
+    PyObject *argsbuf[1];
     int do_enable;
 
-    do_enable = _PyLong_AsInt(arg);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    do_enable = _PyLong_AsInt(args[0]);
     if (do_enable == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -205,4 +219,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f56e6c44a21b22f8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d87990f941c209fa input=a9049054013a1b77]*/
