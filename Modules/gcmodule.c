@@ -1191,6 +1191,11 @@ gc_collect_main(PyThreadState *tstate, int generation,
     _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
     GCState *gcstate = &tstate->interp->gc;
 
+    // gc_collect_main() must not be called before _PyGC_Init
+    // or after _PyGC_Fini()
+    assert(gcstate->garbage != NULL);
+    assert(!_PyErr_Occurred(tstate));
+
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     if (tstate->interp->config._isolated_interpreter) {
         // bpo-40533: The garbage collector must not be run on parallel on
@@ -2073,16 +2078,13 @@ PyGC_Collect(void)
 Py_ssize_t
 _PyGC_CollectNoFail(PyThreadState *tstate)
 {
-    assert(!_PyErr_Occurred(tstate));
-
-    GCState *gcstate = &tstate->interp->gc;
-
     /* Ideally, this function is only called on interpreter shutdown,
        and therefore not recursively.  Unfortunately, when there are daemon
        threads, a daemon thread can start a cyclic garbage collection
        during interpreter shutdown (and then never finish it).
        See http://bugs.python.org/issue8713#msg195178 for an example.
        */
+    GCState *gcstate = &tstate->interp->gc;
     if (gcstate->collecting) {
         return 0;
     }
