@@ -194,6 +194,12 @@ class PlatformTest(unittest.TestCase):
         res = platform.uname()
         self.assertEqual(copy.deepcopy(res), res)
 
+    def test_uname_slices(self):
+        res = platform.uname()
+        expected = tuple(res)
+        self.assertEqual(res[:], expected)
+        self.assertEqual(res[:5], expected[:5])
+
     @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
     def test_uname_processor(self):
         """
