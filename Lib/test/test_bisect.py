@@ -200,6 +200,63 @@ class TestBisect:
         self.module.insort(a=data, x=25, lo=1, hi=3)
         self.assertEqual(data, [10, 20, 25, 25, 25, 30, 40, 50])
 
+    def test_lookups_with_key_function(self):
+        mod = self.module
+
+        # Invariant: Index with a keyfunc on an array
+        # should match the index on an array where
+        # key function has already been applied.
+
+        keyfunc = abs
+        arr = sorted([2, -4, 6, 8, -10], key=keyfunc)
+        precomputed_arr = list(map(keyfunc, arr))
+        for x in precomputed_arr:
+            self.assertEqual(
+                mod.bisect_left(arr, x, key=keyfunc),
+                mod.bisect_left(precomputed_arr, x)
+            )
+            self.assertEqual(
+                mod.bisect_right(arr, x, key=keyfunc),
+                mod.bisect_right(precomputed_arr, x)
+            )
+
+        keyfunc = str.casefold
+        arr = sorted('aBcDeEfgHhiIiij', key=keyfunc)
+        precomputed_arr = list(map(keyfunc, arr))
+        for x in precomputed_arr:
+            self.assertEqual(
+                mod.bisect_left(arr, x, key=keyfunc),
+                mod.bisect_left(precomputed_arr, x)
+            )
+            self.assertEqual(
+                mod.bisect_right(arr, x, key=keyfunc),
+                mod.bisect_right(precomputed_arr, x)
+            )
+
+    def test_insort(self):
+        from random import shuffle
+        mod = self.module
+
+        # Invariant:  As random elements are inserted in
+        # a target list, the targetlist remains sorted.
+        keyfunc = abs
+        data = list(range(-10, 11)) + list(range(-20, 20, 2))
+        shuffle(data)
+        target = []
+        for x in data:
+            mod.insort_left(target, x, key=keyfunc)
+            self.assertEqual(
+                sorted(target, key=keyfunc),
+                target
+            )
+        target = []
+        for x in data:
+            mod.insort_right(target, x, key=keyfunc)
+            self.assertEqual(
+                sorted(target, key=keyfunc),
+                target
+            )
+
 class TestBisectPython(TestBisect, unittest.TestCase):
     module = py_bisect
 

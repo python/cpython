@@ -135,12 +135,12 @@ The class can be used to simulate nested scopes and is useful in templating.
       :attr:`~collections.ChainMap.parents` property.
 
     * The `Nested Contexts recipe
-      <https://github.com/ActiveState/code/tree/master/recipes/Python/577434_Nested_contexts__chamapping/recipe-577434.py>`_ has options to control
+      <https://code.activestate.com/recipes/577434/>`_ has options to control
       whether writes and other mutations apply only to the first mapping or to
       any mapping in the chain.
 
     * A `greatly simplified read-only version of Chainmap
-      <https://github.com/ActiveState/code/tree/master/recipes/Python/305268_Chained_map_lookups/recipe-305268.py>`_.
+      <https://code.activestate.com/recipes/305268/>`_.
 
 
 :class:`ChainMap` Examples and Recipes

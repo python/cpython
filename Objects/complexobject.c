@@ -6,6 +6,7 @@
 /* Submitted by Jim Hugunin */
 
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "structmember.h"         // PyMemberDef
 
@@ -510,23 +511,6 @@ complex_div(PyObject *v, PyObject *w)
 }
 
 static PyObject *
-complex_remainder(PyObject *v, PyObject *w)
-{
-    PyErr_SetString(PyExc_TypeError,
-                    "can't mod complex numbers.");
-    return NULL;
-}
-
-
-static PyObject *
-complex_divmod(PyObject *v, PyObject *w)
-{
-    PyErr_SetString(PyExc_TypeError,
-                    "can't take floor or mod of complex number.");
-    return NULL;
-}
-
-static PyObject *
 complex_pow(PyObject *v, PyObject *w, PyObject *z)
 {
     Py_complex p;
@@ -560,14 +544,6 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         return NULL;
     }
     return PyComplex_FromCComplex(p);
-}
-
-static PyObject *
-complex_int_div(PyObject *v, PyObject *w)
-{
-    PyErr_SetString(PyExc_TypeError,
-                    "can't take floor of complex number.");
-    return NULL;
 }
 
 static PyObject *
@@ -666,22 +642,6 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
 
 Unimplemented:
     Py_RETURN_NOTIMPLEMENTED;
-}
-
-static PyObject *
-complex_int(PyObject *v)
-{
-    PyErr_SetString(PyExc_TypeError,
-               "can't convert complex to int");
-    return NULL;
-}
-
-static PyObject *
-complex_float(PyObject *v)
-{
-    PyErr_SetString(PyExc_TypeError,
-               "can't convert complex to float");
-    return NULL;
 }
 
 /*[clinic input]
@@ -911,7 +871,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 /*[clinic input]
 @classmethod
 complex.__new__ as complex_new
-    real as r: object(c_default="_PyLong_Zero") = 0
+    real as r: object(c_default="NULL") = 0
     imag as i: object(c_default="NULL") = 0
 
 Create a complex number from a real part and an optional imaginary part.
@@ -921,7 +881,7 @@ This is equivalent to (real + imag*1j) where imag defaults to 0.
 
 static PyObject *
 complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
-/*[clinic end generated code: output=b6c7dd577b537dc1 input=6f6b0bedba29bcb5]*/
+/*[clinic end generated code: output=b6c7dd577b537dc1 input=f4c667f2596d4fd1]*/
 {
     PyObject *tmp;
     PyNumberMethods *nbr, *nbi = NULL;
@@ -929,6 +889,10 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     int own_r = 0;
     int cr_is_complex = 0;
     int ci_is_complex = 0;
+
+    if (r == NULL) {
+        r = _PyLong_GetZero();
+    }
 
     /* Special-case for a single argument when type(arg) is complex. */
     if (PyComplex_CheckExact(r) && i == NULL &&
@@ -966,7 +930,9 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
 
     nbr = Py_TYPE(r)->tp_as_number;
-    if (nbr == NULL || (nbr->nb_float == NULL && nbr->nb_index == NULL)) {
+    if (nbr == NULL ||
+        (nbr->nb_float == NULL && nbr->nb_index == NULL && !PyComplex_Check(r)))
+    {
         PyErr_Format(PyExc_TypeError,
                      "complex() first argument must be a string or a number, "
                      "not '%.200s'",
@@ -978,7 +944,9 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
     if (i != NULL) {
         nbi = Py_TYPE(i)->tp_as_number;
-        if (nbi == NULL || (nbi->nb_float == NULL && nbi->nb_index == NULL)) {
+        if (nbi == NULL ||
+            (nbi->nb_float == NULL && nbi->nb_index == NULL && !PyComplex_Check(i)))
+        {
             PyErr_Format(PyExc_TypeError,
                          "complex() second argument must be a number, "
                          "not '%.200s'",
@@ -1057,8 +1025,8 @@ static PyNumberMethods complex_as_number = {
     (binaryfunc)complex_add,                    /* nb_add */
     (binaryfunc)complex_sub,                    /* nb_subtract */
     (binaryfunc)complex_mul,                    /* nb_multiply */
-    (binaryfunc)complex_remainder,              /* nb_remainder */
-    (binaryfunc)complex_divmod,                 /* nb_divmod */
+    0,                                          /* nb_remainder */
+    0,                                          /* nb_divmod */
     (ternaryfunc)complex_pow,                   /* nb_power */
     (unaryfunc)complex_neg,                     /* nb_negative */
     (unaryfunc)complex_pos,                     /* nb_positive */
@@ -1070,9 +1038,9 @@ static PyNumberMethods complex_as_number = {
     0,                                          /* nb_and */
     0,                                          /* nb_xor */
     0,                                          /* nb_or */
-    complex_int,                                /* nb_int */
+    0,                                          /* nb_int */
     0,                                          /* nb_reserved */
-    complex_float,                              /* nb_float */
+    0,                                          /* nb_float */
     0,                                          /* nb_inplace_add */
     0,                                          /* nb_inplace_subtract */
     0,                                          /* nb_inplace_multiply*/
@@ -1083,7 +1051,7 @@ static PyNumberMethods complex_as_number = {
     0,                                          /* nb_inplace_and */
     0,                                          /* nb_inplace_xor */
     0,                                          /* nb_inplace_or */
-    (binaryfunc)complex_int_div,                /* nb_floor_divide */
+    0,                                          /* nb_floor_divide */
     (binaryfunc)complex_div,                    /* nb_true_divide */
     0,                                          /* nb_inplace_floor_divide */
     0,                                          /* nb_inplace_true_divide */

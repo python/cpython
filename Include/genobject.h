@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pystate.h"   /* _PyErr_StackItem */
+#include "abstract.h" /* PySendResult */
 
 /* _PyGenObject_HEAD defines the initial segment of generator
    and coroutine objects. */
@@ -41,24 +42,8 @@ PyAPI_FUNC(PyObject *) PyGen_NewWithQualName(PyFrameObject *,
     PyObject *name, PyObject *qualname);
 PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
-PyAPI_FUNC(PyObject *) _PyGen_Send(PyGenObject *, PyObject *);
 PyObject *_PyGen_yf(PyGenObject *);
 PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
-
-typedef enum {
-    PYGEN_RETURN = 0,
-    PYGEN_ERROR = -1,
-    PYGEN_NEXT = 1,
-} PySendResult;
-
-/* Sends the value into the generator or the coroutine. Returns:
-   - PYGEN_RETURN (0) if generator has returned.
-     'result' parameter is filled with return value
-   - PYGEN_ERROR (-1) if exception was raised.
-     'result' parameter is NULL
-   - PYGEN_NEXT (1) if generator has yielded.
-     'result' parameter is filled with yielded value. */
-PyAPI_FUNC(PySendResult) PyGen_Send(PyGenObject *, PyObject *, PyObject **);
 
 #ifndef Py_LIMITED_API
 typedef struct {

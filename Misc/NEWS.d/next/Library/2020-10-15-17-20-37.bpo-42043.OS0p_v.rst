@@ -1,0 +1,4 @@
+Add support for ``zipfile.Path`` inheritance. ``zipfile.Path.is_file()`` now
+returns False for non-existent names. ``zipfile.Path`` objects now expose a
+``.filename`` attribute and rely on that to resolve ``.name`` and
+``.parent`` when the ``Path`` object is at the root of the zipfile.

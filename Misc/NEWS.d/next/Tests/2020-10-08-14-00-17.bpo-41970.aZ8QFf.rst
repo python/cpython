@@ -1,0 +1,2 @@
+Avoid a test failure in ``test_lib2to3`` if the module has already imported
+at the time the test executes. Patch by Pablo Galindo.

@@ -185,6 +185,11 @@ must not be ``NULL``, and the type is not checked:
 
    Return the microsecond, as an int from 0 through 999999.
 
+.. c:function:: PyObject* PyDateTime_DATE_GET_TZINFO(PyDateTime_DateTime *o)
+
+   Return the tzinfo (which may be ``None``).
+
+   .. versionadded:: 3.10
 
 Macros to extract fields from time objects.  The argument must be an instance of
 :c:data:`PyDateTime_Time`, including subclasses. The argument must not be ``NULL``,
@@ -208,6 +213,12 @@ and the type is not checked:
 .. c:function:: int PyDateTime_TIME_GET_MICROSECOND(PyDateTime_Time *o)
 
    Return the microsecond, as an int from 0 through 999999.
+
+.. c:function:: PyObject* PyDateTime_TIME_GET_TZINFO(PyDateTime_Time *o)
+
+   Return the tzinfo (which may be ``None``).
+
+   .. versionadded:: 3.10
 
 
 Macros to extract fields from time delta objects.  The argument must be an

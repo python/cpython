@@ -1,2 +1,0 @@
-Optimize ``dict_merge()`` for copying dict (e.g. ``dict(d)`` and
-``{}.update(d)``).
