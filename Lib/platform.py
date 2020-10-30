@@ -813,7 +813,7 @@ class uname_result(
         return result
 
     def __getitem__(self, key):
-        return tuple(iter(self))[key]
+        return tuple(self)[key]
 
     def __len__(self):
         return len(tuple(iter(self)))
