@@ -3616,28 +3616,16 @@ dict_vectorcall(PyObject *type, PyObject * const*args,
 
         Py_ssize_t kw_size = PyTuple_GET_SIZE(kwnames);
 
-        if (mp->ma_keys->dk_usable < kw_size) {
-            if (dictresize(mp, estimate_keysize(mp->ma_used + kw_size))) {
+        if (dictresize(mp, estimate_keysize(mp->ma_used + kw_size))) {
+            Py_DECREF(self);
+            return NULL;
+        }
+
+        for (Py_ssize_t i = 0; i < kw_size; i++) {
+            if (dict_set_item_init(self, PyTuple_GET_ITEM(kwnames, i), args[i], nargs) < 0) {
                 Py_DECREF(self);
                 return NULL;
             }
-        }
-
-        if (_PyDict_HasSplitTable(mp)) {
-	        for (Py_ssize_t i = 0; i < kw_size; i++) {
-	            if (PyDict_SetItem(self, PyTuple_GET_ITEM(kwnames, i), args[i]) < 0) {
-	                Py_DECREF(self);
-	                return NULL;
-	            }
-	        }
-        }
-        else {
-	        for (Py_ssize_t i = 0; i < kw_size; i++) {
-	            if (dict_set_item_init(self, PyTuple_GET_ITEM(kwnames, i), args[i], nargs) < 0) {
-	                Py_DECREF(self);
-	                return NULL;
-	            }
-	        }
         }
 
         mp->ma_version_tag = DICT_NEXT_VERSION();
