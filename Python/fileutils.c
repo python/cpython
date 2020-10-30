@@ -1,5 +1,6 @@
 #include "Python.h"
-#include "pycore_fileutils.h"
+#include "pycore_fileutils.h"     // fileutils definitions
+#include "pycore_runtime.h"       // _PyRuntime
 #include "osdefs.h"               // SEP
 #include <locale.h>
 
@@ -817,6 +818,44 @@ _Py_EncodeLocaleEx(const wchar_t *text, char **str,
 {
     return encode_locale_ex(text, str, error_pos, reason, 1,
                             current_locale, errors);
+}
+
+
+PyObject *
+_Py_GetLocaleEncoding(void)
+{
+#ifdef _Py_FORCE_UTF8_LOCALE
+    // On Android langinfo.h and CODESET are missing,
+    // and UTF-8 is always used in mbstowcs() and wcstombs().
+    return PyUnicode_FromString("UTF-8");
+#else
+    const PyPreConfig *preconfig = &_PyRuntime.preconfig;
+    if (preconfig->utf8_mode) {
+        return PyUnicode_FromString("UTF-8");
+    }
+
+#if defined(MS_WINDOWS)
+    return PyUnicode_FromFormat("cp%u", GetACP());
+#else
+    const char *encoding = nl_langinfo(CODESET);
+    if (!encoding || encoding[0] == '\0') {
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
+        // nl_langinfo() can return an empty string when the setting has an
+        // invalid value. Default to UTF-8 in that case, because UTF-8 is the
+        // default charset on macOS and returning nothing will crash the
+        // interpreter.
+        return PyUnicode_FromString("UTF-8");
+#else
+        PyErr_SetString(PyExc_ValueError,
+                        "failed to get the locale encoding: "
+                        "nl_langinfo(CODESET) returns an empty string");
+        return NULL;
+#endif
+    }
+    return PyUnicode_FromString(encoding);
+#endif  // !CODESET
+
+#endif
 }
 
 
