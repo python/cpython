@@ -1,4 +1,4 @@
-Fix a stack overflow error for asyncio Task or Future repr()
+Fix a stack overflow error for asyncio Task or Future repr().
 
-The overflow occurs under some circumstances when a task or future
+The overflow occurs under some circumstances when a Task or Future
 recursively returns itself.
