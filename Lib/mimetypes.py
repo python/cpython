@@ -558,6 +558,7 @@ def _default_mime_types():
         '.pict': 'image/pict',
         '.pct' : 'image/pict',
         '.pic' : 'image/pict',
+        '.webp': 'image/webp',
         '.xul' : 'text/xul',
         }
 
