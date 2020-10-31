@@ -1,0 +1,2 @@
+Check for errors in left-recursive parser rules to avoid cases where such errors do not
+get handled in time and appear as long-distance bugs in other places.
