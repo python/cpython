@@ -1,0 +1,3 @@
+Optimize ``dict.popitem()`` to use EMPTY entry instead of DUMMY entry in the
+internal hash table. Algorithms using ``dict.popitem()`` and inserting the
+dict in a loop will become faster.
