@@ -109,8 +109,9 @@ TryAddRef(StgDictObject *dict, CDataObject *obj)
     IUnknown *punk;
     _Py_IDENTIFIER(_needs_com_addref_);
 
-    if (!_PyDict_GetItemIdWithError((PyObject *)dict, &PyId__needs_com_addref_)) {
-        if (PyErr_Occurred()) {
+    int r = _PyDict_ContainsId((PyObject *)dict, &PyId__needs_com_addref_);
+    if (r <= 0) {
+        if (r < 0) {
             PrintError("getting _needs_com_addref_");
         }
         return;

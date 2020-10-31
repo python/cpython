@@ -351,7 +351,10 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
         return -1;
     Py_INCREF(m);
     d = PyModule_GetDict(m);
-    if (PyDict_GetItemString(d, "__file__") == NULL) {
+    if (_PyDict_GetItemStringWithError(d, "__file__") == NULL) {
+        if (PyErr_Occurred()) {
+            goto done;
+        }
         PyObject *f;
         f = PyUnicode_DecodeFSDefault(filename);
         if (f == NULL)
@@ -770,7 +773,7 @@ static void
 print_exception(PyObject *f, PyObject *value)
 {
     int err = 0;
-    PyObject *type, *tb;
+    PyObject *type, *tb, *tmp;
     _Py_IDENTIFIER(print_file_and_line);
 
     if (!PyExceptionInstance_Check(value)) {
@@ -789,10 +792,12 @@ print_exception(PyObject *f, PyObject *value)
     if (tb && tb != Py_None)
         err = PyTraceBack_Print(tb, f);
     if (err == 0 &&
-        _PyObject_HasAttrId(value, &PyId_print_file_and_line))
+        (err = _PyObject_LookupAttrId(value, &PyId_print_file_and_line, &tmp)) > 0)
     {
         PyObject *message, *filename, *text;
         Py_ssize_t lineno, offset;
+        err = 0;
+        Py_DECREF(tmp);
         if (!parse_syntax_error(value, &message, &filename,
                                 &lineno, &offset, &text))
             PyErr_Clear();
@@ -1114,9 +1119,11 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     _Py_UnhandledKeyboardInterrupt = 0;
 
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (globals != NULL && PyDict_GetItemString(globals, "__builtins__") == NULL) {
-        if (PyDict_SetItemString(globals, "__builtins__",
-                                 tstate->interp->builtins) < 0) {
+    if (globals != NULL && _PyDict_GetItemStringWithError(globals, "__builtins__") == NULL) {
+        if (PyErr_Occurred() ||
+            PyDict_SetItemString(globals, "__builtins__",
+                                 tstate->interp->builtins) < 0)
+        {
             return NULL;
         }
     }

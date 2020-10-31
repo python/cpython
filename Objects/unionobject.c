@@ -15,7 +15,7 @@ unionobject_dealloc(PyObject *self)
     unionobject *alias = (unionobject *)self;
 
     Py_XDECREF(alias->args);
-    self->ob_type->tp_free(self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static Py_hash_t
@@ -311,21 +311,22 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
     _Py_IDENTIFIER(__args__);
     PyObject *qualname = NULL;
     PyObject *module = NULL;
+    PyObject *tmp;
     PyObject *r = NULL;
     int err;
 
-    int has_origin = _PyObject_HasAttrId(p, &PyId___origin__);
-    if (has_origin < 0) {
+    if (_PyObject_LookupAttrId(p, &PyId___origin__, &tmp) < 0) {
         goto exit;
     }
 
-    if (has_origin) {
-        int has_args = _PyObject_HasAttrId(p, &PyId___args__);
-        if (has_args < 0) {
+    if (tmp) {
+        Py_DECREF(tmp);
+        if (_PyObject_LookupAttrId(p, &PyId___args__, &tmp) < 0) {
             goto exit;
         }
-        if (has_args) {
+        if (tmp) {
             // It looks like a GenericAlias
+            Py_DECREF(tmp);
             goto use_repr;
         }
     }

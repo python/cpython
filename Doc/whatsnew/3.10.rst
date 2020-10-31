@@ -186,6 +186,11 @@ by :func:`curses.color_content`, :func:`curses.init_color`,
 support is provided by the underlying ncurses library.
 (Contributed by Jeffrey Kintscher and Hans Petter Jansson in :issue:`36982`.)
 
+encodings
+---------
+:func:`encodings.normalize_encoding` now ignores non-ASCII characters.
+(Contributed by Hai Shi in :issue:`39337`.)
+
 glob
 ----
 
@@ -204,6 +209,13 @@ py_compile
 
 Added ``--quiet`` option to command-line interface of :mod:`py_compile`.
 (Contributed by Gregory Schevchenko in :issue:`38731`.)
+
+shelve
+------
+
+The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
+instead of :mod:`pickle` protocol ``3`` when creating shelves.
+(Contributed by Zackery Spytz in :issue:`34204`.)
 
 sys
 ---
@@ -256,19 +268,58 @@ Optimizations
   average.
   (Contributed by Victor Stinner in :issue:`41006`.)
 
+* The ``LOAD_ATTR`` instruction now uses new "per opcode cache" mechanism.
+  It is about 36% faster now.  (Contributed by Pablo Galindo and Yury Selivanov
+  in :issue:`42093`, based on ideas implemented originally in PyPy and MicroPython.)
+
+* When building Python with ``--enable-optimizations`` now
+  ``-fno-semantic-interposition`` is added to both the compile and link line.
+  This speeds builds of the Python interpreter created with ``--enable-shared``
+  with ``gcc`` by up to 30%. See `this article
+  <https://developers.redhat.com/blog/2020/06/25/red-hat-enterprise-linux-8-2-brings-faster-python-3-8-run-speeds/>`_
+  for more details. (Contributed by Victor Stinner and Pablo Galindo in
+  :issue:`38980`)
 
 Deprecated
 ==========
 
+* Starting in this release, there will be a concerted effort to begin
+  cleaning up old import semantics that were kept for Python 2.7
+  compatibility. Specifically,
+  :meth:`~importlib.abc.PathEntryFinder.find_loader`/:meth:`~importlib.abc.Finder.find_module`
+  (superseded by :meth:`~importlib.abc.Finder.find_spec`),
+  :meth:`~importlib.abc.Loader.load_module`
+  (superseded by :meth:`~importlib.abc.Loader.exec_module`),
+  :meth:`~importlib.abc.Loader.module_repr` (which the import system
+  takes care of for you), the ``__package__`` attribute
+  (superseded by ``__spec__.parent``), the ``__loader__`` attribute
+  (superseded by ``__spec__.loader``), and the ``__cached__`` attribute
+  (superseded by ``__spec__.cached``) will slowly be removed (as well
+  as other classes and methods in :mod:`importlib`).
+  :exc:`ImportWarning` and/or :exc:`DeprecationWarning` will be raised
+  as appropriate to help identify code which needs updating during
+  this transition.
+
 
 Removed
 =======
+
+* Removed special methods ``__int__``, ``__float__``, ``__floordiv__``,
+  ``__mod__``, ``__divmod__``, ``__rfloordiv__``, ``__rmod__`` and
+  ``__rdivmod__`` of the :class:`complex` class.  They always raised
+  a :exc:`TypeError`.
+  (Contributed by Serhiy Storchaka in :issue:`41974`.)
 
 * The ``ParserBase.error()`` method from the private and undocumented ``_markupbase``
   module has been removed.  :class:`html.parser.HTMLParser` is the only subclass of
   ``ParserBase`` and its ``error()`` implementation has already been removed in
   Python 3.5.
   (Contributed by Berker Peksag in :issue:`31844`.)
+
+* Removed the ``unicodedata.ucnhash_CAPI`` attribute which was an internal
+  PyCapsule object. The related private ``_PyUnicode_Name_CAPI`` structure was
+  moved to the internal C API.
+  (Contributed by Victor Stinner in :issue:`42157`.)
 
 
 Porting to Python 3.10
@@ -316,6 +367,14 @@ New Features
 * Add a :c:func:`PyCodec_Unregister` function to unregister a codec
   search function.
   (Contributed by Hai Shi in :issue:`41842`.)
+
+* The :c:func:`PyIter_Send` function was added to allow
+  sending value into iterator without raising ``StopIteration`` exception.
+  (Contributed by Vladimir Matveev in :issue:`41756`.)
+
+* Added :c:func:`PyUnicode_AsUTF8AndSize` to the limited C API.
+  (Contributed by Alex Gaynor in :issue:`41784`.)
+
 
 Porting to Python 3.10
 ----------------------
@@ -368,6 +427,10 @@ Porting to Python 3.10
   raise ``DeprecationWarning`` now.  Use :c:func:`PyUnicode_New` to allocate
   Unicode object without initial data.
   (Contributed by Inada Naoki in :issue:`36346`.)
+
+* The private ``_PyUnicode_Name_CAPI`` structure of the PyCapsule API
+  ``unicodedata.ucnhash_CAPI`` has been moved to the internal C API.
+  (Contributed by Victor Stinner in :issue:`42157`.)
 
 Deprecated
 ----------

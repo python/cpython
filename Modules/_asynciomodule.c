@@ -16,7 +16,6 @@ _Py_IDENTIFIER(add_done_callback);
 _Py_IDENTIFIER(call_soon);
 _Py_IDENTIFIER(cancel);
 _Py_IDENTIFIER(get_event_loop);
-_Py_IDENTIFIER(send);
 _Py_IDENTIFIER(throw);
 
 
@@ -93,11 +92,6 @@ typedef struct {
     TaskObj *sw_task;
     PyObject *sw_arg;
 } TaskStepMethWrapper;
-
-typedef struct {
-    PyObject_HEAD
-    TaskObj *ww_task;
-} TaskWakeupMethWrapper;
 
 typedef struct {
     PyObject_HEAD
@@ -1871,92 +1865,14 @@ TaskStepMethWrapper_new(TaskObj *task, PyObject *arg)
     return (PyObject*) o;
 }
 
-/* ----- Task._wakeup wrapper */
+/* ----- Task._wakeup implementation */
 
-static PyObject *
-TaskWakeupMethWrapper_call(TaskWakeupMethWrapper *o,
-                           PyObject *args, PyObject *kwds)
-{
-    PyObject *fut;
-
-    if (kwds != NULL && PyDict_GET_SIZE(kwds) != 0) {
-        PyErr_SetString(PyExc_TypeError, "function takes no keyword arguments");
-        return NULL;
-    }
-    if (!PyArg_ParseTuple(args, "O", &fut)) {
-        return NULL;
-    }
-
-    return task_wakeup(o->ww_task, fut);
-}
-
-static int
-TaskWakeupMethWrapper_clear(TaskWakeupMethWrapper *o)
-{
-    Py_CLEAR(o->ww_task);
-    return 0;
-}
-
-static int
-TaskWakeupMethWrapper_traverse(TaskWakeupMethWrapper *o,
-                               visitproc visit, void *arg)
-{
-    Py_VISIT(o->ww_task);
-    return 0;
-}
-
-static void
-TaskWakeupMethWrapper_dealloc(TaskWakeupMethWrapper *o)
-{
-    PyObject_GC_UnTrack(o);
-    (void)TaskWakeupMethWrapper_clear(o);
-    Py_TYPE(o)->tp_free(o);
-}
-
-static PyObject *
-TaskWakeupMethWrapper_get___self__(TaskWakeupMethWrapper *o, void *Py_UNUSED(ignored))
-{
-    if (o->ww_task) {
-        Py_INCREF(o->ww_task);
-        return (PyObject*)o->ww_task;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyGetSetDef TaskWakeupMethWrapper_getsetlist[] = {
-    {"__self__", (getter)TaskWakeupMethWrapper_get___self__, NULL, NULL},
-    {NULL} /* Sentinel */
+static  PyMethodDef TaskWakeupDef = {
+    "task_wakeup",
+    (PyCFunction)task_wakeup,
+    METH_O,
+    NULL
 };
-
-static PyTypeObject TaskWakeupMethWrapper_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "TaskWakeupMethWrapper",
-    .tp_basicsize = sizeof(TaskWakeupMethWrapper),
-    .tp_itemsize = 0,
-    .tp_dealloc = (destructor)TaskWakeupMethWrapper_dealloc,
-    .tp_call = (ternaryfunc)TaskWakeupMethWrapper_call,
-    .tp_getattro = PyObject_GenericGetAttr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)TaskWakeupMethWrapper_traverse,
-    .tp_clear = (inquiry)TaskWakeupMethWrapper_clear,
-    .tp_getset = TaskWakeupMethWrapper_getsetlist,
-};
-
-static PyObject *
-TaskWakeupMethWrapper_new(TaskObj *task)
-{
-    TaskWakeupMethWrapper *o;
-    o = PyObject_GC_New(TaskWakeupMethWrapper, &TaskWakeupMethWrapper_Type);
-    if (o == NULL) {
-        return NULL;
-    }
-
-    Py_INCREF(task);
-    o->ww_task = task;
-
-    PyObject_GC_Track(o);
-    return (PyObject*) o;
-}
 
 /* ----- Task introspection helpers */
 
@@ -2695,13 +2611,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
 
     int gen_status = PYGEN_ERROR;
     if (exc == NULL) {
-        if (PyGen_CheckExact(coro) || PyCoro_CheckExact(coro)) {
-            gen_status = PyGen_Send((PyGenObject*)coro, Py_None, &result);
-        }
-        else {
-            result = _PyObject_CallMethodIdOneArg(coro, &PyId_send, Py_None);
-            gen_status = gen_status_from_result(&result);
-        }
+        gen_status = PyIter_Send(coro, Py_None, &result);
     }
     else {
         result = _PyObject_CallMethodIdOneArg(coro, &PyId_throw, exc);
@@ -2810,7 +2720,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
         fut->fut_blocking = 0;
 
         /* result.add_done_callback(task._wakeup) */
-        wrapper = TaskWakeupMethWrapper_new(task);
+        wrapper = PyCFunction_New(&TaskWakeupDef, (PyObject *)task);
         if (wrapper == NULL) {
             goto fail;
         }
@@ -2891,7 +2801,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
             goto fail;
         }
 
-        wrapper = TaskWakeupMethWrapper_new(task);
+        wrapper = PyCFunction_New(&TaskWakeupDef, (PyObject *)task);
         if (wrapper == NULL) {
             goto fail;
         }
@@ -3463,9 +3373,6 @@ PyInit__asyncio(void)
         return NULL;
     }
     if (PyType_Ready(&TaskStepMethWrapper_Type) < 0) {
-        return NULL;
-    }
-    if (PyType_Ready(&TaskWakeupMethWrapper_Type) < 0) {
         return NULL;
     }
     if (PyType_Ready(&PyRunningLoopHolder_Type) < 0) {
