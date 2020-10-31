@@ -134,7 +134,7 @@ arguments of multiple types, :data:`typing.Union` was used::
        return number ** 2
 
 
-Now, type hints can be written in a more succinct manner::
+Type hints can now be written in a more succinct manner::
 
    def square(number: int | float) -> int | float:
        return number ** 2
