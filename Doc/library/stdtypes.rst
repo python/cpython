@@ -4793,7 +4793,8 @@ The ``GenericAlias`` object acts as a proxy for :term:`generic types
 of a generic which provides the types for container elements.
 
 The user-exposed type for the ``GenericAlias`` object can be accessed from
-:data:`types.GenericAlias` and used for :func:`isinstance` checks.
+:class:`types.GenericAlias` and used for :func:`isinstance` checks.  It can
+also be used to create ``GenericAlias`` objects directly.
 
 .. describe:: T[X, Y, ...]
 
