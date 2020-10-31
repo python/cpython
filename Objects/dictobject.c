@@ -3253,7 +3253,8 @@ dict_popitem_impl(PyDictObject *self)
     self->ma_keys->dk_usable++;
     self->ma_used--;
     self->ma_version_tag = DICT_NEXT_VERSION();
-    ASSERT_CONSISTENT(self);
+    // ASSERT_CONSISTENT(self);
+    assert(_PyDict_CheckConsistency((PyObject *)self, 1));
     return res;
 }
 
