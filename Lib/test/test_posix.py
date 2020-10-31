@@ -1909,7 +1909,9 @@ class TestPosixSpawnP(unittest.TestCase, _PosixSpawnMixin):
 class TestPosixWeaklinking(unittest.TestCase):
     # These test cases verify that weak linking support on macOS works
     # as expected. These cases only test new behaviour introduced by weak linking,
-    # regular behaviour is tested by the normal test cases.
+    # regular behaviour is tested by the normal test cases. 
+    #
+    # See the section on Weak Linking in Mac/README.txt for more information.
     def setUp(self):
         import sysconfig
         import platform
@@ -2027,9 +2029,6 @@ class TestPosixWeaklinking(unittest.TestCase):
             finally:
                 support.rmtree(base_path)
 
-
-
-
     def test_listdir_scandir(self):
         self._verify_available("HAVE_FDOPENDIR")
         if self.mac_ver >= (10, 10):
@@ -2138,10 +2137,6 @@ class TestPosixWeaklinking(unittest.TestCase):
 
             with self.assertRaisesRegex(NotImplementedError, "follow_symlinks unavailable"):
                 os.utime("path", follow_symlinks=False)
-
-            # XXX: Check if this test is correct, the implementation of os.utime
-            #      is fairly complicated
-
 
 
 def test_main():

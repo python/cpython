@@ -1046,24 +1046,25 @@ class TestTimeWeaklinking(unittest.TestCase):
     # These test cases verify that weak linking support on macOS works
     # as expected. These cases only test new behaviour introduced by weak linking,
     # regular behaviour is tested by the normal test cases.
-    def setUp(self):
+    #
+    # See the section on Weak Linking in Mac/README.txt for more information.
+    def test_clock_functions(self):
         import sysconfig
         import platform
 
         config_vars = sysconfig.get_config_vars()
-        self.available = { nm for nm in config_vars if nm.startswith("HAVE_") and config_vars[nm] }
-        self.mac_ver = tuple(int(part) for part in platform.mac_ver()[0].split("."))
+        var_name = "HAVE_CLOCK_GETTIME"
+        if var_name not in config_vars or not config_vars[var_name]:
+            raise unittest.SkipTest(f"{var_name} is not available")
 
-    def _verify_available(self, name):
-        if name not in self.available:
-            raise unittest.SkipTest(f"{name} not weak-linked")
+        mac_ver = tuple(int(x) for x in platform.mac_ver()[0].split("."))
 
-    def test_clock_functions(self):
-        self._verify_available("HAVE_CLOCK_GETTIME")
         clock_names = [
             "CLOCK_MONOTONIC", "clock_gettime", "clock_gettime_ns", "clock_settime",
             "clock_settime_ns", "clock_getres"]
-        if self.mac_ver >= (10, 12):
+
+        
+        if mac_ver >= (10, 12):
             for name in clock_names:
                 self.assertTrue(hasattr(time, name), f"time.{name} is not available")
 
