@@ -29,7 +29,6 @@
 #include "microprotocols.h"
 #include "prepare_protocol.h"
 
-
 /** the adapters registry **/
 
 static PyObject *psyco_adapters = NULL;
@@ -149,16 +148,4 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
     /* else set the right exception and return NULL */
     PyErr_SetString(pysqlite_ProgrammingError, "can't adapt");
     return NULL;
-}
-
-/** module-level functions **/
-
-PyObject *
-pysqlite_adapt(pysqlite_Cursor *self, PyObject *args)
-{
-    PyObject *obj, *alt = NULL;
-    PyObject *proto = (PyObject*)pysqlite_PrepareProtocolType;
-
-    if (!PyArg_ParseTuple(args, "O|OO", &obj, &proto, &alt)) return NULL;
-    return pysqlite_microprotocols_adapt(obj, proto, alt);
 }
