@@ -44,11 +44,6 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     level = _PyLong_AsInt(args[1]);
     if (level == -1 && PyErr_Occurred()) {
         goto exit;
@@ -112,11 +107,6 @@ zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto skip_optional_pos;
     }
     if (args[1]) {
-        if (PyFloat_Check(args[1])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         wbits = _PyLong_AsInt(args[1]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
@@ -125,8 +115,17 @@ zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto skip_optional_pos;
         }
     }
-    if (!ssize_t_converter(args[2], &bufsize)) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        bufsize = ival;
     }
 skip_optional_pos:
     return_value = zlib_decompress_impl(module, &data, wbits, bufsize);
@@ -200,11 +199,6 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         goto skip_optional_pos;
     }
     if (args[0]) {
-        if (PyFloat_Check(args[0])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         level = _PyLong_AsInt(args[0]);
         if (level == -1 && PyErr_Occurred()) {
             goto exit;
@@ -214,11 +208,6 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[1]) {
-        if (PyFloat_Check(args[1])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         method = _PyLong_AsInt(args[1]);
         if (method == -1 && PyErr_Occurred()) {
             goto exit;
@@ -228,11 +217,6 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[2]) {
-        if (PyFloat_Check(args[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         wbits = _PyLong_AsInt(args[2]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
@@ -242,11 +226,6 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[3]) {
-        if (PyFloat_Check(args[3])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         memLevel = _PyLong_AsInt(args[3]);
         if (memLevel == -1 && PyErr_Occurred()) {
             goto exit;
@@ -256,11 +235,6 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[4]) {
-        if (PyFloat_Check(args[4])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         strategy = _PyLong_AsInt(args[4]);
         if (strategy == -1 && PyErr_Occurred()) {
             goto exit;
@@ -325,11 +299,6 @@ zlib_decompressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         goto skip_optional_pos;
     }
     if (args[0]) {
-        if (PyFloat_Check(args[0])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         wbits = _PyLong_AsInt(args[0]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
@@ -360,25 +329,25 @@ PyDoc_STRVAR(zlib_Compress_compress__doc__,
 "Call the flush() method to clear these buffers.");
 
 #define ZLIB_COMPRESS_COMPRESS_METHODDEF    \
-    {"compress", (PyCFunction)zlib_Compress_compress, METH_O, zlib_Compress_compress__doc__},
+    {"compress", (PyCFunction)(void(*)(void))zlib_Compress_compress, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress_compress__doc__},
 
 static PyObject *
-zlib_Compress_compress_impl(compobject *self, Py_buffer *data);
+zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
+                            Py_buffer *data);
 
 static PyObject *
-zlib_Compress_compress(compobject *self, PyObject *arg)
+zlib_Compress_compress(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {"y*:compress", _keywords, 0};
     Py_buffer data = {NULL, NULL};
 
-    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &data)) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
-    return_value = zlib_Compress_compress_impl(self, &data);
+    return_value = zlib_Compress_compress_impl(self, cls, &data);
 
 exit:
     /* Cleanup for data */
@@ -407,42 +376,26 @@ PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
 "Call the flush() method to clear these buffers.");
 
 #define ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)(void(*)(void))zlib_Decompress_decompress, METH_FASTCALL|METH_KEYWORDS, zlib_Decompress_decompress__doc__},
+    {"decompress", (PyCFunction)(void(*)(void))zlib_Decompress_decompress, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress_decompress__doc__},
 
 static PyObject *
-zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
-                                Py_ssize_t max_length);
+zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
+                                Py_buffer *data, Py_ssize_t max_length);
 
 static PyObject *
-zlib_Decompress_decompress(compobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Decompress_decompress(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "max_length", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "decompress", 0};
-    PyObject *argsbuf[2];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    static _PyArg_Parser _parser = {"y*|n:decompress", _keywords, 0};
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &data, &max_length)) {
         goto exit;
     }
-    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("decompress", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    if (!ssize_t_converter(args[1], &max_length)) {
-        goto exit;
-    }
-skip_optional_pos:
-    return_value = zlib_Decompress_decompress_impl(self, &data, max_length);
+    return_value = zlib_Decompress_decompress_impl(self, cls, &data, max_length);
 
 exit:
     /* Cleanup for data */
@@ -466,34 +419,24 @@ PyDoc_STRVAR(zlib_Compress_flush__doc__,
 "    can still be compressed.");
 
 #define ZLIB_COMPRESS_FLUSH_METHODDEF    \
-    {"flush", (PyCFunction)(void(*)(void))zlib_Compress_flush, METH_FASTCALL, zlib_Compress_flush__doc__},
+    {"flush", (PyCFunction)(void(*)(void))zlib_Compress_flush, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress_flush__doc__},
 
 static PyObject *
-zlib_Compress_flush_impl(compobject *self, int mode);
+zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode);
 
 static PyObject *
-zlib_Compress_flush(compobject *self, PyObject *const *args, Py_ssize_t nargs)
+zlib_Compress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {"|i:flush", _keywords, 0};
     int mode = Z_FINISH;
 
-    if (!_PyArg_CheckPositional("flush", nargs, 0, 1)) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &mode)) {
         goto exit;
     }
-    if (nargs < 1) {
-        goto skip_optional;
-    }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
-    mode = _PyLong_AsInt(args[0]);
-    if (mode == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-skip_optional:
-    return_value = zlib_Compress_flush_impl(self, mode);
+    return_value = zlib_Compress_flush_impl(self, cls, mode);
 
 exit:
     return return_value;
@@ -508,15 +451,26 @@ PyDoc_STRVAR(zlib_Compress_copy__doc__,
 "Return a copy of the compression object.");
 
 #define ZLIB_COMPRESS_COPY_METHODDEF    \
-    {"copy", (PyCFunction)zlib_Compress_copy, METH_NOARGS, zlib_Compress_copy__doc__},
+    {"copy", (PyCFunction)(void(*)(void))zlib_Compress_copy, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress_copy__doc__},
 
 static PyObject *
-zlib_Compress_copy_impl(compobject *self);
+zlib_Compress_copy_impl(compobject *self, PyTypeObject *cls);
 
 static PyObject *
-zlib_Compress_copy(compobject *self, PyObject *Py_UNUSED(ignored))
+zlib_Compress_copy(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return zlib_Compress_copy_impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":copy", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = zlib_Compress_copy_impl(self, cls);
+
+exit:
+    return return_value;
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -529,15 +483,26 @@ PyDoc_STRVAR(zlib_Compress___copy____doc__,
 "\n");
 
 #define ZLIB_COMPRESS___COPY___METHODDEF    \
-    {"__copy__", (PyCFunction)zlib_Compress___copy__, METH_NOARGS, zlib_Compress___copy____doc__},
+    {"__copy__", (PyCFunction)(void(*)(void))zlib_Compress___copy__, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress___copy____doc__},
 
 static PyObject *
-zlib_Compress___copy___impl(compobject *self);
+zlib_Compress___copy___impl(compobject *self, PyTypeObject *cls);
 
 static PyObject *
-zlib_Compress___copy__(compobject *self, PyObject *Py_UNUSED(ignored))
+zlib_Compress___copy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return zlib_Compress___copy___impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":__copy__", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = zlib_Compress___copy___impl(self, cls);
+
+exit:
+    return return_value;
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -550,7 +515,29 @@ PyDoc_STRVAR(zlib_Compress___deepcopy____doc__,
 "\n");
 
 #define ZLIB_COMPRESS___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", (PyCFunction)zlib_Compress___deepcopy__, METH_O, zlib_Compress___deepcopy____doc__},
+    {"__deepcopy__", (PyCFunction)(void(*)(void))zlib_Compress___deepcopy__, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Compress___deepcopy____doc__},
+
+static PyObject *
+zlib_Compress___deepcopy___impl(compobject *self, PyTypeObject *cls,
+                                PyObject *memo);
+
+static PyObject *
+zlib_Compress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {"O:__deepcopy__", _keywords, 0};
+    PyObject *memo;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &memo)) {
+        goto exit;
+    }
+    return_value = zlib_Compress___deepcopy___impl(self, cls, memo);
+
+exit:
+    return return_value;
+}
 
 #endif /* defined(HAVE_ZLIB_COPY) */
 
@@ -563,15 +550,26 @@ PyDoc_STRVAR(zlib_Decompress_copy__doc__,
 "Return a copy of the decompression object.");
 
 #define ZLIB_DECOMPRESS_COPY_METHODDEF    \
-    {"copy", (PyCFunction)zlib_Decompress_copy, METH_NOARGS, zlib_Decompress_copy__doc__},
+    {"copy", (PyCFunction)(void(*)(void))zlib_Decompress_copy, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress_copy__doc__},
 
 static PyObject *
-zlib_Decompress_copy_impl(compobject *self);
+zlib_Decompress_copy_impl(compobject *self, PyTypeObject *cls);
 
 static PyObject *
-zlib_Decompress_copy(compobject *self, PyObject *Py_UNUSED(ignored))
+zlib_Decompress_copy(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return zlib_Decompress_copy_impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":copy", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = zlib_Decompress_copy_impl(self, cls);
+
+exit:
+    return return_value;
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -584,15 +582,26 @@ PyDoc_STRVAR(zlib_Decompress___copy____doc__,
 "\n");
 
 #define ZLIB_DECOMPRESS___COPY___METHODDEF    \
-    {"__copy__", (PyCFunction)zlib_Decompress___copy__, METH_NOARGS, zlib_Decompress___copy____doc__},
+    {"__copy__", (PyCFunction)(void(*)(void))zlib_Decompress___copy__, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress___copy____doc__},
 
 static PyObject *
-zlib_Decompress___copy___impl(compobject *self);
+zlib_Decompress___copy___impl(compobject *self, PyTypeObject *cls);
 
 static PyObject *
-zlib_Decompress___copy__(compobject *self, PyObject *Py_UNUSED(ignored))
+zlib_Decompress___copy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return zlib_Decompress___copy___impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = { NULL};
+    static _PyArg_Parser _parser = {":__copy__", _keywords, 0};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
+        )) {
+        goto exit;
+    }
+    return_value = zlib_Decompress___copy___impl(self, cls);
+
+exit:
+    return return_value;
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -605,7 +614,29 @@ PyDoc_STRVAR(zlib_Decompress___deepcopy____doc__,
 "\n");
 
 #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", (PyCFunction)zlib_Decompress___deepcopy__, METH_O, zlib_Decompress___deepcopy____doc__},
+    {"__deepcopy__", (PyCFunction)(void(*)(void))zlib_Decompress___deepcopy__, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress___deepcopy____doc__},
+
+static PyObject *
+zlib_Decompress___deepcopy___impl(compobject *self, PyTypeObject *cls,
+                                  PyObject *memo);
+
+static PyObject *
+zlib_Decompress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {"O:__deepcopy__", _keywords, 0};
+    PyObject *memo;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &memo)) {
+        goto exit;
+    }
+    return_value = zlib_Decompress___deepcopy___impl(self, cls, memo);
+
+exit:
+    return return_value;
+}
 
 #endif /* defined(HAVE_ZLIB_COPY) */
 
@@ -619,28 +650,25 @@ PyDoc_STRVAR(zlib_Decompress_flush__doc__,
 "    the initial size of the output buffer.");
 
 #define ZLIB_DECOMPRESS_FLUSH_METHODDEF    \
-    {"flush", (PyCFunction)(void(*)(void))zlib_Decompress_flush, METH_FASTCALL, zlib_Decompress_flush__doc__},
+    {"flush", (PyCFunction)(void(*)(void))zlib_Decompress_flush, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, zlib_Decompress_flush__doc__},
 
 static PyObject *
-zlib_Decompress_flush_impl(compobject *self, Py_ssize_t length);
+zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
+                           Py_ssize_t length);
 
 static PyObject *
-zlib_Decompress_flush(compobject *self, PyObject *const *args, Py_ssize_t nargs)
+zlib_Decompress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {"|n:flush", _keywords, 0};
     Py_ssize_t length = DEF_BUF_SIZE;
 
-    if (!_PyArg_CheckPositional("flush", nargs, 0, 1)) {
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &length)) {
         goto exit;
     }
-    if (nargs < 1) {
-        goto skip_optional;
-    }
-    if (!ssize_t_converter(args[0], &length)) {
-        goto exit;
-    }
-skip_optional:
-    return_value = zlib_Decompress_flush_impl(self, length);
+    return_value = zlib_Decompress_flush_impl(self, cls, length);
 
 exit:
     return return_value;
@@ -682,11 +710,6 @@ zlib_adler32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (nargs < 2) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     value = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
     if (value == (unsigned int)-1 && PyErr_Occurred()) {
@@ -741,11 +764,6 @@ zlib_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     value = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
     if (value == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
@@ -785,4 +803,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=faae38ef96b88b16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6736bae59fab268b input=a9049054013a1b77]*/

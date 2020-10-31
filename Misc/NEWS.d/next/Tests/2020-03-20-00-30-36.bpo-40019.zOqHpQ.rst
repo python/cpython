@@ -1,2 +1,0 @@
-test_gdb now skips tests if it detects that gdb failed to read debug
-information because the Python binary is optimized.

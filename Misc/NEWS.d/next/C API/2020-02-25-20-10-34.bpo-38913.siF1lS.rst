@@ -1,2 +1,0 @@
-Fixed segfault in ``Py_BuildValue()`` called with a format containing "#"
-and undefined PY_SSIZE_T_CLEAN whwn an exception is set.

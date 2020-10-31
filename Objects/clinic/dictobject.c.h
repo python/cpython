@@ -122,7 +122,8 @@ PyDoc_STRVAR(dict_pop__doc__,
 "\n"
 "D.pop(k[,d]) -> v, remove specified key and return the corresponding value.\n"
 "\n"
-"If key is not found, default is returned if given, otherwise KeyError is raised");
+"If the key is not found, return the default if given; otherwise,\n"
+"raise a KeyError.");
 
 #define DICT_POP_METHODDEF    \
     {"pop", (PyCFunction)(void(*)(void))dict_pop, METH_FASTCALL, dict_pop__doc__},
@@ -190,4 +191,4 @@ dict___reversed__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict___reversed___impl(self);
 }
-/*[clinic end generated code: output=4d98145508da8fa3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7b77c16e43d6735a input=a9049054013a1b77]*/

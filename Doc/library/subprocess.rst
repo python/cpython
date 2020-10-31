@@ -40,7 +40,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   capture_output=False, shell=False, cwd=None, timeout=None, \
                   check=False, encoding=None, errors=None, text=None, env=None, \
-                  universal_newlines=None)
+                  universal_newlines=None, **other_popen_kwargs)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -341,10 +341,10 @@ functions.
                  startupinfo=None, creationflags=0, restore_signals=True, \
                  start_new_session=False, pass_fds=(), \*, group=None, \
                  extra_groups=None, user=None, umask=-1, \
-                 encoding=None, errors=None, text=None)
+                 encoding=None, errors=None, text=None, pipesize=-1)
 
    Execute a child program in a new process.  On POSIX, the class uses
-   :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
+   :meth:`os.execvpe`-like behavior to execute the child program.  On Windows,
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
 
@@ -355,6 +355,25 @@ functions.
    platform-dependent and described below.  See the *shell* and *executable*
    arguments for additional differences from the default behavior.  Unless
    otherwise stated, it is recommended to pass *args* as a sequence.
+
+   .. warning::
+
+      For maximum reliability, use a fully-qualified path for the executable.
+      To search for an unqualified name on :envvar:`PATH`, use
+      :meth:`shutil.which`. On all platforms, passing :data:`sys.executable`
+      is the recommended way to launch the current Python interpreter again,
+      and use the ``-m`` command-line format to launch an installed module.
+
+      Resolving the path of *executable* (or the first item of *args*) is
+      platform dependent. For POSIX, see :meth:`os.execvpe`, and note that
+      when resolving or searching for the executable path, *cwd* overrides the
+      current working directory and *env* can override the ``PATH``
+      environment variable. For Windows, see the documentation of the
+      ``lpApplicationName`` and ``lpCommandLine`` parameters of WinAPI
+      ``CreateProcess``, and note that when resolving or searching for the
+      executable path with ``shell=False``, *cwd* does not override the
+      current working directory and *env* cannot override the ``PATH``
+      environment variable. Using a full path avoids all of these variations.
 
    An example of passing some arguments to an external program
    as a sequence is::
@@ -524,7 +543,7 @@ functions.
 
    If *cwd* is not ``None``, the function changes the working directory to
    *cwd* before executing the child.  *cwd* can be a string, bytes or
-   :term:`path-like <path-like object>` object.  In particular, the function
+   :term:`path-like <path-like object>` object.  In POSIX, the function
    looks for *executable* (or for the first item in *args*) relative to *cwd*
    if the executable path is a relative path.
 
@@ -624,6 +643,14 @@ functions.
       * :data:`DETACHED_PROCESS`
       * :data:`CREATE_DEFAULT_ERROR_MODE`
       * :data:`CREATE_BREAKAWAY_FROM_JOB`
+
+   *pipesize* can be used to change the size of the pipe when
+   :data:`PIPE` is used for *stdin*, *stdout* or *stderr*. The size of the pipe
+   is only changed on platforms that support this (only Linux at this time of
+   writing). Other platforms will ignore this parameter.
+
+   .. versionadded:: 3.10
+      The ``pipesize`` parameter was added.
 
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
@@ -738,10 +765,11 @@ Instances of the :class:`Popen` class have the following methods:
 .. method:: Popen.communicate(input=None, timeout=None)
 
    Interact with process: Send data to stdin.  Read data from stdout and stderr,
-   until end-of-file is reached.  Wait for process to terminate.  The optional
-   *input* argument should be data to be sent to the child process, or
-   ``None``, if no data should be sent to the child.  If streams were opened in
-   text mode, *input* must be a string.  Otherwise, it must be bytes.
+   until end-of-file is reached.  Wait for process to terminate and set the
+   :attr:`~Popen.returncode` attribute.  The optional *input* argument should be
+   data to be sent to the child process, or ``None``, if no data should be sent
+   to the child.  If streams were opened in text mode, *input* must be a string.
+   Otherwise, it must be bytes.
 
    :meth:`communicate` returns a tuple ``(stdout_data, stderr_data)``.
    The data will be strings if streams were opened in text mode; otherwise,
@@ -791,14 +819,14 @@ Instances of the :class:`Popen` class have the following methods:
 
 .. method:: Popen.terminate()
 
-   Stop the child. On Posix OSs the method sends SIGTERM to the
+   Stop the child. On POSIX OSs the method sends SIGTERM to the
    child. On Windows the Win32 API function :c:func:`TerminateProcess` is called
    to stop the child.
 
 
 .. method:: Popen.kill()
 
-   Kills the child. On Posix OSs the function sends SIGKILL to the child.
+   Kills the child. On POSIX OSs the function sends SIGKILL to the child.
    On Windows :meth:`kill` is an alias for :meth:`terminate`.
 
 
@@ -1085,7 +1113,8 @@ Prior to Python 3.5, these three functions comprised the high level API to
 subprocess. You can now use :func:`run` in many cases, but lots of existing code
 calls these functions.
 
-.. function:: call(args, *, stdin=None, stdout=None, stderr=None, shell=False, cwd=None, timeout=None)
+.. function:: call(args, *, stdin=None, stdout=None, stderr=None, \
+                   shell=False, cwd=None, timeout=None, **other_popen_kwargs)
 
    Run the command described by *args*.  Wait for command to complete, then
    return the :attr:`~Popen.returncode` attribute.
@@ -1111,7 +1140,9 @@ calls these functions.
    .. versionchanged:: 3.3
       *timeout* was added.
 
-.. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, shell=False, cwd=None, timeout=None)
+.. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, \
+                         shell=False, cwd=None, timeout=None, \
+                         **other_popen_kwargs)
 
    Run command with arguments.  Wait for command to complete. If the return
    code was zero then return, otherwise raise :exc:`CalledProcessError`. The
@@ -1142,7 +1173,8 @@ calls these functions.
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
                            cwd=None, encoding=None, errors=None, \
-                           universal_newlines=None, timeout=None, text=None)
+                           universal_newlines=None, timeout=None, text=None, \
+                           **other_popen_kwargs)
 
    Run command with arguments and return its output.
 

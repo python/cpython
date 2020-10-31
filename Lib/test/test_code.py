@@ -130,7 +130,6 @@ import sys
 import threading
 import unittest
 import weakref
-import opcode
 try:
     import ctypes
 except ImportError:

@@ -5,13 +5,14 @@ import os
 import pdb
 import sys
 import types
+import codecs
 import unittest
 import subprocess
 import textwrap
 
 from contextlib import ExitStack
 from io import StringIO
-from test import support
+from test.support import os_helper
 # This little helper class is essential for testing pdb under doctest.
 from test.test_doctest import _FakeInput
 from unittest.mock import patch
@@ -424,6 +425,47 @@ def test_list_commands():
     (Pdb) continue
     """
 
+def test_pdb_whatis_command():
+    """Test the whatis command
+
+    >>> myvar = (1,2)
+    >>> def myfunc():
+    ...     pass
+
+    >>> class MyClass:
+    ...    def mymethod(self):
+    ...        pass
+
+    >>> def test_function():
+    ...   import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...    'whatis myvar',
+    ...    'whatis myfunc',
+    ...    'whatis MyClass',
+    ...    'whatis MyClass()',
+    ...    'whatis MyClass.mymethod',
+    ...    'whatis MyClass().mymethod',
+    ...    'continue',
+    ... ]):
+    ...    test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_whatis_command[3]>(2)test_function()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) whatis myvar
+    <class 'tuple'>
+    (Pdb) whatis myfunc
+    Function myfunc
+    (Pdb) whatis MyClass
+    Class test.test_pdb.MyClass
+    (Pdb) whatis MyClass()
+    <class 'test.test_pdb.MyClass'>
+    (Pdb) whatis MyClass.mymethod
+    Function mymethod
+    (Pdb) whatis MyClass().mymethod
+    Method mymethod
+    (Pdb) continue
+    """
 
 def test_post_mortem():
     """Test post mortem traceback debugging.
@@ -1187,16 +1229,17 @@ def test_pdb_issue_20766():
 
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
-        support.unlink(support.TESTFN)
+        os_helper.unlink(os_helper.TESTFN)
 
     def _run_pdb(self, pdb_args, commands):
-        self.addCleanup(support.rmtree, '__pycache__')
+        self.addCleanup(os_helper.rmtree, '__pycache__')
         cmd = [sys.executable, '-m', 'pdb'] + pdb_args
         with subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stdin=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
+                env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
         ) as proc:
             stdout, stderr = proc.communicate(str.encode(commands))
         stdout = stdout and bytes.decode(stdout)
@@ -1208,13 +1251,13 @@ class PdbTestCase(unittest.TestCase):
         filename = 'main.py'
         with open(filename, 'w') as f:
             f.write(textwrap.dedent(script))
-        self.addCleanup(support.unlink, filename)
+        self.addCleanup(os_helper.unlink, filename)
         return self._run_pdb([filename], commands)
 
     def run_pdb_module(self, script, commands):
         """Runs the script code as part of a module"""
         self.module_name = 't_main'
-        support.rmtree(self.module_name)
+        os_helper.rmtree(self.module_name)
         main_file = self.module_name + '/__main__.py'
         init_file = self.module_name + '/__init__.py'
         os.mkdir(self.module_name)
@@ -1222,44 +1265,69 @@ class PdbTestCase(unittest.TestCase):
             pass
         with open(main_file, 'w') as f:
             f.write(textwrap.dedent(script))
-        self.addCleanup(support.rmtree, self.module_name)
+        self.addCleanup(os_helper.rmtree, self.module_name)
         return self._run_pdb(['-m', self.module_name], commands)
 
     def _assert_find_function(self, file_content, func_name, expected):
-        file_content = textwrap.dedent(file_content)
-
-        with open(support.TESTFN, 'w') as f:
+        with open(os_helper.TESTFN, 'wb') as f:
             f.write(file_content)
 
         expected = None if not expected else (
-            expected[0], support.TESTFN, expected[1])
+            expected[0], os_helper.TESTFN, expected[1])
         self.assertEqual(
-            expected, pdb.find_function(func_name, support.TESTFN))
+            expected, pdb.find_function(func_name, os_helper.TESTFN))
 
     def test_find_function_empty_file(self):
-        self._assert_find_function('', 'foo', None)
+        self._assert_find_function(b'', 'foo', None)
 
     def test_find_function_found(self):
         self._assert_find_function(
             """\
-            def foo():
-                pass
+def foo():
+    pass
 
-            def bar():
-                pass
+def bœr():
+    pass
 
-            def quux():
-                pass
-            """,
-            'bar',
-            ('bar', 4),
+def quux():
+    pass
+""".encode(),
+            'bœr',
+            ('bœr', 4),
+        )
+
+    def test_find_function_found_with_encoding_cookie(self):
+        self._assert_find_function(
+            """\
+# coding: iso-8859-15
+def foo():
+    pass
+
+def bœr():
+    pass
+
+def quux():
+    pass
+""".encode('iso-8859-15'),
+            'bœr',
+            ('bœr', 5),
+        )
+
+    def test_find_function_found_with_bom(self):
+        self._assert_find_function(
+            codecs.BOM_UTF8 + """\
+def bœr():
+    pass
+""".encode(),
+            'bœr',
+            ('bœr', 1),
         )
 
     def test_issue7964(self):
         # open the file as binary so we can force \r\n newline
-        with open(support.TESTFN, 'wb') as f:
+        with open(os_helper.TESTFN, 'wb') as f:
             f.write(b'print("testing my pdb")\r\n')
-        cmd = [sys.executable, '-m', 'pdb', support.TESTFN]
+        cmd = [sys.executable, '-m', 'pdb', os_helper.TESTFN]
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
@@ -1300,7 +1368,7 @@ class PdbTestCase(unittest.TestCase):
         """
         with open('bar.py', 'w') as f:
             f.write(textwrap.dedent(bar))
-        self.addCleanup(support.unlink, 'bar.py')
+        self.addCleanup(os_helper.unlink, 'bar.py')
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertTrue(
             any('main.py(5)foo()->None' in l for l in stdout.splitlines()),
@@ -1310,7 +1378,7 @@ class PdbTestCase(unittest.TestCase):
         # Invoking "continue" on a non-main thread triggered an exception
         # inside signal.signal.
 
-        with open(support.TESTFN, 'wb') as f:
+        with open(os_helper.TESTFN, 'wb') as f:
             f.write(textwrap.dedent("""
                 import threading
                 import pdb
@@ -1322,20 +1390,21 @@ class PdbTestCase(unittest.TestCase):
 
                 t = threading.Thread(target=start_pdb)
                 t.start()""").encode('ascii'))
-        cmd = [sys.executable, '-u', support.TESTFN]
+        cmd = [sys.executable, '-u', os_helper.TESTFN]
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            env={**os.environ, 'PYTHONIOENCODING': 'utf-8'}
             )
         self.addCleanup(proc.stdout.close)
         stdout, stderr = proc.communicate(b'cont\n')
-        self.assertNotIn('Error', stdout.decode(),
+        self.assertNotIn(b'Error', stdout,
                          "Got an error running test script under PDB")
 
     def test_issue36250(self):
 
-        with open(support.TESTFN, 'wb') as f:
+        with open(os_helper.TESTFN, 'wb') as f:
             f.write(textwrap.dedent("""
                 import threading
                 import pdb
@@ -1351,15 +1420,16 @@ class PdbTestCase(unittest.TestCase):
                 pdb.Pdb(readrc=False).set_trace()
                 evt.set()
                 t.join()""").encode('ascii'))
-        cmd = [sys.executable, '-u', support.TESTFN]
+        cmd = [sys.executable, '-u', os_helper.TESTFN]
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
             )
         self.addCleanup(proc.stdout.close)
         stdout, stderr = proc.communicate(b'cont\ncont\n')
-        self.assertNotIn('Error', stdout.decode(),
+        self.assertNotIn(b'Error', stdout,
                          "Got an error running test script under PDB")
 
     def test_issue16180(self):
@@ -1383,7 +1453,7 @@ class PdbTestCase(unittest.TestCase):
 
         save_home = os.environ.pop('HOME', None)
         try:
-            with support.temp_cwd():
+            with os_helper.temp_cwd():
                 with open('.pdbrc', 'w') as f:
                     f.write("invalid\n")
 
@@ -1399,8 +1469,8 @@ class PdbTestCase(unittest.TestCase):
                 )
                 with proc:
                     stdout, stderr = proc.communicate(b'q\n')
-                    self.assertNotIn("NameError: name 'invalid' is not defined",
-                                  stdout.decode())
+                    self.assertNotIn(b"NameError: name 'invalid' is not defined",
+                                  stdout)
 
         finally:
             if save_home is not None:
@@ -1408,7 +1478,7 @@ class PdbTestCase(unittest.TestCase):
 
     def test_readrc_homedir(self):
         save_home = os.environ.pop("HOME", None)
-        with support.temp_dir() as temp_dir, patch("os.path.expanduser"):
+        with os_helper.temp_dir() as temp_dir, patch("os.path.expanduser"):
             rc_path = os.path.join(temp_dir, ".pdbrc")
             os.path.expanduser.return_value = rc_path
             try:
@@ -1477,12 +1547,12 @@ class PdbTestCase(unittest.TestCase):
 
     def test_module_without_a_main(self):
         module_name = 't_main'
-        support.rmtree(module_name)
+        os_helper.rmtree(module_name)
         init_file = module_name + '/__init__.py'
         os.mkdir(module_name)
         with open(init_file, 'w') as f:
             pass
-        self.addCleanup(support.rmtree, module_name)
+        self.addCleanup(os_helper.rmtree, module_name)
         stdout, stderr = self._run_pdb(['-m', module_name], "")
         self.assertIn("ImportError: No module named t_main.__main__",
                       stdout.splitlines())
@@ -1502,11 +1572,11 @@ class PdbTestCase(unittest.TestCase):
 
     def test_relative_imports(self):
         self.module_name = 't_main'
-        support.rmtree(self.module_name)
+        os_helper.rmtree(self.module_name)
         main_file = self.module_name + '/__main__.py'
         init_file = self.module_name + '/__init__.py'
         module_file = self.module_name + '/module.py'
-        self.addCleanup(support.rmtree, self.module_name)
+        self.addCleanup(os_helper.rmtree, self.module_name)
         os.mkdir(self.module_name)
         with open(init_file, 'w') as f:
             f.write(textwrap.dedent("""
@@ -1540,11 +1610,11 @@ class PdbTestCase(unittest.TestCase):
     def test_relative_imports_on_plain_module(self):
         # Validates running a plain module. See bpo32691
         self.module_name = 't_main'
-        support.rmtree(self.module_name)
+        os_helper.rmtree(self.module_name)
         main_file = self.module_name + '/runme.py'
         init_file = self.module_name + '/__init__.py'
         module_file = self.module_name + '/module.py'
-        self.addCleanup(support.rmtree, self.module_name)
+        self.addCleanup(os_helper.rmtree, self.module_name)
         os.mkdir(self.module_name)
         with open(init_file, 'w') as f:
             f.write(textwrap.dedent("""

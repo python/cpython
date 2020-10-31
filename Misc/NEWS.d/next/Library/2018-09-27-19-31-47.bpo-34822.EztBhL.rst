@@ -1,5 +1,0 @@
-Simplified AST for subscription. Simple indices are now represented by their
-value, extended slices are represented as tuples.  :mod:`ast` classes
-``Index`` and ``ExtSlice`` are considered deprecated and will be removed in
-future Python versions. In the meantime, ``Index(value)`` now returns
-a ``value`` itself, ``ExtSlice(slices)`` returns ``Tuple(slices, Load())``.

@@ -153,7 +153,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
    .. c:member:: const char *m_doc
 
       Docstring for the module; usually a docstring variable created with
-      :c:func:`PyDoc_STRVAR` is used.
+      :c:macro:`PyDoc_STRVAR` is used.
 
    .. c:member:: Py_ssize_t m_size
 
@@ -325,7 +325,7 @@ The *m_slots* array must be terminated by a slot with id 0.
 
 The available slot types are:
 
-.. c:var:: Py_mod_create
+.. c:macro:: Py_mod_create
 
    Specifies a function that is called to create the module object itself.
    The *value* pointer of this slot must point to a function of the signature:
@@ -357,7 +357,7 @@ The available slot types are:
    ``PyModuleDef`` has non-``NULL`` ``m_traverse``, ``m_clear``,
    ``m_free``; non-zero ``m_size``; or slots other than ``Py_mod_create``.
 
-.. c:var:: Py_mod_exec
+.. c:macro:: Py_mod_exec
 
    Specifies a function that is called to *execute* the module.
    This is equivalent to executing the code of a Python module: typically,
@@ -527,6 +527,8 @@ since multiple such modules can be created from a single definition.
    mechanisms (either by calling it directly, or by referring to its
    implementation for details of the required state updates).
 
+   The caller must hold the GIL.
+
    Return 0 on success or -1 on failure.
 
    .. versionadded:: 3.3
@@ -535,5 +537,7 @@ since multiple such modules can be created from a single definition.
 
    Removes the module object created from *def* from the interpreter state.
    Return 0 on success or -1 on failure.
+
+   The caller must hold the GIL.
 
    .. versionadded:: 3.3

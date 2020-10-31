@@ -52,6 +52,7 @@ import threading
 import warnings
 import contextlib
 from time import monotonic as _time
+import types
 
 try:
     import pwd
@@ -61,6 +62,11 @@ try:
     import grp
 except ImportError:
     grp = None
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
+
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "run", "CalledProcessError", "DEVNULL",
@@ -446,17 +452,7 @@ class CompletedProcess(object):
             args.append('stderr={!r}'.format(self.stderr))
         return "{}({})".format(type(self).__name__, ', '.join(args))
 
-    def __class_getitem__(cls, type):
-        """Provide minimal support for using this class as generic
-        (for example in type annotations).
-
-        See PEP 484 and PEP 560 for more details. For example,
-        `CompletedProcess[bytes]` is a valid expression at runtime
-        (type argument `bytes` indicates the type used for stdout).
-        Note, no type checking happens at runtime, but a static type
-        checker can be used.
-        """
-        return cls
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
     def check_returncode(self):
@@ -765,7 +761,7 @@ class Popen(object):
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
                  pass_fds=(), *, user=None, group=None, extra_groups=None,
-                 encoding=None, errors=None, text=None, umask=-1):
+                 encoding=None, errors=None, text=None, umask=-1, pipesize=-1):
         """Create new Popen instance."""
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
@@ -781,6 +777,11 @@ class Popen(object):
             bufsize = -1  # Restore default
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
+
+        if pipesize is None:
+            pipesize = -1  # Restore default
+        if not isinstance(pipesize, int):
+            raise TypeError("pipesize must be an integer")
 
         if _mswindows:
             if preexec_fn is not None:
@@ -806,6 +807,7 @@ class Popen(object):
         self.returncode = None
         self.encoding = encoding
         self.errors = errors
+        self.pipesize = pipesize
 
         # Validate the combinations of text and universal_newlines
         if (text is not None and universal_newlines is not None
@@ -1000,16 +1002,7 @@ class Popen(object):
             obj_repr = obj_repr[:76] + "...>"
         return obj_repr
 
-    def __class_getitem__(cls, type):
-        """Provide minimal support for using this class as generic
-        (for example in type annotations).
-
-        See PEP 484 and PEP 560 for more details. For example, `Popen[bytes]`
-        is a valid expression at runtime (type argument `bytes` indicates the
-        type used for stdout). Note, no type checking happens at runtime, but
-        a static type checker can be used.
-        """
-        return cls
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     @property
     def universal_newlines(self):
@@ -1593,6 +1586,8 @@ class Popen(object):
                 pass
             elif stdin == PIPE:
                 p2cread, p2cwrite = os.pipe()
+                if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
+                    fcntl.fcntl(p2cwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
             elif stdin == DEVNULL:
                 p2cread = self._get_devnull()
             elif isinstance(stdin, int):
@@ -1605,6 +1600,8 @@ class Popen(object):
                 pass
             elif stdout == PIPE:
                 c2pread, c2pwrite = os.pipe()
+                if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
+                    fcntl.fcntl(c2pwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
             elif stdout == DEVNULL:
                 c2pwrite = self._get_devnull()
             elif isinstance(stdout, int):
@@ -1617,6 +1614,8 @@ class Popen(object):
                 pass
             elif stderr == PIPE:
                 errread, errwrite = os.pipe()
+                if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
+                    fcntl.fcntl(errwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
             elif stderr == STDOUT:
                 if c2pwrite != -1:
                     errwrite = c2pwrite
@@ -1838,23 +1837,17 @@ class Popen(object):
                 raise child_exception_type(err_msg)
 
 
-        def _handle_exitstatus(self, sts, _WIFSIGNALED=os.WIFSIGNALED,
-                _WTERMSIG=os.WTERMSIG, _WIFEXITED=os.WIFEXITED,
-                _WEXITSTATUS=os.WEXITSTATUS, _WIFSTOPPED=os.WIFSTOPPED,
-                _WSTOPSIG=os.WSTOPSIG):
+        def _handle_exitstatus(self, sts,
+                               waitstatus_to_exitcode=os.waitstatus_to_exitcode,
+                               _WIFSTOPPED=os.WIFSTOPPED,
+                               _WSTOPSIG=os.WSTOPSIG):
             """All callers to this function MUST hold self._waitpid_lock."""
             # This method is called (indirectly) by __del__, so it cannot
             # refer to anything outside of its local scope.
-            if _WIFSIGNALED(sts):
-                self.returncode = -_WTERMSIG(sts)
-            elif _WIFEXITED(sts):
-                self.returncode = _WEXITSTATUS(sts)
-            elif _WIFSTOPPED(sts):
+            if _WIFSTOPPED(sts):
                 self.returncode = -_WSTOPSIG(sts)
             else:
-                # Should never happen
-                raise SubprocessError("Unknown child exit status!")
-
+                self.returncode = waitstatus_to_exitcode(sts)
 
         def _internal_poll(self, _deadstate=None, _waitpid=os.waitpid,
                 _WNOHANG=os.WNOHANG, _ECHILD=errno.ECHILD):

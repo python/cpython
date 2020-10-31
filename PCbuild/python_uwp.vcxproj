@@ -95,6 +95,7 @@
     <Link>
       <AdditionalDependencies>windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
+      <StackReserveSize>2000000</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="$(Configuration) != 'Debug'">

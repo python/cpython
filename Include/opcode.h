@@ -127,6 +127,28 @@ extern "C" {
 #define SET_UPDATE              163
 #define DICT_MERGE              164
 #define DICT_UPDATE             165
+#ifdef NEED_OPCODE_JUMP_TABLES
+static uint32_t _PyOpcode_RelativeJump[8] = {
+    0U,
+    0U,
+    536870912U,
+    67125248U,
+    67141632U,
+    0U,
+    0U,
+    0U,
+};
+static uint32_t _PyOpcode_Jump[8] = {
+    0U,
+    0U,
+    536870912U,
+    101695488U,
+    67141632U,
+    0U,
+    0U,
+    0U,
+};
+#endif /* OPCODE_TABLES */
 
 /* EXCEPT_HANDLER is a special, implicit block type which is created when
    entering an except handler. It is not an opcode but we define it here

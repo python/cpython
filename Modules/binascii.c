@@ -1311,15 +1311,12 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
     datalen = data->len;
 
     /* We allocate the output same size as input, this is overkill.
-     * The previous implementation used calloc() so we'll zero out the
-     * memory here too, since PyMem_Malloc() does not guarantee that.
      */
-    odata = (unsigned char *) PyMem_Malloc(datalen);
+    odata = (unsigned char *) PyMem_Calloc(1, datalen);
     if (odata == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    memset(odata, 0, datalen);
 
     in = out = 0;
     while (in < datalen) {
@@ -1499,15 +1496,12 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
     }
 
     /* We allocate the output same size as input, this is overkill.
-     * The previous implementation used calloc() so we'll zero out the
-     * memory here too, since PyMem_Malloc() does not guarantee that.
      */
-    odata = (unsigned char *) PyMem_Malloc(odatalen);
+    odata = (unsigned char *) PyMem_Calloc(1, odatalen);
     if (odata == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    memset(odata, 0, odatalen);
 
     in = out = linelen = 0;
     while (in < datalen) {

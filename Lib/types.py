@@ -293,4 +293,11 @@ def coroutine(func):
     return wrapped
 
 
+GenericAlias = type(list[int])
+Union = type(int | str)
+
+EllipsisType = type(Ellipsis)
+NoneType = type(None)
+NotImplementedType = type(NotImplemented)
+
 __all__ = [n for n in globals() if n[:1] != '_']

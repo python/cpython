@@ -1,2 +1,0 @@
-:class:`types.MappingProxyType` objects now support the merge (``|``) operator
-from :pep:`584`.

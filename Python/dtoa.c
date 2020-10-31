@@ -64,6 +64,9 @@
  *  7. _Py_dg_strtod has been modified so that it doesn't accept strings with
  *     leading whitespace.
  *
+ *  8. A corner case where _Py_dg_dtoa didn't strip trailing zeros has been
+ *     fixed. (bugs.python.org/issue40780)
+ *
  ***************************************************************/
 
 /* Please send bug reports for the original dtoa.c code to David M. Gay (dmg
@@ -2562,6 +2565,14 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
                             break;
                         }
                     ++*s++;
+                }
+                else {
+                    /* Strip trailing zeros. This branch was missing from the
+                       original dtoa.c, leading to surplus trailing zeros in
+                       some cases. See bugs.python.org/issue40780. */
+                    while (s > s0 && s[-1] == '0') {
+                        --s;
+                    }
                 }
                 break;
             }

@@ -7,21 +7,18 @@
 extern "C" {
 #endif
 
-#include "pythread.h"
-
 /* This limitation is for performance and simplicity. If needed it can be
 removed (with effort). */
 #define MAX_CO_EXTRA_USERS 255
 
 /* Forward declarations for PyFrameObject, PyThreadState
    and PyInterpreterState */
-struct _frame;
 struct _ts;
 struct _is;
 
 /* struct _ts is defined in cpython/pystate.h */
 typedef struct _ts PyThreadState;
-/* struct _is is defined in internal/pycore_pystate.h */
+/* struct _is is defined in internal/pycore_interp.h */
 typedef struct _is PyInterpreterState;
 
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
@@ -90,7 +87,8 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(unsigned long, PyObject *);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
 /* New in 3.9 */
 PyAPI_FUNC(PyInterpreterState*) PyThreadState_GetInterpreter(PyThreadState *tstate);
-PyAPI_FUNC(struct _frame*) PyThreadState_GetFrame(PyThreadState *tstate);
+PyAPI_FUNC(PyFrameObject*) PyThreadState_GetFrame(PyThreadState *tstate);
+PyAPI_FUNC(uint64_t) PyThreadState_GetID(PyThreadState *tstate);
 #endif
 
 typedef

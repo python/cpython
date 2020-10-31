@@ -1,3 +1,0 @@
-Py_TRASHCAN_BEGIN_CONDITION and Py_TRASHCAN_END macro no longer access
-PyThreadState attributes, but call new private _PyTrash_begin() and
-_PyTrash_end() functions which hide implementation details.

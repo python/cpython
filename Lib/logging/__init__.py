@@ -194,7 +194,8 @@ def _checkLevel(level):
             raise ValueError("Unknown level: %r" % level)
         rv = _nameToLevel[level]
     else:
-        raise TypeError("Level not an integer or a valid string: %r" % level)
+        raise TypeError("Level not an integer or a valid string: %r"
+                        % (level,))
     return rv
 
 #---------------------------------------------------------------------------
@@ -234,11 +235,9 @@ if not hasattr(os, 'register_at_fork'):  # Windows and friends.
     def _register_at_fork_reinit_lock(instance):
         pass  # no-op when os.register_at_fork does not exist.
 else:
-    # A collection of instances with a createLock method (logging.Handler)
+    # A collection of instances with a _at_fork_reinit method (logging.Handler)
     # to be called in the child after forking.  The weakref avoids us keeping
-    # discarded Handler instances alive.  A set is used to avoid accumulating
-    # duplicate registrations as createLock() is responsible for registering
-    # a new Handler instance with this set in the first place.
+    # discarded Handler instances alive.
     _at_fork_reinit_lock_weakset = weakref.WeakSet()
 
     def _register_at_fork_reinit_lock(instance):
@@ -249,16 +248,12 @@ else:
             _releaseLock()
 
     def _after_at_fork_child_reinit_locks():
-        # _acquireLock() was called in the parent before forking.
         for handler in _at_fork_reinit_lock_weakset:
-            try:
-                handler.createLock()
-            except Exception as err:
-                # Similar to what PyErr_WriteUnraisable does.
-                print("Ignoring exception from logging atfork", instance,
-                      "._reinit_lock() method:", err, file=sys.stderr)
-        _releaseLock()  # Acquired by os.register_at_fork(before=.
+            handler._at_fork_reinit()
 
+        # _acquireLock() was called in the parent before forking.
+        # The lock is reinitialized to unlocked state.
+        _lock._at_fork_reinit()
 
     os.register_at_fork(before=_acquireLock,
                         after_in_child=_after_at_fork_child_reinit_locks,
@@ -417,8 +412,9 @@ class PercentStyle(object):
     asctime_search = '%(asctime)'
     validation_pattern = re.compile(r'%\(\w+\)[#0+ -]*(\*|\d+)?(\.(\*|\d+))?[diouxefgcrsa%]', re.I)
 
-    def __init__(self, fmt):
+    def __init__(self, fmt, *, defaults=None):
         self._fmt = fmt or self.default_format
+        self._defaults = defaults
 
     def usesTime(self):
         return self._fmt.find(self.asctime_search) >= 0
@@ -429,7 +425,11 @@ class PercentStyle(object):
             raise ValueError("Invalid format '%s' for '%s' style" % (self._fmt, self.default_format[0]))
 
     def _format(self, record):
-        return self._fmt % record.__dict__
+        if defaults := self._defaults:
+            values = defaults | record.__dict__
+        else:
+            values = record.__dict__
+        return self._fmt % values
 
     def format(self, record):
         try:
@@ -447,7 +447,11 @@ class StrFormatStyle(PercentStyle):
     field_spec = re.compile(r'^(\d+|\w+)(\.\w+|\[[^]]+\])*$')
 
     def _format(self, record):
-        return self._fmt.format(**record.__dict__)
+        if defaults := self._defaults:
+            values = defaults | record.__dict__
+        else:
+            values = record.__dict__
+        return self._fmt.format(**values)
 
     def validate(self):
         """Validate the input format, ensure it is the correct string formatting style"""
@@ -473,8 +477,8 @@ class StringTemplateStyle(PercentStyle):
     asctime_format = '${asctime}'
     asctime_search = '${asctime}'
 
-    def __init__(self, fmt):
-        self._fmt = fmt or self.default_format
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._tpl = Template(self._fmt)
 
     def usesTime(self):
@@ -496,7 +500,11 @@ class StringTemplateStyle(PercentStyle):
             raise ValueError('invalid format: no fields')
 
     def _format(self, record):
-        return self._tpl.substitute(**record.__dict__)
+        if defaults := self._defaults:
+            values = defaults | record.__dict__
+        else:
+            values = record.__dict__
+        return self._tpl.substitute(**values)
 
 
 BASIC_FORMAT = "%(levelname)s:%(name)s:%(message)s"
@@ -515,7 +523,7 @@ class Formatter(object):
     responsible for converting a LogRecord to (usually) a string which can
     be interpreted by either a human or an external system. The base Formatter
     allows a formatting string to be specified. If none is supplied, the
-    the style-dependent default value, "%(message)s", "{message}", or
+    style-dependent default value, "%(message)s", "{message}", or
     "${message}", is used.
 
     The Formatter can be initialized with a format string which makes use of
@@ -552,7 +560,8 @@ class Formatter(object):
 
     converter = time.localtime
 
-    def __init__(self, fmt=None, datefmt=None, style='%', validate=True):
+    def __init__(self, fmt=None, datefmt=None, style='%', validate=True, *,
+                 defaults=None):
         """
         Initialize the formatter with specified format strings.
 
@@ -571,7 +580,7 @@ class Formatter(object):
         if style not in _STYLES:
             raise ValueError('Style must be one of: %s' % ','.join(
                              _STYLES.keys()))
-        self._style = _STYLES[style][0](fmt)
+        self._style = _STYLES[style][0](fmt, defaults=defaults)
         if validate:
             self._style.validate()
 
@@ -603,8 +612,9 @@ class Formatter(object):
         if datefmt:
             s = time.strftime(datefmt, ct)
         else:
-            t = time.strftime(self.default_time_format, ct)
-            s = self.default_msec_format % (t, record.msecs)
+            s = time.strftime(self.default_time_format, ct)
+            if self.default_msec_format:
+                s = self.default_msec_format % (s, record.msecs)
         return s
 
     def formatException(self, ei):
@@ -753,8 +763,8 @@ class Filter(object):
         """
         Determine if the specified record is to be logged.
 
-        Is the specified record to be logged? Returns 0 for no, nonzero for
-        yes. If deemed appropriate, the record may be modified in-place.
+        Returns True if the record should be logged, or False otherwise.
+        If deemed appropriate, the record may be modified in-place.
         """
         if self.nlen == 0:
             return True
@@ -890,6 +900,9 @@ class Handler(Filterer):
         """
         self.lock = threading.RLock()
         _register_at_fork_reinit_lock(self)
+
+    def _at_fork_reinit(self):
+        self.lock._at_fork_reinit()
 
     def acquire(self):
         """
@@ -1482,7 +1495,11 @@ class Logger(Filterer):
         if self.isEnabledFor(CRITICAL):
             self._log(CRITICAL, msg, args, **kwargs)
 
-    fatal = critical
+    def fatal(self, msg, *args, **kwargs):
+        """
+        Don't use this method, use critical() instead.
+        """
+        self.critical(msg, *args, **kwargs)
 
     def log(self, level, msg, *args, **kwargs):
         """
@@ -1753,7 +1770,7 @@ class LoggerAdapter(object):
     information in logging output.
     """
 
-    def __init__(self, logger, extra):
+    def __init__(self, logger, extra=None):
         """
         Initialize the adapter with a logger and a dict-like object which
         provides contextual information. This constructor signature allows
@@ -2041,7 +2058,11 @@ def critical(msg, *args, **kwargs):
         basicConfig()
     root.critical(msg, *args, **kwargs)
 
-fatal = critical
+def fatal(msg, *args, **kwargs):
+    """
+    Don't use this function, use critical() instead.
+    """
+    critical(msg, *args, **kwargs)
 
 def error(msg, *args, **kwargs):
     """
@@ -2167,6 +2188,9 @@ class NullHandler(Handler):
 
     def createLock(self):
         self.lock = None
+
+    def _at_fork_reinit(self):
+        pass
 
 # Warnings integration
 

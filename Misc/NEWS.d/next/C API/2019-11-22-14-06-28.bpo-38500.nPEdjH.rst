@@ -1,5 +1,0 @@
-Add a private API to get and set the frame evaluation function: add
-:c:func:`_PyInterpreterState_GetEvalFrameFunc` and
-:c:func:`_PyInterpreterState_SetEvalFrameFunc` C functions.
-The :c:type:`_PyFrameEvalFunction` function type now takes a *tstate*
-parameter.

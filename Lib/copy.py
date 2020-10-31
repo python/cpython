@@ -192,6 +192,7 @@ d[bytes] = _deepcopy_atomic
 d[str] = _deepcopy_atomic
 d[types.CodeType] = _deepcopy_atomic
 d[type] = _deepcopy_atomic
+d[range] = _deepcopy_atomic
 d[types.BuiltinFunctionType] = _deepcopy_atomic
 d[types.FunctionType] = _deepcopy_atomic
 d[weakref.ref] = _deepcopy_atomic

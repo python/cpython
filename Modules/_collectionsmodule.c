@@ -1,10 +1,11 @@
 #include "Python.h"
-#include "structmember.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
+#include "structmember.h"         // PyMemberDef
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
 #else
-#include <sys/types.h>          /* For size_t */
+#include <sys/types.h>            // size_t
 #endif
 
 /*[clinic input]
@@ -117,23 +118,9 @@ static PyTypeObject deque_type;
 #define CHECK_NOT_END(link)
 #endif
 
-/* A simple freelisting scheme is used to minimize calls to the memory
-   allocator.  It accommodates common use cases where new blocks are being
-   added at about the same rate as old blocks are being freed.
- */
-
-#define MAXFREEBLOCKS 16
-static Py_ssize_t numfreeblocks = 0;
-static block *freeblocks[MAXFREEBLOCKS];
-
 static block *
 newblock(void) {
-    block *b;
-    if (numfreeblocks) {
-        numfreeblocks--;
-        return freeblocks[numfreeblocks];
-    }
-    b = PyMem_Malloc(sizeof(block));
+    block *b = PyMem_Malloc(sizeof(block));
     if (b != NULL) {
         return b;
     }
@@ -144,12 +131,7 @@ newblock(void) {
 static void
 freeblock(block *b)
 {
-    if (numfreeblocks < MAXFREEBLOCKS) {
-        freeblocks[numfreeblocks] = b;
-        numfreeblocks++;
-    } else {
-        PyMem_Free(b);
-    }
+    PyMem_Free(b);
 }
 
 static PyObject *
@@ -1609,6 +1591,8 @@ static PyMethodDef deque_methods[] = {
         METH_FASTCALL,            rotate_doc},
     {"__sizeof__",              (PyCFunction)deque_sizeof,
         METH_NOARGS,             sizeof_doc},
+    {"__class_getitem__",       (PyCFunction)Py_GenericAlias,
+        METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2074,6 +2058,8 @@ static PyMethodDef defdict_methods[] = {
      defdict_copy_doc},
     {"__reduce__", (PyCFunction)defdict_reduce, METH_NOARGS,
      reduce_doc},
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("See PEP 585")},
     {NULL}
 };
 
@@ -2292,6 +2278,7 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
     PyObject *dict_get;
     PyObject *mapping_setitem;
     PyObject *dict_setitem;
+    PyObject *one = _PyLong_GetOne();  // borrowed reference
 
     it = PyObject_GetIter(iterable);
     if (it == NULL)
@@ -2338,10 +2325,10 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             if (oldval == NULL) {
                 if (PyErr_Occurred())
                     goto done;
-                if (_PyDict_SetItem_KnownHash(mapping, key, _PyLong_One, hash) < 0)
+                if (_PyDict_SetItem_KnownHash(mapping, key, one, hash) < 0)
                     goto done;
             } else {
-                newval = PyNumber_Add(oldval, _PyLong_One);
+                newval = PyNumber_Add(oldval, one);
                 if (newval == NULL)
                     goto done;
                 if (_PyDict_SetItem_KnownHash(mapping, key, newval, hash) < 0)
@@ -2350,19 +2337,21 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             }
             Py_DECREF(key);
         }
-    } else {
+    }
+    else {
         bound_get = _PyObject_GetAttrId(mapping, &PyId_get);
         if (bound_get == NULL)
             goto done;
 
+        PyObject *zero = _PyLong_GetZero();  // borrowed reference
         while (1) {
             key = PyIter_Next(it);
             if (key == NULL)
                 break;
-            oldval = PyObject_CallFunctionObjArgs(bound_get, key, _PyLong_Zero, NULL);
+            oldval = PyObject_CallFunctionObjArgs(bound_get, key, zero, NULL);
             if (oldval == NULL)
                 break;
-            newval = PyNumber_Add(oldval, _PyLong_One);
+            newval = PyNumber_Add(oldval, one);
             Py_DECREF(oldval);
             if (newval == NULL)
                 break;
@@ -2489,6 +2478,14 @@ tuplegetter_reduce(_tuplegetterobject *self, PyObject *Py_UNUSED(ignored))
     return Py_BuildValue("(O(nO))", (PyObject*) Py_TYPE(self), self->index, self->doc);
 }
 
+static PyObject*
+tuplegetter_repr(_tuplegetterobject *self)
+{
+    return PyUnicode_FromFormat("%s(%zd, %R)",
+                                _PyType_Name(Py_TYPE(self)),
+                                self->index, self->doc);
+}
+
 
 static PyMemberDef tuplegetter_members[] = {
     {"__doc__",  T_OBJECT, offsetof(_tuplegetterobject, doc), 0},
@@ -2511,7 +2508,7 @@ static PyTypeObject tuplegetter_type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
+    (reprfunc)tuplegetter_repr,                 /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */

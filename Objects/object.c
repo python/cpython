@@ -2,13 +2,14 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
-#include "pycore_ceval.h"   // _Py_EnterRecursiveCall()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_context.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
-#include "pycore_pystate.h"
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
@@ -65,8 +66,7 @@ _Py_GetRefTotal(void)
 void
 _PyDebug_PrintTotalRefs(void) {
     fprintf(stderr,
-            "[%" PY_FORMAT_SIZE_T "d refs, "
-            "%" PY_FORMAT_SIZE_T "d blocks]\n",
+            "[%zd refs, %zd blocks]\n",
             _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
 }
 #endif /* Py_REF_DEBUG */
@@ -139,33 +139,34 @@ Py_DecRef(PyObject *o)
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
 {
-    /* Any changes should be reflected in PyObject_INIT() macro */
     if (op == NULL) {
         return PyErr_NoMemory();
     }
 
-    return PyObject_INIT(op, tp);
+    _PyObject_Init(op, tp);
+    return op;
 }
 
 PyVarObject *
 PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
 {
-    /* Any changes should be reflected in PyObject_INIT_VAR() macro */
     if (op == NULL) {
         return (PyVarObject *) PyErr_NoMemory();
     }
 
-    return PyObject_INIT_VAR(op, tp, size);
+    _PyObject_InitVar(op, tp, size);
+    return op;
 }
 
 PyObject *
 _PyObject_New(PyTypeObject *tp)
 {
-    PyObject *op;
-    op = (PyObject *) PyObject_MALLOC(_PyObject_SIZE(tp));
-    if (op == NULL)
+    PyObject *op = (PyObject *) PyObject_MALLOC(_PyObject_SIZE(tp));
+    if (op == NULL) {
         return PyErr_NoMemory();
-    return PyObject_INIT(op, tp);
+    }
+    _PyObject_Init(op, tp);
+    return op;
 }
 
 PyVarObject *
@@ -174,9 +175,11 @@ _PyObject_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
     PyVarObject *op;
     const size_t size = _PyObject_VAR_SIZE(tp, nitems);
     op = (PyVarObject *) PyObject_MALLOC(size);
-    if (op == NULL)
+    if (op == NULL) {
         return (PyVarObject *)PyErr_NoMemory();
-    return PyObject_INIT_VAR(op, tp, nitems);
+    }
+    _PyObject_InitVar(op, tp, nitems);
+    return op;
 }
 
 void
@@ -187,11 +190,11 @@ PyObject_CallFinalizer(PyObject *self)
     if (tp->tp_finalize == NULL)
         return;
     /* tp_finalize should only be called once. */
-    if (PyType_IS_GC(tp) && _PyGC_FINALIZED(self))
+    if (_PyType_IS_GC(tp) && _PyGC_FINALIZED(self))
         return;
 
     tp->tp_finalize(self);
-    if (PyType_IS_GC(tp)) {
+    if (_PyType_IS_GC(tp)) {
         _PyGC_SET_FINALIZED(self);
     }
 }
@@ -228,7 +231,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     Py_SET_REFCNT(self, refcnt);
 
     _PyObject_ASSERT(self,
-                     (!PyType_IS_GC(Py_TYPE(self))
+                     (!_PyType_IS_GC(Py_TYPE(self))
                       || _PyObject_GC_IS_TRACKED(self)));
     /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
        _Py_RefTotal, so we need to undo that. */
@@ -852,17 +855,6 @@ _PyObject_GetAttrId(PyObject *v, _Py_Identifier *name)
 }
 
 int
-_PyObject_HasAttrId(PyObject *v, _Py_Identifier *name)
-{
-    int result;
-    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
-    if (!oname)
-        return -1;
-    result = PyObject_HasAttr(v, oname);
-    return result;
-}
-
-int
 _PyObject_SetAttrId(PyObject *v, _Py_Identifier *name, PyObject *w)
 {
     int result;
@@ -1103,7 +1095,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     descr = _PyType_Lookup(tp, name);
     if (descr != NULL) {
         Py_INCREF(descr);
-        if (PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+        if (_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
             meth_found = 1;
         } else {
             f = Py_TYPE(descr)->tp_descr_get;
@@ -1166,7 +1158,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     /* Make sure the logic of _PyObject_GetMethod is in sync with
        this method.
 
-       When suppress=1, this function suppress AttributeError.
+       When suppress=1, this function suppresses AttributeError.
     */
 
     PyTypeObject *tp = Py_TYPE(obj);
@@ -1384,7 +1376,7 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
 }
 
 
-/* Test a value used as condition, e.g., in a for or if statement.
+/* Test a value used as condition, e.g., in a while or if statement.
    Return -1 if an error occurred */
 
 int
@@ -1787,6 +1779,7 @@ _PyTypes_Init(void)
     INIT_TYPE(&PyCode_Type, "code");
     INIT_TYPE(&PyFrame_Type, "frame");
     INIT_TYPE(&PyCFunction_Type, "builtin function");
+    INIT_TYPE(&PyCMethod_Type, "builtin method");
     INIT_TYPE(&PyMethod_Type, "method");
     INIT_TYPE(&PyFunction_Type, "function");
     INIT_TYPE(&PyDictProxy_Type, "dict proxy");
@@ -1873,9 +1866,10 @@ _Py_PrintReferences(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining objects:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", (void *)op, Py_REFCNT(op));
-        if (PyObject_Print(op, fp, 0) != 0)
+        fprintf(fp, "%p [%zd] ", (void *)op, Py_REFCNT(op));
+        if (PyObject_Print(op, fp, 0) != 0) {
             PyErr_Clear();
+        }
         putc('\n', fp);
     }
 }
@@ -1889,7 +1883,7 @@ _Py_PrintReferenceAddresses(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining object addresses:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", (void *)op,
+        fprintf(fp, "%p [%zd] %s\n", (void *)op,
             Py_REFCNT(op), Py_TYPE(op)->tp_name);
 }
 
@@ -2026,10 +2020,10 @@ finally:
 void
 _PyTrash_deposit_object(PyObject *op)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    struct _gc_runtime_state *gcstate = &tstate->interp->gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _gc_runtime_state *gcstate = &interp->gc;
 
-    _PyObject_ASSERT(op, PyObject_IS_GC(op));
+    _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), gcstate->trash_delete_later);
@@ -2041,7 +2035,7 @@ void
 _PyTrash_thread_deposit_object(PyObject *op)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyObject_ASSERT(op, PyObject_IS_GC(op));
+    _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), tstate->trash_delete_later);
@@ -2054,8 +2048,8 @@ _PyTrash_thread_deposit_object(PyObject *op)
 void
 _PyTrash_destroy_chain(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    struct _gc_runtime_state *gcstate = &tstate->interp->gc;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _gc_runtime_state *gcstate = &interp->gc;
 
     while (gcstate->trash_delete_later) {
         PyObject *op = gcstate->trash_delete_later;
@@ -2176,7 +2170,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
            to crash than dumping the traceback. */
         void *ptr;
         PyTypeObject *type = Py_TYPE(obj);
-        if (PyType_IS_GC(type)) {
+        if (_PyType_IS_GC(type)) {
             ptr = (void *)((char *)obj - sizeof(PyGC_Head));
         }
         else {
@@ -2205,6 +2199,14 @@ _Py_Dealloc(PyObject *op)
 #endif
     (*dealloc)(op);
 }
+
+
+PyObject **
+PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
+{
+    return _PyObject_GET_WEAKREFS_LISTPTR(op);
+}
+
 
 #ifdef __cplusplus
 }

@@ -13,7 +13,7 @@ if not defined SPHINXBUILD (
     %PYTHON% -c "import sphinx" > nul 2> nul
     if errorlevel 1 (
         echo Installing sphinx with %PYTHON%
-        %PYTHON% -m pip install sphinx
+        %PYTHON% -m pip install sphinx==2.2.0
         if errorlevel 1 exit /B
     )
     set SPHINXBUILD=%PYTHON% -c "import sphinx.cmd.build, sys; sys.exit(sphinx.cmd.build.main())"

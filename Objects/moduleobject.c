@@ -2,8 +2,9 @@
 /* Module object implementation */
 
 #include "Python.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
+#include "pycore_interp.h"        // PyInterpreterState.importlib
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "structmember.h"         // PyMemberDef
 
 static Py_ssize_t max_module_number;
 
@@ -164,7 +165,7 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
 PyObject *
 PyModule_Create2(struct PyModuleDef* module, int module_api_version)
 {
-    if (!_PyImport_IsInitialized(_PyInterpreterState_GET_UNSAFE())) {
+    if (!_PyImport_IsInitialized(_PyInterpreterState_GET())) {
         PyErr_SetString(PyExc_SystemError,
                         "Python import machinery not initialized");
         return NULL;
@@ -476,10 +477,12 @@ PyModule_GetNameObject(PyObject *m)
     }
     d = ((PyModuleObject *)m)->md_dict;
     if (d == NULL ||
-        (name = _PyDict_GetItemId(d, &PyId___name__)) == NULL ||
+        (name = _PyDict_GetItemIdWithError(d, &PyId___name__)) == NULL ||
         !PyUnicode_Check(name))
     {
-        PyErr_SetString(PyExc_SystemError, "nameless module");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_SystemError, "nameless module");
+        }
         return NULL;
     }
     Py_INCREF(name);
@@ -508,10 +511,12 @@ PyModule_GetFilenameObject(PyObject *m)
     }
     d = ((PyModuleObject *)m)->md_dict;
     if (d == NULL ||
-        (fileobj = _PyDict_GetItemId(d, &PyId___file__)) == NULL ||
+        (fileobj = _PyDict_GetItemIdWithError(d, &PyId___file__)) == NULL ||
         !PyUnicode_Check(fileobj))
     {
-        PyErr_SetString(PyExc_SystemError, "module filename missing");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_SystemError, "module filename missing");
+        }
         return NULL;
     }
     Py_INCREF(fileobj);
@@ -572,7 +577,7 @@ _PyModule_ClearDict(PyObject *d)
     Py_ssize_t pos;
     PyObject *key, *value;
 
-    int verbose = _PyInterpreterState_GET_UNSAFE()->config.verbose;
+    int verbose = _Py_GetConfig()->verbose;
 
     /* First, clear only names starting with a single underscore */
     pos = 0;
@@ -659,7 +664,7 @@ module___init___impl(PyModuleObject *self, PyObject *name, PyObject *doc)
 static void
 module_dealloc(PyModuleObject *m)
 {
-    int verbose = _PyInterpreterState_GET_UNSAFE()->config.verbose;
+    int verbose = _Py_GetConfig()->verbose;
 
     PyObject_GC_UnTrack(m);
     if (verbose && m->md_name) {
@@ -683,7 +688,7 @@ module_dealloc(PyModuleObject *m)
 static PyObject *
 module_repr(PyModuleObject *m)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
 }
@@ -720,14 +725,21 @@ module_getattro(PyModuleObject *m, PyObject *name)
     PyErr_Clear();
     if (m->md_dict) {
         _Py_IDENTIFIER(__getattr__);
-        getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
+        getattr = _PyDict_GetItemIdWithError(m->md_dict, &PyId___getattr__);
         if (getattr) {
             return PyObject_CallOneArg(getattr, name);
         }
-        mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        mod_name = _PyDict_GetItemIdWithError(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {
             Py_INCREF(mod_name);
-            PyObject *spec = _PyDict_GetItemId(m->md_dict, &PyId___spec__);
+            PyObject *spec = _PyDict_GetItemIdWithError(m->md_dict, &PyId___spec__);
+            if (spec == NULL && PyErr_Occurred()) {
+                Py_DECREF(mod_name);
+                return NULL;
+            }
             Py_XINCREF(spec);
             if (_PyModuleSpec_IsInitializing(spec)) {
                 PyErr_Format(PyExc_AttributeError,
@@ -743,6 +755,9 @@ module_getattro(PyModuleObject *m, PyObject *name)
             }
             Py_XDECREF(spec);
             Py_DECREF(mod_name);
+            return NULL;
+        }
+        else if (PyErr_Occurred()) {
             return NULL;
         }
     }

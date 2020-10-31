@@ -7,8 +7,8 @@
 Py_LOCAL_INLINE(PyObject *)
 STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
 {
-    char *sepstr = STRINGLIB_STR(sep);
-    const Py_ssize_t seplen = STRINGLIB_LEN(sep);
+    const char *sepstr = STRINGLIB_STR(sep);
+    Py_ssize_t seplen = STRINGLIB_LEN(sep);
     PyObject *res = NULL;
     char *p;
     Py_ssize_t seqlen = 0;

@@ -72,27 +72,6 @@ class TestDefaultDict(unittest.TestCase):
         d3[13]
         self.assertEqual(repr(d3), "defaultdict(%s, {13: 43})" % repr(foo))
 
-    def test_print(self):
-        d1 = defaultdict()
-        def foo(): return 42
-        d2 = defaultdict(foo, {1: 2})
-        # NOTE: We can't use tempfile.[Named]TemporaryFile since this
-        # code must exercise the tp_print C code, which only gets
-        # invoked for *real* files.
-        tfn = tempfile.mktemp()
-        try:
-            f = open(tfn, "w+")
-            try:
-                print(d1, file=f)
-                print(d2, file=f)
-                f.seek(0)
-                self.assertEqual(f.readline(), repr(d1) + "\n")
-                self.assertEqual(f.readline(), repr(d2) + "\n")
-            finally:
-                f.close()
-        finally:
-            os.remove(tfn)
-
     def test_copy(self):
         d1 = defaultdict()
         d2 = d1.copy()
@@ -159,18 +138,6 @@ class TestDefaultDict(unittest.TestCase):
         self.assertRegex(repr(d),
             r"sub\(<bound method .*sub\._factory "
             r"of sub\(\.\.\., \{\}\)>, \{\}\)")
-
-        # NOTE: printing a subclass of a builtin type does not call its
-        # tp_print slot. So this part is essentially the same test as above.
-        tfn = tempfile.mktemp()
-        try:
-            f = open(tfn, "w+")
-            try:
-                print(d, file=f)
-            finally:
-                f.close()
-        finally:
-            os.remove(tfn)
 
     def test_callable_arg(self):
         self.assertRaises(TypeError, defaultdict, {})

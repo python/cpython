@@ -369,6 +369,11 @@ Miscellaneous options
    (filename or built-in module) from which it is loaded.  When given twice
    (:option:`!-vv`), print a message for each file that is checked for when
    searching for a module.  Also provides information on module cleanup at exit.
+
+   .. versionchanged:: 3.10
+      The :mod:`site` module reports the site-specific paths
+      and :file:`.pth` files being processed.
+
    See also :envvar:`PYTHONVERBOSE`.
 
 
@@ -478,6 +483,9 @@ Miscellaneous options
 
       The ``-X showalloccount`` option has been removed.
 
+   .. deprecated-removed:: 3.9 3.10
+      The ``-X oldparser`` option.
+
 
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -533,6 +541,14 @@ conflict.
    within a Python program as the variable :data:`sys.path`.
 
 
+.. envvar:: PYTHONPLATLIBDIR
+
+   If this is set to a non-empty string, it overrides the :data:`sys.platlibdir`
+   value.
+
+   .. versionadded:: 3.9
+
+
 .. envvar:: PYTHONSTARTUP
 
    If this is the name of a readable file, the Python commands in that file are
@@ -542,7 +558,7 @@ conflict.
    the interactive session.  You can also change the prompts :data:`sys.ps1` and
    :data:`sys.ps2` and the hook :data:`sys.__interactivehook__` in this file.
 
-   .. audit-event:: cpython.run_startup filename PYTHONSTARTUP
+   .. audit-event:: cpython.run_startup filename envvar-PYTHONSTARTUP
 
       Raises an :ref:`auditing event <auditing>` ``cpython.run_startup`` with
       the filename as the argument when called on startup.

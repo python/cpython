@@ -1,6 +1,7 @@
 #include "Python.h"
-#include "pycore_fileutils.h"
-#include "osdefs.h"
+#include "pycore_fileutils.h"     // fileutils definitions
+#include "pycore_runtime.h"       // _PyRuntime
+#include "osdefs.h"               // SEP
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -820,6 +821,46 @@ _Py_EncodeLocaleEx(const wchar_t *text, char **str,
 }
 
 
+// Get the current locale encoding: locale.getpreferredencoding(False).
+// See also config_get_locale_encoding()
+PyObject *
+_Py_GetLocaleEncoding(void)
+{
+#ifdef _Py_FORCE_UTF8_LOCALE
+    // On Android langinfo.h and CODESET are missing,
+    // and UTF-8 is always used in mbstowcs() and wcstombs().
+    return PyUnicode_FromString("UTF-8");
+#else
+    const PyPreConfig *preconfig = &_PyRuntime.preconfig;
+    if (preconfig->utf8_mode) {
+        return PyUnicode_FromString("UTF-8");
+    }
+
+#if defined(MS_WINDOWS)
+    return PyUnicode_FromFormat("cp%u", GetACP());
+#else
+    const char *encoding = nl_langinfo(CODESET);
+    if (!encoding || encoding[0] == '\0') {
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
+        // nl_langinfo() can return an empty string when the LC_CTYPE locale is
+        // not supported. Default to UTF-8 in that case, because UTF-8 is the
+        // default charset on macOS.
+        encoding = "UTF-8";
+#else
+        PyErr_SetString(PyExc_ValueError,
+                        "failed to get the locale encoding: "
+                        "nl_langinfo(CODESET) returns an empty string");
+        return NULL;
+#endif
+    }
+    // Decode from UTF-8
+    return PyUnicode_FromString(encoding);
+#endif  // !CODESET
+
+#endif
+}
+
+
 #ifdef MS_WINDOWS
 static __int64 secs_between_epochs = 11644473600; /* Seconds between 1.1.1601 and 1.1.1970 */
 
@@ -1008,15 +1049,21 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 #ifdef MS_WINDOWS
     int err;
     struct _stat wstatbuf;
-    const wchar_t *wpath;
 
-    wpath = _PyUnicode_AsUnicode(path);
+#if USE_UNICODE_WCHAR_CACHE
+    const wchar_t *wpath = _PyUnicode_AsUnicode(path);
+#else /* USE_UNICODE_WCHAR_CACHE */
+    wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     if (wpath == NULL)
         return -2;
 
     err = _wstat(wpath, &wstatbuf);
     if (!err)
         statbuf->st_mode = wstatbuf.st_mode;
+#if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free(wpath);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     return err;
 #else
     int ret;
@@ -1274,7 +1321,12 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
 #endif
 
     if (gil_held) {
-        if (PySys_Audit("open", "sOi", pathname, Py_None, flags) < 0) {
+        PyObject *pathname_obj = PyUnicode_DecodeFSDefault(pathname);
+        if (pathname_obj == NULL) {
+            return -1;
+        }
+        if (PySys_Audit("open", "OOi", pathname_obj, Py_None, flags) < 0) {
+            Py_DECREF(pathname_obj);
             return -1;
         }
 
@@ -1284,12 +1336,16 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
             Py_END_ALLOW_THREADS
         } while (fd < 0
                  && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-        if (async_err)
-            return -1;
-        if (fd < 0) {
-            PyErr_SetFromErrnoWithFilename(PyExc_OSError, pathname);
+        if (async_err) {
+            Py_DECREF(pathname_obj);
             return -1;
         }
+        if (fd < 0) {
+            PyErr_SetFromErrnoWithFilenameObjects(PyExc_OSError, pathname_obj, NULL);
+            Py_DECREF(pathname_obj);
+            return -1;
+        }
+        Py_DECREF(pathname_obj);
     }
     else {
         fd = open(pathname, flags);
@@ -1385,9 +1441,15 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 FILE*
 _Py_fopen(const char *pathname, const char *mode)
 {
-    if (PySys_Audit("open", "ssi", pathname, mode, 0) < 0) {
+    PyObject *pathname_obj = PyUnicode_DecodeFSDefault(pathname);
+    if (pathname_obj == NULL) {
         return NULL;
     }
+    if (PySys_Audit("open", "Osi", pathname_obj, mode, 0) < 0) {
+        Py_DECREF(pathname_obj);
+        return NULL;
+    }
+    Py_DECREF(pathname_obj);
 
     FILE *f = fopen(pathname, mode);
     if (f == NULL)
@@ -1418,7 +1480,6 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     FILE *f;
     int async_err = 0;
 #ifdef MS_WINDOWS
-    const wchar_t *wpath;
     wchar_t wmode[10];
     int usize;
 
@@ -1433,7 +1494,11 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                      Py_TYPE(path));
         return NULL;
     }
-    wpath = _PyUnicode_AsUnicode(path);
+#if USE_UNICODE_WCHAR_CACHE
+    const wchar_t *wpath = _PyUnicode_AsUnicode(path);
+#else /* USE_UNICODE_WCHAR_CACHE */
+    wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
+#endif /* USE_UNICODE_WCHAR_CACHE */
     if (wpath == NULL)
         return NULL;
 
@@ -1441,6 +1506,9 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                                 wmode, Py_ARRAY_LENGTH(wmode));
     if (usize == 0) {
         PyErr_SetFromWindowsErr(0);
+#if !USE_UNICODE_WCHAR_CACHE
+        PyMem_Free(wpath);
+#endif /* USE_UNICODE_WCHAR_CACHE */
         return NULL;
     }
 
@@ -1450,9 +1518,12 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+#if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free(wpath);
+#endif /* USE_UNICODE_WCHAR_CACHE */
 #else
     PyObject *bytes;
-    char *path_bytes;
+    const char *path_bytes;
 
     assert(PyGILState_Check());
 
@@ -1461,6 +1532,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     path_bytes = PyBytes_AS_STRING(bytes);
 
     if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
+        Py_DECREF(bytes);
         return NULL;
     }
 
@@ -2016,6 +2088,7 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
     assert(decimal_point != NULL);
     assert(thousands_sep != NULL);
 
+#ifndef MS_WINDOWS
     int change_locale = 0;
     if ((strlen(lc->decimal_point) > 1 || ((unsigned char)lc->decimal_point[0]) > 127)) {
         change_locale = 1;
@@ -2054,14 +2127,20 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
         }
     }
 
+#define GET_LOCALE_STRING(ATTR) PyUnicode_DecodeLocale(lc->ATTR, NULL)
+#else /* MS_WINDOWS */
+/* Use _W_* fields of Windows strcut lconv */
+#define GET_LOCALE_STRING(ATTR) PyUnicode_FromWideChar(lc->_W_ ## ATTR, -1)
+#endif /* MS_WINDOWS */
+
     int res = -1;
 
-    *decimal_point = PyUnicode_DecodeLocale(lc->decimal_point, NULL);
+    *decimal_point = GET_LOCALE_STRING(decimal_point);
     if (*decimal_point == NULL) {
         goto done;
     }
 
-    *thousands_sep = PyUnicode_DecodeLocale(lc->thousands_sep, NULL);
+    *thousands_sep = GET_LOCALE_STRING(thousands_sep);
     if (*thousands_sep == NULL) {
         goto done;
     }
@@ -2069,9 +2148,89 @@ _Py_GetLocaleconvNumeric(struct lconv *lc,
     res = 0;
 
 done:
+#ifndef MS_WINDOWS
     if (loc != NULL) {
         setlocale(LC_CTYPE, oldloc);
     }
     PyMem_Free(oldloc);
+#endif
     return res;
+
+#undef GET_LOCALE_STRING
+}
+
+/* Our selection logic for which function to use is as follows:
+ * 1. If close_range(2) is available, always prefer that; it's better for
+ *    contiguous ranges like this than fdwalk(3) which entails iterating over
+ *    the entire fd space and simply doing nothing for those outside the range.
+ * 2. If closefrom(2) is available, we'll attempt to use that next if we're
+ *    closing up to sysconf(_SC_OPEN_MAX).
+ * 2a. Fallback to fdwalk(3) if we're not closing up to sysconf(_SC_OPEN_MAX),
+ *    as that will be more performant if the range happens to have any chunk of
+ *    non-opened fd in the middle.
+ * 2b. If fdwalk(3) isn't available, just do a plain close(2) loop.
+ */
+#ifdef __FreeBSD__
+#  define USE_CLOSEFROM
+#endif /* __FreeBSD__ */
+
+#ifdef HAVE_FDWALK
+#  define USE_FDWALK
+#endif /* HAVE_FDWALK */
+
+#ifdef USE_FDWALK
+static int
+_fdwalk_close_func(void *lohi, int fd)
+{
+    int lo = ((int *)lohi)[0];
+    int hi = ((int *)lohi)[1];
+
+    if (fd >= hi) {
+        return 1;
+    }
+    else if (fd >= lo) {
+        /* Ignore errors */
+        (void)close(fd);
+    }
+    return 0;
+}
+#endif /* USE_FDWALK */
+
+/* Closes all file descriptors in [first, last], ignoring errors. */
+void
+_Py_closerange(int first, int last)
+{
+    first = Py_MAX(first, 0);
+    _Py_BEGIN_SUPPRESS_IPH
+#ifdef HAVE_CLOSE_RANGE
+    if (close_range(first, last, 0) == 0 || errno != ENOSYS) {
+        /* Any errors encountered while closing file descriptors are ignored;
+         * ENOSYS means no kernel support, though,
+         * so we'll fallback to the other methods. */
+    }
+    else
+#endif /* HAVE_CLOSE_RANGE */
+#ifdef USE_CLOSEFROM
+    if (last >= sysconf(_SC_OPEN_MAX)) {
+        /* Any errors encountered while closing file descriptors are ignored */
+        closefrom(first);
+    }
+    else
+#endif /* USE_CLOSEFROM */
+#ifdef USE_FDWALK
+    {
+        int lohi[2];
+        lohi[0] = first;
+        lohi[1] = last + 1;
+        fdwalk(_fdwalk_close_func, lohi);
+    }
+#else
+    {
+        for (int i = first; i <= last; i++) {
+            /* Ignore errors */
+            (void)close(i);
+        }
+    }
+#endif /* USE_FDWALK */
+    _Py_END_SUPPRESS_IPH
 }

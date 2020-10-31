@@ -93,7 +93,7 @@ Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"<>", r"!=",
                  r"~")
 
 Bracket = '[][(){}]'
-Special = group(r'\r?\n', r'[:;.,`@]')
+Special = group(r'\r?\n', r':=', r'[:;.,`@]')
 Funny = group(Operator, Bracket, Special)
 
 PlainToken = group(Number, Funny, String, Name)

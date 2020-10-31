@@ -1,2 +1,0 @@
-Added support to fix ``getproxies`` in the :mod:`lib2to3.fixes.fix_urllib`
-module. Patch by José Roberto Meza Cabrera.

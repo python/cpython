@@ -1,3 +1,0 @@
-Fixed :func:`ast.unparse` for extended slices containing a single element
-(e.g. ``a[i:j,]``). Remove redundant tuples when index with a tuple (e.g.
-``a[i, j]``).

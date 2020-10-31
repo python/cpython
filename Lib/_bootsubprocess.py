@@ -27,15 +27,8 @@ class Popen:
                 os._exit(1)
         else:
             # Parent process
-            pid, status = os.waitpid(pid, 0)
-            if os.WIFSIGNALED(status):
-                self.returncode = -os.WTERMSIG(status)
-            elif os.WIFEXITED(status):
-                self.returncode = os.WEXITSTATUS(status)
-            elif os.WIFSTOPPED(status):
-                self.returncode = -os.WSTOPSIG(status)
-            else:
-                raise Exception(f"unknown child process exit status: {status!r}")
+            _, status = os.waitpid(pid, 0)
+            self.returncode = os.waitstatus_to_exitcode(status)
 
         return self.returncode
 
@@ -85,8 +78,10 @@ def check_output(cmd, **kwargs):
     try:
         # system() spawns a shell
         status = os.system(cmd)
-        if status:
-            raise ValueError(f"Command {cmd!r} failed with status {status!r}")
+        exitcode = os.waitstatus_to_exitcode(status)
+        if exitcode:
+            raise ValueError(f"Command {cmd!r} returned non-zero "
+                             f"exit status {exitcode!r}")
 
         try:
             with open(tmp_filename, "rb") as fp:

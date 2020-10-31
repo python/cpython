@@ -118,6 +118,10 @@ created.  Socket addresses are represented as follows:
   - :const:`CAN_ISOTP` protocol require a tuple ``(interface, rx_addr, tx_addr)``
     where both additional parameters are unsigned long integer that represent a
     CAN identifier (standard or extended).
+  - :const:`CAN_J1939` protocol require a tuple ``(interface, name, pgn, addr)``
+    where additional parameters are 64-bit unsigned integer representing the
+    ECU name, a 32-bit unsigned integer representing the Parameter Group Number
+    (PGN), and an 8-bit integer representing the address.
 
 - A string or a tuple ``(id, unit)`` is used for the :const:`SYSPROTO_CONTROL`
   protocol of the :const:`PF_SYSTEM` family. The string is the name of a
@@ -408,6 +412,17 @@ Constants
 
    .. versionadded:: 3.5
 
+.. data:: CAN_RAW_JOIN_FILTERS
+
+   Joins the applied CAN filters such that only CAN frames that match all
+   given CAN filters are passed to user space.
+
+   This constant is documented in the Linux documentation.
+
+   .. availability:: Linux >= 4.1.
+
+   .. versionadded:: 3.9
+
 .. data:: CAN_ISOTP
 
    CAN_ISOTP, in the CAN protocol family, is the ISO-TP (ISO 15765-2) protocol.
@@ -416,6 +431,15 @@ Constants
    .. availability:: Linux >= 2.6.25.
 
    .. versionadded:: 3.7
+
+.. data:: CAN_J1939
+
+   CAN_J1939, in the CAN protocol family, is the SAE J1939 protocol.
+   J1939 constants, documented in the Linux documentation.
+
+   .. availability:: Linux >= 5.4.
+
+   .. versionadded:: 3.9
 
 
 .. data:: AF_PACKET
@@ -533,7 +557,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    default), :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other
    ``SOCK_`` constants. The protocol number is usually zero and may be omitted
    or in the case where the address family is :const:`AF_CAN` the protocol
-   should be one of :const:`CAN_RAW`, :const:`CAN_BCM` or :const:`CAN_ISOTP`.
+   should be one of :const:`CAN_RAW`, :const:`CAN_BCM`, :const:`CAN_ISOTP` or
+   :const:`CAN_J1939`.
 
    If *fileno* is specified, the values for *family*, *type*, and *proto* are
    auto-detected from the specified file descriptor.  Auto-detection can be
@@ -576,6 +601,9 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       will still create a non-blocking socket on OSes that support
       ``SOCK_NONBLOCK``, but ``sock.type`` will be set to
       ``socket.SOCK_STREAM``.
+
+   .. versionchanged:: 3.9
+       The CAN_J1939 protocol was added.
 
 .. function:: socketpair([family[, type[, proto]]])
 
@@ -1063,6 +1091,19 @@ The :mod:`socket` module also offers various network-related services:
    .. versionchanged:: 3.8
       Windows support was added.
 
+   .. note::
+
+      On Windows network interfaces have different names in different contexts
+      (all names are examples):
+
+      * UUID: ``{FB605B73-AAC2-49A6-9A2F-25416AEA0573}``
+      * name: ``ethernet_32770``
+      * friendly name: ``vEthernet (nat)``
+      * description: ``Hyper-V Virtual Ethernet Adapter``
+
+      This function returns names of the second form from the list, ``ethernet_32770``
+      in this example case.
+
 
 .. function:: if_nametoindex(if_name)
 
@@ -1077,6 +1118,9 @@ The :mod:`socket` module also offers various network-related services:
    .. versionchanged:: 3.8
       Windows support was added.
 
+   .. seealso::
+      "Interface name" is a name as documented in :func:`if_nameindex`.
+
 
 .. function:: if_indextoname(if_index)
 
@@ -1090,6 +1134,9 @@ The :mod:`socket` module also offers various network-related services:
 
    .. versionchanged:: 3.8
       Windows support was added.
+
+   .. seealso::
+      "Interface name" is a name as documented in :func:`if_nameindex`.
 
 
 .. _socket-objects:
@@ -1667,7 +1714,9 @@ to sockets.
 
 .. method:: socket.setsockopt(level, optname, value: int)
 .. method:: socket.setsockopt(level, optname, value: buffer)
+   :noindex:
 .. method:: socket.setsockopt(level, optname, None, optlen: int)
+   :noindex:
 
    .. index:: module: struct
 

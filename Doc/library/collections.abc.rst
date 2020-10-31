@@ -98,12 +98,20 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
 
 .. class:: Container
-           Hashable
-           Sized
-           Callable
 
-   ABCs for classes that provide respectively the methods :meth:`__contains__`,
-   :meth:`__hash__`, :meth:`__len__`, and :meth:`__call__`.
+   ABC for classes that provide the :meth:`__contains__` method.
+
+.. class:: Hashable
+
+   ABC for classes that provide the :meth:`__hash__` method.
+
+.. class:: Sized
+
+   ABC for classes that provide the :meth:`__len__` method.
+
+.. class:: Callable
+
+   ABC for classes that provide the :meth:`__call__` method.
 
 .. class:: Iterable
 
@@ -185,7 +193,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
    expressions.  Custom implementations must provide the :meth:`__await__`
    method.
 
-   :term:`Coroutine` objects and instances of the
+   :term:`Coroutine <coroutine>` objects and instances of the
    :class:`~collections.abc.Coroutine` ABC are all instances of this ABC.
 
    .. note::

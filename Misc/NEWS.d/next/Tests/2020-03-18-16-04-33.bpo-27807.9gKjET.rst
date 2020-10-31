@@ -1,2 +1,0 @@
-``test_site.test_startup_imports()`` is now skipped if a path of
-:data:`sys.path` contains a ``.pth`` file.
