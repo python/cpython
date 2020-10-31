@@ -580,7 +580,7 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!_PyArg_CheckPositional("GenericAlias", PyTuple_GET_SIZE(args), 2, 2)) {
         return NULL;
     }
-    PyObject *origin = PyTuple_GET_ITEM(args, 0); 
+    PyObject *origin = PyTuple_GET_ITEM(args, 0);
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
 
     // almost the same as Py_GenericAlias' code, but to assign to self
