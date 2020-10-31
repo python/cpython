@@ -21,6 +21,8 @@ __all__ = ["Awaitable", "Coroutine",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
            "ByteString",
+           # To allow for pickling, not actually meant to be imported.
+           "_CallableGenericAlias"
            ]
 
 # This module has been renamed from collections.abc to _collections_abc to
