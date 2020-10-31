@@ -4764,10 +4764,20 @@ Compared to the overhead of setting up the runtime context, the overhead of a
 single class dictionary lookup is negligible.
 
 
+Type Annotation Types --- :ref:`Generic Alias <types-genericalias>`, :ref:`Union <types-union>`
+===============================================================================================
+
+.. index::
+   single: annotation; type annotation; type hint
+
+The core built-in types for :term:`type annotations <annotation>` are
+:ref:`Generic Alias <types-genericalias>` and :ref:`Union <types-union>`.
+
+
 .. _types-genericalias:
 
 Generic Alias Type
-==================
+------------------
 
 .. index::
    object: GenericAlias
@@ -4870,7 +4880,7 @@ in the ``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
 
 
 Standard Generic Collections
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These standard library collections support parameterized generics.
 
@@ -4915,7 +4925,7 @@ These standard library collections support parameterized generics.
 
 
 Special Attributes of Generic Alias
------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All parameterized generics implement special read-only attributes.
 
@@ -4961,7 +4971,7 @@ All parameterized generics implement special read-only attributes.
 .. _types-union:
 
 Union Type
-==========
+----------
 
 .. index::
    object: Union
