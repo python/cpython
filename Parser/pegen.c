@@ -835,7 +835,7 @@ expr_ty
 _PyPegen_name_token(Parser *p)
 {
     Token *t = _PyPegen_expect_token(p, NAME);
-    if (t == NULL) {
+    if (t == NULL || p->error_indicator) {
         return NULL;
     }
     char* s = PyBytes_AsString(t->bytes);

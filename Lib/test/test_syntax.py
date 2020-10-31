@@ -972,6 +972,9 @@ def func2():
 """
         self._check_error(code, "invalid syntax")
 
+    def test_unexpected_line_continuation(self):
+        self._check_error('A.\u018a\\ ', "unexpected character after line continuation character")
+
 def test_main():
     support.run_unittest(SyntaxTestCase)
     from test import test_syntax
