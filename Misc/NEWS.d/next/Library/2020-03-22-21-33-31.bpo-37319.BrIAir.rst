@@ -1,1 +1,3 @@
 Deprecated support of non-integer arguments in :func:`random.randrange`.
+:exc:`TypeError` is now always raised for wrong type of arguments
+(formerly :exc:`ValueError` could be raised for some non-integer arguments).

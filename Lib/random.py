@@ -303,7 +303,7 @@ class Random(_random.Random):
         except TypeError:
             istart = int(start)
             if istart != start:
-                raise ValueError("non-integer arg 1 for randrange()")
+                raise TypeError("non-integer arg 1 for randrange()")
             _warn('non-integer arg 1 for randrange()',
                   DeprecationWarning, 2)
         if stop is None:
@@ -317,7 +317,7 @@ class Random(_random.Random):
         except TypeError:
             istop = int(stop)
             if istop != stop:
-                raise ValueError("non-integer stop for randrange()")
+                raise TypeError("non-integer stop for randrange()")
             _warn('non-integer stop for randrange()',
                   DeprecationWarning, 2)
         width = istop - istart
@@ -326,7 +326,7 @@ class Random(_random.Random):
         except TypeError:
             istep = int(step)
             if istep != step:
-                raise ValueError("non-integer step for randrange()")
+                raise TypeError("non-integer step for randrange()")
             _warn('non-integer step for randrange()',
                   DeprecationWarning, 2)
         # Fast path.

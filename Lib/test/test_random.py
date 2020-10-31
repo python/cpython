@@ -504,28 +504,40 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         rint = self.gen.randrange(0, 2, 2)
         self.assertEqual(rint, 0)
 
+    def test_randrange_non_integers(self):
+        randrange = self.gen.randrange
+        with self.assertWarns(DeprecationWarning):
+            self.assertIn(randrange(3.0), range(3))
+        with self.assertWarns(DeprecationWarning):
+            self.assertIn(randrange(0, 3.0), range(0, 3))
+        with self.assertWarns(DeprecationWarning):
+            self.assertIn(randrange(0, 42, 1.0), range(0, 42, 1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertIn(randrange(0, 42, 3.0), range(0, 42, 3))
+
     def test_randrange_errors(self):
-        raises = partial(self.assertRaises, ValueError, self.gen.randrange)
+        randrange = self.gen.randrange
+        raises = partial(self.assertRaises, ValueError, randrange)
         # Empty range
         raises(3, 3)
         raises(-721)
         raises(0, 100, -12)
         self.assertWarns(DeprecationWarning, raises, 3, 3, 1.0)
         # Non-integer start/stop
-        raises(3.14159)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 3.0)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, Fraction(3, 1))
-        raises('3')
-        raises(0, 2.71828)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 2.0)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, Fraction(2, 1))
-        raises(0, '2')
+        self.assertRaises(TypeError, randrange, 3.14159)
+        self.assertWarns(DeprecationWarning, randrange, 3.0)
+        self.assertWarns(DeprecationWarning, randrange, Fraction(3, 1))
+        self.assertRaises(TypeError, randrange, '3')
+        self.assertRaises(TypeError, randrange, 0, 2.71828)
+        self.assertWarns(DeprecationWarning, randrange, 0, 2.0)
+        self.assertWarns(DeprecationWarning, randrange, 0, Fraction(2, 1))
+        self.assertRaises(TypeError, randrange, 0, '2')
         # Zero and non-integer step
         raises(0, 42, 0)
-        raises(0, 42, 3.14159)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, 3.0)
-        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, Fraction(3, 1))
-        raises(0, 42, '3')
+        self.assertRaises(TypeError, randrange, 0, 42, 3.14159)
+        self.assertWarns(DeprecationWarning, randrange, 0, 42, 3.0)
+        self.assertWarns(DeprecationWarning, randrange, 0, 42, Fraction(3, 1))
+        self.assertRaises(TypeError, randrange, 0, 42, '3')
 
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1

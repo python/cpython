@@ -135,6 +135,10 @@ Functions for integers
       values.  Formerly it used a style like ``int(random()*n)`` which could produce
       slightly uneven distributions.
 
+   .. versionchanged:: 3.10
+      Formerly :exc:`ValueError` could be raised for non-integer arguments
+      instead of :exc:`TypeError`.
+
    .. deprecated:: 3.10
       Accepting non-integer arguments is deprecated.
 
