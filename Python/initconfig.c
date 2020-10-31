@@ -766,7 +766,7 @@ config_set_bytes_string(PyConfig *config, wchar_t **config_str,
    configured. */
 PyStatus
 PyConfig_SetBytesString(PyConfig *config, wchar_t **config_str,
-                           const char *str)
+                        const char *str)
 {
     return CONFIG_SET_BYTES_STR(config, config_str, str, "string");
 }
@@ -1466,8 +1466,13 @@ config_read_complex_options(PyConfig *config)
 
 
 static const wchar_t *
-config_get_stdio_errors(void)
+config_get_stdio_errors(const PyPreConfig *preconfig)
 {
+    if (preconfig->utf8_mode) {
+        /* UTF-8 Mode uses UTF-8/surrogateescape */
+        return L"surrogateescape";
+    }
+
 #ifndef MS_WINDOWS
     const char *loc = setlocale(LC_CTYPE, NULL);
     if (loc != NULL) {
@@ -1492,26 +1497,41 @@ config_get_stdio_errors(void)
 }
 
 
+// See also _Py_GetLocaleEncoding() and config_get_fs_encoding()
 static PyStatus
-config_get_locale_encoding(PyConfig *config, wchar_t **locale_encoding)
+config_get_locale_encoding(PyConfig *config, const PyPreConfig *preconfig,
+                           wchar_t **locale_encoding)
 {
+#ifdef _Py_FORCE_UTF8_LOCALE
+    return PyConfig_SetString(config, locale_encoding, L"utf-8");
+#else
+    if (preconfig->utf8_mode) {
+        return PyConfig_SetString(config, locale_encoding, L"utf-8");
+    }
+
 #ifdef MS_WINDOWS
     char encoding[20];
     PyOS_snprintf(encoding, sizeof(encoding), "cp%u", GetACP());
     return PyConfig_SetBytesString(config, locale_encoding, encoding);
-#elif defined(_Py_FORCE_UTF8_LOCALE)
-    return PyConfig_SetString(config, locale_encoding, L"utf-8");
 #else
     const char *encoding = nl_langinfo(CODESET);
     if (!encoding || encoding[0] == '\0') {
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
+        // nl_langinfo() can return an empty string when the LC_CTYPE locale is
+        // not supported. Default to UTF-8 in that case, because UTF-8 is the
+        // default charset on macOS.
+        encoding = "UTF-8";
+#else
         return _PyStatus_ERR("failed to get the locale encoding: "
-                             "nl_langinfo(CODESET) failed");
+                             "nl_langinfo(CODESET) returns an empty string");
+#endif
     }
     /* nl_langinfo(CODESET) is decoded by Py_DecodeLocale() */
     return CONFIG_SET_BYTES_STR(config,
                                 locale_encoding, encoding,
                                 "nl_langinfo(CODESET)");
-#endif
+#endif  // !MS_WINDOWS
+#endif  // !_Py_FORCE_UTF8_LOCALE
 }
 
 
@@ -1596,33 +1616,16 @@ config_init_stdio_encoding(PyConfig *config,
         PyMem_RawFree(pythonioencoding);
     }
 
-    /* UTF-8 Mode uses UTF-8/surrogateescape */
-    if (preconfig->utf8_mode) {
-        if (config->stdio_encoding == NULL) {
-            status = PyConfig_SetString(config, &config->stdio_encoding,
-                                        L"utf-8");
-            if (_PyStatus_EXCEPTION(status)) {
-                return status;
-            }
-        }
-        if (config->stdio_errors == NULL) {
-            status = PyConfig_SetString(config, &config->stdio_errors,
-                                        L"surrogateescape");
-            if (_PyStatus_EXCEPTION(status)) {
-                return status;
-            }
-        }
-    }
-
     /* Choose the default error handler based on the current locale. */
     if (config->stdio_encoding == NULL) {
-        status = config_get_locale_encoding(config, &config->stdio_encoding);
+        status = config_get_locale_encoding(config, preconfig,
+                                            &config->stdio_encoding);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
     }
     if (config->stdio_errors == NULL) {
-        const wchar_t *errors = config_get_stdio_errors();
+        const wchar_t *errors = config_get_stdio_errors(preconfig);
         assert(errors != NULL);
 
         status = PyConfig_SetString(config, &config->stdio_errors, errors);
@@ -1635,46 +1638,46 @@ config_init_stdio_encoding(PyConfig *config,
 }
 
 
+// See also config_get_locale_encoding()
+static PyStatus
+config_get_fs_encoding(PyConfig *config, const PyPreConfig *preconfig,
+                       wchar_t **fs_encoding)
+{
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
+    return PyConfig_SetString(config, fs_encoding, L"utf-8");
+#elif defined(MS_WINDOWS)
+    const wchar_t *encoding;
+    if (preconfig->legacy_windows_fs_encoding) {
+        // Legacy Windows filesystem encoding: mbcs/replace
+        encoding = L"mbcs";
+    }
+    else {
+        // Windows defaults to utf-8/surrogatepass (PEP 529)
+        encoding = L"utf-8";
+    }
+     return PyConfig_SetString(config, fs_encoding, encoding);
+#else  // !MS_WINDOWS
+    if (preconfig->utf8_mode) {
+        return PyConfig_SetString(config, fs_encoding, L"utf-8");
+    }
+    else if (_Py_GetForceASCII()) {
+        return PyConfig_SetString(config, fs_encoding, L"ascii");
+    }
+    else {
+        return config_get_locale_encoding(config, preconfig, fs_encoding);
+    }
+#endif  // !MS_WINDOWS
+}
+
+
 static PyStatus
 config_init_fs_encoding(PyConfig *config, const PyPreConfig *preconfig)
 {
     PyStatus status;
 
     if (config->filesystem_encoding == NULL) {
-#ifdef _Py_FORCE_UTF8_FS_ENCODING
-        status = PyConfig_SetString(config, &config->filesystem_encoding, L"utf-8");
-#else
-
-#ifdef MS_WINDOWS
-        if (preconfig->legacy_windows_fs_encoding) {
-            /* Legacy Windows filesystem encoding: mbcs/replace */
-            status = PyConfig_SetString(config, &config->filesystem_encoding,
-                                        L"mbcs");
-        }
-        else
-#endif
-        if (preconfig->utf8_mode) {
-            status = PyConfig_SetString(config, &config->filesystem_encoding,
-                                        L"utf-8");
-        }
-#ifndef MS_WINDOWS
-        else if (_Py_GetForceASCII()) {
-            status = PyConfig_SetString(config, &config->filesystem_encoding,
-                                        L"ascii");
-        }
-#endif
-        else {
-#ifdef MS_WINDOWS
-            /* Windows defaults to utf-8/surrogatepass (PEP 529). */
-            status = PyConfig_SetString(config, &config->filesystem_encoding,
-                                        L"utf-8");
-#else
-            status = config_get_locale_encoding(config,
-                                                &config->filesystem_encoding);
-#endif
-        }
-#endif   /* !_Py_FORCE_UTF8_FS_ENCODING */
-
+        status = config_get_fs_encoding(config, preconfig,
+                                        &config->filesystem_encoding);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
