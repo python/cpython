@@ -329,6 +329,15 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
 
+Changes in the Python API
+-------------------------
+
+* The *etype* parameters of the :func:`~traceback.format_exception`,
+  :func:`~traceback.format_exception_only`, and
+  :func:`~traceback.print_exception` functions in the :mod:`traceback` module
+  have been renamed to *exc*.
+  (Contributed by Zackery Spytz and Matthias Bussonnier in :issue:`26389`.)
+
 
 Build Changes
 =============
